@@ -40,7 +40,7 @@ public class OsVersionsTest {
     public void upgrade() {
         var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), Integer.MAX_VALUE));
         provisionInfraApplication(10);
-        Supplier<List<Node>> hostNodes = () -> tester.nodeRepository().getNodes(NodeType.host);
+        Supplier<List<Node>> hostNodes = () -> tester.nodeRepository().nodes().getNodes(NodeType.host);
 
         // Upgrade OS
         assertTrue("No versions set", versions.readChange().targets().isEmpty());
@@ -94,7 +94,7 @@ public class OsVersionsTest {
         int maxActiveUpgrades = 5;
         var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), maxActiveUpgrades));
         provisionInfraApplication(totalNodes);
-        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list().state(Node.State.active).hosts();
+        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().state(Node.State.active).hosts();
 
         // 5 nodes have no version. The other 15 are spread across different versions
         var hostNodesList = hostNodes.get().asList();
@@ -104,10 +104,10 @@ public class OsVersionsTest {
 
         // Deprovisioned hosts are not considered
         for (var host : tester.makeReadyNodes(10, "default", NodeType.host)) {
-            tester.nodeRepository().fail(host.hostname(), Agent.system, OsVersions.class.getSimpleName());
-            tester.nodeRepository().removeRecursively(host.hostname());
+            tester.nodeRepository().nodes().fail(host.hostname(), Agent.system, OsVersions.class.getSimpleName());
+            tester.nodeRepository().nodes().removeRecursively(host.hostname());
         }
-        assertEquals(10, tester.nodeRepository().getNodes(Node.State.deprovisioned).size());
+        assertEquals(10, tester.nodeRepository().nodes().getNodes(Node.State.deprovisioned).size());
 
         // Set target
         var version1 = Version.fromString("7.1");
@@ -140,7 +140,7 @@ public class OsVersionsTest {
     public void newer_upgrade_aborts_upgrade_to_stale_version() {
         var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), Integer.MAX_VALUE));
         provisionInfraApplication(10);
-        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list().hosts();
+        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().hosts();
 
         // Some nodes are targeting an older version
         var version1 = Version.fromString("7.1");
@@ -166,7 +166,7 @@ public class OsVersionsTest {
         for (var host : hosts) {
             tester.makeReadyVirtualDockerNodes(2, resources, host.hostname());
         }
-        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list()
+        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list()
                                                    .hosts()
                                                    .not().state(Node.State.deprovisioned);
 
@@ -206,7 +206,7 @@ public class OsVersionsTest {
 
         // All hosts upgraded and none are deprovisioning
         assertEquals(hostCount, hostNodes.get().onOsVersion(version1).not().deprovisioning().size());
-        assertEquals(hostCount, tester.nodeRepository().list().state(Node.State.deprovisioned).size());
+        assertEquals(hostCount, tester.nodeRepository().nodes().list().state(Node.State.deprovisioned).size());
         var lastRetiredAt = clock.instant().truncatedTo(ChronoUnit.MILLIS);
 
         // Resuming after everything has upgraded does nothing
@@ -225,7 +225,7 @@ public class OsVersionsTest {
         var versions = new OsVersions(tester.nodeRepository(), new RetiringUpgrader(tester.nodeRepository()));
         int hostCount = 3;
         provisionInfraApplication(hostCount, NodeType.confighost);
-        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().list()
+        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list()
                                                    .nodeType(NodeType.confighost)
                                                    .not().state(Node.State.deprovisioned);
 
@@ -244,7 +244,7 @@ public class OsVersionsTest {
     }
 
     private NodeList retiringChildrenOf(Node parent) {
-        return tester.nodeRepository().list().childrenOf(parent).matching(child -> child.status().wantToRetire());
+        return tester.nodeRepository().nodes().list().childrenOf(parent).matching(child -> child.status().wantToRetire());
     }
 
     private List<Node> provisionInfraApplication(int nodeCount) {
@@ -256,7 +256,7 @@ public class OsVersionsTest {
         tester.prepareAndActivateInfraApplication(infraApplication, nodeType);
         return nodes.stream()
                     .map(Node::hostname)
-                    .flatMap(hostname -> tester.nodeRepository().getNode(hostname).stream())
+                    .flatMap(hostname -> tester.nodeRepository().nodes().getNode(hostname).stream())
                     .collect(Collectors.toList());
     }
 
@@ -289,9 +289,9 @@ public class OsVersionsTest {
             Optional<Version> wantedOsVersion = node.status().osVersion().wanted();
             if (node.status().wantToDeprovision()) {
                 // Complete upgrade by deprovisioning stale hosts and provisioning new ones
-                tester.nodeRepository().park(node.hostname(), false, Agent.system,
-                                             OsVersionsTest.class.getSimpleName());
-                tester.nodeRepository().removeRecursively(node.hostname());
+                tester.nodeRepository().nodes().park(node.hostname(), false, Agent.system,
+                                                     OsVersionsTest.class.getSimpleName());
+                tester.nodeRepository().nodes().removeRecursively(node.hostname());
                 node = provisionInfraApplication(1, nodeType).get(0);
             }
             return node.with(node.status().withOsVersion(node.status().osVersion().withCurrent(wantedOsVersion)));

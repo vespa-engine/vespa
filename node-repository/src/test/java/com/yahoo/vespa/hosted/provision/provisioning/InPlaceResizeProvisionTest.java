@@ -198,7 +198,7 @@ public class InPlaceResizeProvisionTest {
         // Failing one of the new nodes should cause another new node to be allocated rather than
         // unretiring one of the existing nodes, to avoid resizing during unretiring
         Node nodeToFail = listCluster(content1).not().retired().asList().get(0);
-        tester.nodeRepository().fail(nodeToFail.hostname(), Agent.system, "testing");
+        tester.nodeRepository().nodes().fail(nodeToFail.hostname(), Agent.system, "testing");
         new PrepareHelper(tester, app).prepare(content1, 8, 1, halvedResources).activate();
         assertFalse(listCluster(content1).stream().anyMatch(n -> n.equals(nodeToFail)));
         assertSizeAndResources(listCluster(content1).retired(), 4, resources);
@@ -206,8 +206,8 @@ public class InPlaceResizeProvisionTest {
 
         // ... same with setting a node to want to retire
         Node nodeToWantoToRetire = listCluster(content1).not().retired().asList().get(0);
-        try (NodeMutex lock = tester.nodeRepository().lockAndGetRequired(nodeToWantoToRetire)) {
-            tester.nodeRepository().write(lock.node().withWantToRetire(true, Agent.system,
+        try (NodeMutex lock = tester.nodeRepository().nodes().lockAndGetRequired(nodeToWantoToRetire)) {
+            tester.nodeRepository().nodes().write(lock.node().withWantToRetire(true, Agent.system,
                     tester.clock().instant()), lock);
         }
         new PrepareHelper(tester, app).prepare(content1, 8, 1, halvedResources).activate();

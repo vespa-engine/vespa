@@ -110,13 +110,13 @@ class NodesResponse extends HttpResponse {
     private void nodesToSlime(Node.State state, Cursor parentObject) {
         Cursor nodeArray = parentObject.setArray("nodes");
         for (NodeType type : NodeType.values())
-            toSlime(nodeRepository.getNodes(type, state), nodeArray);
+            toSlime(nodeRepository.nodes().getNodes(type, state), nodeArray);
     }
 
     /** Outputs all the nodes to a node array */
     private void nodesToSlime(Cursor parentObject) {
         Cursor nodeArray = parentObject.setArray("nodes");
-        toSlime(nodeRepository.getNodes(), nodeArray);
+        toSlime(nodeRepository.nodes().getNodes(), nodeArray);
     }
 
     private void toSlime(List<Node> nodes, Cursor array) {
@@ -127,7 +127,7 @@ class NodesResponse extends HttpResponse {
     }
 
     private void nodeToSlime(String hostname, Cursor object) {
-        Node node = nodeRepository.getNode(hostname).orElseThrow(() ->
+        Node node = nodeRepository.nodes().getNode(hostname).orElseThrow(() ->
                 new NotFoundException("No node with hostname '" + hostname + "'"));
         toSlime(node, true, object);
     }

@@ -40,19 +40,19 @@ public class ReservationExpirerTest {
         tester.makeReadyHosts(1, hostResources);
 
         // Reserve 2 nodes
-        assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
+        assertEquals(2, nodeRepository.nodes().getNodes(NodeType.tenant, Node.State.ready).size());
         ApplicationId applicationId = new ApplicationId.Builder().tenant("foo").applicationName("bar").instanceName("fuz").build();
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         tester.provisioner().prepare(applicationId, cluster, Capacity.from(new ClusterResources(2, 1, nodeResources)), null);
-        assertEquals(2, nodeRepository.getNodes(NodeType.tenant, Node.State.reserved).size());
+        assertEquals(2, nodeRepository.nodes().getNodes(NodeType.tenant, Node.State.reserved).size());
 
         // Reservation times out
         clock.advance(Duration.ofMinutes(14)); // Reserved but not used time out
         new ReservationExpirer(nodeRepository, Duration.ofMinutes(10), metric).run();
 
         // Assert nothing is reserved
-        assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.reserved).size());
-        List<Node> dirty = nodeRepository.getNodes(NodeType.tenant, Node.State.dirty);
+        assertEquals(0, nodeRepository.nodes().getNodes(NodeType.tenant, Node.State.reserved).size());
+        List<Node> dirty = nodeRepository.nodes().getNodes(NodeType.tenant, Node.State.dirty);
         assertEquals(2, dirty.size());
         assertFalse(dirty.get(0).allocation().isPresent());
         assertFalse(dirty.get(1).allocation().isPresent());

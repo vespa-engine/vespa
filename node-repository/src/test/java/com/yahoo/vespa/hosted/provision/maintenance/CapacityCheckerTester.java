@@ -75,7 +75,7 @@ public class CapacityCheckerTester {
     }
 
     private void updateCapacityChecker() {
-        this.capacityChecker = new CapacityChecker(nodeRepository.list());
+        this.capacityChecker = new CapacityChecker(nodeRepository.nodes().list());
     }
 
     List<NodeModel> createDistinctChildren(int amount, List<NodeResources> childResources) {
@@ -191,12 +191,12 @@ public class CapacityCheckerTester {
                      int numEmptyHosts, NodeResources emptyHostExcessCapacity, int emptyHostExcessIps) {
         List<NodeModel> possibleChildren = createDistinctChildren(numDistinctChildren, childResources);
         Map<ApplicationId, List<Node>> hostsWithChildren = createHostsWithChildren(childrenPerHost, possibleChildren, numHosts, hostExcessCapacity, hostExcessIps);
-        nodeRepository.addNodes(hostsWithChildren.getOrDefault(tenantHostApp, List.of()), Agent.system);
+        nodeRepository.nodes().addNodes(hostsWithChildren.getOrDefault(tenantHostApp, List.of()), Agent.system);
         hostsWithChildren.forEach((applicationId, nodes) -> {
             if (applicationId.equals(tenantHostApp)) return;
-            nodeRepository.addNodes(nodes, Agent.system);
+            nodeRepository.nodes().addNodes(nodes, Agent.system);
         });
-        nodeRepository.addNodes(createEmptyHosts(numHosts, numEmptyHosts, emptyHostExcessCapacity, emptyHostExcessIps), Agent.system);
+        nodeRepository.nodes().addNodes(createEmptyHosts(numHosts, numEmptyHosts, emptyHostExcessCapacity, emptyHostExcessIps), Agent.system);
 
         updateCapacityChecker();
     }
@@ -314,9 +314,9 @@ public class CapacityCheckerTester {
             }
         }
 
-        nodeRepository.addNodes(hosts, Agent.system);
+        nodeRepository.nodes().addNodes(hosts, Agent.system);
         nodes.forEach((application, applicationNodes) -> {
-            nodeRepository.addNodes(applicationNodes, Agent.system);
+            nodeRepository.nodes().addNodes(applicationNodes, Agent.system);
         });
         updateCapacityChecker();
     }

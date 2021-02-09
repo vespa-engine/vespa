@@ -80,7 +80,7 @@ public class SwitchRebalancerTest {
         for (var cluster : List.of(cluster1, cluster2)) {
             tester.clock().advance(SwitchRebalancer.waitTimeAfterPreviousDeployment);
             rebalancer.maintain();
-            NodeList allNodes = tester.nodeRepository().list();
+            NodeList allNodes = tester.nodeRepository().nodes().list();
             NodeList clusterNodes = allNodes.owner(app).cluster(cluster).state(Node.State.active);
             NodeList retired = clusterNodes.retired();
             assertEquals("Node is retired in " + cluster, 1, retired.size());
@@ -90,7 +90,7 @@ public class SwitchRebalancerTest {
             // Retired node becomes inactive and makes zone stable
             try (var lock = tester.provisioner().lock(app)) {
                 NestedTransaction removeTransaction = new NestedTransaction();
-                tester.nodeRepository().deactivate(retired.asList(), new ApplicationTransaction(lock, removeTransaction));
+                tester.nodeRepository().nodes().deactivate(retired.asList(), new ApplicationTransaction(lock, removeTransaction));
                 removeTransaction.commit();
             }
         }
@@ -134,7 +134,7 @@ public class SwitchRebalancerTest {
         // Rebalance
         tester.clock().advance(SwitchRebalancer.waitTimeAfterPreviousDeployment);
         rebalancer.maintain();
-        NodeList activeNodes = tester.nodeRepository().list().owner(app).cluster(spec.id()).state(Node.State.active);
+        NodeList activeNodes = tester.nodeRepository().nodes().list().owner(app).cluster(spec.id()).state(Node.State.active);
         NodeList retired = activeNodes.retired();
         assertEquals("Node is retired", 1, retired.size());
         assertFalse("Retired node was not on exclusive switch", nodesOnExclusiveSwitch.contains(retired.first().get()));
@@ -142,7 +142,7 @@ public class SwitchRebalancerTest {
         // Retired node becomes inactive and makes zone stable
         try (var lock = tester.provisioner().lock(app)) {
             NestedTransaction removeTransaction = new NestedTransaction();
-            tester.nodeRepository().deactivate(retired.asList(), new ApplicationTransaction(lock, removeTransaction));
+            tester.nodeRepository().nodes().deactivate(retired.asList(), new ApplicationTransaction(lock, removeTransaction));
             removeTransaction.commit();
         }
 
@@ -152,9 +152,9 @@ public class SwitchRebalancerTest {
     }
 
     private void assertNoMoves(SwitchRebalancer rebalancer, ProvisioningTester tester) {
-        NodeList nodes0 = tester.nodeRepository().list(Node.State.active).owner(app);
+        NodeList nodes0 = tester.nodeRepository().nodes().list(Node.State.active).owner(app);
         rebalancer.maintain();
-        NodeList nodes1 = tester.nodeRepository().list(Node.State.active).owner(app);
+        NodeList nodes1 = tester.nodeRepository().nodes().list(Node.State.active).owner(app);
         assertEquals("Node allocation is unchanged", nodes0.asList(), nodes1.asList());
         assertEquals("No nodes are retired", List.of(), nodes1.retired().asList());
     }

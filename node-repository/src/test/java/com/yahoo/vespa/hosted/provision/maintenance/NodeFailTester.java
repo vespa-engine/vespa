@@ -102,8 +102,8 @@ public class NodeFailTester {
 
         tester.activate(app1, clusterApp1, capacity1);
         tester.activate(app2, clusterApp2, capacity2);
-        assertEquals(capacity1.minResources().nodes(), tester.nodeRepository.getNodes(app1, Node.State.active).size());
-        assertEquals(capacity2.minResources().nodes(), tester.nodeRepository.getNodes(app2, Node.State.active).size());
+        assertEquals(capacity1.minResources().nodes(), tester.nodeRepository.nodes().getNodes(app1, Node.State.active).size());
+        assertEquals(capacity2.minResources().nodes(), tester.nodeRepository.nodes().getNodes(app2, Node.State.active).size());
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
                 app1, new MockDeployer.ApplicationContext(app1, clusterApp1, capacity1),
@@ -132,10 +132,10 @@ public class NodeFailTester {
         tester.activate(tenantHostApp, clusterNodeAdminApp, allHosts);
         tester.activate(app1, clusterApp1, capacity1);
         tester.activate(app2, clusterApp2, capacity2);
-        assertEquals(Set.of(tester.nodeRepository.getNodes(NodeType.host)),
-                     Set.of(tester.nodeRepository.getNodes(tenantHostApp, Node.State.active)));
-        assertEquals(capacity1.minResources().nodes(), tester.nodeRepository.getNodes(app1, Node.State.active).size());
-        assertEquals(capacity2.minResources().nodes(), tester.nodeRepository.getNodes(app2, Node.State.active).size());
+        assertEquals(Set.of(tester.nodeRepository.nodes().getNodes(NodeType.host)),
+                     Set.of(tester.nodeRepository.nodes().getNodes(tenantHostApp, Node.State.active)));
+        assertEquals(capacity1.minResources().nodes(), tester.nodeRepository.nodes().getNodes(app1, Node.State.active).size());
+        assertEquals(capacity2.minResources().nodes(), tester.nodeRepository.nodes().getNodes(app2, Node.State.active).size());
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
                 tenantHostApp, new MockDeployer.ApplicationContext(tenantHostApp, clusterNodeAdminApp, allHosts),
@@ -163,7 +163,7 @@ public class NodeFailTester {
         Capacity allNodes = Capacity.fromRequiredNodeType(nodeType);
         ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         tester.activate(app1, clusterApp1, allNodes);
-        assertEquals(count, tester.nodeRepository.getNodes(nodeType, Node.State.active).size());
+        assertEquals(count, tester.nodeRepository.nodes().getNodes(nodeType, Node.State.active).size());
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
                 app1, new MockDeployer.ApplicationContext(app1, clusterApp1, allNodes));
@@ -212,7 +212,7 @@ public class NodeFailTester {
     }
 
     public void allNodesMakeAConfigRequestExcept(List<Node> deadNodes) {
-        for (Node node : nodeRepository.getNodes()) {
+        for (Node node : nodeRepository.nodes().getNodes()) {
             if ( ! deadNodes.contains(node))
                 hostLivenessTracker.receivedRequestFrom(node.hostname());
         }
@@ -258,18 +258,18 @@ public class NodeFailTester {
             nodes.add(builder.build());
         }
 
-        nodes = nodeRepository.addNodes(nodes, Agent.system);
-        nodes = nodeRepository.deallocate(nodes, Agent.system, getClass().getSimpleName());
-        return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
+        nodes = nodeRepository.nodes().addNodes(nodes, Agent.system);
+        nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
+        return nodeRepository.nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
     private List<Node> createHostNodes(int count) {
         List<Node> nodes = tester.makeProvisionedNodes(count, (index) -> "parent" + index,
                                                        hostFlavors.getFlavorOrThrow("default"),
                                                        Optional.empty(), NodeType.host, 10, false);
-        nodes = nodeRepository.deallocate(nodes, Agent.system, getClass().getSimpleName());
+        nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
         tester.activateTenantHosts();
-        return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
+        return nodeRepository.nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
     // Prefer using this instead of the above

@@ -35,7 +35,7 @@ public class DelegatingUpgrader implements Upgrader {
 
     @Override
     public void upgradeTo(OsVersionTarget target) {
-        NodeList activeNodes = nodeRepository.list().nodeType(target.nodeType()).state(Node.State.active);
+        NodeList activeNodes = nodeRepository.nodes().list().nodeType(target.nodeType()).state(Node.State.active);
         int numberToUpgrade = Math.max(0, maxActiveUpgrades - activeNodes.changingOsVersionTo(target.version()).size());
         NodeList nodesToUpgrade = activeNodes.not().changingOsVersionTo(target.version())
                                              .osVersionIsBefore(target.version())
@@ -44,17 +44,17 @@ public class DelegatingUpgrader implements Upgrader {
         if (nodesToUpgrade.size() == 0) return;
         LOG.info("Upgrading " + nodesToUpgrade.size() + " nodes of type " + target.nodeType() + " to OS version " +
                  target.version().toFullString());
-        nodeRepository.upgradeOs(NodeListFilter.from(nodesToUpgrade.asList()), Optional.of(target.version()));
+        nodeRepository.nodes().upgradeOs(NodeListFilter.from(nodesToUpgrade.asList()), Optional.of(target.version()));
     }
 
     @Override
     public void disableUpgrade(NodeType type) {
-        NodeList nodesUpgrading = nodeRepository.list()
+        NodeList nodesUpgrading = nodeRepository.nodes().list()
                                                 .nodeType(type)
                                                 .changingOsVersion();
         if (nodesUpgrading.size() == 0) return;
         LOG.info("Disabling OS upgrade of all " + type + " nodes");
-        nodeRepository.upgradeOs(NodeListFilter.from(nodesUpgrading.asList()), Optional.empty());
+        nodeRepository.nodes().upgradeOs(NodeListFilter.from(nodesUpgrading.asList()), Optional.empty());
     }
 
 }

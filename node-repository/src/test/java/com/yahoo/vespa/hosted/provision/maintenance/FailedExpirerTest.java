@@ -268,7 +268,7 @@ public class FailedExpirerTest {
         }
 
         public Node get(String hostname) {
-            return nodeRepository.getNode(hostname)
+            return nodeRepository.nodes().getNode(hostname)
                                  .orElseThrow(() -> new IllegalArgumentException("No such node: " + hostname));
         }
 
@@ -292,8 +292,8 @@ public class FailedExpirerTest {
         public FailureScenario failNode(int times, String... hostname) {
             Stream.of(hostname).forEach(h -> {
                 Node node = get(h);
-                nodeRepository.write(node.with(node.status().withFailCount(times)), () -> {});
-                nodeRepository.fail(h, Agent.system, "Failed by unit test");
+                nodeRepository.nodes().write(node.with(node.status().withFailCount(times)), () -> {});
+                nodeRepository.nodes().fail(h, Agent.system, "Failed by unit test");
             });
             return this;
         }
@@ -302,8 +302,8 @@ public class FailedExpirerTest {
             Stream.of(hostname).forEach(h -> {
                 Node node = get(h);
                 Report report = Report.basicReport("reportId", Report.Type.HARD_FAIL, Instant.EPOCH, "hardware failure");
-                nodeRepository.write(node.with(new Reports().withReport(report)), () -> {});
-                nodeRepository.fail(h, Agent.system, "Failed by unit test");
+                nodeRepository.nodes().write(node.with(new Reports().withReport(report)), () -> {});
+                nodeRepository.nodes().fail(h, Agent.system, "Failed by unit test");
             });
             return this;
         }
@@ -312,8 +312,8 @@ public class FailedExpirerTest {
             List<Node> nodes = Stream.of(hostname)
                                      .map(this::get)
                                      .collect(Collectors.toList());
-            nodes = nodeRepository.deallocate(nodes, Agent.system, getClass().getSimpleName());
-            nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
+            nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
+            nodeRepository.nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
             return this;
         }
 
@@ -340,7 +340,8 @@ public class FailedExpirerTest {
 
         public void assertNodesIn(Node.State state, String... hostnames) {
             assertEquals(Stream.of(hostnames).collect(Collectors.toSet()),
-                         nodeRepository.getNodes(state).stream()
+                         nodeRepository.nodes()
+                                       .getNodes(state).stream()
                                        .map(Node::hostname)
                                        .collect(Collectors.toSet()));
         }

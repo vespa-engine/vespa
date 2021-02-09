@@ -66,7 +66,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
 
     @Override
     public boolean maintain() {
-        NodeList nodes = nodeRepository().list();
+        NodeList nodes = nodeRepository().nodes().list();
         ServiceModel serviceModel = serviceMonitor.getServiceModelSnapshot();
 
         updateZoneMetrics();
@@ -126,7 +126,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
     }
 
     private void updateZoneMetrics() {
-        metric.set("zone.working", nodeRepository().isWorking() ? 1 : 0, null);
+        metric.set("zone.working", nodeRepository().nodes().isWorking() ? 1 : 0, null);
     }
 
     private void updateCacheMetrics() {

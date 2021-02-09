@@ -41,7 +41,7 @@ public abstract class Expirer extends NodeRepositoryMaintainer {
 
     @Override
     protected boolean maintain() {
-        List<Node> expired = nodeRepository().getNodes(fromState).stream()
+        List<Node> expired = nodeRepository().nodes().getNodes(fromState).stream()
                 .filter(this::isExpired)
                 .collect(Collectors.toList());
 

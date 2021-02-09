@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
+import com.yahoo.vespa.hosted.provision.node.Nodes;
 import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
@@ -81,8 +82,8 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
 
     @Override
     protected boolean maintain() {
-        try (Mutex lock = nodeRepository().lockUnallocated()) {
-            NodeList nodes = nodeRepository().list();
+        try (Mutex lock = nodeRepository().nodes().lockUnallocated()) {
+            NodeList nodes = nodeRepository().nodes().list();
             resumeProvisioning(nodes, lock);
             convergeToCapacity(nodes);
         }
@@ -102,7 +103,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
             try {
                 List<Node> updatedNodes = hostProvisioner.provision(host, children);
                 verifyDns(updatedNodes);
-                nodeRepository().write(updatedNodes, lock);
+                nodeRepository().nodes().write(updatedNodes, lock);
             } catch (IllegalArgumentException | IllegalStateException e) {
                 log.log(Level.INFO, "Failed to provision " + host.hostname() + " with " + children.size() + " children: " +
                                     Exceptions.toMessageString(e));
@@ -110,7 +111,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                 log.log(Level.SEVERE, "Failed to provision " + host.hostname() + " with " + children.size()  +
                                       " children, failing out the host recursively", e);
                 // Fail out as operator to force a quick redeployment
-                nodeRepository().failRecursively(
+                nodeRepository().nodes().failRecursively(
                         host.hostname(), Agent.operator, "Failed by HostProvisioner due to provisioning failure");
             } catch (RuntimeException e) {
                 if (e.getCause() instanceof NameNotFoundException)
@@ -137,7 +138,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
         excessHosts.forEach(host -> {
             try {
                 hostProvisioner.deprovision(host);
-                nodeRepository().removeRecursively(host, true);
+                nodeRepository().nodes().removeRecursively(host, true);
             } catch (RuntimeException e) {
                 log.log(Level.WARNING, "Failed to deprovision " + host.hostname() + ", will retry in " + interval(), e);
             }
@@ -199,7 +200,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
 
     private Map<String, Node> findSharedHosts(NodeList nodeList) {
         return nodeList.stream()
-                .filter(node -> NodeRepository.canAllocateTenantNodeTo(node, true))
+                .filter(node -> Nodes.canAllocateTenantNodeTo(node, true))
                 .filter(node -> node.reservedTo().isEmpty())
                 .filter(node -> node.exclusiveTo().isEmpty())
                 .collect(Collectors.toMap(Node::hostname, Function.identity()));
@@ -244,7 +245,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                     .stream()
                     .map(ProvisionedHost::generateHost)
                     .collect(Collectors.toList());
-            nodeRepository().addNodes(hosts, Agent.DynamicProvisioningMaintainer);
+            nodeRepository().nodes().addNodes(hosts, Agent.DynamicProvisioningMaintainer);
             return hosts;
         } catch (OutOfCapacityException | IllegalArgumentException | IllegalStateException e) {
             throw new OutOfCapacityException("Failed to provision " + count + " " + nodeResources + ": " + e.getMessage());

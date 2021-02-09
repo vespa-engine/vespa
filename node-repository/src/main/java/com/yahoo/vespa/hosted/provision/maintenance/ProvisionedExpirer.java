@@ -24,7 +24,7 @@ public class ProvisionedExpirer extends Expirer {
     @Override
     protected void expire(List<Node> expired) {
         for (Node expiredNode : expired)
-            nodeRepository().parkRecursively(expiredNode.hostname(), Agent.ProvisionedExpirer, "Node is stuck in provisioned");
+            nodeRepository().nodes().parkRecursively(expiredNode.hostname(), Agent.ProvisionedExpirer, "Node is stuck in provisioned");
     }
 
 }
