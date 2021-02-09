@@ -12,7 +12,7 @@ import com.yahoo.search.searchchain.Execution;
  * Otherwise a noop searcher
  */
 public class WeakAndReplacementSearcher extends Searcher {
-    private static final CompoundName WEAKAND_REPLACE = new CompoundName("weakand.replace");
+    private static final CompoundName WEAKAND_REPLACE = new CompoundName("weakAnd.replace");
 
     @Override public Result search(Query query, Execution execution) {
         if (!query.properties().getBoolean(WEAKAND_REPLACE)) {
