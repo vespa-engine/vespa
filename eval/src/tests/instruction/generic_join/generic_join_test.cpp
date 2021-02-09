@@ -107,11 +107,11 @@ TEST(GenericJoinTest, generic_join_works_for_simple_and_fast_values) {
     for (size_t i = 0; i < join_layouts.size(); i += 2) {
         const auto &l = join_layouts[i];
         const auto &r = join_layouts[i+1];
-        for (TensorSpec lhs : { l.cpy().cells_float().gen(),
-                                l.cpy().cells_double().gen() })
+        for (TensorSpec lhs : { l.cpy().cells_float(),
+                                l.cpy().cells_double() })
         {
-            for (TensorSpec rhs : { r.cpy().cells_float().gen(),
-                                    r.cpy().cells_double().gen() })
+            for (TensorSpec rhs : { r.cpy().cells_float(),
+                                    r.cpy().cells_double() })
             {
                 for (auto fun: {operation::Add::f, operation::Sub::f, operation::Mul::f, operation::Div::f}) {
                     SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));

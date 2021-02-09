@@ -1,9 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.operationProcessor;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.vespa.http.client.config.SessionParams;
 import com.yahoo.vespa.http.client.core.communication.ClusterConnection;
 
@@ -13,7 +14,8 @@ import java.util.List;
 
 public class OperationStats {
 
-    private static JsonFactory jsonFactory = new JsonFactory();
+    private static ObjectMapper jsonMapper = createMapper();
+
     private final String sessionParamsAsXmlString;
     private List<ClusterConnection> clusters;
     private IncompleteResultsThrottler throttler;
@@ -27,12 +29,18 @@ public class OperationStats {
         this.throttler = throttler;
     }
 
+    private static ObjectMapper createMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new Jdk8Module());
+        mapper.registerModule(new JavaTimeModule());
+        return mapper;
+    }
+
     private String generateSessionParamsAsXmlString(final SessionParams sessionParams) {
-        ObjectMapper objectMapper = new ObjectMapper();
         StringWriter stringWriter = new StringWriter();
         try {
-            JsonGenerator jsonGenerator = jsonFactory.createGenerator(stringWriter);
-            objectMapper.writeValue(jsonGenerator, sessionParams); // TODO SessionParams should not be blindly serialized. This may serialize objects that are not really serializable.
+            JsonGenerator jsonGenerator = jsonMapper.createGenerator(stringWriter);
+            jsonMapper.writeValue(jsonGenerator, sessionParams); // TODO SessionParams should not be blindly serialized. This may serialize objects that are not really serializable.
             return stringWriter.toString();
         } catch (IOException e) {
             return e.getMessage();
@@ -42,7 +50,7 @@ public class OperationStats {
     public String getStatsAsJson() {
         try {
             StringWriter stringWriter = new StringWriter();
-            JsonGenerator jsonGenerator = jsonFactory.createGenerator(stringWriter);
+            JsonGenerator jsonGenerator = jsonMapper.createGenerator(stringWriter);
             jsonGenerator.writeStartObject();
             jsonGenerator.writeArrayFieldStart("clusters");
             for (ClusterConnection cluster : clusters) {

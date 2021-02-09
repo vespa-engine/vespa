@@ -45,12 +45,12 @@ const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("a", GenSpec().seq_bias(1.5).gen())
-        .add("b", GenSpec().seq_bias(2.5).gen())
-        .add("sparse", GenSpec().map("x", {"a", "b", "c"}).gen())
-        .add("mixed", GenSpec().map("x", {"a", "b", "c"}).idx("y", 5).idx("z", 3).gen())
-        .add("empty_mixed", GenSpec().map("x", {}).idx("y", 5).idx("z", 3).gen())
-        .add_mutable("@mixed", GenSpec().map("x", {"a", "b", "c"}).idx("y", 5).idx("z", 3).gen())
+        .add("a", GenSpec(1.5))
+        .add("b", GenSpec(2.5))
+        .add("sparse", GenSpec().map("x", {"a", "b", "c"}))
+        .add("mixed", GenSpec().map("x", {"a", "b", "c"}).idx("y", 5).idx("z", 3))
+        .add("empty_mixed", GenSpec().map("x", {}).idx("y", 5).idx("z", 3))
+        .add_mutable("@mixed", GenSpec().map("x", {"a", "b", "c"}).idx("y", 5).idx("z", 3))
         .add_variants("a1b1c1", GenSpec().idx("a", 1).idx("b", 1).idx("c", 1))
         .add_variants("x1y1z1", GenSpec().idx("x", 1).idx("y", 1).idx("z", 1))
         .add_variants("x3y5z3", GenSpec().idx("x", 3).idx("y", 5).idx("z", 3))

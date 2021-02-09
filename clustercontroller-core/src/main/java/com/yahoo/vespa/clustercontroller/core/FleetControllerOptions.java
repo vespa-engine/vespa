@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * This class represents all the options that can be set in the fleetcontroller.
@@ -137,16 +138,6 @@ public class FleetControllerOptions implements Cloneable {
     // Resource type -> limit in [0, 1]
     public Map<String, Double> clusterFeedBlockLimit = Collections.emptyMap();
 
-    // TODO: Replace usage of this by usage where the nodes are explicitly passed (below)
-    public FleetControllerOptions(String clusterName) {
-        this.clusterName = clusterName;
-        maxTransitionTime.put(NodeType.DISTRIBUTOR, 0);
-        maxTransitionTime.put(NodeType.STORAGE, 5000);
-        nodes = new TreeSet<>();
-        for (int i = 0; i < 10; i++)
-            nodes.add(new ConfiguredNode(i, false));
-    }
-
     public FleetControllerOptions(String clusterName, Collection<ConfiguredNode> nodes) {
         this.clusterName = clusterName;
         maxTransitionTime.put(NodeType.DISTRIBUTOR, 0);
@@ -157,7 +148,6 @@ public class FleetControllerOptions implements Cloneable {
     /** Called on reconfiguration of this cluster */
     public void setStorageDistribution(Distribution distribution) {
         this.storageDistribution = distribution;
-        this.nodes = distribution.getNodes();
     }
 
     public Duration getMaxDeferredTaskVersionWaitTime() {
@@ -249,6 +239,12 @@ public class FleetControllerOptions implements Cloneable {
         sb.append("<tr><td><nobr>Max deferred task version wait time</nobr></td><td align=\"right\">").append(maxDeferredTaskVersionWaitTime.toMillis()).append("ms</td></tr>");
         sb.append("<tr><td><nobr>Cluster has global document types configured</nobr></td><td align=\"right\">").append(clusterHasGlobalDocumentTypes).append("</td></tr>");
         sb.append("<tr><td><nobr>Enable 2-phase cluster state activation protocol</nobr></td><td align=\"right\">").append(enableTwoPhaseClusterStateActivation).append("</td></tr>");
+        sb.append("<tr><td><nobr>Cluster auto feed block on resource exhaustion enabled</nobr></td><td align=\"right\">")
+                        .append(clusterFeedBlockEnabled).append("</td></tr>");
+        sb.append("<tr><td><nobr>Feed block limits</nobr></td><td align=\"right\">")
+                        .append(clusterFeedBlockLimit.entrySet().stream()
+                                .map(kv -> String.format("%s: %.2f%%", kv.getKey(), kv.getValue() * 100.0))
+                                .collect(Collectors.joining("<br/>"))).append("</td></tr>");
 
         sb.append("</table>");
     }

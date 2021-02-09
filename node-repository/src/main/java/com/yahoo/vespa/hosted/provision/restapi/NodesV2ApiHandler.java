@@ -142,7 +142,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Moved " + hostnamesAsString(parkedNodes) + " to parked");
         }
         else if (path.startsWith("/nodes/v2/state/dirty/")) {
-            List<Node> dirtiedNodes = nodeRepository.dirtyRecursively(lastElement(path), Agent.operator, "Dirtied through the nodes/v2 API");
+            List<Node> dirtiedNodes = nodeRepository.deallocateRecursively(lastElement(path), Agent.operator, "Dirtied through the nodes/v2 API");
             return new MessageResponse("Moved " + hostnamesAsString(dirtiedNodes) + " to dirty");
         }
         else if (path.startsWith("/nodes/v2/state/active/")) {

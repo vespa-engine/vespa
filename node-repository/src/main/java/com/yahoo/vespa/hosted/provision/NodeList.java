@@ -69,6 +69,16 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         return matching(node -> node.allocation().isPresent() && node.allocation().get().membership().cluster().type().isContainer());
     }
 
+    /** Returns the subset of nodes that run a stateless service */
+    public NodeList stateless() {
+        return matching(node -> node.allocation().isPresent() && ! node.allocation().get().membership().cluster().isStateful());
+    }
+
+    /** Returns the subset of nodes that run a stateful service */
+    public NodeList stateful() {
+        return matching(node -> node.allocation().isPresent() && node.allocation().get().membership().cluster().isStateful());
+    }
+
     /** Returns the subset of nodes that are currently changing their Vespa version */
     public NodeList changingVersion() {
         return matching(node -> node.status().vespaVersion().isPresent() &&

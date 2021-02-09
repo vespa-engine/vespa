@@ -3,12 +3,15 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsFetcher;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsResponse;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
+import java.util.Set;
 import java.util.logging.Level;
 
 /**
@@ -35,23 +38,44 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
 
     @Override
     protected boolean maintain() {
-        int warnings = 0;
-        for (ApplicationId application : activeNodesByApplication().keySet()) {
-            try {
-                metricsDb.add(metricsFetcher.fetchMetrics(application));
+        try {
+            var warnings = new MutableInteger(0);
+            Set<ApplicationId> applications = activeNodesByApplication().keySet();
+            if (applications.isEmpty()) return true;
+
+            long pauseMs = interval().toMillis() / applications.size() - 1; // spread requests over interval
+            int done = 0;
+            for (ApplicationId application : applications) {
+                metricsFetcher.fetchMetrics(application)
+                              .whenComplete((metricsResponse, exception) -> handleResponse(metricsResponse,
+                                                                                           exception,
+                                                                                           warnings,
+                                                                                           application));
+                if (++done < applications.size())
+                    Thread.sleep(pauseMs);
             }
-            catch (Exception e) {
-                // TODO: Don't warn if this only happens occasionally
-                if (warnings++ < maxWarningsPerInvocation)
-                    log.log(Level.WARNING, "Could not update metrics for " + application + ": " + Exceptions.toMessageString(e), e);
-            }
+            metricsDb.gc();
+
+            // Suppress failures for manual zones for now to avoid noise
+            return nodeRepository().zone().environment().isManuallyDeployed() || warnings.get() == 0;
         }
-        metricsDb.gc();
+        catch (InterruptedException e) {
+            return false;
+        }
+    }
 
-        // Suppress failures for manual zones for now to avoid noise
-        if (nodeRepository().zone().environment().isManuallyDeployed()) return true;
-
-        return warnings == 0;
+    private void handleResponse(MetricsResponse response,
+                                Throwable exception,
+                                MutableInteger warnings,
+                                ApplicationId application) {
+        if (exception != null) {
+            if (warnings.get() < maxWarningsPerInvocation)
+                log.log(Level.WARNING, "Could not update metrics for " + application, exception);
+            warnings.add(1);
+        }
+        else if (response != null) {
+            metricsDb.add(response.metrics());
+        }
     }
 
 }

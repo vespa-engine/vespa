@@ -48,9 +48,10 @@ public class NameServiceDispatcher extends ControllerMaintainer {
 
             var dispatched = queue.first(requestCount);
             if (!dispatched.requests().isEmpty()) {
-                log.log(Level.FINE, "Dispatched name service request(s) in " +
-                                    Duration.between(instant, clock.instant()) +
-                                    ": " + dispatched.requests());
+                Level logLevel = controller().system().isCd() ? Level.INFO : Level.FINE;
+                log.log(logLevel, "Dispatched name service request(s) in " +
+                                  Duration.between(instant, clock.instant()) +
+                                  ": " + dispatched.requests());
             }
             db.writeNameServiceQueue(remaining);
         }

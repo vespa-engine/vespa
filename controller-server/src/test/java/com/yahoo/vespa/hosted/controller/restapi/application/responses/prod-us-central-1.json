@@ -1,6 +1,6 @@
 {
   "bcpStatus": {
-    "rotationStatus": "IN"
+    "rotationStatus": "UNKNOWN"
   },
   "tenant": "tenant1",
   "application": "application1",
@@ -38,7 +38,7 @@
       "endpointId": "default",
       "rotationId": "rotation-id-1",
       "clusterId": "foo",
-      "status": "IN",
+      "status": "UNKNOWN",
       "lastUpdated": "(ignore)"
     }
   ],

@@ -35,7 +35,7 @@ public class RankingExpressionWithTransformerTokensTestCase {
 
     @Test
     public void testTokenTypeIds() throws Exception {
-        String expected = "tensor(d0[1],d1[10]):[0,0,0,0,1,1,1,1,1,1]";
+        String expected = "tensor(d0[1],d1[10]):[0,0,0,0,1,1,1,1,0,0]";
         String a = "tensor(d0[2]):[1,2]";
         String b = "tensor(d0[3]):[3,4,5]";
         String expression = "tokenTypeIds(10, a, b)";

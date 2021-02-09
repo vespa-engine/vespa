@@ -14,7 +14,6 @@ import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
-import com.yahoo.config.model.api.ModelContext.FeatureFlags;
 import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
@@ -346,7 +345,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         }
 
         if (accessLogElements.isEmpty() && deployState.getAccessLoggingEnabledByDefault())
-            cluster.addDefaultSearchAccessLog(deployState);
+            cluster.addDefaultSearchAccessLog();
 
         // Add connection log if access log is configured
         if (cluster.getAllComponents().stream().anyMatch(component -> component instanceof AccessLogComponent)) {
@@ -367,7 +366,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             cluster.setHttp(buildHttp(deployState, cluster, httpElement));
         }
         if (isHostedTenantApplication(context)) {
-            addHostedImplicitHttpIfNotPresent(cluster, deployState);
+            addHostedImplicitHttpIfNotPresent(cluster);
             addHostedImplicitAccessControlIfNotPresent(deployState, cluster);
             addDefaultConnectorHostedFilterBinding(cluster);
             addAdditionalHostedConnector(deployState, cluster, context);
@@ -414,13 +413,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return deployState.isHosted() && context.getApplicationType() == ApplicationType.DEFAULT && !isTesterApplication;
     }
 
-    private static void addHostedImplicitHttpIfNotPresent(ApplicationContainerCluster cluster, DeployState deployState) {
+    private static void addHostedImplicitHttpIfNotPresent(ApplicationContainerCluster cluster) {
         if(cluster.getHttp() == null) {
             cluster.setHttp(new Http(new FilterChains(cluster)));
         }
         JettyHttpServer httpServer = cluster.getHttp().getHttpServer().orElse(null);
         if (httpServer == null) {
-            httpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"), cluster, deployState.featureFlags(), cluster.isHostedVespa());
+            httpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"), cluster, cluster.isHostedVespa());
             cluster.getHttp().setHttpServer(httpServer);
         }
         int defaultPort = Defaults.getDefaults().vespaWebServicePort();
@@ -489,7 +488,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         addIncludes(searchElement);
         cluster.setSearch(buildSearch(deployState, cluster, searchElement));
 
-        addSearchHandler(cluster, searchElement, deployState);
+        addSearchHandler(cluster, searchElement);
         addGUIHandler(cluster);
         validateAndAddConfiguredComponents(deployState, cluster, searchElement, "renderer", ContainerModelBuilder::validateRendererElement);
     }
@@ -554,13 +553,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addNodes(ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
         if (standaloneBuilder)
-            addStandaloneNode(cluster, context.featureFlags());
+            addStandaloneNode(cluster);
         else
             addNodesFromXml(cluster, spec, context);
     }
 
-    private void addStandaloneNode(ApplicationContainerCluster cluster, FeatureFlags featureFlags) {
-        ApplicationContainer container =  new ApplicationContainer(cluster, featureFlags, "standalone", cluster.getContainers().size(), cluster.isHostedVespa());
+    private void addStandaloneNode(ApplicationContainerCluster cluster) {
+        ApplicationContainer container =  new ApplicationContainer(cluster, "standalone", cluster.getContainers().size(), cluster.isHostedVespa());
         cluster.addContainers(Collections.singleton(container));
     }
 
@@ -724,13 +723,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                               false,
                                               !deployState.getProperties().isBootstrap());
             var hosts = hostSystem.allocateHosts(clusterSpec, capacity, log);
-            return createNodesFromHosts(log, context.featureFlags(), hosts, cluster);
+            return createNodesFromHosts(log, hosts, cluster);
         }
         return singleHostContainerCluster(cluster, hostSystem.getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC), context);
     }
 
     private List<ApplicationContainer> singleHostContainerCluster(ApplicationContainerCluster cluster, HostResource host, ConfigModelContext context) {
-        ApplicationContainer node = new ApplicationContainer(cluster, context.featureFlags(), "container.0", 0, cluster.isHostedVespa());
+        ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, cluster.isHostedVespa());
         node.setHostResource(host);
         node.initService(context.getDeployLogger());
         return List.of(node);
@@ -743,7 +742,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                                                   ClusterSpec.Id.from(cluster.getName()), 
                                                                                   log,
                                                                                   hasZooKeeper(containerElement));
-        return createNodesFromHosts(context.getDeployLogger(), context.featureFlags(), hosts, cluster);
+        return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
     }
 
     private List<ApplicationContainer> createNodesFromNodeType(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
@@ -755,7 +754,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Map<HostResource, ClusterMembership> hosts = 
                 cluster.getRoot().hostSystem().allocateHosts(clusterSpec,
                                                              Capacity.fromRequiredNodeType(type), log);
-        return createNodesFromHosts(context.getDeployLogger(), context.featureFlags(), hosts, cluster);
+        return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
     }
     
     private List<ApplicationContainer> createNodesFromContentServiceReference(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
@@ -773,14 +772,14 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                             referenceId, 
                                             cluster.getRoot().hostSystem(),
                                             context.getDeployLogger());
-        return createNodesFromHosts(context.getDeployLogger(), context.featureFlags(), hosts, cluster);
+        return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
     }
 
-    private List<ApplicationContainer> createNodesFromHosts(DeployLogger deployLogger, FeatureFlags featureFlags, Map<HostResource, ClusterMembership> hosts, ApplicationContainerCluster cluster) {
+    private List<ApplicationContainer> createNodesFromHosts(DeployLogger deployLogger, Map<HostResource, ClusterMembership> hosts, ApplicationContainerCluster cluster) {
         List<ApplicationContainer> nodes = new ArrayList<>();
         for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {
             String id = "container." + entry.getValue().index();
-            ApplicationContainer container = new ApplicationContainer(cluster, featureFlags, id, entry.getValue().retired(), entry.getValue().index(), cluster.isHostedVespa());
+            ApplicationContainer container = new ApplicationContainer(cluster, id, entry.getValue().retired(), entry.getValue().index(), cluster.isHostedVespa());
             container.setHostResource(entry.getKey());
             container.initService(deployLogger);
             nodes.add(container);
@@ -818,7 +817,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             container.setPreLoad(nodesElement.getAttribute(VespaDomBuilder.PRELOAD_ATTRIB_NAME));
     }
 
-    private void addSearchHandler(ApplicationContainerCluster cluster, Element searchElement, DeployState deployState) {
+    private void addSearchHandler(ApplicationContainerCluster cluster, Element searchElement) {
         // Magic spell is needed to receive the chains config :-|
         cluster.addComponent(new ProcessingHandler<>(cluster.getSearch().getChains(),
                                                      "com.yahoo.search.searchchain.ExecutionFactory"));

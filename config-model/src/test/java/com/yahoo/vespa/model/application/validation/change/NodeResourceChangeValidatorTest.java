@@ -61,7 +61,7 @@ public class NodeResourceChangeValidatorTest {
                                                           Clock.systemUTC().instant());
     }
 
-    private static VespaModel model(int mem1, int mem2, int cpu1, int cpu2) {
+    private static VespaModel model(int mem1, int mem2, int mem3, int mem4) {
         var properties = new TestProperties();
         properties.setHostedVespa(true);
         var deployState = new DeployState.Builder().properties(properties)
@@ -82,7 +82,7 @@ public class NodeResourceChangeValidatorTest {
                 "   </container>\n" +
                 "   <content id='content1' version='1.0'>\n" +
                 "       <nodes count='3'>\n" +
-                "           <resources vcpu='" + cpu1 + "' memory='8Gb' disk='100Gb'/>" +
+                "           <resources vcpu='1' memory='" + mem3 + "Gb' disk='100Gb'/>" +
                 "       </nodes>\n" +
                 "       <documents>\n" +
                 "           <document mode='index' type='test'/>\n" +
@@ -91,7 +91,7 @@ public class NodeResourceChangeValidatorTest {
                 "   </content>\n" +
                 "   <content id='content2' version='1.0'>\n" +
                 "       <nodes count='4'>\n" +
-                "           <resources vcpu='" + cpu2 + "' memory='8Gb' disk='100Gb'/>" +
+                "           <resources vcpu='1' memory='" + mem4 + "Gb' disk='100Gb'/>" +
                 "       </nodes>\n" +
                 "       <documents>\n" +
                 "           <document mode='streaming' type='test'/>\n" +

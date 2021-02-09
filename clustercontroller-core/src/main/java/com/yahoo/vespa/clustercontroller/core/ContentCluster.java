@@ -14,6 +14,7 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
+import com.yahoo.vespa.clustercontroller.core.status.statuspage.HtmlTable;
 import com.yahoo.vespa.clustercontroller.core.status.statuspage.VdsClusterHtmlRenderer;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
 
@@ -53,6 +54,7 @@ public class ContentCluster {
         setNodes(configuredNodes);
     }
 
+    // TODO move out, this doesn't belong in a domain model class
     public void writeHtmlState(
             final VdsClusterHtmlRenderer vdsClusterHtmlRenderer,
             final StringBuilder sb,
@@ -65,6 +67,12 @@ public class ContentCluster {
 
         final VdsClusterHtmlRenderer.Table table =
                 vdsClusterHtmlRenderer.createNewClusterHtmlTable(clusterName, slobrokGenerationCount);
+
+        if (state.clusterFeedIsBlocked()) { // Implies FeedBlock != null
+            table.appendRaw("<h3 style=\"color: red\">Cluster feeding is blocked!</h3>\n");
+            table.appendRaw(String.format("<p>Summary: <strong>%s</strong></p>\n",
+                                          HtmlTable.escape(state.getFeedBlockOrNull().getDescription())));
+        }
 
         final List<Group> groups = LeafGroups.enumerateFrom(distribution.getRootGroup());
 
@@ -87,6 +95,7 @@ public class ContentCluster {
                     statsAggregator,
                     options.minMergeCompletionRatio,
                     options.maxPrematureCrashes,
+                    options.clusterFeedBlockLimit,
                     eventLog,
                     clusterName,
                     localName);

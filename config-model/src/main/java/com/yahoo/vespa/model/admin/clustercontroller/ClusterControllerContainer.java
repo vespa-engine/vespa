@@ -46,7 +46,7 @@ public class ClusterControllerContainer extends Container implements
             int index,
             boolean runStandaloneZooKeeper,
             DeployState deployState) {
-        super(parent, deployState.featureFlags(), "" + index, index, deployState.isHosted());
+        super(parent, "" + index, index, deployState.isHosted());
         addHandler("clustercontroller-status",
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StatusHandler",
                    "/clustercontroller-status/*",
@@ -155,7 +155,6 @@ public class ClusterControllerContainer extends Container implements
         }
 
         builder.enabled(ctx.reindexing().enabled());
-        builder.windowSizeIncrement(ctx.windowSizeIncrement());
         for (String clusterId : ctx.clusterIds()) {
             ReindexingConfig.Clusters.Builder clusterBuilder = new ReindexingConfig.Clusters.Builder();
             for (NewDocumentType type : ctx.documentTypesForCluster(clusterId)) {

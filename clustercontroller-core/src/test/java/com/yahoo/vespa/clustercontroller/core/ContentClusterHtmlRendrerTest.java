@@ -12,6 +12,7 @@ import org.junit.Test;
 
 import java.io.StringWriter;
 import java.io.Writer;
+import java.util.Collections;
 import java.util.TreeMap;
 
 import static org.hamcrest.core.Is.is;
@@ -60,6 +61,7 @@ public class ContentClusterHtmlRendrerTest {
                 statsAggregator,
                 1.0,
                 10,
+                Collections.emptyMap(),
                 eventLog,
                 "pathPrefix",
                 "name");

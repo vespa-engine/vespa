@@ -57,7 +57,7 @@ public class AccessLogBuilder {
             return new AccessLogComponent(
                     (ContainerCluster<?>) ancestor,
                     accessLogType,
-                    compressionType(spec, deployState, isHostedVespa),
+                    compressionType(spec, isHostedVespa),
                     fileNamePattern(spec),
                     rotationInterval(spec),
                     compressOnRotation(spec),
@@ -82,13 +82,8 @@ public class AccessLogBuilder {
             return nullIfEmpty(spec.getAttribute("fileNamePattern"));
         }
 
-        private static CompressionType compressionType(Element spec, DeployState deployState, boolean isHostedVespa) {
-            CompressionType fallback;
-            if (isHostedVespa && deployState.featureFlags().enableZstdCompressionAccessLog()) {
-                fallback = CompressionType.ZSTD;
-            } else {
-                fallback = CompressionType.GZIP;
-            }
+        private static CompressionType compressionType(Element spec, boolean isHostedVespa) {
+            CompressionType fallback = isHostedVespa ? CompressionType.ZSTD : CompressionType.GZIP;
             return Optional.ofNullable(spec.getAttribute("compressionType"))
                     .filter(value -> !value.isBlank())
                     .map(value -> {

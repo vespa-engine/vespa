@@ -46,8 +46,9 @@ class LogFileHandler <LOGTYPE> {
 
     @FunctionalInterface private interface Pollable<T> { Operation<T> poll() throws InterruptedException; }
 
-    LogFileHandler(Compression compression, String filePattern, String rotationTimes, String symlinkName, int queueSize, LogWriter<LOGTYPE> logWriter) {
-        this(compression, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, logWriter);
+    LogFileHandler(Compression compression, String filePattern, String rotationTimes, String symlinkName, int queueSize,
+                   String threadName, LogWriter<LOGTYPE> logWriter) {
+        this(compression, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, threadName, logWriter);
     }
 
     LogFileHandler(
@@ -56,9 +57,10 @@ class LogFileHandler <LOGTYPE> {
             long[] rotationTimes,
             String symlinkName,
             int queueSize,
+            String threadName,
             LogWriter<LOGTYPE> logWriter) {
         this.logQueue = new LinkedBlockingQueue<>(queueSize);
-        this.logThread = new LogThread<LOGTYPE>(logWriter, filePattern, compression, rotationTimes, symlinkName, this::poll);
+        this.logThread = new LogThread<>(logWriter, filePattern, compression, rotationTimes, symlinkName, threadName, this::poll);
         this.logThread.start();
     }
 
@@ -205,8 +207,9 @@ class LogFileHandler <LOGTYPE> {
                   Compression compression,
                   long[] rotationTimes,
                   String symlinkName,
+                  String threadName,
                   Pollable<LOGTYPE> operationProvider) {
-            super("Logger");
+            super(threadName);
             setDaemon(true);
             this.logWriter = logWriter;
             this.filePattern = filePattern;

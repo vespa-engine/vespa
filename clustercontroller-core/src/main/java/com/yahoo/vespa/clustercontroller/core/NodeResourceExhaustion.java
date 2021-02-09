@@ -53,6 +53,13 @@ public class NodeResourceExhaustion {
         return String.format("%s (<= %.3g)", makeDescriptionPrefix(), limit);
     }
 
+    public String toShorthandDescription() {
+        return String.format("%s%s %.3g > %.3g",
+                resourceType,
+                (resourceUsage.getName() != null ? ":" + resourceUsage.getName() : ""),
+                resourceUsage.getUsage(), limit);
+    }
+
     private String makeDescriptionPrefix() {
         return String.format("%s%s on node %d [%s]",
                 resourceType,

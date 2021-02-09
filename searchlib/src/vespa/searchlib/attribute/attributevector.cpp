@@ -47,13 +47,6 @@ const vespalib::string docIdLimitTag = "docIdLimit";
 
 constexpr size_t DIRECTIO_ALIGNMENT(4096);
 
-template <typename T>
-struct FuncMax : public std::binary_function<T, T, T> {
-    T operator() (const T & x, const T & y) const {
-        return std::max(x, y);
-    }
-};
-
 }
 
 namespace search {
@@ -774,7 +767,7 @@ void
 AttributeVector::drain_hold(uint64_t hold_limit)
 {
     incGeneration();
-    for (int retry = 0; ; ++retry) {
+    for (int retry = 0; retry < 40; ++retry) {
         removeAllOldGenerations();
         updateStat(true);
         if (_status.getOnHold() <= hold_limit) {
@@ -788,10 +781,13 @@ void
 AttributeVector::update_config(const Config& cfg)
 {
     commit(true);
-    drain_hold(1024 * 1024); // Wait until 1MiB or less on hold
     _config.setGrowStrategy(cfg.getGrowStrategy());
+    if (cfg.getCompactionStrategy() == _config.getCompactionStrategy()) {
+        return;
+    }
+    drain_hold(1024 * 1024); // Wait until 1MiB or less on hold
     _config.setCompactionStrategy(cfg.getCompactionStrategy());
-    commit(); // might trigger compaction if compaction strategy changed
+    commit(); // might trigger compaction
     drain_hold(1024 * 1024); // Wait until 1MiB or less on hold
 }
 

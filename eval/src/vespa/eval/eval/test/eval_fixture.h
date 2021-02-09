@@ -30,21 +30,12 @@ public:
         using gen_fun_t = std::function<double(size_t)>;
         static double gen_N(size_t seq) { return (seq + 1); }
         ParamRepo() : map() {}
-        ParamRepo &add(const vespalib::string &name, TensorSpec value_in, bool is_mutable_in);
-        ParamRepo &add(const vespalib::string &name, const TensorSpec &value) {
-            return add(name, value, false);
-        }
-        ParamRepo &add_mutable(const vespalib::string &name, const TensorSpec &value) {
-            return add(name, value, true);
-        }
-        ParamRepo &add_vector(const char *d1, size_t s1, gen_fun_t = gen_N);
-        ParamRepo &add_matrix(const char *d1, size_t s1, const char *d2, size_t s2, gen_fun_t gen = gen_N);
-        ParamRepo &add_cube(const char *d1, size_t s1, const char *d2, size_t s2, const char *d3, size_t s3, gen_fun_t gen = gen_N);
-        ParamRepo &add_dense(const std::vector<std::pair<vespalib::string, size_t> > &dims, gen_fun_t gen = gen_N);
+
+        ParamRepo &add(const vespalib::string &name, TensorSpec value);
+        ParamRepo &add_mutable(const vespalib::string &name, TensorSpec spec);
 
         // produce 4 variants: float/double * mutable/const
-        ParamRepo &add_variants(const vespalib::string &name_base,
-                                const GenSpec &spec);
+        ParamRepo &add_variants(const vespalib::string &name_base, const GenSpec &spec);
         ~ParamRepo() {}
     };
 

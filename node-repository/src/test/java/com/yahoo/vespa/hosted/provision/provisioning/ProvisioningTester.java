@@ -456,7 +456,7 @@ public class ProvisioningTester {
         }
 
         nodes = nodeRepository.addNodes(nodes, Agent.system);
-        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
+        nodes = nodeRepository.deallocate(nodes, Agent.system, getClass().getSimpleName());
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
 
         ConfigServerApplication application = new ConfigServerApplication();
@@ -482,7 +482,7 @@ public class ProvisioningTester {
     }
     public List<Node> makeReadyNodes(int n, Flavor flavor, Optional<TenantName> reservedTo, NodeType type, int ipAddressPoolSize, boolean dualStack) {
         List<Node> nodes = makeProvisionedNodes(n, flavor, reservedTo, type, ipAddressPoolSize, dualStack);
-        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
+        nodes = nodeRepository.deallocate(nodes, Agent.system, getClass().getSimpleName());
         return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
@@ -523,7 +523,7 @@ public class ProvisioningTester {
             nodes.add(builder.build());
         }
         nodes = nodeRepository.addNodes(nodes, Agent.system);
-        nodes = nodeRepository.setDirty(nodes, Agent.system, getClass().getSimpleName());
+        nodes = nodeRepository.deallocate(nodes, Agent.system, getClass().getSimpleName());
         nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
         return nodes;
     }

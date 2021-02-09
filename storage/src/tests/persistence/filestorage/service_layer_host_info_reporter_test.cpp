@@ -50,6 +50,9 @@ struct ServiceLayerHostInfoReporterTest : ::testing::Test {
     void notify(double disk_usage, double memory_usage) {
         notify(disk_usage, memory_usage, {0.0, ""}, {0.0, ""});
     }
+    void set_noise_level(double level) {
+        _reporter.set_noise_level(level);
+    }
 
     size_t requested_almost_immediate_replies() { return _state_manager.requested_almost_immediate_node_state_replies(); }
     ResourceUsage get_old_usage() { return _reporter.get_old_resource_usage(); }
@@ -102,26 +105,45 @@ TEST_F(ServiceLayerHostInfoReporterTest, request_almost_immediate_node_state_as_
     EXPECT_EQ(ResourceUsage(0.8, 0.7, {0.1, attr_es_name}, {0.2, attr_mv_name}), get_usage());
 }
 
-TEST_F(ServiceLayerHostInfoReporterTest,
-       first_valid_attribute_enum_store_sample_triggers_immediate_node_state_when_below_slack_diff)
+TEST_F(ServiceLayerHostInfoReporterTest, can_set_noise_level)
 {
-    // TODO: Assert this is below slack diff when that becomes configurable.
-    constexpr double usage_below_slack_diff = 0.00001;
-    notify(0.0, 0.0, {usage_below_slack_diff, attr_es_name}, {});
+    set_noise_level(0.02);
+    notify(0.5, 0.4);
     EXPECT_EQ(1, requested_almost_immediate_replies());
-    EXPECT_EQ(ResourceUsage(0.0, 0.0, {usage_below_slack_diff, attr_es_name}, {}), get_old_usage());
-    EXPECT_EQ(ResourceUsage(0.0, 0.0, {usage_below_slack_diff, attr_es_name}, {}), get_usage());
+    EXPECT_EQ(ResourceUsage(0.5, 0.4), get_old_usage());
+    EXPECT_EQ(ResourceUsage(0.5, 0.4), get_usage());
+    // the difference in disk usage is below the noise level
+    notify(0.519, 0.4);
+    EXPECT_EQ(1, requested_almost_immediate_replies());
+    EXPECT_EQ(ResourceUsage(0.5, 0.4), get_old_usage());
+    EXPECT_EQ(ResourceUsage(0.519, 0.4), get_usage());
+    // the difference in disk usage is above the noise level
+    notify(0.521, 0.4);
+    EXPECT_EQ(2, requested_almost_immediate_replies());
+    EXPECT_EQ(ResourceUsage(0.521, 0.4), get_old_usage());
+    EXPECT_EQ(ResourceUsage(0.521, 0.4), get_usage());
 }
 
 TEST_F(ServiceLayerHostInfoReporterTest,
-       first_valid_attribute_multi_value_sample_triggers_immediate_node_state_when_below_slack_diff)
+       first_valid_attribute_enum_store_sample_triggers_immediate_node_state_when_below_noise_level)
 {
-    // TODO: Assert this is below slack diff when that becomes configurable.
-    constexpr double usage_below_slack_diff = 0.00001;
-    notify(0.0, 0.0, {}, {usage_below_slack_diff, attr_mv_name});
+    set_noise_level(0.02);
+    constexpr double usage_below_noise_level = 0.019;
+    notify(0.0, 0.0, {usage_below_noise_level, attr_es_name}, {});
     EXPECT_EQ(1, requested_almost_immediate_replies());
-    EXPECT_EQ(ResourceUsage(0.0, 0.0, {}, {usage_below_slack_diff, attr_mv_name}), get_old_usage());
-    EXPECT_EQ(ResourceUsage(0.0, 0.0, {}, {usage_below_slack_diff, attr_mv_name}), get_usage());
+    EXPECT_EQ(ResourceUsage(0.0, 0.0, {usage_below_noise_level, attr_es_name}, {}), get_old_usage());
+    EXPECT_EQ(ResourceUsage(0.0, 0.0, {usage_below_noise_level, attr_es_name}, {}), get_usage());
+}
+
+TEST_F(ServiceLayerHostInfoReporterTest,
+       first_valid_attribute_multi_value_sample_triggers_immediate_node_state_when_below_noise_level)
+{
+    set_noise_level(0.02);
+    constexpr double usage_below_noise_level = 0.019;
+    notify(0.0, 0.0, {}, {usage_below_noise_level, attr_mv_name});
+    EXPECT_EQ(1, requested_almost_immediate_replies());
+    EXPECT_EQ(ResourceUsage(0.0, 0.0, {}, {usage_below_noise_level, attr_mv_name}), get_old_usage());
+    EXPECT_EQ(ResourceUsage(0.0, 0.0, {}, {usage_below_noise_level, attr_mv_name}), get_usage());
 }
 
 TEST_F(ServiceLayerHostInfoReporterTest, json_report_generated)

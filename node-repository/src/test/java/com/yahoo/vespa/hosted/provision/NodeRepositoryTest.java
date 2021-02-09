@@ -228,12 +228,12 @@ public class NodeRepositoryTest {
         assertEquals(6, tester.nodeRepository().getNodes().size());
 
         // Should be OK to dirty host2 as it is in provisioned and its only child is in failed
-        tester.nodeRepository().dirtyRecursively("host2", Agent.system, NodeRepositoryTest.class.getSimpleName());
+        tester.nodeRepository().deallocateRecursively("host2", Agent.system, NodeRepositoryTest.class.getSimpleName());
         assertEquals(asSet("host2", "node20"), filterNodes(tester, node -> node.state() == Node.State.dirty));
 
         // Cant dirty host1, node11 is ready and node12 is active
         try {
-            tester.nodeRepository().dirtyRecursively("host1", Agent.system, NodeRepositoryTest.class.getSimpleName());
+            tester.nodeRepository().deallocateRecursively("host1", Agent.system, NodeRepositoryTest.class.getSimpleName());
             fail("Should not be able to dirty host1");
         } catch (IllegalArgumentException ignored) { } // Expected;
 

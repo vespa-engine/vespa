@@ -43,6 +43,16 @@
       <artifactId>jackson-dataformat-xml</artifactId>
     </dependency>
     <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jdk8</artifactId>
+      <scope>compile</scope>
+    </dependency>
+    <dependency>
       <groupId>io.airlift</groupId>
       <artifactId>airline</artifactId>
       <version>0.6</version>

@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.node.admin.integrationTests;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerEngine;
+import com.yahoo.vespa.hosted.dockerapi.ContainerId;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
@@ -25,12 +26,14 @@ import java.util.OptionalLong;
  * @author freva
  */
 public class ContainerEngineMock implements ContainerEngine {
+    public static final ContainerId CONTAINER_ID = new ContainerId("af345");
+
     private final Map<ContainerName, Container> containersByContainerName = new HashMap<>();
     private static final Object monitor = new Object();
 
     @Override
     public CreateContainerCommand createContainerCommand(DockerImage dockerImage, ContainerName containerName) {
-        return new StartContainerCommandMock(dockerImage, containerName);
+        return new StartContainerCommandMock(CONTAINER_ID, dockerImage, containerName);
     }
 
     @Override
@@ -48,7 +51,7 @@ public class ContainerEngineMock implements ContainerEngine {
         synchronized (monitor) {
             Container container = containersByContainerName.get(containerName);
             containersByContainerName.put(containerName,
-                            new Container(container.hostname, container.image, container.resources, container.name, Container.State.EXITED, 0));
+                            new Container(container.id(), container.hostname, container.image, container.resources, container.name, Container.State.EXITED, 0));
         }
     }
 
@@ -64,7 +67,7 @@ public class ContainerEngineMock implements ContainerEngine {
         synchronized (monitor) {
             Container container = containersByContainerName.get(containerName);
             containersByContainerName.put(containerName,
-                    new Container(container.hostname, container.image, containerResources, container.name, container.state, container.pid));
+                    new Container(container.id(), container.hostname, container.image, containerResources, container.name, container.state, container.pid));
         }
     }
 
@@ -104,12 +107,14 @@ public class ContainerEngineMock implements ContainerEngine {
 
     public class StartContainerCommandMock implements CreateContainerCommand {
 
+        private final ContainerId containerId;
         private final DockerImage dockerImage;
         private final ContainerName containerName;
         private String hostName;
         private ContainerResources containerResources;
 
-        public StartContainerCommandMock(DockerImage dockerImage, ContainerName containerName) {
+        public StartContainerCommandMock(ContainerId containerId, DockerImage dockerImage, ContainerName containerName) {
+            this.containerId = containerId;
             this.dockerImage = dockerImage;
             this.containerName = containerName;
         }
@@ -200,7 +205,7 @@ public class ContainerEngineMock implements ContainerEngine {
         public void create() {
             synchronized (monitor) {
                 containersByContainerName.put(
-                        containerName, new Container(hostName, dockerImage, containerResources, containerName, Container.State.RUNNING, 2));
+                        containerName, new Container(containerId, hostName, dockerImage, containerResources, containerName, Container.State.RUNNING, 2));
             }
         }
     }

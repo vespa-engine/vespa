@@ -52,10 +52,10 @@
       "url": "http://localhost:8080/nodes/v2/node/host1.yahoo.com"
     },
     {
-      "url": "http://localhost:8080/nodes/v2/node/host55.yahoo.com"
+      "url": "http://localhost:8080/nodes/v2/node/host5.yahoo.com"
     },
     {
-      "url": "http://localhost:8080/nodes/v2/node/host5.yahoo.com"
+      "url": "http://localhost:8080/nodes/v2/node/host55.yahoo.com"
     }
   ]
 }

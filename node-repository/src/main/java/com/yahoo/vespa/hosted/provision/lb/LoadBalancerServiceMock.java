@@ -17,9 +17,15 @@ import java.util.Optional;
 public class LoadBalancerServiceMock implements LoadBalancerService {
 
     private final Map<LoadBalancerId, LoadBalancerInstance> instances = new HashMap<>();
+    private boolean throwOnCreate = false;
 
     public Map<LoadBalancerId, LoadBalancerInstance> instances() {
         return Collections.unmodifiableMap(instances);
+    }
+
+    public LoadBalancerServiceMock throwOnCreate(boolean throwOnCreate) {
+        this.throwOnCreate = throwOnCreate;
+        return this;
     }
 
     @Override
@@ -29,6 +35,7 @@ public class LoadBalancerServiceMock implements LoadBalancerService {
 
     @Override
     public LoadBalancerInstance create(LoadBalancerSpec spec, boolean force) {
+        if (throwOnCreate) throw new IllegalStateException("Did not expect a new load balancer to be created");
         var id = new LoadBalancerId(spec.application(), spec.cluster());
         var oldInstance = instances.get(id);
         if (!force && oldInstance != null && !oldInstance.reals().isEmpty() && spec.reals().isEmpty()) {

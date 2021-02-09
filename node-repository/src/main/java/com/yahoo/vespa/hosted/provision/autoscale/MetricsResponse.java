@@ -22,25 +22,31 @@ import java.util.Map;
 import java.util.Optional;
 
 /**
- * Consumes a response from the metrics/v2 API and populates the fields of this with the resulting values
+ * A response containing metrics for a collection of nodes.
  *
  * @author bratseth
  */
 public class MetricsResponse {
 
-    private final Collection<Pair<String, MetricSnapshot>> nodeMetrics = new ArrayList<>();
+    private final Collection<Pair<String, MetricSnapshot>> nodeMetrics;
 
+    /** Creates this from a metrics/V2 response */
     public MetricsResponse(String response, NodeList applicationNodes, NodeRepository nodeRepository) {
         this(SlimeUtils.jsonToSlime(response), applicationNodes, nodeRepository);
     }
 
-    public Collection<Pair<String, MetricSnapshot>> metrics() { return nodeMetrics; }
+    public MetricsResponse(Collection<Pair<String, MetricSnapshot>> metrics) {
+        this.nodeMetrics = metrics;
+    }
 
     private MetricsResponse(Slime response, NodeList applicationNodes, NodeRepository nodeRepository) {
+        nodeMetrics = new ArrayList<>();
         Inspector root = response.get();
         Inspector nodes = root.field("nodes");
         nodes.traverse((ArrayTraverser)(__, node) -> consumeNode(node, applicationNodes, nodeRepository));
     }
+
+    public Collection<Pair<String, MetricSnapshot>> metrics() { return nodeMetrics; }
 
     private void consumeNode(Inspector node, NodeList applicationNodes, NodeRepository nodeRepository) {
         String hostname = node.field("hostname").asString();
@@ -82,6 +88,8 @@ public class MetricsResponse {
     private void consumeMetricsItem(Inspector item, Map<String, Double> values) {
         item.field("values").traverse((ObjectTraverser)(name, value) -> values.put(name, value.asDouble()));
     }
+
+    public static MetricsResponse empty() { return new MetricsResponse(List.of()); }
 
     /** The metrics this can read */
     private enum Metric {

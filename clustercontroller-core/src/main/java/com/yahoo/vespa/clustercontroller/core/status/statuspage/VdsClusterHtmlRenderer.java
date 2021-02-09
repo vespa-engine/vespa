@@ -14,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.TimeZone;
 import java.util.TreeMap;
+import java.util.stream.Collectors;
 
 /**
  * Renders web page with cluster status.
@@ -50,6 +51,10 @@ public class VdsClusterHtmlRenderer {
                     .append(slobrokGenerationCount).append(".</p>\n");
         }
 
+        public void appendRaw(String rawHtml) {
+            contentBuilder.append(rawHtml);
+        }
+
         public void addTable(final StringBuilder destination, final long stableStateTimePeriode) {
             destination.append(contentBuilder);
 
@@ -67,6 +72,7 @@ public class VdsClusterHtmlRenderer {
                 final ClusterStatsAggregator statsAggregator,
                 final double minMergeCompletionRatio,
                 final int maxPrematureCrashes,
+                final Map<String, Double> feedBlockLimits,
                 final EventLog eventLog,
                 final String pathPrefix,
                 final String name) {
@@ -80,6 +86,7 @@ public class VdsClusterHtmlRenderer {
                     statsAggregator,
                     minMergeCompletionRatio,
                     maxPrematureCrashes,
+                    feedBlockLimits,
                     eventLog,
                     pathPrefix,
                     dominantVtag,
@@ -91,6 +98,7 @@ public class VdsClusterHtmlRenderer {
                     statsAggregator,
                     minMergeCompletionRatio,
                     maxPrematureCrashes,
+                    feedBlockLimits,
                     eventLog,
                     pathPrefix,
                     dominantVtag,
@@ -144,6 +152,8 @@ public class VdsClusterHtmlRenderer {
                             .addProperties(new HtmlTable.CellProperties().setColSpan(2).setRowSpan(1)))
                     .addCell(new HtmlTable.Cell(FixedBucketSpaces.globalSpace() + " buckets")
                             .addProperties(new HtmlTable.CellProperties().setColSpan(2).setRowSpan(1)))
+                    .addCell(new HtmlTable.Cell("Resource usage (%)")
+                            .addProperties(new HtmlTable.CellProperties().setColSpan(2).setRowSpan(1)))
                     .addCell(new HtmlTable.Cell("Start Time"))
                     .addCell(new HtmlTable.Cell("RPC Address")));
             table.addRow(new HtmlTable.Row().setHeaderRow().addProperties(headerProperties)
@@ -153,7 +163,9 @@ public class VdsClusterHtmlRenderer {
                     .addCell(new HtmlTable.Cell("Pending"))
                     .addCell(new HtmlTable.Cell("Total"))
                     .addCell(new HtmlTable.Cell("Pending"))
-                    .addCell(new HtmlTable.Cell("Total")));
+                    .addCell(new HtmlTable.Cell("Total"))
+                    .addCell(new HtmlTable.Cell("Disk"))
+                    .addCell(new HtmlTable.Cell("Memory")));
         }
 
         private void renderNodesOneType(
@@ -164,6 +176,7 @@ public class VdsClusterHtmlRenderer {
                 final ClusterStatsAggregator statsAggregator,
                 final double minMergeCompletionRatio,
                 final int maxPrematureCrashes,
+                final Map<String, Double> feedBlockLimits,
                 final EventLog eventLog,
                 final String pathPrefix,
                 final String dominantVtag,
@@ -188,10 +201,40 @@ public class VdsClusterHtmlRenderer {
                 addPrematureCrashes(maxPrematureCrashes, nodeInfo, row);
                 addEventsLastWeek(eventLog, currentTime, nodeInfo, row);
                 addBucketSpacesStats(nodeType, statsAggregator, minMergeCompletionRatio, nodeInfo, row);
+                addResourceUsage(nodeInfo, feedBlockLimits, row);
                 addStartTime(nodeInfo, row);
                 addRpcAddress(nodeInfo, row);
 
                 table.addRow(row);
+                if (nodeType.equals(NodeType.STORAGE)) {
+                    addFeedBlockedRowIfNodeIsBlocking(stateBundle, nodeInfo, row);
+                }
+            }
+        }
+
+        private void addFeedBlockedRowIfNodeIsBlocking(ClusterStateBundle stateBundle, NodeInfo nodeInfo, HtmlTable.Row nodeRow) {
+            // We only show a feed block row if the node is actually blocking feed in the cluster, not
+            // just if limits have been exceeded (as feed block may be config disabled).
+            // O(n) but n expected to be 0-(very small number) in all realistic cases.
+            if (stateBundle.clusterFeedIsBlocked()) {
+                var exhaustions = stateBundle.getFeedBlockOrNull().getConcreteExhaustions().stream()
+                        .filter(ex -> ex.node.getIndex() == nodeInfo.getNodeIndex())
+                        .collect(Collectors.toList());
+                if (!exhaustions.isEmpty()) {
+                    var exhaustionsDesc = exhaustions.stream()
+                            .map(NodeResourceExhaustion::toShorthandDescription)
+                            .collect(Collectors.joining(", "));
+
+                    HtmlTable.Row feedBlockRow = new HtmlTable.Row();
+                    var contents = String.format("<strong>Node is blocking feed: %s</strong>", HtmlTable.escape(exhaustionsDesc));
+                    var cell = new HtmlTable.Cell(contents).addProperties(ERROR_PROPERTY);
+                    cell.addProperties(new HtmlTable.CellProperties().setColSpan(18));
+                    feedBlockRow.addCell(cell);
+                    table.addRow(feedBlockRow);
+                    // Retroactively make the node index cell span 2 rows so it's obvious (hopefully)
+                    // what node the feed block state is related to.
+                    nodeRow.cells.get(0).addProperties(new HtmlTable.CellProperties().setRowSpan(2));
+                }
             }
         }
 
@@ -227,6 +270,37 @@ public class VdsClusterHtmlRenderer {
                         minMergeCompletionRatio);
                 addBucketStats(row, getStatsForDistributorNode(statsAggregator, nodeInfo, FixedBucketSpaces.globalSpace()),
                         minMergeCompletionRatio);
+            }
+        }
+
+        private void addResourceUsage(NodeInfo nodeInfo, Map<String, Double> feedBlockLimits, HtmlTable.Row row) {
+            if (nodeInfo.isDistributor()) {
+                row.addCell(new HtmlTable.Cell("-").addProperties(CENTERED_PROPERTY));
+                row.addCell(new HtmlTable.Cell("-").addProperties(CENTERED_PROPERTY));
+                return;
+            }
+            addSingleResourceUsageCell(nodeInfo, "disk", feedBlockLimits, row);
+            addSingleResourceUsageCell(nodeInfo, "memory", feedBlockLimits, row);
+        }
+
+        private void addSingleResourceUsageCell(NodeInfo nodeInfo, String resourceType,
+                                                Map<String, Double> feedBlockLimits, HtmlTable.Row row)
+        {
+            var hostInfo = nodeInfo.getHostInfo();
+            var usages = hostInfo.getContentNode().getResourceUsage();
+
+            var usage = usages.get(resourceType);
+            if (usage != null && usage.getUsage() != null) {
+                row.addCell(new HtmlTable.Cell(String.format("%.2f", usage.getUsage() * 100.0)));
+                double limit = feedBlockLimits.getOrDefault(resourceType, 1.0);
+                // Mark as error if limit exceeded, warn if within 5% of exceeding
+                if (usage.getUsage() > limit) {
+                    row.getLastCell().addProperties(ERROR_PROPERTY);
+                } else if (usage.getUsage() > (limit - 0.05)) {
+                    row.getLastCell().addProperties(WARNING_PROPERTY);
+                }
+            } else {
+                row.addCell(new HtmlTable.Cell("-").addProperties(CENTERED_PROPERTY));
             }
         }
 

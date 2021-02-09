@@ -143,7 +143,10 @@ public:
     size_t size() const { return _usedElems; }
     size_t capacity() const { return _allocElems; }
     size_t remaining() const { return _allocElems - _usedElems; }
-    void pushed_back(size_t numElems, size_t extraBytes = 0) {
+    void pushed_back(size_t numElems) {
+        pushed_back(numElems, 0);
+    }
+    void pushed_back(size_t numElems, size_t extraBytes) {
         _usedElems += numElems;
         _extraUsedBytes += extraBytes;
     }

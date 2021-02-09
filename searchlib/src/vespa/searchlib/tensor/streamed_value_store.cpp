@@ -156,7 +156,7 @@ StreamedValueStore::TensorEntryImpl<CT>::~TensorEntryImpl() = default;
 
 constexpr size_t MIN_BUFFER_ARRAYS = 8192;
 
-StreamedValueStore::TensorBufferType::TensorBufferType()
+StreamedValueStore::TensorBufferType::TensorBufferType() noexcept
     : ParentType(1, MIN_BUFFER_ARRAYS, TensorStoreType::RefType::offsetSize())
 {
 }
@@ -174,7 +174,7 @@ StreamedValueStore::TensorBufferType::cleanHold(void* buffer, size_t offset, Ele
 
 StreamedValueStore::StreamedValueStore(const ValueType &tensor_type)
   : TensorStore(_concrete_store),
-    _concrete_store(),
+    _concrete_store(std::make_unique<TensorBufferType>()),
     _tensor_type(tensor_type)
 {
     _concrete_store.enableFreeLists();

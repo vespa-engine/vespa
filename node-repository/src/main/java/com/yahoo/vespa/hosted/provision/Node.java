@@ -8,19 +8,26 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancers;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.Generation;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.node.IP;
+import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Comparator;
+import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
+import java.util.TreeSet;
 
 /**
  * A node in the node repository. The identity of a node is given by its id.
@@ -427,6 +434,11 @@ public final class Node implements Nodelike {
                         allocated.memoryGb() / all.memoryGb(),
                         allocated.diskGb() / all.diskGb())
                        .deviation();
+    }
+
+    /** Returns the ACL for the node (trusted nodes, networks and ports) */
+    public NodeAcl acl(NodeList allNodes, LoadBalancers loadBalancers) {
+        return NodeAcl.from(this, allNodes, loadBalancers);
     }
 
     @Override

@@ -112,7 +112,7 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
                 nodesToRecycle.add(candidate);
             }
         }
-        nodeRepository.setDirty(nodesToRecycle, Agent.FailedExpirer, "Expired by FailedExpirer");
+        nodeRepository.deallocate(nodesToRecycle, Agent.FailedExpirer, "Expired by FailedExpirer");
     }
 
     /** Returns whether the current node fail count should be used as an indicator of hardware issue */

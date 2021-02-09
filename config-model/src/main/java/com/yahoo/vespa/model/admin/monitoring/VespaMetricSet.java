@@ -241,6 +241,10 @@ public class VespaMetricSet {
         // DO NOT RELY ON THIS METRIC YET.
         metrics.add(new Metric("cluster-controller.node-event.count"));
 
+        metrics.add(new Metric("cluster-controller.resource_usage.nodes_above_limit.last"));
+        metrics.add(new Metric("cluster-controller.resource_usage.max_memory_utilization.last"));
+        metrics.add(new Metric("cluster-controller.resource_usage.max_disk_utilization.last"));
+
         metrics.add(new Metric("reindexing.progress.last"));
 
         return metrics;

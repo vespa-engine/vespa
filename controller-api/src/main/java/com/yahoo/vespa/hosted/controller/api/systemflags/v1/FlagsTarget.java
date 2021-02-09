@@ -5,6 +5,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.config.provision.zone.ZoneList;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
@@ -37,10 +38,11 @@ public interface FlagsTarget {
     Optional<AthenzIdentity> athenzHttpsIdentity();
     String asString();
 
-    static Set<FlagsTarget> getAllTargetsInSystem(ZoneRegistry registry) {
+    static Set<FlagsTarget> getAllTargetsInSystem(ZoneRegistry registry, boolean reachableOnly) {
         SystemName system = registry.system();
         Set<FlagsTarget> targets = new HashSet<>();
-        for (ZoneApi zone : registry.zones().reachable().zones()) {
+        ZoneList filteredZones = reachableOnly ? registry.zones().reachable() : registry.zones().all();
+        for (ZoneApi zone : filteredZones.zones()) {
             targets.add(forConfigServer(registry, zone.getId()));
         }
         targets.add(forController(system));

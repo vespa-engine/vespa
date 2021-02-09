@@ -128,10 +128,9 @@ public:
         _seq = seq_in;
         return *this;
     }
-    // TODO: stop using and remove
-    GenSpec &seq_bias(double bias) { return seq(N(bias)); }
     ValueType type() const;
     TensorSpec gen() const;
+    operator TensorSpec() const { return gen(); }
 };
 
 } // namespace

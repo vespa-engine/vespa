@@ -32,8 +32,8 @@ const std::vector<GenSpec> layouts = {
 
 TEST(ValueCodecTest, simple_values_can_be_converted_from_and_to_tensor_spec) {
     for (const auto &layout: layouts) {
-        for (TensorSpec expect : { layout.cpy().cells_float().gen(),
-                                   layout.cpy().cells_double().gen() })
+        for (TensorSpec expect : { layout.cpy().cells_float(),
+                                   layout.cpy().cells_double() })
         {
             std::unique_ptr<Value> value = value_from_spec(expect, factory);
             TensorSpec actual = spec_from_value(*value);

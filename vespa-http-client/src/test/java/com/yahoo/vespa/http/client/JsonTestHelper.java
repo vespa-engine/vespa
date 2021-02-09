@@ -4,16 +4,25 @@ package com.yahoo.vespa.http.client;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.google.common.base.Joiner;
 import org.hamcrest.MatcherAssert;
 
-import static uk.co.datumedge.hamcrest.json.SameJSONAs.sameJSONAs;
-
 import java.io.UncheckedIOException;
+
+import static uk.co.datumedge.hamcrest.json.SameJSONAs.sameJSONAs;
 
 public class JsonTestHelper {
 
-    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper mapper = createMapper();
+
+    private static ObjectMapper createMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new Jdk8Module());
+        mapper.registerModule(new JavaTimeModule());
+        return mapper;
+    }
 
     /**
      * Convenience method to input JSON without escaping double quotes and newlines

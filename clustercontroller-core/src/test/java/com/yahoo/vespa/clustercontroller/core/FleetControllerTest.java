@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.Request;
@@ -47,6 +47,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
+import java.util.stream.IntStream;
 
 import static org.junit.Assert.fail;
 
@@ -59,7 +60,7 @@ public abstract class FleetControllerTest implements Waiter {
     private static final int DEFAULT_NODE_COUNT = 10;
 
     Supervisor supervisor;
-    protected FakeTimer timer = new FakeTimer();
+    protected final FakeTimer timer = new FakeTimer();
     boolean usingFakeTimer = false;
     protected Slobrok slobrok;
     protected FleetControllerOptions options;
@@ -124,9 +125,9 @@ public abstract class FleetControllerTest implements Waiter {
     }
 
     static protected FleetControllerOptions defaultOptions(String clusterName) {
-        var opts = new FleetControllerOptions(clusterName);
-        opts.enableTwoPhaseClusterStateActivation = true; // Enable by default, tests can explicitly disable.
-        return opts;
+        return defaultOptions(clusterName, IntStream.range(0, DEFAULT_NODE_COUNT)
+                                                    .mapToObj(i -> new ConfiguredNode(i, false))
+                                                    .collect(Collectors.toSet()));
     }
 
     static protected FleetControllerOptions defaultOptions(String clusterName, Collection<ConfiguredNode> nodes) {

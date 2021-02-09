@@ -11,10 +11,7 @@ public class GroupAutoTakedownLiveConfigTest extends FleetControllerTest {
 
     private long mockConfigGeneration = 1;
 
-
-    private static FleetControllerOptions createOptions(
-                DistributionBuilder.GroupBuilder groupBuilder, double minNodeRatio)
-    {
+    private static FleetControllerOptions createOptions(DistributionBuilder.GroupBuilder groupBuilder, double minNodeRatio) {
         FleetControllerOptions options = defaultOptions("mycluster");
         options.setStorageDistribution(DistributionBuilder.forHierarchicCluster(groupBuilder));
         options.nodes = new HashSet<>(DistributionBuilder.buildConfiguredNodes(groupBuilder.totalNodeCount()));

@@ -147,7 +147,6 @@ public class ModelContextImpl implements ModelContext {
 
     public static class FeatureFlags implements ModelContext.FeatureFlags {
 
-        private final double reindexerWindowSizeIncrement;
         private final double defaultTermwiseLimit;
         private final boolean useThreePhaseUpdates;
         private final String feedSequencer;
@@ -160,14 +159,11 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useAsyncMessageHandlingOnSchedule;
         private final double feedConcurrency;
         private final boolean reconfigurableZookeeperServer;
-        private final boolean enableJdiscConnectionLog;
-        private final boolean enableZstdCompressionAccessLog;
         private final boolean useBucketExecutorForLidSpaceCompact;
         private final boolean enableFeedBlockInDistributor;
         private final double maxDeadBytesRatio;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
-            this.reindexerWindowSizeIncrement = flagValue(source, appId, Flags.REINDEXER_WINDOW_SIZE_INCREMENT);
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
             this.useThreePhaseUpdates = flagValue(source, appId, Flags.USE_THREE_PHASE_UPDATES);
             this.feedSequencer = flagValue(source, appId, Flags.FEED_SEQUENCER_TYPE);
@@ -180,14 +176,11 @@ public class ModelContextImpl implements ModelContext {
             this.useAsyncMessageHandlingOnSchedule = flagValue(source, appId, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
             this.feedConcurrency = flagValue(source, appId, Flags.FEED_CONCURRENCY);
             this.reconfigurableZookeeperServer = flagValue(source, appId, Flags.RECONFIGURABLE_ZOOKEEPER_SERVER_FOR_CLUSTER_CONTROLLER);
-            this.enableJdiscConnectionLog = flagValue(source, appId, Flags.ENABLE_JDISC_CONNECTION_LOG);
-            this.enableZstdCompressionAccessLog = flagValue(source, appId, Flags.ENABLE_ZSTD_COMPRESSION_ACCESS_LOG);
             this.useBucketExecutorForLidSpaceCompact = flagValue(source, appId, Flags.USE_BUCKET_EXECUTOR_FOR_LID_SPACE_COMPACT);
             this.enableFeedBlockInDistributor = flagValue(source, appId, Flags.ENABLE_FEED_BLOCK_IN_DISTRIBUTOR);
             this.maxDeadBytesRatio = flagValue(source, appId, Flags.MAX_DEAD_BYTES_RATIO);
         }
 
-        @Override public double reindexerWindowSizeIncrement() { return reindexerWindowSizeIncrement; }
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
         @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
         @Override public String feedSequencerType() { return feedSequencer; }
@@ -200,8 +193,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
         @Override public double feedConcurrency() { return feedConcurrency; }
         @Override public boolean reconfigurableZookeeperServer() { return reconfigurableZookeeperServer; }
-        @Override public boolean enableJdiscConnectionLog() { return enableJdiscConnectionLog; }
-        @Override public boolean enableZstdCompressionAccessLog() { return enableZstdCompressionAccessLog; }
         @Override public boolean useBucketExecutorForLidSpaceCompact() { return useBucketExecutorForLidSpaceCompact; }
         @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
         @Override public double maxDeadBytesRatio() { return maxDeadBytesRatio; }

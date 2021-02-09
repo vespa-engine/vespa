@@ -24,8 +24,8 @@ public class JobMetrics {
         incompleteRuns.merge(job, 1L, Long::sum);
     }
 
-    /** Record successful run of given job */
-    public void recordSuccessOf(String job) {
+    /** Record completion of given job */
+    public void recordCompletionOf(String job) {
         incompleteRuns.put(job, 0L);
     }
 

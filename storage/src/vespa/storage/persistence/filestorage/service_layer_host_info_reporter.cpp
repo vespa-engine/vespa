@@ -16,8 +16,6 @@ using End = vespalib::JsonStream::End;
 
 namespace {
 
-constexpr double diff_slack = 0.001;
-
 const vespalib::string memory_label("memory");
 const vespalib::string disk_label("disk");
 const vespalib::string attribute_enum_store_label("attribute-enum-store");
@@ -38,7 +36,7 @@ void write_attribute_usage(vespalib::JsonStream& output, const vespalib::string 
     output << End();
 }
 
-bool want_immediate_report(const spi::ResourceUsage& old_usage, const spi::ResourceUsage& new_usage)
+bool want_immediate_report(const spi::ResourceUsage& old_usage, const spi::ResourceUsage& new_usage, double noise_level)
 {
     auto disk_usage_diff = fabs(new_usage.get_disk_usage() - old_usage.get_disk_usage());
     auto memory_usage_diff = fabs(new_usage.get_memory_usage() - old_usage.get_memory_usage());
@@ -48,28 +46,36 @@ bool want_immediate_report(const spi::ResourceUsage& old_usage, const spi::Resou
             new_usage.get_attribute_enum_store_usage().valid();
     bool multivalue_got_valid = !old_usage.get_attribute_multivalue_usage().valid() &&
             new_usage.get_attribute_multivalue_usage().valid();
-    return ((disk_usage_diff > diff_slack) ||
-            (memory_usage_diff > diff_slack) ||
-            (enum_store_diff > diff_slack) ||
-            (multivalue_diff > diff_slack) ||
+    return ((disk_usage_diff > noise_level) ||
+            (memory_usage_diff > noise_level) ||
+            (enum_store_diff > noise_level) ||
+            (multivalue_diff > noise_level) ||
             enum_store_got_valid ||
             multivalue_got_valid);
 }
 
 }
 
-ServiceLayerHostInfoReporter::ServiceLayerHostInfoReporter(NodeStateUpdater& node_state_updater)
+ServiceLayerHostInfoReporter::ServiceLayerHostInfoReporter(NodeStateUpdater& node_state_updater,
+                                                           double noise_level)
     : HostReporter(),
       spi::ResourceUsageListener(),
       _node_state_updater(node_state_updater),
       _lock(),
-      _old_resource_usage()
+      _old_resource_usage(),
+      _noise_level(noise_level)
 {
 }
 
 ServiceLayerHostInfoReporter::~ServiceLayerHostInfoReporter()
 {
     spi::ResourceUsageListener::reset(); // detach
+}
+
+void
+ServiceLayerHostInfoReporter::set_noise_level(double level)
+{
+    _noise_level.store(level, std::memory_order_relaxed);
 }
 
 namespace {
@@ -87,9 +93,10 @@ to_string(const spi::ResourceUsage& usage)
 void
 ServiceLayerHostInfoReporter::update_resource_usage(const spi::ResourceUsage& resource_usage)
 {
-    bool immediate_report = want_immediate_report(_old_resource_usage, resource_usage);
-    LOG(debug, "update_resource_usage(): immediate_report=%s, old_usage=%s, new_usage=%s",
-        (immediate_report ? "true" : "false"), to_string(_old_resource_usage).c_str(),
+    double noise_level = _noise_level.load(std::memory_order_relaxed);
+    bool immediate_report = want_immediate_report(_old_resource_usage, resource_usage, noise_level);
+    LOG(debug, "update_resource_usage(): immediate_report=%s, noise_level=%f, old_usage=%s, new_usage=%s",
+        (immediate_report ? "true" : "false"), noise_level, to_string(_old_resource_usage).c_str(),
         to_string(resource_usage).c_str());
     if (immediate_report) {
         _old_resource_usage = resource_usage;

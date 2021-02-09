@@ -64,9 +64,6 @@
       "name": "ResourceTagMaintainer"
     },
     {
-      "name": "RotationStatusUpdater"
-    },
-    {
       "name": "SystemRoutingPolicyMaintainer"
     },
     {

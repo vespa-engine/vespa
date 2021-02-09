@@ -1,7 +1,6 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.database;
 
-import java.util.logging.Level;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
@@ -18,6 +17,7 @@ import java.io.PrintWriter;
 import java.io.StringWriter;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -26,7 +26,7 @@ import java.util.logging.Logger;
  */
 public class DatabaseHandler {
 
-    private static Logger log = Logger.getLogger(DatabaseHandler.class.getName());
+    private static final Logger log = Logger.getLogger(DatabaseHandler.class.getName());
 
     public interface Context {
         ContentCluster getCluster();
@@ -35,7 +35,7 @@ public class DatabaseHandler {
         NodeStateOrHostInfoChangeHandler getNodeStateUpdateListener();
     }
 
-    private class Data {
+    private static class Data {
         Integer masterVote;
         Integer lastSystemStateVersion;
         Map<Node, NodeState> wantedStates;
@@ -80,7 +80,7 @@ public class DatabaseHandler {
     private final Object databaseMonitor = new Object();
     private Database database;
 
-    private DatabaseListener dbListener = new DatabaseListener();
+    private final DatabaseListener dbListener = new DatabaseListener();
     private final Data currentlyStored = new Data();
     private final Data pendingStore = new Data();
     private long lastZooKeeperConnectionAttempt = 0;
@@ -95,12 +95,13 @@ public class DatabaseHandler {
         this.nodeIndex = ourIndex;
         pendingStore.masterVote = ourIndex; // To begin with we'll vote for ourselves.
         this.monitor = monitor;
+        // TODO: Require non-null, not possible now since at least ClusterFeedBlockTest usese null address
         this.zooKeeperAddress = zooKeeperAddress;
     }
 
     private boolean isDatabaseClosedSafe() {
         synchronized (databaseMonitor) {
-            return database == null || database.isClosed();
+            return isClosed();
         }
     }
 
@@ -133,13 +134,12 @@ public class DatabaseHandler {
         currentlyStored.clear();
         pendingStore.clear();
         pendingStore.masterVote = currentVote;
-        log.log(Level.FINE, "Cleared session metadata. Pending master vote is now "
-                    + pendingStore.masterVote);
+        log.log(Level.FINE, "Cleared session metadata. Pending master vote is now " + pendingStore.masterVote);
     }
 
     public void setZooKeeperAddress(String address) {
         if (address == null && zooKeeperAddress == null) return;
-        if (address != null && zooKeeperAddress != null && address.equals(zooKeeperAddress)) return;
+        if (address != null && address.equals(zooKeeperAddress)) return;
         if (zooKeeperAddress != null) {
             log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": " + (address == null ? "Stopped using ZooKeeper." : "Got new ZooKeeper address to use: " + address));
         }
@@ -200,7 +200,6 @@ public class DatabaseHandler {
     public boolean doNextZooKeeperTask(Context context) throws InterruptedException {
         boolean didWork = false;
         synchronized (monitor) {
-            if (zooKeeperAddress == null) return false; // If not using zookeeper no work to be done
             if (lostZooKeeperConnectionEvent) {
                 log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": doNextZooKeeperTask(): lost connection");
                 context.getFleetController().lostDatabaseConnection();
