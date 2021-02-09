@@ -143,13 +143,6 @@ public class Flags {
             "Takes effect immediately"
     );
 
-    public static final UnboundBooleanFlag ONLY_PUBLIC_ACCESS = defineFeatureFlag(
-            "enable-public-only", false,
-            List.of("ogronnesby"), "2020-12-02", "2021-02-01",
-            "Only access public hosts from container",
-            "Takes effect on next tick"
-    );
-
     public static final UnboundBooleanFlag HIDE_SHARED_ROUTING_ENDPOINT = defineFeatureFlag(
             "hide-shared-routing-endpoint", false,
             List.of("tokle"), "2020-12-02", "2021-06-01",
