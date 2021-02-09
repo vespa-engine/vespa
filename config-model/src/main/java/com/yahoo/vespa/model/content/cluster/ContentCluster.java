@@ -135,7 +135,8 @@ public class ContentCluster extends AbstractConfigProducer implements
             ContentCluster c = new ContentCluster(context.getParentProducer(), getClusterId(contentElement), documentDefinitions,
                                                   globallyDistributedDocuments, routingSelection,
                                                   deployState.zone(), deployState.isHosted());
-            var resourceLimits = new ClusterResourceLimits.Builder().build(contentElement);
+            boolean enableFeedBlockInDistributor = deployState.getProperties().featureFlags().enableFeedBlockInDistributor();
+            var resourceLimits = new ClusterResourceLimits.Builder(enableFeedBlockInDistributor).build(contentElement);
             c.clusterControllerConfig = new ClusterControllerConfig.Builder(getClusterId(contentElement),
                     contentElement,
                     resourceLimits.getClusterControllerLimits()).build(deployState, c, contentElement.getXml());
