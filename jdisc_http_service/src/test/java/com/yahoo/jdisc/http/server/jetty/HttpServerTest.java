@@ -91,8 +91,8 @@ import static com.yahoo.jdisc.http.HttpHeaders.Names.X_DISABLE_CHUNKING;
 import static com.yahoo.jdisc.http.HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
 import static com.yahoo.jdisc.http.HttpHeaders.Values.CLOSE;
 import static com.yahoo.jdisc.http.server.jetty.SimpleHttpClient.ResponseValidator;
-import static com.yahoo.security.KeyAlgorithm.RSA;
-import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_RSA;
+import static com.yahoo.security.KeyAlgorithm.EC;
+import static com.yahoo.security.SignatureAlgorithm.SHA256_WITH_ECDSA;
 import static org.cthul.matchers.CthulMatchers.containsPattern;
 import static org.cthul.matchers.CthulMatchers.matchesPattern;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -965,12 +965,12 @@ public class HttpServerTest {
     }
 
     private static void generatePrivateKeyAndCertificate(Path privateKeyFile, Path certificateFile) throws IOException {
-        KeyPair keyPair = KeyUtils.generateKeypair(RSA, 2048);
+        KeyPair keyPair = KeyUtils.generateKeypair(EC);
         Files.writeString(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()));
 
         X509Certificate certificate = X509CertificateBuilder
                 .fromKeypair(
-                        keyPair, new X500Principal("CN=localhost"), Instant.EPOCH, Instant.EPOCH.plus(100_000, ChronoUnit.DAYS), SHA256_WITH_RSA, BigInteger.ONE)
+                        keyPair, new X500Principal("CN=localhost"), Instant.EPOCH, Instant.EPOCH.plus(100_000, ChronoUnit.DAYS), SHA256_WITH_ECDSA, BigInteger.ONE)
                 .build();
         Files.writeString(certificateFile, X509CertificateUtils.toPem(certificate));
     }
@@ -981,11 +981,11 @@ public class HttpServerTest {
         X509Certificate rootCertificate = X509CertificateUtils.fromPem(Files.readString(rootCertificateFile));
         PrivateKey privateKey = KeyUtils.fromPemEncodedPrivateKey(Files.readString(rootPrivateKeyFile));
 
-        KeyPair keyPair = KeyUtils.generateKeypair(RSA, 2048);
+        KeyPair keyPair = KeyUtils.generateKeypair(EC);
         Files.writeString(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()));
-        Pkcs10Csr csr = Pkcs10CsrBuilder.fromKeypair(new X500Principal("CN=myclient"), keyPair, SHA256_WITH_RSA).build();
+        Pkcs10Csr csr = Pkcs10CsrBuilder.fromKeypair(new X500Principal("CN=myclient"), keyPair, SHA256_WITH_ECDSA).build();
         X509Certificate certificate = X509CertificateBuilder
-                .fromCsr(csr, rootCertificate.getSubjectX500Principal(), Instant.EPOCH, notAfter, privateKey, SHA256_WITH_RSA, BigInteger.ONE)
+                .fromCsr(csr, rootCertificate.getSubjectX500Principal(), Instant.EPOCH, notAfter, privateKey, SHA256_WITH_ECDSA, BigInteger.ONE)
                 .build();
         Files.writeString(certificateFile, X509CertificateUtils.toPem(certificate));
     }
