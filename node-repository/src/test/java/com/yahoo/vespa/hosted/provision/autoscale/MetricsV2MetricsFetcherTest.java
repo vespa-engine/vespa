@@ -77,8 +77,8 @@ public class MetricsV2MetricsFetcherTest {
 
         {
             httpClient.cannedResponse = cannedResponseForApplication2;
-            try (Mutex lock = tester.nodeRepository().nodes().lock(application1)) {
-                tester.nodeRepository().nodes().write(tester.nodeRepository().nodes().getNodes(application2, Node.State.active)
+            try (Mutex lock = tester.nodeRepository().lock(application1)) {
+                tester.nodeRepository().write(tester.nodeRepository().getNodes(application2, Node.State.active)
                         .get(0).retire(tester.clock().instant()), lock);
             }
             List<Pair<String, MetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application2).get().metrics());

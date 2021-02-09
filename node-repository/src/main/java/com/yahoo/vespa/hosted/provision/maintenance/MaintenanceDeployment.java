@@ -104,7 +104,7 @@ class MaintenanceDeployment implements Closeable {
     private Optional<Mutex> tryLock(ApplicationId application, NodeRepository nodeRepository) {
         try {
             // Use a short lock to avoid interfering with change deployments
-            return Optional.of(nodeRepository.nodes().lock(application, Duration.ofSeconds(1)));
+            return Optional.of(nodeRepository.lock(application, Duration.ofSeconds(1)));
         }
         catch (ApplicationLockException e) {
             return Optional.empty();
@@ -116,7 +116,7 @@ class MaintenanceDeployment implements Closeable {
                                                Deployer deployer,
                                                NodeRepository nodeRepository) {
         if (lock.isEmpty()) return Optional.empty();
-        if (nodeRepository.nodes().getNodes(application, Node.State.active).isEmpty()) return Optional.empty();
+        if (nodeRepository.getNodes(application, Node.State.active).isEmpty()) return Optional.empty();
         return deployer.deployFromLocalActive(application);
     }
 
@@ -168,7 +168,7 @@ class MaintenanceDeployment implements Closeable {
                     if ( ! deployment.prepare()) return false;
                     if (verifyTarget) {
                         expectedNewNode =
-                                nodeRepository.nodes().getNodes(application, Node.State.reserved).stream()
+                                nodeRepository.getNodes(application, Node.State.reserved).stream()
                                               .filter(n -> !n.hostname().equals(node.hostname()))
                                               .filter(n -> n.allocation().get().membership().cluster().id().equals(node.allocation().get().membership().cluster().id()))
                                               .findAny();
@@ -185,15 +185,15 @@ class MaintenanceDeployment implements Closeable {
                     markWantToRetire(node, false, agent, nodeRepository); // Necessary if this failed, no-op otherwise
 
                     // Immediately clean up if we reserved the node but could not activate or reserved a node on the wrong host
-                    expectedNewNode.flatMap(node -> nodeRepository.nodes().getNode(node.hostname(), Node.State.reserved))
-                                   .ifPresent(node -> nodeRepository.nodes().deallocate(node, agent, "Expired by " + agent));
+                    expectedNewNode.flatMap(node -> nodeRepository.getNode(node.hostname(), Node.State.reserved))
+                                   .ifPresent(node -> nodeRepository.deallocate(node, agent, "Expired by " + agent));
                 }
             }
         }
 
         /** Returns true only if this operation changes the state of the wantToRetire flag */
         private boolean markWantToRetire(Node node, boolean wantToRetire, Agent agent, NodeRepository nodeRepository) {
-            Optional<NodeMutex> nodeMutex = nodeRepository.nodes().lockAndGet(node);
+            Optional<NodeMutex> nodeMutex = nodeRepository.lockAndGet(node);
             if (nodeMutex.isEmpty()) return false;
 
             try (var nodeLock = nodeMutex.get()) {
@@ -201,7 +201,7 @@ class MaintenanceDeployment implements Closeable {
 
                 if (nodeLock.node().status().wantToRetire() == wantToRetire) return false;
 
-                nodeRepository.nodes().write(nodeLock.node().withWantToRetire(wantToRetire, agent, nodeRepository.clock().instant()), nodeLock);
+                nodeRepository.write(nodeLock.node().withWantToRetire(wantToRetire, agent, nodeRepository.clock().instant()), nodeLock);
                 return true;
             }
         }

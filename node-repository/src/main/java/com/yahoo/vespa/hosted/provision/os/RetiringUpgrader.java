@@ -35,7 +35,7 @@ public class RetiringUpgrader implements Upgrader {
 
     @Override
     public void upgradeTo(OsVersionTarget target) {
-        NodeList allNodes = nodeRepository.nodes().list();
+        NodeList allNodes = nodeRepository.list();
         NodeList activeNodes = allNodes.state(Node.State.active).nodeType(target.nodeType());
         if (activeNodes.size() == 0) return; // No nodes eligible for upgrade
 
@@ -62,7 +62,7 @@ public class RetiringUpgrader implements Upgrader {
     /** Retire and deprovision given host and its children */
     private void retire(Node host, Version target, Instant now, NodeList allNodes) {
         if (!host.type().isHost()) throw new IllegalArgumentException("Cannot retire non-host " + host);
-        Optional<NodeMutex> nodeMutex = nodeRepository.nodes().lockAndGet(host);
+        Optional<NodeMutex> nodeMutex = nodeRepository.lockAndGet(host);
         if (nodeMutex.isEmpty()) return;
         try (var lock = nodeMutex.get()) {
             host = lock.node();
@@ -72,10 +72,10 @@ public class RetiringUpgrader implements Upgrader {
                      host.status().osVersion().current().map(Version::toFullString).orElse("<unset>") +
                      ", want " + target);
             NodeList children = allNodes.childrenOf(host);
-            nodeRepository.nodes().retire(NodeListFilter.from(children.asList()), Agent.RetiringUpgrader, now);
+            nodeRepository.retire(NodeListFilter.from(children.asList()), Agent.RetiringUpgrader, now);
             host = host.withWantToRetire(true, true, Agent.RetiringUpgrader, now);
             host = host.with(host.status().withOsVersion(host.status().osVersion().withWanted(Optional.of(target))));
-            nodeRepository.nodes().write(host, lock);
+            nodeRepository.write(host, lock);
             nodeRepository.osVersions().writeChange((change) -> change.withRetirementAt(now, nodeType));
         }
     }

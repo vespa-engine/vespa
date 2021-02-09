@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.provision.LockedNodeList;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Nodes;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
 
 import java.util.ArrayList;
@@ -137,7 +136,7 @@ public class NodePrioritizer {
         if ( !canAllocateNew) return;
 
         for (Node host : allNodes) {
-            if ( ! Nodes.canAllocateTenantNodeTo(host, dynamicProvisioning)) continue;
+            if ( ! NodeRepository.canAllocateTenantNodeTo(host, dynamicProvisioning)) continue;
             if (host.reservedTo().isPresent() && !host.reservedTo().get().equals(application.tenant())) continue;
             if (host.reservedTo().isPresent() && application.instance().isTester()) continue;
             if (host.exclusiveTo().isPresent()) continue; // Never allocate new nodes to exclusive hosts
@@ -222,7 +221,7 @@ public class NodePrioritizer {
         if (node.type() != NodeType.tenant || node.parentHostname().isEmpty()) return true;
         Optional<Node> parent = allNodes.parentOf(node);
         if (parent.isEmpty()) return false;
-        return Nodes.canAllocateTenantNodeTo(parent.get(), dynamicProvisioning);
+        return NodeRepository.canAllocateTenantNodeTo(parent.get(), dynamicProvisioning);
     }
 
 }

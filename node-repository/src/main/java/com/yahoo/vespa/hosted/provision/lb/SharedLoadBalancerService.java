@@ -34,7 +34,7 @@ public class SharedLoadBalancerService implements LoadBalancerService {
 
     @Override
     public LoadBalancerInstance create(LoadBalancerSpec spec, boolean force) {
-        var proxyNodes = new ArrayList<>(nodeRepository.nodes().getNodes(NodeType.proxy));
+        var proxyNodes = new ArrayList<>(nodeRepository.getNodes(NodeType.proxy));
         proxyNodes.sort(hostnameComparator);
 
         if (proxyNodes.size() == 0) {

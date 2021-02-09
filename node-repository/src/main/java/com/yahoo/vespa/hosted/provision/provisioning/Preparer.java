@@ -85,7 +85,7 @@ class Preparer {
      */
     private List<Node> findNodesInRemovableGroups(ApplicationId application, ClusterSpec requestedCluster, int wantedGroups) {
         List<Node> surplusNodes = new ArrayList<>(0);
-        for (Node node : nodeRepository.nodes().getNodes(application, Node.State.active)) {
+        for (Node node : nodeRepository.getNodes(application, Node.State.active)) {
             ClusterSpec nodeCluster = node.allocation().get().membership().cluster();
             if ( ! nodeCluster.id().equals(requestedCluster.id())) continue;
             if ( ! nodeCluster.type().equals(requestedCluster.type())) continue;
@@ -127,7 +127,7 @@ class Preparer {
      */
     private int findHighestIndex(ApplicationId application, ClusterSpec cluster) {
         int highestIndex = -1;
-        for (Node node : nodeRepository.nodes().getNodes(application, Node.State.allocatedStates().toArray(new Node.State[0]))) {
+        for (Node node : nodeRepository.getNodes(application, Node.State.allocatedStates().toArray(new Node.State[0]))) {
             ClusterSpec nodeCluster = node.allocation().get().membership().cluster();
             if ( ! nodeCluster.id().equals(cluster.id())) continue;
             if ( ! nodeCluster.type().equals(cluster.type())) continue;

@@ -23,7 +23,6 @@ import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.vespa.hosted.provision.node.Nodes;
 import com.yahoo.vespa.hosted.provision.testutils.MockNodeFlavors;
 import org.junit.Test;
 
@@ -120,14 +119,12 @@ public class InstanceValidatorTest {
     @Test
     public void accepts_valid_refresh_requests() {
         NodeRepository nodeRepository = mock(NodeRepository.class);
-        Nodes nodes = mock(Nodes.class);
-        when(nodeRepository.nodes()).thenReturn(nodes);
         InstanceValidator instanceValidator = new InstanceValidator(null, null, nodeRepository, new IdentityDocumentSigner(), vespaTenantDomain);
 
         List<Node> nodeList = createNodes(10);
         Node node = nodeList.get(0);
         nodeList = allocateNode(nodeList, node, applicationId);
-        when(nodes.getNodes()).thenReturn(nodeList);
+        when(nodeRepository.getNodes()).thenReturn(nodeList);
         String nodeIp = node.ipConfig().primary().stream().findAny().orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
         InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, ImmutableList.of(nodeIp));
 
@@ -137,15 +134,12 @@ public class InstanceValidatorTest {
     @Test
     public void rejects_refresh_on_ip_mismatch() {
         NodeRepository nodeRepository = mock(NodeRepository.class);
-        Nodes nodes = mock(Nodes.class);
-        when(nodeRepository.nodes()).thenReturn(nodes);
-
         InstanceValidator instanceValidator = new InstanceValidator(null, null, nodeRepository, new IdentityDocumentSigner(), vespaTenantDomain);
 
         List<Node> nodeList = createNodes(10);
         Node node = nodeList.get(0);
         nodeList = allocateNode(nodeList, node, applicationId);
-        when(nodes.getNodes()).thenReturn(nodeList);
+        when(nodeRepository.getNodes()).thenReturn(nodeList);
         String nodeIp = node.ipConfig().primary().stream().findAny().orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
 
         // Add invalid ip to list of ip addresses
@@ -157,14 +151,10 @@ public class InstanceValidatorTest {
     @Test
     public void rejects_refresh_when_node_is_not_allocated() {
         NodeRepository nodeRepository = mock(NodeRepository.class);
-        Nodes nodes = mock(Nodes.class);
-        when(nodeRepository.nodes()).thenReturn(nodes);
-
         InstanceValidator instanceValidator = new InstanceValidator(null, null, nodeRepository, new IdentityDocumentSigner(), vespaTenantDomain);
 
         List<Node> nodeList = createNodes(10);
-
-        when(nodes.getNodes()).thenReturn(nodeList);
+        when(nodeRepository.getNodes()).thenReturn(nodeList);
         InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, ImmutableList.of("::11"));
 
         assertFalse(instanceValidator.isValidRefresh(instanceConfirmation));

@@ -73,9 +73,9 @@ public class NodePatcher implements AutoCloseable {
             throw new UncheckedIOException("Error reading request body", e);
         }
 
-        this.patchedNodes = new PatchedNodes(nodeRepository.nodes().lockAndGetRequired(node));
+        this.patchedNodes = new PatchedNodes(nodeRepository.lockAndGetRequired(node));
         try {
-            this.memoizedNodes = Suppliers.memoize(() -> nodeRepository.nodes().list(patchedNodes.nodeMutex()));
+            this.memoizedNodes = Suppliers.memoize(() -> nodeRepository.list(patchedNodes.nodeMutex()));
         } catch (RuntimeException e) {
             patchedNodes.close();
             throw e;
@@ -312,7 +312,7 @@ public class NodePatcher implements AutoCloseable {
             if (!fetchedChildren) {
                 memoizedNodes.get()
                         .childrenOf(hostname)
-                        .forEach(node -> nodeRepository.nodes().lockAndGet(node)
+                        .forEach(node -> nodeRepository.lockAndGet(node)
                                 .ifPresent(nodeMutex -> nodes.put(nodeMutex.node().hostname(), nodeMutex)));
                 fetchedChildren = true;
             }
