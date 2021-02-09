@@ -864,60 +864,6 @@ public class ModelProvisioningTest {
         assertEquals(1, clusterControllers.getContainers().size()); // TODO: Expected 3 with this feature reactivated
     }
 
-    @Ignore // TODO: unignore when feature is enabled again
-    @Test
-    public void test2ContentNodesOn2ClustersWithContainerClusterProducesMixedClusterControllerCluster() {
-        String services =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                "<services>" +
-                "  <container version='1.0' id='container'>" +
-                "     <nodes count='3'>" +
-                "       <resources vcpu='1' memory='1Gb' disk='1Gb'/>" +
-                "     </nodes>" +
-                "  </container>" +
-                "  <content version='1.0' id='content1'>" +
-                "     <redundancy>2</redundancy>" +
-                "     <documents>" +
-                "       <document type='type1' mode='index'/>" +
-                "     </documents>" +
-                "     <nodes count='2'>" +
-                "       <resources vcpu='2' memory='2Gb' disk='2Gb'/>" +
-                "     </nodes>" +
-                "  </content>" +
-                "  <content version='1.0' id='content2'>" +
-                "     <redundancy>2</redundancy>" +
-                "     <documents>" +
-                "       <document type='type1' mode='index'/>" +
-                "     </documents>" +
-                "     <nodes count='2'>" +
-                "       <resources vcpu='4' memory='4Gb' disk='4Gb'/>" +
-                "     </nodes>" +
-                "  </content>" +
-                "</services>";
-
-        VespaModelTester tester = new VespaModelTester();
-        // use different flavors to make the test clearer
-        tester.addHosts(new NodeResources(1, 1, 1, 0.3), 3);
-        tester.addHosts(new NodeResources(2, 2, 2, 0.3),  2);
-        tester.addHosts(new NodeResources(4, 4, 4, 0.3),  2);
-        VespaModel model = tester.createModel(services, true);
-
-        ContentCluster cluster1 = model.getContentClusters().get("content1");
-        ClusterControllerContainerCluster clusterControllers1 = cluster1.getClusterControllers();
-        assertEquals(1, clusterControllers1.getContainers().size());
-        assertEquals("node-2-2-2-02",  clusterControllers1.getContainers().get(0).getHostName());
-        assertEquals("node-2-2-2-01",  clusterControllers1.getContainers().get(1).getHostName());
-        assertEquals("node-1-1-1-02", clusterControllers1.getContainers().get(2).getHostName());
-
-        ContentCluster cluster2 = model.getContentClusters().get("content2");
-        ClusterControllerContainerCluster clusterControllers2 = cluster2.getClusterControllers();
-        assertEquals(3, clusterControllers2.getContainers().size());
-        assertEquals("node-4-4-4-02",  clusterControllers2.getContainers().get(0).getHostName());
-        assertEquals("node-4-4-4-01",  clusterControllers2.getContainers().get(1).getHostName());
-        assertEquals("We do not pick the container used to supplement another cluster",
-                     "node-1-1-1-01", clusterControllers2.getContainers().get(2).getHostName());
-    }
-
     @Test
     public void testExplicitDedicatedClusterControllers() {
         String services =

@@ -22,7 +22,6 @@ import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.vespa.config.content.core.BucketspacesConfig;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.model.HostResource;
-import com.yahoo.vespa.model.Service;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerComponent;
@@ -33,9 +32,7 @@ import com.yahoo.vespa.model.admin.clustercontroller.ReindexingContext;
 import com.yahoo.vespa.model.admin.monitoring.Monitoring;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.NodesSpecification;
-import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.Container;
-import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.ContainerModel;
 import com.yahoo.vespa.model.content.ClusterControllerConfig;
 import com.yahoo.vespa.model.content.ClusterResourceLimits;
@@ -58,8 +55,6 @@ import org.w3c.dom.Element;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
@@ -68,8 +63,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toList;
 
 /**
  * A content cluster.
@@ -173,7 +166,7 @@ public class ContentCluster extends AbstractConfigProducer implements
 
             if (context.getParentProducer().getRoot() == null) return c;
 
-            addClusterControllers(containers, context, c.rootGroup, contentElement, c.clusterId, c);
+            addClusterControllers(context, c.rootGroup, contentElement, c.clusterId, c);
             return c;
         }
 
@@ -286,9 +279,11 @@ public class ContentCluster extends AbstractConfigProducer implements
             }
         }
 
-        private void addClusterControllers(Collection<ContainerModel> containers, ConfigModelContext context,
-                                           StorageGroup rootGroup, ModelElement contentElement,
-                                           String contentClusterName, ContentCluster contentCluster) {
+        private void addClusterControllers(ConfigModelContext context,
+                                           StorageGroup rootGroup,
+                                           ModelElement contentElement,
+                                           String contentClusterName,
+                                           ContentCluster contentCluster) {
             if (admin == null) return; // only in tests
             if (contentCluster.getPersistence() == null) return;
 
@@ -309,7 +304,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                                       .orElse(NodesSpecification.nonDedicated(3, context));
                 Collection<HostResource> hosts = nodesSpecification.isDedicated() ?
                                                  getControllerHosts(nodesSpecification, admin, clusterName, context) :
-                                                 drawControllerHosts(nodesSpecification.minResources().nodes(), rootGroup, containers);
+                                                 drawControllerHosts(nodesSpecification.minResources().nodes(), rootGroup);
                 clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone"),
                                                               hosts,
                                                               clusterName,
@@ -355,9 +350,9 @@ public class ContentCluster extends AbstractConfigProducer implements
             return nodesSpecification.provision(admin.hostSystem(), ClusterSpec.Type.admin, ClusterSpec.Id.from(clusterName), context.getDeployLogger(), false).keySet();
         }
 
-        private List<HostResource> drawControllerHosts(int count, StorageGroup rootGroup, Collection<ContainerModel> containers) {
-            List<HostResource> hosts = drawControllerHosts(count, false, rootGroup, containers);
-            List<HostResource> retiredHosts = drawControllerHosts(count, true, rootGroup, containers);
+        private List<HostResource> drawControllerHosts(int count, StorageGroup rootGroup) {
+            List<HostResource> hosts = drawControllerHosts(count, false, rootGroup);
+            List<HostResource> retiredHosts = drawControllerHosts(count, true, rootGroup);
 
             // preserve the cluster state in case all pre-existing controllers are on retired nodes
             List<HostResource> all = new ArrayList<>(hosts);
@@ -365,75 +360,11 @@ public class ContentCluster extends AbstractConfigProducer implements
             return all;
         }
 
-        private List<HostResource> drawControllerHosts(int count, boolean retired, StorageGroup rootGroup, Collection<ContainerModel> containers) {
+        private List<HostResource> drawControllerHosts(int count, boolean retired, StorageGroup rootGroup) {
             List<HostResource> hosts = drawContentHostsRecursively(count, retired, rootGroup);
-            // if (hosts.size() < count) // supply with containers TODO: Currently disabled due to leading to topology change problems
-            //     hosts.addAll(drawContainerHosts(count - hosts.size(), containers, new HashSet<>(hosts)));
             if (hosts.size() % 2 == 0 && ! hosts.isEmpty()) // ZK clusters of even sizes are less available (even in the size=2 case)
                 hosts = hosts.subList(0, hosts.size()-1);
             return hosts;
-        }
-
-        /**
-         * Draws <code>count</code> container nodes to use as cluster controllers, or as many as possible
-         * if less than <code>count</code> are available.
-         * 
-         * This will draw the same nodes each time it is 
-         * invoked if cluster names and node indexes are unchanged.
-         */
-        // DO NOT DELETE - see above
-        private List<HostResource> drawContainerHosts(int count, Collection<ContainerModel> containerClusters, 
-                                                      Set<HostResource> usedHosts) {
-            if (containerClusters.isEmpty()) return Collections.emptyList();
-
-            List<HostResource> allHosts = new ArrayList<>();
-            for (ApplicationContainerCluster cluster : clustersSortedByName(containerClusters))
-                allHosts.addAll(hostResourcesSortedByIndex(cluster));
-            
-            // Don't use hosts already selected to be assigned a cluster controllers as part of building this,
-            // and don't use hosts which already have one. One physical host may have many roles but can only
-            // have one cluster controller
-            List<HostResource> uniqueHostsWithoutClusterController = allHosts.stream()
-                    .filter(h -> ! usedHosts.contains(h))
-                    .filter(h -> ! hostHasClusterController(h.getHostname(), allHosts))
-                    .distinct()
-                    .collect(Collectors.toList());
-
-            return uniqueHostsWithoutClusterController.subList(0, Math.min(uniqueHostsWithoutClusterController.size(), count));
-        }
-        
-        private List<ApplicationContainerCluster> clustersSortedByName(Collection<ContainerModel> containerModels) {
-            return containerModels.stream()
-                    .map(ContainerModel::getCluster)
-                    .filter(cluster -> cluster instanceof ApplicationContainerCluster)
-                    .map(cluster -> (ApplicationContainerCluster) cluster)
-                    .sorted(Comparator.comparing(ContainerCluster::getName))
-                    .collect(Collectors.toList());
-        }
-
-        private List<HostResource> hostResourcesSortedByIndex(ApplicationContainerCluster cluster) {
-            return cluster.getContainers().stream()
-                    .sorted(Comparator.comparing(Container::index))
-                    .map(Container::getHostResource)
-                    .collect(Collectors.toList());
-        }
-
-        /** Returns whether any host having the given hostname has a cluster controller */
-        private boolean hostHasClusterController(String hostname, List<HostResource> hosts) {
-            for (HostResource host : hosts) {
-                if ( ! host.getHostname().equals(hostname)) continue;
-
-                if (hasClusterController(host))
-                    return true;
-            }
-            return false;
-        }
-
-        private boolean hasClusterController(HostResource host) {
-            for (Service service : host.getServices())
-                if (service instanceof ClusterControllerContainer)
-                    return true;
-            return false;
         }
 
         /**
@@ -462,7 +393,7 @@ public class ContentCluster extends AbstractConfigProducer implements
             return sortedHosts;
         }
 
-        private ClusterControllerContainerCluster createClusterControllers(AbstractConfigProducer parent,
+        private ClusterControllerContainerCluster createClusterControllers(AbstractConfigProducer<?> parent,
                                                                            Collection<HostResource> hosts,
                                                                            String name,
                                                                            boolean multitenant,
@@ -507,7 +438,7 @@ public class ContentCluster extends AbstractConfigProducer implements
 
     }
 
-    private ContentCluster(AbstractConfigProducer parent, String clusterId,
+    private ContentCluster(AbstractConfigProducer<?> parent, String clusterId,
                            Map<String, NewDocumentType> documentDefinitions,
                            Set<NewDocumentType> globallyDistributedDocuments,
                            String routingSelection,  Zone zone, boolean isHosted) {
