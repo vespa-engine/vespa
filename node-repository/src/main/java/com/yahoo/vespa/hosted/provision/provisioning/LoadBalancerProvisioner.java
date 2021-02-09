@@ -24,11 +24,13 @@ import com.yahoo.vespa.hosted.provision.lb.Real;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -166,12 +168,10 @@ public class LoadBalancerProvisioner {
 
     /** Idempotently provision a load balancer for given application and cluster */
     private void provision(ApplicationTransaction transaction, LoadBalancerId id, List<Node> nodes, boolean activate) {
-        var now = nodeRepository.clock().instant();
-        var loadBalancer = db.readLoadBalancer(id);
+        Instant now = nodeRepository.clock().instant();
+        Optional<LoadBalancer> loadBalancer = db.readLoadBalancer(id);
         if (loadBalancer.isEmpty() && activate) return; // Nothing to activate as this load balancer was never prepared
-
-        var force = loadBalancer.isPresent() && loadBalancer.get().state() != LoadBalancer.State.active;
-        var instance = provisionInstance(id, nodes, force);
+        LoadBalancerInstance instance = provisionInstance(id, realsOf(nodes), loadBalancer);
         LoadBalancer newLoadBalancer;
         if (loadBalancer.isEmpty()) {
             newLoadBalancer = new LoadBalancer(id, instance, LoadBalancer.State.reserved, now);
@@ -189,16 +189,14 @@ public class LoadBalancerProvisioner {
         provision(transaction, new LoadBalancerId(transaction.application(), clusterId), nodes, true);
     }
 
-    private LoadBalancerInstance provisionInstance(LoadBalancerId id, List<Node> nodes, boolean force) {
-        var reals = new LinkedHashSet<Real>();
-        for (var node : nodes) {
-            for (var ip : reachableIpAddresses(node)) {
-                reals.add(new Real(HostName.from(node.hostname()), ip));
-            }
-        }
+    /** Provision or reconfigure a load balancer instance, if necessary */
+    private LoadBalancerInstance provisionInstance(LoadBalancerId id, Set<Real> reals,
+                                                   Optional<LoadBalancer> currentLoadBalancer) {
+        if (hasReals(currentLoadBalancer, reals)) return currentLoadBalancer.get().instance();
         log.log(Level.FINE, "Creating " + id + ", targeting: " + reals);
         try {
-            return service.create(new LoadBalancerSpec(id.application(), id.cluster(), reals), force);
+            return service.create(new LoadBalancerSpec(id.application(), id.cluster(), reals),
+                                  allowEmptyReals(currentLoadBalancer));
         } catch (Exception e) {
             throw new LoadBalancerServiceException("Failed to (re)configure " + id + ", targeting: " +
                                                    reals + ". The operation will be retried on next deployment", e);
@@ -224,6 +222,17 @@ public class LoadBalancerProvisioner {
         return nodes.stream().collect(Collectors.groupingBy(node -> effectiveId(node.allocation().get().membership().cluster())));
     }
 
+    /** Returns real servers for given nodes */
+    private Set<Real> realsOf(List<Node> nodes) {
+        var reals = new LinkedHashSet<Real>();
+        for (var node : nodes) {
+            for (var ip : reachableIpAddresses(node)) {
+                reals.add(new Real(HostName.from(node.hostname()), ip));
+            }
+        }
+        return reals;
+    }
+
     /** Returns a list of the non-compactable IDs of given load balancer */
     private static List<String> withoutCompactableIds(LoadBalancerId id) {
         List<String> ids = new ArrayList<>(2);
@@ -234,6 +243,17 @@ public class LoadBalancerProvisioner {
             ids.add(id.application().instance().value());
         }
         return ids;
+    }
+
+    /** Returns whether load balancer has given reals */
+    private static boolean hasReals(Optional<LoadBalancer> loadBalancer, Set<Real> reals) {
+        if (loadBalancer.isEmpty()) return false;
+        return loadBalancer.get().instance().reals().equals(reals);
+    }
+
+    /** Returns whether to allow given load balancer to have no reals */
+    private static boolean allowEmptyReals(Optional<LoadBalancer> loadBalancer) {
+        return loadBalancer.isPresent() && loadBalancer.get().state() != LoadBalancer.State.active;
     }
 
     /** Find IP addresses reachable by the load balancer service */
