@@ -226,6 +226,8 @@
                 jackson-jaxrs-base-${jackson2.version}.jar,
                 jackson-jaxrs-json-provider-${jackson2.version}.jar,
                 jackson-module-jaxb-annotations-${jackson2.version}.jar,
+                jakarta.activation-api-1.2.1.jar, <!-- TODO track version in parent pom -->
+                jakarta.xml.bind-api-2.3.2.jar, <!-- TODO track version in parent pom -->
                 javassist-${javassist.version}.jar,
                 javax.ws.rs-api-${javax.ws.rs-api.version}.jar,
                 jersey-client-${jersey2.version}.jar,
