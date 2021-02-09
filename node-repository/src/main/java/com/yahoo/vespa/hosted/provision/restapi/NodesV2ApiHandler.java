@@ -130,27 +130,27 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         // Check paths to disallow illegal state changes
         if (path.startsWith("/nodes/v2/state/ready/") ||
             path.startsWith("/nodes/v2/state/availablefornewallocations/")) {
-            nodeRepository.markNodeAvailableForNewAllocation(lastElement(path), Agent.operator, "Readied through the nodes/v2 API");
+            nodeRepository.nodes().markNodeAvailableForNewAllocation(lastElement(path), Agent.operator, "Readied through the nodes/v2 API");
             return new MessageResponse("Moved " + lastElement(path) + " to ready");
         }
         else if (path.startsWith("/nodes/v2/state/failed/")) {
-            List<Node> failedNodes = nodeRepository.failRecursively(lastElement(path), Agent.operator, "Failed through the nodes/v2 API");
+            List<Node> failedNodes = nodeRepository.nodes().failRecursively(lastElement(path), Agent.operator, "Failed through the nodes/v2 API");
             return new MessageResponse("Moved " + hostnamesAsString(failedNodes) + " to failed");
         }
         else if (path.startsWith("/nodes/v2/state/parked/")) {
-            List<Node> parkedNodes = nodeRepository.parkRecursively(lastElement(path), Agent.operator, "Parked through the nodes/v2 API");
+            List<Node> parkedNodes = nodeRepository.nodes().parkRecursively(lastElement(path), Agent.operator, "Parked through the nodes/v2 API");
             return new MessageResponse("Moved " + hostnamesAsString(parkedNodes) + " to parked");
         }
         else if (path.startsWith("/nodes/v2/state/dirty/")) {
-            List<Node> dirtiedNodes = nodeRepository.deallocateRecursively(lastElement(path), Agent.operator, "Dirtied through the nodes/v2 API");
+            List<Node> dirtiedNodes = nodeRepository.nodes().deallocateRecursively(lastElement(path), Agent.operator, "Dirtied through the nodes/v2 API");
             return new MessageResponse("Moved " + hostnamesAsString(dirtiedNodes) + " to dirty");
         }
         else if (path.startsWith("/nodes/v2/state/active/")) {
-            nodeRepository.reactivate(lastElement(path), Agent.operator, "Reactivated through nodes/v2 API");
+            nodeRepository.nodes().reactivate(lastElement(path), Agent.operator, "Reactivated through nodes/v2 API");
             return new MessageResponse("Moved " + lastElement(path) + " to active");
         }
         else if (path.startsWith("/nodes/v2/state/breakfixed/")) {
-            List<Node> breakfixedNodes = nodeRepository.breakfixRecursively(lastElement(path), Agent.operator, "Breakfixed through the nodes/v2 API");
+            List<Node> breakfixedNodes = nodeRepository.nodes().breakfixRecursively(lastElement(path), Agent.operator, "Breakfixed through the nodes/v2 API");
             return new MessageResponse("Breakfixed " + hostnamesAsString(breakfixedNodes));
         }
 
@@ -162,7 +162,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         if (path.startsWith("/nodes/v2/node/")) {
             try (NodePatcher patcher = new NodePatcher(nodeFlavors, request.getData(), nodeFromRequest(request), nodeRepository)) {
                 var patchedNodes = patcher.apply();
-                nodeRepository.write(patchedNodes, patcher.nodeMutexOfHost());
+                nodeRepository.nodes().write(patchedNodes, patcher.nodeMutexOfHost());
 
                 return new MessageResponse("Updated " + patcher.nodeMutexOfHost().node().hostname());
             }
@@ -177,11 +177,11 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePOST(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/nodes/v2/command/restart")) {
-            int restartCount = nodeRepository.restart(toNodeFilter(request)).size();
+            int restartCount = nodeRepository.nodes().restart(toNodeFilter(request)).size();
             return new MessageResponse("Scheduled restart of " + restartCount + " matching nodes");
         }
         if (path.matches("/nodes/v2/command/reboot")) {
-            int rebootCount = nodeRepository.reboot(toNodeFilter(request)).size();
+            int rebootCount = nodeRepository.nodes().reboot(toNodeFilter(request)).size();
             return new MessageResponse("Scheduled reboot of " + rebootCount + " matching nodes");
         }
         if (path.matches("/nodes/v2/node")) {
@@ -208,14 +208,14 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse deleteNode(String hostname) {
-        Optional<NodeMutex> nodeMutex = nodeRepository.lockAndGet(hostname);
+        Optional<NodeMutex> nodeMutex = nodeRepository.nodes().lockAndGet(hostname);
         if (nodeMutex.isEmpty()) throw new NotFoundException("No node with hostname '" + hostname + "'");
         try (var lock = nodeMutex.get()) {
             if (lock.node().state() == Node.State.deprovisioned) {
-                nodeRepository.forget(lock.node());
+                nodeRepository.nodes().forget(lock.node());
                 return new MessageResponse("Permanently removed " + hostname);
             } else {
-                List<Node> removedNodes = nodeRepository.removeRecursively(hostname);
+                List<Node> removedNodes = nodeRepository.nodes().removeRecursively(hostname);
                 return new MessageResponse("Removed " + removedNodes.stream().map(Node::hostname).collect(Collectors.joining(", ")));
             }
         }
@@ -223,13 +223,13 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
 
     private Node nodeFromRequest(HttpRequest request) {
         String hostname = lastElement(request.getUri().getPath());
-        return nodeRepository.getNode(hostname).orElseThrow(() ->
+        return nodeRepository.nodes().getNode(hostname).orElseThrow(() ->
                 new NotFoundException("No node found with hostname " + hostname));
     }
 
     public int addNodes(InputStream jsonStream) {
         List<Node> nodes = createNodesFromSlime(toSlime(jsonStream).get());
-        return nodeRepository.addNodes(nodes, Agent.operator).size();
+        return nodeRepository.nodes().addNodes(nodes, Agent.operator).size();
     }
 
     private Slime toSlime(InputStream jsonStream) {
@@ -435,7 +435,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         if (application.isEmpty())
             return ErrorResponse.notFoundError("No application '" + id + "'");
         Slime slime = ApplicationSerializer.toSlime(application.get(),
-                                                    nodeRepository.getNodes(id, Node.State.active),
+                                                    nodeRepository.nodes().getNodes(id, Node.State.active),
                                                     withPath("/nodes/v2/applications/" + id, uri));
         return new SlimeJsonResponse(slime);
     }

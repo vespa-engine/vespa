@@ -195,9 +195,9 @@ public class MockDeployer implements Deployer {
         public long activate() {
             lastDeployTimes.put(applicationId, clock.instant());
 
-            for (Node node : nodeRepository.list().owner(applicationId).state(Node.State.active).wantToRetire().asList()) {
-                try (NodeMutex lock = nodeRepository.lockAndGetRequired(node)) {
-                    nodeRepository.write(lock.node().retire(nodeRepository.clock().instant()), lock);
+            for (Node node : nodeRepository.nodes().list().owner(applicationId).state(Node.State.active).wantToRetire().asList()) {
+                try (NodeMutex lock = nodeRepository.nodes().lockAndGetRequired(node)) {
+                    nodeRepository.nodes().write(lock.node().retire(nodeRepository.clock().instant()), lock);
                 }
             }
             return redeployments++;

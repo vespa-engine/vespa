@@ -42,7 +42,7 @@ public abstract class NodeRepositoryMaintainer extends Maintainer {
 
     /** A utility to group active tenant nodes by application */
     protected Map<ApplicationId, List<Node>> activeNodesByApplication() {
-        return nodeRepository().list(Node.State.active)
+        return nodeRepository().nodes().list(Node.State.active)
                                .nodeType(NodeType.tenant)
                                .asList()
                                .stream()

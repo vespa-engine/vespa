@@ -49,7 +49,7 @@ public class AllocationOptimizer {
             limits = atLeast(minimumNodes,  limits);
 
         Optional<AllocatableClusterResources> bestAllocation = Optional.empty();
-        NodeList hosts = nodeRepository.list().hosts();
+        NodeList hosts = nodeRepository.nodes().list().hosts();
         for (int groups = limits.min().groups(); groups <= limits.max().groups(); groups++) {
             for (int nodes = limits.min().nodes(); nodes <= limits.max().nodes(); nodes++) {
                 if (nodes % groups != 0) continue;

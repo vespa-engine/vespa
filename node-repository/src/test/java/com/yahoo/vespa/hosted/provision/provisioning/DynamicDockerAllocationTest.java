@@ -69,7 +69,7 @@ public class DynamicDockerAllocationTest {
                                                                     .build();
         tester.makeReadyNodes(4, "host-small", NodeType.host, 32);
         tester.activateTenantHosts();
-        List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, State.active);
+        List<Node> dockerHosts = tester.nodeRepository().nodes().getNodes(NodeType.host, State.active);
         NodeResources flavor = new NodeResources(1, 4, 100, 1);
 
         // Application 1
@@ -90,7 +90,7 @@ public class DynamicDockerAllocationTest {
 
         // Assert that we have two spare nodes (two hosts that are don't have allocations)
         Set<String> hostsWithChildren = new HashSet<>();
-        for (Node node : tester.nodeRepository().list(State.active).nodeType(NodeType.tenant).not().state(State.inactive).not().retired()) {
+        for (Node node : tester.nodeRepository().nodes().list(State.active).nodeType(NodeType.tenant).not().state(State.inactive).not().retired()) {
             hostsWithChildren.add(node.parentHostname().get());
         }
         assertEquals(4 - spareCount, hostsWithChildren.size());
@@ -110,7 +110,7 @@ public class DynamicDockerAllocationTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(5, "host-small", NodeType.host, 32);
         tester.activateTenantHosts();
-        List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, State.active);
+        List<Node> dockerHosts = tester.nodeRepository().nodes().getNodes(NodeType.host, State.active);
         NodeResources resources = new NodeResources(1, 4, 100, 0.3);
 
         // Application 1
@@ -130,7 +130,7 @@ public class DynamicDockerAllocationTest {
 
         // App 2 and 3 should have been allocated to the same nodes - fail one of the parent hosts from there
         String parent = "host-1.yahoo.com";
-        tester.nodeRepository().failRecursively(parent, Agent.system, "Testing");
+        tester.nodeRepository().nodes().failRecursively(parent, Agent.system, "Testing");
 
         // Redeploy all applications
         deployApp(application1, clusterSpec1, resources, tester, 3);
@@ -139,7 +139,7 @@ public class DynamicDockerAllocationTest {
 
         Map<Integer, Integer> numberOfChildrenStat = new HashMap<>();
         for (Node host : dockerHosts) {
-            int nofChildren = tester.nodeRepository().list().childrenOf(host).size();
+            int nofChildren = tester.nodeRepository().nodes().list().childrenOf(host).size();
             if (!numberOfChildrenStat.containsKey(nofChildren)) {
                 numberOfChildrenStat.put(nofChildren, 0);
             }
@@ -202,7 +202,7 @@ public class DynamicDockerAllocationTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(2, "host-small", NodeType.host, 32);
         tester.activateTenantHosts();
-        List<Node> dockerHosts = tester.nodeRepository().getNodes(NodeType.host, State.active);
+        List<Node> dockerHosts = tester.nodeRepository().nodes().getNodes(NodeType.host, State.active);
         NodeResources flavor = new NodeResources(1, 4, 100, 1);
 
         // Application 1
@@ -216,7 +216,7 @@ public class DynamicDockerAllocationTest {
 
         // Assert that we have two spare nodes (two hosts that are don't have allocations)
         Set<String> hostsWithChildren = new HashSet<>();
-        for (Node node : tester.nodeRepository().list(State.active).nodeType(NodeType.tenant).not().state(State.inactive).not().retired()) {
+        for (Node node : tester.nodeRepository().nodes().list(State.active).nodeType(NodeType.tenant).not().state(State.inactive).not().retired()) {
             hostsWithChildren.add(node.parentHostname().get());
         }
         assertEquals(2, hostsWithChildren.size());
@@ -299,7 +299,7 @@ public class DynamicDockerAllocationTest {
     public void allocation_should_fail_when_host_is_not_in_allocatable_state() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeProvisionedNodes(3, "host-small", NodeType.host, 32).forEach(node ->
-                                                                                        tester.nodeRepository().fail(node.hostname(), Agent.system, getClass().getSimpleName()));
+                                                                                        tester.nodeRepository().nodes().fail(node.hostname(), Agent.system, getClass().getSimpleName()));
 
         ApplicationId application = ProvisioningTester.applicationId();
         tester.prepare(application, clusterSpec("myContent.t2.a2"), 2, 1, new NodeResources(1, 40, 100, 1));
@@ -315,7 +315,7 @@ public class DynamicDockerAllocationTest {
         List<HostSpec> hosts = tester.prepare(application, clusterSpec("myContent.t1.a1"), 2, 1, new NodeResources(1, 4, 100, 1));
         tester.activate(application, hosts);
 
-        List<Node> activeNodes = tester.nodeRepository().getNodes(application);
+        List<Node> activeNodes = tester.nodeRepository().nodes().getNodes(application);
         assertEquals(ImmutableSet.of("127.0.127.13", "::13"), activeNodes.get(0).ipConfig().primary());
         assertEquals(ImmutableSet.of("127.0.127.2", "::2"), activeNodes.get(1).ipConfig().primary());
     }
@@ -437,16 +437,16 @@ public class DynamicDockerAllocationTest {
 
         // Redeploy does not change allocation as a host with switch information is no better or worse than hosts
         // without switch information
-        List<Node> allocatedNodes = tester.nodeRepository().getNodes(app1);
+        List<Node> allocatedNodes = tester.nodeRepository().nodes().getNodes(app1);
         tester.activate(app1, tester.prepare(app1, cluster, Capacity.from(new ClusterResources(2, 1, resources))));
-        assertEquals("Allocation unchanged", allocatedNodes, tester.nodeRepository().getNodes(app1));
+        assertEquals("Allocation unchanged", allocatedNodes, tester.nodeRepository().nodes().getNodes(app1));
 
         // Initial hosts are attached to the same switch
         tester.patchNodes(hosts0, (host) -> host.withSwitchHostname(switch0));
 
         // Redeploy does not change allocation
         tester.activate(app1, tester.prepare(app1, cluster, Capacity.from(new ClusterResources(2, 1, resources))));
-        assertEquals("Allocation unchanged", allocatedNodes, tester.nodeRepository().getNodes(app1));
+        assertEquals("Allocation unchanged", allocatedNodes, tester.nodeRepository().nodes().getNodes(app1));
 
         // One regular host and one slow-disk host are provisioned on the same switch
         String switch1 = "switch1";
@@ -465,13 +465,13 @@ public class DynamicDockerAllocationTest {
         tester.assertSwitches(Set.of(switch0), app1, cluster.id());
 
         // A node is retired
-        tester.patchNode(tester.nodeRepository().list().owner(app1).asList().get(0),
+        tester.patchNode(tester.nodeRepository().nodes().list().owner(app1).asList().get(0),
                          (node) -> node.withWantToRetire(true, Agent.system, tester.clock().instant()));
 
         // Redeploy allocates new node on a distinct switch, and the host with slowest disk (cheapest) on that switch
         tester.activate(app1, tester.prepare(app1, cluster, Capacity.from(new ClusterResources(2, 1, resources))));
         tester.assertSwitches(Set.of(switch0, switch1), app1, cluster.id());
-        assertTrue("Host with slow disk on " + switch1 + " is chosen", tester.nodeRepository().list().owner(app1).state(State.active).stream()
+        assertTrue("Host with slow disk on " + switch1 + " is chosen", tester.nodeRepository().nodes().list().owner(app1).state(State.active).stream()
                                                                              .anyMatch(node -> node.hasParent(hostWithSlowDisk.hostname())));
 
         // Growing cluster picks new node on exclusive switch
@@ -515,14 +515,14 @@ public class DynamicDockerAllocationTest {
                 clusterSpec.with(Optional.of(ClusterSpec.Group.from(0))), index); // Need to add group here so that group is serialized in node allocation
         Node node1aAllocation = node1a.allocate(id, clusterMembership1, node1a.resources(), Instant.now());
 
-        tester.nodeRepository().addNodes(Collections.singletonList(node1aAllocation), Agent.system);
+        tester.nodeRepository().nodes().addNodes(Collections.singletonList(node1aAllocation), Agent.system);
         NestedTransaction transaction = new NestedTransaction().add(new CuratorTransaction(tester.getCurator()));
-        tester.nodeRepository().activate(Collections.singletonList(node1aAllocation), transaction);
+        tester.nodeRepository().nodes().activate(Collections.singletonList(node1aAllocation), transaction);
         transaction.commit();
     }
 
     private List<Node> findSpareCapacity(ProvisioningTester tester) {
-        List<Node> nodes = tester.nodeRepository().getNodes(State.values());
+        List<Node> nodes = tester.nodeRepository().nodes().getNodes(State.values());
         NodeList nl = NodeList.copyOf(nodes);
         return nodes.stream()
                     .filter(n -> n.type() == NodeType.host)

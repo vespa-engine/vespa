@@ -95,19 +95,19 @@ class AutoscalingTester {
     }
 
     public void makeReady(String hostname) {
-        Node node = nodeRepository().getNode(hostname).get();
+        Node node = nodeRepository().nodes().getNode(hostname).get();
         provisioningTester.patchNode(node, (n) -> n.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of())));
-        Node host = nodeRepository().getNode(node.parentHostname().get()).get();
+        Node host = nodeRepository().nodes().getNode(node.parentHostname().get()).get();
         host = host.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
         if (host.state() == Node.State.provisioned)
-            nodeRepository().setReady(List.of(host), Agent.system, getClass().getSimpleName());
+            nodeRepository().nodes().setReady(List.of(host), Agent.system, getClass().getSimpleName());
     }
 
     public void deactivateRetired(ApplicationId application, ClusterSpec cluster, ClusterResources resources) {
-        try (Mutex lock = nodeRepository().lock(application)){
-            for (Node node : nodeRepository().getNodes(application, Node.State.active)) {
+        try (Mutex lock = nodeRepository().nodes().lock(application)){
+            for (Node node : nodeRepository().nodes().getNodes(application, Node.State.active)) {
                 if (node.allocation().get().membership().retired())
-                    nodeRepository().write(node.with(node.allocation().get().removable(true)), lock);
+                    nodeRepository().nodes().write(node.with(node.allocation().get().removable(true)), lock);
             }
         }
         deploy(application, cluster, resources);
@@ -125,7 +125,7 @@ class AutoscalingTester {
      */
     public void addCpuMeasurements(float value, float otherResourcesLoad,
                                    int count, ApplicationId applicationId) {
-        List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
+        List<Node> nodes = nodeRepository().nodes().getNodes(applicationId, Node.State.active);
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofMinutes(1));
@@ -156,7 +156,7 @@ class AutoscalingTester {
      */
     public void addMemMeasurements(float value, float otherResourcesLoad,
                                    int count, ApplicationId applicationId) {
-        List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
+        List<Node> nodes = nodeRepository().nodes().getNodes(applicationId, Node.State.active);
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofMinutes(1));
@@ -181,7 +181,7 @@ class AutoscalingTester {
 
     public void addMeasurements(float cpu, float memory, float disk, int generation, boolean inService, boolean stable,
                                 int count, ApplicationId applicationId) {
-        List<Node> nodes = nodeRepository().getNodes(applicationId, Node.State.active);
+        List<Node> nodes = nodeRepository().nodes().getNodes(applicationId, Node.State.active);
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofMinutes(1));
             for (Node node : nodes) {
@@ -200,22 +200,22 @@ class AutoscalingTester {
                                                            ClusterResources min, ClusterResources max) {
         Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId))
                                                   .withCluster(clusterId, false, min, max);
-        try (Mutex lock = nodeRepository().lock(applicationId)) {
+        try (Mutex lock = nodeRepository().nodes().lock(applicationId)) {
             nodeRepository().applications().put(application, lock);
         }
         return autoscaler.autoscale(application.clusters().get(clusterId),
-                                    nodeRepository().list(applicationId, Node.State.active));
+                                    nodeRepository().nodes().list(applicationId, Node.State.active));
     }
 
     public Autoscaler.Advice suggest(ApplicationId applicationId, ClusterSpec.Id clusterId,
                                                            ClusterResources min, ClusterResources max) {
         Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId))
                                                   .withCluster(clusterId, false, min, max);
-        try (Mutex lock = nodeRepository().lock(applicationId)) {
+        try (Mutex lock = nodeRepository().nodes().lock(applicationId)) {
             nodeRepository().applications().put(application, lock);
         }
         return autoscaler.suggest(application.clusters().get(clusterId),
-                                  nodeRepository().list(applicationId, Node.State.active));
+                                  nodeRepository().nodes().list(applicationId, Node.State.active));
     }
 
     public ClusterResources assertResources(String message,
