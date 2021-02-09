@@ -138,16 +138,6 @@ public class FleetControllerOptions implements Cloneable {
     // Resource type -> limit in [0, 1]
     public Map<String, Double> clusterFeedBlockLimit = Collections.emptyMap();
 
-    // TODO: Replace usage of this by usage where the nodes are explicitly passed (below)
-    public FleetControllerOptions(String clusterName) {
-        this.clusterName = clusterName;
-        maxTransitionTime.put(NodeType.DISTRIBUTOR, 0);
-        maxTransitionTime.put(NodeType.STORAGE, 5000);
-        nodes = new TreeSet<>();
-        for (int i = 0; i < 10; i++)
-            nodes.add(new ConfiguredNode(i, false));
-    }
-
     public FleetControllerOptions(String clusterName, Collection<ConfiguredNode> nodes) {
         this.clusterName = clusterName;
         maxTransitionTime.put(NodeType.DISTRIBUTOR, 0);
@@ -158,7 +148,6 @@ public class FleetControllerOptions implements Cloneable {
     /** Called on reconfiguration of this cluster */
     public void setStorageDistribution(Distribution distribution) {
         this.storageDistribution = distribution;
-        this.nodes = distribution.getNodes();
     }
 
     public Duration getMaxDeferredTaskVersionWaitTime() {

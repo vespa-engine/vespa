@@ -35,8 +35,6 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
     private Supervisor supervisor;
     private FleetController ctrl;
     private DummyCommunicator communicator;
-    private EventLog eventLog;
-    private int dummyConfigGeneration = 2;
 
     @Before
     public void setUp() {
@@ -52,7 +50,7 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
 
         communicator = new DummyCommunicator(nodes, timer);
         MetricUpdater metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex);
-        eventLog = new EventLog(timer, metricUpdater);
+        EventLog eventLog = new EventLog(timer, metricUpdater);
         ContentCluster cluster = new ContentCluster(options.clusterName, options.nodes, options.storageDistribution,
                 options.minStorageNodesUp, options.minRatioOfStorageNodesUp);
         NodeStateGatherer stateGatherer = new NodeStateGatherer(timer, timer, eventLog);
@@ -128,6 +126,7 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         assertTrue(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
 
         // Increase cheese allowance. Should now automatically unblock since reported usage is lower.
+        int dummyConfigGeneration = 2;
         ctrl.updateOptions(createOptions(mapOf(usage("cheese", 0.9), usage("wine", 0.4))), dummyConfigGeneration);
         ctrl.tick(); // Options propagation
         ctrl.tick(); // State recomputation

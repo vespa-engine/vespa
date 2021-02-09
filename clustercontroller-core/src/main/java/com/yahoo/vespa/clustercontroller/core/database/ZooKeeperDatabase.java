@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.database;
 
 import com.yahoo.vespa.clustercontroller.core.AnnotatedClusterState;
@@ -9,6 +9,8 @@ import com.yahoo.vespa.clustercontroller.core.rpc.SlimeClusterStateBundleCodec;
 import org.apache.zookeeper.*;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.data.ACL;
+
+import java.nio.charset.StandardCharsets;
 import java.util.logging.Level;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
@@ -23,8 +25,8 @@ import java.nio.charset.Charset;
 
 public class ZooKeeperDatabase extends Database {
 
-    private static Logger log = Logger.getLogger(ZooKeeperDatabase.class.getName());
-    private static Charset utf8 = Charset.forName("UTF8");
+    private static final Logger log = Logger.getLogger(ZooKeeperDatabase.class.getName());
+    private static final Charset utf8 = StandardCharsets.UTF_8;
     private static final List<ACL> acl = ZooDefs.Ids.OPEN_ACL_UNSAFE;
 
     private final String zooKeeperRoot;
@@ -93,7 +95,7 @@ public class ZooKeeperDatabase extends Database {
             }
             state = watchedEvent.getState();
         }
-    };
+    }
 
     public ZooKeeperDatabase(ContentCluster cluster, int nodeIndex, String address, int timeout, Database.DatabaseListener zksl) throws IOException, KeeperException, InterruptedException {
         this.nodeIndex = nodeIndex;
@@ -111,7 +113,7 @@ public class ZooKeeperDatabase extends Database {
         }
     }
 
-    private void createNode(String prefix, String nodename, byte value[]) throws KeeperException, InterruptedException {
+    private void createNode(String prefix, String nodename, byte[] value) throws KeeperException, InterruptedException {
         try{
             if (session.exists(prefix + nodename, false) != null) {
                 log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Zookeeper node '" + prefix + nodename + "' already exists. Not creating it");
@@ -126,7 +128,7 @@ public class ZooKeeperDatabase extends Database {
     }
 
     private void setupRoot() throws KeeperException, InterruptedException {
-        String pathElements[] = zooKeeperRoot.substring(1).split("/");
+        String[] pathElements = zooKeeperRoot.substring(1).split("/");
         String path = "";
         for (String elem : pathElements) {
             path += "/" + elem;
@@ -137,7 +139,7 @@ public class ZooKeeperDatabase extends Database {
         createNode(zooKeeperRoot, "starttimestamps", new byte[0]);
         createNode(zooKeeperRoot, "latestversion", Integer.valueOf(0).toString().getBytes(utf8));
         createNode(zooKeeperRoot, "published_state_bundle", new byte[0]); // TODO dedupe string constants
-        byte val[] = String.valueOf(nodeIndex).getBytes(utf8);
+        byte[] val = String.valueOf(nodeIndex).getBytes(utf8);
         deleteNodeIfExists(getMyIndexPath());
         log.log(Level.INFO, "Fleetcontroller " + nodeIndex +
                 ": Creating ephemeral master vote node with vote to self.");
@@ -184,7 +186,7 @@ public class ZooKeeperDatabase extends Database {
     }
 
     public boolean storeMasterVote(int wantedMasterIndex) throws InterruptedException {
-        byte val[] = String.valueOf(wantedMasterIndex).getBytes(utf8);
+        byte[] val = String.valueOf(wantedMasterIndex).getBytes(utf8);
         try{
             session.setData(getMyIndexPath(), val, -1);
             log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Stored new vote in ephemeral node. " + nodeIndex + " -> " + wantedMasterIndex);
@@ -197,7 +199,7 @@ public class ZooKeeperDatabase extends Database {
         return false;
     }
     public boolean storeLatestSystemStateVersion(int version) throws InterruptedException {
-        byte data[] = Integer.toString(version).getBytes(utf8);
+        byte[] data = Integer.toString(version).getBytes(utf8);
         try{
             log.log(Level.INFO, String.format("Fleetcontroller %d: Storing new cluster state version in ZooKeeper: %d", nodeIndex, version));
             var stat = session.setData(zooKeeperRoot + "latestversion", data, lastKnownStateVersionZNodeVersion);
@@ -247,7 +249,7 @@ public class ZooKeeperDatabase extends Database {
                 sb.append(node.toString()).append(':').append(toStore.serialize(true)).append('\n');
             }
         }
-        byte val[] = sb.toString().getBytes(utf8);
+        byte[] val = sb.toString().getBytes(utf8);
         try{
             log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Storing wanted states at '" + zooKeeperRoot + "wantedstates'");
             session.setData(zooKeeperRoot + "wantedstates", val, -1);

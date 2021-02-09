@@ -2,12 +2,14 @@
 package com.yahoo.vespa.clustercontroller.apps.clustercontroller;
 
 import com.yahoo.jdisc.Metric;
+import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vespa.clustercontroller.core.FleetController;
 import com.yahoo.vespa.clustercontroller.core.FleetControllerOptions;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -18,7 +20,7 @@ import static org.junit.Assert.assertNull;
  */
 public class ClusterControllerTest {
 
-    private FleetControllerOptions options = new FleetControllerOptions("storage");
+    private FleetControllerOptions options = new FleetControllerOptions("storage", Set.of(new ConfiguredNode(0, false)));
 
     private final Metric metric = new Metric() {
         @Override
@@ -31,7 +33,7 @@ public class ClusterControllerTest {
 
     @Before
     public void setUp() {
-        options = new FleetControllerOptions("storage");
+        options = new FleetControllerOptions("storage", Set.of(new ConfiguredNode(0, false)));
         options.zooKeeperServerAddress = null;
         options.slobrokConfigId = "raw:";
         options.slobrokConnectionSpecs = null;
