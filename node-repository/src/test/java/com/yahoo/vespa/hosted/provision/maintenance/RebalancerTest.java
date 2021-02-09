@@ -68,7 +68,7 @@ public class RebalancerTest {
         // --- Deploying a mem heavy application - allocated to the best option and causing increased skew
         tester.deployApp(memoryApp);
         assertEquals("Assigned to a flat node as that causes least skew", "flat",
-                     tester.nodeRepository().list().parentOf(tester.getNode(memoryApp)).get().flavor().name());
+                     tester.nodeRepository().nodes().list().parentOf(tester.getNode(memoryApp)).get().flavor().name());
         tester.maintain();
         assertEquals("Deploying the mem skewed app increased skew",
                      0.00734, tester.metric().values.get("hostedVespa.docker.skew").doubleValue(), 0.00001);
@@ -83,8 +83,8 @@ public class RebalancerTest {
 
         // --- Making the system stable enables rebalancing
         NestedTransaction tx = new NestedTransaction();
-        tester.nodeRepository().deactivate(List.of(cpuSkewedNode),
-                                           new ApplicationTransaction(new ProvisionLock(cpuApp, () -> {}), tx));
+        tester.nodeRepository().nodes().deactivate(List.of(cpuSkewedNode),
+                                                   new ApplicationTransaction(new ProvisionLock(cpuApp, () -> {}), tx));
         tx.commit();
 
         //     ... if activation fails when trying, we clean up the state
@@ -93,8 +93,8 @@ public class RebalancerTest {
         assertTrue("Want to retire is reset", tester.getNodes(Node.State.active).stream().noneMatch(node -> node.status().wantToRetire()));
         assertEquals("Reserved node was moved to dirty", 1, tester.getNodes(Node.State.dirty).size());
         String reservedHostname = tester.getNodes(Node.State.dirty).get(0).hostname();
-        tester.nodeRepository().setReady(reservedHostname, Agent.system, "Cleanup");
-        tester.nodeRepository().removeRecursively(reservedHostname);
+        tester.nodeRepository().nodes().setReady(reservedHostname, Agent.system, "Cleanup");
+        tester.nodeRepository().nodes().removeRecursively(reservedHostname);
 
         //     ... otherwise we successfully rebalance, again reducing skew
         tester.deployer().setFailActivate(false);
@@ -176,18 +176,18 @@ public class RebalancerTest {
         }
 
         List<Node> getNodes(ApplicationId applicationId, Node.State nodeState) {
-            return tester.nodeRepository().getNodes(applicationId, nodeState);
+            return tester.nodeRepository().nodes().getNodes(applicationId, nodeState);
         }
 
         boolean isNodeRetired(Node node) {
             return getNode(node.hostname()).get().allocation().get().membership().retired();
         }
 
-        Optional<Node> getNode(String hostname) { return tester.nodeRepository().getNode(hostname); }
+        Optional<Node> getNode(String hostname) { return tester.nodeRepository().nodes().getNode(hostname); }
 
-        List<Node> getNodes(Node.State nodeState) { return tester.nodeRepository().getNodes(nodeState); }
+        List<Node> getNodes(Node.State nodeState) { return tester.nodeRepository().nodes().getNodes(nodeState); }
 
-        Node getNode(ApplicationId applicationId) { return tester.nodeRepository().getNodes(applicationId).get(0); }
+        Node getNode(ApplicationId applicationId) { return tester.nodeRepository().nodes().getNodes(applicationId).get(0); }
 
         ManualClock clock() { return tester.clock(); }
 

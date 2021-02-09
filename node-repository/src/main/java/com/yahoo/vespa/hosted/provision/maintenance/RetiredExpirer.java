@@ -45,7 +45,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
 
     @Override
     protected boolean maintain() {
-        List<Node> activeNodes = nodeRepository().getNodes(Node.State.active);
+        List<Node> activeNodes = nodeRepository().nodes().getNodes(Node.State.active);
 
         Map<ApplicationId, List<Node>> retiredNodesByApplication = activeNodes.stream()
                 .filter(node -> node.allocation().isPresent())
@@ -62,7 +62,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
                 List<Node> nodesToRemove = retiredNodes.stream().filter(this::canRemove).collect(Collectors.toList());
                 if (nodesToRemove.isEmpty()) continue;
 
-                nodeRepository().setRemovable(application, nodesToRemove);
+                nodeRepository().nodes().setRemovable(application, nodesToRemove);
 
                 boolean success = deployment.activate().isPresent();
                 if ( ! success) return success;
@@ -83,7 +83,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
      */
     private boolean canRemove(Node node) {
         if (node.type().isHost()) {
-            if (nodeRepository()
+            if (nodeRepository().nodes()
                     .list().childrenOf(node).asList().stream()
                     .allMatch(child -> child.state() == Node.State.parked ||
                                        child.state() == Node.State.failed)) {

@@ -139,17 +139,17 @@ public class MockNodeRepository extends NodeRepository {
         nodes.add(Node.create("cfg2", ipConfig(202), "cfg2.yahoo.com", flavors.getFlavorOrThrow("default"), NodeType.config).build());
 
         // Ready all nodes, except 7 and 55
-        nodes = addNodes(nodes, Agent.system);
+        nodes = nodes().addNodes(nodes, Agent.system);
         nodes.remove(node7);
         nodes.remove(node55);
-        nodes = deallocate(nodes, Agent.system, getClass().getSimpleName());
-        setReady(nodes, Agent.system, getClass().getSimpleName());
+        nodes = nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
+        nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
 
-        fail(node5.hostname(), Agent.system, getClass().getSimpleName());
-        deallocateRecursively(node55.hostname(), Agent.system, getClass().getSimpleName());
+        nodes().fail(node5.hostname(), Agent.system, getClass().getSimpleName());
+        nodes().deallocateRecursively(node55.hostname(), Agent.system, getClass().getSimpleName());
 
-        fail("dockerhost6.yahoo.com", Agent.operator, getClass().getSimpleName());
-        removeRecursively("dockerhost6.yahoo.com");
+        nodes().fail("dockerhost6.yahoo.com", Agent.operator, getClass().getSimpleName());
+        nodes().removeRecursively("dockerhost6.yahoo.com");
 
         ApplicationId zoneApp = ApplicationId.from(TenantName.from("zoneapp"), ApplicationName.from("zoneapp"), InstanceName.from("zoneapp"));
         ClusterSpec zoneCluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build();
@@ -169,7 +169,7 @@ public class MockNodeRepository extends NodeRepository {
                                                                              clock().instant())));
         cluster1 = cluster1.withTarget(Optional.of(new ClusterResources(4, 1,
                                                                         new NodeResources(3, 16, 100, 1))));
-        try (Mutex lock = lock(app1Id)) {
+        try (Mutex lock = nodes().lock(app1Id)) {
             applications().put(app1.with(cluster1), lock);
         }
 
@@ -184,8 +184,8 @@ public class MockNodeRepository extends NodeRepository {
         List<Node> largeNodes = new ArrayList<>();
         largeNodes.add(Node.create("node13", ipConfig(13), "host13.yahoo.com", resources(10, 48, 500, 1, fast, local), NodeType.tenant).build());
         largeNodes.add(Node.create("node14", ipConfig(14), "host14.yahoo.com", resources(10, 48, 500, 1, fast, local), NodeType.tenant).build());
-        addNodes(largeNodes, Agent.system);
-        setReady(largeNodes, Agent.system, getClass().getSimpleName());
+        nodes().addNodes(largeNodes, Agent.system);
+        nodes().setReady(largeNodes, Agent.system, getClass().getSimpleName());
         ApplicationId app4 = ApplicationId.from(TenantName.from("tenant4"), ApplicationName.from("application4"), InstanceName.from("instance4"));
         ClusterSpec cluster4 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("id4")).vespaVersion("6.42").build();
         activate(provisioner.prepare(app4, cluster4, Capacity.from(new ClusterResources(2, 1, new NodeResources(10, 48, 500, 1)), false, true), null), app4, provisioner);

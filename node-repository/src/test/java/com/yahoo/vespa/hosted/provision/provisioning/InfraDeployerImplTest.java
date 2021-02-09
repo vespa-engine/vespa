@@ -123,7 +123,7 @@ public class InfraDeployerImplTest {
         addNode(5, Node.State.dirty, Optional.empty());
         addNode(6, Node.State.ready, Optional.empty());
         Node node7 = addNode(7, Node.State.active, Optional.of(target));
-        nodeRepository.setRemovable(application.getApplicationId(), List.of(node7));
+        nodeRepository.nodes().setRemovable(application.getApplicationId(), List.of(node7));
 
         infraDeployer.getDeployment(application.getApplicationId()).orElseThrow().activate();
 

@@ -75,7 +75,7 @@ public class MemoryMetricsDb implements MetricsDb {
     private void add(String hostname, MetricSnapshot snapshot) {
         NodeTimeseries timeseries = db.get(hostname);
         if (timeseries == null) { // new node
-            Optional<Node> node = nodeRepository.getNode(hostname);
+            Optional<Node> node = nodeRepository.nodes().getNode(hostname);
             if (node.isEmpty()) return;
             if (node.get().allocation().isEmpty()) return;
             timeseries = new NodeTimeseries(hostname, new ArrayList<>());
