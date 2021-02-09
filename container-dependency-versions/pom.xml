@@ -171,6 +171,18 @@
                 <artifactId>javax.activation</artifactId>
                 <version>1.2.0</version>
             </dependency>
+            <dependency>
+                <!-- Needed by jackson-module-jaxb-annotations -->
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>${jakarta-xml-bind-api.version}</version>
+            </dependency>
+            <dependency>
+                <!-- Needed by jackson-module-jaxb-annotations -->
+                <groupId>jakarta.activation</groupId>
+                <artifactId>jakarta.activation-api</artifactId>
+                <version>${jakarta-activation-api.version}</version>
+            </dependency>
             <!-- jaxb end -->
 
             <dependency>
@@ -460,6 +472,8 @@
         <hk2.osgi-resource-locator.version>1.0.1</hk2.osgi-resource-locator.version>
         <jackson2.version>2.12.1</jackson2.version>
         <jackson-databind.version>${jackson2.version}</jackson-databind.version>
+        <jakarta-activation-api.version>1.2.1</jakarta-activation-api.version>
+        <jakarta-xml-bind-api.version>2.3.2</jakarta-xml-bind-api.version>
         <javassist.version>3.20.0-GA</javassist.version>
         <javax.annotation-api.version>1.2</javax.annotation-api.version>
         <javax.validation-api.version>1.1.0.Final</javax.validation-api.version>
