@@ -5,11 +5,11 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vespa.clustercontroller.core.FleetController;
 import com.yahoo.vespa.clustercontroller.core.FleetControllerOptions;
-import com.yahoo.vespa.jdk8compat.Set;
 import org.junit.Before;
 import org.junit.Test;
 
 import java.util.Map;
+import java.util.Set;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
