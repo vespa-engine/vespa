@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.admin.clustercontroller;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -40,6 +41,7 @@ public class ClusterControllerContainer extends Container implements
     private static final ComponentSpecification REINDEXING_CONTROLLER_BUNDLE = new ComponentSpecification("clustercontroller-reindexer");
 
     private final Set<String> bundles = new TreeSet<>();
+    private final ModelContext.FeatureFlags featureFlags;
 
     public ClusterControllerContainer(
             AbstractConfigProducer<?> parent,
@@ -47,6 +49,7 @@ public class ClusterControllerContainer extends Container implements
             boolean runStandaloneZooKeeper,
             DeployState deployState) {
         super(parent, "" + index, index, deployState.isHosted());
+        this.featureFlags = deployState.featureFlags();
         addHandler("clustercontroller-status",
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StatusHandler",
                    "/clustercontroller-status/*",
@@ -144,6 +147,7 @@ public class ClusterControllerContainer extends Container implements
     @Override
     public void getConfig(ZookeeperServerConfig.Builder builder) {
         builder.myid(index());
+        builder.dynamicReconfiguration(featureFlags.reconfigurableZookeeperServer());
     }
 
     @Override
