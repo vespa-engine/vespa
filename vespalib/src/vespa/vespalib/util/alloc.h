@@ -105,6 +105,7 @@ public:
      */
     static Alloc alloc(size_t sz, size_t mmapLimit = MemoryAllocator::HUGEPAGE_SIZE, size_t alignment=0) noexcept;
     static Alloc alloc() noexcept;
+    static Alloc alloc_with_allocator(const MemoryAllocator* allocator) noexcept;
 private:
     Alloc(const MemoryAllocator * allocator, size_t sz) noexcept : _alloc(allocator->alloc(sz)), _allocator(allocator) { }
     Alloc(const MemoryAllocator * allocator) noexcept : _alloc(nullptr, 0), _allocator(allocator) { }

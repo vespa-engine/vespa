@@ -522,6 +522,12 @@ Alloc::alloc(size_t sz, size_t mmapLimit, size_t alignment) noexcept
     return Alloc(&AutoAllocator::getAllocator(mmapLimit, alignment), sz);
 }
 
+Alloc
+Alloc::alloc_with_allocator(const MemoryAllocator* allocator) noexcept
+{
+    return Alloc(allocator);
+}
+
 }
 
 }

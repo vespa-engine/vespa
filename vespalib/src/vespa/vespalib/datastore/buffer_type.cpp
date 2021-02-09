@@ -105,6 +105,12 @@ BufferTypeBase::onFree(ElemCount usedElems)
     _holdUsedElems -= usedElems;
 }
 
+const alloc::MemoryAllocator*
+BufferTypeBase::get_memory_allocator() const
+{
+    return nullptr;
+}
+
 void
 BufferTypeBase::clampMaxArrays(uint32_t maxArrays)
 {
