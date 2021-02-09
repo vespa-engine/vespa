@@ -91,7 +91,7 @@ public class GroupPreparer {
             if (nodeRepository.zone().getCloud().dynamicProvisioning()) {
                 final Version osVersion;
                 if (allocateOsRequirement.equals("rhel8")) {
-                    osVersion = new Version(8);
+                    osVersion = new Version(8, Integer.MAX_VALUE /* always use latest 8 version */, 0);
                 } else {
                     osVersion = nodeRepository.osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
                 }

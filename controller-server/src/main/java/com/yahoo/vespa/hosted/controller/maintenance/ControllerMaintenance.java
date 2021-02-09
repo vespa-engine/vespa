@@ -51,6 +51,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new SystemUpgrader(controller, intervals.systemUpgrader));
         maintainers.add(new JobRunner(controller, intervals.jobRunner));
         maintainers.add(new OsVersionStatusUpdater(controller, intervals.osVersionStatusUpdater));
+        maintainers.add(new OsUpgradeScheduler(controller, intervals.osUpgradeScheduler));
         maintainers.add(new ContactInformationMaintainer(controller, intervals.contactInformationMaintainer));
         maintainers.add(new NameServiceDispatcher(controller, intervals.nameServiceDispatcher));
         maintainers.add(new CostReportMaintainer(controller, intervals.costReportMaintainer, controller.serviceRegistry().costReportConsumer()));
@@ -99,6 +100,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration jobRunner;
         private final Duration osVersionStatusUpdater;
         private final Duration osUpgrader;
+        private final Duration osUpgradeScheduler;
         private final Duration contactInformationMaintainer;
         private final Duration nameServiceDispatcher;
         private final Duration costReportMaintainer;
@@ -124,6 +126,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.jobRunner = duration(90, SECONDS);
             this.osVersionStatusUpdater = duration(2, MINUTES);
             this.osUpgrader = duration(1, MINUTES);
+            this.osUpgradeScheduler = duration(3, HOURS);
             this.contactInformationMaintainer = duration(12, HOURS);
             this.nameServiceDispatcher = duration(10, SECONDS);
             this.costReportMaintainer = duration(2, HOURS);
