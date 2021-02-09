@@ -182,15 +182,17 @@ public class Application {
                                       .min(Comparator.naturalOrder());
     }
 
-    /** Returns the total quota usage for this application */
+    /** Returns the total quota usage for this application, excluding temporary deployments */
     public QuotaUsage quotaUsage() {
         return instances().values().stream()
+                .filter(instance -> !instance.id().instance().isTester()) // Exclude temporary deployments
                 .map(Instance::quotaUsage).reduce(QuotaUsage::add).orElse(QuotaUsage.none);
     }
 
-    /** Returns the total quota usage for this application, excluding one specific deployment */
+    /** Returns the total quota usage for this application, excluding one specific deployment (and temporary deployments) */
     public QuotaUsage quotaUsage(ApplicationId application, ZoneId zone) {
         return instances().values().stream()
+                .filter(instance -> !instance.id().instance().isTester()) // Exclude temporary deployments
                 .map(instance -> instance.quotaUsageExcluding(application, zone))
                 .reduce(QuotaUsage::add).orElse(QuotaUsage.none);
     }
