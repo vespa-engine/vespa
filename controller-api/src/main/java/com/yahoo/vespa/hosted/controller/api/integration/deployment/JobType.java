@@ -91,11 +91,15 @@ public enum JobType {
     productionAwsApNortheast1a  ("production-aws-ap-northeast-1a",
                             Map.of(Public, ZoneId.from("prod", "aws-ap-northeast-1a"))),
 
+    productionAwsEuWest1a  ("production-aws-eu-west-1a",
+                            Map.of(Public, ZoneId.from("prod", "aws-eu-west-1a"))),
+
     testAwsApNortheast1a   ("test-aws-ap-northeast-1a",
                             Map.of(Public, ZoneId.from("prod", "aws-ap-northeast-1a")), true),
 
     productionAwsUsWest2a  ("production-aws-us-west-2a",
-                            Map.of(main, ZoneId.from("prod"   , "aws-us-west-2a"))),
+                            Map.of(main,   ZoneId.from("prod", "aws-us-west-2a"),
+                                   Public, ZoneId.from("prod", "aws-us-west-2a"))),
 
     testAwsUsWest2a        ("test-aws-us-west-2a",
                             Map.of(main, ZoneId.from("prod"   , "aws-us-west-2a")), true),
