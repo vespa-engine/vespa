@@ -15,6 +15,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
@@ -65,14 +66,14 @@ public class InactiveAndFailedExpirerTest {
         // Inactive times out
         tester.advanceTime(Duration.ofMinutes(14));
         new InactiveExpirer(tester.nodeRepository(), Duration.ofMinutes(10), new TestMetric()).run();
-        assertEquals(0, tester.nodeRepository().nodes().getNodes(Node.State.inactive).size());
-        List<Node> dirty = tester.nodeRepository().nodes().getNodes(Node.State.dirty);
+        assertEquals(0, tester.nodeRepository().nodes().list(Node.State.inactive).size());
+        NodeList dirty = tester.nodeRepository().nodes().list(Node.State.dirty);
         assertEquals(2, dirty.size());
-        assertFalse(dirty.get(0).allocation().isPresent());
-        assertFalse(dirty.get(1).allocation().isPresent());
+        assertFalse(dirty.asList().get(0).allocation().isPresent());
+        assertFalse(dirty.asList().get(1).allocation().isPresent());
 
         // One node is set back to ready
-        Node ready = tester.nodeRepository().nodes().setReady(Collections.singletonList(dirty.get(0)), Agent.system, getClass().getSimpleName()).get(0);
+        Node ready = tester.nodeRepository().nodes().setReady(Collections.singletonList(dirty.asList().get(0)), Agent.system, getClass().getSimpleName()).get(0);
         assertEquals("Allocated history is removed on readying",
                 Arrays.asList(History.Event.Type.provisioned, History.Event.Type.readied),
                 ready.history().events().stream().map(History.Event::type).collect(Collectors.toList()));
@@ -108,11 +109,11 @@ public class InactiveAndFailedExpirerTest {
         // Inactive times out and node is moved to dirty
         tester.advanceTime(Duration.ofMinutes(14));
         new InactiveExpirer(tester.nodeRepository(), Duration.ofMinutes(10), new TestMetric()).run();
-        List<Node> dirty = tester.nodeRepository().nodes().getNodes(Node.State.dirty);
+        NodeList dirty = tester.nodeRepository().nodes().list(Node.State.dirty);
         assertEquals(2, dirty.size());
 
         // Reboot generation is increased
-        assertEquals(wantedRebootGeneration + 1, dirty.get(0).status().reboot().wanted());
+        assertEquals(wantedRebootGeneration + 1, dirty.first().get().status().reboot().wanted());
     }
 
     @Test
@@ -154,12 +155,12 @@ public class InactiveAndFailedExpirerTest {
         doThrow(new RuntimeException()).when(orchestrator).acquirePermissionToRemove(any());
         new RetiredExpirer(tester.nodeRepository(), tester.orchestrator(), deployer, new TestMetric(),
                            Duration.ofDays(30), Duration.ofMinutes(10)).run();
-        assertEquals(1, tester.nodeRepository().nodes().getNodes(Node.State.inactive).size());
+        assertEquals(1, tester.nodeRepository().nodes().list(Node.State.inactive).size());
 
         // Inactive times out and one node is moved to parked
         tester.advanceTime(Duration.ofMinutes(11)); // Trigger InactiveExpirer
         new InactiveExpirer(tester.nodeRepository(), Duration.ofMinutes(10), new TestMetric()).run();
-        assertEquals(1, tester.nodeRepository().nodes().getNodes(Node.State.parked).size());
+        assertEquals(1, tester.nodeRepository().nodes().list(Node.State.parked).size());
     }
 
     @Test
@@ -181,11 +182,10 @@ public class InactiveAndFailedExpirerTest {
 
         // See that nodes are moved to dirty immediately.
         new InactiveExpirer(tester.nodeRepository(), Duration.ofMinutes(10), new TestMetric()).run();
-        assertEquals(0, tester.nodeRepository().nodes().getNodes(Node.State.inactive).size());
-        List<Node> dirty = tester.nodeRepository().nodes().getNodes(Node.State.dirty);
+        assertEquals(0, tester.nodeRepository().nodes().list(Node.State.inactive).size());
+        NodeList dirty = tester.nodeRepository().nodes().list(Node.State.dirty);
         assertEquals(1, dirty.size());
-        assertFalse(dirty.get(0).allocation().isPresent());
-
+        assertFalse(dirty.first().get().allocation().isPresent());
     }
 
     @Test
@@ -206,7 +206,7 @@ public class InactiveAndFailedExpirerTest {
         tester.patchNodes(inactiveNodes, (node) -> node.withWantToRetire(true, true, Agent.system, tester.clock().instant()));
         tester.advanceTime(Duration.ofMinutes(11));
         new InactiveExpirer(tester.nodeRepository(), Duration.ofMinutes(10), new TestMetric()).run();
-        assertEquals(2, tester.nodeRepository().nodes().getNodes(Node.State.parked).size());
+        assertEquals(2, tester.nodeRepository().nodes().list(Node.State.parked).size());
     }
 
 }

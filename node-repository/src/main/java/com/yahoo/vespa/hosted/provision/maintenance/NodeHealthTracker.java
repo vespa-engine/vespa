@@ -58,7 +58,7 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
         // Update node last request events through ZooKeeper to collect request to all config servers.
         // We do this here ("lazily") to avoid writing to zk for each config request.
         try (Mutex lock = nodeRepository().nodes().lockUnallocated()) {
-            for (Node node : nodeRepository().nodes().getNodes(Node.State.ready)) {
+            for (Node node : nodeRepository().nodes().list(Node.State.ready)) {
                 Optional<Instant> lastLocalRequest = hostLivenessTracker.lastRequestFrom(node.hostname());
                 if (lastLocalRequest.isEmpty()) continue;
 

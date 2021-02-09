@@ -107,7 +107,7 @@ public class OsVersionsTest {
             tester.nodeRepository().nodes().fail(host.hostname(), Agent.system, OsVersions.class.getSimpleName());
             tester.nodeRepository().nodes().removeRecursively(host.hostname());
         }
-        assertEquals(10, tester.nodeRepository().nodes().getNodes(Node.State.deprovisioned).size());
+        assertEquals(10, tester.nodeRepository().nodes().list(Node.State.deprovisioned).size());
 
         // Set target
         var version1 = Version.fromString("7.1");

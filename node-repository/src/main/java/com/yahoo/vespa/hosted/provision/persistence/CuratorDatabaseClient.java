@@ -261,6 +261,8 @@ public class CuratorDatabaseClient {
     /**
      * Returns all nodes which are in one of the given states.
      * If no states are given this returns all nodes.
+     *
+     * @return the nodes in a mutable list owned by the caller
      */
     public List<Node> readNodes(Node.State ... states) {
         List<Node> nodes = new ArrayList<>();

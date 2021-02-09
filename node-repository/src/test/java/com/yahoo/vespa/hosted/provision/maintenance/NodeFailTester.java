@@ -212,7 +212,7 @@ public class NodeFailTester {
     }
 
     public void allNodesMakeAConfigRequestExcept(List<Node> deadNodes) {
-        for (Node node : nodeRepository.nodes().getNodes()) {
+        for (Node node : nodeRepository.nodes().list()) {
             if ( ! deadNodes.contains(node))
                 hostLivenessTracker.receivedRequestFrom(node.hostname());
         }

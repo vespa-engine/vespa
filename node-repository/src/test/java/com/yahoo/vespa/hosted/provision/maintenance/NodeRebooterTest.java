@@ -113,7 +113,7 @@ public class NodeRebooterTest {
 
     /** Set current reboot generation to the wanted reboot generation whenever it is larger (i.e record a reboot) */
     private void simulateReboot(NodeRepository nodeRepository) {
-        for (Node node : nodeRepository.nodes().getNodes(Node.State.ready, Node.State.active)) {
+        for (Node node : nodeRepository.nodes().list(Node.State.ready, Node.State.active)) {
             if (node.status().reboot().wanted() > node.status().reboot().current())
                 nodeRepository.nodes().write(node.withCurrentRebootGeneration(node.status().reboot().wanted(),
                                                                               nodeRepository.clock().instant()), () -> {});
@@ -129,7 +129,7 @@ public class NodeRebooterTest {
     private void simulateOsUpgrade(NodeRepository nodeRepository) {
         var wantedOsVersion = nodeRepository.osVersions().targetFor(NodeType.host);
         if (wantedOsVersion.isEmpty()) return;
-        for (Node node : nodeRepository.nodes().getNodes(Node.State.ready, Node.State.active)) {
+        for (Node node : nodeRepository.nodes().list(Node.State.ready, Node.State.active)) {
             if (wantedOsVersion.get().isAfter(node.status().osVersion().current().orElse(Version.emptyVersion)))
                 nodeRepository.nodes().write(node.withCurrentOsVersion(wantedOsVersion.get(), nodeRepository.clock().instant()),
                                              () -> {});

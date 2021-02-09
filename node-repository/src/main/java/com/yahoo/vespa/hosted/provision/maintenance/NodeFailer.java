@@ -129,7 +129,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                         clock().instant().minus(downTimeLimit).minus(nodeRequestInterval);
 
         Map<Node, String> nodesByFailureReason = new HashMap<>();
-        for (Node node : nodeRepository().nodes().getNodes(Node.State.ready)) {
+        for (Node node : nodeRepository().nodes().list(Node.State.ready)) {
             if (expectConfigRequests(node) && ! hasNodeRequestedConfigAfter(node, oldestAcceptableRequestTime)) {
                 nodesByFailureReason.put(node, "Not receiving config requests from node");
             } else {
@@ -148,7 +148,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     }
 
     private Map<Node, String> getActiveNodesByFailureReason() {
-        List<Node> activeNodes = nodeRepository().nodes().getNodes(Node.State.active);
+        NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
         Instant graceTimeEnd = clock().instant().minus(downTimeLimit);
         Map<Node, String> nodesByFailureReason = new HashMap<>();
         for (Node node : activeNodes) {
@@ -224,7 +224,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     }
 
     /** Is the node and all active children suspended? */
-    private boolean hostSuspended(Node node, List<Node> activeNodes) {
+    private boolean hostSuspended(Node node, NodeList activeNodes) {
         if (!nodeSuspended(node)) return false;
         if (node.parentHostname().isPresent()) return true; // optimization
         return activeNodes.stream()
@@ -303,7 +303,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     private boolean throttle(Node node) {
         if (throttlePolicy == ThrottlePolicy.disabled) return false;
         Instant startOfThrottleWindow = clock().instant().minus(throttlePolicy.throttleWindow);
-        List<Node> nodes = nodeRepository().nodes().getNodes();
+        NodeList nodes = nodeRepository().nodes().list();
         NodeList recentlyFailedNodes = nodes.stream()
                                             .filter(n -> n.state() == Node.State.failed)
                                             .filter(n -> n.history().hasEventAfter(History.Event.Type.failed, startOfThrottleWindow))

@@ -108,7 +108,7 @@ public class PeriodicApplicationMaintainerTest {
         fixture.activate();
 
         // Freeze active nodes to simulate an application being deleted during a maintenance run
-        List<Node> frozenActiveNodes = nodeRepository.nodes().getNodes(Node.State.active);
+        NodeList frozenActiveNodes = nodeRepository.nodes().list(Node.State.active);
 
         // Remove one application without letting the application maintainer know about it
         fixture.remove(fixture.app2);
@@ -261,9 +261,9 @@ public class PeriodicApplicationMaintainerTest {
     
     private static class TestablePeriodicApplicationMaintainer extends PeriodicApplicationMaintainer {
 
-        private List<Node> overriddenNodesNeedingMaintenance;
+        private NodeList overriddenNodesNeedingMaintenance;
 
-        void setOverriddenNodesNeedingMaintenance(List<Node> overriddenNodesNeedingMaintenance) {
+        void setOverriddenNodesNeedingMaintenance(NodeList overriddenNodesNeedingMaintenance) {
             this.overriddenNodesNeedingMaintenance = overriddenNodesNeedingMaintenance;
         }
 
@@ -273,7 +273,7 @@ public class PeriodicApplicationMaintainerTest {
         }
 
         @Override
-        protected List<Node> nodesNeedingMaintenance() {
+        protected NodeList nodesNeedingMaintenance() {
             return overriddenNodesNeedingMaintenance != null
                     ? overriddenNodesNeedingMaintenance
                     : super.nodesNeedingMaintenance();

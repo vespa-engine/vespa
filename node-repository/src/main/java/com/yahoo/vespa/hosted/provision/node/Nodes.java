@@ -75,15 +75,6 @@ public class Nodes {
     }
 
     /**
-     * Returns all nodes in any of the given states.
-     *
-     * @param inState the states to return nodes from. If no states are given, all nodes of the given type are returned
-     * @return the node, or empty if it was not found in any of the given states
-     */
-    public List<Node> getNodes(Node.State... inState) {
-        return new ArrayList<>(db.readNodes(inState));
-    }
-    /**
      * Finds and returns the nodes of the given type in any of the given states.
      *
      * @param type the node type to return
@@ -94,11 +85,20 @@ public class Nodes {
         return db.readNodes(inState).stream().filter(node -> node.type().equals(type)).collect(Collectors.toList());
     }
 
-    /** Returns a filterable list of nodes in this repository in any of the given states */
+    /**
+     * Returns a list of nodes in this repository in any of the given states
+     *
+     * @param inState the states to return nodes from. If no states are given, all nodes of the given type are returned
+     */
     public NodeList list(Node.State... inState) {
-        return NodeList.copyOf(getNodes(inState));
+        return NodeList.copyOf(db.readNodes(inState));
     }
 
+    /**
+     * Returns a list of nodes in this repository for an application in any of the given states
+     *
+     * @param inState the states to return nodes from. If no states are given, all nodes of the given type are returned
+     */
     public NodeList list(ApplicationId application, Node.State... inState) {
         return NodeList.copyOf(getNodes(application, inState));
     }
@@ -110,7 +110,7 @@ public class Nodes {
 
     /** Returns a locked list of all nodes in this repository */
     public LockedNodeList list(Mutex lock) {
-        return new LockedNodeList(getNodes(), lock);
+        return new LockedNodeList(list().asList(), lock);
     }
 
     public List<Node> getNodes(ApplicationId id, Node.State... inState) { return db.readNodes(id, inState); }

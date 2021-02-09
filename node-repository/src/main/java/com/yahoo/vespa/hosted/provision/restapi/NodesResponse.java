@@ -116,7 +116,7 @@ class NodesResponse extends HttpResponse {
     /** Outputs all the nodes to a node array */
     private void nodesToSlime(Cursor parentObject) {
         Cursor nodeArray = parentObject.setArray("nodes");
-        toSlime(nodeRepository.nodes().getNodes(), nodeArray);
+        toSlime(nodeRepository.nodes().list().asList(), nodeArray);
     }
 
     private void toSlime(List<Node> nodes, Cursor array) {

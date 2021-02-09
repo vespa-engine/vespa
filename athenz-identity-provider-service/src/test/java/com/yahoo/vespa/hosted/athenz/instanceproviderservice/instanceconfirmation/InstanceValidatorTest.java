@@ -21,6 +21,7 @@ import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.athenz.identityprovider.client.IdentityDocumentSigner;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Nodes;
@@ -127,7 +128,7 @@ public class InstanceValidatorTest {
         List<Node> nodeList = createNodes(10);
         Node node = nodeList.get(0);
         nodeList = allocateNode(nodeList, node, applicationId);
-        when(nodes.getNodes()).thenReturn(nodeList);
+        when(nodes.list()).thenReturn(NodeList.copyOf(nodeList));
         String nodeIp = node.ipConfig().primary().stream().findAny().orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
         InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, ImmutableList.of(nodeIp));
 
@@ -145,7 +146,7 @@ public class InstanceValidatorTest {
         List<Node> nodeList = createNodes(10);
         Node node = nodeList.get(0);
         nodeList = allocateNode(nodeList, node, applicationId);
-        when(nodes.getNodes()).thenReturn(nodeList);
+        when(nodes.list()).thenReturn(NodeList.copyOf(nodeList));
         String nodeIp = node.ipConfig().primary().stream().findAny().orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
 
         // Add invalid ip to list of ip addresses
@@ -164,7 +165,7 @@ public class InstanceValidatorTest {
 
         List<Node> nodeList = createNodes(10);
 
-        when(nodes.getNodes()).thenReturn(nodeList);
+        when(nodes.list()).thenReturn(NodeList.copyOf(nodeList));
         InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, ImmutableList.of("::11"));
 
         assertFalse(instanceValidator.isValidRefresh(instanceConfirmation));

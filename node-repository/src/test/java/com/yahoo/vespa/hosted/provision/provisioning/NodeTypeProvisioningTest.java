@@ -265,7 +265,7 @@ public class NodeTypeProvisioningTest {
 
         // All the nodes that were marked with wantToRetire earlier are now dirty
         assertEquals(nodesToRetire.stream().map(Node::hostname).collect(Collectors.toSet()),
-                tester.nodeRepository().nodes().getNodes(Node.State.dirty).stream().map(Node::hostname).collect(Collectors.toSet()));
+                tester.nodeRepository().nodes().list(Node.State.dirty).stream().map(Node::hostname).collect(Collectors.toSet()));
     }
 
     private List<HostSpec> deployProxies(ApplicationId application, ProvisioningTester tester) {

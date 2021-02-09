@@ -7,6 +7,7 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
@@ -45,7 +46,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
 
     @Override
     protected boolean maintain() {
-        List<Node> activeNodes = nodeRepository().nodes().getNodes(Node.State.active);
+        NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
 
         Map<ApplicationId, List<Node>> retiredNodesByApplication = activeNodes.stream()
                 .filter(node -> node.allocation().isPresent())

@@ -522,11 +522,10 @@ public class DynamicDockerAllocationTest {
     }
 
     private List<Node> findSpareCapacity(ProvisioningTester tester) {
-        List<Node> nodes = tester.nodeRepository().nodes().getNodes(State.values());
-        NodeList nl = NodeList.copyOf(nodes);
+        NodeList nodes = tester.nodeRepository().nodes().list(State.values());
         return nodes.stream()
                     .filter(n -> n.type() == NodeType.host)
-                    .filter(n -> nl.childrenOf(n).size() == 0) // Nodes without children
+                    .filter(n -> nodes.childrenOf(n).size() == 0) // Nodes without children
                     .collect(Collectors.toList());
     }
 

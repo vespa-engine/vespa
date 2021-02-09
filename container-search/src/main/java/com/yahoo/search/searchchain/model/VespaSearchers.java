@@ -23,6 +23,7 @@ import java.util.Set;
  */
 @SuppressWarnings({"rawtypes", "unchecked"})
 public class VespaSearchers {
+
     public static final Collection<ChainedComponentModel> vespaSearcherModels =
             toSearcherModels(
                     com.yahoo.prelude.querytransform.PhrasingSearcher.class,
@@ -34,7 +35,6 @@ public class VespaSearchers {
                     com.yahoo.prelude.searcher.PosSearcher.class,
                     com.yahoo.prelude.semantics.SemanticSearcher.class,
                     com.yahoo.search.grouping.GroupingQueryParser.class);
-
 
     public static final Collection<ChainedComponentModel> nativeSearcherModels;
 
@@ -81,4 +81,5 @@ public class VespaSearchers {
         }
         return searcherModels;
     }
+
 }

@@ -109,7 +109,7 @@ public class ProvisioningTest {
         tester.remove(application1);
         assertEquals(tester.toHostNames(previouslyActive.not().container().asList()),
                      tester.toHostNames(tester.nodeRepository().nodes().getNodes(application1, Node.State.inactive)));
-        assertTrue(tester.nodeRepository().nodes().getNodes(Node.State.dirty).containsAll(previouslyActive.container().asList()));
+        assertTrue(tester.nodeRepository().nodes().list(Node.State.dirty).asList().containsAll(previouslyActive.container().asList()));
         assertEquals(0, tester.getNodes(application1, Node.State.active).size());
         assertTrue(tester.nodeRepository().applications().get(application1).isEmpty());
 
@@ -127,7 +127,7 @@ public class ProvisioningTest {
         tester.activate(application2, state2App2.allHosts);
 
         // deploy first app again
-        tester.nodeRepository().nodes().setReady(tester.nodeRepository().nodes().getNodes(Node.State.dirty), Agent.system, "recycled");
+        tester.nodeRepository().nodes().setReady(tester.nodeRepository().nodes().list(Node.State.dirty).asList(), Agent.system, "recycled");
         SystemState state7 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
         state7.assertEquals(state1);
         tester.activate(application1, state7.allHosts);
@@ -222,7 +222,7 @@ public class ProvisioningTest {
         SystemState state3 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
         tester.activate(application1, state3.allHosts);
         assertEquals("Superfluous container nodes are dirtyed",
-                     3-2 + 4-2, tester.nodeRepository().nodes().getNodes(Node.State.dirty).size());
+                     3-2 + 4-2, tester.nodeRepository().nodes().list(Node.State.dirty).size());
         assertEquals("Superfluous content nodes are retired",
                      4-3 + 5-3, tester.getNodes(application1, Node.State.active).retired().size());
 
@@ -245,7 +245,7 @@ public class ProvisioningTest {
         SystemState state5 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
         tester.activate(application1, state5.allHosts);
         assertEquals("Superfluous container nodes are also dirtyed",
-                     4-2 + 5-2 + 1 + 4-2, tester.nodeRepository().nodes().getNodes(Node.State.dirty).size());
+                     4-2 + 5-2 + 1 + 4-2, tester.nodeRepository().nodes().list(Node.State.dirty).size());
         assertEquals("Superfluous content nodes are retired",
                      5-3 + 6-3 - 1, tester.getNodes(application1, Node.State.active).retired().size());
 

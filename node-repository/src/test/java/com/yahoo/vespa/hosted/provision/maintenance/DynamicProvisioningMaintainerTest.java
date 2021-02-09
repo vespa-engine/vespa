@@ -20,6 +20,7 @@ import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
 import com.yahoo.vespa.flags.custom.SharedHost;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -88,7 +89,7 @@ public class DynamicProvisioningMaintainerTest {
 
         tester.maintainer.maintain();
         assertEquals(Set.of("host4", "host4-1"),
-                     tester.nodeRepository.nodes().getNodes(Node.State.failed).stream().map(Node::hostname).collect(Collectors.toSet()));
+                     tester.nodeRepository.nodes().list(Node.State.failed).stream().map(Node::hostname).collect(Collectors.toSet()));
     }
 
     @Test
@@ -123,7 +124,7 @@ public class DynamicProvisioningMaintainerTest {
                                        ClusterCapacity.class);
 
         assertEquals(0, tester.hostProvisioner.provisionedHosts.size());
-        assertEquals(11, tester.nodeRepository.nodes().getNodes().size());
+        assertEquals(11, tester.nodeRepository.nodes().list().size());
         assertTrue(tester.nodeRepository.nodes().getNode("host2").isPresent());
         assertTrue(tester.nodeRepository.nodes().getNode("host2-1").isPresent());
         assertTrue(tester.nodeRepository.nodes().getNode("host3").isPresent());
@@ -134,7 +135,7 @@ public class DynamicProvisioningMaintainerTest {
 
         assertEquals(2, tester.hostProvisioner.provisionedHosts.size());
         assertEquals(2, tester.provisionedHostsMatching(new NodeResources(48, 128, 1000, 10)));
-        List<Node> nodesAfter = tester.nodeRepository.nodes().getNodes();
+        NodeList nodesAfter = tester.nodeRepository.nodes().list();
         assertEquals(11, nodesAfter.size());  // 2 removed, 2 added
         assertTrue("Failed host 'host2' is deprovisioned", tester.nodeRepository.nodes().getNode("host2").isEmpty());
         assertTrue("Node on deprovisioned host removed", tester.nodeRepository.nodes().getNode("host2-1").isEmpty());
@@ -154,7 +155,7 @@ public class DynamicProvisioningMaintainerTest {
                 ClusterCapacity.class);
 
         assertEquals(0, tester.hostProvisioner.provisionedHosts.size());
-        assertEquals(11, tester.nodeRepository.nodes().getNodes().size());
+        assertEquals(11, tester.nodeRepository.nodes().list().size());
         assertTrue(tester.nodeRepository.nodes().getNode("host2").isPresent());
         assertTrue(tester.nodeRepository.nodes().getNode("host2-1").isPresent());
         assertTrue(tester.nodeRepository.nodes().getNode("host3").isPresent());
@@ -194,7 +195,7 @@ public class DynamicProvisioningMaintainerTest {
 
         assertEquals(2, tester.hostProvisioner.provisionedHosts.size());
         assertEquals(2, tester.provisionedHostsMatching(new NodeResources(48, 128, 1000, 10)));
-        assertEquals(10, tester.nodeRepository.nodes().getNodes().size());  // 3 removed, 2 added
+        assertEquals(10, tester.nodeRepository.nodes().list().size());  // 3 removed, 2 added
         assertTrue("preprovision capacity is prefered on shared hosts", tester.nodeRepository.nodes().getNode("host3").isEmpty());
         assertTrue(tester.nodeRepository.nodes().getNode("hostname100").isPresent());
         assertTrue(tester.nodeRepository.nodes().getNode("hostname101").isPresent());
@@ -210,7 +211,7 @@ public class DynamicProvisioningMaintainerTest {
         assertEquals("one provisioned host has been deprovisioned, so there are 2 -> 1 provisioned hosts",
                 1, tester.hostProvisioner.provisionedHosts.size());
         assertEquals(1, tester.provisionedHostsMatching(new NodeResources(48, 128, 1000, 10)));
-        assertEquals(9, tester.nodeRepository.nodes().getNodes().size());  // 4 removed, 2 added
+        assertEquals(9, tester.nodeRepository.nodes().list().size());  // 4 removed, 2 added
         if (tester.nodeRepository.nodes().getNode("hostname100").isPresent()) {
             assertTrue("hostname101 is superfluous and should have been deprovisioned",
                     tester.nodeRepository.nodes().getNode("hostname101").isEmpty());
@@ -224,7 +225,7 @@ public class DynamicProvisioningMaintainerTest {
     private void verifyFirstMaintain(DynamicProvisioningTester tester) {
         assertEquals(1, tester.hostProvisioner.provisionedHosts.size());
         assertEquals(1, tester.provisionedHostsMatching(new NodeResources(48, 128, 1000, 10)));
-        assertEquals(10, tester.nodeRepository.nodes().getNodes().size());  // 2 removed, 1 added
+        assertEquals(10, tester.nodeRepository.nodes().list().size());  // 2 removed, 1 added
         assertTrue("Failed host 'host2' is deprovisioned", tester.nodeRepository.nodes().getNode("host2").isEmpty());
         assertTrue("Node on deprovisioned host removed", tester.nodeRepository.nodes().getNode("host2-1").isEmpty());
         assertTrue("One 1-30-20-3 node fits on host3", tester.nodeRepository.nodes().getNode("host3").isPresent());
@@ -482,9 +483,9 @@ public class DynamicProvisioningMaintainerTest {
         }
 
         private void assertNodesUnchanged() {
-            List<Node> nodes = nodeRepository.nodes().getNodes();
+            NodeList nodes = nodeRepository.nodes().list();
             maintainer.maintain();
-            assertEquals("Nodes are unchanged after maintenance run", nodes, nodeRepository.nodes().getNodes());
+            assertEquals("Nodes are unchanged after maintenance run", nodes, nodeRepository.nodes().list());
         }
 
     }

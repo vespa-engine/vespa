@@ -413,8 +413,8 @@ public class DockerProvisioningTest {
         }
         else {
             assertEquals(0, tester.getNodes(app1, Node.State.inactive).size());
-            assertEquals(2, tester.nodeRepository().nodes().getNodes(Node.State.dirty).size());
-            tester.nodeRepository().nodes().setReady(tester.nodeRepository().nodes().getNodes(Node.State.dirty), Agent.system, "test");
+            assertEquals(2, tester.nodeRepository().nodes().list(Node.State.dirty).size());
+            tester.nodeRepository().nodes().setReady(tester.nodeRepository().nodes().list(Node.State.dirty).asList(), Agent.system, "test");
             tester.activate(app1, cluster1, Capacity.from(new ClusterResources(4, 1, r)));
         }
 
