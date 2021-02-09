@@ -188,7 +188,7 @@ public class DynamicDockerProvisionTest {
         ApplicationId app = ProvisioningTester.applicationId();
 
         Function<Node, Node> retireNode = node -> tester.patchNode(node, (n) -> n.withWantToRetire(true, Agent.system, Instant.now()));
-        Function<Integer, Node> getNodeInGroup = group -> tester.nodeRepository().nodes().getNodes(app).stream()
+        Function<Integer, Node> getNodeInGroup = group -> tester.nodeRepository().nodes().list(app).stream()
                 .filter(node -> node.allocation().get().membership().cluster().group().get().index() == group)
                 .findAny().orElseThrow();
 
@@ -209,7 +209,7 @@ public class DynamicDockerProvisionTest {
         tester.prepare(app, clusterSpec("content"), 8, 2, resources);
 
         // Verify that nodes have unique indices from 0..9
-        var indices = tester.nodeRepository().nodes().getNodes(app).stream()
+        var indices = tester.nodeRepository().nodes().list(app).stream()
                 .map(node -> node.allocation().get().membership().index())
                 .collect(Collectors.toSet());
         assertTrue(indices.containsAll(IntStream.range(0, 10).boxed().collect(Collectors.toList())));

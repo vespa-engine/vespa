@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import org.junit.Test;
 
@@ -33,7 +34,7 @@ public class AclProvisioningTest {
 
     @Test
     public void trusted_nodes_for_allocated_node() {
-        List<Node> configServers = tester.makeConfigServers(3, "d-1-4-10", Version.fromString("6.123.456"));
+        NodeList configServers = tester.makeConfigServers(3, "d-1-4-10", Version.fromString("6.123.456"));
 
         // Populate repo
         tester.makeReadyNodes(10, new NodeResources(1, 4, 10, 1));
@@ -55,14 +56,14 @@ public class AclProvisioningTest {
         Supplier<NodeAcl> nodeAcls = () -> node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
 
         // Trusted nodes are active nodes in same application, proxy nodes and config servers
-        assertAcls(List.of(activeNodes, proxyNodes, configServers, host),
+        assertAcls(List.of(activeNodes, proxyNodes, configServers.asList(), host),
                    Set.of("10.2.3.0/24", "10.4.5.0/24"),
                    List.of(nodeAcls.get()));
     }
 
     @Test
     public void trusted_nodes_for_unallocated_node() {
-        List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
+        NodeList configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         // Populate repo
         tester.makeReadyNodes(10, nodeResources);
@@ -77,12 +78,12 @@ public class AclProvisioningTest {
         List<Node> tenantNodes = tester.nodeRepository().nodes().getNodes(NodeType.tenant);
 
         // Trusted nodes are all proxy-, config-, and, tenant-nodes
-        assertAcls(List.of(proxyNodes, configServers, tenantNodes), List.of(nodeAcl));
+        assertAcls(List.of(proxyNodes, configServers.asList(), tenantNodes), List.of(nodeAcl));
     }
 
     @Test
     public void trusted_nodes_for_config_server() {
-        List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
+        NodeList configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         // Populate repo
         tester.makeReadyNodes(10, nodeResources);
@@ -98,12 +99,12 @@ public class AclProvisioningTest {
         NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
 
         // Trusted nodes is all tenant nodes, all proxy nodes, all config servers and load balancer subnets
-        assertAcls(List.of(tenantNodes, proxyNodes, configServers), Set.of("10.2.3.0/24", "10.4.5.0/24"), List.of(nodeAcl));
+        assertAcls(List.of(tenantNodes, proxyNodes, configServers.asList()), Set.of("10.2.3.0/24", "10.4.5.0/24"), List.of(nodeAcl));
     }
 
     @Test
     public void trusted_nodes_for_proxy() {
-        List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
+        NodeList configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         // Populate repo
         tester.makeReadyNodes(10, "default");
@@ -114,17 +115,17 @@ public class AclProvisioningTest {
         tester.deploy(zoneApplication, Capacity.fromRequiredNodeType(NodeType.proxy));
 
         // Get trusted nodes for first proxy node
-        List<Node> proxyNodes = tester.nodeRepository().nodes().getNodes(zoneApplication);
-        Node node = proxyNodes.get(0);
+        NodeList proxyNodes = tester.nodeRepository().nodes().list(zoneApplication);
+        Node node = proxyNodes.first().get();
         NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
 
         // Trusted nodes is all config servers and all proxy nodes
-        assertAcls(List.of(proxyNodes, configServers), List.of(nodeAcl));
+        assertAcls(List.of(proxyNodes.asList(), configServers.asList()), List.of(nodeAcl));
     }
 
     @Test
     public void trusted_nodes_for_children_of_docker_host() {
-        List<Node> configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
+        NodeList configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         // Populate repo
         List<Node> dockerHostNodes = tester.makeReadyNodes(2, "default", NodeType.host);
@@ -143,7 +144,7 @@ public class AclProvisioningTest {
                     .findFirst()
                     .orElseThrow(() -> new RuntimeException("Expected to find ACL for node " + dockerNode.hostname()));
             assertEquals(dockerHostNodeUnderTest.hostname(), dockerNode.parentHostname().get());
-            assertAcls(List.of(configServers, dockerNodes, List.of(dockerHostNodeUnderTest)), nodeAcl);
+            assertAcls(List.of(configServers.asList(), dockerNodes, List.of(dockerHostNodeUnderTest)), nodeAcl);
         }
     }
 

@@ -18,6 +18,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -102,8 +103,8 @@ public class NodeFailTester {
 
         tester.activate(app1, clusterApp1, capacity1);
         tester.activate(app2, clusterApp2, capacity2);
-        assertEquals(capacity1.minResources().nodes(), tester.nodeRepository.nodes().getNodes(app1, Node.State.active).size());
-        assertEquals(capacity2.minResources().nodes(), tester.nodeRepository.nodes().getNodes(app2, Node.State.active).size());
+        assertEquals(capacity1.minResources().nodes(), tester.nodeRepository.nodes().list(app1, Node.State.active).size());
+        assertEquals(capacity2.minResources().nodes(), tester.nodeRepository.nodes().list(app2, Node.State.active).size());
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
                 app1, new MockDeployer.ApplicationContext(app1, clusterApp1, capacity1),
@@ -133,9 +134,9 @@ public class NodeFailTester {
         tester.activate(app1, clusterApp1, capacity1);
         tester.activate(app2, clusterApp2, capacity2);
         assertEquals(Set.of(tester.nodeRepository.nodes().getNodes(NodeType.host)),
-                     Set.of(tester.nodeRepository.nodes().getNodes(tenantHostApp, Node.State.active)));
-        assertEquals(capacity1.minResources().nodes(), tester.nodeRepository.nodes().getNodes(app1, Node.State.active).size());
-        assertEquals(capacity2.minResources().nodes(), tester.nodeRepository.nodes().getNodes(app2, Node.State.active).size());
+                     Set.of(tester.nodeRepository.nodes().list(tenantHostApp, Node.State.active).asList()));
+        assertEquals(capacity1.minResources().nodes(), tester.nodeRepository.nodes().list(app1, Node.State.active).size());
+        assertEquals(capacity2.minResources().nodes(), tester.nodeRepository.nodes().list(app2, Node.State.active).size());
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
                 tenantHostApp, new MockDeployer.ApplicationContext(tenantHostApp, clusterNodeAdminApp, allHosts),
@@ -288,7 +289,7 @@ public class NodeFailTester {
     }
 
     /** Returns the node with the highest membership index from the given set of allocated nodes */
-    public Node highestIndex(List<Node> nodes) {
+    public Node highestIndex(NodeList nodes) {
         Node highestIndex = null;
         for (Node node : nodes) {
             if (highestIndex == null || node.allocation().get().membership().index() >

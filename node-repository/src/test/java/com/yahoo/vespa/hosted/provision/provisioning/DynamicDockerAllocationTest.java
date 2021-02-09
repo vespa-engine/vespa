@@ -315,9 +315,9 @@ public class DynamicDockerAllocationTest {
         List<HostSpec> hosts = tester.prepare(application, clusterSpec("myContent.t1.a1"), 2, 1, new NodeResources(1, 4, 100, 1));
         tester.activate(application, hosts);
 
-        List<Node> activeNodes = tester.nodeRepository().nodes().getNodes(application);
-        assertEquals(ImmutableSet.of("127.0.127.13", "::13"), activeNodes.get(0).ipConfig().primary());
-        assertEquals(ImmutableSet.of("127.0.127.2", "::2"), activeNodes.get(1).ipConfig().primary());
+        NodeList activeNodes = tester.nodeRepository().nodes().list(application);
+        assertEquals(ImmutableSet.of("127.0.127.13", "::13"), activeNodes.asList().get(0).ipConfig().primary());
+        assertEquals(ImmutableSet.of("127.0.127.2", "::2"), activeNodes.asList().get(1).ipConfig().primary());
     }
 
     @Test
@@ -437,16 +437,16 @@ public class DynamicDockerAllocationTest {
 
         // Redeploy does not change allocation as a host with switch information is no better or worse than hosts
         // without switch information
-        List<Node> allocatedNodes = tester.nodeRepository().nodes().getNodes(app1);
+        NodeList allocatedNodes = tester.nodeRepository().nodes().list(app1);
         tester.activate(app1, tester.prepare(app1, cluster, Capacity.from(new ClusterResources(2, 1, resources))));
-        assertEquals("Allocation unchanged", allocatedNodes, tester.nodeRepository().nodes().getNodes(app1));
+        assertEquals("Allocation unchanged", allocatedNodes, tester.nodeRepository().nodes().list(app1));
 
         // Initial hosts are attached to the same switch
         tester.patchNodes(hosts0, (host) -> host.withSwitchHostname(switch0));
 
         // Redeploy does not change allocation
         tester.activate(app1, tester.prepare(app1, cluster, Capacity.from(new ClusterResources(2, 1, resources))));
-        assertEquals("Allocation unchanged", allocatedNodes, tester.nodeRepository().nodes().getNodes(app1));
+        assertEquals("Allocation unchanged", allocatedNodes, tester.nodeRepository().nodes().list(app1));
 
         // One regular host and one slow-disk host are provisioned on the same switch
         String switch1 = "switch1";

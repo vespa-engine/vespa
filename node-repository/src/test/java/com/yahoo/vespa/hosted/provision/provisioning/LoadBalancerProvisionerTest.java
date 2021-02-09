@@ -12,6 +12,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.Real;
@@ -136,7 +137,7 @@ public class LoadBalancerProvisionerTest {
         // Entire application is removed: Nodes and load balancer are deactivated
         tester.remove(app1);
         dirtyNodesOf(app1);
-        assertTrue("No nodes are allocated to " + app1, tester.nodeRepository().nodes().getNodes(app1, Node.State.reserved, Node.State.active).isEmpty());
+        assertTrue("No nodes are allocated to " + app1, tester.nodeRepository().nodes().list(app1, Node.State.reserved, Node.State.active).isEmpty());
         assertEquals(2, lbApp1.get().size());
         assertTrue("Deactivated load balancers", lbApp1.get().stream().allMatch(lb -> lb.state() == LoadBalancer.State.inactive));
         assertTrue("Load balancers for " + app2 + " remain active", lbApp2.get().stream().allMatch(lb -> lb.state() == LoadBalancer.State.active));
@@ -167,7 +168,7 @@ public class LoadBalancerProvisionerTest {
         var nodes = tester.prepare(app1, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("qrs")), 2 , 1, resources);
         Supplier<LoadBalancer> lb = () -> tester.nodeRepository().loadBalancers().list(app1).asList().get(0);
         assertTrue("Load balancer provisioned with empty reals", tester.loadBalancerService().instances().get(lb.get().id()).reals().isEmpty());
-        assignIps(tester.nodeRepository().nodes().getNodes(app1));
+        assignIps(tester.nodeRepository().nodes().list(app1));
         tester.activate(app1, nodes);
         assertFalse("Load balancer is reconfigured with reals", tester.loadBalancerService().instances().get(lb.get().id()).reals().isEmpty());
 
@@ -180,7 +181,7 @@ public class LoadBalancerProvisionerTest {
         // Application is redeployed
         nodes = tester.prepare(app1, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("qrs")), 2 , 1, resources);
         assertTrue("Load balancer is reconfigured with empty reals", tester.loadBalancerService().instances().get(lb.get().id()).reals().isEmpty());
-        assignIps(tester.nodeRepository().nodes().getNodes(app1));
+        assignIps(tester.nodeRepository().nodes().list(app1));
         tester.activate(app1, nodes);
         assertFalse("Load balancer is reconfigured with reals", tester.loadBalancerService().instances().get(lb.get().id()).reals().isEmpty());
     }
@@ -269,7 +270,7 @@ public class LoadBalancerProvisionerTest {
     }
 
     private void dirtyNodesOf(ApplicationId application) {
-        tester.nodeRepository().nodes().deallocate(tester.nodeRepository().nodes().getNodes(application), Agent.system, this.getClass().getSimpleName());
+        tester.nodeRepository().nodes().deallocate(tester.nodeRepository().nodes().list(application).asList(), Agent.system, this.getClass().getSimpleName());
     }
 
     private Set<HostSpec> prepare(ApplicationId application, ClusterSpec... specs) {
@@ -285,10 +286,10 @@ public class LoadBalancerProvisionerTest {
         return allNodes;
     }
 
-    private void assignIps(List<Node> nodes) {
+    private void assignIps(NodeList nodes) {
         try (var lock = tester.nodeRepository().nodes().lockUnallocated()) {
             for (int i = 0; i < nodes.size(); i++) {
-                tester.nodeRepository().nodes().write(nodes.get(i).with(IP.Config.EMPTY.withPrimary(Set.of("127.0.0." + i))), lock);
+                tester.nodeRepository().nodes().write(nodes.asList().get(i).with(IP.Config.EMPTY.withPrimary(Set.of("127.0.0." + i))), lock);
             }
         }
     }

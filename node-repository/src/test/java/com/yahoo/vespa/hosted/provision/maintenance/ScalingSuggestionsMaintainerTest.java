@@ -14,6 +14,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricSnapshot;
@@ -121,7 +122,7 @@ public class ScalingSuggestionsMaintainerTest {
 
     public void addMeasurements(float cpu, float memory, float disk, int generation, int count, ApplicationId applicationId,
                                 NodeRepository nodeRepository, MetricsDb db) {
-        List<Node> nodes = nodeRepository.nodes().getNodes(applicationId, Node.State.active);
+        NodeList nodes = nodeRepository.nodes().list(applicationId, Node.State.active);
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)
                 db.add(List.of(new Pair<>(node.hostname(), new MetricSnapshot(nodeRepository.clock().instant(),

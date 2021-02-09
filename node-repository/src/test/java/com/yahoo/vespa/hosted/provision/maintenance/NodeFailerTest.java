@@ -173,8 +173,8 @@ public class NodeFailerTest {
         tester.suspend(NodeFailTester.app1);
 
         // Set two nodes down (one for each application) and wait 65 minutes
-        String host_from_suspended_app = tester.nodeRepository.nodes().getNodes(NodeFailTester.app1, Node.State.active).get(1).hostname();
-        String host_from_normal_app = tester.nodeRepository.nodes().getNodes(NodeFailTester.app2, Node.State.active).get(3).hostname();
+        String host_from_suspended_app = tester.nodeRepository.nodes().list(NodeFailTester.app1, Node.State.active).asList().get(1).hostname();
+        String host_from_normal_app = tester.nodeRepository.nodes().list(NodeFailTester.app2, Node.State.active).asList().get(3).hostname();
         tester.serviceMonitor.setHostDown(host_from_suspended_app);
         tester.serviceMonitor.setHostDown(host_from_normal_app);
         tester.runMaintainers();
@@ -191,15 +191,15 @@ public class NodeFailerTest {
     public void zone_is_not_working_if_too_many_nodes_down() {
         NodeFailTester tester = NodeFailTester.withTwoApplications();
 
-        tester.serviceMonitor.setHostDown(tester.nodeRepository.nodes().getNodes(NodeFailTester.app1, Node.State.active).get(0).hostname());
+        tester.serviceMonitor.setHostDown(tester.nodeRepository.nodes().list(NodeFailTester.app1, Node.State.active).asList().get(0).hostname());
         tester.runMaintainers();
         assertTrue(tester.nodeRepository.nodes().isWorking());
 
-        tester.serviceMonitor.setHostDown(tester.nodeRepository.nodes().getNodes(NodeFailTester.app1, Node.State.active).get(1).hostname());
+        tester.serviceMonitor.setHostDown(tester.nodeRepository.nodes().list(NodeFailTester.app1, Node.State.active).asList().get(1).hostname());
         tester.runMaintainers();
         assertTrue(tester.nodeRepository.nodes().isWorking());
 
-        tester.serviceMonitor.setHostDown(tester.nodeRepository.nodes().getNodes(NodeFailTester.app1, Node.State.active).get(2).hostname());
+        tester.serviceMonitor.setHostDown(tester.nodeRepository.nodes().list(NodeFailTester.app1, Node.State.active).asList().get(2).hostname());
         tester.runMaintainers();
         assertFalse(tester.nodeRepository.nodes().isWorking());
 
@@ -235,8 +235,8 @@ public class NodeFailerTest {
         assertEquals(Node.State.failed, tester.nodeRepository.nodes().getNode(readyFail1.hostname()).get().state());
         assertEquals(Node.State.failed, tester.nodeRepository.nodes().getNode(readyFail2.hostname()).get().state());
 
-        String downHost1 = tester.nodeRepository.nodes().getNodes(NodeFailTester.app1, Node.State.active).get(1).hostname();
-        String downHost2 = tester.nodeRepository.nodes().getNodes(NodeFailTester.app2, Node.State.active).get(3).hostname();
+        String downHost1 = tester.nodeRepository.nodes().list(NodeFailTester.app1, Node.State.active).asList().get(1).hostname();
+        String downHost2 = tester.nodeRepository.nodes().list(NodeFailTester.app2, Node.State.active).asList().get(3).hostname();
         tester.serviceMonitor.setHostDown(downHost1);
         tester.serviceMonitor.setHostDown(downHost2);
         // nothing happens the first 45 minutes
@@ -280,7 +280,7 @@ public class NodeFailerTest {
         assertEquals( 0, tester.nodeRepository.nodes().getNodes(NodeType.tenant, Node.State.ready).size());
 
         // the last host goes down
-        Node lastNode = tester.highestIndex(tester.nodeRepository.nodes().getNodes(NodeFailTester.app1, Node.State.active));
+        Node lastNode = tester.highestIndex(tester.nodeRepository.nodes().list(NodeFailTester.app1, Node.State.active));
         tester.serviceMonitor.setHostDown(lastNode.hostname());
         // it is not failed because there are no ready nodes to replace it
         for (int minutes = 0; minutes < 75; minutes +=5 ) {
@@ -304,7 +304,7 @@ public class NodeFailerTest {
         assertEquals( 5, tester.nodeRepository.nodes().getNodes(NodeType.tenant, Node.State.failed).size());
         assertEquals( 0, tester.nodeRepository.nodes().getNodes(NodeType.tenant, Node.State.ready).size());
         assertTrue("The index of the last failed node is not reused",
-                   tester.highestIndex(tester.nodeRepository.nodes().getNodes(NodeFailTester.app1, Node.State.active)).allocation().get().membership().index()
+                   tester.highestIndex(tester.nodeRepository.nodes().list(NodeFailTester.app1, Node.State.active)).allocation().get().membership().index()
                    >
                    lastNode.allocation().get().membership().index());
     }
@@ -312,7 +312,7 @@ public class NodeFailerTest {
     @Test
     public void re_activate_grace_period_test() {
         NodeFailTester tester = NodeFailTester.withTwoApplications();
-        String downNode = tester.nodeRepository.nodes().getNodes(NodeFailTester.app1, Node.State.active).get(1).hostname();
+        String downNode = tester.nodeRepository.nodes().list(NodeFailTester.app1, Node.State.active).asList().get(1).hostname();
 
         tester.serviceMonitor.setHostDown(downNode);
         tester.allNodesMakeAConfigRequestExcept();
@@ -349,7 +349,7 @@ public class NodeFailerTest {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         tester.activate(NodeFailTester.app1, cluster, capacity);
 
-        String downHost = tester.nodeRepository.nodes().getNodes(NodeFailTester.app1, Node.State.active).get(0).hostname();
+        String downHost = tester.nodeRepository.nodes().list(NodeFailTester.app1, Node.State.active).first().get().hostname();
         tester.serviceMonitor.setHostDown(downHost);
 
         // nothing happens the first 45 minutes

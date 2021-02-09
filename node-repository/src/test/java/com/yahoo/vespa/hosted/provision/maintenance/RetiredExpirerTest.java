@@ -71,8 +71,8 @@ public class RetiredExpirerTest {
         activate(applicationId, cluster, wantedNodes=7, 1);
         activate(applicationId, cluster, wantedNodes=2, 1);
         activate(applicationId, cluster, wantedNodes=3, 1);
-        assertEquals(7, nodeRepository.nodes().getNodes(applicationId, Node.State.active).size());
-        assertEquals(0, nodeRepository.nodes().getNodes(applicationId, Node.State.inactive).size());
+        assertEquals(7, nodeRepository.nodes().list(applicationId, Node.State.active).size());
+        assertEquals(0, nodeRepository.nodes().list(applicationId, Node.State.inactive).size());
 
         // Cause inactivation of retired nodes
         clock.advance(Duration.ofHours(30)); // Retire period spent
@@ -83,12 +83,12 @@ public class RetiredExpirerTest {
                                                                                                          cluster,
                                                                                                          Capacity.from(new ClusterResources(wantedNodes, 1, nodeResources)))));
         createRetiredExpirer(deployer).run();
-        assertEquals(3, nodeRepository.nodes().getNodes(applicationId, Node.State.active).size());
-        assertEquals(4, nodeRepository.nodes().getNodes(applicationId, Node.State.inactive).size());
+        assertEquals(3, nodeRepository.nodes().list(applicationId, Node.State.active).size());
+        assertEquals(4, nodeRepository.nodes().list(applicationId, Node.State.inactive).size());
         assertEquals(1, deployer.redeployments);
 
         // inactivated nodes are not retired
-        for (Node node : nodeRepository.nodes().getNodes(applicationId, Node.State.inactive))
+        for (Node node : nodeRepository.nodes().list(applicationId, Node.State.inactive))
             assertFalse(node.allocation().get().membership().retired());
     }
 
@@ -106,8 +106,8 @@ public class RetiredExpirerTest {
         activate(applicationId, cluster, wantedNodes=7, 1);
         activate(applicationId, cluster, wantedNodes=2, 1);
         activate(applicationId, cluster, wantedNodes=3, 1);
-        assertEquals(7, nodeRepository.nodes().getNodes(applicationId, Node.State.active).size());
-        assertEquals(0, nodeRepository.nodes().getNodes(applicationId, Node.State.inactive).size());
+        assertEquals(7, nodeRepository.nodes().list(applicationId, Node.State.active).size());
+        assertEquals(0, nodeRepository.nodes().list(applicationId, Node.State.inactive).size());
 
         // Cause inactivation of retired nodes
         MockDeployer deployer =
@@ -128,27 +128,27 @@ public class RetiredExpirerTest {
 
         RetiredExpirer retiredExpirer = createRetiredExpirer(deployer);
         retiredExpirer.run();
-        assertEquals(5, nodeRepository.nodes().getNodes(applicationId, Node.State.active).size());
-        assertEquals(2, nodeRepository.nodes().getNodes(applicationId, Node.State.inactive).size());
+        assertEquals(5, nodeRepository.nodes().list(applicationId, Node.State.active).size());
+        assertEquals(2, nodeRepository.nodes().list(applicationId, Node.State.inactive).size());
         assertEquals(1, deployer.redeployments);
         verify(orchestrator, times(4)).acquirePermissionToRemove(any());
 
         // Running it again has no effect
         retiredExpirer.run();
-        assertEquals(5, nodeRepository.nodes().getNodes(applicationId, Node.State.active).size());
-        assertEquals(2, nodeRepository.nodes().getNodes(applicationId, Node.State.inactive).size());
+        assertEquals(5, nodeRepository.nodes().list(applicationId, Node.State.active).size());
+        assertEquals(2, nodeRepository.nodes().list(applicationId, Node.State.inactive).size());
         assertEquals(1, deployer.redeployments);
         verify(orchestrator, times(6)).acquirePermissionToRemove(any());
 
         clock.advance(RETIRED_EXPIRATION.plusMinutes(1));
         retiredExpirer.run();
-        assertEquals(3, nodeRepository.nodes().getNodes(applicationId, Node.State.active).size());
-        assertEquals(4, nodeRepository.nodes().getNodes(applicationId, Node.State.inactive).size());
+        assertEquals(3, nodeRepository.nodes().list(applicationId, Node.State.active).size());
+        assertEquals(4, nodeRepository.nodes().list(applicationId, Node.State.inactive).size());
         assertEquals(2, deployer.redeployments);
         verify(orchestrator, times(6)).acquirePermissionToRemove(any());
 
         // inactivated nodes are not retired
-        for (Node node : nodeRepository.nodes().getNodes(applicationId, Node.State.inactive))
+        for (Node node : nodeRepository.nodes().list(applicationId, Node.State.inactive))
             assertFalse(node.allocation().get().membership().retired());
     }
 

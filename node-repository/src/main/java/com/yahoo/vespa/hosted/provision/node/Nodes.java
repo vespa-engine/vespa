@@ -100,12 +100,7 @@ public class Nodes {
      * @param inState the states to return nodes from. If no states are given, all nodes of the given type are returned
      */
     public NodeList list(ApplicationId application, Node.State... inState) {
-        return NodeList.copyOf(getNodes(application, inState));
-    }
-
-    /** Returns a filterable list of all nodes of an application */
-    public NodeList list(ApplicationId application) {
-        return NodeList.copyOf(getNodes(application));
+        return NodeList.copyOf(db.readNodes(application, inState));
     }
 
     /** Returns a locked list of all nodes in this repository */
@@ -113,7 +108,6 @@ public class Nodes {
         return new LockedNodeList(list().asList(), lock);
     }
 
-    public List<Node> getNodes(ApplicationId id, Node.State... inState) { return db.readNodes(id, inState); }
     public List<Node> getInactive() { return db.readNodes(Node.State.inactive); }
     public List<Node> getFailed() { return db.readNodes(Node.State.failed); }
 
@@ -421,7 +415,7 @@ public class Nodes {
         // TODO: Work out a safe lock acquisition strategy for moves, e.g. migrate to lockNode.
         try (Mutex lock = lock(node)) {
             if (toState == Node.State.active) {
-                for (Node currentActive : getNodes(node.allocation().get().owner(), Node.State.active)) {
+                for (Node currentActive : list(node.allocation().get().owner(), Node.State.active)) {
                     if (node.allocation().get().membership().cluster().equals(currentActive.allocation().get().membership().cluster())
                         && node.allocation().get().membership().index() == currentActive.allocation().get().membership().index())
                         illegal("Could not set " + node + " active: Same cluster and index as " + currentActive);
