@@ -44,7 +44,7 @@ public abstract class NodeMover<MOVE> extends NodeRepositoryMaintainer {
             ApplicationId applicationId = node.allocation().get().owner();
             if (applicationId.instance().isTester()) continue;
             if (deployedRecently(applicationId)) continue;
-            for (Node toHost : allNodes.matching(nodeRepository().nodes()::canAllocateTenantNodeTo)) {
+            for (Node toHost : allNodes.matching(nodeRepository()::canAllocateTenantNodeTo)) {
                 if (toHost.hostname().equals(node.parentHostname().get())) continue;
                 if ( ! capacity.freeCapacityOf(toHost).satisfies(node.resources())) continue;
 

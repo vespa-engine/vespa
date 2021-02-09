@@ -137,7 +137,7 @@ public class InstanceValidator {
         }
 
         // Find node matching vespa unique id
-        Node node = nodeRepository.nodes().getNodes().stream()
+        Node node = nodeRepository.getNodes().stream()
                 .filter(n -> n.allocation().isPresent())
                 .filter(n -> nodeMatchesVespaUniqueId(n, vespaUniqueInstanceId))
                 .findFirst() // Should be only one

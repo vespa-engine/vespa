@@ -80,7 +80,7 @@ public class RealDataScenarioTest {
         };
 
         deploy(tester, app, specs, capacities);
-        tester.nodeRepository().nodes().list(app).cluster(specs[1].id()).forEach(System.out::println);
+        tester.nodeRepository().list(app).cluster(specs[1].id()).forEach(System.out::println);
     }
 
     private void deploy(ProvisioningTester tester, ApplicationId app, ClusterSpec[] specs, Capacity[] capacities) {

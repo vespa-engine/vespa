@@ -116,7 +116,7 @@ public class AutoscalingTest {
 
         // deploy with slow
         tester.deploy(application1, cluster1, 5, 1, hostResources);
-        tester.nodeRepository().nodes().getNodes(application1).stream()
+        tester.nodeRepository().getNodes(application1).stream()
               .allMatch(n -> n.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.slow);
 
         tester.clock().advance(Duration.ofDays(2));
@@ -132,7 +132,7 @@ public class AutoscalingTest {
         assertEquals("Disk speed from min/max is used",
                      NodeResources.DiskSpeed.any, scaledResources.nodeResources().diskSpeed());
         tester.deploy(application1, cluster1, scaledResources);
-        tester.nodeRepository().nodes().getNodes(application1).stream()
+        tester.nodeRepository().getNodes(application1).stream()
               .allMatch(n -> n.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.any);
     }
 

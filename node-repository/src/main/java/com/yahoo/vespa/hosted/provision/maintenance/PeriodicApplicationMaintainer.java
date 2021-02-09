@@ -76,7 +76,7 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
     }
 
     protected List<Node> nodesNeedingMaintenance() {
-        return nodeRepository().nodes().getNodes(Node.State.active);
+        return nodeRepository().getNodes(Node.State.active);
     }
 
 }

@@ -39,7 +39,7 @@ public class InactiveExpirer extends Expirer {
     @Override
     protected void expire(List<Node> expired) {
         expired.forEach(node -> {
-            nodeRepository.nodes().deallocate(node, Agent.InactiveExpirer, "Expired by InactiveExpirer");
+            nodeRepository.deallocate(node, Agent.InactiveExpirer, "Expired by InactiveExpirer");
         });
     }
 

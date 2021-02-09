@@ -51,19 +51,19 @@ public class OperatorChangeApplicationMaintainerTest {
         maintainer.maintain();
         assertEquals("No changes -> no redeployments", 3, fixture.deployer.redeployments);
 
-        nodeRepository.nodes().fail(nodeRepository.nodes().getNodes(fixture.app1).get(3).hostname(), Agent.system, "Failing to unit test");
+        nodeRepository.fail(nodeRepository.getNodes(fixture.app1).get(3).hostname(), Agent.system, "Failing to unit test");
         clock.advance(Duration.ofMinutes(2));
         maintainer.maintain();
         assertEquals("System change -> no redeployments", 3, fixture.deployer.redeployments);
 
         clock.advance(Duration.ofSeconds(1));
-        nodeRepository.nodes().fail(nodeRepository.nodes().getNodes(fixture.app2).get(4).hostname(), Agent.operator, "Manual node failing");
+        nodeRepository.fail(nodeRepository.getNodes(fixture.app2).get(4).hostname(), Agent.operator, "Manual node failing");
         clock.advance(Duration.ofMinutes(2));
         maintainer.maintain();
         assertEquals("Operator change -> redeployment", 4, fixture.deployer.redeployments);
 
         clock.advance(Duration.ofSeconds(1));
-        nodeRepository.nodes().fail(nodeRepository.nodes().getNodes(fixture.app3).get(1).hostname(), Agent.operator, "Manual node failing");
+        nodeRepository.fail(nodeRepository.getNodes(fixture.app3).get(1).hostname(), Agent.operator, "Manual node failing");
         clock.advance(Duration.ofMinutes(2));
         maintainer.maintain();
         assertEquals("Operator change -> redeployment", 5, fixture.deployer.redeployments);
@@ -104,9 +104,9 @@ public class OperatorChangeApplicationMaintainerTest {
             deployer.deployFromLocalActive(app1, false).get().activate();
             deployer.deployFromLocalActive(app2, false).get().activate();
             deployer.deployFromLocalActive(app3, false).get().activate();
-            assertEquals(wantedNodesApp1, nodeRepository.nodes().getNodes(app1, Node.State.active).size());
-            assertEquals(wantedNodesApp2, nodeRepository.nodes().getNodes(app2, Node.State.active).size());
-            assertEquals(wantedNodesApp3, nodeRepository.nodes().getNodes(app3, Node.State.active).size());
+            assertEquals(wantedNodesApp1, nodeRepository.getNodes(app1, Node.State.active).size());
+            assertEquals(wantedNodesApp2, nodeRepository.getNodes(app2, Node.State.active).size());
+            assertEquals(wantedNodesApp3, nodeRepository.getNodes(app3, Node.State.active).size());
         }
 
     }

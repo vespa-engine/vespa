@@ -57,15 +57,15 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
     private void updateReadyNodeLivenessEvents() {
         // Update node last request events through ZooKeeper to collect request to all config servers.
         // We do this here ("lazily") to avoid writing to zk for each config request.
-        try (Mutex lock = nodeRepository().nodes().lockUnallocated()) {
-            for (Node node : nodeRepository().nodes().getNodes(Node.State.ready)) {
+        try (Mutex lock = nodeRepository().lockUnallocated()) {
+            for (Node node : nodeRepository().getNodes(Node.State.ready)) {
                 Optional<Instant> lastLocalRequest = hostLivenessTracker.lastRequestFrom(node.hostname());
                 if (lastLocalRequest.isEmpty()) continue;
 
                 if (!node.history().hasEventAfter(History.Event.Type.requested, lastLocalRequest.get())) {
                     History updatedHistory = node.history()
                                                  .with(new History.Event(History.Event.Type.requested, Agent.NodeHealthTracker, lastLocalRequest.get()));
-                    nodeRepository().nodes().write(node.with(updatedHistory), lock);
+                    nodeRepository().write(node.with(updatedHistory), lock);
                 }
             }
         }
@@ -76,7 +76,7 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
      * Otherwise we remove any "down" history record.
      */
     private void updateActiveNodeDownState() {
-        NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
+        NodeList activeNodes = nodeRepository().list(Node.State.active);
         serviceMonitor.getServiceModelSnapshot().getServiceInstancesByHostName().forEach((hostname, serviceInstances) -> {
             Optional<Node> node = activeNodes.matching(n -> n.hostname().equals(hostname.toString())).first();
             if (node.isEmpty()) return;
@@ -87,7 +87,7 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
 
             // Lock and update status
             ApplicationId owner = node.get().allocation().get().owner();
-            try (var lock = nodeRepository().nodes().lock(owner)) {
+            try (var lock = nodeRepository().lock(owner)) {
                 node = getNode(hostname.toString(), owner, lock); // Re-get inside lock
                 if (node.isEmpty()) return; // Node disappeared or changed allocation
                 if (isDown) {
@@ -116,7 +116,7 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
 
     /** Get node by given hostname and application. The applicationLock must be held when calling this */
     private Optional<Node> getNode(String hostname, ApplicationId application, @SuppressWarnings("unused") Mutex applicationLock) {
-        return nodeRepository().nodes().getNode(hostname, Node.State.active)
+        return nodeRepository().getNode(hostname, Node.State.active)
                                .filter(node -> node.allocation().isPresent())
                                .filter(node -> node.allocation().get().owner().equals(application));
     }
@@ -124,13 +124,13 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
     /** Record a node as down if not already recorded */
     private void recordAsDown(Node node, Mutex lock) {
         if (node.history().event(History.Event.Type.down).isPresent()) return; // already down: Don't change down timestamp
-        nodeRepository().nodes().write(node.downAt(clock().instant(), Agent.NodeHealthTracker), lock);
+        nodeRepository().write(node.downAt(clock().instant(), Agent.NodeHealthTracker), lock);
     }
 
     /** Clear down record for node, if any */
     private void clearDownRecord(Node node, Mutex lock) {
         if (node.history().event(History.Event.Type.down).isEmpty()) return;
-        nodeRepository().nodes().write(node.up(), lock);
+        nodeRepository().write(node.up(), lock);
     }
 
 }
