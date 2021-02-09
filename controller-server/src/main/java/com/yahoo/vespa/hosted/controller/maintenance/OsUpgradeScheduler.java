@@ -26,7 +26,15 @@ import java.util.stream.Collectors;
  */
 public class OsUpgradeScheduler extends ControllerMaintainer {
 
+    /** Trigger a new upgrade when the current target version reaches this age */
     private static final Duration MAX_VERSION_AGE = Duration.ofDays(30);
+
+    /**
+     * The interval at which new versions become available. We use this to avoid scheduling upgrades to a version that
+     * may not be available yet
+     */
+    private static final Duration AVAILABILITY_INTERVAL = Duration.ofDays(7);
+
     private static final DateTimeFormatter VERSION_DATE_PATTERN = DateTimeFormatter.ofPattern("yyyyMMdd");
 
     public OsUpgradeScheduler(Controller controller, Duration interval) {
@@ -48,11 +56,12 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         Optional<Version> currentTarget = controller().osVersionTarget(cloud)
                                                       .map(OsVersionTarget::osVersion)
                                                       .map(OsVersion::version);
-
         if (currentTarget.isEmpty()) return Optional.empty();
         if (!hasExpired(currentTarget.get())) return Optional.empty();
+
         Instant now = controller().clock().instant();
-        String qualifier = LocalDate.ofInstant(now, ZoneOffset.UTC).format(VERSION_DATE_PATTERN);
+        String qualifier = LocalDate.ofInstant(now.minus(AVAILABILITY_INTERVAL), ZoneOffset.UTC)
+                                    .format(VERSION_DATE_PATTERN);
         return Optional.of(new Version(currentTarget.get().getMajor(),
                                        currentTarget.get().getMinor(),
                                        currentTarget.get().getMicro(),
@@ -62,15 +71,14 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
     /** Returns whether we should upgrade from given version */
     private boolean hasExpired(Version version) {
         String qualifier = version.getQualifier();
-        if (qualifier.matches("^\\d{8,}")) {
-            String dateString = qualifier.substring(0, 8);
-            Instant now = controller().clock().instant();
-            Instant versionDate = LocalDate.parse(dateString, VERSION_DATE_PATTERN)
-                                           .atStartOfDay(ZoneOffset.UTC)
-                                           .toInstant();
-            return versionDate.isBefore(now.minus(MAX_VERSION_AGE));
-        }
-        return false;
+        if (!qualifier.matches("^\\d{8,}")) return false;
+
+        String dateString = qualifier.substring(0, 8);
+        Instant now = controller().clock().instant();
+        Instant versionDate = LocalDate.parse(dateString, VERSION_DATE_PATTERN)
+                                       .atStartOfDay(ZoneOffset.UTC)
+                                       .toInstant();
+        return versionDate.isBefore(now.minus(MAX_VERSION_AGE));
     }
 
     /** Returns the clouds where we can safely schedule OS upgrades */

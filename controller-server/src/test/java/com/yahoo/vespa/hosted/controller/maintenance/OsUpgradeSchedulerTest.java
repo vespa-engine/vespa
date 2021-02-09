@@ -48,7 +48,7 @@ public class OsUpgradeSchedulerTest {
         }
 
         // Just over 30 days pass, and a new target replaces the expired one
-        Version version1 = Version.fromString("7.0.0.20210222");
+        Version version1 = Version.fromString("7.0.0.20210215");
         tester.clock().advance(Duration.ofDays(15).plus(Duration.ofSeconds(1)));
         scheduler.maintain();
         assertEquals("New target set", version1, tester.controller().osVersionTarget(cloud).get().osVersion().version());
