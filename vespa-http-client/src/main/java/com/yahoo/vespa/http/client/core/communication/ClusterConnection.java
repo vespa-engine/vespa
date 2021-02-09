@@ -1,9 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.http.client.core.communication;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.yahoo.vespa.http.client.config.Cluster;
 import com.yahoo.vespa.http.client.config.ConnectionParams;
 import com.yahoo.vespa.http.client.config.Endpoint;
@@ -27,8 +28,7 @@ import java.util.concurrent.TimeUnit;
  */
 public class ClusterConnection implements AutoCloseable {
 
-    private static final JsonFactory jsonFactory = new JsonFactory();
-    private static final ObjectMapper objectMapper = new ObjectMapper();
+    private static ObjectMapper jsonMapper = createMapper();
 
     private final List<IOThread> ioThreads = new ArrayList<>();
     private final int clusterId;
@@ -102,6 +102,13 @@ public class ClusterConnection implements AutoCloseable {
         }
     }
 
+    private static ObjectMapper createMapper() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new Jdk8Module());
+        mapper.registerModule(new JavaTimeModule());
+        return mapper;
+    }
+
     public int getClusterId() {
         return clusterId;
     }
@@ -149,7 +156,7 @@ public class ClusterConnection implements AutoCloseable {
 
     public String getStatsAsJSon() throws IOException {
         StringWriter stringWriter = new StringWriter();
-        JsonGenerator jsonGenerator = jsonFactory.createGenerator(stringWriter);
+        JsonGenerator jsonGenerator = jsonMapper.createGenerator(stringWriter);
         jsonGenerator.writeStartObject();
         jsonGenerator.writeArrayFieldStart("session");
         for (IOThread ioThread : ioThreads) {
@@ -160,7 +167,7 @@ public class ClusterConnection implements AutoCloseable {
             jsonGenerator.writeEndObject();
             jsonGenerator.writeFieldName("stats");
             IOThread.ConnectionStats connectionStats = ioThread.getConnectionStats();
-            objectMapper.writeValue(jsonGenerator, connectionStats);
+            jsonMapper.writeValue(jsonGenerator, connectionStats);
             jsonGenerator.writeEndObject();
         }
         jsonGenerator.writeEndArray();

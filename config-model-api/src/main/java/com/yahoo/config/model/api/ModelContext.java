@@ -65,7 +65,7 @@ public interface ModelContext {
      */
     interface FeatureFlags {
         @ModelFeatureFlag(owners = {"bjorncs", "jonmv"}, removeAfter = "7.352") default boolean enableAutomaticReindexing() { return true; }
-        @ModelFeatureFlag(owners = {"jonmv"}) default double reindexerWindowSizeIncrement() { return 0.2; }
+        @ModelFeatureFlag(owners = {"jonmv"}, removeAfter = "7.355") default double reindexerWindowSizeIncrement() { return 0.2; }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Revisit in May or June 2021") default double defaultTermwiseLimit() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"vekterli"}) default boolean useThreePhaseUpdates() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select sequencer type use while feeding") default String feedSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
@@ -76,13 +76,12 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean skipMbusReplyThread() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"tokle"}) default boolean useAccessControlTlsHandshakeClientAuth() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useAsyncMessageHandlingOnSchedule() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "7.348") default int contentNodeBucketDBStripeBits() { return 4; }
         @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "7.350") default int mergeChunkSize() { return 0x2000000; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedConcurrency() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useBucketExecutorForLidSpaceCompact() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"musum", "mpolden"}, comment = "Revisit in February 2021") default boolean reconfigurableZookeeperServer() { return false; }
-        @ModelFeatureFlag(owners = {"bjorncs", "tokle"}) default boolean enableJdiscConnectionLog() { return false; }
-        @ModelFeatureFlag(owners = {"bjorncs", "tokle", "baldersheim"}) default boolean enableZstdCompressionAccessLog() { return false; }
+        @ModelFeatureFlag(owners = {"bjorncs", "tokle"}, removeAfter = "7.357") default boolean enableJdiscConnectionLog() { return true; }
+        @ModelFeatureFlag(owners = {"bjorncs", "tokle", "baldersheim"}, removeAfter = "7.357") default boolean enableZstdCompressionAccessLog() { return true; }
         @ModelFeatureFlag(owners = {"geirst"}) default boolean enableFeedBlockInDistributor() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim", "geirst", "toregge"}) default double maxDeadBytesRatio() { return 0.2; }
     }

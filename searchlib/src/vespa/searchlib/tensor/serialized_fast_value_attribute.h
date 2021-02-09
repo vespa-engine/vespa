@@ -21,12 +21,12 @@ class SerializedFastValueAttribute : public TensorAttribute {
     StreamedValueStore _streamedValueStore; // data store for serialized tensors
 public:
     SerializedFastValueAttribute(vespalib::stringref baseFileName, const Config &cfg);
-    virtual ~SerializedFastValueAttribute();
-    virtual void setTensor(DocId docId, const vespalib::eval::Value &tensor) override;
-    virtual std::unique_ptr<vespalib::eval::Value> getTensor(DocId docId) const override;
-    virtual bool onLoad() override;
-    virtual std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
-    virtual void compactWorst() override;
+    ~SerializedFastValueAttribute() override;
+    void setTensor(DocId docId, const vespalib::eval::Value &tensor) override;
+    std::unique_ptr<vespalib::eval::Value> getTensor(DocId docId) const override;
+    bool onLoad() override;
+    std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;
+    void compactWorst() override;
 };
 
 }

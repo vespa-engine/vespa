@@ -20,11 +20,11 @@ const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("x5", GenSpec().idx("x", 5).gen())
-        .add("x5f", GenSpec().idx("x", 5).cells_float().gen())
-        .add("x5y1", GenSpec().idx("x", 5).idx("y", 1).gen())
-        .add("y1z1", GenSpec().idx("y", 5).idx("z", 1).gen())
-        .add("x_m", GenSpec().map("x", {"a"}).gen());
+        .add("x5", GenSpec().idx("x", 5))
+        .add("x5f", GenSpec().idx("x", 5).cells_float())
+        .add("x5y1", GenSpec().idx("x", 5).idx("y", 1))
+        .add("y1z1", GenSpec().idx("y", 5).idx("z", 1))
+        .add("x_m", GenSpec().map("x", {"a"}));
 }
 EvalFixture::ParamRepo param_repo = make_params();
 

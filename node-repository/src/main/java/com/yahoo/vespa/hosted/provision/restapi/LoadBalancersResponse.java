@@ -40,9 +40,9 @@ public class LoadBalancersResponse extends HttpResponse {
         LoadBalancerList loadBalancers;
         var application = application();
         if (application.isPresent()) {
-            loadBalancers = nodeRepository.loadBalancers(application.get());
+            loadBalancers = nodeRepository.loadBalancers().list(application.get());
         } else {
-            loadBalancers = nodeRepository.loadBalancers();
+            loadBalancers = nodeRepository.loadBalancers().list();
         }
         return loadBalancers.asList();
     }

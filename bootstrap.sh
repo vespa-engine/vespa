@@ -74,7 +74,7 @@ mvn_install -N
 
 # and build plugins first:
 echo "Building Vespa Maven plugins."
-mvn_install --threads 1.5C -f maven-plugins/pom.xml
+mvn_install -f maven-plugins/pom.xml
 
 # now everything else should just work with normal maven dependency resolution:
 

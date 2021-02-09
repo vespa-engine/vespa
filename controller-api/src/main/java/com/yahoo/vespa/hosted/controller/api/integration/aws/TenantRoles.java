@@ -4,11 +4,11 @@ package com.yahoo.vespa.hosted.controller.api.integration.aws;
 /**
  * @author mortent
  */
-public class ApplicationRoles {
+public class TenantRoles {
     private final String hostRole;
     private final String containerRole;
 
-    public ApplicationRoles(String hostRole, String containerRole) {
+    public TenantRoles(String hostRole, String containerRole) {
         this.hostRole = hostRole;
         this.containerRole = containerRole;
     }

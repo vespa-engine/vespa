@@ -96,10 +96,10 @@ public class PeriodicApplicationMaintainerTest {
         // Cause maintenance deployment which will update the applications with the re-activated nodes
         clock.advance(Duration.ofMinutes(35)); // Otherwise redeploys are inhibited
         fixture.runApplicationMaintainer();
-        assertEquals("Superflous content nodes are retired",
+        assertEquals("Superfluous content nodes are retired",
                      reactivatedInApp2, fixture.getNodes(Node.State.active).retired().size());
-        assertEquals("Superflous container nodes are deactivated (this makes little point for container nodes)",
-                     reactivatedInApp1, fixture.getNodes(Node.State.inactive).size());
+        assertEquals("Superfluous container nodes are deallocated",
+                     reactivatedInApp1, fixture.getNodes(Node.State.dirty).size());
     }
 
     @Test(timeout = 60_000)

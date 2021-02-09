@@ -26,13 +26,13 @@ vespalib::string infer_type(const Layout &layout) {
 }
 
 TensorSpec spec(const Layout &layout, const Sequence &seq) {
-    return GenSpec(layout.domains).cells(layout.cell_type).seq(seq).gen();
+    return GenSpec(layout.domains).cells(layout.cell_type).seq(seq);
 }
 TensorSpec spec(const Domain &domain, const Sequence &seq) {
     return spec(Layout({domain}), seq);
 }
 TensorSpec spec(double value) {
-    return GenSpec(value).gen();
+    return GenSpec(value);
 }
 
 TensorSpec spec(const vespalib::string &type,

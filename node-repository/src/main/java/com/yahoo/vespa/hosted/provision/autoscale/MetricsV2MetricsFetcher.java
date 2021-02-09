@@ -1,9 +1,8 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
-import ai.vespa.util.http.VespaHttpClientBuilder;
+import ai.vespa.util.http.VespaAsyncHttpClientBuilder;
 import com.google.inject.Inject;
-import com.yahoo.collections.Pair;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.applicationmodel.HostName;
@@ -12,15 +11,14 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.BasicResponseHandler;
-import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
+import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
+import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
+import org.apache.hc.core5.concurrent.FutureCallback;
 
 import java.io.IOException;
-import java.io.UncheckedIOException;
-import java.util.Collection;
-import java.util.Collections;
 import java.util.Optional;
+import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -37,32 +35,37 @@ public class MetricsV2MetricsFetcher extends AbstractComponent implements Metric
 
     private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
-    private final HttpClient httpClient;
+    private final AsyncHttpClient httpClient;
 
     @Inject
     @SuppressWarnings("unused")
     public MetricsV2MetricsFetcher(NodeRepository nodeRepository, Orchestrator orchestrator) {
-        this(nodeRepository, orchestrator, new ApacheHttpClient());
+        this(nodeRepository, orchestrator, new AsyncApacheHttpClient());
     }
 
-    public MetricsV2MetricsFetcher(NodeRepository nodeRepository, Orchestrator orchestrator, HttpClient httpClient) {
+    public MetricsV2MetricsFetcher(NodeRepository nodeRepository, Orchestrator orchestrator, AsyncHttpClient httpClient) {
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.httpClient = httpClient;
     }
 
     @Override
-    public Collection<Pair<String, MetricSnapshot>> fetchMetrics(ApplicationId application) {
+    public CompletableFuture<MetricsResponse> fetchMetrics(ApplicationId application) {
         NodeList applicationNodes = nodeRepository.list(application).state(Node.State.active);
 
         Optional<Node> metricsV2Container = applicationNodes.container()
                                                             .matching(node -> expectedUp(node))
                                                             .stream()
                                                             .findFirst();
-        if (metricsV2Container.isEmpty()) return Collections.emptyList();
-        // Consumer 'autoscaling' defined in com.yahoo.vespa.model.admin.monitoring.MetricConsumer
-        String url = "http://" + metricsV2Container.get().hostname() + ":" + 4080 + apiPath + "?consumer=autoscaling";
-        return new MetricsResponse(httpClient.get(url), applicationNodes, nodeRepository).metrics();
+        if (metricsV2Container.isEmpty()) {
+            return CompletableFuture.completedFuture(MetricsResponse.empty());
+        }
+        else {
+            // Consumer 'autoscaling' defined in com.yahoo.vespa.model.admin.monitoring.MetricConsumer
+            String url = "http://" + metricsV2Container.get().hostname() + ":" + 4080 + apiPath + "?consumer=autoscaling";
+            return httpClient.get(url)
+                             .thenApply(response -> new MetricsResponse(response, applicationNodes, nodeRepository));
+        }
     }
 
     @Override
@@ -79,27 +82,28 @@ public class MetricsV2MetricsFetcher extends AbstractComponent implements Metric
         }
     }
 
-    /** The simplest possible http client interface */
-    public interface HttpClient {
+    /** A simple async HTTP client */
+    public interface AsyncHttpClient {
 
-        String get(String url);
+        CompletableFuture<String> get(String url);
         void close();
 
     }
 
-    /** Implements the HttpClient interface by delegating to an Apache HTTP client */
-    public static class ApacheHttpClient implements HttpClient {
+    /** Implements the AsyncHttpClient interface by delegating to an Apache HTTP client */
+    public static class AsyncApacheHttpClient implements AsyncHttpClient {
 
-        private final CloseableHttpClient httpClient = VespaHttpClientBuilder.createWithBasicConnectionManager().build();
+        private final CloseableHttpAsyncClient httpClient = VespaAsyncHttpClientBuilder.create().build();
+
+        public AsyncApacheHttpClient() {
+            httpClient.start();
+        }
 
         @Override
-        public String get(String url) {
-            try {
-                return httpClient.execute(new HttpGet(url), new BasicResponseHandler());
-            }
-            catch (IOException e) {
-                throw new UncheckedIOException("Could not get " + url, e);
-            }
+        public CompletableFuture<String> get(String url) {
+            CompletableFuture<String> callback = new CompletableFuture<>();
+            httpClient.execute(new SimpleHttpRequest("GET", url), new CallbackAdaptor(callback));
+            return callback;
         }
 
         @Override
@@ -110,6 +114,31 @@ public class MetricsV2MetricsFetcher extends AbstractComponent implements Metric
             catch (IOException e) {
                 log.log(Level.WARNING, "Exception deconstructing", e);
             }
+        }
+
+        private static class CallbackAdaptor implements FutureCallback<SimpleHttpResponse> {
+
+            private final CompletableFuture<String> callback;
+
+            public CallbackAdaptor(CompletableFuture<String> callback) {
+                this.callback = callback;
+            }
+
+            @Override
+            public void completed(SimpleHttpResponse simpleHttpResponse) {
+                callback.complete(simpleHttpResponse.getBodyText());
+            }
+
+            @Override
+            public void failed(Exception e) {
+                callback.completeExceptionally(e);
+            }
+
+            @Override
+            public void cancelled() {
+                callback.cancel(true);
+            }
+
         }
 
     }

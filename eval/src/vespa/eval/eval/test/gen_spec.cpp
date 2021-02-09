@@ -11,11 +11,11 @@ namespace vespalib::eval::test {
 //-----------------------------------------------------------------------------
 
 Sequence N(double bias) {
-    return [bias](size_t i) { return (i + bias); };
+    return [bias](size_t i) noexcept { return (i + bias); };
 }
 
 Sequence AX_B(double a, double b) {
-    return [a,b](size_t i) { return (a * i) + b; };
+    return [a,b](size_t i) noexcept { return (a * i) + b; };
 }
 
 Sequence Div16(const Sequence &seq) {
@@ -36,7 +36,7 @@ Sequence SigmoidF(const Sequence &seq) {
 
 Sequence Seq(const std::vector<double> &seq) {
     assert(!seq.empty());
-    return [seq](size_t i) { return seq[i % seq.size()]; };
+    return [seq](size_t i) noexcept { return seq[i % seq.size()]; };
 }
 
 //-----------------------------------------------------------------------------

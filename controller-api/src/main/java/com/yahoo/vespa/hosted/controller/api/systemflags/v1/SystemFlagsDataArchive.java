@@ -163,7 +163,7 @@ public class SystemFlagsDataArchive {
 
     private static Set<String> getFilenamesForSystem(ZoneRegistry systemDefinition) {
         if (systemDefinition == null) return Set.of();
-        return FlagsTarget.getAllTargetsInSystem(systemDefinition).stream()
+        return FlagsTarget.getAllTargetsInSystem(systemDefinition, false).stream()
                 .flatMap(target -> target.flagDataFilesPrioritized().stream())
                 .collect(Collectors.toSet());
     }

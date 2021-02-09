@@ -288,6 +288,7 @@ public class SystemFlagsDataArchiveTest {
         when(registryMock.getConfigServerHttpsIdentity(any())).thenReturn(new AthenzService("domain", "servicename"));
         ZoneList zoneListMock = mock(ZoneList.class);
         when(zoneListMock.reachable()).thenReturn(zoneListMock);
+        when(zoneListMock.all()).thenReturn(zoneListMock);
         when(zoneListMock.zones()).thenReturn((List)List.of(new SimpleZone("prod.us-west-1"), new SimpleZone("prod.us-east-3")));
         when(registryMock.zones()).thenReturn(zoneListMock);
         return registryMock;

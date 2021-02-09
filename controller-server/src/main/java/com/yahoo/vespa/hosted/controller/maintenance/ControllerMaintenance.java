@@ -56,7 +56,6 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new CostReportMaintainer(controller, intervals.costReportMaintainer, controller.serviceRegistry().costReportConsumer()));
         maintainers.add(new ResourceMeterMaintainer(controller, intervals.resourceMeterMaintainer, metric, controller.serviceRegistry().meteringService()));
         maintainers.add(new CloudEventReporter(controller, intervals.cloudEventReporter, metric));
-        maintainers.add(new RotationStatusUpdater(controller, intervals.defaultInterval));
         maintainers.add(new ResourceTagMaintainer(controller, intervals.resourceTagMaintainer, controller.serviceRegistry().resourceTagger()));
         maintainers.add(new SystemRoutingPolicyMaintainer(controller, intervals.systemRoutingPolicyMaintainer));
         maintainers.add(new ApplicationMetaDataGarbageCollector(controller, intervals.applicationMetaDataGarbageCollector));
@@ -126,7 +125,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.osVersionStatusUpdater = duration(2, MINUTES);
             this.osUpgrader = duration(1, MINUTES);
             this.contactInformationMaintainer = duration(12, HOURS);
-            this.nameServiceDispatcher = duration(30, SECONDS);
+            this.nameServiceDispatcher = duration(10, SECONDS);
             this.costReportMaintainer = duration(2, HOURS);
             this.resourceMeterMaintainer = duration(3, MINUTES);
             this.cloudEventReporter = duration(30, MINUTES);

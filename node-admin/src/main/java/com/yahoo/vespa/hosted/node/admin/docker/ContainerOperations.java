@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.docker;
 
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.vespa.hosted.dockerapi.Container;
+import com.yahoo.vespa.hosted.dockerapi.ContainerId;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.dockerapi.ContainerResources;
 import com.yahoo.vespa.hosted.dockerapi.ContainerStats;
@@ -30,7 +31,7 @@ public interface ContainerOperations {
 
     void removeContainer(NodeAgentContext context, Container container);
 
-    void updateContainer(NodeAgentContext context, ContainerResources containerResources);
+    void updateContainer(NodeAgentContext context, ContainerId containerId, ContainerResources containerResources);
 
     Optional<Container> getContainer(NodeAgentContext context);
 

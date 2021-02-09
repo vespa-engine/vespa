@@ -39,20 +39,26 @@ public class MetricReporterTest {
         }
     }
 
-    private static HasMetricContext.Dimension[] withNodeTypeDimension(String type) {
+    private static HasMetricContext.Dimension[] withClusterDimension() {
         // Dimensions that are always present
         HasMetricContext.Dimension controllerDim = withDimension("controller-index", "0");
         HasMetricContext.Dimension clusterDim = withDimension("cluster", "foo");
+        return new HasMetricContext.Dimension[] { controllerDim, clusterDim };
+    }
+
+    private static HasMetricContext.Dimension[] withNodeTypeDimension(String type) {
         // Node type-specific dimension
         HasMetricContext.Dimension nodeType = withDimension("node-type", type);
-        return new HasMetricContext.Dimension[] { controllerDim, clusterDim, nodeType };
+        var otherDims = withClusterDimension();
+        return new HasMetricContext.Dimension[] { otherDims[0], otherDims[1], nodeType };
     }
 
     @Test
     public void metrics_are_emitted_for_different_node_state_counts() {
         Fixture f = new Fixture();
         f.metricUpdater.updateClusterStateMetrics(f.clusterFixture.cluster(),
-                ClusterState.stateFromString("distributor:10 .1.s:d storage:9 .1.s:d .2.s:m .4.s:d"));
+                ClusterState.stateFromString("distributor:10 .1.s:d storage:9 .1.s:d .2.s:m .4.s:d"),
+                new ResourceUsageStats());
 
         verify(f.mockReporter).set(eq("cluster-controller.up.count"), eq(9),
                 argThat(hasMetricContext(withNodeTypeDimension("distributor"))));
@@ -68,7 +74,8 @@ public class MetricReporterTest {
 
     private void doTestRatiosInState(String clusterState, double distributorRatio, double storageRatio) {
         Fixture f = new Fixture();
-        f.metricUpdater.updateClusterStateMetrics(f.clusterFixture.cluster(), ClusterState.stateFromString(clusterState));
+        f.metricUpdater.updateClusterStateMetrics(f.clusterFixture.cluster(), ClusterState.stateFromString(clusterState),
+                new ResourceUsageStats());
 
         verify(f.mockReporter).set(eq("cluster-controller.available-nodes.ratio"),
                 doubleThat(closeTo(distributorRatio, 0.0001)),
@@ -98,6 +105,26 @@ public class MetricReporterTest {
     @Test
     public void maintenance_mode_is_counted_as_available() {
         doTestRatiosInState("distributor:10 storage:10 .0.s:m", 1.0, 1.0);
+    }
+
+    @Test
+    public void metrics_are_emitted_for_resource_usage() {
+        Fixture f = new Fixture();
+        f.metricUpdater.updateClusterStateMetrics(f.clusterFixture.cluster(),
+                ClusterState.stateFromString("distributor:10 storage:10"),
+                new ResourceUsageStats(0.5, 0.6, 5));
+
+        verify(f.mockReporter).set(eq("cluster-controller.resource_usage.max_disk_utilization"),
+                doubleThat(closeTo(0.5, 0.0001)),
+                argThat(hasMetricContext(withClusterDimension())));
+
+        verify(f.mockReporter).set(eq("cluster-controller.resource_usage.max_memory_utilization"),
+                doubleThat(closeTo(0.6, 0.0001)),
+                argThat(hasMetricContext(withClusterDimension())));
+
+        verify(f.mockReporter).set(eq("cluster-controller.resource_usage.nodes_above_limit"),
+                eq(5),
+                argThat(hasMetricContext(withClusterDimension())));
     }
 
 }

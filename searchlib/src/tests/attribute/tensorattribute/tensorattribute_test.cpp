@@ -482,6 +482,7 @@ struct Fixture {
     void testCompaction();
     void testTensorTypeFileHeaderTag();
     void testEmptyTensor();
+    void testOnHoldAccounting();
 };
 
 
@@ -658,6 +659,19 @@ Fixture::testEmptyTensor()
     }
 }
 
+void
+Fixture::testOnHoldAccounting()
+{
+    {
+        AttributeGuard guard(_attr);
+        EXPECT_EQUAL(0u, getStatus().getOnHold());
+        set_empty_tensor(1);
+        clearTensor(1);
+        EXPECT_NOT_EQUAL(0u, getStatus().getOnHold());
+    }
+    EXPECT_EQUAL(0u, getStatus().getOnHold());
+}
+
 template <class MakeFixture>
 void testAll(MakeFixture &&f)
 {
@@ -667,6 +681,7 @@ void testAll(MakeFixture &&f)
     TEST_DO(f()->testCompaction());
     TEST_DO(f()->testTensorTypeFileHeaderTag());
     TEST_DO(f()->testEmptyTensor());
+    TEST_DO(f()->testOnHoldAccounting());
 }
 
 TEST("Test sparse tensors with generic tensor attribute")

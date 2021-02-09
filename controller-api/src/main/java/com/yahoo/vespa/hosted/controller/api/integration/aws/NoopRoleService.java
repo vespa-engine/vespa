@@ -12,13 +12,8 @@ import java.util.Optional;
 public class NoopRoleService implements RoleService {
 
     @Override
-    public Optional<ApplicationRoles> createApplicationRoles(ApplicationId applicationId) {
+    public Optional<TenantRoles> createTenantRole(TenantName tenant) {
         return Optional.empty();
-    }
-
-    @Override
-    public String createTenantRole(TenantName tenant) {
-        return "";
     }
 
     @Override

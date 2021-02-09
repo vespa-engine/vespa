@@ -138,6 +138,7 @@ LidSpaceCompactionJobBase::run()
         } else {
             _scanItr = IDocumentScanIterator::UP();
             _shouldCompactLidSpace = true;
+            return false;
         }
     }
 

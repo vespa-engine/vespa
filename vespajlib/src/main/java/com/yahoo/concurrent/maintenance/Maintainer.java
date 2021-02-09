@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.concurrent.maintenance;
 
+import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.net.HostName;
 
 import java.time.Duration;
@@ -31,13 +32,15 @@ public abstract class Maintainer implements Runnable {
     private final Duration interval;
     private final ScheduledExecutorService service;
     private final AtomicBoolean shutDown = new AtomicBoolean();
+    private final boolean ignoreCollision;
 
     public Maintainer(String name, Duration interval, Instant startedAt, JobControl jobControl,
-                      JobMetrics jobMetrics, List<String> clusterHostnames) {
+                      JobMetrics jobMetrics, List<String> clusterHostnames, boolean ignoreCollision) {
         this.name = name;
         this.interval = requireInterval(interval);
         this.jobControl = Objects.requireNonNull(jobControl);
         this.jobMetrics = Objects.requireNonNull(jobMetrics);
+        this.ignoreCollision = ignoreCollision;
         Objects.requireNonNull(startedAt);
         Objects.requireNonNull(clusterHostnames);
         Duration initialDelay = staggeredDelay(interval, startedAt, HostName.getLocalhost(), clusterHostnames);
@@ -86,7 +89,13 @@ public abstract class Maintainer implements Runnable {
         log.log(Level.FINE, () -> "Running " + this.getClass().getSimpleName());
         jobMetrics.recordRunOf(name());
         try (var lock = jobControl.lockJob(name())) {
-            if (maintain()) jobMetrics.recordSuccessOf(name());
+            if (maintain()) jobMetrics.recordCompletionOf(name());
+        } catch (UncheckedTimeoutException e) {
+            if (ignoreCollision) {
+                jobMetrics.recordCompletionOf(name());
+            } else {
+                log.log(Level.WARNING, this + " collided with another run. Will retry in " + interval);
+            }
         } catch (Throwable e) {
             log.log(Level.WARNING, this + " failed. Will retry in " + interval, e);
         } finally {

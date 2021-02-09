@@ -4,6 +4,7 @@ package com.yahoo.document.datatypes;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -56,4 +57,47 @@ public class TensorFieldValueTestCase {
         TensorFieldValue field2 = new TensorFieldValue(TensorType.fromSpec("tensor(x{})"));
         assertEquals("null", field2.toString());
     }
+
+    @Test
+    public void requireThatSerializationHappens() {
+        TensorFieldValue orig = createFieldValue("{{x:0}:2.0}");
+        assertEquals("tensor(x{}):{0:2.0}", orig.toString());
+        assertTrue(orig.getWrappedValue() != null);
+        Optional<byte[]> serializedBytes = orig.getSerializedTensor();
+        assertTrue(serializedBytes.isPresent());
+        Optional<byte[]> otherSerialized = orig.getSerializedTensor();
+        assertTrue(otherSerialized.isPresent());
+        assertTrue(serializedBytes.get() == otherSerialized.get());
+
+        TensorFieldValue copy = new TensorFieldValue();
+        assertTrue(copy.getSerializedTensor().isEmpty());
+        copy.assignSerializedTensor(serializedBytes.get());
+        assertFalse(copy.getSerializedTensor().isEmpty());
+        otherSerialized = copy.getSerializedTensor();
+        assertTrue(serializedBytes.get() == otherSerialized.get());
+
+        copy = new TensorFieldValue();
+        assertTrue(copy.getTensorType().isEmpty());
+        copy.assignSerializedTensor(serializedBytes.get());
+        assertFalse(copy.getTensorType().isEmpty());
+        assertEquals(copy.getTensorType().get(), orig.getTensorType().get());
+
+        copy = new TensorFieldValue();
+        assertTrue(copy.getTensor().isEmpty());
+        copy.assignSerializedTensor(serializedBytes.get());
+        assertFalse(copy.getTensor().isEmpty());
+
+        copy = new TensorFieldValue();
+        assertTrue(copy.getTensor().isEmpty());
+        copy.assignSerializedTensor(serializedBytes.get());
+        assertFalse(copy.getTensor().isEmpty());
+        assertEquals(copy.getTensor().get(), orig.getTensor().get());
+
+        copy = new TensorFieldValue();
+        assertTrue(copy.getWrappedValue() == null);
+        copy.assignSerializedTensor(serializedBytes.get());
+        assertFalse(copy.getWrappedValue() == null);
+        assertEquals(copy.getWrappedValue(), orig.getWrappedValue());
+    }
+
 }

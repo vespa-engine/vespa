@@ -90,6 +90,8 @@
                                                 <include>com.sun.xml.bind:jaxb-core:[${jaxb.version}]:jar:provided</include>
                                                 <include>com.sun.xml.bind:jaxb-impl:[${jaxb.version}]:jar:provided</include>
                                                 <include>commons-logging:commons-logging:[1.1.3]:jar:provided</include>
+                                                <include>jakarta.activation:jakarta.activation-api:[1.2.1]:jar:provided</include>
+                                                <include>jakarta.xml.bind:jakarta.xml.bind-api:[2.3.2]:jar:provided</include>
                                                 <include>javax.annotation:javax.annotation-api:[${javax.annotation-api.version}]:jar:provided</include>
                                                 <include>javax.inject:javax.inject:[${javax.inject.version}]:jar:provided</include>
                                                 <include>javax.servlet:javax.servlet-api:[${javax.servlet-api.version}]:jar:provided</include>

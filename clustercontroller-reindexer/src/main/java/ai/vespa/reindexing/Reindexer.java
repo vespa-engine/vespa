@@ -49,10 +49,9 @@ public class Reindexer {
     private final ReindexingMetrics metrics;
     private final Clock clock;
     private final Phaser phaser = new Phaser(2); // Reindexer and visitor.
-    private final double windowSizeIncrement;
 
     public Reindexer(Cluster cluster, Map<DocumentType, Instant> ready, ReindexingCurator database,
-                     DocumentAccess access, Metric metric, Clock clock, double windowSizeIncrement) {
+                     DocumentAccess access, Metric metric, Clock clock) {
         this(cluster,
              ready,
              database,
@@ -65,13 +64,12 @@ public class Reindexer {
                  }
              },
              metric,
-             clock,
-             windowSizeIncrement);
+             clock
+        );
     }
 
     Reindexer(Cluster cluster, Map<DocumentType, Instant> ready, ReindexingCurator database,
-              Function<VisitorParameters, Runnable> visitorSessions, Metric metric, Clock clock,
-              double windowSizeIncrement) {
+              Function<VisitorParameters, Runnable> visitorSessions, Metric metric, Clock clock) {
         for (DocumentType type : ready.keySet())
             cluster.bucketSpaceOf(type); // Verifies this is known.
 
@@ -81,7 +79,6 @@ public class Reindexer {
         this.visitorSessions = visitorSessions;
         this.metrics = new ReindexingMetrics(metric, cluster.name);
         this.clock = clock;
-        this.windowSizeIncrement = windowSizeIncrement;
     }
 
     /** Lets the reindexer abort any ongoing visit session, wait for it to complete normally, then exit. */
@@ -198,7 +195,7 @@ public class Reindexer {
 
     VisitorParameters createParameters(DocumentType type, ProgressToken progress) {
         VisitorParameters parameters = new VisitorParameters(type.getName());
-        parameters.setThrottlePolicy(new DynamicThrottlePolicy().setWindowSizeIncrement(windowSizeIncrement)
+        parameters.setThrottlePolicy(new DynamicThrottlePolicy().setWindowSizeIncrement(0.2)
                                                                 .setWindowSizeDecrementFactor(5)
                                                                 .setResizeRate(10)
                                                                 .setMinWindowSize(1));

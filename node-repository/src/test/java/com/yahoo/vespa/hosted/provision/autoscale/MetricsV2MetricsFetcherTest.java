@@ -15,6 +15,7 @@ import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -25,7 +26,7 @@ public class MetricsV2MetricsFetcherTest {
     private static final double delta = 0.00000001;
 
     @Test
-    public void testMetricsFetch() {
+    public void testMetricsFetch() throws Exception {
         NodeResources resources = new NodeResources(1, 10, 100, 1);
         ProvisioningTester tester = new ProvisioningTester.Builder().build();
         OrchestratorMock orchestrator = new OrchestratorMock();
@@ -44,7 +45,7 @@ public class MetricsV2MetricsFetcherTest {
 
         {
             httpClient.cannedResponse = cannedResponseForApplication1;
-            List<Pair<String, MetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application1));
+            List<Pair<String, MetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application1).get().metrics());
             assertEquals("http://host-1.yahoo.com:4080/metrics/v2/values?consumer=autoscaling",
                          httpClient.requestsReceived.get(0));
             assertEquals(2, values.size());
@@ -62,7 +63,7 @@ public class MetricsV2MetricsFetcherTest {
 
         {
             httpClient.cannedResponse = cannedResponseForApplication2;
-            List<Pair<String, MetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application2));
+            List<Pair<String, MetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application2).get().metrics());
             assertEquals("http://host-3.yahoo.com:4080/metrics/v2/values?consumer=autoscaling",
                          httpClient.requestsReceived.get(1));
             assertEquals(1, values.size());
@@ -80,21 +81,21 @@ public class MetricsV2MetricsFetcherTest {
                 tester.nodeRepository().write(tester.nodeRepository().getNodes(application2, Node.State.active)
                         .get(0).retire(tester.clock().instant()), lock);
             }
-            List<Pair<String, MetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application2));
+            List<Pair<String, MetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application2).get().metrics());
             assertFalse(values.get(0).getSecond().stable());
         }
     }
 
-    private static class MockHttpClient implements MetricsV2MetricsFetcher.HttpClient {
+    private static class MockHttpClient implements MetricsV2MetricsFetcher.AsyncHttpClient {
 
         List<String> requestsReceived = new ArrayList<>();
 
         String cannedResponse = null;
 
         @Override
-        public String get(String url) {
+        public CompletableFuture<String> get(String url) {
             requestsReceived.add(url);
-            return cannedResponse;
+            return CompletableFuture.completedFuture(cannedResponse);
         }
 
         @Override

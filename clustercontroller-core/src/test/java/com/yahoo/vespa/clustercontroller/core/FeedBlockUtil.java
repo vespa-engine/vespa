@@ -3,6 +3,7 @@ package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.ResourceUsage;
 
 import java.util.Arrays;
@@ -11,6 +12,8 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static com.yahoo.vespa.clustercontroller.core.ClusterFixture.storageNode;
 
 public class FeedBlockUtil {
 
@@ -89,6 +92,23 @@ public class FeedBlockUtil {
     static Set<NodeResourceExhaustion> setOf(NodeResourceExhaustion... exhaustions) {
         return Arrays.stream(exhaustions).collect(Collectors.toCollection(LinkedHashSet::new));
     }
+
+    static ClusterFixture createFixtureWithReportedUsages(NodeAndUsages... nodeAndUsages) {
+        var highestIndex = Arrays.stream(nodeAndUsages).mapToInt(u -> u.index).max();
+        if (highestIndex.isEmpty()) {
+            throw new IllegalArgumentException("Can't have an empty cluster");
+        }
+        var cf = ClusterFixture
+                .forFlatCluster(highestIndex.getAsInt() + 1)
+                .assignDummyRpcAddresses()
+                .bringEntireClusterUp();
+        for (var nu : nodeAndUsages) {
+            cf.cluster().getNodeInfo(storageNode(nu.index))
+                    .setHostInfo(HostInfo.createHostInfo(createResourceUsageJson(nu.usages)));
+        }
+        return cf;
+    }
+
 
 
 }

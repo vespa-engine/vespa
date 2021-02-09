@@ -11,7 +11,9 @@ class AccessLogHandler {
     private final LogFileHandler<RequestLogEntry> logFileHandler;
 
     AccessLogHandler(AccessLogConfig.FileHandler config, LogWriter<RequestLogEntry> logWriter) {
-        logFileHandler = new LogFileHandler<>(toCompression(config), config.pattern(), config.rotation(), config.symlink(), config.queueSize(), logWriter);
+        logFileHandler = new LogFileHandler<>(
+                toCompression(config), config.pattern(), config.rotation(),
+                config.symlink(), config.queueSize(), "request-logger", logWriter);
     }
 
     public void log(RequestLogEntry entry) {

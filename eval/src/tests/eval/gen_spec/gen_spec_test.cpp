@@ -57,12 +57,12 @@ TensorSpec scalar_5 = TensorSpec("double").add({}, 5.0);
 
 TEST(GenSpecTest, scalar_double) {
     EXPECT_EQ(GenSpec().gen(), scalar_1);
-    EXPECT_EQ(GenSpec().seq_bias(5.0).gen(), scalar_5);
+    EXPECT_EQ(GenSpec(5.0).gen(), scalar_5);
 }
 
 TEST(GenSpecTest, not_scalar_float_just_yet) {
     EXPECT_EQ(GenSpec().cells_float().gen(), scalar_1);
-    EXPECT_EQ(GenSpec().cells_float().seq_bias(5.0).gen(), scalar_5);
+    EXPECT_EQ(GenSpec(5.0).cells_float().gen(), scalar_5);
 }
 
 //-----------------------------------------------------------------------------
@@ -226,6 +226,11 @@ TEST(GenSpecTest, generating_basic_mixed) {
 
 TEST(GenSpecTest, generating_inverted_mixed) {
     EXPECT_EQ(GenSpec().idx("d", 3).map("c", 1).idx("b", 1).map("a", 3).gen(), inverted_mixed);
+}
+
+TEST(GenSpecTest, gen_spec_can_be_implicitly_converted_to_tensor_spec) {
+    EXPECT_EQ(GenSpec().map("a", 3).idx("b", 1).map("c", 1).idx("d", 3), basic_mixed);
+    EXPECT_EQ(GenSpec().idx("d", 3).map("c", 1).idx("b", 1).map("a", 3), inverted_mixed);
 }
 
 //-----------------------------------------------------------------------------

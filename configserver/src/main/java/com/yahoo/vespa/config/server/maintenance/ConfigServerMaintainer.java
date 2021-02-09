@@ -35,7 +35,7 @@ public abstract class ConfigServerMaintainer extends Maintainer {
     ConfigServerMaintainer(ApplicationRepository applicationRepository, Curator curator, FlagSource flagSource,
                            Instant now, Duration interval) {
         super(null, interval, now, new JobControl(new JobControlFlags(curator, flagSource)),
-              jobMetrics(applicationRepository.metric()), cluster(curator));
+              jobMetrics(applicationRepository.metric()), cluster(curator), false);
         this.applicationRepository = applicationRepository;
     }
 

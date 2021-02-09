@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateProvider;
-import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
@@ -92,20 +91,20 @@ public class EndpointCertificateMaintainer extends ControllerMaintainer {
     private void deployRefreshedCertificates() {
         var now = clock.instant();
         curator.readAllEndpointCertificateMetadata().forEach((applicationId, endpointCertificateMetadata) ->
-                endpointCertificateMetadata.lastRefreshed().ifPresent(lastRefreshTime -> {
-                    Instant refreshTime = Instant.ofEpochSecond(lastRefreshTime);
-                    if (now.isAfter(refreshTime.plus(7, ChronoUnit.DAYS))) {
-
-                        controller().jobController().jobs(applicationId).forEach(job ->
-                                controller().jobController().jobStatus(new JobId(applicationId, JobType.fromJobName(job.jobName()))).lastTriggered().ifPresent(run -> {
-                                    if (run.start().isBefore(refreshTime) && job.isProduction() && job.isDeployment()) {
-                                        deploymentTrigger.reTrigger(applicationId, job);
-                                        log.info("Re-triggering deployment job " + job.jobName() + " for instance " +
-                                                applicationId.serializedForm() + " to roll out refreshed endpoint certificate");
-                                    }
-                                }));
-                    }
-                }));
+                                                                     endpointCertificateMetadata.lastRefreshed().ifPresent(lastRefreshTime -> {
+                                                                         Instant refreshTime = Instant.ofEpochSecond(lastRefreshTime);
+                                                                         if (now.isAfter(refreshTime.plus(7, ChronoUnit.DAYS))) {
+                                                                             controller().applications().getInstance(applicationId)
+                                                                                         .ifPresent(instance -> instance.productionDeployments().forEach((zone, deployment) -> {
+                                                                                             if (deployment.at().isBefore(refreshTime)) {
+                                                                                                 JobType job = JobType.from(controller().system(), zone).get();
+                                                                                                 deploymentTrigger.reTrigger(applicationId, job);
+                                                                                                 log.info("Re-triggering deployment job " + job.jobName() + " for instance " +
+                                                                                                          applicationId.serializedForm() + " to roll out refreshed endpoint certificate");
+                                                                                             }
+                                                                                         }));
+                                                                         }
+                                                                     }));
     }
 
     private OptionalInt latestVersionInSecretStore(EndpointCertificateMetadata originalCertificateMetadata) {

@@ -530,10 +530,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         if (containerSearch != null) containerSearch.connectSearchClusters(clusterMap);
     }
 
-    public void addDefaultSearchAccessLog(DeployState deployState) {
-        var compressionType = isHostedVespa && deployState.featureFlags().enableZstdCompressionAccessLog()
-                ? AccessLogComponent.CompressionType.ZSTD
-                : AccessLogComponent.CompressionType.GZIP;
+    public void addDefaultSearchAccessLog() {
+        var compressionType = isHostedVespa ? AccessLogComponent.CompressionType.ZSTD : AccessLogComponent.CompressionType.GZIP;
         addComponent(new AccessLogComponent(this, AccessLogComponent.AccessLogType.jsonAccessLog, compressionType, getName(), isHostedVespa));
     }
 

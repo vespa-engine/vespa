@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 vespa_add_library(searchcore_bucketmover_test STATIC
     SOURCES
@@ -13,6 +13,7 @@ vespa_add_executable(searchcore_documentbucketmover_test_app TEST
     searchcore_test
     searchcore_server
     searchcore_feedoperation
+    GTest::GTest
 )
 vespa_add_test(NAME searchcore_documentbucketmover_test_app COMMAND searchcore_documentbucketmover_test_app)
 
@@ -24,6 +25,7 @@ vespa_add_executable(searchcore_scaniterator_test_app TEST
     searchcore_server
     searchcore_test
     searchcore_feedoperation
+    GTest::GTest
 )
 vespa_add_test(NAME searchcore_scaniterator_test_app COMMAND searchcore_scaniterator_test_app)
 
@@ -35,5 +37,6 @@ vespa_add_executable(searchcore_documentmover_test_app TEST
     searchcore_server
     searchcore_test
     searchcore_feedoperation
+    GTest::GTest
 )
 vespa_add_test(NAME searchcore_documentmover_test_app COMMAND searchcore_documentmover_test_app)

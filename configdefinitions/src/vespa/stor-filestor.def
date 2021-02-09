@@ -64,3 +64,10 @@ enable_multibit_split_optimalization bool default=true restart
 ## This async message is then handled by the calling thread immediately,
 ## instead of going via a persistence thread.
 use_async_message_handling_on_schedule bool default=false restart
+
+## The noise level used when deciding whether a resource usage sample should be reported to the cluster controller.
+##
+## If one of the resource categories (e.g. disk or memory) has a usage delta that is larger than the noise level,
+## the entire resource usage sample is immediately reported to the cluster controller (via host info).
+## This config can be live updated (doesn't require restart).
+resource_usage_reporter_noise_level double default=0.001

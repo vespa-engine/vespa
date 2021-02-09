@@ -16,6 +16,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.stream.Collectors;
 
 /**
  * This class represents all the options that can be set in the fleetcontroller.
@@ -249,6 +250,12 @@ public class FleetControllerOptions implements Cloneable {
         sb.append("<tr><td><nobr>Max deferred task version wait time</nobr></td><td align=\"right\">").append(maxDeferredTaskVersionWaitTime.toMillis()).append("ms</td></tr>");
         sb.append("<tr><td><nobr>Cluster has global document types configured</nobr></td><td align=\"right\">").append(clusterHasGlobalDocumentTypes).append("</td></tr>");
         sb.append("<tr><td><nobr>Enable 2-phase cluster state activation protocol</nobr></td><td align=\"right\">").append(enableTwoPhaseClusterStateActivation).append("</td></tr>");
+        sb.append("<tr><td><nobr>Cluster auto feed block on resource exhaustion enabled</nobr></td><td align=\"right\">")
+                        .append(clusterFeedBlockEnabled).append("</td></tr>");
+        sb.append("<tr><td><nobr>Feed block limits</nobr></td><td align=\"right\">")
+                        .append(clusterFeedBlockLimit.entrySet().stream()
+                                .map(kv -> String.format("%s: %.2f%%", kv.getKey(), kv.getValue() * 100.0))
+                                .collect(Collectors.joining("<br/>"))).append("</td></tr>");
 
         sb.append("</table>");
     }

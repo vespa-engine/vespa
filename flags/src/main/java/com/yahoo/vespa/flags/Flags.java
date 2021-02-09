@@ -143,14 +143,6 @@ public class Flags {
             "Takes effect immediately"
     );
 
-    public static final UnboundBooleanFlag CONTROLLER_PROVISION_LB = defineFeatureFlag(
-            "controller-provision-lb", false,
-            List.of("mpolden"), "2020-12-02", "2021-02-01",
-            "Provision load balancer for controller cluster",
-            "Takes effect when controller application is redeployed",
-            ZONE_ID
-    );
-
     public static final UnboundBooleanFlag HIDE_SHARED_ROUTING_ENDPOINT = defineFeatureFlag(
             "hide-shared-routing-endpoint", false,
             List.of("tokle"), "2020-12-02", "2021-06-01",
@@ -180,13 +172,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundDoubleFlag REINDEXER_WINDOW_SIZE_INCREMENT = defineDoubleFlag(
-            "reindexer-window-size-increment", 0.2,
-            List.of("jonmv"), "2020-12-09", "2021-02-07",
-            "Window size increment for dynamic throttle policy used by reindexer visitor session — more means more aggressive reindexing",
-            "Takes effect on (re)deployment",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_LID_SPACE_COMPACT = defineFeatureFlag(
             "use-bucket-executor-for-lid-space-compact", false,
             List.of("baldersheim"), "2021-01-24", "2021-03-01",
@@ -214,18 +199,6 @@ public class Flags {
             "Whether to use reconfigurable zookeeper server for cluster controller",
             "Takes effect on (re)redeployment",
             APPLICATION_ID);
-
-    public static final UnboundBooleanFlag ENABLE_JDISC_CONNECTION_LOG = defineFeatureFlag(
-            "enable-jdisc-connection-log", false,
-            List.of("bjorncs", "tokle"), "2021-01-12", "2021-04-01",
-            "Whether to enable jdisc connection log",
-            "Takes effect on (re)deployment");
-
-    public static final UnboundBooleanFlag ENABLE_ZSTD_COMPRESSION_ACCESS_LOG = defineFeatureFlag(
-            "enable-zstd-compression-access-log", false,
-            List.of("bjorncs", "tokle", "baldersheim"), "2021-01-19", "2021-04-01",
-            "Whether to enable zstd compression of jdisc access logs",
-            "Takes effect on (re)deployment");
 
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
             "enable-feed-block-in-distributor", false,

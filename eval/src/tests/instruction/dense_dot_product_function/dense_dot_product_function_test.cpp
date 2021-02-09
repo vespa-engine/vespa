@@ -19,7 +19,7 @@ using namespace vespalib::eval::test;
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 TensorSpec makeTensor(size_t numCells, double cellBias) {
-    return GenSpec().idx("x", numCells).seq_bias(cellBias).gen();
+    return GenSpec(cellBias).idx("x", numCells);
 }
 
 const double leftBias = 3.0;
@@ -39,7 +39,7 @@ void check_gen_with_result(size_t l, size_t r, double wanted) {
     param_repo.add("b", makeTensor(r, rightBias));
     vespalib::string expr = "reduce(a*b,sum,x)";
     EvalFixture evaluator(prod_factory, expr, param_repo, true);
-    EXPECT_EQUAL(GenSpec().seq_bias(wanted).gen(), evaluator.result());
+    EXPECT_EQUAL(GenSpec(wanted), evaluator.result());
     EXPECT_EQUAL(evaluator.result(), EvalFixture::ref(expr, param_repo));
     auto info = evaluator.find_all<DenseDotProductFunction>();
     EXPECT_EQUAL(info.size(), 1u);
@@ -87,16 +87,16 @@ TEST("require that dot product with equal sizes is correct") {
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("v01_x1", GenSpec().idx("x", 1).seq_bias(2.0).gen())
-        .add("v02_x3", GenSpec().idx("x", 3).seq_bias(4.0).gen())
-        .add("v03_x3", GenSpec().idx("x", 3).seq_bias(5.0).gen())
-        .add("v04_y3", GenSpec().idx("y", 3).seq_bias(10).gen())
-        .add("v05_x5", GenSpec().idx("x", 5).seq_bias(6.0).gen())
-        .add("v06_x5", GenSpec().idx("x", 5).seq_bias(7.0).gen())
-        .add("v07_x5f", GenSpec().cells_float().idx("x", 5).seq_bias(7.0).gen())
-        .add("v08_x5f", GenSpec().cells_float().idx("x", 5).seq_bias(6.0).gen())
-        .add("m01_x3y3", GenSpec().idx("x", 3).idx("y", 3).seq_bias(1.0).gen())
-        .add("m02_x3y3", GenSpec().idx("x", 3).idx("y", 3).seq_bias(2.0).gen());
+        .add("v01_x1", GenSpec(2.0).idx("x", 1))
+        .add("v02_x3", GenSpec(4.0).idx("x", 3))
+        .add("v03_x3", GenSpec(5.0).idx("x", 3))
+        .add("v04_y3", GenSpec(10).idx("y", 3))
+        .add("v05_x5", GenSpec(6.0).idx("x", 5))
+        .add("v06_x5", GenSpec(7.0).idx("x", 5))
+        .add("v07_x5f", GenSpec(7.0).cells_float().idx("x", 5))
+        .add("v08_x5f", GenSpec(6.0).cells_float().idx("x", 5))
+        .add("m01_x3y3", GenSpec(1.0).idx("x", 3).idx("y", 3))
+        .add("m02_x3y3", GenSpec(2.0).idx("x", 3).idx("y", 3));
 }
 EvalFixture::ParamRepo param_repo = make_params();
 

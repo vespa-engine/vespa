@@ -111,6 +111,7 @@ JobTestBase::endScan() {
 
 JobTestBase &
 JobTestBase::compact() {
+    EXPECT_FALSE(run());
     EXPECT_TRUE(run());
     return *this;
 }

@@ -18,9 +18,9 @@ const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
-        .add("a", GenSpec().seq_bias(1.0).gen())
-        .add("b", GenSpec().seq_bias(2.0).gen())
-        .add("c", GenSpec().seq_bias(3.0).gen());
+        .add("a", GenSpec(1.0))
+        .add("b", GenSpec(2.0))
+        .add("c", GenSpec(3.0));
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
