@@ -159,8 +159,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useAsyncMessageHandlingOnSchedule;
         private final double feedConcurrency;
         private final boolean reconfigurableZookeeperServer;
-        private final boolean enableJdiscConnectionLog;
-        private final boolean enableZstdCompressionAccessLog;
         private final boolean useBucketExecutorForLidSpaceCompact;
         private final boolean enableFeedBlockInDistributor;
         private final double maxDeadBytesRatio;
@@ -178,8 +176,6 @@ public class ModelContextImpl implements ModelContext {
             this.useAsyncMessageHandlingOnSchedule = flagValue(source, appId, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
             this.feedConcurrency = flagValue(source, appId, Flags.FEED_CONCURRENCY);
             this.reconfigurableZookeeperServer = flagValue(source, appId, Flags.RECONFIGURABLE_ZOOKEEPER_SERVER_FOR_CLUSTER_CONTROLLER);
-            this.enableJdiscConnectionLog = flagValue(source, appId, Flags.ENABLE_JDISC_CONNECTION_LOG);
-            this.enableZstdCompressionAccessLog = flagValue(source, appId, Flags.ENABLE_ZSTD_COMPRESSION_ACCESS_LOG);
             this.useBucketExecutorForLidSpaceCompact = flagValue(source, appId, Flags.USE_BUCKET_EXECUTOR_FOR_LID_SPACE_COMPACT);
             this.enableFeedBlockInDistributor = flagValue(source, appId, Flags.ENABLE_FEED_BLOCK_IN_DISTRIBUTOR);
             this.maxDeadBytesRatio = flagValue(source, appId, Flags.MAX_DEAD_BYTES_RATIO);
@@ -197,8 +193,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
         @Override public double feedConcurrency() { return feedConcurrency; }
         @Override public boolean reconfigurableZookeeperServer() { return reconfigurableZookeeperServer; }
-        @Override public boolean enableJdiscConnectionLog() { return enableJdiscConnectionLog; }
-        @Override public boolean enableZstdCompressionAccessLog() { return enableZstdCompressionAccessLog; }
         @Override public boolean useBucketExecutorForLidSpaceCompact() { return useBucketExecutorForLidSpaceCompact; }
         @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
         @Override public double maxDeadBytesRatio() { return maxDeadBytesRatio; }

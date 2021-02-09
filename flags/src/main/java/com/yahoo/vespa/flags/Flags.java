@@ -207,18 +207,6 @@ public class Flags {
             "Takes effect on (re)redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag ENABLE_JDISC_CONNECTION_LOG = defineFeatureFlag(
-            "enable-jdisc-connection-log", false,
-            List.of("bjorncs", "tokle"), "2021-01-12", "2021-04-01",
-            "Whether to enable jdisc connection log",
-            "Takes effect on (re)deployment");
-
-    public static final UnboundBooleanFlag ENABLE_ZSTD_COMPRESSION_ACCESS_LOG = defineFeatureFlag(
-            "enable-zstd-compression-access-log", false,
-            List.of("bjorncs", "tokle", "baldersheim"), "2021-01-19", "2021-04-01",
-            "Whether to enable zstd compression of jdisc access logs",
-            "Takes effect on (re)deployment");
-
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
             "enable-feed-block-in-distributor", false,
             List.of("geirst"), "2021-01-27", "2021-04-01",
