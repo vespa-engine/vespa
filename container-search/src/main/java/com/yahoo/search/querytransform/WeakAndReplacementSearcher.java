@@ -9,7 +9,9 @@ import com.yahoo.search.searchchain.Execution;
 
 /**
  * Recursively replaces all instances of OrItems with WeakAndItems if the query property weakand.replace is true.
- * Otherwise a noop searcher
+ * Otherwise a noop searcher.
+ *
+ * @author karowan
  */
 public class WeakAndReplacementSearcher extends Searcher {
     private static final CompoundName WEAKAND_REPLACE = new CompoundName("weakAnd.replace");
