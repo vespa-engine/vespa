@@ -33,7 +33,6 @@ import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeCandidate;
 import com.yahoo.vespa.hosted.provision.provisioning.NodePrioritizer;
-import com.yahoo.vespa.hosted.provision.provisioning.NodeResourceComparator;
 import com.yahoo.vespa.hosted.provision.provisioning.NodeSpec;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
 import com.yahoo.yolean.Exceptions;
@@ -52,7 +51,6 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * @author freva
@@ -314,18 +312,6 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
     private static NodeResources toNodeResources(ClusterCapacity clusterCapacity) {
         return new NodeResources(clusterCapacity.vcpu(), clusterCapacity.memoryGb(), clusterCapacity.diskGb(),
                 clusterCapacity.bandwidthGbps());
-    }
-
-    /** Reads node resources declared by target capacity flag */
-    private List<NodeResources> targetCapacity() {
-        return preprovisionCapacityFlag.value().stream()
-                .flatMap(cap -> {
-                    NodeResources resources = new NodeResources(cap.vcpu(), cap.memoryGb(),
-                            cap.diskGb(), cap.bandwidthGbps());
-                    return IntStream.range(0, cap.count()).mapToObj(i -> resources);
-                })
-                .sorted(NodeResourceComparator.memoryDiskCpuOrder().reversed())
-                .collect(Collectors.toList());
     }
 
     /** Verify DNS configuration of given nodes */
