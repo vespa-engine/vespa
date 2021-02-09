@@ -1,25 +1,41 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.logserver;
 
-import static org.junit.Assert.*;
-
+import com.yahoo.log.LogMessage;
+import com.yahoo.logserver.handlers.LogHandler;
 import org.junit.Test;
 
-import com.yahoo.logserver.handlers.LogHandler;
-import com.yahoo.logserver.test.LogDispatcherTestCase;
+import java.util.List;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertTrue;
 
 public class FlusherTestCase {
 
     @Test
-    public void testFlusher() throws InterruptedException {
+    public void flush_is_invoked_on_handler_and_flusher_can_be_shut_down() throws InterruptedException {
         Flusher flusher = new Flusher();
-        LogDispatcherTestCase.MockHandler handler = new LogDispatcherTestCase.MockHandler();
+        MockHandler handler = new MockHandler();
         Flusher.register(handler);
         flusher.start();
-        Thread.sleep(5000);
-        flusher.interrupt();
-        flusher.join();
-        assertTrue(handler.flushCalled > 0);
+        try {
+            assertTrue(handler.flushInvoked.await(60, TimeUnit.SECONDS));
+        } finally {
+            flusher.interrupt();
+            flusher.join();
+        }
+    }
+
+    private static class MockHandler implements LogHandler {
+
+        private final CountDownLatch flushInvoked = new CountDownLatch(1);
+
+        @Override public void flush() { flushInvoked.countDown(); }
+
+        @Override public void handle(LogMessage msg) {}
+        @Override public void handle(List<LogMessage> messages) {}
+        @Override public void close() {}
     }
 
 }
