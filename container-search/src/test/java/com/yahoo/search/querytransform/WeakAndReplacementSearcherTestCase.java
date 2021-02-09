@@ -15,7 +15,7 @@ import static org.junit.Assert.*;
 
 public class WeakAndReplacementSearcherTestCase {
 
-    private static final CompoundName WEAKAND_REPLACE = new CompoundName("weakand.replace");
+    private static final CompoundName WEAKAND_REPLACE = new CompoundName("weakAnd.replace");
     private static final int N = 99;
 
 
