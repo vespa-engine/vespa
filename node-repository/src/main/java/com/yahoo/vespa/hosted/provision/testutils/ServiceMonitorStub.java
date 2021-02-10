@@ -70,7 +70,7 @@ public class ServiceMonitorStub implements ServiceMonitor {
         Map<ApplicationInstanceReference, ApplicationInstance> status = new HashMap<>();
         for (Map.Entry<ApplicationId, MockDeployer.ApplicationContext> app : apps.entrySet()) {
             Set<ServiceInstance> serviceInstances = new HashSet<>();
-            for (Node node : nodeRepository.nodes().list(app.getValue().id(), Node.State.active)) {
+            for (Node node : nodeRepository.nodes().list(Node.State.active).owner(app.getValue().id())) {
                 serviceInstances.add(new ServiceInstance(new ConfigId("configid"),
                                                          new HostName(node.hostname()),
                                                          getHostStatus(node.hostname())));

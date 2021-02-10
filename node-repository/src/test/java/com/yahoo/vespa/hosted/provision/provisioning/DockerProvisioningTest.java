@@ -366,7 +366,7 @@ public class DockerProvisioningTest {
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, r)));
 
         var tx = new ApplicationTransaction(new ProvisionLock(app1, tester.nodeRepository().nodes().lock(app1)), new NestedTransaction());
-        tester.nodeRepository().nodes().deactivate(tester.nodeRepository().nodes().list(app1, Node.State.active).retired().asList(), tx);
+        tester.nodeRepository().nodes().deactivate(tester.nodeRepository().nodes().list(Node.State.active).owner(app1).retired().asList(), tx);
         tx.nested().commit();
 
         assertEquals(2, tester.getNodes(app1, Node.State.active).size());

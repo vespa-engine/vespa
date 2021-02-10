@@ -115,14 +115,14 @@ public class ScalingSuggestionsMaintainerTest {
     }
 
     private boolean shouldSuggest(ApplicationId app, ClusterSpec cluster, ProvisioningTester tester) {
-        var currentResources = tester.nodeRepository().nodes().list(app).cluster(cluster.id()).not().retired().toResources();
+        var currentResources = tester.nodeRepository().nodes().list().owner(app).cluster(cluster.id()).not().retired().toResources();
         return tester.nodeRepository().applications().get(app).get().cluster(cluster.id()).get()
                      .shouldSuggestResources(currentResources);
     }
 
     public void addMeasurements(float cpu, float memory, float disk, int generation, int count, ApplicationId applicationId,
                                 NodeRepository nodeRepository, MetricsDb db) {
-        NodeList nodes = nodeRepository.nodes().list(applicationId, Node.State.active);
+        NodeList nodes = nodeRepository.nodes().list(Node.State.active).owner(applicationId);
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)
                 db.add(List.of(new Pair<>(node.hostname(), new MetricSnapshot(nodeRepository.clock().instant(),

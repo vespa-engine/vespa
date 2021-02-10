@@ -278,16 +278,6 @@ public class CuratorDatabaseClient {
         return nodes;
     }
 
-    /** 
-     * Returns all nodes allocated to the given application which are in one of the given states 
-     * If no states are given this returns all nodes.
-     */
-    public List<Node> readNodes(ApplicationId applicationId, Node.State ... states) {
-        List<Node> nodes = readNodes(states);
-        nodes.removeIf(node -> ! node.allocation().isPresent() || ! node.allocation().get().owner().equals(applicationId));
-        return nodes;
-    }
-
     /**
      * Returns a particular node, or empty if this node is not in any of the given states.
      * If no states are given this returns the node if it is present in any state.

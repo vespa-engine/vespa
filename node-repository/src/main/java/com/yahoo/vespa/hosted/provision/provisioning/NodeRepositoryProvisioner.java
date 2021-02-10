@@ -150,7 +150,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private ClusterResources currentResources(ApplicationId applicationId,
                                               ClusterSpec clusterSpec,
                                               Capacity requested) {
-        List<Node> nodes = nodeRepository.nodes().list(applicationId, Node.State.active)
+        List<Node> nodes = nodeRepository.nodes().list(Node.State.active).owner(applicationId)
                                    .cluster(clusterSpec.id())
                                    .not().retired()
                                    .not().removable()

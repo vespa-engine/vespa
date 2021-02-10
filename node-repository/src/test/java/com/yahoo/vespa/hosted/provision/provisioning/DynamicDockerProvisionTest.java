@@ -167,19 +167,19 @@ public class DynamicDockerProvisionTest {
 
         mockHostProvisioner(hostProvisioner, "large", 3, null); // Provision shared hosts
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, resources);
-        Set<Node> initialNodes = tester.nodeRepository().nodes().list(application1).stream().collect(Collectors.toSet());
+        Set<Node> initialNodes = tester.nodeRepository().nodes().list().owner(application1).stream().collect(Collectors.toSet());
         assertEquals(4, initialNodes.size());
 
         // Redeploy same application with exclusive=true
         mockHostProvisioner(hostProvisioner, "large", 3, application1);
         prepareAndActivate(application1, clusterSpec("mycluster", true), 4, 1, resources);
-        assertEquals(8, tester.nodeRepository().nodes().list(application1).size());
-        assertEquals(initialNodes, tester.nodeRepository().nodes().list(application1).retired().stream().collect(Collectors.toSet()));
+        assertEquals(8, tester.nodeRepository().nodes().list().owner(application1).size());
+        assertEquals(initialNodes, tester.nodeRepository().nodes().list().owner(application1).retired().stream().collect(Collectors.toSet()));
 
         // Redeploy without exclusive again is no-op
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, resources);
-        assertEquals(8, tester.nodeRepository().nodes().list(application1).size());
-        assertEquals(initialNodes, tester.nodeRepository().nodes().list(application1).retired().stream().collect(Collectors.toSet()));
+        assertEquals(8, tester.nodeRepository().nodes().list().owner(application1).size());
+        assertEquals(initialNodes, tester.nodeRepository().nodes().list().owner(application1).retired().stream().collect(Collectors.toSet()));
     }
 
     @Test
@@ -188,7 +188,7 @@ public class DynamicDockerProvisionTest {
         ApplicationId app = ProvisioningTester.applicationId();
 
         Function<Node, Node> retireNode = node -> tester.patchNode(node, (n) -> n.withWantToRetire(true, Agent.system, Instant.now()));
-        Function<Integer, Node> getNodeInGroup = group -> tester.nodeRepository().nodes().list(app).stream()
+        Function<Integer, Node> getNodeInGroup = group -> tester.nodeRepository().nodes().list().owner(app).stream()
                 .filter(node -> node.allocation().get().membership().cluster().group().get().index() == group)
                 .findAny().orElseThrow();
 
@@ -209,7 +209,7 @@ public class DynamicDockerProvisionTest {
         tester.prepare(app, clusterSpec("content"), 8, 2, resources);
 
         // Verify that nodes have unique indices from 0..9
-        var indices = tester.nodeRepository().nodes().list(app).stream()
+        var indices = tester.nodeRepository().nodes().list().owner(app).stream()
                 .map(node -> node.allocation().get().membership().index())
                 .collect(Collectors.toSet());
         assertTrue(indices.containsAll(IntStream.range(0, 10).boxed().collect(Collectors.toList())));

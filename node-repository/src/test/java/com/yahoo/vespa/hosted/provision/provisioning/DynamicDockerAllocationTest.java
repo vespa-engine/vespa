@@ -315,7 +315,7 @@ public class DynamicDockerAllocationTest {
         List<HostSpec> hosts = tester.prepare(application, clusterSpec("myContent.t1.a1"), 2, 1, new NodeResources(1, 4, 100, 1));
         tester.activate(application, hosts);
 
-        NodeList activeNodes = tester.nodeRepository().nodes().list(application);
+        NodeList activeNodes = tester.nodeRepository().nodes().list().owner(application);
         assertEquals(ImmutableSet.of("127.0.127.13", "::13"), activeNodes.asList().get(0).ipConfig().primary());
         assertEquals(ImmutableSet.of("127.0.127.2", "::2"), activeNodes.asList().get(1).ipConfig().primary());
     }
@@ -437,16 +437,16 @@ public class DynamicDockerAllocationTest {
 
         // Redeploy does not change allocation as a host with switch information is no better or worse than hosts
         // without switch information
-        NodeList allocatedNodes = tester.nodeRepository().nodes().list(app1);
+        NodeList allocatedNodes = tester.nodeRepository().nodes().list().owner(app1);
         tester.activate(app1, tester.prepare(app1, cluster, Capacity.from(new ClusterResources(2, 1, resources))));
-        assertEquals("Allocation unchanged", allocatedNodes, tester.nodeRepository().nodes().list(app1));
+        assertEquals("Allocation unchanged", allocatedNodes, tester.nodeRepository().nodes().list().owner(app1));
 
         // Initial hosts are attached to the same switch
         tester.patchNodes(hosts0, (host) -> host.withSwitchHostname(switch0));
 
         // Redeploy does not change allocation
         tester.activate(app1, tester.prepare(app1, cluster, Capacity.from(new ClusterResources(2, 1, resources))));
-        assertEquals("Allocation unchanged", allocatedNodes, tester.nodeRepository().nodes().list(app1));
+        assertEquals("Allocation unchanged", allocatedNodes, tester.nodeRepository().nodes().list().owner(app1));
 
         // One regular host and one slow-disk host are provisioned on the same switch
         String switch1 = "switch1";

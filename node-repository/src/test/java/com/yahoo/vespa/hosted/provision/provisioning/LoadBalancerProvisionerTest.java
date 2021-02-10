@@ -137,7 +137,7 @@ public class LoadBalancerProvisionerTest {
         // Entire application is removed: Nodes and load balancer are deactivated
         tester.remove(app1);
         dirtyNodesOf(app1);
-        assertTrue("No nodes are allocated to " + app1, tester.nodeRepository().nodes().list(app1, Node.State.reserved, Node.State.active).isEmpty());
+        assertTrue("No nodes are allocated to " + app1, tester.nodeRepository().nodes().list(Node.State.reserved, Node.State.active).owner(app1).isEmpty());
         assertEquals(2, lbApp1.get().size());
         assertTrue("Deactivated load balancers", lbApp1.get().stream().allMatch(lb -> lb.state() == LoadBalancer.State.inactive));
         assertTrue("Load balancers for " + app2 + " remain active", lbApp2.get().stream().allMatch(lb -> lb.state() == LoadBalancer.State.active));
@@ -168,7 +168,7 @@ public class LoadBalancerProvisionerTest {
         var nodes = tester.prepare(app1, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("qrs")), 2 , 1, resources);
         Supplier<LoadBalancer> lb = () -> tester.nodeRepository().loadBalancers().list(app1).asList().get(0);
         assertTrue("Load balancer provisioned with empty reals", tester.loadBalancerService().instances().get(lb.get().id()).reals().isEmpty());
-        assignIps(tester.nodeRepository().nodes().list(app1));
+        assignIps(tester.nodeRepository().nodes().list().owner(app1));
         tester.activate(app1, nodes);
         assertFalse("Load balancer is reconfigured with reals", tester.loadBalancerService().instances().get(lb.get().id()).reals().isEmpty());
 
@@ -181,7 +181,7 @@ public class LoadBalancerProvisionerTest {
         // Application is redeployed
         nodes = tester.prepare(app1, clusterRequest(ClusterSpec.Type.container, ClusterSpec.Id.from("qrs")), 2 , 1, resources);
         assertTrue("Load balancer is reconfigured with empty reals", tester.loadBalancerService().instances().get(lb.get().id()).reals().isEmpty());
-        assignIps(tester.nodeRepository().nodes().list(app1));
+        assignIps(tester.nodeRepository().nodes().list().owner(app1));
         tester.activate(app1, nodes);
         assertFalse("Load balancer is reconfigured with reals", tester.loadBalancerService().instances().get(lb.get().id()).reals().isEmpty());
     }
@@ -270,7 +270,7 @@ public class LoadBalancerProvisionerTest {
     }
 
     private void dirtyNodesOf(ApplicationId application) {
-        tester.nodeRepository().nodes().deallocate(tester.nodeRepository().nodes().list(application).asList(), Agent.system, this.getClass().getSimpleName());
+        tester.nodeRepository().nodes().deallocate(tester.nodeRepository().nodes().list().owner(application).asList(), Agent.system, this.getClass().getSimpleName());
     }
 
     private Set<HostSpec> prepare(ApplicationId application, ClusterSpec... specs) {

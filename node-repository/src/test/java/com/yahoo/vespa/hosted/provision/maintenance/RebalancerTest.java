@@ -177,7 +177,7 @@ public class RebalancerTest {
         }
 
         List<Node> getNodes(ApplicationId applicationId, Node.State nodeState) {
-            return tester.nodeRepository().nodes().list(applicationId, nodeState).asList();
+            return tester.nodeRepository().nodes().list(nodeState).owner(applicationId).asList();
         }
 
         boolean isNodeRetired(Node node) {
@@ -188,7 +188,7 @@ public class RebalancerTest {
 
         NodeList getNodes(Node.State nodeState) { return tester.nodeRepository().nodes().list(nodeState); }
 
-        Node getNode(ApplicationId applicationId) { return tester.nodeRepository().nodes().list(applicationId).first().get(); }
+        Node getNode(ApplicationId applicationId) { return tester.nodeRepository().nodes().list().owner(applicationId).first().get(); }
 
         ManualClock clock() { return tester.clock(); }
 

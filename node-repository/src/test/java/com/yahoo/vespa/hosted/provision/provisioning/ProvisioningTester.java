@@ -143,7 +143,7 @@ public class ProvisioningTester {
     public NodeRepositoryProvisioner provisioner() { return provisioner; }
     public LoadBalancerServiceMock loadBalancerService() { return loadBalancerService; }
     public CapacityPolicies capacityPolicies() { return capacityPolicies; }
-    public NodeList getNodes(ApplicationId id, Node.State ... inState) { return nodeRepository.nodes().list(id, inState); }
+    public NodeList getNodes(ApplicationId id, Node.State ... inState) { return nodeRepository.nodes().list(inState).owner(id); }
 
     public Node patchNode(Node node, UnaryOperator<Node> patcher) {
         return patchNodes(List.of(node), patcher).get(0);
@@ -170,12 +170,12 @@ public class ProvisioningTester {
     }
 
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity) {
-        Set<String> reservedBefore = toHostNames(nodeRepository.nodes().list(application, Node.State.reserved));
-        Set<String> inactiveBefore = toHostNames(nodeRepository.nodes().list(application, Node.State.inactive));
+        Set<String> reservedBefore = toHostNames(nodeRepository.nodes().list(Node.State.reserved).owner(application));
+        Set<String> inactiveBefore = toHostNames(nodeRepository.nodes().list(Node.State.inactive).owner(application));
         List<HostSpec> hosts1 = provisioner.prepare(application, cluster, capacity, provisionLogger);
         List<HostSpec> hosts2 = provisioner.prepare(application, cluster, capacity, provisionLogger);
         assertEquals("Prepare is idempotent", hosts1, hosts2);
-        Set<String> newlyActivated = toHostNames(nodeRepository.nodes().list(application, Node.State.reserved));
+        Set<String> newlyActivated = toHostNames(nodeRepository.nodes().list(Node.State.reserved).owner(application));
         newlyActivated.removeAll(reservedBefore);
         newlyActivated.removeAll(inactiveBefore);
         return hosts1;
@@ -213,7 +213,7 @@ public class ProvisioningTester {
             provisioner.activate(hosts, new ActivationContext(0), new ApplicationTransaction(lock, transaction));
             transaction.commit();
         }
-        assertEquals(toHostNames(hosts), toHostNames(nodeRepository.nodes().list(application, Node.State.active)));
+        assertEquals(toHostNames(hosts), toHostNames(nodeRepository.nodes().list(Node.State.active).owner(application)));
         return hosts;
     }
 
@@ -259,7 +259,7 @@ public class ProvisioningTester {
      * number of matches to the given filters
      */
     public void assertRestartCount(ApplicationId application, HostFilter... filters) {
-        for (Node node : nodeRepository.nodes().list(application, Node.State.active)) {
+        for (Node node : nodeRepository.nodes().list(Node.State.active).owner(application)) {
             int expectedRestarts = 0;
             for (HostFilter filter : filters)
                 if (NodeHostFilter.from(filter).matches(node))
@@ -464,7 +464,7 @@ public class ProvisioningTester {
                                        application.getClusterSpecWithVersion(configServersVersion),
                                        application.getCapacity());
         activate(application.getApplicationId(), new HashSet<>(hosts));
-        return nodeRepository.nodes().list(application.getApplicationId(), Node.State.active);
+        return nodeRepository.nodes().list(Node.State.active).owner(application.getApplicationId());
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type, int ipAddressPoolSize) {
@@ -560,7 +560,7 @@ public class ProvisioningTester {
     }
 
     public void assertAllocatedOn(String explanation, String hostFlavor, ApplicationId app) {
-        for (Node node : nodeRepository.nodes().list(app)) {
+        for (Node node : nodeRepository.nodes().list().owner(app)) {
             Node parent = nodeRepository.nodes().node(node.parentHostname().get()).get();
             assertEquals(node + ": " + explanation, hostFlavor, parent.flavor().name());
         }
@@ -594,7 +594,7 @@ public class ProvisioningTester {
     }
 
     public int hostFlavorCount(String hostFlavor, ApplicationId app) {
-        return (int)nodeRepository().nodes().list(app).stream()
+        return (int)nodeRepository().nodes().list().owner(app).stream()
                                     .map(n -> nodeRepository().nodes().node(n.parentHostname().get()).get())
                                     .filter(p -> p.flavor().name().equals(hostFlavor))
                                     .count();

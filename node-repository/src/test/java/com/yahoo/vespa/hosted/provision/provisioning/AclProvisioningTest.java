@@ -115,7 +115,7 @@ public class AclProvisioningTest {
         tester.deploy(zoneApplication, Capacity.fromRequiredNodeType(NodeType.proxy));
 
         // Get trusted nodes for first proxy node
-        NodeList proxyNodes = tester.nodeRepository().nodes().list(zoneApplication);
+        NodeList proxyNodes = tester.nodeRepository().nodes().list().owner(zoneApplication);
         Node node = proxyNodes.first().get();
         NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
 

@@ -72,7 +72,7 @@ public class AutoscalingMaintainerTester {
     }
 
     public void addMeasurements(float cpu, float mem, float disk, long generation, int count, ApplicationId applicationId) {
-        NodeList nodes = nodeRepository().nodes().list(applicationId, Node.State.active);
+        NodeList nodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId);
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)
                 metricsDb.add(List.of(new Pair<>(node.hostname(), new MetricSnapshot(clock().instant(),
