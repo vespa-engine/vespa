@@ -34,7 +34,8 @@ public class ClusterControllerClusterConfigurerTest {
                 .min_node_ratio_per_group(0.123)
                 .enable_cluster_feed_block(true)
                 .cluster_feed_block_limit("foo", 0.5)
-                .cluster_feed_block_limit("bar", 0.7);
+                .cluster_feed_block_limit("bar", 0.7)
+                .cluster_feed_block_noise_level(0.05);
         SlobroksConfig.Builder slobroksConfig = new SlobroksConfig.Builder();
         SlobroksConfig.Slobrok.Builder slobrok = new SlobroksConfig.Slobrok.Builder();
         slobrok.connectionspec("foo");
@@ -63,6 +64,7 @@ public class ClusterControllerClusterConfigurerTest {
         assertTrue(configurer.getOptions().clusterFeedBlockEnabled);
         assertEquals(0.5, configurer.getOptions().clusterFeedBlockLimit.get("foo"), 0.01);
         assertEquals(0.7, configurer.getOptions().clusterFeedBlockLimit.get("bar"), 0.01);
+        assertEquals(0.05, configurer.getOptions().clusterFeedBlockNoiseLevel, 0.001);
 
         try{
             zookeepersConfig.zookeeperserverlist("");
