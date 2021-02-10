@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
 import com.yahoo.collections.CollectionUtil;
@@ -12,7 +12,7 @@ import java.util.List;
  */
 public class ZooKeepersConfigProvider implements ZookeepersConfig.Producer {
 
-    public static final int zkPort = Integer.getInteger("zk_port", 2181);
+    public static final int zkPort = 2181;
 
     private final List<Configserver> configServers;
 
