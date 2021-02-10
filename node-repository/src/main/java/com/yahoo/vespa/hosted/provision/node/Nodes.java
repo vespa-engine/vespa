@@ -97,9 +97,6 @@ public class Nodes {
         return new LockedNodeList(list().asList(), lock);
     }
 
-    public List<Node> getInactive() { return db.readNodes(Node.State.inactive); }
-    public List<Node> getFailed() { return db.readNodes(Node.State.failed); }
-
     /**
      * Returns whether the zone managed by this node repository seems to be working.
      * If too many nodes are not responding, there is probably some zone-wide issue
