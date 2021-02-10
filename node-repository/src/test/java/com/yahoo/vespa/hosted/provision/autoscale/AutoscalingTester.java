@@ -96,9 +96,9 @@ class AutoscalingTester {
     }
 
     public void makeReady(String hostname) {
-        Node node = nodeRepository().nodes().getNode(hostname).get();
+        Node node = nodeRepository().nodes().node(hostname).get();
         provisioningTester.patchNode(node, (n) -> n.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of())));
-        Node host = nodeRepository().nodes().getNode(node.parentHostname().get()).get();
+        Node host = nodeRepository().nodes().node(node.parentHostname().get()).get();
         host = host.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
         if (host.state() == Node.State.provisioned)
             nodeRepository().nodes().setReady(List.of(host), Agent.system, getClass().getSimpleName());

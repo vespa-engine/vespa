@@ -52,7 +52,7 @@ public class AclProvisioningTest {
 
         // Get trusted nodes for the first active node
         Node node = activeNodes.get(0);
-        List<Node> host = node.parentHostname().flatMap(tester.nodeRepository().nodes()::getNode).map(List::of).orElseGet(List::of);
+        List<Node> host = node.parentHostname().flatMap(tester.nodeRepository().nodes()::node).map(List::of).orElseGet(List::of);
         Supplier<NodeAcl> nodeAcls = () -> node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
 
         // Trusted nodes are active nodes in same application, proxy nodes and config servers
@@ -94,7 +94,7 @@ public class AclProvisioningTest {
         NodeList tenantNodes = tester.nodeRepository().nodes().list().nodeType(NodeType.tenant);
 
         // Get trusted nodes for the first config server
-        Node node = tester.nodeRepository().nodes().getNode("cfg1")
+        Node node = tester.nodeRepository().nodes().node("cfg1")
                 .orElseThrow(() -> new RuntimeException("Failed to find cfg1"));
         NodeAcl nodeAcl = node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
 

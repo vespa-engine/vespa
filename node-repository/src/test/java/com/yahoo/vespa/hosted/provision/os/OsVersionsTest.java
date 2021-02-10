@@ -256,7 +256,7 @@ public class OsVersionsTest {
         tester.prepareAndActivateInfraApplication(infraApplication, nodeType);
         return nodes.stream()
                     .map(Node::hostname)
-                    .flatMap(hostname -> tester.nodeRepository().nodes().getNode(hostname).stream())
+                    .flatMap(hostname -> tester.nodeRepository().nodes().node(hostname).stream())
                     .collect(Collectors.toList());
     }
 

@@ -97,11 +97,11 @@ public class NodeFailerTest {
                 .map(Node::state).collect(Collectors.toSet());
         assertEquals(Set.of(Node.State.failed), childStates2Iter);
         // The host itself is still active as it too must be allowed to suspend
-        assertEquals(Node.State.active, tester.nodeRepository.nodes().getNode(hostWithHwFailure).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(hostWithHwFailure).get().state());
 
         tester.suspend(hostWithHwFailure);
         tester.runMaintainers();
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().getNode(hostWithHwFailure).get().state());
+        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(hostWithHwFailure).get().state());
         assertEquals(4, tester.nodeRepository.nodes().list(Node.State.failed).size());
     }
 
@@ -109,7 +109,7 @@ public class NodeFailerTest {
     public void hw_fail_only_if_whole_host_is_suspended() {
         NodeFailTester tester = NodeFailTester.withTwoApplicationsOnDocker(6);
         String hostWithFailureReports = selectFirstParentHostWithNActiveNodesExcept(tester.nodeRepository, 2);
-        assertEquals(Node.State.active, tester.nodeRepository.nodes().getNode(hostWithFailureReports).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(hostWithFailureReports).get().state());
 
         // The host has 2 nodes in active and 1 ready
         Map<Node.State, List<String>> hostnamesByState = tester.nodeRepository.nodes().list().childrenOf(hostWithFailureReports).asList().stream()
@@ -132,40 +132,40 @@ public class NodeFailerTest {
         // The ready node will be failed, but neither the host nor the 2 active nodes since they have not been suspended
         tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().getNode(readyChild).get().state());
-        assertEquals(Node.State.active, tester.nodeRepository.nodes().getNode(hostWithFailureReports).get().state());
-        assertEquals(Node.State.active, tester.nodeRepository.nodes().getNode(activeChild1).get().state());
-        assertEquals(Node.State.active, tester.nodeRepository.nodes().getNode(activeChild2).get().state());
+        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(readyChild).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(hostWithFailureReports).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(activeChild1).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(activeChild2).get().state());
 
         // Suspending the host will not fail any more since none of the children are suspened
         tester.suspend(hostWithFailureReports);
         tester.clock.advance(Duration.ofHours(25));
         tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().getNode(readyChild).get().state());
-        assertEquals(Node.State.active, tester.nodeRepository.nodes().getNode(hostWithFailureReports).get().state());
-        assertEquals(Node.State.active, tester.nodeRepository.nodes().getNode(activeChild1).get().state());
-        assertEquals(Node.State.active, tester.nodeRepository.nodes().getNode(activeChild2).get().state());
+        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(readyChild).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(hostWithFailureReports).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(activeChild1).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(activeChild2).get().state());
 
         // Suspending one child node will fail that out.
         tester.suspend(activeChild1);
         tester.clock.advance(Duration.ofHours(25));
         tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().getNode(readyChild).get().state());
-        assertEquals(Node.State.active, tester.nodeRepository.nodes().getNode(hostWithFailureReports).get().state());
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().getNode(activeChild1).get().state());
-        assertEquals(Node.State.active, tester.nodeRepository.nodes().getNode(activeChild2).get().state());
+        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(readyChild).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(hostWithFailureReports).get().state());
+        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(activeChild1).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(activeChild2).get().state());
 
         // Suspending the second child node will fail that out and the host.
         tester.suspend(activeChild2);
         tester.clock.advance(Duration.ofHours(25));
         tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().getNode(readyChild).get().state());
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().getNode(hostWithFailureReports).get().state());
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().getNode(activeChild1).get().state());
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().getNode(activeChild2).get().state());
+        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(readyChild).get().state());
+        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(hostWithFailureReports).get().state());
+        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(activeChild1).get().state());
+        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(activeChild2).get().state());
     }
 
     @Test
@@ -182,10 +182,10 @@ public class NodeFailerTest {
         tester.clock.advance(Duration.ofMinutes(65));
         tester.runMaintainers();
 
-        assertTrue(tester.nodeRepository.nodes().getNode(host_from_normal_app).get().isDown());
-        assertTrue(tester.nodeRepository.nodes().getNode(host_from_suspended_app).get().isDown());
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().getNode(host_from_normal_app).get().state());
-        assertEquals(Node.State.active, tester.nodeRepository.nodes().getNode(host_from_suspended_app).get().state());
+        assertTrue(tester.nodeRepository.nodes().node(host_from_normal_app).get().isDown());
+        assertTrue(tester.nodeRepository.nodes().node(host_from_suspended_app).get().isDown());
+        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(host_from_normal_app).get().state());
+        assertEquals(Node.State.active, tester.nodeRepository.nodes().node(host_from_suspended_app).get().state());
     }
 
     @Test
@@ -233,8 +233,8 @@ public class NodeFailerTest {
         assertEquals(4, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
         tester.runMaintainers();
         assertEquals(2, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().getNode(readyFail1.hostname()).get().state());
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().getNode(readyFail2.hostname()).get().state());
+        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(readyFail1.hostname()).get().state());
+        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(readyFail2.hostname()).get().state());
 
         String downHost1 = tester.nodeRepository.nodes().list(NodeFailTester.app1, Node.State.active).asList().get(1).hostname();
         String downHost2 = tester.nodeRepository.nodes().list(NodeFailTester.app2, Node.State.active).asList().get(3).hostname();
@@ -324,7 +324,7 @@ public class NodeFailerTest {
         tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
         assertEquals(1, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().getNode(downNode).get().state());
+        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(downNode).get().state());
 
         // Re-activate the node. It is still down, but should not be failed out until the grace period has passed again
         tester.nodeRepository.nodes().reactivate(downNode, Agent.system, getClass().getSimpleName());
@@ -337,7 +337,7 @@ public class NodeFailerTest {
         tester.allNodesMakeAConfigRequestExcept();
         tester.runMaintainers();
         assertEquals(1, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
-        assertEquals(Node.State.failed, tester.nodeRepository.nodes().getNode(downNode).get().state());
+        assertEquals(Node.State.failed, tester.nodeRepository.nodes().node(downNode).get().state());
     }
 
     @Test

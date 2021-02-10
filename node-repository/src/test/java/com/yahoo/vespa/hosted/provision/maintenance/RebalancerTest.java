@@ -184,7 +184,7 @@ public class RebalancerTest {
             return getNode(node.hostname()).get().allocation().get().membership().retired();
         }
 
-        Optional<Node> getNode(String hostname) { return tester.nodeRepository().nodes().getNode(hostname); }
+        Optional<Node> getNode(String hostname) { return tester.nodeRepository().nodes().node(hostname); }
 
         NodeList getNodes(Node.State nodeState) { return tester.nodeRepository().nodes().list(nodeState); }
 

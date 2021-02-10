@@ -223,7 +223,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
 
     private Node nodeFromRequest(HttpRequest request) {
         String hostname = lastElement(request.getUri().getPath());
-        return nodeRepository.nodes().getNode(hostname).orElseThrow(() ->
+        return nodeRepository.nodes().node(hostname).orElseThrow(() ->
                 new NotFoundException("No node found with hostname " + hostname));
     }
 

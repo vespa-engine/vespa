@@ -268,7 +268,7 @@ public class FailedExpirerTest {
         }
 
         public Node get(String hostname) {
-            return nodeRepository.nodes().getNode(hostname)
+            return nodeRepository.nodes().node(hostname)
                                  .orElseThrow(() -> new IllegalArgumentException("No such node: " + hostname));
         }
 

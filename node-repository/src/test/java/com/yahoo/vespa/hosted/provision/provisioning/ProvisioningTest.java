@@ -32,7 +32,6 @@ import com.yahoo.vespa.service.duper.InfraApplication;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -161,7 +160,7 @@ public class ProvisioningTest {
 
         HostSpec host1 = state1.container0.iterator().next();
         assertFalse(host1.version().isPresent());
-        Node node1 = tester.nodeRepository().nodes().getNode(host1.hostname()).get();
+        Node node1 = tester.nodeRepository().nodes().node(host1.hostname()).get();
         tester.nodeRepository().nodes().write(node1.with(node1.status().withVespaVersion(Version.fromString("1.2.3"))), () -> {});
 
         // redeploy
@@ -187,7 +186,7 @@ public class ProvisioningTest {
         tester.activate(application1, state1.allHosts);
 
         HostSpec host1 = state1.container0.iterator().next();
-        Node node1 = tester.nodeRepository().nodes().getNode(host1.hostname()).get();
+        Node node1 = tester.nodeRepository().nodes().node(host1.hostname()).get();
         DockerImage dockerImage = DockerImage.fromString(dockerImageRepo).withTag(Version.fromString("1.2.3"));
         tester.nodeRepository().nodes().write(node1.with(node1.status().withContainerImage(dockerImage)), () -> {});
 
@@ -196,7 +195,7 @@ public class ProvisioningTest {
         tester.activate(application1, state2.allHosts);
 
         host1 = state2.container0.iterator().next();
-        node1 = tester.nodeRepository().nodes().getNode(host1.hostname()).get();
+        node1 = tester.nodeRepository().nodes().node(host1.hostname()).get();
         assertEquals(dockerImage, node1.status().containerImage().get());
     }
 
@@ -318,7 +317,7 @@ public class ProvisioningTest {
         tester.activate(application1, state1.allHosts);
 
         tester.nodeRepository().nodes().list(application1)
-              .forEach(n -> assertEquals(large, tester.nodeRepository().nodes().getNode(n.parentHostname().get()).get().resources()));
+              .forEach(n -> assertEquals(large, tester.nodeRepository().nodes().node(n.parentHostname().get()).get().resources()));
     }
 
     @Test
@@ -785,7 +784,7 @@ public class ProvisioningTest {
         // Re-deploy application with 1 node less, the retired node should be on the spare host
         tester.deploy(application, spec, Capacity.from(new ClusterResources(5, 1, defaultResources)));
 
-        assertTrue(tester.nodeRepository().nodes().getNode(randomNode.hostname()).get().allocation().get().membership().retired());
+        assertTrue(tester.nodeRepository().nodes().node(randomNode.hostname()).get().allocation().get().membership().retired());
     }
 
     @Test

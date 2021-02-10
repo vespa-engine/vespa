@@ -193,7 +193,7 @@ public class ProvisioningTester {
                     nodeRepository.nodes().write(node, lock);
                 }
                 if (node.parentHostname().isEmpty()) continue;
-                Node parent = nodeRepository.nodes().getNode(node.parentHostname().get()).get();
+                Node parent = nodeRepository.nodes().node(node.parentHostname().get()).get();
                 if (parent.state() == Node.State.active) continue;
                 NestedTransaction t = new NestedTransaction();
                 if (parent.ipConfig().primary().isEmpty())
@@ -316,7 +316,7 @@ public class ProvisioningTester {
     }
 
     public void fail(String hostname) {
-        int beforeFailCount = nodeRepository.nodes().getNode(hostname, Node.State.active).get().status().failCount();
+        int beforeFailCount = nodeRepository.nodes().node(hostname, Node.State.active).get().status().failCount();
         Node failedNode = nodeRepository.nodes().fail(hostname, Agent.system, "Failing to unit test");
         assertTrue(nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).asList().contains(failedNode));
         assertEquals(beforeFailCount + 1, failedNode.status().failCount());
@@ -561,7 +561,7 @@ public class ProvisioningTester {
 
     public void assertAllocatedOn(String explanation, String hostFlavor, ApplicationId app) {
         for (Node node : nodeRepository.nodes().list(app)) {
-            Node parent = nodeRepository.nodes().getNode(node.parentHostname().get()).get();
+            Node parent = nodeRepository.nodes().node(node.parentHostname().get()).get();
             assertEquals(node + ": " + explanation, hostFlavor, parent.flavor().name());
         }
     }
@@ -595,7 +595,7 @@ public class ProvisioningTester {
 
     public int hostFlavorCount(String hostFlavor, ApplicationId app) {
         return (int)nodeRepository().nodes().list(app).stream()
-                                    .map(n -> nodeRepository().nodes().getNode(n.parentHostname().get()).get())
+                                    .map(n -> nodeRepository().nodes().node(n.parentHostname().get()).get())
                                     .filter(p -> p.flavor().name().equals(hostFlavor))
                                     .count();
     }

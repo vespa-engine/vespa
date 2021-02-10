@@ -434,13 +434,13 @@ public class DockerProvisioningTest {
 
     private void assertNodeParentReservation(List<Node> nodes, Optional<TenantName> reservation, ProvisioningTester tester) {
         for (Node node : nodes)
-            assertEquals(reservation, tester.nodeRepository().nodes().getNode(node.parentHostname().get()).get().reservedTo());
+            assertEquals(reservation, tester.nodeRepository().nodes().node(node.parentHostname().get()).get().reservedTo());
     }
 
     private void assertHostSpecParentReservation(List<HostSpec> hostSpecs, Optional<TenantName> reservation, ProvisioningTester tester) {
         for (HostSpec hostSpec : hostSpecs) {
-            Node node = tester.nodeRepository().nodes().getNode(hostSpec.hostname()).get();
-            assertEquals(reservation, tester.nodeRepository().nodes().getNode(node.parentHostname().get()).get().reservedTo());
+            Node node = tester.nodeRepository().nodes().node(hostSpec.hostname()).get();
+            assertEquals(reservation, tester.nodeRepository().nodes().node(node.parentHostname().get()).get().reservedTo());
         }
     }
 

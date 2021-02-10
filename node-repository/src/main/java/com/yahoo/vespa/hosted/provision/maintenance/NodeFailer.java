@@ -30,7 +30,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.counting;
 
 /**
  * Maintains information in the node repo about when this node last responded to ping
@@ -133,7 +132,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             if (expectConfigRequests(node) && ! hasNodeRequestedConfigAfter(node, oldestAcceptableRequestTime)) {
                 nodesByFailureReason.put(node, "Not receiving config requests from node");
             } else {
-                Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().nodes().getNode(parent)).orElse(node);
+                Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().nodes().node(parent)).orElse(node);
                 List<String> failureReports = reasonsToFailParentHost(hostNode);
                 if (failureReports.size() > 0) {
                     if (hostNode.equals(node)) {
@@ -158,7 +157,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                     nodesByFailureReason.put(node, "Node has been down longer than " + downTimeLimit);
             }
             else if (hostSuspended(node, activeNodes)) {
-                Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().nodes().getNode(parent)).orElse(node);
+                Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().nodes().node(parent)).orElse(node);
                 if (hostNode.type().isHost()) {
                     List<String> failureReports = reasonsToFailParentHost(hostNode);
                     if (failureReports.size() > 0) {
@@ -184,7 +183,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
     /** Returns whether node has any kind of hardware issue */
     static boolean hasHardwareIssue(Node node, NodeRepository nodeRepository) {
-        Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository.nodes().getNode(parent)).orElse(node);
+        Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository.nodes().node(parent)).orElse(node);
         return reasonsToFailParentHost(hostNode).size() > 0;
     }
 

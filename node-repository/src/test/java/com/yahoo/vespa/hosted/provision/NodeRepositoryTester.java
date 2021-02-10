@@ -79,7 +79,7 @@ public class NodeRepositoryTester {
      * of valid state transitions
      */
     public void setNodeState(String hostname, Node.State state) {
-        Node node = nodeRepository.nodes().getNode(hostname).orElseThrow(RuntimeException::new);
+        Node node = nodeRepository.nodes().node(hostname).orElseThrow(RuntimeException::new);
         nodeRepository.database().writeTo(state, node, Agent.system, Optional.empty());
     }
 

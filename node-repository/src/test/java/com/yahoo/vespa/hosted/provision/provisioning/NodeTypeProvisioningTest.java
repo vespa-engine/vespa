@@ -123,7 +123,7 @@ public class NodeTypeProvisioningTest {
             assertEquals(11, nodes.size());
 
             // Verify that wantToRetire has been propagated
-            assertTrue(tester.nodeRepository().nodes().getNode(nodeToRetire.hostname())
+            assertTrue(tester.nodeRepository().nodes().node(nodeToRetire.hostname())
                     .flatMap(Node::allocation)
                     .map(allocation -> allocation.membership().retired())
                     .orElseThrow(RuntimeException::new));
@@ -137,7 +137,7 @@ public class NodeTypeProvisioningTest {
             assertEquals(11, nodes.size());
 
             // Verify that the node is still marked as retired
-            assertTrue(tester.nodeRepository().nodes().getNode(nodeToRetire.hostname())
+            assertTrue(tester.nodeRepository().nodes().node(nodeToRetire.hostname())
                     .flatMap(Node::allocation)
                     .map(allocation -> allocation.membership().retired())
                     .orElseThrow(RuntimeException::new));
@@ -154,7 +154,7 @@ public class NodeTypeProvisioningTest {
             assertEquals(10, nodes.size());
 
             // Verify that the node is now inactive
-            assertEquals(Node.State.dirty, tester.nodeRepository().nodes().getNode(nodeToRetire.hostname())
+            assertEquals(Node.State.dirty, tester.nodeRepository().nodes().node(nodeToRetire.hostname())
                     .orElseThrow(RuntimeException::new).state());
         }
     }
@@ -233,7 +233,7 @@ public class NodeTypeProvisioningTest {
             assertEquals(10, nodes.size());
 
             // Verify the node we previously set to retire has finished retiring
-            assertEquals(Node.State.dirty, tester.nodeRepository().nodes().getNode(currentyRetiringHostname)
+            assertEquals(Node.State.dirty, tester.nodeRepository().nodes().node(currentyRetiringHostname)
                     .orElseThrow(RuntimeException::new).state());
 
             // Verify that a node is currently retiring

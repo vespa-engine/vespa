@@ -185,7 +185,7 @@ class MaintenanceDeployment implements Closeable {
                     markWantToRetire(node, false, agent, nodeRepository); // Necessary if this failed, no-op otherwise
 
                     // Immediately clean up if we reserved the node but could not activate or reserved a node on the wrong host
-                    expectedNewNode.flatMap(node -> nodeRepository.nodes().getNode(node.hostname(), Node.State.reserved))
+                    expectedNewNode.flatMap(node -> nodeRepository.nodes().node(node.hostname(), Node.State.reserved))
                                    .ifPresent(node -> nodeRepository.nodes().deallocate(node, agent, "Expired by " + agent));
                 }
             }

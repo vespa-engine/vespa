@@ -126,7 +126,7 @@ class Activator {
     private void unreserveParentsOf(List<Node> nodes) {
         for (Node node : nodes) {
             if ( node.parentHostname().isEmpty()) continue;
-            Optional<Node> parentNode = nodeRepository.nodes().getNode(node.parentHostname().get());
+            Optional<Node> parentNode = nodeRepository.nodes().node(node.parentHostname().get());
             if (parentNode.isEmpty()) continue;
             if (parentNode.get().reservedTo().isEmpty()) continue;
 
