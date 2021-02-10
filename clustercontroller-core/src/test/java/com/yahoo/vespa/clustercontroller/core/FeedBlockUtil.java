@@ -89,6 +89,10 @@ public class FeedBlockUtil {
         return new NodeResourceExhaustion(new Node(NodeType.STORAGE, index), type, new ResourceUsage(0.8, null), 0.7, "foo");
     }
 
+    static NodeResourceExhaustion exhaustion(int index, String type, double usage) {
+        return new NodeResourceExhaustion(new Node(NodeType.STORAGE, index), type, new ResourceUsage(usage, null), 0.7, "foo");
+    }
+
     static Set<NodeResourceExhaustion> setOf(NodeResourceExhaustion... exhaustions) {
         return Arrays.stream(exhaustions).collect(Collectors.toCollection(LinkedHashSet::new));
     }

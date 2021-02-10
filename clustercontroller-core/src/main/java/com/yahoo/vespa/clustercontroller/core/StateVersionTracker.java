@@ -124,6 +124,10 @@ public class StateVersionTracker {
         return latestCandidateState.getBaselineAnnotatedState();
     }
 
+    public ClusterStateBundle getLatestCandidateStateBundle() {
+        return latestCandidateState;
+    }
+
     public List<ClusterStateHistoryEntry> getClusterStateHistory() {
         return Collections.unmodifiableList(clusterStateHistory);
     }

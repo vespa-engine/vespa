@@ -177,13 +177,13 @@ public class EventDiffCalculator {
         Set<NodeResourceExhaustion> fromBlockSet = params.feedBlockFrom != null ? params.feedBlockFrom.getConcreteExhaustions() : Collections.emptySet();
         Set<NodeResourceExhaustion> toBlockSet   = params.feedBlockTo   != null ? params.feedBlockTo.getConcreteExhaustions()   : Collections.emptySet();
 
-        for (var ex : setSubtraction(toBlockSet, fromBlockSet)) {
-            var info = cluster.getNodeInfo(ex.node);
-            events.add(createNodeEvent(info, String.format("Added resource exhaustion: %s", ex.toExhaustionAddedDescription()), params));
-        }
         for (var ex : setSubtraction(fromBlockSet, toBlockSet)) {
             var info = cluster.getNodeInfo(ex.node);
             events.add(createNodeEvent(info, String.format("Removed resource exhaustion: %s", ex.toExhaustionRemovedDescription()), params));
+        }
+        for (var ex : setSubtraction(toBlockSet, fromBlockSet)) {
+            var info = cluster.getNodeInfo(ex.node);
+            events.add(createNodeEvent(info, String.format("Added resource exhaustion: %s", ex.toExhaustionAddedDescription()), params));
         }
     }
 

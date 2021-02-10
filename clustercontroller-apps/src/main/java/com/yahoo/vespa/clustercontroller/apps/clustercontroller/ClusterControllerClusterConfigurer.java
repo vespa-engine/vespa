@@ -83,6 +83,7 @@ public class ClusterControllerClusterConfigurer {
         options.enableTwoPhaseClusterStateActivation = config.enable_two_phase_cluster_state_transitions();
         options.clusterFeedBlockEnabled = config.enable_cluster_feed_block();
         options.clusterFeedBlockLimit = Map.copyOf(config.cluster_feed_block_limit());
+        options.clusterFeedBlockNoiseLevel = config.cluster_feed_block_noise_level();
     }
 
     private static void configure(FleetControllerOptions options, SlobroksConfig config) {

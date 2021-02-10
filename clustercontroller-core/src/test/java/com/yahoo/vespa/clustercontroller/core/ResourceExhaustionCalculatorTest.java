@@ -5,8 +5,10 @@ import org.junit.Test;
 
 import static com.yahoo.vespa.clustercontroller.core.ClusterFixture.storageNode;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.createFixtureWithReportedUsages;
+import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.exhaustion;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.forNode;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.mapOf;
+import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.setOf;
 import static com.yahoo.vespa.clustercontroller.core.FeedBlockUtil.usage;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -94,6 +96,47 @@ public class ResourceExhaustionCalculatorTest {
         var calc = new ResourceExhaustionCalculator(false, mapOf(usage("disk", 0.5), usage("memory", 0.8)));
         var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", 0.51), usage("memory", 0.79)),
                                                  forNode(2, usage("disk", 0.4), usage("memory", 0.6)));
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfo());
+        assertNull(feedBlock);
+    }
+
+    @Test
+    public void retain_node_feed_block_status_when_within_hysteresis_window_limit_crossed_edge_case() {
+        var curFeedBlock = ClusterStateBundle.FeedBlock.blockedWith("foo", setOf(exhaustion(1, "memory", 0.51)));
+        var calc = new ResourceExhaustionCalculator(true, mapOf(usage("disk", 0.5), usage("memory", 0.5)), curFeedBlock, 0.1);
+        // Node 1 goes from 0.51 to 0.49, crossing the 0.5 threshold. Should still be blocked.
+        // Node 2 is at 0.49 but was not previously blocked and should not be blocked now either.
+        var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", 0.3), usage("memory", 0.49)),
+                                                 forNode(2, usage("disk", 0.3), usage("memory", 0.49)));
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfo());
+        assertNotNull(feedBlock);
+        // TODO should we not change the limits themselves? Explicit mention of hysteresis state?
+        assertEquals("memory on node 1 [storage.1.local] (0.490 > 0.400)",
+                     feedBlock.getDescription());
+    }
+
+    @Test
+    public void retain_node_feed_block_status_when_within_hysteresis_window_under_limit_edge_case() {
+        var curFeedBlock = ClusterStateBundle.FeedBlock.blockedWith("foo", setOf(exhaustion(1, "memory", 0.49)));
+        var calc = new ResourceExhaustionCalculator(true, mapOf(usage("disk", 0.5), usage("memory", 0.5)), curFeedBlock, 0.1);
+        // Node 1 goes from 0.49 to 0.48, NOT crossing the 0.5 threshold. Should still be blocked.
+        // Node 2 is at 0.49 but was not previously blocked and should not be blocked now either.
+        var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", 0.3), usage("memory", 0.48)),
+                                                 forNode(2, usage("disk", 0.3), usage("memory", 0.49)));
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfo());
+        assertNotNull(feedBlock);
+        assertEquals("memory on node 1 [storage.1.local] (0.480 > 0.400)",
+                feedBlock.getDescription());
+    }
+
+    @Test
+    public void retained_node_feed_block_cleared_once_hysteresis_threshold_is_passed() {
+        var curFeedBlock = ClusterStateBundle.FeedBlock.blockedWith("foo", setOf(exhaustion(1, "memory", 0.48)));
+        var calc = new ResourceExhaustionCalculator(true, mapOf(usage("disk", 0.5), usage("memory", 0.5)), curFeedBlock, 0.1);
+        // Node 1 goes from 0.48 to 0.39. Should be unblocked
+        // Node 2 is at 0.49 but was not previously blocked and should not be blocked now either.
+        var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", 0.3), usage("memory", 0.39)),
+                                                 forNode(2, usage("disk", 0.3), usage("memory", 0.49)));
         var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfo());
         assertNull(feedBlock);
     }
