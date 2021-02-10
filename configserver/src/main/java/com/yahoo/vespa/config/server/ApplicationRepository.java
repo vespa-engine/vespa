@@ -90,6 +90,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -835,7 +836,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public void deleteExpiredLocalSessions() {
         Map<Tenant, Collection<LocalSession>> sessionsPerTenant = new HashMap<>();
-        tenantRepository.getAllTenants().forEach(tenant -> sessionsPerTenant.put(tenant, tenant.getSessionRepository().getLocalSessions()));
+        tenantRepository.getAllTenants()
+                        .forEach(tenant -> sessionsPerTenant.put(tenant,
+                                                             Collections.unmodifiableCollection(tenant.getSessionRepository().getLocalSessions())));
 
         Set<ApplicationId> applicationIds = new HashSet<>();
         sessionsPerTenant.values()
