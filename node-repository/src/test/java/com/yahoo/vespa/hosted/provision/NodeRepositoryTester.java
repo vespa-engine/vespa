@@ -52,7 +52,7 @@ public class NodeRepositoryTester {
     public MockCurator curator() { return curator; }
     
     public List<Node> getNodes(NodeType type, Node.State ... inState) {
-        return nodeRepository.nodes().getNodes(type, inState);
+        return nodeRepository.nodes().list(inState).nodeType(type).asList();
     }
     
     public Node addHost(String id, String hostname, String flavor, NodeType type) {

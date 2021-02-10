@@ -81,10 +81,10 @@ public class InactiveAndFailedExpirerTest {
         // Dirty times out for the other one
         tester.advanceTime(Duration.ofMinutes(14));
         new DirtyExpirer(tester.nodeRepository(), Duration.ofMinutes(10), new TestMetric()).run();
-        assertEquals(0, tester.nodeRepository().nodes().getNodes(NodeType.tenant, Node.State.dirty).size());
-        List<Node> failed = tester.nodeRepository().nodes().getNodes(NodeType.tenant, Node.State.failed);
+        assertEquals(0, tester.nodeRepository().nodes().list(Node.State.dirty).nodeType(NodeType.tenant).size());
+        NodeList failed = tester.nodeRepository().nodes().list(Node.State.failed).nodeType(NodeType.tenant);
         assertEquals(1, failed.size());
-        assertEquals(1, failed.get(0).status().failCount());
+        assertEquals(1, failed.first().get().status().failCount());
     }
 
     @Test

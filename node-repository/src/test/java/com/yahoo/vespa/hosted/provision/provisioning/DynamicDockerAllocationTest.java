@@ -69,7 +69,7 @@ public class DynamicDockerAllocationTest {
                                                                     .build();
         tester.makeReadyNodes(4, "host-small", NodeType.host, 32);
         tester.activateTenantHosts();
-        List<Node> dockerHosts = tester.nodeRepository().nodes().getNodes(NodeType.host, State.active);
+        List<Node> dockerHosts = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host).asList();
         NodeResources flavor = new NodeResources(1, 4, 100, 1);
 
         // Application 1
@@ -110,7 +110,7 @@ public class DynamicDockerAllocationTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(5, "host-small", NodeType.host, 32);
         tester.activateTenantHosts();
-        List<Node> dockerHosts = tester.nodeRepository().nodes().getNodes(NodeType.host, State.active);
+        NodeList dockerHosts = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host);
         NodeResources resources = new NodeResources(1, 4, 100, 0.3);
 
         // Application 1
@@ -202,7 +202,7 @@ public class DynamicDockerAllocationTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(2, "host-small", NodeType.host, 32);
         tester.activateTenantHosts();
-        List<Node> dockerHosts = tester.nodeRepository().nodes().getNodes(NodeType.host, State.active);
+        List<Node> dockerHosts = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host).asList();
         NodeResources flavor = new NodeResources(1, 4, 100, 1);
 
         // Application 1

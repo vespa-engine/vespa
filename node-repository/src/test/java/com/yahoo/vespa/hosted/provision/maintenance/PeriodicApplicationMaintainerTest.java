@@ -71,23 +71,23 @@ public class PeriodicApplicationMaintainerTest {
         int failedOrParkedInApp2 = 2;
         assertEquals(fixture.wantedNodesApp1 - failedInApp1, nodeRepository.nodes().list(fixture.app1, Node.State.active).size());
         assertEquals(fixture.wantedNodesApp2 - failedOrParkedInApp2, nodeRepository.nodes().list(fixture.app2, Node.State.active).size());
-        assertEquals(failedInApp1 + failedOrParkedInApp2, nodeRepository.nodes().getNodes(NodeType.tenant, Node.State.failed, Node.State.parked).size());
-        assertEquals(3, nodeRepository.nodes().getNodes(NodeType.tenant, Node.State.ready).size());
-        assertEquals(2, nodeRepository.nodes().getNodes(NodeType.host, Node.State.ready).size());
+        assertEquals(failedInApp1 + failedOrParkedInApp2, nodeRepository.nodes().list(Node.State.failed, Node.State.parked).nodeType(NodeType.tenant).size());
+        assertEquals(3, nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
+        assertEquals(2, nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.host).size());
 
         // Cause maintenance deployment which will allocate replacement nodes
         fixture.runApplicationMaintainer();
         assertEquals(fixture.wantedNodesApp1, nodeRepository.nodes().list(fixture.app1, Node.State.active).size());
         assertEquals(fixture.wantedNodesApp2, nodeRepository.nodes().list(fixture.app2, Node.State.active).size());
-        assertEquals(0, nodeRepository.nodes().getNodes(NodeType.tenant, Node.State.ready).size());
+        assertEquals(0, nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
 
         // Reactivate the previously failed nodes
-        nodeRepository.nodes().reactivate(nodeRepository.nodes().getNodes(NodeType.tenant, Node.State.failed).get(0).hostname(), Agent.system, getClass().getSimpleName());
-        nodeRepository.nodes().reactivate(nodeRepository.nodes().getNodes(NodeType.tenant, Node.State.failed).get(0).hostname(), Agent.system, getClass().getSimpleName());
-        nodeRepository.nodes().reactivate(nodeRepository.nodes().getNodes(NodeType.tenant, Node.State.parked).get(0).hostname(), Agent.system, getClass().getSimpleName());
+        nodeRepository.nodes().reactivate(nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).first().get().hostname(), Agent.system, getClass().getSimpleName());
+        nodeRepository.nodes().reactivate(nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).first().get().hostname(), Agent.system, getClass().getSimpleName());
+        nodeRepository.nodes().reactivate(nodeRepository.nodes().list(Node.State.parked).nodeType(NodeType.tenant).first().get().hostname(), Agent.system, getClass().getSimpleName());
         int reactivatedInApp1 = 1;
         int reactivatedInApp2 = 2;
-        assertEquals(0, nodeRepository.nodes().getNodes(NodeType.tenant, Node.State.failed).size());
+        assertEquals(0, nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
         assertEquals(fixture.wantedNodesApp1 + reactivatedInApp1, nodeRepository.nodes().list(fixture.app1, Node.State.active).size());
         assertEquals(fixture.wantedNodesApp2 + reactivatedInApp2, nodeRepository.nodes().list(fixture.app2, Node.State.active).size());
         assertEquals("The reactivated nodes are now active but not part of the application",
@@ -250,7 +250,7 @@ public class PeriodicApplicationMaintainerTest {
         }
 
         NodeList getNodes(Node.State ... states) {
-            return NodeList.copyOf(nodeRepository.nodes().getNodes(NodeType.tenant, states));
+            return nodeRepository.nodes().list(states).nodeType(NodeType.tenant);
         }
 
         void setBootstrapping(boolean bootstrapping) {

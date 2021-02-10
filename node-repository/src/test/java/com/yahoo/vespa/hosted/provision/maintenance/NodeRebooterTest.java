@@ -8,6 +8,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
@@ -94,8 +95,8 @@ public class NodeRebooterTest {
         while (true) {
             rebooter.maintain();
             simulateReboot(nodeRepository);
-            List<Node> nodes = nodeRepository.nodes().getNodes(NodeType.host, Node.State.ready);
-            int count = withCurrentRebootGeneration(1L, nodes).size();
+            NodeList nodes = nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.host);
+            int count = withCurrentRebootGeneration(1L, nodes.asList()).size();
             if (count == 2) {
                 break;
             }
@@ -103,8 +104,8 @@ public class NodeRebooterTest {
     }
 
     private void assertReadyHosts(int expectedCount, NodeRepository nodeRepository, long generation) {
-        List<Node> nodes = nodeRepository.nodes().getNodes(NodeType.host, Node.State.ready);
-        assertEquals(expectedCount, withCurrentRebootGeneration(generation, nodes).size());
+        NodeList nodes = nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.host);
+        assertEquals(expectedCount, withCurrentRebootGeneration(generation, nodes.asList()).size());
     }
 
     private void makeReadyHosts(int count, ProvisioningTester tester) {

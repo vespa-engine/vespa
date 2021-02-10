@@ -318,7 +318,7 @@ public class ProvisioningTester {
     public void fail(String hostname) {
         int beforeFailCount = nodeRepository.nodes().getNode(hostname, Node.State.active).get().status().failCount();
         Node failedNode = nodeRepository.nodes().fail(hostname, Agent.system, "Failing to unit test");
-        assertTrue(nodeRepository.nodes().getNodes(NodeType.tenant, Node.State.failed).contains(failedNode));
+        assertTrue(nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).asList().contains(failedNode));
         assertEquals(beforeFailCount + 1, failedNode.status().failCount());
     }
 

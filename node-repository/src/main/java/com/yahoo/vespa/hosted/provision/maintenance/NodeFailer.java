@@ -246,7 +246,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                 return true;
             case proxy:
             case proxyhost:
-                return nodeRepository().nodes().getNodes(nodeType, Node.State.failed).size() == 0;
+                return nodeRepository().nodes().list(Node.State.failed).nodeType(nodeType).isEmpty();
             default:
                 return false;
         }

@@ -40,7 +40,7 @@ public class OsVersionsTest {
     public void upgrade() {
         var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), Integer.MAX_VALUE));
         provisionInfraApplication(10);
-        Supplier<List<Node>> hostNodes = () -> tester.nodeRepository().nodes().getNodes(NodeType.host);
+        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
 
         // Upgrade OS
         assertTrue("No versions set", versions.readChange().targets().isEmpty());
@@ -50,7 +50,7 @@ public class OsVersionsTest {
         assertTrue("Per-node wanted OS version remains unset", hostNodes.get().stream().allMatch(node -> node.status().osVersion().wanted().isEmpty()));
 
         // One host upgrades to a later version outside the control of orchestration
-        Node hostOnLaterVersion = hostNodes.get().get(0);
+        Node hostOnLaterVersion = hostNodes.get().first().get();
         setCurrentVersion(List.of(hostOnLaterVersion), Version.fromString("8.1"));
 
         // Upgrade OS again
@@ -60,12 +60,12 @@ public class OsVersionsTest {
 
         // Resume upgrade
         versions.resumeUpgradeOf(NodeType.host, true);
-        List<Node> allHosts = hostNodes.get();
+        NodeList allHosts = hostNodes.get();
         assertTrue("Wanted version is set", allHosts.stream()
                                                        .filter(node -> !node.equals(hostOnLaterVersion))
                                                        .allMatch(node -> node.status().osVersion().wanted().isPresent()));
         assertTrue("Wanted version is not set for host on later version",
-                   allHosts.get(0).status().osVersion().wanted().isEmpty());
+                   allHosts.first().get().status().osVersion().wanted().isEmpty());
 
         // Halt upgrade
         versions.resumeUpgradeOf(NodeType.host, false);

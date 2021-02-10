@@ -382,7 +382,7 @@ public class DynamicProvisioningMaintainerTest {
         var tester = new DynamicProvisioningTester().addInitialNodes();
         tester.hostProvisioner.with(Behaviour.failDnsUpdate);
 
-        Supplier<List<Node>> provisioning = () -> tester.nodeRepository.nodes().getNodes(NodeType.host, Node.State.provisioned);
+        Supplier<NodeList> provisioning = () -> tester.nodeRepository.nodes().list(Node.State.provisioned).nodeType(NodeType.host);
         assertEquals(2, provisioning.get().size());
         tester.maintainer.maintain();
 

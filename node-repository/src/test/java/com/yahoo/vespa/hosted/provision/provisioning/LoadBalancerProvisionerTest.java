@@ -174,8 +174,8 @@ public class LoadBalancerProvisionerTest {
 
         // Application is removed, nodes are deleted and load balancer is deactivated
         tester.remove(app1);
-        tester.nodeRepository().database().removeNodes(tester.nodeRepository().nodes().getNodes(NodeType.tenant));
-        assertTrue("Nodes are deleted", tester.nodeRepository().nodes().getNodes(NodeType.tenant).isEmpty());
+        tester.nodeRepository().database().removeNodes(tester.nodeRepository().nodes().list().nodeType(NodeType.tenant).asList());
+        assertTrue("Nodes are deleted", tester.nodeRepository().nodes().list().nodeType(NodeType.tenant).isEmpty());
         assertSame("Load balancer is deactivated", LoadBalancer.State.inactive, lb.get().state());
 
         // Application is redeployed

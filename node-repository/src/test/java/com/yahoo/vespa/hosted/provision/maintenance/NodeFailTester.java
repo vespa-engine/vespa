@@ -133,7 +133,7 @@ public class NodeFailTester {
         tester.activate(tenantHostApp, clusterNodeAdminApp, allHosts);
         tester.activate(app1, clusterApp1, capacity1);
         tester.activate(app2, clusterApp2, capacity2);
-        assertEquals(Set.of(tester.nodeRepository.nodes().getNodes(NodeType.host)),
+        assertEquals(Set.of(tester.nodeRepository.nodes().list().nodeType(NodeType.host).asList()),
                      Set.of(tester.nodeRepository.nodes().list(tenantHostApp, Node.State.active).asList()));
         assertEquals(capacity1.minResources().nodes(), tester.nodeRepository.nodes().list(app1, Node.State.active).size());
         assertEquals(capacity2.minResources().nodes(), tester.nodeRepository.nodes().list(app2, Node.State.active).size());
@@ -164,7 +164,7 @@ public class NodeFailTester {
         Capacity allNodes = Capacity.fromRequiredNodeType(nodeType);
         ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
         tester.activate(app1, clusterApp1, allNodes);
-        assertEquals(count, tester.nodeRepository.nodes().getNodes(nodeType, Node.State.active).size());
+        assertEquals(count, tester.nodeRepository.nodes().list(Node.State.active).nodeType(nodeType).size());
 
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
                 app1, new MockDeployer.ApplicationContext(app1, clusterApp1, allNodes));
