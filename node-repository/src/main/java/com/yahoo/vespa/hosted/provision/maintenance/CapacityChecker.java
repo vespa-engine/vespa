@@ -26,7 +26,7 @@ public class CapacityChecker {
 
     // We only care about nodes in one of these states.
     private static final Set<Node.State> relevantNodeStates = EnumSet.of(
-            Node.State.active, Node.State.inactive, Node.State.dirty, Node.State.provisioned, Node.State.ready, Node.State.reserved);
+            Node.State.active, Node.State.inactive, Node.State.provisioned, Node.State.ready, Node.State.reserved);
 
     private final List<Node> hosts;
     private final Map<String, Node> nodeMap;
