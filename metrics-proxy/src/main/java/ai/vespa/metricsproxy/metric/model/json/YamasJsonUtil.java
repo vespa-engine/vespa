@@ -108,9 +108,13 @@ public class YamasJsonUtil {
 
         if (packet.dimensions().isEmpty()) model.dimensions = null;
         else {
-            model.dimensions = packet.dimensions().entrySet().stream().collect(
-                    toLinkedMap(id2dim -> id2dim.getKey().id,
-                                Map.Entry::getValue));
+            model.dimensions = packet.dimensions().entrySet()
+                    .stream()
+                    .filter(entry -> entry.getKey() != null && entry.getValue() != null)
+                    .collect(toLinkedMap(
+                            id2dim -> id2dim.getKey().id,
+                            Map.Entry::getValue)
+                    );
         }
 
         YamasJsonModel.YamasJsonNamespace namespaces = toYamasJsonNamespaces(packet.consumers());
