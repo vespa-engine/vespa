@@ -502,20 +502,21 @@ public class SelectParser implements Parser {
         return item;
     }
 
+    @SuppressWarnings("deprecation")
     private CompositeItem buildWeakAnd(String key, Inspector value) {
         WeakAndItem weakAnd = new WeakAndItem();
         addItemsFromInspector(weakAnd, value);
         Inspector annotations = getAnnotations(value);
 
-        if (annotations != null){
+        if (annotations != null) {
             annotations.traverse((ObjectTraverser) (annotation_name, annotation_value) -> {
                 if (TARGET_HITS.equals(annotation_name)){
                     weakAnd.setN((int)(annotation_value.asDouble()));
                 }
-                if (TARGET_NUM_HITS.equals(annotation_name)){
+                if (TARGET_NUM_HITS.equals(annotation_name)) {
                     weakAnd.setN((int)(annotation_value.asDouble()));
                 }
-                if (SCORE_THRESHOLD.equals(annotation_name)){
+                if (SCORE_THRESHOLD.equals(annotation_name)) {
                     weakAnd.setScoreThreshold((int)(annotation_value.asDouble()));
                 }
             });

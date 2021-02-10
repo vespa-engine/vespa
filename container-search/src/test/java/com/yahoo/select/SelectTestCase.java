@@ -552,6 +552,7 @@ public class SelectTestCase {
     }
 
     @Test
+    @SuppressWarnings("deprecation")
     public void testWeakAnd() {
         assertParse("{ \"weakAnd\": [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ] }",
                 "WAND(100) a:A b:B");

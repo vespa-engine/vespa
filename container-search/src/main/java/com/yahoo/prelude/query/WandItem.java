@@ -17,7 +17,7 @@ import java.nio.ByteBuffer;
  */
 public class WandItem extends WeightedSetItem {
 
-    private int targetNumHits;
+    private final int targetNumHits;
     private double scoreThreshold = 0;
     private double thresholdBoostFactor = 1;
 

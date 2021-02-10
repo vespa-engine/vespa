@@ -1099,6 +1099,7 @@ public class YqlParser implements Parser {
         return convertVarArgs(spec, 0, new OrItem());
     }
 
+    @SuppressWarnings("deprecation")
     private CompositeItem buildWeakAnd(OperatorNode<ExpressionOperator> spec) {
         WeakAndItem weakAnd = new WeakAndItem();
         Integer targetNumHits = getAnnotation(spec, TARGET_HITS,

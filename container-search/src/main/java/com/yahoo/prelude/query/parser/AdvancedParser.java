@@ -148,10 +148,10 @@ public class AdvancedParser extends StructuredParser {
             }
             return topLevelItem;
         } else if (isTheWord("wand", item)) {
-            int n=consumeNumericArgument();
-            if (n==0)
+            int n = consumeNumericArgument();
+            if (n == 0)
                 n=WeakAndItem.defaultN;
-            if (topLevelIsClosed || !(topLevelItem instanceof WeakAndItem) || n!=((WeakAndItem)topLevelItem).getN()) {
+            if (topLevelIsClosed || !(topLevelItem instanceof WeakAndItem) || n != ((WeakAndItem)topLevelItem).getN()) {
                 WeakAndItem wand = new WeakAndItem();
                 wand.setN(n);
                 wand.addItem(topLevelItem);
