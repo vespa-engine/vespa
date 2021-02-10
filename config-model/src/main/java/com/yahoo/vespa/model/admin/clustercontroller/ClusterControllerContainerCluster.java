@@ -34,19 +34,12 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
 
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
+        super.getConfig(builder);
         int maxHeapSize = featureFlags.clusterControllerMaxHeapSizeInMb();
         boolean verboseGc = (maxHeapSize < 512);
         builder.jvm
                 .verbosegc(verboseGc)
-                .availableProcessors(2)
-                .compressedClassSpaceSize(32)
-                .minHeapsize(32)
-                .heapsize(maxHeapSize)
-                .heapSizeAsPercentageOfPhysicalMemory(0)
-                .gcopts(getJvmGCOptions().orElse(G1GC));
-        if (getEnvironmentVars() != null) {
-            builder.qrs.env(getEnvironmentVars());
-        }
+                .heapsize(maxHeapSize);
     }
 
     public ReindexingContext reindexingContext() { return reindexingContext; }
