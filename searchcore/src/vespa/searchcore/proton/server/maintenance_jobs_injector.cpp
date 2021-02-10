@@ -63,6 +63,7 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
 
 void
 injectBucketMoveJob(MaintenanceController &controller,
+                    const DocumentDBMaintenanceConfig &config,
                     IFrozenBucketHandler &fbHandler,
                     bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                     const vespalib::string &docTypeName,
@@ -73,8 +74,7 @@ injectBucketMoveJob(MaintenanceController &controller,
                     IBucketStateChangedNotifier &bucketStateChangedNotifier,
                     const std::shared_ptr<IBucketStateCalculator> &calc,
                     DocumentDBJobTrackers &jobTrackers,
-                    IDiskMemUsageNotifier &diskMemUsageNotifier,
-                    const BlockableMaintenanceJobConfig &blockableConfig)
+                    IDiskMemUsageNotifier &diskMemUsageNotifier)
 {
     auto bmj = std::make_unique<BucketMoveJob>(calc,
                                 moveHandler,
@@ -86,7 +86,7 @@ injectBucketMoveJob(MaintenanceController &controller,
                                 clusterStateChangedNotifier,
                                 bucketStateChangedNotifier,
                                 diskMemUsageNotifier,
-                                blockableConfig,
+                                config.getBlockableJobConfig(),
                                 docTypeName, bucketSpace);
     controller.registerJobInMasterThread(trackJob(jobTrackers.getBucketMove(), std::move(bmj)));
 }
@@ -121,26 +121,28 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
 {
     controller.registerJobInMasterThread(std::make_unique<HeartBeatJob>(hbHandler, config.getHeartBeatConfig()));
     controller.registerJobInDefaultPool(std::make_unique<PruneSessionCacheJob>(scPruner, config.getSessionCachePruneInterval()));
+
     const MaintenanceDocumentSubDB &mRemSubDB(controller.getRemSubDB());
     auto pruneRDjob = std::make_unique<PruneRemovedDocumentsJob>(config.getPruneRemovedDocumentsConfig(), *mRemSubDB.meta_store(),
                                                                  mRemSubDB.sub_db_id(), docTypeName, prdHandler, fbHandler);
     controller.registerJobInMasterThread(trackJob(jobTrackers.getRemovedDocumentsPrune(), std::move(pruneRDjob)));
+
     if (!config.getLidSpaceCompactionConfig().isDisabled()) {
         injectLidSpaceCompactionJobs(controller, config, bucketExecutor, lscHandlers, opStorer, fbHandler,
                                      jobTrackers.getLidSpaceCompact(), diskMemUsageNotifier,
                                      clusterStateChangedNotifier, calc, bucketSpace);
     }
-    injectBucketMoveJob(controller, fbHandler, bucketCreateNotifier, docTypeName, bucketSpace, moveHandler, bucketModifiedHandler,
-                        clusterStateChangedNotifier, bucketStateChangedNotifier, calc, jobTrackers,
-                        diskMemUsageNotifier, config.getBlockableJobConfig());
-    controller.registerJobInMasterThread(std::make_unique<SampleAttributeUsageJob>
-                                                 (readyAttributeManager,
-                                                  notReadyAttributeManager,
-                                                  attributeUsageFilter,
-                                                  docTypeName,
-                                                  config.getAttributeUsageSampleInterval(),
-                                                  std::move(attribute_config_inspector),
-                                                  transient_memory_usage_provider));
+
+    injectBucketMoveJob(controller, config, fbHandler, bucketCreateNotifier, docTypeName, bucketSpace, moveHandler,
+                        bucketModifiedHandler, clusterStateChangedNotifier, bucketStateChangedNotifier, calc,
+                        jobTrackers, diskMemUsageNotifier);
+
+    controller.registerJobInMasterThread(
+            std::make_unique<SampleAttributeUsageJob>(readyAttributeManager, notReadyAttributeManager,
+                                                      attributeUsageFilter, docTypeName,
+                                                      config.getAttributeUsageSampleInterval(),
+                                                      std::move(attribute_config_inspector),
+                                                      transient_memory_usage_provider));
 }
 
 } // namespace proton
