@@ -39,7 +39,7 @@ void check_gen_with_result(size_t l, size_t r, double wanted) {
     param_repo.add("b", makeTensor(r, rightBias));
     vespalib::string expr = "reduce(a*b,sum,x)";
     EvalFixture evaluator(prod_factory, expr, param_repo, true);
-    EXPECT_EQUAL(GenSpec(wanted), evaluator.result());
+    EXPECT_EQUAL(GenSpec(wanted).gen(), evaluator.result());
     EXPECT_EQUAL(evaluator.result(), EvalFixture::ref(expr, param_repo));
     auto info = evaluator.find_all<DenseDotProductFunction>();
     EXPECT_EQUAL(info.size(), 1u);
