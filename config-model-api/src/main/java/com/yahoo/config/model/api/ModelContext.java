@@ -62,6 +62,7 @@ public interface ModelContext {
      *
      * 3)
      *  - Remove below method once all config-model versions in hosted production include changes from 1)
+     *  - Remove all flag data files from hosted-feature-flag repository
      */
     interface FeatureFlags {
         @ModelFeatureFlag(owners = {"bjorncs", "jonmv"}, removeAfter = "7.352") default boolean enableAutomaticReindexing() { return true; }
