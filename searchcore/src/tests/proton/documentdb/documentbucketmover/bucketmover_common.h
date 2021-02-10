@@ -4,13 +4,12 @@
 #include <vespa/searchcore/proton/bucketdb/bucket_create_notifier.h>
 #include <vespa/searchcore/proton/test/bucketfactory.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
-#include <vespa/searchcore/proton/server/bucketmovejob.h>
-#include <vespa/searchcore/proton/server/documentbucketmover.h>
 #include <vespa/searchcore/proton/server/i_move_operation_limiter.h>
 #include <vespa/searchcore/proton/server/idocumentmovehandler.h>
 #include <vespa/searchcore/proton/server/imaintenancejobrunner.h>
 #include <vespa/searchcore/proton/server/maintenancedocumentsubdb.h>
 #include <vespa/searchcore/proton/server/ibucketmodifiedhandler.h>
+#include <vespa/searchcore/proton/server/i_maintenance_job.h>
 #include <vespa/searchcore/proton/test/buckethandler.h>
 #include <vespa/searchcore/proton/test/clusterstatehandler.h>
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
@@ -122,6 +121,14 @@ struct MySubDb {
     void setBucketState(const BucketId &bucketId, bool active) {
         _metaStore.setBucketState(bucketId, active);
     }
+};
+
+struct MyCountJobRunner : public IMaintenanceJobRunner {
+    uint32_t runCount;
+    explicit MyCountJobRunner(IMaintenanceJob &job) : runCount(0) {
+        job.registerRunner(this);
+    }
+    void run() override { ++runCount; }
 };
 
 bool

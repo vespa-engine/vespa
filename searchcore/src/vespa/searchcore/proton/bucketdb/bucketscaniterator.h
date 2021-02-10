@@ -26,9 +26,7 @@ private:
 public:
     enum class Pass {FIRST, SECOND};
     ScanIterator(BucketDBOwner::Guard db, Pass pass, BucketId lastBucket, BucketId endBucket);
-
     ScanIterator(BucketDBOwner::Guard db, BucketId bucket);
-
     ScanIterator(const ScanIterator &) = delete;
     ScanIterator(ScanIterator &&rhs);
     ScanIterator &operator=(const ScanIterator &) = delete;
