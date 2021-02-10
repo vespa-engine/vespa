@@ -116,6 +116,8 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
     (void) reservedElements;
     AllocResult alloc = calcAllocation(bufferId, *typeHandler, elementsNeeded, false);
     assert(alloc.elements >= reservedElements + elementsNeeded);
+    auto allocator = typeHandler->get_memory_allocator();
+    _buffer = (allocator != nullptr) ? Alloc::alloc_with_allocator(allocator) : Alloc::alloc(0, MemoryAllocator::HUGEPAGE_SIZE);
     _buffer.create(alloc.bytes).swap(_buffer);
     buffer = _buffer.get();
     assert(buffer != nullptr || alloc.elements == 0u);

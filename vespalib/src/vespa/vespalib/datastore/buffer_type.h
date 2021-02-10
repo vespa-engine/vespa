@@ -5,6 +5,8 @@
 #include "atomic_entry_ref.h"
 #include <string>
 
+namespace vespalib::alloc { class MemoryAllocator; }
+
 namespace vespalib::datastore {
 
 using ElemCount = uint64_t;
@@ -53,6 +55,7 @@ public:
     virtual void onActive(uint32_t bufferId, ElemCount *usedElems, ElemCount &deadElems, void *buffer);
     void onHold(const ElemCount *usedElems);
     virtual void onFree(ElemCount usedElems);
+    virtual const alloc::MemoryAllocator* get_memory_allocator() const;
 
     /**
      * Calculate number of arrays to allocate for new buffer given how many elements are needed.
