@@ -39,7 +39,7 @@ class CorsLogic {
     static Map<String, String> createCorsPreflightResponseHeaders(String requestOriginHeader,
                                                                   Set<String> allowedOrigins) {
         TreeMap<String, String> headers = new TreeMap<>();
-        if (allowedOrigins.contains(requestOriginHeader))
+        if (requestOriginHeader != null && allowedOrigins.contains(requestOriginHeader))
             headers.put(ALLOW_ORIGIN_HEADER, requestOriginHeader);
         ACCESS_CONTROL_HEADERS.forEach(headers::put);
         return headers;
