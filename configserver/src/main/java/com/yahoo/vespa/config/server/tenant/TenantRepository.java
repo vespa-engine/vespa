@@ -450,29 +450,31 @@ public class TenantRepository {
 
     /**
      * A helper to format a log preamble for messages with a tenant and app id
+     *
      * @param app the app
      * @return the log string
      */
     public static String logPre(ApplicationId app) {
         if (DEFAULT_TENANT.equals(app.tenant())) return "";
         StringBuilder ret = new StringBuilder()
-            .append(logPre(app.tenant()))
-            .append("app:"+app.application().value())
-            .append(":"+app.instance().value())
-            .append(" ");
+                .append(logPre(app.tenant()))
+                .append("app:" + app.application().value())
+                .append(":" + app.instance().value())
+                .append(" ");
         return ret.toString();
-    }    
+    }
 
     /**
      * A helper to format a log preamble for messages with a tenant
+     *
      * @param tenant tenant
      * @return the log string
      */
     public static String logPre(TenantName tenant) {
         if (DEFAULT_TENANT.equals(tenant)) return "";
         StringBuilder ret = new StringBuilder()
-            .append("tenant:" + tenant.value())
-            .append(" ");
+                .append("tenant:" + tenant.value())
+                .append(" ");
         return ret.toString();
     }
 
