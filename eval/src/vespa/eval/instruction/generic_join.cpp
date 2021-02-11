@@ -19,8 +19,6 @@ using operation::SwapArgs2;
 using State = InterpretedFunction::State;
 using Instruction = InterpretedFunction::Instruction;
 
-namespace {
-
 //-----------------------------------------------------------------------------
 
 template <typename LCT, typename RCT, typename OCT, typename Fun>
@@ -56,6 +54,8 @@ generic_mixed_join(const Value &lhs, const Value &rhs, const JoinParam &param)
     return builder->build(std::move(builder));
 };
 
+namespace {
+
 template <typename LCT, typename RCT, typename OCT, typename Fun>
 void my_mixed_join_op(State &state, uint64_t param_in) {
     const auto &param = unwrap_param<JoinParam>(param_in);
@@ -63,48 +63,6 @@ void my_mixed_join_op(State &state, uint64_t param_in) {
     const Value &rhs = state.peek(0);
     auto up = generic_mixed_join<LCT, RCT, OCT, Fun>(lhs, rhs, param);
     auto &result = state.stash.create<std::unique_ptr<Value>>(std::move(up));
-    const Value &result_ref = *(result.get());
-    state.pop_pop_push(result_ref);
-};
-
-//-----------------------------------------------------------------------------
-
-template <typename LCT, typename RCT, typename OCT, typename Fun>
-void my_sparse_no_overlap_join_op(State &state, uint64_t param_in) {
-    const auto &param = unwrap_param<JoinParam>(param_in);
-    const Value &lhs = state.peek(1);
-    const Value &rhs = state.peek(0);
-    auto lhs_cells = lhs.cells().typify<LCT>();
-    auto rhs_cells = rhs.cells().typify<RCT>();
-    const Value::Index &lhs_index = lhs.index();
-    const Value::Index &rhs_index = rhs.index();
-    if (auto indexes = detect_type<FastValueIndex>(lhs_index, rhs_index)) {
-        const auto &lhs_fast = indexes.get<0>();
-        const auto &rhs_fast = indexes.get<1>();
-        return state.pop_pop_push(
-                FastValueIndex::sparse_no_overlap_join<LCT,RCT,OCT,Fun>
-                        (param.res_type, Fun(param.function),
-                         lhs_fast, rhs_fast,
-                         param.sparse_plan.sources,
-                         lhs_cells, rhs_cells, state.stash));
-    }
-    Fun fun(param.function);
-    SparseJoinState sparse(param.sparse_plan, lhs.index(), rhs.index());
-    auto guess = lhs.index().size() * rhs.index().size();
-    assert(param.dense_plan.out_size == 1);
-    auto builder = param.factory.create_transient_value_builder<OCT>(param.res_type, param.sparse_plan.sources.size(), 1, guess);
-    auto outer = sparse.first_index.create_view({});
-    assert(sparse.second_view_dims.empty());
-    auto inner = sparse.second_index.create_view({});
-    outer->lookup({});
-    while (outer->next_result(sparse.first_address, sparse.first_subspace)) {
-        inner->lookup({});
-        while (inner->next_result(sparse.second_only_address, sparse.second_subspace)) {
-            auto cell_value = fun(lhs_cells[sparse.lhs_subspace], rhs_cells[sparse.rhs_subspace]);
-            builder->add_subspace(sparse.full_address)[0] = cell_value;
-        }
-    }
-    auto &result = state.stash.create<std::unique_ptr<Value>>(builder->build(std::move(builder)));
     const Value &result_ref = *(result.get());
     state.pop_pop_push(result_ref);
 };
@@ -221,12 +179,6 @@ struct SelectGenericJoinOp {
             (param.sparse_plan.sources.size() == param.sparse_plan.lhs_overlap.size()))
         {
             return my_sparse_full_overlap_join_op<LCT,RCT,OCT,Fun>;
-        }
-        if ((param.dense_plan.out_size == 1) &&
-            (param.sparse_plan.lhs_overlap.size() == 0) &&
-            (param.sparse_plan.rhs_overlap.size() == 0))
-        {
-            return my_sparse_no_overlap_join_op<LCT,RCT,OCT,Fun>;
         }
         return my_mixed_join_op<LCT,RCT,OCT,Fun>;
     }
