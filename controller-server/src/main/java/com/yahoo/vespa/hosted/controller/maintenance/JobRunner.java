@@ -36,7 +36,7 @@ public class JobRunner extends ControllerMaintainer {
     private final StepRunner runner;
 
     public JobRunner(Controller controller, Duration duration) {
-        this(controller, duration, Executors.newFixedThreadPool(128, new DaemonThreadFactory("job-runner-")), new InternalStepRunner(controller));
+        this(controller, duration, Executors.newFixedThreadPool(32, new DaemonThreadFactory("job-runner-")), new InternalStepRunner(controller));
     }
 
     @TestOnly
