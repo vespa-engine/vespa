@@ -42,6 +42,7 @@ belowLimit()
 }
 
 const HwInfo::Memory defaultMemory(8ul * 1024ul * 1024ul * 1024ul);
+constexpr size_t ONE_G = 1024ul * 1024ul * 1024ul;;
 
 struct Fixture
 {
@@ -72,6 +73,29 @@ TEST_F("require that strategy is updated when setting new config", Fixture)
 {
     f.updater.setConfig(getConfig(6, 3, 30));
     TEST_DO(f.assertStrategyConfig(6, 3, 30));
+}
+
+TEST("require that we use configured memory limits") {
+    auto cfg = MemoryFlushConfigUpdater::convertConfig(getConfig(6, 3, 30), defaultMemory);
+    EXPECT_EQUAL(cfg.maxGlobalMemory, 6u);
+    EXPECT_EQUAL(cfg.maxMemoryGain, 3);
+}
+
+TEST("require that we cap configured limits based on available memory") {
+    const uint64_t LIMIT = defaultMemory.sizeBytes()/4;
+    constexpr uint64_t MEM_4G = 4 * ONE_G;
+    auto cfg = MemoryFlushConfigUpdater::convertConfig(getConfig(MEM_4G, MEM_4G, 30), defaultMemory);
+    EXPECT_EQUAL(cfg.maxGlobalMemory, LIMIT);
+    EXPECT_EQUAL(uint64_t(cfg.maxMemoryGain), LIMIT);
+}
+
+TEST("require that we cap configured limits based on the absolute 16G limit") {
+    constexpr uint64_t LIMIT_16G = 16 * ONE_G;
+    constexpr uint64_t MEM_64G = 64 * ONE_G;
+    const HwInfo::Memory largeMemory(512 * ONE_G);
+    auto cfg = MemoryFlushConfigUpdater::convertConfig(getConfig(MEM_64G, MEM_64G, 30), largeMemory);
+    EXPECT_EQUAL(cfg.maxGlobalMemory, LIMIT_16G);
+    EXPECT_EQUAL(uint64_t(cfg.maxMemoryGain), LIMIT_16G);
 }
 
 TEST_F("require that strategy is updated with normal values if no limits are reached", Fixture)
