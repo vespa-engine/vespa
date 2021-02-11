@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.net.HostName;
+import com.yahoo.protect.Process;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
@@ -52,10 +53,7 @@ public class Reconfigurer extends AbstractComponent {
             zooKeeperRunner = startServer(newConfig, server);
 
         if (shouldReconfigure(newConfig)) {
-            if ( ! reconfigure(newConfig)) {
-                server.shutdown();
-                System.exit(1); // Reconfiguration failed, give up, we don't know why
-            }
+            reconfigure(newConfig, server);
         }
     }
 
@@ -81,7 +79,7 @@ public class Reconfigurer extends AbstractComponent {
         return runner;
     }
 
-    private boolean reconfigure(ZookeeperServerConfig newConfig) {
+    private void reconfigure(ZookeeperServerConfig newConfig, VespaZooKeeperServer server) {
         Instant reconfigTriggered = Instant.now();
         List<String> newServers = difference(servers(newConfig), servers(activeConfig));
         String leavingServers = String.join(",", difference(serverIds(activeConfig), serverIds(newConfig)));
@@ -92,7 +90,8 @@ public class Reconfigurer extends AbstractComponent {
                             ", leaving servers: " + leavingServers);
         String connectionSpec = localConnectionSpec(activeConfig);
         Instant now = Instant.now();
-        Instant end = now.plus(reconfigTimeout(newServers.size()));
+        Duration reconfigTimeout = reconfigTimeout(newServers.size());
+        Instant end = now.plus(reconfigTimeout);
         // Loop reconfiguring since we might need to wait until another reconfiguration is finished before we can succeed
         for (int attempt = 1; now.isBefore(end); attempt++) {
             try {
@@ -104,7 +103,7 @@ public class Reconfigurer extends AbstractComponent {
                                     ", after " + attempt + " attempt(s). ZooKeeper reconfig call took " +
                                     Duration.between(reconfigStarted, reconfigEnded));
                 activeConfig = newConfig;
-                return true;
+                return;
             } catch (ReconfigException e) {
                 Duration delay = backoff.delay(attempt);
                 log.log(Level.WARNING, "Reconfiguration attempt " + attempt + " failed. Retrying in " + delay +
@@ -117,7 +116,8 @@ public class Reconfigurer extends AbstractComponent {
         }
 
         // Reconfiguration failed
-        return false;
+        server.shutdown();
+        Process.logAndDie("Reconfiguration did not complete within timeout " + reconfigTimeout + ". Forcing shutdown");
     }
 
     /** Returns the timeout to use for the given joining server count */
