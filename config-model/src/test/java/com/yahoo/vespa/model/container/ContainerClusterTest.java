@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.CuratorConfig;
-import com.yahoo.cloud.config.RoutingProviderConfig;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.DeployLogger;
@@ -295,17 +294,6 @@ public class ContainerClusterTest {
         ServerConfig cfg = root.getConfig(ServerConfig.class, "container0/c1/DefaultHttpServer");
         assertEquals(28, cfg.maxWorkerThreads());
         assertEquals(28, cfg.minWorkerThreads());
-    }
-
-    @Test
-    public void requireThatRoutingProviderIsDisabledForNonHosted() {
-        DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(false)).build();
-        MockRoot root = new MockRoot("foo", state);
-        ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "container0", "container1", state);
-        RoutingProviderConfig.Builder builder = new RoutingProviderConfig.Builder();
-        cluster.getConfig(builder);
-        RoutingProviderConfig config = new RoutingProviderConfig(builder);
-        assertFalse(config.enabled());
     }
 
     @Test
