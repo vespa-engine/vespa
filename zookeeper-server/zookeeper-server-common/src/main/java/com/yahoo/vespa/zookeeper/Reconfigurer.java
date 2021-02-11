@@ -51,8 +51,12 @@ public class Reconfigurer extends AbstractComponent {
         if (zooKeeperRunner == null)
             zooKeeperRunner = startServer(newConfig, server);
 
-        if (shouldReconfigure(newConfig))
-            reconfigure(newConfig);
+        if (shouldReconfigure(newConfig)) {
+            if ( ! reconfigure(newConfig)) {
+                server.shutdown();
+                System.exit(1); // Reconfiguration failed, give up, we don't know why
+            }
+        }
     }
 
     ZookeeperServerConfig activeConfig() {
@@ -77,7 +81,7 @@ public class Reconfigurer extends AbstractComponent {
         return runner;
     }
 
-    private void reconfigure(ZookeeperServerConfig newConfig) {
+    private boolean reconfigure(ZookeeperServerConfig newConfig) {
         Instant reconfigTriggered = Instant.now();
         List<String> newServers = difference(servers(newConfig), servers(activeConfig));
         String leavingServers = String.join(",", difference(serverIds(activeConfig), serverIds(newConfig)));
@@ -100,7 +104,7 @@ public class Reconfigurer extends AbstractComponent {
                                     ", after " + attempt + " attempt(s). ZooKeeper reconfig call took " +
                                     Duration.between(reconfigStarted, reconfigEnded));
                 activeConfig = newConfig;
-                return;
+                return true;
             } catch (ReconfigException e) {
                 Duration delay = backoff.delay(attempt);
                 log.log(Level.WARNING, "Reconfiguration attempt " + attempt + " failed. Retrying in " + delay +
@@ -111,6 +115,9 @@ public class Reconfigurer extends AbstractComponent {
                 now = Instant.now();
             }
         }
+
+        // Reconfiguration failed
+        return false;
     }
 
     /** Returns the timeout to use for the given joining server count */
