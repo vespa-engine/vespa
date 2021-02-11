@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.CuratorConfig;
-import com.yahoo.cloud.config.RoutingProviderConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.docproc.DocprocConfig;
@@ -101,7 +100,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         SemanticRulesConfig.Producer,
         DocprocConfig.Producer,
         ClusterInfoConfig.Producer,
-        RoutingProviderConfig.Producer,
         ConfigserverConfig.Producer,
         CuratorConfig.Producer
 {
@@ -592,11 +590,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public boolean isHostedVespa() {
         return isHostedVespa;
-    }
-
-    @Override
-    public void getConfig(RoutingProviderConfig.Builder builder) {
-        builder.enabled(isHostedVespa);
     }
 
     public Map<String, String> concreteDocumentTypes() { return concreteDocumentTypes; }
