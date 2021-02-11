@@ -6,3 +6,6 @@ enabledCredentials[] enum { ROLE_CERTIFICATE, ROLE_TOKEN, ACCESS_TOKEN }
 
 # Name of role token http header
 roleTokenHeaderName string default="Athenz-Role-Token"
+
+# Allowed Athenz proxy identities
+allowedProxyIdentities[] string

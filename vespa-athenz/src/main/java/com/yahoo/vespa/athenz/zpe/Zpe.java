@@ -16,4 +16,5 @@ public interface Zpe {
     AuthorizationResult checkAccessAllowed(ZToken roleToken, AthenzResourceName resourceName, String action);
     AuthorizationResult checkAccessAllowed(X509Certificate roleCertificate, AthenzResourceName resourceName, String action);
     AuthorizationResult checkAccessAllowed(AthenzAccessToken accessToken, X509Certificate identityCertificate, AthenzResourceName resourceName, String action);
+    AuthorizationResult checkAccessAllowed(AthenzAccessToken accessToken, AthenzResourceName resourceName, String action);
 }
