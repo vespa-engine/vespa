@@ -111,12 +111,15 @@ MemoryFlushConfigUpdater::setNodeRetired(bool nodeRetired)
 }
 
 namespace {
+// This is a hard limit to ensure that we stop before we reach some internal limits.
+// This responsibility should not be here, but in each of the components
+
+constexpr uint64_t MAX_HARD_MEMORY_LIMIT_16G = 16ul * 1024ul * 1024ul * 1024ul;
 
 size_t
 getHardMemoryLimit(const HwInfo::Memory &memory)
 {
-    return std::max((size_t) memory.sizeBytes() / 4,
-                    (size_t) 16ul * 1024ul * 1024ul * 1024ul);
+    return std::min(memory.sizeBytes() / 4, MAX_HARD_MEMORY_LIMIT_16G);
 }
 
 }
@@ -130,16 +133,14 @@ MemoryFlushConfigUpdater::convertConfig(const ProtonConfig::Flush::Memory &confi
     if (totalMaxMemory > hardMemoryLimit) {
         LOG(info, "flush.memory.maxmemory=%" PRId64 " cannot"
             " be set above the hard limit of %ld so we cap it to the hard limit",
-            config.maxmemory,
-            hardMemoryLimit);
+            config.maxmemory, hardMemoryLimit);
         totalMaxMemory = hardMemoryLimit;
     }
     size_t eachMaxMemory = config.each.maxmemory;
     if (eachMaxMemory > hardMemoryLimit) {
         LOG(info, "flush.memory.each.maxmemory=%" PRId64 " cannot"
             " be set above the hard limit of %ld so we cap it to the hard limit",
-            config.maxmemory,
-            hardMemoryLimit);
+            config.maxmemory, hardMemoryLimit);
         eachMaxMemory = hardMemoryLimit;
     }
     return MemoryFlush::Config(totalMaxMemory,
