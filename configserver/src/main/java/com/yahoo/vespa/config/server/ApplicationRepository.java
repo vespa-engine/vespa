@@ -832,7 +832,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         Map<Tenant, Collection<LocalSession>> sessionsPerTenant = new HashMap<>();
         tenantRepository.getAllTenants()
                         .forEach(tenant -> sessionsPerTenant.put(tenant,
-                                                             Collections.unmodifiableCollection(tenant.getSessionRepository().getLocalSessions())));
+                                                                 List.copyOf(tenant.getSessionRepository().getLocalSessions())));
 
         Set<ApplicationId> applicationIds = new HashSet<>();
         sessionsPerTenant.values()
