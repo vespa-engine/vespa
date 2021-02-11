@@ -620,6 +620,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
 
     public void setEnvironmentVars(String environmentVars) { this.environmentVars = environmentVars; }
 
+    public String getEnvironmentVars() { return environmentVars; }
+
     public Optional<String> getJvmGCOptions() { return Optional.ofNullable(jvmGCOptions); }
 
     public final void setRpcServerEnabled(boolean rpcServerEnabled) { this.rpcServerEnabled = rpcServerEnabled; }

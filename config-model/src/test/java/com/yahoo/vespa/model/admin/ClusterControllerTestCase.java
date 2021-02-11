@@ -372,7 +372,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
                 "\n" +
                 "</services>";
 
-        VespaModel model = createVespaModel(xml, false);
+        VespaModel model = createVespaModel(xml);
         assertTrue(model.getService("admin/cluster-controllers/0").isPresent());
 
         assertTrue(existsHostsWithClusterControllerConfigId(model));
@@ -400,6 +400,44 @@ public class ClusterControllerTestCase extends DomBuilderTest {
 
         assertReindexingConfigPresent(model);
         assertReindexingConfiguredOnAdminCluster(model);
+    }
+
+    @Test
+    public void testQrStartConfigWithFeatureFlagForMaxHeap() throws Exception {
+        String xml = "<?xml version=\"1.0\" encoding=\"utf-8\" ?>\n" +
+                     "<services>\n" +
+                     "\n" +
+                     "  <admin version=\"2.0\">\n" +
+                     "    <adminserver hostalias=\"configserver\" />\n" +
+                     "    <logserver hostalias=\"logserver\" />\n" +
+                     "    <slobroks>\n" +
+                     "      <slobrok hostalias=\"configserver\" />\n" +
+                     "      <slobrok hostalias=\"logserver\" />\n" +
+                     "    </slobroks>\n" +
+                     "  </admin>\n" +
+                     "  <content version='1.0' id='bar'>" +
+                     "     <redundancy>1</redundancy>\n" +
+                     "     <documents>" +
+                     "       <document type=\"type1\" mode=\"store-only\"/>\n" +
+                     "     </documents>\n" +
+                     "     <group>" +
+                     "       <node hostalias='node0' distribution-key='0' />" +
+                     "     </group>" +
+                     "   </content>" +
+                     "\n" +
+                     "</services>";
+
+        VespaModel model = createVespaModel(xml, new DeployState.Builder().properties(new TestProperties().clusterControllerMaxHeapSizeInMb(256)));
+        assertTrue(model.getService("admin/cluster-controllers/0").isPresent());
+
+        QrStartConfig.Builder qrBuilder = new QrStartConfig.Builder();
+        model.getConfig(qrBuilder, "admin/cluster-controllers/0/components/clustercontroller-bar-configurer");
+        QrStartConfig qrStartConfig = new QrStartConfig(qrBuilder);
+        // Taken from ContainerCluster
+        assertEquals(32, qrStartConfig.jvm().minHeapsize());
+        // Overridden values from ClusterControllerContainerCluster
+        assertEquals(256, qrStartConfig.jvm().heapsize());
+        assertTrue(qrStartConfig.jvm().verbosegc());
     }
 
     @Test
@@ -476,21 +514,21 @@ public class ClusterControllerTestCase extends DomBuilderTest {
     }
 
     private VespaModel createVespaModel(String servicesXml) throws IOException, SAXException {
-        return createVespaModel(servicesXml, false);
+        return createVespaModel(servicesXml, new DeployState.Builder().properties(new TestProperties().enableAutomaticReindexing(true)));
     }
-    private VespaModel createVespaModel(String servicesXml, boolean isHosted) throws IOException, SAXException {
+
+    private VespaModel createVespaModel(String servicesXml, DeployState.Builder deployStateBuilder) throws IOException, SAXException {
         ApplicationPackage applicationPackage = new MockApplicationPackage.Builder()
                 .withServices(servicesXml)
                 .withSchemas(sds)
                 .build();
         // Need to create VespaModel to make deploy properties have effect
         DeployLogger logger = new DeployLoggerStub();
-        VespaModel model = new VespaModel(new NullConfigModelRegistry(), new DeployState.Builder()
+        VespaModel model = new VespaModel(new NullConfigModelRegistry(), deployStateBuilder
                 .applicationPackage(applicationPackage)
                 .reindexing(new DummyReindexing())
                 .deployLogger(logger)
                 .zone(new Zone(SystemName.cd, Environment.dev, RegionName.from("here")))
-                .properties(new TestProperties().setHostedVespa(isHosted).enableAutomaticReindexing(true))
                 .build());
         SimpleApplicationValidator.checkServices(new StringReader(servicesXml), new Version(7));
         return model;

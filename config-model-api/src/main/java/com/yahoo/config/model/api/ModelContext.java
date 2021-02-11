@@ -85,6 +85,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"bjorncs", "tokle", "baldersheim"}, removeAfter = "7.357") default boolean enableZstdCompressionAccessLog() { return true; }
         @ModelFeatureFlag(owners = {"geirst"}) default boolean enableFeedBlockInDistributor() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim", "geirst", "toregge"}) default double maxDeadBytesRatio() { return 0.2; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default int clusterControllerMaxHeapSizeInMb() { return 512; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
@@ -108,13 +109,12 @@ public interface ModelContext {
 
         Optional<ApplicationRoles> applicationRoles();
 
-        default Quota quota() {
-            return Quota.unlimited();
-        }
+        default Quota quota() { return Quota.unlimited(); }
 
         /// Default setting for the gc-options attribute if not specified explicit by application
         String jvmGCOptions();
-        // TODO(somebody): Only needed for LbServicesProducerTest
+
+        // Note: Used in unit tests (set to false in TestProperties) to avoid needing to deal with implicitly created node for logserver
         default boolean useDedicatedNodeForLogserver() { return true; }
 
     }

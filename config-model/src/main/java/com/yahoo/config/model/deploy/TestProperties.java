@@ -1,4 +1,4 @@
-// Copyright 2019 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model.deploy;
 
 import com.google.common.collect.ImmutableList;
@@ -53,6 +53,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useBucketExecutorForLidSpaceCompact;
     private boolean enableFeedBlockInDistributor = false;
     private double maxDeadBytesRatio = 0.2;
+    private int clusterControllerMaxHeapSizeInMb = 512;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -88,6 +89,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean useBucketExecutorForLidSpaceCompact() { return useBucketExecutorForLidSpaceCompact; }
     @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
     @Override public double maxDeadBytesRatio() { return maxDeadBytesRatio; }
+    @Override public int clusterControllerMaxHeapSizeInMb() { return clusterControllerMaxHeapSizeInMb; }
 
     public TestProperties setFeedConcurrency(double feedConcurrency) {
         this.feedConcurrency = feedConcurrency;
@@ -199,6 +201,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties maxDeadBytesRatio(double ratio) {
         maxDeadBytesRatio = ratio;
+        return this;
+    }
+
+    public TestProperties clusterControllerMaxHeapSizeInMb(int heapSize) {
+        clusterControllerMaxHeapSizeInMb = heapSize;
         return this;
     }
 
