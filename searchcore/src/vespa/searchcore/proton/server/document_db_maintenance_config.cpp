@@ -6,8 +6,7 @@ namespace proton {
 
 constexpr vespalib::duration MAX_DELAY_SEC = 300s;
 
-DocumentDBPruneConfig::
-DocumentDBPruneConfig()
+DocumentDBPruneConfig::DocumentDBPruneConfig() noexcept
     : _delay(MAX_DELAY_SEC),
       _interval(21600s),
       _age(1209600s)
@@ -15,7 +14,7 @@ DocumentDBPruneConfig()
 }
 
 DocumentDBPruneConfig::
-DocumentDBPruneConfig(vespalib::duration interval, vespalib::duration age)
+DocumentDBPruneConfig(vespalib::duration interval, vespalib::duration age) noexcept
     : _delay(std::min(MAX_DELAY_SEC, interval)),
       _interval(interval),
       _age(age)
@@ -23,32 +22,30 @@ DocumentDBPruneConfig(vespalib::duration interval, vespalib::duration age)
 }
 
 bool
-DocumentDBPruneConfig::
-operator==(const DocumentDBPruneConfig &rhs) const
+DocumentDBPruneConfig::operator==(const DocumentDBPruneConfig &rhs) const noexcept
 {
     return _delay == rhs._delay &&
            _interval == rhs._interval &&
            _age == rhs._age;
 }
 
-DocumentDBHeartBeatConfig::DocumentDBHeartBeatConfig()
+DocumentDBHeartBeatConfig::DocumentDBHeartBeatConfig() noexcept
     : _interval(60s)
 {
 }
 
-DocumentDBHeartBeatConfig::DocumentDBHeartBeatConfig(vespalib::duration interval)
+DocumentDBHeartBeatConfig::DocumentDBHeartBeatConfig(vespalib::duration interval) noexcept
     : _interval(interval)
 {
 }
 
 bool
-DocumentDBHeartBeatConfig::
-operator==(const DocumentDBHeartBeatConfig &rhs) const
+DocumentDBHeartBeatConfig::operator==(const DocumentDBHeartBeatConfig &rhs) const noexcept
 {
     return _interval == rhs._interval;
 }
 
-DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig()
+DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig() noexcept
     : _delay(MAX_DELAY_SEC),
       _interval(3600s),
       _allowedLidBloat(1000000000),
@@ -66,7 +63,7 @@ DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig(vespalib:
                                                                        double remove_batch_block_rate,
                                                                        double remove_block_rate,
                                                                        bool disabled,
-                                                                       bool useBucketExecutor)
+                                                                       bool useBucketExecutor) noexcept
     : _delay(std::min(MAX_DELAY_SEC, interval)),
       _interval(interval),
       _allowedLidBloat(allowedLidBloat),
@@ -79,7 +76,7 @@ DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig(vespalib:
 }
 
 DocumentDBLidSpaceCompactionConfig
-DocumentDBLidSpaceCompactionConfig::createDisabled()
+DocumentDBLidSpaceCompactionConfig::createDisabled() noexcept
 {
     DocumentDBLidSpaceCompactionConfig result;
     result._disabled = true;
@@ -87,7 +84,7 @@ DocumentDBLidSpaceCompactionConfig::createDisabled()
 }
 
 bool
-DocumentDBLidSpaceCompactionConfig::operator==(const DocumentDBLidSpaceCompactionConfig &rhs) const
+DocumentDBLidSpaceCompactionConfig::operator==(const DocumentDBLidSpaceCompactionConfig &rhs) const noexcept
 {
    return _delay == rhs._delay &&
            _interval == rhs._interval &&
@@ -97,25 +94,41 @@ DocumentDBLidSpaceCompactionConfig::operator==(const DocumentDBLidSpaceCompactio
 }
 
 
-BlockableMaintenanceJobConfig::BlockableMaintenanceJobConfig()
+BlockableMaintenanceJobConfig::BlockableMaintenanceJobConfig() noexcept
     : _resourceLimitFactor(1.0),
       _maxOutstandingMoveOps(10)
 {}
 
 BlockableMaintenanceJobConfig::BlockableMaintenanceJobConfig(double resourceLimitFactor,
-                                                             uint32_t maxOutstandingMoveOps)
+                                                             uint32_t maxOutstandingMoveOps) noexcept
     : _resourceLimitFactor(resourceLimitFactor),
       _maxOutstandingMoveOps(maxOutstandingMoveOps)
 {}
 
 bool
-BlockableMaintenanceJobConfig::operator==(const BlockableMaintenanceJobConfig &rhs) const
+BlockableMaintenanceJobConfig::operator==(const BlockableMaintenanceJobConfig &rhs) const noexcept
 {
     return _resourceLimitFactor == rhs._resourceLimitFactor &&
            _maxOutstandingMoveOps == rhs._maxOutstandingMoveOps;
 }
 
-DocumentDBMaintenanceConfig::DocumentDBMaintenanceConfig()
+BucketMoveConfig::BucketMoveConfig() noexcept
+    : _maxDocsToMovePerBucket(1),
+      _useBucketExecutor(false)
+{}
+BucketMoveConfig::BucketMoveConfig(uint32_t  maxDocsToMovePerBucket, bool useBucketExecutor_) noexcept
+    : _maxDocsToMovePerBucket(maxDocsToMovePerBucket),
+      _useBucketExecutor(useBucketExecutor_)
+{}
+
+bool
+BucketMoveConfig::operator==(const BucketMoveConfig &rhs) const noexcept
+{
+    return _maxDocsToMovePerBucket == rhs._maxDocsToMovePerBucket &&
+            _useBucketExecutor == rhs._useBucketExecutor;
+}
+
+DocumentDBMaintenanceConfig::DocumentDBMaintenanceConfig() noexcept
     : _pruneRemovedDocuments(),
       _heartBeat(),
       _sessionCachePruneInterval(900s),
@@ -124,9 +137,9 @@ DocumentDBMaintenanceConfig::DocumentDBMaintenanceConfig()
       _attributeUsageFilterConfig(),
       _attributeUsageSampleInterval(60s),
       _blockableJobConfig(),
-      _flushConfig()
-{
-}
+      _flushConfig(),
+      _bucketMoveConfig()
+{ }
 
 DocumentDBMaintenanceConfig::~DocumentDBMaintenanceConfig() = default;
 
@@ -139,7 +152,8 @@ DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &pruneRe
                             const AttributeUsageFilterConfig &attributeUsageFilterConfig,
                             vespalib::duration attributeUsageSampleInterval,
                             const BlockableMaintenanceJobConfig &blockableJobConfig,
-                            const DocumentDBFlushConfig &flushConfig)
+                            const DocumentDBFlushConfig &flushConfig,
+                            const BucketMoveConfig & bucketMoveconfig) noexcept
     : _pruneRemovedDocuments(pruneRemovedDocuments),
       _heartBeat(heartBeat),
       _sessionCachePruneInterval(groupingSessionPruneInterval),
@@ -148,15 +162,16 @@ DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &pruneRe
       _attributeUsageFilterConfig(attributeUsageFilterConfig),
       _attributeUsageSampleInterval(attributeUsageSampleInterval),
       _blockableJobConfig(blockableJobConfig),
-      _flushConfig(flushConfig)
-{
-}
+      _flushConfig(flushConfig),
+      _bucketMoveConfig(bucketMoveconfig)
+{ }
 
 bool
 DocumentDBMaintenanceConfig::
-operator==(const DocumentDBMaintenanceConfig &rhs) const
+operator==(const DocumentDBMaintenanceConfig &rhs) const noexcept
 {
-    return _pruneRemovedDocuments == rhs._pruneRemovedDocuments &&
+    return
+        _pruneRemovedDocuments == rhs._pruneRemovedDocuments &&
         _heartBeat == rhs._heartBeat &&
         _sessionCachePruneInterval == rhs._sessionCachePruneInterval &&
         _visibilityDelay == rhs._visibilityDelay &&
@@ -164,7 +179,8 @@ operator==(const DocumentDBMaintenanceConfig &rhs) const
         _attributeUsageFilterConfig == rhs._attributeUsageFilterConfig &&
         _attributeUsageSampleInterval == rhs._attributeUsageSampleInterval &&
         _blockableJobConfig == rhs._blockableJobConfig &&
-        _flushConfig == rhs._flushConfig;
+        _flushConfig == rhs._flushConfig &&
+        _bucketMoveConfig == rhs._bucketMoveConfig;
 }
 
 } // namespace proton
