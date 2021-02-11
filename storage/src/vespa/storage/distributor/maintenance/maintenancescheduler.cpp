@@ -61,7 +61,7 @@ bool
 MaintenanceScheduler::possibleToScheduleInEmergency(
         const PrioritizedBucket& bucket) const
 {
-    return bucket.moreImportantThan(MaintenancePriority::HIGH);
+    return bucket.moreImportantThan(MaintenancePriority::VERY_HIGH);
 }
 
 void
@@ -84,6 +84,8 @@ MaintenanceScheduler::convertToOperationPriority(MaintenancePriority::Priority p
     case MaintenancePriority::HIGH:
         return OperationStarter::Priority(50);
     case MaintenancePriority::VERY_HIGH:
+        return OperationStarter::Priority(30);
+    case MaintenancePriority::HIGHEST:
         return OperationStarter::Priority(0);
     default:
         LOG_ABORT("should not be reached");
