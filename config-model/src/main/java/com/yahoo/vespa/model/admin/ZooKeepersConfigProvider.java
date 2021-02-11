@@ -12,7 +12,7 @@ import java.util.List;
  */
 public class ZooKeepersConfigProvider implements ZookeepersConfig.Producer {
 
-    public static final int zkPort = 2181;
+    public static final int zooKeeperClientPort = 2181;
 
     private final List<Configserver> configServers;
 
@@ -27,7 +27,7 @@ public class ZooKeepersConfigProvider implements ZookeepersConfig.Producer {
     public List<String> getZooKeepers() {
         List<String> servers = new ArrayList<>();
         for (Configserver server : configServers) {
-            servers.add(server.getHostName() + ":" + zkPort);
+            servers.add(server.getHostName() + ":" + zooKeeperClientPort);
         }
         return servers;
     }
