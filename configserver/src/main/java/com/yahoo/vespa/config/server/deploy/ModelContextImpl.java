@@ -163,6 +163,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean enableFeedBlockInDistributor;
         private final double maxDeadBytesRatio;
         private final int clusterControllerMaxHeapSizeInMb;
+        private final List<String> allowedAthenzProxyIdentities;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
@@ -181,6 +182,7 @@ public class ModelContextImpl implements ModelContext {
             this.enableFeedBlockInDistributor = flagValue(source, appId, Flags.ENABLE_FEED_BLOCK_IN_DISTRIBUTOR);
             this.maxDeadBytesRatio = flagValue(source, appId, Flags.MAX_DEAD_BYTES_RATIO);
             this.clusterControllerMaxHeapSizeInMb = flagValue(source, appId, Flags.CLUSTER_CONTROLLER_MAX_HEAP_SIZE_IN_MB);
+            this.allowedAthenzProxyIdentities = flagValue(source, appId, Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES);
         }
 
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
@@ -199,6 +201,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
         @Override public double maxDeadBytesRatio() { return maxDeadBytesRatio; }
         @Override public int clusterControllerMaxHeapSizeInMb() { return clusterControllerMaxHeapSizeInMb; }
+        @Override public List<String> allowedAthenzProxyIdentities() { return allowedAthenzProxyIdentities; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
