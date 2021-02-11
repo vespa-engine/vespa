@@ -87,3 +87,4 @@ See [Building Vespa RPM](docker/README.md#building-vespa-rpm) for details.
 ## License
 
 Code licensed under the Apache 2.0 license. See [LICENSE](LICENSE) for terms.
+
