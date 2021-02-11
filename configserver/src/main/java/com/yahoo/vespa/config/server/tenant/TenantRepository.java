@@ -95,7 +95,7 @@ public class TenantRepository {
     private final Map<TenantName, Tenant> tenants = Collections.synchronizedMap(new LinkedHashMap<>());
     private final Locks<TenantName> tenantLocks = new Locks<>(1, TimeUnit.MINUTES);
     private final HostRegistry hostRegistry;
-    private final List<TenantListener> tenantListeners = Collections.synchronizedList(new ArrayList<>());
+    private final TenantListener tenantListener;
     private final Curator curator;
     private final Metrics metrics;
     private final MetricUpdater metricUpdater;
@@ -112,7 +112,6 @@ public class TenantRepository {
     private final ModelFactoryRegistry modelFactoryRegistry;
     private final ConfigDefinitionRepo configDefinitionRepo;
     private final ReloadListener reloadListener;
-    private final TenantListener tenantListener;
     private final ExecutorService bootstrapExecutor;
     private final ScheduledExecutorService checkForRemovedApplicationsService =
             new ScheduledThreadPoolExecutor(1, new DaemonThreadFactory("check for removed applications"));
@@ -179,7 +178,6 @@ public class TenantRepository {
         this.curator = curator;
         this.metrics = metrics;
         metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
-        this.tenantListeners.add(tenantListener);
         this.zkCacheExecutor = zkCacheExecutor;
         this.zkWatcherExecutor = zkWatcherExecutor;
         this.fileDistributionFactory = fileDistributionFactory;
@@ -213,9 +211,7 @@ public class TenantRepository {
     }
 
     private void notifyTenantsLoaded() {
-        for (TenantListener tenantListener : tenantListeners) {
-            tenantListener.onTenantsLoaded();
-        }
+        tenantListener.onTenantsLoaded();
     }
 
     public Tenant addTenant(TenantName tenantName) {
@@ -376,15 +372,11 @@ public class TenantRepository {
     }
 
     private void notifyNewTenant(Tenant tenant) {
-        for (TenantListener listener : tenantListeners) {
-            listener.onTenantCreate(tenant);
-        }
+        tenantListener.onTenantCreate(tenant);
     }
 
     private void notifyRemovedTenant(TenantName name) {
-        for (TenantListener listener : tenantListeners) {
-            listener.onTenantDelete(name);
-        }
+        tenantListener.onTenantDelete(name);
     }
 
     /**
@@ -458,29 +450,31 @@ public class TenantRepository {
 
     /**
      * A helper to format a log preamble for messages with a tenant and app id
+     *
      * @param app the app
      * @return the log string
      */
     public static String logPre(ApplicationId app) {
         if (DEFAULT_TENANT.equals(app.tenant())) return "";
         StringBuilder ret = new StringBuilder()
-            .append(logPre(app.tenant()))
-            .append("app:"+app.application().value())
-            .append(":"+app.instance().value())
-            .append(" ");
+                .append(logPre(app.tenant()))
+                .append("app:" + app.application().value())
+                .append(":" + app.instance().value())
+                .append(" ");
         return ret.toString();
-    }    
+    }
 
     /**
      * A helper to format a log preamble for messages with a tenant
+     *
      * @param tenant tenant
      * @return the log string
      */
     public static String logPre(TenantName tenant) {
         if (DEFAULT_TENANT.equals(tenant)) return "";
         StringBuilder ret = new StringBuilder()
-            .append("tenant:" + tenant.value())
-            .append(" ");
+                .append("tenant:" + tenant.value())
+                .append(" ");
         return ret.toString();
     }
 
