@@ -141,7 +141,6 @@ public class ApplicationRepositoryTest {
                 .withProvisioner(provisioner)
                 .withConfigserverConfig(configserverConfig)
                 .withOrchestrator(orchestrator)
-                .withFlagSource(flagSource)
                 .withLogRetriever(new MockLogRetriever())
                 .withClock(clock)
                 .build();
