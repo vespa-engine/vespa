@@ -23,7 +23,7 @@ jobs:
       MAIN_CACHE_FILE: "/main_job_cache/vespa.tar"
 
     steps:
-      - test-cache: echo "check if cache is stuck in cache bookend"
+      - test-cache: echo "test if cache is stuck in cache bookend"
       - inspect: |
           set -x
           env | grep -v TOKEN
