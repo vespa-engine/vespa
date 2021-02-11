@@ -32,19 +32,19 @@ public class NodeRepositoryTest {
     @Test
     public void add_and_remove() {
         NodeRepositoryTester tester = new NodeRepositoryTester();
-        assertEquals(0, tester.nodeRepository().nodes().getNodes().size());
+        assertEquals(0, tester.nodeRepository().nodes().list().size());
 
         tester.addHost("id1", "host1", "default", NodeType.host);
         tester.addHost("id2", "host2", "default", NodeType.host);
         tester.addHost("id3", "host3", "default", NodeType.host);
 
-        assertEquals(3, tester.nodeRepository().nodes().getNodes().size());
+        assertEquals(3, tester.nodeRepository().nodes().list().size());
         
         tester.nodeRepository().nodes().park("host2", true, Agent.system, "Parking to unit test");
         tester.nodeRepository().nodes().removeRecursively("host2");
 
-        assertEquals(3, tester.nodeRepository().nodes().getNodes().size());
-        assertEquals(1, tester.nodeRepository().nodes().getNodes(Node.State.deprovisioned).size());
+        assertEquals(3, tester.nodeRepository().nodes().list().size());
+        assertEquals(1, tester.nodeRepository().nodes().list(Node.State.deprovisioned).size());
     }
 
     @Test
@@ -75,13 +75,13 @@ public class NodeRepositoryTest {
         tester.setNodeState("cfg1", Node.State.dirty);
 
         tester.nodeRepository().nodes().markNodeAvailableForNewAllocation("host1", Agent.system, getClass().getSimpleName());
-        assertEquals(Node.State.ready, tester.nodeRepository().nodes().getNode("host1").get().state());
+        assertEquals(Node.State.ready, tester.nodeRepository().nodes().node("host1").get().state());
 
         tester.nodeRepository().nodes().markNodeAvailableForNewAllocation("host2", Agent.system, getClass().getSimpleName());
-        assertFalse(tester.nodeRepository().nodes().getNode("host2").isPresent());
+        assertFalse(tester.nodeRepository().nodes().node("host2").isPresent());
 
         tester.nodeRepository().nodes().markNodeAvailableForNewAllocation("cfg1", Agent.system, getClass().getSimpleName());
-        assertEquals(Node.State.ready, tester.nodeRepository().nodes().getNode("cfg1").get().state());
+        assertEquals(Node.State.ready, tester.nodeRepository().nodes().node("cfg1").get().state());
     }
 
     @Test
@@ -92,14 +92,14 @@ public class NodeRepositoryTest {
         tester.setNodeState("host1", Node.State.dirty);
         tester.setNodeState("host2", Node.State.dirty);
 
-        Node node2 = tester.nodeRepository().nodes().getNode("host2").orElseThrow();
+        Node node2 = tester.nodeRepository().nodes().node("host2").orElseThrow();
         var reportsBuilder = new Reports.Builder(node2.reports());
         reportsBuilder.setReport(Report.basicReport("reportId", Report.Type.HARD_FAIL, Instant.EPOCH, "hardware failure"));
         node2 = node2.with(reportsBuilder.build());
         tester.nodeRepository().nodes().write(node2, () -> {});
 
         tester.nodeRepository().nodes().markNodeAvailableForNewAllocation("host1", Agent.system, getClass().getSimpleName());
-        assertEquals(Node.State.ready, tester.nodeRepository().nodes().getNode("host1").get().state());
+        assertEquals(Node.State.ready, tester.nodeRepository().nodes().node("host1").get().state());
 
         try {
             tester.nodeRepository().nodes().markNodeAvailableForNewAllocation("host2", Agent.system, getClass().getSimpleName());
@@ -120,7 +120,7 @@ public class NodeRepositoryTest {
         tester.addNode("node12", "node12", "host1", "docker", NodeType.tenant);
         tester.addNode("node20", "node20", "host2", "docker", NodeType.tenant);
         tester.setNodeState("node11", Node.State.active);
-        assertEquals(6, tester.nodeRepository().nodes().getNodes().size());
+        assertEquals(6, tester.nodeRepository().nodes().list().size());
 
         try {
             tester.nodeRepository().nodes().removeRecursively("host1");
@@ -128,21 +128,21 @@ public class NodeRepositoryTest {
         } catch (IllegalArgumentException ignored) {
             // Expected
         }
-        assertEquals(6, tester.nodeRepository().nodes().getNodes().size());
+        assertEquals(6, tester.nodeRepository().nodes().list().size());
 
         // Should be OK to delete host2 as both host2 and its only child, node20, are in state provisioned
         tester.nodeRepository().nodes().removeRecursively("host2");
-        assertEquals(5, tester.nodeRepository().nodes().getNodes().size());
-        assertEquals(Node.State.deprovisioned, tester.nodeRepository().nodes().getNode("host2").get().state());
+        assertEquals(5, tester.nodeRepository().nodes().list().size());
+        assertEquals(Node.State.deprovisioned, tester.nodeRepository().nodes().node("host2").get().state());
 
         // Now node10 is in provisioned, set node11 to failed and node12 to ready, and it should be OK to delete host1
         tester.nodeRepository().nodes().fail("node11", Agent.system, getClass().getSimpleName());
         tester.nodeRepository().nodes().setReady("node12", Agent.system, getClass().getSimpleName());
         tester.nodeRepository().nodes().removeRecursively("node12"); // Remove one of the children first instead
-        assertEquals(4, tester.nodeRepository().nodes().getNodes().size());
+        assertEquals(4, tester.nodeRepository().nodes().list().size());
         tester.nodeRepository().nodes().removeRecursively("host1");
-        assertEquals(Node.State.deprovisioned, tester.nodeRepository().nodes().getNode("host1").get().state());
-        assertEquals(IP.Config.EMPTY.primary(), tester.nodeRepository().nodes().getNode("host1").get().ipConfig().primary());
+        assertEquals(Node.State.deprovisioned, tester.nodeRepository().nodes().node("host1").get().state());
+        assertEquals(IP.Config.EMPTY.primary(), tester.nodeRepository().nodes().node("host1").get().ipConfig().primary());
     }
 
     @Test
@@ -155,13 +155,13 @@ public class NodeRepositoryTest {
         tester.addNode("id2", cfg1, cfghost1, "docker", NodeType.config);
         tester.setNodeState(cfghost1, Node.State.active);
         tester.setNodeState(cfg1, Node.State.active);
-        assertEquals(2, tester.nodeRepository().nodes().getNodes().size());
+        assertEquals(2, tester.nodeRepository().nodes().list().size());
 
         try {
             tester.nodeRepository().nodes().removeRecursively(cfghost1);
             fail("Should not be able to delete host node, one of the children is in state active");
         } catch (IllegalArgumentException ignored) { }
-        assertEquals(2, tester.nodeRepository().nodes().getNodes().size());
+        assertEquals(2, tester.nodeRepository().nodes().list().size());
 
         // Fail host and container
         tester.nodeRepository().nodes().failRecursively(cfghost1, Agent.system, getClass().getSimpleName());
@@ -179,7 +179,7 @@ public class NodeRepositoryTest {
         tester.clock().advance(Duration.ofSeconds(1));
         tester.addHost("id1", "host1", "default", NodeType.host);
         tester.addHost("id2", "host2", "default", NodeType.host);
-        assertFalse(tester.nodeRepository().nodes().getNode("host1").get().history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
+        assertFalse(tester.nodeRepository().nodes().node("host1").get().history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
 
         // Set host 1 properties and deprovision it
         try (var lock = tester.nodeRepository().nodes().lockAndGetRequired("host1")) {
@@ -192,16 +192,16 @@ public class NodeRepositoryTest {
         tester.nodeRepository().nodes().removeRecursively("host1");
 
         // Host 1 is deprovisioned and unwanted properties are cleared
-        Node host1 = tester.nodeRepository().nodes().getNode("host1").get();
+        Node host1 = tester.nodeRepository().nodes().node("host1").get();
         assertEquals(Node.State.deprovisioned, host1.state());
         assertTrue(host1.history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
 
         // Adding it again preserves some information from the deprovisioned host and removes it
         tester.addHost("id2", "host1", "default", NodeType.host);
-        host1 = tester.nodeRepository().nodes().getNode("host1").get();
+        host1 = tester.nodeRepository().nodes().node("host1").get();
         assertEquals("This is the newly added node", "id2", host1.id());
         assertFalse("The old 'host1' is removed",
-                    tester.nodeRepository().nodes().getNode("host1", Node.State.deprovisioned).isPresent());
+                    tester.nodeRepository().nodes().node("host1", Node.State.deprovisioned).isPresent());
         assertFalse("Not transferred from deprovisioned host", host1.status().wantToRetire());
         assertFalse("Not transferred from deprovisioned host", host1.status().wantToDeprovision());
         assertTrue("Transferred from deprovisioned host", host1.history().hasEventAfter(History.Event.Type.deprovisioned, testStart));
@@ -225,7 +225,7 @@ public class NodeRepositoryTest {
         tester.setNodeState("node12", Node.State.active);
         tester.setNodeState("node20", Node.State.failed);
 
-        assertEquals(6, tester.nodeRepository().nodes().getNodes().size());
+        assertEquals(6, tester.nodeRepository().nodes().list().size());
 
         // Should be OK to dirty host2 as it is in provisioned and its only child is in failed
         tester.nodeRepository().nodes().deallocateRecursively("host2", Agent.system, NodeRepositoryTest.class.getSimpleName());
@@ -267,8 +267,8 @@ public class NodeRepositoryTest {
         tester.setNodeState("node1", Node.State.failed);
         tester.nodeRepository().nodes().breakfixRecursively("host1", Agent.system, reason);
 
-        assertEquals(1, tester.nodeRepository().nodes().getNodes().size());
-        Node node = tester.nodeRepository().nodes().getNodes().get(0);
+        assertEquals(1, tester.nodeRepository().nodes().list().size());
+        Node node = tester.nodeRepository().nodes().list().first().get();
         assertEquals("host1", node.hostname());
         assertEquals(Node.State.breakfixed, node.state());
     }
@@ -279,7 +279,7 @@ public class NodeRepositoryTest {
 
     private static Set<String> filterNodes(NodeRepositoryTester tester, Predicate<Node> filter) {
         return tester.nodeRepository().nodes()
-                .getNodes().stream()
+                .list().stream()
                 .filter(filter)
                 .map(Node::hostname)
                 .collect(Collectors.toSet());

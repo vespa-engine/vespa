@@ -69,7 +69,7 @@ public class DynamicDockerAllocationTest {
                                                                     .build();
         tester.makeReadyNodes(4, "host-small", NodeType.host, 32);
         tester.activateTenantHosts();
-        List<Node> dockerHosts = tester.nodeRepository().nodes().getNodes(NodeType.host, State.active);
+        List<Node> dockerHosts = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host).asList();
         NodeResources flavor = new NodeResources(1, 4, 100, 1);
 
         // Application 1
@@ -110,7 +110,7 @@ public class DynamicDockerAllocationTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(5, "host-small", NodeType.host, 32);
         tester.activateTenantHosts();
-        List<Node> dockerHosts = tester.nodeRepository().nodes().getNodes(NodeType.host, State.active);
+        NodeList dockerHosts = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host);
         NodeResources resources = new NodeResources(1, 4, 100, 0.3);
 
         // Application 1
@@ -202,7 +202,7 @@ public class DynamicDockerAllocationTest {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).flavorsConfig(flavorsConfig()).build();
         tester.makeReadyNodes(2, "host-small", NodeType.host, 32);
         tester.activateTenantHosts();
-        List<Node> dockerHosts = tester.nodeRepository().nodes().getNodes(NodeType.host, State.active);
+        List<Node> dockerHosts = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host).asList();
         NodeResources flavor = new NodeResources(1, 4, 100, 1);
 
         // Application 1
@@ -315,9 +315,9 @@ public class DynamicDockerAllocationTest {
         List<HostSpec> hosts = tester.prepare(application, clusterSpec("myContent.t1.a1"), 2, 1, new NodeResources(1, 4, 100, 1));
         tester.activate(application, hosts);
 
-        List<Node> activeNodes = tester.nodeRepository().nodes().getNodes(application);
-        assertEquals(ImmutableSet.of("127.0.127.13", "::13"), activeNodes.get(0).ipConfig().primary());
-        assertEquals(ImmutableSet.of("127.0.127.2", "::2"), activeNodes.get(1).ipConfig().primary());
+        NodeList activeNodes = tester.nodeRepository().nodes().list().owner(application);
+        assertEquals(ImmutableSet.of("127.0.127.13", "::13"), activeNodes.asList().get(0).ipConfig().primary());
+        assertEquals(ImmutableSet.of("127.0.127.2", "::2"), activeNodes.asList().get(1).ipConfig().primary());
     }
 
     @Test
@@ -437,16 +437,16 @@ public class DynamicDockerAllocationTest {
 
         // Redeploy does not change allocation as a host with switch information is no better or worse than hosts
         // without switch information
-        List<Node> allocatedNodes = tester.nodeRepository().nodes().getNodes(app1);
+        NodeList allocatedNodes = tester.nodeRepository().nodes().list().owner(app1);
         tester.activate(app1, tester.prepare(app1, cluster, Capacity.from(new ClusterResources(2, 1, resources))));
-        assertEquals("Allocation unchanged", allocatedNodes, tester.nodeRepository().nodes().getNodes(app1));
+        assertEquals("Allocation unchanged", allocatedNodes, tester.nodeRepository().nodes().list().owner(app1));
 
         // Initial hosts are attached to the same switch
         tester.patchNodes(hosts0, (host) -> host.withSwitchHostname(switch0));
 
         // Redeploy does not change allocation
         tester.activate(app1, tester.prepare(app1, cluster, Capacity.from(new ClusterResources(2, 1, resources))));
-        assertEquals("Allocation unchanged", allocatedNodes, tester.nodeRepository().nodes().getNodes(app1));
+        assertEquals("Allocation unchanged", allocatedNodes, tester.nodeRepository().nodes().list().owner(app1));
 
         // One regular host and one slow-disk host are provisioned on the same switch
         String switch1 = "switch1";
@@ -522,11 +522,10 @@ public class DynamicDockerAllocationTest {
     }
 
     private List<Node> findSpareCapacity(ProvisioningTester tester) {
-        List<Node> nodes = tester.nodeRepository().nodes().getNodes(State.values());
-        NodeList nl = NodeList.copyOf(nodes);
+        NodeList nodes = tester.nodeRepository().nodes().list(State.values());
         return nodes.stream()
                     .filter(n -> n.type() == NodeType.host)
-                    .filter(n -> nl.childrenOf(n).size() == 0) // Nodes without children
+                    .filter(n -> nodes.childrenOf(n).size() == 0) // Nodes without children
                     .collect(Collectors.toList());
     }
 

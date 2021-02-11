@@ -17,6 +17,7 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
@@ -92,7 +93,7 @@ public class RebalancerTest {
         tester.maintain();
         assertTrue("Want to retire is reset", tester.getNodes(Node.State.active).stream().noneMatch(node -> node.status().wantToRetire()));
         assertEquals("Reserved node was moved to dirty", 1, tester.getNodes(Node.State.dirty).size());
-        String reservedHostname = tester.getNodes(Node.State.dirty).get(0).hostname();
+        String reservedHostname = tester.getNodes(Node.State.dirty).first().get().hostname();
         tester.nodeRepository().nodes().setReady(reservedHostname, Agent.system, "Cleanup");
         tester.nodeRepository().nodes().removeRecursively(reservedHostname);
 
@@ -176,18 +177,18 @@ public class RebalancerTest {
         }
 
         List<Node> getNodes(ApplicationId applicationId, Node.State nodeState) {
-            return tester.nodeRepository().nodes().getNodes(applicationId, nodeState);
+            return tester.nodeRepository().nodes().list(nodeState).owner(applicationId).asList();
         }
 
         boolean isNodeRetired(Node node) {
             return getNode(node.hostname()).get().allocation().get().membership().retired();
         }
 
-        Optional<Node> getNode(String hostname) { return tester.nodeRepository().nodes().getNode(hostname); }
+        Optional<Node> getNode(String hostname) { return tester.nodeRepository().nodes().node(hostname); }
 
-        List<Node> getNodes(Node.State nodeState) { return tester.nodeRepository().nodes().getNodes(nodeState); }
+        NodeList getNodes(Node.State nodeState) { return tester.nodeRepository().nodes().list(nodeState); }
 
-        Node getNode(ApplicationId applicationId) { return tester.nodeRepository().nodes().getNodes(applicationId).get(0); }
+        Node getNode(ApplicationId applicationId) { return tester.nodeRepository().nodes().list().owner(applicationId).first().get(); }
 
         ManualClock clock() { return tester.clock(); }
 

@@ -366,7 +366,7 @@ public class DockerProvisioningTest {
         tester.activate(app1, cluster1, Capacity.from(new ClusterResources(2, 1, r)));
 
         var tx = new ApplicationTransaction(new ProvisionLock(app1, tester.nodeRepository().nodes().lock(app1)), new NestedTransaction());
-        tester.nodeRepository().nodes().deactivate(tester.nodeRepository().nodes().list(app1, Node.State.active).retired().asList(), tx);
+        tester.nodeRepository().nodes().deactivate(tester.nodeRepository().nodes().list(Node.State.active).owner(app1).retired().asList(), tx);
         tx.nested().commit();
 
         assertEquals(2, tester.getNodes(app1, Node.State.active).size());
@@ -413,8 +413,8 @@ public class DockerProvisioningTest {
         }
         else {
             assertEquals(0, tester.getNodes(app1, Node.State.inactive).size());
-            assertEquals(2, tester.nodeRepository().nodes().getNodes(Node.State.dirty).size());
-            tester.nodeRepository().nodes().setReady(tester.nodeRepository().nodes().getNodes(Node.State.dirty), Agent.system, "test");
+            assertEquals(2, tester.nodeRepository().nodes().list(Node.State.dirty).size());
+            tester.nodeRepository().nodes().setReady(tester.nodeRepository().nodes().list(Node.State.dirty).asList(), Agent.system, "test");
             tester.activate(app1, cluster1, Capacity.from(new ClusterResources(4, 1, r)));
         }
 
@@ -434,13 +434,13 @@ public class DockerProvisioningTest {
 
     private void assertNodeParentReservation(List<Node> nodes, Optional<TenantName> reservation, ProvisioningTester tester) {
         for (Node node : nodes)
-            assertEquals(reservation, tester.nodeRepository().nodes().getNode(node.parentHostname().get()).get().reservedTo());
+            assertEquals(reservation, tester.nodeRepository().nodes().node(node.parentHostname().get()).get().reservedTo());
     }
 
     private void assertHostSpecParentReservation(List<HostSpec> hostSpecs, Optional<TenantName> reservation, ProvisioningTester tester) {
         for (HostSpec hostSpec : hostSpecs) {
-            Node node = tester.nodeRepository().nodes().getNode(hostSpec.hostname()).get();
-            assertEquals(reservation, tester.nodeRepository().nodes().getNode(node.parentHostname().get()).get().reservedTo());
+            Node node = tester.nodeRepository().nodes().node(hostSpec.hostname()).get();
+            assertEquals(reservation, tester.nodeRepository().nodes().node(node.parentHostname().get()).get().reservedTo());
         }
     }
 

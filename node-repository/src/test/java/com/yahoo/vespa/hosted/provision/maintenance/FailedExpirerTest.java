@@ -268,7 +268,7 @@ public class FailedExpirerTest {
         }
 
         public Node get(String hostname) {
-            return nodeRepository.nodes().getNode(hostname)
+            return nodeRepository.nodes().node(hostname)
                                  .orElseThrow(() -> new IllegalArgumentException("No such node: " + hostname));
         }
 
@@ -341,7 +341,7 @@ public class FailedExpirerTest {
         public void assertNodesIn(Node.State state, String... hostnames) {
             assertEquals(Stream.of(hostnames).collect(Collectors.toSet()),
                          nodeRepository.nodes()
-                                       .getNodes(state).stream()
+                                       .list(state).stream()
                                        .map(Node::hostname)
                                        .collect(Collectors.toSet()));
         }

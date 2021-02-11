@@ -116,7 +116,7 @@ class MaintenanceDeployment implements Closeable {
                                                Deployer deployer,
                                                NodeRepository nodeRepository) {
         if (lock.isEmpty()) return Optional.empty();
-        if (nodeRepository.nodes().getNodes(application, Node.State.active).isEmpty()) return Optional.empty();
+        if (nodeRepository.nodes().list(Node.State.active).owner(application).isEmpty()) return Optional.empty();
         return deployer.deployFromLocalActive(application);
     }
 
@@ -168,7 +168,7 @@ class MaintenanceDeployment implements Closeable {
                     if ( ! deployment.prepare()) return false;
                     if (verifyTarget) {
                         expectedNewNode =
-                                nodeRepository.nodes().getNodes(application, Node.State.reserved).stream()
+                                nodeRepository.nodes().list(Node.State.reserved).owner(application).stream()
                                               .filter(n -> !n.hostname().equals(node.hostname()))
                                               .filter(n -> n.allocation().get().membership().cluster().id().equals(node.allocation().get().membership().cluster().id()))
                                               .findAny();
@@ -185,7 +185,7 @@ class MaintenanceDeployment implements Closeable {
                     markWantToRetire(node, false, agent, nodeRepository); // Necessary if this failed, no-op otherwise
 
                     // Immediately clean up if we reserved the node but could not activate or reserved a node on the wrong host
-                    expectedNewNode.flatMap(node -> nodeRepository.nodes().getNode(node.hostname(), Node.State.reserved))
+                    expectedNewNode.flatMap(node -> nodeRepository.nodes().node(node.hostname(), Node.State.reserved))
                                    .ifPresent(node -> nodeRepository.nodes().deallocate(node, agent, "Expired by " + agent));
                 }
             }

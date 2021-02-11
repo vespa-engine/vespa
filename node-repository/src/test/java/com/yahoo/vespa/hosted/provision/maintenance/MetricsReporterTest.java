@@ -181,7 +181,7 @@ public class MetricsReporterTest {
         }
 
         NestedTransaction transaction = new NestedTransaction();
-        nodeRepository.nodes().activate(nodeRepository.nodes().getNodes(NodeType.host), transaction);
+        nodeRepository.nodes().activate(nodeRepository.nodes().list().nodeType(NodeType.host).asList(), transaction);
         transaction.commit();
 
         Orchestrator orchestrator = mock(Orchestrator.class);

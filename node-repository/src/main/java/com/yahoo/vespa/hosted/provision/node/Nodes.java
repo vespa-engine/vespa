@@ -70,52 +70,23 @@ public class Nodes {
      * @param inState the states the node may be in. If no states are given, it will be returned from any state
      * @return the node, or empty if it was not found in any of the given states
      */
-    public Optional<Node> getNode(String hostname, Node.State... inState) {
+    public Optional<Node> node(String hostname, Node.State... inState) {
         return db.readNode(hostname, inState);
     }
 
     /**
-     * Returns all nodes in any of the given states.
+     * Returns a list of nodes in this repository in any of the given states
      *
      * @param inState the states to return nodes from. If no states are given, all nodes of the given type are returned
-     * @return the node, or empty if it was not found in any of the given states
      */
-    public List<Node> getNodes(Node.State... inState) {
-        return new ArrayList<>(db.readNodes(inState));
-    }
-    /**
-     * Finds and returns the nodes of the given type in any of the given states.
-     *
-     * @param type the node type to return
-     * @param inState the states to return nodes from. If no states are given, all nodes of the given type are returned
-     * @return the node, or empty if it was not found in any of the given states
-     */
-    public List<Node> getNodes(NodeType type, Node.State... inState) {
-        return db.readNodes(inState).stream().filter(node -> node.type().equals(type)).collect(Collectors.toList());
-    }
-
-    /** Returns a filterable list of nodes in this repository in any of the given states */
     public NodeList list(Node.State... inState) {
-        return NodeList.copyOf(getNodes(inState));
-    }
-
-    public NodeList list(ApplicationId application, Node.State... inState) {
-        return NodeList.copyOf(getNodes(application, inState));
-    }
-
-    /** Returns a filterable list of all nodes of an application */
-    public NodeList list(ApplicationId application) {
-        return NodeList.copyOf(getNodes(application));
+        return NodeList.copyOf(db.readNodes(inState));
     }
 
     /** Returns a locked list of all nodes in this repository */
     public LockedNodeList list(Mutex lock) {
-        return new LockedNodeList(getNodes(), lock);
+        return new LockedNodeList(list().asList(), lock);
     }
-
-    public List<Node> getNodes(ApplicationId id, Node.State... inState) { return db.readNodes(id, inState); }
-    public List<Node> getInactive() { return db.readNodes(Node.State.inactive); }
-    public List<Node> getFailed() { return db.readNodes(Node.State.failed); }
 
     /**
      * Returns whether the zone managed by this node repository seems to be working.
@@ -138,7 +109,7 @@ public class Nodes {
                 illegal("Cannot add " + node + ": This is not a docker node");
             if (node.allocation().isEmpty())
                 illegal("Cannot add " + node + ": Docker containers needs to be allocated");
-            Optional<Node> existing = getNode(node.hostname());
+            Optional<Node> existing = node(node.hostname());
             if (existing.isPresent())
                 illegal("Cannot add " + node + ": A node with this name already exists (" +
                         existing.get() + ", " + existing.get().history() + "). Node to be added: " +
@@ -165,7 +136,7 @@ public class Nodes {
                         illegal("Cannot add nodes: " + node + " is duplicated in the argument list");
                 }
 
-                Optional<Node> existing = getNode(node.hostname());
+                Optional<Node> existing = node(node.hostname());
                 if (existing.isPresent()) {
                     if (existing.get().state() != Node.State.deprovisioned)
                         illegal("Cannot add " + node + ": A node with this name already exists");
@@ -203,7 +174,7 @@ public class Nodes {
     }
 
     public Node setReady(String hostname, Agent agent, String reason) {
-        Node nodeToReady = getNode(hostname).orElseThrow(() ->
+        Node nodeToReady = node(hostname).orElseThrow(() ->
                                                                  new NoSuchNodeException("Could not move " + hostname + " to ready: Node not found"));
 
         if (nodeToReady.state() == Node.State.ready) return nodeToReady;
@@ -255,7 +226,7 @@ public class Nodes {
     }
 
     public List<Node> deallocateRecursively(String hostname, Agent agent, String reason) {
-        Node nodeToDirty = getNode(hostname).orElseThrow(() ->
+        Node nodeToDirty = node(hostname).orElseThrow(() ->
                                                                  new IllegalArgumentException("Could not deallocate " + hostname + ": Node not found"));
 
         List<Node> nodesToDirty =
@@ -368,7 +339,7 @@ public class Nodes {
      * Moves a host to breakfixed state, removing any children.
      */
     public List<Node> breakfixRecursively(String hostname, Agent agent, String reason) {
-        Node node = getNode(hostname).orElseThrow(() ->
+        Node node = node(hostname).orElseThrow(() ->
                                                           new NoSuchNodeException("Could not breakfix " + hostname + ": Node not found"));
 
         try (Mutex lock = lockUnallocated()) {
@@ -397,7 +368,7 @@ public class Nodes {
 
     private Node move(String hostname, boolean keepAllocation, Node.State toState, Agent agent, Optional<String> reason,
                       NestedTransaction transaction) {
-        Node node = getNode(hostname).orElseThrow(() ->
+        Node node = node(hostname).orElseThrow(() ->
                                                           new NoSuchNodeException("Could not move " + hostname + " to " + toState + ": Node not found"));
 
         if (!keepAllocation && node.allocation().isPresent()) {
@@ -421,7 +392,7 @@ public class Nodes {
         // TODO: Work out a safe lock acquisition strategy for moves, e.g. migrate to lockNode.
         try (Mutex lock = lock(node)) {
             if (toState == Node.State.active) {
-                for (Node currentActive : getNodes(node.allocation().get().owner(), Node.State.active)) {
+                for (Node currentActive : list(Node.State.active).owner(node.allocation().get().owner())) {
                     if (node.allocation().get().membership().cluster().equals(currentActive.allocation().get().membership().cluster())
                         && node.allocation().get().membership().index() == currentActive.allocation().get().membership().index())
                         illegal("Could not set " + node + " active: Same cluster and index as " + currentActive);
@@ -436,7 +407,7 @@ public class Nodes {
      * containers this will remove the node from node repository, otherwise the node will be moved to state ready.
      */
     public Node markNodeAvailableForNewAllocation(String hostname, Agent agent, String reason) {
-        Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
+        Node node = node(hostname).orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
         if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && node.type() == NodeType.tenant) {
             if (node.state() != Node.State.dirty)
                 illegal("Cannot make " + node  + " available for new allocation as it is not in state [dirty]");
@@ -445,7 +416,7 @@ public class Nodes {
 
         if (node.state() == Node.State.ready) return node;
 
-        Node parentHost = node.parentHostname().flatMap(this::getNode).orElse(node);
+        Node parentHost = node.parentHostname().flatMap(this::node).orElse(node);
         List<String> failureReasons = NodeFailer.reasonsToFailParentHost(parentHost);
         if ( ! failureReasons.isEmpty())
             illegal(node + " cannot be readied because it has hard failures: " + failureReasons);
@@ -459,7 +430,7 @@ public class Nodes {
      * @return a List of all the nodes that have been removed or (for hosts) deprovisioned
      */
     public List<Node> removeRecursively(String hostname) {
-        Node node = getNode(hostname).orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
+        Node node = node(hostname).orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
         return removeRecursively(node, false);
     }
 
@@ -687,9 +658,9 @@ public class Nodes {
             Mutex lockToClose = lock(staleNode);
             try {
                 // As an optimization we first try finding the node in the same state
-                Optional<Node> freshNode = getNode(staleNode.hostname(), staleNode.state());
+                Optional<Node> freshNode = node(staleNode.hostname(), staleNode.state());
                 if (freshNode.isEmpty()) {
-                    freshNode = getNode(staleNode.hostname());
+                    freshNode = node(staleNode.hostname());
                     if (freshNode.isEmpty()) {
                         return Optional.empty();
                     }
@@ -715,7 +686,7 @@ public class Nodes {
 
     /** Returns the unallocated/application lock, and the node acquired under that lock. */
     public Optional<NodeMutex> lockAndGet(String hostname) {
-        return getNode(hostname).flatMap(this::lockAndGet);
+        return node(hostname).flatMap(this::lockAndGet);
     }
 
     /** Returns the unallocated/application lock, and the node acquired under that lock. */

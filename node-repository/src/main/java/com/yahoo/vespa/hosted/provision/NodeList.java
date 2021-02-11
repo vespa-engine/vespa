@@ -271,4 +271,14 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         return asList().toString();
     }
 
+    @Override
+    public int hashCode() { return asList().hashCode(); }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof NodeList)) return false;
+        return this.asList().equals(((NodeList) other).asList());
+    }
+
 }

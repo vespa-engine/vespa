@@ -103,7 +103,7 @@ public class OsUpgradeActivatorTest {
     private Stream<Node> streamUpdatedNodes(List<Node> nodes) {
         Stream<Node> stream = Stream.empty();
         for (var node : nodes) {
-            stream = Stream.concat(stream, tester.nodeRepository().nodes().getNode(node.hostname()).stream());
+            stream = Stream.concat(stream, tester.nodeRepository().nodes().node(node.hostname()).stream());
         }
         return stream;
     }

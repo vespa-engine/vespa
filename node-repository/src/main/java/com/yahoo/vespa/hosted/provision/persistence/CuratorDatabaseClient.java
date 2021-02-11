@@ -261,6 +261,8 @@ public class CuratorDatabaseClient {
     /**
      * Returns all nodes which are in one of the given states.
      * If no states are given this returns all nodes.
+     *
+     * @return the nodes in a mutable list owned by the caller
      */
     public List<Node> readNodes(Node.State ... states) {
         List<Node> nodes = new ArrayList<>();
@@ -273,16 +275,6 @@ public class CuratorDatabaseClient {
                 node.ifPresent(nodes::add); // node might disappear between getChildren and getNode
             }
         }
-        return nodes;
-    }
-
-    /** 
-     * Returns all nodes allocated to the given application which are in one of the given states 
-     * If no states are given this returns all nodes.
-     */
-    public List<Node> readNodes(ApplicationId applicationId, Node.State ... states) {
-        List<Node> nodes = readNodes(states);
-        nodes.removeIf(node -> ! node.allocation().isPresent() || ! node.allocation().get().owner().equals(applicationId));
         return nodes;
     }
 

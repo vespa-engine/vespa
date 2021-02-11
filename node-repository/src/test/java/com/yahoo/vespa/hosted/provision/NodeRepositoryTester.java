@@ -52,7 +52,7 @@ public class NodeRepositoryTester {
     public MockCurator curator() { return curator; }
     
     public List<Node> getNodes(NodeType type, Node.State ... inState) {
-        return nodeRepository.nodes().getNodes(type, inState);
+        return nodeRepository.nodes().list(inState).nodeType(type).asList();
     }
     
     public Node addHost(String id, String hostname, String flavor, NodeType type) {
@@ -79,7 +79,7 @@ public class NodeRepositoryTester {
      * of valid state transitions
      */
     public void setNodeState(String hostname, Node.State state) {
-        Node node = nodeRepository.nodes().getNode(hostname).orElseThrow(RuntimeException::new);
+        Node node = nodeRepository.nodes().node(hostname).orElseThrow(RuntimeException::new);
         nodeRepository.database().writeTo(state, node, Agent.system, Optional.empty());
     }
 

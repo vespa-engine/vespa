@@ -32,7 +32,6 @@ import com.yahoo.vespa.service.duper.InfraApplication;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashSet;
@@ -95,7 +94,8 @@ public class ProvisioningTest {
         SystemState state5 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
         HostSpec removed = tester.removeOne(state5.allHosts);
         tester.activate(application1, state5.allHosts);
-        assertEquals(removed.hostname(), tester.nodeRepository().nodes().getNodes(application1, Node.State.inactive).get(0).hostname());
+        assertEquals(removed.hostname(),
+                     tester.nodeRepository().nodes().list(Node.State.inactive).owner(application1).first().get().hostname());
 
         // remove some of the clusters
         SystemState state6 = prepare(application1, 0, 2, 0, 3, defaultResources, tester);
@@ -107,14 +107,14 @@ public class ProvisioningTest {
         NodeList previouslyActive = tester.getNodes(application1, Node.State.active);
         NodeList previouslyInactive = tester.getNodes(application1, Node.State.inactive);
         tester.remove(application1);
-        assertEquals(tester.toHostNames(previouslyActive.not().container().asList()),
-                     tester.toHostNames(tester.nodeRepository().nodes().getNodes(application1, Node.State.inactive)));
-        assertTrue(tester.nodeRepository().nodes().getNodes(Node.State.dirty).containsAll(previouslyActive.container().asList()));
+        assertEquals(tester.toHostNames(previouslyActive.not().container()),
+                     tester.toHostNames(tester.nodeRepository().nodes().list(Node.State.inactive).owner(application1)));
+        assertTrue(tester.nodeRepository().nodes().list(Node.State.dirty).asList().containsAll(previouslyActive.container().asList()));
         assertEquals(0, tester.getNodes(application1, Node.State.active).size());
         assertTrue(tester.nodeRepository().applications().get(application1).isEmpty());
 
         // other application is unaffected
-        assertEquals(state1App2.hostNames(), tester.toHostNames(tester.nodeRepository().nodes().getNodes(application2, Node.State.active)));
+        assertEquals(state1App2.hostNames(), tester.toHostNames(tester.nodeRepository().nodes().list(Node.State.active).owner(application2)));
 
         // fail a node from app2 and make sure it does not get inactive nodes from first
         HostSpec failed = tester.removeOne(state1App2.allHosts);
@@ -127,7 +127,7 @@ public class ProvisioningTest {
         tester.activate(application2, state2App2.allHosts);
 
         // deploy first app again
-        tester.nodeRepository().nodes().setReady(tester.nodeRepository().nodes().getNodes(Node.State.dirty), Agent.system, "recycled");
+        tester.nodeRepository().nodes().setReady(tester.nodeRepository().nodes().list(Node.State.dirty).asList(), Agent.system, "recycled");
         SystemState state7 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
         state7.assertEquals(state1);
         tester.activate(application1, state7.allHosts);
@@ -160,7 +160,7 @@ public class ProvisioningTest {
 
         HostSpec host1 = state1.container0.iterator().next();
         assertFalse(host1.version().isPresent());
-        Node node1 = tester.nodeRepository().nodes().getNode(host1.hostname()).get();
+        Node node1 = tester.nodeRepository().nodes().node(host1.hostname()).get();
         tester.nodeRepository().nodes().write(node1.with(node1.status().withVespaVersion(Version.fromString("1.2.3"))), () -> {});
 
         // redeploy
@@ -186,7 +186,7 @@ public class ProvisioningTest {
         tester.activate(application1, state1.allHosts);
 
         HostSpec host1 = state1.container0.iterator().next();
-        Node node1 = tester.nodeRepository().nodes().getNode(host1.hostname()).get();
+        Node node1 = tester.nodeRepository().nodes().node(host1.hostname()).get();
         DockerImage dockerImage = DockerImage.fromString(dockerImageRepo).withTag(Version.fromString("1.2.3"));
         tester.nodeRepository().nodes().write(node1.with(node1.status().withContainerImage(dockerImage)), () -> {});
 
@@ -195,7 +195,7 @@ public class ProvisioningTest {
         tester.activate(application1, state2.allHosts);
 
         host1 = state2.container0.iterator().next();
-        node1 = tester.nodeRepository().nodes().getNode(host1.hostname()).get();
+        node1 = tester.nodeRepository().nodes().node(host1.hostname()).get();
         assertEquals(dockerImage, node1.status().containerImage().get());
     }
 
@@ -222,7 +222,7 @@ public class ProvisioningTest {
         SystemState state3 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
         tester.activate(application1, state3.allHosts);
         assertEquals("Superfluous container nodes are dirtyed",
-                     3-2 + 4-2, tester.nodeRepository().nodes().getNodes(Node.State.dirty).size());
+                     3-2 + 4-2, tester.nodeRepository().nodes().list(Node.State.dirty).size());
         assertEquals("Superfluous content nodes are retired",
                      4-3 + 5-3, tester.getNodes(application1, Node.State.active).retired().size());
 
@@ -245,7 +245,7 @@ public class ProvisioningTest {
         SystemState state5 = prepare(application1, 2, 2, 3, 3, defaultResources, tester);
         tester.activate(application1, state5.allHosts);
         assertEquals("Superfluous container nodes are also dirtyed",
-                     4-2 + 5-2 + 1 + 4-2, tester.nodeRepository().nodes().getNodes(Node.State.dirty).size());
+                     4-2 + 5-2 + 1 + 4-2, tester.nodeRepository().nodes().list(Node.State.dirty).size());
         assertEquals("Superfluous content nodes are retired",
                      5-3 + 6-3 - 1, tester.getNodes(application1, Node.State.active).retired().size());
 
@@ -289,7 +289,7 @@ public class ProvisioningTest {
 
         // redeploy with increased sizes and new flavor
         SystemState state3 = prepare(application1, 3, 4, 4, 5, large, tester);
-        assertEquals("New nodes are reserved", 16, tester.nodeRepository().nodes().getNodes(application1, Node.State.reserved).size());
+        assertEquals("New nodes are reserved", 16, tester.nodeRepository().nodes().list(Node.State.reserved).owner(application1).size());
         tester.activate(application1, state3.allHosts);
         assertEquals("small container nodes are retired because we are swapping the entire cluster",
                      2 + 2, tester.getNodes(application1, Node.State.active).retired().type(ClusterSpec.Type.container).resources(small).size());
@@ -316,8 +316,8 @@ public class ProvisioningTest {
         SystemState state1 = prepare(application1, 2, 2, 4, 4, small, tester);
         tester.activate(application1, state1.allHosts);
 
-        tester.nodeRepository().nodes().getNodes(application1)
-              .forEach(n -> assertEquals(large, tester.nodeRepository().nodes().getNode(n.parentHostname().get()).get().resources()));
+        tester.nodeRepository().nodes().list().owner(application1)
+              .forEach(n -> assertEquals(large, tester.nodeRepository().nodes().node(n.parentHostname().get()).get().resources()));
     }
 
     @Test
@@ -374,7 +374,7 @@ public class ProvisioningTest {
             assertEquals(6, state.allHosts.size());
             tester.activate(application, state.allHosts);
             assertTrue(state.allHosts.stream().allMatch(host -> host.requestedResources().get().diskSpeed() == NodeResources.DiskSpeed.any));
-            assertTrue(tester.nodeRepository().nodes().getNodes(application).stream().allMatch(node -> node.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.any));
+            assertTrue(tester.nodeRepository().nodes().list().owner(application).stream().allMatch(node -> node.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.any));
         }
 
         {
@@ -386,7 +386,7 @@ public class ProvisioningTest {
             assertEquals(8, state.allHosts.size());
             tester.activate(application, state.allHosts);
             assertTrue(state.allHosts.stream().allMatch(host -> host.requestedResources().get().diskSpeed() == NodeResources.DiskSpeed.fast));
-            assertTrue(tester.nodeRepository().nodes().getNodes(application).stream().allMatch(node -> node.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.fast));
+            assertTrue(tester.nodeRepository().nodes().list().owner(application).stream().allMatch(node -> node.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.fast));
         }
 
         {
@@ -397,7 +397,7 @@ public class ProvisioningTest {
             assertEquals(8, state.allHosts.size());
             tester.activate(application, state.allHosts);
             assertTrue(state.allHosts.stream().allMatch(host -> host.requestedResources().get().diskSpeed() == NodeResources.DiskSpeed.any));
-            assertTrue(tester.nodeRepository().nodes().getNodes(application).stream().allMatch(node -> node.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.any));
+            assertTrue(tester.nodeRepository().nodes().list().owner(application).stream().allMatch(node -> node.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.any));
         }
     }
 
@@ -692,25 +692,25 @@ public class ProvisioningTest {
         // Allocate 5 nodes
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
         tester.activate(application, tester.prepare(application, cluster, capacity));
-        assertEquals(5, NodeList.copyOf(tester.nodeRepository().nodes().getNodes(application, Node.State.active)).not().retired().size());
-        assertEquals(0, NodeList.copyOf(tester.nodeRepository().nodes().getNodes(application, Node.State.active)).retired().size());
+        assertEquals(5, tester.nodeRepository().nodes().list(Node.State.active).owner(application).not().retired().size());
+        assertEquals(0, tester.nodeRepository().nodes().list(Node.State.active).owner(application).retired().size());
 
         // Mark the nodes as want to retire
-        tester.nodeRepository().nodes().getNodes(application, Node.State.active).forEach(node -> tester.patchNode(node, (n) -> n.withWantToRetire(true, Agent.system, tester.clock().instant())));
+        tester.nodeRepository().nodes().list(Node.State.active).owner(application).forEach(node -> tester.patchNode(node, (n) -> n.withWantToRetire(true, Agent.system, tester.clock().instant())));
         // redeploy without allow failing
         tester.activate(application, tester.prepare(application, cluster, capacityFORCED));
 
         // Nodes are not retired since that is unsafe when we cannot fail
-        assertEquals(5, NodeList.copyOf(tester.nodeRepository().nodes().getNodes(application, Node.State.active)).not().retired().size());
-        assertEquals(0, NodeList.copyOf(tester.nodeRepository().nodes().getNodes(application, Node.State.active)).retired().size());
+        assertEquals(5, tester.nodeRepository().nodes().list(Node.State.active).owner(application).not().retired().size());
+        assertEquals(0, tester.nodeRepository().nodes().list(Node.State.active).owner(application).retired().size());
         // ... but we still want to
-        tester.nodeRepository().nodes().getNodes(application, Node.State.active).forEach(node -> assertTrue(node.status().wantToRetire()));
+        tester.nodeRepository().nodes().list(Node.State.active).owner(application).forEach(node -> assertTrue(node.status().wantToRetire()));
 
         // redeploy with allowing failing
         tester.activate(application, tester.prepare(application, cluster, capacity));
         // ... old nodes are now retired
-        assertEquals(5, NodeList.copyOf(tester.nodeRepository().nodes().getNodes(application, Node.State.active)).not().retired().size());
-        assertEquals(5, NodeList.copyOf(tester.nodeRepository().nodes().getNodes(application, Node.State.active)).retired().size());
+        assertEquals(5, tester.nodeRepository().nodes().list(Node.State.active).owner(application).not().retired().size());
+        assertEquals(5, tester.nodeRepository().nodes().list(Node.State.active).owner(application).retired().size());
     }
 
     @Test
@@ -723,17 +723,17 @@ public class ProvisioningTest {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("music")).vespaVersion("4.5.6").build();
 
         tester.activate(application, tester.prepare(application, cluster, capacityCanFail));
-        assertEquals(0, NodeList.copyOf(tester.nodeRepository().nodes().getNodes(application, Node.State.active)).retired().size());
+        assertEquals(0, tester.nodeRepository().nodes().list(Node.State.active).owner(application).retired().size());
 
-        tester.patchNode(tester.nodeRepository().nodes().getNodes(application).stream().findAny().orElseThrow(), n -> n.withWantToRetire(true, Agent.system, tester.clock().instant()));
+        tester.patchNode(tester.nodeRepository().nodes().list().owner(application).stream().findAny().orElseThrow(), n -> n.withWantToRetire(true, Agent.system, tester.clock().instant()));
         tester.activate(application, tester.prepare(application, cluster, capacityCanFail));
-        assertEquals(1, NodeList.copyOf(tester.nodeRepository().nodes().getNodes(application, Node.State.active)).retired().size());
-        assertEquals(6, tester.nodeRepository().nodes().getNodes(application, Node.State.active).size());
+        assertEquals(1, tester.nodeRepository().nodes().list(Node.State.active).owner(application).retired().size());
+        assertEquals(6, tester.nodeRepository().nodes().list(Node.State.active).owner(application).size());
 
         Capacity capacityCannotFail = Capacity.from(new ClusterResources(5, 1, defaultResources), false, false);
         tester.activate(application, tester.prepare(application, cluster, capacityCannotFail));
-        assertEquals(1, NodeList.copyOf(tester.nodeRepository().nodes().getNodes(application, Node.State.active)).retired().size());
-        assertEquals(6, tester.nodeRepository().nodes().getNodes(application, Node.State.active).size());
+        assertEquals(1, tester.nodeRepository().nodes().list(Node.State.active).owner(application).retired().size());
+        assertEquals(6, tester.nodeRepository().nodes().list(Node.State.active).owner(application).size());
     }
 
     @Test
@@ -784,7 +784,7 @@ public class ProvisioningTest {
         // Re-deploy application with 1 node less, the retired node should be on the spare host
         tester.deploy(application, spec, Capacity.from(new ClusterResources(5, 1, defaultResources)));
 
-        assertTrue(tester.nodeRepository().nodes().getNode(randomNode.hostname()).get().allocation().get().membership().retired());
+        assertTrue(tester.nodeRepository().nodes().node(randomNode.hostname()).get().allocation().get().membership().retired());
     }
 
     @Test
@@ -901,7 +901,7 @@ public class ProvisioningTest {
         try {
             prepareAndActivate.apply(cfgApp);
         } catch (ParentHostUnavailableException ignored) { }
-        assertEquals(2, tester.nodeRepository().nodes().list(cfgApp.getApplicationId()).state(Node.State.reserved).size());
+        assertEquals(2, tester.nodeRepository().nodes().list().owner(cfgApp.getApplicationId()).state(Node.State.reserved).size());
 
         prepareAndActivate.apply(cfgHostApp);
 

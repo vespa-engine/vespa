@@ -78,9 +78,9 @@ public class DynamicDockerProvisionTest {
 
         // Total of 8 nodes should now be in node-repo, 4 active hosts and 4 active nodes
         assertEquals(8, tester.nodeRepository().nodes().list().size());
-        assertEquals(4, tester.nodeRepository().nodes().getNodes(NodeType.host, Node.State.active).size());
+        assertEquals(4, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host).size());
         assertEquals(List.of("host-100-1", "host-101-1", "host-102-1", "host-103-1"),
-                tester.nodeRepository().nodes().getNodes(NodeType.tenant, Node.State.active).stream()
+                tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.tenant).stream()
                         .map(Node::hostname).sorted().collect(Collectors.toList()));
 
         // Deploy new application
@@ -89,10 +89,10 @@ public class DynamicDockerProvisionTest {
 
         // Total of 12 nodes should now be in node-repo, 4 active hosts and 8 active nodes
         assertEquals(12, tester.nodeRepository().nodes().list().size());
-        assertEquals(4, tester.nodeRepository().nodes().getNodes(NodeType.host, Node.State.active).size());
+        assertEquals(4, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host).size());
         assertEquals(List.of("host-100-1", "host-100-2", "host-101-1", "host-101-2", "host-102-1", "host-102-2",
                 "host-103-1", "host-103-2"),
-                tester.nodeRepository().nodes().getNodes(NodeType.tenant, Node.State.active).stream()
+                tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.tenant).stream()
                         .map(Node::hostname).sorted().collect(Collectors.toList()));
 
         // Deploy new exclusive application
@@ -104,8 +104,8 @@ public class DynamicDockerProvisionTest {
 
         // Total of 20 nodes should now be in node-repo, 8 active hosts and 12 active nodes
         assertEquals(20, tester.nodeRepository().nodes().list().size());
-        assertEquals(8, tester.nodeRepository().nodes().getNodes(NodeType.host, Node.State.active).size());
-        assertEquals(12, tester.nodeRepository().nodes().getNodes(NodeType.tenant, Node.State.active).size());
+        assertEquals(8, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.host).size());
+        assertEquals(12, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
 
         verifyNoMoreInteractions(hostProvisioner);
     }
@@ -125,7 +125,7 @@ public class DynamicDockerProvisionTest {
 
         // Total of 16 nodes should now be in node-repo, 8 active hosts and 8 active nodes
         assertEquals(16, tester.nodeRepository().nodes().list().size());
-        assertEquals(8, tester.nodeRepository().nodes().getNodes(NodeType.tenant, Node.State.active).size());
+        assertEquals(8, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
 
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, smallResources);
         prepareAndActivate(application2, clusterSpec("mycluster", true), 4, 1, smallResources);
@@ -153,11 +153,11 @@ public class DynamicDockerProvisionTest {
 
         ApplicationId application3 = ProvisioningTester.applicationId();
         prepareAndActivate(application3, clusterSpec("mycluster"), 3, 1, resources);
-        assertEquals(4, tester.nodeRepository().nodes().getNodes(NodeType.tenant).stream().map(Node::parentHostname).distinct().count());
+        assertEquals(4, tester.nodeRepository().nodes().list().nodeType(NodeType.tenant).stream().map(Node::parentHostname).distinct().count());
 
         ApplicationId application4 = ProvisioningTester.applicationId();
         prepareAndActivate(application4, clusterSpec("mycluster"), 3, 1, resources);
-        assertEquals(5, tester.nodeRepository().nodes().getNodes(NodeType.tenant).stream().map(Node::parentHostname).distinct().count());
+        assertEquals(5, tester.nodeRepository().nodes().list().nodeType(NodeType.tenant).stream().map(Node::parentHostname).distinct().count());
     }
 
     @Test
@@ -167,19 +167,19 @@ public class DynamicDockerProvisionTest {
 
         mockHostProvisioner(hostProvisioner, "large", 3, null); // Provision shared hosts
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, resources);
-        Set<Node> initialNodes = tester.nodeRepository().nodes().list(application1).stream().collect(Collectors.toSet());
+        Set<Node> initialNodes = tester.nodeRepository().nodes().list().owner(application1).stream().collect(Collectors.toSet());
         assertEquals(4, initialNodes.size());
 
         // Redeploy same application with exclusive=true
         mockHostProvisioner(hostProvisioner, "large", 3, application1);
         prepareAndActivate(application1, clusterSpec("mycluster", true), 4, 1, resources);
-        assertEquals(8, tester.nodeRepository().nodes().list(application1).size());
-        assertEquals(initialNodes, tester.nodeRepository().nodes().list(application1).retired().stream().collect(Collectors.toSet()));
+        assertEquals(8, tester.nodeRepository().nodes().list().owner(application1).size());
+        assertEquals(initialNodes, tester.nodeRepository().nodes().list().owner(application1).retired().stream().collect(Collectors.toSet()));
 
         // Redeploy without exclusive again is no-op
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, resources);
-        assertEquals(8, tester.nodeRepository().nodes().list(application1).size());
-        assertEquals(initialNodes, tester.nodeRepository().nodes().list(application1).retired().stream().collect(Collectors.toSet()));
+        assertEquals(8, tester.nodeRepository().nodes().list().owner(application1).size());
+        assertEquals(initialNodes, tester.nodeRepository().nodes().list().owner(application1).retired().stream().collect(Collectors.toSet()));
     }
 
     @Test
@@ -188,7 +188,7 @@ public class DynamicDockerProvisionTest {
         ApplicationId app = ProvisioningTester.applicationId();
 
         Function<Node, Node> retireNode = node -> tester.patchNode(node, (n) -> n.withWantToRetire(true, Agent.system, Instant.now()));
-        Function<Integer, Node> getNodeInGroup = group -> tester.nodeRepository().nodes().getNodes(app).stream()
+        Function<Integer, Node> getNodeInGroup = group -> tester.nodeRepository().nodes().list().owner(app).stream()
                 .filter(node -> node.allocation().get().membership().cluster().group().get().index() == group)
                 .findAny().orElseThrow();
 
@@ -209,7 +209,7 @@ public class DynamicDockerProvisionTest {
         tester.prepare(app, clusterSpec("content"), 8, 2, resources);
 
         // Verify that nodes have unique indices from 0..9
-        var indices = tester.nodeRepository().nodes().getNodes(app).stream()
+        var indices = tester.nodeRepository().nodes().list().owner(app).stream()
                 .map(node -> node.allocation().get().membership().index())
                 .collect(Collectors.toSet());
         assertTrue(indices.containsAll(IntStream.range(0, 10).boxed().collect(Collectors.toList())));
@@ -398,9 +398,9 @@ public class DynamicDockerProvisionTest {
 
     private void prepareAndActivate(ApplicationId application, ClusterSpec clusterSpec, int nodes, int groups, NodeResources resources) {
         List<HostSpec> prepared = tester.prepare(application, clusterSpec, nodes, groups, resources);
-        List<Node> provisionedHosts = tester.nodeRepository().nodes().getNodes(NodeType.host, Node.State.provisioned);
+        NodeList provisionedHosts = tester.nodeRepository().nodes().list(Node.State.provisioned).nodeType(NodeType.host);
         if (!provisionedHosts.isEmpty()) {
-            tester.nodeRepository().nodes().setReady(provisionedHosts, Agent.system, DynamicDockerProvisionTest.class.getSimpleName());
+            tester.nodeRepository().nodes().setReady(provisionedHosts.asList(), Agent.system, DynamicDockerProvisionTest.class.getSimpleName());
             tester.activateTenantHosts();
         }
         tester.activate(application, prepared);

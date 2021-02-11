@@ -223,7 +223,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
 
     private Node nodeFromRequest(HttpRequest request) {
         String hostname = lastElement(request.getUri().getPath());
-        return nodeRepository.nodes().getNode(hostname).orElseThrow(() ->
+        return nodeRepository.nodes().node(hostname).orElseThrow(() ->
                 new NotFoundException("No node found with hostname " + hostname));
     }
 
@@ -435,7 +435,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         if (application.isEmpty())
             return ErrorResponse.notFoundError("No application '" + id + "'");
         Slime slime = ApplicationSerializer.toSlime(application.get(),
-                                                    nodeRepository.nodes().getNodes(id, Node.State.active),
+                                                    nodeRepository.nodes().list(Node.State.active).owner(id).asList(),
                                                     withPath("/nodes/v2/applications/" + id, uri));
         return new SlimeJsonResponse(slime);
     }
