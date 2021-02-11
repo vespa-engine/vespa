@@ -4,6 +4,7 @@
 
 #include "alloc.h"
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <map>
 
@@ -18,7 +19,7 @@ class MmapFileAllocator : public MemoryAllocator {
     vespalib::string _dir_name;
     mutable File _file;
     mutable uint64_t _end_offset;
-    mutable std::map<void *, size_t> _allocations;
+    mutable hash_map<void *, size_t> _allocations;
 public:
     MmapFileAllocator(const vespalib::string& dir_name);
     ~MmapFileAllocator();

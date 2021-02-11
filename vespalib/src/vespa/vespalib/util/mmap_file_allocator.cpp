@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "mmap_file_allocator.h"
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <cassert>
@@ -9,10 +10,10 @@ namespace vespalib::alloc {
 
 namespace {
 
-const size_t page_size = std::max(getpagesize(), 4096);
+const size_t mmap_alignment = getpagesize();
 
-size_t round_to_page_size(size_t size) {
-    return (size + ((-size) & (page_size - 1)));
+size_t round_to_mmap_alignment(size_t size) {
+    return ((size + (mmap_alignment - 1)) & ~(mmap_alignment - 1));
 }
 
 }
@@ -41,7 +42,7 @@ MmapFileAllocator::alloc(size_t sz) const
         return PtrAndSize(nullptr, 0); // empty allocation
     }
     uint64_t offset = _end_offset;
-    sz = round_to_page_size(sz);
+    sz = round_to_mmap_alignment(sz);
     _end_offset += sz;
     _file.resize(_end_offset);
     void *buf = mmap(nullptr, sz,
@@ -52,7 +53,7 @@ MmapFileAllocator::alloc(size_t sz) const
     assert(buf != MAP_FAILED);
     assert(buf != nullptr);
     // Register allocation
-    auto ins_res = _allocations.emplace(buf, sz);
+    auto ins_res = _allocations.insert(std::make_pair(buf, sz));
     assert(ins_res.second);
     return PtrAndSize(buf, sz);
 }
