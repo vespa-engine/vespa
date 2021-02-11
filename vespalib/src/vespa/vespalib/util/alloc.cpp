@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "alloc.h"
+#include "round_up_to_page_size.h"
 #include <sys/mman.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -10,7 +11,6 @@
 #include <cassert>
 #include <mutex>
 #include <vespa/fastos/file.h>
-#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.alloc");
@@ -22,16 +22,10 @@ namespace {
 volatile bool _G_hasHugePageFailureJustHappened(false);
 bool _G_SilenceCoreOnOOM(false);
 int  _G_HugeFlags = 0;
-const size_t _G_pageSize = getpagesize();
 size_t _G_MMapLogLimit = std::numeric_limits<size_t>::max();
 size_t _G_MMapNoCoreLimit = std::numeric_limits<size_t>::max();
 std::mutex _G_lock;
 std::atomic<size_t> _G_mmapCount(0);
-
-size_t
-roundUp2PageSize(size_t sz) {
-    return (sz + (_G_pageSize - 1)) & ~(_G_pageSize - 1);
-}
 
 struct MMapInfo {
     MMapInfo() :
@@ -319,7 +313,7 @@ MemoryAllocator::PtrAndSize
 MMapAllocator::salloc(size_t sz, void * wantedAddress)
 {
     void * buf(nullptr);
-    sz = roundUp2PageSize(sz);
+    sz = round_up_to_page_size(sz);
     if (sz > 0) {
         const int flags(MAP_ANON | MAP_PRIVATE);
         const int prot(PROT_READ | PROT_WRITE);
@@ -372,7 +366,7 @@ MMapAllocator::salloc(size_t sz, void * wantedAddress)
 
 size_t
 MMapAllocator::sresize_inplace(PtrAndSize current, size_t newSize) {
-    newSize = roundUp2PageSize(newSize);
+    newSize = round_up_to_page_size(newSize);
     if (newSize > current.second) {
         return extend_inplace(current, newSize);
     } else if (newSize < current.second) {

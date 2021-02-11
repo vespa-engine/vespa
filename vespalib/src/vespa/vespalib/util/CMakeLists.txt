@@ -31,6 +31,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     left_right_heap.cpp
     lz4compressor.cpp
     md5.c
+    mmap_file_allocator.cpp
     printable.cpp
     priority_queue.cpp
     random.cpp
@@ -39,6 +40,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     reusable_set.cpp
     reusable_set_handle.cpp
     reusable_set_pool.cpp
+    round_up_to_page_size.cpp
     runnable.cpp
     runnable_pair.cpp
     sequence.cpp
