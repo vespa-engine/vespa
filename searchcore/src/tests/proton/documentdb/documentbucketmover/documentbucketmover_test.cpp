@@ -1,7 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketmover_common.h"
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/searchcore/proton/server/bucketmovejob.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
@@ -55,14 +55,6 @@ struct MyFrozenBucketHandler : public IFrozenBucketHandler
             ? ExclusiveBucketGuard::UP()
             : std::make_unique<ExclusiveBucketGuard>(bucket);
     }
-};
-
-struct MyCountJobRunner : public IMaintenanceJobRunner {
-    uint32_t runCount;
-    explicit MyCountJobRunner(IMaintenanceJob &job) : runCount(0) {
-        job.registerRunner(this);
-    }
-    void run() override { ++runCount; }
 };
 
 struct ControllerFixtureBase : public ::testing::Test
@@ -152,7 +144,7 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
 {
 }
 
-ControllerFixtureBase::~ControllerFixtureBase() {}
+ControllerFixtureBase::~ControllerFixtureBase() = default;
 constexpr double RESOURCE_LIMIT_FACTOR = 1.0;
 constexpr uint32_t MAX_OUTSTANDING_OPS = 10;
 const BlockableMaintenanceJobConfig BLOCKABLE_CONFIG(RESOURCE_LIMIT_FACTOR, MAX_OUTSTANDING_OPS);
