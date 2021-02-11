@@ -3,6 +3,7 @@ package com.yahoo.vespa.athenz.api;
 
 import com.auth0.jwt.JWT;
 import com.auth0.jwt.interfaces.DecodedJWT;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -41,6 +42,7 @@ public class AthenzAccessToken {
     public Instant getExpiryTime () {
         return jwt().getExpiresAt().toInstant();
     }
+    public AthenzIdentity getAthenzIdentity() { return AthenzIdentities.from(jwt().getClaim("client_id").asString()); }
 
     private DecodedJWT jwt() {
         if (jwt == null) {

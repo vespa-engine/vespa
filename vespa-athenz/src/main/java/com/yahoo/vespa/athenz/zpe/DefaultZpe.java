@@ -45,10 +45,19 @@ public class DefaultZpe implements Zpe {
     public AuthorizationResult checkAccessAllowed(
             AthenzAccessToken accessToken, X509Certificate identityCertificate, AthenzResourceName resourceName, String action) {
         StringBuilder returnedMatchedRole = new StringBuilder();
-        AuthZpeClient.AccessCheckStatus rawResult =
-                AuthZpeClient.allowAccess(
-                        accessToken.value(), identityCertificate, /*certHash*/null, resourceName.toResourceNameString(), action, returnedMatchedRole);
+        AuthZpeClient.AccessCheckStatus rawResult;
+        if (identityCertificate == null) {
+            rawResult = AuthZpeClient.allowAccess(accessToken.value(), resourceName.toResourceNameString(), action, returnedMatchedRole);
+        } else {
+            rawResult = AuthZpeClient.allowAccess(
+                    accessToken.value(), identityCertificate, /*certHash*/null, resourceName.toResourceNameString(), action, returnedMatchedRole);
+        }
         return createResult(returnedMatchedRole, rawResult, resourceName);
+    }
+
+    @Override
+    public AuthorizationResult checkAccessAllowed(AthenzAccessToken accessToken, AthenzResourceName resourceName, String action) {
+        return checkAccessAllowed(accessToken, null, resourceName, action);
     }
 
     private static AuthorizationResult createResult(

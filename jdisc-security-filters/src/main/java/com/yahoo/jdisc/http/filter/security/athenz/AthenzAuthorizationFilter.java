@@ -6,7 +6,6 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.athenz.RequestResourceMapper.ResourceNameAndAction;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
-import java.util.logging.Level;
 import com.yahoo.vespa.athenz.api.AthenzAccessToken;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -22,6 +21,8 @@ import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -54,6 +55,7 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
     private final Zpe zpe;
     private final RequestResourceMapper requestResourceMapper;
     private final Metric metric;
+    private final Set<AthenzIdentity> allowedProxyIdentities;
 
     @Inject
     public AthenzAuthorizationFilter(AthenzAuthorizationFilterConfig config, RequestResourceMapper resourceMapper, Metric metric) {
@@ -72,6 +74,9 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
         this.requestResourceMapper = resourceMapper;
         this.zpe = zpe;
         this.metric = metric;
+        this.allowedProxyIdentities = config.allowedProxyIdentities().stream()
+                .map(AthenzIdentities::from)
+                .collect(Collectors.toSet());
     }
 
     @Override
@@ -123,8 +128,21 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
     private Result checkAccessWithAccessToken(DiscFilterRequest request, ResourceNameAndAction resourceAndAction) {
         AthenzAccessToken accessToken = getAccessToken(request);
         X509Certificate identityCertificate = getClientCertificate(request);
-        var zpeResult = zpe.checkAccessAllowed(
-                accessToken, identityCertificate, resourceAndAction.resourceName(), resourceAndAction.action());
+        AthenzIdentity peerIdentity = AthenzIdentities.from(identityCertificate);
+        if (allowedProxyIdentities.contains(peerIdentity)) {
+            return checkAccessWithProxiedAccessToken(resourceAndAction, accessToken, identityCertificate);
+        } else {
+            var zpeResult = zpe.checkAccessAllowed(
+                    accessToken, identityCertificate, resourceAndAction.resourceName(), resourceAndAction.action());
+            return new Result(ACCESS_TOKEN, peerIdentity, zpeResult);
+        }
+    }
+
+    private Result checkAccessWithProxiedAccessToken(ResourceNameAndAction resourceAndAction, AthenzAccessToken accessToken, X509Certificate identityCertificate) {
+        AthenzIdentity proxyIdentity = AthenzIdentities.from(identityCertificate);
+        log.log(Level.FINE,
+                () -> String.format("Checking proxied access token. Proxy identity: '%s'. Allowed identities: %s", proxyIdentity, allowedProxyIdentities));
+        var zpeResult = zpe.checkAccessAllowed(accessToken, resourceAndAction.resourceName(), resourceAndAction.action());
         return new Result(ACCESS_TOKEN, AthenzIdentities.from(identityCertificate), zpeResult);
     }
 
