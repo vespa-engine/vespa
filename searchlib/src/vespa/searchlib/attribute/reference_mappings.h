@@ -87,6 +87,7 @@ public:
         return TargetLids(&_targetLids[0], committedDocIdLimit);
     }
     uint32_t getTargetLid(uint32_t doc) const {
+        // Check limit to avoid reading memory beyond end of valid mapping array
         return doc < _committedDocIdLimit ? _targetLids[doc] : 0u;
     }
     ReverseMappingRefs getReverseMappingRefs() const {

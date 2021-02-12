@@ -40,6 +40,7 @@ class ImportedSearchContext : public ISearchContext {
     SearchContextParams                             _params;
 
     uint32_t getTargetLid(uint32_t lid) const {
+        // Check range to avoid reading memory beyond end of mapping array
         return lid < _targetLids.size() ? _targetLids[lid] : 0u;
     }
 
