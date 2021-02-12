@@ -2,6 +2,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("dense_tensor_store_test");
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/searchlib/tensor/dense_tensor_store.h>
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_spec.h>
@@ -27,7 +28,7 @@ struct Fixture
 {
     DenseTensorStore store;
     Fixture(const vespalib::string &tensorType)
-        : store(ValueType::from_spec(tensorType))
+        : store(ValueType::from_spec(tensorType), {})
     {}
     void assertSetAndGetTensor(const TensorSpec &tensorSpec) {
         Value::UP expTensor = makeTensor(tensorSpec);
