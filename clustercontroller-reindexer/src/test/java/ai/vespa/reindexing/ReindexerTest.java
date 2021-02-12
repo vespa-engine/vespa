@@ -28,10 +28,12 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicReference;
 
+import static java.util.logging.Level.WARNING;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertSame;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * @author jonmv
@@ -140,7 +142,11 @@ class ReindexerTest {
         aborted.set(new Reindexer(cluster, Map.of(music, Instant.ofEpochMilli(20)), database, parameters -> {
                     database.writeReindexing(Reindexing.empty(), "cluster"); // Wipe database to verify we write data from reindexer.
                     parameters.getControlHandler().onProgress(new ProgressToken());
-                    aborted.get().shutdown();
+                    try {
+                        aborted.get().close();
+                    } catch (Exception e) {
+                        fail(e);
+                    }
                     return () -> {
                         shutDown.set(true);
                         parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.ABORTED, "Shut down");

@@ -38,7 +38,7 @@ import static java.util.logging.Level.WARNING;
  *
  * @author jonmv
  */
-public class Reindexer {
+public class Reindexer implements AutoCloseable {
 
     private static final Logger log = Logger.getLogger(Reindexer.class.getName());
 
@@ -79,11 +79,6 @@ public class Reindexer {
         this.visitorSessions = visitorSessions;
         this.metrics = new ReindexingMetrics(metric, cluster.name);
         this.clock = clock;
-    }
-
-    /** Lets the reindexer abort any ongoing visit session, wait for it to complete normally, then exit. */
-    public void shutdown() {
-        phaser.forceTermination(); // All parties waiting on this phaser are immediately allowed to proceed.
     }
 
     /** Starts and tracks reprocessing of ready document types until done, or interrupted. */
@@ -211,6 +206,18 @@ public class Reindexer {
         return parameters;
     }
 
+    @Override
+    public void close() throws Exception {
+        phaser.forceTermination(); // All parties waiting on this phaser are immediately allowed to proceed.
+        database.close();
+    }
+
+    @Override
+    public String toString() {
+        return "Reindexer{" +
+                "cluster=" + cluster +
+                '}';
+    }
 
     static class Cluster {
 
