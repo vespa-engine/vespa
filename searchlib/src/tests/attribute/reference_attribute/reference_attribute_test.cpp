@@ -256,6 +256,18 @@ TEST_F(ReferenceAttributeTest, reference_for_a_document_can_be_cleared)
     assertNoRef(2);
 }
 
+TEST_F(ReferenceAttributeTest, lid_beyond_range_is_mapped_to_zero)
+{
+    auto factory = std::make_shared<MyGidToLidMapperFactory>();
+    setGidToLidMapperFactory(factory);
+    ensureDocIdLimit(5);
+    _attr->addDocs(1);
+    set(5, toGid(doc2));
+    EXPECT_EQ(0, _attr->getTargetLid(5));
+    _attr->commit();
+    EXPECT_EQ(17, _attr->getTargetLid(5));
+}
+
 TEST_F(ReferenceAttributeTest, read_guard_protects_references)
 {
     ensureDocIdLimit(5);
