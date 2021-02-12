@@ -281,7 +281,7 @@ public class SetNodeStateTest extends StateRestApiTest {
                 .setNewState("user", state.toString().toLowerCase(), "whatever reason.")
                 .setCondition(SetUnitStateRequest.Condition.SAFE));
 
-        String regex = "^There is a node already in maintenance:([0-9]+)$";
+        String regex = "^Another node wants maintenance:([0-9]+)$";
         Matcher matcher = Pattern.compile(regex).matcher(setResponse.getReason());
 
         String errorMessage = "Expected reason to match '" + regex + "', but got: " + setResponse.getReason() + "'";

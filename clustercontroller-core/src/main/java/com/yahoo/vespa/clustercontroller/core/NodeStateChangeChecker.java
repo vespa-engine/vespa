@@ -226,7 +226,7 @@ public class NodeStateChangeChecker {
             return Result.allowSettingOfWantedState();
         }
 
-        Result ongoingChanges = anyNodeSetToMaintenance();
+        Result ongoingChanges = anyNodeSetToMaintenance(clusterState);
         if (!ongoingChanges.settingWantedStateIsAllowed()) {
             return ongoingChanges;
         }
@@ -281,10 +281,13 @@ public class NodeStateChangeChecker {
         return false;
     }
 
-    private Result anyNodeSetToMaintenance() {
+    private Result anyNodeSetToMaintenance(ClusterState clusterState) {
         for (NodeInfo nodeInfo : clusterInfo.getAllNodeInfo()) {
+            if (clusterState.getNodeState(nodeInfo.getNode()).getState() == State.MAINTENANCE) {
+                return Result.createDisallowed("Another node is already in maintenance:" + nodeInfo.getNodeIndex());
+            }
             if (nodeInfo.getWantedState().getState() == State.MAINTENANCE) {
-                return Result.createDisallowed("There is a node already in maintenance:" + nodeInfo.getNodeIndex());
+                return Result.createDisallowed("Another node wants maintenance:" + nodeInfo.getNodeIndex());
             }
         }
         return Result.allowSettingOfWantedState();
