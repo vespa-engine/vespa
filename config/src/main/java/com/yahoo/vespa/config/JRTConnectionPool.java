@@ -39,7 +39,7 @@ public class JRTConnectionPool implements ConnectionPool {
     private volatile JRTConnection currentConnection;
 
     public JRTConnectionPool(ConfigSourceSet sourceSet) {
-        supervisor = new Supervisor(new Transport("config-jrtpool-" + sourceSet.hashCode()));
+        supervisor = new Supervisor(new Transport("config-jrtpool-" + sourceSet.hashCode())).useSmallBuffers();
         addSources(sourceSet);
     }
 

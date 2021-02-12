@@ -99,7 +99,7 @@ public class RpcServer {
         disconnect();
         log.log(Level.FINE, "Fleetcontroller " + fleetControllerIndex + ": Connecting RPC server.");
         if (supervisor != null) disconnect();
-        supervisor = new Supervisor(new Transport("rpc" + port));
+        supervisor = new Supervisor(new Transport("rpc" + port)).useSmallBuffers();
         addMethods();
         log.log(Level.FINE, "Fleetcontroller " + fleetControllerIndex + ": Attempting to bind to port " + port);
         acceptor = supervisor.listen(new Spec(port));

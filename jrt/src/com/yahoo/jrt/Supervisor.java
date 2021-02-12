@@ -15,6 +15,8 @@ import java.util.concurrent.atomic.AtomicReference;
  **/
 public class Supervisor {
 
+    private static final int SMALL_INPUT_BUFFER_SIZE = 20 * 1024;  // Large enough too hold the typical application buffersize of 17k.
+    private static final int SMALL_OUTPUT_BUFFER_SIZE = 8 *1024;   // Suitable small buffer usage with many connections and little traffic.
     private final Transport         transport;
     private SessionHandler          sessionHandler = null;
     private final Object            methodMapLock = new Object();
@@ -31,6 +33,16 @@ public class Supervisor {
     public Supervisor(Transport transport) {
         this.transport = transport;
         new MandatoryMethods(this);
+    }
+
+    /**
+     * Will optimize buffers size for small memory footprint
+     * Use this when you have many connections with very little traffic.
+     **/
+    public Supervisor useSmallBuffers() {
+        setMaxInputBufferSize(SMALL_INPUT_BUFFER_SIZE);
+        setMaxOutputBufferSize(SMALL_OUTPUT_BUFFER_SIZE);
+        return this;
     }
 
     /**

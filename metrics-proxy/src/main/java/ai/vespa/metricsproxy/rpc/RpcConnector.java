@@ -27,7 +27,7 @@ public class RpcConnector extends AbstractComponent {
     private final Acceptor acceptor;
 
     public RpcConnector(RpcConnectorConfig config) {
-        supervisor = new Supervisor(new Transport("rpc-" + config.port()));
+        supervisor = new Supervisor(new Transport("rpc-" + config.port())).useSmallBuffers();
         Spec spec = new Spec(config.port());
         try {
             acceptor = supervisor.listen(spec);

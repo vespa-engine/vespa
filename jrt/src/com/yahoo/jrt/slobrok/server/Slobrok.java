@@ -39,7 +39,7 @@ public class Slobrok {
 
     public Slobrok(int port) throws ListenFailedException {
         // NB: rpc must be single-threaded
-        orb = new Supervisor(new Transport("slobrok-" + port, 1));
+        orb = new Supervisor(new Transport("slobrok-" + port, 1)).useSmallBuffers();
         registerMethods();
         try {
             listener = orb.listen(new Spec(port));
