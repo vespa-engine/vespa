@@ -14,6 +14,7 @@ public:
         MEDIUM,
         HIGH,
         VERY_HIGH,
+        HIGHEST,
         PRIORITY_LIMIT
     };
 
@@ -25,6 +26,7 @@ public:
         case MEDIUM: return "MEDIUM";
         case HIGH: return "HIGH";
         case VERY_HIGH: return "VERY_HIGH";
+        case HIGHEST: return "HIGHEST";
         default: return "INVALID";
         }
     }
