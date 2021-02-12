@@ -57,7 +57,7 @@ public class Mirror implements IMirror {
      **/
     public Mirror(Supervisor orb, SlobrokList slobroks, BackOffPolicy bop) {
         this.orb = orb;
-        orb.enableSmallBuffers();
+        orb.useSmallBuffers();
         this.slobroks = slobroks;
         this.backOff = bop;
         transportThread = orb.transport().selectThread();

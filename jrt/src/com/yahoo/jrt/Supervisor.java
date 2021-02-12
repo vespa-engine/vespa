@@ -39,7 +39,7 @@ public class Supervisor {
      * Will optimize buffers size for small memory footprint
      * Use this when you have many connections with very little traffic.
      **/
-    public Supervisor enableSmallBuffers() {
+    public Supervisor useSmallBuffers() {
         setMaxInputBufferSize(SMALL_INPUT_BUFFER_SIZE);
         setMaxOutputBufferSize(SMALL_OUTPUT_BUFFER_SIZE);
         return this;

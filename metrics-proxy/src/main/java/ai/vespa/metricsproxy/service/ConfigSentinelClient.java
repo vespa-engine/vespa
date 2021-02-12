@@ -28,7 +28,7 @@ public class ConfigSentinelClient extends AbstractComponent {
 
     @Inject
     public ConfigSentinelClient() {
-        supervisor = new Supervisor(new Transport("sentinel-client")).enableSmallBuffers();
+        supervisor = new Supervisor(new Transport("sentinel-client")).useSmallBuffers();
     }
 
     @Override
