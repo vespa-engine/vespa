@@ -401,7 +401,7 @@ class LogFileHandler <LOGTYPE> {
         private static void runCompressionZstd(NativeIO nativeIO, Path oldFile) {
             try {
                 Path compressedFile = Paths.get(oldFile.toString() + ".zst");
-                int bufferSize = 48*1024*1024;
+                int bufferSize = 0x400000; // 4M
                 try (FileOutputStream fileOut = AtomicFileOutputStream.create(compressedFile);
                      ZstdOuputStream out = new ZstdOuputStream(fileOut, bufferSize);
                      FileInputStream in = new FileInputStream(oldFile.toFile())) {
