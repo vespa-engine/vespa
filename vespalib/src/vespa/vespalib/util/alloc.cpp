@@ -182,13 +182,13 @@ struct MMapLimitAndAlignmentHash {
     std::size_t operator ()(MMapLimitAndAlignment key) const noexcept { return key.hash(); }
 };
 
-using AutoAllocatorsMap = std::unordered_map<MMapLimitAndAlignment, AutoAllocator::UP, MMapLimitAndAlignmentHash>;
+using AutoAllocatorsMap = std::unordered_map<MMapLimitAndAlignment, std::unique_ptr<MemoryAllocator>, MMapLimitAndAlignmentHash>;
 using AutoAllocatorsMapWithDefault = std::pair<AutoAllocatorsMap, alloc::MemoryAllocator *>;
 
 void createAlignedAutoAllocators(AutoAllocatorsMap & map, size_t mmapLimit) {
     for (size_t alignment : {0,0x200, 0x400, 0x1000}) {
         MMapLimitAndAlignment key(mmapLimit, alignment);
-        auto result = map.emplace(key, AutoAllocator::UP(new AutoAllocator(mmapLimit, alignment)));
+        auto result = map.emplace(key, std::make_unique<AutoAllocator>(mmapLimit, alignment));
         (void) result;
         assert( result.second );
 
