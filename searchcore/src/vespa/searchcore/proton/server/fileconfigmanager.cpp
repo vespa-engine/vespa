@@ -19,6 +19,7 @@
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <sstream>
+#include <cassert>
 #include <fcntl.h>
 
 #include <vespa/log/log.h>
@@ -56,7 +57,6 @@ makeSnapDirBaseName(SerialNum serialNum)
     return os.str();
 }
 
-
 void
 fsyncFile(const vespalib::string &fileName)
 {
@@ -93,7 +93,6 @@ save(const vespalib::string &snapDir, const Config &config)
     saveHelper(snapDir, config.defName(), config);
 }
 
-
 class ConfigFile
 {
     typedef std::shared_ptr<ConfigFile> SP;
@@ -110,12 +109,9 @@ public:
                const vespalib::string &fullName);
 
     nbostream &serialize(nbostream &stream) const;
-
     nbostream &deserialize(nbostream &stream);
-
     void save(const vespalib::string &snapDir) const;
 };
-
 
 ConfigFile::ConfigFile()
     : _name(),
@@ -124,8 +120,7 @@ ConfigFile::ConfigFile()
 {
 }
 
-ConfigFile::~ConfigFile() {}
-
+ConfigFile::~ConfigFile() = default;
 
 ConfigFile::ConfigFile(const vespalib::string &name,
                        const vespalib::string &fullName)
@@ -144,7 +139,6 @@ ConfigFile::ConfigFile(const vespalib::string &name,
     file.Close();
 }
 
-
 nbostream &
 ConfigFile::serialize(nbostream &stream) const
 {
@@ -156,7 +150,6 @@ ConfigFile::serialize(nbostream &stream) const
     stream.write(&_content[0], sz);
     return stream;
 }
-
 
 nbostream &
 ConfigFile::deserialize(nbostream &stream)
@@ -175,7 +168,6 @@ ConfigFile::deserialize(nbostream &stream)
     return stream;
 }
 
-
 void
 ConfigFile::save(const vespalib::string &snapDir) const
 {
@@ -193,20 +185,17 @@ ConfigFile::save(const vespalib::string &snapDir) const
     fsyncFile(fullName);
 }
 
-
 nbostream &
 operator<<(nbostream &stream, const ConfigFile &configFile)
 {
     return configFile.serialize(stream);
 }
 
-
 nbostream &
 operator>>(nbostream &stream, ConfigFile &configFile)
 {
     return configFile.deserialize(stream);
 }
-
 
 std::vector<vespalib::string>
 getFileList(const vespalib::string &snapDir)
@@ -222,7 +211,6 @@ getFileList(const vespalib::string &snapDir)
     std::sort(res.begin(), res.end());
     return res;
 }
-
 
 }
 
@@ -243,11 +231,7 @@ FileConfigManager::FileConfigManager(const vespalib::string &baseDir,
     _protonConfig.reset(new ProtonConfig());
 }
 
-
-FileConfigManager::~FileConfigManager()
-{
-}
-
+FileConfigManager::~FileConfigManager() = default;
 
 SerialNum
 FileConfigManager::getBestSerialNum() const
@@ -255,7 +239,6 @@ FileConfigManager::getBestSerialNum() const
     Snapshot snap = _info.getBestSnapshot();
     return snap.valid ? snap.syncToken : UINT64_C(0);
 }
-
 
 SerialNum
 FileConfigManager::getOldestSerialNum() const
@@ -270,7 +253,6 @@ FileConfigManager::getOldestSerialNum() const
     }
     return res;
 }
-
 
 void
 FileConfigManager::saveConfig(const DocumentDBConfig &snapshot,
@@ -389,7 +371,6 @@ FileConfigManager::loadConfig(const DocumentDBConfig &currentSnapshot,
     loadedSnapshot->setConfigId(_configId);
 }
 
-
 void
 FileConfigManager::removeInvalid()
 {
@@ -422,7 +403,6 @@ FileConfigManager::removeInvalid()
     (void) saveRemInvalidSnap;
 }
 
-
 void
 FileConfigManager::prune(SerialNum serialNum)
 {
@@ -448,14 +428,12 @@ FileConfigManager::prune(SerialNum serialNum)
     removeInvalid();
 }
 
-
 bool
 FileConfigManager::hasValidSerial(SerialNum serialNum) const
 {
     IndexMetaInfo::Snapshot snap = _info.getSnapshot(serialNum);
     return snap.valid;
 }
-
 
 SerialNum
 FileConfigManager::getPrevValidSerial(SerialNum serialNum) const
@@ -470,7 +448,6 @@ FileConfigManager::getPrevValidSerial(SerialNum serialNum) const
     }
     return res;
 }
-
 
 void
 FileConfigManager::serializeConfig(SerialNum serialNum, nbostream &stream)
@@ -489,7 +466,6 @@ FileConfigManager::serializeConfig(SerialNum serialNum, nbostream &stream)
         stream << file;
     }
 }
-
 
 void
 FileConfigManager::deserializeConfig(SerialNum serialNum, nbostream &stream)
@@ -525,13 +501,10 @@ FileConfigManager::deserializeConfig(SerialNum serialNum, nbostream &stream)
     }
 }
 
-
 void
 FileConfigManager::setProtonConfig(const ProtonConfigSP &protonConfig)
 {
     _protonConfig = protonConfig;
 }
-
-
 
 } // namespace proton

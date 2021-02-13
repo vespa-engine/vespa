@@ -3,6 +3,7 @@
 #include "iterator_pack.h"
 #include "termwise_helper.h"
 #include <vespa/searchlib/fef/matchdata.h>
+#include <cassert>
 
 namespace search::queryeval {
 

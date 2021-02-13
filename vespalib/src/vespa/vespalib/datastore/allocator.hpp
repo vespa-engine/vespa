@@ -4,6 +4,7 @@
 
 #include "allocator.h"
 #include "bufferstate.h"
+#include <cassert>
 
 namespace vespalib::datastore {
 

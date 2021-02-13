@@ -160,11 +160,7 @@ public:
             return LidInfo();
         }
     }
-    FileId getActiveFileId(const MonitorGuard & guard) const {
-        assert(hasUpdateLock(guard));
-        (void) guard;
-        return _active;
-    }
+    FileId getActiveFileId(const MonitorGuard & guard) const;
     bool hasUpdateLock(const MonitorGuard & guard) const {
         return (guard.mutex() == &_updateLock) && guard.owns_lock();
     }
@@ -213,25 +209,10 @@ private:
     void setNewFileChunk(const MonitorGuard & guard, FileChunk::UP fileChunk);
     vespalib::string ls(const NameIdSet & partList);
 
-    WriteableFileChunk & getActive(const MonitorGuard & guard) {
-        assert(hasUpdateLock(guard));
-        return static_cast<WriteableFileChunk &>(*_fileChunks[_active.getId()]);
-    }
-
-    const WriteableFileChunk & getActive(const MonitorGuard & guard) const {
-        assert(hasUpdateLock(guard));
-        return static_cast<const WriteableFileChunk &>(*_fileChunks[_active.getId()]);
-    }
-
-    const FileChunk * getPrevActive(const MonitorGuard & guard) const {
-        assert(hasUpdateLock(guard));
-        return ( !_prevActive.isActive() ) ? _fileChunks[_prevActive.getId()].get() : nullptr;
-    }
-    void setActive(const MonitorGuard & guard, FileId fileId) {
-        assert(hasUpdateLock(guard));
-        _prevActive = _active;
-        _active = fileId;
-    }
+    WriteableFileChunk & getActive(const MonitorGuard & guard);
+    const WriteableFileChunk & getActive(const MonitorGuard & guard) const;
+    const FileChunk * getPrevActive(const MonitorGuard & guard) const;
+    void setActive(const MonitorGuard & guard, FileId fileId);
 
     double getMaxBucketSpread() const;
 

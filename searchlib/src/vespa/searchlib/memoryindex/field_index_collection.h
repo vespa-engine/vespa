@@ -32,7 +32,7 @@ private:
 
 public:
     FieldIndexCollection(const index::Schema& schema, const index::IFieldLengthInspector& inspector);
-    ~FieldIndexCollection();
+    ~FieldIndexCollection() override;
 
     uint64_t getNumUniqueWords() const {
         uint64_t numUniqueWords = 0;

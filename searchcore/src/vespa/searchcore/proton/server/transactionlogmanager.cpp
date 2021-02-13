@@ -5,6 +5,7 @@
 #include <vespa/searchlib/transactionlog/translogclient.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.transactionlogmanager");

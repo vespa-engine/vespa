@@ -8,6 +8,7 @@
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/fastos/file.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.common.bitvector");

@@ -22,6 +22,7 @@
 #include <vespa/searchlib/transactionlog/client_session.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <cassert>
 #include <unistd.h>
 
 #include <vespa/log/log.h>

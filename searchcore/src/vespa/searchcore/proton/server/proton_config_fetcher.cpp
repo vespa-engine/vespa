@@ -7,6 +7,7 @@
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <thread>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.proton_config_fetcher");
