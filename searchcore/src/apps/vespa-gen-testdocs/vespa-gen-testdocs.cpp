@@ -4,6 +4,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/fastos/app.h>
 #include <iostream>

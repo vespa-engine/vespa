@@ -14,6 +14,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <iomanip>
 

@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <vespa/vespalib/util/alloc.h>
+#include <vespa/vespalib/util/memory_allocator.h>
 
 namespace vespalib {
 

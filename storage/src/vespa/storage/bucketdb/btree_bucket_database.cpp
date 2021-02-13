@@ -4,6 +4,7 @@
 #include "generic_btree_bucket_database.hpp"
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
+#include <vespa/vespalib/util/memory_allocator.h>
 #include <iostream>
 
 /*
