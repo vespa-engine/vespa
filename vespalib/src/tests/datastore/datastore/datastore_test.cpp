@@ -4,6 +4,7 @@
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/test/memory_allocator_observer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("datastore_test");
@@ -590,47 +591,8 @@ TEST(DataStoreTest, require_that_offset_in_EntryRefT_is_within_bounds_when_alloc
 
 namespace {
 
-struct AllocStats {
-    size_t alloc_cnt;
-    size_t free_cnt;
-    AllocStats()
-        : AllocStats(0, 0)
-    {
-    }
-    AllocStats(size_t alloc_cnt_in, size_t free_cnt_in)
-        : alloc_cnt(alloc_cnt_in),
-          free_cnt(free_cnt_in)
-    {
-    }
-    bool operator==(const AllocStats &rhs) const {
-        return ((alloc_cnt == rhs.alloc_cnt) &&
-                (free_cnt == rhs.free_cnt));
-    }
-};
-
-std::ostream&
-operator<<(std::ostream &os, const AllocStats &stats)
-{
-    os << "{alloc_cnt=" << stats.alloc_cnt << ", free_cnt=" << stats.free_cnt << "}";
-    return os;
-}
-
-class MyMemoryAllocator : public alloc::MemoryAllocator {
-    AllocStats &_stats;
-    const alloc::MemoryAllocator* _backing_allocator;
-public:
-    MyMemoryAllocator(AllocStats &stats)
-        : alloc::MemoryAllocator(),
-          _stats(stats),
-          _backing_allocator(alloc::MemoryAllocator::select_allocator(HUGEPAGE_SIZE, 0))
-    {
-    }
-    ~MyMemoryAllocator() override = default;
-
-    PtrAndSize alloc(size_t sz) const override { ++_stats.alloc_cnt; return _backing_allocator->alloc(sz); }
-    void free(PtrAndSize alloc) const override { ++_stats.free_cnt; _backing_allocator->free(alloc); }
-    size_t resize_inplace(PtrAndSize current, size_t newSize) const override { return _backing_allocator->resize_inplace(current, newSize); }
-};
+using MyMemoryAllocator = vespalib::alloc::test::MemoryAllocatorObserver;
+using AllocStats = MyMemoryAllocator::Stats;
 
 class MyBufferType : public BufferType<int>
 {
