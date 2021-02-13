@@ -2,6 +2,7 @@
 
 #include "allocatedbitvector.h"
 #include <cstring>
+#include <cassert>
 
 namespace search {
 

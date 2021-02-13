@@ -5,6 +5,7 @@
 #include <iostream>
 #include <string>
 #include <vector>
+#include <cassert>
 
 LOG_SETUP("bitvectorbenchmark");
 

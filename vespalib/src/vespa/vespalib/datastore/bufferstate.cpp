@@ -2,6 +2,7 @@
 
 #include "bufferstate.h"
 #include <limits>
+#include <cassert>
 
 using vespalib::alloc::Alloc;
 using vespalib::alloc::MemoryAllocator;
@@ -12,7 +13,6 @@ BufferState::FreeListList::~FreeListList()
 {
     assert(_head == nullptr);  // Owner should have disabled free lists
 }
-
 
 BufferState::BufferState()
     : _usedElems(0),
@@ -35,7 +35,6 @@ BufferState::BufferState()
 {
 }
 
-
 BufferState::~BufferState()
 {
     assert(_state == FREE);
@@ -44,6 +43,12 @@ BufferState::~BufferState()
     assert(_prevHasFree == nullptr);
     assert(_holdElems == 0);
     assert(isFreeListEmpty());
+}
+
+void
+BufferState::decHoldElems(size_t value) {
+    assert(_holdElems >= value);
+    _holdElems -= value;
 }
 
 namespace {

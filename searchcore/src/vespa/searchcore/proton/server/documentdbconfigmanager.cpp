@@ -21,6 +21,7 @@
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/time/time_box.h>
 #include <thread>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.documentdbconfigmanager");

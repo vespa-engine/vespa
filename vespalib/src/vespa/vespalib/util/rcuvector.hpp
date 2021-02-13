@@ -4,6 +4,7 @@
 
 #include "rcuvector.h"
 #include <vespa/vespalib/util/array.hpp>
+#include <cassert>
 
 namespace vespalib {
 

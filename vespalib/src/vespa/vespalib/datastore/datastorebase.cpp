@@ -3,6 +3,7 @@
 #include "datastore.h"
 #include <vespa/vespalib/util/array.hpp>
 #include <limits>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.datastore.datastorebase");
@@ -109,8 +110,7 @@ DataStoreBase::switchActiveBuffer(uint32_t typeId, size_t elemsNeeded)
         }
     }
     if (!_states[activeBufferId].isFree()) {
-        LOG(error, "did not find free buffer");
-        abort();
+        LOG_ABORT("did not find free buffer");
     }
     onActive(activeBufferId, typeId, elemsNeeded);
     _activeBufferIds[typeId] = activeBufferId;
