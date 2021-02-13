@@ -2,6 +2,7 @@
 
 #include "comprbuffer.h"
 #include <vespa/fastos/file.h>
+#include <vespa/vespalib/util/memory_allocator.h>
 #include <cassert>
 #include <cstring>
 

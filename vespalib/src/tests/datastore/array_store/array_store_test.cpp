@@ -6,6 +6,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/traits.h>
 #include <vector>
 

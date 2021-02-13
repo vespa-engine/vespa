@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "alloc.h"
+#include "memory_allocator.h"
 #include "round_up_to_page_size.h"
 #include <sys/mman.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -465,6 +466,34 @@ MemoryAllocator::select_allocator(size_t mmapLimit, size_t alignment) {
     return & AutoAllocator::getAllocator(mmapLimit, alignment);
 }
 
+Alloc::Alloc(const MemoryAllocator * allocator, size_t sz) noexcept
+    : _alloc(allocator->alloc(sz)),
+      _allocator(allocator)
+{
+}
+
+Alloc::~Alloc()
+{ 
+    if (_alloc.first != nullptr) {
+        _allocator->free(_alloc);
+        _alloc.first = nullptr;
+    }
+}
+
+Alloc&
+Alloc::operator=(Alloc && rhs) noexcept
+{
+    if (this != & rhs) {
+        if (_alloc.first != nullptr) {
+            _allocator->free(_alloc);
+        }
+        _alloc = rhs._alloc;
+        _allocator = rhs._allocator;
+        rhs.clear();
+    }
+    return *this;
+}
+
 Alloc
 Alloc::allocHeap(size_t sz)
 {
@@ -508,6 +537,12 @@ Alloc
 Alloc::alloc() noexcept
 {
     return Alloc(&AutoAllocator::getDefault());
+}
+
+Alloc
+Alloc::alloc(size_t sz) noexcept
+{
+    return Alloc(&AutoAllocator::getDefault(), sz);
 }
 
 Alloc
