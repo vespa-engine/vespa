@@ -89,15 +89,6 @@ TEST("require that we cap configured limits based on available memory") {
     EXPECT_EQUAL(uint64_t(cfg.maxMemoryGain), LIMIT);
 }
 
-TEST("require that we cap configured limits based on the absolute 16G limit") {
-    constexpr uint64_t LIMIT_16G = 16 * ONE_G;
-    constexpr uint64_t MEM_64G = 64 * ONE_G;
-    const HwInfo::Memory largeMemory(512 * ONE_G);
-    auto cfg = MemoryFlushConfigUpdater::convertConfig(getConfig(MEM_64G, MEM_64G, 30), largeMemory);
-    EXPECT_EQUAL(cfg.maxGlobalMemory, LIMIT_16G);
-    EXPECT_EQUAL(uint64_t(cfg.maxMemoryGain), LIMIT_16G);
-}
-
 TEST_F("require that strategy is updated with normal values if no limits are reached", Fixture)
 {
     f.updater.notifyDiskMemUsage(DiskMemUsageState());

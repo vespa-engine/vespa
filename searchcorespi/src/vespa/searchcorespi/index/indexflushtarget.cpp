@@ -7,16 +7,20 @@ LOG_SETUP(".searchcorespi.index.indexflushtarget");
 
 namespace searchcorespi::index {
 
-IndexFlushTarget::IndexFlushTarget(IndexMaintainer &indexMaintainer)
+IndexFlushTarget::IndexFlushTarget(IndexMaintainer &indexMaintainer, IndexMaintainer::FlushStats flushStats)
     : IFlushTarget("memoryindex.flush", Type::FLUSH, Component::INDEX),
       _indexMaintainer(indexMaintainer),
-      _flushStats(indexMaintainer.getFlushStats()),
+      _flushStats(flushStats),
       _numFrozenMemoryIndexes(indexMaintainer.getNumFrozenMemoryIndexes()),
       _maxFrozenMemoryIndexes(indexMaintainer.getMaxFrozenMemoryIndexes()),
       _lastStats()
 {
     _lastStats.setPathElementsToLog(7);
 }
+
+IndexFlushTarget::IndexFlushTarget(IndexMaintainer &indexMaintainer)
+    : IndexFlushTarget(indexMaintainer, indexMaintainer.getFlushStats())
+{}
 
 IndexFlushTarget::~IndexFlushTarget() = default;
 
@@ -32,17 +36,19 @@ IndexFlushTarget::getApproxDiskGain() const
     return DiskGain(0, 0);
 }
 
-
 bool
 IndexFlushTarget::needUrgentFlush() const
 {
-    bool urgent = _numFrozenMemoryIndexes > _maxFrozenMemoryIndexes;
+    // Due to limitation of 16G address space of single datastore
+    // TODO: Even better if urgency was decided by memory index itself.
+    constexpr int64_t G = 1024*1024*1024l;
+    bool urgent = (_numFrozenMemoryIndexes > _maxFrozenMemoryIndexes) ||
+                  (getApproxMemoryGain().gain() > 16*G);
     SerialNum flushedSerial = _indexMaintainer.getFlushedSerialNum();
-    LOG(debug, "Num frozen: %u Urgent: %d, flushedSerial=%" PRIu64,
-        _numFrozenMemoryIndexes, static_cast<int>(urgent), flushedSerial);
+    LOG(debug, "Num frozen: %u Memory gain: %ld Urgent: %d, flushedSerial=%" PRIu64,
+        _numFrozenMemoryIndexes, getApproxMemoryGain().gain(), static_cast<int>(urgent), flushedSerial);
     return urgent;
 }
-
 
 IFlushTarget::Time
 IndexFlushTarget::getLastFlushTime() const
@@ -63,12 +69,10 @@ IndexFlushTarget::initFlush(SerialNum serialNum, std::shared_ptr<search::IFlushT
     return _indexMaintainer.initFlush(serialNum, &_lastStats);
 }
 
-
 uint64_t
 IndexFlushTarget::getApproxBytesToWriteToDisk() const
 {
-    MemoryGain gain(_flushStats.memory_before_bytes,
-                    _flushStats.memory_after_bytes);
+    MemoryGain gain(_flushStats.memory_before_bytes, _flushStats.memory_after_bytes);
     if (gain.getAfter() < gain.getBefore()) {
         return gain.getBefore() - gain.getAfter();
     } else {
