@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include "alloc.h"
+#include "memory_allocator.h"
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/string.h>
