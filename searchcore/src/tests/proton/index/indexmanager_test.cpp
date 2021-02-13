@@ -314,7 +314,7 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed)
     }
 }
 
-TEST_F(IndexManagerTest, require_that_large_memory_footprint_triggers_urgenflush) {
+TEST_F(IndexManagerTest, require_that_large_memory_footprint_triggers_urgent_flush) {
     using FlushStats = IndexMaintainer::FlushStats;
     constexpr size_t G = 1024*1024*1024l;
     // IndexMaintainer::FlushStats small_15G(15*G, 0, 1, 1);
