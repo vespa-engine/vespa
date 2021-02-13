@@ -60,6 +60,7 @@ public:
      * is always used when size is above limit.
      */
     static Alloc alloc(size_t sz) noexcept;
+    static Alloc alloc_aligned(size_t sz, size_t alignment) noexcept;
     static Alloc alloc(size_t sz, size_t mmapLimit, size_t alignment=0) noexcept;
     static Alloc alloc() noexcept;
     static Alloc alloc_with_allocator(const MemoryAllocator* allocator) noexcept;
