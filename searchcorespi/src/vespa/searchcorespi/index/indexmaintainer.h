@@ -285,8 +285,8 @@ public:
     void removeOldDiskIndexes();
 
     struct FlushStats {
-        FlushStats() :
-            memory_before_bytes(0),
+        explicit FlushStats(uint64_t memory_before=0) :
+            memory_before_bytes(memory_before),
             memory_after_bytes(0),
             disk_write_bytes(0),
             cpu_time_required(0)

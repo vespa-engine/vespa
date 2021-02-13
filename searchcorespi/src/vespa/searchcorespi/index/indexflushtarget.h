@@ -11,15 +11,16 @@ namespace searchcorespi::index {
  **/
 class IndexFlushTarget : public IFlushTarget {
 private:
-    IndexMaintainer &_indexMaintainer;
-    IndexMaintainer::FlushStats _flushStats;
-    uint32_t _numFrozenMemoryIndexes;
-    uint32_t _maxFrozenMemoryIndexes;
-    FlushStats _lastStats;
+    IndexMaintainer                   &_indexMaintainer;
+    const IndexMaintainer::FlushStats  _flushStats;
+    uint32_t                           _numFrozenMemoryIndexes;
+    uint32_t                           _maxFrozenMemoryIndexes;
+    FlushStats                         _lastStats;
 
 public:
-    IndexFlushTarget(IndexMaintainer &indexMaintainer);
-    ~IndexFlushTarget();
+    explicit IndexFlushTarget(IndexMaintainer &indexMaintainer);
+    IndexFlushTarget(IndexMaintainer &indexMaintainer, IndexMaintainer::FlushStats flushStats);
+    ~IndexFlushTarget() override;
 
     // Implements IFlushTarget
     MemoryGain getApproxMemoryGain() const override;

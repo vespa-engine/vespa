@@ -3,20 +3,8 @@
 
 #include "index_searchable_stats.h"
 
-namespace searchcorespi {
-namespace index {
+namespace searchcorespi::index {
 
-struct IMemoryIndex;
+using MemoryIndexStats = IndexSearchableStats;
 
-/**
- * Information about a memory index usable by state explorer.
- */
-class MemoryIndexStats : public IndexSearchableStats {
-public:
-    MemoryIndexStats();
-    MemoryIndexStats(const IMemoryIndex &index);
-    ~MemoryIndexStats();
-};
-
-} // namespace searchcorespi::index
-} // namespace searchcorespi
+}
