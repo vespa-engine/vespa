@@ -14,7 +14,6 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/exceptions.h>
-#include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <iomanip>
 
@@ -139,7 +138,7 @@ TEST("test that DirectIOPadding works accordng to spec") {
     FastOS_File file("directio.test");
     file.EnableDirectIO();
     EXPECT_TRUE(file.OpenReadWrite());
-    Alloc buf(Alloc::alloc(FILE_SIZE, MemoryAllocator::HUGEPAGE_SIZE, 4096));
+    Alloc buf(Alloc::alloc_aligned(FILE_SIZE, 4096));
     memset(buf.get(), 'a', buf.size());
     EXPECT_EQUAL(FILE_SIZE, file.Write2(buf.get(), FILE_SIZE));
     size_t padBefore(0);

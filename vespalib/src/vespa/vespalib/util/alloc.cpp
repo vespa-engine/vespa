@@ -546,6 +546,12 @@ Alloc::alloc(size_t sz) noexcept
 }
 
 Alloc
+Alloc::alloc_aligned(size_t sz, size_t alignment) noexcept
+{
+    return Alloc(&AutoAllocator::getAllocator(MemoryAllocator::HUGEPAGE_SIZE, alignment), sz);
+}
+
+Alloc
 Alloc::alloc(size_t sz, size_t mmapLimit, size_t alignment) noexcept
 {
     return Alloc(&AutoAllocator::getAllocator(mmapLimit, alignment), sz);
