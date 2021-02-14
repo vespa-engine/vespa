@@ -165,6 +165,13 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundIntFlag MAX_PENDING_MOVE_OPS = defineIntFlag(
+            "max-pending-move-ops", 10,
+            List.of("baldersheim"), "2021-12-15", "2021-04-01",
+            "Max number of move operations inflight",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     public static final UnboundDoubleFlag FEED_CONCURRENCY = defineDoubleFlag(
             "feed-concurrency", 0.5,
             List.of("baldersheim"), "2020-12-02", "2022-01-01",

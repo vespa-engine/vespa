@@ -152,6 +152,7 @@ public class ModelContextImpl implements ModelContext {
         private final String feedSequencer;
         private final String responseSequencer;
         private final int numResponseThreads;
+        private final int maxPendingMoveOps;
         private final boolean skipCommunicationManagerThread;
         private final boolean skipMbusRequestThread;
         private final boolean skipMbusReplyThread;
@@ -172,6 +173,7 @@ public class ModelContextImpl implements ModelContext {
             this.feedSequencer = flagValue(source, appId, Flags.FEED_SEQUENCER_TYPE);
             this.responseSequencer = flagValue(source, appId, Flags.RESPONSE_SEQUENCER_TYPE);
             this.numResponseThreads = flagValue(source, appId, Flags.RESPONSE_NUM_THREADS);
+            this.maxPendingMoveOps = flagValue(source, appId, Flags.MAX_PENDING_MOVE_OPS);
             this.skipCommunicationManagerThread = flagValue(source, appId, Flags.SKIP_COMMUNICATIONMANAGER_THREAD);
             this.skipMbusRequestThread = flagValue(source, appId, Flags.SKIP_MBUS_REQUEST_THREAD);
             this.skipMbusReplyThread = flagValue(source, appId, Flags.SKIP_MBUS_REPLY_THREAD);
@@ -192,6 +194,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public String feedSequencerType() { return feedSequencer; }
         @Override public String responseSequencerType() { return responseSequencer; }
         @Override public int defaultNumResponseThreads() { return numResponseThreads; }
+        @Override public int maxPendingMoveOps() { return maxPendingMoveOps; }
         @Override public boolean skipCommunicationManagerThread() { return skipCommunicationManagerThread; }
         @Override public boolean skipMbusRequestThread() { return skipMbusRequestThread; }
         @Override public boolean skipMbusReplyThread() { return skipMbusReplyThread; }

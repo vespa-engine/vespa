@@ -41,6 +41,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private String sequencerType = "LATENCY";
     private String responseSequencerType = "ADAPTIVE";
     private int responseNumThreads = 2;
+    private int maxPendingMoveOps = 10;
     private Optional<EndpointCertificateSecrets> endpointCertificateSecrets = Optional.empty();
     private AthenzDomain athenzDomain;
     private ApplicationRoles applicationRoles;
@@ -78,6 +79,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public Optional<ApplicationRoles> applicationRoles() { return Optional.ofNullable(applicationRoles); }
     @Override public String responseSequencerType() { return responseSequencerType; }
     @Override public int defaultNumResponseThreads() { return responseNumThreads; }
+    @Override public int maxPendingMoveOps() { return maxPendingMoveOps; }
     @Override public boolean skipCommunicationManagerThread() { return false; }
     @Override public boolean skipMbusRequestThread() { return false; }
     @Override public boolean skipMbusReplyThread() { return false; }
@@ -117,6 +119,10 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     }
     public TestProperties setResponseNumThreads(int numThreads) {
         responseNumThreads = numThreads;
+        return this;
+    }
+    public TestProperties setMaxPendingMoveOps(int moveOps) {
+        maxPendingMoveOps = moveOps;
         return this;
     }
     public TestProperties setDefaultTermwiseLimit(double limit) {
