@@ -51,6 +51,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean enableAutomaticReindexing = false;
     private boolean reconfigurableZookeeperServer = false;
     private boolean useBucketExecutorForLidSpaceCompact;
+    private boolean useBucketExecutorForBucketMove;
     private boolean enableFeedBlockInDistributor = false;
     private double maxDeadBytesRatio = 0.2;
     private int clusterControllerMaxHeapSizeInMb = 512;
@@ -87,6 +88,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean enableAutomaticReindexing() { return enableAutomaticReindexing; }
     @Override public boolean reconfigurableZookeeperServer() { return reconfigurableZookeeperServer; }
     @Override public boolean useBucketExecutorForLidSpaceCompact() { return useBucketExecutorForLidSpaceCompact; }
+    @Override public boolean useBucketExecutorForBucketMove() { return useBucketExecutorForBucketMove; }
     @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
     @Override public double maxDeadBytesRatio() { return maxDeadBytesRatio; }
     @Override public int clusterControllerMaxHeapSizeInMb() { return clusterControllerMaxHeapSizeInMb; }
@@ -191,6 +193,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties useBucketExecutorForLidSpaceCompact(boolean enabled) {
         useBucketExecutorForLidSpaceCompact = enabled;
+        return this;
+    }
+
+    public TestProperties useBucketExecutorForBucketMove(boolean enabled) {
+        useBucketExecutorForBucketMove = enabled;
         return this;
     }
 

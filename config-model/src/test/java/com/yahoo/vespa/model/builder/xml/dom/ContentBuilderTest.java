@@ -835,10 +835,27 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals(flag, config.lidspacecompaction().usebucketexecutor());
     }
 
+    private void verifyThatFeatureFlagControlsUseBucketExecutorForBucketMove(boolean flag) {
+        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().useBucketExecutorForBucketMove(flag));
+        VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
+                .withServices(singleNodeContentXml())
+                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
+                .build())
+                .create(deployStateBuilder);
+        ProtonConfig config = getProtonConfig(model.getContentClusters().values().iterator().next());
+        assertEquals(flag, config.bucketmove().usebucketexecutor());
+    }
+
     @Test
     public void verifyUseBucketExecutorForLidSpaceCompact() {
         verifyThatFeatureFlagControlsUseBucketExecutorForLidSpaceCompact(true);
         verifyThatFeatureFlagControlsUseBucketExecutorForLidSpaceCompact(false);
+    }
+
+    @Test
+    public void verifyUseBucketExecutorForBucketMove() {
+        verifyThatFeatureFlagControlsUseBucketExecutorForBucketMove(true);
+        verifyThatFeatureFlagControlsUseBucketExecutorForBucketMove(false);
     }
 
     @Test

@@ -79,6 +79,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useAsyncMessageHandlingOnSchedule() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedConcurrency() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useBucketExecutorForLidSpaceCompact() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useBucketExecutorForBucketMove() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"musum", "mpolden"}, comment = "Revisit in February 2021") default boolean reconfigurableZookeeperServer() { return false; }
         @ModelFeatureFlag(owners = {"bjorncs", "tokle"}, removeAfter = "7.357") default boolean enableJdiscConnectionLog() { return true; }
         @ModelFeatureFlag(owners = {"bjorncs", "tokle", "baldersheim"}, removeAfter = "7.357") default boolean enableZstdCompressionAccessLog() { return true; }

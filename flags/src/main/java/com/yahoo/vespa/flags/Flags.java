@@ -179,6 +179,13 @@ public class Flags {
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_BUCKET_MOVE = defineFeatureFlag(
+            "use-bucket-executor-for-bucket-move", false,
+            List.of("baldersheim"), "2021-02-15", "2021-04-01",
+            "Wheter to use content-level bucket executor or legacy frozen buckets",
+            "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
     public static final UnboundBooleanFlag USE_POWER_OF_TWO_CHOICES_LOAD_BALANCING = defineFeatureFlag(
             "use-power-of-two-choices-load-balancing", false,
             List.of("tokle"), "2020-12-02", "2021-02-15",
