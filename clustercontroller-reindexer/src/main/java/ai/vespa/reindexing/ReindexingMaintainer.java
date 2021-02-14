@@ -98,13 +98,8 @@ public class ReindexingMaintainer extends AbstractComponent {
     @Override
     public void deconstruct() {
         try {
-            for (Reindexer reindexer : reindexers) {
-                try {
-                    reindexer.close();
-                } catch (Exception e) {
-                    log.log(WARNING, "Received exception while closing down reindexer " + reindexer.toString() + " : ", e);
-                }
-            }
+            for (Reindexer reindexer : reindexers)
+                reindexer.shutdown();
 
             executor.shutdown();
             if ( ! executor.awaitTermination(45, TimeUnit.SECONDS))
