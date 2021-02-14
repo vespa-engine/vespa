@@ -167,7 +167,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_PENDING_MOVE_OPS = defineIntFlag(
             "max-pending-move-ops", 10,
-            List.of("baldersheim"), "2021-12-15", "2021-04-01",
+            List.of("baldersheim"), "2021-02-15", "2021-04-01",
             "Max number of move operations inflight",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
