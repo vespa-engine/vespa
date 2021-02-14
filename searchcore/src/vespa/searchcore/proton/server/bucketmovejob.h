@@ -139,7 +139,7 @@ public:
     void notifyDiskMemUsage(DiskMemUsageState state) override;
 
     // bucketdb::IBucketCreateListener API
-    void notifyCreateBucket(const document::BucketId &bucket) override;
+    void notifyCreateBucket(const bucketdb::Guard & guard, const document::BucketId &bucket) override;
 };
 
 } // namespace proton

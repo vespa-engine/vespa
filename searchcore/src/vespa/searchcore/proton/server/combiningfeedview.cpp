@@ -1,9 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "combiningfeedview.h"
-#include <vespa/document/fieldvalue/document.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 
 #include <vespa/log/log.h>

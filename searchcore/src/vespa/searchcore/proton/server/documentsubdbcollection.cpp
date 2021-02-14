@@ -51,7 +51,7 @@ DocumentSubDBCollection::DocumentSubDBCollection(
       _bucketDBHandler(),
       _hwInfo(hwInfo)
 {
-    _bucketDB = std::make_shared<BucketDBOwner>();
+    _bucketDB = std::make_shared<bucketdb::BucketDBOwner>();
     _bucketDBHandler = std::make_unique<bucketdb::BucketDBHandler>(*_bucketDB);
 
     StoreOnlyDocSubDB::Context context(owner, tlSyncer, getSerialNum, fileHeaderContext, writeService,

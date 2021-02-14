@@ -3,6 +3,7 @@
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/server/combiningfeedview.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/document/update/documentupdate.h>
@@ -47,7 +48,7 @@ struct MyFeedView : public test::DummyFeedView
     uint32_t             _handlePrune;
     uint32_t             _wantedLidLimit;
     MyFeedView(const std::shared_ptr<const DocumentTypeRepo> &repo,
-               std::shared_ptr<BucketDBOwner> bucketDB,
+               std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
                SubDbType subDbType) :
         test::DummyFeedView(repo),
         _metaStore(bucketDB,
@@ -95,7 +96,7 @@ struct MySubDb
 {
     MyFeedView::SP _view;
     MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo,
-            std::shared_ptr<BucketDBOwner> bucketDB,
+            std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
             SubDbType subDbType)
         : _view(std::make_shared<MyFeedView>(repo, std::move(bucketDB), subDbType))
     {
@@ -129,7 +130,7 @@ const uint32_t NOT_READY = 2;
 struct Fixture
 {
     test::UserDocumentsBuilder      _builder;
-    std::shared_ptr<BucketDBOwner>  _bucketDB;
+    std::shared_ptr<bucketdb::BucketDBOwner>  _bucketDB;
     MySubDb                         _ready;
     MySubDb                         _removed;
     MySubDb                         _notReady;
@@ -137,7 +138,7 @@ struct Fixture
     CombiningFeedView               _view;
     Fixture() :
         _builder(),
-        _bucketDB(std::make_shared<BucketDBOwner>()),
+        _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
         _ready(_builder.getRepo(), _bucketDB, SubDbType::READY),
         _removed(_builder.getRepo(), _bucketDB, SubDbType::REMOVED),
         _notReady(_builder.getRepo(), _bucketDB, SubDbType::NOTREADY),

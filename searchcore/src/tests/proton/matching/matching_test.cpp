@@ -13,6 +13,7 @@
 #include <vespa/searchcore/proton/matching/querynodes.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/matching/viewresolver.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchlib/aggregation/aggregation.h>
 #include <vespa/searchlib/aggregation/grouping.h>
 #include <vespa/searchlib/aggregation/perdocexpression.h>
@@ -377,7 +378,7 @@ MyWorld::MyWorld()
       searchContext(),
       attributeContext(),
       sessionManager(),
-      metaStore(std::make_shared<BucketDBOwner>()),
+      metaStore(std::make_shared<bucketdb::BucketDBOwner>()),
       matchingStats(),
       clock(),
       queryLimiter()

@@ -19,11 +19,11 @@ class BucketCreateNotifier : public IBucketCreateNotifier
 
 public:
     BucketCreateNotifier();
-    virtual ~BucketCreateNotifier() override;
+    ~BucketCreateNotifier() override;
 
-    virtual void notifyCreateBucket(const document::BucketId &bucket) override;
-    virtual void addListener(IBucketCreateListener *listener) override;
-    virtual void removeListener(IBucketCreateListener *listener) override;
+    void notifyCreateBucket(const Guard & guard, const document::BucketId &bucket) override;
+    void addListener(IBucketCreateListener *listener) override;
+    void removeListener(IBucketCreateListener *listener) override;
 };
 
 }

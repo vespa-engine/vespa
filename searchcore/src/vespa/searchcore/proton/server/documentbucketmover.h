@@ -10,14 +10,16 @@ namespace vespalib { class IDestructorCallback; }
 
 namespace proton {
 
-class BucketDBOwner;
 struct IDocumentMoveHandler;
 struct IMoveOperationLimiter;
 class MaintenanceDocumentSubDB;
 class MoveOperation;
 
 namespace bucketdb {
-    /**
+
+class BucketDBOwner;
+
+/**
   * Class used to move all documents in a bucket from a source sub database
   * to a target sub database. The actual moving is handled by a given instance
   * of IDocumentMoveHandler.
@@ -49,7 +51,7 @@ public:
     BucketMover(const BucketMover &) = delete;
     BucketMover & operator=(const BucketMover &) = delete;
 
-    // TODO remove once we have swaitched bucket move job
+    // TODO remove once we have switched bucket move job
     bool moveDocuments(size_t maxDocsToMove, IMoveOperationLimiter &limiter);
 
     /// Must be called in master thread
@@ -105,7 +107,7 @@ public:
                         const MaintenanceDocumentSubDB *source,
                         uint32_t targetSubDbId,
                         IDocumentMoveHandler &handler,
-                        BucketDBOwner &bucketDb);
+                        bucketdb::BucketDBOwner &bucketDb);
     const document::BucketId &getBucket() const { return _impl->getBucket(); }
     bool moveDocuments(size_t maxDocsToMove);
     void cancel() { _impl->cancel(); }

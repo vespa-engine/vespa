@@ -2,26 +2,23 @@
 
 #include "bucket_db_owner.h"
 
-namespace proton {
+namespace proton::bucketdb {
 
-BucketDBOwner::Guard::Guard(BucketDB *bucketDB, Mutex &mutex)
+Guard::Guard(BucketDB *bucketDB, std::mutex &mutex)
     : _bucketDB(bucketDB),
       _guard(mutex)
-{
-}
+{ }
 
 
-BucketDBOwner::Guard::Guard(Guard &&rhs)
+Guard::Guard(Guard &&rhs)
     : _bucketDB(rhs._bucketDB),
       _guard(std::move(rhs._guard))
-{
-}
+{ }
 
 
 BucketDBOwner::BucketDBOwner()
     : _bucketDB(),
       _mutex()
-{
-}
+{ }
 
 } // namespace proton

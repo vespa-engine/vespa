@@ -2,6 +2,7 @@
 
 #include "buckethandler.h"
 #include "ibucketstatechangedhandler.h"
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/vespalib/util/lambdatask.h>
 
 #include <vespa/log/log.h>
@@ -58,8 +59,7 @@ BucketHandler::deactivateAllActiveBuckets()
     BucketId::List buckets;
     _ready->getBucketDB().takeGuard()->getActiveBuckets(buckets);
     for (auto bucketId : buckets) {
-        _ready->setBucketState(bucketId,
-                               storage::spi::BucketInfo::NOT_ACTIVE);
+        _ready->setBucketState(bucketId, storage::spi::BucketInfo::NOT_ACTIVE);
         // Don't notify bucket state changed, node is marked down so
         // noone is listening.
     }

@@ -7,23 +7,17 @@ using storage::spi::BucketInfo;
 
 namespace proton::bucketdb {
 
-ScanIterator::ScanIterator(BucketDBOwner::Guard db, Pass pass, BucketId lastBucket, BucketId endBucket)
+ScanIterator::ScanIterator(const Guard & db, Pass pass, BucketId lastBucket, BucketId endBucket)
     : _db(std::move(db)),
       _itr(lastBucket.isSet() ? _db->upperBound(lastBucket) : _db->begin()),
       _end(pass == Pass::SECOND && endBucket.isSet() ?
            _db->upperBound(endBucket) : _db->end())
 { }
 
-ScanIterator::ScanIterator(BucketDBOwner::Guard db, BucketId bucket)
+ScanIterator::ScanIterator(const Guard & db, BucketId bucket)
     : _db(std::move(db)),
       _itr(_db->lowerBound(bucket)),
       _end(_db->end())
-{ }
-
-ScanIterator::ScanIterator(ScanIterator &&rhs)
-    : _db(std::move(rhs._db)),
-      _itr(rhs._itr),
-      _end(rhs._end)
 { }
 
 } // namespace proton

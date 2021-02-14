@@ -1,11 +1,12 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "lid_space_common.h"
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 struct HandlerTest : public ::testing::Test {
     DocBuilder _docBuilder;
-    std::shared_ptr<BucketDBOwner> _bucketDB;
+    std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
     MyDocumentStore _docStore;
     MySubDb _subDb;
     LidSpaceCompactionHandler _handler;
@@ -15,7 +16,7 @@ struct HandlerTest : public ::testing::Test {
 
 HandlerTest::HandlerTest()
     : _docBuilder(Schema()),
-      _bucketDB(std::make_shared<BucketDBOwner>()),
+      _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
       _docStore(),
       _subDb(_bucketDB, _docStore, _docBuilder.getDocumentTypeRepo()),
       _handler(_subDb.maintenance_sub_db, "test")

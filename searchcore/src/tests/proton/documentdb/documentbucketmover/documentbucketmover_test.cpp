@@ -64,7 +64,7 @@ struct ControllerFixtureBase : public ::testing::Test
     test::ClusterStateHandler   _clusterStateHandler;
     test::BucketHandler         _bucketHandler;
     MyBucketModifiedHandler     _modifiedHandler;
-    std::shared_ptr<BucketDBOwner> _bucketDB;
+    std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
     MyMoveHandler               _moveHandler;
     MySubDb                     _ready;
     MySubDb                     _notReady;
@@ -129,7 +129,7 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
       _calc(std::make_shared<test::BucketStateCalculator>()),
       _bucketHandler(),
       _modifiedHandler(),
-      _bucketDB(std::make_shared<BucketDBOwner>()),
+      _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
       _moveHandler(*_bucketDB, storeMoveDoneContexts),
       _ready(_builder.getRepo(), _bucketDB, 1, SubDbType::READY),
       _notReady(_builder.getRepo(), _bucketDB, 2, SubDbType::NOTREADY),
@@ -751,7 +751,7 @@ TEST_F(ControllerFixture, require_that_notifyCreateBucket_causes_bucket_to_be_re
     EXPECT_TRUE(bucketsModified().empty());
     addReady(_notReady.bucket(3)); // bucket 3 now ready, no notify
     EXPECT_TRUE(_bmj.done());        // move job still believes work done
-    _bmj.notifyCreateBucket(_notReady.bucket(3)); // reconsider bucket 3
+    _bmj.notifyCreateBucket(_bucketDB->takeGuard(), _notReady.bucket(3)); // reconsider bucket 3
     EXPECT_FALSE(_bmj.done());
     runLoop();
     EXPECT_TRUE(_bmj.done());

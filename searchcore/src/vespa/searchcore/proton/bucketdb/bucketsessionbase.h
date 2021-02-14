@@ -20,12 +20,11 @@ public:
     typedef storage::spi::Timestamp Timestamp;
 
 protected:
-    BucketDBOwner::Guard _bucketDB;
+    Guard _bucketDB;
     IBucketCreateNotifier &_bucketCreateNotifier;
 
 public:
     BucketSessionBase(BucketDBOwner &bucketDB, IBucketCreateNotifier &bucketCreateNotifier);
-
     bool extractInfo(const BucketId &bucket, BucketState *&info);
 
     static bool calcFixupNeed(BucketState *state, bool wantActive, bool fixup);
