@@ -29,6 +29,7 @@
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchcore/proton/server/documentretriever.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/test/dummy_document_store.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
@@ -84,7 +85,6 @@ using search::index::Schema;
 using search::index::schema::DataType;
 using search::tensor::TensorAttribute;
 using storage::spi::Bucket;
-using storage::spi::GetResult;
 using storage::spi::Timestamp;
 using storage::spi::test::makeSpiBucket;
 using vespalib::make_string;
@@ -327,7 +327,7 @@ struct Fixture {
 
     Fixture()
         : repo(getRepoConfig()),
-          meta_store(std::make_shared<BucketDBOwner>()),
+          meta_store(std::make_shared<bucketdb::BucketDBOwner>()),
           gid(doc_id.getGlobalId()),
           bucket_id(gid.convertToBucketId()),
           timestamp(21),

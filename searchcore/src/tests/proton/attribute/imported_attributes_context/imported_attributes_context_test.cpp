@@ -1,11 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("imported_attributes_context_test");
+
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/searchcore/proton/attribute/imported_attributes_context.h>
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/imported_attribute_vector.h>
@@ -14,6 +14,8 @@ LOG_SETUP("imported_attributes_context_test");
 #include <vespa/searchlib/test/mock_gid_to_lid_mapping.h>
 #include <future>
 
+#include <vespa/log/log.h>
+LOG_SETUP("imported_attributes_context_test");
 using namespace proton;
 using search::AttributeVector;
 using search::attribute::BasicType;
@@ -80,7 +82,7 @@ struct Fixture {
                                                            createReferenceAttribute(name + "_ref"),
                                                            std::shared_ptr<search::IDocumentMetaStoreContext>(),
                                                            createTargetAttribute(name + "_target"),
-                                                           std::make_shared<const DocumentMetaStoreContext>(std::make_shared<BucketDBOwner>()),
+                                                           std::make_shared<const DocumentMetaStoreContext>(std::make_shared<bucketdb::BucketDBOwner>()),
                                                            false);
         repo.add(name, attr);
         return *this;

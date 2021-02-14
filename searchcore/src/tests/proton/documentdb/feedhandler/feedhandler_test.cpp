@@ -428,7 +428,7 @@ struct FeedHandlerFixture
     MyReplayConfig               replayConfig;
     MyFeedView                   feedView;
     MyTlsWriter                  tls_writer;
-    BucketDBOwner                _bucketDB;
+    bucketdb::BucketDBOwner      _bucketDB;
     bucketdb::BucketDBHandler    _bucketDBHandler;
     FeedHandler                  handler;
     FeedHandlerFixture()

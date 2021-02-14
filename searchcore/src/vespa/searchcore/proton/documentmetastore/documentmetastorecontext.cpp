@@ -11,10 +11,10 @@ DocumentMetaStoreContext::ReadGuard::ReadGuard(const search::AttributeVector::SP
 }
 
 
-DocumentMetaStoreContext::DocumentMetaStoreContext(BucketDBOwner::SP bucketDB,
+DocumentMetaStoreContext::DocumentMetaStoreContext(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
                                                    const vespalib::string &name,
                                                    const search::GrowStrategy &grow) :
-    _metaStoreAttr(std::make_shared<DocumentMetaStore>(bucketDB, name, grow)),
+    _metaStoreAttr(std::make_shared<DocumentMetaStore>(std::move(bucketDB), name, grow)),
     _metaStore(std::dynamic_pointer_cast<IDocumentMetaStore>(_metaStoreAttr))
 {
 }
@@ -26,7 +26,7 @@ DocumentMetaStoreContext::DocumentMetaStoreContext(const search::AttributeVector
 {
 }
 
-DocumentMetaStoreContext::~DocumentMetaStoreContext() {}
+DocumentMetaStoreContext::~DocumentMetaStoreContext() = default;
 
 void
 DocumentMetaStoreContext::constructFreeList()

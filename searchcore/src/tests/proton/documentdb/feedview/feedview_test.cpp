@@ -10,6 +10,7 @@
 #include <vespa/searchcore/proton/server/matchview.h>
 #include <vespa/searchcore/proton/server/searchable_feed_view.h>
 #include <vespa/searchcore/proton/feedoperation/operations.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/test/document_meta_store_context_observer.h>
 #include <vespa/searchcore/proton/test/dummy_document_store.h>
 #include <vespa/searchcore/proton/test/dummy_summary_manager.h>
@@ -541,7 +542,7 @@ struct FixtureBase
         return msa._store;
     }
 
-    BucketDBOwner::Guard getBucketDB() const {
+    bucketdb::Guard getBucketDB() const {
         return getMetaStore().getBucketDB().takeGuard();
     }
 
@@ -684,7 +685,7 @@ FixtureBase::FixtureBase()
       msa(static_cast<MySummaryAdapter&>(*sa)),
       maw(static_cast<MyAttributeWriter&>(*aw)),
       _docIdLimit(0u),
-      _dmscReal(std::make_shared<DocumentMetaStoreContext>(std::make_shared<BucketDBOwner>())),
+      _dmscReal(std::make_shared<DocumentMetaStoreContext>(std::make_shared<bucketdb::BucketDBOwner>())),
       _dmsc(std::make_shared<test::DocumentMetaStoreContextObserver>(*_dmscReal)),
       pc(sc._builder->getDocumentType().getName(), "fileconfig_test"),
       _sharedExecutor(1, 0x10000),

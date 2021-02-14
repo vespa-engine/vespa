@@ -31,13 +31,13 @@ struct MyMoveOperationLimiter : public IMoveOperationLimiter {
 
 struct MyMoveHandler : public IDocumentMoveHandler {
     using MoveOperationVector = std::vector<MoveOperation>;
-    BucketDBOwner &_bucketDb;
+    bucketdb::BucketDBOwner &_bucketDb;
     MoveOperationVector _moves;
     size_t _numCachedBuckets;
     bool _storeMoveDoneContexts;
     std::vector<vespalib::IDestructorCallback::SP> _moveDoneContexts;
 
-    MyMoveHandler(BucketDBOwner &bucketDb, bool storeMoveDoneContext = false);
+    MyMoveHandler(bucketdb::BucketDBOwner &bucketDb, bool storeMoveDoneContext = false);
     ~MyMoveHandler() override;
     void handleMove(MoveOperation &op, vespalib::IDestructorCallback::SP moveDoneCtx) override;
 
@@ -103,7 +103,7 @@ struct MySubDb {
     UserDocuments                         _docs;
     bucketdb::BucketDBHandler             _bucketDBHandler;
 
-    MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::shared_ptr<BucketDBOwner> bucketDB,
+    MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
             uint32_t subDbId, SubDbType subDbType);
 
     ~MySubDb();

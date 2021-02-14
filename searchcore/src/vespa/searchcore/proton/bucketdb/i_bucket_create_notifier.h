@@ -7,6 +7,7 @@ namespace document { class BucketId; }
 namespace proton::bucketdb {
 
 class IBucketCreateListener;
+class Guard;
 
 /**
  * Interface class used to (un)register a listener to get notifications about
@@ -15,13 +16,13 @@ class IBucketCreateListener;
 class IBucketCreateNotifier
 {
 public:
-    virtual ~IBucketCreateNotifier() {}
+    virtual ~IBucketCreateNotifier() = default;
 
     /**
      * Signal that the given bucket has been created due to split/join
      * operation.
      */
-    virtual void notifyCreateBucket(const document::BucketId &bucket) = 0;
+    virtual void notifyCreateBucket(const Guard & guard, const document::BucketId &bucket) = 0;
 
     /*
      * Register bucket create listener.

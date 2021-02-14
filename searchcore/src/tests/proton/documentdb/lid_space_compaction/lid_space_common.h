@@ -140,6 +140,6 @@ struct MySubDb {
     test::DummyDocumentSubDb sub_db;
     MaintenanceDocumentSubDB maintenance_sub_db;
     PendingLidTracker _pendingLidsForCommit;
-    MySubDb(std::shared_ptr<BucketDBOwner> bucket_db, const MyDocumentStore& store, const std::shared_ptr<const DocumentTypeRepo> & repo);
+    MySubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucket_db, const MyDocumentStore& store, const std::shared_ptr<const DocumentTypeRepo> & repo);
     ~MySubDb();
 };

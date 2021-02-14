@@ -14,7 +14,7 @@ using document::BucketId;
 struct MySubDbTwoBuckets : public MySubDb
 {
     MySubDbTwoBuckets(test::UserDocumentsBuilder &builder,
-                      std::shared_ptr<BucketDBOwner> bucketDB,
+                      std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
                       uint32_t subDbId,
                       SubDbType subDbType)
         : MySubDb(builder.getRepo(), bucketDB, subDbId, subDbType)
@@ -32,16 +32,16 @@ struct MySubDbTwoBuckets : public MySubDb
 struct DocumentMoverTest : ::testing::Test
 {
     test::UserDocumentsBuilder _builder;
-    std::shared_ptr<BucketDBOwner> _bucketDB;
+    std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
     MyMoveOperationLimiter     _limiter;
     DocumentBucketMover        _mover;
     MySubDbTwoBuckets          _source;
-    BucketDBOwner              _bucketDb;
+    bucketdb::BucketDBOwner    _bucketDb;
     MyMoveHandler              _handler;
     PendingLidTracker          _pendingLidsForCommit;
     DocumentMoverTest()
         : _builder(),
-          _bucketDB(std::make_shared<BucketDBOwner>()),
+          _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
           _limiter(),
           _mover(_limiter),
           _source(_builder, _bucketDB, 0u, SubDbType::READY),

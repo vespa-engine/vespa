@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/persistenceengine/i_document_retriever.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 
@@ -35,17 +36,12 @@ BucketMover::createMoveOperation(const MoveKey &key) {
 
 void
 BucketMover::moveDocument(MoveOperationUP moveOp, IDestructorCallbackSP onDone) {
-    // We cache the bucket for the document we are going to move to avoid getting
-    // inconsistent bucket info (getBucketInfo()) while moving between ready and not-ready
-    // sub dbs as the bucket info is not updated atomically in this case.
-    _bucketDb->takeGuard()->cacheBucket(moveOp->getBucketId());
     _handler->handleMove(*moveOp, std::move(onDone));
-    _bucketDb->takeGuard()->uncacheBucket();
 }
 
 
 BucketMover::BucketMover(const BucketId &bucket, const MaintenanceDocumentSubDB *source, uint32_t targetSubDbId,
-                         IDocumentMoveHandler &handler,BucketDBOwner &bucketDb) noexcept
+                         IDocumentMoveHandler &handler, BucketDBOwner &bucketDb) noexcept
     : _source(source),
       _handler(&handler),
       _bucketDb(&bucketDb),
@@ -111,11 +107,15 @@ BucketMover::moveDocuments(size_t maxDocsToMove, IMoveOperationLimiter &limiter)
     if (moveOps.empty()) return allOk;
 
     updateLastValidGid(moveOps.back()->getDocument()->getId().getGlobalId());
-    std::vector<IDestructorCallbackSP> opTrackers;
-    for (size_t i(0); i < moveOps.size(); i++) {
-        opTrackers.push_back(limiter.beginOperation());
+
+    for (auto & moveOp : moveOps) {
+        // We cache the bucket for the document we are going to move to avoid getting
+        // inconsistent bucket info (getBucketInfo()) while moving between ready and not-ready
+        // sub dbs as the bucket info is not updated atomically in this case.
+        _bucketDb->takeGuard()->cacheBucket(moveOp->getBucketId());
+        _handler->handleMove(*moveOp, limiter.beginOperation());
+        _bucketDb->takeGuard()->uncacheBucket();
     }
-    moveDocuments(std::move(moveOps), std::make_shared<vespalib::KeepAlive<std::vector<IDestructorCallbackSP>>>(opTrackers));
     return allOk;
 }
 
@@ -132,7 +132,7 @@ DocumentBucketMover::DocumentBucketMover(IMoveOperationLimiter &limiter) noexcep
 
 void
 DocumentBucketMover::setupForBucket(const document::BucketId &bucket, const MaintenanceDocumentSubDB *source,
-                                    uint32_t targetSubDbId, IDocumentMoveHandler &handler, BucketDBOwner &bucketDb)
+                                    uint32_t targetSubDbId, IDocumentMoveHandler &handler, bucketdb::BucketDBOwner &bucketDb)
 {
     _impl = std::make_unique<BucketMover>(bucket, source, targetSubDbId, handler, bucketDb);
 }

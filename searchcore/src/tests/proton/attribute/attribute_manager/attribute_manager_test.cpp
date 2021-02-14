@@ -12,6 +12,7 @@
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/attribute/sequential_attributes_initializer.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastorecontext.h>
 #include <vespa/searchcore/proton/flushengine/shrink_lid_space_flush_target.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
@@ -140,7 +141,7 @@ struct ImportedAttributesRepoBuilder {
         refAttr->setGidToLidMapperFactory(std::make_shared<MockGidToLidMapperFactory>());
         auto targetAttr = search::AttributeFactory::createAttribute(name + "_target", INT32_SINGLE);
         auto documentMetaStore = std::shared_ptr<search::IDocumentMetaStoreContext>();
-        auto targetDocumentMetaStore = std::make_shared<const DocumentMetaStoreContext>(std::make_shared<BucketDBOwner>());
+        auto targetDocumentMetaStore = std::make_shared<const DocumentMetaStoreContext>(std::make_shared<bucketdb::BucketDBOwner>());
         auto importedAttr = ImportedAttributeVectorFactory::create(name, refAttr, documentMetaStore, targetAttr, targetDocumentMetaStore, false);
         _repo->add(name, importedAttr);
     }
@@ -230,7 +231,7 @@ struct DummyInitializerTask : public InitializerTask
 struct ParallelAttributeManager
 {
     InitializerTask::SP documentMetaStoreInitTask;
-    BucketDBOwner::SP bucketDbOwner;
+    std::shared_ptr<bucketdb::BucketDBOwner> bucketDbOwner;
     DocumentMetaStore::SP documentMetaStore;
     AllocStrategy        alloc_strategy;
     bool fastAccessAttributesOnly;
@@ -247,7 +248,7 @@ struct ParallelAttributeManager
 ParallelAttributeManager::ParallelAttributeManager(search::SerialNum configSerialNum, AttributeManager::SP baseAttrMgr,
                                                    const AttributesConfig &attrCfg, uint32_t docIdLimit)
     : documentMetaStoreInitTask(std::make_shared<DummyInitializerTask>()),
-      bucketDbOwner(std::make_shared<BucketDBOwner>()),
+      bucketDbOwner(std::make_shared<bucketdb::BucketDBOwner>()),
       documentMetaStore(std::make_shared<DocumentMetaStore>(bucketDbOwner)),
       alloc_strategy(),
       fastAccessAttributesOnly(false),

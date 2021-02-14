@@ -1007,7 +1007,7 @@ void notifyBucketsChanged(const documentmetastore::IBucketHandler &metaStore,
                           IBucketModifiedHandler &handler,
                           const vespalib::string &name)
 {
-    BucketDBOwner::Guard buckets = metaStore.getBucketDB().takeGuard();
+    bucketdb::Guard buckets = metaStore.getBucketDB().takeGuard();
     for (const auto &kv : *buckets) {
         handler.notifyBucketModified(kv.first);
     }
