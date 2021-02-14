@@ -26,7 +26,7 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
  *
  * @author jonmv
  */
-public class ReindexingCurator implements AutoCloseable {
+public class ReindexingCurator {
 
     private final Curator curator;
     private final ReindexingSerializer serializer;
@@ -64,11 +64,6 @@ public class ReindexingCurator implements AutoCloseable {
     private Path rootPath(String clusterName) { return Path.fromString("/reindexing/v1/" + clusterName); }
     private Path statusPath(String clusterName) { return rootPath(clusterName).append("status"); }
     private Path lockPath(String clusterName) { return rootPath(clusterName).append("lock"); }
-
-    @Override
-    public void close() throws Exception {
-        curator.close();
-    }
 
 
     private static class ReindexingSerializer {

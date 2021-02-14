@@ -50,6 +50,7 @@ public class ReindexingMaintainer extends AbstractComponent {
 
     private static final Logger log = Logger.getLogger(Reindexing.class.getName());
 
+    private final Curator curator;
     private final List<Reindexer> reindexers;
     private final ScheduledExecutorService executor;
 
@@ -65,11 +66,12 @@ public class ReindexingMaintainer extends AbstractComponent {
     ReindexingMaintainer(Clock clock, Metric metric, DocumentAccess access, ZookeepersConfig zookeepersConfig,
                          ClusterListConfig clusterListConfig, AllClustersBucketSpacesConfig allClustersBucketSpacesConfig,
                          ReindexingConfig reindexingConfig) {
+        this.curator = Curator.create(zookeepersConfig.zookeeperserverlist());
+        ReindexingCurator reindexingCurator = new ReindexingCurator(curator, access.getDocumentTypeManager());
         this.reindexers = reindexingConfig.clusters().entrySet().stream()
                                           .map(cluster -> new Reindexer(parseCluster(cluster.getKey(), clusterListConfig, allClustersBucketSpacesConfig, access.getDocumentTypeManager()),
                                                                         parseReady(cluster.getValue(), access.getDocumentTypeManager()),
-                                                                        new ReindexingCurator(Curator.create(zookeepersConfig.zookeeperserverlist()),
-                                                                                              access.getDocumentTypeManager()),
+                                                                        reindexingCurator,
                                                                         access,
                                                                         metric,
                                                                         clock))
@@ -98,13 +100,8 @@ public class ReindexingMaintainer extends AbstractComponent {
     @Override
     public void deconstruct() {
         try {
-            for (Reindexer reindexer : reindexers) {
-                try {
-                    reindexer.close();
-                } catch (Exception e) {
-                    log.log(WARNING, "Received exception while closing down reindexer " + reindexer.toString() + " : ", e);
-                }
-            }
+            for (Reindexer reindexer : reindexers)
+                reindexer.shutdown();
 
             executor.shutdown();
             if ( ! executor.awaitTermination(45, TimeUnit.SECONDS))
@@ -116,6 +113,8 @@ public class ReindexingMaintainer extends AbstractComponent {
         }
         if ( ! executor.isShutdown())
             executor.shutdownNow();
+
+        curator.close();
     }
 
     static Map<DocumentType, Instant> parseReady(ReindexingConfig.Clusters cluster, DocumentTypeManager manager) {

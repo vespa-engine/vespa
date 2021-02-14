@@ -100,8 +100,9 @@ public class ClusterController extends AbstractComponent
      */
     private void verifyThatZooKeeperWorks(FleetControllerOptions options) throws Exception {
         if (options.zooKeeperServerAddress != null && !"".equals(options.zooKeeperServerAddress)) {
-            Curator curator = Curator.create(options.zooKeeperServerAddress);
-            curator.framework().blockUntilConnected();
+            try (Curator curator = Curator.create(options.zooKeeperServerAddress)) {
+                curator.framework().blockUntilConnected();
+            }
         }
     }
 
