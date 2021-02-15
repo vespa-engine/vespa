@@ -155,7 +155,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
 
         if (!NodeMover.zoneIsStable(allNodes)) return;
 
-        // Find an active node on a overcommited host and retire it
+        // Find an active node on a overcommitted host and retire it
         Optional<Node> nodeToRetire = overcommittedHosts.stream().flatMap(parent -> allNodes.childrenOf(parent).stream())
                 .filter(node -> node.state() == Node.State.active)
                 .min(this::retireOvercomittedComparator);
@@ -170,7 +170,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
             if (nodeWithWantToRetire.isEmpty()) return;
 
             nodeRepository().nodes().write(nodeWithWantToRetire.get(), deployment.applicationLock().get());
-            log.log(Level.INFO, String.format("Redeploying %s to relocate %s from overcommited host",
+            log.log(Level.INFO, String.format("Redeploying %s to move %s from overcommitted host",
                     application, nodeToRetire.get().hostname()));
             deployment.activate();
         }

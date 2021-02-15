@@ -326,9 +326,9 @@ public class SpareCapacityMaintainerTest {
         }
 
         private void dumpState() {
-            for (Node host : nodeRepository.nodes().list().hosts().asList()) {
+            for (Node host : nodeRepository.nodes().list().hosts()) {
                 System.out.println("Host " + host.hostname() + " " + host.resources());
-                for (Node node : nodeRepository.nodes().list().childrenOf(host).asList())
+                for (Node node : nodeRepository.nodes().list().childrenOf(host))
                     System.out.println("    Node " + node.hostname() + " " + node.resources() + " allocation " +node.allocation());
             }
         }

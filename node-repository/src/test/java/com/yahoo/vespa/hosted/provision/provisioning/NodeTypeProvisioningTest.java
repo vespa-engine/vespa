@@ -202,7 +202,7 @@ public class NodeTypeProvisioningTest {
 
             // The retiring node should be one of the nodes we marked for retirement
             currentyRetiringHostname = nodesCurrentlyRetiring.get(0).hostname();
-            assertTrue(nodesToRetire.stream().map(Node::hostname).filter(hostname -> hostname.equals(currentyRetiringHostname)).count() == 1);
+            assertEquals(1, nodesToRetire.stream().map(Node::hostname).filter(hostname -> hostname.equals(currentyRetiringHostname)).count());
         }
 
         { // Redeploying while the node is still retiring has no effect

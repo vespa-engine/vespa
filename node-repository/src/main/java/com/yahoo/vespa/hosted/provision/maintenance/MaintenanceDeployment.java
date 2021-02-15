@@ -122,7 +122,7 @@ class MaintenanceDeployment implements Closeable {
 
     @Override
     public void close() {
-        lock.ifPresent(l -> l.close());
+        lock.ifPresent(Mutex::close);
         closed = true;
     }
 
