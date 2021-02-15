@@ -143,7 +143,6 @@ public class VespaModelTester {
                                                               false,
                                                               startIndexForClusters, retiredHostNames) :
                                       new SingleNodeProvisioner();
-        System.out.println("Created provisioner " + provisioner);
 
         TestProperties properties = new TestProperties()
                 .setMultitenant(true)
