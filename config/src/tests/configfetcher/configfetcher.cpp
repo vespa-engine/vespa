@@ -51,7 +51,7 @@ TEST("requireThatConfigUpdatesArePerformed") {
     FileSpec spec("test1.cfg");
     MyCallback cb;
     cb._configured = false;
-    vespalib::ThreadStackExecutor executor(1, 128 * 1024);
+    vespalib::ThreadStackExecutor executor(1, 128_Ki);
 
     {
         ConfigFetcher fetcher(500);

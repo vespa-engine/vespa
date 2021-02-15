@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/config/common/configsystem.h>
 #include <vespa/defaults.h>
 #include <vespa/fastos/file.h>
@@ -10,7 +11,7 @@ using namespace config;
 namespace {
 
 const char *VESPA_HOME="VESPA_HOME";
-char cwd[1024];
+char cwd[1_Ki];
 
 }
 
