@@ -15,8 +15,6 @@ import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.container.logging.FormatUtil.writeSecondsField;
-
 /**
  * Formatting of an {@link AccessLogEntry} in the Vespa JSON access log format.
  *
@@ -64,9 +62,14 @@ public class JSONFormatter implements LogWriter<RequestLogEntry> {
                 generator.writeStringField("connection", connectionId);
             }
 
-            Principal principal = entry.userPrincipal().orElse(null);
-            if (principal != null) {
-                generator.writeStringField("user-principal", principal.getName());
+            Principal userPrincipal = entry.userPrincipal().orElse(null);
+            if (userPrincipal != null) {
+                generator.writeStringField("user-principal", userPrincipal.getName());
+            }
+
+            Principal sslPrincipal = entry.sslPrincipal().orElse(null);
+            if (sslPrincipal != null) {
+                generator.writeStringField("ssl-principal", sslPrincipal.getName());
             }
 
             String remoteAddress = entry.remoteAddress().orElse(null);
