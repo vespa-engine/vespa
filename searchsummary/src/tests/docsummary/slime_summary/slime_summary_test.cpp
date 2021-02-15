@@ -6,6 +6,7 @@
 #include <vespa/searchsummary/docsummary/docsumstate.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 using namespace vespalib::slime::convenience;
 using namespace search::docsummary;
@@ -37,7 +38,7 @@ struct DocsumFixture : IDocsumStore, GetDocsumsStateCallback {
     ~DocsumFixture();
     void getDocsum(Slime &slime) {
         uint32_t classId;
-        search::RawBuf buf(4096);
+        search::RawBuf buf(4_Ki);
         writer->WriteDocsum(1u, &state, this, &buf);
         ASSERT_GREATER(buf.GetUsedLen(), sizeof(classId));
         memcpy(&classId, buf.GetDrainPos(), sizeof(classId));

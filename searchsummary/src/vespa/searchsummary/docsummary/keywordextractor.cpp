@@ -5,6 +5,7 @@
 #include "idocsumenvironment.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/vespalib/stllike/hashtable.hpp>
+#include <vespa/vespalib/util/size_literals.h>
 
 /** Tell us what parts of the query we are interested in */
 
@@ -153,7 +154,7 @@ char *
 KeywordExtractor::ExtractKeywords(vespalib::stringref buf) const
 {
     search::SimpleQueryStackDumpIterator si(buf);
-    char keywordstore[4096]; // Initial storage for keywords buffer
+    char keywordstore[4_Ki]; // Initial storage for keywords buffer
     search::RawBuf keywords(keywordstore, sizeof(keywordstore));
 
     while (si.next()) {
