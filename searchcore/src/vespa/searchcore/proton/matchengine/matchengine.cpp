@@ -5,6 +5,7 @@
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 
@@ -47,7 +48,7 @@ MatchEngine::MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t di
       _distributionKey(distributionKey),
       _closed(false),
       _handlers(),
-      _executor(std::max(size_t(1), numThreads / threadsPerSearch), 256 * 1024, match_engine_executor),
+      _executor(std::max(size_t(1), numThreads / threadsPerSearch), 256_Ki, match_engine_executor),
       _threadBundlePool(std::max(size_t(1), threadsPerSearch)),
       _nodeUp(false)
 {
@@ -146,7 +147,7 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req,
         ret->request->trace().getRoot().setLong("distribution-key", _distributionKey);
         ret->request->trace().done();
         search::fef::Properties & trace = ret->propertiesMap.lookupCreate("trace");
-        vespalib::SmartBuffer output(4096);
+        vespalib::SmartBuffer output(4_Ki);
         vespalib::slime::BinaryFormat::encode(ret->request->trace().getSlime(), output);
         trace.add("slime", output.obtain().make_stringref());
     }

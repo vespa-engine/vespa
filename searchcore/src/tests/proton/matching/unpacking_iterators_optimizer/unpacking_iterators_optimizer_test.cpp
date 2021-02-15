@@ -6,6 +6,7 @@
 #include <vespa/searchlib/query/tree/querybuilder.h>
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/data/output_writer.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <string>
 
 using namespace proton::matching;
@@ -69,7 +70,7 @@ struct DumpQuery : QueryVisitor {
 };
 
 std::string dump_query(Node &root) {
-    SmartBuffer buffer(4096);
+    SmartBuffer buffer(4_Ki);
     {
         OutputWriter writer(buffer, 1024);
         DumpQuery dumper(writer, 0);

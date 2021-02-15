@@ -38,6 +38,7 @@
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/random.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/searchlib/aggregation/forcelink.hpp>
 #include <vespa/searchlib/expression/forcelink.hpp>
@@ -223,7 +224,7 @@ Proton::Proton(const config::ConfigUri & configUri,
       _stateServer(),
       // This executor can only have 1 thread as it is used for
       // serializing startup.
-      _executor(1, 128 * 1024),
+      _executor(1, 128_Ki),
       _protonDiskLayout(),
       _protonConfigurer(_executor, *this, _protonDiskLayout),
       _protonConfigFetcher(configUri, _protonConfigurer, subscribeTimeout),
@@ -232,7 +233,7 @@ Proton::Proton(const config::ConfigUri & configUri,
       _compile_cache_executor_binding(),
       _queryLimiter(),
       _clock(0.001),
-      _threadPool(128 * 1024),
+      _threadPool(128_Ki),
       _distributionKey(-1),
       _isInitializing(true),
       _abortInit(false),
@@ -317,14 +318,14 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
                                                              protonConfig.visit.ignoremaxbytes);
 
     vespalib::string fileConfigId;
-    _warmupExecutor = std::make_unique<vespalib::ThreadStackExecutor>(4, 128*1024, index_warmup_executor);
+    _warmupExecutor = std::make_unique<vespalib::ThreadStackExecutor>(4, 128_Ki, index_warmup_executor);
 
     const size_t sharedThreads = derive_shared_threads(protonConfig, hwInfo.cpu());
-    _sharedExecutor = std::make_shared<vespalib::BlockingThreadStackExecutor>(sharedThreads, 128*1024, sharedThreads*16, proton_shared_executor);
+    _sharedExecutor = std::make_shared<vespalib::BlockingThreadStackExecutor>(sharedThreads, 128_Ki, sharedThreads*16, proton_shared_executor);
     _compile_cache_executor_binding = vespalib::eval::CompileCache::bind(_sharedExecutor);
     InitializeThreads initializeThreads;
     if (protonConfig.initialize.threads > 0) {
-        initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(protonConfig.initialize.threads, 128 * 1024, initialize_executor);
+        initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(protonConfig.initialize.threads, 128_Ki, initialize_executor);
         _initDocumentDbsInSequence = (protonConfig.initialize.threads == 1);
     }
     _protonConfigurer.applyInitialConfig(initializeThreads);
@@ -599,7 +600,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
         // If configured value for initialize threads was 0, or we
         // are performing a reconfig after startup has completed, then use
         // 1 thread per document type.
-        initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(1, 128 * 1024);
+        initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(1, 128_Ki);
     }
     auto ret = std::make_shared<DocumentDB>(config.basedir + "/documents", documentDBConfig, config.tlsspec,
                                             _queryLimiter, _clock, docTypeName, bucketSpace, config, *this,

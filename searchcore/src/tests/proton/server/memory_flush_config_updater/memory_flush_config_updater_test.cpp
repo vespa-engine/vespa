@@ -2,6 +2,7 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcore/proton/server/memory_flush_config_updater.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 using namespace proton;
 using vespa::config::search::core::ProtonConfig;
@@ -41,8 +42,7 @@ belowLimit()
     return ResourceUsageState(0.7, 0.6);
 }
 
-const HwInfo::Memory defaultMemory(8ul * 1024ul * 1024ul * 1024ul);
-constexpr size_t ONE_G = 1024ul * 1024ul * 1024ul;;
+const HwInfo::Memory defaultMemory(8_Gi);
 
 struct Fixture
 {
@@ -83,7 +83,7 @@ TEST("require that we use configured memory limits") {
 
 TEST("require that we cap configured limits based on available memory") {
     const uint64_t LIMIT = defaultMemory.sizeBytes()/4;
-    constexpr uint64_t MEM_4G = 4 * ONE_G;
+    constexpr uint64_t MEM_4G = 4_Gi;
     auto cfg = MemoryFlushConfigUpdater::convertConfig(getConfig(MEM_4G, MEM_4G, 30), defaultMemory);
     EXPECT_EQUAL(cfg.maxGlobalMemory, LIMIT);
     EXPECT_EQUAL(uint64_t(cfg.maxMemoryGain), LIMIT);

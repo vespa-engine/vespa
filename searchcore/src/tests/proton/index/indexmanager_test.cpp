@@ -20,6 +20,7 @@
 #include <vespa/searchlib/test/index/mock_field_length_inspector.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/time.h>
 #include <set>
@@ -316,7 +317,7 @@ TEST_F(IndexManagerTest, require_that_memory_index_is_flushed)
 
 TEST_F(IndexManagerTest, require_that_large_memory_footprint_triggers_urgent_flush) {
     using FlushStats = IndexMaintainer::FlushStats;
-    constexpr size_t G = 1024*1024*1024l;
+    constexpr size_t G =1_Gi;
     // IndexMaintainer::FlushStats small_15G(15*G, 0, 1, 1);
     EXPECT_FALSE(IndexFlushTarget(_index_manager->getMaintainer()).needUrgentFlush());
     EXPECT_FALSE(IndexFlushTarget(_index_manager->getMaintainer(), FlushStats(15*G)).needUrgentFlush());

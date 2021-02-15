@@ -36,6 +36,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
@@ -253,7 +254,7 @@ ParallelAttributeManager::ParallelAttributeManager(search::SerialNum configSeria
       alloc_strategy(),
       fastAccessAttributesOnly(false),
       mgr(std::make_shared<AttributeManager::SP>()),
-      masterExecutor(1, 128 * 1024),
+      masterExecutor(1, 128_Ki),
       master(masterExecutor),
       initializer(std::make_shared<AttributeManagerInitializer>(configSerialNum, documentMetaStoreInitTask,
                                                                 documentMetaStore, baseAttrMgr, attrCfg,
@@ -261,7 +262,7 @@ ParallelAttributeManager::ParallelAttributeManager(search::SerialNum configSeria
                                                                 fastAccessAttributesOnly, master, mgr))
 {
     documentMetaStore->setCommittedDocIdLimit(docIdLimit);
-    vespalib::ThreadStackExecutor executor(3, 128 * 1024);
+    vespalib::ThreadStackExecutor executor(3, 128_Ki);
     initializer::TaskRunner taskRunner(executor);
     taskRunner.runTask(initializer);
 }

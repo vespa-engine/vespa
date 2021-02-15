@@ -5,17 +5,12 @@
 #include <vespa/searchcore/proton/flushengine/tls_stats_map.h>
 #include <vespa/searchcore/proton/test/dummy_flush_target.h>
 #include <vespa/searchcore/proton/server/memoryflush.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 using vespalib::system_time;
 using search::SerialNum;
 using namespace proton;
 using namespace searchcorespi;
-
-namespace{
-
-static constexpr uint64_t gibi = UINT64_C(1024) * UINT64_C(1024) * UINT64_C(1024);
-
-}
 
 typedef IFlushTarget::MemoryGain MemoryGain;
 typedef IFlushTarget::DiskGain DiskGain;
@@ -162,12 +157,12 @@ requireThatWeCanOrderByMemoryGain()
       .add(createTargetM("t4", MemoryGain(20, 0)))
       .add(createTargetM("t3", MemoryGain(15, 0)));
     { // target t4 has memoryGain >= maxMemoryGain
-        MemoryFlush flush({1000, 20 * gibi, 1.0, 20, 1.0, minutes(1)});
+        MemoryFlush flush({1000, 20_Gi, 1.0, 20, 1.0, minutes(1)});
         EXPECT_TRUE(assertOrder(StringList().add("t4").add("t3").add("t2").add("t1"),
                                 flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
     { // trigger totalMemoryGain >= globalMaxMemory
-        MemoryFlush flush({50, 20 * gibi, 1.0, 1000, 1.0, minutes(1)});
+        MemoryFlush flush({50, 20_Gi, 1.0, 1000, 1.0, minutes(1)});
         EXPECT_TRUE(assertOrder(StringList().add("t4").add("t3").add("t2").add("t1"),
                                 flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
@@ -186,13 +181,13 @@ requireThatWeCanOrderByDiskGainWithLargeValues()
       .add(createTargetD("t3", DiskGain(before, 50 * milli))); // gain 50M
     { // target t4 has diskGain > bloatValue
         // t4 gain: 55M / 100M = 0.55 -> bloat factor 0.54 to trigger
-        MemoryFlush flush({1000, 20 * gibi, 10.0, 1000, 0.54, minutes(1)});
+        MemoryFlush flush({1000, 20_Gi, 10.0, 1000, 0.54, minutes(1)});
         EXPECT_TRUE(assertOrder(StringList().add("t4").add("t3").add("t2").add("t1"),
                                 flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
     { // trigger totalDiskGain > totalBloatValue
         // total gain: 160M / 4 * 100M = 0.4 -> bloat factor 0.39 to trigger
-        MemoryFlush flush({1000, 20 * gibi, 0.39, 1000, 10.0, minutes(1)});
+        MemoryFlush flush({1000, 20_Gi, 0.39, 1000, 10.0, minutes(1)});
         EXPECT_TRUE(assertOrder(StringList().add("t4").add("t3").add("t2").add("t1"),
                                 flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
@@ -210,13 +205,13 @@ requireThatWeCanOrderByDiskGainWithSmallValues()
     // target bloat value calculation uses min 100M disk size
     { // target t4 has diskGain > bloatValue
         // t4 gain: 55 / 100M = 0.0000055 -> bloat factor 0.0000054 to trigger
-        MemoryFlush flush({1000, 20 * gibi, 10.0, 1000, 0.00000054, minutes(1)});
+        MemoryFlush flush({1000, 20_Gi, 10.0, 1000, 0.00000054, minutes(1)});
         EXPECT_TRUE(assertOrder(StringList().add("t4").add("t3").add("t2").add("t1"),
                                 flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
     { // trigger totalDiskGain > totalBloatValue
         // total gain: 160 / 100M = 0.0000016 -> bloat factor 0.0000015 to trigger
-        MemoryFlush flush({1000, 20 * gibi, 0.0000015, 1000, 10.0, minutes(1)});
+        MemoryFlush flush({1000, 20_Gi, 0.0000015, 1000, 10.0, minutes(1)});
         EXPECT_TRUE(assertOrder(StringList().add("t4").add("t3").add("t2").add("t1"),
                                 flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
@@ -234,12 +229,12 @@ requireThatWeCanOrderByAge()
       .add(createTargetT("t3", now - seconds(15)));
 
     { // all targets have timeDiff >= maxTimeGain
-        MemoryFlush flush({1000, 20 * gibi, 1.0, 1000, 1.0, seconds(2)}, start);
+        MemoryFlush flush({1000, 20_Gi, 1.0, 1000, 1.0, seconds(2)}, start);
         EXPECT_TRUE(assertOrder(StringList().add("t4").add("t3").add("t2").add("t1"),
                                 flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
     { // no targets have timeDiff >= maxTimeGain
-        MemoryFlush flush({1000, 20 * gibi, 1.0, 1000, 1.0, seconds(30)}, start);
+        MemoryFlush flush({1000, 20_Gi, 1.0, 1000, 1.0, seconds(30)}, start);
         EXPECT_TRUE(assertOrder(StringList(), flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
 }
@@ -252,19 +247,19 @@ requireThatWeCanOrderByTlsSize()
     ContextBuilder cb;
     IFlushHandler::SP handler1(std::make_shared<MyFlushHandler>("handler1"));
     IFlushHandler::SP handler2(std::make_shared<MyFlushHandler>("handler2"));
-    cb.addTls("handler1", {20 * gibi, 1001, 2000 });
-    cb.addTls("handler2", { 5 * gibi, 1001, 2000 });
+    cb.addTls("handler1", {20_Gi, 1001, 2000 });
+    cb.addTls("handler2", { 5_Gi, 1001, 2000 });
     cb.add(std::make_shared<FlushContext>(handler1, createTargetT("t2", now - seconds(10), 1900), 2000)).
         add(std::make_shared<FlushContext>(handler2, createTargetT("t1", now - seconds(5), 1000), 2000)).
         add(std::make_shared<FlushContext>(handler1, createTargetT("t4", system_time(), 1000), 2000)).
         add(std::make_shared<FlushContext>(handler2, createTargetT("t3", now - seconds(15), 1900), 2000));
     { // sum of tls sizes above limit, trigger sort order based on tls size
-        MemoryFlush flush({1000, 3 * gibi, 1.0, 1000, 1.0, seconds(2)}, start);
+        MemoryFlush flush({1000, 3_Gi, 1.0, 1000, 1.0, seconds(2)}, start);
         EXPECT_TRUE(assertOrder(StringList().add("t4").add("t1").add("t2").add("t3"),
                                 flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
     { // sum of tls sizes below limit
-        MemoryFlush flush({1000, 30 * gibi, 1.0, 1000, 1.0, seconds(30)}, start);
+        MemoryFlush flush({1000, 30_Gi, 1.0, 1000, 1.0, seconds(30)}, start);
         EXPECT_TRUE(assertOrder(StringList(), flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
 }
@@ -294,21 +289,21 @@ requireThatOrderTypeIsPreserved()
         ContextBuilder cb;
         cb.add(createTargetT("t2", ts2, 5), 14)
           .add(createTargetD("t1", DiskGain(100 * milli, 80 * milli), 5));
-        MemoryFlush flush({1000, 20 * gibi, 1.0, 1000, 0.19, seconds(30)});
+        MemoryFlush flush({1000, 20_Gi, 1.0, 1000, 0.19, seconds(30)});
         EXPECT_TRUE(assertOrder(StringList().add("t1").add("t2"), flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
     { // DISKBLOAT VS MEMORY
         ContextBuilder cb;
         cb.add(createTargetD("t2", DiskGain(100 * milli, 80 * milli)))
           .add(createTargetM("t1", MemoryGain(100, 80)));
-        MemoryFlush flush({1000, 20 * gibi, 1.0, 20, 0.19, seconds(30)});
+        MemoryFlush flush({1000, 20_Gi, 1.0, 20, 0.19, seconds(30)});
         EXPECT_TRUE(assertOrder(StringList().add("t1").add("t2"), flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
     { // urgent flush
         ContextBuilder cb;
         cb.add(createTargetF("t2", false))
           .add(createTargetF("t1", true));
-        MemoryFlush flush({1000, 20 * gibi, 1.0, 1000, 1.0, seconds(30)});
+        MemoryFlush flush({1000, 20_Gi, 1.0, 1000, 1.0, seconds(30)});
         EXPECT_TRUE(assertOrder(StringList().add("t1").add("t2"), flush.getFlushTargets(cb.list(), cb.tlsStats())));
     }
 }

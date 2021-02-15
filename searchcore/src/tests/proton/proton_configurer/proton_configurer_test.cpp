@@ -24,6 +24,7 @@
 #include <vespa/searchcore/config/config-onnx-models.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/config-bucketspaces.h>
@@ -272,7 +273,7 @@ struct MyProtonConfigurerOwner : public IProtonConfigurerOwner,
     MyProtonConfigurerOwner()
         : IProtonConfigurerOwner(),
           MyLog(),
-          _executor(1, 128 * 1024),
+          _executor(1, 128_Ki),
           _dbs()
     {
     }
