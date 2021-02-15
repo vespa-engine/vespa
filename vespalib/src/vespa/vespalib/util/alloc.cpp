@@ -233,9 +233,9 @@ createAutoAllocatorsWithDefault() {
 
 AutoAllocatorsMapWithDefault  _G_availableAutoAllocators = createAutoAllocatorsWithDefault();
 alloc::HeapAllocator _G_heapAllocatorDefault;
-alloc::AlignedHeapAllocator _G_4KalignedHeapAllocator(1024);
-alloc::AlignedHeapAllocator _G_1KalignedHeapAllocator(4_Ki);
 alloc::AlignedHeapAllocator _G_512BalignedHeapAllocator(512);
+alloc::AlignedHeapAllocator _G_1KalignedHeapAllocator(1_Ki);
+alloc::AlignedHeapAllocator _G_4KalignedHeapAllocator(4_Ki);
 alloc::MMapAllocator _G_mmapAllocatorDefault;
 
 MemoryAllocator &
