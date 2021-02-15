@@ -161,7 +161,7 @@ public class EndpointCertificateManagerTest {
     public void reprovisions_certificate_with_added_sans_when_deploying_to_new_zone() {
         ZoneId testZone = zoneRegistryMock.zones().directlyRouted().in(Environment.prod).zones().stream().skip(1).findFirst().orElseThrow().getId();
 
-        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "uuid", expectedSans, "mockCa", Optional.empty(), Optional.empty()));
+        mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "original-request-uuid", expectedSans, "mockCa", Optional.empty(), Optional.empty()));
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), -1);
         secretStore.setSecret("vespa.tls.default.default.default-cert", X509CertificateUtils.toPem(testCertificate) + X509CertificateUtils.toPem(testCertificate), -1);
 
@@ -172,6 +172,7 @@ public class EndpointCertificateManagerTest {
         assertTrue(endpointCertificateMetadata.isPresent());
         assertEquals(0, endpointCertificateMetadata.get().version());
         assertEquals(endpointCertificateMetadata, mockCuratorDb.readEndpointCertificateMetadata(testInstance.id()));
+        assertEquals("original-request-uuid", endpointCertificateMetadata.get().request_id());
         assertEquals(Set.copyOf(expectedCombinedSans), Set.copyOf(endpointCertificateMetadata.get().requestedDnsSans()));
     }
 
