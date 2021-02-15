@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/datastore/entryref.h>
 #include <vespa/vespalib/datastore/array_store_config.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 using namespace vespalib::datastore;
 using AllocSpec = ArrayStoreConfig::AllocSpec;
@@ -64,7 +65,7 @@ TEST_F("require that we can generate config optimized for a given huge page", Fi
                                                                                       4 * KB,
                                                                                       8 * KB))
 {
-    EXPECT_EQUAL(1024u, f.cfg.maxSmallArraySize());
+    EXPECT_EQUAL(1_Ki, f.cfg.maxSmallArraySize());
     TEST_DO(f.assertSpec(0, 8 * KB)); // large arrays
     TEST_DO(f.assertSpec(1, 256 * KB));
     TEST_DO(f.assertSpec(2, 256 * KB));

@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/backtrace.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <map>
 #include <atomic>
 #include <unordered_map>
@@ -233,7 +234,7 @@ createAutoAllocatorsWithDefault() {
 AutoAllocatorsMapWithDefault  _G_availableAutoAllocators = createAutoAllocatorsWithDefault();
 alloc::HeapAllocator _G_heapAllocatorDefault;
 alloc::AlignedHeapAllocator _G_4KalignedHeapAllocator(1024);
-alloc::AlignedHeapAllocator _G_1KalignedHeapAllocator(4096);
+alloc::AlignedHeapAllocator _G_1KalignedHeapAllocator(4_Ki);
 alloc::AlignedHeapAllocator _G_512BalignedHeapAllocator(512);
 alloc::MMapAllocator _G_mmapAllocatorDefault;
 

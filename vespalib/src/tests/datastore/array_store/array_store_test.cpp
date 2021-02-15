@@ -7,6 +7,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/memory_allocator.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/traits.h>
 #include <vector>
 
@@ -35,7 +36,7 @@ struct Fixture
     generation_t generation;
     Fixture(uint32_t maxSmallArraySize, bool enable_free_lists = true)
         : store(ArrayStoreConfig(maxSmallArraySize,
-                                 ArrayStoreConfig::AllocSpec(16, RefT::offsetSize(), 8 * 1024,
+                                 ArrayStoreConfig::AllocSpec(16, RefT::offsetSize(), 8_Ki,
                                                              ALLOC_GROW_FACTOR)).enable_free_lists(enable_free_lists)),
           refStore(),
           generation(1)
@@ -403,7 +404,7 @@ TEST_F("require that address space usage is ratio between used arrays and number
 
 TEST_F("require that offset in EntryRefT is within bounds when allocating memory buffers where wanted number of bytes is not a power of 2 and less than huge page size",
        ByteFixture(ByteFixture::ArrayStoreType::optimizedConfigForHugePage(1023, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
-                                                                           4 * 1024, 8 * 1024, ALLOC_GROW_FACTOR)))
+                                                                           4_Ki, 8_Ki, ALLOC_GROW_FACTOR)))
 {
     // The array store config used in this test is equivalent to the one multi-value attribute uses when initializing multi-value mapping.
     // See similar test in datastore_test.cpp for more details on what happens during memory allocation.

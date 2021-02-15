@@ -4,6 +4,7 @@
 #include "adaptive_sequenced_executor.h"
 #include "singleexecutor.h"
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/stllike/hashtable.h>
 #include <cassert>
 
@@ -11,7 +12,7 @@ namespace vespalib {
 
 namespace {
 
-constexpr uint32_t stackSize = 128 * 1024;
+constexpr uint32_t stackSize = 128_Ki;
 constexpr uint8_t MAGIC = 255;
 
 bool
