@@ -31,7 +31,6 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.logging.FileConnectionLog;
-import com.yahoo.jdisc.http.server.jetty.VoidConnectionLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.searchdefinition.derived.RankProfileList;
@@ -350,8 +349,6 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Add connection log if access log is configured
         if (cluster.getAllComponents().stream().anyMatch(component -> component instanceof AccessLogComponent)) {
             cluster.addComponent(new ConnectionLogComponent(cluster, FileConnectionLog.class, "qrs"));
-        } else {
-            cluster.addComponent(new ConnectionLogComponent(cluster, VoidConnectionLog.class, "qrs"));
         }
     }
 

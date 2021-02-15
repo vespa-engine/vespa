@@ -8,16 +8,15 @@ import com.yahoo.container.logging.ConnectionLogConfig;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.container.logging.JSONAccessLog;
 import com.yahoo.container.logging.VespaAccessLog;
-import com.yahoo.jdisc.http.server.jetty.VoidConnectionLog;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.component.Component;
 import org.junit.Test;
 import org.w3c.dom.Element;
 
 import static com.yahoo.text.StringUtilities.quote;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertEquals;
 
 /**
  * @author gjoranv
@@ -127,8 +126,6 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
                 nodesXml,
                 "</container>" );
         createModel(root, clusterElem);
-        Component<?, ?> voidConnectionLogComponent = getContainerComponent("default", VoidConnectionLog.class.getName());
-        assertNotNull(voidConnectionLogComponent);
         Component<?, ?> fileConnectionLogComponent = getContainerComponent("default", FileConnectionLog.class.getName());
         assertNull(fileConnectionLogComponent);
     }
