@@ -1,23 +1,24 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/data/output_writer.h>
-#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/json_format.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/interpreted_function.h>
-#include <vespa/eval/eval/value_type.h>
-#include <vespa/eval/eval/value.h>
-#include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/simple_value.h>
-#include <vespa/eval/eval/fast_value.h>
-#include <vespa/eval/streamed/streamed_value_builder_factory.h>
+#include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/test/reference_evaluation.h>
 #include <vespa/eval/eval/test/test_io.h>
+#include <vespa/eval/eval/value.h>
+#include <vespa/eval/eval/value_codec.h>
+#include <vespa/eval/eval/value_type.h>
+#include <vespa/eval/streamed/streamed_value_builder_factory.h>
 #include <unistd.h>
 #include <functional>
 
@@ -323,7 +324,7 @@ void display(Input &in, Output &out) {
     size_t test_cnt = 0;
     auto handle_test = [&out,&test_cnt](Slime &slime)
                        {
-                           OutputWriter dst(out, 4096);
+                           OutputWriter dst(out, 4_Ki);
                            dst.printf("\n------- TEST #%zu -------\n\n", test_cnt++);
                            print_test(slime.get(), dst);
                        };

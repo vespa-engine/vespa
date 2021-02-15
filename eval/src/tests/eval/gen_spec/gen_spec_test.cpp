@@ -2,6 +2,7 @@
 
 #include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
@@ -45,7 +46,7 @@ TEST(GenSpecTest, default_spec) {
     EXPECT_TRUE(spec.dims().empty());
     EXPECT_EQ(spec.cells(), CellType::DOUBLE);
     auto seq = spec.seq();
-    for (size_t i = 0; i < 4096; ++i) {
+    for (size_t i = 0; i < 4_Ki; ++i) {
         EXPECT_EQ(seq(i), (i + 1.0));        
     }
 }
@@ -69,21 +70,21 @@ TEST(GenSpecTest, not_scalar_float_just_yet) {
 
 TEST(SequenceTest, n) {
     GenSpec::seq_t seq = GenSpec().seq(N()).seq();
-    for (size_t i = 0; i < 4096; ++i) {
+    for (size_t i = 0; i < 4_Ki; ++i) {
         EXPECT_EQ(seq(i), (i + 1.0));        
     }
 }
 
 TEST(SequenceTest, bias) {
     GenSpec::seq_t seq = GenSpec().seq(N(13.5)).seq();
-    for (size_t i = 0; i < 4096; ++i) {
+    for (size_t i = 0; i < 4_Ki; ++i) {
         EXPECT_EQ(seq(i), (i + 13.5));
     }
 }
 
 TEST(SequenceTest, ax_b) {
     GenSpec::seq_t seq = GenSpec().seq(AX_B(3.5, 2.5)).seq();
-    for (size_t i = 0; i < 4096; ++i) {
+    for (size_t i = 0; i < 4_Ki; ++i) {
         EXPECT_EQ(seq(i), (i * 3.5) + 2.5);
     }
 }
@@ -91,28 +92,28 @@ TEST(SequenceTest, ax_b) {
 TEST(SequenceTest, seq) {
     std::vector<double> values({1.5, 3.5, 2.5, 10.0});
     GenSpec::seq_t seq = GenSpec().seq(Seq(values)).seq();
-    for (size_t i = 0; i < 4096; ++i) {
+    for (size_t i = 0; i < 4_Ki; ++i) {
         EXPECT_EQ(seq(i), values[i % values.size()]);
     }
 }
 
 TEST(SequenceTest, n_div16_sub2) {
     GenSpec::seq_t seq = GenSpec().seq(Sub2(Div16(N()))).seq();
-    for (size_t i = 0; i < 4096; ++i) {
+    for (size_t i = 0; i < 4_Ki; ++i) {
         EXPECT_EQ(seq(i), ((i + 1.0) / 16.0) - 2.0);
     }
 }
 
 TEST(SequenceTest, n_op_sqrt) {
     GenSpec::seq_t seq = GenSpec().seq(OpSeq(N(), operation::Sqrt::f)).seq();
-    for (size_t i = 0; i < 4096; ++i) {
+    for (size_t i = 0; i < 4_Ki; ++i) {
         EXPECT_EQ(seq(i), operation::Sqrt::f(i + 1.0));
     }
 }
 
 TEST(SequenceTest, n_sigmoidf) {
     GenSpec::seq_t seq = GenSpec().seq(SigmoidF(N())).seq();
-    for (size_t i = 0; i < 4096; ++i) {
+    for (size_t i = 0; i < 4_Ki; ++i) {
         EXPECT_EQ(seq(i), double((float)operation::Sigmoid::f(i + 1.0)));
         EXPECT_TRUE(seq(i) == double((float)operation::Sigmoid::f(i + 1.0)));
     }
