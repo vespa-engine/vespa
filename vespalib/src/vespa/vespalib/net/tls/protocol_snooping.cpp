@@ -71,7 +71,7 @@ TlsSnoopingResult snoop_client_hello_header(const char* buf) noexcept {
     // where we control frame sizes and where such fragmentation should not take place.
     // We also do not support TLSv1.3 0-RTT which may trigger early data.
     uint16_t length = tls_record_length(buf);
-    if ((length < 4) || (length > (16_Ki + 2048))) {
+    if ((length < 4) || (length > (16_Ki + 2_Ki))) {
         return TlsSnoopingResult::RecordSizeRfcViolation;
     }
     if (!is_client_hello_handshake_record(buf)) {
