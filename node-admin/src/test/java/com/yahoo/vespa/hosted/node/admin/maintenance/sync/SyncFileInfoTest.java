@@ -34,7 +34,7 @@ public class SyncFileInfoTest {
     @Test
     public void tenant_access_log() {
         SyncFileInfo sfi = SyncFileInfo.tenantAccessLog(bucket, application, hostname, accessLogPath);
-        assertEquals(Paths.get("/tenant.application.instance/h12352a/logs/access/access.json-20210212.zst"), sfi.destPath());
+        assertEquals(Paths.get("tenant.application.instance/h12352a/logs/access/access.json-20210212.zst"), sfi.destPath());
         assertEquals(bucket, sfi.bucketName());
         assertNotEquals(ZstdCompressingInputStream.class, getInputStreamType(sfi));
     }
@@ -42,21 +42,21 @@ public class SyncFileInfoTest {
     @Test
     public void tenant_vespa_log() {
         SyncFileInfo sfi = SyncFileInfo.tenantVespaLog(bucket, application, hostname, vespaLogPath);
-        assertEquals(Paths.get("/tenant.application.instance/h12352a/logs/vespa/vespa.log-2021-02-12.zst"), sfi.destPath());
+        assertEquals(Paths.get("tenant.application.instance/h12352a/logs/vespa/vespa.log-2021-02-12.zst"), sfi.destPath());
         assertEquals(ZstdCompressingInputStream.class, getInputStreamType(sfi));
     }
 
     @Test
     public void infra_access_log() {
         SyncFileInfo sfi = SyncFileInfo.infrastructureAccessLog(bucket, hostname, accessLogPath);
-        assertEquals(Paths.get("/infrastructure/h12352a/logs/access/access.json-20210212.zst"), sfi.destPath());
+        assertEquals(Paths.get("infrastructure/h12352a/logs/access/access.json-20210212.zst"), sfi.destPath());
         assertNotEquals(ZstdCompressingInputStream.class, getInputStreamType(sfi));
     }
 
     @Test
     public void infra_vespa_log() {
         SyncFileInfo sfi = SyncFileInfo.infrastructureVespaLog(bucket, hostname, vespaLogPath);
-        assertEquals(Paths.get("/infrastructure/h12352a/logs/vespa/vespa.log-2021-02-12.zst"), sfi.destPath());
+        assertEquals(Paths.get("infrastructure/h12352a/logs/vespa/vespa.log-2021-02-12.zst"), sfi.destPath());
         assertEquals(ZstdCompressingInputStream.class, getInputStreamType(sfi));
     }
 
