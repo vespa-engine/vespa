@@ -41,7 +41,7 @@ public class WeakAndReplacementSearcher extends Searcher {
      * Recursively iterates over an Item to replace all instances of OrItems with WeakAndItems
      * @param item the current item in the replacement iteration
      * @param hits the wand.hits property from the request which is assigned to the N value of the new WeakAndItem
-     * @return The original item or a WeakAndItem replacement of an OrItem
+     * @return the original item or a WeakAndItem replacement of an OrItem
      */
     private Item replaceOrItems(Item item, int hits) {
         if (!(item instanceof CompositeItem)) {
@@ -63,4 +63,5 @@ public class WeakAndReplacementSearcher extends Searcher {
         }
         return compositeItem;
     }
+
 }

@@ -387,7 +387,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         if (deployState.endpointCertificateSecrets().isPresent()) {
             boolean authorizeClient = deployState.zone().system().isPublic();
             if (authorizeClient && deployState.tlsClientAuthority().isEmpty()) {
-                throw new RuntimeException("Client certificate authority security/clients.pem is missing - see: https://cloud.vespa.ai/security-model#data-plane");
+                throw new RuntimeException("Client certificate authority security/clients.pem is missing - see: https://cloud.vespa.ai/en/security-model#data-plane");
             }
             EndpointCertificateSecrets endpointCertificateSecrets = deployState.endpointCertificateSecrets().get();
 
@@ -725,7 +725,9 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             var hosts = hostSystem.allocateHosts(clusterSpec, capacity, log);
             return createNodesFromHosts(log, hosts, cluster);
         }
-        return singleHostContainerCluster(cluster, hostSystem.getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC), context);
+        else {
+            return singleHostContainerCluster(cluster, hostSystem.getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC), context);
+        }
     }
 
     private List<ApplicationContainer> singleHostContainerCluster(ApplicationContainerCluster cluster, HostResource host, ConfigModelContext context) {

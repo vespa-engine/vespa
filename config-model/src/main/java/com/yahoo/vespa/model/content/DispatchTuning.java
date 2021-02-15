@@ -3,7 +3,7 @@ package com.yahoo.vespa.model.content;
 
 /**
  * Tuning of dispatching to content nodes, see the
- * <a href="https://docs.vespa.ai/documentation/reference/services-content.html#dispatch-tuning">dispatch tuning documentation</a>.
+ * <a href="https://docs.vespa.ai/en/reference/services-content.html#dispatch-tuning">dispatch tuning documentation</a>.
  *
  * @author Simon Thoresen Hult
  */

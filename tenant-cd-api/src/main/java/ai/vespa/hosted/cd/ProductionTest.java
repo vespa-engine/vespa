@@ -14,7 +14,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * Tests that verify the health of production deployments of Vespa applications.
  *
  * Test classes annotated with this annotation are run during declared production tests.
- * See <a href="https://cloud.vespa.ai/automated-deployments.html">Vespa cloud documentation</a>.
+ * See <a href="https://cloud.vespa.ai/en/automated-deployments">Vespa cloud documentation</a>.
  *
  * @author jonmv
  */

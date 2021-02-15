@@ -87,7 +87,7 @@ public class ValidationOverrides {
 
     public static String toAllowMessage(ValidationId id) {
         return "To allow this add <allow until='yyyy-mm-dd'>" + id + "</allow> to validation-overrides.xml" +
-               ", see https://docs.vespa.ai/documentation/reference/validation-overrides.html";
+               ", see https://docs.vespa.ai/en/reference/validation-overrides.html";
     }
 
     /**

@@ -33,9 +33,9 @@ public class ProvisionerAdapter implements HostProvisioner {
 
     @Override
     public HostSpec allocateHost(String alias) {
-        // Wow. Such mess. TODO: Actually support polymorphy or stop pretending to, see also ModelContextImpl.getHostProvisioner
+        // TODO: Remove this method since hosted/non-hosted needs different interfaces. See also ModelContextImpl.getHostProvisioner
         throw new UnsupportedOperationException("Allocating hosts using <node> tags is not supported in hosted environments, " +
-                                                "use <nodes count='N'> instead, see https://cloud.vespa.ai/reference/services");
+                                                "use <nodes count='N'> instead, see https://cloud.vespa.ai/en/reference/services");
     }
 
     @Override

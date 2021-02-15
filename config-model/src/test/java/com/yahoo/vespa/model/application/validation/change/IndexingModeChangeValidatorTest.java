@@ -37,7 +37,7 @@ public class IndexingModeChangeValidatorTest {
         catch (ValidationException e) {
             assertEquals("indexing-mode-change:\n" +
                          "\tDocument type 'music' in cluster 'default' changed indexing mode from 'indexed' to 'streaming'\n" +
-                         "To allow this add <allow until='yyyy-mm-dd'>indexing-mode-change</allow> to validation-overrides.xml, see https://docs.vespa.ai/documentation/reference/validation-overrides.html",
+                         "To allow this add <allow until='yyyy-mm-dd'>indexing-mode-change</allow> to validation-overrides.xml, see https://docs.vespa.ai/en/reference/validation-overrides.html",
                          e.getMessage());
         }
     }

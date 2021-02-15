@@ -1,7 +1,7 @@
 # vespa_query_dsl
 This lib is used for composing vespa YQL queries
 
-Reference: https://docs.vespa.ai/documentation/reference/query-language-reference.html
+Reference: https://docs.vespa.ai/en/reference/query-language-reference.html
 
 # usage
 Please refer to the unit test:
@@ -9,7 +9,7 @@ Please refer to the unit test:
 https://github.com/vespa-engine/vespa/tree/master/client/src/test/groovy/ai/vespa/client/dsl/QTest.groovy
 
 # todos
-- [ ] support `predicate` (https://docs.vespa.ai/documentation/predicate-fields.html)
+- [ ] support `predicate` (https://docs.vespa.ai/en/predicate-fields.html)
 - [ ] support methods for checking positive/negative conditions for specific field
 - [X] support order by annotation
 - [X] support order by
