@@ -16,6 +16,7 @@
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/config-stor-distribution.h>
 #include <algorithm>
 #include <limits>
@@ -1109,7 +1110,7 @@ TEST_F(ConformanceTest, testIterateAllDocs)
     std::vector<DocAndTimestamp> docs(feedDocs(*spi, testDocMan, b, 100));
     CreateIteratorResult iter(createIterator(*spi, b, createSelection("")));
 
-    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4096);
+    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4_Ki);
     verifyDocs(docs, chunks);
 
     spi->destroyIterator(iter.getIteratorId(), context);
@@ -1137,7 +1138,7 @@ TEST_F(ConformanceTest, testIterateAllDocsNewestVersionOnly)
 
     CreateIteratorResult iter(createIterator(*spi, b, createSelection("")));
 
-    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4096);
+    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4_Ki);
     verifyDocs(newDocs, chunks);
 
     spi->destroyIterator(iter.getIteratorId(), context);
@@ -1173,7 +1174,7 @@ TEST_F(ConformanceTest, testMaxByteSize)
     spi->createBucket(b, context);
 
     std::vector<DocAndTimestamp> docs(
-            feedDocs(*spi, testDocMan, b, 100, 4096, 4096));
+            feedDocs(*spi, testDocMan, b, 100, 4_Ki, 4096));
 
     Selection sel(createSelection(""));
     CreateIteratorResult iter(createIterator(*spi, b, sel));
@@ -1221,7 +1222,7 @@ TEST_F(ConformanceTest, testIterateMatchTimestampRange)
 
     CreateIteratorResult iter(createIterator(*spi, b, sel));
 
-    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 2048);
+    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 2_Ki);
     verifyDocs(docsToVisit, chunks);
 
     spi->destroyIterator(iter.getIteratorId(), context);
@@ -1270,7 +1271,7 @@ TEST_F(ConformanceTest, testIterateExplicitTimestampSubset)
 
     CreateIteratorResult iter(createIterator(*spi, b, sel));
 
-    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 2048);
+    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 2_Ki);
     verifyDocs(docsToVisit, chunks, removes);
 
     spi->destroyIterator(iter.getIteratorId(), context);
@@ -1308,7 +1309,7 @@ TEST_F(ConformanceTest, testIterateRemoves)
         Selection sel(createSelection(""));
         CreateIteratorResult iter(createIterator(*spi, b, sel));
 
-        std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4096);
+        std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4_Ki);
         verifyDocs(nonRemovedDocs, chunks);
         spi->destroyIterator(iter.getIteratorId(), context);
     }
@@ -1317,7 +1318,7 @@ TEST_F(ConformanceTest, testIterateRemoves)
         Selection sel(createSelection(""));
         CreateIteratorResult iter(createIterator(*spi, b, sel, NEWEST_DOCUMENT_OR_REMOVE));
 
-        std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4096);
+        std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4_Ki);
         std::vector<DocEntry::UP> entries = getEntriesFromChunks(chunks);
         EXPECT_EQ(docs.size(), entries.size());
         verifyDocs(nonRemovedDocs, chunks, removedDocs);
@@ -1350,7 +1351,7 @@ TEST_F(ConformanceTest, testIterateMatchSelection)
 
     CreateIteratorResult iter(createIterator(*spi, b, createSelection("testdoctype1.headerval % 3 == 0")));
 
-    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 2048 * 1024);
+    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 2_Mi);
     verifyDocs(docsToVisit, chunks);
 
     spi->destroyIterator(iter.getIteratorId(), context);
@@ -1377,7 +1378,7 @@ TEST_F(ConformanceTest, testIterationRequiringDocumentIdOnlyMatching)
     CreateIteratorResult iter(createIterator(*spi, b, sel, NEWEST_DOCUMENT_OR_REMOVE));
     EXPECT_TRUE(iter.getErrorCode() == Result::ErrorType::NONE);
 
-    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4096);
+    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4_Ki);
     std::vector<DocAndTimestamp> docs;
     std::set<vespalib::string> removes;
     removes.insert(removedId.toString());
@@ -1397,7 +1398,7 @@ TEST_F(ConformanceTest, testIterateBadDocumentSelection)
     {
         CreateIteratorResult iter(createIterator(*spi, b, createSelection("the muppet show")));
         if (iter.getErrorCode() == Result::ErrorType::NONE) {
-            IterateResult result(spi->iterate(iter.getIteratorId(), 4096, context));
+            IterateResult result(spi->iterate(iter.getIteratorId(), 4_Ki, context));
             EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
             EXPECT_EQ(size_t(0), result.getEntries().size());
             EXPECT_EQ(true, result.isCompleted());
@@ -1409,7 +1410,7 @@ TEST_F(ConformanceTest, testIterateBadDocumentSelection)
     {
         CreateIteratorResult iter(createIterator(*spi, b, createSelection("unknownddoctype.something=thatthing")));
         if (iter.getErrorCode() == Result::ErrorType::NONE) {
-            IterateResult result(spi->iterate(iter.getIteratorId(), 4096, context));
+            IterateResult result(spi->iterate(iter.getIteratorId(), 4_Ki, context));
             EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
             EXPECT_EQ(size_t(0), result.getEntries().size());
             EXPECT_EQ(true, result.isCompleted());
@@ -1433,10 +1434,10 @@ TEST_F(ConformanceTest, testIterateAlreadyCompleted)
     Selection sel(createSelection(""));
     CreateIteratorResult iter(createIterator(*spi, b, sel));
 
-    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4096);
+    std::vector<Chunk> chunks = doIterate(*spi, iter.getIteratorId(), 4_Ki);
     verifyDocs(docs, chunks);
 
-    IterateResult result(spi->iterate(iter.getIteratorId(), 4096, context));
+    IterateResult result(spi->iterate(iter.getIteratorId(), 4_Ki, context));
     EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
     EXPECT_EQ(size_t(0), result.getEntries().size());
     EXPECT_TRUE(result.isCompleted());
@@ -1456,7 +1457,7 @@ TEST_F(ConformanceTest, testIterateEmptyBucket)
 
     CreateIteratorResult iter(createIterator(*spi, b, sel));
 
-    IterateResult result(spi->iterate(iter.getIteratorId(), 4096, context));
+    IterateResult result(spi->iterate(iter.getIteratorId(), 4_Ki, context));
     EXPECT_EQ(Result::ErrorType::NONE, result.getErrorCode());
     EXPECT_EQ(size_t(0), result.getEntries().size());
     EXPECT_TRUE(result.isCompleted());
