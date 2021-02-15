@@ -83,8 +83,7 @@ TEST("require that we use configured memory limits") {
 
 TEST("require that we cap configured limits based on available memory") {
     const uint64_t LIMIT = defaultMemory.sizeBytes()/4;
-    constexpr uint64_t MEM_4G = 4_Gi;
-    auto cfg = MemoryFlushConfigUpdater::convertConfig(getConfig(MEM_4G, MEM_4G, 30), defaultMemory);
+    auto cfg = MemoryFlushConfigUpdater::convertConfig(getConfig(4_Gi, 4_Gi, 30), defaultMemory);
     EXPECT_EQUAL(cfg.maxGlobalMemory, LIMIT);
     EXPECT_EQUAL(uint64_t(cfg.maxMemoryGain), LIMIT);
 }
