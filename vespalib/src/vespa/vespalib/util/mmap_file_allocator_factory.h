@@ -23,7 +23,7 @@ class MmapFileAllocatorFactory {
     MmapFileAllocatorFactory& operator=(const MmapFileAllocatorFactory &) = delete;
 public:
     void setup(const vespalib::string &dir_name);
-    virtual std::unique_ptr<MemoryAllocator> get_memory_allocator(const vespalib::string& name);
+    std::unique_ptr<MemoryAllocator> make_memory_allocator(const vespalib::string& name);
     
     static MmapFileAllocatorFactory& instance();
 };

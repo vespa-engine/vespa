@@ -23,15 +23,15 @@ bool is_mmap_file_allocator(const MemoryAllocator *allocator)
 TEST(MmapFileAllocatorFactoryTest, empty_dir_gives_no_allocator)
 {
     MmapFileAllocatorFactory::instance().setup("");
-    auto allocator = MmapFileAllocatorFactory::instance().get_memory_allocator("foo");
+    auto allocator = MmapFileAllocatorFactory::instance().make_memory_allocator("foo");
     EXPECT_FALSE(allocator);
 }
 
 TEST(MmapFileAllocatorFactoryTest, nonempty_dir_gives_allocator)
 {
     MmapFileAllocatorFactory::instance().setup(basedir);
-    auto allocator0 = MmapFileAllocatorFactory::instance().get_memory_allocator("foo");
-    auto allocator1 = MmapFileAllocatorFactory::instance().get_memory_allocator("bar");
+    auto allocator0 = MmapFileAllocatorFactory::instance().make_memory_allocator("foo");
+    auto allocator1 = MmapFileAllocatorFactory::instance().make_memory_allocator("bar");
     EXPECT_TRUE(is_mmap_file_allocator(allocator0.get()));
     EXPECT_TRUE(is_mmap_file_allocator(allocator1.get()));
     vespalib::string allocator0_dir(basedir + "/0.foo");

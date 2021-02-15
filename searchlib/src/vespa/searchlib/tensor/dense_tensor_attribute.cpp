@@ -78,7 +78,7 @@ std::unique_ptr<vespalib::alloc::MemoryAllocator>
 make_memory_allocator(const vespalib::string& name, bool huge)
 {
     if (huge) {
-        return vespalib::alloc::MmapFileAllocatorFactory::instance().get_memory_allocator(name);
+        return vespalib::alloc::MmapFileAllocatorFactory::instance().make_memory_allocator(name);
     }
     return {};
 }
