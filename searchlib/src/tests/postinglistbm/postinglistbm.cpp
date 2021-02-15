@@ -11,6 +11,7 @@
 #include <vespa/searchlib/test/fakedata/fakewordset.h>
 #include <vespa/searchlib/test/fakedata/fpfactory.h>
 #include <vespa/vespalib/util/rand48.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 
@@ -232,7 +233,7 @@ main(int argc, char **argv)
 {
     postinglistbm::PostingListBM app;
 
-    setvbuf(stdout, nullptr, _IOLBF, 32768);
+    setvbuf(stdout, nullptr, _IOLBF, 32_Ki);
     app._rnd.srand48(32);
     return app.Entry(argc, argv);
 }

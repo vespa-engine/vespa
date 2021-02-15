@@ -1,21 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/searchlib/common/bitvector.h>
-#include <vespa/vespalib/util/rand48.h>
-#include <vespa/searchlib/test/fakedata/fakeword.h>
-#include <vespa/searchlib/test/fakedata/fakewordset.h>
-#include <vespa/searchlib/index/docidandfeatures.h>
-#include <vespa/searchlib/index/field_length_info.h>
-#include <vespa/searchlib/index/postinglisthandle.h>
-#include <vespa/searchlib/diskindex/zcposoccrandread.h>
-#include <vespa/searchlib/index/dummyfileheadercontext.h>
-#include <vespa/searchlib/index/schemautil.h>
-#include <vespa/searchlib/diskindex/fieldwriter.h>
 #include <vespa/searchlib/diskindex/fieldreader.h>
-#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/searchlib/diskindex/fieldwriter.h>
 #include <vespa/searchlib/diskindex/pagedict4file.h>
 #include <vespa/searchlib/diskindex/pagedict4randread.h>
+#include <vespa/searchlib/diskindex/zcposoccrandread.h>
+#include <vespa/searchlib/index/docidandfeatures.h>
+#include <vespa/searchlib/index/dummyfileheadercontext.h>
+#include <vespa/searchlib/index/field_length_info.h>
+#include <vespa/searchlib/index/postinglisthandle.h>
+#include <vespa/searchlib/index/schemautil.h>
+#include <vespa/searchlib/test/fakedata/fakeword.h>
+#include <vespa/searchlib/test/fakedata/fakewordset.h>
+#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/rand48.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/time.h>
 #include <openssl/sha.h>
 #include <vespa/fastos/app.h>
@@ -55,7 +56,7 @@ void FastS_block_usr2() { }
 namespace fieldwriter {
 
 uint32_t minSkipDocs = 64;
-uint32_t minChunkDocs = 262144;
+uint32_t minChunkDocs = 256_Ki;
 
 vespalib::string dirprefix = "index/";
 
@@ -296,7 +297,7 @@ FileChecksum::FileChecksum(const vespalib::string &file_name)
 {
     SHA256_CTX c; 
     FastOS_File f;
-    Alloc buf = Alloc::alloc(65536);
+    Alloc buf = Alloc::alloc(64_Ki);
     vespalib::string full_file_name(dirprefix + file_name);
     bool openres = f.OpenReadOnly(full_file_name.c_str());
     if (!openres) {
@@ -706,7 +707,7 @@ main(int argc, char **argv)
 {
     fieldwriter::FieldWriterTest app;
 
-    setvbuf(stdout, nullptr, _IOLBF, 32768);
+    setvbuf(stdout, nullptr, _IOLBF, 32_Ki);
     app._rnd.srand48(32);
     return app.Entry(argc, argv);
 }

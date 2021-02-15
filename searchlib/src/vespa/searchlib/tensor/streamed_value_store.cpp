@@ -9,6 +9,7 @@
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/typify.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/log/log.h>
@@ -154,7 +155,7 @@ StreamedValueStore::TensorEntryImpl<CT>::~TensorEntryImpl() = default;
 
 //-----------------------------------------------------------------------------
 
-constexpr size_t MIN_BUFFER_ARRAYS = 8192;
+constexpr size_t MIN_BUFFER_ARRAYS = 8_Ki;
 
 StreamedValueStore::TensorBufferType::TensorBufferType() noexcept
     : ParentType(1, MIN_BUFFER_ARRAYS, TensorStoreType::RefType::offsetSize())

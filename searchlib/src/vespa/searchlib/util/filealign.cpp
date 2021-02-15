@@ -2,6 +2,7 @@
 
 #include "filealign.h"
 #include <vespa/fastos/file.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <cassert>
 
 namespace search {
@@ -97,8 +98,8 @@ FileAlign::setupAlign(size_t elements,
         _directIOFileAlign = 1;
         _directIOMemAlign = 1;
     }
-    if (preferredFileAlignment < 4096)
-        preferredFileAlignment = 4096;
+    if (preferredFileAlignment < 4_Ki)
+        preferredFileAlignment = 4_Ki;
     _preferredFileAlign = preferredFileAlignment;
 
     size_t minDirectIOElements = getMinBlocking(elemSize, _directIOFileAlign);

@@ -13,9 +13,10 @@
 #include <vespa/searchlib/queryeval/fake_search.h>
 #include <vespa/searchlib/queryeval/fake_searchable.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
+#include <vespa/vespalib/util/sequencedtaskexecutor.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/util/sequencedtaskexecutor.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
@@ -126,7 +127,7 @@ VESPA_THREAD_STACK_TAG(push_executor)
 
 Index::Index(const MySetup &setup)
     : schema(setup.schema),
-      _executor(1, 128 * 1024),
+      _executor(1, 128_Ki),
       _invertThreads(SequencedTaskExecutor::create(invert_executor, 2)),
       _pushThreads(SequencedTaskExecutor::create(push_executor, 2)),
       index(schema, setup, *_invertThreads, *_pushThreads),

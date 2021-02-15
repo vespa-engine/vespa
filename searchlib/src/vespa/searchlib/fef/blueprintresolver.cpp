@@ -4,6 +4,7 @@
 #include "blueprintfactory.h"
 #include "featurenameparser.h"
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <stack>
 #include <cassert>
 #include <set>
@@ -282,9 +283,9 @@ BlueprintResolver::compile()
                                    }
                                });
     compile_thread.join();
-    int stack_usage = compiler.stack_usage();
-    if (stack_usage > (128 * 1024)) {
-        LOG(warning, "high stack usage: %d bytes", stack_usage);
+    size_t stack_usage = compiler.stack_usage();
+    if (stack_usage > (128_Ki)) {
+        LOG(warning, "high stack usage: %zu bytes", stack_usage);
     }
     return !compiler.failed();
 }

@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/attribute/posting_list_merger.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <algorithm>
 
 using vespalib::btree::BTreeNoLeafData;
@@ -56,7 +57,7 @@ public:
     }
 };
 
-constexpr uint32_t docIdLimit = 16384;
+constexpr uint32_t docIdLimit = 16_Ki;
 
 struct WeightedFixture
 {

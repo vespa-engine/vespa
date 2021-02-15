@@ -3,12 +3,13 @@
 #include "attributememoryfilewriter.h"
 #include "attributememoryfilebufferwriter.h"
 #include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 namespace search {
 
 namespace {
 
-const uint32_t MIN_ALIGNMENT = 4096;
+const uint32_t MIN_ALIGNMENT = 4_Ki;
 
 }
 

@@ -15,6 +15,7 @@
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <iomanip>
 
 using document::BucketId;
@@ -134,33 +135,33 @@ checkStats(IDataStore &store,
 
 #ifdef __linux__
 TEST("test that DirectIOPadding works accordng to spec") {
-    constexpr ssize_t FILE_SIZE = 4096*3;
+    constexpr ssize_t FILE_SIZE = 4_Ki*3;
     FastOS_File file("directio.test");
     file.EnableDirectIO();
     EXPECT_TRUE(file.OpenReadWrite());
-    Alloc buf(Alloc::alloc_aligned(FILE_SIZE, 4096));
+    Alloc buf(Alloc::alloc_aligned(FILE_SIZE, 4_Ki));
     memset(buf.get(), 'a', buf.size());
     EXPECT_EQUAL(FILE_SIZE, file.Write2(buf.get(), FILE_SIZE));
     size_t padBefore(0);
     size_t padAfter(0);
 
-    EXPECT_TRUE(file.DirectIOPadding(4096, 4096, padBefore, padAfter));
+    EXPECT_TRUE(file.DirectIOPadding(4_Ki, 4096, padBefore, padAfter));
     EXPECT_EQUAL(0u, padBefore);
     EXPECT_EQUAL(0u, padAfter);
 
-    EXPECT_TRUE(file.DirectIOPadding(4095, 4096, padBefore, padAfter));
+    EXPECT_TRUE(file.DirectIOPadding(4095, 4_Ki, padBefore, padAfter));
     EXPECT_EQUAL(4095u, padBefore);
     EXPECT_EQUAL(1u, padAfter);
 
-    EXPECT_TRUE(file.DirectIOPadding(4097, 4096, padBefore, padAfter));
+    EXPECT_TRUE(file.DirectIOPadding(4097, 4_Ki, padBefore, padAfter));
     EXPECT_EQUAL(1u, padBefore);
     EXPECT_EQUAL(4095u, padAfter);
 
-    EXPECT_TRUE(file.DirectIOPadding(4096, 4097, padBefore, padAfter));
+    EXPECT_TRUE(file.DirectIOPadding(4_Ki, 4097, padBefore, padAfter));
     EXPECT_EQUAL(0u, padBefore);
     EXPECT_EQUAL(4095u, padAfter);
 
-    EXPECT_TRUE(file.DirectIOPadding(4096, 4095, padBefore, padAfter));
+    EXPECT_TRUE(file.DirectIOPadding(4_Ki, 4095, padBefore, padAfter));
     EXPECT_EQUAL(0u, padBefore);
     EXPECT_EQUAL(1u, padAfter);
 
@@ -168,15 +169,15 @@ TEST("test that DirectIOPadding works accordng to spec") {
     EXPECT_EQUAL(1u, padBefore);
     EXPECT_EQUAL(0u, padAfter);
 
-    EXPECT_TRUE(file.DirectIOPadding(4097, 4096, padBefore, padAfter));
+    EXPECT_TRUE(file.DirectIOPadding(4097, 4_Ki, padBefore, padAfter));
     EXPECT_EQUAL(1u, padBefore);
     EXPECT_EQUAL(4095u, padAfter);
 
-    EXPECT_TRUE(file.DirectIOPadding(4097, 4096, padBefore, padAfter));
+    EXPECT_TRUE(file.DirectIOPadding(4097, 4_Ki, padBefore, padAfter));
     EXPECT_EQUAL(1u, padBefore);
     EXPECT_EQUAL(4095u, padAfter);
 
-    EXPECT_FALSE(file.DirectIOPadding(FILE_SIZE-1, 4096, padBefore, padAfter));
+    EXPECT_FALSE(file.DirectIOPadding(FILE_SIZE-1, 4_Ki, padBefore, padAfter));
     EXPECT_EQUAL(0u, padBefore);
     EXPECT_EQUAL(0u, padAfter);
     EXPECT_EQUAL(FILE_SIZE, file.GetSize());
@@ -190,11 +191,11 @@ TEST("test that DirectIOPadding works accordng to spec") {
     EXPECT_EQUAL(FILE_SIZE*2, file2.GetSize());
     EXPECT_TRUE(file2.Close());
 
-    EXPECT_TRUE(file.DirectIOPadding(4097, 4096, padBefore, padAfter));
+    EXPECT_TRUE(file.DirectIOPadding(4097, 4_Ki, padBefore, padAfter));
     EXPECT_EQUAL(1u, padBefore);
     EXPECT_EQUAL(4095u, padAfter);
 
-    EXPECT_TRUE(file.DirectIOPadding(FILE_SIZE-1, 4096, padBefore, padAfter));
+    EXPECT_TRUE(file.DirectIOPadding(FILE_SIZE-1, 4_Ki, padBefore, padAfter));
     EXPECT_EQUAL(4095u, padBefore);
     EXPECT_EQUAL(1u, padAfter);
 
@@ -205,7 +206,7 @@ TEST("test that DirectIOPadding works accordng to spec") {
 
 void verifyGrowing(const LogDataStore::Config & config, uint32_t minFiles, uint32_t maxFiles) {
     DirectoryHandler tmpDir("growing");
-    vespalib::ThreadStackExecutor executor(4, 128*1024);
+    vespalib::ThreadStackExecutor executor(4, 128_Ki);
     DummyFileHeaderContext fileHeaderContext;
     MyTlSyncer tlSyncer;
     {
@@ -276,7 +277,7 @@ void fetchAndTest(IDataStore & datastore, uint32_t lid, const void *a, size_t sz
 TEST("testTruncatedIdxFile"){
     LogDataStore::Config config;
     DummyFileHeaderContext fileHeaderContext;
-    vespalib::ThreadStackExecutor executor(1, 128*1024);
+    vespalib::ThreadStackExecutor executor(1, 128_Ki);
     MyTlSyncer tlSyncer;
     {
         // Files comes from the 'growing test'.
@@ -305,7 +306,7 @@ TEST("testTruncatedIdxFile"){
 TEST("testThatEmptyIdxFilesAndDanglingDatFilesAreRemoved") {
     LogDataStore::Config config;
     DummyFileHeaderContext fileHeaderContext;
-    vespalib::ThreadStackExecutor executor(1, 128*1024);
+    vespalib::ThreadStackExecutor executor(1, 128_Ki);
     MyTlSyncer tlSyncer;
     LogDataStore datastore(executor, "dangling-test", config,
                            GrowStrategy(), TuneFileSummary(),
@@ -318,7 +319,7 @@ TEST("testThatEmptyIdxFilesAndDanglingDatFilesAreRemoved") {
 TEST("testThatIncompleteCompactedFilesAreRemoved") {
     LogDataStore::Config config;
     DummyFileHeaderContext fileHeaderContext;
-    vespalib::ThreadStackExecutor executor(1, 128*1024);
+    vespalib::ThreadStackExecutor executor(1, 128_Ki);
     MyTlSyncer tlSyncer;
     LogDataStore datastore(executor, "incompletecompact-test", config,
                            GrowStrategy(), TuneFileSummary(),
@@ -338,7 +339,7 @@ public:
         _myDir("visitcache"),
         _config(),
         _fileHeaderContext(),
-        _executor(1, 128*1024),
+        _executor(1, 128_Ki),
         _tlSyncer(),
         _datastore(_executor, _myDir.getDir(), _config, GrowStrategy(),
                    TuneFileSummary(), _fileHeaderContext, _tlSyncer, nullptr)
@@ -525,9 +526,9 @@ VisitCacheStore::VisitCacheStore(UpdateStrategy strategy) :
     _config(DocumentStore::Config(CompressionConfig::LZ4, 1000000, 0)
                     .allowVisitCaching(true).updateStrategy(strategy),
             LogDataStore::Config().setMaxFileSize(50000).setMaxBucketSpread(3.0)
-                    .setFileConfig(WriteableFileChunk::Config(CompressionConfig(), 16384))),
+                    .setFileConfig(WriteableFileChunk::Config(CompressionConfig(), 16_Ki))),
     _fileHeaderContext(),
-    _executor(1, 128*1024),
+    _executor(1, 128_Ki),
     _tlSyncer(),
     _datastore(std::make_unique<LogDocumentStore>(_executor, _myDir.getDir(), _config, GrowStrategy(),
                                                   TuneFileSummary(), _fileHeaderContext, _tlSyncer, nullptr)),
@@ -669,7 +670,7 @@ TEST("testWriteRead") {
     {
         EXPECT_TRUE(FastOS_File::MakeDirectory("empty"));
         DummyFileHeaderContext fileHeaderContext;
-        vespalib::ThreadStackExecutor executor(1, 128*1024);
+        vespalib::ThreadStackExecutor executor(1, 128_Ki);
         MyTlSyncer tlSyncer;
         LogDataStore datastore(executor, "empty", config, GrowStrategy(),
                                TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
@@ -705,7 +706,7 @@ TEST("testWriteRead") {
     }
     {
         DummyFileHeaderContext fileHeaderContext;
-        vespalib::ThreadStackExecutor executor(1, 128*1024);
+        vespalib::ThreadStackExecutor executor(1, 128_Ki);
         MyTlSyncer tlSyncer;
         LogDataStore datastore(executor, "empty", config,
                                GrowStrategy(), TuneFileSummary(),
@@ -756,7 +757,7 @@ TEST("requireThatFlushTimeIsAvailableAfterFlush") {
     vespalib::system_time before(vespalib::system_clock::now());
     DummyFileHeaderContext fileHeaderContext;
     LogDataStore::Config config;
-    vespalib::ThreadStackExecutor executor(1, 128*1024);
+    vespalib::ThreadStackExecutor executor(1, 128_Ki);
     MyTlSyncer tlSyncer;
     LogDataStore store(executor, testDir.getDir(), config, GrowStrategy(),
                        TuneFileSummary(), fileHeaderContext, tlSyncer, nullptr);
@@ -842,7 +843,7 @@ struct Fixture {
 
     Fixture(const vespalib::string &dirName = "tmp",
             bool dirCleanup = true,
-            size_t maxFileSize = 4096 * 2)
+            size_t maxFileSize = 4_Ki * 2)
         : executor(1, 0x20000),
           dir(dirName),
           serialNum(0),

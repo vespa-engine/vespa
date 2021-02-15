@@ -9,6 +9,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
+#include <vespa/vespalib/util/size_literals.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -18,7 +19,7 @@ namespace search {
 
 namespace {
     constexpr size_t DEFAULT_MAX_FILESIZE = 1000000000ul;
-    constexpr uint32_t DEFAULT_MAX_LIDS_PER_FILE = 32 * 1024 * 1024;
+    constexpr uint32_t DEFAULT_MAX_LIDS_PER_FILE = 32_Mi;
 }
 
 using vespalib::getLastErrorString;

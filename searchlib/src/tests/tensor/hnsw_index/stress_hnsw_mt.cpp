@@ -22,6 +22,7 @@
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 
 #include <vespa/log/log.h>
@@ -59,7 +60,7 @@ struct MallocPointVector {
 };
 static MallocPointVector *aligned_alloc_pv(size_t num) {
     size_t num_bytes = num * sizeof(MallocPointVector);
-    double mega_bytes = num_bytes / (1024.0*1024.0);
+    double mega_bytes = num_bytes / double(1_Mi);
     fprintf(stderr, "allocate %.2f MB of vectors\n", mega_bytes);
     char *mem = (char *)malloc(num_bytes + 512);
     mem += 512;
@@ -221,8 +222,8 @@ public:
           vectors(),
           gen_handler(),
           index(),
-          multi_prepare_workers(10, 128*1024, 50),
-          write_thread(1, 128*1024, 500)
+          multi_prepare_workers(10, 128_Ki, 50),
+          write_thread(1, 128_Ki, 500)
     {
         loaded_vectors.load();
     }

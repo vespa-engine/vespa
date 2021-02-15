@@ -19,6 +19,7 @@
 #include <vespa/searchlib/query/query_term_decoder.h>
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/searchlib/util/logutil.h>
 #include <vespa/searchcommon/attribute/attribute_utils.h>
 #include <thread>
@@ -45,7 +46,7 @@ const vespalib::string dataTypeTag = "datatype";
 const vespalib::string collectionTypeTag = "collectiontype";
 const vespalib::string docIdLimitTag = "docIdLimit";
 
-constexpr size_t DIRECTIO_ALIGNMENT(4096);
+constexpr size_t DIRECTIO_ALIGNMENT(4_Ki);
 
 }
 
@@ -643,7 +644,7 @@ IExtendAttribute *AttributeVector::getExtendInterface() { return nullptr; }
 uint64_t
 AttributeVector::getEstimatedSaveByteSize() const
 {
-    uint64_t headerSize = 4096;
+    uint64_t headerSize = 4_Ki;
     uint64_t totalValueCount = _status.getNumValues();
     uint64_t uniqueValueCount = _status.getNumUniqueValues();
     uint64_t docIdLimit = getCommittedDocIdLimit();
@@ -785,10 +786,10 @@ AttributeVector::update_config(const Config& cfg)
     if (cfg.getCompactionStrategy() == _config.getCompactionStrategy()) {
         return;
     }
-    drain_hold(1024 * 1024); // Wait until 1MiB or less on hold
+    drain_hold(1_Mi); // Wait until 1MiB or less on hold
     _config.setCompactionStrategy(cfg.getCompactionStrategy());
     commit(); // might trigger compaction
-    drain_hold(1024 * 1024); // Wait until 1MiB or less on hold
+    drain_hold(1_Mi); // Wait until 1MiB or less on hold
 }
 
 template bool AttributeVector::append<StringChangeData>(ChangeVectorT< ChangeTemplate<StringChangeData> > &changes, uint32_t , const StringChangeData &, int32_t, bool);

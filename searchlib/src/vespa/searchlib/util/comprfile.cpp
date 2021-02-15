@@ -2,6 +2,7 @@
 
 #include "comprfile.h"
 #include <vespa/fastos/file.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <cassert>
 #include <cstring>
 
@@ -453,7 +454,7 @@ ComprFileWriteContext::allocComprBuf(unsigned int comprBufSize, size_t preferred
 void
 ComprFileWriteContext::allocComprBuf()
 {
-    allocComprBuf(32768, 32768);
+    allocComprBuf(32_Ki, 32_Ki);
 }
 
 }

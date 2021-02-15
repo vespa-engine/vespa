@@ -20,6 +20,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/util/compress.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/data/databuffer.h>
 
 #include <limits>
@@ -58,7 +59,7 @@ public:
     }
 
     virtual Buffer allocBuf(size_t size) override {
-        return std::make_unique<BufferBuf>(size, 4096);
+        return std::make_unique<BufferBuf>(size, 4_Ki);
     }
 
     virtual void writeBuf(Buffer buf_in) override {

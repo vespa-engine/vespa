@@ -7,6 +7,7 @@
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fastos/thread.h>
 
 
@@ -46,10 +47,10 @@ struct RpcTask : public vespalib::Executor::Task {
 }
 
 TransLogClient::TransLogClient(const vespalib::string & rpcTarget) :
-    _executor(std::make_unique<vespalib::ThreadStackExecutor>(1, 128 * 1024, translogclient_rpc_callback)),
+    _executor(std::make_unique<vespalib::ThreadStackExecutor>(1, 128_Ki, translogclient_rpc_callback)),
     _rpcTarget(rpcTarget),
     _sessions(),
-    _threadPool(std::make_unique<FastOS_ThreadPool>(1024*60)),
+    _threadPool(std::make_unique<FastOS_ThreadPool>(60_Ki)),
     _transport(std::make_unique<FNET_Transport>()),
     _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())),
     _target(nullptr)
