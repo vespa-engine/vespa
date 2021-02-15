@@ -220,6 +220,9 @@ public class NodeResources {
     }
     @Override
     public String toString() {
+        if (isUnspecified())
+            return "unspecified resources";
+
         StringBuilder sb = new StringBuilder("[vcpu: ");
         appendDouble(sb, vcpu);
         sb.append(", memory: ");
