@@ -89,7 +89,9 @@ public class EndpointCertificateManager {
         // Re-provision certificate if it is missing SANs for the zone we are deploying to
         var requiredSansForZone = dnsNamesOf(instance.id(), zone);
         if (!currentCertificateMetadata.get().requestedDnsSans().containsAll(requiredSansForZone)) {
-            var reprovisionedCertificateMetadata = provisionEndpointCertificate(instance, currentCertificateMetadata, zone, instanceSpec);
+            var reprovisionedCertificateMetadata =
+                    provisionEndpointCertificate(instance, currentCertificateMetadata, zone, instanceSpec)
+                    .withRequestId(currentCertificateMetadata.get().request_id()); // We're required to keep the original request_id
             curator.writeEndpointCertificateMetadata(instance.id(), reprovisionedCertificateMetadata);
             // Verification is unlikely to succeed in this case, as certificate must be available first - controller will retry
             endpointCertificateValidator.validate(reprovisionedCertificateMetadata, instance.id().serializedForm(), zone, requiredSansForZone);
