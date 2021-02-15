@@ -200,7 +200,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_POWER_OF_TWO_CHOICES_LOAD_BALANCING = defineFeatureFlag(
             "use-power-of-two-choices-load-balancing", false,
-            List.of("tokle"), "2020-12-02", "2021-02-15",
+            List.of("tokle"), "2020-12-02", "2021-04-01",
             "Whether to use Power of two load balancing algorithm for application",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
