@@ -67,6 +67,7 @@ vespa_define_module(
     src/tests/instruction/remove_trivial_dimension_optimizer
     src/tests/instruction/sparse_dot_product_function
     src/tests/instruction/sparse_merge_function
+    src/tests/instruction/sparse_no_overlap_join_function
     src/tests/instruction/sum_max_dot_product_function
     src/tests/instruction/vector_from_doubles_function
     src/tests/streamed/value
