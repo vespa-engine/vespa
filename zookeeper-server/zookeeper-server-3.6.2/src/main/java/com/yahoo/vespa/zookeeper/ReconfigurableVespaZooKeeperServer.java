@@ -36,4 +36,10 @@ public class ReconfigurableVespaZooKeeperServer extends AbstractComponent implem
         return true;
     }
 
+    @Override
+    public void deconstruct() {
+        peer.shutdown();
+        super.deconstruct();
+    }
+
 }
