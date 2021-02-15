@@ -13,7 +13,7 @@ import com.yahoo.component.provider.ComponentRegistry;
  */
 public class AccessLog implements RequestLog {
 
-    public static final AccessLog VOID_INSTANCE = new AccessLog(new ComponentRegistry<>());
+    public static final AccessLog NONE_INSTANCE = new AccessLog(new ComponentRegistry<>());
 
     private final ComponentRegistry<RequestLogHandler> implementers;
 
@@ -23,7 +23,7 @@ public class AccessLog implements RequestLog {
     }
 
     public static AccessLog voidAccessLog() {
-        return VOID_INSTANCE;
+        return NONE_INSTANCE;
     }
 
     @Override

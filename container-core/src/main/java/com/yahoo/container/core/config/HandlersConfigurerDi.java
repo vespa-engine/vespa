@@ -145,7 +145,7 @@ public class HandlersConfigurerDi {
                 // otherwise fallback injection may lead to a cascade of components requiring reconstruction.
                 bind(com.yahoo.container.Container.class).toInstance(vespaContainer);
                 bind(com.yahoo.statistics.Statistics.class).toInstance(Statistics.nullImplementation);
-                bind(AccessLog.class).toInstance(AccessLog.VOID_INSTANCE);
+                bind(AccessLog.class).toInstance(AccessLog.NONE_INSTANCE);
                 bind(Executor.class).toInstance(fallbackExecutor);
                 if (vespaContainer.getFileAcquirer() != null)
                     bind(com.yahoo.filedistribution.fileacquirer.FileAcquirer.class).toInstance(vespaContainer.getFileAcquirer());
