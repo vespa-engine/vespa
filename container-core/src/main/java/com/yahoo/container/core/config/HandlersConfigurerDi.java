@@ -48,6 +48,9 @@ public class HandlersConfigurerDi {
 
     private static final Logger log = Logger.getLogger(HandlersConfigurerDi.class.getName());
 
+    private static final Executor fallbackExecutor = Executors.newCachedThreadPool(
+            ThreadFactoryFactory.getThreadFactory("HandlersConfigurerDI"));
+
     private final com.yahoo.container.Container vespaContainer;
     private final Container container;
 
@@ -138,10 +141,12 @@ public class HandlersConfigurerDi {
         return discInjector.createChildInjector(new AbstractModule() {
             @Override
             protected void configure() {
+                // Provide a singleton instance for all component fallbacks,
+                // otherwise fallback injection may lead to a cascade of components requiring reconstruction.
                 bind(com.yahoo.container.Container.class).toInstance(vespaContainer);
                 bind(com.yahoo.statistics.Statistics.class).toInstance(Statistics.nullImplementation);
-                bind(AccessLog.class).toInstance(new AccessLog(new ComponentRegistry<>()));
-                bind(Executor.class).toInstance(Executors.newCachedThreadPool(ThreadFactoryFactory.getThreadFactory("HandlersConfigurerDI")));
+                bind(AccessLog.class).toInstance(AccessLog.NONE_INSTANCE);
+                bind(Executor.class).toInstance(fallbackExecutor);
                 if (vespaContainer.getFileAcquirer() != null)
                     bind(com.yahoo.filedistribution.fileacquirer.FileAcquirer.class).toInstance(vespaContainer.getFileAcquirer());
             }
