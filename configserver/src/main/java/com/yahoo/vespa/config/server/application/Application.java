@@ -96,7 +96,6 @@ public class Application implements ModelResult {
     /**
      * Gets a config from ZK. Returns null if not found.
      */
-    @SuppressWarnings("deprecation")
     public ConfigResponse resolveConfig(GetConfigRequest req, ConfigResponseFactory responseFactory) {
         long start = System.currentTimeMillis();
         metricUpdater.incrementRequests();

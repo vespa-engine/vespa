@@ -194,16 +194,14 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     }
 
     /**
-     * Gets the ports metainfo object. The service implementation
-     * must populate this object in the constructor.
+     * Gets the ports metainfo object. The service implementation must populate this object in the constructor.
      */
     public PortsMeta getPortsMeta() {
         return portsMeta;
     }
 
     /**
-     * Computes and returns the i'th port for this service, based on
-     * this Service's baseport.
+     * Computes and returns the i'th port for this service, based on this Service's baseport.
      *
      * @param i the offset from 'basePort' of the port to return
      * @return the i'th port relative to the base port.

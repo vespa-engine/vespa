@@ -418,7 +418,6 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      * @param configId the config id for the config client
      * @return the builder if a producer was found, and it did apply config, null otherwise
      */
-    @SuppressWarnings("unchecked")
     @Override
     public ConfigInstance.Builder getConfig(ConfigInstance.Builder builder, String configId) {
         checkId(configId);

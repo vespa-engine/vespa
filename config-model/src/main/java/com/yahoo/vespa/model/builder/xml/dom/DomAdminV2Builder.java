@@ -134,7 +134,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         return cfgs;
     }
 
-    private List<Slobrok> getSlobroks(DeployState deployState, AbstractConfigProducer parent, Element slobroksE) {
+    private List<Slobrok> getSlobroks(DeployState deployState, AbstractConfigProducer<?> parent, Element slobroksE) {
         List<Slobrok> slobs = new ArrayList<>();
         if (slobroksE != null) {
             slobs = getExplicitSlobrokSetup(deployState, parent, slobroksE);
@@ -142,16 +142,12 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         return slobs;
     }
 
-    private List<Slobrok> getExplicitSlobrokSetup(DeployState deployState, AbstractConfigProducer parent, Element slobroksE) {
-        List<Slobrok> slobs = new ArrayList<>();
-        List<Element> slobsE = XML.getChildren(slobroksE, "slobrok");
+    private List<Slobrok> getExplicitSlobrokSetup(DeployState deployState, AbstractConfigProducer<?> parent, Element slobroksE) {
+        List<Slobrok> slobroks = new ArrayList<>();
         int i = 0;
-        for (Element e : slobsE) {
-            Slobrok slob = new SlobrokBuilder(i).build(deployState, parent, e);
-            slobs.add(slob);
-            i++;
-        }
-        return slobs;
+        for (Element e : XML.getChildren(slobroksE, "slobrok"))
+            slobroks.add(new SlobrokBuilder(i++).build(deployState, parent, e));
+        return slobroks;
     }
 
     private static class LogserverBuilder extends DomConfigProducerBuilder<Logserver> {
@@ -184,6 +180,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
     }
 
     private static class SlobrokBuilder extends DomConfigProducerBuilder<Slobrok> {
+
         int i;
 
         public SlobrokBuilder(int i) {
@@ -194,6 +191,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         protected Slobrok doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
             return new Slobrok(parent, i);
         }
+
     }
 
     private static class ClusterControllerBuilder extends DomConfigProducerBuilder<ClusterControllerContainer> {

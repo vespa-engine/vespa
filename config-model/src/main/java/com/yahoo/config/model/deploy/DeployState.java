@@ -156,10 +156,11 @@ public class DeployState implements ConfigDefinitionStore {
     }
 
     public static HostProvisioner getDefaultModelHostProvisioner(ApplicationPackage applicationPackage) {
-        if (applicationPackage.getHosts() == null) {
-            return new SingleNodeProvisioner();
-        } else {
-            return new HostsXmlProvisioner(applicationPackage.getHosts());
+        try (Reader hostsReader = applicationPackage.getHosts()) {
+            return hostsReader == null ? new SingleNodeProvisioner() : new HostsXmlProvisioner(hostsReader);
+        }
+        catch (IOException e) {
+            throw new IllegalStateException("Could not read hosts.xml", e);
         }
     }
 

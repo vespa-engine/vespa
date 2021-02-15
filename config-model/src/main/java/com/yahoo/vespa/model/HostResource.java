@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
@@ -67,9 +68,11 @@ public class HostResource implements Comparable<HostResource> {
     List<Integer> allocateService(DeployLogger deployLogger, AbstractService service, int wantedPort) {
         ports().useLogger(deployLogger);
         List<Integer> ports = hostPorts.allocatePorts(service, wantedPort);
-        assert (getService(service.getServiceName()) == null) :
-                ("There is already a service with name '" + service.getServiceName() + "' registered on " + this +
-                ". Most likely a programming error - all service classes must have unique names, even in different packages!");
+        if (getService(service.getServiceName()) != null)
+            throw new IllegalStateException("There is already a service with name '" + service.getServiceName() +
+                                            "' registered on " + this + ". " +
+                                            "Most likely a programming error - " +
+                                            "all service classes must have unique names, even in different packages!");
 
         services.put(service.getServiceName(), service);
         return ports;
