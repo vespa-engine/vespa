@@ -187,6 +187,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addSimpleComponent("com.yahoo.container.jdisc.ContainerThreadFactory");
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
         addSimpleComponent(com.yahoo.container.handler.ClustersStatus.class.getName());
+        addSimpleComponent("com.yahoo.container.jdisc.DisabledConnectionLogProvider");
         addJaxProviders();
     }
 
