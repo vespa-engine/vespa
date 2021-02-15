@@ -12,7 +12,7 @@ thing we haven't done is to create a module structure friendly to newcomers - th
 simply organized in a flat structure of about 150 modules. 
 
 This document aims to provide a map from the
-[functional elements](https://docs.vespa.ai/documentation/overview.html)
+[functional elements](https://docs.vespa.ai/en/overview.html)
 of Vespa to the most important modules in the flat module structure in the
 [code base on GitHub](https://github.com/vespa-engine/vespa).
 

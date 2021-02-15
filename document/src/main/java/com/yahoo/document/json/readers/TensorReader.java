@@ -14,7 +14,7 @@ import static com.yahoo.document.json.readers.JsonParserHelpers.*;
 
 /**
  * Reads the tensor format defined at
- * See <a href="https://docs.vespa.ai/documentation/reference/document-json-format.html">https://docs.vespa.ai/documentation/reference/document-json-format.html</a>
+ * See <a href="https://docs.vespa.ai/en/reference/document-json-format.html">https://docs.vespa.ai/en/reference/document-json-format.html</a>
  *
  * @author geirst
  * @author bratseth

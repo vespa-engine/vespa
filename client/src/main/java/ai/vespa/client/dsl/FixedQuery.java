@@ -12,7 +12,7 @@ import java.util.stream.Collectors;
 /**
  * FixedQuery contains a 'Query' which is terminated by a 'semicolon'
  * This object holds vespa or user defined parameters
- * https://docs.vespa.ai/documentation/reference/search-api-reference.html
+ * https://docs.vespa.ai/en/reference/search-api-reference.html
  */
 public class FixedQuery {
 

@@ -930,7 +930,7 @@ public class ControllerTest {
                          "[endpoint 'default' (cluster foo) -> us-east-3, us-west-1] and add " +
                          "[endpoint 'default' (cluster bar) -> us-east-3, us-west-1]. To allow this add " +
                          "<allow until='yyyy-mm-dd'>global-endpoint-change</allow> to validation-overrides.xml, see " +
-                         "https://docs.vespa.ai/documentation/reference/validation-overrides.html", e.getMessage());
+                         "https://docs.vespa.ai/en/reference/validation-overrides.html", e.getMessage());
         }
 
         // Redeploy with override succeeds

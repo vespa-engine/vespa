@@ -33,7 +33,7 @@ We only seek to accept code that you are authorized to contribute to the project
 
 ## Versioning
 Vespa uses semantic versioning - see
-[vespa versions](http://docs.vespa.ai/documentation/vespa-versions.html).
+[vespa versions](http://docs.vespa.ai/en/vespa-versions.html).
 Notice in particular that any Java API in a package having a @PublicAPI
 annotation in the package-info file cannot be changed in an incompatible way
 between major versions: Existing types and method signatures must be preserved

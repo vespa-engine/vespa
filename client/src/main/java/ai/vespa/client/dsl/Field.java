@@ -27,7 +27,7 @@ public class Field extends QueryChain {
 
     /**
      * Contains query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#contains
      *
      * @param value the value
      * @return the query
@@ -38,7 +38,7 @@ public class Field extends QueryChain {
 
     /**
      * Contains query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#contains
      *
      * @param annotation the annotation
      * @param value      the value
@@ -50,7 +50,7 @@ public class Field extends QueryChain {
 
     /**
      * Contains phrase query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#contains
      *
      * @param value  the value
      * @param others the others
@@ -62,7 +62,7 @@ public class Field extends QueryChain {
 
     /**
      * Contains phrase query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#contains
      *
      * @param values the values
      * @return the query
@@ -77,7 +77,7 @@ public class Field extends QueryChain {
 
     /**
      * Contains near query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#contains
      *
      * @param value  the value
      * @param others the others
@@ -89,7 +89,7 @@ public class Field extends QueryChain {
 
     /**
      * Contains near query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#contains
      *
      * @param values the values
      * @return the query
@@ -104,7 +104,7 @@ public class Field extends QueryChain {
 
     /**
      * Contains near query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#contains
      *
      * @param annotation the annotation
      * @param value      the value
@@ -117,7 +117,7 @@ public class Field extends QueryChain {
 
     /**
      * Contains near query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#contains
      *
      * @param annotation the annotation
      * @param values     the values
@@ -133,7 +133,7 @@ public class Field extends QueryChain {
 
     /**
      * Contains onear query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#contains
      *
      * @param value  the value
      * @param others the others
@@ -145,7 +145,7 @@ public class Field extends QueryChain {
 
     /**
      * Contains onear query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#contains
      *
      * @param values the values
      * @return the query
@@ -160,7 +160,7 @@ public class Field extends QueryChain {
 
     /**
      * Contains onear query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#contains
      *
      * @param annotation the annotation
      * @param value      the value
@@ -173,7 +173,7 @@ public class Field extends QueryChain {
 
     /**
      * Contains onear query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#contains
      *
      * @param annotation the annotation
      * @param values     the values
@@ -189,7 +189,7 @@ public class Field extends QueryChain {
 
     /**
      * Contains same element query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#contains
      *
      * @param andQuery the and query
      * @return the query
@@ -200,7 +200,7 @@ public class Field extends QueryChain {
 
     /**
      * Contains equiv query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#contains
      *
      * @param value  the value
      * @param others the others
@@ -212,7 +212,7 @@ public class Field extends QueryChain {
 
     /**
      * Contains equiv query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#contains
      *
      * @param values the values
      * @return the query
@@ -230,7 +230,7 @@ public class Field extends QueryChain {
 
     /**
      * Contains uri query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#contains
      *
      * @param value the value
      * @return the query
@@ -241,7 +241,7 @@ public class Field extends QueryChain {
 
     /**
      * Contains uri query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#contains
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#contains
      *
      * @param annotation the annotation
      * @param value      the value
@@ -253,7 +253,7 @@ public class Field extends QueryChain {
 
     /**
      * Matches query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#matches
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#matches
      *
      * @param str the str
      * @return the query
@@ -264,7 +264,7 @@ public class Field extends QueryChain {
 
     /**
      * Equals query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
      *
      * @param t the t
      * @return the query
@@ -275,7 +275,7 @@ public class Field extends QueryChain {
 
     /**
      * Greater than or equal to query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
      *
      * @param t the t
      * @return the query
@@ -286,7 +286,7 @@ public class Field extends QueryChain {
 
     /**
      * Greater than query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
      *
      * @param t the t
      * @return the query
@@ -297,7 +297,7 @@ public class Field extends QueryChain {
 
     /**
      * Less than or equal to query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
      *
      * @param t the t
      * @return the query
@@ -308,7 +308,7 @@ public class Field extends QueryChain {
 
     /**
      * Less than query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
      *
      * @param t the t
      * @return the query
@@ -319,7 +319,7 @@ public class Field extends QueryChain {
 
     /**
      * In range query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
      *
      * @param l the l
      * @param m the m
@@ -331,7 +331,7 @@ public class Field extends QueryChain {
 
     /**
      * Equal to query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
      *
      * @param t the t
      * @return the query
@@ -342,7 +342,7 @@ public class Field extends QueryChain {
 
     /**
      * Greater than or equal to query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
      *
      * @param t the t
      * @return the query
@@ -353,7 +353,7 @@ public class Field extends QueryChain {
 
     /**
      * Greater than query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
      *
      * @param t the t
      * @return the query
@@ -364,7 +364,7 @@ public class Field extends QueryChain {
 
     /**
      * Less than or equal to query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
      *
      * @param t the t
      * @return the query
@@ -375,7 +375,7 @@ public class Field extends QueryChain {
 
     /**
      * Less than query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
      *
      * @param t the t
      * @return the query
@@ -386,7 +386,7 @@ public class Field extends QueryChain {
 
     /**
      * In range query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#numeric
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
      *
      * @param l the l
      * @param m the m
@@ -399,7 +399,7 @@ public class Field extends QueryChain {
 
     /**
      * Is true query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#boolean
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#boolean
      *
      * @return the query
      */
@@ -409,7 +409,7 @@ public class Field extends QueryChain {
 
     /**
      * Is false query.
-     * https://docs.vespa.ai/documentation/reference/query-language-reference.html#boolean
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#boolean
      *
      * @return the query
      */

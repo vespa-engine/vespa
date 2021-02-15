@@ -15,7 +15,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *
  * Test classes annotated with this annotation are run in the first phase of automated staging tests,
  * to make the initial deployment similar to a production one.
- * See <a href="https://cloud.vespa.ai/automated-deployments.html">Vespa cloud documentation</a>.
+ * See <a href="https://cloud.vespa.ai/en/automated-deployments">Vespa cloud documentation</a>.
  *
  * @author jonmv
  */

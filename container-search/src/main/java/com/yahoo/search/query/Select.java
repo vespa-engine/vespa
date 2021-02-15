@@ -79,7 +79,7 @@ public class Select implements Cloneable {
      * Sets the document selection criterion of the query.
      *
      * @param where the documents to select as a JSON string on the format specified in
-     *        <a href="https://docs.vespa.ai/documentation/reference/select-reference.html">the select reference doc</a>
+     *        <a href="https://docs.vespa.ai/en/reference/select-reference.html">the select reference doc</a>
      */
     public void setWhereString(String where) {
         this.where = where;
@@ -96,7 +96,7 @@ public class Select implements Cloneable {
      * Sets the grouping operation of the query.
      *
      * @param grouping the grouping to perform as a JSON string on the format specified in
-     *        <a href="https://docs.vespa.ai/documentation/reference/select-reference.html">the select reference doc</a>
+     *        <a href="https://docs.vespa.ai/en/reference/select-reference.html">the select reference doc</a>
      */
     public void setGroupingString(String grouping) {
         groupingRequests.clear();
