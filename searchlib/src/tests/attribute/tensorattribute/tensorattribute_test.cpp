@@ -26,6 +26,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 
 #include <vespa/log/log.h>
@@ -256,10 +257,16 @@ struct FixtureTraits {
     bool use_direct_tensor_attribute = false;
     bool enable_hnsw_index = false;
     bool use_mock_index = false;
+    bool use_mmap_file_allocator = false;
 
     FixtureTraits dense() && {
         use_dense_tensor_attribute = true;
         enable_hnsw_index = false;
+        return *this;
+    }
+
+    FixtureTraits mmap_file_allocator() && {
+        use_mmap_file_allocator = true;
         return *this;
     }
 
@@ -326,6 +333,9 @@ struct Fixture {
         _cfg.setTensorType(ValueType::from_spec(_typeSpec));
         if (_cfg.tensorType().is_dense()) {
             _denseTensors = true;
+        }
+        if (_traits.use_mmap_file_allocator) {
+            _cfg.setHuge(true);
         }
         if (_traits.use_mock_index) {
             _index_factory = std::make_unique<MockNearestNeighborIndexFactory>();
@@ -996,6 +1006,19 @@ TEST_F("NN blueprint handles strong filter triggering brute force search", Neare
     bp->set_global_filter(*strong_filter);
     EXPECT_EQUAL(11u, bp->getState().estimate().estHits);
     EXPECT_FALSE(bp->may_approximate());
+}
+
+TEST("Dense tensor attribute with huge flag uses mmap file allocator")
+{
+    vespalib::string basedir("mmap-file-allocator-factory-dir");
+    vespalib::alloc::MmapFileAllocatorFactory::instance().setup(basedir);
+    {
+        Fixture f(vec_2d_spec, FixtureTraits().dense().mmap_file_allocator());
+        vespalib::string allocator_dir(basedir + "/0.my_attr");
+        EXPECT_TRUE(vespalib::isDirectory(allocator_dir));
+    }
+    vespalib::alloc::MmapFileAllocatorFactory::instance().setup("");
+    vespalib::rmdir(basedir, true);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -32,6 +32,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     lz4compressor.cpp
     md5.c
     mmap_file_allocator.cpp
+    mmap_file_allocator_factory.cpp
     printable.cpp
     priority_queue.cpp
     random.cpp
