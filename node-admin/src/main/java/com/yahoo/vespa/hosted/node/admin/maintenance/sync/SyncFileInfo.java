@@ -63,7 +63,7 @@ public class SyncFileInfo {
     }
 
     private static Path destination(ApplicationId app, HostName hostName, String dir, Path filename, String extension) {
-        StringBuilder sb = new StringBuilder(50).append('/');
+        StringBuilder sb = new StringBuilder(100).append('/');
 
         if (app == null) sb.append("infrastructure");
         else sb.append(app.tenant().value()).append('.').append(app.application().value()).append('.').append(app.instance().value());
