@@ -160,7 +160,7 @@ class MaintenanceDeployment implements Closeable {
             try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository)) {
                 if ( ! deployment.isValid()) return false;
 
-                boolean couldMarkRetiredNow = markWantToRetire(node, true, agent, nodeRepository);
+                boolean couldMarkRetiredNow = markPreferToRetire(node, true, agent, nodeRepository);
                 if ( ! couldMarkRetiredNow) return false;
 
                 Optional<Node> expectedNewNode = Optional.empty();
@@ -182,7 +182,7 @@ class MaintenanceDeployment implements Closeable {
                     return true;
                 }
                 finally {
-                    markWantToRetire(node, false, agent, nodeRepository); // Necessary if this failed, no-op otherwise
+                    markPreferToRetire(node, false, agent, nodeRepository); // Necessary if this failed, no-op otherwise
 
                     // Immediately clean up if we reserved the node but could not activate or reserved a node on the wrong host
                     expectedNewNode.flatMap(node -> nodeRepository.nodes().node(node.hostname(), Node.State.reserved))
@@ -191,17 +191,17 @@ class MaintenanceDeployment implements Closeable {
             }
         }
 
-        /** Returns true only if this operation changes the state of the wantToRetire flag */
-        private boolean markWantToRetire(Node node, boolean wantToRetire, Agent agent, NodeRepository nodeRepository) {
+        /** Returns true only if this operation changes the state of the preferToRetire flag */
+        private boolean markPreferToRetire(Node node, boolean preferToRetire, Agent agent, NodeRepository nodeRepository) {
             Optional<NodeMutex> nodeMutex = nodeRepository.nodes().lockAndGet(node);
             if (nodeMutex.isEmpty()) return false;
 
             try (var nodeLock = nodeMutex.get()) {
                 if (nodeLock.node().state() != Node.State.active) return false;
 
-                if (nodeLock.node().status().wantToRetire() == wantToRetire) return false;
+                if (nodeLock.node().status().preferToRetire() == preferToRetire) return false;
 
-                nodeRepository.nodes().write(nodeLock.node().withWantToRetire(wantToRetire, agent, nodeRepository.clock().instant()), nodeLock);
+                nodeRepository.nodes().write(nodeLock.node().withPreferToRetire(preferToRetire, agent, nodeRepository.clock().instant()), nodeLock);
                 return true;
             }
         }

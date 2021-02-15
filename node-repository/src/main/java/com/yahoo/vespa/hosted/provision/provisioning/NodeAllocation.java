@@ -115,7 +115,7 @@ class NodeAllocation {
                 if ((! saturated() && hasCompatibleFlavor(candidate) && requestedNodes.acceptable(candidate)) || acceptToRetire) {
                     candidate = candidate.withNode();
                     if (candidate.isValid())
-                        accepted.add(acceptNode(candidate, shouldRetire(candidate), resizeable));
+                        accepted.add(acceptNode(candidate, shouldRetire(candidate, nodesPrioritized), resizeable));
                 }
             }
             else if (! saturated() && hasCompatibleFlavor(candidate)) {
@@ -146,7 +146,7 @@ class NodeAllocation {
         return accepted;
     }
 
-    private boolean shouldRetire(NodeCandidate candidate) {
+    private boolean shouldRetire(NodeCandidate candidate, List<NodeCandidate> candidates) {
         if ( ! requestedNodes.considerRetiring())
             return candidate.allocation().map(a -> a.membership().retired()).orElse(false); // don't second-guess if already retired
 
@@ -154,6 +154,7 @@ class NodeAllocation {
         if (violatesParentHostPolicy(candidate)) return true;
         if ( ! hasCompatibleFlavor(candidate)) return true;
         if (candidate.wantToRetire()) return true;
+        if (candidate.preferToRetire() && !candidate.replacementIncreasesSkew(candidates)) return true;
         if (violatesExclusivity(candidate)) return true;
         return false;
     }
@@ -226,13 +227,13 @@ class NodeAllocation {
         return requestedNodes.isCompatible(candidate.flavor(), nodeRepository.flavors()) || candidate.isResizable;
     }
 
-    private Node acceptNode(NodeCandidate candidate, boolean wantToRetire, boolean resizeable) {
+    private Node acceptNode(NodeCandidate candidate, boolean shouldRetire, boolean resizeable) {
         Node node = candidate.toNode();
 
         if (node.allocation().isPresent()) // Record the currently requested resources
             node = node.with(node.allocation().get().withRequestedResources(requestedNodes.resources().orElse(node.resources())));
 
-        if (! wantToRetire) {
+        if (! shouldRetire) {
             accepted++;
 
             // We want to allocate new nodes rather than unretiring with resize, so count without those

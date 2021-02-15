@@ -69,10 +69,10 @@ public abstract class NodeMover<MOVE> extends NodeRepositoryMaintainer {
 
     /** Returns true if no active nodes are retiring or about to be retired */
     static boolean zoneIsStable(NodeList allNodes) {
-        NodeList active = allNodes.state(Node.State.active);
-        if (active.stream().anyMatch(node -> node.allocation().get().membership().retired())) return false;
-        if (active.stream().anyMatch(node -> node.status().wantToRetire())) return false;
-        return true;
+        return allNodes.state(Node.State.active).stream()
+                       .noneMatch(node -> node.allocation().get().membership().retired() ||
+                                          node.status().wantToRetire() ||
+                                          node.status().preferToRetire());
     }
 
 }
