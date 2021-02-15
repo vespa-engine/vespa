@@ -96,7 +96,7 @@ public class Status {
     }
 
     /**
-     * Returns whether this node is requested to retire. Unlike {@link this#wantToRetire()}, this is a soft
+     * Returns whether this node is requested to retire. Unlike {@link Status#wantToRetire()}, this is a soft
      * request to retire, which will not allow any replacement to increase node skew in the cluster.
      */
     public boolean preferToRetire() {
