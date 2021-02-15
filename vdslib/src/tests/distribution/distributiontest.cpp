@@ -14,6 +14,7 @@
 #include <vespa/vespalib/stllike/lexical_cast.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <gmock/gmock.h>
 #include <chrono>
 #include <thread>
@@ -221,7 +222,7 @@ TEST(DistributionTest, test_unchanged_distribution)
     Distribution distr(Distribution::getDefaultDistributionConfig(3, 10));
     std::ifstream in("distribution/testdata/41-distributordistribution");
 
-    for (unsigned i = 0; i < 65536; i++) {
+    for (unsigned i = 0; i < 64_Ki; i++) {
         uint16_t node = distr.getIdealDistributorNode(
                 state, document::BucketId(16, i), "u");
 
@@ -403,8 +404,8 @@ TEST(DistributionTest, testHighSplitBit)
 
 TEST(DistributionTest, test_distribution)
 {
-    const int min_buckets = 1024*64;
-    const int max_buckets = 1024*64;
+    const int min_buckets = 64_Ki;
+    const int max_buckets = 64_Ki;
     const int min_nodes = 2;
     const int max_nodes = 50;
 
