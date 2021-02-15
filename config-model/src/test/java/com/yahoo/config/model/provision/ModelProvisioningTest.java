@@ -14,6 +14,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.core.ApplicationMetadataConfig;
 import com.yahoo.search.config.QrStartConfig;
+import com.yahoo.vespa.config.content.core.StorStatusConfig;
 import com.yahoo.vespa.config.search.core.ProtonConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.HostSystem;
@@ -1509,6 +1510,7 @@ public class ModelProvisioningTest {
 
         assertEquals("Nodes in container cluster", 1, model.getContainerClusters().get("container1").getContainers().size());
         assertEquals("Nodes in content cluster (downscaled)", 1, model.getContentClusters().get("content").getRootGroup().getNodes().size());
+        model.getConfig(new StorStatusConfig.Builder(), "default");
     }
 
     @Test

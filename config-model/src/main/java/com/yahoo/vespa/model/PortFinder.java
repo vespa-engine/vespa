@@ -41,7 +41,7 @@ public class PortFinder {
         String key = request.key();
         if (byKeys.containsKey(key)) {
             int port = byKeys.get(key).port;
-            log.log(Level.FINE, "Re-using port "+port+" for allocation "+request+" on "+host);
+            log.log(Level.FINE, "Re-using port "+port+" for allocation " + request + " on " + host);
             return port;
         }
         int port = request.port;

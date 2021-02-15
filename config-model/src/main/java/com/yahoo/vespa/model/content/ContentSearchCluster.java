@@ -266,7 +266,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     }
 
     public void addSearchNode(DeployState deployState, ContentNode node, StorageGroup parentGroup, ModelElement element) {
-        AbstractConfigProducer parent = hasIndexedCluster() ? getIndexed() : this;
+        AbstractConfigProducer<?> parent = hasIndexedCluster() ? getIndexed() : this;
 
         NodeSpec spec = getNextSearchNodeSpec(parentGroup);
         SearchNode searchNode;

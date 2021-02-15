@@ -6,12 +6,14 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.HostProvisioner;
+import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
+import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
@@ -141,6 +143,7 @@ public class VespaModelTester {
                                                               false,
                                                               startIndexForClusters, retiredHostNames) :
                                       new SingleNodeProvisioner();
+        System.out.println("Created provisioner " + provisioner);
 
         TestProperties properties = new TestProperties()
                 .setMultitenant(true)
