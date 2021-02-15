@@ -36,7 +36,8 @@ enum PathGroup {
              "/zone/v2/{*}",
              "/routing/v1/",
              "/routing/v1/status/environment/{*}",
-             "/routing/v1/inactive/environment/{*}"),
+             "/routing/v1/inactive/environment/{*}",
+             "/state/v1/{*}"),
 
     /** Paths used for creating and reading user resources. */
     user(PathPrefix.api,
