@@ -68,7 +68,7 @@ public class Rebalancer extends NodeMover<Rebalancer.Move> {
         HostCapacity capacity = new HostCapacity(allNodes, nodeRepository().resourcesCalculator());
         double totalSkew = 0;
         int hostCount = 0;
-        for (Node host : allNodes.nodeType((NodeType.host)).state(Node.State.active)) {
+        for (Node host : allNodes.nodeType(NodeType.host).state(Node.State.active)) {
             hostCount++;
             totalSkew += Node.skew(host.flavor().resources(), capacity.freeCapacityOf(host));
         }

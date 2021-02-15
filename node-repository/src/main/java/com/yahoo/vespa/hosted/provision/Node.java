@@ -8,8 +8,6 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
-import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancers;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -22,12 +20,9 @@ import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.time.Instant;
 import java.util.Arrays;
-import java.util.Comparator;
-import java.util.LinkedHashSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
-import java.util.TreeSet;
 
 /**
  * A node in the node repository. The identity of a node is given by its id.
@@ -212,6 +207,16 @@ public final class Node implements Nodelike {
         return withWantToRetire(wantToRetire, status.wantToDeprovision(), agent, at);
     }
 
+    /** Returns a copy of this node with preferToRetire set to given value and updated history */
+    public Node withPreferToRetire(boolean preferToRetire, Agent agent, Instant at) {
+        if (preferToRetire == status.preferToRetire()) return this;
+        Node node = this.with(status.withPreferToRetire(preferToRetire));
+        if (preferToRetire) {
+            node = node.with(history.with(new History.Event(History.Event.Type.preferToRetire, agent, at)));
+        }
+        return node;
+    }
+
     /**
      * Returns a copy of this node which is retired.
      * If the node was already retired it is returned as-is.
@@ -225,7 +230,7 @@ public final class Node implements Nodelike {
 
     /** Returns a copy of this node which is retired */
     public Node retire(Instant retiredAt) {
-        if (status.wantToRetire())
+        if (status.wantToRetire() || status.preferToRetire())
             return retire(Agent.system, retiredAt);
         else
             return retire(Agent.application, retiredAt);
