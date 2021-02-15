@@ -50,7 +50,7 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode) {
     // Easier to see what goes wrong with only 1 thread per disk.
     config->set("minimum_file_meta_slots", "2");
     config->set("minimum_file_header_block_size", "368");
-    config->set("minimum_file_size", "4_Ki");
+    config->set("minimum_file_size", "4096");
     config->set("threads[1]");
     config->set("threads[0].lowestpri 255");
     config->set("dir_spread", "4");
@@ -66,7 +66,7 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode) {
     // Easier to see what goes wrong with only 1 thread per disk.
     config->set("minimum_file_meta_slots", "2");
     config->set("minimum_file_header_block_size", "368");
-    config->set("minimum_file_size", "4_Ki");
+    config->set("minimum_file_size", "4096");
     config->set("dir_spread", "4");
     config->set("dir_levels", "0");
     config = &dc.addConfig("persistence");

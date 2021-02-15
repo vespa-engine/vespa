@@ -244,7 +244,7 @@ TEST("require that multiple chunks can be used by the stash") {
     EXPECT_EQUAL(100 * 512 + count * chunk_header_size(), stash.count_used());
 }
 
-TEST("require that default chunk size is 4_Ki") {
+TEST("require that default chunk size is 4096") {
     Stash stash;
     EXPECT_EQUAL(4_Ki, stash.get_chunk_size());
 }
