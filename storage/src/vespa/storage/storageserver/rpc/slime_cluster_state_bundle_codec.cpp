@@ -6,6 +6,7 @@
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 using document::FixedBucketSpaces;
 using vespalib::slime::Cursor;
@@ -77,7 +78,7 @@ EncodedClusterStateBundle SlimeClusterStateBundleCodec::encode(
         feed_block.setString(DescriptionField, bundle.feed_block()->description());
     }
 
-    OutputBuf out_buf(4096);
+    OutputBuf out_buf(4_Ki);
     BinaryFormat::encode(slime, out_buf);
     ConstBufferRef to_compress(out_buf.getBuf().getData(), out_buf.getBuf().getDataLen());
     auto buf = std::make_unique<DataBuffer>(vespalib::roundUp2inN(out_buf.getBuf().getDataLen()));

@@ -106,7 +106,7 @@ vdstestlib::DirConfig getStandardConfig(bool storagenode, const std::string & ro
     // Easier to see what goes wrong with only 1 thread per disk.
     config->set("minimum_file_meta_slots", "2");
     config->set("minimum_file_header_block_size", "368");
-    config->set("minimum_file_size", "4096");
+    config->set("minimum_file_size", "4_Ki");
     config->set("num_threads", "1");
     config->set("dir_spread", "4");
     config->set("dir_levels", "0");

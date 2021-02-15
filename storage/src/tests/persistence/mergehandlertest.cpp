@@ -8,6 +8,7 @@
 #include <tests/common/message_sender_stub.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <gmock/gmock.h>
 #include <cmath>
 
@@ -626,7 +627,7 @@ MergeHandlerTest::createDummyGetBucketDiff(int timestampOffset, uint16_t hasMask
         diff.push_back(e);
     }
 
-    auto getBucketDiffCmd = std::make_shared<api::GetBucketDiffCommand>(_bucket, _nodes, 1024*1024);
+    auto getBucketDiffCmd = std::make_shared<api::GetBucketDiffCommand>(_bucket, _nodes, 1_Mi);
     getBucketDiffCmd->getDiff() = diff;
     return getBucketDiffCmd;
 }

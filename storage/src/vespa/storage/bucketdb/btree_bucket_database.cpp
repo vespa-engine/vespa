@@ -5,6 +5,7 @@
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/util/memory_allocator.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <iostream>
 
 /*
@@ -37,7 +38,7 @@ using document::BucketId;
 template <typename ReplicaStore>
 vespalib::datastore::ArrayStoreConfig make_default_array_store_config() {
     return ReplicaStore::optimizedConfigForHugePage(1023, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE,
-                                                    4 * 1024, 8 * 1024, 0.2).enable_free_lists(true);
+                                                    4_Ki, 8_Ki, 0.2).enable_free_lists(true);
 }
 
 namespace {

@@ -3,6 +3,7 @@
 #include "threadpoolimpl.h"
 #include "threadimpl.h"
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <thread>
 #include <vespa/log/log.h>
 LOG_SETUP(".storageframework.thread_pool_impl");
@@ -13,7 +14,7 @@ using vespalib::IllegalStateException;
 namespace storage::framework::defaultimplementation {
 
 ThreadPoolImpl::ThreadPoolImpl(Clock& clock)
-    : _backendThreadPool(512 * 1024),
+    : _backendThreadPool(512_Ki),
       _clock(clock),
       _stopping(false)
 { }

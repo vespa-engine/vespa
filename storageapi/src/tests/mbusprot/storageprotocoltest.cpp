@@ -16,6 +16,7 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <sstream>
 
@@ -626,7 +627,7 @@ TEST_P(StorageProtocolTest, get_bucket_diff) {
     entries.back()._gid = document::GlobalId("1234567890abcdef");
     entries.back()._timestamp = 123456;
     entries.back()._headerSize = 100;
-    entries.back()._bodySize = 65536;
+    entries.back()._bodySize = 64_Ki;
     entries.back()._flags = 1;
     entries.back()._hasMask = 3;
 
