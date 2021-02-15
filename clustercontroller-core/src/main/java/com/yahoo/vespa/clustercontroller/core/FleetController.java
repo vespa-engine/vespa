@@ -40,8 +40,11 @@ import java.util.Map;
 import java.util.Queue;
 import java.util.Set;
 import java.util.TimeZone;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.locks.Lock;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -51,6 +54,9 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                                         Runnable, RemoteClusterControllerTaskScheduler {
 
     private static final Logger log = Logger.getLogger(FleetController.class.getName());
+
+    // Components of different DI graph generation shan't run() simultaneously.
+    private static final Map<String, Lock> controllerLocks = new ConcurrentHashMap<>();
 
     private final Timer timer;
     private final Object monitor;
@@ -1087,6 +1093,9 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     public void run() {
         controllerThreadId = Thread.currentThread().getId();
         try {
+            controllerLocks.computeIfAbsent(getOptions().clusterName + getOptions().fleetControllerIndex,
+                                            __ -> new ReentrantLock())
+                           .lockInterruptibly();
             processingCycle = true;
             while( isRunning() ) {
                 tick();
@@ -1102,6 +1111,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             running.set(false);
             failAllVersionDependentTasks();
             synchronized (monitor) { monitor.notifyAll(); }
+            controllerLocks.get(getOptions().clusterName + getOptions().fleetControllerIndex).unlock();
         }
     }
 
