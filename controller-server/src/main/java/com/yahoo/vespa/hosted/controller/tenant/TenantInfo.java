@@ -1,6 +1,10 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.tenant;
 
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
+
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 
 /**

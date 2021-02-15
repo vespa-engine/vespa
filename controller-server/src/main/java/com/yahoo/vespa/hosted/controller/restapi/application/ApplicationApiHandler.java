@@ -98,6 +98,7 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfoAddress;
 import com.yahoo.vespa.hosted.controller.tenant.TenantInfoBillingContact;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -117,6 +118,7 @@ import java.security.PublicKey;
 import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Base64;
 import java.util.Comparator;
@@ -267,6 +269,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePUT(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return updateTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return updateTenantInfo(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/secret-store")) return addSecretStore(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
         return ErrorResponse.notFoundError("Nothing at " + path);
@@ -629,6 +632,36 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             controller.applications().store(application);
         });
         return new SlimeJsonResponse(root);
+    }
+
+    private HttpResponse addSecretStore(String tenantName, HttpRequest request) {
+        if (controller.tenants().require(TenantName.from(tenantName)).type() != Tenant.Type.cloud)
+            throw new IllegalArgumentException("Tenant '" + tenantName + "' is not a cloud tenant");
+
+        var data = toSlime(request.getData()).get();
+        var awsId = mandatory("awsId", data).asString();
+        var externalId = mandatory("externalId", data).asString();
+        var name = mandatory("name", data).asString();
+        var role = mandatory("role", data).asString();
+
+        var tenant = (CloudTenant) controller.tenants().require(TenantName.from(tenantName));
+        var tenantSecretStore = new TenantSecretStore(name, awsId, role);
+
+        if (!tenantSecretStore.isValid()) {
+            return ErrorResponse.badRequest(String.format("Secret store " + tenantSecretStore + " is invalid"));
+        }
+        if (tenant.tenantSecretStores().contains(tenantSecretStore)) {
+            return ErrorResponse.badRequest(String.format("Secret store " + tenantSecretStore + " is already configured"));
+        }
+
+        controller.serviceRegistry().roleService().createTenantPolicy(TenantName.from(tenantName), name, awsId, role);
+        controller.serviceRegistry().tenantSecretService().addSecretStore(tenantSecretStore, externalId);
+        // Store changes
+        controller.tenants().lockOrThrow(tenant.name(), LockedTenant.Cloud.class, lockedTenant -> {
+            lockedTenant = lockedTenant.withSecretStore(tenantSecretStore);
+            controller.tenants().store(lockedTenant);
+        });
+        return new MessageResponse("Configured secret store: " + tenantSecretStore);
     }
 
     private HttpResponse patchApplication(String tenantName, String applicationName, HttpRequest request) {

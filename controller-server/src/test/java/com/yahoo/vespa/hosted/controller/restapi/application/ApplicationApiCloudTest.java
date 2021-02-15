@@ -114,6 +114,38 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         }
     }
 
+    @Test
+    public void test_secret_store_configuration() {
+        var secretStoreRequest =
+                request("/application/v4/tenant/scoober/secret-store", PUT)
+                        .data("{" +
+                                "\"awsId\": \"123\"," +
+                                "\"name\": \"some-name\"," +
+                                "\"role\": \"role-id\"," +
+                                "\"externalId\": \"321\"" +
+                                "}")
+                        .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(secretStoreRequest, "{\"message\":\"Configured secret store: TenantSecretStore{name='some-name', awsId='123', role='role-id'}\"}", 200);
+        tester.assertResponse(secretStoreRequest, "{" +
+                "\"error-code\":\"BAD_REQUEST\"," +
+                "\"message\":\"Secret store TenantSecretStore{name='some-name', awsId='123', role='role-id'} is already configured\"" +
+                "}", 400);
+
+        secretStoreRequest =
+                request("/application/v4/tenant/scoober/secret-store", PUT)
+                        .data("{" +
+                                "\"awsId\": \"123\"," +
+                                "\"name\": \" \"," +
+                                "\"role\": \"role-id\"," +
+                                "\"externalId\": \"321\"" +
+                                "}")
+                        .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(secretStoreRequest, "{" +
+                "\"error-code\":\"BAD_REQUEST\"," +
+                "\"message\":\"Secret store TenantSecretStore{name=' ', awsId='123', role='role-id'} is invalid\"" +
+                "}", 400);
+    }
+
     private ApplicationPackageBuilder prodBuilder() {
         return new ApplicationPackageBuilder()
                 .instances("default")

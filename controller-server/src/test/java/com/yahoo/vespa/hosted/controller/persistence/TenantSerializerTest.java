@@ -10,6 +10,7 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
@@ -95,7 +96,9 @@ public class TenantSerializerTest {
                                              Optional.of(new SimplePrincipal("foobar-user")),
                                              ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
                                                                otherPublicKey, new SimplePrincipal("jane")),
-                                             TenantInfo.EMPTY);
+                                             TenantInfo.EMPTY,
+                                             List.of()
+        );
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
         assertEquals(tenant.creator(), serialized.creator());
@@ -111,9 +114,15 @@ public class TenantSerializerTest {
                 Optional.of(new SimplePrincipal("foobar-user")),
                 ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
                         otherPublicKey, new SimplePrincipal("jane")),
-                TenantInfo.EMPTY.withName("Ofni Tnanet"));
+                TenantInfo.EMPTY.withName("Ofni Tnanet"),
+                List.of(
+                        new TenantSecretStore("ss1", "123", "role1"),
+                        new TenantSecretStore("ss2", "124", "role2")
+                )
+        );
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.info(), serialized.info());
+        assertEquals(tenant.tenantSecretStores(), serialized.tenantSecretStores());
     }
 
 
