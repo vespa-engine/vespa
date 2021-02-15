@@ -47,6 +47,8 @@ import java.util.stream.Collectors;
 
 import static com.yahoo.config.model.test.TestUtil.joinLines;
 import static com.yahoo.vespa.defaults.Defaults.getDefaults;
+import static com.yahoo.vespa.model.search.NodeResourcesTuning.GB;
+import static com.yahoo.vespa.model.search.NodeResourcesTuning.reservedMemoryGb;
 import static org.hamcrest.CoreMatchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -268,7 +270,7 @@ public class ModelProvisioningTest {
             assertEquals("Heap size is lowered with combined clusters",
                          17, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
             assertEquals("Memory for proton is lowered to account for the jvm heap",
-                         (long)(3 * (Math.pow(1024, 3)) * (1 - 0.17)), protonMemorySize(model.getContentClusters().get("content1")));
+                         (long)((3 - reservedMemoryGb) * (Math.pow(1024, 3)) * (1 - 0.17)), protonMemorySize(model.getContentClusters().get("content1")));
             assertProvisioned(0, ClusterSpec.Id.from("container1"), ClusterSpec.Type.container, model);
             assertProvisioned(2, ClusterSpec.Id.from("content1"), ClusterSpec.Id.from("container1"), ClusterSpec.Type.combined, model);
         }
@@ -304,7 +306,7 @@ public class ModelProvisioningTest {
             assertEquals("Heap size is normal",
                          60, physicalMemoryPercentage(model.getContainerClusters().get("container1")));
             assertEquals("Memory for proton is normal",
-                         (long)(3 * (Math.pow(1024, 3))), protonMemorySize(model.getContentClusters().get("content1")));
+                         (long)((3 - reservedMemoryGb) * (Math.pow(1024, 3))), protonMemorySize(model.getContentClusters().get("content1")));
         }
     }
 
@@ -2000,11 +2002,9 @@ public class ModelProvisioningTest {
         ProtonConfig cfg = getProtonConfig(model, cluster.getSearchNodes().get(0).getConfigId());
         assertEquals(2000, cfg.flush().memory().maxtlssize()); // from config override
         assertEquals(1000, cfg.flush().memory().maxmemory()); // from explicit tuning
-        assertEquals((long) 16 * GB, cfg.flush().memory().each().maxmemory()); // from default node flavor tuning
+        assertEquals((long) (128 - reservedMemoryGb) * GB / 8, cfg.flush().memory().each().maxmemory()); // from default node flavor tuning
         assertEquals(0.92, cfg.writefilter().memorylimit(), 0.0001); // from explicit resource-limits
     }
-
-    private static long GB = 1024 * 1024 * 1024;
 
     private static ProtonConfig getProtonConfig(VespaModel model, String configId) {
         ProtonConfig.Builder builder = new ProtonConfig.Builder();
