@@ -4,6 +4,7 @@
 #include <vespa/metrics/metrics.h>
 #include <vespa/metrics/summetric.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 namespace metrics {
 
@@ -175,7 +176,7 @@ TEST_F(SnapshotTest, test_snapshot_two_days)
     TestMetricSet set("test");
 
     FakeTimer* timer;
-    FastOS_ThreadPool threadPool(256 * 1024);
+    FastOS_ThreadPool threadPool(256_Ki);
     MetricManager mm(
             std::unique_ptr<MetricManager::Timer>(timer = new FakeTimer));
     {

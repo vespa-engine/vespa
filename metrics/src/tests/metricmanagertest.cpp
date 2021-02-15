@@ -9,6 +9,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/data/simple_buffer.h>
@@ -146,7 +147,7 @@ namespace {
 std::pair<std::string, std::string>
 getMatchedMetrics(const vespalib::string& config)
 {
-    FastOS_ThreadPool pool(256 * 1024);
+    FastOS_ThreadPool pool(256_Ki);
     TestMetricSet mySet;
     MetricManager mm;
     mm.registerMetric(mm.getMetricLock(), mySet.set);
@@ -465,7 +466,7 @@ std::string dumpAllSnapshots(const MetricManager& mm,
 
 TEST_F(MetricManagerTest, test_snapshots)
 {
-    FastOS_ThreadPool pool(256 * 1024);
+    FastOS_ThreadPool pool(256_Ki);
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
     TestMetricSet mySet;
@@ -567,7 +568,7 @@ TEST_F(MetricManagerTest, test_snapshots)
 
 TEST_F(MetricManagerTest, test_xml_output)
 {
-    FastOS_ThreadPool pool(256 * 1024);
+    FastOS_ThreadPool pool(256_Ki);
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
     MetricManager mm(std::move(timerImpl));
@@ -645,7 +646,7 @@ TEST_F(MetricManagerTest, test_xml_output)
 
 TEST_F(MetricManagerTest, test_json_output)
 {
-    FastOS_ThreadPool pool(256 * 1024);
+    FastOS_ThreadPool pool(256_Ki);
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
     MetricManager mm(std::move(timerImpl));
@@ -734,7 +735,7 @@ namespace {
 
 struct MetricSnapshotTestFixture
 {
-    static const size_t DEFAULT_THREAD_STACK_SIZE = 256 * 1024;
+    static const size_t DEFAULT_THREAD_STACK_SIZE = 256_Ki;
 
     MetricManagerTest& test;
     FastOS_ThreadPool pool;
@@ -974,7 +975,7 @@ TEST_F(MetricManagerTest, json_output_can_have_multiple_sets_with_same_name)
 
 TEST_F(MetricManagerTest, test_text_output)
 {
-    FastOS_ThreadPool pool(256 * 1024);
+    FastOS_ThreadPool pool(256_Ki);
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
     MetricManager mm(std::move(timerImpl));
@@ -1063,7 +1064,7 @@ namespace {
 TEST_F(MetricManagerTest, test_update_hooks)
 {
     std::ostringstream output;
-    FastOS_ThreadPool pool(256 * 1024);
+    FastOS_ThreadPool pool(256_Ki);
     FakeTimer* timer = new FakeTimer(1000);
     std::unique_ptr<MetricManager::Timer> timerImpl(timer);
         // Add a metric set just so one exist
