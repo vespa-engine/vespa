@@ -441,7 +441,7 @@ public class ContentCluster extends AbstractConfigProducer implements
     private ContentCluster(AbstractConfigProducer<?> parent, String clusterId,
                            Map<String, NewDocumentType> documentDefinitions,
                            Set<NewDocumentType> globallyDistributedDocuments,
-                           String routingSelection,  Zone zone, boolean isHosted) {
+                           String routingSelection, Zone zone, boolean isHosted) {
         super(parent, clusterId);
         this.isHosted = isHosted;
         this.clusterId = clusterId;

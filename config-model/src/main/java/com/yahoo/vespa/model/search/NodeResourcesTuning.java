@@ -126,11 +126,11 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     /** Returns the memory we can expect will be available for the content node processes */
     private double usableMemoryGb() {
         double usableMemoryGb = resources.memoryGb() - reservedMemoryGb;
-        if (!combined) {
+        if ( ! combined) {
             return usableMemoryGb;
         }
 
-        double fractionTakenByContainer = (double)ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster / 100;
+        double fractionTakenByContainer = ApplicationContainerCluster.heapSizePercentageOfTotalNodeMemoryWhenCombinedCluster * 1e-2;
         return usableMemoryGb * (1 - fractionTakenByContainer);
     }
 
