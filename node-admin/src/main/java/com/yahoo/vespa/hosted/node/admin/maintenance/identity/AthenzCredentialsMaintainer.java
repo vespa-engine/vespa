@@ -177,6 +177,11 @@ public class AthenzCredentialsMaintainer implements CredentialsMaintainer {
         }
     }
 
+    @Override
+    public String name() {
+        return "node-certificate";
+    }
+
     private boolean shouldRefreshCredentials(Duration age) {
         return age.compareTo(REFRESH_PERIOD) >= 0;
     }
