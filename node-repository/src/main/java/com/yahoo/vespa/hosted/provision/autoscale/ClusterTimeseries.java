@@ -49,6 +49,7 @@ public class ClusterTimeseries {
     /** Returns the average load of this resource in this */
     public double averageLoad(Resource resource) {
         int measurementCount = allTimeseries.stream().mapToInt(m -> m.size()).sum();
+        if (measurementCount == 0) return 0;
         double measurementSum = allTimeseries.stream().flatMap(m -> m.asList().stream()).mapToDouble(m -> value(resource, m)).sum();
         return measurementSum / measurementCount;
     }

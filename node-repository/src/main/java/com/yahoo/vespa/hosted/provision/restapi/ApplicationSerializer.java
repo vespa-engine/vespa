@@ -10,9 +10,12 @@ import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
+import com.yahoo.vespa.hosted.provision.autoscale.ClusterTimeseries;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
+import com.yahoo.vespa.hosted.provision.autoscale.Resource;
 
 import java.net.URI;
+import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
 
@@ -59,7 +62,7 @@ public class ApplicationSerializer {
         if (cluster.shouldSuggestResources(currentResources))
             cluster.suggestedResources().ifPresent(suggested -> toSlime(suggested.resources(), clusterObject.setObject("suggested")));
         cluster.targetResources().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
-        //toSlime(metricsDb.getNodeTimeseries(NodeList.copyOf(nodes),))
+        clusterUtilizationToSlime(cluster, NodeList.copyOf(applicationNodes), metricsDb, clusterObject.setObject("utilization"));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
         clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());
     }
@@ -68,6 +71,14 @@ public class ApplicationSerializer {
         clusterResourcesObject.setLong("nodes", resources.nodes());
         clusterResourcesObject.setLong("groups", resources.groups());
         NodeResourcesSerializer.toSlime(resources.nodeResources(), clusterResourcesObject.setObject("resources"));
+    }
+
+    private static void clusterUtilizationToSlime(Cluster cluster, NodeList nodes, MetricsDb metricsDb, Cursor utilizationObject) {
+        var timeseries = new ClusterTimeseries(Duration.ofHours(1), cluster, nodes, metricsDb);
+
+        utilizationObject.setDouble("cpu", timeseries.averageLoad(Resource.cpu));
+        utilizationObject.setDouble("memory", timeseries.averageLoad(Resource.memory));
+        utilizationObject.setDouble("disk", timeseries.averageLoad(Resource.disk));
     }
 
     private static void scalingEventsToSlime(List<ScalingEvent> scalingEvents, Cursor scalingEventsArray) {
