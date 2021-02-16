@@ -902,6 +902,7 @@ BucketDBUpdater::MergingNodeRemover::MergingNodeRemover(
       _available_nodes(),
       _nonOwnedBuckets(),
       _removed_buckets(0),
+      _removed_documents(0),
       _localIndex(localIndex),
       _distribution(distribution),
       _upStates(upStates),
@@ -1026,6 +1027,7 @@ BucketDBUpdater::MergingNodeRemover::merge(storage::BucketDatabase::Merger& merg
 
     if (remainingCopies.empty()) {
         ++_removed_buckets;
+        _removed_documents += e->getHighestDocumentCount();
         return Result::Skip;
     } else {
         setCopiesInEntry(e, remainingCopies);
@@ -1043,9 +1045,10 @@ BucketDBUpdater::MergingNodeRemover::~MergingNodeRemover()
 {
     if (_removed_buckets != 0) {
         LOGBM(info, "After cluster state change %s, %zu buckets no longer "
-                    "have available replicas. Documents in these buckets will "
+                    "have available replicas. %zu documents in these buckets will "
                     "be unavailable until nodes come back up",
-                    _oldState.getTextualDifference(_state).c_str(), _removed_buckets);
+                    _oldState.getTextualDifference(_state).c_str(),
+                    _removed_buckets, _removed_documents);
     }
 }
 
