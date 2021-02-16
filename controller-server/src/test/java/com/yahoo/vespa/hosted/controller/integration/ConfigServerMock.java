@@ -115,6 +115,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                       current,
                                       Optional.of(new ClusterResources(2, 1, new NodeResources(3, 8, 50, 1, slow, remote))),
                                       Optional.empty(),
+                                      new Cluster.Utilization(0.1, 0.2, 0.3),
                                       List.of(new Cluster.ScalingEvent(new ClusterResources(0, 0, NodeResources.unspecified()),
                                                                        current,
                                                                        Instant.ofEpochMilli(1234))),

@@ -740,6 +740,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 && ! cluster.target().get().justNumbers().equals(cluster.current().justNumbers()))
                 toSlime(cluster.target().get(), clusterObject.setObject("target"));
             cluster.suggested().ifPresent(suggested -> toSlime(suggested, clusterObject.setObject("suggested")));
+            utilizationToSlime(cluster.utilization(), clusterObject.setObject("utilization"));
             scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
             clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());
         }
@@ -1982,6 +1983,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         toSlime(resources.nodeResources(), object.setObject("nodeResources"));
         if ( ! controller.zoneRegistry().system().isPublic())
             object.setDouble("cost", Math.round(resources.nodes() * resources.nodeResources().cost() * 100.0 / 3.0) / 100.0);
+    }
+
+    private void utilizationToSlime(Cluster.Utilization utilization, Cursor utilizationObject) {
+        utilizationObject.setDouble("cpu", utilization.cpu());
+        utilizationObject.setDouble("memory", utilization.memory());
+        utilizationObject.setDouble("disk", utilization.disk());
     }
 
     private void scalingEventsToSlime(List<Cluster.ScalingEvent> scalingEvents, Cursor scalingEventsArray) {
