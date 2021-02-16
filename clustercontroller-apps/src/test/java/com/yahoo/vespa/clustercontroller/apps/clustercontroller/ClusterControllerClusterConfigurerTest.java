@@ -57,7 +57,8 @@ public class ClusterControllerClusterConfigurerTest {
                 new FleetcontrollerConfig(fleetcontrollerConfig),
                 new SlobroksConfig(slobroksConfig),
                 new ZookeepersConfig(zookeepersConfig),
-                metric
+                metric,
+                null
         );
         assertTrue(configurer.getOptions() != null);
         assertEquals(0.123, configurer.getOptions().minNodeRatioPerGroup, 0.01);
@@ -74,7 +75,8 @@ public class ClusterControllerClusterConfigurerTest {
                     new FleetcontrollerConfig(fleetcontrollerConfig),
                     new SlobroksConfig(slobroksConfig),
                     new ZookeepersConfig(zookeepersConfig),
-                    metric
+                    metric,
+                    null
             );
             fail("Should not get here");
         } catch (Exception e) {

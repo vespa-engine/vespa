@@ -31,16 +31,13 @@ public class ClusterController extends AbstractComponent
     private final Map<String, StatusHandler.ContainerStatusPageServer> status = new TreeMap<>();
 
     /**
-     * Dependency injection constructor for controller. {@link VespaZooKeeperServer} argument given
-     * to ensure that zookeeper has started before we start polling it.
+     * Dependency injection constructor for controller. A {@link VespaZooKeeperServer} argument is required
+     * for all its users, to ensure that zookeeper has started before we start polling it, but
+     * should not be injected here, as that causes recreation of the cluster controller, and old and new
+     * will run master election, etc., concurrently, which breaks everything.
      */
-    @SuppressWarnings("unused")
     @Inject
-    public ClusterController(VespaZooKeeperServer ignored) {
-        this();
-    }
-
-    ClusterController() {
+    public ClusterController() {
         metricWrapper = new JDiscMetricWrapper(null);
     }
 
