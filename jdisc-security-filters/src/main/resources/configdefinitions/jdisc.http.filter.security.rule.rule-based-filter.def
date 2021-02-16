@@ -1,0 +1,13 @@
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=jdisc.http.filter.security.rule
+
+dryrun bool default=false
+rule[].name string
+rule[].action enum { ALLOW, BLOCK }
+rule[].hostNames[] string
+rule[].methods[] enum { GET, POST, PUT, PATCH, DELETE }
+rule[].pathExpressions[] string
+rule[].httpResponseCode int default=403
+rule[].httpResponseMessage string default=""
+
+
