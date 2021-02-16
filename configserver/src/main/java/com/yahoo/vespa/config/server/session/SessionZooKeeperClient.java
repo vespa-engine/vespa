@@ -52,6 +52,7 @@ public class SessionZooKeeperClient {
     private static final String DOCKER_IMAGE_REPOSITORY_PATH = "dockerImageRepository";
     private static final String ATHENZ_DOMAIN = "athenzDomain";
     private static final String QUOTA_PATH = "quota";
+    private static final String DEDICATED_CLUSTER_CONTROLLER_CLUSTER_PATH = "dedicatedClusterControllerCluster";
     private final Curator curator;
     private final ConfigCurator configCurator;
     private final TenantName tenantName;
@@ -189,6 +190,10 @@ public class SessionZooKeeperClient {
         return sessionPath.append(QUOTA_PATH).getAbsolute();
     }
 
+    private String dedicatedClusterControllerClusterPath() {
+        return sessionPath.append(DEDICATED_CLUSTER_CONTROLLER_CLUSTER_PATH).getAbsolute();
+    }
+
     public void writeVespaVersion(Version version) {
         configCurator.putData(versionPath(), version.toString());
     }
@@ -262,6 +267,14 @@ public class SessionZooKeeperClient {
         return Optional.ofNullable(configCurator.getData(quotaPath()))
                 .map(SlimeUtils::jsonToSlime)
                 .map(slime -> Quota.fromSlime(slime.get()));
+    }
+
+    public void writeDedicatedClusterControllerCluster() {
+        configCurator.createNode(dedicatedClusterControllerClusterPath());
+    }
+
+    public boolean readDedicatedClusterControllerCluster() {
+        return configCurator.exists(dedicatedClusterControllerClusterPath());
     }
 
     /**

@@ -110,6 +110,14 @@ public class ApplicationCuratorDatabase {
                : data.map(bytes -> Long.parseLong(Utf8.toString(bytes)));
     }
 
+    public boolean getDedicatedClusterControllerCluster(ApplicationId id) {
+        return curator.exists(dedicatedClusterControllerClusterPath(id));
+    }
+
+    public void setDedicatedClusterControllerCluster(ApplicationId id) {
+        curator.create(dedicatedClusterControllerClusterPath(id));
+    }
+
     /**
      * List the active applications of a tenant in this config server.
      *
@@ -149,6 +157,10 @@ public class ApplicationCuratorDatabase {
 
     private Path applicationPath(ApplicationId id) {
         return applicationsPath.append(id.serializedForm());
+    }
+
+    private Path dedicatedClusterControllerClusterPath(ApplicationId id) {
+        return applicationPath(id).append("dedicatedClusterControllerCluster");
     }
 
     private Path reindexingDataPath(ApplicationId id) {
