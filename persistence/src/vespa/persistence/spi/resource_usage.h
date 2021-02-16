@@ -37,6 +37,8 @@ public:
     {
     }
 
+    ResourceUsage(const ResourceUsage &rhs);
+
     ~ResourceUsage();
 
     double get_disk_usage() const noexcept { return _disk_usage; }

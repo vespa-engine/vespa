@@ -5,6 +5,8 @@
 
 namespace storage::spi {
 
+ResourceUsage::ResourceUsage(const ResourceUsage &rhs) = default;
+
 ResourceUsage::~ResourceUsage() = default;
 
 std::ostream& operator<<(std::ostream& out, const ResourceUsage& resource_usage)
