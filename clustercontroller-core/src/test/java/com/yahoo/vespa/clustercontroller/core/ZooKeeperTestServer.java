@@ -1,45 +1,58 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.net.HostName;
-import org.apache.zookeeper.server.NIOServerCnxnFactory;
-import org.apache.zookeeper.server.ZooKeeperServer;
+import com.yahoo.vespa.curator.Curator;
+import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
+import com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.InetSocketAddress;
+import java.net.ServerSocket;
 import java.time.Duration;
+import java.util.Optional;
 
 /**
  * This class sets up a zookeeper server, such that we can test fleetcontroller zookeeper parts without stubbing in the client.
  */
 public class ZooKeeperTestServer {
     private final File zooKeeperDir;
-    private final ZooKeeperServer server;
+    private final VespaZooKeeperServer server;
     private static final Duration tickTime = Duration.ofMillis(2000);
-    private final NIOServerCnxnFactory factory;
     private static final String DIR_PREFIX = "test_fltctrl_zk";
     private static final String DIR_POSTFIX = "sdir";
+    private final int port;
 
     ZooKeeperTestServer() throws IOException {
         this(0);
     }
 
-    private ZooKeeperTestServer(int port) throws IOException {
+    private ZooKeeperTestServer(int wantedPort) throws IOException {
+        this.port = findFreePort(wantedPort);
         zooKeeperDir = getTempDir();
         delete(zooKeeperDir);
         if (!zooKeeperDir.mkdir()) {
             throw new IllegalStateException("Failed to create directory " + zooKeeperDir);
         }
         zooKeeperDir.deleteOnExit();
-        server = new ZooKeeperServer(zooKeeperDir, zooKeeperDir, (int)tickTime.toMillis());
-        final int maxcc = 10000; // max number of connections from the same client
-        factory = new NIOServerCnxnFactory();
-        factory.configure(new InetSocketAddress(port), maxcc); // Use any port
-        try{
-            factory.startup(server);
-        } catch (InterruptedException e) {
-            throw new IllegalStateException("Interrupted during test startup: ", e);
+        ZookeeperServerConfig config = new ZookeeperServerConfig.Builder()
+                .tickTime((int) tickTime.toMillis())
+                .clientPort(this.port)
+                .server(new ZookeeperServerConfig.Server.Builder().hostname("localhost").id(0))
+                .myid(0)
+                .zooKeeperConfigFile(zooKeeperDir.toPath().resolve("zookeeper.cfg").toFile().getAbsolutePath())
+                .dataDir(zooKeeperDir.toPath().toFile().getAbsolutePath())
+                .myidFile(zooKeeperDir.toPath().resolve("myId").toFile().getAbsolutePath())
+                .build();
+        server = new VespaZooKeeperServerImpl(config);
+
+        try (Curator curator = Curator.create("localhost:" + port, Optional.empty())) {
+            try {
+                curator.framework().blockUntilConnected();
+            } catch (InterruptedException interruptedException) {
+                throw new RuntimeException(interruptedException);
+            }
         }
     }
 
@@ -47,9 +60,16 @@ public class ZooKeeperTestServer {
         return new ZooKeeperTestServer(port);
     }
 
-    private int getPort() {
-        return factory.getLocalPort();
+    private int findFreePort(int port) {
+        if (port != 0) return port;
+        try (ServerSocket serverSocket = new ServerSocket(port)) {
+            return serverSocket.getLocalPort();
+        } catch (IOException e) {
+            throw new NullPointerException("Could not find any free port");
+        }
     }
+
+    private int getPort() { return port; }
 
     String getAddress() {
         return HostName.getLocalhost() + ":" + getPort();
@@ -61,8 +81,6 @@ public class ZooKeeperTestServer {
         if (cleanupZooKeeperDir) {
             delete(zooKeeperDir);
         }
-
-        factory.shutdown();
     }
 
     private void delete(File f) {
@@ -85,4 +103,5 @@ public class ZooKeeperTestServer {
 
         return File.createTempFile(DIR_PREFIX, DIR_POSTFIX);
     }
+
 }
