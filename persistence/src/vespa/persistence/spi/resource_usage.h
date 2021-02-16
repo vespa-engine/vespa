@@ -39,7 +39,13 @@ public:
 
     ResourceUsage(const ResourceUsage &rhs);
 
+    ResourceUsage(ResourceUsage &&rhs);
+
     ~ResourceUsage();
+
+    ResourceUsage& operator=(const ResourceUsage &rhs);
+
+    ResourceUsage& operator=(ResourceUsage &&rhs);
 
     double get_disk_usage() const noexcept { return _disk_usage; }
     double get_memory_usage() const noexcept { return _memory_usage; }
