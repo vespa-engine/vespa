@@ -3,8 +3,13 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
@@ -13,6 +18,8 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.disk.CoredumpCleanupRule;
 import com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanup;
 import com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanupRule;
 import com.yahoo.vespa.hosted.node.admin.maintenance.disk.LinearCleanupRule;
+import com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncClient;
+import com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncFileInfo;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentTask;
@@ -31,6 +38,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +47,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanupRule.Priority;
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -53,9 +62,11 @@ public class StorageMaintainer {
 
     private final Terminal terminal;
     private final CoredumpHandler coredumpHandler;
-    private final Path archiveContainerStoragePath;
     private final DiskCleanup diskCleanup;
+    private final SyncClient syncClient;
     private final Clock clock;
+    private final Path archiveContainerStoragePath;
+    private final StringFlag syncBucketNameFlag;
 
     // We cache disk usage to avoid doing expensive disk operations so often
     private final Cache<ContainerName, DiskSize> diskUsage = CacheBuilder.newBuilder()
@@ -63,16 +74,34 @@ public class StorageMaintainer {
             .expireAfterWrite(5, TimeUnit.MINUTES)
             .build();
 
-    public StorageMaintainer(Terminal terminal, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath) {
-        this(terminal, coredumpHandler, archiveContainerStoragePath, new DiskCleanup(), Clock.systemUTC());
-    }
-
-    public StorageMaintainer(Terminal terminal, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath, DiskCleanup diskCleanup, Clock clock) {
+    public StorageMaintainer(Terminal terminal, CoredumpHandler coredumpHandler, DiskCleanup diskCleanup,
+                             SyncClient syncClient, Clock clock, Path archiveContainerStoragePath, FlagSource flagSource) {
         this.terminal = terminal;
         this.coredumpHandler = coredumpHandler;
-        this.archiveContainerStoragePath = archiveContainerStoragePath;
         this.diskCleanup = diskCleanup;
+        this.syncClient = syncClient;
         this.clock = clock;
+        this.archiveContainerStoragePath = archiveContainerStoragePath;
+        this.syncBucketNameFlag = Flags.SYNC_HOST_LOGS_TO_S3_BUCKET.bindTo(flagSource);
+    }
+
+    public boolean syncLogs(NodeAgentContext context) {
+        Optional<ApplicationId> app = context.node().owner();
+        if (app.isEmpty()) return false;
+        String bucketName = syncBucketNameFlag
+                .with(FetchVector.Dimension.NODE_TYPE, NodeType.tenant.name())
+                .with(FetchVector.Dimension.APPLICATION_ID, app.get().serializedForm())
+                .value();
+        if (bucketName.isBlank()) return false;
+
+        List<SyncFileInfo> syncFileInfos = FileFinder.files(pathOnHostUnderContainerVespaHome(context, "logs/vespa"))
+                .maxDepth(2)
+                .stream()
+                .sorted(Comparator.comparing(FileFinder.FileAttributes::lastModifiedTime))
+                .flatMap(fa -> SyncFileInfo.tenantLog(bucketName, app.get(), context.hostname(), fa.path()).stream())
+                .collect(Collectors.toList());
+
+        return syncClient.sync(context, syncFileInfos, 1);
     }
 
     public Optional<DiskSize> diskUsageFor(NodeAgentContext context) {
@@ -127,22 +156,20 @@ public class StorageMaintainer {
         Instant start = clock.instant();
         double oneMonthSeconds = Duration.ofDays(30).getSeconds();
         Function<Instant, Double> monthNormalizer = instant -> Duration.between(instant, start).getSeconds() / oneMonthSeconds;
-        Function<String, Path> pathOnHostUnderContainerVespaHome = path ->
-                context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome(path));
         List<DiskCleanupRule> rules = new ArrayList<>();
 
-        rules.add(CoredumpCleanupRule.forContainer(pathOnHostUnderContainerVespaHome.apply("var/crash")));
+        rules.add(CoredumpCleanupRule.forContainer(pathOnHostUnderContainerVespaHome(context, "var/crash")));
 
         if (context.node().membership().map(m -> m.type().isContainer()).orElse(false))
-            rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome.apply("logs/vespa/qrs")).list(),
+            rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome(context, "logs/vespa/qrs")).list(),
                     fa -> monthNormalizer.apply(fa.lastModifiedTime()), Priority.LOWEST, Priority.HIGHEST));
 
         if (context.nodeType() == NodeType.tenant && context.node().membership().map(m -> m.type().isAdmin()).orElse(false))
-            rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome.apply("logs/vespa/logarchive")).list(),
+            rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome(context, "logs/vespa/logarchive")).list(),
                     fa -> monthNormalizer.apply(fa.lastModifiedTime()), Priority.LOWEST, Priority.HIGHEST));
 
         if (context.nodeType() == NodeType.proxy)
-            rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome.apply("logs/nginx")).list(),
+            rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome(context, "logs/nginx")).list(),
                     fa -> monthNormalizer.apply(fa.lastModifiedTime()), Priority.LOWEST, Priority.MEDIUM));
 
         return rules;
@@ -211,5 +238,9 @@ public class StorageMaintainer {
                         .map(DockerImage::asString)
                         .orElse("<none>")
                 );
+    }
+
+    private static Path pathOnHostUnderContainerVespaHome(NodeAgentContext context, String path) {
+        return context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome(path));
     }
 }

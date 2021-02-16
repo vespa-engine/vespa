@@ -499,6 +499,7 @@ public class NodeAgentImpl implements NodeAgent {
                     orchestrator.resume(context.hostname().value());
                     suspendedInOrchestrator = false;
                 }
+                storageMaintainer.syncLogs(context);
                 break;
             case provisioned:
                 nodeRepository.setNodeState(context.hostname().value(), NodeState.dirty);
