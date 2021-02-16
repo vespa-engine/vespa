@@ -1,0 +1,42 @@
+# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Chains configuration
+namespace=container.core
+
+components[].id string
+
+# Configured functionality provided by this - comes in addition to those set in the code
+components[].dependencies.provides[] string
+
+# Configured "before" dependencies provided by this - comes in addition to those set in the code
+components[].dependencies.before[] string
+
+# Configured "after" dependencies provided by this - comes in addition to those set in the code
+components[].dependencies.after[] string
+
+# The id of this chain. The id has the form name(:version)?
+# where the version has the form 1(.2(.3(.identifier)?)?)?.
+# The default chain must be called "default".
+chains[].id string
+
+#The type of this chain
+chains[].type enum {DOCPROC, SEARCH} default=SEARCH
+
+# The id of a component to include in this chain.
+# The id has the form fullclassname(:version)?
+# where the version has the form 1(.2(.3(.identifier)?)?)?.
+chains[].components[] string
+
+# The optional list of chain ids this inherits.
+# The ids has the form name(:version)?
+# where the version has the form 1(.2(.3(.identifier)?)?)?.
+# If the version is not specified the newest version is used.
+chains[].inherits[] string
+
+# The optional list of component ids to exclude from this chain even if they exists in inherited chains
+# If versions are specified in these ids, they are ignored.
+chains[].excludes[] string
+
+# The phases for a chain
+chains[].phases[].id string
+chains[].phases[].before[] string
+chains[].phases[].after[] string
