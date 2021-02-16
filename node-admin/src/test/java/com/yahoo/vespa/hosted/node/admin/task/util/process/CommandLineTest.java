@@ -161,4 +161,15 @@ public class CommandLineTest {
         terminal.verifyAllCommandsExecuted();
     }
 
+    @Test
+    public void testEnvironment() {
+        terminal.expectCommand("env k1=v1 -u k2 \"key 3=value 3\" programname 2>&1");
+        commandLine.add("programname")
+                .setEnvironmentVariable("key 3", "value 3")
+                .removeEnvironmentVariable("k2")
+                .setEnvironmentVariable("k1", "v1")
+                .execute();
+        terminal.verifyAllCommandsExecuted();
+    }
+
 }
