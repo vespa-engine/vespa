@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.application.validation;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.model.VespaModel;
 
@@ -20,6 +21,7 @@ import java.util.stream.Collectors;
  * @author ogronnesby
  */
 public class QuotaValidator extends Validator {
+
     private static final Logger log = Logger.getLogger(QuotaValidator.class.getName());
 
     @Override
@@ -30,11 +32,10 @@ public class QuotaValidator extends Validator {
     }
 
     private void validateBudget(BigDecimal budget, VespaModel model, SystemName systemName) {
-        var spend = model.provisioned().all().values().stream()
-                .filter(Objects::nonNull)
-                .map(Capacity::maxResources)
-                .mapToDouble(clusterCapacity -> clusterCapacity.nodeResources().cost() * clusterCapacity.nodes())
-                .sum();
+        var spend = model.allocatedHosts().getHosts().stream()
+                         .filter(hostSpec -> hostSpec.membership().get().cluster().type() != ClusterSpec.Type.admin)
+                         .mapToDouble(hostSpec -> hostSpec.advertisedResources().cost())
+                         .sum();
 
         if (Math.abs(spend) < 0.01) {
             log.warning("Deploying application " + model.applicationPackage().getApplicationId() + " with zero budget use.  This is suspicious, but not blocked");
