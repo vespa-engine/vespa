@@ -5,6 +5,7 @@ import com.yahoo.collections.Pair;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -45,7 +46,8 @@ public class MemoryMetricsDb implements MetricsDb {
     }
 
     @Override
-    public List<NodeTimeseries> getNodeTimeseries(Instant startTime, Set<String> hostnames) {
+    public List<NodeTimeseries> getNodeTimeseries(Duration period, Set<String> hostnames) {
+        Instant startTime = nodeRepository.clock().instant().minus(period);
         synchronized (lock) {
             return hostnames.stream()
                             .map(hostname -> db.getOrDefault(hostname, new NodeTimeseries(hostname, List.of())).justAfter(startTime))

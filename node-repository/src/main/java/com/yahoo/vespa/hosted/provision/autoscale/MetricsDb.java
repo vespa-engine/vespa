@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Clock;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
@@ -26,11 +27,13 @@ public interface MetricsDb {
     /**
      * Returns a list with one entry for each hostname containing
      * the snapshots recorded after the given time (or an empty snapshot if none).
+     *
+     * @param period the duration into the past to return data for
      */
-    List<NodeTimeseries> getNodeTimeseries(Instant startTime, Set<String> hostnames);
+    List<NodeTimeseries> getNodeTimeseries(Duration period, Set<String> hostnames);
 
-    default List<NodeTimeseries> getNodeTimeseries(Instant startTime, NodeList nodes) {
-        return getNodeTimeseries(startTime, nodes.stream().map(Node::hostname).collect(Collectors.toSet()));
+    default List<NodeTimeseries> getNodeTimeseries(Duration period, NodeList nodes) {
+        return getNodeTimeseries(period, nodes.stream().map(Node::hostname).collect(Collectors.toSet()));
     }
 
     /** Must be called intermittently (as long as add is called) to gc old data */

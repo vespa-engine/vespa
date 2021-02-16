@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -71,14 +72,16 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
 
     private final Orchestrator orchestrator;
     private final NodeRepository nodeRepository;
+    private final MetricsDb metricsDb;
     private final NodeFlavors nodeFlavors;
 
     @Inject
     public NodesV2ApiHandler(LoggingRequestHandler.Context parentCtx, Orchestrator orchestrator,
-                             NodeRepository nodeRepository, NodeFlavors flavors) {
+                             NodeRepository nodeRepository, MetricsDb metricsDb, NodeFlavors flavors) {
         super(parentCtx);
         this.orchestrator = orchestrator;
         this.nodeRepository = nodeRepository;
+        this.metricsDb = metricsDb;
         this.nodeFlavors = flavors;
     }
 
@@ -436,6 +439,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
             return ErrorResponse.notFoundError("No application '" + id + "'");
         Slime slime = ApplicationSerializer.toSlime(application.get(),
                                                     nodeRepository.nodes().list(Node.State.active).owner(id).asList(),
+                                                    metricsDb,
                                                     withPath("/nodes/v2/applications/" + id, uri));
         return new SlimeJsonResponse(slime);
     }
