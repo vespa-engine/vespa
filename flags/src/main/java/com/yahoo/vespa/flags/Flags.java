@@ -245,6 +245,13 @@ public class Flags {
             "JVM max heap size for cluster controller in Mb",
             "Takes effect when restarting cluster controller");
 
+    public static final UnboundBooleanFlag DEDICATED_CLUSTER_CONTROLLER_CLUSTER = defineFeatureFlag(
+            "dedicated-cluster-controller-cluster", false,
+            List.of("jonmv"), "2021-02-15", "2021-04-15",
+            "Makes application eligible for switching to a dedicated, shared cluster controller cluster, by a maintainer",
+            "Takes effect immediately",
+            APPLICATION_ID);
+
     public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
             "allowed-athenz-proxy-identities", List.of(), String.class,
             List.of("bjorncs", "tokle"), "2021-02-10", "2021-08-01",

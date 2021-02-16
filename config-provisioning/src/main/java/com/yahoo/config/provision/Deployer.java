@@ -71,4 +71,10 @@ public interface Deployer {
     /** Timeout in server, clients can use this to set correct client timeout */
     default Duration serverDeployTimeout() { return Duration.ofMinutes(30); }
 
+    /** Turn on dedicated cluster controllers for the given application. */
+    default void setDedicatedClusterControllerCluster(ApplicationId id) { }
+
+    /** Get whether the given application uses dedicated cluster controllers. */
+    default boolean getDedicatedClusterControllerCluster(ApplicationId id) { return false; }
+
 }

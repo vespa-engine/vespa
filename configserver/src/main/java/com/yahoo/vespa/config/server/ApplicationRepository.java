@@ -1049,6 +1049,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     @Override
     public Duration serverDeployTimeout() { return Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout()); }
 
+    @Override
+    public void setDedicatedClusterControllerCluster(ApplicationId id) {
+        requireDatabase(id).setDedicatedClusterControllerCluster(id);
+    }
+
+    @Override
+    public boolean getDedicatedClusterControllerCluster(ApplicationId id) {
+        return requireDatabase(id).getDedicatedClusterControllerCluster(id);
+    }
+
     private static void logConfigChangeActions(ConfigChangeActions actions, DeployLogger logger) {
         RestartActions restartActions = actions.getRestartActions();
         if ( ! restartActions.isEmpty()) {
