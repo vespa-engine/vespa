@@ -1405,6 +1405,7 @@ public class ModelProvisioningTest {
                         "</container>" +
                         "</services>";
         VespaModelTester tester = new VespaModelTester();
+        tester.setHosted(false);
         tester.addHosts(1);
         VespaModel model = tester.createModel(services, true);
         assertEquals(1, model.getRoot().hostSystem().getHosts().size());

@@ -15,8 +15,13 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.ProvisionLogger;
+import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
@@ -47,7 +52,7 @@ public class VespaModelTester {
     private final ConfigModelRegistry configModelRegistry;
 
     private boolean hosted = true;
-    private Map<NodeResources, Collection<Host>> hostsByResources = new HashMap<>();
+    private final Map<NodeResources, Collection<Host>> hostsByResources = new HashMap<>();
     private ApplicationId applicationId = ApplicationId.defaultId();
     private boolean useDedicatedNodeForLogserver = false;
 
@@ -139,9 +144,12 @@ public class VespaModelTester {
         ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
 
         HostProvisioner provisioner = hosted ?
-                                      new InMemoryProvisioner(hostsByResources, failOnOutOfCapacity, useMaxResources,
-                                                              false,
-                                                              startIndexForClusters, retiredHostNames) :
+                                      new ProvisionerAdapter(new InMemoryProvisioner(hostsByResources,
+                                                                                     failOnOutOfCapacity,
+                                                                                     useMaxResources,
+                                                                                     false,
+                                                                                     startIndexForClusters,
+                                                                                     retiredHostNames)) :
                                       new SingleNodeProvisioner();
 
         TestProperties properties = new TestProperties()
@@ -159,4 +167,25 @@ public class VespaModelTester {
         return modelCreatorWithMockPkg.create(false, deployState.build(), configModelRegistry);
     }
 
+    /** To verify that we don't call allocateHost(alias) in hosted environments */
+    private static class ProvisionerAdapter implements HostProvisioner {
+
+        private final HostProvisioner provisioner;
+
+        public ProvisionerAdapter(HostProvisioner provisioner) {
+            this.provisioner = provisioner;
+        }
+
+        @Override
+        public HostSpec allocateHost(String alias) {
+            throw new UnsupportedOperationException("Allocating hosts using <node> tags is not supported in hosted environments, " +
+                                                    "use <nodes count='N'> instead, see https://cloud.vespa.ai/en/reference/services");
+        }
+
+        @Override
+        public List<HostSpec> prepare(ClusterSpec cluster, Capacity capacity, ProvisionLogger logger) {
+            return provisioner.prepare(cluster, capacity, logger);
+        }
+
+    }
 }
