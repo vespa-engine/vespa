@@ -3,11 +3,12 @@
 #include <vespa/searchlib/attribute/multi_value_mapping.h>
 #include <vespa/searchlib/attribute/multi_value_mapping.hpp>
 #include <vespa/searchlib/attribute/not_implemented_attribute.h>
-#include <vespa/vespalib/util/rand48.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/generationhandler.h>
+#include <vespa/vespalib/util/rand48.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("multivaluemapping_test");
@@ -82,7 +83,7 @@ public:
     }
     void setup(uint32_t maxSmallArraySize, bool enable_free_lists = true) {
         ArrayStoreConfig config(maxSmallArraySize,
-                                ArrayStoreConfig::AllocSpec(0, RefType::offsetSize(), 8 * 1024, ALLOC_GROW_FACTOR));
+                                ArrayStoreConfig::AllocSpec(0, RefType::offsetSize(), 8_Ki, ALLOC_GROW_FACTOR));
         config.enable_free_lists(enable_free_lists);
         _mvMapping = std::make_unique<MvMapping>(config);
         _attr = std::make_unique<AttributeType>(*_mvMapping);

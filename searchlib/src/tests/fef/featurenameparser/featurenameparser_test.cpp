@@ -3,6 +3,7 @@
 LOG_SETUP("featurenameparser_test");
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/searchlib/fef/featurenameparser.h>
 #include <vector>
 #include <string>
@@ -61,7 +62,7 @@ Test::testParse(const vespalib::string &input, bool valid,
 void
 Test::testFile(const vespalib::string &name)
 {
-    char buf[4096];
+    char buf[4_Ki];
     uint32_t lineN = 0;
     FILE *f = fopen(name.c_str(), "r");
     ASSERT_TRUE(f != 0);

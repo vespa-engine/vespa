@@ -11,6 +11,7 @@
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/transport_security_options_reading.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vector>
 #include <chrono>
 #include <thread>
@@ -57,7 +58,7 @@ public:
 class XorCryptoSocket : public CryptoSocket
 {
 private:
-    static constexpr size_t CHUNK_SIZE = 16 * 1024;
+    static constexpr size_t CHUNK_SIZE = 16_Ki;
     enum class OP { READ_KEY, WRITE_KEY };
     std::vector<OP> _op_stack;
     char            _my_key;

@@ -6,6 +6,7 @@
 #include "watcher.h"
 #include <vespa/vespalib/util/sig_catch.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <thread>
 #include <fcntl.h>
 #include <glob.h>
@@ -29,7 +30,7 @@ void snooze(vespalib::Timer & timer)
     std::this_thread::sleep_for(1000ms - timer.elapsed());
 }
 
-constexpr size_t G_BUFSIZE = 1024*1024;
+constexpr size_t G_BUFSIZE = 1_Mi;
 } // namespace logdemon::<unnamed>
 
 

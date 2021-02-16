@@ -5,6 +5,7 @@
 #include <vespa/searchcore/proton/summaryengine/docsum_by_slime.h>
 #include <vespa/searchcore/proton/matchengine/matchengine.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
 
@@ -198,7 +199,7 @@ RPCHooksBase::RPCHooksBase(Params &params)
       _regAPI(*_orb, slobrok::ConfiguratorFactory(params.slobrok_config)),
       _stateLock(),
       _stateCond(),
-      _executor(params.numRpcThreads, 128 * 1024, proton_rpc_executor)
+      _executor(params.numRpcThreads, 128_Ki, proton_rpc_executor)
 { }
 
 void

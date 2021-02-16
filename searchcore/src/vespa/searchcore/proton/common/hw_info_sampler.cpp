@@ -7,6 +7,7 @@
 #include <vespa/searchcore/config/config-hwinfo.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <filesystem>
 #include <thread>
 #include <vespa/log/log.h>
@@ -80,7 +81,7 @@ double measureDiskWriteSpeed(const vespalib::string &path,
 {
     FastOS_File testFile;
     vespalib::string fileName = path + "/hwinfo-writespeed";
-    size_t bufferLen = 1024 * 1024;
+    size_t bufferLen = 1_Mi;
     Alloc buffer(Alloc::allocMMap(bufferLen));
     memset(buffer.get(), 0, buffer.size());
     testFile.EnableDirectIO();
@@ -100,7 +101,7 @@ double measureDiskWriteSpeed(const vespalib::string &path,
     testFile.Close();
     vespalib::unlink(fileName);
     double elapsed = vespalib::to_s(after - before);
-    double diskWriteSpeed = diskWriteLen / elapsed / 1024 / 1024;
+    double diskWriteSpeed = diskWriteLen / elapsed / 1_Mi;
     return diskWriteSpeed;
 }
 
@@ -148,7 +149,7 @@ HwInfoSampler::setDiskWriteSpeed(const vespalib::string &path, const Config &con
 void
 HwInfoSampler::sampleDiskWriteSpeed(const vespalib::string &path, const Config &config)
 {
-    size_t minDiskWriteLen = 1024u * 1024u;
+    size_t minDiskWriteLen = 1_Mi;
     size_t diskWriteLen = config.diskSampleWriteSize;
     diskWriteLen = std::max(diskWriteLen, minDiskWriteLen);
     _sampleTime = Clock::now();

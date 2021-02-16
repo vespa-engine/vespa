@@ -4,6 +4,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/json_format.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <unistd.h>
 #include <assert.h>
 
@@ -16,7 +17,7 @@ namespace vespalib::eval::test {
 
 //-----------------------------------------------------------------------------
 
-constexpr size_t CHUNK_SIZE = 16384;
+constexpr size_t CHUNK_SIZE = 16_Ki;
 const char *num_tests_str = "num_tests";
 
 //-----------------------------------------------------------------------------

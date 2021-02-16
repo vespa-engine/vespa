@@ -3,6 +3,7 @@
 #include "searchresult.h"
 #include <vespa/document/util/bytebuffer.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <algorithm>
 
 namespace vdslib {
@@ -102,7 +103,7 @@ SearchResult::SearchResult() :
     _docIdBuffer(),
     _numDocIdBytes(0)
 {
-    _docIdBuffer.reset(new vespalib::MallocPtr(4096));
+    _docIdBuffer.reset(new vespalib::MallocPtr(4_Ki));
 }
 
 SearchResult::SearchResult(document::ByteBuffer & buf) :

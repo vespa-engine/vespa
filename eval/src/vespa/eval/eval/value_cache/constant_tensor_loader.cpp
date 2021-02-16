@@ -7,6 +7,7 @@
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/vespalib/data/lz4_input_decoder.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <set>
 
 #include <vespa/log/log.h>
@@ -53,7 +54,7 @@ void decode_json(const vespalib::string &path, Slime &slime) {
         LOG(warning, "could not read file: %s", path.c_str());
     } else {
         if (ends_with(path, ".lz4")) {
-            size_t buffer_size = 64 * 1024;
+            size_t buffer_size = 64_Ki;
             Lz4InputDecoder lz4_decoder(file, buffer_size);
             decode_json(path, lz4_decoder, slime);
             if (lz4_decoder.failed()) {

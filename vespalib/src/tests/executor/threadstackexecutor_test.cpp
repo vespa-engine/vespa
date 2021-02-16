@@ -3,6 +3,7 @@
 
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/backtrace.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <atomic>
 
 using namespace vespalib;
@@ -171,14 +172,14 @@ vespalib::string get_worker_stack_trace(ThreadStackExecutor &executor) {
 
 VESPA_THREAD_STACK_TAG(my_stack_tag);
 
-TEST_F("require that executor has appropriate default thread stack tag", ThreadStackExecutor(1, 128*1024)) {
+TEST_F("require that executor has appropriate default thread stack tag", ThreadStackExecutor(1, 128_Ki)) {
     vespalib::string trace = get_worker_stack_trace(f1);
     if (!EXPECT_TRUE(trace.find("unnamed_nonblocking_executor") != vespalib::string::npos)) {
         fprintf(stderr, "%s\n", trace.c_str());
     }
 }
 
-TEST_F("require that executor thread stack tag can be set", ThreadStackExecutor(1, 128*1024, my_stack_tag)) {
+TEST_F("require that executor thread stack tag can be set", ThreadStackExecutor(1, 128_Ki, my_stack_tag)) {
     vespalib::string trace = get_worker_stack_trace(f1);
     if (!EXPECT_TRUE(trace.find("my_stack_tag") != vespalib::string::npos)) {
         fprintf(stderr, "%s\n", trace.c_str());

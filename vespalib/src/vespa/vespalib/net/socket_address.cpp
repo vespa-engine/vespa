@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "socket_address.h"
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <sys/types.h>
 #include <sys/un.h>
@@ -71,7 +72,7 @@ SocketAddress::ip_address() const
 vespalib::string
 SocketAddress::reverse_lookup() const
 {
-    std::vector<char> result(4096, '\0');
+    std::vector<char> result(4_Ki, '\0');
     getnameinfo(addr(), _size, &result[0], 4000, nullptr, 0, NI_NAMEREQD);
     return &result[0];
 }

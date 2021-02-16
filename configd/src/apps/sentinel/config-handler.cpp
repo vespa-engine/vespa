@@ -5,6 +5,7 @@
 
 #include <vespa/vespalib/net/socket_address.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <string>
 #include <fcntl.h>
 #include <sys/wait.h>
@@ -284,8 +285,8 @@ ConfigHandler::handleCmd(const Cmd& cmd)
     switch (cmd.type()) {
     case Cmd::LIST:
         {
-            char retbuf[65536];
-            size_t left = 65536;
+            char retbuf[64_Ki];
+            size_t left = 64_Ki;
             size_t pos = 0;
             retbuf[pos] = 0;
             for (const auto & entry : _services) {

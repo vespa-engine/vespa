@@ -2,9 +2,9 @@
 #include <vespa/log/log.h>
 LOG_SETUP("generation_handler_stress_test");
 #include <vespa/vespalib/testkit/testapp.h>
-
 #include <vespa/vespalib/util/generationhandler.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 using vespalib::Executor;
 using vespalib::GenerationHandler;
@@ -52,8 +52,8 @@ private:
 Fixture::Fixture(uint32_t readThreads)
     : _generationHandler(),
       _readThreads(readThreads),
-      _writer(1, 128 * 1024),
-      _readers(readThreads, 128 * 1024),
+      _writer(1, 128_Ki),
+      _readers(readThreads, 128_Ki),
       _doneWriteWork(0),
       _doneReadWork(0),
       _stopRead(0),

@@ -4,6 +4,7 @@
 #include <vespa/searchsummary/docsummary/general_result.h>
 #include <vespa/searchsummary/docsummary/resultconfig.h>
 #include <vespa/searchsummary/docsummary/resultpacker.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fastos/app.h>
 #include <vespa/log/log.h>
 LOG_SETUP("docsum-pack");
@@ -343,8 +344,8 @@ MyApp::TestCompressInplace()
     const char *buf;
     uint32_t buflen;
 
-    search::RawBuf         field1(32768);
-    search::RawBuf         field2(32768);
+    search::RawBuf         field1(32_Ki);
+    search::RawBuf         field2(32_Ki);
     const ResultClass   *resClass;
     GeneralResult *gres;
 

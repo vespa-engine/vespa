@@ -9,6 +9,7 @@
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 #include <vespa/vespalib/test/make_tls_options_for_testing.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <thread>
 
 using namespace vespalib;
@@ -18,7 +19,7 @@ struct Rpc : FRT_Invokable {
     FNET_Transport    transport;
     FRT_Supervisor    orb;
     Rpc(CryptoEngine::SP crypto, size_t num_threads)
-        : thread_pool(128 * 1024), transport(TransportConfig(num_threads).crypto(std::move(crypto))), orb(&transport) {}
+        : thread_pool(128_Ki), transport(TransportConfig(num_threads).crypto(std::move(crypto))), orb(&transport) {}
     void start() {
         ASSERT_TRUE(transport.Start(&thread_pool));
     }

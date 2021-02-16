@@ -8,6 +8,7 @@
 #include <vespa/vespalib/net/tls/transport_security_options.h>
 #include <vespa/vespalib/net/tls/tls_crypto_engine.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include "client.h"
 #include "fbench.h"
 #include <cstring>
@@ -340,7 +341,7 @@ FBench::Main(int argc, char *argv[])
     int byteLimit   = 0;
     int ignoreCount = 0;
     int seconds     = 60;
-    int maxLineSize = 128 * 1024;
+    int maxLineSize = 128_Ki;
     const int minLineSize = 1024;
 
     const char *queryFilePattern  = "query%03d.txt";

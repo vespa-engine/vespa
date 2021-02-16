@@ -2,6 +2,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_usage_filter_test");
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/attribute/i_attribute_usage_listener.h>
 
@@ -14,14 +15,9 @@ using vespalib::AddressSpace;
 namespace
 {
 
-vespalib::AddressSpace enumStoreOverLoad(30 * 1024 * 1024 * UINT64_C(1024),
-                                         0,
-                                         32 * 1024 * 1024 * UINT64_C(1024));
+vespalib::AddressSpace enumStoreOverLoad(30_Gi, 0, 32_Gi);
 
-vespalib::AddressSpace multiValueOverLoad(127 * 1024 * 1024,
-                                          0,
-                                          128 * 1024 * 1024);
-
+vespalib::AddressSpace multiValueOverLoad(127_Mi, 0, 128_Mi);
 
 
 class MyAttributeStats : public AttributeUsageStats

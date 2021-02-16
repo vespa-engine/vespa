@@ -1,8 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/array.hpp>
+#include <vespa/vespalib/util/size_literals.h>
 #include <deque>
 #include <atomic>
 
@@ -139,14 +140,14 @@ TEST("test that organic growth is by 2 in N and reserve resize are exact")
     EXPECT_EQUAL(512u, c.capacity());
     c.push_back('j');
     EXPECT_EQUAL(513u, c.size());
-    EXPECT_EQUAL(1024u, c.capacity());
+    EXPECT_EQUAL(1_Ki, c.capacity());
     for(size_t i(513); i < 1024; i++) {
         c.push_back('a');
     }
-    EXPECT_EQUAL(1024u, c.size());
-    EXPECT_EQUAL(1024u, c.capacity());
+    EXPECT_EQUAL(1_Ki, c.size());
+    EXPECT_EQUAL(1_Ki, c.capacity());
     c.reserve(1025);
-    EXPECT_EQUAL(1024u, c.size());
+    EXPECT_EQUAL(1_Ki, c.size());
     EXPECT_EQUAL(1025u, c.capacity());
     c.push_back('b');   // Within, no growth
     EXPECT_EQUAL(1025u, c.size());
@@ -345,7 +346,7 @@ TEST_F("require that try_unreserve() succeedes if mmap can be shrinked", Unreser
     int *oldPtr = &f.arr[0];
     f.arr.resize(512);
     EXPECT_TRUE(f.arr.try_unreserve(1023));
-    EXPECT_EQUAL(1024u, f.arr.capacity());
+    EXPECT_EQUAL(1_Ki, f.arr.capacity());
     int *newPtr = &f.arr[0];
     EXPECT_EQUAL(oldPtr, newPtr);
 }

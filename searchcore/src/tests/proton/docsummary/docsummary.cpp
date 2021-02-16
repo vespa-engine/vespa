@@ -36,6 +36,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/encoding/base64.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <regex>
@@ -101,7 +102,7 @@ public:
         : _dmk("summary"),
           _bld(schema),
           _repo(std::make_shared<DocumentTypeRepo>(_bld.getDocumentType())),
-          _summaryExecutor(4, 128 * 1024),
+          _summaryExecutor(4, 128_Ki),
           _noTlSyncer(),
           _str(_summaryExecutor, "summary",
                LogDocumentStore::Config(
@@ -193,7 +194,7 @@ public:
         : _dmk(docTypeName),
           _fileHeaderContext(),
           _tls("tmp", 9013, ".", _fileHeaderContext),
-          _summaryExecutor(8, 128*1024),
+          _summaryExecutor(8, 128_Ki),
           _bucketExecutor(2),
           _mkdirOk(FastOS_File::MakeDirectory("tmpdb")),
           _queryLimiter(),
@@ -224,7 +225,7 @@ public:
                                             DocTypeName(docTypeName), makeBucketSpace(), *b->getProtonConfigSP(), *this,
                                             _summaryExecutor, _summaryExecutor, _bucketExecutor, _tls, _dummy, _fileHeaderContext,
                                             std::make_unique<MemoryConfigStore>(),
-                                            std::make_shared<vespalib::ThreadStackExecutor>(16, 128 * 1024), _hwInfo),
+                                            std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), _hwInfo),
         _ddb->start();
         _ddb->waitForOnlineState();
         _aw = std::make_unique<AttributeWriter>(_ddb->getReadySubDB()->getAttributeManager());

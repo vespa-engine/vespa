@@ -9,6 +9,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <tests/common/dummystoragelink.h>
 #include <tests/distributor/distributortestutil.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include "dummy_cluster_context.h"
 
@@ -39,7 +40,7 @@ struct SplitOperationTest : Test, DistributorTestUtil {
 };
 
 SplitOperationTest::SplitOperationTest()
-    : splitByteSize(10*1024*1024),
+    : splitByteSize(10_Mi),
       tooLargeBucketSize(splitByteSize * 1.1),
       splitCount(UINT32_MAX),
       maxSplitBits(58)

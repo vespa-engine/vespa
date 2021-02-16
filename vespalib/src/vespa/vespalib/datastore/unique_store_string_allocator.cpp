@@ -2,12 +2,13 @@
 
 #include "unique_store_string_allocator.hpp"
 #include "buffer_type.hpp"
+#include <vespa/vespalib/util/size_literals.h>
 
 namespace vespalib::datastore {
 
 namespace {
 
-constexpr size_t NUM_ARRAYS_FOR_NEW_UNIQUESTORE_BUFFER = 1024u;
+constexpr size_t NUM_ARRAYS_FOR_NEW_UNIQUESTORE_BUFFER = 1_Ki;
 constexpr float ALLOC_GROW_FACTOR = 0.2;
 
 }

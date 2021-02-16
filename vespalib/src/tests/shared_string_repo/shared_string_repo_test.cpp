@@ -3,6 +3,7 @@
 #include <vespa/vespalib/util/shared_string_repo.h>
 #include <vespa/vespalib/util/rendezvous.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/testkit/test_kit.h>
@@ -18,7 +19,7 @@ using Stats = SharedStringRepo::Stats;
 
 bool verbose = false;
 double budget = 0.10;
-size_t work_size = 4096;
+size_t work_size = 4_Ki;
 
 //-----------------------------------------------------------------------------
 

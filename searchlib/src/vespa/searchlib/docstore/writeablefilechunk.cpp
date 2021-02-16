@@ -5,6 +5,7 @@
 #include "summaryexceptions.h"
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/array.hpp>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
@@ -26,8 +27,8 @@ namespace search {
 
 namespace {
 
-const uint64_t Alignment = 4096;
-const uint64_t headerAlign = 4096;
+const uint64_t Alignment = 4_Ki;
+const uint64_t headerAlign = 4_Ki;
 
 }
 

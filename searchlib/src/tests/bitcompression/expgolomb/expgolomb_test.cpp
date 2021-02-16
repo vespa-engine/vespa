@@ -2,6 +2,7 @@
 
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vector>
 #include <algorithm>
 
@@ -498,7 +499,7 @@ TestFixture<bigEndian>::testBoundaries(int kValue, bool small, std::vector<uint6
 {
     EC e;
     search::ComprFileWriteContext wc(e);
-    wc.allocComprBuf(32768, 32768);
+    wc.allocComprBuf(32_Ki, 32_Ki);
     e.setupWrite(wc);
     for (auto num : v) {
         e.encodeExpGolomb(num, kValue);
@@ -554,7 +555,7 @@ TestFixture<bigEndian>::testRandNums(int kValue)
 {
     EC e;
     search::ComprFileWriteContext wc(e);
-    wc.allocComprBuf(32768, 32768);
+    wc.allocComprBuf(32_Ki, 32_Ki);
     e.setupWrite(wc);
     for (auto num : _randNums) {
         e.encodeExpGolomb(num, kValue);

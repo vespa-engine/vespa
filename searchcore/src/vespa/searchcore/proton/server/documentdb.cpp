@@ -36,6 +36,7 @@
 #include <vespa/searchlib/engine/searchreply.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 #include <vespa/searchcorespi/index/warmupconfig.h>
@@ -68,7 +69,7 @@ using searchcorespi::IFlushTarget;
 namespace proton {
 
 namespace {
-constexpr uint32_t indexing_thread_stack_size = 128 * 1024;
+constexpr uint32_t indexing_thread_stack_size = 128_Ki;
 
 index::IndexConfig
 makeIndexConfig(const ProtonConfig::Index & cfg) {

@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_set.h>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -30,8 +31,6 @@ getName(const IFlushHandler & handler, const IFlushTarget & target)
     return (handler.getName() + "." + target.getName());
 }
 
-static constexpr uint64_t gibi = UINT64_C(1024) * UINT64_C(1024) * UINT64_C(1024);
-
 uint64_t
 estimateNeededTlsSizeForFlushTarget(const TlsStats &tlsStats, SerialNum flushedSerialNum)
 {
@@ -52,10 +51,10 @@ estimateNeededTlsSizeForFlushTarget(const TlsStats &tlsStats, SerialNum flushedS
 }
 
 MemoryFlush::Config::Config()
-    : maxGlobalMemory(4000*1024*1024ul),
-      maxGlobalTlsSize(20 * gibi),
+    : maxGlobalMemory(4000_Mi),
+      maxGlobalTlsSize(20_Gi),
       globalDiskBloatFactor(0.2),
-      maxMemoryGain(1000*1024*1024ul),
+      maxMemoryGain(1000_Mi),
       diskBloatFactor(0.2),
       maxTimeGain(std::chrono::hours(24))
 { }

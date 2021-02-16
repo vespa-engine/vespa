@@ -2,6 +2,7 @@
 
 #include <vespa/eval/eval/nested_loop.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 using vespalib::BenchmarkTimer;
@@ -18,7 +19,7 @@ void perform_direct_1(const LIST &loop, const LIST &stride) {
         assert(idx1 == expect);
         ++expect;
     }
-    assert(expect == 4096);
+    assert(expect == 4_Ki);
 }
 
 void perform_direct_2(const LIST &loop, const LIST &stride) {
@@ -32,7 +33,7 @@ void perform_direct_2(const LIST &loop, const LIST &stride) {
             ++expect;
         }
     }
-    assert(expect == 4096);
+    assert(expect == 4_Ki);
 }
 
 void perform_direct_3(const LIST &loop, const LIST &stride) {
@@ -49,7 +50,7 @@ void perform_direct_3(const LIST &loop, const LIST &stride) {
             }
         }
     }
-    assert(expect == 4096);
+    assert(expect == 4_Ki);
 }
 
 void perform_direct_4(const LIST &loop, const LIST &stride) {
@@ -69,7 +70,7 @@ void perform_direct_4(const LIST &loop, const LIST &stride) {
             }
         }
     }
-    assert(expect == 4096);
+    assert(expect == 4_Ki);
 }
 
 void perform_direct_lambda_1(const LIST &loop, const LIST &stride) {
@@ -84,7 +85,7 @@ void perform_direct_lambda_1(const LIST &loop, const LIST &stride) {
     for (size_t i = 0; i < loop[0]; ++i, idx1 += stride[0]) {
         fun(idx1);
     }
-    assert(expect == 4096);
+    assert(expect == 4_Ki);
 }
 
 void perform_direct_lambda_2(const LIST &loop, const LIST &stride) {
@@ -102,7 +103,7 @@ void perform_direct_lambda_2(const LIST &loop, const LIST &stride) {
             fun(idx2);
         }
     }
-    assert(expect == 4096);
+    assert(expect == 4_Ki);
 }
 
 void perform_direct_lambda_3(const LIST &loop, const LIST &stride) {
@@ -123,7 +124,7 @@ void perform_direct_lambda_3(const LIST &loop, const LIST &stride) {
             }
         }
     }
-    assert(expect == 4096);
+    assert(expect == 4_Ki);
 }
 
 void perform_direct_lambda_4(const LIST &loop, const LIST &stride) {
@@ -147,7 +148,7 @@ void perform_direct_lambda_4(const LIST &loop, const LIST &stride) {
             }
         }
     }
-    assert(expect == 4096);
+    assert(expect == 4_Ki);
 }
 
 void perform_generic(const LIST &loop, const LIST &stride) {
@@ -158,13 +159,13 @@ void perform_generic(const LIST &loop, const LIST &stride) {
         ++expect;
     };
     run_nested_loop(0, loop, stride, fun);
-    assert(expect == 4096);
+    assert(expect == 4_Ki);
 }
 
 void nop() {}
 
 double estimate_cost_1_us(call_t perform_fun) {
-    LIST loop({4096});
+    LIST loop({4_Ki});
     LIST stride({1});
     return BenchmarkTimer::benchmark([&](){ perform_fun(loop, stride); }, nop, 10000, 5.0) * 1000.0 * 1000.0;
 }

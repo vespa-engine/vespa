@@ -135,6 +135,7 @@ vespa_define_module(
     src/tests/util/mmap_file_allocator_factory
     src/tests/util/rcuvector
     src/tests/util/reusable_set
+    src/tests/util/size_literals
     src/tests/valgrind
     src/tests/visit_ranges
     src/tests/websocket

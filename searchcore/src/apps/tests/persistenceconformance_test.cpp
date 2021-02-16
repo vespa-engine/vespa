@@ -36,6 +36,7 @@
 #include <vespa/config-indexschema.h>
 #include <vespa/config-summary.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("persistenceconformance_test");
@@ -217,7 +218,7 @@ public:
                                _fileHeaderContext,
                                _config_stores.getConfigStore(docType.toString()),
                                std::make_shared<vespalib::ThreadStackExecutor>
-                               (16, 128 * 1024),
+                               (16, 128_Ki),
                                HwInfo());
     }
 };
@@ -231,7 +232,7 @@ DocumentDBFactory::DocumentDBFactory(const vespalib::string &baseDir, int tlsLis
       _queryLimiter(),
       _clock(),
       _metricsWireService(),
-      _summaryExecutor(8, 128 * 1024),
+      _summaryExecutor(8, 128_Ki),
       _bucketExecutor(2)
 {}
 DocumentDBFactory::~DocumentDBFactory()  = default;

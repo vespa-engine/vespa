@@ -1,5 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "protocol_snooping.h"
+#include <vespa/vespalib/util/size_literals.h>
 #include <iostream>
 #include <cstdlib>
 #include <stdint.h>
@@ -63,14 +64,14 @@ TlsSnoopingResult snoop_client_hello_header(const char* buf) noexcept {
     if (!is_expected_tls_protocol_version(buf)) {
         return TlsSnoopingResult::ProtocolVersionMismatch;
     }
-    // Length of TLS record follows. Must be <= 16KiB + 2048 (16KiB + 256 on v1.3).
+    // Length of TLS record follows. Must be <= 16KiB + 2_Ki (16KiB + 256 on v1.3).
     // We expect that the first record contains _only_ a ClientHello with no coalescing
     // and no fragmentation. This is technically a violation of the TLS spec, but this
     // particular detection logic is only intended to be used against other Vespa nodes
     // where we control frame sizes and where such fragmentation should not take place.
     // We also do not support TLSv1.3 0-RTT which may trigger early data.
     uint16_t length = tls_record_length(buf);
-    if ((length < 4) || (length > (16384 + 2048))) {
+    if ((length < 4) || (length > (16_Ki + 2_Ki))) {
         return TlsSnoopingResult::RecordSizeRfcViolation;
     }
     if (!is_client_hello_handshake_record(buf)) {

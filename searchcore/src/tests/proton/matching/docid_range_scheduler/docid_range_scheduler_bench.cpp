@@ -4,6 +4,7 @@
 #include <vespa/searchcore/proton/matching/docid_range_scheduler.h>
 #include <vespa/vespalib/util/rendezvous.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using namespace proton::matching;
@@ -146,7 +147,7 @@ struct SchedulerList {
         factory_list.push_back(std::make_unique<TaskSchedulerFactory>(num_threads, 64));
         factory_list.push_back(std::make_unique<TaskSchedulerFactory>(num_threads, 256));
         factory_list.push_back(std::make_unique<TaskSchedulerFactory>(num_threads, 1024));
-        factory_list.push_back(std::make_unique<TaskSchedulerFactory>(num_threads, 4096));
+        factory_list.push_back(std::make_unique<TaskSchedulerFactory>(num_threads, 4_Ki));
         factory_list.push_back(std::make_unique<AdaptiveSchedulerFactory>(num_threads, 1000));
         factory_list.push_back(std::make_unique<AdaptiveSchedulerFactory>(num_threads, 100));
         factory_list.push_back(std::make_unique<AdaptiveSchedulerFactory>(num_threads, 10));

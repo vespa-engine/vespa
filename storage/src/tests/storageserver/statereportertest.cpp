@@ -13,6 +13,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/simple_buffer.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -60,7 +61,7 @@ struct MetricClock : public metrics::MetricManager::Timer
 }
 
 StateReporterTest::StateReporterTest()
-    : _threadPool(256*1024),
+    : _threadPool(256_Ki),
       _clock(nullptr),
       _top(),
       _stateReporter()

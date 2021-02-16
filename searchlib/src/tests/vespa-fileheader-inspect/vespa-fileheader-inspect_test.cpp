@@ -3,6 +3,7 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/util/fileheadertk.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fastos/file.h>
 
 using namespace search;
@@ -24,7 +25,7 @@ vespalib::string readFile(const vespalib::string &fileName) {
     FastOS_File file;
     ASSERT_TRUE(file.OpenReadOnly(fileName.c_str()));
 
-    char buf[4096];
+    char buf[4_Ki];
     uint32_t len = file.Read(buf, sizeof(buf));
     EXPECT_LESS(len, sizeof(buf)); // make sure we got everything
 

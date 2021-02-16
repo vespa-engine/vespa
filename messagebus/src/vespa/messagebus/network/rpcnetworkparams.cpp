@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "rpcnetworkparams.h"
+#include <vespa/vespalib/util/size_literals.h>
 
 namespace mbus {
 
@@ -12,8 +13,8 @@ RPCNetworkParams::RPCNetworkParams(config::ConfigUri configUri) :
     _identity(Identity("")),
     _slobrokConfig(std::move(configUri)),
     _listenPort(0),
-    _maxInputBufferSize(256*1024),
-    _maxOutputBufferSize(256*1024),
+    _maxInputBufferSize(256_Ki),
+    _maxOutputBufferSize(256_Ki),
     _numThreads(4),
     _tcpNoDelay(true),
     _dispatchOnEncode(true),

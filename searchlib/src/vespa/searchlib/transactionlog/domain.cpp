@@ -6,6 +6,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fastos/file.h>
 #include <algorithm>
 #include <thread>
@@ -37,7 +38,7 @@ Domain::Domain(const string &domainName, const string & baseDir, Executor & exec
     : _config(cfg),
       _currentChunk(createCommitChunk(cfg)),
       _lastSerial(0),
-      _singleCommitter(std::make_unique<vespalib::ThreadStackExecutor>(1, 128 * 1024)),
+      _singleCommitter(std::make_unique<vespalib::ThreadStackExecutor>(1, 128_Ki)),
       _executor(executor),
       _sessionId(1),
       _syncMonitor(),

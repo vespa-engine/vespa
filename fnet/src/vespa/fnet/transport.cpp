@@ -4,6 +4,7 @@
 #include "transport_thread.h"
 #include "iocomponent.h"
 #include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <chrono>
 #include <xxhash.h>
 
@@ -46,7 +47,7 @@ TransportConfig::crypto() const {
 FNET_Transport::FNET_Transport(TransportConfig cfg)
     : _async_resolver(cfg.resolver()),
       _crypto_engine(cfg.crypto()),
-      _work_pool(std::make_unique<vespalib::ThreadStackExecutor>(1, 128 * 1024, fnet_work_pool, 1024)),
+      _work_pool(std::make_unique<vespalib::ThreadStackExecutor>(1, 128_Ki, fnet_work_pool, 1024)),
       _threads(),
       _config(cfg.config())
 {

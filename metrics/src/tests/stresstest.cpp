@@ -4,6 +4,7 @@
 #include <vespa/metrics/metrics.h>
 #include <vespa/metrics/summetric.hpp>
 #include <vespa/vespalib/util/time.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <thread>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -113,7 +114,7 @@ TEST(StressTest, test_stress)
     OuterMetricSet metrics;
 
     LOG(info, "Starting load givers");
-    FastOS_ThreadPool threadPool(256 * 1024);
+    FastOS_ThreadPool threadPool(256_Ki);
     std::vector<Hammer::UP> hammers;
     for (uint32_t i=0; i<10; ++i) {
         hammers.push_back(std::make_unique<Hammer>(metrics, threadPool));

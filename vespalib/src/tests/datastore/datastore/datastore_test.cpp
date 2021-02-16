@@ -5,6 +5,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/test/memory_allocator_observer.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("datastore_test");
@@ -143,8 +144,8 @@ assertMemStats(const DataStoreBase::MemStats &exp,
 TEST(DataStoreTest, require_that_entry_ref_is_working)
 {
     using MyRefType = EntryRefT<22>;
-    EXPECT_EQ(4194304u, MyRefType::offsetSize());
-    EXPECT_EQ(1024u, MyRefType::numBuffers());
+    EXPECT_EQ(4_Mi, MyRefType::offsetSize());
+    EXPECT_EQ(1_Ki, MyRefType::numBuffers());
     {
         MyRefType r(0, 0);
         EXPECT_EQ(0u, r.offset());
@@ -171,8 +172,8 @@ TEST(DataStoreTest, require_that_entry_ref_is_working)
 TEST(DataStoreTest, require_that_aligned_entry_ref_is_working)
 {
     using MyRefType = AlignedEntryRefT<22, 2>; // 4 byte alignement
-    EXPECT_EQ(4 * 4194304u, MyRefType::offsetSize());
-    EXPECT_EQ(1024u, MyRefType::numBuffers());
+    EXPECT_EQ(16_Mi, MyRefType::offsetSize());
+    EXPECT_EQ(1_Ki, MyRefType::numBuffers());
     EXPECT_EQ(0u, MyRefType::align(0));
     EXPECT_EQ(4u, MyRefType::align(1));
     EXPECT_EQ(4u, MyRefType::align(2));

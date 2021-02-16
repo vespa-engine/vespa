@@ -9,6 +9,7 @@
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/util/fileutil.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.predicate_attribute");
@@ -134,7 +135,7 @@ PredicateAttribute::onGenerationChange(generation_t generation)
 void
 PredicateAttribute::onSave(IAttributeSaveTarget &saveTarget) {
     LOG(info, "Saving predicate attribute version %d", getVersion());
-    IAttributeSaveTarget::Buffer buffer(saveTarget.datWriter().allocBuf(4096));
+    IAttributeSaveTarget::Buffer buffer(saveTarget.datWriter().allocBuf(4_Ki));
     _index->serialize(*buffer);
     uint32_t  highest_doc_id = static_cast<uint32_t>(_min_feature.size() - 1);
     buffer->writeInt32(highest_doc_id);

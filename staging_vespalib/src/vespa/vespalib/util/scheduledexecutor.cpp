@@ -3,6 +3,7 @@
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/task.h>
 #include <vespa/fnet/transport.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 namespace vespalib {
 
@@ -35,7 +36,7 @@ public:
 };
 
 ScheduledExecutor::ScheduledExecutor()
-    : _threadPool(128 * 1024),
+    : _threadPool(128_Ki),
       _transport(new FNET_Transport()),
       _lock(),
       _taskList()

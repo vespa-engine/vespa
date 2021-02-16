@@ -9,6 +9,7 @@
 #include <vespa/searchlib/queryeval/emptysearch.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 namespace search {
 
@@ -244,7 +245,7 @@ SingleBoolAttribute::onShrinkLidSpace()
 uint64_t
 SingleBoolAttribute::getEstimatedSaveByteSize() const
 {
-    constexpr uint64_t headerSize = 4096 + sizeof(uint32_t);
+    constexpr uint64_t headerSize = 4_Ki + sizeof(uint32_t);
     return headerSize + _bv.sizeBytes();
 }
 

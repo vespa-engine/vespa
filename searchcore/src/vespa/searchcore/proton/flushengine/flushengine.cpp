@@ -9,6 +9,7 @@
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchlib/common/flush_token.h>
 #include <vespa/vespalib/util/jsonwriter.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <thread>
 
 #include <vespa/log/log.h>
@@ -82,10 +83,10 @@ FlushEngine::FlushEngine(std::shared_ptr<flushengine::ITlsStatsFactory> tlsStats
       _maxConcurrent(numThreads),
       _idleInterval(idleInterval),
       _taskId(0),
-      _threadPool(128 * 1024),
+      _threadPool(128_Ki),
       _strategy(std::move(strategy)),
       _priorityStrategy(),
-      _executor(numThreads, 128 * 1024, flush_engine_executor),
+      _executor(numThreads, 128_Ki, flush_engine_executor),
       _lock(),
       _cond(),
       _handlers(),

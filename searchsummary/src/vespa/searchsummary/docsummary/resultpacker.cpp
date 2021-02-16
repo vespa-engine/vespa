@@ -2,6 +2,7 @@
 
 #include "resultpacker.h"
 #include <vespa/searchcommon/common/undefinedvalues.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.docsummary.resultpacker");
@@ -57,8 +58,8 @@ ResultPacker::SetFormatError(ResType type)
 
 
 ResultPacker::ResultPacker(const ResultConfig *resConfig)
-    : _buf(32768),
-      _cbuf(32768),
+    : _buf(32_Ki),
+      _cbuf(32_Ki),
       _resConfig(resConfig),
       _resClass(nullptr),
       _entryIdx(0),

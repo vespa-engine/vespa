@@ -1,12 +1,16 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/vespalib/btree/btreeroot.h>
+#include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreebuilder.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
-#include <vespa/vespalib/btree/btree.h>
+#include <vespa/vespalib/btree/btreeroot.h>
 #include <vespa/vespalib/btree/btreestore.h>
+
+#include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/rand48.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreenode.hpp>
@@ -17,9 +21,6 @@
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/btree/btreeaggregator.hpp>
-
-#include <vespa/vespalib/util/threadstackexecutor.h>
-#include <vespa/vespalib/util/lambdatask.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("btreestress_test");
@@ -62,8 +63,8 @@ Fixture::Fixture()
     : _generationHandler(),
       _tree(),
       _writeItr(_tree.begin()),
-      _writer(1, 128 * 1024),
-      _readers(4, 128 * 1024),
+      _writer(1, 128_Ki),
+      _readers(4, 128_Ki),
       _rnd(),
       _keyLimit(1000000),
       _readSeed(50),

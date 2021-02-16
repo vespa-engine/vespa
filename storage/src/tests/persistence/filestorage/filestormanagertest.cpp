@@ -26,6 +26,7 @@
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/gate.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <atomic>
 #include <thread>
 
@@ -593,7 +594,7 @@ TEST_F(FileStorManagerTest, handler_paused_multi_thread) {
 
     Document::SP doc(createDocument(content, "id:footype:testdoctype1:n=1234:bar").release());
 
-    FastOS_ThreadPool pool(512 * 1024);
+    FastOS_ThreadPool pool(512_Ki);
     MessagePusherThread pushthread(filestorHandler, doc);
     pushthread.start(pool);
 
@@ -1277,7 +1278,7 @@ TEST_F(FileStorManagerTest, visiting) {
     // Visit bucket with no split, using no selection
     {
         spi::IteratorId iterId(createIterator(top, ids[0], "true"));
-        auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[0]), iterId, 16*1024);
+        auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[0]), iterId, 16_Ki);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
         ASSERT_EQ(1, top.getNumReplies());
@@ -1293,7 +1294,7 @@ TEST_F(FileStorManagerTest, visiting) {
         uint32_t totalDocs = 0;
         spi::IteratorId iterId(createIterator(top, ids[1], "testdoctype1.hstringval = \"John Doe\""));
         while (true) {
-            auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[1]), iterId, 16*1024);
+            auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[1]), iterId, 16_Ki);
             top.sendDown(cmd);
             top.waitForMessages(1, _waitTime);
             ASSERT_EQ(1, top.getNumReplies());
@@ -1320,7 +1321,7 @@ TEST_F(FileStorManagerTest, visiting) {
                                framework::MicroSecTime(40)));
         uint32_t totalDocs = 0;
         while (true) {
-            auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[1]), iterId, 16*1024);
+            auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[1]), iterId, 16_Ki);
             top.sendDown(cmd);
             top.waitForMessages(1, _waitTime);
             ASSERT_EQ(1, top.getNumReplies());
@@ -1631,7 +1632,7 @@ TEST_F(FileStorManagerTest, get_iter) {
     // Sending a getiter request that will only visit some of the docs
     spi::IteratorId iterId(createIterator(top, bid, ""));
     {
-        auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(bid), iterId, 2048);
+        auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(bid), iterId, 2_Ki);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
         ASSERT_EQ(1, top.getNumReplies());
@@ -1656,7 +1657,7 @@ TEST_F(FileStorManagerTest, get_iter) {
         EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
     }
     {
-        auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(bid), iterId, 2048);
+        auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(bid), iterId, 2_Ki);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
         ASSERT_EQ(1, top.getNumReplies());

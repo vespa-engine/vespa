@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".diskindex.pagedict4file");
@@ -37,7 +38,7 @@ namespace search::diskindex {
 
 namespace {
 
-const uint32_t headerAlign = 4096;
+const uint32_t headerAlign = 4_Ki;
 
 }
 
@@ -211,12 +212,12 @@ PageDict4FileSeqRead::open(const vespalib::string &name,
 
     _spReadContext.setFile(&_spfile);
     _spReadContext.setFileSize(_spfile.GetSize());
-    _spReadContext.allocComprBuf(65536u, 32768u);
+    _spReadContext.allocComprBuf(64_Ki, 32_Ki);
     _spd.emptyBuffer(0);
 
     _pReadContext.setFile(&_pfile);
     _pReadContext.setFileSize(_pfile.GetSize());
-    _pReadContext.allocComprBuf(65536u, 32768u);
+    _pReadContext.allocComprBuf(64_Ki, 32_Ki);
     _pd.emptyBuffer(0);
 
     uint64_t fileSize = _ssfile.GetSize();
@@ -224,7 +225,7 @@ PageDict4FileSeqRead::open(const vespalib::string &name,
     _ssReadContext.setFileSize(fileSize);
     _ssReadContext.allocComprBuf((fileSize + sizeof(uint64_t) - 1) /
                                  sizeof(uint64_t),
-                                 32768u);
+                                 32_Ki);
     _ssd.emptyBuffer(0);
 
     _ssReadContext.readComprBuffer();
@@ -357,9 +358,9 @@ PageDict4FileSeqWrite::open(const vespalib::string &name,
     assertOpenWriteOnly(ok, ssname);
     _ssWriteContext.setFile(&_ssfile);
 
-    _pWriteContext.allocComprBuf(65536u, 32768u);
-    _spWriteContext.allocComprBuf(65536u, 32768u);
-    _ssWriteContext.allocComprBuf(65536u, 32768u);
+    _pWriteContext.allocComprBuf(64_Ki, 32_Ki);
+    _spWriteContext.allocComprBuf(64_Ki, 32_Ki);
+    _ssWriteContext.allocComprBuf(64_Ki, 32_Ki);
 
     uint64_t pFileSize = _pfile.GetSize();
     uint64_t spFileSize = _spfile.GetSize();

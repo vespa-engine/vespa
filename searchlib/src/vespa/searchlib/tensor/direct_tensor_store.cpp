@@ -4,12 +4,13 @@
 #include <vespa/eval/eval/value.h>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
+#include <vespa/vespalib/util/size_literals.h>
 
 using vespalib::datastore::EntryRef;
 
 namespace search::tensor {
 
-constexpr size_t MIN_BUFFER_ARRAYS = 8192;
+constexpr size_t MIN_BUFFER_ARRAYS = 8_Ki;
 
 DirectTensorStore::TensorBufferType::TensorBufferType()
     : ParentType(1, MIN_BUFFER_ARRAYS, TensorStoreType::RefType::offsetSize())

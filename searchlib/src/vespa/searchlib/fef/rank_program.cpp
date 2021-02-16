@@ -4,6 +4,7 @@
 #include "featureoverrider.h"
 #include <vespa/vespalib/locale/c.h>
 #include <vespa/vespalib/stllike/hash_set.hpp>
+#include <vespa/vespalib/util/size_literals.h>
 #include <algorithm>
 #include <cassert>
 
@@ -157,7 +158,7 @@ RankProgram::resolve(const BlueprintResolver::FeatureMap &features, bool unbox_s
 
 RankProgram::RankProgram(BlueprintResolver::SP resolver)
     : _resolver(std::move(resolver)),
-      _hot_stash(32768),
+      _hot_stash(32_Ki),
       _cold_stash(),
       _executors(),
       _unboxed_seeds(),

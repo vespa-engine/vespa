@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "dirtraverse.h"
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fastos/file.h>
 #include <cassert>
 #include <cstring>
@@ -234,7 +235,7 @@ DirectoryTraverse::GetTreeSize()
 {
     FastOS_StatInfo statInfo;
     uint64_t size = 0;
-    const uint64_t blockSize = 4096;
+    const uint64_t blockSize = 4_Ki;
 
     while (NextName()) {
         const char *relname = GetRelName();
