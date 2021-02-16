@@ -6,10 +6,12 @@ import com.yahoo.net.HostName;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
 import com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl;
+import com.yahoo.vespa.zookeeper.VespaZooKeeperTestServer;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
+import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.Optional;
 
@@ -45,7 +47,8 @@ public class ZooKeeperTestServer {
                 .dataDir(zooKeeperDir.toPath().toFile().getAbsolutePath())
                 .myidFile(zooKeeperDir.toPath().resolve("myId").toFile().getAbsolutePath())
                 .build();
-        server = new VespaZooKeeperServerImpl(config);
+        server = new VespaZooKeeperTestServer(config);
+        server.start(Paths.get(config.zooKeeperConfigFile()));
 
         try (Curator curator = Curator.create("localhost:" + port, Optional.empty())) {
             try {
