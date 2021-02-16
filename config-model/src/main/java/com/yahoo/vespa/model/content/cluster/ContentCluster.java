@@ -10,6 +10,7 @@ import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 import com.yahoo.documentmodel.NewDocumentType;
@@ -63,6 +64,8 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 /**
  * A content cluster.
@@ -299,18 +302,20 @@ public class ContentCluster extends AbstractConfigProducer implements
             }
             else if (admin.multitenant()) {
                 String clusterName = contentClusterName + "-controllers";
-                NodesSpecification nodesSpecification =
-                    NodesSpecification.optionalDedicatedFromParent(contentElement.child("controllers"), context)
-                                      .orElse(NodesSpecification.nonDedicated(3, context));
-                Collection<HostResource> hosts = nodesSpecification.isDedicated() ?
-                                                 getControllerHosts(nodesSpecification, admin, clusterName, context) :
-                                                 drawControllerHosts(nodesSpecification.minResources().nodes(), rootGroup);
-                clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone"),
-                                                              hosts,
-                                                              clusterName,
-                                                              true,
-                                                              context.getDeployState());
-                contentCluster.clusterControllers = clusterControllers;
+                Optional<NodesSpecification> nodesSpecification = NodesSpecification.optionalDedicatedFromParent(contentElement.child("controllers"), context);
+                if (nodesSpecification.isEmpty() && context.properties().dedicatedClusterControllerCluster())
+                    clusterControllers = getDedicatedSharedControllers(contentElement, admin, contentCluster, context);
+                else {
+                    Collection<HostResource> hosts = nodesSpecification.isPresent() && nodesSpecification.get().isDedicated()
+                                                     ? getControllerHosts(nodesSpecification.get(), admin, clusterName, context)
+                                                     : drawControllerHosts(nodesSpecification.map(spec -> spec.minResources().nodes()).orElse(3), rootGroup);
+                    clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone"),
+                                                                  hosts,
+                                                                  clusterName,
+                                                                  true,
+                                                                  context.getDeployState());
+                    contentCluster.clusterControllers = clusterControllers;
+                }
             }
             else {
                 clusterControllers = admin.getClusterControllers();
@@ -344,6 +349,35 @@ public class ContentCluster extends AbstractConfigProducer implements
             Set<HostResource> c1Hosts = c1.getRootGroup().recursiveGetNodes().stream().map(StorageNode::getHostResource).collect(Collectors.toSet());
             Set<HostResource> c2Hosts = c2.getRootGroup().recursiveGetNodes().stream().map(StorageNode::getHostResource).collect(Collectors.toSet());
             return ! Sets.intersection(c1Hosts, c2Hosts).isEmpty();
+        }
+
+        private ClusterControllerContainerCluster getDedicatedSharedControllers(ModelElement contentElement, Admin admin,
+                                                                                ContentCluster contentCluster, ConfigModelContext context) {
+            if (admin.getClusterControllers() == null) {
+                NodesSpecification spec = NodesSpecification.dedicatedFromSharedParents(3,
+                                                                                        new NodeResources(0.5,
+                                                                                                          2,
+                                                                                                          10,
+                                                                                                          0.3,
+                                                                                                          NodeResources.DiskSpeed.any,
+                                                                                                          NodeResources.StorageType.any),
+                                                                                        contentElement,
+                                                                                        context);
+
+                Collection<HostResource> hosts = spec.provision(admin.hostSystem(),
+                                                                ClusterSpec.Type.admin,
+                                                                ClusterSpec.Id.from("cluster-controllers"),
+                                                                context.getDeployLogger(),
+                                                                true)
+                                                     .keySet();
+
+                admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone"),
+                                                                     hosts,
+                                                                     "cluster-controllers",
+                                                                     true,
+                                                                     context.getDeployState()));
+            }
+            return admin.getClusterControllers();
         }
 
         private Collection<HostResource> getControllerHosts(NodesSpecification nodesSpecification, Admin admin, String clusterName, ConfigModelContext context) {
@@ -384,7 +418,7 @@ public class ContentCluster extends AbstractConfigProducer implements
             else {
                 hosts.addAll(group.getNodes().stream()
                      .filter(node -> node.isRetired() == retired)
-                     .map(StorageNode::getHostResource).collect(Collectors.toList()));
+                     .map(StorageNode::getHostResource).collect(toList()));
             }
 
             List<HostResource> sortedHosts = new ArrayList<>(hosts);
