@@ -79,9 +79,8 @@ private:
     const uint32_t _notReadySubDbId;
     using RetrieversSP = std::shared_ptr<std::vector<std::shared_ptr<IDocumentRetriever>> >;
     vespalib::VarHolder<RetrieversSP> _retrievers;
-    using ReprocessingTasks = std::vector<std::shared_ptr<IReprocessingTask>>;
     ReprocessingRunner _reprocessingRunner;
-    std::shared_ptr<BucketDBOwner> _bucketDB;
+    std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
     std::unique_ptr<bucketdb::BucketDBHandler> _bucketDBHandler;
     HwInfo _hwInfo;
 
@@ -122,7 +121,7 @@ public:
     const_iterator begin() const { return _subDBs.begin(); }
     const_iterator end() const { return _subDBs.end(); }
 
-    BucketDBOwner &getBucketDB() { return *_bucketDB; }
+    bucketdb::BucketDBOwner &getBucketDB() { return *_bucketDB; }
 
     bucketdb::IBucketDBHandler &getBucketDBHandler() {
         return *_bucketDBHandler;

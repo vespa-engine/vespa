@@ -34,14 +34,14 @@ public class Rebalancer extends NodeMover<Rebalancer.Move> {
 
     @Override
     protected boolean maintain() {
-        if ( ! nodeRepository().isWorking()) return false;
+        if ( ! nodeRepository().nodes().isWorking()) return false;
 
         boolean success = true;
         if (nodeRepository().zone().getCloud().dynamicProvisioning()) return success; // Rebalancing not necessary
         if (nodeRepository().zone().environment().isTest()) return success; // Short lived deployments; no need to rebalance
 
         // Work with an unlocked snapshot as this can take a long time and full consistency is not needed
-        NodeList allNodes = nodeRepository().list();
+        NodeList allNodes = nodeRepository().nodes().list();
         updateSkewMetric(allNodes);
         if ( ! zoneIsStable(allNodes)) return success;
         findBestMove(allNodes).execute(true, Agent.Rebalancer, deployer, metric, nodeRepository());
@@ -68,7 +68,7 @@ public class Rebalancer extends NodeMover<Rebalancer.Move> {
         HostCapacity capacity = new HostCapacity(allNodes, nodeRepository().resourcesCalculator());
         double totalSkew = 0;
         int hostCount = 0;
-        for (Node host : allNodes.nodeType((NodeType.host)).state(Node.State.active)) {
+        for (Node host : allNodes.nodeType(NodeType.host).state(Node.State.active)) {
             hostCount++;
             totalSkew += Node.skew(host.flavor().resources(), capacity.freeCapacityOf(host));
         }

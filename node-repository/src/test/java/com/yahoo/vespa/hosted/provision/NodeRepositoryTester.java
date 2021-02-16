@@ -52,7 +52,7 @@ public class NodeRepositoryTester {
     public MockCurator curator() { return curator; }
     
     public List<Node> getNodes(NodeType type, Node.State ... inState) {
-        return nodeRepository.getNodes(type, inState);
+        return nodeRepository.nodes().list(inState).nodeType(type).asList();
     }
     
     public Node addHost(String id, String hostname, String flavor, NodeType type) {
@@ -70,7 +70,7 @@ public class NodeRepositoryTester {
     private Node addNode(String id, String hostname, String parentHostname, Flavor flavor, NodeType type) {
         IP.Config ipConfig = new IP.Config(nodeRepository.nameResolver().resolveAll(hostname), Set.of());
         Node node = Node.create(id, ipConfig, hostname, flavor, type).parentHostname(parentHostname).build();
-        return nodeRepository.addNodes(List.of(node), Agent.system).get(0);
+        return nodeRepository.nodes().addNodes(List.of(node), Agent.system).get(0);
     }
 
     /**
@@ -79,7 +79,7 @@ public class NodeRepositoryTester {
      * of valid state transitions
      */
     public void setNodeState(String hostname, Node.State state) {
-        Node node = nodeRepository.getNode(hostname).orElseThrow(RuntimeException::new);
+        Node node = nodeRepository.nodes().node(hostname).orElseThrow(RuntimeException::new);
         nodeRepository.database().writeTo(state, node, Agent.system, Optional.empty());
     }
 

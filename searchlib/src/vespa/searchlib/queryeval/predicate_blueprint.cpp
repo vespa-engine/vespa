@@ -13,6 +13,7 @@
 #include <vespa/vespalib/btree/btreeiterator.hpp>
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
+#include <vespa/vespalib/util/memory_allocator.h>
 #include <algorithm>
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.predicate.predicate_blueprint");

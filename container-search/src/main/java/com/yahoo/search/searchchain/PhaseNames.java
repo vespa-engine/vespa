@@ -10,6 +10,7 @@ package com.yahoo.search.searchchain;
  * @author Steinar Knutsen
  */
 public final class PhaseNames {
+
     private PhaseNames() {
     }
 

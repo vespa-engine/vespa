@@ -2,6 +2,7 @@
 
 #include "multi_value_mapping_base.h"
 #include <vespa/searchcommon/common/compaction_strategy.h>
+#include <cassert>
 
 namespace search::attribute {
 

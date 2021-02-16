@@ -34,7 +34,7 @@ public class FederationSearcherModel extends ChainedComponentModel {
         }
     }
 
-    private static ComponentSpecification federationSearcherComponentSpecification =
+    private static final ComponentSpecification federationSearcherComponentSpecification =
             new ComponentSpecification(FederationSearcher.class.getName());
 
     public final List<TargetSpec> targets;

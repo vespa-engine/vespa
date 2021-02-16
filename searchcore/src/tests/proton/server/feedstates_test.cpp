@@ -69,7 +69,7 @@ struct Fixture
     IFeedView *feed_view_ptr;
     MyReplayConfig replay_config;
     MemoryConfigStore config_store;
-    BucketDBOwner _bucketDB;
+    bucketdb::BucketDBOwner _bucketDB;
     bucketdb::BucketDBHandler _bucketDBHandler;
     MyIncSerialNum _inc_serial_num;
     ReplayTransactionLogState state;

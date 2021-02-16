@@ -275,8 +275,8 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
                          .id(container.index())
                          .joining(!previousHosts.isEmpty() &&
                                   !previousHosts.contains(container.getHostName()));
-            builder.server(serverBuilder)
-                   .dynamicReconfiguration(true);
+            builder.server(serverBuilder);
+            builder.dynamicReconfiguration(true);
         }
     }
 

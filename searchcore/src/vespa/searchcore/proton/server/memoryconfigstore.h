@@ -26,19 +26,17 @@ public:
     MemoryConfigStore(ConfigMaps::SP maps);
     ~MemoryConfigStore();
 
-    virtual SerialNum getBestSerialNum() const override;
-    virtual SerialNum getOldestSerialNum() const override;
-    virtual bool hasValidSerial(SerialNum serial) const override;
-    virtual SerialNum getPrevValidSerial(SerialNum serial) const override;
-    virtual void saveConfig(const DocumentDBConfig &config,
-                            SerialNum serial) override;
-    virtual void loadConfig(const DocumentDBConfig &, SerialNum serial,
-                            DocumentDBConfig::SP &loaded_config) override;
-    virtual void removeInvalid() override;
+    SerialNum getBestSerialNum() const override;
+    SerialNum getOldestSerialNum() const override;
+    bool hasValidSerial(SerialNum serial) const override;
+    SerialNum getPrevValidSerial(SerialNum serial) const override;
+    void saveConfig(const DocumentDBConfig &config, SerialNum serial) override;
+    void loadConfig(const DocumentDBConfig &, SerialNum serial, DocumentDBConfig::SP &loaded_config) override;
+    void removeInvalid() override;
     void prune(SerialNum serial) override;
-    virtual void serializeConfig(SerialNum, vespalib::nbostream &) override;
-    virtual void deserializeConfig(SerialNum, vespalib::nbostream &) override;
-    virtual void setProtonConfig(const ProtonConfigSP &) override;
+    void serializeConfig(SerialNum, vespalib::nbostream &) override;
+    void deserializeConfig(SerialNum, vespalib::nbostream &) override;
+    void setProtonConfig(const ProtonConfigSP &) override;
 };
 
 // Holds the state of a set of MemoryConfigStore objects, making stored

@@ -76,7 +76,7 @@ public class OsUpgradeActivatorTest {
         assertFalse("OS version " + osVersion0 + " is inactive", isOsVersionActive(NodeType.host));
 
         // One tenant host fails and is no longer considered
-        tester.nodeRepository().fail(tenantHostNodes.get(0).hostname(), Agent.system, this.getClass().getSimpleName());
+        tester.nodeRepository().nodes().fail(tenantHostNodes.get(0).hostname(), Agent.system, this.getClass().getSimpleName());
 
         // Remaining hosts complete their Vespa upgrade
         var healthyTenantHostNodes = tenantHostNodes.subList(1, tenantHostNodes.size());
@@ -91,7 +91,7 @@ public class OsUpgradeActivatorTest {
     private boolean isOsVersionActive(NodeType... types) {
         var active = true;
         for (var type : types) {
-            active &= tester.nodeRepository().list().nodeType(type).changingOsVersion().size() > 0;
+            active &= tester.nodeRepository().nodes().list().nodeType(type).changingOsVersion().size() > 0;
         }
         return active;
     }
@@ -103,7 +103,7 @@ public class OsUpgradeActivatorTest {
     private Stream<Node> streamUpdatedNodes(List<Node> nodes) {
         Stream<Node> stream = Stream.empty();
         for (var node : nodes) {
-            stream = Stream.concat(stream, tester.nodeRepository().getNode(node.hostname()).stream());
+            stream = Stream.concat(stream, tester.nodeRepository().nodes().node(node.hostname()).stream());
         }
         return stream;
     }

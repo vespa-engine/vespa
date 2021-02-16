@@ -6,6 +6,7 @@ import com.yahoo.component.ComponentSpecification;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.ServerConfig;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.SimpleComponent;
 
@@ -45,14 +46,6 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
         addChild(connectorFactory);
     }
 
-    public void removeConnector(ConnectorFactory connectorFactory) {
-        if (connectorFactory == null) {
-            return;
-        }
-        removeChild(connectorFactory);
-        connectorFactories.remove(connectorFactory);
-    }
-
     public List<ConnectorFactory> getConnectorFactories() {
         return Collections.unmodifiableList(connectorFactories);
     }
@@ -82,10 +75,17 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
 
     private void configureJettyThreadpool(ServerConfig.Builder builder) {
         if (cluster == null) return;
+        if (cluster instanceof ApplicationContainerCluster) {
+            configureApplicationClusterJettyThreadPool(builder);
+        } else {
+            builder.minWorkerThreads(2).maxWorkerThreads(4);
+        }
+    }
+    private void configureApplicationClusterJettyThreadPool(ServerConfig.Builder builder) {
         double vcpu = cluster.vcpu().orElse(0);
         if (vcpu > 0) {
             int threads = 16 + (int) Math.ceil(vcpu);
-            builder.maxWorkerThreads(threads).minWorkerThreads(threads);
+            builder.minWorkerThreads(threads).maxWorkerThreads(threads);
         }
     }
 

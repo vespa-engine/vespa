@@ -28,7 +28,7 @@ public class CapacityCheckerTest {
         tester.populateNodeRepositoryFromJsonFile(Paths.get(path));
         var failurePath = tester.capacityChecker.worstCaseHostLossLeadingToFailure();
         assertTrue(failurePath.isPresent());
-        assertTrue(tester.nodeRepository.getNodes(NodeType.host).containsAll(failurePath.get().hostsCausingFailure));
+        assertTrue(tester.nodeRepository.nodes().list().nodeType(NodeType.host).asList().containsAll(failurePath.get().hostsCausingFailure));
         assertEquals(5, failurePath.get().hostsCausingFailure.size());
     }
 
@@ -39,7 +39,7 @@ public class CapacityCheckerTest {
                10, new NodeResources(-1, 10, 100, 1), 10,
                 0, new NodeResources(1, 10, 100, 1), 10);
         int overcommittedHosts = tester.capacityChecker.findOvercommittedHosts().size();
-        assertEquals(tester.nodeRepository.getNodes(NodeType.host).size(), overcommittedHosts);
+        assertEquals(tester.nodeRepository.nodes().list().nodeType(NodeType.host).size(), overcommittedHosts);
     }
 
     @Test
@@ -63,7 +63,7 @@ public class CapacityCheckerTest {
             assertTrue(failurePath.isPresent());
             assertTrue("Computing worst case host loss if all hosts have to be removed should result in an non-empty failureReason with empty nodes.",
                        failurePath.get().failureReason.tenant.isEmpty() && failurePath.get().failureReason.host.isEmpty());
-            assertEquals(tester.nodeRepository.getNodes(NodeType.host).size(), failurePath.get().hostsCausingFailure.size());
+            assertEquals(tester.nodeRepository.nodes().list().nodeType(NodeType.host).size(), failurePath.get().hostsCausingFailure.size());
         }
 
         {

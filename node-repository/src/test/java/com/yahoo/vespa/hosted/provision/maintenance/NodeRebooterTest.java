@@ -8,6 +8,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
@@ -94,8 +95,8 @@ public class NodeRebooterTest {
         while (true) {
             rebooter.maintain();
             simulateReboot(nodeRepository);
-            List<Node> nodes = nodeRepository.getNodes(NodeType.host, Node.State.ready);
-            int count = withCurrentRebootGeneration(1L, nodes).size();
+            NodeList nodes = nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.host);
+            int count = withCurrentRebootGeneration(1L, nodes.asList()).size();
             if (count == 2) {
                 break;
             }
@@ -103,8 +104,8 @@ public class NodeRebooterTest {
     }
 
     private void assertReadyHosts(int expectedCount, NodeRepository nodeRepository, long generation) {
-        List<Node> nodes = nodeRepository.getNodes(NodeType.host, Node.State.ready);
-        assertEquals(expectedCount, withCurrentRebootGeneration(generation, nodes).size());
+        NodeList nodes = nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.host);
+        assertEquals(expectedCount, withCurrentRebootGeneration(generation, nodes.asList()).size());
     }
 
     private void makeReadyHosts(int count, ProvisioningTester tester) {
@@ -113,10 +114,10 @@ public class NodeRebooterTest {
 
     /** Set current reboot generation to the wanted reboot generation whenever it is larger (i.e record a reboot) */
     private void simulateReboot(NodeRepository nodeRepository) {
-        for (Node node : nodeRepository.getNodes(Node.State.ready, Node.State.active)) {
+        for (Node node : nodeRepository.nodes().list(Node.State.ready, Node.State.active)) {
             if (node.status().reboot().wanted() > node.status().reboot().current())
-                nodeRepository.write(node.withCurrentRebootGeneration(node.status().reboot().wanted(),
-                                                                      nodeRepository.clock().instant()), () -> {});
+                nodeRepository.nodes().write(node.withCurrentRebootGeneration(node.status().reboot().wanted(),
+                                                                              nodeRepository.clock().instant()), () -> {});
         }
     }
 
@@ -129,10 +130,10 @@ public class NodeRebooterTest {
     private void simulateOsUpgrade(NodeRepository nodeRepository) {
         var wantedOsVersion = nodeRepository.osVersions().targetFor(NodeType.host);
         if (wantedOsVersion.isEmpty()) return;
-        for (Node node : nodeRepository.getNodes(Node.State.ready, Node.State.active)) {
+        for (Node node : nodeRepository.nodes().list(Node.State.ready, Node.State.active)) {
             if (wantedOsVersion.get().isAfter(node.status().osVersion().current().orElse(Version.emptyVersion)))
-                nodeRepository.write(node.withCurrentOsVersion(wantedOsVersion.get(), nodeRepository.clock().instant()),
-                                     () -> {});
+                nodeRepository.nodes().write(node.withCurrentOsVersion(wantedOsVersion.get(), nodeRepository.clock().instant()),
+                                             () -> {});
         }
     }
 

@@ -1,7 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketmover_common.h"
-#include <vespa/vespalib/testkit/testapp.h>
+#include <vespa/searchcore/proton/server/bucketmovejob.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
@@ -57,14 +57,6 @@ struct MyFrozenBucketHandler : public IFrozenBucketHandler
     }
 };
 
-struct MyCountJobRunner : public IMaintenanceJobRunner {
-    uint32_t runCount;
-    explicit MyCountJobRunner(IMaintenanceJob &job) : runCount(0) {
-        job.registerRunner(this);
-    }
-    void run() override { ++runCount; }
-};
-
 struct ControllerFixtureBase : public ::testing::Test
 {
     test::UserDocumentsBuilder  _builder;
@@ -72,7 +64,7 @@ struct ControllerFixtureBase : public ::testing::Test
     test::ClusterStateHandler   _clusterStateHandler;
     test::BucketHandler         _bucketHandler;
     MyBucketModifiedHandler     _modifiedHandler;
-    std::shared_ptr<BucketDBOwner> _bucketDB;
+    std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
     MyMoveHandler               _moveHandler;
     MySubDb                     _ready;
     MySubDb                     _notReady;
@@ -137,7 +129,7 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
       _calc(std::make_shared<test::BucketStateCalculator>()),
       _bucketHandler(),
       _modifiedHandler(),
-      _bucketDB(std::make_shared<BucketDBOwner>()),
+      _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
       _moveHandler(*_bucketDB, storeMoveDoneContexts),
       _ready(_builder.getRepo(), _bucketDB, 1, SubDbType::READY),
       _notReady(_builder.getRepo(), _bucketDB, 2, SubDbType::NOTREADY),
@@ -152,7 +144,7 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
 {
 }
 
-ControllerFixtureBase::~ControllerFixtureBase() {}
+ControllerFixtureBase::~ControllerFixtureBase() = default;
 constexpr double RESOURCE_LIMIT_FACTOR = 1.0;
 constexpr uint32_t MAX_OUTSTANDING_OPS = 10;
 const BlockableMaintenanceJobConfig BLOCKABLE_CONFIG(RESOURCE_LIMIT_FACTOR, MAX_OUTSTANDING_OPS);
@@ -759,7 +751,7 @@ TEST_F(ControllerFixture, require_that_notifyCreateBucket_causes_bucket_to_be_re
     EXPECT_TRUE(bucketsModified().empty());
     addReady(_notReady.bucket(3)); // bucket 3 now ready, no notify
     EXPECT_TRUE(_bmj.done());        // move job still believes work done
-    _bmj.notifyCreateBucket(_notReady.bucket(3)); // reconsider bucket 3
+    _bmj.notifyCreateBucket(_bucketDB->takeGuard(), _notReady.bucket(3)); // reconsider bucket 3
     EXPECT_FALSE(_bmj.done());
     runLoop();
     EXPECT_TRUE(_bmj.done());

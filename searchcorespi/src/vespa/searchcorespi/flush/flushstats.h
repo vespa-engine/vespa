@@ -12,7 +12,7 @@ class FlushStats
 {
 private:
     vespalib::string _path; // path to data flushed
-    size_t      _pathElementsToLog;
+    size_t           _pathElementsToLog;
 
 public:
     FlushStats();

@@ -2,6 +2,7 @@
 #include "condensedbitvectors.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/rcuvector.h>
+#include <cassert>
 
 using vespalib::IllegalArgumentException;
 using vespalib::make_string;

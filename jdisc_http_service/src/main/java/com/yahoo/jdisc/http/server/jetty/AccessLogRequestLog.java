@@ -14,6 +14,7 @@ import org.eclipse.jetty.util.component.AbstractLifeCycle;
 
 import javax.servlet.http.HttpServletRequest;
 import java.security.Principal;
+import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
@@ -101,6 +102,10 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
                     builder.addExtraAttribute(header, value);
                 }
             });
+            X509Certificate[] clientCert = (X509Certificate[]) request.getAttribute(ServletRequest.SERVLET_REQUEST_X509CERT);
+            if (clientCert != null && clientCert.length > 0) {
+                builder.sslPrincipal(clientCert[0].getSubjectX500Principal());
+            }
 
             AccessLogEntry accessLogEntry = (AccessLogEntry) request.getAttribute(JDiscHttpServlet.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY);
             if (accessLogEntry != null) {

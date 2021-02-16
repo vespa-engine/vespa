@@ -28,8 +28,6 @@ import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.config.util.ConfigUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.junit.Rule;
@@ -73,10 +71,10 @@ public class SessionRepositoryTest {
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
 
     public void setup() throws Exception {
-        setup(new InMemoryFlagSource(), new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry()))));
+        setup(new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry()))));
     }
 
-    private void setup(FlagSource flagSource, ModelFactoryRegistry modelFactoryRegistry) throws Exception {
+    private void setup(ModelFactoryRegistry modelFactoryRegistry) throws Exception {
         curator = new MockCurator();
         File configserverDbDir = temporaryFolder.newFolder().getAbsoluteFile();
         ConfigserverConfig configserverConfig = new ConfigserverConfig.Builder()
@@ -96,7 +94,6 @@ public class SessionRepositoryTest {
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(new MockProvisioner())
                 .withOrchestrator(new OrchestratorMock())
-                .withFlagSource(flagSource)
                 .build();
         sessionRepository = tenantRepository.getTenant(tenantName).getSessionRepository();
     }
@@ -191,7 +188,7 @@ public class SessionRepositoryTest {
         okFactory.vespaVersion = new Version(1, 1, 0);
         okFactory.throwOnLoad = false;
 
-        setup(new InMemoryFlagSource(), new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
+        setup(new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
 
         deploy();
     }
@@ -207,7 +204,7 @@ public class SessionRepositoryTest {
         okFactory.vespaVersion = new Version(2, 0, 0);
         okFactory.throwOnLoad = false;
 
-        setup(new InMemoryFlagSource(), new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
+        setup(new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
 
         deploy();
     }
@@ -222,7 +219,7 @@ public class SessionRepositoryTest {
         okFactory.vespaVersion = new Version(2, 0, 0);
         okFactory.throwErrorOnLoad = false;
 
-        setup(new InMemoryFlagSource(), new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
+        setup(new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
 
         File testApp = new File("src/test/apps/app-major-version-2");
         deploy(applicationId, testApp);
@@ -240,7 +237,7 @@ public class SessionRepositoryTest {
         okFactory.vespaVersion = new Version(1, 0, 0);
         okFactory.throwErrorOnLoad = false;
 
-        setup(new InMemoryFlagSource(), new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
+        setup(new ModelFactoryRegistry(List.of(okFactory, failingFactory)));
 
         File testApp = new File("src/test/apps/app-major-version-2");
         deploy(applicationId, testApp);

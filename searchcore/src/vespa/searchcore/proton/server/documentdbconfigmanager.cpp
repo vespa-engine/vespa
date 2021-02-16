@@ -21,6 +21,7 @@
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/time/time_box.h>
 #include <thread>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.documentdbconfigmanager");
@@ -152,9 +153,8 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
             BlockableMaintenanceJobConfig(
                     proton.maintenancejobs.resourcelimitfactor,
                     proton.maintenancejobs.maxoutstandingmoveops),
-            DocumentDBFlushConfig(
-                    proton.index.maxflushed,
-                    proton.index.maxflushedretired));
+            DocumentDBFlushConfig(proton.index.maxflushed,proton.index.maxflushedretired),
+            BucketMoveConfig(proton.bucketmove.maxdocstomoveperbucket, proton.bucketmove.usebucketexecutor));
 }
 
 template<typename T>

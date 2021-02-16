@@ -30,7 +30,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.counting;
 
 /**
  * Maintains information in the node repo about when this node last responded to ping
@@ -75,13 +74,13 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
     @Override
     protected boolean maintain() {
-        if ( ! nodeRepository().isWorking()) return false;
+        if ( ! nodeRepository().nodes().isWorking()) return false;
 
         int throttledHostFailures = 0;
         int throttledNodeFailures = 0;
 
         // Ready nodes
-        try (Mutex lock = nodeRepository().lockUnallocated()) {
+        try (Mutex lock = nodeRepository().nodes().lockUnallocated()) {
             for (Map.Entry<Node, String> entry : getReadyNodesByFailureReason().entrySet()) {
                 Node node = entry.getKey();
                 if (throttle(node)) {
@@ -90,7 +89,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                     continue;
                 }
                 String reason = entry.getValue();
-                nodeRepository().fail(node.hostname(), Agent.NodeFailer, reason);
+                nodeRepository().nodes().fail(node.hostname(), Agent.NodeFailer, reason);
             }
         }
 
@@ -129,11 +128,11 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                         clock().instant().minus(downTimeLimit).minus(nodeRequestInterval);
 
         Map<Node, String> nodesByFailureReason = new HashMap<>();
-        for (Node node : nodeRepository().getNodes(Node.State.ready)) {
+        for (Node node : nodeRepository().nodes().list(Node.State.ready)) {
             if (expectConfigRequests(node) && ! hasNodeRequestedConfigAfter(node, oldestAcceptableRequestTime)) {
                 nodesByFailureReason.put(node, "Not receiving config requests from node");
             } else {
-                Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().getNode(parent)).orElse(node);
+                Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().nodes().node(parent)).orElse(node);
                 List<String> failureReports = reasonsToFailParentHost(hostNode);
                 if (failureReports.size() > 0) {
                     if (hostNode.equals(node)) {
@@ -148,7 +147,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     }
 
     private Map<Node, String> getActiveNodesByFailureReason() {
-        List<Node> activeNodes = nodeRepository().getNodes(Node.State.active);
+        NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
         Instant graceTimeEnd = clock().instant().minus(downTimeLimit);
         Map<Node, String> nodesByFailureReason = new HashMap<>();
         for (Node node : activeNodes) {
@@ -158,7 +157,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                     nodesByFailureReason.put(node, "Node has been down longer than " + downTimeLimit);
             }
             else if (hostSuspended(node, activeNodes)) {
-                Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().getNode(parent)).orElse(node);
+                Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository().nodes().node(parent)).orElse(node);
                 if (hostNode.type().isHost()) {
                     List<String> failureReports = reasonsToFailParentHost(hostNode);
                     if (failureReports.size() > 0) {
@@ -184,7 +183,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
 
     /** Returns whether node has any kind of hardware issue */
     static boolean hasHardwareIssue(Node node, NodeRepository nodeRepository) {
-        Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository.getNode(parent)).orElse(node);
+        Node hostNode = node.parentHostname().flatMap(parent -> nodeRepository.nodes().node(parent)).orElse(node);
         return reasonsToFailParentHost(hostNode).size() > 0;
     }
 
@@ -224,7 +223,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     }
 
     /** Is the node and all active children suspended? */
-    private boolean hostSuspended(Node node, List<Node> activeNodes) {
+    private boolean hostSuspended(Node node, NodeList activeNodes) {
         if (!nodeSuspended(node)) return false;
         if (node.parentHostname().isPresent()) return true; // optimization
         return activeNodes.stream()
@@ -246,7 +245,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                 return true;
             case proxy:
             case proxyhost:
-                return nodeRepository().getNodes(nodeType, Node.State.failed).size() == 0;
+                return nodeRepository().nodes().list(Node.State.failed).nodeType(nodeType).isEmpty();
             default:
                 return false;
         }
@@ -264,21 +263,21 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             deployer.deployFromLocalActive(node.allocation().get().owner(), Duration.ofMinutes(30));
         if (deployment.isEmpty()) return false;
 
-        try (Mutex lock = nodeRepository().lock(node.allocation().get().owner())) {
+        try (Mutex lock = nodeRepository().nodes().lock(node.allocation().get().owner())) {
             // If the active node that we are trying to fail is of type host, we need to successfully fail all
             // the children nodes running on it before we fail the host
             boolean allTenantNodesFailedOutSuccessfully = true;
             String reasonForChildFailure = "Failing due to parent host " + node.hostname() + " failure: " + reason;
-            for (Node failingTenantNode : nodeRepository().list().childrenOf(node)) {
+            for (Node failingTenantNode : nodeRepository().nodes().list().childrenOf(node)) {
                 if (failingTenantNode.state() == Node.State.active) {
                     allTenantNodesFailedOutSuccessfully &= failActive(failingTenantNode, reasonForChildFailure);
                 } else {
-                    nodeRepository().fail(failingTenantNode.hostname(), Agent.NodeFailer, reasonForChildFailure);
+                    nodeRepository().nodes().fail(failingTenantNode.hostname(), Agent.NodeFailer, reasonForChildFailure);
                 }
             }
 
             if (! allTenantNodesFailedOutSuccessfully) return false;
-            node = nodeRepository().fail(node.hostname(), Agent.NodeFailer, reason);
+            node = nodeRepository().nodes().fail(node.hostname(), Agent.NodeFailer, reason);
             try {
                 deployment.get().activate();
                 return true;
@@ -290,8 +289,8 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             } catch (RuntimeException e) {
                 // The expected reason for deployment to fail here is that there is no capacity available to redeploy.
                 // In that case we should leave the node in the active state to avoid failing additional nodes.
-                nodeRepository().reactivate(node.hostname(), Agent.NodeFailer,
-                                            "Failed to redeploy after being failed by NodeFailer");
+                nodeRepository().nodes().reactivate(node.hostname(), Agent.NodeFailer,
+                                                    "Failed to redeploy after being failed by NodeFailer");
                 log.log(Level.WARNING, "Attempted to fail " + node + " for " + node.allocation().get().owner() +
                                        ", but redeploying without the node failed", e);
                 return false;
@@ -303,7 +302,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     private boolean throttle(Node node) {
         if (throttlePolicy == ThrottlePolicy.disabled) return false;
         Instant startOfThrottleWindow = clock().instant().minus(throttlePolicy.throttleWindow);
-        List<Node> nodes = nodeRepository().getNodes();
+        NodeList nodes = nodeRepository().nodes().list();
         NodeList recentlyFailedNodes = nodes.stream()
                                             .filter(n -> n.state() == Node.State.failed)
                                             .filter(n -> n.history().hasEventAfter(History.Event.Type.failed, startOfThrottleWindow))

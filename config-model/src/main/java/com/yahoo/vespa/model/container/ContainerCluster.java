@@ -4,7 +4,6 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.CuratorConfig;
-import com.yahoo.cloud.config.RoutingProviderConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.docproc.DocprocConfig;
@@ -101,7 +100,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         SemanticRulesConfig.Producer,
         DocprocConfig.Producer,
         ClusterInfoConfig.Producer,
-        RoutingProviderConfig.Producer,
         ConfigserverConfig.Producer,
         CuratorConfig.Producer
 {
@@ -189,6 +187,7 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         addSimpleComponent("com.yahoo.container.jdisc.ContainerThreadFactory");
         addSimpleComponent("com.yahoo.container.handler.VipStatus");
         addSimpleComponent(com.yahoo.container.handler.ClustersStatus.class.getName());
+        addSimpleComponent("com.yahoo.container.jdisc.DisabledConnectionLogProvider");
         addJaxProviders();
     }
 
@@ -594,11 +593,6 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         return isHostedVespa;
     }
 
-    @Override
-    public void getConfig(RoutingProviderConfig.Builder builder) {
-        builder.enabled(isHostedVespa);
-    }
-
     public Map<String, String> concreteDocumentTypes() { return concreteDocumentTypes; }
 
     /** The configured service aliases for the service in this cluster */
@@ -619,6 +613,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
     public void setJvmGCOptions(String opts) { this.jvmGCOptions = opts; }
 
     public void setEnvironmentVars(String environmentVars) { this.environmentVars = environmentVars; }
+
+    public String getEnvironmentVars() { return environmentVars; }
 
     public Optional<String> getJvmGCOptions() { return Optional.ofNullable(jvmGCOptions); }
 

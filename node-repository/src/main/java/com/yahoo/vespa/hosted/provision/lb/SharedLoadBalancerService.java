@@ -34,14 +34,13 @@ public class SharedLoadBalancerService implements LoadBalancerService {
 
     @Override
     public LoadBalancerInstance create(LoadBalancerSpec spec, boolean force) {
-        var proxyNodes = new ArrayList<>(nodeRepository.getNodes(NodeType.proxy));
-        proxyNodes.sort(hostnameComparator);
+        var proxyNodes = nodeRepository.nodes().list().nodeType(NodeType.proxy).sortedBy(hostnameComparator);
 
         if (proxyNodes.size() == 0) {
             throw new IllegalStateException("Missing proxy nodes in node repository");
         }
 
-        var firstProxyNode = proxyNodes.get(0);
+        var firstProxyNode = proxyNodes.first().get();
         var networkNames = proxyNodes.stream()
                                      .flatMap(node -> node.ipConfig().primary().stream())
                                      .map(SharedLoadBalancerService::withPrefixLength)

@@ -110,6 +110,19 @@ public class EndpointCertificateMetadata {
                 Optional.of(lastRefreshed));
     }
 
+    public EndpointCertificateMetadata withRequestId(String requestId) {
+        return new EndpointCertificateMetadata(
+                this.keyName,
+                this.certName,
+                this.version,
+                this.lastRequested,
+                requestId,
+                this.requestedDnsSans,
+                this.issuer,
+                this.expiry,
+                lastRefreshed);
+    }
+
     @Override
     public String toString() {
         return "EndpointCertificateMetadata{" +

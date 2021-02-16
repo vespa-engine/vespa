@@ -155,7 +155,9 @@ public class History {
             // The node was failed
             failed(false),
             // The node was breakfixed
-            breakfixed(false);
+            breakfixed(false),
+            // The node was scheduled to be moved
+            preferToRetire(false);
             
             private final boolean applicationLevel;
             

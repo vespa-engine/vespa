@@ -16,9 +16,8 @@ class MoveOperation;
 struct IDocumentMoveHandler
 {
     virtual void handleMove(MoveOperation &op, std::shared_ptr<vespalib::IDestructorCallback> moveDoneCtx) = 0;
-    virtual ~IDocumentMoveHandler() {}
+    virtual ~IDocumentMoveHandler() = default;
 };
-
 
 } // namespace proton
 

@@ -556,7 +556,7 @@ public class SessionRepository {
         log.log(Level.FINE, () -> "Purging old sessions for tenant '" + tenantName + "'");
         Set<LocalSession> toDelete = new HashSet<>();
         try {
-            for (LocalSession candidate : localSessionCache.values()) {
+            for (LocalSession candidate : List.copyOf(localSessionCache.values())) {
                 Instant createTime = candidate.getCreateTime();
                 log.log(Level.FINE, () -> "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + createTime);
 

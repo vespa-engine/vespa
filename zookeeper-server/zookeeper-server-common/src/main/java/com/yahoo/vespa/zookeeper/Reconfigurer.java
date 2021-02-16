@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.net.HostName;
+import com.yahoo.protect.Process;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
@@ -51,8 +52,9 @@ public class Reconfigurer extends AbstractComponent {
         if (zooKeeperRunner == null)
             zooKeeperRunner = startServer(newConfig, server);
 
-        if (shouldReconfigure(newConfig))
-            reconfigure(newConfig);
+        if (shouldReconfigure(newConfig)) {
+            reconfigure(newConfig, server);
+        }
     }
 
     ZookeeperServerConfig activeConfig() {
@@ -77,8 +79,12 @@ public class Reconfigurer extends AbstractComponent {
         return runner;
     }
 
-    private void reconfigure(ZookeeperServerConfig newConfig) {
+    private void reconfigure(ZookeeperServerConfig newConfig, VespaZooKeeperServer server) {
         Instant reconfigTriggered = Instant.now();
+        // No point in trying to reconfigure if there is only one server in the new ensemble,
+        // the others will be shutdown or are about to be shutdown
+        if (newConfig.server().size() == 1) shutdownAndDie(server, Duration.ZERO);
+
         List<String> newServers = difference(servers(newConfig), servers(activeConfig));
         String leavingServers = String.join(",", difference(serverIds(activeConfig), serverIds(newConfig)));
         String joiningServers = String.join(",", newServers);
@@ -88,7 +94,8 @@ public class Reconfigurer extends AbstractComponent {
                             ", leaving servers: " + leavingServers);
         String connectionSpec = localConnectionSpec(activeConfig);
         Instant now = Instant.now();
-        Instant end = now.plus(reconfigTimeout(newServers.size()));
+        Duration reconfigTimeout = reconfigTimeout(newServers.size());
+        Instant end = now.plus(reconfigTimeout);
         // Loop reconfiguring since we might need to wait until another reconfiguration is finished before we can succeed
         for (int attempt = 1; now.isBefore(end); attempt++) {
             try {
@@ -111,6 +118,14 @@ public class Reconfigurer extends AbstractComponent {
                 now = Instant.now();
             }
         }
+
+        // Reconfiguration failed
+        shutdownAndDie(server, reconfigTimeout);
+    }
+
+    private void shutdownAndDie(VespaZooKeeperServer server, Duration reconfigTimeout) {
+        server.shutdown();
+        Process.logAndDie("Reconfiguration did not complete within timeout " + reconfigTimeout + ". Forcing shutdown");
     }
 
     /** Returns the timeout to use for the given joining server count */

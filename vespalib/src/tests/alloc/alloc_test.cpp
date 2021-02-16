@@ -2,8 +2,10 @@
 
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/alloc.h>
+#include <vespa/vespalib/util/mmap_file_allocator.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <cstddef>
+#include <sys/mman.h>
 
 using namespace vespalib;
 using namespace vespalib::alloc;
@@ -277,6 +279,32 @@ TEST("auto alloced mmap alloc can not be shrinked below HUGEPAGE_SIZE/2 + 1 ") {
     EXPECT_TRUE(buf.resize_inplace(SZ));
     EXPECT_EQUAL(oldPtr, buf.get());
     EXPECT_EQUAL(SZ, buf.size());
+}
+
+TEST("mmap file allocator works")
+{
+    MmapFileAllocator allocator("mmap-file-allocator-dir");
+    auto alloc = Alloc::alloc_with_allocator(&allocator);
+    auto buf = alloc.create(0);
+    EXPECT_EQUAL(0u, allocator.get_end_offset());
+    EXPECT_EQUAL(0u, buf.size());
+    EXPECT_TRUE(buf.get() == nullptr);
+    buf = alloc.create(4);
+    EXPECT_LESS_EQUAL(4u, buf.size());
+    EXPECT_TRUE(buf.get() != nullptr);
+    memcpy(buf.get(), "1st", 4);
+    auto buf2 = alloc.create(5);
+    EXPECT_LESS_EQUAL(5u, buf2.size());
+    EXPECT_TRUE(buf2.get() != nullptr);
+    EXPECT_TRUE(buf.get() != buf2.get());
+    memcpy(buf2.get(), "fine", 5);
+    EXPECT_FALSE(buf.resize_inplace(5));
+    EXPECT_FALSE(buf.resize_inplace(3));
+    EXPECT_NOT_EQUAL(0u, allocator.get_end_offset());
+    int result = msync(buf.get(), buf.size(), MS_SYNC);
+    EXPECT_EQUAL(0, result);
+    result = msync(buf2.get(), buf2.size(), MS_SYNC);
+    EXPECT_EQUAL(0, result);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

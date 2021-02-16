@@ -17,14 +17,17 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.test.ManualClock;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockDeployer;
+import com.yahoo.vespa.hosted.provision.testutils.MockDeployer.ApplicationContext;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -68,7 +71,7 @@ public class RebalancerTest {
         // --- Deploying a mem heavy application - allocated to the best option and causing increased skew
         tester.deployApp(memoryApp);
         assertEquals("Assigned to a flat node as that causes least skew", "flat",
-                     tester.nodeRepository().list().parentOf(tester.getNode(memoryApp)).get().flavor().name());
+                     tester.nodeRepository().nodes().list().parentOf(tester.getNode(memoryApp)).get().flavor().name());
         tester.maintain();
         assertEquals("Deploying the mem skewed app increased skew",
                      0.00734, tester.metric().values.get("hostedVespa.docker.skew").doubleValue(), 0.00001);
@@ -83,8 +86,8 @@ public class RebalancerTest {
 
         // --- Making the system stable enables rebalancing
         NestedTransaction tx = new NestedTransaction();
-        tester.nodeRepository().deactivate(List.of(cpuSkewedNode),
-                                           new ApplicationTransaction(new ProvisionLock(cpuApp, () -> {}), tx));
+        tester.nodeRepository().nodes().deactivate(List.of(cpuSkewedNode),
+                                                   new ApplicationTransaction(new ProvisionLock(cpuApp, () -> {}), tx));
         tx.commit();
 
         //     ... if activation fails when trying, we clean up the state
@@ -92,9 +95,9 @@ public class RebalancerTest {
         tester.maintain();
         assertTrue("Want to retire is reset", tester.getNodes(Node.State.active).stream().noneMatch(node -> node.status().wantToRetire()));
         assertEquals("Reserved node was moved to dirty", 1, tester.getNodes(Node.State.dirty).size());
-        String reservedHostname = tester.getNodes(Node.State.dirty).get(0).hostname();
-        tester.nodeRepository().setReady(reservedHostname, Agent.system, "Cleanup");
-        tester.nodeRepository().removeRecursively(reservedHostname);
+        String reservedHostname = tester.getNodes(Node.State.dirty).first().get().hostname();
+        tester.nodeRepository().nodes().setReady(reservedHostname, Agent.system, "Cleanup");
+        tester.nodeRepository().nodes().removeRecursively(reservedHostname);
 
         //     ... otherwise we successfully rebalance, again reducing skew
         tester.deployer().setFailActivate(false);
@@ -133,6 +136,30 @@ public class RebalancerTest {
                    tester.getNodes(cpuApp, Node.State.active).stream().anyMatch(node -> node.hasParent(newCpuHost.hostname())));
     }
 
+    @Test
+    public void testRebalancingDoesNotReduceSwitchExclusivity() {
+        Capacity capacity = Capacity.from(new ClusterResources(4, 1, RebalancerTester.cpuResources), true, false);
+        Map<ApplicationId, ApplicationContext> apps = Map.of(cpuApp, new ApplicationContext(cpuApp, RebalancerTester.clusterSpec("c"), capacity));
+        RebalancerTester tester = new RebalancerTester(4, apps);
+
+        // Application is deployed and balanced across exclusive switches
+        tester.deployApp(cpuApp);
+        NodeList allNodes = tester.nodeRepository().nodes().list();
+        NodeList applicationNodes = allNodes.owner(cpuApp);
+        NodeList nodesOnExclusiveSwitch = applicationNodes.onExclusiveSwitch(allNodes.parentsOf(applicationNodes));
+        assertEquals(4, nodesOnExclusiveSwitch.size());
+
+        // Rebalancer does nothing
+        tester.assertNoMovesAfter(waitTimeAfterPreviousDeployment, cpuApp);
+
+        // Another host is provisioned on an existing switch, which can reduce skew
+        Node newCpuHost = tester.makeReadyNode("cpu");
+        tester.tester.patchNode(newCpuHost, (host) -> host.withSwitchHostname("switch0"));
+        tester.activateTenantHosts();
+
+        // Rebalancer does not move to new host, as this would violate switch exclusivity
+        tester.assertNoMovesAfter(waitTimeAfterPreviousDeployment, cpuApp);
+    }
 
     static class RebalancerTester {
 
@@ -149,12 +176,19 @@ public class RebalancerTest {
         private final Rebalancer rebalancer;
 
         RebalancerTester() {
-            Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(
-                    cpuApp, new MockDeployer.ApplicationContext(cpuApp, clusterSpec("c"), Capacity.from(new ClusterResources(1, 1, cpuResources))),
-                    memoryApp, new MockDeployer.ApplicationContext(memoryApp, clusterSpec("c"), Capacity.from(new ClusterResources(1, 1, memResources))));
+            this(3,
+                 Map.of(cpuApp, new ApplicationContext(cpuApp, clusterSpec("c"), Capacity.from(new ClusterResources(1, 1, cpuResources))),
+                        memoryApp, new ApplicationContext(memoryApp, clusterSpec("c"), Capacity.from(new ClusterResources(1, 1, memResources)))));
+        }
+
+        RebalancerTester(int hostCount, Map<ApplicationId, ApplicationContext> apps) {
             deployer = new MockDeployer(tester.provisioner(), tester.clock(), apps);
             rebalancer = new Rebalancer(deployer, tester.nodeRepository(), metric, Duration.ofMinutes(1));
-            tester.makeReadyNodes(3, "flat", NodeType.host, 8);
+            List<Node> hosts = tester.makeReadyNodes(hostCount, "flat", NodeType.host, 8);
+            for (int i = 0; i < hosts.size(); i++) {
+                String switchHostname = "switch" + i;
+                tester.patchNode(hosts.get(i), (host) -> host.withSwitchHostname(switchHostname));
+            }
             tester.activateTenantHosts();
         }
 
@@ -176,22 +210,33 @@ public class RebalancerTest {
         }
 
         List<Node> getNodes(ApplicationId applicationId, Node.State nodeState) {
-            return tester.nodeRepository().getNodes(applicationId, nodeState);
+            return tester.nodeRepository().nodes().list(nodeState).owner(applicationId).asList();
         }
 
         boolean isNodeRetired(Node node) {
             return getNode(node.hostname()).get().allocation().get().membership().retired();
         }
 
-        Optional<Node> getNode(String hostname) { return tester.nodeRepository().getNode(hostname); }
+        Optional<Node> getNode(String hostname) { return tester.nodeRepository().nodes().node(hostname); }
 
-        List<Node> getNodes(Node.State nodeState) { return tester.nodeRepository().getNodes(nodeState); }
+        NodeList getNodes(Node.State nodeState) { return tester.nodeRepository().nodes().list(nodeState); }
 
-        Node getNode(ApplicationId applicationId) { return tester.nodeRepository().getNodes(applicationId).get(0); }
+        Node getNode(ApplicationId applicationId) { return tester.nodeRepository().nodes().list().owner(applicationId).first().get(); }
 
         ManualClock clock() { return tester.clock(); }
 
         MockDeployer deployer() { return deployer; }
+
+        private void assertNoMovesAfter(Duration duration, ApplicationId app) {
+            tester.clock().advance(duration);
+            NodeList before = tester.nodeRepository().nodes().list(Node.State.active).owner(app)
+                                    .sortedBy(Comparator.comparing(Node::hostname));
+            maintain();
+            NodeList after = tester.nodeRepository().nodes().list(Node.State.active).owner(app)
+                                   .sortedBy(Comparator.comparing(Node::hostname));
+            assertEquals("Node allocation is unchanged", before.asList(), after.asList());
+            assertEquals("No nodes are retired", List.of(), after.retired().asList());
+        }
 
         private FlavorsConfig flavorsConfig() {
             FlavorConfigBuilder b = new FlavorConfigBuilder();

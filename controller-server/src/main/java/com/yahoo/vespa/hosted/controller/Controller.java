@@ -235,6 +235,8 @@ public class Controller extends AbstractComponent {
             targets.removeIf(target -> target.osVersion().cloud().equals(cloudName)); // Only allow a single target per cloud
             targets.add(new OsVersionTarget(new OsVersion(version, cloudName), upgradeBudget));
             curator.writeOsVersionTargets(targets);
+            log.info("Triggered OS upgrade to " + version.toFullString() + " in cloud " +
+                     cloudName.value() + upgradeBudget.map(b -> ", with upgrade budget " + b).orElse(""));
         }
     }
 

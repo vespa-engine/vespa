@@ -439,7 +439,7 @@ class QTest extends Specification {
     def "basic group syntax"() {
         /*
         example from vespa document:
-        https://docs.vespa.ai/documentation/grouping.html
+        https://docs.vespa.ai/en/grouping.html
         all( group(a) max(5) each(output(count())
             all(max(1) each(output(summary())))
             all(group(b) each(output(count())
@@ -470,7 +470,7 @@ class QTest extends Specification {
     def "set group syntax string directly"() {
         /*
         example from vespa document:
-        https://docs.vespa.ai/documentation/grouping.html
+        https://docs.vespa.ai/en/grouping.html
         all( group(a) max(5) each(output(count())
             all(max(1) each(output(summary())))
             all(group(b) each(output(count())

@@ -6,6 +6,7 @@
 #include <vespa/vespalib/stllike/hash_map.hpp>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/compressor.h>
+#include <vespa/vespalib/util/memory_allocator.h>
 #include <algorithm>
 
 namespace search::docstore {

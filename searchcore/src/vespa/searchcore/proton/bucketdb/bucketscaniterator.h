@@ -19,18 +19,16 @@ class ScanIterator {
 private:
     using BucketId = document::BucketId;
     using BucketIterator = BucketDB::ConstMapIterator;
-    BucketDBOwner::Guard _db;
+    const Guard         &_db;
     BucketIterator       _itr;
     BucketIterator       _end;
 
 public:
     enum class Pass {FIRST, SECOND};
-    ScanIterator(BucketDBOwner::Guard db, Pass pass, BucketId lastBucket, BucketId endBucket);
-
-    ScanIterator(BucketDBOwner::Guard db, BucketId bucket);
-
+    ScanIterator(const Guard & db, Pass pass, BucketId lastBucket, BucketId endBucket);
+    ScanIterator(const Guard & db, BucketId bucket);
     ScanIterator(const ScanIterator &) = delete;
-    ScanIterator(ScanIterator &&rhs);
+    ScanIterator(ScanIterator &&rhs) = delete;
     ScanIterator &operator=(const ScanIterator &) = delete;
     ScanIterator &operator=(ScanIterator &&rhs) = delete;
 

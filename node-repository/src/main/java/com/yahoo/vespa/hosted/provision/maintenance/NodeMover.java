@@ -44,7 +44,7 @@ public abstract class NodeMover<MOVE> extends NodeRepositoryMaintainer {
             ApplicationId applicationId = node.allocation().get().owner();
             if (applicationId.instance().isTester()) continue;
             if (deployedRecently(applicationId)) continue;
-            for (Node toHost : allNodes.matching(nodeRepository()::canAllocateTenantNodeTo)) {
+            for (Node toHost : allNodes.matching(nodeRepository().nodes()::canAllocateTenantNodeTo)) {
                 if (toHost.hostname().equals(node.parentHostname().get())) continue;
                 if ( ! capacity.freeCapacityOf(toHost).satisfies(node.resources())) continue;
 
@@ -69,10 +69,10 @@ public abstract class NodeMover<MOVE> extends NodeRepositoryMaintainer {
 
     /** Returns true if no active nodes are retiring or about to be retired */
     static boolean zoneIsStable(NodeList allNodes) {
-        NodeList active = allNodes.state(Node.State.active);
-        if (active.stream().anyMatch(node -> node.allocation().get().membership().retired())) return false;
-        if (active.stream().anyMatch(node -> node.status().wantToRetire())) return false;
-        return true;
+        return allNodes.state(Node.State.active).stream()
+                       .noneMatch(node -> node.allocation().get().membership().retired() ||
+                                          node.status().wantToRetire() ||
+                                          node.status().preferToRetire());
     }
 
 }

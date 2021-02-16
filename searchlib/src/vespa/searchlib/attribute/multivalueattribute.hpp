@@ -5,6 +5,7 @@
 #include <vespa/searchlib/attribute/multivalueattribute.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/memory_allocator.h>
 
 namespace search {
 

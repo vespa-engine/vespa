@@ -67,13 +67,13 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
 
     @Override
     protected boolean maintain() {
-        if ( ! nodeRepository().isWorking()) return false;
+        if ( ! nodeRepository().nodes().isWorking()) return false;
 
         boolean success = true;
         // Don't need to maintain spare capacity in dynamically provisioned zones; can provision more on demand.
         if (nodeRepository().zone().getCloud().dynamicProvisioning()) return success;
 
-        NodeList allNodes = nodeRepository().list();
+        NodeList allNodes = nodeRepository().nodes().list();
         CapacityChecker capacityChecker = new CapacityChecker(allNodes);
 
         List<Node> overcommittedHosts = capacityChecker.findOvercommittedHosts();
@@ -116,7 +116,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
         if (nodeWhichCantMove.isEmpty()) return List.of();
 
         Node node = nodeWhichCantMove.get();
-        NodeList allNodes = nodeRepository().list();
+        NodeList allNodes = nodeRepository().nodes().list();
         // Allocation will assign the spareCount most empty nodes as "spares", which will not be allocated on
         // unless needed for node failing. Our goal here is to make room on these spares for the given node
         HostCapacity hostCapacity = new HostCapacity(allNodes, nodeRepository().resourcesCalculator());
@@ -155,7 +155,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
 
         if (!NodeMover.zoneIsStable(allNodes)) return;
 
-        // Find an active node on a overcommited host and retire it
+        // Find an active node on a overcommitted host and retire it
         Optional<Node> nodeToRetire = overcommittedHosts.stream().flatMap(parent -> allNodes.childrenOf(parent).stream())
                 .filter(node -> node.state() == Node.State.active)
                 .min(this::retireOvercomittedComparator);
@@ -165,12 +165,12 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
         try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
             if ( ! deployment.isValid()) return; // this will be done at another config server
 
-            Optional<Node> nodeWithWantToRetire = nodeRepository().getNode(nodeToRetire.get().hostname())
+            Optional<Node> nodeWithWantToRetire = nodeRepository().nodes().node(nodeToRetire.get().hostname())
                     .map(node -> node.withWantToRetire(true, Agent.SpareCapacityMaintainer, nodeRepository().clock().instant()));
             if (nodeWithWantToRetire.isEmpty()) return;
 
-            nodeRepository().write(nodeWithWantToRetire.get(), deployment.applicationLock().get());
-            log.log(Level.INFO, String.format("Redeploying %s to relocate %s from overcommited host",
+            nodeRepository().nodes().write(nodeWithWantToRetire.get(), deployment.applicationLock().get());
+            log.log(Level.INFO, String.format("Redeploying %s to move %s from overcommitted host",
                     application, nodeToRetire.get().hostname()));
             deployment.activate();
         }

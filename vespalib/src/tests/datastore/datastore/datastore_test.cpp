@@ -4,6 +4,7 @@
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/insertion_operators.h>
+#include <vespa/vespalib/test/memory_allocator_observer.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("datastore_test");
@@ -18,6 +19,9 @@ private:
     using ParentType::_activeBufferIds;
 public:
     MyStore() {}
+    explicit MyStore(std::unique_ptr<BufferType<int>> type)
+        : ParentType(std::move(type))
+    {}
     void holdBuffer(uint32_t bufferId) {
         ParentType::holdBuffer(bufferId);
     }
@@ -583,6 +587,50 @@ TEST(DataStoreTest, require_that_offset_in_EntryRefT_is_within_bounds_when_alloc
     assertGrowStats<uint32_t>({8192,8192,8192,16384,16384,32768,65536,65536,98304,98304,98304,98304}, 3);
     assertGrowStats<uint32_t>({16384,16384,16384,32768,32768,65536,131072,131072,163840,163840,163840,163840}, 5);
     assertGrowStats<uint32_t>({16384,16384,16384,32768,32768,65536,131072,131072,229376,229376,229376,229376}, 7);
+}
+
+namespace {
+
+using MyMemoryAllocator = vespalib::alloc::test::MemoryAllocatorObserver;
+using AllocStats = MyMemoryAllocator::Stats;
+
+class MyBufferType : public BufferType<int>
+{
+    std::unique_ptr<alloc::MemoryAllocator> _allocator;
+public:
+    MyBufferType(std::unique_ptr<alloc::MemoryAllocator> allocator, uint32_t max_arrays)
+        : BufferType<int>(1, 2, max_arrays, max_arrays, 0.2),
+          _allocator(std::move(allocator))
+    {
+    }
+    const alloc::MemoryAllocator* get_memory_allocator() const override {
+        return _allocator.get();
+    }
+};
+
+}
+
+TEST(DataStoreTest, can_set_memory_allocator)
+{
+    AllocStats stats;
+    {
+        MyStore s(std::make_unique<MyBufferType>(std::make_unique<MyMemoryAllocator>(stats), MyStore::RefType::offsetSize()));
+        EXPECT_EQ(AllocStats(1, 0), stats);
+        auto ref = s.addEntry(42);
+        EXPECT_EQ(0u, MyRef(ref).bufferId());
+        EXPECT_EQ(AllocStats(1, 0), stats);
+        auto ref2 = s.addEntry(43);
+        EXPECT_EQ(0u, MyRef(ref2).bufferId());
+        EXPECT_EQ(AllocStats(2, 0), stats);
+        s.switchActiveBuffer();
+        EXPECT_EQ(AllocStats(3, 0), stats);
+        s.holdBuffer(0);
+        s.transferHoldLists(10);
+        EXPECT_EQ(AllocStats(3, 0), stats);
+        s.trimHoldLists(11);
+        EXPECT_EQ(AllocStats(3, 2), stats);
+    }
+    EXPECT_EQ(AllocStats(3, 3), stats);
 }
 
 TEST(DataStoreTest, control_static_sizes) {

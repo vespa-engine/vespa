@@ -47,7 +47,7 @@ public class IdentityDocumentGenerator {
 
     public SignedIdentityDocument generateSignedIdentityDocument(String hostname, IdentityType identityType) {
         try {
-            Node node = nodeRepository.getNode(hostname).orElseThrow(() -> new RuntimeException("Unable to find node " + hostname));
+            Node node = nodeRepository.nodes().node(hostname).orElseThrow(() -> new RuntimeException("Unable to find node " + hostname));
             Allocation allocation = node.allocation().orElseThrow(() -> new RuntimeException("No allocation for node " + node.hostname()));
             VespaUniqueInstanceId providerUniqueId = new VespaUniqueInstanceId(
                     allocation.membership().index(),

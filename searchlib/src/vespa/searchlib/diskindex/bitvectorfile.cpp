@@ -5,6 +5,7 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <cassert>
 
 namespace search::diskindex {
 

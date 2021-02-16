@@ -36,7 +36,7 @@ MaintenanceSchedulerTest::SetUp()
 }
 
 TEST_F(MaintenanceSchedulerTest, priority_cleared_after_scheduled) {
-    _priorityDb->setPriority(PrioritizedBucket(makeDocumentBucket(BucketId(16, 1)), Priority::VERY_HIGH));
+    _priorityDb->setPriority(PrioritizedBucket(makeDocumentBucket(BucketId(16, 1)), Priority::HIGHEST));
     _scheduler->tick(MaintenanceScheduler::NORMAL_SCHEDULING_MODE);
     EXPECT_EQ("", _priorityDb->toString());
 }
@@ -48,20 +48,20 @@ TEST_F(MaintenanceSchedulerTest, operation_is_scheduled) {
               _operationStarter->toString());
 }
 
-TEST_F(MaintenanceSchedulerTest, no_operations_toschedule) {
+TEST_F(MaintenanceSchedulerTest, no_operations_to_schedule) {
     WaitTimeMs waitMs(_scheduler->tick(MaintenanceScheduler::NORMAL_SCHEDULING_MODE));
     EXPECT_EQ(WaitTimeMs(1), waitMs);
     EXPECT_EQ("", _operationStarter->toString());
 }
 
 TEST_F(MaintenanceSchedulerTest, suppress_low_priorities_in_emergency_mode) {
-    _priorityDb->setPriority(PrioritizedBucket(makeDocumentBucket(BucketId(16, 1)), Priority::HIGH));
-    _priorityDb->setPriority(PrioritizedBucket(makeDocumentBucket(BucketId(16, 2)), Priority::VERY_HIGH));
+    _priorityDb->setPriority(PrioritizedBucket(makeDocumentBucket(BucketId(16, 1)), Priority::VERY_HIGH));
+    _priorityDb->setPriority(PrioritizedBucket(makeDocumentBucket(BucketId(16, 2)), Priority::HIGHEST));
     EXPECT_EQ(WaitTimeMs(0), _scheduler->tick(MaintenanceScheduler::RECOVERY_SCHEDULING_MODE));
     EXPECT_EQ(WaitTimeMs(1), _scheduler->tick(MaintenanceScheduler::RECOVERY_SCHEDULING_MODE));
     EXPECT_EQ("Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000002)), pri 0\n",
               _operationStarter->toString());
-    EXPECT_EQ("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri HIGH)\n",
+    EXPECT_EQ("PrioritizedBucket(Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)), pri VERY_HIGH)\n",
               _priorityDb->toString());
 }
 

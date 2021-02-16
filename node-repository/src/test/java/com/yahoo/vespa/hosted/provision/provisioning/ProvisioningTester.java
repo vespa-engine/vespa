@@ -143,7 +143,7 @@ public class ProvisioningTester {
     public NodeRepositoryProvisioner provisioner() { return provisioner; }
     public LoadBalancerServiceMock loadBalancerService() { return loadBalancerService; }
     public CapacityPolicies capacityPolicies() { return capacityPolicies; }
-    public NodeList getNodes(ApplicationId id, Node.State ... inState) { return NodeList.copyOf(nodeRepository.getNodes(id, inState)); }
+    public NodeList getNodes(ApplicationId id, Node.State ... inState) { return nodeRepository.nodes().list(inState).owner(id); }
 
     public Node patchNode(Node node, UnaryOperator<Node> patcher) {
         return patchNodes(List.of(node), patcher).get(0);
@@ -152,9 +152,9 @@ public class ProvisioningTester {
     public List<Node> patchNodes(List<Node> nodes, UnaryOperator<Node> patcher) {
         List<Node> updated = new ArrayList<>();
         for (var node : nodes) {
-            try (var lock = nodeRepository.lockAndGetRequired(node)) {
+            try (var lock = nodeRepository.nodes().lockAndGetRequired(node)) {
                 node = patcher.apply(lock.node());
-                nodeRepository.write(node, lock);
+                nodeRepository.nodes().write(node, lock);
                 updated.add(node);
             }
         }
@@ -170,12 +170,12 @@ public class ProvisioningTester {
     }
 
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity) {
-        Set<String> reservedBefore = toHostNames(nodeRepository.getNodes(application, Node.State.reserved));
-        Set<String> inactiveBefore = toHostNames(nodeRepository.getNodes(application, Node.State.inactive));
+        Set<String> reservedBefore = toHostNames(nodeRepository.nodes().list(Node.State.reserved).owner(application));
+        Set<String> inactiveBefore = toHostNames(nodeRepository.nodes().list(Node.State.inactive).owner(application));
         List<HostSpec> hosts1 = provisioner.prepare(application, cluster, capacity, provisionLogger);
         List<HostSpec> hosts2 = provisioner.prepare(application, cluster, capacity, provisionLogger);
         assertEquals("Prepare is idempotent", hosts1, hosts2);
-        Set<String> newlyActivated = toHostNames(nodeRepository.getNodes(application, Node.State.reserved));
+        Set<String> newlyActivated = toHostNames(nodeRepository.nodes().list(Node.State.reserved).owner(application));
         newlyActivated.removeAll(reservedBefore);
         newlyActivated.removeAll(inactiveBefore);
         return hosts1;
@@ -186,19 +186,19 @@ public class ProvisioningTester {
 
         // Add ip addresses and activate parent host if necessary
         for (HostSpec prepared : preparedNodes) {
-            try (var lock = nodeRepository.lockAndGetRequired(prepared.hostname())) {
+            try (var lock = nodeRepository.nodes().lockAndGetRequired(prepared.hostname())) {
                 Node node = lock.node();
                 if (node.ipConfig().primary().isEmpty()) {
                     node = node.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of()));
-                    nodeRepository.write(node, lock);
+                    nodeRepository.nodes().write(node, lock);
                 }
                 if (node.parentHostname().isEmpty()) continue;
-                Node parent = nodeRepository.getNode(node.parentHostname().get()).get();
+                Node parent = nodeRepository.nodes().node(node.parentHostname().get()).get();
                 if (parent.state() == Node.State.active) continue;
                 NestedTransaction t = new NestedTransaction();
                 if (parent.ipConfig().primary().isEmpty())
                     parent = parent.with(new IP.Config(Set.of("::" + 0 + ":0"), Set.of("::" + 0 + ":2")));
-                nodeRepository.activate(List.of(parent), t);
+                nodeRepository.nodes().activate(List.of(parent), t);
                 t.commit();
             }
         }
@@ -213,7 +213,7 @@ public class ProvisioningTester {
             provisioner.activate(hosts, new ActivationContext(0), new ApplicationTransaction(lock, transaction));
             transaction.commit();
         }
-        assertEquals(toHostNames(hosts), toHostNames(nodeRepository.getNodes(application, Node.State.active)));
+        assertEquals(toHostNames(hosts), toHostNames(nodeRepository.nodes().list(Node.State.active).owner(application)));
         return hosts;
     }
 
@@ -238,7 +238,7 @@ public class ProvisioningTester {
     }
 
     public void deactivate(ApplicationId applicationId) {
-        try (var lock = nodeRepository.lock(applicationId)) {
+        try (var lock = nodeRepository.nodes().lock(applicationId)) {
             NestedTransaction deactivateTransaction = new NestedTransaction();
             nodeRepository.remove(new ApplicationTransaction(new ProvisionLock(applicationId, lock),
                                                              deactivateTransaction));
@@ -250,7 +250,7 @@ public class ProvisioningTester {
         return hosts.stream().map(HostSpec::hostname).collect(Collectors.toSet());
     }
 
-    public Set<String> toHostNames(List<Node> nodes) {
+    public Set<String> toHostNames(NodeList nodes) {
         return nodes.stream().map(Node::hostname).collect(Collectors.toSet());
     }
 
@@ -259,7 +259,7 @@ public class ProvisioningTester {
      * number of matches to the given filters
      */
     public void assertRestartCount(ApplicationId application, HostFilter... filters) {
-        for (Node node : nodeRepository.getNodes(application, Node.State.active)) {
+        for (Node node : nodeRepository.nodes().list(Node.State.active).owner(application)) {
             int expectedRestarts = 0;
             for (HostFilter filter : filters)
                 if (NodeHostFilter.from(filter).matches(node))
@@ -291,7 +291,7 @@ public class ProvisioningTester {
                             double vcpu, double memory, double disk, double bandwidth,
                             DiskSpeed diskSpeed, StorageType storageType,
                             ApplicationId app, ClusterSpec cluster) {
-        List<Node> nodeList = nodeRepository.list().owner(app).cluster(cluster.id()).state(Node.State.active).not().retired().asList();
+        List<Node> nodeList = nodeRepository.nodes().list().owner(app).cluster(cluster.id()).state(Node.State.active).not().retired().asList();
         assertEquals(explanation + ": Node count",
                      nodes,
                      nodeList.size());
@@ -316,9 +316,9 @@ public class ProvisioningTester {
     }
 
     public void fail(String hostname) {
-        int beforeFailCount = nodeRepository.getNode(hostname, Node.State.active).get().status().failCount();
-        Node failedNode = nodeRepository.fail(hostname, Agent.system, "Failing to unit test");
-        assertTrue(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).contains(failedNode));
+        int beforeFailCount = nodeRepository.nodes().node(hostname, Node.State.active).get().status().failCount();
+        Node failedNode = nodeRepository.nodes().fail(hostname, Agent.system, "Failing to unit test");
+        assertTrue(nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).asList().contains(failedNode));
         assertEquals(beforeFailCount + 1, failedNode.status().failCount());
     }
 
@@ -437,11 +437,11 @@ public class ProvisioningTester {
             reservedTo.ifPresent(builder::reservedTo);
             nodes.add(builder.build());
         }
-        nodes = nodeRepository.addNodes(nodes, Agent.system);
+        nodes = nodeRepository.nodes().addNodes(nodes, Agent.system);
         return nodes;
     }
 
-    public List<Node> makeConfigServers(int n, String flavor, Version configServersVersion) {
+    public NodeList makeConfigServers(int n, String flavor, Version configServersVersion) {
         List<Node> nodes = new ArrayList<>(n);
         MockNameResolver nameResolver = (MockNameResolver)nodeRepository().nameResolver();
 
@@ -455,16 +455,16 @@ public class ProvisioningTester {
             nodes.add(node);
         }
 
-        nodes = nodeRepository.addNodes(nodes, Agent.system);
-        nodes = nodeRepository.deallocate(nodes, Agent.system, getClass().getSimpleName());
-        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
+        nodes = nodeRepository.nodes().addNodes(nodes, Agent.system);
+        nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
+        nodeRepository.nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
 
         ConfigServerApplication application = new ConfigServerApplication();
         List<HostSpec> hosts = prepare(application.getApplicationId(),
                                        application.getClusterSpecWithVersion(configServersVersion),
                                        application.getCapacity());
         activate(application.getApplicationId(), new HashSet<>(hosts));
-        return nodeRepository.getNodes(application.getApplicationId(), Node.State.active);
+        return nodeRepository.nodes().list(Node.State.active).owner(application.getApplicationId());
     }
 
     public List<Node> makeReadyNodes(int n, String flavor, NodeType type, int ipAddressPoolSize) {
@@ -482,8 +482,8 @@ public class ProvisioningTester {
     }
     public List<Node> makeReadyNodes(int n, Flavor flavor, Optional<TenantName> reservedTo, NodeType type, int ipAddressPoolSize, boolean dualStack) {
         List<Node> nodes = makeProvisionedNodes(n, flavor, reservedTo, type, ipAddressPoolSize, dualStack);
-        nodes = nodeRepository.deallocate(nodes, Agent.system, getClass().getSimpleName());
-        return nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
+        nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
+        return nodeRepository.nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
     private Flavor asFlavor(String flavorString, NodeType type) {
@@ -522,9 +522,9 @@ public class ProvisioningTester {
             parentHostname.ifPresent(builder::parentHostname);
             nodes.add(builder.build());
         }
-        nodes = nodeRepository.addNodes(nodes, Agent.system);
-        nodes = nodeRepository.deallocate(nodes, Agent.system, getClass().getSimpleName());
-        nodeRepository.setReady(nodes, Agent.system, getClass().getSimpleName());
+        nodes = nodeRepository.nodes().addNodes(nodes, Agent.system);
+        nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
+        nodeRepository.nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
         return nodes;
     }
 
@@ -560,20 +560,20 @@ public class ProvisioningTester {
     }
 
     public void assertAllocatedOn(String explanation, String hostFlavor, ApplicationId app) {
-        for (Node node : nodeRepository.getNodes(app)) {
-            Node parent = nodeRepository.getNode(node.parentHostname().get()).get();
+        for (Node node : nodeRepository.nodes().list().owner(app)) {
+            Node parent = nodeRepository.nodes().node(node.parentHostname().get()).get();
             assertEquals(node + ": " + explanation, hostFlavor, parent.flavor().name());
         }
     }
 
     public void assertSwitches(Set<String> expectedSwitches, ApplicationId application, ClusterSpec.Id cluster) {
-        NodeList allNodes = nodeRepository.list();
+        NodeList allNodes = nodeRepository.nodes().list();
         NodeList activeNodes = allNodes.owner(application).state(Node.State.active).cluster(cluster);
         assertEquals(expectedSwitches, switchesOf(activeNodes, allNodes));
     }
 
     public List<Node> activeNodesOn(String switchHostname, ApplicationId application, ClusterSpec.Id cluster) {
-        NodeList allNodes = nodeRepository.list();
+        NodeList allNodes = nodeRepository.nodes().list();
         NodeList activeNodes = allNodes.state(Node.State.active).owner(application).cluster(cluster);
         return activeNodes.stream().filter(node -> {
             Optional<String> allocatedSwitchHostname = allNodes.parentOf(node).flatMap(Node::switchHostname);
@@ -594,10 +594,10 @@ public class ProvisioningTester {
     }
 
     public int hostFlavorCount(String hostFlavor, ApplicationId app) {
-        return (int)nodeRepository().getNodes(app).stream()
-                                                  .map(n -> nodeRepository().getNode(n.parentHostname().get()).get())
-                                                  .filter(p -> p.flavor().name().equals(hostFlavor))
-                                                  .count();
+        return (int)nodeRepository().nodes().list().owner(app).stream()
+                                    .map(n -> nodeRepository().nodes().node(n.parentHostname().get()).get())
+                                    .filter(p -> p.flavor().name().equals(hostFlavor))
+                                    .count();
     }
 
     public static final class Builder {

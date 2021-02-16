@@ -3,6 +3,7 @@
 
 #include "lrucache_map.h"
 #include <vespa/vespalib/stllike/hashtable.hpp>
+#include <cassert>
 
 namespace vespalib {
 

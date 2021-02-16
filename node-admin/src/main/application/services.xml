@@ -3,8 +3,7 @@
 <services version="1.0" xmlns:preprocess="properties">
   <container id="node-admin" version="1.0">
     <!-- Please update container test when changing this file -->
-    <accesslog type="vespa" fileNamePattern="logs/vespa/node-admin/access.log.%Y%m%d%H%M%S" symlinkName="access.log" />
-    <accesslog type="json"  fileNamePattern="logs/vespa/node-admin/access-json.log.%Y%m%d%H%M%S" symlinkName="access-json.log" compressOnRotation="true" />
+    <accesslog type="json"  fileNamePattern="logs/vespa/node-admin/access-json.log.%Y%m%d%H%M%S" symlinkName="access-json.log" compressOnRotation="true" compressionType="zstd"/>
 
     <component id="docker-api" class="com.yahoo.vespa.hosted.dockerapi.DockerEngine" bundle="docker-api"/>
     <component id="metrics" class="com.yahoo.vespa.hosted.dockerapi.metrics.Metrics" bundle="docker-api"/>

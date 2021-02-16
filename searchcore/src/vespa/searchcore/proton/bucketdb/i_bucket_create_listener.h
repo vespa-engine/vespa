@@ -6,6 +6,8 @@ namespace document { class BucketId; }
 
 namespace proton::bucketdb {
 
+class Guard;
+
 /**
  * Interface class used by a registered listener to get notifications about
  * non-empty buckets created due to split/join operations.
@@ -13,13 +15,13 @@ namespace proton::bucketdb {
 class IBucketCreateListener
 {
 public:
-    virtual ~IBucketCreateListener() {}
+    virtual ~IBucketCreateListener() = default;
 
     /**
      * Signal that the given bucket has been created due to split/join
      * operation.
      */
-    virtual void notifyCreateBucket(const document::BucketId &bucket) = 0;
+    virtual void notifyCreateBucket(const Guard & guard, const document::BucketId &bucket) = 0;
 };
 
 }

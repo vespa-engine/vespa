@@ -25,6 +25,7 @@
 #include <vespa/searchcore/proton/server/maintenancecontroller.h>
 #include <vespa/searchcore/proton/test/buckethandler.h>
 #include <vespa/searchcore/proton/test/clusterstatehandler.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/mock_attribute_manager.h>
 #include <vespa/searchcore/proton/test/test.h>
@@ -98,7 +99,7 @@ class MyDocumentSubDB
 
 public:
     MyDocumentSubDB(uint32_t subDBId, SubDbType subDbType, const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                    std::shared_ptr<BucketDBOwner> bucketDB, const DocTypeName &docTypeName);
+                    std::shared_ptr<bucketdb::BucketDBOwner> bucketDB, const DocTypeName &docTypeName);
     ~MyDocumentSubDB();
 
     uint32_t getSubDBId() const { return _subDBId; }
@@ -131,7 +132,7 @@ public:
 };
 
 MyDocumentSubDB::MyDocumentSubDB(uint32_t subDBId, SubDbType subDbType, const std::shared_ptr<const document::DocumentTypeRepo> &repo,
-                                 std::shared_ptr<BucketDBOwner> bucketDB, const DocTypeName &docTypeName)
+                                 std::shared_ptr<bucketdb::BucketDBOwner> bucketDB, const DocTypeName &docTypeName)
     : _docs(),
       _subDBId(subDBId),
       _metaStoreSP(std::make_shared<DocumentMetaStore>(
@@ -365,7 +366,7 @@ public:
     DummyBucketExecutor                _bucketExecutor;
     DocTypeName                        _docTypeName;
     test::UserDocumentsBuilder         _builder;
-    std::shared_ptr<BucketDBOwner>     _bucketDB;
+    std::shared_ptr<bucketdb::BucketDBOwner>     _bucketDB;
     test::BucketStateCalculator::SP    _calc;
     test::ClusterStateHandler          _clusterStateHandler;
     test::BucketHandler                _bucketHandler;
@@ -416,7 +417,8 @@ public:
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
                            _mcCfg->getBlockableJobConfig(),
-                           _mcCfg->getFlushConfig());
+                           _mcCfg->getFlushConfig(),
+                           _mcCfg->getBucketMoveConfig());
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
@@ -433,7 +435,8 @@ public:
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
                            _mcCfg->getBlockableJobConfig(),
-                           _mcCfg->getFlushConfig());
+                           _mcCfg->getFlushConfig(),
+                           _mcCfg->getBucketMoveConfig());
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
@@ -450,7 +453,8 @@ public:
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
                            _mcCfg->getBlockableJobConfig(),
-                           _mcCfg->getFlushConfig());
+                           _mcCfg->getFlushConfig(),
+                           _mcCfg->getBucketMoveConfig());
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
@@ -465,7 +469,8 @@ public:
                            _mcCfg->getAttributeUsageFilterConfig(),
                            _mcCfg->getAttributeUsageSampleInterval(),
                            _mcCfg->getBlockableJobConfig(),
-                           _mcCfg->getFlushConfig());
+                           _mcCfg->getFlushConfig(),
+                           _mcCfg->getBucketMoveConfig());
         _mcCfg = newCfg;
         forwardMaintenanceConfig();
     }
@@ -781,7 +786,7 @@ MaintenanceControllerFixture::MaintenanceControllerFixture()
       _bucketExecutor(2),
       _docTypeName("searchdocument"), // must match document builder
       _builder(),
-      _bucketDB(std::make_shared<BucketDBOwner>()),
+      _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
       _calc(new test::BucketStateCalculator()),
       _clusterStateHandler(),
       _bucketHandler(),

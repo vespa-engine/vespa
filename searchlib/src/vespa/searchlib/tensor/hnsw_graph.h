@@ -43,7 +43,6 @@ struct HnswGraph {
     std::atomic<uint64_t> entry_docid_and_level;
 
     HnswGraph();
-
     ~HnswGraph();
 
     NodeRef make_node_for_document(uint32_t docid, uint32_t num_levels);
@@ -108,19 +107,7 @@ struct HnswGraph {
         {}
     };
 
-    void set_entry_node(EntryNode node) {
-        uint64_t value = node.level;
-        value <<= 32;
-        value |= node.docid;
-        if (node.node_ref.valid()) {
-            assert(node.level >= 0);
-            assert(node.docid > 0);
-        } else {
-            assert(node.level == -1);
-            assert(node.docid == 0);
-        }
-        entry_docid_and_level.store(value, std::memory_order_release);
-    }
+    void set_entry_node(EntryNode node);
 
     uint64_t get_entry_atomic() const {
         return entry_docid_and_level.load(std::memory_order_acquire);

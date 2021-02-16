@@ -118,7 +118,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     @Override
     public void restart(ApplicationId application, HostFilter filter) {
-        nodeRepository.restart(ApplicationFilter.from(application, NodeHostFilter.from(filter)));
+        nodeRepository.nodes().restart(ApplicationFilter.from(application, NodeHostFilter.from(filter)));
     }
 
     @Override
@@ -129,7 +129,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     @Override
     public ProvisionLock lock(ApplicationId application) {
-        return new ProvisionLock(application, nodeRepository.lock(application));
+        return new ProvisionLock(application, nodeRepository.nodes().lock(application));
     }
 
     /**
@@ -137,7 +137,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
      * and updates the application store with the received min and max.
      */
     private ClusterResources decideTargetResources(ApplicationId applicationId, ClusterSpec clusterSpec, Capacity requested) {
-        try (Mutex lock = nodeRepository.lock(applicationId)) {
+        try (Mutex lock = nodeRepository.nodes().lock(applicationId)) {
             Application application = nodeRepository.applications().get(applicationId).orElse(new Application(applicationId));
             application = application.withCluster(clusterSpec.id(), clusterSpec.isExclusive(), requested.minResources(), requested.maxResources());
             nodeRepository.applications().put(application, lock);
@@ -150,7 +150,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private ClusterResources currentResources(ApplicationId applicationId,
                                               ClusterSpec clusterSpec,
                                               Capacity requested) {
-        List<Node> nodes = NodeList.copyOf(nodeRepository.getNodes(applicationId, Node.State.active))
+        List<Node> nodes = nodeRepository.nodes().list(Node.State.active).owner(applicationId)
                                    .cluster(clusterSpec.id())
                                    .not().retired()
                                    .not().removable()

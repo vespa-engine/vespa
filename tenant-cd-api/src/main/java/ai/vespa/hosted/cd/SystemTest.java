@@ -17,7 +17,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * Tests that compare the behaviour of a Vespa application deployment against a fixed specification.
  *
  * Test classes annotated with this annotation are run against a fresh deployment during automated system tests.
- * See <a href="https://cloud.vespa.ai/automated-deployments.html">Vespa cloud documentation</a>.
+ * See <a href="https://cloud.vespa.ai/en/automated-deployments">Vespa cloud documentation</a>.
  *
  * @author jonmv
  */

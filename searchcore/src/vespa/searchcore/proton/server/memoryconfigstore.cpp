@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "memoryconfigstore.h"
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.memoryconfigstore");
@@ -9,7 +10,7 @@ namespace proton {
 
 MemoryConfigStore::MemoryConfigStore() : _maps(new ConfigMaps) {}
 MemoryConfigStore::MemoryConfigStore(ConfigMaps::SP maps) : _maps(maps) {}
-MemoryConfigStore::~MemoryConfigStore() { }
+MemoryConfigStore::~MemoryConfigStore() = default;
 
 ConfigStore::SerialNum
 MemoryConfigStore::getBestSerialNum() const {
@@ -77,8 +78,8 @@ MemoryConfigStore::deserializeConfig(SerialNum, vespalib::nbostream &) {
 void
 MemoryConfigStore::setProtonConfig(const ProtonConfigSP &) { }
 
-MemoryConfigStores::MemoryConfigStores() { }
-MemoryConfigStores::~MemoryConfigStores() { }
+MemoryConfigStores::MemoryConfigStores() = default;
+MemoryConfigStores::~MemoryConfigStores() = default;
 
 ConfigStore::UP
 MemoryConfigStores::getConfigStore(const std::string &type) {

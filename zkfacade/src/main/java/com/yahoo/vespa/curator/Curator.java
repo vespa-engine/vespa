@@ -78,6 +78,7 @@ public class Curator implements VespaCurator, AutoCloseable {
     }
 
     @Inject
+    // TODO jonmv: Use a Provider for this, due to required shutdown.
     public Curator(CuratorConfig curatorConfig, @SuppressWarnings("unused") VespaZooKeeperServer server) {
         // Depends on ZooKeeperServer to make sure it is started first
         this(ConnectionSpec.create(curatorConfig.server(),

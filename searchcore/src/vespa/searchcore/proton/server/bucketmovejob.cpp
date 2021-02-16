@@ -228,7 +228,7 @@ BucketMoveJob::deactivateBucket(BucketId bucket)
 void
 BucketMoveJob::activateBucket(BucketId bucket)
 {
-    BucketDBOwner::Guard notReadyBdb(_notReady.meta_store()->getBucketDB().takeGuard());
+    bucketdb::Guard notReadyBdb(_notReady.meta_store()->getBucketDB().takeGuard());
     if (notReadyBdb->get(bucket).getDocumentCount() == 0) {
         return; // notready bucket already empty. This is the normal case.
     }
@@ -236,7 +236,7 @@ BucketMoveJob::activateBucket(BucketId bucket)
 }
 
 void
-BucketMoveJob::notifyCreateBucket(const BucketId &bucket)
+BucketMoveJob::notifyCreateBucket(const bucketdb::Guard &, const BucketId &bucket)
 {
     _delayedBuckets.insert(bucket);
     considerRun();

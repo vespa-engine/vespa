@@ -68,7 +68,7 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
 
     @Override
     protected boolean maintain() {
-        List<Node> remainingNodes = nodeRepository.getNodes(Node.State.failed).stream()
+        List<Node> remainingNodes = nodeRepository.nodes().list(Node.State.failed).stream()
                                                   .filter(node -> node.type() == NodeType.tenant ||
                                                                   node.type() == NodeType.host)
                                                   .collect(Collectors.toList());
@@ -95,14 +95,14 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
         for (Node candidate : nodes) {
             if (NodeFailer.hasHardwareIssue(candidate, nodeRepository)) {
                 List<String> unparkedChildren = !candidate.type().isHost() ? List.of() :
-                                                nodeRepository.list()
+                                                nodeRepository.nodes().list()
                                                               .childrenOf(candidate)
                                                               .matching(node -> node.state() != Node.State.parked)
                                                               .mapToList(Node::hostname);
 
                 if (unparkedChildren.isEmpty()) {
-                    nodeRepository.park(candidate.hostname(), false, Agent.FailedExpirer,
-                            "Parked by FailedExpirer due to hardware issue");
+                    nodeRepository.nodes().park(candidate.hostname(), false, Agent.FailedExpirer,
+                                                "Parked by FailedExpirer due to hardware issue");
                 } else {
                     log.info(String.format("Expired failed node %s with hardware issue was not parked because of " +
                                            "unparked children: %s", candidate.hostname(),
@@ -112,7 +112,7 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
                 nodesToRecycle.add(candidate);
             }
         }
-        nodeRepository.deallocate(nodesToRecycle, Agent.FailedExpirer, "Expired by FailedExpirer");
+        nodeRepository.nodes().deallocate(nodesToRecycle, Agent.FailedExpirer, "Expired by FailedExpirer");
     }
 
     /** Returns whether the current node fail count should be used as an indicator of hardware issue */

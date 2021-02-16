@@ -82,6 +82,7 @@ public class NodeSerializer {
     private static final String nodeTypeKey = "type";
     private static final String wantToRetireKey = "wantToRetire";
     private static final String wantToDeprovisionKey = "wantToDeprovision";
+    private static final String preferToRetireKey = "preferToRetire";
     private static final String osVersionKey = "osVersion";
     private static final String wantedOsVersionKey = "wantedOsVersion";
     private static final String firmwareCheckKey = "firmwareCheck";
@@ -161,6 +162,7 @@ public class NodeSerializer {
         node.status().containerImage().ifPresent(image -> object.setString(currentContainerImageKey, image.asString()));
         object.setLong(failCountKey, node.status().failCount());
         object.setBool(wantToRetireKey, node.status().wantToRetire());
+        object.setBool(preferToRetireKey, node.status().preferToRetire());
         object.setBool(wantToDeprovisionKey, node.status().wantToDeprovision());
         node.allocation().ifPresent(allocation -> toSlime(allocation, object.setObject(instanceKey)));
         toSlime(node.history(), object.setArray(historyKey));
@@ -269,6 +271,7 @@ public class NodeSerializer {
                           (int) object.field(failCountKey).asLong(),
                           object.field(wantToRetireKey).asBool(),
                           object.field(wantToDeprovisionKey).asBool(),
+                          object.field(preferToRetireKey).asBool(),
                           new OsVersion(versionFromSlime(object.field(osVersionKey)),
                                         versionFromSlime(object.field(wantedOsVersionKey))),
                           instantFromSlime(object.field(firmwareCheckKey)));
@@ -421,6 +424,7 @@ public class NodeSerializer {
             case "osUpgraded" : return History.Event.Type.osUpgraded;
             case "firmwareVerified" : return History.Event.Type.firmwareVerified;
             case "breakfixed" : return History.Event.Type.breakfixed;
+            case "preferToRetire" : return History.Event.Type.preferToRetire;
         }
         throw new IllegalArgumentException("Unknown node event type '" + eventTypeString + "'");
     }
@@ -444,6 +448,7 @@ public class NodeSerializer {
             case osUpgraded: return "osUpgraded";
             case firmwareVerified: return "firmwareVerified";
             case breakfixed: return "breakfixed";
+            case preferToRetire: return "preferToRetire";
         }
         throw new IllegalArgumentException("Serialized form of '" + nodeEventType + "' not defined");
     }

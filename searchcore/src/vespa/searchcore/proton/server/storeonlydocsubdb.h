@@ -82,6 +82,7 @@ public:
 class StoreOnlyDocSubDB : public DocSubDB
 {
 public:
+    using BucketDBOwnerSP = std::shared_ptr<bucketdb::BucketDBOwner>;
     struct Config {
         const DocTypeName _docTypeName;
         const vespalib::string _subName;
@@ -101,7 +102,7 @@ public:
         const IGetSerialNum &_getSerialNum;
         const search::common::FileHeaderContext &_fileHeaderContext;
         searchcorespi::index::IThreadingService &_writeService;
-        std::shared_ptr<BucketDBOwner> _bucketDB;
+        BucketDBOwnerSP _bucketDB;
         bucketdb::IBucketDBHandlerInitializer &_bucketDBHandlerInitializer;
         DocumentDBTaggedMetrics &_metrics;
         std::mutex &_configMutex;
@@ -112,7 +113,7 @@ public:
                 const IGetSerialNum &getSerialNum,
                 const search::common::FileHeaderContext &fileHeaderContext,
                 searchcorespi::index::IThreadingService &writeService,
-                std::shared_ptr<BucketDBOwner> bucketDB,
+                BucketDBOwnerSP bucketDB,
                 bucketdb::IBucketDBHandlerInitializer &
                 bucketDBHandlerInitializer,
                 DocumentDBTaggedMetrics &metrics,
@@ -126,7 +127,7 @@ protected:
     const DocTypeName             _docTypeName;
     const vespalib::string        _subName;
     const vespalib::string        _baseDir;
-    BucketDBOwner::SP             _bucketDB;
+    BucketDBOwnerSP               _bucketDB;
     bucketdb::IBucketDBHandlerInitializer &_bucketDBHandlerInitializer;
     IDocumentMetaStoreContext::SP _metaStoreCtx;
     // The following two serial numbers reflect state at program startup

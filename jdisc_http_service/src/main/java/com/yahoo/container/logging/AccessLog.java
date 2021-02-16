@@ -13,6 +13,8 @@ import com.yahoo.component.provider.ComponentRegistry;
  */
 public class AccessLog implements RequestLog {
 
+    public static final AccessLog NONE_INSTANCE = new AccessLog(new ComponentRegistry<>());
+
     private final ComponentRegistry<RequestLogHandler> implementers;
 
     @Inject
@@ -21,7 +23,7 @@ public class AccessLog implements RequestLog {
     }
 
     public static AccessLog voidAccessLog() {
-        return new AccessLog(new ComponentRegistry<>());
+        return NONE_INSTANCE;
     }
 
     @Override

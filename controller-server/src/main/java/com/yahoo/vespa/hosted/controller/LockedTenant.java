@@ -11,6 +11,7 @@ import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.LastLoginInfo;
@@ -20,6 +21,8 @@ import com.yahoo.vespa.hosted.controller.tenant.TenantInfo;
 import java.security.Principal;
 import java.security.PublicKey;
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Optional;
 
 import static java.util.Objects.requireNonNull;
@@ -117,21 +120,23 @@ public abstract class LockedTenant {
         private final Optional<Principal> creator;
         private final BiMap<PublicKey, Principal> developerKeys;
         private final TenantInfo info;
+        private final List<TenantSecretStore> tenantSecretStores;
 
-        private Cloud(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<Principal> creator, BiMap<PublicKey, Principal> developerKeys, TenantInfo info) {
+        private Cloud(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<Principal> creator, BiMap<PublicKey, Principal> developerKeys, TenantInfo info, List<TenantSecretStore> tenantSecretStores) {
             super(name, createdAt, lastLoginInfo);
             this.developerKeys = ImmutableBiMap.copyOf(developerKeys);
             this.creator = creator;
             this.info = info;
+            this.tenantSecretStores = tenantSecretStores;
         }
 
         private Cloud(CloudTenant tenant) {
-            this(tenant.name(), tenant.createdAt(), tenant.lastLoginInfo(), Optional.empty(), tenant.developerKeys(), tenant.info());
+            this(tenant.name(), tenant.createdAt(), tenant.lastLoginInfo(), Optional.empty(), tenant.developerKeys(), tenant.info(), tenant.tenantSecretStores());
         }
 
         @Override
         public CloudTenant get() {
-            return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info);
+            return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores);
         }
 
         public Cloud withDeveloperKey(PublicKey key, Principal principal) {
@@ -139,22 +144,28 @@ public abstract class LockedTenant {
             if (keys.containsKey(key))
                 throw new IllegalArgumentException("Key " + KeyUtils.toPem(key) + " is already owned by " + keys.get(key));
             keys.put(key, principal);
-            return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info, tenantSecretStores);
         }
 
         public Cloud withoutDeveloperKey(PublicKey key) {
             BiMap<PublicKey, Principal> keys = HashBiMap.create(developerKeys);
             keys.remove(key);
-            return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info, tenantSecretStores);
         }
 
         public Cloud withInfo(TenantInfo newInfo) {
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, newInfo);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, newInfo, tenantSecretStores);
         }
 
         @Override
         public LockedTenant with(LastLoginInfo lastLoginInfo) {
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores);
+        }
+
+        public Cloud withSecretStore(TenantSecretStore tenantSecretStore) {
+            ArrayList<TenantSecretStore> secretStores = new ArrayList<>(tenantSecretStores);
+            secretStores.add(tenantSecretStore);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, secretStores);
         }
     }
 

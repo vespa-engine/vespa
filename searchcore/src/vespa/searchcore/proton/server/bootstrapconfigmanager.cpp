@@ -7,7 +7,7 @@
 #include <vespa/config-bucketspaces.h>
 #include <vespa/searchlib/common/tunefileinfo.hpp>
 #include <vespa/vespalib/io/fileutil.h>
-
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.bootstrapconfigmanager");
@@ -31,7 +31,7 @@ BootstrapConfigManager::BootstrapConfigManager(const vespalib::string & configId
       _pendingConfigMutex()
 { }
 
-BootstrapConfigManager::~BootstrapConfigManager() { }
+BootstrapConfigManager::~BootstrapConfigManager() = default;
 
 
 const ConfigKeySet

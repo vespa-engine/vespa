@@ -1,14 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.logserver;
 
+import com.yahoo.logserver.handlers.LogHandler;
+
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
-import java.util.logging.Logger;
-
 import java.util.logging.Level;
-import com.yahoo.logserver.handlers.LogHandler;
+import java.util.logging.Logger;
 
 /**
  * @author Bjorn Borud
@@ -32,10 +32,10 @@ public class Flusher extends Thread {
         logHandlers.add(new WeakReference<>(logHandler));
     }
 
+    @Override
     public synchronized void run() {
         try {
             while(!isInterrupted()) {
-                Thread.sleep(2000);
                 Iterator<WeakReference<LogHandler>> it = logHandlers.iterator();
                 while (it.hasNext()) {
                     WeakReference<LogHandler> r = it.next();
@@ -49,6 +49,7 @@ public class Flusher extends Thread {
                         log.log(Level.FINE, "Flushing " + h);
                     }
                 }
+                Thread.sleep(2000);
             }
         } catch (InterruptedException e) {
             log.log(Level.WARNING, "flusher was interrupted", e);

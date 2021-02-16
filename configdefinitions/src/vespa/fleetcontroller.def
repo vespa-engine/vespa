@@ -197,3 +197,11 @@ enable_cluster_feed_block bool default=false
 # The keys used must match the similar keys in the host info JSON structure.
 # All limits are numbers between 0.0 and 1.0.
 cluster_feed_block_limit{} double
+
+# To avoid having the cluster feed block state flip-flop from nodes that are hovering
+# just around the feed block limits, this noise threshold implicitly makes the
+# feed block limit value _lower_ for a resource that is already exhausted. I.e. the
+# node must reach a lower resource usage than the limit for feed to be unblocked.
+# This is in absolute numbers, so 0.01 implies that a block limit of 0.8 effectively
+# becomes 0.79 for an already blocked node.
+cluster_feed_block_noise_level double default=0.0

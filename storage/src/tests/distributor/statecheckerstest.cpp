@@ -698,14 +698,14 @@ TEST_F(StateCheckersTest, synchronize_and_move) {
             .clusterState("distributor:1 storage:4"));
 }
 
-TEST_F(StateCheckersTest, global_bucket_merges_have_high_priority_if_prioritization_enabled) {
+TEST_F(StateCheckersTest, global_bucket_merges_have_very_high_priority_if_prioritization_enabled) {
     runAndVerify<SynchronizeAndMoveStateChecker>(
             CheckerParams().expect(
                             "[Synchronizing buckets with different checksums "
                             "node(idx=0,crc=0x1,docs=1/1,bytes=1/1,trusted=false,active=false,ready=false), "
                             "node(idx=1,crc=0x2,docs=2/2,bytes=2/2,trusted=false,active=false,ready=false)] "
                             "(pri 115) "
-                            "(scheduling pri HIGH)")
+                            "(scheduling pri VERY_HIGH)")
                     .bucketInfo("0=1,1=2")
                     .bucket_space(document::FixedBucketSpaces::global_space())
                     .includeSchedulingPriority(true)

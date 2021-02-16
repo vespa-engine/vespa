@@ -14,8 +14,6 @@ import com.yahoo.vespa.model.application.validation.RestartConfigs;
 
 /**
  * Common class for config producers for storage and distributor nodes.
- *
- * TODO: Author
  */
 @RestartConfigs({StorCommunicationmanagerConfig.class, StorStatusConfig.class,
                  StorServerConfig.class, LoadTypeConfig.class, MetricsmanagerConfig.class})

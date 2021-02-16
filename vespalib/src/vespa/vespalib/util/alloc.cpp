@@ -1,5 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "alloc.h"
+#include "memory_allocator.h"
+#include "round_up_to_page_size.h"
 #include <sys/mman.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/exceptions.h>
@@ -10,7 +12,6 @@
 #include <cassert>
 #include <mutex>
 #include <vespa/fastos/file.h>
-#include <unistd.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".vespalib.alloc");
@@ -22,16 +23,10 @@ namespace {
 volatile bool _G_hasHugePageFailureJustHappened(false);
 bool _G_SilenceCoreOnOOM(false);
 int  _G_HugeFlags = 0;
-const size_t _G_pageSize = getpagesize();
 size_t _G_MMapLogLimit = std::numeric_limits<size_t>::max();
 size_t _G_MMapNoCoreLimit = std::numeric_limits<size_t>::max();
 std::mutex _G_lock;
 std::atomic<size_t> _G_mmapCount(0);
-
-size_t
-roundUp2PageSize(size_t sz) {
-    return (sz + (_G_pageSize - 1)) & ~(_G_pageSize - 1);
-}
 
 struct MMapInfo {
     MMapInfo() :
@@ -188,13 +183,13 @@ struct MMapLimitAndAlignmentHash {
     std::size_t operator ()(MMapLimitAndAlignment key) const noexcept { return key.hash(); }
 };
 
-using AutoAllocatorsMap = std::unordered_map<MMapLimitAndAlignment, AutoAllocator::UP, MMapLimitAndAlignmentHash>;
+using AutoAllocatorsMap = std::unordered_map<MMapLimitAndAlignment, std::unique_ptr<MemoryAllocator>, MMapLimitAndAlignmentHash>;
 using AutoAllocatorsMapWithDefault = std::pair<AutoAllocatorsMap, alloc::MemoryAllocator *>;
 
 void createAlignedAutoAllocators(AutoAllocatorsMap & map, size_t mmapLimit) {
     for (size_t alignment : {0,0x200, 0x400, 0x1000}) {
         MMapLimitAndAlignment key(mmapLimit, alignment);
-        auto result = map.emplace(key, AutoAllocator::UP(new AutoAllocator(mmapLimit, alignment)));
+        auto result = map.emplace(key, std::make_unique<AutoAllocator>(mmapLimit, alignment));
         (void) result;
         assert( result.second );
 
@@ -319,7 +314,7 @@ MemoryAllocator::PtrAndSize
 MMapAllocator::salloc(size_t sz, void * wantedAddress)
 {
     void * buf(nullptr);
-    sz = roundUp2PageSize(sz);
+    sz = round_up_to_page_size(sz);
     if (sz > 0) {
         const int flags(MAP_ANON | MAP_PRIVATE);
         const int prot(PROT_READ | PROT_WRITE);
@@ -372,7 +367,7 @@ MMapAllocator::salloc(size_t sz, void * wantedAddress)
 
 size_t
 MMapAllocator::sresize_inplace(PtrAndSize current, size_t newSize) {
-    newSize = roundUp2PageSize(newSize);
+    newSize = round_up_to_page_size(newSize);
     if (newSize > current.second) {
         return extend_inplace(current, newSize);
     } else if (newSize < current.second) {
@@ -471,6 +466,34 @@ MemoryAllocator::select_allocator(size_t mmapLimit, size_t alignment) {
     return & AutoAllocator::getAllocator(mmapLimit, alignment);
 }
 
+Alloc::Alloc(const MemoryAllocator * allocator, size_t sz) noexcept
+    : _alloc(allocator->alloc(sz)),
+      _allocator(allocator)
+{
+}
+
+Alloc::~Alloc()
+{ 
+    if (_alloc.first != nullptr) {
+        _allocator->free(_alloc);
+        _alloc.first = nullptr;
+    }
+}
+
+Alloc&
+Alloc::operator=(Alloc && rhs) noexcept
+{
+    if (this != & rhs) {
+        if (_alloc.first != nullptr) {
+            _allocator->free(_alloc);
+        }
+        _alloc = rhs._alloc;
+        _allocator = rhs._allocator;
+        rhs.clear();
+    }
+    return *this;
+}
+
 Alloc
 Alloc::allocHeap(size_t sz)
 {
@@ -517,9 +540,27 @@ Alloc::alloc() noexcept
 }
 
 Alloc
+Alloc::alloc(size_t sz) noexcept
+{
+    return Alloc(&AutoAllocator::getDefault(), sz);
+}
+
+Alloc
+Alloc::alloc_aligned(size_t sz, size_t alignment) noexcept
+{
+    return Alloc(&AutoAllocator::getAllocator(MemoryAllocator::HUGEPAGE_SIZE, alignment), sz);
+}
+
+Alloc
 Alloc::alloc(size_t sz, size_t mmapLimit, size_t alignment) noexcept
 {
     return Alloc(&AutoAllocator::getAllocator(mmapLimit, alignment), sz);
+}
+
+Alloc
+Alloc::alloc_with_allocator(const MemoryAllocator* allocator) noexcept
+{
+    return Alloc(allocator);
 }
 
 }

@@ -13,6 +13,7 @@ import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.identifiers.PropertyId;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.BillingInfo;
@@ -69,6 +70,9 @@ public class TenantSerializer {
     private static final String pemDeveloperKeysField = "pemDeveloperKeys";
     private static final String tenantInfoField = "info";
     private static final String lastLoginInfoField = "lastLoginInfo";
+    private static final String secretStoresField = "secretStores";
+    private static final String awsIdField = "awsId";
+    private static final String roleField = "role";
 
     public Slime toSlime(Tenant tenant) {
         Slime slime = new Slime();
@@ -105,6 +109,7 @@ public class TenantSerializer {
         developerKeysToSlime(tenant.developerKeys(), root.setArray(pemDeveloperKeysField));
         toSlime(legacyBillingInfo, root.setObject(billingInfoField));
         toSlime(tenant.info(), root);
+        toSlime(tenant.tenantSecretStores(), root);
     }
 
     private void developerKeysToSlime(BiMap<PublicKey, Principal> keys, Cursor array) {
@@ -156,7 +161,8 @@ public class TenantSerializer {
         Optional<Principal> creator = SlimeUtils.optionalString(tenantObject.field(creatorField)).map(SimplePrincipal::new);
         BiMap<PublicKey, Principal> developerKeys = developerKeysFromSlime(tenantObject.field(pemDeveloperKeysField));
         TenantInfo info = tenantInfoFromSlime(tenantObject.field(tenantInfoField));
-        return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info);
+        List<TenantSecretStore> tenantSecretStores = secretStoresFromSlime(tenantObject.field(secretStoresField));
+        return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores);
     }
 
     private BiMap<PublicKey, Principal> developerKeysFromSlime(Inspector array) {
@@ -199,6 +205,22 @@ public class TenantSerializer {
                 .withAddress(tenantInfoAddressFromSlime(billingObject.field("address")));
     }
 
+    private List<TenantSecretStore> secretStoresFromSlime(Inspector secretStoresObject) {
+        List<TenantSecretStore> secretStores = new ArrayList<>();
+        if (!secretStoresObject.valid()) return secretStores;
+
+        secretStoresObject.traverse((ArrayTraverser) (index, inspector) -> {
+            secretStores.add(
+                    new TenantSecretStore(
+                            inspector.field(nameField).asString(),
+                            inspector.field(awsIdField).asString(),
+                            inspector.field(roleField).asString()
+                    )
+            );
+        });
+        return secretStores;
+    }
+
     private LastLoginInfo lastLoginInfoFromSlime(Inspector lastLoginInfoObject) {
         Map<LastLoginInfo.UserLevel, Instant> lastLoginByUserLevel = new HashMap<>();
         lastLoginInfoObject.traverse((String name, Inspector value) ->
@@ -238,6 +260,19 @@ public class TenantSerializer {
         addressCursor.setString("email", billingContact.email());
         addressCursor.setString("phone", billingContact.phone());
         toSlime(billingContact.address(), addressCursor);
+    }
+
+    private void toSlime(List<TenantSecretStore> tenantSecretStores, Cursor parentCursor) {
+        if (tenantSecretStores.isEmpty()) return;
+
+        Cursor secretStoresCursor = parentCursor.setArray(secretStoresField);
+        tenantSecretStores.forEach(tenantSecretStore -> {
+            Cursor secretStoreCursor = secretStoresCursor.addObject();
+            secretStoreCursor.setString(nameField, tenantSecretStore.getName());
+            secretStoreCursor.setString(awsIdField, tenantSecretStore.getAwsId());
+            secretStoreCursor.setString(roleField, tenantSecretStore.getRole());
+        });
+
     }
 
     private Optional<Contact> contactFrom(Inspector object) {

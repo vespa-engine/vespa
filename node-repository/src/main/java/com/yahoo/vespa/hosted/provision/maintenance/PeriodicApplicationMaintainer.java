@@ -9,6 +9,7 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Duration;
@@ -75,8 +76,8 @@ public class PeriodicApplicationMaintainer extends ApplicationMaintainer {
         return ! skipMaintenanceDeployment.value();
     }
 
-    protected List<Node> nodesNeedingMaintenance() {
-        return nodeRepository().getNodes(Node.State.active);
+    protected NodeList nodesNeedingMaintenance() {
+        return nodeRepository().nodes().list(Node.State.active);
     }
 
 }

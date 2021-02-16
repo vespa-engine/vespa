@@ -176,10 +176,7 @@ public:
 
     void incDeadElems(size_t value) { _deadElems += value; }
     void incHoldElems(size_t value) { _holdElems += value; }
-    void decHoldElems(size_t value) {
-        assert(_holdElems >= value);
-        _holdElems -= value;
-    }
+    void decHoldElems(size_t value);
     void incExtraUsedBytes(size_t value) { _extraUsedBytes += value; }
     void incExtraHoldBytes(size_t value) {
         _extraHoldBytes += value;

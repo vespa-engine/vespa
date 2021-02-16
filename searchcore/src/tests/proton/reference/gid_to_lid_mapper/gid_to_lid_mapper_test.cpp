@@ -75,14 +75,14 @@ void assertLid(const std::unique_ptr<search::IGidToLidMapper> &mapper, const ves
 struct Fixture
 {
 
-    BucketDBOwner::SP _bucketDB;
+    std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
     std::shared_ptr<DocumentMetaStore> _dms;
     std::shared_ptr<const DocumentMetaStoreContext> _dmsContext;
     Timestamp _timestamp;
     using generation_t = GenerationHandler::generation_t;
 
     Fixture()
-        : _bucketDB(std::make_shared<BucketDBOwner>()),
+        : _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
           _dms(std::make_shared<DocumentMetaStore>(_bucketDB)),
           _dmsContext(std::make_shared<const DocumentMetaStoreContext>(_dms))
     {

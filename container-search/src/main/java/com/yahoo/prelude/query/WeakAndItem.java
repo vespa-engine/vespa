@@ -18,7 +18,7 @@ import java.nio.ByteBuffer;
  */
 public final class WeakAndItem extends NonReducibleCompositeItem {
 
-    private int N;
+    private int n;
     private String index;
     private int scoreThreshold = 0;
 
@@ -31,15 +31,15 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     }
 
     /**
-     * Make a WAND item with no children. You can mention a common index or you can mention it on each child.
+     * Make a WeakAnd item with no children. You can mention a common index or you can mention it on each child.
      *
-     * @param index The index it shall search.
-     * @param N the target for minimum number of hits to produce;
+     * @param index the index to search
+     * @param n the target for minimum number of hits to produce;
      *        a backend will not suppress any hits in the operator
      *        until N hits have been produced.
-     **/
-    public WeakAndItem(String index, int N) {
-        this.N = N;
+     */
+    public WeakAndItem(String index, int n) {
+        this.n = n;
         this.index = (index == null) ? "" : index;
     }
     public WeakAndItem(int N) {
@@ -61,7 +61,7 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     protected void appendHeadingString(StringBuilder buffer) {
         buffer.append(getName());
         buffer.append("(");
-        buffer.append(N);
+        buffer.append(n);
         buffer.append(")");
         buffer.append(" ");
     }
@@ -75,53 +75,52 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     }
 
     public int getN() {
-        return N;
+        return n;
     }
 
     public void setN(int N) {
-        this.N = N;
+        this.n = N;
     }
 
+    @Deprecated // TODO: Remove on Vespa 8
     public int getScoreThreshold() {
         return scoreThreshold;
     }
 
     /**
-     * Sets the score threshold used by the backend search operator handling this WeakAndItem.
-     * This threshold is currently only used if the WeakAndItem is searching a RISE index field.
-     * The score threshold then specifies the minimum dot product score a match needs to be part of the result set.
-     * Default value is 0.
+     * Noop.
      *
-     * @param scoreThreshold the score threshold.
+     * @deprecated has no effect
      */
+    @Deprecated // TODO: Remove on Vespa 8
     public void setScoreThreshold(int scoreThreshold) {
         this.scoreThreshold = scoreThreshold;
     }
 
+    @Override
     protected void encodeThis(ByteBuffer buffer) {
         super.encodeThis(buffer);
-        IntegerCompressor.putCompressedPositiveNumber(N, buffer);
+        IntegerCompressor.putCompressedPositiveNumber(n, buffer);
         putString(index, buffer);
     }
 
     @Override
     public void disclose(Discloser discloser) {
         super.disclose(discloser);
-        discloser.addProperty("N", N);
+        discloser.addProperty("N", n);
     }
 
+    @Override
     public int hashCode() {
-        return super.hashCode() + 31 * N;
+        return super.hashCode() + 31 * n;
     }
 
-    /**
-     * Returns whether this item is of the same class and
-     * contains the same state as the given item
-     */
+    /** Returns whether this item is of the same class and contains the same state as the given item. */
+    @Override
     public boolean equals(Object object) {
         if (!super.equals(object)) return false;
         WeakAndItem other = (WeakAndItem) object; // Ensured by superclass
-        if (this.N != other.N) return false;
+        if (this.n != other.n) return false;
         return true;
     }
 

@@ -72,7 +72,7 @@
                             <goal>wget</goal>
                         </goals>
                         <configuration>
-                            <url>https://docs.vespa.ai/documentation/reference/search-api-reference.html</url>
+                            <url>https://docs.vespa.ai/en/reference/search-api-reference.html</url>
                             <outputFileName>search-api-reference.html</outputFileName>
                             <outputDirectory>${project.build.outputDirectory}/gui/_includes/</outputDirectory>
                         </configuration>

@@ -51,7 +51,7 @@ public class MetricsV2MetricsFetcher extends AbstractComponent implements Metric
 
     @Override
     public CompletableFuture<MetricsResponse> fetchMetrics(ApplicationId application) {
-        NodeList applicationNodes = nodeRepository.list(application).state(Node.State.active);
+        NodeList applicationNodes = nodeRepository.nodes().list().owner(application).state(Node.State.active);
 
         Optional<Node> metricsV2Container = applicationNodes.container()
                                                             .matching(node -> expectedUp(node))

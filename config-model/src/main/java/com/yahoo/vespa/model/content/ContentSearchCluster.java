@@ -12,7 +12,6 @@ import com.yahoo.vespa.model.builder.xml.dom.DomSearchTuningBuilder;
 import com.yahoo.vespa.model.builder.xml.dom.ModelElement;
 import com.yahoo.vespa.model.builder.xml.dom.VespaDomBuilder;
 import com.yahoo.vespa.model.content.cluster.ContentCluster;
-import com.yahoo.vespa.model.content.cluster.DomResourceLimitsBuilder;
 import com.yahoo.vespa.model.search.AbstractSearchCluster;
 import com.yahoo.vespa.model.search.IndexedSearchCluster;
 import com.yahoo.vespa.model.search.NamedSchema;
@@ -64,8 +63,10 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private final Map<StorageGroup, NodeSpec> groupToSpecMap = new LinkedHashMap<>();
     private Optional<ResourceLimits> resourceLimits = Optional.empty();
     private final ProtonConfig.Indexing.Optimize.Enum feedSequencerType;
+    private final int maxPendingMoveOps;
     private final double defaultFeedConcurrency;
     private final boolean useBucketExecutorForLidSpaceCompact;
+    private final boolean useBucketExecutorForBucketMove;
     private final double defaultMaxDeadBytesRatio;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
@@ -204,9 +205,11 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         this.globallyDistributedDocuments = globallyDistributedDocuments;
         this.flushOnShutdown = flushOnShutdown;
         this.combined = combined;
+        maxPendingMoveOps = featureFlags.maxPendingMoveOps();
         feedSequencerType = convertFeedSequencerType(featureFlags.feedSequencerType());
         defaultFeedConcurrency = featureFlags.feedConcurrency();
         useBucketExecutorForLidSpaceCompact = featureFlags.useBucketExecutorForLidSpaceCompact();
+        useBucketExecutorForBucketMove = featureFlags.useBucketExecutorForBucketMove();
         defaultMaxDeadBytesRatio = featureFlags.maxDeadBytesRatio();
     }
 
@@ -263,7 +266,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     }
 
     public void addSearchNode(DeployState deployState, ContentNode node, StorageGroup parentGroup, ModelElement element) {
-        AbstractConfigProducer parent = hasIndexedCluster() ? getIndexed() : this;
+        AbstractConfigProducer<?> parent = hasIndexedCluster() ? getIndexed() : this;
 
         NodeSpec spec = getNextSearchNodeSpec(parentGroup);
         SearchNode searchNode;
@@ -429,7 +432,9 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         } else {
             builder.indexing.optimize(feedSequencerType);
         }
+        builder.maintenancejobs.maxoutstandingmoveops(maxPendingMoveOps);
         builder.lidspacecompaction.usebucketexecutor(useBucketExecutorForLidSpaceCompact);
+        builder.bucketmove.usebucketexecutor(useBucketExecutorForBucketMove);
     }
 
     private boolean isGloballyDistributed(NewDocumentType docType) {

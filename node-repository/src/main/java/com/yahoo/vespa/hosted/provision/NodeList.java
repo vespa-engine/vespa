@@ -168,9 +168,9 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     /** Returns the subset of nodes which have a record of being down */
     public NodeList down() { return matching(Node::isDown); }
 
-    /** Returns the subset of nodes which wantToRetire set true */
-    public NodeList wantToRetire() {
-        return matching(node -> node.status().wantToRetire());
+    /** Returns the subset of nodes which have retirement requested */
+    public NodeList retirementRequested() {
+        return matching(node -> node.status().wantToRetire() || node.status().preferToRetire());
     }
 
     /** Returns the parent nodes of the given child nodes */
@@ -269,6 +269,16 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     @Override
     public String toString() {
         return asList().toString();
+    }
+
+    @Override
+    public int hashCode() { return asList().hashCode(); }
+
+    @Override
+    public boolean equals(Object other) {
+        if (other == this) return true;
+        if ( ! (other instanceof NodeList)) return false;
+        return this.asList().equals(((NodeList) other).asList());
     }
 
 }

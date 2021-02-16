@@ -1,6 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.NameService;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
@@ -18,15 +19,13 @@ import java.util.logging.Level;
  */
 public class NameServiceDispatcher extends ControllerMaintainer {
 
-    private static final int defaultRequestCount = 1;
-
     private final Clock clock;
     private final CuratorDb db;
     private final NameService nameService;
     private final int requestCount;
 
     public NameServiceDispatcher(Controller controller, Duration interval) {
-        this(controller, interval, defaultRequestCount);
+        this(controller, interval, requestCount(controller.system()));
     }
 
     public NameServiceDispatcher(Controller controller, Duration interval, int requestCount) {
@@ -56,6 +55,11 @@ public class NameServiceDispatcher extends ControllerMaintainer {
             db.writeNameServiceQueue(remaining);
         }
         return success;
+    }
+
+    private static int requestCount(SystemName system) {
+        // Dispatch more requests at a time in CD as integration tests expect reasonably quick DNS changes
+        return system.isCd() ? 3 : 1;
     }
 
 }

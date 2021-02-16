@@ -33,18 +33,18 @@ Vespa per second.
 
 To get started using Vespa pick one of the quick start documents:
 
-- [Run on a Mac or Linux machine using Docker](https://docs.vespa.ai/documentation/vespa-quick-start.html)
-- [Run on a Windows machine using Docker](https://docs.vespa.ai/documentation/vespa-quick-start-windows.html)
-- [Run on a Mac or Linux machine using VirtualBox+Vagrant](https://docs.vespa.ai/documentation/vespa-quick-start-centos.html)
-- [Multinode install on AWS EC2](https://docs.vespa.ai/documentation/vespa-quick-start-multinode-aws.html)
-- [Multinode install on AWS ECS](https://docs.vespa.ai/documentation/vespa-quick-start-multinode-aws-ecs.html)
+- [Run on a Mac or Linux machine using Docker](https://docs.vespa.ai/en/vespa-quick-start.html)
+- [Run on a Windows machine using Docker](https://docs.vespa.ai/en/vespa-quick-start-windows.html)
+- [Run on a Mac or Linux machine using VirtualBox+Vagrant](https://docs.vespa.ai/en/vespa-quick-start-centos.html)
+- [Multinode install on AWS EC2](https://docs.vespa.ai/en/vespa-quick-start-multinode-aws.html)
+- [Multinode install on AWS ECS](https://docs.vespa.ai/en/vespa-quick-start-multinode-aws-ecs.html)
 
 ## Usage 
 
-- The application created in the quickstart is fully functional and production ready, but you may want to [add more nodes](https://docs.vespa.ai/documentation/multinode-systems.html) for redundancy.
-- Try the [Blog search and recommendation tutorial](https://docs.vespa.ai/documentation/tutorials/blog-search.html) to learn more about using Vespa
-- See [developing applications](https://docs.vespa.ai/documentation/jdisc/developing-applications.html) on adding your own Java components to your Vespa application.
-- [Vespa APIs](https://docs.vespa.ai/documentation/api.html) is useful to understand how to interface with Vespa
+- The application created in the quickstart is fully functional and production ready, but you may want to [add more nodes](https://docs.vespa.ai/en/multinode-systems.html) for redundancy.
+- Try the [Blog search and recommendation tutorial](https://docs.vespa.ai/en/tutorials/blog-search.html) to learn more about using Vespa
+- See [developing applications](https://docs.vespa.ai/en/jdisc/developing-applications.html) on adding your own Java components to your Vespa application.
+- [Vespa APIs](https://docs.vespa.ai/en/api.html) is useful to understand how to interface with Vespa
 - Explore the [sample applications](https://github.com/vespa-engine/sample-apps/tree/master)
 
 Full documentation is available on [https://docs.vespa.ai](https://docs.vespa.ai).

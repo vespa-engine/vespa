@@ -35,8 +35,8 @@ public class ResourceLimits implements FleetcontrollerConfig.Producer, ProtonCon
         // Note: The resource categories must match the ones used in host info reporting
         // between content nodes and cluster controller:
         // storage/src/vespa/storage/persistence/filestorage/service_layer_host_info_reporter.cpp
-        builder.cluster_feed_block_limit.put("memory", memoryLimit.orElse(0.79));
-        builder.cluster_feed_block_limit.put("disk", diskLimit.orElse(0.79));
+        builder.cluster_feed_block_limit.put("memory", memoryLimit.orElse(0.8));
+        builder.cluster_feed_block_limit.put("disk", diskLimit.orElse(0.8));
         builder.cluster_feed_block_limit.put("attribute-enum-store", 0.89);
         builder.cluster_feed_block_limit.put("attribute-multi-value", 0.89);
     }

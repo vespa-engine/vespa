@@ -43,6 +43,7 @@ public class RequestLogEntry {
     private final String rawPath;
     private final String rawQuery;
     private final Principal userPrincipal;
+    private final Principal sslPrincipal;
     private final HitCounts hitCounts;
     private final TraceNode traceNode;
     private final Map<String, Collection<String>> extraAttributes;
@@ -67,6 +68,7 @@ public class RequestLogEntry {
         this.rawPath = builder.rawPath;
         this.rawQuery = builder.rawQuery;
         this.userPrincipal = builder.userPrincipal;
+        this.sslPrincipal = builder.sslPrincipal;
         this.hitCounts = builder.hitCounts;
         this.traceNode = builder.traceNode;
         this.extraAttributes = copyExtraAttributes(builder.extraAttributes);
@@ -91,6 +93,7 @@ public class RequestLogEntry {
     public Optional<String> rawPath() { return Optional.ofNullable(rawPath); }
     public Optional<String> rawQuery() { return Optional.ofNullable(rawQuery); }
     public Optional<Principal> userPrincipal() { return Optional.ofNullable(userPrincipal); }
+    public Optional<Principal> sslPrincipal() { return Optional.ofNullable(sslPrincipal); }
     public Optional<HitCounts> hitCounts() { return Optional.ofNullable(hitCounts); }
     public Optional<TraceNode> traceNode() { return Optional.ofNullable(traceNode); }
     public Collection<String> extraAttributeKeys() { return Collections.unmodifiableCollection(extraAttributes.keySet()); }
@@ -135,6 +138,7 @@ public class RequestLogEntry {
         private Principal userPrincipal;
         private HitCounts hitCounts;
         private TraceNode traceNode;
+        private Principal sslPrincipal;
         private final Map<String, Collection<String>> extraAttributes = new HashMap<>();
 
         public Builder connectionId(String connectionId) { this.connectionId = requireNonNull(connectionId); return this; }
@@ -156,6 +160,7 @@ public class RequestLogEntry {
         public Builder rawPath(String rawPath) { this.rawPath = requireNonNull(rawPath); return this; }
         public Builder rawQuery(String rawQuery) { this.rawQuery = requireNonNull(rawQuery); return this; }
         public Builder userPrincipal(Principal userPrincipal) { this.userPrincipal = requireNonNull(userPrincipal); return this; }
+        public Builder sslPrincipal(Principal sslPrincipal) { this.sslPrincipal = requireNonNull(sslPrincipal); return this; }
         public Builder hitCounts(HitCounts hitCounts) { this.hitCounts = requireNonNull(hitCounts); return this; }
         public Builder traceNode(TraceNode traceNode) { this.traceNode = requireNonNull(traceNode); return this; }
         public Builder addExtraAttribute(String key, String value) {

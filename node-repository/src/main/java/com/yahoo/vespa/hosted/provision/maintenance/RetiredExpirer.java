@@ -7,10 +7,12 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
 import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.List;
@@ -45,7 +47,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
 
     @Override
     protected boolean maintain() {
-        List<Node> activeNodes = nodeRepository().getNodes(Node.State.active);
+        NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
 
         Map<ApplicationId, List<Node>> retiredNodesByApplication = activeNodes.stream()
                 .filter(node -> node.allocation().isPresent())
@@ -62,7 +64,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
                 List<Node> nodesToRemove = retiredNodes.stream().filter(this::canRemove).collect(Collectors.toList());
                 if (nodesToRemove.isEmpty()) continue;
 
-                nodeRepository().setRemovable(application, nodesToRemove);
+                nodeRepository().nodes().setRemovable(application, nodesToRemove);
 
                 boolean success = deployment.activate().isPresent();
                 if ( ! success) return success;
@@ -83,7 +85,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
      */
     private boolean canRemove(Node node) {
         if (node.type().isHost()) {
-            if (nodeRepository()
+            if (nodeRepository().nodes()
                     .list().childrenOf(node).asList().stream()
                     .allMatch(child -> child.state() == Node.State.parked ||
                                        child.state() == Node.State.failed)) {
@@ -95,7 +97,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
         }
 
         if (node.history().hasEventBefore(History.Event.Type.retired, clock().instant().minus(retiredExpiry))) {
-            log.info("Node " + node + " has been retired longer than " + retiredExpiry);
+            log.warning("Node " + node + " has been retired longer than " + retiredExpiry + ": Allowing removal. This may cause data loss");
             return true;
         }
 
@@ -104,10 +106,10 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
             log.info("Node " + node + " has been granted permission to be removed");
             return true;
         } catch (UncheckedTimeoutException e) {
-            log.info("Timed out trying to acquire permission to remove " + node.hostname() + ": " + e.getMessage());
+            log.warning("Timed out trying to acquire permission to remove " + node.hostname() + ": " + Exceptions.toMessageString(e));
             return false;
         } catch (OrchestrationException e) {
-            log.info("Did not get permission to remove retired " + node + ": " + e.getMessage());
+            log.info("Did not get permission to remove retired " + node + ": " + Exceptions.toMessageString(e));
             return false;
         }
     }

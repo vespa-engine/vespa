@@ -16,6 +16,11 @@ using join_fun_t = operation::op2_t;
 
 //-----------------------------------------------------------------------------
 
+struct JoinParam;
+
+template <typename LCT, typename RCT, typename OCT, typename Fun>
+Value::UP generic_mixed_join(const Value &lhs, const Value &rhs, const JoinParam &param);
+
 struct GenericJoin {
     static InterpretedFunction::Instruction
     make_instruction(const ValueType &lhs_type, const ValueType &rhs_type,

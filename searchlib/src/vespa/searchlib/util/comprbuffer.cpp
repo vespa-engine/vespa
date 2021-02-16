@@ -73,7 +73,7 @@ ComprBuffer::allocComprBuf()
     }
     size_t fullpadding = paddingAfter + paddingBefore;
     size_t allocLen = _comprBufSize * _unitSize + fullpadding;
-    _comprAlloc = Alloc::alloc(allocLen, vespalib::alloc::MemoryAllocator::HUGEPAGE_SIZE, memalign);
+    _comprAlloc = Alloc::alloc_aligned(allocLen, memalign);
     void *alignedBuf = _comprAlloc.get();
     memset(alignedBuf, 0, allocLen);
     /*

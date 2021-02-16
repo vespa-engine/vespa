@@ -42,7 +42,7 @@ public class ProxyServer implements Runnable {
 
     private final static Logger log = Logger.getLogger(ProxyServer.class.getName());
     private final AtomicBoolean signalCaught = new AtomicBoolean(false);
-    private final Supervisor supervisor = new Supervisor(new Transport("proxy-server", JRT_TRANSPORT_THREADS));
+    private final Supervisor supervisor;
 
     private final ConfigProxyRpcServer rpcServer;
     private ConfigSourceSet configSource;
@@ -56,6 +56,7 @@ public class ProxyServer implements Runnable {
 
     ProxyServer(Spec spec, ConfigSourceSet source, MemoryCache memoryCache, ConfigSourceClient configClient) {
         this.configSource = source;
+        supervisor = new Supervisor(new Transport("proxy-server", JRT_TRANSPORT_THREADS)).useSmallBuffers();
         log.log(Level.FINE, "Using config source '" + source);
         this.memoryCache = memoryCache;
         this.rpcServer = createRpcServer(spec);

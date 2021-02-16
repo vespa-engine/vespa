@@ -195,7 +195,7 @@ public class FastHit extends Hit {
 
     /**
      * Returns values for the features listed in
-     * <a href="https://docs.vespa.ai/documentation/reference/schema-reference.html#summary-features">summary-features</a>
+     * <a href="https://docs.vespa.ai/en/reference/schema-reference.html#summary-features">summary-features</a>
      * in the rank profile specified in the query producing this.
      */
     public FeatureData features() {

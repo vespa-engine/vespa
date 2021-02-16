@@ -37,6 +37,7 @@
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 #include <vespa/vespalib/util/random.h>
 
 #include <vespa/searchlib/aggregation/forcelink.hpp>
@@ -302,6 +303,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     }
     _protonDiskLayout = std::make_unique<ProtonDiskLayout>(protonConfig.basedir, protonConfig.tlsspec);
     vespalib::chdir(protonConfig.basedir);
+    vespalib::alloc::MmapFileAllocatorFactory::instance().setup(protonConfig.basedir + "/swapdirs");
     _tls->start();
     _flushEngine = std::make_unique<FlushEngine>(std::make_shared<flushengine::TlsStatsFactory>(_tls->getTransLogServer()),
                                                  strategy, flush.maxconcurrent, vespalib::from_s(flush.idleinterval));

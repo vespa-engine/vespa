@@ -7,6 +7,7 @@
 #include <vespa/searchcore/proton/server/putdonecontext.h>
 #include <vespa/searchcore/proton/server/removedonecontext.h>
 #include <vespa/searchcore/proton/server/storeonlyfeedview.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
 #include <vespa/searchcore/proton/reference/dummy_gid_to_lid_change_handler.h>
@@ -199,7 +200,7 @@ struct FixtureBase {
           putCount(0),
           heartbeatCount(0),
           outstandingMoveOps(0),
-          metaStore(std::make_shared<DocumentMetaStore>(std::make_shared<BucketDBOwner>(),
+          metaStore(std::make_shared<DocumentMetaStore>(std::make_shared<bucketdb::BucketDBOwner>(),
                                                         DocumentMetaStore::getFixedName(),
                                                         search::GrowStrategy(),
                                                         subDbType)),

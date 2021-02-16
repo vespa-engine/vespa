@@ -62,6 +62,7 @@ public interface ModelContext {
      *
      * 3)
      *  - Remove below method once all config-model versions in hosted production include changes from 1)
+     *  - Remove all flag data files from hosted-feature-flag repository
      */
     interface FeatureFlags {
         @ModelFeatureFlag(owners = {"bjorncs", "jonmv"}, removeAfter = "7.352") default boolean enableAutomaticReindexing() { return true; }
@@ -71,19 +72,22 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}, comment = "Select sequencer type use while feeding") default String feedSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default String responseSequencerType() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default int defaultNumResponseThreads() { return 2; }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default int maxPendingMoveOps() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean skipCommunicationManagerThread() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean skipMbusRequestThread() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean skipMbusReplyThread() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"tokle"}) default boolean useAccessControlTlsHandshakeClientAuth() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useAsyncMessageHandlingOnSchedule() { throw new UnsupportedOperationException("TODO specify default value"); }
-        @ModelFeatureFlag(owners = {"baldersheim"}, removeAfter = "7.350") default int mergeChunkSize() { return 0x2000000; }
         @ModelFeatureFlag(owners = {"baldersheim"}) default double feedConcurrency() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useBucketExecutorForLidSpaceCompact() { throw new UnsupportedOperationException("TODO specify default value"); }
+        @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useBucketExecutorForBucketMove() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"musum", "mpolden"}, comment = "Revisit in February 2021") default boolean reconfigurableZookeeperServer() { return false; }
         @ModelFeatureFlag(owners = {"bjorncs", "tokle"}, removeAfter = "7.357") default boolean enableJdiscConnectionLog() { return true; }
         @ModelFeatureFlag(owners = {"bjorncs", "tokle", "baldersheim"}, removeAfter = "7.357") default boolean enableZstdCompressionAccessLog() { return true; }
         @ModelFeatureFlag(owners = {"geirst"}) default boolean enableFeedBlockInDistributor() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim", "geirst", "toregge"}) default double maxDeadBytesRatio() { return 0.2; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default int clusterControllerMaxHeapSizeInMb() { return 512; }
+        @ModelFeatureFlag(owners = {"bjorncs", "tokle"}) default List<String> allowedAthenzProxyIdentities() { return List.of(); }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
@@ -107,13 +111,12 @@ public interface ModelContext {
 
         Optional<ApplicationRoles> applicationRoles();
 
-        default Quota quota() {
-            return Quota.unlimited();
-        }
+        default Quota quota() { return Quota.unlimited(); }
 
         /// Default setting for the gc-options attribute if not specified explicit by application
         String jvmGCOptions();
-        // TODO(somebody): Only needed for LbServicesProducerTest
+
+        // Note: Used in unit tests (set to false in TestProperties) to avoid needing to deal with implicitly created node for logserver
         default boolean useDedicatedNodeForLogserver() { return true; }
 
     }

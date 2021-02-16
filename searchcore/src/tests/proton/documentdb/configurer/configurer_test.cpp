@@ -16,6 +16,7 @@
 #include <vespa/searchcore/proton/server/summaryadapter.h>
 #include <vespa/searchcore/proton/server/attribute_writer_factory.h>
 #include <vespa/searchcore/proton/server/reconfig_params.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/matching/sessionmanager.h>
 #include <vespa/searchcore/proton/matching/querylimiter.h>
 #include <vespa/searchcore/proton/test/documentdb_config_builder.h>
@@ -193,7 +194,7 @@ Fixture::initViewSet(ViewSet &views)
             (_summaryExecutor, search::LogDocumentStore::Config(), search::GrowStrategy(), BASE_DIR, views._docTypeName,
              TuneFileSummary(), views._fileHeaderContext,views._noTlSyncer, search::IBucketizer::SP());
     auto sesMgr = make_shared<SessionManager>(100);
-    auto metaStore = make_shared<DocumentMetaStoreContext>(make_shared<BucketDBOwner>());
+    auto metaStore = make_shared<DocumentMetaStoreContext>(make_shared<bucketdb::BucketDBOwner>());
     auto indexWriter = std::make_shared<IndexWriter>(indexMgr);
     auto attrWriter = std::make_shared<AttributeWriter>(attrMgr);
     auto summaryAdapter = std::make_shared<SummaryAdapter>(summaryMgr);
@@ -254,7 +255,7 @@ struct MyFastAccessFeedView
     void init() {
         MySummaryAdapter::SP summaryAdapter = std::make_shared<MySummaryAdapter>();
         Schema::SP schema = std::make_shared<Schema>();
-        _dmsc = make_shared<DocumentMetaStoreContext>(std::make_shared<BucketDBOwner>());
+        _dmsc = make_shared<DocumentMetaStoreContext>(std::make_shared<bucketdb::BucketDBOwner>());
         std::shared_ptr<const DocumentTypeRepo> repo = createRepo();
         StoreOnlyFeedView::Context storeOnlyCtx(summaryAdapter, schema, _dmsc, repo,
                                                 _pendingLidsForCommit, *_gidToLidChangeHandler, _writeService);

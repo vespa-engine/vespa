@@ -52,8 +52,8 @@ public class TlsCryptoSocket implements CryptoSocket {
         this.channel = channel;
         this.sslEngine = sslEngine;
         SSLSession nullSession = sslEngine.getSession();
-        this.wrapBuffer = new Buffer(Math.max(0x10000, nullSession.getPacketBufferSize() * 2));
-        this.unwrapBuffer = new Buffer(Math.max(0x10000, nullSession.getPacketBufferSize() * 2));
+        this.wrapBuffer = new Buffer(Math.max(0x8000, nullSession.getPacketBufferSize()));
+        this.unwrapBuffer = new Buffer(Math.max(0x8000, nullSession.getPacketBufferSize()));
         // Note: Dummy buffer as unwrap requires a full size application buffer even though no application data is unwrapped
         this.handshakeDummyBuffer = ByteBuffer.allocate(nullSession.getApplicationBufferSize());
         this.handshakeState = HandshakeState.NOT_STARTED;

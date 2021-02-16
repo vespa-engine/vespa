@@ -16,11 +16,9 @@ import com.yahoo.container.di.config.SubscriberFactory;
 import com.yahoo.container.di.osgi.BundleClasses;
 import com.yahoo.container.di.osgi.OsgiUtil;
 import com.yahoo.container.logging.AccessLog;
-import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.jdisc.application.OsgiFramework;
 import com.yahoo.jdisc.handler.RequestHandler;
-import com.yahoo.jdisc.http.server.jetty.VoidConnectionLog;
 import com.yahoo.jdisc.service.ClientProvider;
 import com.yahoo.jdisc.service.ServerProvider;
 import com.yahoo.osgi.OsgiImpl;
@@ -49,6 +47,9 @@ import static com.yahoo.collections.CollectionUtil.first;
 public class HandlersConfigurerDi {
 
     private static final Logger log = Logger.getLogger(HandlersConfigurerDi.class.getName());
+
+    private static final Executor fallbackExecutor = Executors.newCachedThreadPool(
+            ThreadFactoryFactory.getThreadFactory("HandlersConfigurerDI"));
 
     private final com.yahoo.container.Container vespaContainer;
     private final Container container;
@@ -140,11 +141,12 @@ public class HandlersConfigurerDi {
         return discInjector.createChildInjector(new AbstractModule() {
             @Override
             protected void configure() {
+                // Provide a singleton instance for all component fallbacks,
+                // otherwise fallback injection may lead to a cascade of components requiring reconstruction.
                 bind(com.yahoo.container.Container.class).toInstance(vespaContainer);
                 bind(com.yahoo.statistics.Statistics.class).toInstance(Statistics.nullImplementation);
-                bind(AccessLog.class).toInstance(new AccessLog(new ComponentRegistry<>()));
-                bind(Executor.class).toInstance(Executors.newCachedThreadPool(ThreadFactoryFactory.getThreadFactory("HandlersConfigurerDI")));
-                bind(ConnectionLog.class).toInstance(new VoidConnectionLog());
+                bind(AccessLog.class).toInstance(AccessLog.NONE_INSTANCE);
+                bind(Executor.class).toInstance(fallbackExecutor);
                 if (vespaContainer.getFileAcquirer() != null)
                     bind(com.yahoo.filedistribution.fileacquirer.FileAcquirer.class).toInstance(vespaContainer.getFileAcquirer());
             }

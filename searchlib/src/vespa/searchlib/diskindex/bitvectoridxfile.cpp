@@ -5,6 +5,7 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <cassert>
 
 namespace search::diskindex {
 
@@ -35,9 +36,7 @@ BitVectorIdxFileWrite::BitVectorIdxFileWrite(BitVectorKeyScope scope)
 {
 }
 
-
 BitVectorIdxFileWrite::~BitVectorIdxFileWrite() = default;
-
 
 uint64_t
 BitVectorIdxFileWrite::idxSize() const
@@ -45,7 +44,6 @@ BitVectorIdxFileWrite::idxSize() const
     return _idxHeaderLen +
         static_cast<int64_t>(_numKeys) * sizeof(BitVectorWordSingleKey);
 }
-
 
 void
 BitVectorIdxFileWrite::open(const vespalib::string &name,
@@ -88,7 +86,6 @@ BitVectorIdxFileWrite::open(const vespalib::string &name,
     assert(pos == _idxFile->GetPosition());
 }
 
-
 void
 BitVectorIdxFileWrite::makeIdxHeader(const FileHeaderContext &fileHeaderContext)
 {
@@ -106,7 +103,6 @@ BitVectorIdxFileWrite::makeIdxHeader(const FileHeaderContext &fileHeaderContext)
     _idxHeaderLen = h.writeFile(*_idxFile);
     _idxFile->Flush();
 }
-
 
 void
 BitVectorIdxFileWrite::updateIdxHeader(uint64_t fileBitSize)
@@ -129,7 +125,6 @@ BitVectorIdxFileWrite::updateIdxHeader(uint64_t fileBitSize)
     _idxFile->Sync();
 }
 
-
 void
 BitVectorIdxFileWrite::addWordSingle(uint64_t wordNum, uint32_t numDocs)
 {
@@ -139,7 +134,6 @@ BitVectorIdxFileWrite::addWordSingle(uint64_t wordNum, uint32_t numDocs)
     _idxFile->WriteBuf(&key, sizeof(key));
     ++_numKeys;
 }
-
 
 void
 BitVectorIdxFileWrite::flush()
@@ -151,13 +145,11 @@ BitVectorIdxFileWrite::flush()
     (void) pos;
 }
 
-
 void
 BitVectorIdxFileWrite::syncCommon()
 {
     _idxFile->Sync();
 }
-
 
 void
 BitVectorIdxFileWrite::sync()
@@ -165,7 +157,6 @@ BitVectorIdxFileWrite::sync()
     flush();
     syncCommon();
 }
-
 
 void
 BitVectorIdxFileWrite::close()

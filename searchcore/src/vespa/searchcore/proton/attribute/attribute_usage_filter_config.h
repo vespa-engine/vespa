@@ -17,18 +17,18 @@ struct AttributeUsageFilterConfig
     double _enumStoreLimit;
     double _multiValueLimit;
 
-    AttributeUsageFilterConfig()
+    AttributeUsageFilterConfig() noexcept
         : _enumStoreLimit(1.0),
           _multiValueLimit(1.0)
     { }
 
     AttributeUsageFilterConfig(double enumStoreLimit_in,
-                               double multiValueLimit_in)
+                               double multiValueLimit_in) noexcept
         : _enumStoreLimit(enumStoreLimit_in),
           _multiValueLimit(multiValueLimit_in)
     { }
 
-    bool operator==(const AttributeUsageFilterConfig &rhs) const {
+    bool operator==(const AttributeUsageFilterConfig &rhs) const noexcept {
         return ((_enumStoreLimit == rhs._enumStoreLimit) &&
                 (_multiValueLimit == rhs._multiValueLimit));
     }

@@ -8,7 +8,6 @@
 #include "lid_gid_key_comparator.h"
 #include "lid_hold_list.h"
 #include "raw_document_meta_data.h"
-#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/common/subdbtype.h>
 #include <vespa/searchlib/attribute/singlesmallnumericattribute.h>
 #include <vespa/searchlib/queryeval/blueprint.h>
@@ -16,13 +15,14 @@
 #include <vespa/vespalib/util/rcuvector.h>
 
 namespace proton::bucketdb {
-class SplitBucketSession;
-class JoinBucketsSession;
+    class SplitBucketSession;
+    class JoinBucketsSession;
+    class Guard;
 }
 
 namespace proton::documentmetastore {
-class OperationListener;
-class Reader;
+    class OperationListener;
+    class Reader;
 }
 
 namespace proton {
@@ -54,25 +54,27 @@ public:
 
 private:
     // maps from lid -> meta data
-    typedef vespalib::RcuVectorBase<RawDocumentMetaData> MetaDataStore;
-    typedef documentmetastore::LidGidKeyComparator KeyComp;
+    using MetaDataStore = vespalib::RcuVectorBase<RawDocumentMetaData>;
+    using KeyComp = documentmetastore::LidGidKeyComparator;
+    using OperationListenerSP = std::shared_ptr<documentmetastore::OperationListener>;
+    using BucketDBOwnerSP = std::shared_ptr<bucketdb::BucketDBOwner>;
 
     // Lids are stored as keys in the tree, sorted by their gid
     // counterpart.  The LidGidKeyComparator class maps from lids -> metadata by
     // using the metadata store.
-    typedef vespalib::btree::BTree<documentmetastore::GidToLidMapKey, vespalib::btree::BTreeNoLeafData,
-                                 vespalib::btree::NoAggregated, const KeyComp &> TreeType;
+    using TreeType =  vespalib::btree::BTree<documentmetastore::GidToLidMapKey, vespalib::btree::BTreeNoLeafData,
+                                             vespalib::btree::NoAggregated, const KeyComp &>;
 
     MetaDataStore       _metaDataStore;
     TreeType            _gidToLidMap;
     Iterator            _gid_to_lid_map_write_itr; // Iterator used for all updates of _gidToLidMap
     SerialNum           _gid_to_lid_map_write_itr_prepare_serial_num;
     documentmetastore::LidAllocator _lidAlloc;
-    BucketDBOwner::SP   _bucketDB;
+    BucketDBOwnerSP     _bucketDB;
     uint32_t            _shrinkLidSpaceBlockers;
     const SubDbType     _subDbType;
     bool                _trackDocumentSizes;
-    std::shared_ptr<documentmetastore::OperationListener> _op_listener;
+    OperationListenerSP _op_listener;
 
     DocId getFreeLid();
     DocId peekFreeLid();
@@ -124,7 +126,7 @@ private:
 
     VESPA_DLL_LOCAL DocId readNextDoc(documentmetastore::Reader & reader, TreeType::Builder & treeBuilder);
 
-    void remove(DocId lid, uint64_t cached_iterator_sequence_id, BucketDBOwner::Guard &bucketGuard);
+    void remove(DocId lid, uint64_t cached_iterator_sequence_id, bucketdb::Guard &bucketGuard);
 
 public:
     typedef TreeType::Iterator Iterator;
@@ -134,7 +136,7 @@ public:
         sizeof(uint32_t) + GlobalId::LENGTH + sizeof(uint8_t) +
         sizeof(Timestamp::Type);
 
-    DocumentMetaStore(BucketDBOwner::SP bucketDB,
+    DocumentMetaStore(BucketDBOwnerSP bucketDB,
                       const vespalib::string & name=getFixedName(),
                       const search::GrowStrategy & grow=search::GrowStrategy(),
                       SubDbType subDbType = SubDbType::READY);
@@ -227,7 +229,7 @@ public:
     /**
      * Implements documentmetastore::IBucketHandler.
      */
-    BucketDBOwner &getBucketDB() const override { return *_bucketDB; }
+    bucketdb::BucketDBOwner &getBucketDB() const override { return *_bucketDB; }
 
     bucketdb::BucketDeltaPair handleSplit(const bucketdb::SplitBucketSession &session) override;
     bucketdb::BucketDeltaPair handleJoin(const bucketdb::JoinBucketsSession &session) override;

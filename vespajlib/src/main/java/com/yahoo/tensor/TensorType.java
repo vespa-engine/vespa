@@ -112,7 +112,7 @@ public class TensorType {
 
     /**
      * Returns a tensor type instance from a
-     * <a href="https://docs.vespa.ai/documentation/reference/tensor.html#tensor-type-spec">tensor type spec</a>:
+     * <a href="https://docs.vespa.ai/en/reference/tensor.html#tensor-type-spec">tensor type spec</a>:
      * <code>tensor(dimension1, dimension2, ...)</code>
      * where each dimension is either
      * <ul>

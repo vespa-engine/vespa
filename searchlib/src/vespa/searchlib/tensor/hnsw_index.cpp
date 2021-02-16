@@ -9,6 +9,7 @@
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/data/slime/inserter.h>
 #include <vespa/vespalib/datastore/array_store.hpp>
+#include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
 #include <vespa/log/log.h>
 

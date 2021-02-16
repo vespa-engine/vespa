@@ -121,7 +121,7 @@ public class MetricsReporterTest {
         expectedMetrics.put("cache.nodeObject.evictionCount", 0L);
         expectedMetrics.put("cache.nodeObject.size", 2L);
 
-        nodeRepository.list();
+        nodeRepository.nodes().list();
         expectedMetrics.put("cache.curator.hitRate", 0.52D);
         expectedMetrics.put("cache.curator.evictionCount", 0L);
         expectedMetrics.put("cache.curator.size", 12L);
@@ -162,26 +162,26 @@ public class MetricsReporterTest {
 
         Node dockerHost = Node.create("openStackId1", new IP.Config(Set.of("::1"), ipAddressPool), "dockerHost",
                                       nodeFlavors.getFlavorOrThrow("host"), NodeType.host).build();
-        nodeRepository.addNodes(List.of(dockerHost), Agent.system);
-        nodeRepository.deallocateRecursively("dockerHost", Agent.system, getClass().getSimpleName());
-        nodeRepository.setReady("dockerHost", Agent.system, getClass().getSimpleName());
+        nodeRepository.nodes().addNodes(List.of(dockerHost), Agent.system);
+        nodeRepository.nodes().deallocateRecursively("dockerHost", Agent.system, getClass().getSimpleName());
+        nodeRepository.nodes().setReady("dockerHost", Agent.system, getClass().getSimpleName());
 
         Node container1 = Node.createDockerNode(Set.of("::2"), "container1",
                                                 "dockerHost", new NodeResources(1, 3, 2, 1), NodeType.tenant).build();
         container1 = container1.with(allocation(Optional.of("app1"), container1).get());
-        try (Mutex lock = nodeRepository.lockUnallocated()) {
-            nodeRepository.addDockerNodes(new LockedNodeList(List.of(container1), lock));
+        try (Mutex lock = nodeRepository.nodes().lockUnallocated()) {
+            nodeRepository.nodes().addDockerNodes(new LockedNodeList(List.of(container1), lock));
         }
 
         Node container2 = Node.createDockerNode(Set.of("::3"), "container2",
                                                 "dockerHost", new NodeResources(2, 4, 4, 1), NodeType.tenant).build();
         container2 = container2.with(allocation(Optional.of("app2"), container2).get());
-        try (Mutex lock = nodeRepository.lockUnallocated()) {
-            nodeRepository.addDockerNodes(new LockedNodeList(List.of(container2), lock));
+        try (Mutex lock = nodeRepository.nodes().lockUnallocated()) {
+            nodeRepository.nodes().addDockerNodes(new LockedNodeList(List.of(container2), lock));
         }
 
         NestedTransaction transaction = new NestedTransaction();
-        nodeRepository.activate(nodeRepository.getNodes(NodeType.host), transaction);
+        nodeRepository.nodes().activate(nodeRepository.nodes().list().nodeType(NodeType.host).asList(), transaction);
         transaction.commit();
 
         Orchestrator orchestrator = mock(Orchestrator.class);

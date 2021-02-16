@@ -1244,4 +1244,35 @@ LogDataStore::shrinkLidSpace()
     incGeneration();
 }
 
+FileChunk::FileId
+LogDataStore::getActiveFileId(const MonitorGuard & guard) const {
+    assert(hasUpdateLock(guard));
+    (void) guard;
+    return _active;
+}
+
+WriteableFileChunk &
+LogDataStore::getActive(const MonitorGuard & guard) {
+    assert(hasUpdateLock(guard));
+    return static_cast<WriteableFileChunk &>(*_fileChunks[_active.getId()]);
+}
+
+const WriteableFileChunk &
+LogDataStore::getActive(const MonitorGuard & guard) const {
+    assert(hasUpdateLock(guard));
+    return static_cast<const WriteableFileChunk &>(*_fileChunks[_active.getId()]);
+}
+
+const FileChunk *
+LogDataStore::getPrevActive(const MonitorGuard & guard) const {
+    assert(hasUpdateLock(guard));
+    return ( !_prevActive.isActive() ) ? _fileChunks[_prevActive.getId()].get() : nullptr;
+}
+void
+LogDataStore::setActive(const MonitorGuard & guard, FileId fileId) {
+    assert(hasUpdateLock(guard));
+    _prevActive = _active;
+    _active = fileId;
+}
+
 } // namespace search

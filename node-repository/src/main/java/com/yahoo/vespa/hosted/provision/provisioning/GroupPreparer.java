@@ -81,8 +81,8 @@ public class GroupPreparer {
         }
 
         // There were some changes, so re-do the allocation with locks
-        try (Mutex lock = nodeRepository.lock(application);
-             Mutex allocationLock = nodeRepository.lockUnallocated()) {
+        try (Mutex lock = nodeRepository.nodes().lock(application);
+             Mutex allocationLock = nodeRepository.nodes().lockUnallocated()) {
 
             NodeAllocation allocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
                                                           highestIndex, wantedGroups, allocationLock,
@@ -91,7 +91,7 @@ public class GroupPreparer {
             if (nodeRepository.zone().getCloud().dynamicProvisioning()) {
                 final Version osVersion;
                 if (allocateOsRequirement.equals("rhel8")) {
-                    osVersion = new Version(8);
+                    osVersion = new Version(8, Integer.MAX_VALUE /* always use latest 8 version */, 0);
                 } else {
                     osVersion = nodeRepository.osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
                 }
@@ -109,7 +109,7 @@ public class GroupPreparer {
                 List<Node> hosts = provisionedHosts.stream()
                                                    .map(ProvisionedHost::generateHost)
                                                    .collect(Collectors.toList());
-                nodeRepository.addNodes(hosts, Agent.application);
+                nodeRepository.nodes().addNodes(hosts, Agent.application);
 
                 // Offer the nodes on the newly provisioned hosts, this should be enough to cover the deficit
                 List<NodeCandidate> candidates = provisionedHosts.stream()
@@ -124,8 +124,8 @@ public class GroupPreparer {
                                                  allocation.outOfCapacityDetails());
 
             // Carry out and return allocation
-            nodeRepository.reserve(allocation.reservableNodes());
-            nodeRepository.addDockerNodes(new LockedNodeList(allocation.newNodes(), allocationLock));
+            nodeRepository.nodes().reserve(allocation.reservableNodes());
+            nodeRepository.nodes().addDockerNodes(new LockedNodeList(allocation.newNodes(), allocationLock));
             List<Node> acceptedNodes = allocation.finalNodes();
             surplusActiveNodes.removeAll(acceptedNodes);
             return acceptedNodes;
@@ -135,7 +135,7 @@ public class GroupPreparer {
     private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
                                              List<Node> surplusActiveNodes, MutableInteger highestIndex, int wantedGroups,
                                              Mutex allocationLock, String allocateOsRequirement) {
-        LockedNodeList allNodes = nodeRepository.list(allocationLock);
+        LockedNodeList allNodes = nodeRepository.nodes().list(allocationLock);
         NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes,
                 highestIndex, nodeRepository);
         NodePrioritizer prioritizer = new NodePrioritizer(

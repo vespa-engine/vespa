@@ -2,6 +2,7 @@
 #include <vespa/searchcore/proton/server/buckethandler.h>
 #include <vespa/searchcore/proton/server/ibucketstatechangedhandler.h>
 #include <vespa/searchcore/proton/server/ibucketmodifiedhandler.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/persistence/spi/test.h>
 #include <vespa/vespalib/testkit/testapp.h>
@@ -28,7 +29,7 @@ struct MySubDb
 {
     DocumentMetaStore   _metaStore;
     test::UserDocuments _docs;
-    MySubDb(std::shared_ptr<BucketDBOwner> bucketDB, SubDbType subDbType)
+    MySubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB, SubDbType subDbType)
         : _metaStore(bucketDB,
                      DocumentMetaStore::getFixedName(),
                      search::GrowStrategy(),
@@ -69,17 +70,6 @@ struct MyChangedHandler : public IBucketStateChangedHandler
     }
 };
 
-
-struct MyModifiedHandler : public IBucketModifiedHandler
-{
-    virtual void
-    notifyBucketModified(const BucketId &bucket) override
-    {
-        (void) bucket;
-    }
-};
-
-
 bool
 expectEqual(uint32_t docCount, uint32_t metaCount, size_t docSizes, size_t entrySizes, const BucketInfo &info)
 {
@@ -94,28 +84,26 @@ expectEqual(uint32_t docCount, uint32_t metaCount, size_t docSizes, size_t entry
 struct Fixture
 {
     test::UserDocumentsBuilder      _builder;
-    std::shared_ptr<BucketDBOwner>  _bucketDB;
+    std::shared_ptr<bucketdb::BucketDBOwner>  _bucketDB;
     MySubDb                         _ready;
     MySubDb                         _removed;
     MySubDb                         _notReady;
     ThreadStackExecutor             _exec;
     BucketHandler                   _handler;
     MyChangedHandler                _changedHandler;
-    MyModifiedHandler               _modifiedHandler;
     BucketStateCalculator::SP       _calc;
     test::BucketIdListResultHandler _bucketList;
     test::BucketInfoResultHandler   _bucketInfo;
     test::GenericResultHandler      _genResult;
     Fixture()
         : _builder(),
-          _bucketDB(std::make_shared<BucketDBOwner>()),
+          _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
           _ready(_bucketDB, SubDbType::READY),
           _removed(_bucketDB, SubDbType::REMOVED),
           _notReady(_bucketDB, SubDbType::NOTREADY),
           _exec(1, 64000),
           _handler(_exec),
           _changedHandler(),
-          _modifiedHandler(),
           _calc(new BucketStateCalculator()),
           _bucketList(), _bucketInfo(), _genResult()
     {
@@ -180,7 +168,7 @@ TEST_F("require that bucket is reported in handleGetBucketInfo()", Fixture)
 TEST_F("require that handleGetBucketInfo() can get cached bucket", Fixture)
 {
     {
-        BucketDBOwner::Guard db = f._bucketDB->takeGuard();
+        bucketdb::Guard db = f._bucketDB->takeGuard();
         db->add(GID_1, BUCKET_1, TIME_1, DOCSIZE_1, SubDbType::READY);
         db->cacheBucket(BUCKET_1);
         db->add(GID_1, BUCKET_1, TIME_1, DOCSIZE_1, SubDbType::NOTREADY);
@@ -194,7 +182,7 @@ TEST_F("require that handleGetBucketInfo() can get cached bucket", Fixture)
     EXPECT_TRUE(expectEqual(2, 2, 2 * DOCSIZE_1, 2 * DOCSIZE_1, f._bucketInfo.getInfo()));
     {
         // Must ensure empty bucket db before destruction.
-        BucketDBOwner::Guard db = f._bucketDB->takeGuard();
+        bucketdb::Guard db = f._bucketDB->takeGuard();
         db->remove(GID_1, BUCKET_1, TIME_1, DOCSIZE_1, SubDbType::READY);
         db->remove(GID_1, BUCKET_1, TIME_1, DOCSIZE_1, SubDbType::NOTREADY);
     }

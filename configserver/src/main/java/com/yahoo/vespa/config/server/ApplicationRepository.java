@@ -73,9 +73,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
@@ -90,6 +88,7 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -150,8 +149,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  ConfigserverConfig configserverConfig,
                                  Orchestrator orchestrator,
                                  TesterClient testerClient,
-                                 Metric metric,
-                                 FlagSource flagSource) {
+                                 Metric metric) {
         this(tenantRepository,
              hostProvisionerProvider.getHostProvisioner(),
              infraDeployerProvider.getInfraDeployer(),
@@ -163,7 +161,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              Clock.systemUTC(),
              testerClient,
              metric,
-             flagSource,
              new DefaultClusterReindexingStatusClient());
     }
 
@@ -178,7 +175,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   Clock clock,
                                   TesterClient testerClient,
                                   Metric metric,
-                                  FlagSource flagSource,
                                   ClusterReindexingStatusClient clusterReindexingStatusClient) {
         this.tenantRepository = Objects.requireNonNull(tenantRepository);
         this.hostProvisioner = Objects.requireNonNull(hostProvisioner);
@@ -275,7 +271,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                              clock,
                                              testerClient,
                                              metric,
-                                             flagSource,
                                              ClusterReindexingStatusClient.DUMMY_INSTANCE);
         }
 
@@ -835,7 +830,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     public void deleteExpiredLocalSessions() {
         Map<Tenant, Collection<LocalSession>> sessionsPerTenant = new HashMap<>();
-        tenantRepository.getAllTenants().forEach(tenant -> sessionsPerTenant.put(tenant, tenant.getSessionRepository().getLocalSessions()));
+        tenantRepository.getAllTenants()
+                        .forEach(tenant -> sessionsPerTenant.put(tenant,
+                                                                 List.copyOf(tenant.getSessionRepository().getLocalSessions())));
 
         Set<ApplicationId> applicationIds = new HashSet<>();
         sessionsPerTenant.values()

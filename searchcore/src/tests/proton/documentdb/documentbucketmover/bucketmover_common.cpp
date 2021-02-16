@@ -14,7 +14,7 @@ MyBucketModifiedHandler::notifyBucketModified(const BucketId &bucket) {
     _modified.push_back(bucket);
 }
 
-MyMoveHandler::MyMoveHandler(BucketDBOwner &bucketDb, bool storeMoveDoneContext)
+MyMoveHandler::MyMoveHandler(bucketdb::BucketDBOwner &bucketDb, bool storeMoveDoneContext)
     : _bucketDb(bucketDb),
       _moves(),
       _numCachedBuckets(),
@@ -35,16 +35,17 @@ MyMoveHandler::handleMove(MoveOperation &op, IDestructorCallback::SP moveDoneCtx
     }
 }
 
-MySubDb::MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::shared_ptr<BucketDBOwner> bucketDB,
+MySubDb::MySubDb(const std::shared_ptr<const DocumentTypeRepo> &repo, std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
                  uint32_t subDbId, SubDbType subDbType)
-        : _metaStoreSP(std::make_shared<DocumentMetaStore>(bucketDB, DocumentMetaStore::getFixedName(),
-                                                           search::GrowStrategy(), subDbType)),
-          _metaStore(*_metaStoreSP),
-          _realRetriever(std::make_shared<MyDocumentRetriever>(repo)),
-          _retriever(_realRetriever),
-          _subDb("my_sub_db", subDbId, _metaStoreSP, _retriever, IFeedView::SP(), nullptr),
-          _docs(),
-          _bucketDBHandler(*bucketDB) {
+    : _metaStoreSP(std::make_shared<DocumentMetaStore>(bucketDB, DocumentMetaStore::getFixedName(),
+                                                       search::GrowStrategy(), subDbType)),
+      _metaStore(*_metaStoreSP),
+      _realRetriever(std::make_shared<MyDocumentRetriever>(repo)),
+      _retriever(_realRetriever),
+      _subDb("my_sub_db", subDbId, _metaStoreSP, _retriever, IFeedView::SP(), nullptr),
+      _docs(),
+      _bucketDBHandler(*bucketDB)
+{
     _bucketDBHandler.addDocumentMetaStore(_metaStoreSP.get(), 0);
 }
 

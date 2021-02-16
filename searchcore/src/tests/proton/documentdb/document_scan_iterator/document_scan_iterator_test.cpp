@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/server/document_scan_iterator.h>
+#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/document/base/documentid.h>
@@ -22,7 +23,7 @@ struct Fixture
     DocumentMetaStore _metaStore;
     std::unique_ptr<DocumentScanIterator> _itr;
     Fixture()
-        : _metaStore(std::make_shared<BucketDBOwner>()),
+        : _metaStore(std::make_shared<bucketdb::BucketDBOwner>()),
           _itr()
     {
         _metaStore.constructFreeList();

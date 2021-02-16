@@ -86,7 +86,10 @@ public:
         std::atomic_thread_fence(std::memory_order_acquire);
         return TargetLids(&_targetLids[0], committedDocIdLimit);
     }
-    uint32_t getTargetLid(uint32_t doc) const { return _targetLids[doc]; }
+    uint32_t getTargetLid(uint32_t doc) const {
+        // Check limit to avoid reading memory beyond end of valid mapping array
+        return doc < _committedDocIdLimit ? _targetLids[doc] : 0u;
+    }
     ReverseMappingRefs getReverseMappingRefs() const {
         uint32_t targetLidLimit = _targetLidLimit;
         std::atomic_thread_fence(std::memory_order_acquire);

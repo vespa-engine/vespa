@@ -64,7 +64,7 @@ class Activator {
         Instant activationTime = nodeRepository.clock().instant(); // Use one timestamp for all activation changes
         ApplicationId application = transaction.application();
         Set<String> hostnames = hosts.stream().map(HostSpec::hostname).collect(Collectors.toSet());
-        NodeList allNodes = nodeRepository.list();
+        NodeList allNodes = nodeRepository.nodes().list();
         NodeList applicationNodes = allNodes.owner(application);
 
         List<Node> reserved = applicationNodes.state(Node.State.reserved).asList();
@@ -86,8 +86,8 @@ class Activator {
 
         List<Node> activeToRemove = removeHostsFromList(hostnames, oldActive);
         activeToRemove = activeToRemove.stream().map(Node::unretire).collect(Collectors.toList()); // only active nodes can be retired. TODO: Move this line to deactivate
-        nodeRepository.deactivate(activeToRemove, transaction); // TODO: Pass activation time in this call and next line
-        nodeRepository.activate(newActive, transaction.nested()); // activate also continued active to update node state
+        nodeRepository.nodes().deactivate(activeToRemove, transaction); // TODO: Pass activation time in this call and next line
+        nodeRepository.nodes().activate(newActive, transaction.nested()); // activate also continued active to update node state
 
         rememberResourceChange(transaction, generation, activationTime,
                                NodeList.copyOf(oldActive).not().retired(),
@@ -126,16 +126,16 @@ class Activator {
     private void unreserveParentsOf(List<Node> nodes) {
         for (Node node : nodes) {
             if ( node.parentHostname().isEmpty()) continue;
-            Optional<Node> parentNode = nodeRepository.getNode(node.parentHostname().get());
+            Optional<Node> parentNode = nodeRepository.nodes().node(node.parentHostname().get());
             if (parentNode.isEmpty()) continue;
             if (parentNode.get().reservedTo().isEmpty()) continue;
 
             // Above is an optimization to avoid unnecessary locking - now repeat all conditions under lock
-            Optional<NodeMutex> parent = nodeRepository.lockAndGet(node.parentHostname().get());
+            Optional<NodeMutex> parent = nodeRepository.nodes().lockAndGet(node.parentHostname().get());
             if (parent.isEmpty()) continue;
             try (var lock = parent.get()) {
                 if (lock.node().reservedTo().isEmpty()) continue;
-                nodeRepository.write(lock.node().withoutReservedTo(), lock);
+                nodeRepository.nodes().write(lock.node().withoutReservedTo(), lock);
             }
         }
     }

@@ -34,6 +34,7 @@ vespa_add_library(eval_instruction OBJECT
     replace_type_function.cpp
     sparse_dot_product_function.cpp
     sparse_merge_function.cpp
+    sparse_no_overlap_join_function.cpp
     sum_max_dot_product_function.cpp
     vector_from_doubles_function.cpp
 )

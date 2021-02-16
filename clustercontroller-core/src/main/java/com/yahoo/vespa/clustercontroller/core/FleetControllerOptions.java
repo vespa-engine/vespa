@@ -138,6 +138,8 @@ public class FleetControllerOptions implements Cloneable {
     // Resource type -> limit in [0, 1]
     public Map<String, Double> clusterFeedBlockLimit = Collections.emptyMap();
 
+    public double clusterFeedBlockNoiseLevel = 0.01;
+
     public FleetControllerOptions(String clusterName, Collection<ConfiguredNode> nodes) {
         this.clusterName = clusterName;
         maxTransitionTime.put(NodeType.DISTRIBUTOR, 0);

@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bufferstate.h"
+#include <vespa/vespalib/util/memory_allocator.h>
 #include <limits>
+#include <cassert>
 
 using vespalib::alloc::Alloc;
 using vespalib::alloc::MemoryAllocator;
@@ -12,7 +14,6 @@ BufferState::FreeListList::~FreeListList()
 {
     assert(_head == nullptr);  // Owner should have disabled free lists
 }
-
 
 BufferState::BufferState()
     : _usedElems(0),
@@ -35,7 +36,6 @@ BufferState::BufferState()
 {
 }
 
-
 BufferState::~BufferState()
 {
     assert(_state == FREE);
@@ -44,6 +44,12 @@ BufferState::~BufferState()
     assert(_prevHasFree == nullptr);
     assert(_holdElems == 0);
     assert(isFreeListEmpty());
+}
+
+void
+BufferState::decHoldElems(size_t value) {
+    assert(_holdElems >= value);
+    _holdElems -= value;
 }
 
 namespace {
@@ -116,6 +122,8 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
     (void) reservedElements;
     AllocResult alloc = calcAllocation(bufferId, *typeHandler, elementsNeeded, false);
     assert(alloc.elements >= reservedElements + elementsNeeded);
+    auto allocator = typeHandler->get_memory_allocator();
+    _buffer = (allocator != nullptr) ? Alloc::alloc_with_allocator(allocator) : Alloc::alloc(0, MemoryAllocator::HUGEPAGE_SIZE);
     _buffer.create(alloc.bytes).swap(_buffer);
     buffer = _buffer.get();
     assert(buffer != nullptr || alloc.elements == 0u);

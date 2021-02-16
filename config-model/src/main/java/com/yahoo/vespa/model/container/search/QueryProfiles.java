@@ -70,7 +70,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
                                        ? ""
                                        : "In particular, the tensors (" + String.join(", ", tensorFields) +
                                          ") will be interpreted as strings, not tensors if sent in requests. ") +
-                                      "See https://docs.vespa.ai/documentation/query-profiles.html");
+                                      "See https://docs.vespa.ai/en/query-profiles.html");
         }
 
     }

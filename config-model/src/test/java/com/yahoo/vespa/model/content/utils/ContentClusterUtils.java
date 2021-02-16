@@ -68,16 +68,24 @@ public class ContentClusterUtils {
         return new ContentCluster.Builder(admin).build(Collections.emptyList(), context, doc.getDocumentElement());
     }
 
-    public static ContentCluster createCluster(String clusterXml, List<String> schemas) throws Exception {
-        MockRoot root = createMockRoot(schemas);
+    public static ContentCluster createCluster(String clusterXml, List<String> schemas, DeployState.Builder deployStateBuilder) throws Exception {
+        MockRoot root = createMockRoot(schemas, deployStateBuilder);
         ContentCluster cluster = createCluster(clusterXml, root);
         root.freezeModelTopology();
         cluster.validate();
         return cluster;
     }
 
+    public static ContentCluster createCluster(String clusterXml, List<String> schemas) throws Exception {
+        return createCluster(clusterXml, schemas, new DeployState.Builder());
+    }
+
     public static ContentCluster createCluster(String clusterXml) throws Exception {
-        return createCluster(clusterXml, SchemaBuilder.createSchemas("test"));
+        return createCluster(clusterXml, SchemaBuilder.createSchemas("test"), new DeployState.Builder());
+    }
+
+    public static ContentCluster createCluster(String clusterXml, DeployState.Builder deployStateBuilder) throws Exception {
+        return createCluster(clusterXml, SchemaBuilder.createSchemas("test"), deployStateBuilder);
     }
 
     public static String createClusterXml(String groupXml, int redundancy, int searchableCopies) {

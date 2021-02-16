@@ -22,9 +22,7 @@ SplitBucketSession::SplitBucketSession(BucketDBOwner &bucketDB,
       _source(source),
       _target1(target1),
       _target2(target2)
-{
-}
-
+{ }
 
 void
 SplitBucketSession::setup()
@@ -49,7 +47,6 @@ SplitBucketSession::setup()
     }
 }
 
-
 void
 SplitBucketSession::applyDeltas(const BucketDeltaPair &deltas)
 {
@@ -57,10 +54,8 @@ SplitBucketSession::applyDeltas(const BucketDeltaPair &deltas)
     _target2Delta += deltas._delta2;
 }
 
-
 void
-SplitBucketSession::applyDelta(const BucketState &delta, BucketState *src,
-                            BucketId &dstBucket)
+SplitBucketSession::applyDelta(const BucketState &delta, BucketState *src, BucketId &dstBucket)
 {
     if (delta.empty())
         return;
@@ -68,7 +63,6 @@ SplitBucketSession::applyDelta(const BucketState &delta, BucketState *src,
     BucketState *dst = _bucketDB->getBucketStatePtr(dstBucket);
     delta.applyDelta(src, dst);
 }
-
 
 void
 SplitBucketSession::finish()
@@ -86,10 +80,10 @@ SplitBucketSession::finish()
         _bucketDB->deleteEmptyBucket(_source);
     }
     if (!_target1Delta.empty()) {
-        _bucketCreateNotifier.notifyCreateBucket(_target1);
+        _bucketCreateNotifier.notifyCreateBucket(_bucketDB, _target1);
     }
     if (!_target2Delta.empty()) {
-        _bucketCreateNotifier.notifyCreateBucket(_target2);
+        _bucketCreateNotifier.notifyCreateBucket(_bucketDB, _target2);
     }
 }
 

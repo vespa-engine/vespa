@@ -4,7 +4,6 @@
 
 #include "documentmetastore.h"
 #include "i_document_meta_store_context.h"
-#include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 
 namespace proton {
 
@@ -32,10 +31,10 @@ public:
      * Create a new context instantiating a document meta store
      * with the given name, grow strategy, and comparator.
      */
-    DocumentMetaStoreContext(BucketDBOwner::SP bucketDB,
+    DocumentMetaStoreContext(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB,
                              const vespalib::string &name = DocumentMetaStore::getFixedName(),
                              const search::GrowStrategy &grow = search::GrowStrategy());
-    ~DocumentMetaStoreContext();
+    ~DocumentMetaStoreContext() override;
     /**
      * Create a new context with the given document meta store encapsulated
      * as an attribute vector.

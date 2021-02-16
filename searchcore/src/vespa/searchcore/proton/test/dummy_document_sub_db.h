@@ -31,7 +31,7 @@ struct DummyDocumentSubDb : public IDocumentSubDB
     std::unique_ptr<ExecutorThreadingService> _writeService;
     PendingLidTracker        _pendingLidTracker;
 
-    DummyDocumentSubDb(std::shared_ptr<BucketDBOwner> bucketDB, uint32_t subDbId)
+    DummyDocumentSubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucketDB, uint32_t subDbId)
         : _subDbId(subDbId),
           _metaStoreCtx(std::move(bucketDB)),
           _summaryManager(),

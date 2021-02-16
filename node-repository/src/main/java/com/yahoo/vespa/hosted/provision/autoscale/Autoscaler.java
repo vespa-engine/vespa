@@ -176,7 +176,7 @@ public class Autoscaler {
             return false;
 
         // A deployment is ongoing
-        if (nodeRepository.getNodes(nodes.first().get().allocation().get().owner(), Node.State.reserved).size() > 0)
+        if (nodeRepository.nodes().list(Node.State.reserved).owner(nodes.first().get().allocation().get().owner()).size() > 0)
             return false;
 
         return true;

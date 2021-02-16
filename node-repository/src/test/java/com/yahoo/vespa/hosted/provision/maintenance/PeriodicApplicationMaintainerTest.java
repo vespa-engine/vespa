@@ -64,32 +64,32 @@ public class PeriodicApplicationMaintainerTest {
         fixture.setBootstrapping(false);
 
         // Fail and park some nodes
-        nodeRepository.fail(nodeRepository.getNodes(fixture.app1).get(3).hostname(), Agent.system, "Failing to unit test");
-        nodeRepository.fail(nodeRepository.getNodes(fixture.app2).get(0).hostname(), Agent.system, "Failing to unit test");
-        nodeRepository.park(nodeRepository.getNodes(fixture.app2).get(4).hostname(), true, Agent.system, "Parking to unit test");
+        nodeRepository.nodes().fail(nodeRepository.nodes().list().owner(fixture.app1).asList().get(3).hostname(), Agent.system, "Failing to unit test");
+        nodeRepository.nodes().fail(nodeRepository.nodes().list().owner(fixture.app2).asList().get(0).hostname(), Agent.system, "Failing to unit test");
+        nodeRepository.nodes().park(nodeRepository.nodes().list().owner(fixture.app2).asList().get(4).hostname(), true, Agent.system, "Parking to unit test");
         int failedInApp1 = 1;
         int failedOrParkedInApp2 = 2;
-        assertEquals(fixture.wantedNodesApp1 - failedInApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
-        assertEquals(fixture.wantedNodesApp2 - failedOrParkedInApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
-        assertEquals(failedInApp1 + failedOrParkedInApp2, nodeRepository.getNodes(NodeType.tenant, Node.State.failed, Node.State.parked).size());
-        assertEquals(3, nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
-        assertEquals(2, nodeRepository.getNodes(NodeType.host, Node.State.ready).size());
+        assertEquals(fixture.wantedNodesApp1 - failedInApp1, nodeRepository.nodes().list(Node.State.active).owner(fixture.app1).size());
+        assertEquals(fixture.wantedNodesApp2 - failedOrParkedInApp2, nodeRepository.nodes().list(Node.State.active).owner(fixture.app2).size());
+        assertEquals(failedInApp1 + failedOrParkedInApp2, nodeRepository.nodes().list(Node.State.failed, Node.State.parked).nodeType(NodeType.tenant).size());
+        assertEquals(3, nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
+        assertEquals(2, nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.host).size());
 
         // Cause maintenance deployment which will allocate replacement nodes
         fixture.runApplicationMaintainer();
-        assertEquals(fixture.wantedNodesApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
-        assertEquals(fixture.wantedNodesApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
-        assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.ready).size());
+        assertEquals(fixture.wantedNodesApp1, nodeRepository.nodes().list(Node.State.active).owner(fixture.app1).size());
+        assertEquals(fixture.wantedNodesApp2, nodeRepository.nodes().list(Node.State.active).owner(fixture.app2).size());
+        assertEquals(0, nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
 
         // Reactivate the previously failed nodes
-        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname(), Agent.system, getClass().getSimpleName());
-        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.failed).get(0).hostname(), Agent.system, getClass().getSimpleName());
-        nodeRepository.reactivate(nodeRepository.getNodes(NodeType.tenant, Node.State.parked).get(0).hostname(), Agent.system, getClass().getSimpleName());
+        nodeRepository.nodes().reactivate(nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).first().get().hostname(), Agent.system, getClass().getSimpleName());
+        nodeRepository.nodes().reactivate(nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).first().get().hostname(), Agent.system, getClass().getSimpleName());
+        nodeRepository.nodes().reactivate(nodeRepository.nodes().list(Node.State.parked).nodeType(NodeType.tenant).first().get().hostname(), Agent.system, getClass().getSimpleName());
         int reactivatedInApp1 = 1;
         int reactivatedInApp2 = 2;
-        assertEquals(0, nodeRepository.getNodes(NodeType.tenant, Node.State.failed).size());
-        assertEquals(fixture.wantedNodesApp1 + reactivatedInApp1, nodeRepository.getNodes(fixture.app1, Node.State.active).size());
-        assertEquals(fixture.wantedNodesApp2 + reactivatedInApp2, nodeRepository.getNodes(fixture.app2, Node.State.active).size());
+        assertEquals(0, nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
+        assertEquals(fixture.wantedNodesApp1 + reactivatedInApp1, nodeRepository.nodes().list(Node.State.active).owner(fixture.app1).size());
+        assertEquals(fixture.wantedNodesApp2 + reactivatedInApp2, nodeRepository.nodes().list(Node.State.active).owner(fixture.app2).size());
         assertEquals("The reactivated nodes are now active but not part of the application",
                      0, fixture.getNodes(Node.State.active).retired().size());
 
@@ -108,17 +108,17 @@ public class PeriodicApplicationMaintainerTest {
         fixture.activate();
 
         // Freeze active nodes to simulate an application being deleted during a maintenance run
-        List<Node> frozenActiveNodes = nodeRepository.getNodes(Node.State.active);
+        NodeList frozenActiveNodes = nodeRepository.nodes().list(Node.State.active);
 
         // Remove one application without letting the application maintainer know about it
         fixture.remove(fixture.app2);
-        assertEquals(fixture.wantedNodesApp2, nodeRepository.getNodes(fixture.app2, Node.State.inactive).size());
+        assertEquals(fixture.wantedNodesApp2, nodeRepository.nodes().list(Node.State.inactive).owner(fixture.app2).size());
 
         // Nodes belonging to app2 are inactive after maintenance
         fixture.maintainer.setOverriddenNodesNeedingMaintenance(frozenActiveNodes);
         fixture.runApplicationMaintainer();
         assertEquals("Inactive nodes were incorrectly activated after maintenance", fixture.wantedNodesApp2,
-                     nodeRepository.getNodes(fixture.app2, Node.State.inactive).size());
+                     nodeRepository.nodes().list(Node.State.inactive).owner(fixture.app2).size());
     }
 
     @Test(timeout = 60_000)
@@ -232,8 +232,8 @@ public class PeriodicApplicationMaintainerTest {
         void activate() {
             deployer.deployFromLocalActive(app1, false).get().activate();
             deployer.deployFromLocalActive(app2, false).get().activate();
-            assertEquals(wantedNodesApp1, nodeRepository.getNodes(app1, Node.State.active).size());
-            assertEquals(wantedNodesApp2, nodeRepository.getNodes(app2, Node.State.active).size());
+            assertEquals(wantedNodesApp1, nodeRepository.nodes().list(Node.State.active).owner(app1).size());
+            assertEquals(wantedNodesApp2, nodeRepository.nodes().list(Node.State.active).owner(app2).size());
         }
 
         void remove(ApplicationId application) {
@@ -250,7 +250,7 @@ public class PeriodicApplicationMaintainerTest {
         }
 
         NodeList getNodes(Node.State ... states) {
-            return NodeList.copyOf(nodeRepository.getNodes(NodeType.tenant, states));
+            return nodeRepository.nodes().list(states).nodeType(NodeType.tenant);
         }
 
         void setBootstrapping(boolean bootstrapping) {
@@ -261,9 +261,9 @@ public class PeriodicApplicationMaintainerTest {
     
     private static class TestablePeriodicApplicationMaintainer extends PeriodicApplicationMaintainer {
 
-        private List<Node> overriddenNodesNeedingMaintenance;
+        private NodeList overriddenNodesNeedingMaintenance;
 
-        void setOverriddenNodesNeedingMaintenance(List<Node> overriddenNodesNeedingMaintenance) {
+        void setOverriddenNodesNeedingMaintenance(NodeList overriddenNodesNeedingMaintenance) {
             this.overriddenNodesNeedingMaintenance = overriddenNodesNeedingMaintenance;
         }
 
@@ -273,7 +273,7 @@ public class PeriodicApplicationMaintainerTest {
         }
 
         @Override
-        protected List<Node> nodesNeedingMaintenance() {
+        protected NodeList nodesNeedingMaintenance() {
             return overriddenNodesNeedingMaintenance != null
                     ? overriddenNodesNeedingMaintenance
                     : super.nodesNeedingMaintenance();

@@ -46,6 +46,9 @@
       "name": "NameServiceDispatcher"
     },
     {
+      "name": "OsUpgradeScheduler"
+    },
+    {
       "name": "OsVersionStatusUpdater"
     },
     {

@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketmover_common.h"
+#include <vespa/searchcore/proton/bucketdb/bucketscaniterator.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
@@ -16,7 +17,7 @@ using ScanPass = ScanItr::Pass;
 struct ScanTestBase : public ::testing::Test
 {
     test::UserDocumentsBuilder _builder;
-    std::shared_ptr<BucketDBOwner> _bucketDB;
+    std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
     MySubDb                    _ready;
     MySubDb                    _notReady;
     ScanTestBase();
@@ -33,7 +34,7 @@ struct ScanTestBase : public ::testing::Test
 
 ScanTestBase::ScanTestBase()
     : _builder(),
-      _bucketDB(std::make_shared<BucketDBOwner>()),
+      _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
       _ready(_builder.getRepo(), _bucketDB, 1, SubDbType::READY),
       _notReady(_builder.getRepo(), _bucketDB, 2, SubDbType::NOTREADY)
 {}

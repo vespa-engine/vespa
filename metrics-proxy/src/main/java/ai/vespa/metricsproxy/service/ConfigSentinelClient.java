@@ -24,10 +24,11 @@ import java.util.logging.Logger;
 public class ConfigSentinelClient extends AbstractComponent {
     private final static Logger log = Logger.getLogger(ConfigSentinelClient.class.getName());
 
-    private final Supervisor supervisor = new Supervisor(new Transport("sentinel-client"));
+    private final Supervisor supervisor;
 
     @Inject
     public ConfigSentinelClient() {
+        supervisor = new Supervisor(new Transport("sentinel-client")).useSmallBuffers();
     }
 
     @Override

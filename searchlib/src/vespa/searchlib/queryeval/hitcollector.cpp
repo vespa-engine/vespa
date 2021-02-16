@@ -3,6 +3,7 @@
 #include "hitcollector.h"
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/sort.h>
+#include <cassert>
 
 namespace search::queryeval {
 

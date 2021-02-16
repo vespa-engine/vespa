@@ -346,15 +346,14 @@ DocumentMetaStore::updateMetaDataAndBucketDB(const GlobalId &gid,
 namespace {
 
 void
-unloadBucket(BucketDBOwner &db, const BucketId &id, const BucketState &delta)
+unloadBucket(bucketdb::BucketDBOwner &db, const BucketId &id, const BucketState &delta)
 {
     if (!id.valid()) {
         assert(delta.empty());
         return;
     }
     assert(!delta.empty());
-    BucketDBOwner::Guard guard(db.takeGuard());
-    guard->unloadBucket(id, delta);
+    db.takeGuard()->unloadBucket(id, delta);
 }
 
 }
@@ -376,14 +375,13 @@ DocumentMetaStore::unload()
             prevDelta = BucketState();
             prev = bucketId;
         }
-        prevDelta.add(metaData.getGid(), metaData.getTimestamp(), metaData.getDocSize(),
-                      _subDbType);
+        prevDelta.add(metaData.getGid(), metaData.getTimestamp(), metaData.getDocSize(), _subDbType);
     }
     unloadBucket(*_bucketDB, prev, prevDelta);
 }
 
 
-DocumentMetaStore::DocumentMetaStore(BucketDBOwner::SP bucketDB,
+DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
                                      const vespalib::string &name,
                                      const GrowStrategy &grow,
                                      SubDbType subDbType)
@@ -398,7 +396,7 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwner::SP bucketDB,
       _lidAlloc(_metaDataStore.size(),
                 _metaDataStore.capacity(),
                 getGenerationHolder()),
-      _bucketDB(bucketDB),
+      _bucketDB(std::move(bucketDB)),
       _shrinkLidSpaceBlockers(0),
       _subDbType(subDbType),
       _trackDocumentSizes(true),
@@ -546,7 +544,7 @@ DocumentMetaStore::updateMetaData(DocId lid,
 }
 
 void
-DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num, BucketDBOwner::Guard &bucketGuard)
+DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num, bucketdb::Guard &bucketGuard)
 {
     const GlobalId & gid = getRawGid(lid);
     KeyComp comp(gid, _metaDataStore);
@@ -577,7 +575,7 @@ DocumentMetaStore::remove(DocId lid, uint64_t prepare_serial_num)
     if (!validLid(lid)) {
         return false;
     }
-    BucketDBOwner::Guard bucketGuard = _bucketDB->takeGuard();
+    bucketdb::Guard bucketGuard = _bucketDB->takeGuard();
     remove(lid, prepare_serial_num, bucketGuard);
     incGeneration();
     if (_op_listener) {
@@ -624,7 +622,7 @@ DocumentMetaStore::move(DocId fromLid, DocId toLid, uint64_t prepare_serial_num)
 void
 DocumentMetaStore::removeBatch(const std::vector<DocId> &lidsToRemove, const uint32_t docIdLimit)
 {
-    BucketDBOwner::Guard bucketGuard = _bucketDB->takeGuard();
+    bucketdb::Guard bucketGuard = _bucketDB->takeGuard();
     for (const auto &lid : lidsToRemove) {
         assert(lid > 0 && lid < docIdLimit);
         (void) docIdLimit;

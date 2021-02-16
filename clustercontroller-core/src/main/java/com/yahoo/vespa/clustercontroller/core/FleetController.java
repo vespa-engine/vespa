@@ -345,7 +345,6 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         if (!options.clusterFeedBlockEnabled) {
             return;
         }
-        // TODO hysteresis to prevent oscillations!
         var calc = createResourceExhaustionCalculator();
         // Important: nodeInfo contains the _current_ host info _prior_ to newHostInfo being applied.
         var previouslyExhausted = calc.enumerateNodeResourceExhaustions(nodeInfo);
@@ -953,7 +952,10 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     }
 
     private ResourceExhaustionCalculator createResourceExhaustionCalculator() {
-        return new ResourceExhaustionCalculator(options.clusterFeedBlockEnabled, options.clusterFeedBlockLimit);
+        return new ResourceExhaustionCalculator(
+                options.clusterFeedBlockEnabled, options.clusterFeedBlockLimit,
+                stateVersionTracker.getLatestCandidateStateBundle().getFeedBlockOrNull(),
+                options.clusterFeedBlockNoiseLevel);
     }
 
     private static ClusterStateDeriver createIdentityClonedBucketSpaceStateDeriver() {
