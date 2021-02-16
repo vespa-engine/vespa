@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.apps.clustercontroller;
 
+import com.google.inject.Inject;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.state.NodeType;
@@ -9,6 +10,7 @@ import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.cloud.config.SlobroksConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.cloud.config.ZookeepersConfig;
+import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
 
 import java.time.Duration;
 import java.util.Map;
@@ -21,12 +23,19 @@ public class ClusterControllerClusterConfigurer {
 
     private final FleetControllerOptions options;
 
+    /**
+     * The {@link VespaZooKeeperServer} argument is required by the injected {@link ClusterController},
+     * to ensure that zookeeper has started before it starts polling it. It must be done here to avoid
+     * duplicates being created by the dependency injection framework.
+     */
+    @Inject
     public ClusterControllerClusterConfigurer(ClusterController controller,
                                               StorDistributionConfig distributionConfig,
                                               FleetcontrollerConfig fleetcontrollerConfig,
                                               SlobroksConfig slobroksConfig,
                                               ZookeepersConfig zookeepersConfig,
-                                              Metric metricImpl) throws Exception {
+                                              Metric metricImpl,
+                                              VespaZooKeeperServer started) throws Exception {
         this.options = configure(distributionConfig, fleetcontrollerConfig, slobroksConfig, zookeepersConfig);
         if (controller != null) {
             controller.setOptions(options, metricImpl);
