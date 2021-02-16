@@ -2,17 +2,15 @@
 package com.yahoo.component.chain;
 
 import com.yahoo.component.chain.dependencies.Dependencies;
-import net.jcip.annotations.Immutable;
 
 import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Used for many to many constraints on searcher ordering.
+ * Used for many to many constraints on searcher ordering. Immutable.
  *
  * @author Tony Vaagenes
  */
-@Immutable
 public class Phase {
 
     public final Dependencies dependencies;
