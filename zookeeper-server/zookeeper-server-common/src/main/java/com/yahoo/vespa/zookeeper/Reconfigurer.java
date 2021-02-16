@@ -81,6 +81,10 @@ public class Reconfigurer extends AbstractComponent {
 
     private void reconfigure(ZookeeperServerConfig newConfig, VespaZooKeeperServer server) {
         Instant reconfigTriggered = Instant.now();
+        // No point in trying to reconfigure if there is only one server in the new ensemble,
+        // the others will be shutdown or are about to be shutdown
+        if (newConfig.server().size() == 1) shutdownAndDie(server, Duration.ZERO);
+
         List<String> newServers = difference(servers(newConfig), servers(activeConfig));
         String leavingServers = String.join(",", difference(serverIds(activeConfig), serverIds(newConfig)));
         String joiningServers = String.join(",", newServers);
@@ -116,6 +120,10 @@ public class Reconfigurer extends AbstractComponent {
         }
 
         // Reconfiguration failed
+        shutdownAndDie(server, reconfigTimeout);
+    }
+
+    private void shutdownAndDie(VespaZooKeeperServer server, Duration reconfigTimeout) {
         server.shutdown();
         Process.logAndDie("Reconfiguration did not complete within timeout " + reconfigTimeout + ". Forcing shutdown");
     }
