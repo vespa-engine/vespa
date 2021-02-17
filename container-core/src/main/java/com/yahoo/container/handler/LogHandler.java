@@ -101,7 +101,9 @@ public class LogHandler extends ThreadedHttpRequestHandler {
         public void send(ByteBuffer src) throws IOException {
             try {
                 stallWhilePendingAbove(maxPending);
-            } catch (InterruptedException e) {}
+            } catch (InterruptedException ignored) {
+                throw new IOException("Interrupted waiting for IO");
+            }
             CompletionHandler pendingTracker = new TrackCompletition(src.remaining());
             try {
                 send(src, pendingTracker);
