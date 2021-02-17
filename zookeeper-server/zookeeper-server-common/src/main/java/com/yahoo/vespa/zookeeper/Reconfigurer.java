@@ -86,12 +86,12 @@ public class Reconfigurer extends AbstractComponent {
         if (newConfig.server().size() == 1) shutdownAndDie(server, Duration.ZERO);
 
         List<String> newServers = difference(servers(newConfig), servers(activeConfig));
-        String leavingServers = String.join(",", difference(serverIds(activeConfig), serverIds(newConfig)));
-        String joiningServers = String.join(",", newServers);
-        leavingServers = leavingServers.isEmpty() ? null : leavingServers;
-        joiningServers = joiningServers.isEmpty() ? null : joiningServers;
-        log.log(Level.INFO, "Will reconfigure ZooKeeper cluster. \nJoining servers: " + joiningServers +
-                            "\nleaving servers: " + leavingServers +
+        String leavingServerIds = String.join(",", serverIdsDifference(activeConfig, newConfig));
+        String joiningServersSpec = String.join(",", newServers);
+        leavingServerIds = leavingServerIds.isEmpty() ? null : leavingServerIds;
+        joiningServersSpec = joiningServersSpec.isEmpty() ? null : joiningServersSpec;
+        log.log(Level.INFO, "Will reconfigure ZooKeeper cluster. \nJoining servers: " + joiningServersSpec +
+                            "\nleaving servers: " + leavingServerIds +
                             "\nServers in active config:" + servers(activeConfig) +
                             "\nServers in new config:" + servers(newConfig));
         String connectionSpec = localConnectionSpec(activeConfig);
@@ -102,7 +102,7 @@ public class Reconfigurer extends AbstractComponent {
         for (int attempt = 1; now.isBefore(end); attempt++) {
             try {
                 Instant reconfigStarted = Instant.now();
-                vespaZooKeeperAdmin.reconfigure(connectionSpec, joiningServers, leavingServers);
+                vespaZooKeeperAdmin.reconfigure(connectionSpec, joiningServersSpec, leavingServerIds);
                 Instant reconfigEnded = Instant.now();
                 log.log(Level.INFO, "Reconfiguration completed in " +
                                     Duration.between(reconfigTriggered, reconfigEnded) +
@@ -141,11 +141,10 @@ public class Reconfigurer extends AbstractComponent {
         return HostName.getLocalhost() + ":" + config.clientPort();
     }
 
-    private static List<String> serverIds(ZookeeperServerConfig config) {
-        return config.server().stream()
-                     .map(ZookeeperServerConfig.Server::id)
-                     .map(String::valueOf)
-                     .collect(Collectors.toList());
+    private static List<String> serverIdsDifference(ZookeeperServerConfig oldConfig, ZookeeperServerConfig newConfig) {
+        return difference(servers(oldConfig), servers(newConfig)).stream()
+                                                                 .map(server -> server.substring(0, server.indexOf('=')))
+                                                                 .collect(Collectors.toList());
     }
 
     private static List<String> servers(ZookeeperServerConfig config) {
