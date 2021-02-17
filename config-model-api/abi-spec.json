@@ -198,7 +198,6 @@
       "public java.util.Optional globalServiceId()",
       "public boolean canUpgradeAt(java.time.Instant)",
       "public boolean canChangeRevisionAt(java.time.Instant)",
-      "public java.util.Optional athenzDomain()",
       "public java.util.Optional athenzService(com.yahoo.config.provision.Environment, com.yahoo.config.provision.RegionName)",
       "public com.yahoo.config.application.api.Notifications notifications()",
       "public java.util.List endpoints()",
