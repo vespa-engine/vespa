@@ -6,6 +6,9 @@ vespa_add_library(eval_eval OBJECT
     basic_nodes.cpp
     call_nodes.cpp
     cell_type.cpp
+    cells_array.cpp
+    cells_array_ref.cpp
+    const_cells_array_ref.cpp
     compile_tensor_function.cpp
     delete_node.cpp
     dense_cells_value.cpp
