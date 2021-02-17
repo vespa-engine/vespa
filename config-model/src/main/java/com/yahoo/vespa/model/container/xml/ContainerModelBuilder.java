@@ -29,6 +29,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
@@ -207,6 +208,19 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Must be added after nodes:
         addAthensCopperArgos(cluster, context);
         addZooKeeper(cluster, spec);
+
+        addParameterStoreValidationHandler(cluster, deployState);
+    }
+
+
+    private void addParameterStoreValidationHandler(ApplicationContainerCluster cluster, DeployState deployState) {
+        if (deployState.zone().system() == SystemName.PublicCd) {
+            BindingPattern bindingPattern = SystemBindingPattern.fromHttpPath("/validate-secret-store");
+            Handler<AbstractConfigProducer<?>> handler = new Handler<>(
+                    new ComponentModel("com.yahoo.jdisc.cloud.aws.AwsParameterStoreValidationHandler", null, null, null));
+            handler.addServerBindings(bindingPattern);
+            cluster.addComponent(handler);
+        }
     }
 
     private void addZooKeeper(ApplicationContainerCluster cluster, Element spec) {
