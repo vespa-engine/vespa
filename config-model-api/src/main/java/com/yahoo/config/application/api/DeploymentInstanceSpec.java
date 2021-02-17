@@ -154,10 +154,6 @@ public class DeploymentInstanceSpec extends DeploymentSpec.Steps {
                              .noneMatch(block -> block.window().includes(instant));
     }
 
-    /** Returns the athenz domain if configured */
-    // TODO jonmv: Remove when 7.162 is older than the oldest deployed version.
-    public Optional<AthenzDomain> athenzDomain() { return Optional.empty(); }
-
     /** Returns the athenz service for environment/region if configured, defaulting to that of the instance */
     public Optional<AthenzService> athenzService(Environment environment, RegionName region) {
         return zones().stream()
