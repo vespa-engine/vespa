@@ -22,7 +22,7 @@ public class SyncFileInfoTest {
     private static final FileSystem fileSystem = TestFileSystem.create();
 
     private static final String bucket = "logs-region-acdf21";
-    private static final ApplicationId application = ApplicationId.from("tenant", "application", "instance");
+    private static final ApplicationId application = ApplicationId.from("ten", "app", "ins");
     private static final HostName hostname = HostName.from("h12352a.env.region-1.vespa.domain.example");
     private static final Path accessLogPath1 = fileSystem.getPath("/opt/vespa/logs/qrs/access.log.20210211");
     private static final Path accessLogPath2 = fileSystem.getPath("/opt/vespa/logs/qrs/access.log.20210212.zst");
@@ -36,15 +36,15 @@ public class SyncFileInfoTest {
     @Test
     public void tenant_log() {
         assertTenantSyncFileInfo(accessLogPath1, null, null);
-        assertTenantSyncFileInfo(accessLogPath2, "tenant.application.instance/h12352a/logs/access/access.log.20210212.zst", NONE);
-        assertTenantSyncFileInfo(accessLogPath3, "tenant.application.instance/h12352a/logs/access/access-json.log.20210213.zst", NONE);
-        assertTenantSyncFileInfo(accessLogPath4, "tenant.application.instance/h12352a/logs/access/JsonAccessLog.default.20210214.zst", NONE);
+        assertTenantSyncFileInfo(accessLogPath2, "ten/app/ins/h12352a/logs/access/access.log.20210212.zst", NONE);
+        assertTenantSyncFileInfo(accessLogPath3, "ten/app/ins/h12352a/logs/access/access-json.log.20210213.zst", NONE);
+        assertTenantSyncFileInfo(accessLogPath4, "ten/app/ins/h12352a/logs/access/JsonAccessLog.default.20210214.zst", NONE);
 
         assertTenantSyncFileInfo(connectionLogPath1, null, null);
-        assertTenantSyncFileInfo(connectionLogPath2, "tenant.application.instance/h12352a/logs/connection/ConnectionLog.default.20210212.zst", NONE);
+        assertTenantSyncFileInfo(connectionLogPath2, "ten/app/ins/h12352a/logs/connection/ConnectionLog.default.20210212.zst", NONE);
 
         assertTenantSyncFileInfo(vespaLogPath1, null, null);
-        assertTenantSyncFileInfo(vespaLogPath2, "tenant.application.instance/h12352a/logs/vespa/vespa.log-2021-02-12.zst", ZSTD);
+        assertTenantSyncFileInfo(vespaLogPath2, "ten/app/ins/h12352a/logs/vespa/vespa.log-2021-02-12.zst", ZSTD);
     }
 
     @Test
