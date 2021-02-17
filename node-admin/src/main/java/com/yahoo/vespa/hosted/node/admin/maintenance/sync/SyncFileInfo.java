@@ -73,7 +73,7 @@ public class SyncFileInfo {
         StringBuilder sb = new StringBuilder(100);
 
         if (app == null) sb.append("infrastructure");
-        else sb.append(app.tenant().value()).append('.').append(app.application().value()).append('.').append(app.instance().value());
+        else sb.append(app.tenant().value()).append('/').append(app.application().value()).append('/').append(app.instance().value());
 
         sb.append('/');
         for (char c: hostName.value().toCharArray()) {
