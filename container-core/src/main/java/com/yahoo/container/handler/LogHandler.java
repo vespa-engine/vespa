@@ -16,6 +16,7 @@ import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.Optional;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
@@ -62,14 +63,12 @@ public class LogHandler extends ThreadedHttpRequestHandler {
 
 
     private static class MaxPendingContentChannelOutputStream extends ContentChannelOutputStream {
-        private final ContentChannel channel;
         private final long maxPending;
-        private AtomicLong sent = new AtomicLong(0);
-        private AtomicLong acked = new AtomicLong(0);
+        private final AtomicLong sent = new AtomicLong(0);
+        private final AtomicLong acked = new AtomicLong(0);
 
         public MaxPendingContentChannelOutputStream(ContentChannel endpoint, long maxPending) {
             super(endpoint);
-            this.channel = endpoint;
             this.maxPending = maxPending;
         }
 
@@ -78,19 +77,24 @@ public class LogHandler extends ThreadedHttpRequestHandler {
         }
 
         private class TrackCompletition implements CompletionHandler {
-            final long written;
+            private final long written;
+            private final AtomicBoolean replied = new AtomicBoolean(false);
             TrackCompletition(long written) {
                 this.written = written;
                 sent.addAndGet(written);
             }
             @Override
             public void completed() {
-                acked.addAndGet(written);
+                if (!replied.getAndSet(true)) {
+                    acked.addAndGet(written);
+                }
             }
 
             @Override
             public void failed(Throwable t) {
-                acked.addAndGet(written);
+                if (!replied.getAndSet(true)) {
+                    acked.addAndGet(written);
+                }
             }
         }
         @Override
@@ -98,7 +102,13 @@ public class LogHandler extends ThreadedHttpRequestHandler {
             try {
                 stallWhilePendingAbove(maxPending);
             } catch (InterruptedException e) {}
-            send(src, new TrackCompletition(src.remaining()));
+            CompletionHandler pendingTracker = new TrackCompletition(src.remaining());
+            try {
+                send(src, pendingTracker);
+            } catch (Throwable throwable) {
+                pendingTracker.failed(throwable);
+                throw throwable;
+            }
         }
 
         private void stallWhilePendingAbove(long pending) throws InterruptedException {
