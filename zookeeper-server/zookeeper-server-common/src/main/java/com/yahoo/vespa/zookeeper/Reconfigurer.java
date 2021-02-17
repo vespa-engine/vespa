@@ -91,7 +91,9 @@ public class Reconfigurer extends AbstractComponent {
         leavingServers = leavingServers.isEmpty() ? null : leavingServers;
         joiningServers = joiningServers.isEmpty() ? null : joiningServers;
         log.log(Level.INFO, "Will reconfigure ZooKeeper cluster. Joining servers: " + joiningServers +
-                            ", leaving servers: " + leavingServers);
+                            ", leaving servers: " + leavingServers +
+                            ". Servers in active config:" + activeConfig.server() +
+                            ". Servers in new config:" + newConfig.server());
         String connectionSpec = localConnectionSpec(activeConfig);
         Instant now = Instant.now();
         Duration reconfigTimeout = reconfigTimeout(newServers.size());
