@@ -303,7 +303,6 @@
     "methods": [
       "public void <init>()",
       "public final boolean concerns(com.yahoo.config.provision.Environment)",
-      "public boolean deploysTo(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public abstract boolean concerns(com.yahoo.config.provision.Environment, java.util.Optional)",
       "public java.util.List zones()",
       "public java.time.Duration delay()",
