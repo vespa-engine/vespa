@@ -1060,7 +1060,8 @@ BucketStateStateChecker::check(StateChecker::Context& c)
     }
 
     ActiveList activeNodes(
-            ActiveCopy::calculate(c.idealState, c.distribution, c.entry));
+            ActiveCopy::calculate(c.idealState, c.distribution, c.entry,
+                                  c.distributorConfig.max_activation_inhibited_out_of_sync_groups()));
     if (activeNodes.empty()) {
         return Result::noMaintenanceNeeded();
     }

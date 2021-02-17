@@ -208,6 +208,12 @@ struct DistributorTest : Test, DistributorTestUtil {
         configureDistributor(builder);
     }
 
+    void configure_max_activation_inhibited_out_of_sync_groups(uint32_t n_groups) {
+        ConfigBuilder builder;
+        builder.maxActivationInhibitedOutOfSyncGroups = n_groups;
+        configureDistributor(builder);
+    }
+
     void configureMaxClusterClockSkew(int seconds);
     void sendDownClusterStateCommand();
     void replyToSingleRequestBucketInfoCommandWith1Bucket();
@@ -1186,6 +1192,17 @@ TEST_F(DistributorTest, prioritize_global_bucket_merges_config_is_propagated_to_
 
     configure_prioritize_global_bucket_merges(false);
     EXPECT_FALSE(getConfig().prioritize_global_bucket_merges());
+}
+
+TEST_F(DistributorTest, max_activation_inhibited_out_of_sync_groups_config_is_propagated_to_internal_config) {
+    createLinks();
+    setupDistributor(Redundancy(1), NodeCount(1), "distributor:1 storage:1");
+
+    configure_max_activation_inhibited_out_of_sync_groups(3);
+    EXPECT_EQ(getConfig().max_activation_inhibited_out_of_sync_groups(), 3);
+
+    configure_max_activation_inhibited_out_of_sync_groups(0);
+    EXPECT_EQ(getConfig().max_activation_inhibited_out_of_sync_groups(), 0);
 }
 
 TEST_F(DistributorTest, wanted_split_bit_count_is_lower_bounded) {

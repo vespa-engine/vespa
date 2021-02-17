@@ -112,24 +112,17 @@ namespace {
     }
 }
 
-#undef DEBUG
-#if 0
-#define DEBUG(a) a
-#else
-#define DEBUG(a)
-#endif
-
 ActiveList
 ActiveCopy::calculate(const std::vector<uint16_t>& idealState,
                       const lib::Distribution& distribution,
-                      BucketDatabase::Entry& e)
+                      BucketDatabase::Entry& e,
+                      uint32_t max_activation_inhibited_out_of_sync_groups)
 {
-    DEBUG(std::cerr << "Ideal state is " << idealState << "\n");
     std::vector<uint16_t> validNodesWithCopy = buildValidNodeIndexList(e);
     if (validNodesWithCopy.empty()) {
         return ActiveList();
     }
-    typedef std::vector<uint16_t> IndexList;
+    using IndexList = std::vector<uint16_t>;
     std::vector<IndexList> groups;
     if (distribution.activePerGroup()) {
         groups = distribution.splitNodesIntoLeafGroups(std::move(validNodesWithCopy));
@@ -138,11 +131,24 @@ ActiveCopy::calculate(const std::vector<uint16_t>& idealState,
     }
     std::vector<ActiveCopy> result;
     result.reserve(groups.size());
-    for (uint32_t i=0; i<groups.size(); ++i) {
-        std::vector<ActiveCopy> entries = buildNodeList(e, groups[i], idealState);
-        DEBUG(std::cerr << "Finding active for group " << entries << "\n");
+
+    auto maybe_majority_info = ((max_activation_inhibited_out_of_sync_groups > 0)
+                                ? e->majority_consistent_bucket_info()
+                                : api::BucketInfo()); // Invalid by default
+    uint32_t inhibited_groups = 0;
+    for (const auto& group_nodes : groups) {
+        std::vector<ActiveCopy> entries = buildNodeList(e, group_nodes, idealState);
         auto best = std::min_element(entries.begin(), entries.end(), ActiveStateOrder());
-        DEBUG(std::cerr << "Best copy " << *best << "\n");
+        if ((groups.size() > 1) &&
+            (inhibited_groups < max_activation_inhibited_out_of_sync_groups) &&
+            maybe_majority_info.valid())
+        {
+            const auto* candidate = e->getNode(best->_nodeIndex);
+            if (!candidate->getBucketInfo().equalDocumentInfo(maybe_majority_info) && !candidate->active()) {
+                ++inhibited_groups;
+                continue; // Do _not_ add candidate as activation target since it's out of sync with the majority
+            }
+        }
         result.emplace_back(*best);
     }
     return ActiveList(std::move(result));
