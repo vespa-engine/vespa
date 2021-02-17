@@ -63,6 +63,11 @@
           "storageType" : "any"
         }
       },
+      "utilization" : {
+          "cpu" : 0.0,
+          "memory" : 0.0,
+          "disk" : 0.0
+      },
       "scalingEvents" : [
         {
           "from": {

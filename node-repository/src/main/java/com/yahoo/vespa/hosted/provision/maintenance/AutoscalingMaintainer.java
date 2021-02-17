@@ -108,7 +108,8 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                         .anyMatch(node -> node.history().hasEventAt(History.Event.Type.retired, event.at())))
             return cluster;
         // - 2. all nodes have switched to the right config generation
-        for (NodeTimeseries nodeTimeseries : metricsDb.getNodeTimeseries(event.at(), clusterNodes)) {
+        for (NodeTimeseries nodeTimeseries : metricsDb.getNodeTimeseries(Duration.between(event.at(), clock().instant()),
+                                                                         clusterNodes)) {
             Optional<MetricSnapshot> firstOnNewGeneration =
                     nodeTimeseries.asList().stream()
                                            .filter(snapshot -> snapshot.generation() >= event.generation()).findFirst();

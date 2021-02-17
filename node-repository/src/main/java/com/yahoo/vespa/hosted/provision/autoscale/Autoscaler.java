@@ -68,7 +68,7 @@ public class Autoscaler {
             return Advice.dontScale("Won't autoscale now: Less than " + scalingWindow + " since last rescaling");
 
         ClusterTimeseries clusterTimeseries =
-                new ClusterTimeseries(nodeRepository.clock().instant().minus(scalingWindow), cluster, clusterNodes, metricsDb);
+                new ClusterTimeseries(scalingWindow, cluster, clusterNodes, metricsDb);
         AllocatableClusterResources currentAllocation =
                 new AllocatableClusterResources(clusterNodes.asList(), nodeRepository, cluster.exclusive());
 
