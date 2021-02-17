@@ -52,6 +52,9 @@ public class SessionZooKeeperClient {
     private static final String DOCKER_IMAGE_REPOSITORY_PATH = "dockerImageRepository";
     private static final String ATHENZ_DOMAIN = "athenzDomain";
     private static final String QUOTA_PATH = "quota";
+
+    // Whether the deployment of this particular session should use a dedicated CCC.
+    // The one in ApplicationCuratorDatabase signals what all future preparations should use, i.e., here.
     private static final String DEDICATED_CLUSTER_CONTROLLER_CLUSTER_PATH = "dedicatedClusterControllerCluster";
     private final Curator curator;
     private final ConfigCurator configCurator;

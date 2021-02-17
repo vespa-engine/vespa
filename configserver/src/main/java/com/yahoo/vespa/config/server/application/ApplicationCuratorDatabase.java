@@ -159,6 +159,7 @@ public class ApplicationCuratorDatabase {
         return applicationsPath.append(id.serializedForm());
     }
 
+    // Used to determine whether future preparations of this application should use a dedicated CCC.
     private Path dedicatedClusterControllerClusterPath(ApplicationId id) {
         return applicationPath(id).append("dedicatedClusterControllerCluster");
     }

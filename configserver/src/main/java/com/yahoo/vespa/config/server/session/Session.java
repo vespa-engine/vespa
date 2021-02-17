@@ -158,6 +158,14 @@ public abstract class Session implements Comparable<Session>  {
         return sessionZooKeeperClient.getAllocatedHosts();
     }
 
+    public void setDedicatedClusterControllerCluster() {
+        sessionZooKeeperClient.writeDedicatedClusterControllerCluster();
+    }
+
+    public boolean getDedicatedClusterControllerCluster() {
+        return sessionZooKeeperClient.readDedicatedClusterControllerCluster();
+    }
+
     public Transaction createDeactivateTransaction() {
         return createSetStatusTransaction(Status.DEACTIVATE);
     }
