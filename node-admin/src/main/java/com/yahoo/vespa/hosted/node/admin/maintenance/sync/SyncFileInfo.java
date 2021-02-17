@@ -4,11 +4,9 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.sync;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Optional;
 
 /**
  * @author freva
@@ -18,52 +16,61 @@ public class SyncFileInfo {
     private final String bucketName;
     private final Path srcPath;
     private final Path destPath;
-    private final boolean compressWithZstd;
+    private final Compression uploadCompression;
 
-    private SyncFileInfo(String bucketName, Path srcPath, Path destPath, boolean compressWithZstd) {
+    private SyncFileInfo(String bucketName, Path srcPath, Path destPath, Compression uploadCompression) {
         this.bucketName = bucketName;
         this.srcPath = srcPath;
         this.destPath = destPath;
-        this.compressWithZstd = compressWithZstd;
+        this.uploadCompression = uploadCompression;
     }
 
     public String bucketName() {
         return bucketName;
     }
 
+    /** Source path of the file to sync */
     public Path srcPath() {
         return srcPath;
     }
 
+    /** Remote path to store the file at */
     public Path destPath() {
         return destPath;
     }
 
-    public InputStream inputStream() throws IOException {
-        InputStream is = Files.newInputStream(srcPath);
-        if (compressWithZstd) return new ZstdCompressingInputStream(is, 4 << 20);
-        return is;
+    /** Compression algorithm to use when uploading the file */
+    public Compression uploadCompression() {
+        return uploadCompression;
     }
 
+    public static Optional<SyncFileInfo> tenantLog(String bucketName, ApplicationId applicationId, HostName hostName, Path logFile) {
+        String filename = logFile.getFileName().toString();
+        Compression compression = Compression.NONE;
+        String dir = null;
 
-    public static SyncFileInfo tenantVespaLog(String bucketName, ApplicationId applicationId, HostName hostName, Path vespaLogFile) {
-        return new SyncFileInfo(bucketName, vespaLogFile, destination(applicationId, hostName, "logs/vespa", vespaLogFile, ".zst"), true);
-    }
+        if (filename.startsWith("vespa.log-")) {
+            dir = "logs/vespa";
+            compression = Compression.ZSTD;
+        } else if (filename.endsWith(".zst")) {
+            if (filename.startsWith("JsonAccessLog.") || filename.startsWith("access"))
+                dir = "logs/access";
+            else if (filename.startsWith("ConnectionLog."))
+                dir = "logs/connection";
+        }
 
-    public static SyncFileInfo tenantAccessLog(String bucketName, ApplicationId applicationId, HostName hostName, Path accessLogFile) {
-        return new SyncFileInfo(bucketName, accessLogFile, destination(applicationId, hostName, "logs/access", accessLogFile, null), false);
+        if (dir == null) return Optional.empty();
+        return Optional.of(new SyncFileInfo(
+                bucketName, logFile, destination(applicationId, hostName, dir, logFile, compression), compression));
     }
 
     public static SyncFileInfo infrastructureVespaLog(String bucketName, HostName hostName, Path vespaLogFile) {
-        return new SyncFileInfo(bucketName, vespaLogFile, destination(null, hostName, "logs/vespa", vespaLogFile, ".zst"), true);
+        Compression compression = Compression.ZSTD;
+        return new SyncFileInfo(bucketName, vespaLogFile, destination(null, hostName, "logs/vespa", vespaLogFile, compression), compression);
     }
 
-    public static SyncFileInfo infrastructureAccessLog(String bucketName, HostName hostName, Path accessLogFile) {
-        return new SyncFileInfo(bucketName, accessLogFile, destination(null, hostName, "logs/access", accessLogFile, null), false);
-    }
-
-    private static Path destination(ApplicationId app, HostName hostName, String dir, Path filename, String extension) {
-        StringBuilder sb = new StringBuilder(100).append('/');
+    private static Path destination(ApplicationId app, HostName hostName, String dir, Path filename, Compression uploadCompression) {
+        StringBuilder sb = new StringBuilder(100);
 
         if (app == null) sb.append("infrastructure");
         else sb.append(app.tenant().value()).append('.').append(app.application().value()).append('.').append(app.instance().value());
@@ -76,8 +83,17 @@ public class SyncFileInfo {
 
         sb.append('/').append(dir).append('/').append(filename.getFileName().toString());
 
-        if (extension != null) sb.append(extension);
+        if (uploadCompression.extension != null) sb.append(uploadCompression.extension);
 
         return Paths.get(sb.toString());
+    }
+
+    public enum Compression {
+        NONE(null), ZSTD(".zst");
+
+        private final String extension;
+        Compression(String extension) {
+            this.extension = extension;
+        }
     }
 }

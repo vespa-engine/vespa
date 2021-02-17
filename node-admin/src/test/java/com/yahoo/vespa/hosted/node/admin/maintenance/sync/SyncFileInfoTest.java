@@ -4,19 +4,15 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.sync;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.vespa.test.file.TestFileSystem;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.UncheckedIOException;
 import java.nio.file.FileSystem;
-import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Optional;
 
+import static com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncFileInfo.Compression.NONE;
+import static com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncFileInfo.Compression.ZSTD;
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 
 /**
  * @author freva
@@ -28,52 +24,39 @@ public class SyncFileInfoTest {
     private static final String bucket = "logs-region-acdf21";
     private static final ApplicationId application = ApplicationId.from("tenant", "application", "instance");
     private static final HostName hostname = HostName.from("h12352a.env.region-1.vespa.domain.example");
-    private static final Path accessLogPath = fileSystem.getPath("/opt/vespa/logs/qrs/access.json-20210212.zst");
-    private static final Path vespaLogPath = fileSystem.getPath("/opt/vespa/logs/vespa.log-2021-02-12");
+    private static final Path accessLogPath1 = fileSystem.getPath("/opt/vespa/logs/qrs/access.log.20210211");
+    private static final Path accessLogPath2 = fileSystem.getPath("/opt/vespa/logs/qrs/access.log.20210212.zst");
+    private static final Path accessLogPath3 = fileSystem.getPath("/opt/vespa/logs/qrs/access-json.log.20210213.zst");
+    private static final Path accessLogPath4 = fileSystem.getPath("/opt/vespa/logs/qrs/JsonAccessLog.default.20210214.zst");
+    private static final Path connectionLogPath1 = fileSystem.getPath("/opt/vespa/logs/qrs/ConnectionLog.default.20210210");
+    private static final Path connectionLogPath2 = fileSystem.getPath("/opt/vespa/logs/qrs/ConnectionLog.default.20210212.zst");
+    private static final Path vespaLogPath1 = fileSystem.getPath("/opt/vespa/logs/vespa.log");
+    private static final Path vespaLogPath2 = fileSystem.getPath("/opt/vespa/logs/vespa.log-2021-02-12");
 
     @Test
-    public void tenant_access_log() {
-        SyncFileInfo sfi = SyncFileInfo.tenantAccessLog(bucket, application, hostname, accessLogPath);
-        assertEquals(Paths.get("/tenant.application.instance/h12352a/logs/access/access.json-20210212.zst"), sfi.destPath());
-        assertEquals(bucket, sfi.bucketName());
-        assertNotEquals(ZstdCompressingInputStream.class, getInputStreamType(sfi));
-    }
+    public void tenant_log() {
+        assertTenantSyncFileInfo(accessLogPath1, null, null);
+        assertTenantSyncFileInfo(accessLogPath2, "tenant.application.instance/h12352a/logs/access/access.log.20210212.zst", NONE);
+        assertTenantSyncFileInfo(accessLogPath3, "tenant.application.instance/h12352a/logs/access/access-json.log.20210213.zst", NONE);
+        assertTenantSyncFileInfo(accessLogPath4, "tenant.application.instance/h12352a/logs/access/JsonAccessLog.default.20210214.zst", NONE);
 
-    @Test
-    public void tenant_vespa_log() {
-        SyncFileInfo sfi = SyncFileInfo.tenantVespaLog(bucket, application, hostname, vespaLogPath);
-        assertEquals(Paths.get("/tenant.application.instance/h12352a/logs/vespa/vespa.log-2021-02-12.zst"), sfi.destPath());
-        assertEquals(ZstdCompressingInputStream.class, getInputStreamType(sfi));
-    }
+        assertTenantSyncFileInfo(connectionLogPath1, null, null);
+        assertTenantSyncFileInfo(connectionLogPath2, "tenant.application.instance/h12352a/logs/connection/ConnectionLog.default.20210212.zst", NONE);
 
-    @Test
-    public void infra_access_log() {
-        SyncFileInfo sfi = SyncFileInfo.infrastructureAccessLog(bucket, hostname, accessLogPath);
-        assertEquals(Paths.get("/infrastructure/h12352a/logs/access/access.json-20210212.zst"), sfi.destPath());
-        assertNotEquals(ZstdCompressingInputStream.class, getInputStreamType(sfi));
+        assertTenantSyncFileInfo(vespaLogPath1, null, null);
+        assertTenantSyncFileInfo(vespaLogPath2, "tenant.application.instance/h12352a/logs/vespa/vespa.log-2021-02-12.zst", ZSTD);
     }
 
     @Test
     public void infra_vespa_log() {
-        SyncFileInfo sfi = SyncFileInfo.infrastructureVespaLog(bucket, hostname, vespaLogPath);
-        assertEquals(Paths.get("/infrastructure/h12352a/logs/vespa/vespa.log-2021-02-12.zst"), sfi.destPath());
-        assertEquals(ZstdCompressingInputStream.class, getInputStreamType(sfi));
+        SyncFileInfo sfi = SyncFileInfo.infrastructureVespaLog(bucket, hostname, vespaLogPath2);
+        assertEquals("infrastructure/h12352a/logs/vespa/vespa.log-2021-02-12.zst", sfi.destPath().toString());
+        assertEquals(ZSTD, sfi.uploadCompression());
     }
 
-    @BeforeClass
-    public static void setup() throws IOException {
-        Files.createDirectories(vespaLogPath.getParent());
-        Files.createFile(vespaLogPath);
-        Files.createDirectories(accessLogPath.getParent());
-        Files.createFile(accessLogPath);
+    private static void assertTenantSyncFileInfo(Path srcPath, String destPath, SyncFileInfo.Compression compression) {
+        Optional<SyncFileInfo> sfi = SyncFileInfo.tenantLog(bucket, application, hostname, srcPath);
+        assertEquals(destPath, sfi.map(SyncFileInfo::destPath).map(Path::toString).orElse(null));
+        assertEquals(compression, sfi.map(SyncFileInfo::uploadCompression).orElse(null));
     }
-
-    private static Class<? extends InputStream> getInputStreamType(SyncFileInfo syncFileInfo) {
-        try (InputStream inputStream = syncFileInfo.inputStream()) {
-            return inputStream.getClass();
-        } catch (IOException e) {
-            throw new UncheckedIOException(e);
-        }
-    }
-
 }
