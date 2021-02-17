@@ -13,7 +13,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
-import java.util.stream.IntStream;
+import java.util.Arrays;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -68,6 +68,14 @@ public class ReconfigurerTest {
         assertNull("No servers are joining", reconfigurer.joiningServers());
         assertEquals("3,4", reconfigurer.leavingServers());
         assertSame(nextConfig, reconfigurer.activeConfig());
+
+        // Cluster loses node1, but node3 joins. Indices are shuffled.
+        nextConfig = createConfig(3, true, 1);
+        reconfigurer.startOrReconfigure(nextConfig);
+        assertEquals(3, reconfigurer.reconfigurations());
+        assertEquals("1=node2:2182:2183;2181,2=node3:2182:2183;2181", reconfigurer.joiningServers());
+        assertEquals("1,2", reconfigurer.leavingServers());
+        assertSame(nextConfig, reconfigurer.activeConfig());
     }
 
     @Test
@@ -107,11 +115,15 @@ public class ReconfigurerTest {
        reconfigurer.shutdown();
     }
 
-    private ZookeeperServerConfig createConfig(int numberOfServers, boolean dynamicReconfiguration) {
+    private ZookeeperServerConfig createConfig(int numberOfServers, boolean dynamicReconfiguration, int... skipIndices) {
+        Arrays.sort(skipIndices);
         ZookeeperServerConfig.Builder builder = new ZookeeperServerConfig.Builder();
         builder.zooKeeperConfigFile(cfgFile.getAbsolutePath());
         builder.myidFile(idFile.getAbsolutePath());
-        IntStream.range(0, numberOfServers).forEach(i -> builder.server(newServer(i, "node" + i)));
+        for (int i = 0, index = 0; i < numberOfServers; i++, index++) {
+            while (Arrays.binarySearch(skipIndices, index) >= 0) index++;
+            builder.server(newServer(i, "node" + index));
+        }
         builder.myid(0);
         builder.dynamicReconfiguration(dynamicReconfiguration);
         return builder.build();
