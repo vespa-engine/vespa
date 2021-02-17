@@ -29,6 +29,7 @@
         <module>application-preprocessor</module>
         <module>athenz-identity-provider-service</module>
         <module>bundle-plugin-test</module>
+        <module>chain</module>
         <module>client</module>
         <module>cloud-tenant-base</module>
         <module>cloud-tenant-base-dependencies-enforcer</module>

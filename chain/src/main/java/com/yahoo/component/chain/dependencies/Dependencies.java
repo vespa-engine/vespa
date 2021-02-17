@@ -4,12 +4,14 @@ package com.yahoo.component.chain.dependencies;
 import java.util.*;
 
 import com.google.common.collect.ImmutableSet;
+import net.jcip.annotations.Immutable;
 
 /**
- * Constraints for ordering ChainedComponents in chains. Immutable.
+ * Constraints for ordering ChainedComponents in chains.
  *
  * @author Tony Vaagenes
  */
+@Immutable
 public class Dependencies {
 
     private final Set<String> provides;

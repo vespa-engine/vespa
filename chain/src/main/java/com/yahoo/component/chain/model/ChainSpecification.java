@@ -5,14 +5,16 @@ import com.google.common.collect.ImmutableSet;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.Phase;
+import net.jcip.annotations.Immutable;
 
 import java.util.*;
 
 /**
- * Specifies how the components should be selected to create a chain. Immutable.
+ * Specifies how the components should be selected to create a chain.
  *
  * @author Tony Vaagenes
  */
+@Immutable
 public class ChainSpecification {
 
     public static class Inheritance {
