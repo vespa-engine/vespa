@@ -17,6 +17,7 @@ import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
+import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.FlagSource;
@@ -61,7 +62,8 @@ public class TestTenantRepository extends TenantRepository {
               modelFactoryRegistry,
               configDefinitionRepo,
               reloadListener,
-              tenantListener);
+              tenantListener,
+              ConfigCurator.create(curator));
     }
 
     public static class Builder {

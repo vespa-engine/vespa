@@ -27,6 +27,7 @@ import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
+import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
@@ -193,7 +194,7 @@ public class TenantRepositoryTest {
         // Should get exception if config is true
         expectedException.expect(RuntimeException.class);
         expectedException.expectMessage("Could not create all tenants when bootstrapping, failed to create: [default]");
-        new FailingDuringBootstrapTenantRepository(configserverConfig);
+        new FailingDuringBootstrapTenantRepository(configserverConfig, new MockCurator());
     }
 
     private List<String> readZKChildren(String path) throws Exception {
@@ -206,9 +207,9 @@ public class TenantRepositoryTest {
 
     private static class FailingDuringBootstrapTenantRepository extends TenantRepository {
 
-        public FailingDuringBootstrapTenantRepository(ConfigserverConfig configserverConfig) {
+        public FailingDuringBootstrapTenantRepository(ConfigserverConfig configserverConfig, Curator curator) {
             super(new HostRegistry(),
-                  new MockCurator(),
+                  curator,
                   Metrics.createTestMetrics(),
                   new StripedExecutor<>(new InThreadExecutorService()),
                   new FileDistributionFactory(new ConfigserverConfig.Builder().build()),
@@ -223,7 +224,8 @@ public class TenantRepositoryTest {
                   new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry()))),
                   new TestConfigDefinitionRepo(),
                   new TenantApplicationsTest.MockReloadListener(),
-                  new MockTenantListener());
+                  new MockTenantListener(),
+                  ConfigCurator.create(curator));
         }
 
         @Override

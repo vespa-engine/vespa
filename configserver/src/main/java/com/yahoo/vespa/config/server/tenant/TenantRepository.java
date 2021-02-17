@@ -30,6 +30,7 @@ import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.session.SessionRepository;
+import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
@@ -96,6 +97,7 @@ public class TenantRepository {
     private final Locks<TenantName> tenantLocks = new Locks<>(1, TimeUnit.MINUTES);
     private final HostRegistry hostRegistry;
     private final TenantListener tenantListener;
+    private final ConfigCurator configCurator;
     private final Curator curator;
     private final Metrics metrics;
     private final MetricUpdater metricUpdater;
@@ -134,7 +136,8 @@ public class TenantRepository {
                             ModelFactoryRegistry modelFactoryRegistry,
                             ConfigDefinitionRepo configDefinitionRepo,
                             ReloadListener reloadListener,
-                            TenantListener tenantListener) {
+                            TenantListener tenantListener,
+                            ConfigCurator configCurator) {
         this(hostRegistry,
              curator,
              metrics,
@@ -151,7 +154,8 @@ public class TenantRepository {
              modelFactoryRegistry,
              configDefinitionRepo,
              reloadListener,
-             tenantListener);
+             tenantListener,
+             configCurator);
     }
 
     public TenantRepository(HostRegistry hostRegistry,
@@ -170,7 +174,8 @@ public class TenantRepository {
                             ModelFactoryRegistry modelFactoryRegistry,
                             ConfigDefinitionRepo configDefinitionRepo,
                             ReloadListener reloadListener,
-                            TenantListener tenantListener) {
+                            TenantListener tenantListener,
+                            ConfigCurator configCurator) {
         this.hostRegistry = hostRegistry;
         this.configserverConfig = configserverConfig;
         this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
@@ -191,6 +196,7 @@ public class TenantRepository {
         this.configDefinitionRepo = configDefinitionRepo;
         this.reloadListener = reloadListener;
         this.tenantListener = tenantListener;
+        this.configCurator = configCurator;
 
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
@@ -333,6 +339,7 @@ public class TenantRepository {
                                                                     applicationRepo,
                                                                     sessionPreparer,
                                                                     curator,
+                                                                    configCurator,
                                                                     metrics,
                                                                     zkWatcherExecutor,
                                                                     permanentApplicationPackage,
