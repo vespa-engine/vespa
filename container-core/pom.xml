@@ -24,12 +24,12 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>http-utils</artifactId>
+      <artifactId>container-di</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>processing</artifactId>
+      <artifactId>http-utils</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
