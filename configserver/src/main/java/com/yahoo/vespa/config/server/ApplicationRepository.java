@@ -23,6 +23,8 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.jdisc.SecretStoreProvider;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
@@ -39,6 +41,7 @@ import com.yahoo.vespa.config.server.application.ConfigConvergenceChecker;
 import com.yahoo.vespa.config.server.application.DefaultClusterReindexingStatusClient;
 import com.yahoo.vespa.config.server.application.FileDistributionStatus;
 import com.yahoo.vespa.config.server.application.HttpProxy;
+import com.yahoo.vespa.config.server.http.SecretStoreValidator;
 import com.yahoo.vespa.config.server.application.TenantApplications;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
 import com.yahoo.vespa.config.server.configchange.RefeedActions;
@@ -69,6 +72,7 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantMetaData;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
+import com.yahoo.vespa.config.server.application.TenantSecretStore;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.curator.stats.ThreadLockStats;
@@ -88,7 +92,6 @@ import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -138,6 +141,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final LogRetriever logRetriever;
     private final TesterClient testerClient;
     private final Metric metric;
+    private final SecretStoreValidator secretStoreValidator;
     private final ClusterReindexingStatusClient clusterReindexingStatusClient;
 
     @Inject
@@ -149,7 +153,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  ConfigserverConfig configserverConfig,
                                  Orchestrator orchestrator,
                                  TesterClient testerClient,
-                                 Metric metric) {
+                                 Metric metric,
+                                 SecretStore secretStore) {
         this(tenantRepository,
              hostProvisionerProvider.getHostProvisioner(),
              infraDeployerProvider.getInfraDeployer(),
@@ -161,6 +166,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              Clock.systemUTC(),
              testerClient,
              metric,
+             new SecretStoreValidator(secretStore),
              new DefaultClusterReindexingStatusClient());
     }
 
@@ -175,6 +181,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   Clock clock,
                                   TesterClient testerClient,
                                   Metric metric,
+                                  SecretStoreValidator secretStoreValidator,
                                   ClusterReindexingStatusClient clusterReindexingStatusClient) {
         this.tenantRepository = Objects.requireNonNull(tenantRepository);
         this.hostProvisioner = Objects.requireNonNull(hostProvisioner);
@@ -187,6 +194,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.clock = Objects.requireNonNull(clock);
         this.testerClient = Objects.requireNonNull(testerClient);
         this.metric = Objects.requireNonNull(metric);
+        this.secretStoreValidator = Objects.requireNonNull(secretStoreValidator);
         this.clusterReindexingStatusClient = clusterReindexingStatusClient;
     }
 
@@ -200,6 +208,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         private LogRetriever logRetriever = new LogRetriever();
         private TesterClient testerClient = new TesterClient();
         private Metric metric = new NullMetric();
+        private SecretStoreValidator secretStoreValidator = new SecretStoreValidator(new SecretStoreProvider().get());
         private FlagSource flagSource = new InMemoryFlagSource();
 
         public Builder withTenantRepository(TenantRepository tenantRepository) {
@@ -271,6 +280,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                              clock,
                                              testerClient,
                                              metric,
+                                             secretStoreValidator,
                                              ClusterReindexingStatusClient.DUMMY_INSTANCE);
         }
 
@@ -669,6 +679,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return applicationSet.isEmpty()
                 ? List.of()
                 : applicationSet.get().getAllVersions(applicationId);
+    }
+
+    public HttpResponse validateSecretStore(ApplicationId applicationId, TenantSecretStore tenantSecretStore, String tenantSecretName) {
+        Application application = getApplication(applicationId);
+        return secretStoreValidator.validateSecretStore(application, tenantSecretStore, tenantSecretName);
     }
 
     // ---------------- Convergence ----------------------------------------------------------------

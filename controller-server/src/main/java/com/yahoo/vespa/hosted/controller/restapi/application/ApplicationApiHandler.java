@@ -298,6 +298,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/reindexing")) return enableReindexing(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/suspend")) return suspend(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), true);
+        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/validate-parameter-store")) return validateParameterStore(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/deploy")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -580,6 +581,26 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             controller.tenants().store(tenant);
         });
         return new SlimeJsonResponse(root);
+    }
+
+
+    private HttpResponse validateParameterStore(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
+        var tenant = TenantName.from(tenantName);
+        if (controller.tenants().require(tenant).type() != Tenant.Type.cloud)
+            throw new IllegalArgumentException("Tenant '" + tenant + "' is not a cloud tenant");
+
+        var application = ApplicationId.from(tenantName, applicationName, instanceName);
+        var zone = requireZone(environment, region);
+        var deployment = new DeploymentId(application, zone);
+
+        var data = toSlime(request.getData()).get();
+        var awsId = mandatory("awsId", data).asString();
+        var name = mandatory("name", data).asString();
+        var role = mandatory("role", data).asString();
+        var tenantSecretStore = new TenantSecretStore(name, awsId, role);
+
+        var response = controller.serviceRegistry().configServer().validateSecretStore(deployment, tenantSecretStore);
+        return new MessageResponse(response);
     }
 
     private HttpResponse removeDeveloperKey(String tenantName, HttpRequest request) {

@@ -17,6 +17,7 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.application.BindingMatch;
 import com.yahoo.jdisc.application.UriPattern;
 import com.yahoo.slime.Cursor;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.StringUtilities;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
@@ -28,12 +29,12 @@ import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.tenant.Tenant;
+import com.yahoo.vespa.config.server.application.TenantSecretStore;
 
 import java.io.IOException;
 import java.net.URLDecoder;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -44,6 +45,7 @@ import java.util.TreeMap;
 import java.util.TreeSet;
 import java.util.stream.Stream;
 
+import static com.yahoo.yolean.Exceptions.uncheck;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Map.Entry.comparingByKey;
 import static java.util.stream.Collectors.toList;
@@ -68,6 +70,7 @@ public class ApplicationHandler extends HttpHandler {
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/metrics/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/metrics/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/logs",
+            "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/validate-secret-store/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/tester/*/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/tester/*",
             "http://*/application/v2/tenant/*/application/*/environment/*/region/*/instance/*/quota",
@@ -227,6 +230,12 @@ public class ApplicationHandler extends HttpHandler {
             return createMessageResponse("Reindexing enabled");
         }
 
+        if (isValidateSecretStoreRequest(request)) {
+            var tenantSecretStore = tenantSecretStoreFromRequest(request);
+            var tenantSecretName = tenantSecretNameFromRequest(request);
+            return applicationRepository.validateSecretStore(applicationId, tenantSecretStore, tenantSecretName);
+        }
+
         throw new NotFoundException("Illegal POST request '" + request.getUri() + "'");
     }
 
@@ -350,6 +359,11 @@ public class ApplicationHandler extends HttpHandler {
                 request.getUri().getPath().endsWith("/logs");
     }
 
+    private static boolean isValidateSecretStoreRequest(HttpRequest request) {
+        return getBindingMatch(request).groupCount() == 8 &&
+                request.getUri().getPath().contains("/validate-secret-store/");
+    }
+
     private static boolean isServiceConvergeListRequest(HttpRequest request) {
         return getBindingMatch(request).groupCount() == 7 &&
                 request.getUri().getPath().endsWith("/serviceconverge");
@@ -406,6 +420,11 @@ public class ApplicationHandler extends HttpHandler {
     }
 
     private static String getPathSuffix(HttpRequest req) {
+        BindingMatch<?> bm = getBindingMatch(req);
+        return bm.group(8);
+    }
+
+    private static String tenantSecretNameFromRequest(HttpRequest req) {
         BindingMatch<?> bm = getBindingMatch(req);
         return bm.group(8);
     }
@@ -512,6 +531,14 @@ public class ApplicationHandler extends HttpHandler {
             status.progress().ifPresent(progress -> object.setDouble("progress", progress));
         }
 
+    }
+
+    private TenantSecretStore tenantSecretStoreFromRequest(HttpRequest httpRequest) {
+        var data = uncheck(() -> SlimeUtils.jsonToSlime(httpRequest.getData().readAllBytes()).get());
+        var awsId = data.field("awsId").asString();
+        var name = data.field("name").asString();
+        var role = data.field("role").asString();
+        return new TenantSecretStore(name, awsId, role);
     }
 
     private static JSONResponse createMessageResponse(String message) {
