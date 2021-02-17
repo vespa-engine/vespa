@@ -17,15 +17,17 @@ public class VespaZooKeeperAdminImpl implements VespaZooKeeperAdmin {
 
     private static final Logger log = java.util.logging.Logger.getLogger(VespaZooKeeperAdminImpl.class.getName());
 
-    @Override
-    public void reconfigure(String connectionSpec, String joiningServers, String leavingServers) throws ReconfigException {
+    private void reconfigure(String connectionSpec, String joiningServers, String leavingServers, String newMembers) throws ReconfigException {
+        if (newMembers != null && (joiningServers != null || leavingServers != null))
+            throw new IllegalArgumentException("Cannot supply both newMembers and joining or leaving servers");
+
         try {
             ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec,
                                                                (int) sessionTimeout().toMillis(),
                                                                (event) -> log.log(Level.INFO, event.toString()));
             long fromConfig = -1;
             // Using string parameters because the List variant of reconfigure fails to join empty lists (observed on 3.5.6, fixed in 3.7.0)
-            byte[] appliedConfig = zooKeeperAdmin.reconfigure(joiningServers, leavingServers, null, fromConfig, null);
+            byte[] appliedConfig = zooKeeperAdmin.reconfigure(joiningServers, leavingServers, newMembers, fromConfig, null);
             log.log(Level.INFO, "Applied ZooKeeper config: " + new String(appliedConfig, StandardCharsets.UTF_8));
         } catch (KeeperException e) {
             if (retryOn(e))
@@ -35,6 +37,16 @@ public class VespaZooKeeperAdminImpl implements VespaZooKeeperAdmin {
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
         }
+    }
+
+    @Override
+    public void reconfigure(String connectionSpec, String joiningServers, String leavingServers) throws ReconfigException {
+        reconfigure(connectionSpec, joiningServers, leavingServers, null);
+    }
+
+    @Override
+    public void reconfigure(String connectionSpec, String newMembers) throws ReconfigException {
+        reconfigure(connectionSpec, null, null, newMembers);
     }
 
     private static boolean retryOn(KeeperException e) {

@@ -50,8 +50,9 @@ public class ReconfigurerTest {
         ZookeeperServerConfig nextConfig = createConfig(5, true);
         reconfigurer.startOrReconfigure(nextConfig);
         assertEquals("node1:2181", reconfigurer.connectionSpec());
-        assertEquals("3=node3:2182:2183;2181,4=node4:2182:2183;2181", reconfigurer.joiningServers());
+        assertNull("No servers are joining", reconfigurer.joiningServers());
         assertNull("No servers are leaving", reconfigurer.leavingServers());
+        assertEquals("0=node0:2182:2183;2181,1=node1:2182:2183;2181,2=node2:2182:2183;2181,3=node3:2182:2183;2181,4=node4:2182:2183;2181", reconfigurer.newMembers());
         assertEquals(1, reconfigurer.reconfigurations());
         assertSame(nextConfig, reconfigurer.activeConfig());
 
@@ -66,15 +67,17 @@ public class ReconfigurerTest {
         assertEquals(2, reconfigurer.reconfigurations());
         assertEquals("node1:2181", reconfigurer.connectionSpec());
         assertNull("No servers are joining", reconfigurer.joiningServers());
-        assertEquals("3,4", reconfigurer.leavingServers());
+        assertNull("No servers are leaving", reconfigurer.leavingServers());
+        assertEquals("0=node0:2182:2183;2181,1=node1:2182:2183;2181,2=node2:2182:2183;2181", reconfigurer.newMembers());
         assertSame(nextConfig, reconfigurer.activeConfig());
 
         // Cluster loses node1, but node3 joins. Indices are shuffled.
         nextConfig = createConfig(3, true, 1);
         reconfigurer.startOrReconfigure(nextConfig);
         assertEquals(3, reconfigurer.reconfigurations());
-        assertEquals("1=node2:2182:2183;2181,2=node3:2182:2183;2181", reconfigurer.joiningServers());
-        assertEquals("1,2", reconfigurer.leavingServers());
+        assertNull("No servers are joining", reconfigurer.joiningServers());
+        assertNull("No servers are leaving", reconfigurer.leavingServers());
+        assertEquals("0=node0:2182:2183;2181,1=node2:2182:2183;2181,2=node3:2182:2183;2181", reconfigurer.newMembers());
         assertSame(nextConfig, reconfigurer.activeConfig());
     }
 
@@ -167,6 +170,8 @@ public class ReconfigurerTest {
             return zooKeeperAdmin.leavingServers;
         }
 
+        String newMembers() { return zooKeeperAdmin.newMembers; }
+
         int reconfigurations() {
             return zooKeeperAdmin.reconfigurations;
         }
@@ -189,6 +194,7 @@ public class ReconfigurerTest {
         String connectionSpec;
         String joiningServers;
         String leavingServers;
+        String newMembers;
         int reconfigurations = 0;
 
         private int failures = 0;
@@ -200,12 +206,24 @@ public class ReconfigurerTest {
         }
 
         @Override
+        public void reconfigure(String connectionSpec, String newMembers) throws ReconfigException {
+            if (++attempts < failures)
+                throw new ReconfigException("Reconfig failed");
+            this.connectionSpec = connectionSpec;
+            this.joiningServers = null;
+            this.leavingServers = null;
+            this.newMembers = newMembers;
+            this.reconfigurations++;
+        }
+
+        @Override
         public void reconfigure(String connectionSpec, String joiningServers, String leavingServers) throws ReconfigException {
             if (++attempts < failures)
                 throw new ReconfigException("Reconfig failed");
             this.connectionSpec = connectionSpec;
             this.joiningServers = joiningServers;
             this.leavingServers = leavingServers;
+            this.newMembers = null;
             this.reconfigurations++;
         }
 

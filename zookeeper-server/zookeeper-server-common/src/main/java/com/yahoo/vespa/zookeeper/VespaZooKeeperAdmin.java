@@ -12,6 +12,8 @@ public interface VespaZooKeeperAdmin {
 
     void reconfigure(String connectionSpec, String joiningServers, String leavingServers) throws ReconfigException;
 
+    void reconfigure(String connectionSpec, String newMembers) throws ReconfigException;
+
     /* Timeout for connecting to ZooKeeper */
     default Duration sessionTimeout() { return Duration.ofSeconds(30); }
 

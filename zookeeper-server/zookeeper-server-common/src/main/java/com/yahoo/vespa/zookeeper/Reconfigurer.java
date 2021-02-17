@@ -85,24 +85,20 @@ public class Reconfigurer extends AbstractComponent {
         // the others will be shutdown or are about to be shutdown
         if (newConfig.server().size() == 1) shutdownAndDie(server, Duration.ZERO);
 
-        List<String> newServers = difference(servers(newConfig), servers(activeConfig));
-        String leavingServerIds = String.join(",", serverIdsDifference(activeConfig, newConfig));
-        String joiningServersSpec = String.join(",", newServers);
-        leavingServerIds = leavingServerIds.isEmpty() ? null : leavingServerIds;
-        joiningServersSpec = joiningServersSpec.isEmpty() ? null : joiningServersSpec;
-        log.log(Level.INFO, "Will reconfigure ZooKeeper cluster. \nJoining servers: " + joiningServersSpec +
-                            "\nleaving servers: " + leavingServerIds +
+        String newMembers = String.join(",", servers(newConfig));
+        log.log(Level.INFO, "Will reconfigure ZooKeeper cluster." +
                             "\nServers in active config:" + servers(activeConfig) +
                             "\nServers in new config:" + servers(newConfig));
         String connectionSpec = localConnectionSpec(activeConfig);
         Instant now = Instant.now();
-        Duration reconfigTimeout = reconfigTimeout(newServers.size());
+        Duration reconfigTimeout = reconfigTimeout(newConfig.server().size());
         Instant end = now.plus(reconfigTimeout);
         // Loop reconfiguring since we might need to wait until another reconfiguration is finished before we can succeed
         for (int attempt = 1; now.isBefore(end); attempt++) {
             try {
                 Instant reconfigStarted = Instant.now();
-                vespaZooKeeperAdmin.reconfigure(connectionSpec, joiningServersSpec, leavingServerIds);
+
+                vespaZooKeeperAdmin.reconfigure(connectionSpec, newMembers);
                 Instant reconfigEnded = Instant.now();
                 log.log(Level.INFO, "Reconfiguration completed in " +
                                     Duration.between(reconfigTriggered, reconfigEnded) +
