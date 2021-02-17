@@ -72,12 +72,16 @@ class LogReader {
 
                 Iterator<LineWithTimestamp> lines = Iterators.mergeSorted(logLineIterators,
                                                                           Comparator.comparingDouble(LineWithTimestamp::timestamp));
-                long linesWritten = 0;
+                long charsWritten = 0;
                 while (lines.hasNext()) {
-                    writer.write(lines.next().line());
+                    String line = lines.next().line();
+                    writer.write(line);
                     writer.newLine();
-                    if ((++linesWritten & ((1 << 16) - 1)) == 0)
+                    charsWritten += line.length();
+                    if (charsWritten > 0x100000) {
                         writer.flush();
+                        charsWritten = 0;
+                    }
                 }
             }
             catch (IOException e) {
@@ -188,9 +192,11 @@ class LogReader {
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                    if (     logFilePattern.matcher(file.getFileName().toString()).matches()
+                    if (logFilePattern.matcher(file.getFileName().toString()).matches()
                         && ! attrs.lastModifiedTime().toInstant().isBefore(from))
+                    {
                         paths.add(file);
+                    }
 
                     return FileVisitResult.CONTINUE;
                 }
