@@ -114,7 +114,6 @@
         <module>parent</module>
         <module>predicate-search</module>
         <module>predicate-search-core</module>
-        <module>processing</module>
         <module>provided-dependencies</module>
         <module>searchcore</module>
         <module>searchlib</module>
