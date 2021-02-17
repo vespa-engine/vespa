@@ -260,7 +260,10 @@ public class DeploymentSpec {
             return concerns(environment, region);
         }
 
-        /** Returns whether this step specifies the given environment, and, optionally, region. */
+        /**
+         * Returns whether this step specifies the given environment, and, optionally,
+         * if this step specifies a region, whether this is also the given region.
+         */
         public abstract boolean concerns(Environment environment, Optional<RegionName> region);
 
         /** Returns the zones deployed to in this step. */
@@ -348,7 +351,7 @@ public class DeploymentSpec {
         @Override
         public boolean concerns(Environment environment, Optional<RegionName> region) {
             if (environment != this.environment) return false;
-            if (region.isPresent() && ! region.equals(this.region)) return false;
+            if (region.isPresent() && this.region.isPresent() && ! region.equals(this.region)) return false;
             return true;
         }
 
