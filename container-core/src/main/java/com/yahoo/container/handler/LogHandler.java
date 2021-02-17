@@ -15,13 +15,14 @@ import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.time.Instant;
 import java.util.Optional;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executor;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 public class LogHandler extends ThreadedHttpRequestHandler {
 
     private final LogReader logReader;
+    private static final long MB = 1024*1024;
 
     @Inject
     public LogHandler(Executor executor, LogHandlerConfig config) {
@@ -45,7 +46,7 @@ public class LogHandler extends ThreadedHttpRequestHandler {
             @Override
             public void render(OutputStream output, ContentChannel networkChannel, CompletionHandler handler) {
                 try {
-                    OutputStream blockingOutput = new BlockingFlushContentChannelOutputStream(networkChannel);
+                    OutputStream blockingOutput = new MaxPendingContentChannelOutputStream(networkChannel, 1*MB);
                     logReader.writeLogs(blockingOutput, from, to, hostname);
                     blockingOutput.close();
                 }
@@ -60,26 +61,57 @@ public class LogHandler extends ThreadedHttpRequestHandler {
     }
 
 
-    private static class BlockingFlushContentChannelOutputStream extends ContentChannelOutputStream {
-
+    private static class MaxPendingContentChannelOutputStream extends ContentChannelOutputStream {
         private final ContentChannel channel;
+        private final long maxPending;
+        private AtomicLong sent = new AtomicLong(0);
+        private AtomicLong acked = new AtomicLong(0);
 
-        public BlockingFlushContentChannelOutputStream(ContentChannel endpoint) {
+        public MaxPendingContentChannelOutputStream(ContentChannel endpoint, long maxPending) {
             super(endpoint);
             this.channel = endpoint;
+            this.maxPending = maxPending;
+        }
+
+        private long pendingBytes() {
+            return sent.get() - acked.get();
+        }
+
+        private class TrackCompletition implements CompletionHandler {
+            final long written;
+            TrackCompletition(long written) {
+                this.written = written;
+                sent.addAndGet(written);
+            }
+            @Override
+            public void completed() {
+                acked.addAndGet(written);
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                acked.addAndGet(written);
+            }
+        }
+        @Override
+        public void send(ByteBuffer src) throws IOException {
+            try {
+                stallWhilePendingAbove(maxPending);
+            } catch (InterruptedException e) {}
+            send(src, new TrackCompletition(src.remaining()));
+        }
+
+        private void stallWhilePendingAbove(long pending) throws InterruptedException {
+            while (pendingBytes() > pending) {
+                Thread.sleep(1);
+            }
         }
 
         @Override
         public void flush() throws IOException {
             super.flush();
-            CountDownLatch latch = new CountDownLatch(1);
-            channel.write(ByteBuffer.allocate(0), // :'(
-                          new CompletionHandler() {
-                              @Override public void completed() { latch.countDown(); }
-                              @Override public void failed(Throwable t) { latch.countDown(); }
-                          });
             try {
-                latch.await();
+                stallWhilePendingAbove(0);
             }
             catch (InterruptedException e) {
                 throw new RuntimeException("Interrupted waiting for underlying IO to complete", e);

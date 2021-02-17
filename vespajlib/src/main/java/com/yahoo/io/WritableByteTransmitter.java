@@ -10,5 +10,5 @@ import java.nio.ByteBuffer;
  * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
  */
 public interface WritableByteTransmitter {
-    public void send(ByteBuffer src) throws IOException;
+    void send(ByteBuffer src) throws IOException;
 }
