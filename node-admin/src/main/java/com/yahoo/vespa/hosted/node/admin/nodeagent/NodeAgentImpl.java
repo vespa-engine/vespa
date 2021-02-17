@@ -62,7 +62,7 @@ public class NodeAgentImpl implements NodeAgent {
     private final ContainerOperations containerOperations;
     private final RegistryCredentialsProvider registryCredentialsProvider;
     private final StorageMaintainer storageMaintainer;
-    private final Optional<CredentialsMaintainer> credentialsMaintainer;
+    private final List<CredentialsMaintainer> credentialsMaintainers;
     private final Optional<AclMaintainer> aclMaintainer;
     private final Optional<HealthChecker> healthChecker;
     private final Clock clock;
@@ -102,17 +102,17 @@ public class NodeAgentImpl implements NodeAgent {
     public NodeAgentImpl(NodeAgentContextSupplier contextSupplier, NodeRepository nodeRepository,
                          Orchestrator orchestrator, ContainerOperations containerOperations,
                          RegistryCredentialsProvider registryCredentialsProvider, StorageMaintainer storageMaintainer,
-                         FlagSource flagSource, Optional<CredentialsMaintainer> credentialsMaintainer,
+                         FlagSource flagSource, List<CredentialsMaintainer> credentialsMaintainers,
                          Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock) {
         this(contextSupplier, nodeRepository, orchestrator, containerOperations, registryCredentialsProvider,
-             storageMaintainer, flagSource, credentialsMaintainer, aclMaintainer, healthChecker, clock,
+             storageMaintainer, flagSource, credentialsMaintainers, aclMaintainer, healthChecker, clock,
              DEFAULT_WARM_UP_DURATION);
     }
 
     public NodeAgentImpl(NodeAgentContextSupplier contextSupplier, NodeRepository nodeRepository,
                          Orchestrator orchestrator, ContainerOperations containerOperations,
                          RegistryCredentialsProvider registryCredentialsProvider, StorageMaintainer storageMaintainer,
-                         FlagSource flagSource, Optional<CredentialsMaintainer> credentialsMaintainer,
+                         FlagSource flagSource, List<CredentialsMaintainer> credentialsMaintainers,
                          Optional<AclMaintainer> aclMaintainer, Optional<HealthChecker> healthChecker, Clock clock,
                          Duration warmUpDuration) {
         this.contextSupplier = contextSupplier;
@@ -121,7 +121,7 @@ public class NodeAgentImpl implements NodeAgent {
         this.containerOperations = containerOperations;
         this.registryCredentialsProvider = registryCredentialsProvider;
         this.storageMaintainer = storageMaintainer;
-        this.credentialsMaintainer = credentialsMaintainer;
+        this.credentialsMaintainers = credentialsMaintainers;
         this.aclMaintainer = aclMaintainer;
         this.healthChecker = healthChecker;
         this.clock = clock;
@@ -460,7 +460,7 @@ public class NodeAgentImpl implements NodeAgent {
                     return;
                 }
                 container = removeContainerIfNeededUpdateContainerState(context, container);
-                credentialsMaintainer.ifPresent(maintainer -> maintainer.converge(context));
+                credentialsMaintainers.forEach(maintainer -> maintainer.converge(context));
                 if (container.isEmpty()) {
                     containerState = STARTING;
                     container = Optional.of(startContainer(context));
@@ -506,7 +506,7 @@ public class NodeAgentImpl implements NodeAgent {
             case dirty:
                 removeContainerIfNeededUpdateContainerState(context, container);
                 context.log(logger, "State is " + node.state() + ", will delete application storage and mark node as ready");
-                credentialsMaintainer.ifPresent(maintainer -> maintainer.clearCredentials(context));
+                credentialsMaintainers.forEach(maintainer -> maintainer.clearCredentials(context));
                 storageMaintainer.archiveNodeStorage(context);
                 updateNodeRepoWithCurrentAttributes(context);
                 nodeRepository.setNodeState(context.hostname().value(), NodeState.ready);
@@ -605,8 +605,8 @@ public class NodeAgentImpl implements NodeAgent {
         };
     }
 
-    protected Optional<CredentialsMaintainer> credentialsMaintainer() {
-        return credentialsMaintainer;
+    protected List<CredentialsMaintainer> credentialsMaintainers() {
+        return credentialsMaintainers;
     }
 
     private Duration warmUpDuration(ZoneApi zone) {
