@@ -126,7 +126,7 @@ public class LogHandler extends ThreadedHttpRequestHandler {
                 stallWhilePendingAbove(0);
             }
             catch (InterruptedException e) {
-                throw new RuntimeException("Interrupted waiting for underlying IO to complete", e);
+                throw new IOException("Interrupted waiting for IO");
             }
         }
 
