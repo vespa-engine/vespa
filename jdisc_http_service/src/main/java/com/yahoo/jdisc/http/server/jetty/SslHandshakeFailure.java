@@ -16,7 +16,7 @@ enum SslHandshakeFailure {
             MetricDefinitions.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS,
             "INCOMPATIBLE_CLIENT_PROTOCOLS",
             "(Client requested protocol \\S+? is not enabled or supported in server context" +
-                    "|The client supported protocol versions \\[\\S+?\\] are not accepted by server preferences \\[\\S+?\\])"),
+                    "|The client supported protocol versions \\[.+?\\] are not accepted by server preferences \\[.+?\\])"),
     INCOMPATIBLE_CIPHERS(
             MetricDefinitions.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS,
             "INCOMPATIBLE_CLIENT_CIPHER_SUITES",
