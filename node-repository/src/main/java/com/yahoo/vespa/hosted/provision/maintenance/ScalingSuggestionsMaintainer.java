@@ -63,7 +63,7 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
     private boolean suggest(ApplicationId applicationId,
                             ClusterSpec.Id clusterId,
                             NodeList clusterNodes) {
-        Application application = applications().get(applicationId).orElse(new Application(applicationId));
+        Application application = applications().get(applicationId).orElse(Application.empty(applicationId));
         Optional<Cluster> cluster = application.cluster(clusterId);
         if (cluster.isEmpty()) return true;
         var suggestion = autoscaler.suggest(cluster.get(), clusterNodes);

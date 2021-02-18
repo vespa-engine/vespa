@@ -37,12 +37,9 @@ public class TrafficFractionUpdater extends ControllerMaintainer {
     @Override
     protected boolean maintain() {
         for (var application : applications.asList()) {
-            System.out.println("Application " + application);
             for (var instance : application.instances().values()) {
-                System.out.println("  Instance " + instance);
                 for (var deployment : instance.deployments().values()) {
                     if ( ! deployment.zone().environment().isProduction()) continue;
-                    System.out.println("    Deployment " + deployment);
                     updateTrafficFraction(instance, deployment);
                 }
             }
@@ -58,13 +55,12 @@ public class TrafficFractionUpdater extends ControllerMaintainer {
         long prodRegions = instance.deployments().values().stream()
                                                           .filter(i -> i.zone().environment().isProduction())
                                                           .count();
-        System.out.println("      qps in zone: " + qpsInZone + ", total qps: " + totalQps + ", prod regions: " +  prodRegions);
         double currentTrafficFraction = totalQps == 0 ? 0 : qpsInZone / totalQps;
         double maxTrafficFraction = prodRegions < 2 ? 1.0 : 1.0 / ( prodRegions - 1.0);
         if (currentTrafficFraction > maxTrafficFraction) // This can happen because the assumption of equal traffic
             maxTrafficFraction = currentTrafficFraction; // distribution can be incorrect
 
-        nodeRepository.setTrafficFraction(deployment.zone(), instance.id(), currentTrafficFraction, maxTrafficFraction);
+        nodeRepository.patchApplication(deployment.zone(), instance.id(), currentTrafficFraction, maxTrafficFraction);
     }
 
 }

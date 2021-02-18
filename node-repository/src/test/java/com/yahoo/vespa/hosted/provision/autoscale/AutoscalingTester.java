@@ -199,7 +199,7 @@ class AutoscalingTester {
 
     public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId,
                                                            ClusterResources min, ClusterResources max) {
-        Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId))
+        Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
                                                   .withCluster(clusterId, false, min, max);
         try (Mutex lock = nodeRepository().nodes().lock(applicationId)) {
             nodeRepository().applications().put(application, lock);
@@ -210,7 +210,7 @@ class AutoscalingTester {
 
     public Autoscaler.Advice suggest(ApplicationId applicationId, ClusterSpec.Id clusterId,
                                                            ClusterResources min, ClusterResources max) {
-        Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId))
+        Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
                                                   .withCluster(clusterId, false, min, max);
         try (Mutex lock = nodeRepository().nodes().lock(applicationId)) {
             nodeRepository().applications().put(application, lock);

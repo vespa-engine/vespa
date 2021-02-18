@@ -72,7 +72,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                            ClusterSpec.Id clusterId,
                            NodeList clusterNodes,
                            MaintenanceDeployment deployment) {
-        Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId));
+        Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId));
         if (application.cluster(clusterId).isEmpty()) return;
         Cluster cluster = application.cluster(clusterId).get();
         cluster = updateCompletion(cluster, clusterNodes);
