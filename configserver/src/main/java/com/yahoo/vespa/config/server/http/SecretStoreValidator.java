@@ -10,7 +10,6 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.application.TenantSecretStore;
 import com.yahoo.yolean.Exceptions;
-import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -26,6 +25,8 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  */
 public class SecretStoreValidator {
 
+    // http for easier testing. VespaHttpClient rewrites to https
+    private static final String PROTOCOL = "http://";
     private static final String AWS_PARAMETER_VALIDATION_HANDLER_POSTFIX = ":4080/validate-secret-store";
     private final SecretStore secretStore;
     private final CloseableHttpClient httpClient = VespaHttpClientBuilder.create().build();
@@ -60,7 +61,7 @@ public class SecretStoreValidator {
                             .count() > 0)
                 .map(HostInfo::getHostname)
                 .findFirst().orElseThrow();
-        return URI.create(hostname + AWS_PARAMETER_VALIDATION_HANDLER_POSTFIX);
+        return URI.create(PROTOCOL + hostname + AWS_PARAMETER_VALIDATION_HANDLER_POSTFIX);
     }
 
     private HttpResponse postRequest(URI uri, Slime slime) {
@@ -68,8 +69,8 @@ public class SecretStoreValidator {
         var data = uncheck(() -> SlimeUtils.toJsonBytes(slime));
         var entity = new ByteArrayEntity(data);
         postRequest.setEntity(entity);
-        try (CloseableHttpResponse response = httpClient.execute(postRequest)){
-            return new ProxyResponse(response);
+        try {
+            return new ProxyResponse(httpClient.execute(postRequest));
         } catch (IOException e) {
             return HttpErrorResponse.internalServerError(
                     String.format("Failed to post request to %s: %s", uri, Exceptions.toMessageString(e))

@@ -268,6 +268,11 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             return this;
         }
 
+        public Builder withSecretStoreValidator(SecretStoreValidator secretStoreValidator) {
+            this.secretStoreValidator = secretStoreValidator;
+            return this;
+        }
+
         public ApplicationRepository build() {
             return new ApplicationRepository(tenantRepository,
                                              hostProvisioner,

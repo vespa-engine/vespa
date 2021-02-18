@@ -426,7 +426,7 @@ public class ApplicationHandler extends HttpHandler {
 
     private static String tenantSecretNameFromRequest(HttpRequest req) {
         BindingMatch<?> bm = getBindingMatch(req);
-        return bm.group(8);
+        return bm.group(7);
     }
 
     private static ApplicationId getApplicationIdFromRequest(HttpRequest req) {
