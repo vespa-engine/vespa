@@ -253,6 +253,14 @@ public:
     bool prioritize_global_bucket_merges() const noexcept {
         return _prioritize_global_bucket_merges;
     }
+
+    void set_max_activation_inhibited_out_of_sync_groups(uint32_t max_groups) noexcept {
+        _max_activation_inhibited_out_of_sync_groups = max_groups;
+    }
+    uint32_t max_activation_inhibited_out_of_sync_groups() const noexcept {
+        return _max_activation_inhibited_out_of_sync_groups;
+    }
+
     bool enable_revert() const noexcept {
         return _enable_revert;
     }
@@ -274,6 +282,7 @@ private:
     uint32_t _idealStateChunkSize;
     uint32_t _maxNodesPerMerge;
     uint32_t _max_consecutively_inhibited_maintenance_ticks;
+    uint32_t _max_activation_inhibited_out_of_sync_groups;
 
     std::string _garbageCollectionSelection;
 

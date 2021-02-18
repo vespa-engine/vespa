@@ -182,4 +182,58 @@ TEST(BucketInfoTest, remove_node_can_defer_update_of_trusted_flag) {
     EXPECT_FALSE(info.getNode(0)->trusted());
 }
 
+TEST(BucketInfoTest, no_majority_consistent_bucket_for_too_few_replicas) {
+    std::vector<uint16_t> order;
+    BucketInfo info;
+    // No majority with 0 nodes, for all the obvious reasons.
+    EXPECT_FALSE(info.majority_consistent_bucket_info().valid());
+    // 1 is technically a majority of 1, but it doesn't make sense from the perspective
+    // of preventing activation of minority replicas.
+    info.addNode(BucketCopy(0, 0, api::BucketInfo(0x1, 2, 144)), order);
+    EXPECT_FALSE(info.majority_consistent_bucket_info().valid());
+    // Similarly, for 2 out of 2 nodes in sync we have no minority (so no point in reporting),
+    // and with 1 out of 2 nodes we have no idea which of the nodes to treat as "authoritative".
+    info.addNode(BucketCopy(0, 1, api::BucketInfo(0x1, 2, 144)), order);
+    EXPECT_FALSE(info.majority_consistent_bucket_info().valid());
+}
+
+TEST(BucketInfoTest, majority_consistent_bucket_info_can_be_inferred) {
+    std::vector<uint16_t> order;
+    BucketInfo info;
+    info.addNode(BucketCopy(0, 0, api::BucketInfo(0x1, 2, 144)), order);
+    info.addNode(BucketCopy(0, 1, api::BucketInfo(0x1, 2, 144)), order);
+    info.addNode(BucketCopy(0, 2, api::BucketInfo(0x1, 2, 144)), order);
+
+    auto maj_info = info.majority_consistent_bucket_info();
+    ASSERT_TRUE(maj_info.valid());
+    EXPECT_EQ(maj_info, api::BucketInfo(0x1, 2, 144));
+
+    // 3 of 4 in sync, still majority.
+    info.addNode(BucketCopy(0, 3, api::BucketInfo(0x1, 3, 255)), order);
+
+    maj_info = info.majority_consistent_bucket_info();
+    ASSERT_TRUE(maj_info.valid());
+    EXPECT_EQ(maj_info, api::BucketInfo(0x1, 2, 144));
+
+    // 3 of 5 in sync, still majority.
+    info.addNode(BucketCopy(0, 4, api::BucketInfo(0x1, 3, 255)), order);
+
+    maj_info = info.majority_consistent_bucket_info();
+    ASSERT_TRUE(maj_info.valid());
+    EXPECT_EQ(maj_info, api::BucketInfo(0x1, 2, 144));
+
+    // 3 of 6 mutually in sync, no majority.
+    info.addNode(BucketCopy(0, 5, api::BucketInfo(0x1, 3, 255)), order);
+
+    maj_info = info.majority_consistent_bucket_info();
+    EXPECT_FALSE(maj_info.valid());
+
+    // 4 out of 7 in sync; majority.
+    info.addNode(BucketCopy(0, 6, api::BucketInfo(0x1, 3, 255)), order);
+
+    maj_info = info.majority_consistent_bucket_info();
+    ASSERT_TRUE(maj_info.valid());
+    EXPECT_EQ(maj_info, api::BucketInfo(0x1, 3, 255));
+}
+
 } // storage::distributor

@@ -106,6 +106,11 @@ public:
         return _nodes;
     }
 
+    // If there is a valid majority of replicas that have the same metadata
+    // (checksum and document count), return that bucket info.
+    // Otherwise, return default-constructed info with valid() == false.
+    api::BucketInfo majority_consistent_bucket_info() const noexcept;
+
     std::string toString() const;
 
     uint32_t getHighestDocumentCount() const;

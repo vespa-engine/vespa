@@ -1109,8 +1109,7 @@ std::string StateCheckersTest::testBucketStatePerGroup(
                             includePriority);
 }
 
-TEST_F(StateCheckersTest, bucket_state_per_group) {
-    setupDistributor(6, 20, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
+std::shared_ptr<lib::Distribution> make_3x3_group_config() {
     vespa::config::content::StorDistributionConfigBuilder config;
     config.activePerLeafGroup = true;
     config.redundancy = 6;
@@ -1136,8 +1135,12 @@ TEST_F(StateCheckersTest, bucket_state_per_group) {
     config.group[3].nodes[0].index = 9;
     config.group[3].nodes[1].index = 10;
     config.group[3].nodes[2].index = 11;
-    auto distr = std::make_shared<lib::Distribution>(config);
-    triggerDistributionChange(std::move(distr));
+    return std::make_shared<lib::Distribution>(config);
+}
+
+TEST_F(StateCheckersTest, bucket_state_per_group) {
+    setupDistributor(6, 20, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
+    triggerDistributionChange(make_3x3_group_config());
 
     {
         DistributorConfiguration::MaintenancePriorities mp;
@@ -1182,6 +1185,70 @@ TEST_F(StateCheckersTest, bucket_state_per_group) {
                                       "5=2/3/4/t, 6=2/3/4/t, 8=2/3/4/t, "
                                       "9=2/3/4/t, 10=2/3/4/t, 11=2/3/4/t",
                                       true));
+}
+
+TEST_F(StateCheckersTest, do_not_activate_replicas_that_are_out_of_sync_with_majority) {
+    // TODO why this strange distribution...
+    // groups: [0, 1, 3] [5, 6, 8] [9, 10, 11]
+    setupDistributor(6, 12, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
+    triggerDistributionChange(make_3x3_group_config());
+    getConfig().set_max_activation_inhibited_out_of_sync_groups(3);
+
+    // 5 is out of sync with 0 and 9 and will NOT be activated.
+    EXPECT_EQ("[Setting node 0 as active: first available copy]"
+              "[Setting node 9 as active: copy is ideal state priority 2]",
+              testBucketStatePerGroup("0=2/3/4, 5=3/4/5, 9=2/3/4"));
+
+    // We also try the other indices:...
+    // 0 out of sync, 5 and 9 in sync (one hopes..!)
+    EXPECT_EQ("[Setting node 5 as active: first available copy]"
+              "[Setting node 9 as active: copy is ideal state priority 2]",
+              testBucketStatePerGroup("0=4/5/6, 5=2/3/4, 9=2/3/4"));
+
+    // 9 out of sync, 0 and 5 in sync
+    EXPECT_EQ("[Setting node 0 as active: first available copy]"
+              "[Setting node 5 as active: first available copy]",
+              testBucketStatePerGroup("0=2/3/4, 5=2/3/4, 9=5/3/4"));
+
+    // If there's no majority, we activate everything because there's really nothing
+    // better we can do.
+    EXPECT_EQ("[Setting node 0 as active: first available copy]"
+              "[Setting node 5 as active: first available copy]"
+              "[Setting node 9 as active: copy is ideal state priority 2]",
+              testBucketStatePerGroup("0=2/3/4, 5=5/6/7, 9=8/9/10"));
+
+    // However, if a replica is _already_ active, we will not deactivate it.
+    EXPECT_EQ("[Setting node 0 as active: first available copy]"
+              "[Setting node 9 as active: copy is ideal state priority 2]",
+              testBucketStatePerGroup("0=2/3/4, 5=3/4/5/u/a, 9=2/3/4"));
+}
+
+TEST_F(StateCheckersTest, replica_activation_inhibition_can_be_limited_to_max_n_groups) {
+    // groups: [0, 1, 3] [5, 6, 8] [9, 10, 11]
+    setupDistributor(6, 12, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
+    triggerDistributionChange(make_3x3_group_config());
+    getConfig().set_max_activation_inhibited_out_of_sync_groups(1);
+
+    // We count metadata majorities independent of groups. Let there be 3 in-sync replicas in
+    // group 0, 1 out of sync in group 1 and 1 out of sync in group 2. Unless we have
+    // mechanisms in place to limit the number of affected groups, both groups 1 and 2 would
+    // be inhibited for activation. Since we limit to 1, only group 1 should be affected.
+    EXPECT_EQ("[Setting node 1 as active: copy is ideal state priority 4]"
+              "[Setting node 9 as active: copy is ideal state priority 2]",
+              testBucketStatePerGroup("0=2/3/4, 1=2/3/4, 3=2/3/4, 5=3/4/5, 9=5/6/7"));
+}
+
+TEST_F(StateCheckersTest, activate_replicas_that_are_out_of_sync_with_majority_if_inhibition_config_disabled) {
+    // groups: [0, 1, 3] [5, 6, 8] [9, 10, 11]
+    setupDistributor(6, 12, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
+    triggerDistributionChange(make_3x3_group_config());
+    getConfig().set_max_activation_inhibited_out_of_sync_groups(0);
+
+    // 5 is out of sync with 0 and 9 but will still be activated since the config is false.
+    EXPECT_EQ("[Setting node 0 as active: first available copy]"
+              "[Setting node 5 as active: first available copy]"
+              "[Setting node 9 as active: copy is ideal state priority 2]",
+              testBucketStatePerGroup("0=2/3/4, 5=3/4/5, 9=2/3/4"));
 }
 
 TEST_F(StateCheckersTest, allow_activation_of_retired_nodes) {

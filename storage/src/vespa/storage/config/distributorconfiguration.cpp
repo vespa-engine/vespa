@@ -24,6 +24,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _idealStateChunkSize(1000),
       _maxNodesPerMerge(16),
       _max_consecutively_inhibited_maintenance_ticks(20),
+      _max_activation_inhibited_out_of_sync_groups(0),
       _lastGarbageCollectionChange(vespalib::duration::zero()),
       _garbageCollectionInterval(0),
       _minPendingMaintenanceOps(100),
@@ -165,6 +166,7 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     _use_weak_internal_read_consistency_for_client_gets = config.useWeakInternalReadConsistencyForClientGets;
     _enable_metadata_only_fetch_phase_for_inconsistent_updates = config.enableMetadataOnlyFetchPhaseForInconsistentUpdates;
     _prioritize_global_bucket_merges = config.prioritizeGlobalBucketMerges;
+    _max_activation_inhibited_out_of_sync_groups = config.maxActivationInhibitedOutOfSyncGroups;
     _enable_revert = config.enableRevert;
 
     _minimumReplicaCountingMode = config.minimumReplicaCountingMode;

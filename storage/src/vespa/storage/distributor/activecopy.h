@@ -17,7 +17,9 @@ struct ActiveCopy {
     friend std::ostream& operator<<(std::ostream& out, const ActiveCopy& e);
 
     static ActiveList calculate(const std::vector<uint16_t>& idealState,
-                                const lib::Distribution&, BucketDatabase::Entry&);
+                                const lib::Distribution&,
+                                BucketDatabase::Entry&,
+                                uint32_t max_activation_inhibited_out_of_sync_groups);
 
     uint16_t _nodeIndex;
     uint16_t _ideal;
