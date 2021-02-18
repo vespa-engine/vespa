@@ -30,6 +30,7 @@ import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.session.SessionPreparer;
 import com.yahoo.vespa.config.server.session.SessionRepository;
+import com.yahoo.vespa.config.server.zookeeper.ConfigCurator;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.transaction.CuratorOperations;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
@@ -96,6 +97,7 @@ public class TenantRepository {
     private final Locks<TenantName> tenantLocks = new Locks<>(1, TimeUnit.MINUTES);
     private final HostRegistry hostRegistry;
     private final TenantListener tenantListener;
+    private final ConfigCurator configCurator;
     private final Curator curator;
     private final Metrics metrics;
     private final MetricUpdater metricUpdater;
@@ -123,7 +125,7 @@ public class TenantRepository {
      */
     @Inject
     public TenantRepository(HostRegistry hostRegistry,
-                            Curator curator,
+                            ConfigCurator configCurator,
                             Metrics metrics,
                             FlagSource flagSource,
                             SecretStore secretStore,
@@ -136,7 +138,7 @@ public class TenantRepository {
                             ReloadListener reloadListener,
                             TenantListener tenantListener) {
         this(hostRegistry,
-             curator,
+             configCurator,
              metrics,
              new StripedExecutor<>(),
              new FileDistributionFactory(configserverConfig),
@@ -155,7 +157,7 @@ public class TenantRepository {
     }
 
     public TenantRepository(HostRegistry hostRegistry,
-                            Curator curator,
+                            ConfigCurator configCurator,
                             Metrics metrics,
                             StripedExecutor<TenantName> zkWatcherExecutor,
                             FileDistributionFactory fileDistributionFactory,
@@ -175,7 +177,7 @@ public class TenantRepository {
         this.configserverConfig = configserverConfig;
         this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
                                                               new DaemonThreadFactory("bootstrap-tenant-"));
-        this.curator = curator;
+        this.curator = configCurator.curator();
         this.metrics = metrics;
         metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
         this.zkCacheExecutor = zkCacheExecutor;
@@ -191,6 +193,7 @@ public class TenantRepository {
         this.configDefinitionRepo = configDefinitionRepo;
         this.reloadListener = reloadListener;
         this.tenantListener = tenantListener;
+        this.configCurator = configCurator;
 
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
@@ -332,7 +335,7 @@ public class TenantRepository {
         SessionRepository sessionRepository = new SessionRepository(tenantName,
                                                                     applicationRepo,
                                                                     sessionPreparer,
-                                                                    curator,
+                                                                    configCurator,
                                                                     metrics,
                                                                     zkWatcherExecutor,
                                                                     permanentApplicationPackage,
