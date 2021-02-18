@@ -667,7 +667,7 @@ public class HttpServerTest {
                 .build();
 
         assertHttpsRequestTriggersSslHandshakeException(
-                driver, clientCtx, "TLSv1.3", null, "Received fatal alert: protocol_version");
+                driver, clientCtx, "TLSv1.1", null, "Received fatal alert: protocol_version");
         verify(metricConsumer.mockitoMock())
                 .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
