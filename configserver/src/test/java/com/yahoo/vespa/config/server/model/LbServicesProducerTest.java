@@ -124,6 +124,18 @@ public class LbServicesProducerTest {
             assertTrue(conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").usePowerOfTwoChoicesLb());
     }
 
+    @Test
+    public void generate_non_mtls_endpoints_from_feature_flag() {
+        RegionName regionName = RegionName.from("us-east-1");
+
+        LbServicesConfig conf = createModelAndGetLbServicesConfig(regionName);
+        assertTrue(conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").generateNonMtlsEndpoint());
+
+        flagSource.withBooleanFlag(Flags.GENERATE_NON_MTLS_ENDPOINT.id(), false);
+        conf = createModelAndGetLbServicesConfig(regionName);
+        assertFalse(conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").generateNonMtlsEndpoint());
+    }
+
     private LbServicesConfig createModelAndGetLbServicesConfig(RegionName regionName) {
         Zone zone = new Zone(Environment.prod, regionName);
         Map<TenantName, Set<ApplicationInfo>> testModel = createTestModel(new DeployState.Builder().zone(zone));

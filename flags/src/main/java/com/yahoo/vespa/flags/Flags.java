@@ -251,6 +251,13 @@ public class Flags {
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
 
+    public static final UnboundBooleanFlag GENERATE_NON_MTLS_ENDPOINT = defineFeatureFlag(
+            "generate-non-mtls-endpoint", true,
+            List.of("tokle"), "2021-02-18", "2021-10-01",
+            "Whether to generate the non-mtls endpoint",
+            "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
