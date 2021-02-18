@@ -326,6 +326,10 @@ public final class ControllerTester {
         }
     }
 
+    public Application createApplication(ApplicationId id) {
+        return createApplication(id.tenant().value(), id.application().value(), id.instance().value());
+    }
+
     public Application createApplication(String tenant, String applicationName, String instanceName) {
         Application application = createApplication(tenant, applicationName);
         controller().applications().createInstance(application.id().instance(instanceName));

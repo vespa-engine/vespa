@@ -14,6 +14,7 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
+import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import org.junit.Test;
 
@@ -279,7 +280,7 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void test_autoscalinggroupsize_by_cpu() {
+    public void test_autoscaling_groupsize_by_cpu() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 3, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(21, 7, new NodeResources(100, 1000, 1000, 1));
@@ -427,6 +428,36 @@ public class AutoscalingTest {
         tester.assertResources("Scaling down since resource usage has gone down",
                                5, 1, 3, 83, 36,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
+    }
+
+    @Test
+    public void test_autoscaling_considers_read_share() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        ClusterResources min = new ClusterResources( 1, 1, resources);
+        ClusterResources max = new ClusterResources(10, 1, resources);
+        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        tester.deploy(application1, cluster1, 5, 1, resources);
+        tester.addCpuMeasurements(0.25f, 1f, 120, application1);
+
+        // (no read share stored)
+        tester.assertResources("Advice to scale up since we set aside for bcp by default",
+                               7, 1, 3,  100, 100,
+                               tester.autoscale(application1, cluster1.id(), min, max).target());
+
+        tester.storeReadShare(0.25, 0.5, application1);
+        tester.assertResources("Half of global share is the same as the default assumption used above",
+                               7, 1, 3,  100, 100,
+                               tester.autoscale(application1, cluster1.id(), min, max).target());
+
+        tester.storeReadShare(0.5, 0.5, application1);
+        tester.assertResources("Advice to scale down since we don't need room for bcp",
+                               4, 1, 3,  100, 100,
+                               tester.autoscale(application1, cluster1.id(), min, max).target());
+
     }
 
     /**

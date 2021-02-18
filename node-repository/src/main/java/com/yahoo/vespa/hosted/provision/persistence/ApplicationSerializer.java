@@ -12,6 +12,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
+import com.yahoo.vespa.hosted.provision.applications.Status;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
@@ -37,6 +38,11 @@ public class ApplicationSerializer {
     //          - CHANGING THE FORMAT OF A FIELD: Don't do it bro.
 
     private static final String idKey = "id";
+
+    private static final String statusKey = "status";
+    private static final String currentReadShareKey = "currentReadShare";
+    private static final String maxReadShareKey = "maxReadShare";
+
     private static final String clustersKey = "clusters";
     private static final String exclusiveKey = "exclusive";
     private static final String minResourcesKey = "min";
@@ -73,12 +79,26 @@ public class ApplicationSerializer {
 
     private static void toSlime(Application application, Cursor object) {
         object.setString(idKey, application.id().serializedForm());
+        toSlime(application.status(), object.setObject(statusKey));
         clustersToSlime(application.clusters().values(), object.setObject(clustersKey));
     }
 
     private static Application applicationFromSlime(Inspector applicationObject) {
         ApplicationId id = ApplicationId.fromSerializedForm(applicationObject.field(idKey).asString());
-        return new Application(id, clustersFromSlime(applicationObject.field(clustersKey)));
+        return new Application(id,
+                               statusFromSlime(applicationObject.field(statusKey)),
+                               clustersFromSlime(applicationObject.field(clustersKey)));
+    }
+
+    private static void toSlime(Status status, Cursor statusObject) {
+        statusObject.setDouble(currentReadShareKey, status.currentReadShare());
+        statusObject.setDouble(maxReadShareKey, status.maxReadShare());
+    }
+
+    private static Status statusFromSlime(Inspector statusObject) {
+        if ( ! statusObject.valid()) return Status.initial(); // TODO: Remove this line after March 2021
+        return new Status(statusObject.field(currentReadShareKey).asDouble(),
+                          statusObject.field(maxReadShareKey).asDouble());
     }
 
     private static void clustersToSlime(Collection<Cluster> clusters, Cursor clustersObject) {

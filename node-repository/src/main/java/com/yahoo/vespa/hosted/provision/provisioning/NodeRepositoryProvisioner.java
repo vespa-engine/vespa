@@ -138,7 +138,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
      */
     private ClusterResources decideTargetResources(ApplicationId applicationId, ClusterSpec clusterSpec, Capacity requested) {
         try (Mutex lock = nodeRepository.nodes().lock(applicationId)) {
-            Application application = nodeRepository.applications().get(applicationId).orElse(new Application(applicationId));
+            Application application = nodeRepository.applications().get(applicationId).orElse(Application.empty(applicationId));
             application = application.withCluster(clusterSpec.id(), clusterSpec.isExclusive(), requested.minResources(), requested.maxResources());
             nodeRepository.applications().put(application, lock);
             return application.clusters().get(clusterSpec.id()).targetResources()

@@ -15,8 +15,8 @@ import java.util.stream.Collectors;
  */
 public class Application {
 
-    private ApplicationId id;
-    private Map<ClusterSpec.Id, Cluster> clusters;
+    private final ApplicationId id;
+    private final Map<ClusterSpec.Id, Cluster> clusters;
 
     public Application(ApplicationId id, Collection<Cluster> clusters) {
         this.id = id;

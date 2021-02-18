@@ -637,6 +637,7 @@ public class Nodes {
     }
 
     /** Create a lock which provides exclusive rights to making changes to the given application */
+    // TODO: Move to Applications
     public Mutex lock(ApplicationId application) {
         return db.lock(application);
     }

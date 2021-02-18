@@ -162,7 +162,7 @@ class AutoscalingTester {
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofMinutes(1));
             for (Node node : nodes) {
-                float cpu  = (float) Resource.cpu.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
+                float cpu  = (float) 0.2 * otherResourcesLoad * oneExtraNodeFactor;
                 float memory = value * oneExtraNodeFactor;
                 float disk = (float) Resource.disk.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
                 db.add(List.of(new Pair<>(node.hostname(), new MetricSnapshot(clock().instant(),
@@ -197,25 +197,32 @@ class AutoscalingTester {
         }
     }
 
+    public void storeReadShare(double currentReadShare, double maxReadShare, ApplicationId applicationId) {
+        Application application = nodeRepository().applications().require(applicationId);
+        application = application.with(application.status().withCurrentReadShare(currentReadShare)
+                                                           .withMaxReadShare(maxReadShare));
+        nodeRepository().applications().put(application, nodeRepository().nodes().lock(applicationId));
+    }
+
     public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId,
                                                            ClusterResources min, ClusterResources max) {
-        Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId))
+        Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
                                                   .withCluster(clusterId, false, min, max);
         try (Mutex lock = nodeRepository().nodes().lock(applicationId)) {
             nodeRepository().applications().put(application, lock);
         }
-        return autoscaler.autoscale(application.clusters().get(clusterId),
+        return autoscaler.autoscale(application, application.clusters().get(clusterId),
                                     nodeRepository().nodes().list(Node.State.active).owner(applicationId));
     }
 
     public Autoscaler.Advice suggest(ApplicationId applicationId, ClusterSpec.Id clusterId,
                                                            ClusterResources min, ClusterResources max) {
-        Application application = nodeRepository().applications().get(applicationId).orElse(new Application(applicationId))
+        Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId))
                                                   .withCluster(clusterId, false, min, max);
         try (Mutex lock = nodeRepository().nodes().lock(applicationId)) {
             nodeRepository().applications().put(application, lock);
         }
-        return autoscaler.suggest(application.clusters().get(clusterId),
+        return autoscaler.suggest(application, application.clusters().get(clusterId),
                                   nodeRepository().nodes().list(Node.State.active).owner(applicationId));
     }
 

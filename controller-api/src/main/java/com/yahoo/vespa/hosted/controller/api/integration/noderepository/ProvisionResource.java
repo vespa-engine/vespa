@@ -61,6 +61,11 @@ public interface ProvisionResource {
     @Path("/application/{application}")
     ApplicationData getApplication(@PathParam("application") String applicationId);
 
+    @POST
+    @Path("/application/{application}")
+    String patchApplication(@PathParam("application") String applicationId, ApplicationPatch applicationPatch,
+                   @HeaderParam("X-HTTP-Method-Override") String patchOverride);
+
     @PUT
     @Path("/state/{state}/{hostname}")
     String setState(@PathParam("state") NodeState state, @PathParam("hostname") String hostname);

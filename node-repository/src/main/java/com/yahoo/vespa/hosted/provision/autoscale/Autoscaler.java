@@ -7,6 +7,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 
@@ -44,8 +45,8 @@ public class Autoscaler {
      * @param clusterNodes the list of all the active nodes in a cluster
      * @return scaling advice for this cluster
      */
-    public Advice suggest(Cluster cluster, NodeList clusterNodes) {
-        return autoscale(cluster, clusterNodes, Limits.empty());
+    public Advice suggest(Application application, Cluster cluster, NodeList clusterNodes) {
+        return autoscale(application, cluster, clusterNodes, Limits.empty());
     }
 
     /**
@@ -54,12 +55,12 @@ public class Autoscaler {
      * @param clusterNodes the list of all the active nodes in a cluster
      * @return scaling advice for this cluster
      */
-    public Advice autoscale(Cluster cluster, NodeList clusterNodes) {
+    public Advice autoscale(Application application, Cluster cluster, NodeList clusterNodes) {
         if (cluster.minResources().equals(cluster.maxResources())) return Advice.none("Autoscaling is not enabled");
-        return autoscale(cluster, clusterNodes, Limits.of(cluster));
+        return autoscale(application, cluster, clusterNodes, Limits.of(cluster));
     }
 
-    private Advice autoscale(Cluster cluster, NodeList clusterNodes, Limits limits) {
+    private Advice autoscale(Application application, Cluster cluster, NodeList clusterNodes, Limits limits) {
         if ( ! stable(clusterNodes, nodeRepository))
             return Advice.none("Cluster change in progress");
 
@@ -87,7 +88,7 @@ public class Autoscaler {
         double memoryLoad = clusterTimeseries.averageLoad(Resource.memory);
         double diskLoad   = clusterTimeseries.averageLoad(Resource.disk);
 
-        var target = ResourceTarget.idealLoad(cpuLoad, memoryLoad, diskLoad, currentAllocation);
+        var target = ResourceTarget.idealLoad(cpuLoad, memoryLoad, diskLoad, currentAllocation, application);
 
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(target, currentAllocation, limits);

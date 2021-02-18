@@ -257,6 +257,12 @@ public class NodesV2ApiTest {
                    "application1.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/application/tenant2.application2.instance2"),
                    "application2.json");
+
+        // Update (PATCH) an application
+        assertResponse(new Request("http://localhost:8080/nodes/v2/application/tenant1.application1.instance1",
+                                   Utf8.toBytes("{\"currentReadShare\": 0.3, " +
+                                                "\"maxReadShare\": 0.5 }"), Request.Method.PATCH),
+                       "{\"message\":\"Updated application 'tenant1.application1.instance1'\"}");
     }
 
     @Test
