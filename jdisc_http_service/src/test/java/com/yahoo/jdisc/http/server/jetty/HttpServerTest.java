@@ -848,7 +848,7 @@ public class HttpServerTest {
         Assertions.assertThat(logEntry.localPort()).hasValue(listenPort);
         Assertions.assertThat(logEntry.httpBytesReceived()).hasValueSatisfying(value -> Assertions.assertThat(value).isPositive());
         Assertions.assertThat(logEntry.httpBytesSent()).hasValueSatisfying(value -> Assertions.assertThat(value).isPositive());
-        Assertions.assertThat(logEntry.sslProtocol()).hasValue("TLSv1.2");
+        Assertions.assertThat(logEntry.sslProtocol()).hasValue("TLSv1.3");
         Assertions.assertThat(logEntry.sslPeerSubject()).hasValue("CN=localhost");
         Assertions.assertThat(logEntry.sslCipherSuite()).hasValueSatisfying(cipher -> Assertions.assertThat(cipher).isNotBlank());
         Assertions.assertThat(logEntry.sslSessionId()).hasValueSatisfying(sessionId -> Assertions.assertThat(sessionId).hasSize(64));
