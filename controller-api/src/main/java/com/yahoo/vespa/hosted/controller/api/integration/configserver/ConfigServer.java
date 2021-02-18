@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
@@ -14,6 +15,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 
 import java.io.InputStream;
@@ -147,5 +149,8 @@ public interface ConfigServer {
 
     /** Sets suspension status — whether application node operations are orchestrated — for the given deployment. */
     void setSuspension(DeploymentId deploymentId, boolean suspend);
+
+    /** Validates secret store configuration. */
+    String validateSecretStore(DeploymentId deploymentId, TenantSecretStore tenantSecretStore);
 
 }

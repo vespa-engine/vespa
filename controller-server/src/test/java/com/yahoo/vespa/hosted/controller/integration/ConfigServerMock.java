@@ -12,6 +12,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
@@ -38,6 +39,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceCon
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TestReport;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -571,6 +573,11 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         var q = new QuotaUsage();
         q.rate = 42.42;
         return q;
+    }
+
+    @Override
+    public String validateSecretStore(DeploymentId deployment, TenantSecretStore tenantSecretStore) {
+        return "";
     }
 
     public static class Application {
