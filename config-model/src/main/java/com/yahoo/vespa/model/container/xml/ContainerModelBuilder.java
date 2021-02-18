@@ -214,7 +214,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
 
     private void addParameterStoreValidationHandler(ApplicationContainerCluster cluster, DeployState deployState) {
-        if (deployState.zone().system() == SystemName.PublicCd) {
+        if (deployState.featureFlags().tenantIamRole()) {
             BindingPattern bindingPattern = SystemBindingPattern.fromHttpPath("/validate-secret-store");
             Handler<AbstractConfigProducer<?>> handler = new Handler<>(
                     new ComponentModel("com.yahoo.jdisc.cloud.aws.AwsParameterStoreValidationHandler", null, null, null));
