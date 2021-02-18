@@ -222,6 +222,9 @@ public class VespaMetricSet {
 
         addMetric(metrics, "jdisc.application.failed_component_graphs", List.of("rate"));
 
+        addMetric(metrics, "jdisc.http.filter.rule.blocked_requests", List.of("rate"));
+        addMetric(metrics, "jdisc.http.filter.rule.allowed_requests", List.of("rate"));
+
         return metrics;
     }
 
