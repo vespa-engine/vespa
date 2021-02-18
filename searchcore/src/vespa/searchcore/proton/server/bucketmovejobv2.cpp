@@ -121,13 +121,16 @@ BucketMoveJobV2::needMove(const ScanIterator &itr) const {
     LOG(spam, "checkBucket(): bucket(%s), shouldBeReady(%s), active(%s)",
         itr.getBucket().toString().c_str(), bool2str(shouldBeReady), bool2str(isActive));
     if (wantReady) {
-        if (!hasNotReadyDocs)
+        if (!hasNotReadyDocs) {
             return noMove; // No notready bucket to make ready
+        }
     } else {
-        if (isActive)
+        if (isActive) {
             return noMove; // Do not move rom ready to not ready when active
-        if (!hasReadyDocs)
+        }
+        if (!hasReadyDocs) {
             return noMove; // No ready bucket to make notready
+        }
     }
     return {true, wantReady};
 }
@@ -250,7 +253,7 @@ BucketMoveJobV2::greedyCreateMover() {
     if ( ! _buckets2Move.empty()) {
         auto next = _buckets2Move.begin();
         auto mover = createMover(next->first, next->second);
-        _buckets2Move.erase(next->first);
+        _buckets2Move.erase(next);
         return mover;
     }
     return {};
