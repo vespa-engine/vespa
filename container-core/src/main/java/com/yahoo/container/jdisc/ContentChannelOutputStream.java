@@ -12,7 +12,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.ByteBuffer;
 import java.util.Arrays;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -125,9 +124,13 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
     @Override
     public void send(ByteBuffer src) throws IOException {
         // Don't do a buffer.flush() from here, this method is used by the buffer itself
+        send(src, null);
+    }
+
+    protected void send(ByteBuffer src, CompletionHandler completionHandler) throws IOException {
         try {
             byteBufferData += src.remaining();
-            endpoint.write(src, new LoggingCompletionHandler());
+            endpoint.write(src, new LoggingCompletionHandler(completionHandler));
         } catch (RuntimeException e) {
             throw new IOException(Exceptions.toMessageString(e), e);
         }
@@ -138,10 +141,16 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
         return buffer.appended() + byteBufferData;
     }
 
-    class LoggingCompletionHandler implements CompletionHandler {
-
+    private class LoggingCompletionHandler implements CompletionHandler {
+        private final CompletionHandler nested;
+        LoggingCompletionHandler(CompletionHandler nested) {
+            this.nested = nested;
+        }
         @Override
         public void completed() {
+            if (nested != null) {
+                nested.completed();
+            }
         }
 
         @Override
@@ -157,6 +166,9 @@ public class ContentChannelOutputStream extends OutputStream implements Writable
             }
             if (log.isLoggable(logLevel)) {
                 log.log(logLevel, "Got exception when writing to client: " + Exceptions.toMessageString(t));
+            }
+            if (nested != null) {
+                nested.failed(t);
             }
         }
     }

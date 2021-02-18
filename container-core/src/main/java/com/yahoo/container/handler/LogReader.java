@@ -43,12 +43,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author jonmv
  */
 class LogReader {
-
     static final Pattern logArchivePathPattern = Pattern.compile("(\\d{4})/(\\d{2})/(\\d{2})/(\\d{2})-\\d+(.gz)?");
     static final Pattern vespaLogPathPattern = Pattern.compile("vespa\\.log(?:-(\\d{4})-(\\d{2})-(\\d{2})\\.(\\d{2})-(\\d{2})-(\\d{2})(?:.gz)?)?");
 
     private final Path logDirectory;
     private final Pattern logFilePattern;
+
 
     LogReader(String logDirectory, String logFilePattern) {
         this(Paths.get(Defaults.getDefaults().underVespaHome(logDirectory)), Pattern.compile(logFilePattern));
@@ -72,16 +72,10 @@ class LogReader {
 
                 Iterator<LineWithTimestamp> lines = Iterators.mergeSorted(logLineIterators,
                                                                           Comparator.comparingDouble(LineWithTimestamp::timestamp));
-                long charsWritten = 0;
                 while (lines.hasNext()) {
                     String line = lines.next().line();
                     writer.write(line);
                     writer.newLine();
-                    charsWritten += line.length();
-                    if (charsWritten > 0x100000) {
-                        writer.flush();
-                        charsWritten = 0;
-                    }
                 }
             }
             catch (IOException e) {

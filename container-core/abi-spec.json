@@ -376,6 +376,7 @@
       "public void nonCopyingWrite(byte[], int, int)",
       "public void nonCopyingWrite(byte[])",
       "public void send(java.nio.ByteBuffer)",
+      "protected void send(java.nio.ByteBuffer, com.yahoo.jdisc.handler.CompletionHandler)",
       "public long written()"
     ],
     "fields": []
