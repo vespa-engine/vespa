@@ -1,6 +1,8 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.vespa.hosted.provision.applications.Application;
+
 /**
  * A resource target to hit for the allocation optimizer.
  * The target is measured in cpu, memory and disk per node in the allocation given by current.
@@ -46,8 +48,8 @@ public class ResourceTarget {
 
     /** Create a target of achieving ideal load given a current load */
     public static ResourceTarget idealLoad(double currentCpuLoad, double currentMemoryLoad, double currentDiskLoad,
-                                           AllocatableClusterResources current) {
-        return new ResourceTarget(nodeUsage(Resource.cpu, currentCpuLoad, current) / Resource.cpu.idealAverageLoad(),
+                                           AllocatableClusterResources current, Application application) {
+        return new ResourceTarget(nodeUsage(Resource.cpu, currentCpuLoad, current) / idealCpuLoad(application),
                                   nodeUsage(Resource.memory, currentMemoryLoad, current) / Resource.memory.idealAverageLoad(),
                                   nodeUsage(Resource.disk, currentDiskLoad, current) / Resource.disk.idealAverageLoad(),
                                   true);
@@ -59,6 +61,19 @@ public class ResourceTarget {
                                   current.realResources().nodeResources().memoryGb(),
                                   current.realResources().nodeResources().diskGb(),
                                   false);
+    }
+
+    /** Ideal cpu load must take the application traffic fraction into account */
+    private static double idealCpuLoad(Application application) {
+        double trafficFactor;
+        if (application.status().maxTrafficFraction() == 0) // No traffic fraction data
+            trafficFactor = 0.5; // assume we currently get half of the global share of traffic
+        else
+            trafficFactor = application.status().currentTrafficFraction() / application.status().maxTrafficFraction();
+
+        if (trafficFactor < 0.5)  // The expectation that we have almost no load with almost no queries is incorrect due
+            trafficFactor = 0.5;  // to write traffic; once that is separated we can lower this threshold (but not to 0)
+        return trafficFactor * Resource.cpu.idealAverageLoad();
     }
 
 }

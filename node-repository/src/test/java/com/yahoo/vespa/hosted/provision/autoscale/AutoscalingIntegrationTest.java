@@ -59,7 +59,7 @@ public class AutoscalingIntegrationTest {
         try (Mutex lock = tester.nodeRepository().nodes().lock(application1)) {
             tester.nodeRepository().applications().put(application, lock);
         }
-        var scaledResources = autoscaler.suggest(application.clusters().get(cluster1.id()),
+        var scaledResources = autoscaler.suggest(application, application.clusters().get(cluster1.id()),
                                                  tester.nodeRepository().nodes().list().owner(application1));
         assertTrue(scaledResources.isPresent());
     }

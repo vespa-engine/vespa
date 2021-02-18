@@ -99,7 +99,7 @@ public class ScalingSuggestionsMaintainerTest {
         var suggested = tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().suggestedResources().get().resources();
         tester.deploy(app1, cluster1, Capacity.from(suggested, suggested, false, true));
         tester.clock().advance(Duration.ofDays(2));
-        addMeasurements((float)Resource.cpu.idealAverageLoad(),
+        addMeasurements(0.2f,
                         (float)Resource.memory.idealAverageLoad(),
                         (float)Resource.disk.idealAverageLoad(),
                         0, 500, app1, tester.nodeRepository(), metricsDb);
