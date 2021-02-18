@@ -125,7 +125,7 @@ public class TenantRepository {
      */
     @Inject
     public TenantRepository(HostRegistry hostRegistry,
-                            Curator curator,
+                            ConfigCurator configCurator,
                             Metrics metrics,
                             FlagSource flagSource,
                             SecretStore secretStore,
@@ -136,10 +136,9 @@ public class TenantRepository {
                             ModelFactoryRegistry modelFactoryRegistry,
                             ConfigDefinitionRepo configDefinitionRepo,
                             ReloadListener reloadListener,
-                            TenantListener tenantListener,
-                            ConfigCurator configCurator) {
+                            TenantListener tenantListener) {
         this(hostRegistry,
-             curator,
+             configCurator,
              metrics,
              new StripedExecutor<>(),
              new FileDistributionFactory(configserverConfig),
@@ -154,12 +153,11 @@ public class TenantRepository {
              modelFactoryRegistry,
              configDefinitionRepo,
              reloadListener,
-             tenantListener,
-             configCurator);
+             tenantListener);
     }
 
     public TenantRepository(HostRegistry hostRegistry,
-                            Curator curator,
+                            ConfigCurator configCurator,
                             Metrics metrics,
                             StripedExecutor<TenantName> zkWatcherExecutor,
                             FileDistributionFactory fileDistributionFactory,
@@ -174,13 +172,12 @@ public class TenantRepository {
                             ModelFactoryRegistry modelFactoryRegistry,
                             ConfigDefinitionRepo configDefinitionRepo,
                             ReloadListener reloadListener,
-                            TenantListener tenantListener,
-                            ConfigCurator configCurator) {
+                            TenantListener tenantListener) {
         this.hostRegistry = hostRegistry;
         this.configserverConfig = configserverConfig;
         this.bootstrapExecutor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
                                                               new DaemonThreadFactory("bootstrap-tenant-"));
-        this.curator = curator;
+        this.curator = configCurator.curator();
         this.metrics = metrics;
         metricUpdater = metrics.getOrCreateMetricUpdater(Collections.emptyMap());
         this.zkCacheExecutor = zkCacheExecutor;
@@ -338,7 +335,6 @@ public class TenantRepository {
         SessionRepository sessionRepository = new SessionRepository(tenantName,
                                                                     applicationRepo,
                                                                     sessionPreparer,
-                                                                    curator,
                                                                     configCurator,
                                                                     metrics,
                                                                     zkWatcherExecutor,

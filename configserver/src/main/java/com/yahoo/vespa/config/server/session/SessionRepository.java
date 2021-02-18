@@ -124,7 +124,6 @@ public class SessionRepository {
     public SessionRepository(TenantName tenantName,
                              TenantApplications applicationRepo,
                              SessionPreparer sessionPreparer,
-                             Curator curator,
                              ConfigCurator configCurator,
                              Metrics metrics,
                              StripedExecutor<TenantName> zkWatcherExecutor,
@@ -145,7 +144,7 @@ public class SessionRepository {
         sessionCounter = new SessionCounter(configCurator, tenantName);
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.clock = clock;
-        this.curator = curator;
+        this.curator = configCurator.curator();
         this.sessionLifetime = Duration.ofSeconds(configserverConfig.sessionLifetime());
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
         this.permanentApplicationPackage = permanentApplicationPackage;

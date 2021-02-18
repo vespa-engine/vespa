@@ -194,7 +194,7 @@ public class TenantRepositoryTest {
         // Should get exception if config is true
         expectedException.expect(RuntimeException.class);
         expectedException.expectMessage("Could not create all tenants when bootstrapping, failed to create: [default]");
-        new FailingDuringBootstrapTenantRepository(configserverConfig, new MockCurator());
+        new FailingDuringBootstrapTenantRepository(configserverConfig);
     }
 
     private List<String> readZKChildren(String path) throws Exception {
@@ -207,9 +207,9 @@ public class TenantRepositoryTest {
 
     private static class FailingDuringBootstrapTenantRepository extends TenantRepository {
 
-        public FailingDuringBootstrapTenantRepository(ConfigserverConfig configserverConfig, Curator curator) {
+        public FailingDuringBootstrapTenantRepository(ConfigserverConfig configserverConfig) {
             super(new HostRegistry(),
-                  curator,
+                  ConfigCurator.create(new MockCurator()),
                   Metrics.createTestMetrics(),
                   new StripedExecutor<>(new InThreadExecutorService()),
                   new FileDistributionFactory(new ConfigserverConfig.Builder().build()),
@@ -224,8 +224,7 @@ public class TenantRepositoryTest {
                   new ModelFactoryRegistry(List.of(new VespaModelFactory(new NullConfigModelRegistry()))),
                   new TestConfigDefinitionRepo(),
                   new TenantApplicationsTest.MockReloadListener(),
-                  new MockTenantListener(),
-                  ConfigCurator.create(curator));
+                  new MockTenantListener());
         }
 
         @Override

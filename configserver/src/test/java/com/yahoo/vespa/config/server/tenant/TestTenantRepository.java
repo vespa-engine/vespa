@@ -47,7 +47,7 @@ public class TestTenantRepository extends TenantRepository {
                                 ReloadListener reloadListener,
                                 TenantListener tenantListener) {
         super(hostRegistry,
-              curator,
+              ConfigCurator.create(curator),
               metrics,
               new StripedExecutor<>(new InThreadExecutorService()),
               fileDistributionFactory,
@@ -62,8 +62,7 @@ public class TestTenantRepository extends TenantRepository {
               modelFactoryRegistry,
               configDefinitionRepo,
               reloadListener,
-              tenantListener,
-              ConfigCurator.create(curator));
+              tenantListener);
     }
 
     public static class Builder {
