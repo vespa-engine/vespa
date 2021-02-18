@@ -60,6 +60,7 @@ public class NodeRepository extends AbstractComponent {
     private final JobControl jobControl;
     private final Applications applications;
     private final LoadBalancers loadBalancers;
+    private final FlagSource flagSource;
     private final int spareCount;
 
     /**
@@ -122,6 +123,7 @@ public class NodeRepository extends AbstractComponent {
         this.jobControl = new JobControl(new JobControlFlags(db, flagSource));
         this.applications = new Applications(db);
         this.loadBalancers = new LoadBalancers(db);
+        this.flagSource = flagSource;
         this.spareCount = spareCount;
         rewriteNodes();
     }
@@ -174,6 +176,14 @@ public class NodeRepository extends AbstractComponent {
 
     public HostResourcesCalculator resourcesCalculator() { return resourcesCalculator; }
 
+    public FlagSource flagSource() { return flagSource; }
+
+    /** Returns the time keeper of this system */
+    public Clock clock() { return clock; }
+
+    /** Returns the zone of this system */
+    public Zone zone() { return zone; }
+
     /** The number of nodes we should ensure has free capacity for node failures whenever possible */
     public int spareCount() { return spareCount; }
 
@@ -203,11 +213,5 @@ public class NodeRepository extends AbstractComponent {
                    transaction.nested());
         applications.remove(transaction);
     }
-
-    /** Returns the time keeper of this system */
-    public Clock clock() { return clock; }
-
-    /** Returns the zone of this system */
-    public Zone zone() { return zone; }
 
 }
