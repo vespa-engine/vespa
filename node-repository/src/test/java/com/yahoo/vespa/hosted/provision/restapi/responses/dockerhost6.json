@@ -20,6 +20,7 @@
   "currentRebootGeneration": 0,
   "failCount": 1,
   "wantToRetire": false,
+  "preferToRetire": false,
   "wantToDeprovision": false,
   "history": [
     {

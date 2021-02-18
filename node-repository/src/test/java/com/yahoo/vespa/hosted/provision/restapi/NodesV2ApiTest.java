@@ -224,7 +224,7 @@ public class NodesV2ApiTest {
                        "{\"message\":\"Updated dockerhost2.yahoo.com\"}");
         // Make sure that wantToRetire is applied recursively, but wantToDeprovision isn't
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"),
-                "\"wantToRetire\":true,\"wantToDeprovision\":false,");
+                "\"wantToRetire\":true,\"preferToRetire\":false,\"wantToDeprovision\":false,");
 
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "\"modelName\":\"foo\"");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",

@@ -184,6 +184,7 @@ class NodesResponse extends HttpResponse {
         currentDockerImage(node).ifPresent(dockerImage -> object.setString("currentDockerImage", dockerImage.asString()));
         object.setLong("failCount", node.status().failCount());
         object.setBool("wantToRetire", node.status().wantToRetire());
+        object.setBool("preferToRetire", node.status().preferToRetire());
         object.setBool("wantToDeprovision", node.status().wantToDeprovision());
         toSlime(node.history(), object.setArray("history"));
         ipAddressesToSlime(node.ipConfig().primary(), object.setArray("ipAddresses"));
