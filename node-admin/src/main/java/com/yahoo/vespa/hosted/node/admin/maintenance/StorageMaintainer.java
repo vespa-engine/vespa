@@ -3,13 +3,8 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.google.common.cache.Cache;
 import com.google.common.cache.CacheBuilder;
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.dockerapi.Container;
 import com.yahoo.vespa.hosted.dockerapi.ContainerName;
 import com.yahoo.vespa.hosted.node.admin.component.TaskContext;
@@ -28,6 +23,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -66,7 +62,6 @@ public class StorageMaintainer {
     private final SyncClient syncClient;
     private final Clock clock;
     private final Path archiveContainerStoragePath;
-    private final StringFlag syncBucketNameFlag;
 
     // We cache disk usage to avoid doing expensive disk operations so often
     private final Cache<ContainerName, DiskSize> diskUsage = CacheBuilder.newBuilder()
@@ -75,30 +70,24 @@ public class StorageMaintainer {
             .build();
 
     public StorageMaintainer(Terminal terminal, CoredumpHandler coredumpHandler, DiskCleanup diskCleanup,
-                             SyncClient syncClient, Clock clock, Path archiveContainerStoragePath, FlagSource flagSource) {
+                             SyncClient syncClient, Clock clock, Path archiveContainerStoragePath) {
         this.terminal = terminal;
         this.coredumpHandler = coredumpHandler;
         this.diskCleanup = diskCleanup;
         this.syncClient = syncClient;
         this.clock = clock;
         this.archiveContainerStoragePath = archiveContainerStoragePath;
-        this.syncBucketNameFlag = Flags.SYNC_HOST_LOGS_TO_S3_BUCKET.bindTo(flagSource);
     }
 
     public boolean syncLogs(NodeAgentContext context) {
-        Optional<ApplicationId> app = context.node().owner();
-        if (app.isEmpty()) return false;
-        String bucketName = syncBucketNameFlag
-                .with(FetchVector.Dimension.NODE_TYPE, NodeType.tenant.name())
-                .with(FetchVector.Dimension.APPLICATION_ID, app.get().serializedForm())
-                .value();
-        if (bucketName.isBlank()) return false;
+        Optional<URI> archiveUri = context.node().archiveUri();
+        if (archiveUri.isEmpty()) return false;
 
         List<SyncFileInfo> syncFileInfos = FileFinder.files(pathOnHostUnderContainerVespaHome(context, "logs/vespa"))
                 .maxDepth(2)
                 .stream()
                 .sorted(Comparator.comparing(FileFinder.FileAttributes::lastModifiedTime))
-                .flatMap(fa -> SyncFileInfo.tenantLog(bucketName, app.get(), context.hostname(), fa.path()).stream())
+                .flatMap(fa -> SyncFileInfo.forLogFile(archiveUri.get(), fa.path()).stream())
                 .collect(Collectors.toList());
 
         return syncClient.sync(context, syncFileInfos, 1);

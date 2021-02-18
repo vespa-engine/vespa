@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.maintenance;
 
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.test.ManualClock;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.maintenance.coredump.CoredumpHandler;
 import com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanup;
@@ -46,10 +45,9 @@ public class StorageMaintainerTest {
     private final DiskCleanup diskCleanup = mock(DiskCleanup.class);
     private final SyncClient syncClient = mock(SyncClient.class);
     private final ManualClock clock = new ManualClock(Instant.ofEpochSecond(1234567890));
-    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final FileSystem fileSystem = TestFileSystem.create();
     private final StorageMaintainer storageMaintainer = new StorageMaintainer(terminal, coredumpHandler, diskCleanup, syncClient, clock,
-            fileSystem.getPath("/home/docker/container-storage/container-archive"), flagSource);
+            fileSystem.getPath("/home/docker/container-storage/container-archive"));
 
     @Test
     public void testDiskUsed() throws IOException {
