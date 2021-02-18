@@ -186,8 +186,8 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     @Override
-    public void setTrafficFraction(ZoneId zone, ApplicationId application,
-                                   double currentReadShare, double maxReadShare) {
+    public void patchApplication(ZoneId zone, ApplicationId application,
+                                 double currentReadShare, double maxReadShare) {
         trafficFractions.put(new DeploymentId(application, zone), new Pair<>(currentReadShare, maxReadShare));
     }
 
