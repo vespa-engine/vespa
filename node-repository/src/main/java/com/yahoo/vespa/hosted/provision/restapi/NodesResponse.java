@@ -8,10 +8,8 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
-import com.yahoo.slime.JsonFormat;
-import com.yahoo.slime.Slime;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -22,8 +20,6 @@ import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +29,7 @@ import java.util.function.Function;
 /**
 * @author bratseth
 */
-class NodesResponse extends HttpResponse {
+class NodesResponse extends SlimeJsonResponse {
 
     /** The responses this can create */
     public enum ResponseType { nodeList, stateList, nodesInStateList, singleNode }
@@ -48,19 +44,16 @@ class NodesResponse extends HttpResponse {
     private final boolean recursive;
     private final Function<HostName, Optional<HostInfo>> orchestrator;
     private final NodeRepository nodeRepository;
-    private final Slime slime;
 
     public NodesResponse(ResponseType responseType, HttpRequest request,  
                          Orchestrator orchestrator, NodeRepository nodeRepository) {
-        super(200);
         this.parentUrl = toParentUrl(request);
         this.nodeParentUrl = toNodeParentUrl(request);
-        filter = NodesV2ApiHandler.toNodeFilter(request);
+        this.filter = NodesV2ApiHandler.toNodeFilter(request);
         this.recursive = request.getBooleanProperty("recursive");
         this.orchestrator = orchestrator.getHostResolver();
         this.nodeRepository = nodeRepository;
 
-        slime = new Slime();
         Cursor root = slime.setObject();
         switch (responseType) {
             case nodeList: nodesToSlime(root); break;
@@ -82,16 +75,6 @@ class NodesResponse extends HttpResponse {
     private String toNodeParentUrl(HttpRequest request) {
         URI uri = request.getUri();
         return uri.getScheme() + "://" + uri.getHost() + ":" + uri.getPort() + "/nodes/v2/node/";
-    }
-
-    @Override
-    public void render(OutputStream stream) throws IOException {
-        new JsonFormat(true).encode(stream, slime);
-    }
-
-    @Override
-    public String getContentType() {
-        return "application/json";
     }
 
     private void statesToSlime(Cursor root) {
