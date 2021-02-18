@@ -158,7 +158,7 @@ public class NodeRepository extends AbstractComponent {
     /** Returns the status of firmware checks for hosts managed by this. */
     public FirmwareChecks firmwareChecks() { return firmwareChecks; }
 
-    /** Returns the docker images to use for nodes in this. */
+    /** Returns the container images to use for nodes in this. */
     public ContainerImages containerImages() { return containerImages; }
 
     /** Returns the status of maintenance jobs managed by this. */

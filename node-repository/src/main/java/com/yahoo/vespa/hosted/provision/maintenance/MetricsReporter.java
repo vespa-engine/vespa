@@ -75,7 +75,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         nodes.forEach(node -> updateNodeMetrics(node, serviceModel));
         updateNodeCountMetrics(nodes);
         updateLockMetrics();
-        updateDockerMetrics(nodes);
+        updateContainerMetrics(nodes);
         updateTenantUsageMetrics(nodes);
         updateRepairTicketMetrics(nodes);
         updateAllocationMetrics(nodes);
@@ -315,7 +315,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         }
     }
 
-    private void updateDockerMetrics(NodeList nodes) {
+    private void updateContainerMetrics(NodeList nodes) {
         NodeResources totalCapacity = getCapacityTotal(nodes);
         metric.set("hostedVespa.docker.totalCapacityCpu", totalCapacity.vcpu(), null);
         metric.set("hostedVespa.docker.totalCapacityMem", totalCapacity.memoryGb(), null);
@@ -381,10 +381,10 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
                     .reduce(new NodeResources(0, 0, 0, 0, any), NodeResources::add);
     }
 
-    private static NodeResources freeCapacityOf(NodeList nodes, Node dockerHost) {
-        return nodes.childrenOf(dockerHost).asList().stream()
+    private static NodeResources freeCapacityOf(NodeList nodes, Node host) {
+        return nodes.childrenOf(host).asList().stream()
                     .map(node -> node.flavor().resources().justNumbers())
-                    .reduce(dockerHost.flavor().resources().justNumbers(), NodeResources::subtract);
+                    .reduce(host.flavor().resources().justNumbers(), NodeResources::subtract);
     }
 
     private static class ClusterKey {

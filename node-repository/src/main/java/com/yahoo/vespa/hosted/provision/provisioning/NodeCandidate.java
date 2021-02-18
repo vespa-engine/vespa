@@ -405,12 +405,12 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
                                                 "Failed when allocating address on host");
             }
 
-            Node node = Node.createDockerNode(allocation.get().addresses(),
-                                              allocation.get().hostname(),
-                                              parentHostname().get(),
-                                              resources.with(parent.get().resources().diskSpeed())
+            Node node = Node.reserve(allocation.get().addresses(),
+                                     allocation.get().hostname(),
+                                     parentHostname().get(),
+                                     resources.with(parent.get().resources().diskSpeed())
                                                        .with(parent.get().resources().storageType()),
-                                              NodeType.tenant).build();
+                                     NodeType.tenant).build();
             return new ConcreteNodeCandidate(node, freeParentCapacity, parent, violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizable);
 
         }

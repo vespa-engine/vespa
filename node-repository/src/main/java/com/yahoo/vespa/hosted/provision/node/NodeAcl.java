@@ -16,8 +16,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * A node ACL. The ACL contains the node which the ACL is valid for,
- * a set of nodes and networks that the node should trust.
+ * A node ACL declares which nodes, networks and ports a node should trust.
  *
  * @author mpolden
  */
@@ -57,8 +56,8 @@ public class NodeAcl {
         Set<String> trustedNetworks = new LinkedHashSet<>();
 
         // For all cases below, trust:
-        // - SSH: If the Docker host has one container, and it is using the Docker host's network namespace,
-        //   opening up SSH to the Docker host is done here as a trusted port. For simplicity all nodes have
+        // - SSH: If the host has one container, and it is using the host's network namespace,
+        //   opening up SSH to the host is done here as a trusted port. For simplicity all nodes have
         //   SSH opened (which is safe for 2 reasons: SSH daemon is not run inside containers, and NPT networks
         //   will (should) not forward port 22 traffic to container).
         // - parent host (for health checks and metrics)
