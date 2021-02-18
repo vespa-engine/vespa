@@ -103,11 +103,10 @@ public class NodeRepository extends AbstractComponent {
                           boolean useCuratorClientCache,
                           int spareCount,
                           long nodeCacheSize) {
-        // TODO (valerijf): Uncomment when exception for prod.cd-aws is removed
-//        if (provisionServiceProvider.getHostProvisioner().isPresent() != zone.getCloud().dynamicProvisioning())
-//            throw new IllegalArgumentException(String.format(
-//                    "dynamicProvisioning property must be 1-to-1 with availability of HostProvisioner, was: dynamicProvisioning=%s, hostProvisioner=%s",
-//                    zone.getCloud().dynamicProvisioning(), provisionServiceProvider.getHostProvisioner().map(__ -> "present").orElse("empty")));
+        if (provisionServiceProvider.getHostProvisioner().isPresent() != zone.getCloud().dynamicProvisioning())
+            throw new IllegalArgumentException(String.format(
+                    "dynamicProvisioning property must be 1-to-1 with availability of HostProvisioner, was: dynamicProvisioning=%s, hostProvisioner=%s",
+                    zone.getCloud().dynamicProvisioning(), provisionServiceProvider.getHostProvisioner().map(__ -> "present").orElse("empty")));
 
         this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache, nodeCacheSize);
         this.zone = zone;
