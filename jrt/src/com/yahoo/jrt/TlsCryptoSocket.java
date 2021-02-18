@@ -21,7 +21,6 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 import static java.util.stream.Collectors.toList;
-import static javax.net.ssl.SSLEngineResult.HandshakeStatus;
 import static javax.net.ssl.SSLEngineResult.Status;
 
 /**
@@ -249,7 +248,6 @@ public class TlsCryptoSocket implements CryptoSocket {
 
     private int applicationDataWrap(ByteBuffer src) throws IOException {
         SSLEngineResult result = sslEngineWrap(src);
-        if (result.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING) throw new SSLException("Renegotiation detected");
         switch (result.getStatus()) {
             case OK:
                 return result.bytesConsumed();
@@ -281,7 +279,6 @@ public class TlsCryptoSocket implements CryptoSocket {
 
     private int applicationDataUnwrap(ByteBuffer dst) throws IOException {
         SSLEngineResult result = sslEngineUnwrap(dst);
-        if (result.getHandshakeStatus() != HandshakeStatus.NOT_HANDSHAKING) throw new SSLException("Renegotiation detected");
         switch (result.getStatus()) {
             case OK:
                 return result.bytesProduced();
