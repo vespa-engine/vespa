@@ -11,13 +11,17 @@ import javax.net.ssl.SSLHandshakeException;
 import javax.net.ssl.SSLPeerUnverifiedException;
 import javax.net.ssl.SSLSession;
 import java.io.IOException;
+import java.net.SocketAddress;
 import java.nio.ByteBuffer;
 import java.nio.channels.ClosedChannelException;
 import java.nio.channels.SocketChannel;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.stream.Collectors.toList;
@@ -51,12 +55,16 @@ public class TlsCryptoSocket implements CryptoSocket {
         this.channel = channel;
         this.sslEngine = sslEngine;
         SSLSession nullSession = sslEngine.getSession();
-        this.wrapBuffer = new Buffer(Math.max(0x8000, nullSession.getPacketBufferSize()));
-        this.unwrapBuffer = new Buffer(Math.max(0x8000, nullSession.getPacketBufferSize()));
+        int bufferSize = Math.max(0x8000, nullSession.getPacketBufferSize());
+        this.wrapBuffer = new Buffer(bufferSize);
+        this.unwrapBuffer = new Buffer(bufferSize);
         // Note: Dummy buffer as unwrap requires a full size application buffer even though no application data is unwrapped
         this.handshakeDummyBuffer = ByteBuffer.allocate(nullSession.getApplicationBufferSize());
         this.handshakeState = HandshakeState.NOT_STARTED;
-        log.fine(() -> "Initialized with " + sslEngine.toString());
+        debugLog(() -> String.format(
+                "Initialized (isClient=%b, localAddress=%s, remoteAddress=%s, wrapBuffer=%d, unwrapBuffer=%d)",
+                sslEngine.getUseClientMode(), toString(channel::getLocalAddress), toString(channel::getRemoteAddress),
+                bufferSize, bufferSize));
     }
 
     // inject pre-read data into the read pipeline (typically called by MaybeTlsCryptoSocket)
@@ -72,7 +80,7 @@ public class TlsCryptoSocket implements CryptoSocket {
     @Override
     public HandshakeResult handshake() throws IOException {
         HandshakeState newHandshakeState = processHandshakeState(this.handshakeState);
-        log.fine(() -> String.format("Handshake state '%s -> %s'", this.handshakeState, newHandshakeState));
+        debugLog(() -> String.format("Handshake state '%s' => '%s'", this.handshakeState, newHandshakeState));
         this.handshakeState = newHandshakeState;
         return toHandshakeResult(newHandshakeState);
     }
@@ -89,7 +97,7 @@ public class TlsCryptoSocket implements CryptoSocket {
         try {
             switch (state) {
                 case NOT_STARTED:
-                    log.fine(() -> "Initiating handshake");
+                    debugLog(() -> "Initiating handshake");
                     sslEngine.beginHandshake();
                     break;
                 case NEED_WRITE:
@@ -115,8 +123,9 @@ public class TlsCryptoSocket implements CryptoSocket {
                     throw unhandledStateException(state);
             }
             while (true) {
-                log.fine(() -> "SSLEngine.getHandshakeStatus(): " + sslEngine.getHandshakeStatus());
-                switch (sslEngine.getHandshakeStatus()) {
+                SSLEngineResult.HandshakeStatus handshakeStatus = sslEngine.getHandshakeStatus();
+                debugLog(() -> "SSLEngine.getHandshakeStatus(): " + handshakeStatus);
+                switch (handshakeStatus) {
                     case NOT_HANDSHAKING:
                         if (wrapBuffer.bytes() > 0) return HandshakeState.NEED_WRITE;
                         sslEngine.setEnableSessionCreation(false); // disable renegotiation
@@ -124,7 +133,7 @@ public class TlsCryptoSocket implements CryptoSocket {
                         SSLSession session = sslEngine.getSession();
                         sessionApplicationBufferSize = session.getApplicationBufferSize();
                         sessionPacketBufferSize = session.getPacketBufferSize();
-                        log.fine(() -> String.format("Handshake complete: protocol=%s, cipherSuite=%s", session.getProtocol(), session.getCipherSuite()));
+                        debugLog(() -> String.format("Handshake complete: protocol=%s, cipherSuite=%s", session.getProtocol(), session.getCipherSuite()));
                         if (sslEngine.getUseClientMode()) {
                             metrics.incrementClientTlsConnectionsEstablished();
                         } else {
@@ -141,7 +150,7 @@ public class TlsCryptoSocket implements CryptoSocket {
                         if (!handshakeWrap()) return HandshakeState.NEED_WRITE;
                         break;
                     default:
-                        throw new IllegalStateException("Unexpected handshake status: " + sslEngine.getHandshakeStatus());
+                        throw debugLogException(new IllegalStateException("Unexpected handshake status: " + handshakeStatus));
                 }
             }
         } catch (SSLHandshakeException e) {
@@ -149,11 +158,11 @@ public class TlsCryptoSocket implements CryptoSocket {
             if (authorizationResult == null || authorizationResult.succeeded()) { // don't include handshake failures due from PeerAuthorizerTrustManager
                 metrics.incrementTlsCertificateVerificationFailures();
             }
-            throw e;
+            throw debugLogException(e);
         }
     }
 
-    private static HandshakeResult toHandshakeResult(HandshakeState state) {
+    private HandshakeResult toHandshakeResult(HandshakeState state) {
         switch (state) {
             case NEED_READ:
                 return HandshakeResult.NEED_READ;
@@ -260,7 +269,8 @@ public class TlsCryptoSocket implements CryptoSocket {
 
     private SSLEngineResult sslEngineWrap(ByteBuffer src) throws IOException {
         SSLEngineResult result = sslEngine.wrap(src, wrapBuffer.getWritable(sessionPacketBufferSize));
-        if (result.getStatus() == Status.CLOSED) throw new ClosedChannelException();
+        debugLog(() -> String.format("SSLEngine.wrap(): status=%s, handshakeStatus=%s", result.getStatus(), result.getHandshakeStatus()));
+        if (result.getStatus() == Status.CLOSED) throw debugLogException(new ClosedChannelException());
         return result;
     }
 
@@ -268,7 +278,8 @@ public class TlsCryptoSocket implements CryptoSocket {
         SSLEngineResult result = sslEngineUnwrap(handshakeDummyBuffer);
         switch (result.getStatus()) {
             case OK:
-                if (result.bytesProduced() > 0) throw new SSLException("Got application data in handshake unwrap");
+                if (result.bytesProduced() > 0)
+                    throw debugLogException(new SSLException("Got application data in handshake unwrap"));
                 return true;
             case BUFFER_UNDERFLOW:
                 return false;
@@ -292,33 +303,59 @@ public class TlsCryptoSocket implements CryptoSocket {
 
     private SSLEngineResult sslEngineUnwrap(ByteBuffer dst) throws IOException {
         SSLEngineResult result = sslEngine.unwrap(unwrapBuffer.getReadable(), dst);
-        if (result.getStatus() == Status.CLOSED) throw new ClosedChannelException();
+        debugLog(() -> String.format("SSLEngine.unwrap(): status=%s, handshakeStatus=%s", result.getStatus(), result.getHandshakeStatus()));
+        if (result.getStatus() == Status.CLOSED) throw debugLogException(new ClosedChannelException());
         return result;
     }
 
     // returns number of bytes read
     private int channelRead() throws IOException {
         int read = channel.read(unwrapBuffer.getWritable(sessionPacketBufferSize));
-        if (read == -1) throw new ClosedChannelException();
+        debugLog(() -> "SocketChannel.read(): read=" + read);
+        if (read == -1) throw debugLogException(new ClosedChannelException());
         return read;
     }
 
     // returns number of bytes written
     private int channelWrite() throws IOException {
-        return channel.write(wrapBuffer.getReadable());
+        int written = channel.write(wrapBuffer.getReadable());
+        debugLog(() -> "SocketChannel.write(): written=" + written);
+        return written;
     }
 
-    private static IllegalStateException unhandledStateException(HandshakeState state) {
-        return new IllegalStateException("Unhandled state: " + state);
+    private IllegalStateException unhandledStateException(HandshakeState state) {
+        return debugLogException(new IllegalStateException("Unhandled state: " + state));
     }
 
-    private static IllegalStateException unexpectedStatusException(Status status) {
-        return new IllegalStateException("Unexpected status: " + status);
+    private IllegalStateException unexpectedStatusException(Status status) {
+        return debugLogException(new IllegalStateException("Unexpected status: " + status));
     }
 
     private void verifyHandshakeCompleted() throws SSLException {
         if (handshakeState != HandshakeState.COMPLETED)
-            throw new SSLException("Handshake not completed: handshakeState=" + handshakeState);
+            throw debugLogException(new SSLException("Handshake not completed: handshakeState=" + handshakeState));
+    }
+
+    private void debugLog(Supplier<String> message) { debugLog(message, null); }
+
+    private <T extends Exception> T debugLogException(T e) { debugLog(e::toString, e); return e; }
+
+    private void debugLog(Supplier<String> message, Throwable t) {
+        Supplier<String> messageWithPrefix = () -> String.format("SSLEngine@%h: %s", sslEngine, message.get());
+        if (t != null) {
+            log.log(Level.FINE, t, messageWithPrefix);
+        } else {
+            log.log(Level.FINE, messageWithPrefix);
+        }
+    }
+
+    @FunctionalInterface private interface SocketAddressSupplier { SocketAddress get() throws IOException; }
+    private static String toString(SocketAddressSupplier supplier) {
+        try {
+            return Objects.toString(supplier.get());
+        } catch (IOException e) {
+            return "[unknown]";
+        }
     }
 
 }
