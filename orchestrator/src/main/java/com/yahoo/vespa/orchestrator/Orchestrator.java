@@ -127,4 +127,6 @@ public interface Orchestrator {
      */
     void suspend(ApplicationId appId) throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException;
 
+    default boolean isQuiescent(ApplicationId id) { return false; }
+
 }

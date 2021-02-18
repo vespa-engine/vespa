@@ -258,7 +258,7 @@ public class PeriodicApplicationMaintainerTest {
         }
 
     }
-    
+
     private static class TestablePeriodicApplicationMaintainer extends PeriodicApplicationMaintainer {
 
         private NodeList overriddenNodesNeedingMaintenance;
@@ -275,8 +275,8 @@ public class PeriodicApplicationMaintainerTest {
         @Override
         protected NodeList nodesNeedingMaintenance() {
             return overriddenNodesNeedingMaintenance != null
-                    ? overriddenNodesNeedingMaintenance
-                    : super.nodesNeedingMaintenance();
+                   ? overriddenNodesNeedingMaintenance
+                   : super.nodesNeedingMaintenance();
         }
 
     }

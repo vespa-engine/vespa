@@ -9,6 +9,7 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.orchestrator.Orchestrator;
 
 import java.time.DayOfWeek;
 import java.time.Duration;
@@ -28,26 +29,36 @@ import static java.util.stream.Collectors.toUnmodifiableSet;
 public class DedicatedClusterControllerClusterMigrator extends ApplicationMaintainer {
 
     private final BooleanFlag flag;
+    private final Orchestrator orchestrator;
 
     protected DedicatedClusterControllerClusterMigrator(Deployer deployer, Metric metric, NodeRepository nodeRepository,
-                                                        Duration interval, FlagSource flags) {
+                                                        Duration interval, FlagSource flags, Orchestrator orchestrator) {
         super(deployer, metric, nodeRepository, interval);
         this.flag = Flags.DEDICATED_CLUSTER_CONTROLLER_CLUSTER.bindTo(flags);
+        this.orchestrator = orchestrator;
     }
 
     @Override
     protected Set<ApplicationId> applicationsNeedingMaintenance() {
+        if (deployer().bootstrapping()) return Set.of();
+
         ZonedDateTime date = ZonedDateTime.ofInstant(clock().instant(), java.time.ZoneId.of("Europe/Oslo"));
         if (List.of(SATURDAY, SUNDAY).contains(date.getDayOfWeek()) || date.getHour() < 8 || 12 < date.getHour())
             return Set.of();
 
         return nodeRepository().applications().ids().stream()
+                               .sorted()
                                .filter(this::isEligible)
                                .filter(this::hasNotSwitched)
                                .filter(this::isQuiescent)
                                .limit(1)
-                               .peek(this::migrate)
                                .collect(toUnmodifiableSet());
+    }
+
+    @Override
+    protected void deploy(ApplicationId id) {
+        migrate(id);
+        super.deploy(id);
     }
 
     private boolean isEligible(ApplicationId id) {
@@ -59,7 +70,7 @@ public class DedicatedClusterControllerClusterMigrator extends ApplicationMainta
     }
 
     private boolean isQuiescent(ApplicationId id) {
-        return false; // Check all content nodes are UP, have wanted state UP, and can be moved to MAINTENANCE.
+        return orchestrator.isQuiescent(id); // Check all content nodes are UP, have wanted state UP, and can be moved to MAINTENANCE.
     }
 
     private void migrate(ApplicationId id) {
