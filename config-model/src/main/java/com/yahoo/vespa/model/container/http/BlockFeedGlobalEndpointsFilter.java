@@ -20,12 +20,15 @@ import static com.yahoo.jdisc.http.filter.security.rule.RuleBasedFilterConfig.Ru
 import static com.yahoo.jdisc.http.filter.security.rule.RuleBasedFilterConfig.Rule.Methods.Enum.POST;
 import static com.yahoo.jdisc.http.filter.security.rule.RuleBasedFilterConfig.Rule.Methods.Enum.PUT;
 
-public class BlockFeedGlobalEndpointsFilterConfigProducer extends Filter implements RuleBasedFilterConfig.Producer {
+/**
+ * @author mortent
+ */
+public class BlockFeedGlobalEndpointsFilter extends Filter implements RuleBasedFilterConfig.Producer {
 
     private final Set<ContainerEndpoint> endpoints;
     private final boolean dryRun;
 
-    public BlockFeedGlobalEndpointsFilterConfigProducer(Set<ContainerEndpoint> endpoints, boolean dryRun) {
+    public BlockFeedGlobalEndpointsFilter(Set<ContainerEndpoint> endpoints, boolean dryRun) {
         super(createFilterComponentModel());
         this.endpoints = Set.copyOf(endpoints);
         this.dryRun = dryRun;
@@ -38,8 +41,8 @@ public class BlockFeedGlobalEndpointsFilterConfigProducer extends Filter impleme
                 .collect(Collectors.toSet());
         RuleBasedFilterConfig.Rule.Builder rule = new RuleBasedFilterConfig.Rule.Builder()
                 .hostNames(hostNames)
-                .pathExpressions("/feed")
                 .pathExpressions("/reserved-for-internal-use/feedapi")
+                .pathExpressions("/document/v1/{*}")
                 .methods(List.of(PUT, POST, DELETE))
                 .action(BLOCK)
                 .name("block-feed-global-endpoints")
