@@ -43,7 +43,7 @@ struct DocumentMoverTest : ::testing::Test
         : _builder(),
           _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
           _limiter(),
-          _mover(_limiter),
+          _mover(_limiter, _bucketDb),
           _source(_builder, _bucketDB, 0u, SubDbType::READY),
           _bucketDb(),
           _handler(_bucketDb)
@@ -58,7 +58,7 @@ struct DocumentMoverTest : ::testing::Test
                                                   _source._subDb.retriever(),
                                                   _source._subDb.feed_view(),
                                                   &_pendingLidsForCommit);
-        _mover.setupForBucket(bucket, &_source._subDb, targetSubDbId, _handler, _bucketDb);
+        _mover.setupForBucket(bucket, &_source._subDb, targetSubDbId, _handler);
     }
     bool moveDocuments(size_t maxDocsToMove) {
         return _mover.moveDocuments(maxDocsToMove);
@@ -68,7 +68,7 @@ struct DocumentMoverTest : ::testing::Test
 TEST_F(DocumentMoverTest, require_that_initial_bucket_mover_is_done)
 {
     MyMoveOperationLimiter limiter;
-    DocumentBucketMover mover(limiter);
+    DocumentBucketMover mover(limiter, _bucketDb);
     EXPECT_TRUE(mover.bucketDone());
     mover.moveDocuments(2);
     EXPECT_TRUE(mover.bucketDone());

@@ -82,7 +82,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
 
 struct MyBucketModifiedHandler : public IBucketModifiedHandler {
     using BucketId = document::BucketId;
-    BucketId::List _modified;
+    std::vector<BucketId> _modified;
 
     void notifyBucketModified(const BucketId &bucket) override;
 
