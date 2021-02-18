@@ -1,9 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "detect_type.h"
 #include "generic_merge.h"
 #include <vespa/eval/eval/inline_operation.h>
-#include <vespa/eval/eval/fast_value.hpp>
 #include <vespa/eval/eval/wrap_param.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/typify.h>
