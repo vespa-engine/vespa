@@ -9,6 +9,9 @@ import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.filter.security.rule.RuleBasedFilterConfig;
+import com.yahoo.path.Path;
+import com.yahoo.vespa.model.clients.ContainerDocumentApi;
+import com.yahoo.vespa.model.container.ContainerCluster;
 
 import java.util.List;
 import java.util.Set;
@@ -41,8 +44,8 @@ public class BlockFeedGlobalEndpointsFilter extends Filter implements RuleBasedF
                 .collect(Collectors.toSet());
         RuleBasedFilterConfig.Rule.Builder rule = new RuleBasedFilterConfig.Rule.Builder()
                 .hostNames(hostNames)
-                .pathExpressions("/reserved-for-internal-use/feedapi")
-                .pathExpressions("/document/v1/{*}")
+                .pathExpressions(ContainerCluster.RESERVED_URI_PREFIX + "/{*}")
+                .pathExpressions(ContainerDocumentApi.DOCUMENT_V1_PREFIX + "/{*}")
                 .methods(List.of(PUT, POST, DELETE))
                 .action(BLOCK)
                 .name("block-feed-global-endpoints")
