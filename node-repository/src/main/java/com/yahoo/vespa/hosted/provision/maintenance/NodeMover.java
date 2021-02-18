@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.HostCapacity;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Set;
 
 /**
  * Base class for maintainers that move nodes.
@@ -39,6 +40,7 @@ public abstract class NodeMover<MOVE> extends NodeRepositoryMaintainer {
         HostCapacity capacity = new HostCapacity(allNodes, nodeRepository().resourcesCalculator());
         MOVE bestMove = emptyMove;
         NodeList activeNodes = allNodes.nodeType(NodeType.tenant).state(Node.State.active);
+        Set<Node> spares = capacity.findSpareHosts(allNodes.asList(), nodeRepository().spareCount());
         for (Node node : activeNodes) {
             if (node.parentHostname().isEmpty()) continue;
             ApplicationId applicationId = node.allocation().get().owner();
@@ -46,6 +48,7 @@ public abstract class NodeMover<MOVE> extends NodeRepositoryMaintainer {
             if (deployedRecently(applicationId)) continue;
             for (Node toHost : allNodes.matching(nodeRepository().nodes()::canAllocateTenantNodeTo)) {
                 if (toHost.hostname().equals(node.parentHostname().get())) continue;
+                if (spares.contains(toHost)) continue; // Do not offer spares as a valid move as they are reserved for replacement of failed nodes
                 if ( ! capacity.freeCapacityOf(toHost).satisfies(node.resources())) continue;
 
                 MOVE suggestedMove = suggestedMove(node, allNodes.parentOf(node).get(), toHost, allNodes);
