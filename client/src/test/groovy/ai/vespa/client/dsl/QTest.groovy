@@ -111,6 +111,23 @@ class QTest extends Specification {
         q == """yql=select * from sd1 where f1 <= 1L and f2 < 2L and f3 >= 3L and f4 > 4L and f5 = 5L and range(f6, 6L, 7L);"""
     }
 
+    def "float numeric operations"() {
+        given:
+        def q = Q.select("*")
+                .from("sd1")
+                .where("f1").le(1.1)
+                .and("f2").lt(2.2)
+                .and("f3").ge(3.3)
+                .and("f4").gt(4.4)
+                .and("f5").eq(5.5)
+                .and("f6").inRange(6.6, 7.7)
+                .semicolon()
+                .build()
+
+        expect:
+        q == """yql=select * from sd1 where f1 <= 1.1 and f2 < 2.2 and f3 >= 3.3 and f4 > 4.4 and f5 = 5.5 and range(f6, 6.6, 7.7);"""
+    }
+
     def "nested queries"() {
         given:
         def q = Q.select("*")

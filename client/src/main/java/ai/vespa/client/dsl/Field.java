@@ -396,6 +396,72 @@ public class Field extends QueryChain {
         return common("range", annotation, l, new Long[]{m});
     }
 
+    /**
+     * Equal to query.
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
+    public Query eq(float t) {
+        return common("=", annotation, t);
+    }
+
+    /**
+     * Greater than or equal to query.
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
+    public Query ge(float t) {
+        return common(">=", annotation, t);
+    }
+
+    /**
+     * Greater than query.
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
+    public Query gt(float t) {
+        return common(">", annotation, t);
+    }
+
+    /**
+     * Less than or equal to query.
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
+    public Query le(float t) {
+        return common("<=", annotation, t);
+    }
+
+    /**
+     * Less than query.
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
+    public Query lt(float t) {
+        return common("<", annotation, t);
+    }
+
+    /**
+     * In range query.
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
+     *
+     * @param l the l
+     * @param m the m
+     * @return the query
+     */
+    public Query inRange(float l, float m) {
+        return common("range", annotation, l, new Float[]{m});
+    }
 
     /**
      * Is true query.
