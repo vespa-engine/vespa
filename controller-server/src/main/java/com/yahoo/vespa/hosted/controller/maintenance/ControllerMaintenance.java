@@ -64,6 +64,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new HostSwitchUpdater(controller, intervals.hostSwitchUpdater));
         maintainers.add(new ReindexingTriggerer(controller, intervals.reindexingTriggerer));
         maintainers.add(new EndpointCertificateMaintainer(controller, intervals.endpointCertificateMaintainer));
+        maintainers.add(new TrafficFractionUpdater(controller, intervals.trafficFractionUpdater));
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -113,6 +114,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration hostSwitchUpdater;
         private final Duration reindexingTriggerer;
         private final Duration endpointCertificateMaintainer;
+        private final Duration trafficFractionUpdater;
 
         public Intervals(SystemName system) {
             this.system = Objects.requireNonNull(system);
@@ -139,6 +141,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.hostSwitchUpdater = duration(12, HOURS);
             this.reindexingTriggerer = duration(1, HOURS);
             this.endpointCertificateMaintainer = duration(12, HOURS);
+            this.trafficFractionUpdater = duration(5, MINUTES);
         }
 
         private Duration duration(long amount, TemporalUnit unit) {
