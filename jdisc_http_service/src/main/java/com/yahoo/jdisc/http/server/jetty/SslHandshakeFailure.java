@@ -24,7 +24,7 @@ enum SslHandshakeFailure {
     MISSING_CLIENT_CERT(
             MetricDefinitions.SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT,
             "MISSING_CLIENT_CERTIFICATE",
-            "Empty server certificate chain"),
+            "Empty (server|client) certificate chain"),
     EXPIRED_CLIENT_CERTIFICATE(
             MetricDefinitions.SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT,
             "EXPIRED_CLIENT_CERTIFICATE",
