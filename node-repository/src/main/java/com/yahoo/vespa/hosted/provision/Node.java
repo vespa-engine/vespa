@@ -55,7 +55,7 @@ public final class Node implements Nodelike {
     private final Optional<Allocation> allocation;
 
     /** Creates a node builder in the initial state (reserved) */
-    public static Node.Builder createDockerNode(Set<String> ipAddresses, String hostname, String parentHostname, NodeResources resources, NodeType type) {
+    public static Node.Builder reserve(Set<String> ipAddresses, String hostname, String parentHostname, NodeResources resources, NodeType type) {
         return new Node.Builder("fake-" + hostname, hostname, new Flavor(resources), State.reserved, type)
                 .ipConfig(IP.Config.ofEmptyPool(ipAddresses))
                 .parentHostname(parentHostname);
@@ -122,7 +122,7 @@ public final class Node implements Nodelike {
      *
      * - OpenStack: UUID
      * - AWS: Instance ID
-     * - Docker containers: fake-[hostname]
+     * - Linux containers: fake-[hostname]
      */
     public String id() { return id; }
 

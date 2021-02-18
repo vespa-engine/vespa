@@ -32,7 +32,8 @@ public class HostCapacity {
     public NodeList allNodes() { return allNodes; }
 
     /**
-     * Spare hosts are the hosts in the system with the most free capacity.
+     * Spare hosts are the hosts in the system with the most free capacity. A zone may reserve a minimum number of spare
+     * hosts to increase the chances of having replacements for failed nodes.
      *
      * We do not count retired or inactive nodes as used capacity (as they could have been
      * moved to create space for the spare node in the first place).
@@ -42,9 +43,9 @@ public class HostCapacity {
      */
     public Set<Node> findSpareHosts(List<Node> candidates, int count) {
         return candidates.stream()
-                         .filter(node -> node.type() == NodeType.host)
-                         .filter(dockerHost -> dockerHost.state() == Node.State.active)
-                         .filter(dockerHost -> freeIPs(dockerHost) > 0)
+                         .filter(node -> node.type().canRun(NodeType.tenant))
+                         .filter(host -> host.state() == Node.State.active)
+                         .filter(host -> freeIps(host) > 0)
                          .sorted(this::compareWithoutInactive)
                          .limit(count)
                          .collect(Collectors.toSet());
@@ -58,34 +59,29 @@ public class HostCapacity {
                 .collect(Collectors.toSet());
     }
 
-    private int compareWithoutInactive(Node hostA, Node hostB) {
-        int result = compare(freeCapacityOf(hostB, true), freeCapacityOf(hostA, true));
+    private int compareWithoutInactive(Node a, Node b) {
+        int result = compare(freeCapacityOf(b, true), freeCapacityOf(a, true));
         if (result != 0) return result;
 
         // If resources are equal we want to assign to the one with the most IP addresses free
-        return freeIPs(hostB) - freeIPs(hostA);
+        return freeIps(b) - freeIps(a);
     }
 
     private int compare(NodeResources a, NodeResources b) {
         return NodeResourceComparator.defaultOrder().compare(a, b);
     }
 
-    /**
-     * Checks the node capacity and free ip addresses to see
-     * if we could allocate a flavor on the docker host.
-     */
-    boolean hasCapacity(Node dockerHost, NodeResources requestedCapacity) {
-        return freeCapacityOf(dockerHost, false).satisfies(requestedCapacity) && freeIPs(dockerHost) > 0;
+    /** Returns whether host has room for requested capacity */
+    boolean hasCapacity(Node host, NodeResources requestedCapacity) {
+        return freeCapacityOf(host, false).satisfies(requestedCapacity) && freeIps(host) > 0;
     }
 
-    /**
-     * Number of free (not allocated) IP addresses assigned to the dockerhost.
-     */
-    int freeIPs(Node dockerHost) {
-        if (dockerHost.type() == NodeType.host) {
-            return dockerHost.ipConfig().pool().eventuallyUnusedAddressCount(allNodes);
+    /** Returns the number of available IP addresses on given host */
+    int freeIps(Node host) {
+        if (host.type() == NodeType.host) {
+            return host.ipConfig().pool().eventuallyUnusedAddressCount(allNodes);
         } else {
-            return dockerHost.ipConfig().pool().findUnusedIpAddresses(allNodes).size();
+            return host.ipConfig().pool().findUnusedIpAddresses(allNodes).size();
         }
     }
 
@@ -93,7 +89,7 @@ public class HostCapacity {
      * Calculate the remaining capacity of a host.
      *
      * @param host the host to find free capacity of.
-     * @return a default (empty) capacity if not a docker host, otherwise the free/unallocated/rest capacity
+     * @return a default (empty) capacity if not host, otherwise the free/unallocated/rest capacity
      */
     public NodeResources freeCapacityOf(Node host) {
         return freeCapacityOf(host, false);
@@ -105,13 +101,14 @@ public class HostCapacity {
 
         NodeResources hostResources = hostResourcesCalculator.advertisedResourcesOf(host.flavor());
         return allNodes.childrenOf(host).asList().stream()
-                .filter(node -> !(excludeInactive && isInactiveOrRetired(node)))
-                .map(node -> node.flavor().resources().justNumbers())
-                .reduce(hostResources.justNumbers(), NodeResources::subtract)
-                .with(host.flavor().resources().diskSpeed()).with(host.flavor().resources().storageType());
+                       .filter(node -> !(excludeInactive && inactiveOrRetired(node)))
+                       .map(node -> node.flavor().resources().justNumbers())
+                       .reduce(hostResources.justNumbers(), NodeResources::subtract)
+                       .with(host.flavor().resources().diskSpeed())
+                       .with(host.flavor().resources().storageType());
     }
 
-    private static boolean isInactiveOrRetired(Node node) {
+    private static boolean inactiveOrRetired(Node node) {
         if (node.state() == Node.State.inactive) return true;
         if (node.allocation().isPresent() && node.allocation().get().membership().retired()) return true;
         return false;

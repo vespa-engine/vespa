@@ -102,13 +102,13 @@ public class Nodes {
 
     // ----------------- Node lifecycle -----------------------------------------------------------
 
-    /** Adds a list of newly created docker container nodes to the node repository as <i>reserved</i> nodes */
-    public List<Node> addDockerNodes(LockedNodeList nodes) {
+    /** Adds a list of newly created reserved nodes to the node repository */
+    public List<Node> addReservedNodes(LockedNodeList nodes) {
         for (Node node : nodes) {
             if ( ! node.flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER))
-                illegal("Cannot add " + node + ": This is not a docker node");
+                illegal("Cannot add " + node + ": This is not a child node");
             if (node.allocation().isEmpty())
-                illegal("Cannot add " + node + ": Docker containers needs to be allocated");
+                illegal("Cannot add " + node + ": Child nodes need to be allocated");
             Optional<Node> existing = node(node.hostname());
             if (existing.isPresent())
                 illegal("Cannot add " + node + ": A node with this name already exists (" +
@@ -119,7 +119,7 @@ public class Nodes {
     }
 
     /**
-     * Adds a list of (newly created) nodes to the node repository as <i>provisioned</i> nodes.
+     * Adds a list of (newly created) nodes to the node repository as provisioned nodes.
      * If any of the nodes already exists in the deprovisioned state, the new node will be merged
      * with the history of that node.
      */
@@ -403,7 +403,7 @@ public class Nodes {
     }
 
     /*
-     * This method is used by the REST API to handle readying nodes for new allocations. For tenant docker
+     * This method is used by the REST API to handle readying nodes for new allocations. For Linux
      * containers this will remove the node from node repository, otherwise the node will be moved to state ready.
      */
     public Node markNodeAvailableForNewAllocation(String hostname, Agent agent, String reason) {

@@ -225,7 +225,7 @@ public class IP {
     /**
      * A pool of addresses from which an allocation can be made.
      *
-     * Addresses in this are available for use by Docker containers
+     * Addresses in this are available for use by Linux containers.
      */
     public static class Pool {
 

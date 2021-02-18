@@ -62,7 +62,7 @@ public class ProvisionedHost {
 
     /** Generate {@link Node} instance representing the node running on this physical host */
     public Node generateNode() {
-        return Node.createDockerNode(Set.of(), nodeHostname(), hostHostname, nodeResources, NodeType.tenant).build();
+        return Node.reserve(Set.of(), nodeHostname(), hostHostname, nodeResources, NodeType.tenant).build();
     }
 
     public String getId() {

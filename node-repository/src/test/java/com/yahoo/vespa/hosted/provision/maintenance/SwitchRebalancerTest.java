@@ -21,7 +21,6 @@ import com.yahoo.vespa.hosted.provision.testutils.MockDeployer.ClusterContext;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -42,16 +41,16 @@ public class SwitchRebalancerTest {
     public void rebalance() {
         ClusterSpec.Id cluster1 = ClusterSpec.Id.from("c1");
         ClusterSpec.Id cluster2 = ClusterSpec.Id.from("c2");
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east")))
+                                                                    .spareCount(1)
+                                                                    .build();
         MockDeployer deployer = deployer(tester, cluster1, cluster2);
         SwitchRebalancer rebalancer = new SwitchRebalancer(tester.nodeRepository(), Duration.ofDays(1), new TestMetric(), deployer);
 
         // Provision initial hosts on same switch
         NodeResources hostResources = new NodeResources(48, 128, 500, 10);
-        List<Node> hosts0 = tester.makeReadyNodes(3, hostResources, NodeType.host, 5);
-        tester.activateTenantHosts();
         String switch0 = "switch0";
-        tester.patchNodes(hosts0, (host) -> host.withSwitchHostname(switch0));
+        provisionHosts(3, switch0, hostResources, tester);
 
         // Deploy application
         deployer.deployFromLocalActive(app).get().activate();
@@ -62,21 +61,21 @@ public class SwitchRebalancerTest {
         tester.clock().advance(SwitchRebalancer.waitTimeAfterPreviousDeployment);
         assertNoMoves(rebalancer, tester);
 
-        // Provision hosts on distinct switches
-        List<Node> hosts1 = tester.makeReadyNodes(3, hostResources, NodeType.host, 5);
-        tester.activateTenantHosts();
-        for (int i = 0; i < hosts1.size(); i++) {
-            String switchHostname = "switch" + (i + 1);
-            tester.patchNode(hosts1.get(i), (host) -> host.withSwitchHostname(switchHostname));
-        }
+        // Provision a single host on a new switch
+        provisionHost("switch1", hostResources, tester);
 
-        // Application is redeployed
+        // Application is redeployed and rebalancer does nothing as not enough time has passed since deployment
         deployer.deployFromLocalActive(app).get().activate();
-
-        // Rebalancer does nothing as not enough time has passed since previous deployment
         assertNoMoves(rebalancer, tester);
 
-        // Rebalancer retires one node from non-exclusive switch in each cluster, and allocates a new one
+        // No rebalancing because the additional host is counted as a spare
+        tester.clock().advance(SwitchRebalancer.waitTimeAfterPreviousDeployment);
+        assertNoMoves(rebalancer, tester);
+
+        // More hosts are provisioned. Rebalancer now retires one node from non-exclusive switch in each cluster, and
+        // allocates a new one
+        provisionHost("switch2", hostResources, tester);
+        provisionHost("switch3", hostResources, tester);
         for (var cluster : List.of(cluster1, cluster2)) {
             tester.clock().advance(SwitchRebalancer.waitTimeAfterPreviousDeployment);
             rebalancer.maintain();
@@ -110,13 +109,10 @@ public class SwitchRebalancerTest {
 
         // Provision initial hosts on two switches
         NodeResources hostResources = new NodeResources(8, 16, 500, 10);
-        List<Node> hosts0 = tester.makeReadyNodes(4, hostResources, NodeType.host, 5);
-        hosts0.sort(Comparator.comparing(Node::hostname));
-        tester.activateTenantHosts();
         String switch0 = "switch0";
         String switch1 = "switch1";
-        tester.patchNode(hosts0.get(0), (host) -> host.withSwitchHostname(switch0));
-        tester.patchNodes(hosts0.subList(1, hosts0.size()), (host) -> host.withSwitchHostname(switch1));
+        provisionHost(switch0, hostResources, tester);
+        provisionHosts(3, switch1, hostResources, tester);
 
         // Deploy application
         deployer.deployFromLocalActive(app).get().activate();
@@ -126,10 +122,8 @@ public class SwitchRebalancerTest {
         assertEquals(3, tester.activeNodesOn(switch1, app, spec.id()).size());
 
         // Another host becomes available on a new host
-        List<Node> hosts2 = tester.makeReadyNodes(1, hostResources, NodeType.host, 5);
-        tester.activateTenantHosts();
         String switch2 = "switch2";
-        tester.patchNodes(hosts2, (host) -> host.withSwitchHostname(switch2));
+        provisionHost(switch2, hostResources, tester);
 
         // Rebalance
         tester.clock().advance(SwitchRebalancer.waitTimeAfterPreviousDeployment);
@@ -149,6 +143,16 @@ public class SwitchRebalancerTest {
         // Next iteration does nothing
         tester.clock().advance(SwitchRebalancer.waitTimeAfterPreviousDeployment);
         assertNoMoves(rebalancer, tester);
+    }
+
+    private void provisionHost(String switchHostname, NodeResources hostResources, ProvisioningTester tester) {
+        provisionHosts(1, switchHostname, hostResources, tester);
+    }
+
+    private void provisionHosts(int count, String switchHostname, NodeResources hostResources, ProvisioningTester tester) {
+        List<Node> hosts = tester.makeReadyNodes(count, hostResources, NodeType.host, 5);
+        tester.patchNodes(hosts, (host) -> host.withSwitchHostname(switchHostname));
+        tester.activateTenantHosts();
     }
 
     private void assertNoMoves(SwitchRebalancer rebalancer, ProvisioningTester tester) {
