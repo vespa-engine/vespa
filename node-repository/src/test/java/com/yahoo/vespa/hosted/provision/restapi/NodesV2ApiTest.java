@@ -260,8 +260,8 @@ public class NodesV2ApiTest {
 
         // Update (PATCH) an application
         assertResponse(new Request("http://localhost:8080/nodes/v2/application/tenant1.application1.instance1",
-                                   Utf8.toBytes("{\"currentTrafficFraction\": 0.3, " +
-                                                "\"maxTrafficFraction\": 0.5 }"), Request.Method.PATCH),
+                                   Utf8.toBytes("{\"currentReadShare\": 0.3, " +
+                                                "\"maxReadShare\": 0.5 }"), Request.Method.PATCH),
                        "{\"message\":\"Updated application 'tenant1.application1.instance1'\"}");
     }
 

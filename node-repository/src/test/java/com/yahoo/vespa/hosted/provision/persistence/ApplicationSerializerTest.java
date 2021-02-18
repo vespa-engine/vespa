@@ -52,7 +52,7 @@ public class ApplicationSerializerTest {
                                                           Optional.of(Instant.ofEpochMilli(67890L)))),
                                  "Autoscaling status"));
         Application original = new Application(ApplicationId.from("myTenant", "myApplication", "myInstance"),
-                                               Status.initial().withCurrentTrafficFraction(0.3).withMaxTrafficFraction(0.5),
+                                               Status.initial().withCurrentReadShare(0.3).withMaxReadShare(0.5),
                                                clusters);
 
         Application serialized = ApplicationSerializer.fromJson(ApplicationSerializer.toJson(original));

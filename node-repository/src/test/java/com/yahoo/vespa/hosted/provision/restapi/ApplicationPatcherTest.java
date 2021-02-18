@@ -21,13 +21,13 @@ public class ApplicationPatcherTest {
         NodeRepositoryTester tester = new NodeRepositoryTester();
         Application application = Application.empty(ApplicationId.from("t1", "a1", "i1"));
         tester.nodeRepository().applications().put(application, tester.nodeRepository().nodes().lock(application.id()));
-        String patch = "{ \"currentTrafficFraction\" :0.4, \"maxTrafficFraction\": 1.0 }";
+        String patch = "{ \"currentReadShare\" :0.4, \"maxReadShare\": 1.0 }";
         ApplicationPatcher patcher = new ApplicationPatcher(new ByteArrayInputStream(patch.getBytes()),
                                                             application.id(),
                                                             tester.nodeRepository());
         Application patched = patcher.apply();
-        assertEquals(0.4, patcher.application().status().currentTrafficFraction(), 0.0000001);
-        assertEquals(1.0, patcher.application().status().maxTrafficFraction(), 0.0000001);
+        assertEquals(0.4, patcher.application().status().currentReadShare(), 0.0000001);
+        assertEquals(1.0, patcher.application().status().maxReadShare(), 0.0000001);
         patcher.close();
     }
 

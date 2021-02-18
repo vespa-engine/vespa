@@ -16,19 +16,19 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 public class ApplicationPatch {
 
     @JsonProperty
-    private final Double currentTrafficFraction;
+    private final Double currentReadShare;
 
     @JsonProperty
-    private final Double maxTrafficFraction;
+    private final Double maxReadShare;
 
     @JsonCreator
-    public ApplicationPatch(@JsonProperty("currentTrafficFraction") Double currentTrafficFraction,
-                            @JsonProperty("maxTrafficFraction") Double maxTrafficFraction) {
-        this.currentTrafficFraction = currentTrafficFraction;
-        this.maxTrafficFraction = maxTrafficFraction;
+    public ApplicationPatch(@JsonProperty("currentReadShare") Double currentReadShare,
+                            @JsonProperty("maxReadShare") Double maxReadShare) {
+        this.currentReadShare = currentReadShare;
+        this.maxReadShare = maxReadShare;
     }
 
-    public Double getCurrentTrafficFraction() { return currentTrafficFraction; }
-    public Double getMaxTrafficFraction() { return maxTrafficFraction; }
+    public Double getCurrentReadShare() { return currentReadShare; }
+    public Double getMaxReadShare() { return maxReadShare; }
 
 }

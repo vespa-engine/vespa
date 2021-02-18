@@ -66,10 +66,10 @@ public class ResourceTarget {
     /** Ideal cpu load must take the application traffic fraction into account */
     private static double idealCpuLoad(Application application) {
         double trafficFactor;
-        if (application.status().maxTrafficFraction() == 0) // No traffic fraction data
+        if (application.status().maxReadShare() == 0) // No traffic fraction data
             trafficFactor = 0.5; // assume we currently get half of the global share of traffic
         else
-            trafficFactor = application.status().currentTrafficFraction() / application.status().maxTrafficFraction();
+            trafficFactor = application.status().currentReadShare() / application.status().maxReadShare();
 
         if (trafficFactor < 0.5)  // The expectation that we have almost no load with almost no queries is incorrect due
             trafficFactor = 0.5;  // to write traffic; once that is separated we can lower this threshold (but not to 0)

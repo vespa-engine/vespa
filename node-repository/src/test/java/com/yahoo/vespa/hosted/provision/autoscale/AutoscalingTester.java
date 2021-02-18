@@ -199,8 +199,8 @@ class AutoscalingTester {
 
     public void storeReadShare(double currentReadShare, double maxReadShare, ApplicationId applicationId) {
         Application application = nodeRepository().applications().require(applicationId);
-        application = application.with(application.status().withCurrentTrafficFraction(currentReadShare)
-                                                           .withMaxTrafficFraction(maxReadShare));
+        application = application.with(application.status().withCurrentReadShare(currentReadShare)
+                                                           .withMaxReadShare(maxReadShare));
         nodeRepository().applications().put(application, nodeRepository().nodes().lock(applicationId));
     }
 

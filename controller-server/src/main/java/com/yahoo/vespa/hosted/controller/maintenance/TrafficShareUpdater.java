@@ -23,12 +23,12 @@ import java.time.Duration;
  *
  * @author bratseth
  */
-public class TrafficFractionUpdater extends ControllerMaintainer {
+public class TrafficShareUpdater extends ControllerMaintainer {
 
     private final ApplicationController applications;
     private final NodeRepository nodeRepository;
 
-    public TrafficFractionUpdater(Controller controller, Duration duration) {
+    public TrafficShareUpdater(Controller controller, Duration duration) {
         super(controller, duration, DeploymentMetricsMaintainer.class.getSimpleName(), SystemName.all());
         this.applications = controller.applications();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
@@ -55,12 +55,12 @@ public class TrafficFractionUpdater extends ControllerMaintainer {
         long prodRegions = instance.deployments().values().stream()
                                                           .filter(i -> i.zone().environment().isProduction())
                                                           .count();
-        double currentTrafficFraction = totalQps == 0 ? 0 : qpsInZone / totalQps;
-        double maxTrafficFraction = prodRegions < 2 ? 1.0 : 1.0 / ( prodRegions - 1.0);
-        if (currentTrafficFraction > maxTrafficFraction) // This can happen because the assumption of equal traffic
-            maxTrafficFraction = currentTrafficFraction; // distribution can be incorrect
+        double currentReadShare = totalQps == 0 ? 0 : qpsInZone / totalQps;
+        double maxReadShare = prodRegions < 2 ? 1.0 : 1.0 / ( prodRegions - 1.0);
+        if (currentReadShare > maxReadShare) // This can happen because the assumption of equal traffic
+            maxReadShare = currentReadShare; // distribution can be incorrect
 
-        nodeRepository.patchApplication(deployment.zone(), instance.id(), currentTrafficFraction, maxTrafficFraction);
+        nodeRepository.patchApplication(deployment.zone(), instance.id(), currentReadShare, maxReadShare);
     }
 
 }

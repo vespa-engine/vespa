@@ -10,40 +10,40 @@ import java.util.Objects;
  */
 public class Status {
 
-    private final double currentTrafficFraction;
-    private final double maxTrafficFraction;
+    private final double currentReadShare;
+    private final double maxReadShare;
 
     /** Do not use */
-    public Status(double currentTrafficFraction, double maxTrafficFraction) {
-        this.currentTrafficFraction = currentTrafficFraction;
-        this.maxTrafficFraction = maxTrafficFraction;
+    public Status(double currentReadShare, double maxReadShare) {
+        this.currentReadShare = currentReadShare;
+        this.maxReadShare = maxReadShare;
     }
 
-    public Status withCurrentTrafficFraction(double currentTrafficFraction) {
-        return new Status(currentTrafficFraction, maxTrafficFraction);
+    public Status withCurrentReadShare(double currentReadShare) {
+        return new Status(currentReadShare, maxReadShare);
     }
 
     /**
      * Returns the current fraction of the global traffic to this application that is received by the
      * deployment in this zone.
      */
-    public double currentTrafficFraction() { return currentTrafficFraction; }
+    public double currentReadShare() { return currentReadShare; }
 
-    public Status withMaxTrafficFraction(double maxTrafficFraction) {
-        return new Status(currentTrafficFraction, maxTrafficFraction);
+    public Status withMaxReadShare(double maxReadShare) {
+        return new Status(currentReadShare, maxReadShare);
     }
 
     /**
      * Returns an estimate of the max fraction of the global traffic to this application that may possibly
      * be received by the deployment in this zone.
      */
-    public double maxTrafficFraction() { return maxTrafficFraction; }
+    public double maxReadShare() { return maxReadShare; }
 
     public static Status initial() { return new Status(0, 0); }
 
     @Override
     public int hashCode() {
-        return Objects.hash(currentTrafficFraction, maxTrafficFraction);
+        return Objects.hash(currentReadShare, maxReadShare);
     }
 
     @Override
@@ -51,16 +51,16 @@ public class Status {
         if (o == this) return true;
         if ( ! (o instanceof Status)) return false;
         Status other = (Status)o;
-        if ( other.currentTrafficFraction != this.currentTrafficFraction) return false;
-        if ( other.maxTrafficFraction != this.maxTrafficFraction) return false;
+        if ( other.currentReadShare != this.currentReadShare) return false;
+        if ( other.maxReadShare != this.maxReadShare) return false;
         return true;
     }
 
     @Override
     public String toString() {
         return "application status: [" +
-               "currentTrafficFraction: " + currentTrafficFraction + ", " +
-               "maxTrafficFraction: " + maxTrafficFraction +
+               "currentReadShare: " + currentReadShare + ", " +
+               "maxReadShare: " + maxReadShare +
                "]";
     }
 

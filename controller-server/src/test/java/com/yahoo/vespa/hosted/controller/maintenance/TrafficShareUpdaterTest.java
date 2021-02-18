@@ -21,14 +21,14 @@ import static org.junit.Assert.assertEquals;
  *
  * @author bratseth
  */
-public class TrafficFractionUpdaterTest {
+public class TrafficShareUpdaterTest {
 
     @Test
     public void testTrafficUpdater() {
         DeploymentTester tester = new DeploymentTester();
         var application = tester.newDeploymentContext();
         var deploymentMetricsMaintainer = new DeploymentMetricsMaintainer(tester.controller(), Duration.ofDays(1));
-        var updater = new TrafficFractionUpdater(tester.controller(), Duration.ofDays(1));
+        var updater = new TrafficShareUpdater(tester.controller(), Duration.ofDays(1));
         ZoneId prod1 = ZoneId.from("prod", "ap-northeast-1");
         ZoneId prod2 = ZoneId.from("prod", "us-east-3");
         ZoneId prod3 = ZoneId.from("prod", "us-west-1");
@@ -85,11 +85,11 @@ public class TrafficFractionUpdaterTest {
         tester.controllerTester().serviceRegistry().configServerMock().setMetrics(new DeploymentId(application, zone), clusterMetrics);
     }
 
-    private void assertTrafficFraction(double currentTrafficFraction, double maxTrafficFraction,
+    private void assertTrafficFraction(double currentReadShare, double maxReadShare,
                                        ApplicationId application, ZoneId zone, DeploymentTester tester) {
         NodeRepositoryMock mock = (NodeRepositoryMock)tester.controller().serviceRegistry().configServer().nodeRepository();
-        assertEquals(currentTrafficFraction, mock.getTrafficFraction(application, zone).getFirst(), 0.00001);
-        assertEquals(maxTrafficFraction, mock.getTrafficFraction(application, zone).getSecond(), 0.00001);
+        assertEquals(currentReadShare, mock.getTrafficFraction(application, zone).getFirst(), 0.00001);
+        assertEquals(maxReadShare, mock.getTrafficFraction(application, zone).getSecond(), 0.00001);
     }
 
 }

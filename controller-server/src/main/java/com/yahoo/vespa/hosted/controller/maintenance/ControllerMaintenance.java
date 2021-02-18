@@ -64,7 +64,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new HostSwitchUpdater(controller, intervals.hostSwitchUpdater));
         maintainers.add(new ReindexingTriggerer(controller, intervals.reindexingTriggerer));
         maintainers.add(new EndpointCertificateMaintainer(controller, intervals.endpointCertificateMaintainer));
-        maintainers.add(new TrafficFractionUpdater(controller, intervals.trafficFractionUpdater));
+        maintainers.add(new TrafficShareUpdater(controller, intervals.trafficFractionUpdater));
     }
 
     public Upgrader upgrader() { return upgrader; }

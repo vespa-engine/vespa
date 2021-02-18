@@ -40,8 +40,8 @@ public class ApplicationSerializer {
     private static final String idKey = "id";
 
     private static final String statusKey = "status";
-    private static final String currentTrafficFractionKey = "currentTrafficFraction";
-    private static final String maxTrafficFractionKey = "maxTrafficFraction";
+    private static final String currentReadShareKey = "currentReadShare";
+    private static final String maxReadShareKey = "maxReadShare";
 
     private static final String clustersKey = "clusters";
     private static final String exclusiveKey = "exclusive";
@@ -91,14 +91,14 @@ public class ApplicationSerializer {
     }
 
     private static void toSlime(Status status, Cursor statusObject) {
-        statusObject.setDouble(currentTrafficFractionKey, status.currentTrafficFraction());
-        statusObject.setDouble(maxTrafficFractionKey, status.maxTrafficFraction());
+        statusObject.setDouble(currentReadShareKey, status.currentReadShare());
+        statusObject.setDouble(maxReadShareKey, status.maxReadShare());
     }
 
     private static Status statusFromSlime(Inspector statusObject) {
         if ( ! statusObject.valid()) return Status.initial(); // TODO: Remove this line after March 2021
-        return new Status(statusObject.field(currentTrafficFractionKey).asDouble(),
-                          statusObject.field(maxTrafficFractionKey).asDouble());
+        return new Status(statusObject.field(currentReadShareKey).asDouble(),
+                          statusObject.field(maxReadShareKey).asDouble());
     }
 
     private static void clustersToSlime(Collection<Cluster> clusters, Cursor clustersObject) {
