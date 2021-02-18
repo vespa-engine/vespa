@@ -403,6 +403,73 @@ public class Field extends QueryChain {
      * @param t the t
      * @return the query
      */
+    public Query eq(double t) {
+        return common("=", annotation, t);
+    }
+
+    /**
+     * Greater than or equal to query.
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
+    public Query ge(double t) {
+        return common(">=", annotation, t);
+    }
+
+    /**
+     * Greater than query.
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
+    public Query gt(double t) {
+        return common(">", annotation, t);
+    }
+
+    /**
+     * Less than or equal to query.
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
+    public Query le(double t) {
+        return common("<=", annotation, t);
+    }
+
+    /**
+     * Less than query.
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
+    public Query lt(double t) {
+        return common("<", annotation, t);
+    }
+
+    /**
+     * In range query.
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
+     *
+     * @param l the l
+     * @param m the m
+     * @return the query
+     */
+    public Query inRange(double l, double m) {
+        return common("range", annotation, l, new Double[]{m});
+    }
+
+    /**
+     * Equal to query.
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#numeric
+     *
+     * @param t the t
+     * @return the query
+     */
     public Query eq(float t) {
         return common("=", annotation, t);
     }
