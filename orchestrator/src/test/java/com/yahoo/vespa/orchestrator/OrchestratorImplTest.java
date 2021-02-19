@@ -18,8 +18,11 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.orchestrator.controller.ClusterControllerClient;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactory;
 import com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock;
+import com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState;
+import com.yahoo.vespa.orchestrator.controller.ClusterControllerStateResponse;
 import com.yahoo.vespa.orchestrator.model.ApplicationApiFactory;
 import com.yahoo.vespa.orchestrator.model.NodeGroup;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
@@ -396,6 +399,77 @@ public class OrchestratorImplTest {
                 lock,
                 serviceMonitor,
                 applicationApiFactory);
+    }
+
+    @Test
+    public void testIsQuiescent() throws Exception {
+        StatusService statusService = new ZkStatusService(new MockCurator(),
+                                                          mock(Metric.class),
+                                                          new TestTimer(),
+                                                          new DummyAntiServiceMonitor());
+
+        HostName hostName = new HostName("my.host");
+        HostName ccHost = new HostName("cc.host");
+        TenantId tenantId = new TenantId("tenant");
+        ApplicationInstanceId applicationInstanceId = new ApplicationInstanceId("app:env:region:instance");
+        ApplicationInstanceReference reference = new ApplicationInstanceReference(tenantId, applicationInstanceId);
+        ApplicationId id = ApplicationId.from("tenant", "app", "instance");
+
+        ApplicationInstance applicationInstance =
+                new ApplicationInstance(tenantId,
+                                        applicationInstanceId,
+                                        Set.of(new ServiceCluster(new ClusterId("foo"),
+                                                                  ServiceType.STORAGE,
+                                                                  Set.of(new ServiceInstance(new ConfigId("foo/storage/1"),
+                                                                                             hostName,
+                                                                                             ServiceStatus.UP),
+                                                                         new ServiceInstance(new ConfigId("foo/storage/2"),
+                                                                                             hostName,
+                                                                                             ServiceStatus.UP))),
+                                               new ServiceCluster(new ClusterId("bar"),
+                                                                  ServiceType.SEARCH,
+                                                                  Set.of(new ServiceInstance(new ConfigId("bar/storage/0"),
+                                                                                             hostName,
+                                                                                             ServiceStatus.UP),
+                                                                         new ServiceInstance(new ConfigId("bar/storage/3"),
+                                                                                             hostName,
+                                                                                             ServiceStatus.UP))),
+                                               new ServiceCluster(new ClusterId("cluster-controllers"),
+                                                                  ServiceType.CLUSTER_CONTROLLER,
+                                                                  Set.of(new ServiceInstance(new ConfigId("what/standalone/cluster-controllers/0"),
+                                                                                             ccHost,
+                                                                                             ServiceStatus.UP)))));
+
+        ServiceMonitor serviceMonitor = () -> new ServiceModel(Map.of(reference, applicationInstance));
+
+        ClusterControllerClientFactory clusterControllerClientFactory = mock(ClusterControllerClientFactory.class);
+        ClusterControllerClient fooClient = mock(ClusterControllerClient.class);
+        ClusterControllerClient barClient = mock(ClusterControllerClient.class);
+        when(clusterControllerClientFactory.createClient(List.of(ccHost), "foo")).thenReturn(fooClient);
+        when(clusterControllerClientFactory.createClient(List.of(ccHost), "bar")).thenReturn(barClient);
+
+        orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource), clusterControllerClientFactory, applicationApiFactory),
+                                            clusterControllerClientFactory,
+                                            statusService,
+                                            serviceMonitor,
+                                            0,
+                                            new ManualClock(),
+                                            applicationApiFactory,
+                                            flagSource);
+
+        ClusterControllerStateResponse accepted = new ClusterControllerStateResponse(true, "OK");
+        ClusterControllerStateResponse denied = new ClusterControllerStateResponse(false, "NO");
+        when(fooClient.setNodeState(any(), eq(1), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(accepted);
+        when(fooClient.setNodeState(any(), eq(2), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(accepted);
+        when(barClient.setNodeState(any(), eq(0), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(accepted);
+        when(barClient.setNodeState(any(), eq(3), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(accepted);
+        assertTrue(orchestrator.isQuiescent(id));
+
+        when(fooClient.setNodeState(any(), eq(2), eq(ClusterControllerNodeState.MAINTENANCE))).thenReturn(denied);
+        assertFalse(orchestrator.isQuiescent(id));
+
+        when(fooClient.setNodeState(any(), eq(2), eq(ClusterControllerNodeState.MAINTENANCE))).thenThrow(new RuntimeException());
+        assertFalse(orchestrator.isQuiescent(id));
     }
 
     @Test

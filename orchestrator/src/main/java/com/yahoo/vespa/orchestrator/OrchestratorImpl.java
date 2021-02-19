@@ -34,6 +34,7 @@ import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
+import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -44,8 +45,12 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
+
+import static com.yahoo.vespa.orchestrator.controller.ClusterControllerNodeState.MAINTENANCE;
+import static java.util.stream.Collectors.toList;
+import static java.util.stream.Collectors.toSet;
 
 /**
  * @author oyving
@@ -113,7 +118,7 @@ public class OrchestratorImpl implements Orchestrator {
                 .serviceClusters().stream()
                 .flatMap(cluster -> cluster.serviceInstances().stream())
                 .filter(serviceInstance -> hostName.equals(serviceInstance.hostName()))
-                .collect(Collectors.toList());
+                .collect(toList());
 
         HostInfo hostInfo = statusService.getHostInfo(applicationInstance.reference(), hostName);
 
@@ -215,7 +220,7 @@ public class OrchestratorImpl implements Orchestrator {
      * Suspend normal operations for a group of nodes in the same application.
      *
      * @param nodeGroup The group of nodes in an application.
-     * @throws HostStateChangeDeniedException if the request cannot be meet due to policy constraints.
+     * @throws HostStateChangeDeniedException if the request cannot be met due to policy constraints.
      */
     void suspendGroup(OrchestratorContext context, NodeGroup nodeGroup) throws HostStateChangeDeniedException {
         ApplicationInstanceReference applicationReference = nodeGroup.getApplicationReference();
@@ -244,7 +249,7 @@ public class OrchestratorImpl implements Orchestrator {
     @Override
     public Set<ApplicationId> getAllSuspendedApplications() {
         Set<ApplicationInstanceReference> refSet = statusService.getAllSuspendedApplications();
-        return refSet.stream().map(OrchestratorUtil::toApplicationId).collect(Collectors.toSet());
+        return refSet.stream().map(OrchestratorUtil::toApplicationId).collect(toSet());
     }
 
     @Override
@@ -337,7 +342,7 @@ public class OrchestratorImpl implements Orchestrator {
 
         return nodeGroupMap.values().stream()
                 .sorted(OrchestratorImpl::compareNodeGroupsForSuspend)
-                .collect(Collectors.toList());
+                .collect(toList());
     }
 
     private static int compareNodeGroupsForSuspend(NodeGroup leftNodeGroup, NodeGroup rightNodeGroup) {
@@ -375,10 +380,47 @@ public class OrchestratorImpl implements Orchestrator {
 
                 // If the clustercontroller throws an error the nodes will be marked as allowed to be down
                 // and be set back up on next resume invocation.
-                setClusterStateInController(context.createSubcontextWithinLock(), application, ClusterControllerNodeState.MAINTENANCE);
+                setClusterStateInController(context.createSubcontextWithinLock(), application, MAINTENANCE);
             }
 
             lock.setApplicationInstanceStatus(status);
+        }
+    }
+
+    @Override
+    public boolean isQuiescent(ApplicationId id) {
+        try {
+            ApplicationInstance application = serviceMonitor.getApplication(OrchestratorUtil.toApplicationInstanceReference(id, serviceMonitor))
+                                                            .orElseThrow(ApplicationIdNotFoundException::new);
+
+            List<ServiceCluster> contentClusters = application.serviceClusters().stream()
+                                                              .filter(VespaModelUtil::isContent)
+                                                              .collect(toList());
+
+            // For all content clusters, probe whether maintenance is OK.
+            OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock)
+                                                             .createSubcontextForSingleAppOp(true); // probe
+            for (ServiceCluster cluster : contentClusters) {
+                List<HostName> clusterControllers = VespaModelUtil.getClusterControllerInstancesInOrder(application, cluster.clusterId());
+                ClusterControllerClient client = clusterControllerClientFactory.createClient(clusterControllers, cluster.clusterId().s());
+                for (ServiceInstance service : cluster.serviceInstances()) {
+                    try {
+                        ClusterControllerStateResponse response = client.setNodeState(context,
+                                                                                      VespaModelUtil.getStorageNodeIndex(service.configId()),
+                                                                                      MAINTENANCE);
+                        if ( ! response.wasModified)
+                            return false;
+                    }
+                    catch (Exception e) {
+                        log.log(Level.INFO, "Failed probing for permission to set " + service + " in MAINTENANCE: " + Exceptions.toMessageString(e));
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+        catch (ApplicationIdNotFoundException ignored) {
+            return false;
         }
     }
 
@@ -390,7 +432,7 @@ public class OrchestratorImpl implements Orchestrator {
         Set<ClusterId> contentClusterIds = application.serviceClusters().stream()
                 .filter(VespaModelUtil::isContent)
                 .map(ServiceCluster::clusterId)
-                .collect(Collectors.toSet());
+                .collect(toSet());
 
         // For all content clusters set in maintenance
         for (ClusterId clusterId : contentClusterIds) {

@@ -368,7 +368,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                                                                 true)
                                                      .keySet();
 
-                admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone"),
+                admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(admin, "standalone"),
                                                                      hosts,
                                                                      "cluster-controllers",
                                                                      true,

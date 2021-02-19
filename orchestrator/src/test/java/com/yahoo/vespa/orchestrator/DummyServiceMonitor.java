@@ -45,11 +45,11 @@ public class DummyServiceMonitor implements ServiceMonitor, AntiServiceMonitor {
         apps.add(new ApplicationInstance(
                 new TenantId("test-tenant-id"),
                 new ApplicationInstanceId("application:prod:utopia-1:instance"),
-                TestUtil.makeServiceClusterSet(
+                Set.of(
                         new ServiceCluster(
                                 new ClusterId("test-cluster-id-1"),
                                 new ServiceType("storagenode"),
-                                TestUtil.makeServiceInstanceSet(
+                                Set.of(
                                         new ServiceInstance(
                                                 new ConfigId("storage/storage/1"),
                                                 TEST1_HOST_NAME,
@@ -61,7 +61,7 @@ public class DummyServiceMonitor implements ServiceMonitor, AntiServiceMonitor {
                         new ServiceCluster(
                                 new ClusterId("clustercontroller"),
                                 new ServiceType("container-clustercontroller"),
-                                TestUtil.makeServiceInstanceSet(
+                                Set.of(
                                         new ServiceInstance(
                                                 new ConfigId("clustercontroller-1"),
                                                 new HostName("myclustercontroller.hostname.tld"),
@@ -73,11 +73,11 @@ public class DummyServiceMonitor implements ServiceMonitor, AntiServiceMonitor {
         apps.add(new ApplicationInstance(
                 new TenantId("mediasearch"),
                 new ApplicationInstanceId("imagesearch:prod:utopia-1:default"),
-                TestUtil.makeServiceClusterSet(
+                Set.of(
                         new ServiceCluster(
                                 new ClusterId("image"),
                                 new ServiceType("storagenode"),
-                                TestUtil.makeServiceInstanceSet(
+                                Set.of(
                                         new ServiceInstance(
                                                 new ConfigId("storage/storage/3"),
                                                 TEST3_HOST_NAME,
@@ -89,7 +89,7 @@ public class DummyServiceMonitor implements ServiceMonitor, AntiServiceMonitor {
                         new ServiceCluster(
                                 new ClusterId("clustercontroller"),
                                 new ServiceType("container-clustercontroller"),
-                                TestUtil.makeServiceInstanceSet(
+                                Set.of(
                                         new ServiceInstance(
                                                 new ConfigId("clustercontroller-1"),
                                                 new HostName("myclustercontroller2.hostname.tld"),
@@ -101,11 +101,11 @@ public class DummyServiceMonitor implements ServiceMonitor, AntiServiceMonitor {
         apps.add(new ApplicationInstance(
                 new TenantId("tenant-id-3"),
                 new ApplicationInstanceId("application-instance-3:prod:utopia-1:default"),
-                TestUtil.makeServiceClusterSet(
+                Set.of(
                         new ServiceCluster(
                                 new ClusterId("cluster-id-3"),
                                 new ServiceType("storagenode"),
-                                TestUtil.makeServiceInstanceSet(
+                                Set.of(
                                         new ServiceInstance(
                                                 new ConfigId("storage/storage/1"),
                                                 TEST6_HOST_NAME,
@@ -117,7 +117,7 @@ public class DummyServiceMonitor implements ServiceMonitor, AntiServiceMonitor {
                         new ServiceCluster(
                                 new ClusterId("clustercontroller"),
                                 new ServiceType("container-clustercontroller"),
-                                TestUtil.makeServiceInstanceSet(
+                                Set.of(
                                         new ServiceInstance(
                                                 new ConfigId("clustercontroller-1"),
                                                 new HostName("myclustercontroller3.hostname.tld"),
