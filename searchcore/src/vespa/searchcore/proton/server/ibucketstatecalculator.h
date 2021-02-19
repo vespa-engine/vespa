@@ -2,7 +2,7 @@
 
 #pragma once
 
-#include <memory>
+#include <vespa/vespalib/util/trinary.h>
 
 namespace document { class Bucket; }
 
@@ -10,8 +10,7 @@ namespace proton {
 
 struct IBucketStateCalculator
 {
-    typedef std::shared_ptr<IBucketStateCalculator> SP;
-    virtual bool shouldBeReady(const document::Bucket &bucket) const = 0;
+    virtual vespalib::Trinary shouldBeReady(const document::Bucket &bucket) const = 0;
     virtual bool clusterUp() const = 0;
     virtual bool nodeUp() const = 0;
     virtual bool nodeInitializing() const = 0;

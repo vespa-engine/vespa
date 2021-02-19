@@ -37,7 +37,7 @@ public:
           _nodeRetired(_calc.nodeRetired())
     {
     }
-    bool shouldBeReady(const document::Bucket &bucket) const override {
+    vespalib::Trinary shouldBeReady(const document::Bucket &bucket) const override {
         return _calc.shouldBeReady(Bucket(bucket));
     }
     bool clusterUp() const override { return _clusterUp; }

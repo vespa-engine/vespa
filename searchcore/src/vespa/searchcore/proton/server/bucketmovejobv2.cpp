@@ -26,15 +26,24 @@ using storage::spi::Bucket;
 using storage::spi::makeBucketTask;
 using proton::bucketdb::BucketMover;
 using vespalib::makeLambdaTask;
+using vespalib::Trinary;
 
 namespace proton {
 
 namespace {
 
-const char * bool2str(bool v) { return (v ? "T" : "F"); }
+const char *
+toStr(bool v) {
+    return (v ? "T" : "F");
+}
+
+const char *
+toStr(Trinary v) {
+    return (v == Trinary::True) ? "T" : ((v == Trinary::False) ? "F" : "U");
+}
 
 bool
-blockedDueToClusterState(const IBucketStateCalculator::SP &calc)
+blockedDueToClusterState(const std::shared_ptr<IBucketStateCalculator> &calc)
 {
     bool clusterUp = calc && calc->clusterUp();
     bool nodeUp = calc && calc->nodeUp();
@@ -44,7 +53,7 @@ blockedDueToClusterState(const IBucketStateCalculator::SP &calc)
 
 }
 
-BucketMoveJobV2::BucketMoveJobV2(const IBucketStateCalculator::SP &calc,
+BucketMoveJobV2::BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &calc,
                                  IDocumentMoveHandler &moveHandler,
                                  IBucketModifiedHandler &modifiedHandler,
                                  IThreadService & master,
@@ -116,10 +125,13 @@ BucketMoveJobV2::needMove(const ScanIterator &itr) const {
     if (!_calc || (_calc->nodeRetired() && !isActive)) {
         return noMove;
     }
-    const bool shouldBeReady = _calc->shouldBeReady(document::Bucket(_bucketSpace, itr.getBucket()));
-    const bool wantReady = shouldBeReady || isActive;
+    const Trinary shouldBeReady = _calc->shouldBeReady(document::Bucket(_bucketSpace, itr.getBucket()));
+    if (shouldBeReady == Trinary::Undefined) {
+        return noMove;
+    }
+    const bool wantReady = (shouldBeReady == Trinary::True) || isActive;
     LOG(spam, "checkBucket(): bucket(%s), shouldBeReady(%s), active(%s)",
-        itr.getBucket().toString().c_str(), bool2str(shouldBeReady), bool2str(isActive));
+        itr.getBucket().toString().c_str(), toStr(shouldBeReady), toStr(isActive));
     if (wantReady) {
         if (!hasNotReadyDocs) {
             return noMove; // No notready bucket to make ready
@@ -328,7 +340,7 @@ BucketMoveJobV2::backFillMovers() {
     }
 }
 void
-BucketMoveJobV2::notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc)
+BucketMoveJobV2::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc)
 {
     // Called by master write thread
     _calc = newCalc;
