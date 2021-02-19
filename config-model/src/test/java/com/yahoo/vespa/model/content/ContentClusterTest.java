@@ -245,7 +245,7 @@ public class ContentClusterTest extends ContentBaseTest {
             "</services>";
 
         List<String> sds = ApplicationPackageUtils.generateSchemas("type1", "type2");
-        VespaModel model = (new VespaModelCreatorWithMockPkg(null, xml, sds)).create();
+        VespaModel model = new VespaModelCreatorWithMockPkg(null, xml, sds).create();
         assertEquals(2, model.getContentClusters().get("bar").getDocumentDefinitions().size());
         ContainerCluster cluster = model.getAdmin().getClusterControllers();
         assertEquals(3, cluster.getContainers().size());

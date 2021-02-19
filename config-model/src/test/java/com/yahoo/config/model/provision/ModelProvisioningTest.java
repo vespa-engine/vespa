@@ -60,7 +60,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * Test cases for provisioning nodes to entire vespamodels
+ * Test cases for provisioning nodes to entire Vespa models.
  *
  * @author Vegard Havdal
  * @author bratseth
@@ -68,7 +68,7 @@ import static org.junit.Assert.fail;
 public class ModelProvisioningTest {
 
     @Test
-    public void testNodeCountForJdisc() {
+    public void testNodesJdisc() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
                         "<services>\n" +
@@ -664,39 +664,6 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testClusterControllersCanSupplementWithAllContainerClusters() {
-        String services =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                "<services>" +
-                "  <admin version='4.0'/>" +
-                "  <container version='1.0' id='foo1'>" +
-                "     <nodes count='2'/>" +
-                "  </container>" +
-                "  <container version='1.0' id='foo2'>" +
-                "     <nodes count='1'/>" +
-                "  </container>" +
-                "  <content version='1.0' id='bar'>" +
-                "     <redundancy>2</redundancy>" +
-                "     <documents>" +
-                "       <document type='type1' mode='index'/>" +
-                "     </documents>" +
-                "     <controllers><nodes dedicated='false' count='5'/></controllers>" +
-                "     <nodes count='2'/>" +
-                "  </content>" +
-                "</services>";
-
-        int numberOfHosts = 5;
-        VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(numberOfHosts);
-        VespaModel model = tester.createModel(services, true);
-        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
-
-        ContentCluster cluster = model.getContentClusters().get("bar");
-        ContainerCluster clusterControllers = cluster.getClusterControllers();
-        assertEquals(1, clusterControllers.getContainers().size()); // TODO: Expected 5 with this feature reactivated
-    }
-
-    @Test
     public void testClusterControllersIncludeNonRetiredNodes() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -842,32 +809,6 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void test2ContentNodesWithContainerClusterProducesMixedClusterControllerCluster() {
-        String services =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                "<services>" +
-                "  <container version='1.0' id='foo'>" +
-                "     <nodes count='3'/>" +
-                "  </container>" +
-                "  <content version='1.0' id='bar'>" +
-                "     <redundancy>2</redundancy>" +
-                "     <documents>" +
-                "       <document type='type1' mode='index'/>" +
-                "     </documents>" +
-                "     <nodes count='2'/>" +
-                "  </content>" +
-                "</services>";
-
-        VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(5);
-        VespaModel model = tester.createModel(services, true);
-
-        ContentCluster cluster = model.getContentClusters().get("bar");
-        ContainerCluster clusterControllers = cluster.getClusterControllers();
-        assertEquals(1, clusterControllers.getContainers().size()); // TODO: Expected 3 with this feature reactivated
-    }
-
-    @Test
     public void testExplicitDedicatedClusterControllers() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -900,48 +841,6 @@ public class ModelProvisioningTest {
         assertEquals("node-1-3-10-03", clusterControllers.getContainers().get(1).getHostName());
         assertEquals("node-1-3-10-02", clusterControllers.getContainers().get(2).getHostName());
         assertEquals("node-1-3-10-01", clusterControllers.getContainers().get(3).getHostName());
-    }
-
-    @Test
-    @Ignore // WIP, fails now
-    public void testClusterControllersWithNodeChange() {
-        String services =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                "<services>" +
-                "  <content version='1.0' id='bar'>" +
-                "     <redundancy>2</redundancy>" +
-                "     <documents>" +
-                "       <document type='type1' mode='index'/>" +
-                "     </documents>" +
-                "     <nodes count='3'/>" +
-                "  </content>" +
-                "</services>";
-
-        VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(3);
-        VespaModel model = tester.createModel(services);
-
-        List<ClusterControllerContainer> containers = model.getContentClusters().get("bar").getClusterControllers().getContainers();
-        assertEquals(3, containers.size());
-        assertEquals("node-1-3-10-03", containers.get(0).getHostName());
-        assertEquals("node-1-3-10-02", containers.get(1).getHostName());
-        assertEquals("node-1-3-10-01", containers.get(2).getHostName());
-
-        int indexForHost03 = containers.get(1).index();
-        String hostnameForHost03 = containers.get(1).getHostName();
-
-        // Add 1 node to see if this changes index of already existing cluster controllers
-        tester.addHosts(4);
-        model = tester.createModel(services);
-        containers = model.getContentClusters().get("bar").getClusterControllers().getContainers();
-        assertEquals(3, containers.size());
-        assertEquals("node-1-3-10-04", containers.get(0).getHostName());
-        assertEquals("node-1-3-10-03", containers.get(1).getHostName());
-        assertEquals("node-1-3-10-02", containers.get(2).getHostName());
-
-        assertEquals(hostnameForHost03, containers.get(2).getHostName());
-        // TODO: Fails here because index has changed
-        assertEquals(indexForHost03, containers.get(2).index());
     }
 
     @Test
