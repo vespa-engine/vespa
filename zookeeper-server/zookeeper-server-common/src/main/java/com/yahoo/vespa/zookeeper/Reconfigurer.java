@@ -132,8 +132,8 @@ public class Reconfigurer extends AbstractComponent {
 
     /** Returns the timeout to use for the given joining server count */
     private static Duration reconfigTimeout(int joiningServers) {
-        // For reconfig to succeed, the current ensemble must have a majority. When an ensemble grows and the joining
-        // servers outnumber the existing ones, we have to wait for enough of them to start to have a majority.
+        // For reconfig to succeed, the current and resulting ensembles must have a majority. When an ensemble grows and
+        // the joining servers outnumber the existing ones, we have to wait for enough of them to start to have a majority.
         return Duration.ofMillis(Math.max(joiningServers * NODE_TIMEOUT.toMillis(), MIN_TIMEOUT.toMillis()));
     }
 
