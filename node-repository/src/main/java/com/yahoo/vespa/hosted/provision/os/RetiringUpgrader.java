@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
@@ -37,7 +38,7 @@ public class RetiringUpgrader implements Upgrader {
     public void upgradeTo(OsVersionTarget target) {
         NodeList allNodes = nodeRepository.nodes().list();
         NodeList activeNodes = allNodes.state(Node.State.active).nodeType(target.nodeType());
-        if (activeNodes.size() == 0) return; // No nodes eligible for upgrade
+        if (activeNodes.isEmpty()) return; // No nodes eligible for upgrade
 
         Instant now = nodeRepository.clock().instant();
         Duration nodeBudget = target.upgradeBudget()
@@ -51,7 +52,7 @@ public class RetiringUpgrader implements Upgrader {
                    .not().deprovisioning()
                    .byIncreasingOsVersion()
                    .first(1)
-                   .forEach(node -> retire(node, target.version(), now, allNodes));
+                   .forEach(node -> deprovision(node, target.version(), now, allNodes));
     }
 
     @Override
@@ -60,11 +61,12 @@ public class RetiringUpgrader implements Upgrader {
     }
 
     /** Retire and deprovision given host and its children */
-    private void retire(Node host, Version target, Instant now, NodeList allNodes) {
+    private void deprovision(Node host, Version target, Instant now, NodeList allNodes) {
         if (!host.type().isHost()) throw new IllegalArgumentException("Cannot retire non-host " + host);
         Optional<NodeMutex> nodeMutex = nodeRepository.nodes().lockAndGet(host);
         if (nodeMutex.isEmpty()) return;
-        try (var lock = nodeMutex.get()) {
+        // Take allocationLock to prevent any further allocation of nodes on this host
+        try (NodeMutex lock = nodeMutex.get(); Mutex allocationLock = nodeRepository.nodes().lockUnallocated()) {
             host = lock.node();
             NodeType nodeType = host.type();
 
