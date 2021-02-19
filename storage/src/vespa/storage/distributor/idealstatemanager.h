@@ -6,7 +6,6 @@
 #include <vespa/storage/distributor/maintenance/maintenanceprioritygenerator.h>
 #include <vespa/storage/distributor/maintenance/maintenanceoperationgenerator.h>
 #include <vespa/storageframework/generic/status/htmlstatusreporter.h>
-#include <vespa/vdslib/state/clusterstate.h>
 
 namespace storage::distributor {
 

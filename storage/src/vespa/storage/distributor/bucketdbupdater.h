@@ -33,7 +33,6 @@ class BucketDBUpdater : public framework::StatusReporter,
                         public api::MessageHandler
 {
 public:
-    using OutdatedNodes = dbtransition::OutdatedNodes;
     using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
     BucketDBUpdater(Distributor& owner,
                     DistributorBucketSpaceRepo& bucketSpaceRepo,

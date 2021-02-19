@@ -5,7 +5,7 @@
 #include "pendingmessagetracker.h"
 #include <vespa/document/select/parser.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
-
+#include <vespa/vdslib/state/clusterstate.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributorstoragelink");

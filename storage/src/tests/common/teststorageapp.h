@@ -84,7 +84,7 @@ public:
     const document::BucketIdFactory& getBucketIdFactory()
         { return _compReg.getBucketIdFactory(); }
     TestNodeStateUpdater& getStateUpdater() { return _nodeStateUpdater; }
-    lib::Distribution::SP getDistribution()
+    std::shared_ptr<lib::Distribution> & getDistribution()
         { return _compReg.getDistribution(); }
     TestNodeStateUpdater& getNodeStateUpdater() { return _nodeStateUpdater; }
     uint16_t getIndex() const { return _compReg.getIndex(); }

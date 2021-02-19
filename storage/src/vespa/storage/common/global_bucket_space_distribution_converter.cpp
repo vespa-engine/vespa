@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "global_bucket_space_distribution_converter.h"
+#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/config/config.h>
 #include <vespa/config/print/asciiconfigwriter.h>
 #include <vespa/config/print/asciiconfigreader.h>
@@ -9,7 +10,6 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cassert>
 #include <map>
-#include <memory>
 
 namespace storage {
 

@@ -18,6 +18,7 @@
 #include <vespa/documentapi/messagebus/messages/putdocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/removedocumentmessage.h>
 #include <vespa/documentapi/messagebus/messages/visitor.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/objects/nbostream.h>

@@ -7,7 +7,6 @@
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/clock/clock.h>
-#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
 #include <vespa/vespalib/util/xmlserializable.h>
 #include "outdated_nodes_map.h"
@@ -209,12 +208,8 @@ private:
     bool iAmDown() const;
 
     bool storageNodeUpInNewState(document::BucketSpace bucketSpace, uint16_t node) const;
-    std::string getNewClusterStateBundleString() const {
-        return _newClusterStateBundle.getBaselineClusterState()->toString();
-    }
-    std::string getPrevClusterStateBundleString() const {
-        return _prevClusterStateBundle.getBaselineClusterState()->toString();
-    }
+    std::string getNewClusterStateBundleString() const;
+    std::string getPrevClusterStateBundleString() const;
     void update_reply_failure_statistics(const api::ReturnCode& result, const BucketSpaceAndNode& source);
 
     std::shared_ptr<api::SetSystemStateCommand> _cmd;

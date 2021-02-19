@@ -8,6 +8,7 @@
 #include <vespa/storage/distributor/distributor.h>
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include "dummy_cluster_context.h"
 

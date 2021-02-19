@@ -25,7 +25,6 @@
 
 #include <string>
 #include <vespa/vdslib/state/nodestate.h>
-#include <vespa/vdslib/state/clusterstate.h>
 
 namespace storage {
 
@@ -39,7 +38,7 @@ struct StateListener {
 struct NodeStateUpdater {
     typedef std::unique_ptr<NodeStateUpdater> UP;
 
-    virtual ~NodeStateUpdater() {}
+    virtual ~NodeStateUpdater() = default;
 
     virtual lib::NodeState::CSP getReportedNodeState() const = 0;
     virtual lib::NodeState::CSP getCurrentNodeState() const = 0;

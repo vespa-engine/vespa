@@ -10,6 +10,8 @@
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/util/xmlstream.h>
 #include <thread>
 

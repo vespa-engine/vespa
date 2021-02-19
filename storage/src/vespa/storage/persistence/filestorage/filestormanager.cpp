@@ -7,6 +7,7 @@
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/messagebucket.h>
 #include <vespa/storage/config/config-stor-server.h>

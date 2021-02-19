@@ -12,6 +12,7 @@
 #include <vespa/storage/distributor/statecheckers.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/stat.h>
+#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
 

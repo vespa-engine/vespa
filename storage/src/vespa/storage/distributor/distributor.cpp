@@ -15,6 +15,7 @@
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
+#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/memoryusage.h>
 
 #include <vespa/log/log.h>

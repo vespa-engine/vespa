@@ -4,6 +4,7 @@
 #include "ibucketstatechangedhandler.h"
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.buckethandler");
@@ -35,12 +36,8 @@ BucketHandler::performSetCurrentState(BucketId bucketId,
     LOG(debug, "performSetCurrentState(%s, %s)",
         bucketId.toString().c_str(), (active ? "ACTIVE" : "NOT_ACTIVE"));
     _ready->setBucketState(bucketId, active);
-    if (!_changedHandlers.empty()) {
-        typedef std::vector<IBucketStateChangedHandler *> Chv;
-        Chv &chs(_changedHandlers);
-        for (Chv::const_iterator itr = chs.begin(); itr != chs.end(); ++itr) {
-            (*itr)->notifyBucketStateChanged(bucketId, newState);
-        }
+    for (const auto & ch : _changedHandlers) {
+        ch->notifyBucketStateChanged(bucketId, newState);
     }
     resultHandler->handle(Result());
 }

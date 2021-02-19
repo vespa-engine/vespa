@@ -9,6 +9,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
+#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/storage/distributor/distributor_bucket_space_repo.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/operationtargetresolverimpl.h>

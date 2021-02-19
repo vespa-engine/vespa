@@ -6,6 +6,7 @@
 #include <tests/persistence/common/persistenceproviderwrapper.h>
 #include <vespa/persistence/dummyimpl/dummypersistence.h>
 #include <tests/persistence/common/filestortestfixture.h>
+#include <vespa/vdslib/state/clusterstate.h>
 
 using storage::spi::test::makeSpiBucket;
 using namespace ::testing;

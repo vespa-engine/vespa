@@ -25,9 +25,8 @@ public:
                  const lib::Distribution& distribution);
 
     ClusterState(vespalib::nbostream& i);
-
     ClusterState(const ClusterState& other);
-    ClusterState& operator=(const ClusterState& other);
+    ClusterState& operator=(const ClusterState& other) = delete;
     ~ClusterState();
 
     /**

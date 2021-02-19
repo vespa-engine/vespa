@@ -112,7 +112,7 @@ public:
     Distribution(const vespalib::string& serialized);
     ~Distribution();
 
-    Distribution& operator=(const Distribution&);
+    Distribution& operator=(const Distribution&) = delete;
 
     const vespalib::string& serialize() const { return _serialized; }
 

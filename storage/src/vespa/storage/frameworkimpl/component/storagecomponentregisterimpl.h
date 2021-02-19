@@ -11,8 +11,8 @@
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/storageframework/defaultimplementation/component/componentregisterimpl.h>
-#include <vespa/vdslib/distribution/distribution.h>
 
+namespace storage::lib { class Distribution; }
 namespace storage {
 
 class StorageComponentRegisterImpl
@@ -28,7 +28,7 @@ class StorageComponentRegisterImpl
     uint16_t _index;
     std::shared_ptr<const document::DocumentTypeRepo> _docTypeRepo;
     document::BucketIdFactory _bucketIdFactory;
-    lib::Distribution::SP _distribution;
+    std::shared_ptr<lib::Distribution> _distribution;
     NodeStateUpdater* _nodeStateUpdater;
     BucketspacesConfig _bucketSpacesConfig;
 
@@ -42,7 +42,7 @@ public:
     uint16_t getIndex() const { return _index; }
     std::shared_ptr<const document::DocumentTypeRepo> getTypeRepo() { return _docTypeRepo; }
     const document::BucketIdFactory& getBucketIdFactory() { return _bucketIdFactory; }
-    lib::Distribution::SP getDistribution() { return _distribution; }
+    std::shared_ptr<lib::Distribution> & getDistribution() { return _distribution; }
     NodeStateUpdater& getNodeStateUpdater() { return *_nodeStateUpdater; }
 
     void registerStorageComponent(StorageComponent&) override;
@@ -51,7 +51,7 @@ public:
     virtual void setNodeStateUpdater(NodeStateUpdater& updater);
     virtual void setDocumentTypeRepo(std::shared_ptr<const document::DocumentTypeRepo>);
     virtual void setBucketIdFactory(const document::BucketIdFactory&);
-    virtual void setDistribution(lib::Distribution::SP);
+    virtual void setDistribution(std::shared_ptr<lib::Distribution>);
     virtual void setBucketSpacesConfig(const BucketspacesConfig&);
 };
 

@@ -13,6 +13,7 @@
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/persistence/spi/bucket_limits.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/gtest/gtest.h>
 

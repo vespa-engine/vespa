@@ -13,11 +13,13 @@
 #include <vespa/storageapi/messageapi/bucketinforeply.h>
 #include <vespa/storageapi/messageapi/maintenancecommand.h>
 #include <vespa/document/base/globalid.h>
-#include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/document/util/printable.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/storageapi/defs.h>
 
 namespace document { class DocumentTypeRepo; }
+
+namespace storage::lib { class ClusterState; }
 
 namespace storage::api {
 

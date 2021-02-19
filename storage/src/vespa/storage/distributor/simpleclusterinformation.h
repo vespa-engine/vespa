@@ -2,8 +2,7 @@
 #pragma once
 
 #include "clusterinformation.h"
-#include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/vdslib/state/cluster_state_bundle.h>
 
 namespace storage::distributor {
 
