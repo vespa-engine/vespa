@@ -178,7 +178,7 @@ class NodesResponse extends SlimeJsonResponse {
         node.reports().toSlime(object, "reports");
         node.modelName().ifPresent(modelName -> object.setString("modelName", modelName));
         node.switchHostname().ifPresent(switchHostname -> object.setString("switchHostname", switchHostname));
-        nodeArchiveUrl(nodeRepository.flagSource(), node).ifPresent(url -> object.setString("nodeArchiveUrl", url));
+        nodeArchiveUri(nodeRepository.flagSource(), node).ifPresent(url -> object.setString("nodeArchiveUri", url));
     }
 
     private void toSlime(ApplicationId id, Cursor object) {
@@ -233,7 +233,7 @@ class NodesResponse extends SlimeJsonResponse {
         return path.substring(lastSlash+1);
     }
 
-    static Optional<String> nodeArchiveUrl(FlagSource flagSource, Node node) {
+    static Optional<String> nodeArchiveUri(FlagSource flagSource, Node node) {
         String bucket = Flags.SYNC_HOST_LOGS_TO_S3_BUCKET.bindTo(flagSource)
                 .with(FetchVector.Dimension.NODE_TYPE, node.type().name())
                 .with(FetchVector.Dimension.APPLICATION_ID, node.allocation().map(alloc -> alloc.owner().serializedForm()).orElse(null))
