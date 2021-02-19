@@ -141,6 +141,10 @@ lib::Distribution::DistributionConfig getCfg(uint16_t redundancy, uint16_t ready
     return config;
 }
 
+Trinary toTrinary(bool v) {
+    return v ? Trinary::True : Trinary::False;
+}
+
 }
 
 TEST(ClusterStateTest, testReady)
@@ -155,35 +159,35 @@ TEST(ClusterStateTest, testReady)
     {
         lib::Distribution d(getCfg(3, 0));
         ClusterState state(s, 0, d);
-        EXPECT_EQ(Trinary::False, state.shouldBeReady(b));
+        EXPECT_EQ(toTrinary(false), state.shouldBeReady(b));
     }
 
     // Only node 0 with 1 ready copy.
     for (uint32_t i = 0; i < 3; ++i) {
         lib::Distribution d(getCfg(3, 1));
         ClusterState state(s, i, d);
-        EXPECT_EQ((i == 0) ? Trinary::True : Trinary::False, state.shouldBeReady(b));
+        EXPECT_EQ(toTrinary(i == 0), state.shouldBeReady(b));
     }
 
     // All of them with 3 ready copies
     for (uint32_t i = 0; i < 3; ++i) {
         lib::Distribution d(getCfg(3, 3));
         ClusterState state(s, i, d);
-        EXPECT_EQ(Trinary::True, state.shouldBeReady(b));
+        EXPECT_EQ(toTrinary(true), state.shouldBeReady(b));
     }
 
     // Node 0 and node 1 with 2 ready copies.
     for (uint32_t i = 0; i < 3; ++i) {
         lib::Distribution d(getCfg(3, 2));
         ClusterState state(s, i, d);
-        EXPECT_EQ((i == 0 || i == 2) ? Trinary::True : Trinary::False, state.shouldBeReady(b));
+        EXPECT_EQ(toTrinary(i == 0 || i == 2), state.shouldBeReady(b));
     }
 
     // All of them with 3 ready copies
     for (uint32_t i = 0; i < 3; ++i) {
         lib::Distribution d(getCfg(3, 3));
         ClusterState state(s, i, d);
-        EXPECT_EQ(Trinary::True, state.shouldBeReady(b));
+        EXPECT_EQ(toTrinary(true), state.shouldBeReady(b));
     }
 
     lib::ClusterState s2("version:1 storage:3 .0.s:d distributor:3");
@@ -192,13 +196,13 @@ TEST(ClusterStateTest, testReady)
     for (uint32_t i = 0; i < 3; ++i) {
         lib::Distribution d(getCfg(3, 2));
         ClusterState state(s2, i, d);
-        EXPECT_EQ((i == 1 || i == 2) ? Trinary::True : Trinary::False, state.shouldBeReady(b));
+        EXPECT_EQ(toTrinary(i == 1 || i == 2), state.shouldBeReady(b));
     }
 
     for (uint32_t i = 0; i < 3; ++i) {
         lib::Distribution d(getCfg(3, 1));
         ClusterState state(s2, i, d);
-        EXPECT_EQ((i == 2) ? Trinary::True : Trinary::False, state.shouldBeReady(b));
+        EXPECT_EQ(toTrinary(i == 2), state.shouldBeReady(b));
     }
 }
 
