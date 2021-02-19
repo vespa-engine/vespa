@@ -1,4 +1,4 @@
 <!-- Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 # Container core
 
-This module contains various core classes for JDisc container.
+This module contains core classes for JDisc container. 

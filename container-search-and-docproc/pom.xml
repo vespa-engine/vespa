@@ -63,10 +63,6 @@
           <artifactId>component</artifactId>
         </exclusion>
         <exclusion>
-            <groupId>com.yahoo.vespa</groupId>
-            <artifactId>processing</artifactId>
-        </exclusion>
-        <exclusion>
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>config</artifactId>
         </exclusion>
@@ -101,10 +97,6 @@
         <exclusion>
           <groupId>com.yahoo.vespa</groupId>
           <artifactId>component</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.yahoo.vespa</groupId>
-          <artifactId>processing</artifactId>
         </exclusion>
         <exclusion>
           <groupId>com.yahoo.vespa</groupId>
