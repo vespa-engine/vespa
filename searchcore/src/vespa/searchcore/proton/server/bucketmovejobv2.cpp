@@ -156,7 +156,6 @@ BucketMoveJobV2::startMove(BucketMoverSP mover, size_t maxDocsToMove) {
     if (keys.empty()) return;
     if (_stopped.load(std::memory_order_relaxed)) return;
     mover->updateLastValidGid(keys.back()._gid);
-    auto context = getLimiter().beginOperation();
     Bucket spiBucket(document::Bucket(_bucketSpace, mover->getBucket()));
     auto bucketTask = makeBucketTask(
             [this, mover=std::move(mover), keys=std::move(keys),opsTracker=getLimiter().beginOperation()]

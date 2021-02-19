@@ -569,7 +569,7 @@ TEST_F(MaxOutstandingMoveOpsFixture_2, require_that_bucket_move_job_is_blocked_i
     sync();
     assertDocsMoved(2, 2);
 
-    unblockJob(2);
+    unblockJob(1);
     assertRunToFinished();
     sync();
     assertDocsMoved(3, 1);
