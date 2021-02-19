@@ -8,7 +8,9 @@
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/vdslib/distribution/distribution.h>
 #include <algorithm>
 
 #include <vespa/log/log.h>

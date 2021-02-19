@@ -12,7 +12,7 @@
 #pragma once
 
 #include <vespa/config/helper/configfetcher.h>
-#include <vespa/vdslib/state/clusterstate.h>
+#include <vespa/vdslib/state/nodestate.h>
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/common/storagelink.h>

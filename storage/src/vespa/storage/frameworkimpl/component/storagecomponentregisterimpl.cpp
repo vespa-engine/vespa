@@ -91,7 +91,7 @@ StorageComponentRegisterImpl::setBucketIdFactory(const document::BucketIdFactory
 }
 
 void
-StorageComponentRegisterImpl::setDistribution(lib::Distribution::SP distribution)
+StorageComponentRegisterImpl::setDistribution(std::shared_ptr<lib::Distribution> distribution)
 {
     std::lock_guard lock(_componentLock);
     _distribution = distribution;

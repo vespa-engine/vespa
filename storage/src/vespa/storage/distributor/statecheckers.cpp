@@ -9,6 +9,8 @@
 #include <vespa/storage/distributor/operations/idealstate/setbucketstateoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
 #include <vespa/storage/distributor/operations/idealstate/garbagecollectionoperation.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 
 #include <vespa/log/log.h>

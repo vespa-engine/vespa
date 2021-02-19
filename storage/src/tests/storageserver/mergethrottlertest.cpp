@@ -7,6 +7,7 @@
 #include <tests/common/dummystoragelink.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/storageserver/mergethrottler.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/persistence/messages.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/state.h>

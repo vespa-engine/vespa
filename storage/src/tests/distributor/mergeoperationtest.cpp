@@ -1,13 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/document/test/make_document_bucket.h>
 #include <tests/common/dummystoragelink.h>
+#include <tests/distributor/distributortestutil.h>
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
 #include <vespa/storage/distributor/bucketdbupdater.h>
 #include <vespa/storage/distributor/distributor.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
-#include <tests/distributor/distributortestutil.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/document/test/make_document_bucket.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/gtest/gtest.h>
 

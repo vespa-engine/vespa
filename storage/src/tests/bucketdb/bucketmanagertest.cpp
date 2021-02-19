@@ -19,6 +19,8 @@
 #include <tests/common/dummystoragelink.h>
 #include <tests/common/testhelper.h>
 #include <vespa/vdslib/state/random.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <future>

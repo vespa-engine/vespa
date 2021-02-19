@@ -10,6 +10,7 @@
 #include <vespa/storageapi/mbusprot/storagecommand.h>
 #include <vespa/storageapi/mbusprot/storagereply.h>
 #include <vespa/storageapi/message/visitor.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/document.h>
 #include <vespa/document/update/fieldpathupdates.h>

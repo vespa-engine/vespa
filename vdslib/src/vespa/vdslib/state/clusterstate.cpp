@@ -13,8 +13,7 @@ LOG_SETUP(".vdslib.state.cluster");
 
 using vespalib::IllegalArgumentException;
 
-namespace storage {
-namespace lib {
+namespace storage::lib {
 
 ClusterState::ClusterState()
     : Printable(),
@@ -27,7 +26,7 @@ ClusterState::ClusterState()
 { }
 
 ClusterState::ClusterState(const ClusterState& other) = default;
-ClusterState::~ClusterState() { }
+ClusterState::~ClusterState() = default;
 
 struct NodeData {
     bool empty;
@@ -242,20 +241,6 @@ ClusterState::serialize(vespalib::asciistream & out, bool ignoreNewFeatures) con
             }
         }
     }
-}
-
-ClusterState&
-ClusterState::operator=(const ClusterState& other)
-{
-    if (this != &other) {
-        _version = other._version;
-        _clusterState = other._clusterState;
-        _nodeStates = other._nodeStates;
-        _nodeCount = other._nodeCount;
-        _description = other._description;
-        _distributionBits = other._distributionBits;
-    }
-    return *this;
 }
 
 bool
@@ -515,5 +500,4 @@ ClusterState::printStateGroupwise(std::ostream& out, const Group& group,
     out << "\n" << indent << "}";
 }
 
-} // lib
-} // storage
+}

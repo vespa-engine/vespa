@@ -23,7 +23,7 @@ ServiceLayerComponentRegisterImpl::registerServiceLayerComponent(ServiceLayerMan
 }
 
 void
-ServiceLayerComponentRegisterImpl::setDistribution(lib::Distribution::SP distribution)
+ServiceLayerComponentRegisterImpl::setDistribution(std::shared_ptr<lib::Distribution> distribution)
 {
     _bucketSpaceRepo.get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
     auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);

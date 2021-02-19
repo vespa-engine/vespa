@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "distribution.h"
-#include <vespa/vdslib/distribution/distribution_config_util.h>
+#include "distribution_config_util.h"
 #include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/util/bobhash.h>
@@ -106,17 +106,7 @@ Distribution::Distribution(const vespalib::string& serialized)
     configure(*reader.read());
 }
 
-Distribution&
-Distribution::operator=(const Distribution& d)
-{
-    vespalib::asciistream ist(d.serialize());
-    config::AsciiConfigReader<vespa::config::content::StorDistributionConfig> reader(ist);
-    configure(*reader.read());
-    return *this;
-}
-
 Distribution::~Distribution() = default;
-
 
 void
 Distribution::configure(const vespa::config::content::StorDistributionConfig& config)

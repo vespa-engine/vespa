@@ -5,7 +5,6 @@
 #include "distributormessagesender.h"
 #include "operationstarter.h"
 #include <vespa/storage/common/storagelink.h>
-#include <vespa/vdslib/state/clusterstate.h>
 
 namespace storage::framework { struct Clock; }
 

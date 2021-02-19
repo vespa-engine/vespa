@@ -43,14 +43,6 @@ ClusterState::ClusterState(const ClusterState& other) {
 
 ClusterState::~ClusterState() = default;
 
-ClusterState& ClusterState::operator=(const ClusterState& other) {
-    ClusterState copy(other);
-    _state = std::move(copy._state);
-    _nodeIndex = copy._nodeIndex;
-    _distribution = std::move(copy._distribution);
-    return *this;
-}
-
 bool ClusterState::shouldBeReady(const Bucket& b) const {
     assert(_distribution);
     assert(_state);

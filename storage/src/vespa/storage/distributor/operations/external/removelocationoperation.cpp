@@ -6,6 +6,8 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/document/select/parser.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/vdslib/state/clusterstate.h>
+
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.callback.doc.removelocation");

@@ -11,6 +11,7 @@
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/visitor.h>
 #include <vespa/storageapi/message/stat.h>
+#include <vespa/vdslib/state/clusterstate.h>
 
 namespace storage::mbusprot {
 

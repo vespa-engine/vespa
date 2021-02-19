@@ -8,6 +8,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/persistence/spi/test.h>
 #include <sstream>
 

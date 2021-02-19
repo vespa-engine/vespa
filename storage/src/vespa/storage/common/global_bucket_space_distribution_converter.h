@@ -2,10 +2,10 @@
 
 #pragma once
 
-#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/config-stor-distribution.h>
 #include <memory>
 
+namespace storage::lib { class Distribution; }
 namespace storage {
 
 struct GlobalBucketSpaceDistributionConverter {

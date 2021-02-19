@@ -5,6 +5,7 @@
 #include <vespa/storage/storageserver/communicationmanager.h>
 #include <vespa/storage/storageserver/message_dispatcher.h>
 #include <vespa/storage/storageserver/rpcrequestwrapper.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/storageapi/message/state.h>

@@ -2,6 +2,7 @@
 
 #include "testnodestateupdater.h"
 #include <vespa/vdslib/state/cluster_state_bundle.h>
+#include <vespa/vdslib/state/clusterstate.h>
 
 namespace storage {
 
@@ -23,7 +24,7 @@ TestNodeStateUpdater::getClusterStateBundle() const
 }
 
 void
-TestNodeStateUpdater::setClusterState(lib::ClusterState::CSP c)
+TestNodeStateUpdater::setClusterState(std::shared_ptr<const lib::ClusterState> c)
 {
     setClusterStateBundle(std::make_shared<const lib::ClusterStateBundle>(*c));
 }

@@ -21,14 +21,11 @@ namespace vespalib { class asciistream; }
 
 namespace storage::lib {
 
-class IdealGroup;
-class SystemState;
-
 class Group : public document::Printable
 {
 public:
-    typedef std::unique_ptr<Group> UP;
-    typedef RedundancyGroupDistribution Distribution;
+    using UP = std::unique_ptr<Group>;
+    using Distribution = RedundancyGroupDistribution ;
 
 private:
     vespalib::string           _name;

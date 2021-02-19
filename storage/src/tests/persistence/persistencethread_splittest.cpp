@@ -6,6 +6,7 @@
 #include <vespa/persistence/spi/persistenceprovider.h>
 #include <tests/persistence/persistencetestutils.h>
 #include <vespa/document/test/make_document_bucket.h>
+#include <vespa/vdslib/state/clusterstate.h>
 
 using storage::spi::test::makeSpiBucket;
 using document::test::makeDocumentBucket;

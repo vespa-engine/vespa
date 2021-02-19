@@ -24,6 +24,8 @@
 #include <vespa/storage/storageserver/statemanager.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/vdslib/state/random.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/gate.h>
 #include <vespa/vespalib/util/size_literals.h>
