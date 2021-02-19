@@ -55,6 +55,7 @@ public class VespaModelTester {
     private final Map<NodeResources, Collection<Host>> hostsByResources = new HashMap<>();
     private ApplicationId applicationId = ApplicationId.defaultId();
     private boolean useDedicatedNodeForLogserver = false;
+    private boolean dedicatedClusterControllerCluster = false;
 
     public VespaModelTester() {
         this(new NullConfigModelRegistry());
@@ -98,6 +99,10 @@ public class VespaModelTester {
     /** Sets the tenant, application name, and instance name of the model being built. */
     public void setApplicationId(String tenant, String applicationName, String instanceName) {
         applicationId = ApplicationId.from(tenant, applicationName, instanceName);
+    }
+
+    public void dedicatedClusterControllerCluster(boolean dedicatedClusterControllerCluster) {
+        this.dedicatedClusterControllerCluster = dedicatedClusterControllerCluster;
     }
 
     public void useDedicatedNodeForLogserver(boolean useDedicatedNodeForLogserver) {
@@ -156,7 +161,8 @@ public class VespaModelTester {
                 .setMultitenant(true)
                 .setHostedVespa(hosted)
                 .setApplicationId(applicationId)
-                .setUseDedicatedNodeForLogserver(useDedicatedNodeForLogserver);
+                .setUseDedicatedNodeForLogserver(useDedicatedNodeForLogserver)
+                .setDedicatedClusterControllerCluster(dedicatedClusterControllerCluster);
 
         DeployState.Builder deployState = new DeployState.Builder()
                 .applicationPackage(appPkg)

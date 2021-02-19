@@ -190,8 +190,8 @@ public class NodesSpecification {
      * Returns a requirement for {@code count} nodes with {@code exclusive} and {@code required} taken as
      * the OR over all content clusters, and with the given resources.
      */
-    public static NodesSpecification dedicatedFromSharedParents(int count, NodeResources resources,
-                                                                ModelElement element, ConfigModelContext context) {
+    public static NodesSpecification exclusiveAndRequiredFromSharedParents(int count, NodeResources resources,
+                                                                           ModelElement element, ConfigModelContext context) {
         List<NodesSpecification> allContent = findParentByTag("services", element.getXml()).map(services -> XML.getChildren(services, "content"))
                                                                                            .orElse(List.of())
                                                                                            .stream()

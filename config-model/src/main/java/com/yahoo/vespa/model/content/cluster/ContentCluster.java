@@ -351,18 +351,15 @@ public class ContentCluster extends AbstractConfigProducer implements
             return ! Sets.intersection(c1Hosts, c2Hosts).isEmpty();
         }
 
+        public static final NodeResources clusterControllerResources = new NodeResources(0.5, 2, 10, 0.3, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);
+
         private ClusterControllerContainerCluster getDedicatedSharedControllers(ModelElement contentElement, Admin admin,
                                                                                 ContentCluster contentCluster, ConfigModelContext context) {
             if (admin.getClusterControllers() == null) {
-                NodesSpecification spec = NodesSpecification.dedicatedFromSharedParents(3,
-                                                                                        new NodeResources(0.5,
-                                                                                                          2,
-                                                                                                          10,
-                                                                                                          0.3,
-                                                                                                          NodeResources.DiskSpeed.any,
-                                                                                                          NodeResources.StorageType.any),
-                                                                                        contentElement,
-                                                                                        context);
+                NodesSpecification spec = NodesSpecification.exclusiveAndRequiredFromSharedParents(3,
+                                                                                                   clusterControllerResources,
+                                                                                                   contentElement,
+                                                                                                   context);
 
                 Collection<HostResource> hosts = spec.provision(admin.hostSystem(),
                                                                 ClusterSpec.Type.admin,
