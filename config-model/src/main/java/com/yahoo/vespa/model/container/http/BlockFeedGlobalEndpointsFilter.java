@@ -42,16 +42,18 @@ public class BlockFeedGlobalEndpointsFilter extends Filter implements RuleBasedF
         Set<String> hostNames = endpoints.stream()
                 .flatMap(e -> e.names().stream())
                 .collect(Collectors.toSet());
-        RuleBasedFilterConfig.Rule.Builder rule = new RuleBasedFilterConfig.Rule.Builder()
-                .hostNames(hostNames)
-                .pathExpressions(ContainerCluster.RESERVED_URI_PREFIX + "/{*}")
-                .pathExpressions(ContainerDocumentApi.DOCUMENT_V1_PREFIX + "/{*}")
-                .methods(List.of(PUT, POST, DELETE))
-                .action(BLOCK)
-                .name("block-feed-global-endpoints")
-                .blockResponseMessage("Feed to global endpoints are not allowed")
-                .blockResponseCode(404);
-        builder.rule(rule);
+        if(hostNames.size() > 0) {
+            RuleBasedFilterConfig.Rule.Builder rule = new RuleBasedFilterConfig.Rule.Builder()
+                    .hostNames(hostNames)
+                    .pathExpressions(ContainerCluster.RESERVED_URI_PREFIX + "/{*}")
+                    .pathExpressions(ContainerDocumentApi.DOCUMENT_V1_PREFIX + "/{*}")
+                    .methods(List.of(PUT, POST, DELETE))
+                    .action(BLOCK)
+                    .name("block-feed-global-endpoints")
+                    .blockResponseMessage("Feed to global endpoints are not allowed")
+                    .blockResponseCode(404);
+            builder.rule(rule);
+        }
         builder.dryrun(dryRun);
         builder.defaultRule.action(ALLOW);
     }
