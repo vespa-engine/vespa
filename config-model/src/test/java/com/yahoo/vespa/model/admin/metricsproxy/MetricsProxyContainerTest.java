@@ -43,9 +43,29 @@ public class MetricsProxyContainerTest {
         for (var host : model.hostSystem().getHosts()) {
             assertThat(host.getService(METRICS_PROXY_CONTAINER.serviceName), notNullValue());
 
-            long metricsProxies =  host.getServices().stream()
-                    .filter(s -> s.getClass().equals(MetricsProxyContainer.class))
-                    .count();
+            long metricsProxies = host.getServices().stream()
+                                      .filter(s -> s.getClass().equals(MetricsProxyContainer.class))
+                                      .count();
+            assertThat(metricsProxies, is(1L));
+        }
+    }
+
+    @Test
+    public void one_metrics_proxy_container_is_added_to_every_node_also_when_dedicated_CCC() {
+        var numberOfHosts = 7;
+        var tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        tester.dedicatedClusterControllerCluster(true);
+
+        VespaModel model = tester.createModel(servicesWithManyNodes(), true);
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
+
+        for (var host : model.hostSystem().getHosts()) {
+            assertThat(host.getService(METRICS_PROXY_CONTAINER.serviceName), notNullValue());
+
+            long metricsProxies = host.getServices().stream()
+                                      .filter(s -> s.getClass().equals(MetricsProxyContainer.class))
+                                      .count();
             assertThat(metricsProxies, is(1L));
         }
     }

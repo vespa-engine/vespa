@@ -20,6 +20,7 @@ import org.w3c.dom.Node;
 
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -195,7 +196,9 @@ public class NodesSpecification {
         List<NodesSpecification> allContent = findParentByTag("services", element.getXml()).map(services -> XML.getChildren(services, "content"))
                                                                                            .orElse(List.of())
                                                                                            .stream()
-                                                                                           .map(content -> from(new ModelElement(content), context))
+                                                                                           .map(content -> new ModelElement(content).child("nodes"))
+                                                                                           .filter(nodes -> nodes != null && nodes.integerAttribute("count") != null)
+                                                                                           .map(nodes -> from(nodes, context))
                                                                                            .collect(toList());
         return new NodesSpecification(new ClusterResources(count, 1, resources),
                                       new ClusterResources(count, 1, resources),

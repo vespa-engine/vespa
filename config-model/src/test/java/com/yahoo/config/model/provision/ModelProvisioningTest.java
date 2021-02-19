@@ -809,6 +809,46 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testDedicatedClusterControllers() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <content version='1.0' id='foo'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2' />" +
+                "  </content>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>2</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2' />" +
+                "  </content>" +
+                "</services>";
+
+        int numberOfHosts = 7;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        tester.dedicatedClusterControllerCluster(true);
+        VespaModel model = tester.createModel(services);
+        assertEquals(7, model.getRoot().hostSystem().getHosts().size());
+
+        // Check cluster controllers
+        assertNull(model.getContentClusters().get("foo").getClusterControllers());
+        assertNull(model.getContentClusters().get("bar").getClusterControllers());
+        ClusterControllerContainerCluster clusterControllers = model.getAdmin().getClusterControllers();
+        assertEquals(3, clusterControllers.getContainers().size());
+        assertEquals("cluster-controllers", clusterControllers.getName());
+        clusterControllers.getContainers().stream().map(ClusterControllerContainer::getHost).forEach(host -> {
+            assertTrue(host.spec().membership().get().cluster().isStateful());
+            assertEquals(ClusterSpec.Type.admin, host.spec().membership().get().cluster().type());
+        });
+    }
+
+    @Test
     public void testExplicitDedicatedClusterControllers() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -1032,6 +1072,50 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         tester.createModel(services, false);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRequiredNodesAndDedicatedClusterControllers() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <content version='1.0' id='foo'>" +
+                "     <redundancy>1</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2' required='true'/>" +
+                "  </content>" +
+                "</services>";
+
+        int numberOfHosts = 4; // needs 2 for foo and 3 for cluster controllers.
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        tester.dedicatedClusterControllerCluster(true);
+        tester.createModel(services, false);
+    }
+
+    @Test
+    public void testExclusiveDedicatedClusterControllers() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <content version='1.0' id='foo'>" +
+                "     <redundancy>1</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2' exclusive='true'/>" +
+                "  </content>" +
+                "</services>";
+
+        int numberOfHosts = 5;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        tester.dedicatedClusterControllerCluster(true);
+        VespaModel model = tester.createModel(services);
+        assertEquals(5, model.hostSystem().getHosts().size());
+        model.hostSystem().getHosts().forEach(host -> assertTrue(host.spec().membership().get().cluster().isExclusive()));
     }
 
     @Test
