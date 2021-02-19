@@ -153,11 +153,6 @@ public class NodeStateChangeChecker {
                     + currentState);
         }
 
-        Result allNodesAreUpCheck = checkAllNodesAreUp(clusterState);
-        if (!allNodesAreUpCheck.settingWantedStateIsAllowed()) {
-            return allNodesAreUpCheck;
-        }
-
         HostInfo hostInfo = nodeInfo.getHostInfo();
         Integer hostInfoNodeVersion = hostInfo.getClusterStateVersionOrNull();
         int clusterControllerVersion = clusterState.getVersion();
