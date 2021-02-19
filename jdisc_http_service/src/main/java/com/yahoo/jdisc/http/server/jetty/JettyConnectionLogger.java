@@ -3,6 +3,7 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.container.logging.ConnectionLogEntry;
+import com.yahoo.container.logging.ConnectionLogEntry.SslHandshakeFailure.ExceptionEntry;
 import com.yahoo.io.HexDump;
 import com.yahoo.jdisc.http.ServerConfig;
 import org.eclipse.jetty.io.Connection;
@@ -27,6 +28,7 @@ import javax.net.ssl.StandardConstants;
 import java.net.InetSocketAddress;
 import java.security.cert.X509Certificate;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Objects;
@@ -222,9 +224,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         private Date sslPeerNotBefore;
         private Date sslPeerNotAfter;
         private List<SNIServerName> sslSniServerNames;
-        private String sslHandshakeFailureException;
-        private String sslHandshakeFailureMessage;
-        private String sslHandshakeFailureType;
+        private SSLHandshakeException sslHandshakeException;
 
         private ConnectionInfo(UUID uuid, long createdAt, InetSocketAddress localAddress, InetSocketAddress peerAddress) {
             this.uuid = uuid;
@@ -284,11 +284,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         }
 
         synchronized ConnectionInfo setSslHandshakeFailure(SSLHandshakeException exception) {
-            this.sslHandshakeFailureException = exception.getClass().getName();
-            this.sslHandshakeFailureMessage = exception.getMessage();
-            this.sslHandshakeFailureType = SslHandshakeFailure.fromSslHandshakeException(exception)
-                    .map(SslHandshakeFailure::failureType)
-                    .orElse("UNKNOWN");
+            this.sslHandshakeException = exception;
             return this;
         }
 
@@ -338,10 +334,17 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
                         .withSslPeerNotAfter(sslPeerNotAfter.toInstant())
                         .withSslPeerNotBefore(sslPeerNotBefore.toInstant());
             }
-            if (sslHandshakeFailureException != null && sslHandshakeFailureMessage != null && sslHandshakeFailureType != null) {
-                builder.withSslHandshakeFailureException(sslHandshakeFailureException)
-                        .withSslHandshakeFailureMessage(sslHandshakeFailureMessage)
-                        .withSslHandshakeFailureType(sslHandshakeFailureType);
+            if (sslHandshakeException != null) {
+                List<ExceptionEntry> exceptionChain = new ArrayList<>();
+                Throwable cause = sslHandshakeException;
+                while (cause != null) {
+                    exceptionChain.add(new ExceptionEntry(cause.getClass().getName(), cause.getMessage()));
+                    cause = cause.getCause();
+                }
+                String type = SslHandshakeFailure.fromSslHandshakeException(sslHandshakeException)
+                        .map(SslHandshakeFailure::failureType)
+                        .orElse("UNKNOWN");
+                builder.withSslHandshakeFailure(new ConnectionLogEntry.SslHandshakeFailure(type, exceptionChain));
             }
             return builder.build();
         }

@@ -5,6 +5,7 @@ import com.google.inject.AbstractModule;
 import com.google.inject.Module;
 import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.container.logging.ConnectionLogEntry;
+import com.yahoo.container.logging.ConnectionLogEntry.SslHandshakeFailure.ExceptionEntry;
 import com.yahoo.container.logging.RequestLog;
 import com.yahoo.container.logging.RequestLogEntry;
 import com.yahoo.jdisc.References;
@@ -647,9 +648,8 @@ public class HttpServerTest {
                 .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
         Assertions.assertThat(connectionLog.logEntries()).hasSize(1);
-        ConnectionLogEntry logEntry = connectionLog.logEntries().get(0);
-        Assertions.assertThat(logEntry.sslHandshakeFailureException()).hasValue(SSLHandshakeException.class.getName());
-        Assertions.assertThat(logEntry.sslHandshakeFailureType()).hasValue(SslHandshakeFailure.MISSING_CLIENT_CERT.failureType());
+        assertSslHandshakeFailurePresent(
+                connectionLog.logEntries().get(0), SSLHandshakeException.class, SslHandshakeFailure.MISSING_CLIENT_CERT.failureType());
     }
 
     @Test
@@ -672,9 +672,8 @@ public class HttpServerTest {
                 .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
         Assertions.assertThat(connectionLog.logEntries()).hasSize(1);
-        ConnectionLogEntry logEntry = connectionLog.logEntries().get(0);
-        Assertions.assertThat(logEntry.sslHandshakeFailureException()).hasValue(SSLHandshakeException.class.getName());
-        Assertions.assertThat(logEntry.sslHandshakeFailureType()).hasValue(SslHandshakeFailure.INCOMPATIBLE_PROTOCOLS.failureType());
+        assertSslHandshakeFailurePresent(
+                connectionLog.logEntries().get(0), SSLHandshakeException.class, SslHandshakeFailure.INCOMPATIBLE_PROTOCOLS.failureType());
     }
 
     @Test
@@ -697,9 +696,8 @@ public class HttpServerTest {
                 .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
         Assertions.assertThat(connectionLog.logEntries()).hasSize(1);
-        ConnectionLogEntry logEntry = connectionLog.logEntries().get(0);
-        Assertions.assertThat(logEntry.sslHandshakeFailureException()).hasValue(SSLHandshakeException.class.getName());
-        Assertions.assertThat(logEntry.sslHandshakeFailureType()).hasValue(SslHandshakeFailure.INCOMPATIBLE_CIPHERS.failureType());
+        assertSslHandshakeFailurePresent(
+                connectionLog.logEntries().get(0), SSLHandshakeException.class, SslHandshakeFailure.INCOMPATIBLE_CIPHERS.failureType());
     }
 
     @Test
@@ -727,8 +725,8 @@ public class HttpServerTest {
         assertTrue(driver.close());
         Assertions.assertThat(connectionLog.logEntries()).hasSize(1);
         ConnectionLogEntry logEntry = connectionLog.logEntries().get(0);
-        Assertions.assertThat(logEntry.sslHandshakeFailureException()).hasValue(SSLHandshakeException.class.getName());
-        Assertions.assertThat(logEntry.sslHandshakeFailureType()).hasValue(SslHandshakeFailure.INVALID_CLIENT_CERT.failureType());
+        assertSslHandshakeFailurePresent(
+                connectionLog.logEntries().get(0), SSLHandshakeException.class, SslHandshakeFailure.INVALID_CLIENT_CERT.failureType());
     }
 
     @Test
@@ -910,6 +908,15 @@ public class HttpServerTest {
         } else {
             Assertions.assertThat(entry.remotePort()).isEmpty();
         }
+    }
+
+    private static void assertSslHandshakeFailurePresent(
+            ConnectionLogEntry entry, Class<? extends SSLHandshakeException> expectedException, String expectedType) {
+        Assertions.assertThat(entry.sslHandshakeFailure()).isPresent();
+        ConnectionLogEntry.SslHandshakeFailure failure = entry.sslHandshakeFailure().get();
+        assertEquals(expectedType, failure.type());
+        ExceptionEntry exceptionEntry = failure.exceptionChain().get(0);
+        assertEquals(expectedException.getName(), exceptionEntry.name());
     }
 
     private static TestDriver createSslWithProxyProtocolTestDriver(

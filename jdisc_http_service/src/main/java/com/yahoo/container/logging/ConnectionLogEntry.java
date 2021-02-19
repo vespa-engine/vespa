@@ -3,6 +3,7 @@
 package com.yahoo.container.logging;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -31,9 +32,7 @@ public class ConnectionLogEntry {
     private final Instant sslPeerNotBefore;
     private final Instant sslPeerNotAfter;
     private final String sslSniServerName;
-    private final String sslHandshakeFailureException;
-    private final String sslHandshakeFailureMessage;
-    private final String sslHandshakeFailureType;
+    private final SslHandshakeFailure sslHandshakeFailure;
 
 
     private ConnectionLogEntry(Builder builder) {
@@ -57,9 +56,7 @@ public class ConnectionLogEntry {
         this.sslPeerNotBefore = builder.sslPeerNotBefore;
         this.sslPeerNotAfter = builder.sslPeerNotAfter;
         this.sslSniServerName = builder.sslSniServerName;
-        this.sslHandshakeFailureException = builder.sslHandshakeFailureException;
-        this.sslHandshakeFailureMessage = builder.sslHandshakeFailureMessage;
-        this.sslHandshakeFailureType = builder.sslHandshakeFailureType;
+        this.sslHandshakeFailure = builder.sslHandshakeFailure;
     }
 
     public static Builder builder(UUID id, Instant timestamp) {
@@ -86,9 +83,33 @@ public class ConnectionLogEntry {
     public Optional<Instant> sslPeerNotBefore() { return Optional.ofNullable(sslPeerNotBefore); }
     public Optional<Instant> sslPeerNotAfter() { return Optional.ofNullable(sslPeerNotAfter); }
     public Optional<String> sslSniServerName() { return Optional.ofNullable(sslSniServerName); }
-    public Optional<String> sslHandshakeFailureException() { return Optional.ofNullable(sslHandshakeFailureException); }
-    public Optional<String> sslHandshakeFailureMessage() { return Optional.ofNullable(sslHandshakeFailureMessage); }
-    public Optional<String> sslHandshakeFailureType() { return Optional.ofNullable(sslHandshakeFailureType); }
+    public Optional<SslHandshakeFailure> sslHandshakeFailure() { return Optional.ofNullable(sslHandshakeFailure); }
+
+    public static class SslHandshakeFailure {
+        private final String type;
+        private final List<ExceptionEntry> exceptionChain;
+
+        public SslHandshakeFailure(String type, List<ExceptionEntry> exceptionChain) {
+            this.type = type;
+            this.exceptionChain = List.copyOf(exceptionChain);
+        }
+
+        public String type() { return type; }
+        public List<ExceptionEntry> exceptionChain() { return exceptionChain; }
+
+        public static class ExceptionEntry {
+            private final String name;
+            private final String message;
+
+            public ExceptionEntry(String name, String message) {
+                this.name = name;
+                this.message = message;
+            }
+
+            public String name() { return name; }
+            public String message() { return message; }
+        }
+    }
 
     public static class Builder {
         private final UUID id;
@@ -111,9 +132,7 @@ public class ConnectionLogEntry {
         private Instant sslPeerNotBefore;
         private Instant sslPeerNotAfter;
         private String sslSniServerName;
-        private String sslHandshakeFailureException;
-        private String sslHandshakeFailureMessage;
-        private String sslHandshakeFailureType;
+        private SslHandshakeFailure sslHandshakeFailure;
 
 
         Builder(UUID id, Instant timestamp) {
@@ -194,16 +213,8 @@ public class ConnectionLogEntry {
             this.sslSniServerName = sslSniServerName;
             return this;
         }
-        public Builder withSslHandshakeFailureException(String exception) {
-            this.sslHandshakeFailureException = exception;
-            return this;
-        }
-        public Builder withSslHandshakeFailureMessage(String message) {
-            this.sslHandshakeFailureMessage = message;
-            return this;
-        }
-        public Builder withSslHandshakeFailureType(String type) {
-            this.sslHandshakeFailureType = type;
+        public Builder withSslHandshakeFailure(SslHandshakeFailure sslHandshakeFailure) {
+            this.sslHandshakeFailure = sslHandshakeFailure;
             return this;
         }
 
