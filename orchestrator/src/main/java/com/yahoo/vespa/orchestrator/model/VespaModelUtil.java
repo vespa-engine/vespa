@@ -117,8 +117,7 @@ public class VespaModelUtil {
     }
 
     /**
-     * @return  Host name for a Cluster Controller that is likely to be the master, is !isPresent() if
-     *          no cluster controller was found.
+     * @return  Host name for a Cluster Controller that is likely to be the master.
      * @throws  java.lang.IllegalArgumentException if there are no cluster controller instances.
      */
     public static HostName getControllerHostName(ApplicationInstance application, ClusterId contentClusterId) {
