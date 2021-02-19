@@ -12,10 +12,6 @@
 #include <vespa/storageapi/messageapi/storagecommand.h>
 #include <vespa/storageapi/buckets/bucketinfo.h>
 
-namespace staorage::lib {
-    class ClusterState;
-    class ClusterStateBundle;
-}
 namespace storage::distributor {
 
 class DistributorBucketSpaceRepo;
