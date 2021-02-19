@@ -8,6 +8,9 @@ import org.apache.zookeeper.server.quorum.QuorumPeerMain;
 
 import java.io.IOException;
 import java.nio.file.Path;
+import java.time.Duration;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Starts/stops a ZooKeeper server. Extends QuorumPeerMain to be able to call initializeAndRun() and wraps
@@ -17,15 +20,19 @@ import java.nio.file.Path;
  */
 class VespaQuorumPeer extends QuorumPeerMain {
 
+    private static final Logger log = java.util.logging.Logger.getLogger(Reconfigurer.class.getName());
+    private static final Duration timeToWaitForShutdown = Duration.ofSeconds(60);
+
     public void start(Path path) {
         initializeAndRun(new String[]{ path.toFile().getAbsolutePath()});
     }
 
     public void shutdown() {
         if (quorumPeer != null) {
+            log.log(Level.INFO, "Shutting down ZooKeeper server");
             try {
                 quorumPeer.shutdown();
-                quorumPeer.join(); // Wait for shutdown to complete
+                quorumPeer.join(timeToWaitForShutdown.toMillis()); // Wait for shutdown to complete
             } catch (RuntimeException|InterruptedException e) {
                 // If shutdown fails, we have no other option than forcing the JVM to stop and letting it be restarted.
                 //
