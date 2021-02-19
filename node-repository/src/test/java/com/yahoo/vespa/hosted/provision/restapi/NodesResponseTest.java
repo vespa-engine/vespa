@@ -25,23 +25,23 @@ public class NodesResponseTest {
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
     @Test
-    public void node_archive_url() {
+    public void archive_uri() {
         ApplicationId app = ApplicationId.from("vespa", "music", "main");
-        // Flag not set, no archive url
-        assertNodeArchiveUri(null, "h432a.prod.us-south-1.vespa.domain.tld", NodeType.tenant, app);
-        assertNodeArchiveUri(null, "cfg1.prod.us-south-1.vespa.domain.tld", NodeType.config, app);
+        // Flag not set, no archive uri
+        assertArchiveUri(null, "h432a.prod.us-south-1.vespa.domain.tld", NodeType.tenant, app);
+        assertArchiveUri(null, "cfg1.prod.us-south-1.vespa.domain.tld", NodeType.config, app);
 
         flagSource.withStringFlag(Flags.SYNC_HOST_LOGS_TO_S3_BUCKET.id(), "vespa-data-bucket");
         // Flag is set, but node not allocated, only sync non-tenant nodes
-        assertNodeArchiveUri(null, "h432a.prod.us-south-1.vespa.domain.tld", NodeType.tenant, null);
-        assertNodeArchiveUri("s3://vespa-data-bucket/hosted-vespa/cfg1/", "cfg1.prod.us-south-1.vespa.domain.tld", NodeType.config, null);
+        assertArchiveUri(null, "h432a.prod.us-south-1.vespa.domain.tld", NodeType.tenant, null);
+        assertArchiveUri("s3://vespa-data-bucket/hosted-vespa/cfg1/", "cfg1.prod.us-south-1.vespa.domain.tld", NodeType.config, null);
 
         // Flag is set and node is allocated
-        assertNodeArchiveUri("s3://vespa-data-bucket/vespa/music/main/h432a/", "h432a.prod.us-south-1.vespa.domain.tld", NodeType.tenant, app);
-        assertNodeArchiveUri("s3://vespa-data-bucket/hosted-vespa/cfg1/", "cfg1.prod.us-south-1.vespa.domain.tld", NodeType.config, app);
+        assertArchiveUri("s3://vespa-data-bucket/vespa/music/main/h432a/", "h432a.prod.us-south-1.vespa.domain.tld", NodeType.tenant, app);
+        assertArchiveUri("s3://vespa-data-bucket/hosted-vespa/cfg1/", "cfg1.prod.us-south-1.vespa.domain.tld", NodeType.config, app);
     }
 
-    private void assertNodeArchiveUri(String archiveUrl, String hostname, NodeType type, ApplicationId appId) {
+    private void assertArchiveUri(String archiveUri, String hostname, NodeType type, ApplicationId appId) {
         Node.Builder nodeBuilder = Node.create("id", hostname, new Flavor(NodeResources.unspecified()), Node.State.parked, type);
         Optional.ofNullable(appId)
                 .map(app -> new Allocation(app,
@@ -51,6 +51,6 @@ public class NodesResponseTest {
                         false))
                 .ifPresent(nodeBuilder::allocation);
 
-        assertEquals(archiveUrl, NodesResponse.nodeArchiveUri(flagSource, nodeBuilder.build()).orElse(null));
+        assertEquals(archiveUri, NodesResponse.archiveUri(flagSource, nodeBuilder.build()).orElse(null));
     }
 }
