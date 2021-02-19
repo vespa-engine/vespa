@@ -59,13 +59,13 @@ public class VespaModelTester {
     public VespaModelTester() {
         this(new NullConfigModelRegistry());
     }
-    
+
     public VespaModelTester(ConfigModelRegistry configModelRegistry) {
         this.configModelRegistry = configModelRegistry;
     }
-    
-    /** Adds some nodes with resources 1, 3, 9 */
-    public Hosts addHosts(int count) { return addHosts(new NodeResources(1, 3, 9, 1), count); }
+
+    /** Adds some nodes with resources 1, 3, 10 */
+    public Hosts addHosts(int count) { return addHosts(InMemoryProvisioner.defaultResources, count); }
 
     public Hosts addHosts(NodeResources resources, int count) {
         return addHosts(Optional.of(new Flavor(resources)), resources, count);
@@ -73,7 +73,7 @@ public class VespaModelTester {
 
     private Hosts addHosts(Optional<Flavor> flavor, NodeResources resources, int count) {
         List<Host> hosts = new ArrayList<>();
-        
+
         for (int i = 0; i < count; ++i) {
             // Let host names sort in the opposite order of the order the hosts are added
             // This allows us to test index vs. name order selection when subsets of hosts are selected from a cluster

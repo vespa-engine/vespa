@@ -119,7 +119,7 @@ public class MetricsProxyContainerTest {
 
         NodeInfoConfig config = hostedModel.getConfig(NodeInfoConfig.class, metricsV2Handler.getConfigId());
         assertTrue(config.role().startsWith("content/my-content/0/"));
-        assertTrue(config.hostname().startsWith("node-1-3-9-"));
+        assertTrue(config.hostname().startsWith("node-1-3-10-"));
     }
 
     @Test
