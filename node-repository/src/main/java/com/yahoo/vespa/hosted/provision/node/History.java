@@ -136,10 +136,22 @@ public class History {
         }
 
         public enum Type { 
-            // State move events
-            provisioned(false), deprovisioned(false), readied, reserved, activated, deactivated, deallocated, parked,
-            // The node was scheduled for retirement
-            wantToRetire,
+            // State changes
+            activated,
+            breakfixed(false),
+            deactivated,
+            deallocated,
+            deprovisioned(false),
+            failed(false),
+            parked,
+            provisioned(false),
+            readied,
+            reserved,
+
+            // The node was scheduled for retirement (hard)
+            wantToRetire(false),
+            // The node was scheduled for retirement (soft)
+            preferToRetire(false),
             // The active node was retired
             retired,
             // The active node went down according to the service monitor
@@ -151,13 +163,7 @@ public class History {
             // The node upgraded its OS (implies a reboot)
             osUpgraded(false),
             // The node verified its firmware (whether this resulted in a reboot depends on the node model)
-            firmwareVerified(false),
-            // The node was failed
-            failed(false),
-            // The node was breakfixed
-            breakfixed(false),
-            // The node was scheduled to be moved
-            preferToRetire(false);
+            firmwareVerified(false);
             
             private final boolean applicationLevel;
             
