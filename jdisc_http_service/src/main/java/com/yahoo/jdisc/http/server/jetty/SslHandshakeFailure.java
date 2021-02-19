@@ -16,7 +16,7 @@ enum SslHandshakeFailure {
             MetricDefinitions.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS,
             "INCOMPATIBLE_CLIENT_PROTOCOLS",
             "(Client requested protocol \\S+? is not enabled or supported in server context" +
-                    "|The client supported protocol versions \\[\\S+?\\] are not accepted by server preferences \\[\\S+?\\])"),
+                    "|The client supported protocol versions \\[.+?\\] are not accepted by server preferences \\[.+?\\])"),
     INCOMPATIBLE_CIPHERS(
             MetricDefinitions.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS,
             "INCOMPATIBLE_CLIENT_CIPHER_SUITES",
@@ -24,7 +24,7 @@ enum SslHandshakeFailure {
     MISSING_CLIENT_CERT(
             MetricDefinitions.SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT,
             "MISSING_CLIENT_CERTIFICATE",
-            "Empty server certificate chain"),
+            "Empty (server|client) certificate chain"),
     EXPIRED_CLIENT_CERTIFICATE(
             MetricDefinitions.SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT,
             "EXPIRED_CLIENT_CERTIFICATE",

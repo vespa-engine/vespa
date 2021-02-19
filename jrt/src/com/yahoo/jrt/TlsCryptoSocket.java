@@ -49,6 +49,7 @@ public class TlsCryptoSocket implements CryptoSocket {
     private AuthorizationResult authorizationResult;
 
     public TlsCryptoSocket(SocketChannel channel, SSLEngine sslEngine) {
+        disableTlsv13(sslEngine);
         this.channel = channel;
         this.sslEngine = sslEngine;
         SSLSession nullSession = sslEngine.getSession();
@@ -322,6 +323,14 @@ public class TlsCryptoSocket implements CryptoSocket {
     private void verifyHandshakeCompleted() throws SSLException {
         if (handshakeState != HandshakeState.COMPLETED)
             throw new SSLException("Handshake not completed: handshakeState=" + handshakeState);
+    }
+
+    private static void disableTlsv13(SSLEngine sslEngine) {
+        String[] filteredProtocols = Arrays.stream(sslEngine.getEnabledProtocols())
+                .filter(p -> !p.equals("TLSv1.3"))
+                .toArray(String[]::new);
+        if (filteredProtocols.length == 0) throw new IllegalArgumentException("JRT does not support TLSv1.3");
+        sslEngine.setEnabledProtocols(filteredProtocols);
     }
 
 }

@@ -667,7 +667,7 @@ public class HttpServerTest {
                 .build();
 
         assertHttpsRequestTriggersSslHandshakeException(
-                driver, clientCtx, "TLSv1.3", null, "Received fatal alert: protocol_version");
+                driver, clientCtx, "TLSv1.1", null, "Received fatal alert: protocol_version");
         verify(metricConsumer.mockitoMock())
                 .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
@@ -848,7 +848,7 @@ public class HttpServerTest {
         Assertions.assertThat(logEntry.localPort()).hasValue(listenPort);
         Assertions.assertThat(logEntry.httpBytesReceived()).hasValueSatisfying(value -> Assertions.assertThat(value).isPositive());
         Assertions.assertThat(logEntry.httpBytesSent()).hasValueSatisfying(value -> Assertions.assertThat(value).isPositive());
-        Assertions.assertThat(logEntry.sslProtocol()).hasValue("TLSv1.2");
+        Assertions.assertThat(logEntry.sslProtocol()).hasValue("TLSv1.3");
         Assertions.assertThat(logEntry.sslPeerSubject()).hasValue("CN=localhost");
         Assertions.assertThat(logEntry.sslCipherSuite()).hasValueSatisfying(cipher -> Assertions.assertThat(cipher).isNotBlank());
         Assertions.assertThat(logEntry.sslSessionId()).hasValueSatisfying(sessionId -> Assertions.assertThat(sessionId).hasSize(64));

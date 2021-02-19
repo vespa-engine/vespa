@@ -34,7 +34,7 @@ public interface TlsContext extends AutoCloseable {
             "TLS_AES_256_GCM_SHA384", // TLSv1.3
             "TLS_CHACHA20_POLY1305_SHA256"); // TLSv1.3, Java 12
 
-    Set<String> ALLOWED_PROTOCOLS = com.yahoo.vespa.jdk8compat.Set.of("TLSv1.2"); // TODO Enable TLSv1.3
+    Set<String> ALLOWED_PROTOCOLS = com.yahoo.vespa.jdk8compat.Set.of("TLSv1.2", "TLSv1.3");
     String SSL_CONTEXT_VERSION = "TLS"; // Use SSLContext implementations that supports all TLS versions
 
     /**
