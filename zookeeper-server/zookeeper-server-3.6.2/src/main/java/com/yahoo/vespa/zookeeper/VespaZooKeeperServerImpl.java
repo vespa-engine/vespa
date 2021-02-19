@@ -6,6 +6,7 @@ import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.AbstractComponent;
 
 import java.nio.file.Path;
+import java.time.Duration;
 
 /**
  * @author Ulf Lilleengen
@@ -30,7 +31,7 @@ public class VespaZooKeeperServerImpl extends AbstractComponent implements Vespa
 
     @Override
     public void shutdown() {
-        peer.shutdown();
+        peer.shutdown(Duration.ofMinutes(1));
     }
 
     @Override

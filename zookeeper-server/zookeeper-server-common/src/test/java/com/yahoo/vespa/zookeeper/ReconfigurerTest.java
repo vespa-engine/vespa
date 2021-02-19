@@ -14,10 +14,13 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests dynamic reconfiguration of zookeeper cluster.
@@ -136,9 +139,16 @@ public class ReconfigurerTest {
         return builder;
     }
 
+    private static class MockQuorumPeer implements QuorumPeer {
+        final AtomicBoolean on = new AtomicBoolean();
+        @Override public void start(Path path) { assertFalse(on.getAndSet(true)); }
+        @Override public void shutdown(Duration timeout) { assertTrue(on.getAndSet(false)); }
+    }
+
     private static class TestableReconfigurer extends Reconfigurer implements VespaZooKeeperServer {
 
         private final TestableVespaZooKeeperAdmin zooKeeperAdmin;
+        private QuorumPeer serverPeer;
 
         TestableReconfigurer(TestableVespaZooKeeperAdmin zooKeeperAdmin) {
             super(zooKeeperAdmin, new Sleeper() {
@@ -152,7 +162,7 @@ public class ReconfigurerTest {
         }
 
         void startOrReconfigure(ZookeeperServerConfig newConfig) {
-            startOrReconfigure(newConfig, this);
+            startOrReconfigure(newConfig, this, MockQuorumPeer::new, peer -> serverPeer = peer);
         }
 
         String connectionSpec() {
@@ -172,10 +182,10 @@ public class ReconfigurerTest {
         }
 
         @Override
-        public void shutdown() {}
+        public void shutdown() { serverPeer.shutdown(Duration.ofSeconds(1)); }
 
         @Override
-        public void start(Path configFilePath) { }
+        public void start(Path configFilePath) { serverPeer.start(configFilePath); }
 
         @Override
         public boolean reconfigurable() {
