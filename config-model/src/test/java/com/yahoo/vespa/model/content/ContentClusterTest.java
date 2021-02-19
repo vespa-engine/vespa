@@ -1043,4 +1043,20 @@ public class ContentClusterTest extends ContentBaseTest {
         assertZookeeperServerImplementation(true, "com.yahoo.vespa.zookeeper.VespaZooKeeperAdminImpl");
     }
 
+    private int resolveMaxInhibitedGroupsConfigWithFeatureFlag(int maxGroups) {
+        VespaModel model = createEnd2EndOneNode(new TestProperties().maxActivationInhibitedOutOfSyncGroups(maxGroups));
+
+        ContentCluster cc = model.getContentClusters().get("storage");
+        var builder = new StorDistributormanagerConfig.Builder();
+        cc.getDistributorNodes().getConfig(builder);
+
+        return (new StorDistributormanagerConfig(builder)).max_activation_inhibited_out_of_sync_groups();
+    }
+
+    @Test
+    public void default_distributor_max_inhibited_group_activation_config_controlled_by_properties() {
+        assertEquals(0, resolveMaxInhibitedGroupsConfigWithFeatureFlag(0));
+        assertEquals(2, resolveMaxInhibitedGroupsConfigWithFeatureFlag(2));
+    }
+
 }

@@ -258,6 +258,14 @@ public class Flags {
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
+    public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
+            "max-activation-inhibited-out-of-sync-groups", 0,
+            List.of("vekterli"), "2021-02-19", "2021-05-01",
+            "Allows replicas in up to N content groups to not be activated " +
+            "for query visibility if they are out of sync with a majority of other replicas",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
