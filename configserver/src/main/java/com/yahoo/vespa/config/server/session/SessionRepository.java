@@ -212,7 +212,7 @@ public class SessionRepository {
         futures.forEach((sessionId, future) -> {
             try {
                 future.get();
-                log.log(Level.INFO, () -> "Local session " + sessionId + " loaded");
+                log.log(Level.FINE, () -> "Local session " + sessionId + " loaded");
             } catch (ExecutionException | InterruptedException e) {
                 log.log(Level.WARNING, "Could not load session " + sessionId, e);
             }
@@ -373,7 +373,7 @@ public class SessionRepository {
         futures.forEach((sessionId, future) -> {
             try {
                 future.get();
-                log.log(Level.INFO, () -> "Remote session " + sessionId + " loaded");
+                log.log(Level.FINE, () -> "Remote session " + sessionId + " loaded");
             } catch (ExecutionException | InterruptedException e) {
                 log.log(Level.WARNING, "Could not load session " + sessionId, e);
             }
