@@ -14,10 +14,15 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests dynamic reconfiguration of zookeeper cluster.
@@ -80,22 +85,18 @@ public class ReconfigurerTest {
 
     @Test
     public void testReconfigureFailsWithReconfigInProgressThenSucceeds() {
-        TestableReconfigurer reconfigurer = new TestableReconfigurer(new TestableVespaZooKeeperAdmin().failures(3));
-        try {
-            ZookeeperServerConfig initialConfig = createConfig(3, true);
-            reconfigurer.startOrReconfigure(initialConfig);
-            assertSame(initialConfig, reconfigurer.activeConfig());
+        reconfigurer = new TestableReconfigurer(new TestableVespaZooKeeperAdmin().failures(3));
+        ZookeeperServerConfig initialConfig = createConfig(3, true);
+        reconfigurer.startOrReconfigure(initialConfig);
+        assertSame(initialConfig, reconfigurer.activeConfig());
 
-            ZookeeperServerConfig nextConfig = createConfig(5, true);
-            reconfigurer.startOrReconfigure(nextConfig);
-            assertEquals("node1:2181", reconfigurer.connectionSpec());
-            assertEquals("3=node3:2182:2183;2181,4=node4:2182:2183;2181", reconfigurer.joiningServers());
-            assertNull("No servers are leaving", reconfigurer.leavingServers());
-            assertEquals(1, reconfigurer.reconfigurations());
-            assertSame(nextConfig, reconfigurer.activeConfig());
-        } finally {
-            reconfigurer.shutdown();
-        }
+        ZookeeperServerConfig nextConfig = createConfig(5, true);
+        reconfigurer.startOrReconfigure(nextConfig);
+        assertEquals("node1:2181", reconfigurer.connectionSpec());
+        assertEquals("3=node3:2182:2183;2181,4=node4:2182:2183;2181", reconfigurer.joiningServers());
+        assertNull("No servers are leaving", reconfigurer.leavingServers());
+        assertEquals(1, reconfigurer.reconfigurations());
+        assertSame(nextConfig, reconfigurer.activeConfig());
     }
 
     @Test
@@ -136,9 +137,17 @@ public class ReconfigurerTest {
         return builder;
     }
 
+    private static class MockQuorumPeer implements QuorumPeer {
+        final AtomicBoolean on = new AtomicBoolean();
+        @Override public void start(Path path) { assertFalse(on.getAndSet(true)); }
+        @Override public void shutdown(Duration timeout) { assertTrue(on.getAndSet(false)); }
+    }
+
     private static class TestableReconfigurer extends Reconfigurer implements VespaZooKeeperServer {
 
         private final TestableVespaZooKeeperAdmin zooKeeperAdmin;
+        private QuorumPeer serverPeer;
+        private final CountDownLatch latch = new CountDownLatch(1);
 
         TestableReconfigurer(TestableVespaZooKeeperAdmin zooKeeperAdmin) {
             super(zooKeeperAdmin, new Sleeper() {
@@ -152,7 +161,7 @@ public class ReconfigurerTest {
         }
 
         void startOrReconfigure(ZookeeperServerConfig newConfig) {
-            startOrReconfigure(newConfig, this);
+            startOrReconfigure(newConfig, this, MockQuorumPeer::new, peer -> serverPeer = peer);
         }
 
         String connectionSpec() {
@@ -172,10 +181,17 @@ public class ReconfigurerTest {
         }
 
         @Override
-        public void shutdown() {}
+        public void shutdown() {
+            try {
+                latch.await(1, TimeUnit.SECONDS);
+            }
+            catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+            serverPeer.shutdown(Duration.ofSeconds(1)); }
 
         @Override
-        public void start(Path configFilePath) { }
+        public void start(Path configFilePath) { serverPeer.start(configFilePath); latch.countDown(); }
 
         @Override
         public boolean reconfigurable() {
