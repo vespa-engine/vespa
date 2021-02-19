@@ -2,6 +2,7 @@
 #pragma once
 
 #include <memory>
+#include <vespa/vespalib/util/trinary.h>
 
 namespace vespalib { class nbostream; }
 namespace storage::lib {
@@ -30,13 +31,13 @@ public:
     ~ClusterState();
 
     /**
-     * Returns true if the system has been set up to have
+     * Returns Trinary::True if the system has been set up to have
      * "ready" nodes, and the given bucket is in the ideal state
-     * for readiness.
+     * for readiness. Trinary ::Undefined is returned in case the bucketId is invalid (too few used bits)
      *
      * @param b The bucket to check.
      */
-    bool shouldBeReady(const Bucket& b) const;
+    vespalib::Trinary shouldBeReady(const Bucket& b) const;
 
     /**
      * Returns false if the cluster has been deemed down. This can happen

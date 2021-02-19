@@ -86,7 +86,7 @@ private:
     void cancelMovesForBucket(BucketId bucket);
     bool moveDocs(size_t maxDocsToMove);
 public:
-    BucketMoveJobV2(const IBucketStateCalculator::SP &calc,
+    BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &calc,
                     IDocumentMoveHandler &moveHandler,
                     IBucketModifiedHandler &modifiedHandler,
                     IThreadService & master,
@@ -109,7 +109,7 @@ public:
     bool inSync() const;
 
     bool run() override;
-    void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
+    void notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc) override;
     void notifyBucketStateChanged(const BucketId &bucketId, ActiveState newState) override;
     void notifyDiskMemUsage(DiskMemUsageState state) override;
     void notifyCreateBucket(const bucketdb::Guard & guard, const BucketId &bucket) override;

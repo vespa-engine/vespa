@@ -95,7 +95,7 @@ private:
     void activateBucket(document::BucketId bucket);
 
 public:
-    BucketMoveJob(const IBucketStateCalculator::SP &calc,
+    BucketMoveJob(const std::shared_ptr<IBucketStateCalculator> &calc,
                   IDocumentMoveHandler &moveHandler,
                   IBucketModifiedHandler &modifiedHandler,
                   const MaintenanceDocumentSubDB &ready,
@@ -127,7 +127,7 @@ public:
     bool run() override;
 
     // IClusterStateChangedHandler API
-    void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
+    void notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc) override;
 
     // IBucketFreezeListener API
     void notifyThawedBucket(const document::BucketId &bucket) override;

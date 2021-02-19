@@ -66,7 +66,7 @@ BucketHandler::BucketHandler(vespalib::Executor &executor)
     : IClusterStateChangedHandler(),
       IBucketStateChangedNotifier(),
       _executor(executor),
-      _ready(NULL),
+      _ready(nullptr),
       _changedHandlers(),
       _nodeUp(false)
 {
@@ -139,13 +139,11 @@ BucketHandler::handlePopulateActiveBuckets(document::BucketId::List &buckets,
 }
 
 void
-BucketHandler::notifyClusterStateChanged(const IBucketStateCalculator::SP & newCalc)
+BucketHandler::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> & newCalc)
 {
     bool oldNodeUp = _nodeUp;
     _nodeUp = newCalc->nodeUp();
-    LOG(spam, "notifyClusterStateChanged: %s -> %s",
-        oldNodeUp ? "up" : "down",
-        _nodeUp ? "up" : "down");
+    LOG(spam, "notifyClusterStateChanged: %s -> %s", oldNodeUp ? "up" : "down", _nodeUp ? "up" : "down");
     if (oldNodeUp && !_nodeUp) {
         deactivateAllActiveBuckets();
     }

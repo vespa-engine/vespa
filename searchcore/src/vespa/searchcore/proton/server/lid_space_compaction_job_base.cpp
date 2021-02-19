@@ -162,7 +162,7 @@ LidSpaceCompactionJobBase::notifyDiskMemUsage(DiskMemUsageState state)
 }
 
 void
-LidSpaceCompactionJobBase::notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc)
+LidSpaceCompactionJobBase::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc)
 {
     // Called by master write thread
     bool nodeRetired = newCalc->nodeRetired();

@@ -63,7 +63,7 @@ public:
                                      IGenericResultHandler &resultHandler);
 
     // Implements IClusterStateChangedHandler
-    void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
+    void notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc) override;
 
     // Implement IBucketStateChangedNotifier
     void addBucketStateChangedHandler(IBucketStateChangedHandler *handler) override;

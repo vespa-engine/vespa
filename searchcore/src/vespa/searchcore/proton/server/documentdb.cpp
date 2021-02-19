@@ -986,7 +986,7 @@ DocumentDB::forwardMaintenanceConfig()
 }
 
 void
-DocumentDB::notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc)
+DocumentDB::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc)
 {
     // Called by executor thread
     _calc = newCalc; // Save for maintenance job injection
