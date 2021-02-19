@@ -44,6 +44,7 @@ import org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V2;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -653,6 +654,7 @@ public class HttpServerTest {
     }
 
     @Test
+    @Ignore
     public void requireThatMetricIsIncrementedWhenClientUsesIncompatibleTlsVersion() throws IOException {
         Path privateKeyFile = tmpFolder.newFile().toPath();
         Path certificateFile = tmpFolder.newFile().toPath();
