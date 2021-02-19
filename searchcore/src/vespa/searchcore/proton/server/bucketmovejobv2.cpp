@@ -332,11 +332,11 @@ BucketMoveJobV2::notifyClusterStateChanged(const IBucketStateCalculator::SP &new
 {
     // Called by master write thread
     _calc = newCalc;
-    recompute();
     if (blockedDueToClusterState(_calc)) {
         setBlocked(BlockedReason::CLUSTER_STATE);
     } else {
         unBlock(BlockedReason::CLUSTER_STATE);
+        recompute();
     }
 }
 
