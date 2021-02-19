@@ -161,7 +161,8 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                zkClient.readAthenzDomain(),
                                                new ApplicationRolesStore(curator, TenantRepository.getTenantPath(tenant))
                                                        .readApplicationRoles(applicationId),
-                                               zkClient.readQuota());
+                                               zkClient.readQuota(),
+                                               zkClient.readDedicatedClusterControllerCluster());
     }
 
 }

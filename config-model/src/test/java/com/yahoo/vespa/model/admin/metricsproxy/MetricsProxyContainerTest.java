@@ -43,9 +43,29 @@ public class MetricsProxyContainerTest {
         for (var host : model.hostSystem().getHosts()) {
             assertThat(host.getService(METRICS_PROXY_CONTAINER.serviceName), notNullValue());
 
-            long metricsProxies =  host.getServices().stream()
-                    .filter(s -> s.getClass().equals(MetricsProxyContainer.class))
-                    .count();
+            long metricsProxies = host.getServices().stream()
+                                      .filter(s -> s.getClass().equals(MetricsProxyContainer.class))
+                                      .count();
+            assertThat(metricsProxies, is(1L));
+        }
+    }
+
+    @Test
+    public void one_metrics_proxy_container_is_added_to_every_node_also_when_dedicated_CCC() {
+        var numberOfHosts = 7;
+        var tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        tester.dedicatedClusterControllerCluster(true);
+
+        VespaModel model = tester.createModel(servicesWithManyNodes(), true);
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
+
+        for (var host : model.hostSystem().getHosts()) {
+            assertThat(host.getService(METRICS_PROXY_CONTAINER.serviceName), notNullValue());
+
+            long metricsProxies = host.getServices().stream()
+                                      .filter(s -> s.getClass().equals(MetricsProxyContainer.class))
+                                      .count();
             assertThat(metricsProxies, is(1L));
         }
     }
@@ -119,7 +139,7 @@ public class MetricsProxyContainerTest {
 
         NodeInfoConfig config = hostedModel.getConfig(NodeInfoConfig.class, metricsV2Handler.getConfigId());
         assertTrue(config.role().startsWith("content/my-content/0/"));
-        assertTrue(config.hostname().startsWith("node-1-3-9-"));
+        assertTrue(config.hostname().startsWith("node-1-3-10-"));
     }
 
     @Test

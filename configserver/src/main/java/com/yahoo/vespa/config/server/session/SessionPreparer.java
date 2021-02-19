@@ -26,6 +26,7 @@ import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.lang.SettableOptional;
 import com.yahoo.path.Path;
 import com.yahoo.vespa.config.server.TimeoutBudget;
+import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.PermanentApplicationPackage;
 import com.yahoo.vespa.config.server.configchange.ConfigChangeActions;
@@ -114,9 +115,11 @@ public class SessionPreparer {
                                  Optional<ApplicationSet> activeApplicationSet, Instant now, File serverDbSessionDir,
                                  ApplicationPackage applicationPackage, SessionZooKeeperClient sessionZooKeeperClient) {
         ApplicationId applicationId = params.getApplicationId();
+        boolean dedicatedClusterControllerCluster = new ApplicationCuratorDatabase(applicationId.tenant(), curator).getDedicatedClusterControllerCluster(applicationId);
         Preparation preparation = new Preparation(hostValidator, logger, params, activeApplicationSet,
                                                   TenantRepository.getTenantPath(applicationId.tenant()),
-                                                  serverDbSessionDir, applicationPackage, sessionZooKeeperClient);
+                                                  serverDbSessionDir, applicationPackage, sessionZooKeeperClient,
+                                                  dedicatedClusterControllerCluster);
         preparation.preprocess();
         try {
             AllocatedHosts allocatedHosts = preparation.buildModels(now);
@@ -170,7 +173,7 @@ public class SessionPreparer {
         Preparation(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
                     Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
                     File serverDbSessionDir, ApplicationPackage applicationPackage,
-                    SessionZooKeeperClient sessionZooKeeperClient) {
+                    SessionZooKeeperClient sessionZooKeeperClient, boolean dedicatedClusterControllerCluster) {
             this.logger = logger;
             this.params = params;
             this.applicationPackage = applicationPackage;
@@ -200,7 +203,8 @@ public class SessionPreparer {
                                                               endpointCertificateSecrets,
                                                               athenzDomain,
                                                               applicationRoles,
-                                                              params.quota());
+                                                              params.quota(),
+                                                              dedicatedClusterControllerCluster);
             this.fileDistributionProvider = fileDistributionFactory.createProvider(serverDbSessionDir);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
@@ -272,7 +276,8 @@ public class SessionPreparer {
                                   prepareResult.getFileRegistries(), 
                                   prepareResult.allocatedHosts(),
                                   athenzDomain,
-                                  params.quota());
+                                  params.quota(),
+                                  properties.dedicatedClusterControllerCluster());
             checkTimeout("write state to zookeeper");
         }
 
@@ -321,7 +326,8 @@ public class SessionPreparer {
                                        Map<Version, FileRegistry> fileRegistryMap,
                                        AllocatedHosts allocatedHosts,
                                        Optional<AthenzDomain> athenzDomain,
-                                       Optional<Quota> quota) {
+                                       Optional<Quota> quota,
+                                       boolean dedicatedClusterControllerCluster) {
         ZooKeeperDeployer zkDeployer = zooKeeperClient.createDeployer(deployLogger);
         try {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
@@ -332,6 +338,8 @@ public class SessionPreparer {
             zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
             zooKeeperClient.writeAthenzDomain(athenzDomain);
             zooKeeperClient.writeQuota(quota);
+            if (dedicatedClusterControllerCluster)
+                zooKeeperClient.writeDedicatedClusterControllerCluster();
         } catch (RuntimeException | IOException e) {
             zkDeployer.cleanup();
             throw new RuntimeException("Error preparing session", e);

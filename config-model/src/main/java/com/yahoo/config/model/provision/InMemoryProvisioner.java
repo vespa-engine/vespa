@@ -36,7 +36,7 @@ import java.util.stream.IntStream;
  */
 public class InMemoryProvisioner implements HostProvisioner {
 
-    private static final NodeResources defaultResources = new NodeResources(1, 3, 9, 1);
+    public static final NodeResources defaultResources = new NodeResources(1, 3, 10, 1);
 
     /**
      * If this is true an exception is thrown when all nodes are used.

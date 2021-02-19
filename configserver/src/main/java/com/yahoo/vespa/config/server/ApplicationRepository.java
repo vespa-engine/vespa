@@ -32,6 +32,7 @@ import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.application.Application;
+import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
 import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.application.ClusterReindexing;
@@ -933,13 +934,17 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return getLocalSession(tenant, sessionId).getMetaData();
     }
 
-    public ApplicationReindexing getReindexing(ApplicationId id) {
+    private ApplicationCuratorDatabase requireDatabase(ApplicationId id) {
         Tenant tenant = getTenant(id);
         if (tenant == null)
             throw new NotFoundException("Tenant '" + id.tenant().value() + "' not found");
 
-        return tenant.getApplicationRepo().database().readReindexingStatus(id)
-                            .orElseThrow(() -> new NotFoundException("Reindexing status not found for " + id));
+        return tenant.getApplicationRepo().database();
+    }
+
+    public ApplicationReindexing getReindexing(ApplicationId id) {
+        return requireDatabase(id).readReindexingStatus(id)
+                                  .orElseThrow(() -> new NotFoundException("Reindexing status not found for " + id));
     }
 
     public void modifyReindexing(ApplicationId id, UnaryOperator<ApplicationReindexing> modifications) {
@@ -1043,6 +1048,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     @Override
     public Duration serverDeployTimeout() { return Duration.ofSeconds(configserverConfig.zookeeper().barrierTimeout()); }
+
+    @Override
+    public void setDedicatedClusterControllerCluster(ApplicationId id) {
+        requireDatabase(id).setDedicatedClusterControllerCluster(id);
+    }
+
+    @Override
+    public boolean getDedicatedClusterControllerCluster(ApplicationId id) {
+        return requireDatabase(id).getDedicatedClusterControllerCluster(id);
+    }
 
     private static void logConfigChangeActions(ConfigChangeActions actions, DeployLogger logger) {
         RestartActions restartActions = actions.getRestartActions();
