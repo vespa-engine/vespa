@@ -21,12 +21,6 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>jdisc_core</artifactId>
       <version>${project.version}</version>
-        <exclusions>
-          <exclusion>
-            <groupId>org.jvnet.hudson</groupId>
-            <artifactId>annotation-indexer</artifactId>
-          </exclusion>
-        </exclusions>
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
