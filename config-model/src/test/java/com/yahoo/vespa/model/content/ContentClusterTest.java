@@ -1146,8 +1146,8 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(1, clusterControllers.reindexingContext().documentTypesForCluster("dev-null").size());
         var storageBuilder = new FleetcontrollerConfig.Builder();
         var devNullBuilder = new FleetcontrollerConfig.Builder();
-        twoContentModel.getConfig(storageBuilder, "storage/standalone/cluster-controllers/0/components/clustercontroller-storage-configurer");
-        twoContentModel.getConfig(devNullBuilder, "storage/standalone/cluster-controllers/0/components/clustercontroller-dev-null-configurer");
+        twoContentModel.getConfig(storageBuilder, "admin/standalone/cluster-controllers/0/components/clustercontroller-storage-configurer");
+        twoContentModel.getConfig(devNullBuilder, "admin/standalone/cluster-controllers/0/components/clustercontroller-dev-null-configurer");
         assertEquals(0.618, storageBuilder.build().min_distributor_up_ratio(), 1e-9);
         assertEquals(0.418, devNullBuilder.build().min_distributor_up_ratio(), 1e-9);
     }
