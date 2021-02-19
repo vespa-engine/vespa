@@ -92,10 +92,11 @@ public class Reindexer {
             throw new IllegalStateException("Already shut down");
 
         // Keep metrics in sync across cluster controller containers.
-        metrics.dump(database.readReindexing(cluster.name));
+        AtomicReference<Reindexing> reindexing = new AtomicReference<>(database.readReindexingOrDefault(cluster.name, ready, clock.instant()));
+        database.writeReindexing(reindexing.get(), cluster.name());
+        metrics.dump(reindexing.get());
 
         try (Lock lock = database.lockReindexing(cluster.name())) {
-            AtomicReference<Reindexing> reindexing = new AtomicReference<>(database.readReindexing(cluster.name()));
             reindexing.set(updateWithReady(ready, reindexing.get(), clock.instant()));
             database.writeReindexing(reindexing.get(), cluster.name());
             metrics.dump(reindexing.get());
