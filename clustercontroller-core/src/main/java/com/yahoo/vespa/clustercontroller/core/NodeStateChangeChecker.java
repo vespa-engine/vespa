@@ -29,20 +29,14 @@ public class NodeStateChangeChecker {
     public static final String BUCKETS_METRIC_NAME = "vds.datastored.bucket_space.buckets_total";
     public static final Map<String, String> BUCKETS_METRIC_DIMENSIONS = Map.of("bucketSpace", "default");
 
-    private final int minStorageNodesUp;
-    private final double minRatioOfStorageNodesUp;
     private final int requiredRedundancy;
     private final HierarchicalGroupVisiting groupVisiting;
     private final ClusterInfo clusterInfo;
 
     public NodeStateChangeChecker(
-            int minStorageNodesUp,
-            double minRatioOfStorageNodesUp,
             int requiredRedundancy,
             HierarchicalGroupVisiting groupVisiting,
             ClusterInfo clusterInfo) {
-        this.minStorageNodesUp = minStorageNodesUp;
-        this.minRatioOfStorageNodesUp = minRatioOfStorageNodesUp;
         this.requiredRedundancy = requiredRedundancy;
         this.groupVisiting = groupVisiting;
         this.clusterInfo = clusterInfo;
@@ -159,11 +153,6 @@ public class NodeStateChangeChecker {
                     + currentState);
         }
 
-        Result thresholdCheckResult = checkUpThresholds(clusterState);
-        if (!thresholdCheckResult.settingWantedStateIsAllowed()) {
-            return thresholdCheckResult;
-        }
-
         HostInfo hostInfo = nodeInfo.getHostInfo();
         Integer hostInfoNodeVersion = hostInfo.getClusterStateVersionOrNull();
         int clusterControllerVersion = clusterState.getVersion();
@@ -226,19 +215,14 @@ public class NodeStateChangeChecker {
             return Result.allowSettingOfWantedState();
         }
 
-        Result ongoingChanges = anyNodeSetToMaintenance(clusterState);
-        if (!ongoingChanges.settingWantedStateIsAllowed()) {
-            return ongoingChanges;
+        Result allNodesAreUpCheck = checkAllNodesAreUp(clusterState);
+        if (!allNodesAreUpCheck.settingWantedStateIsAllowed()) {
+            return allNodesAreUpCheck;
         }
 
         Result checkDistributorsResult = checkDistributors(nodeInfo.getNode(), clusterState.getVersion());
         if (!checkDistributorsResult.settingWantedStateIsAllowed()) {
             return checkDistributorsResult;
-        }
-
-        Result thresholdCheckResult = checkUpThresholds(clusterState);
-        if (!thresholdCheckResult.settingWantedStateIsAllowed()) {
-            return thresholdCheckResult;
         }
 
         return Result.allowSettingOfWantedState();
@@ -281,48 +265,38 @@ public class NodeStateChangeChecker {
         return false;
     }
 
-    private Result anyNodeSetToMaintenance(ClusterState clusterState) {
-        for (NodeInfo nodeInfo : clusterInfo.getAllNodeInfo()) {
-            if (clusterState.getNodeState(nodeInfo.getNode()).getState() == State.MAINTENANCE) {
-                return Result.createDisallowed("Another node is already in maintenance:" + nodeInfo.getNodeIndex());
-            }
-            if (nodeInfo.getWantedState().getState() == State.MAINTENANCE) {
-                return Result.createDisallowed("Another node wants maintenance:" + nodeInfo.getNodeIndex());
-            }
-        }
-        return Result.allowSettingOfWantedState();
-    }
+    private Result checkAllNodesAreUp(ClusterState clusterState) {
+        // This method verifies both storage nodes and distributors are up (or retired).
+        // The complicated part is making a summary error message.
 
-    private int contentNodesWithAvailableNodeState(ClusterState clusterState) {
-        final int nodeCount = clusterState.getNodeCount(NodeType.STORAGE);
-        int upNodesCount = 0;
-        for (int i = 0; i < nodeCount; ++i) {
-            final Node node = new Node(NodeType.STORAGE, i);
-            final State state = clusterState.getNodeState(node).getState();
-            if (state == State.UP || state == State.RETIRED || state == State.INITIALIZING) {
-                upNodesCount++;
+        for (NodeInfo storageNodeInfo : clusterInfo.getStorageNodeInfo()) {
+            State wantedState = storageNodeInfo.getUserWantedState().getState();
+            if (wantedState != State.UP && wantedState != State.RETIRED) {
+                return Result.createDisallowed("Another storage node wants state " +
+                        wantedState.toString().toUpperCase() + ": " + storageNodeInfo.getNodeIndex());
+            }
+
+            State state = clusterState.getNodeState(storageNodeInfo.getNode()).getState();
+            if (state != State.UP && state != State.RETIRED) {
+                return Result.createDisallowed("Another storage node has state " + state.toString().toUpperCase() +
+                        ": " + storageNodeInfo.getNodeIndex());
             }
         }
-        return upNodesCount;
-    }
 
-    private Result checkUpThresholds(ClusterState clusterState) {
-        if (clusterInfo.getStorageNodeInfo().size() < minStorageNodesUp) {
-            return Result.createDisallowed("There are only " + clusterInfo.getStorageNodeInfo().size() +
-                    " storage nodes up, while config requires at least " + minStorageNodesUp);
+        for (NodeInfo distributorNodeInfo : clusterInfo.getDistributorNodeInfo()) {
+            State wantedState = distributorNodeInfo.getUserWantedState().getState();
+            if (wantedState != State.UP && wantedState != State.RETIRED) {
+                return Result.createDisallowed("Another distributor wants state " + wantedState.toString().toUpperCase() +
+                        ": " + distributorNodeInfo.getNodeIndex());
+            }
+
+            State state = clusterState.getNodeState(distributorNodeInfo.getNode()).getState();
+            if (state != State.UP && state != State.RETIRED) {
+                return Result.createDisallowed("Another distributor has state " + state.toString().toUpperCase() +
+                        ": " + distributorNodeInfo.getNodeIndex());
+            }
         }
 
-        final int nodesCount = clusterInfo.getStorageNodeInfo().size();
-        final int upNodesCount = contentNodesWithAvailableNodeState(clusterState);
-
-        if (nodesCount == 0) {
-            return Result.createDisallowed("No storage nodes in cluster state");
-        }
-        if (((double)upNodesCount) / nodesCount < minRatioOfStorageNodesUp) {
-            return Result.createDisallowed("Not enough storage nodes running: " + upNodesCount
-                    + " of " +  nodesCount + " storage nodes are up which is less that the required fraction of "
-                    + minRatioOfStorageNodesUp);
-        }
         return Result.allowSettingOfWantedState();
     }
 

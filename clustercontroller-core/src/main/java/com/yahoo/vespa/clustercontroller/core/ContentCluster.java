@@ -203,8 +203,6 @@ public class ContentCluster {
             NodeState oldState, NodeState newState) {
 
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
-                minStorageNodesUp,
-                minRatioOfStorageNodesUp,
                 distribution.getRedundancy(),
                 new HierarchicalGroupVisitingAdapter(distribution),
                 clusterInfo
