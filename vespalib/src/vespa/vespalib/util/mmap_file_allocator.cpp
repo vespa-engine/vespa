@@ -46,6 +46,8 @@ MmapFileAllocator::alloc(size_t sz) const
     // Register allocation
     auto ins_res = _allocations.insert(std::make_pair(buf, sz));
     assert(ins_res.second);
+    int retval = madvise(buf, sz, MADV_RANDOM);
+    assert(retval == 0);
     return PtrAndSize(buf, sz);
 }
 
