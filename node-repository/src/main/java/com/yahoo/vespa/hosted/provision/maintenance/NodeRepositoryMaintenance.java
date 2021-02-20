@@ -64,7 +64,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         maintainers.add(new AutoscalingMaintainer(nodeRepository, metricsDb, deployer, metric, defaults.autoscalingInterval));
         maintainers.add(new ScalingSuggestionsMaintainer(nodeRepository, metricsDb, defaults.scalingSuggestionsInterval, metric));
         maintainers.add(new SwitchRebalancer(nodeRepository, defaults.switchRebalancerInterval, metric, deployer));
-        maintainers.add(new DedicatedClusterControllerClusterMigrator(deployer, metric, nodeRepository, defaults.dedicatedClusterControllerMigratorInterval, flagSource, orchestrator));
+        if (zone.environment() == Environment.staging || zone.environment() == Environment.perf || zone.environment() == Environment.prod)
+            maintainers.add(new DedicatedClusterControllerClusterMigrator(deployer, metric, nodeRepository, defaults.dedicatedClusterControllerMigratorInterval, flagSource, orchestrator));
 
         provisionServiceProvider.getLoadBalancerService(nodeRepository)
                                 .map(lbService -> new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService, metric))

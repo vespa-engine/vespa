@@ -20,6 +20,7 @@ import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
@@ -280,7 +281,7 @@ public class ModelContextImpl implements ModelContext {
             this.athenzDomain = athenzDomain;
             this.applicationRoles = applicationRoles;
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
-            this.dedicatedClusterControllerCluster = dedicatedClusterControllerCluster;
+            this.dedicatedClusterControllerCluster = List.of(Environment.staging, Environment.perf, Environment.prod).contains(zone.environment()) && dedicatedClusterControllerCluster;
 
             jvmGcOptions = flagValue(flagSource, applicationId, PermanentFlags.JVM_GC_OPTIONS);
         }
