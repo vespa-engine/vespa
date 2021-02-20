@@ -99,7 +99,7 @@ public class ClusterController extends AbstractComponent
     private void verifyThatZooKeeperWorks(FleetControllerOptions options) throws Exception {
         if (options.zooKeeperServerAddress != null && !"".equals(options.zooKeeperServerAddress)) {
             try (Curator curator = Curator.create(options.zooKeeperServerAddress)) {
-                if ( ! curator.framework().blockUntilConnected(60, TimeUnit.SECONDS))
+                if ( ! curator.framework().blockUntilConnected(600, TimeUnit.SECONDS))
                     com.yahoo.protect.Process.logAndDie("Failed to connect to ZK, dying and restarting container");
             }
         }
