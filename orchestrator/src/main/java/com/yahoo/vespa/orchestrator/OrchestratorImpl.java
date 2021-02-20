@@ -398,8 +398,7 @@ public class OrchestratorImpl implements Orchestrator {
                                                               .collect(toList());
 
             // For all content clusters, probe whether maintenance is OK.
-            OrchestratorContext context = OrchestratorContext.createContextForSingleAppOp(clock)
-                                                             .createSubcontextForSingleAppOp(true); // probe
+            OrchestratorContext context = OrchestratorContext.createContextForBatchProbe(clock);
             for (ServiceCluster cluster : contentClusters) {
                 List<HostName> clusterControllers = VespaModelUtil.getClusterControllerInstancesInOrder(application, cluster.clusterId());
                 ClusterControllerClient client = clusterControllerClientFactory.createClient(clusterControllers, cluster.clusterId().s());
