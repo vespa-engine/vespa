@@ -55,6 +55,11 @@ public class OrchestratorContext implements AutoCloseable {
                 false, false);
     }
 
+    public static OrchestratorContext createContextForBatchProbe(Clock clock) {
+        return new OrchestratorContext(null, clock, TimeBudget.fromNow(clock, DEFAULT_TIMEOUT_FOR_BATCH_OP),
+                                       true, false);
+    }
+
     private OrchestratorContext(OrchestratorContext parentOrNull,
                                 Clock clock,
                                 TimeBudget timeBudget,

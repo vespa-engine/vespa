@@ -304,7 +304,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                 String clusterName = contentClusterName + "-controllers";
                 Optional<NodesSpecification> nodesSpecification = NodesSpecification.optionalDedicatedFromParent(contentElement.child("controllers"), context);
                 if (nodesSpecification.isEmpty() && context.properties().dedicatedClusterControllerCluster())
-                    clusterControllers = getDedicatedSharedControllers(contentElement, admin, contentCluster, context);
+                    clusterControllers = getDedicatedSharedControllers(contentElement, admin, context);
                 else {
                     Collection<HostResource> hosts = nodesSpecification.isPresent() && nodesSpecification.get().isDedicated()
                                                      ? getControllerHosts(nodesSpecification.get(), admin, clusterName, context)
@@ -354,7 +354,7 @@ public class ContentCluster extends AbstractConfigProducer implements
         public static final NodeResources clusterControllerResources = new NodeResources(0.5, 2, 10, 0.3, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);
 
         private ClusterControllerContainerCluster getDedicatedSharedControllers(ModelElement contentElement, Admin admin,
-                                                                                ContentCluster contentCluster, ConfigModelContext context) {
+                                                                                ConfigModelContext context) {
             if (admin.getClusterControllers() == null) {
                 NodesSpecification spec = NodesSpecification.exclusiveAndRequiredFromSharedParents(3,
                                                                                                    clusterControllerResources,
@@ -368,7 +368,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                                                                 true)
                                                      .keySet();
 
-                admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone"),
+                admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(admin, "standalone"),
                                                                      hosts,
                                                                      "cluster-controllers",
                                                                      true,

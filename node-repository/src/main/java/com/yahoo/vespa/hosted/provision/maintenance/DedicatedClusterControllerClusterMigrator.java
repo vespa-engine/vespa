@@ -56,6 +56,11 @@ public class DedicatedClusterControllerClusterMigrator extends ApplicationMainta
     }
 
     @Override
+    protected boolean canDeployNow(ApplicationId id) {
+        return isQuiescent(id);
+    }
+
+    @Override
     protected void deploy(ApplicationId id) {
         migrate(id);
         super.deploy(id);

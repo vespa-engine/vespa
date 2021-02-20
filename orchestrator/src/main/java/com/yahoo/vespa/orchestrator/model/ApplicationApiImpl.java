@@ -46,7 +46,6 @@ public class ApplicationApiImpl implements ApplicationApi {
         this.nodeGroup = nodeGroup;
         this.lock = lock;
         this.clock = clock;
-        Collection<HostName> hosts = getHostsUsedByApplicationInstance(applicationInstance);
         this.hostInfos = lock.getHostInfos();
         this.clusterInOrder = makeClustersInOrder(nodeGroup, hostInfos, clusterControllerClientFactory, numberOfConfigServers);
     }

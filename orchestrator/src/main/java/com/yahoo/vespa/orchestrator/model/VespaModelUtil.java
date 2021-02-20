@@ -74,19 +74,20 @@ public class VespaModelUtil {
      * @return The set of all Cluster Controller service instances for the application.
      */
     public static List<HostName> getClusterControllerInstancesInOrder(ApplicationInstance application,
-                                                                          ClusterId contentClusterId)
+                                                                      ClusterId contentClusterId)
     {
         Set<ServiceCluster> controllerClusters = getClusterControllerServiceClusters(application);
 
         Collection<ServiceCluster> controllerClustersForContentCluster = filter(controllerClusters, contentClusterId);
 
+        // TODO jonmv: the exception will be the new norm here.
         Set<ServiceInstance> clusterControllerInstances;
         if (controllerClustersForContentCluster.size() == 1) {
             clusterControllerInstances = first(controllerClustersForContentCluster).serviceInstances();
         } else if (controllerClusters.size() == 1) {
             ServiceCluster cluster = first(controllerClusters);
-            log.warning("No cluster controller cluster for content cluster " + contentClusterId
-                    + ", using the only cluster controller cluster available: " + cluster.clusterId());
+            log.info("No cluster controller cluster for content cluster " + contentClusterId
+                     + ", using the only cluster controller cluster available: " + cluster.clusterId());
 
             clusterControllerInstances = cluster.serviceInstances();
         } else {
@@ -117,8 +118,7 @@ public class VespaModelUtil {
     }
 
     /**
-     * @return  Host name for a Cluster Controller that is likely to be the master, is !isPresent() if
-     *          no cluster controller was found.
+     * @return  Host name for a Cluster Controller that is likely to be the master.
      * @throws  java.lang.IllegalArgumentException if there are no cluster controller instances.
      */
     public static HostName getControllerHostName(ApplicationInstance application, ClusterId contentClusterId) {
