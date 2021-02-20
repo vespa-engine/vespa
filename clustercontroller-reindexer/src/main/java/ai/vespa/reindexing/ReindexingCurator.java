@@ -46,16 +46,23 @@ public class ReindexingCurator {
     }
 
     /** If no reindexing data exists (has been wiped), assume current ready documents are already done. */
-    public Reindexing readReindexingOrDefault(String cluster, Map<DocumentType, Instant> ready, Instant now) {
-        return curator.getData(statusPath(cluster)).map(serializer::deserialize)
-                      .orElseGet(() -> {
-                          Reindexing reindexing = Reindexing.empty();
-                          for (DocumentType type : ready.keySet())
-                              if (ready.get(type).isBefore(now))
-                                  reindexing = reindexing.with(type, Status.ready(now).running().successful(now));
+    public void initializeIfEmpty(String cluster, Map<DocumentType, Instant> ready, Instant now) {
+        if ( ! curator.exists(statusPath(cluster))) {
+            try (Lock lock = lockReindexing(cluster)) {
+                if (curator.exists(statusPath(cluster)))
+                    return; // Some other node already did this.
 
-                          return reindexing;
-                      });
+                Reindexing reindexing = Reindexing.empty();
+                for (DocumentType type : ready.keySet())
+                    if (ready.get(type).isBefore(now))
+                        reindexing = reindexing.with(type, Status.ready(now).running().successful(now));
+
+                writeReindexing(reindexing, cluster);
+            }
+            catch (ReindexingLockException ignored) {
+                // Some other node took ownership and is doing this.
+            }
+        }
     }
 
     public Reindexing readReindexing(String cluster) {
