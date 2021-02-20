@@ -43,7 +43,8 @@ public class DedicatedClusterControllerClusterMigrator extends ApplicationMainta
         if (deployer().bootstrapping()) return Set.of();
 
         ZonedDateTime date = ZonedDateTime.ofInstant(clock().instant(), java.time.ZoneId.of("Europe/Oslo"));
-        if (List.of(SATURDAY, SUNDAY).contains(date.getDayOfWeek()) || date.getHour() < 8 || 12 < date.getHour())
+        if (   ! nodeRepository().zone().system().isCd()
+            &&   (List.of(SATURDAY, SUNDAY).contains(date.getDayOfWeek()) || date.getHour() < 8 || 12 < date.getHour()))
             return Set.of();
 
         return nodeRepository().applications().ids().stream()
