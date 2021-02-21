@@ -66,7 +66,7 @@ public:
 
     BucketMover(const document::BucketId &bucket, const MaintenanceDocumentSubDB *source,
                 uint32_t targetSubDbId, IDocumentMoveHandler &handler) noexcept;
-    BucketMover(BucketMover &&) noexcept = default;
+    BucketMover(BucketMover &&) noexcept = delete;
     BucketMover & operator=(BucketMover &&) noexcept = delete;
     BucketMover(const BucketMover &) = delete;
     BucketMover & operator=(const BucketMover &) = delete;
