@@ -16,6 +16,7 @@
 #include <vespa/persistence/spi/bucket_tasks.h>
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.bucketmovejob");
