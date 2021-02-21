@@ -33,8 +33,14 @@ public class ApplicationPatcher implements AutoCloseable {
         } catch (IOException e) {
             throw new UncheckedIOException("Error reading request body", e);
         }
-        this.application = nodeRepository.applications().require(applicationId);
         this.lock = nodeRepository.nodes().lock(applicationId);
+        try {
+            this.application = nodeRepository.applications().require(applicationId);
+        }
+        catch (RuntimeException e) {
+            lock.close();
+            throw e;
+        }
     }
 
     /** Applies the json to the application and returns it. */
