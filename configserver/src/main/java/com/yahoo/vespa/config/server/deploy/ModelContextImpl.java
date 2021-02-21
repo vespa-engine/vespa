@@ -281,7 +281,7 @@ public class ModelContextImpl implements ModelContext {
             this.athenzDomain = athenzDomain;
             this.applicationRoles = applicationRoles;
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
-            this.dedicatedClusterControllerCluster = List.of(Environment.staging, Environment.perf, Environment.prod).contains(zone.environment()) && dedicatedClusterControllerCluster;
+            this.dedicatedClusterControllerCluster = zoneHasRedundancyOrIsCD(zone) && dedicatedClusterControllerCluster;
 
             jvmGcOptions = flagValue(flagSource, applicationId, PermanentFlags.JVM_GC_OPTIONS);
         }
@@ -347,6 +347,10 @@ public class ModelContextImpl implements ModelContext {
                     .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
                     .boxedValue();
         }
+    }
+
+    private static boolean zoneHasRedundancyOrIsCD(Zone zone) {
+        return zone.system().isCd() || List.of(Environment.staging, Environment.perf, Environment.prod).contains(zone.environment());
     }
 
 }
