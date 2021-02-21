@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.jrt.Spec;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
@@ -11,7 +10,6 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
@@ -39,14 +37,10 @@ public class StateChangeHandler {
     private int maxInitProgressTime = 5000;
     private int maxPrematureCrashes = 4;
     private long stableStateTimePeriod = 60 * 60 * 1000;
-    private final Map<Integer, String> hostnames = new HashMap<>();
     private int maxSlobrokDisconnectGracePeriod = 1000;
     private static final boolean disableUnstableNodes = true;
 
-    /**
-     * @param metricUpdater may be null, in which case no metrics will be recorded.
-     */
-    public StateChangeHandler(Timer timer, EventLogInterface eventLog, MetricUpdater metricUpdater) {
+    public StateChangeHandler(Timer timer, EventLogInterface eventLog) {
         this.timer = timer;
         this.eventLog = eventLog;
         maxTransitionTime.put(NodeType.DISTRIBUTOR, 5000);
@@ -168,17 +162,13 @@ public class StateChangeHandler {
     }
 
     public void handleNewNode(NodeInfo node) {
-        setHostName(node);
         String message = "Found new node " + node + " in slobrok at " + node.getRpcAddress();
         eventLog.add(NodeEvent.forBaseline(node, message, NodeEvent.Type.REPORTED, timer.getCurrentTimeInMillis()), isMaster);
     }
 
     public void handleMissingNode(final ClusterState currentClusterState,
                                   final NodeInfo node,
-                                  final NodeStateOrHostInfoChangeHandler nodeListener)
-    {
-        removeHostName(node);
-
+                                  final NodeStateOrHostInfoChangeHandler nodeListener) {
         final long timeNow = timer.getCurrentTimeInMillis();
 
         if (node.getLatestNodeStateRequestTime() != null) {
@@ -234,30 +224,13 @@ public class StateChangeHandler {
     }
 
     public void handleNewRpcAddress(NodeInfo node) {
-        setHostName(node);
         String message = "Node " + node + " has a new address in slobrok: " + node.getRpcAddress();
         eventLog.add(NodeEvent.forBaseline(node, message, NodeEvent.Type.REPORTED, timer.getCurrentTimeInMillis()), isMaster);
     }
 
     public void handleReturnedRpcAddress(NodeInfo node) {
-        setHostName(node);
         String message = "Node got back into slobrok with same address as before: " + node.getRpcAddress();
         eventLog.add(NodeEvent.forBaseline(node, message, NodeEvent.Type.REPORTED, timer.getCurrentTimeInMillis()), isMaster);
-    }
-
-    private void setHostName(NodeInfo node) {
-        String rpcAddress = node.getRpcAddress();
-        if (rpcAddress == null) {
-            // This may happen if we haven't seen the node in Slobrok yet.
-            return;
-        }
-
-        Spec address = new Spec(rpcAddress);
-        if (address.malformed()) {
-            return;
-        }
-
-        hostnames.put(node.getNodeIndex(), address.host());
     }
 
     void reconfigureFromOptions(FleetControllerOptions options) {
@@ -266,10 +239,6 @@ public class StateChangeHandler {
         setMaxInitProgressTime(options.maxInitProgressTime);
         setMaxSlobrokDisconnectGracePeriod(options.maxSlobrokDisconnectGracePeriod);
         setMaxTransitionTime(options.maxTransitionTime);
-    }
-
-    private void removeHostName(NodeInfo node) {
-        hostnames.remove(node.getNodeIndex());
     }
 
     // TODO too many hidden behavior dependencies between this and the actually

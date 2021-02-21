@@ -172,9 +172,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         ContentCluster cluster = new ContentCluster(
                 options.clusterName,
                 options.nodes,
-                options.storageDistribution,
-                options.minStorageNodesUp,
-                options.minRatioOfStorageNodesUp);
+                options.storageDistribution);
         NodeStateGatherer stateGatherer = new NodeStateGatherer(timer, timer, log);
         Communicator communicator = new RPCCommunicator(
                 RPCCommunicator.createRealSupervisor(),
@@ -186,7 +184,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 options.nodeStateRequestRoundTripTimeMaxSeconds);
         DatabaseHandler database = new DatabaseHandler(new ZooKeeperDatabaseFactory(), timer, options.zooKeeperServerAddress, options.fleetControllerIndex, timer);
         NodeLookup lookUp = new SlobrokClient(timer);
-        StateChangeHandler stateGenerator = new StateChangeHandler(timer, log, metricUpdater);
+        StateChangeHandler stateGenerator = new StateChangeHandler(timer, log);
         SystemStateBroadcaster stateBroadcaster = new SystemStateBroadcaster(timer, timer);
         MasterElectionHandler masterElectionHandler = new MasterElectionHandler(options.fleetControllerIndex, options.fleetControllerCount, timer, timer);
         FleetController controller = new FleetController(
@@ -503,8 +501,6 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         cluster.setPollingFrequency(options.statePollingFrequency);
         cluster.setDistribution(options.storageDistribution);
         cluster.setNodes(options.nodes);
-        cluster.setMinRatioOfStorageNodesUp(options.minRatioOfStorageNodesUp);
-        cluster.setMinStorageNodesUp(options.minStorageNodesUp);
         database.setZooKeeperAddress(options.zooKeeperServerAddress);
         database.setZooKeeperSessionTimeout(options.zooKeeperSessionTimeout);
         stateGatherer.setMaxSlobrokDisconnectGracePeriod(options.maxSlobrokDisconnectGracePeriod);

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
@@ -64,7 +64,7 @@ public class NodeStateChangeCheckerTest {
         Distribution distribution = mock(Distribution.class);
         Group group = new Group(2, "to");
         when(distribution.getRootGroup()).thenReturn(group);
-        return new ContentCluster("Clustername", nodes, distribution, 3, 0.0);
+        return new ContentCluster("Clustername", nodes, distribution);
     }
 
     private String createDistributorHostInfo(int replicationfactor1, int replicationfactor2, int replicationfactor3) {

@@ -54,8 +54,6 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     private Target connection;
     /** We cache last connection we did request info on, as we want to report appropriate error for node regardless of whether other commands have created new connection. */
     public Target lastRequestInfoConnection;
-    /** Sets the version we assumed we were when opening this connection. (Needed in case we need to do some sort of handshaking to decrease version. */
-    private int connectionVersion;
     /**
      * Counts the number of attempts we have tried since last time we had
      * contact with the node. (Used to retry fast early)
@@ -116,7 +114,6 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         this.connectionAttemptCount = 0;
         this.timeOfFirstFailingConnectionAttempt = 0;
         this.version = getLatestVersion();
-        this.connectionVersion = getLatestVersion();
         this.configuredRetired = configuredRetired;
         this.recentlyObservedUnstableDuringInit = false;
         this.rpcAddress = rpcAddress;
@@ -134,7 +131,6 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         this.lastSeenInSlobrok = null;
         this.nextAttemptTime = 0;
         this.version = getLatestVersion();
-        this.connectionVersion = getLatestVersion();
     }
 
     public long getWentDownWithStartTime() { return wentDownWithStartTime; }
@@ -410,7 +406,6 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
 
     public Target setConnection(Target t) {
         this.connection = t;
-        this.connectionVersion = getLatestVersion();
         return t;
     }
 

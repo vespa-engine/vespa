@@ -37,16 +37,11 @@ public class ContentCluster {
     private int pollingFrequency = 5000;
 
     private Distribution distribution;
-    private int minStorageNodesUp;
-    private double minRatioOfStorageNodesUp;
 
-    public ContentCluster(String clusterName, Collection<ConfiguredNode> configuredNodes, Distribution distribution,
-                          int minStorageNodesUp, double minRatioOfStorageNodesUp) {
+    public ContentCluster(String clusterName, Collection<ConfiguredNode> configuredNodes, Distribution distribution) {
         if (configuredNodes == null) throw new IllegalArgumentException("Nodes must be set");
         this.clusterName = clusterName;
         this.distribution = distribution;
-        this.minStorageNodesUp = minStorageNodesUp;
-        this.minRatioOfStorageNodesUp = minRatioOfStorageNodesUp;
         setNodes(configuredNodes);
     }
 
@@ -174,17 +169,6 @@ public class ContentCluster {
 
     public void setSlobrokGenerationCount(int count) { slobrokGenerationCount = count; }
 
-    private void getLeaves(Group node, List<Group> leaves, List<String> names, String name) {
-        if (node.isLeafGroup()) {
-            leaves.add(node);
-            names.add(name + "/" + node.getName());
-            return;
-        }
-        for (Group g : node.getSubgroups().values()) {
-            getLeaves(g, leaves, names, name + (node.getName() != null ? "/" + node.getName() : ""));
-        }
-    }
-
     /**
      * Checks if a node can be upgraded
      *
@@ -224,14 +208,6 @@ public class ContentCluster {
                 // like any other state:
                 return List.of();
         }
-    }
-
-    public void setMinStorageNodesUp(int minStorageNodesUp) {
-        this.minStorageNodesUp = minStorageNodesUp;
-    }
-
-    public void setMinRatioOfStorageNodesUp(double minRatioOfStorageNodesUp) {
-        this.minRatioOfStorageNodesUp = minRatioOfStorageNodesUp;
     }
 
     public boolean hasConfiguredNode(int index) {

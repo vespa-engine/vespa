@@ -9,7 +9,6 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
-import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -39,9 +38,7 @@ public class ClusterFixture {
     }
 
     private StateChangeHandler createNodeStateChangeHandlerForCluster() {
-        final int controllerIndex = 0;
-        MetricUpdater metricUpdater = new MetricUpdater(new NoMetricReporter(), controllerIndex);
-        return new StateChangeHandler(timer, eventLog, metricUpdater);
+        return new StateChangeHandler(timer, eventLog);
     }
 
     public ClusterFixture bringEntireClusterUp() {
@@ -200,7 +197,7 @@ public class ClusterFixture {
         Collection<ConfiguredNode> nodes = DistributionBuilder.buildConfiguredNodes(nodeCount);
 
         Distribution distribution = DistributionBuilder.forFlatCluster(nodeCount);
-        ContentCluster cluster = new ContentCluster("foo", nodes, distribution, 0, 0.0);
+        ContentCluster cluster = new ContentCluster("foo", nodes, distribution);
 
         return new ClusterFixture(cluster, distribution);
     }
@@ -208,7 +205,7 @@ public class ClusterFixture {
     static ClusterFixture forHierarchicCluster(DistributionBuilder.GroupBuilder root) {
         List<ConfiguredNode> nodes = DistributionBuilder.buildConfiguredNodes(root.totalNodeCount());
         Distribution distribution = DistributionBuilder.forHierarchicCluster(root);
-        ContentCluster cluster = new ContentCluster("foo", nodes, distribution, 0, 0.0);
+        ContentCluster cluster = new ContentCluster("foo", nodes, distribution);
 
         return new ClusterFixture(cluster, distribution);
     }
