@@ -8,9 +8,10 @@ import java.util.regex.Pattern;
  * Utility class for parsing timeout fields.
  *
  * @author Tony Vaagenes
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class TimeParser {
+
     private static final Pattern timeoutPattern = Pattern.compile("(\\d+(\\.\\d*)?)\\s*(m)?s");
     private static final double milliSecondsPerSecond = 1000.0d;
 
@@ -24,7 +25,7 @@ public class TimeParser {
         if (matcher.group(3) != null) {
             value /= milliSecondsPerSecond;
         }
-        return Double.valueOf(value);
+        return value;
     }
 
     public static int asMilliSeconds(String timeout) {
@@ -40,4 +41,5 @@ public class TimeParser {
 
         return (int) value;
     }
+
 }

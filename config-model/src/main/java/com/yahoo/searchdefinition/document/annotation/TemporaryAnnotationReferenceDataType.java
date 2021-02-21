@@ -5,9 +5,10 @@ import com.yahoo.document.annotation.AnnotationReferenceDataType;
 import com.yahoo.document.annotation.AnnotationType;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class TemporaryAnnotationReferenceDataType extends AnnotationReferenceDataType {
+
     private final String target;
 
     public TemporaryAnnotationReferenceDataType(String target) {
@@ -23,4 +24,5 @@ public class TemporaryAnnotationReferenceDataType extends AnnotationReferenceDat
         super.setName("annotationreference<" + type.getName() + ">");
         super.setAnnotationType(type);
     }
+
 }

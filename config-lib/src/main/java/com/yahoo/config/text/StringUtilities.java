@@ -3,23 +3,26 @@ package com.yahoo.config.text;
 
 import java.nio.charset.Charset;
 import java.io.ByteArrayOutputStream;
+import java.nio.charset.StandardCharsets;
 
 /**
  * Escapes strings into and out of a format where they only contain printable characters.
  *
  * Need to duplicate escape / unescape of strings as we have in C++ for java version of system states.
  *
- * @author <a href="mailto:humbe@yahoo-inc.com">Haakon Humberset</a>
+ * @author Haakon Humberset
  */
 public class StringUtilities {
-    private static Charset UTF8 = Charset.forName("utf8");
+
+    private static final Charset UTF8 = StandardCharsets.UTF_8;
 
     private static byte toHex(int val) { return (byte) (val < 10 ? '0' + val : 'a' + (val - 10)); }
 
     private static class ReplacementCharacters {
-        public byte needEscape[] = new byte[256];
-        public byte replacement1[] = new byte[256];
-        public byte replacement2[] = new byte[256];
+
+        public byte[] needEscape = new byte[256];
+        public byte[] replacement1 = new byte[256];
+        public byte[] replacement2 = new byte[256];
 
         public ReplacementCharacters() {
             for (int i=0; i<256; ++i) {
@@ -55,12 +58,12 @@ public class StringUtilities {
     /**
      * Escapes strings into a format with only printable ASCII characters.
      *
-     * @param source The string to escape
-     * @param delimiter Escape this character too, even if it is printable.
-     * @return The escaped string
+     * @param source the string to escape
+     * @param delimiter escape this character too, even if it is printable
+     * @return the escaped string
      */
     public static String escape(String source, char delimiter) {
-        byte bytes[] = source.getBytes(UTF8);
+        byte[] bytes = source.getBytes(UTF8);
         ByteArrayOutputStream result = new ByteArrayOutputStream();
         for (byte b : bytes) {
             int val = b;
@@ -81,8 +84,7 @@ public class StringUtilities {
                 result.write(replacementCharacters.replacement2[val]);
             }
         }
-        return new String(result.toByteArray(), UTF8);
+        return result.toString(UTF8);
     }
-
 
 }

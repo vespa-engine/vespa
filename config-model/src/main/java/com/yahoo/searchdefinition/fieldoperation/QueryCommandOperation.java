@@ -6,10 +6,11 @@ import com.yahoo.searchdefinition.document.SDField;
 import java.util.List;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class QueryCommandOperation implements FieldOperation {
-    private List<String> queryCommands = new java.util.ArrayList<>(0);
+
+    private final List<String> queryCommands = new java.util.ArrayList<>(0);
 
     public void addQueryCommand(String name) {
        queryCommands.add(name);
@@ -20,4 +21,5 @@ public class QueryCommandOperation implements FieldOperation {
             field.addQueryCommand(command);
         }
     }
+
 }

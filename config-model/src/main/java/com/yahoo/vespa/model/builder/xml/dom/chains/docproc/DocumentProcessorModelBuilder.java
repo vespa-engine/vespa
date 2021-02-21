@@ -11,7 +11,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class DocumentProcessorModelBuilder extends ChainedComponentModelBuilder {
 
@@ -35,7 +35,7 @@ public class DocumentProcessorModelBuilder extends ChainedComponentModelBuilder 
      * Parses a schemamapping element and generates a map of field mappings
      *
      * @param e a schemamapping element
-     * @return doctype,in-document → in-processor
+     * @return doctype, in-document → in-processor
      */
     public static Map<Pair<String,String>, String> parseFieldNameSchemaMap(Element e) {
         Map<Pair<String, String>, String> ret = new HashMap<>();

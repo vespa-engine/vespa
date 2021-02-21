@@ -10,9 +10,9 @@ import static org.junit.Assert.assertNotNull;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class MbusClientProviderTest {
+
     @Test
     public void testIntermediateClient() {
         SessionConfig.Builder builder = new SessionConfig.Builder();
@@ -34,4 +34,5 @@ public class MbusClientProviderTest {
         assertNotNull(p.get());
         p.deconstruct();
     }
+
 }

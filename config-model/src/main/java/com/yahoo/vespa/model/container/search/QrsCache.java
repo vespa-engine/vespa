@@ -4,12 +4,14 @@ package com.yahoo.vespa.model.container.search;
 /**
  * A helper class to wrap a set of QRS cache settings.
  *
- * @author  <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class QrsCache {
+
     public final Integer size;
 
     public QrsCache(Integer size) {
         this.size = size;
     }
+
 }

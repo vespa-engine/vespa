@@ -6,7 +6,7 @@ import java.io.Serializable;
 /**
  * The rank settings given in a rank clause in the search definition.
  *
- * @author  <a href="mailto:vehardh@yahoo-inc.com">Vegard Havdal</a>
+ * @author Vegard Havdal
  */
 public class Ranking implements Cloneable, Serializable {
 
