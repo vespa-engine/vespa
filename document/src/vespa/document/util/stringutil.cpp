@@ -179,7 +179,7 @@ printAsHex(std::ostream& output, const void* source, unsigned int size,
     const unsigned char* start = reinterpret_cast<const unsigned char*>(source);
     uint32_t posWidth = 1;
     for (uint32_t i=size; i>9; i /= 10) { ++posWidth; }
-    std::vector<unsigned char> printables(columnwidth + 1);
+    std::vector<unsigned char> printables(static_cast<size_t>(columnwidth) + 1);
     printables[columnwidth] = '\0';
     for (unsigned int i=0; i<size; i += columnwidth) {
         std::ostringstream ost;
