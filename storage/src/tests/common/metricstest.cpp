@@ -13,6 +13,7 @@
 #include <vespa/metrics/metricmanager.h>
 #include <vespa/config/common/exceptions.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
 #include <thread>
@@ -70,7 +71,7 @@ MetricsTest::~MetricsTest() = default;
 
 void MetricsTest::SetUp() {
     _config = std::make_unique<vdstestlib::DirConfig>(getStandardConfig(true, "metricstest"));
-    assert(system(("rm -rf " + getRootFolder(*_config)).c_str()) == 0);
+    vespalib::rmdir(getRootFolder(*_config), true);
     try {
         _node = std::make_unique<TestServiceLayerApp>(NodeIndex(0), _config->getConfigId());
         _node->setupDummyPersistence();
