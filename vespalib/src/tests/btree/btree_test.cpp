@@ -519,10 +519,10 @@ Test::requireThatNodeSplitInsertWorks()
 
 struct BTreeStealTraits
 {
-    static const size_t LEAF_SLOTS = 6;
-    static const size_t INTERNAL_SLOTS = 6;
-    static const size_t PATH_SIZE = 20;
-    static const bool BINARY_SEEK = true;
+    static constexpr size_t LEAF_SLOTS = 6;
+    static constexpr size_t INTERNAL_SLOTS = 6;
+    static constexpr size_t PATH_SIZE = 20;
+    static constexpr bool BINARY_SEEK = true;
 };
 
 void
