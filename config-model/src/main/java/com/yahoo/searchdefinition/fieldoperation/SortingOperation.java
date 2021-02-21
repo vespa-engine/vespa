@@ -6,10 +6,11 @@ import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.searchdefinition.document.Sorting;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class SortingOperation implements FieldOperation {
-    private String attributeName;
+
+    private final String attributeName;
     private Boolean ascending;
     private Boolean descending;
     private Sorting.Function function;
@@ -88,4 +89,5 @@ public class SortingOperation implements FieldOperation {
             sorting.setLocale(locale);
         }
     }
+
 }

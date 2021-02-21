@@ -14,12 +14,14 @@ import java.util.ListIterator;
  * A node in a {@link SpanNode} tree that can have a <strong>multiple</strong> trees of child nodes, each with its own probability.
  * This class has quite a few convenience methods for accessing the <strong>first</strong> subtree.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  * @see com.yahoo.document.annotation.SpanList
  */
 public class AlternateSpanList extends SpanList {
+
     public static final byte ID = 4;
-    private final List<Children> childTrees = new LinkedList<Children>();
+
+    private final List<Children> childTrees = new LinkedList<>();
     private static final Comparator<Children> childComparator = new ProbabilityComparator();
 
     /** Create a new AlternateSpanList instance, having a single subtree with probability 1.0. */
@@ -28,7 +30,7 @@ public class AlternateSpanList extends SpanList {
         ensureAtLeastOneSubTree();
     }
 
-    /*
+    /**
      * Deep-copies another AlternateSpanList.
      *
      * @param otherSpanList the instance to deep-copy.
@@ -267,7 +269,6 @@ public class AlternateSpanList extends SpanList {
         }
     }
 
-
     /**
      * Traverses all immediate children of all subtrees of this AlternateSpanList.
      * The ListIterator only supports iteration forwards, and the optional operations that are implemented are
@@ -334,7 +335,6 @@ public class AlternateSpanList extends SpanList {
         return children(i).size();
     }
 
-
     /**
      * Returns a modifiable {@link List} of child nodes of the specified subtree.
      *
@@ -344,7 +344,6 @@ public class AlternateSpanList extends SpanList {
     protected List<SpanNode> children(int i) {
         return childTrees.get(i).children();
     }
-
 
     @Override
     void setParent(SpanNodeParent parent) {
@@ -435,7 +434,6 @@ public class AlternateSpanList extends SpanList {
             ch.setInvalid();
         }
     }
-
 
     /**
      * Sets the subtree at index i.
@@ -597,7 +595,6 @@ public class AlternateSpanList extends SpanList {
         return "AlternateSpanList, num subtrees=" + getNumSubTrees();
     }
 
-
     private static class ProbabilityComparator implements Comparator<Children> {
         @Override
         public int compare(Children o1, Children o2) {
@@ -606,6 +603,7 @@ public class AlternateSpanList extends SpanList {
     }
 
     private class Children extends SpanList {
+
         private double probability = 1.0;
 
         private Children(SpanNodeParent parent) {
@@ -630,5 +628,7 @@ public class AlternateSpanList extends SpanList {
         public void setProbability(double probability) {
             this.probability = probability;
         }
+
     }
+
 }

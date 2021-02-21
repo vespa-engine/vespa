@@ -5,9 +5,10 @@ import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.SDField;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class MatchOperation implements FieldOperation {
+
     private Matching.Type matchingType;
     private Integer gramSize;
     private Integer maxLength;
@@ -50,4 +51,5 @@ public class MatchOperation implements FieldOperation {
             field.getMatching().setExactMatchTerminator(exactMatchTerminator);
         }
     }
+
 }

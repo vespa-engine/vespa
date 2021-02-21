@@ -7,9 +7,10 @@ package com.yahoo.prelude.query;
  * the default is creating a phrase, but for business reasons, some East Asian
  * languages use an AND instead.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
- * @since 5.1.28
+ * @author Steinar Knutsen
  */
 public enum SegmentingRule {
+
     LANGUAGE_DEFAULT, PHRASE, BOOLEAN_AND;
+
 }

@@ -5,9 +5,8 @@ package com.yahoo.prelude.query;
 /**
  * A word that matches a suffix of words instead of a complete word.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
-
 public class SuffixItem extends WordItem {
 
     public SuffixItem(String suffix) {

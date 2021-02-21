@@ -6,9 +6,9 @@ import org.osgi.framework.BundleException;
 
 /**
  * @author Ulf Lilleengen
- * @since 5.1
  */
 public class DisableOsgiFrameworkTest {
+
     @Test(expected = RuntimeException.class)
     public void require_that_installBundle_throws_exception() throws BundleException {
         new DisableOsgiFramework().installBundle("foo");
@@ -43,4 +43,5 @@ public class DisableOsgiFrameworkTest {
     public void require_that_stop_throws_exception() throws BundleException {
         new DisableOsgiFramework().stop();
     }
+
 }

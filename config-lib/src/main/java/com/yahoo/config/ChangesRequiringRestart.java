@@ -8,11 +8,12 @@ import java.util.Map;
 import static java.util.stream.Collectors.joining;
 
 /**
- * @author <a href="mailto:magnarn@yahoo-inc.com">Magnar Nedland</a>
- *
  * This class aggregates information about config changes that causes a restart to be required.
+ *
+ * @author Magnar Nedland
  */
 public class ChangesRequiringRestart {
+
     static class ReportLine {
         private String name;
         private final Node from;
@@ -159,4 +160,5 @@ public class ChangesRequiringRestart {
     public boolean needsRestart() {
         return !report.isEmpty();
     }
+
 }

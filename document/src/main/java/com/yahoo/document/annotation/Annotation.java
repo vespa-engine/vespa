@@ -5,21 +5,21 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.datatypes.FieldValue;
 
 /**
- * An Annotation describes some kind of information associated with
- * a {@link SpanNode}.
+ * An Annotation describes some kind of information associated with a {@link SpanNode}.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  * @see com.yahoo.document.annotation.SpanNode
  * @see com.yahoo.document.annotation.AnnotationType
+ * @author Einar M R Rosenvinge
  */
 public class Annotation implements Comparable<Annotation> {
+
     private AnnotationType type;
     private SpanNode spanNode = null;
     private FieldValue value = null;
-    /**
-     * This scratch id is used to avoid using IdentityHashMaps as they are very costly.
-     */
+
+    /** This scratch id is used to avoid using IdentityHashMaps as they are very costly. */
     private int scratchId = -1;
+
     public void setScratchId(int id) {
         scratchId = id;
     }
@@ -30,7 +30,7 @@ public class Annotation implements Comparable<Annotation> {
 
 
     /**
-     * Constructs an Annotation without a type.&nbsp;BEWARE! Should only be used during deserialization.
+     * Constructs an Annotation without a type. BEWARE! Should only be used during deserialization.
      */
     public Annotation() {
     }
@@ -77,7 +77,7 @@ public class Annotation implements Comparable<Annotation> {
     }
 
     /**
-     * Sets the type of this annotation.&nbsp;BEWARE! Should only be used during deserialization.
+     * Sets the type of this annotation. BEWARE! Should only be used during deserialization.
      *
      * @param type the type of this annotation
      */
@@ -96,9 +96,9 @@ public class Annotation implements Comparable<Annotation> {
     }
 
     /**
-     * Returns true iff.&nbsp;this Annotation is associated with a SpanNode and the SpanNode is valid.
+     * Returns true iff this Annotation is associated with a SpanNode and the SpanNode is valid.
      *
-     * @return true iff.&nbsp;this Annotation is associated with a SpanNode and the SpanNode is valid.
+     * @return true iff this Annotation is associated with a SpanNode and the SpanNode is valid.
      * @see com.yahoo.document.annotation.SpanNode#isValid()
      */
     public boolean isSpanNodeValid() {
@@ -129,7 +129,7 @@ public class Annotation implements Comparable<Annotation> {
     }
 
     /**
-     * WARNING!&nbsp;Should only be used by deserializers!&nbsp;Sets the span node that this annotation points to.
+     * WARNING! Should only be used by deserializers!&nbsp;Sets the span node that this annotation points to.
      *
      * @param spanNode the span node that this annotation shall point to.
      */
@@ -143,14 +143,14 @@ public class Annotation implements Comparable<Annotation> {
             throw new IllegalStateException("Span node is invalid: " + spanNode);
         }
         if (spanNode == DummySpanNode.INSTANCE) {
-            //internal safeguard
-            throw new IllegalStateException("BUG!! Annotations should never be attached to DummySpanNode.");
+            // internal safeguard
+            throw new IllegalStateException("BUG! Annotations should never be attached to DummySpanNode.");
         }
         this.spanNode = spanNode;
     }
 
     /**
-     * WARNING!&nbsp;Should only be used by deserializers!&nbsp;Sets the span node that this annotation points to.
+     * WARNING! Should only be used by deserializers! Sets the span node that this annotation points to.
      *
      * @param spanNode the span node that this annotation shall point to.
      */
@@ -247,7 +247,7 @@ public class Annotation implements Comparable<Annotation> {
             return comp;
         }
 
-        //types are equal, too, compare values
+        // types are equal, too, compare values
         if (value == null) {
             comp = (annotation.value == null) ? 0 : -1;
         } else {
@@ -256,5 +256,6 @@ public class Annotation implements Comparable<Annotation> {
 
         return comp;
     }
+
 }
 
