@@ -524,7 +524,7 @@ struct BTreeStealTraits
     static constexpr size_t LEAF_SLOTS = 6;
     static constexpr size_t INTERNAL_SLOTS = 6;
     static constexpr size_t PATH_SIZE = 20;
-    static constexpr bool BINARY_SEEK = true;
+    [[maybe_unused]] static constexpr bool BINARY_SEEK = true;
 };
 
 }
