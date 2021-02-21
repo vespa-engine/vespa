@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
@@ -21,6 +21,7 @@ import java.util.TreeMap;
 import static org.mockito.Mockito.mock;
 
 public class ClusterFixture {
+
     public final ContentCluster cluster;
     public final Distribution distribution;
     public final FakeTimer timer;
@@ -131,22 +132,19 @@ public class ClusterFixture {
         return this;
     }
 
-    ClusterFixture disableAutoClusterTakedown() {
+    void disableAutoClusterTakedown() {
         setMinNodesUp(0, 0, 0.0, 0.0);
-        return this;
     }
 
-    ClusterFixture setMinNodesUp(int minDistNodes, int minStorNodes, double minDistRatio, double minStorRatio) {
+    void setMinNodesUp(int minDistNodes, int minStorNodes, double minDistRatio, double minStorRatio) {
         params.minStorageNodesUp(minStorNodes)
               .minDistributorNodesUp(minDistNodes)
               .minRatioOfStorageNodesUp(minStorRatio)
               .minRatioOfDistributorNodesUp(minDistRatio);
-        return this;
     }
 
-    ClusterFixture setMinNodeRatioPerGroup(double upRatio) {
+    void setMinNodeRatioPerGroup(double upRatio) {
         params.minNodeRatioPerGroup(upRatio);
-        return this;
     }
 
     public ClusterFixture assignDummyRpcAddresses() {

@@ -501,7 +501,7 @@ public class RpcServerTest extends FleetControllerTest {
         assertEquals(req.toString(), ErrorCode.NONE, req.errorCode());
         assertTrue(req.toString(), req.checkReturnTypes("s"));
 
-        ClusterState state = waitForState("version:\\d+ distributor:26 .* storage:26 .* .14.s:r.* .16.s:m .*");
+        waitForState("version:\\d+ distributor:26 .* storage:26 .* .14.s:r.* .16.s:m .*");
         nodes.get(5 * 2 + 1).disconnect();
         waitForCompleteCycle();
         timer.advanceTime(100000000);

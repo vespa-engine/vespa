@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import java.util.logging.Level;
@@ -65,7 +65,7 @@ public class StateGatherTest extends FleetControllerTest {
                     throw new TimeoutException("Did not get to have one timed out within timeout of " + timeoutMS + " ms"
                             + ", " + getGetNodeStateReplyCounts(dnode) + ", " + getGetNodeStateReplyCounts(snode));
                 }
-                try{ timer.wait(1); } catch (InterruptedException e) {}
+                try{ timer.wait(1); } catch (InterruptedException e) { /* ignore */ }
             }
         }
     }
@@ -74,7 +74,7 @@ public class StateGatherTest extends FleetControllerTest {
         long timeout = System.currentTimeMillis() + timeoutMS;
         while (dnode.getPendingNodeStateCount() != 1 || snode.getPendingNodeStateCount() != 1) {
             if (System.currentTimeMillis() > timeout) throw new TimeoutException("Did not get to have one pending within timeout of " + timeoutMS + " ms");
-            try{ Thread.sleep(1); } catch (InterruptedException e) {}
+            try{ Thread.sleep(1); } catch (InterruptedException e) { /* ignore */ }
         }
     }
 

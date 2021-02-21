@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.collections.Pair;
@@ -25,11 +25,11 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     public static Logger log = Logger.getLogger(NodeInfo.class.getName());
 
     private final ContentCluster cluster;
-    private Node node;
+    private final Node node;
     private String rpcAddress;
     /** If set to a timestamp, we haven't seen this node in slobrok since then. If not set, it is currently in slobrok. */
     private Long lastSeenInSlobrok;
-    private List<Pair<GetNodeStateRequest, Long>> pendingNodeStateRequests = new LinkedList<>();
+    private final List<Pair<GetNodeStateRequest, Long>> pendingNodeStateRequests = new LinkedList<>();
     private NodeState reportedState;
     private NodeState wantedState;
 
@@ -78,7 +78,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     private int version;
 
     // Mapping of cluster state version -> cluster state bundle instance
-    private TreeMap<Integer, ClusterStateBundle> clusterStateVersionBundleSent = new TreeMap<>();
+    private final TreeMap<Integer, ClusterStateBundle> clusterStateVersionBundleSent = new TreeMap<>();
     private ClusterStateBundle clusterStateVersionBundleAcknowledged;
 
     private int clusterStateVersionActivationSent = -1;

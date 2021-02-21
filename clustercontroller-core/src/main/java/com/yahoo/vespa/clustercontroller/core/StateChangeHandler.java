@@ -1,14 +1,21 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.Spec;
-import java.util.logging.Level;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
-import com.yahoo.vdslib.state.*;
+import com.yahoo.vdslib.state.ClusterState;
+import com.yahoo.vdslib.state.Node;
+import com.yahoo.vdslib.state.NodeState;
+import com.yahoo.vdslib.state.NodeType;
+import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
 
-import java.util.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+import java.util.TreeMap;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -21,7 +28,7 @@ import java.util.logging.Logger;
  */
 public class StateChangeHandler {
 
-    private static Logger log = Logger.getLogger(StateChangeHandler.class.getName());
+    private static final Logger log = Logger.getLogger(StateChangeHandler.class.getName());
 
     private final Timer timer;
     private final EventLogInterface eventLog;
@@ -32,7 +39,7 @@ public class StateChangeHandler {
     private int maxInitProgressTime = 5000;
     private int maxPrematureCrashes = 4;
     private long stableStateTimePeriod = 60 * 60 * 1000;
-    private Map<Integer, String> hostnames = new HashMap<>();
+    private final Map<Integer, String> hostnames = new HashMap<>();
     private int maxSlobrokDisconnectGracePeriod = 1000;
     private static final boolean disableUnstableNodes = true;
 
@@ -265,10 +272,6 @@ public class StateChangeHandler {
         hostnames.remove(node.getNodeIndex());
     }
 
-    Map<Integer, String> getHostnames() {
-        return Collections.unmodifiableMap(hostnames);
-    }
-
     // TODO too many hidden behavior dependencies between this and the actually
     // generated cluster state. Still a bit of a mine field...
     // TODO remove all node state mutation from this function entirely in favor of ClusterStateGenerator!
@@ -489,9 +492,7 @@ public class StateChangeHandler {
                                 timeNow - node.getUpStableStateTime(), node.getPrematureCrashCount() + 1),
                         NodeEvent.Type.CURRENT,
                         timeNow), isMaster);
-                if (handlePrematureCrash(node, nodeListener)) {
-                    return true;
-                }
+                return handlePrematureCrash(node, nodeListener);
             }
         }
         return false;

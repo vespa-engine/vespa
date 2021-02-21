@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.Node;
@@ -17,8 +17,8 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class EventLogTest {
-    private MetricUpdater metricUpdater = mock(MetricUpdater.class);
-    private NodeEvent nodeEvent = mock(NodeEvent.class);
+    private final MetricUpdater metricUpdater = mock(MetricUpdater.class);
+    private final NodeEvent nodeEvent = mock(NodeEvent.class);
 
     private EventLog eventLog;
 

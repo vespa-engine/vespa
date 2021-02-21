@@ -1,9 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @class VdsCluster
- *
- * Represents a VDS cluster.
- */
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
@@ -241,4 +237,5 @@ public class ContentCluster {
     public boolean hasConfiguredNode(int index) {
         return clusterInfo.hasConfiguredNode(index);
     }
+
 }

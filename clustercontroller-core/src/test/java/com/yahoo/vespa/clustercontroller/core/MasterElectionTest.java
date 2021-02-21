@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.Request;
@@ -82,7 +82,7 @@ public class MasterElectionTest extends FleetControllerTest {
         for (FleetController f : fleetControllers) {
             while (f.hasZookeeperConnection()) {
                 timer.advanceTime(1000);
-                try { Thread.sleep(1); } catch (InterruptedException e) {}
+                try { Thread.sleep(1); } catch (InterruptedException e) { /* ignore */ }
                 if (System.currentTimeMillis() > maxTime)
                     throw new TimeoutException("Failed to notice zookeeper down within timeout of " + timeoutMS + " ms");
             }
@@ -194,7 +194,7 @@ public class MasterElectionTest extends FleetControllerTest {
                 }
             }
                 // Have to wait to get zookeeper communication chance to happen.
-            try{ Thread.sleep(100); } catch (InterruptedException e) {}
+            try{ Thread.sleep(100); } catch (InterruptedException e) { /* ignore */ }
         }
 
         if (!isOnlyMaster) {
@@ -348,7 +348,7 @@ public class MasterElectionTest extends FleetControllerTest {
                 }
             }
             if (allOk) return;
-            try{ Thread.sleep(100); } catch (InterruptedException e) {}
+            try{ Thread.sleep(100); } catch (InterruptedException e) { /* ignore */ }
         }
         throw new IllegalStateException("Did not get master reason '" + reason
                 + "' within timeout of " + timeoutMS + " ms");

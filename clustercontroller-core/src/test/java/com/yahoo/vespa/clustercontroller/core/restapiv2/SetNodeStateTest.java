@@ -48,11 +48,10 @@ public class SetNodeStateTest extends StateRestApiTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     public static class SetUnitStateRequestImpl extends StateRequest implements SetUnitStateRequest {
-        private Map<String, UnitState> newStates = new LinkedHashMap<>();
+        private final Map<String, UnitState> newStates = new LinkedHashMap<>();
         private Condition condition = Condition.FORCE;
         private ResponseWait responseWait = ResponseWait.WAIT_UNTIL_CLUSTER_ACKED;
-        private TimeBudget timeBudget = TimeBudget.fromNow(Clock.systemUTC(), Duration.ofSeconds(10));
-        private boolean probe = false;
+        private final TimeBudget timeBudget = TimeBudget.fromNow(Clock.systemUTC(), Duration.ofSeconds(10));
 
         SetUnitStateRequestImpl(String req) {
             super(req, 0);
@@ -108,7 +107,7 @@ public class SetNodeStateTest extends StateRestApiTest {
 
         @Override
         public boolean isProbe() {
-            return probe;
+            return false;
         }
     }
 

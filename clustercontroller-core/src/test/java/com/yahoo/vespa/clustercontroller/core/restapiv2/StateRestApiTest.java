@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-// TODO: Author
 public abstract class StateRestApiTest {
 
     private ClusterControllerMock books;
@@ -37,8 +36,8 @@ public abstract class StateRestApiTest {
     Map<Integer, ClusterControllerStateRestAPI.Socket> ccSockets;
 
     public static class StateRequest implements UnitStateRequest {
-        private String[] path;
-        private int recursive;
+        private final String[] path;
+        private final int recursive;
 
         StateRequest(String req, int recursive) {
             path = req.isEmpty() ? new String[0] : req.split("/");

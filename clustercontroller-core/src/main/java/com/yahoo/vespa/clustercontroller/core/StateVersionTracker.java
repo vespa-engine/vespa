@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.state.ClusterState;
@@ -32,7 +32,7 @@ public class StateVersionTracker {
     private ClusterStateBundle currentClusterState = latestCandidateState;
 
     private ClusterStateView clusterStateView;
-    private ClusterStatsChangeTracker clusterStatsChangeTracker;
+    private final ClusterStatsChangeTracker clusterStatsChangeTracker;
 
     private final LinkedList<ClusterStateHistoryEntry> clusterStateHistory = new LinkedList<>();
     private int maxHistoryEntryCount = 50;

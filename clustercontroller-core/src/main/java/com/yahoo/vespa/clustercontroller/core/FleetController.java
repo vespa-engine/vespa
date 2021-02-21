@@ -103,8 +103,6 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     private final RunDataExtractor dataExtractor = new RunDataExtractor() {
         @Override
-        public com.yahoo.vdslib.state.ClusterState getLatestClusterState() { return stateVersionTracker.getVersionedClusterState(); }
-        @Override
         public FleetControllerOptions getOptions() { return options; }
         @Override
         public long getConfigGeneration() { return configGeneration; }
@@ -277,7 +275,6 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         }
     }
 
-    public int getHttpPort() { return statusPageServer.getPort(); }
     public int getRpcPort() { return rpcServer.getPort(); }
 
     public void shutdown() throws InterruptedException, java.io.IOException {

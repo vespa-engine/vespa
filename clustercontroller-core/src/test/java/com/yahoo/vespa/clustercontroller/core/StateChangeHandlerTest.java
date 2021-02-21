@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
@@ -62,9 +62,9 @@ public class StateChangeHandlerTest {
         }
     }
 
-    private FakeTimer clock = new FakeTimer();
-    private TestEventLog eventLog = new TestEventLog();
-    private Set<ConfiguredNode> configuredNodes = new TreeSet<>();
+    private final FakeTimer clock = new FakeTimer();
+    private final TestEventLog eventLog = new TestEventLog();
+    private final Set<ConfiguredNode> configuredNodes = new TreeSet<>();
     private Config config;
     private ContentCluster cluster;
     private StateChangeHandler nodeStateChangeHandler;
