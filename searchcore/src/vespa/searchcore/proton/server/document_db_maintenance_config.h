@@ -5,6 +5,7 @@
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter_config.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/time.h>
+#include <memory>
 
 namespace proton {
 

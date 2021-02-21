@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/document/bucket/bucketid.h>
+#include <memory>
 
 namespace proton {
 

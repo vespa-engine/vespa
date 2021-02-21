@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <memory>
 
 namespace document {
 struct SpanTreeVisitor;
@@ -10,7 +11,7 @@ struct SpanTreeVisitor;
 struct SpanNode {
     typedef std::unique_ptr<SpanNode> UP;
 
-    virtual ~SpanNode() {}
+    virtual ~SpanNode() = default;
 
     vespalib::string toString() const;
     virtual void accept(SpanTreeVisitor &visitor) const = 0;

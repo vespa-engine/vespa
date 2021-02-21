@@ -3,6 +3,7 @@
 
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <memory>
 
 namespace document { class DocumentTypeRepo; }
 namespace vespalib { class nbostream; }

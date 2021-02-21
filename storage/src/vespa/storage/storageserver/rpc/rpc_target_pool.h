@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <cstdint>
 #include <vector>
+#include <memory>
 
 namespace storage::rpc {
 

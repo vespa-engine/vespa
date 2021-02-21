@@ -16,6 +16,7 @@
 #include <vespa/vespalib/util/crc.h>
 #include <map>
 #include <vector>
+#include <memory>
 
 namespace vespalib { class asciistream; }
 

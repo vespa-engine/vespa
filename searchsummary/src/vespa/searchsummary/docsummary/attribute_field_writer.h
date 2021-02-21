@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/data/memory.h>
+#include <memory>
 
 namespace search::attribute { class IAttributeVector; }
 namespace vespalib::slime { struct Cursor; }

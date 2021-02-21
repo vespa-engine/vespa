@@ -10,6 +10,7 @@
 #include <vespa/document/util/printable.h>
 #include <vespa/vdslib/state/node.h>
 #include <vector>
+#include <memory>
 
 namespace storage::lib {
 

@@ -13,6 +13,7 @@
 #include "state.h"
 #include <vespa/document/bucket/bucketidfactory.h>
 #include <vespa/vespalib/objects/floatingpointtype.h>
+#include <memory>
 
 namespace storage::lib {
 

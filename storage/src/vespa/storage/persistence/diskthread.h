@@ -13,13 +13,11 @@
 #pragma once
 
 #include <vespa/storageframework/generic/thread/runnable.h>
+#include <memory>
 
+namespace storage::framework { class Thread; }
 
 namespace storage {
-
-namespace framework {
-    class Thread;
-}
 
 class DiskThread : public framework::Runnable
 {

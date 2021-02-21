@@ -2,6 +2,7 @@
 #pragma once
 
 #include "tracenode.h"
+#include <memory>
 
 namespace vespalib {
 

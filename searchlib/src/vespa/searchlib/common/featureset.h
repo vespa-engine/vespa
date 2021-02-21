@@ -7,6 +7,7 @@
 #include <vespa/vespalib/data/memory.h>
 #include <map>
 #include <vector>
+#include <memory>
 
 namespace search {
 

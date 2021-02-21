@@ -5,7 +5,6 @@
 #include <cstring>
 #include <cstdint>
 #include <cstdlib>
-#include <vespa/vespalib/util/alloc.h>
 
 #define VESPA_DLL_LOCAL  __attribute__ ((visibility("hidden")))
 
