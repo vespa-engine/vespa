@@ -350,7 +350,8 @@ public class ModelContextImpl implements ModelContext {
     }
 
     private static boolean zoneHasRedundancyOrIsCD(Zone zone) {
-        return zone.system().isCd() || List.of(Environment.staging, Environment.perf, Environment.prod).contains(zone.environment());
+        return    zone.system().isCd() && zone.environment() == Environment.dev
+               || List.of(Environment.staging, Environment.perf, Environment.prod).contains(zone.environment());
     }
 
 }
