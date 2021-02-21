@@ -517,6 +517,8 @@ Test::requireThatNodeSplitInsertWorks()
     }
 }
 
+namespace {
+
 struct BTreeStealTraits
 {
     static constexpr size_t LEAF_SLOTS = 6;
@@ -524,6 +526,8 @@ struct BTreeStealTraits
     static constexpr size_t PATH_SIZE = 20;
     static constexpr bool BINARY_SEEK = true;
 };
+
+}
 
 void
 Test::requireThatNodeStealWorks()
