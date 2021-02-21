@@ -87,14 +87,17 @@ public class Reconfigurer extends AbstractComponent {
     }
 
     private void reconfigure(ZookeeperServerConfig newConfig) {
-        Instant reconfigTriggered = Instant.now();
-        // No point in trying to reconfigure if there is only one server in the new ensemble,
-        // the others will be shutdown or are about to be shutdown
-        if (newConfig.server().size() == 1) shutdownAndDie(Duration.ZERO);
+        List<String> currentServers = servers(activeConfig);
+        List<String> joiningServers = difference(servers(newConfig), currentServers);
+        List<String> leavingServers = serverIdsDifference(activeConfig, newConfig);
 
-        List<String> newServers = difference(servers(newConfig), servers(activeConfig));
+        // If enough servers from the current ensemble leave, we won't have the quroum required for
+        // accepting the new config, and must shut down and start fresh instead.
+        if (leavingServers.size() * 2 >= currentServers.size())
+            shutdownAndDie(Duration.ZERO);
+
         String leavingServerIds = String.join(",", serverIdsDifference(activeConfig, newConfig));
-        String joiningServersSpec = String.join(",", newServers);
+        String joiningServersSpec = String.join(",", joiningServers);
         leavingServerIds = leavingServerIds.isEmpty() ? null : leavingServerIds;
         joiningServersSpec = joiningServersSpec.isEmpty() ? null : joiningServersSpec;
         log.log(Level.INFO, "Will reconfigure ZooKeeper cluster. \nJoining servers: " + joiningServersSpec +
@@ -103,7 +106,8 @@ public class Reconfigurer extends AbstractComponent {
                             "\nServers in new config:" + servers(newConfig));
         String connectionSpec = localConnectionSpec(activeConfig);
         Instant now = Instant.now();
-        Duration reconfigTimeout = reconfigTimeout(newServers.size());
+        Instant reconfigTriggered = now;
+        Duration reconfigTimeout = reconfigTimeout(joiningServers.size());
         Instant end = now.plus(reconfigTimeout);
         // Loop reconfiguring since we might need to wait until another reconfiguration is finished before we can succeed
         for (int attempt = 1; now.isBefore(end); attempt++) {

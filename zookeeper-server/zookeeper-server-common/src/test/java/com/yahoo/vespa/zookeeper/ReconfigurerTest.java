@@ -65,21 +65,21 @@ public class ReconfigurerTest {
         assertEquals(1, reconfigurer.reconfigurations());
         assertSame(nextConfig, reconfigurer.activeConfig());
 
-        // Cluster shrinks
-        nextConfig = createConfig(3, true);
+        // Cluster loses node3, but node5 joins. Indices are shuffled.
+        nextConfig = createConfig(5, true, 3);
         reconfigurer.startOrReconfigure(nextConfig);
         assertEquals(2, reconfigurer.reconfigurations());
-        assertEquals("node1:2181", reconfigurer.connectionSpec());
-        assertNull("No servers are joining", reconfigurer.joiningServers());
+        assertEquals("3=node4:2182:2183;2181,4=node5:2182:2183;2181", reconfigurer.joiningServers());
         assertEquals("3,4", reconfigurer.leavingServers());
         assertSame(nextConfig, reconfigurer.activeConfig());
 
-        // Cluster loses node1, but node3 joins. Indices are shuffled.
-        nextConfig = createConfig(3, true, 1);
+        // Cluster shrinks
+        nextConfig = createConfig(3, true);
         reconfigurer.startOrReconfigure(nextConfig);
         assertEquals(3, reconfigurer.reconfigurations());
-        assertEquals("1=node2:2182:2183;2181,2=node3:2182:2183;2181", reconfigurer.joiningServers());
-        assertEquals("1,2", reconfigurer.leavingServers());
+        assertEquals("node1:2181", reconfigurer.connectionSpec());
+        assertNull("No servers are joining", reconfigurer.joiningServers());
+        assertEquals("3,4", reconfigurer.leavingServers());
         assertSame(nextConfig, reconfigurer.activeConfig());
     }
 
