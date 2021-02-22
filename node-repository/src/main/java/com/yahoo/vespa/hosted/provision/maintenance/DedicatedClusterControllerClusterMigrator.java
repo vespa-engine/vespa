@@ -57,18 +57,14 @@ public class DedicatedClusterControllerClusterMigrator extends ApplicationMainta
     }
 
     @Override
-    protected boolean canDeployNow(ApplicationId id) {
-        return isQuiescent(id);
-    }
-
-    @Override
     protected void deploy(ApplicationId id) {
         migrate(id);
         super.deploy(id);
     }
 
     private boolean isEligible(ApplicationId id) {
-        return flag.with(FetchVector.Dimension.APPLICATION_ID, id.serializedForm()).value();
+        return    deployer().lastDeployTime(id).map(at -> at.isBefore(clock().instant().minus(Duration.ofMinutes(10)))).orElse(false)
+               && flag.with(FetchVector.Dimension.APPLICATION_ID, id.serializedForm()).value();
     }
 
     private boolean hasNotSwitched(ApplicationId id) {
