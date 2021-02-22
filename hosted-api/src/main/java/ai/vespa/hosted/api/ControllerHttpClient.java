@@ -18,6 +18,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.text.Utf8;
 
 import javax.net.ssl.SSLContext;
+import javax.net.ssl.SSLParameters;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -433,11 +434,17 @@ public abstract class ControllerHttpClient {
     private static class MutualTlsControllerHttpClient extends ControllerHttpClient {
 
         private MutualTlsControllerHttpClient(URI endpoint, SSLContext sslContext) {
-            super(endpoint, HttpClient.newBuilder().sslContext(sslContext));
+            super(endpoint, HttpClient.newBuilder().sslContext(sslContext).sslParameters(tlsv12Parameters(sslContext)));
         }
 
         private MutualTlsControllerHttpClient(URI endpoint, PrivateKey privateKey, List<X509Certificate> certs) {
             this(endpoint, new SslContextBuilder().withKeyStore(privateKey, certs).build());
+        }
+
+        private static SSLParameters tlsv12Parameters(SSLContext sslContext) {
+            SSLParameters parameters = sslContext.getDefaultSSLParameters();
+            parameters.setProtocols(new String[]{ "TLSv1.2" });
+            return parameters;
         }
 
     }
