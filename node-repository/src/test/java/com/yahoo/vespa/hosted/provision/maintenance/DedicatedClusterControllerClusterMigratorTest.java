@@ -26,6 +26,7 @@ import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicReference;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -41,11 +42,11 @@ public class DedicatedClusterControllerClusterMigratorTest {
     public void testMigration() throws InterruptedException, TimeoutException {
         ApplicationId id1 = ApplicationId.from("t", "a", "i1"), id2 = ApplicationId.from("t", "a", "i2");
         ProvisioningTester tester = new ProvisioningTester.Builder().build();
+        tester.clock().setInstant(Instant.EPOCH); // EPOCH was a week-day.
         tester.makeReadyNodes(4, new NodeResources(1.5, 8, 50, 0.3));
         tester.makeReadyHosts(1, NodeResources.unspecified());
         tester.deploy(id1, Capacity.from(new ClusterResources(2, 1, NodeResources.unspecified())));
         tester.deploy(id2, Capacity.from(new ClusterResources(2, 1, NodeResources.unspecified())));
-        tester.clock().setInstant(Instant.EPOCH); // EPOCH was a week-day.
         MockDeployer deployer = new MockDeployer();
         InMemoryFlagSource flags = new InMemoryFlagSource();
         AtomicBoolean isQuiescent = new AtomicBoolean();
@@ -64,11 +65,12 @@ public class DedicatedClusterControllerClusterMigratorTest {
         // Set all conditions true except time window.
         flags.withBooleanFlag(Flags.DEDICATED_CLUSTER_CONTROLLER_CLUSTER.id(), true);
         isQuiescent.set(true);
+        deployer.deployedAt.set(tester.clock().instant().minus(Duration.ofMinutes(15)));
         migrator.maintain();
         assertFalse(deployer.getDedicatedClusterControllerCluster(id1));
 
         // Enter time window, but no longer quiescent.
-        tester.clock().advance(Duration.ofHours(9));
+        tester.clock().advance(Duration.ofHours(8));
         isQuiescent.set(false);
         migrator.maintain();
         assertFalse(deployer.getDedicatedClusterControllerCluster(id1));
@@ -79,8 +81,14 @@ public class DedicatedClusterControllerClusterMigratorTest {
         migrator.maintain();
         assertFalse(deployer.getDedicatedClusterControllerCluster(id1));
 
-        // Finally, all stars align.
+        // Flagged, but recently deployed.
         flags.withBooleanFlag(Flags.DEDICATED_CLUSTER_CONTROLLER_CLUSTER.id(), true);
+        deployer.deployedAt.set(tester.clock().instant().minus(Duration.ofMinutes(5)));
+        migrator.maintain();
+        assertFalse(deployer.getDedicatedClusterControllerCluster(id1));
+
+        // Finally, all stars align.
+        deployer.deployedAt.set(tester.clock().instant().minus(Duration.ofMinutes(15)));
         migrator.maintain();
         assertTrue(deployer.getDedicatedClusterControllerCluster(id1));  // Lex sorting, t.a.i1 before t.a.i2.
         assertFalse(deployer.getDedicatedClusterControllerCluster(id2));
@@ -98,6 +106,7 @@ public class DedicatedClusterControllerClusterMigratorTest {
 
         final Phaser phaser = new Phaser(2); // Test thread and deployer.
         final Set<ApplicationId> dedicatedCCC = new ConcurrentSkipListSet<>();
+        final AtomicReference<Instant> deployedAt = new AtomicReference<>();
 
         @Override
         public Optional<Deployment> deployFromLocalActive(ApplicationId application, boolean bootstrap) {
@@ -115,7 +124,7 @@ public class DedicatedClusterControllerClusterMigratorTest {
 
         @Override
         public Optional<Instant> lastDeployTime(ApplicationId application) {
-            return Optional.empty();
+            return Optional.ofNullable(deployedAt.get());
         }
 
         @Override
