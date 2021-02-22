@@ -435,7 +435,7 @@ TEST_F(DistributorTest, metric_update_hook_updates_pending_maintenance_metrics) 
     getConfig().setMaxPendingMaintenanceOps(1);
 
     // 1 bucket must be merged, 1 must be split, 1 should be activated.
-    addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a,1=2/2/2");
+    addNodesToBucketDB(document::BucketId(16, 1), "0=2/2/2/t/a,1=1/1/1");
     addNodesToBucketDB(document::BucketId(16, 2),
                        "0=100/10000000/200000/t/a,1=100/10000000/200000/t");
     addNodesToBucketDB(document::BucketId(16, 3),
