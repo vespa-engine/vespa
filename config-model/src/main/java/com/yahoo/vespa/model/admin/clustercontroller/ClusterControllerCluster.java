@@ -32,6 +32,7 @@ public class ClusterControllerCluster extends AbstractConfigProducer<ClusterCont
     @Override
     public void getConfig(ZookeeperServerConfig.Builder builder) {
         builder.clientPort(ZK_CLIENT_PORT);
+        builder.juteMaxBuffer(1024 * 1024); // 1 Mb should be more than enough for cluster controller
         for (ClusterControllerContainer container : containerCluster.getContainers()) {
             ZookeeperServerConfig.Server.Builder serverBuilder = new ZookeeperServerConfig.Server.Builder();
             serverBuilder.hostname(container.getHostName());
