@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.jrt.Acceptor;
@@ -38,21 +38,21 @@ public class DummyVdsNode {
 
     public static Logger log = Logger.getLogger(DummyVdsNode.class.getName());
 
-    private String[] slobrokConnectionSpecs;
-    private String clusterName;
-    private NodeType type;
-    private int index;
+    private final String[] slobrokConnectionSpecs;
+    private final String clusterName;
+    private final NodeType type;
+    private final int index;
     private NodeState nodeState;
     private String hostInfo = "{}";
     private Supervisor supervisor;
     private Acceptor acceptor;
     private Register register;
-    private int stateCommunicationVersion;
+    private final int stateCommunicationVersion;
     private boolean negotiatedHandle = false;
     private final Timer timer;
     private boolean failSetSystemStateRequests = false;
     private boolean resetTimestampOnReconnect = false;
-    private Map<Node, Long> highestStartTimestamps = new TreeMap<Node, Long>();
+    private final Map<Node, Long> highestStartTimestamps = new TreeMap<Node, Long>();
     int timedOutStateReplies = 0;
     int outdatedStateReplies = 0;
     int immediateStateReplies = 0;
@@ -79,10 +79,10 @@ public class DummyVdsNode {
      * History of received cluster states.
      * Any access to this list or to its members must be synchronized on the timer variable.
      */
-    private List<ClusterStateBundle> clusterStateBundles = new LinkedList<>();
+    private final List<ClusterStateBundle> clusterStateBundles = new LinkedList<>();
     private int activatedClusterStateVersion = 0;
 
-    private Thread messageResponder = new Thread() {
+    private final Thread messageResponder = new Thread() {
         public void run() {
             log.log(Level.FINE, "Dummy node " + DummyVdsNode.this.toString() + ": starting message reponder thread");
             while (true) {
@@ -113,7 +113,7 @@ public class DummyVdsNode {
         }
     };
 
-    public DummyVdsNode(Timer timer, DummyVdsNodeOptions options, String slobrokConnectionSpecs[], String clusterName, boolean distributor, int index) throws Exception {
+    public DummyVdsNode(Timer timer, DummyVdsNodeOptions options, String[] slobrokConnectionSpecs, String clusterName, boolean distributor, int index) throws Exception {
         this.timer = timer;
         this.slobrokConnectionSpecs = slobrokConnectionSpecs;
         this.clusterName = clusterName;
@@ -129,7 +129,7 @@ public class DummyVdsNode {
 
     public void shutdown() {
         messageResponder.interrupt();
-        try{ messageResponder.join(); } catch (InterruptedException e) {}
+        try{ messageResponder.join(); } catch (InterruptedException e) { /* ignore */ }
         disconnect();
     }
 
@@ -183,7 +183,7 @@ public class DummyVdsNode {
             newState.setDescription("controlled shutdown");
             setNodeState(newState);
             // Sleep a bit in hopes of answer being written before shutting down socket
-            try{ Thread.sleep(100); } catch (InterruptedException e) {}
+            try{ Thread.sleep(100); } catch (InterruptedException e) { /* ignore */ }
         }
         if (supervisor == null) return;
         register.shutdown();
@@ -214,9 +214,7 @@ public class DummyVdsNode {
                     throw new RuntimeException("Timed out waiting for state version " + version + " in " + this);
                 Thread.sleep(10);
             }
-        }
-        catch (InterruptedException e) {
-        }
+        } catch (InterruptedException e) { /* ignore */ }
     }
 
     /** Returns the latest system state version received, or empty if none are received yet. */
@@ -226,12 +224,6 @@ public class DummyVdsNode {
                 return Optional.empty();
             }
             return Optional.of(clusterStateBundles.get(0).getVersion());
-        }
-    }
-
-    public int getActivatedClusterStateVersion() {
-        synchronized (timer) {
-            return activatedClusterStateVersion;
         }
     }
 
@@ -254,8 +246,7 @@ public class DummyVdsNode {
                 try{
                     log.log(Level.FINE, "Dummy node " + this + " waiting " + (endTime - startTime) + " ms for pending request.");
                     timer.wait(endTime - startTime);
-                } catch (InterruptedException e) {
-                }
+                } catch (InterruptedException e) { /* ignore */ }
                 log.log(Level.FINE, "Dummy node " + this + " woke up to recheck.");
             }
             startTime = System.currentTimeMillis();
@@ -472,11 +463,6 @@ public class DummyVdsNode {
             e.printStackTrace(System.err);
             req.setError(ErrorCode.METHOD_FAILED, e.getMessage());
         }
-    }
-
-    public long getStartTimestamp(Node n) {
-        Long ts = highestStartTimestamps.get(n);
-        return (ts == null ? 0 : ts);
     }
 
     private void updateStartTimestamps(ClusterState state) {

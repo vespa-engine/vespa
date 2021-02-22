@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
@@ -21,7 +21,7 @@ class GroupAvailabilityCalculator {
     private final Distribution distribution;
     private final double minNodeRatioPerGroup;
     private final int safeMaintenanceGroupThreshold;
-    private List<Integer> nodesSafelySetToMaintenance;
+    private final List<Integer> nodesSafelySetToMaintenance;
 
     private GroupAvailabilityCalculator(Distribution distribution,
                                         double minNodeRatioPerGroup,
@@ -37,7 +37,7 @@ class GroupAvailabilityCalculator {
         private Distribution distribution;
         private double minNodeRatioPerGroup = 1.0;
         private int safeMaintenanceGroupThreshold = 2;
-        private List<Integer> nodesSafelySetToMaintenance = new ArrayList<>();
+        private final List<Integer> nodesSafelySetToMaintenance = new ArrayList<>();
 
         Builder withDistribution(Distribution distribution) {
             this.distribution = distribution;

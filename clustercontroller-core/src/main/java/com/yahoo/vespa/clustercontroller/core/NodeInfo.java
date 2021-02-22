@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.collections.Pair;
@@ -25,11 +25,11 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     public static Logger log = Logger.getLogger(NodeInfo.class.getName());
 
     private final ContentCluster cluster;
-    private Node node;
+    private final Node node;
     private String rpcAddress;
     /** If set to a timestamp, we haven't seen this node in slobrok since then. If not set, it is currently in slobrok. */
     private Long lastSeenInSlobrok;
-    private List<Pair<GetNodeStateRequest, Long>> pendingNodeStateRequests = new LinkedList<>();
+    private final List<Pair<GetNodeStateRequest, Long>> pendingNodeStateRequests = new LinkedList<>();
     private NodeState reportedState;
     private NodeState wantedState;
 
@@ -54,8 +54,6 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     private Target connection;
     /** We cache last connection we did request info on, as we want to report appropriate error for node regardless of whether other commands have created new connection. */
     public Target lastRequestInfoConnection;
-    /** Sets the version we assumed we were when opening this connection. (Needed in case we need to do some sort of handshaking to decrease version. */
-    private int connectionVersion;
     /**
      * Counts the number of attempts we have tried since last time we had
      * contact with the node. (Used to retry fast early)
@@ -78,7 +76,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
     private int version;
 
     // Mapping of cluster state version -> cluster state bundle instance
-    private TreeMap<Integer, ClusterStateBundle> clusterStateVersionBundleSent = new TreeMap<>();
+    private final TreeMap<Integer, ClusterStateBundle> clusterStateVersionBundleSent = new TreeMap<>();
     private ClusterStateBundle clusterStateVersionBundleAcknowledged;
 
     private int clusterStateVersionActivationSent = -1;
@@ -116,7 +114,6 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         this.connectionAttemptCount = 0;
         this.timeOfFirstFailingConnectionAttempt = 0;
         this.version = getLatestVersion();
-        this.connectionVersion = getLatestVersion();
         this.configuredRetired = configuredRetired;
         this.recentlyObservedUnstableDuringInit = false;
         this.rpcAddress = rpcAddress;
@@ -134,7 +131,6 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         this.lastSeenInSlobrok = null;
         this.nextAttemptTime = 0;
         this.version = getLatestVersion();
-        this.connectionVersion = getLatestVersion();
     }
 
     public long getWentDownWithStartTime() { return wentDownWithStartTime; }
@@ -410,7 +406,6 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
 
     public Target setConnection(Target t) {
         this.connection = t;
-        this.connectionVersion = getLatestVersion();
         return t;
     }
 

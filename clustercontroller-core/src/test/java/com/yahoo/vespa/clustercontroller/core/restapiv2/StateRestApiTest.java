@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
@@ -27,7 +27,6 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
 
-// TODO: Author
 public abstract class StateRestApiTest {
 
     private ClusterControllerMock books;
@@ -37,8 +36,8 @@ public abstract class StateRestApiTest {
     Map<Integer, ClusterControllerStateRestAPI.Socket> ccSockets;
 
     public static class StateRequest implements UnitStateRequest {
-        private String[] path;
-        private int recursive;
+        private final String[] path;
+        private final int recursive;
 
         StateRequest(String req, int recursive) {
             path = req.isEmpty() ? new String[0] : req.split("/");
@@ -56,8 +55,7 @@ public abstract class StateRestApiTest {
         jsonWriter.setDefaultPathPrefix("/cluster/v2");
         {
             Set<ConfiguredNode> nodes = FleetControllerTest.toNodes(0, 1, 2, 3);
-            ContentCluster cluster = new ContentCluster(
-                    "books", nodes, distribution, 6 /* minStorageNodesUp*/, 0.9 /* minRatioOfStorageNodesUp */);
+            ContentCluster cluster = new ContentCluster("books", nodes, distribution);
             initializeCluster(cluster, nodes);
             AnnotatedClusterState baselineState = AnnotatedClusterState.withoutAnnotations(ClusterState.stateFromString("distributor:4 storage:4"));
             Map<String, AnnotatedClusterState> bucketSpaceStates = new HashMap<>();
@@ -70,8 +68,7 @@ public abstract class StateRestApiTest {
             Set<ConfiguredNode> nodes = FleetControllerTest.toNodes(1, 2, 3, 5, 7);
             Set<ConfiguredNode> nodesInSlobrok = FleetControllerTest.toNodes(1, 3, 5, 7);
 
-            ContentCluster cluster = new ContentCluster(
-                    "music", nodes, distribution, 4 /* minStorageNodesUp*/, 0.0 /* minRatioOfStorageNodesUp */);
+            ContentCluster cluster = new ContentCluster("music", nodes, distribution);
             if (dontInitializeNode2) {
                 // TODO: this skips initialization of node 2 to fake that it is not answering
                 // which really leaves us in an illegal state
@@ -87,14 +84,11 @@ public abstract class StateRestApiTest {
         }
         ccSockets = new TreeMap<>();
         ccSockets.put(0, new ClusterControllerStateRestAPI.Socket("localhost", 80));
-        restAPI = new ClusterControllerStateRestAPI(new ClusterControllerStateRestAPI.FleetControllerResolver() {
-            @Override
-            public Map<String, RemoteClusterControllerTaskScheduler> getFleetControllers() {
-                Map<String, RemoteClusterControllerTaskScheduler> fleetControllers = new LinkedHashMap<>();
-                fleetControllers.put(books.context.cluster.getName(), books);
-                fleetControllers.put(music.context.cluster.getName(), music);
-                return fleetControllers;
-            }
+        restAPI = new ClusterControllerStateRestAPI(() -> {
+            Map<String, RemoteClusterControllerTaskScheduler> fleetControllers = new LinkedHashMap<>();
+            fleetControllers.put(books.context.cluster.getName(), books);
+            fleetControllers.put(music.context.cluster.getName(), music);
+            return fleetControllers;
         }, ccSockets);
     }
 
@@ -102,8 +96,7 @@ public abstract class StateRestApiTest {
         books = null;
         Distribution distribution = new Distribution(Distribution.getSimpleGroupConfig(2, nodeCount));
         jsonWriter.setDefaultPathPrefix("/cluster/v2");
-        ContentCluster cluster = new ContentCluster(
-                "music", distribution.getNodes(), distribution, 0 /* minStorageNodesUp*/, 0.0 /* minRatioOfStorageNodesUp */);
+        ContentCluster cluster = new ContentCluster("music", distribution.getNodes(), distribution);
         initializeCluster(cluster, distribution.getNodes());
         AnnotatedClusterState baselineState = AnnotatedClusterState
                 .withoutAnnotations(ClusterState.stateFromString("distributor:" + nodeCount + " storage:" + nodeCount +
@@ -116,13 +109,10 @@ public abstract class StateRestApiTest {
                 ClusterStateBundle.of(baselineState, bucketSpaceStates), 0, 0);
         ccSockets = new TreeMap<>();
         ccSockets.put(0, new ClusterControllerStateRestAPI.Socket("localhost", 80));
-        restAPI = new ClusterControllerStateRestAPI(new ClusterControllerStateRestAPI.FleetControllerResolver() {
-            @Override
-            public Map<String, RemoteClusterControllerTaskScheduler> getFleetControllers() {
-                Map<String, RemoteClusterControllerTaskScheduler> fleetControllers = new LinkedHashMap<>();
-                fleetControllers.put(music.context.cluster.getName(), music);
-                return fleetControllers;
-            }
+        restAPI = new ClusterControllerStateRestAPI(() -> {
+            Map<String, RemoteClusterControllerTaskScheduler> fleetControllers = new LinkedHashMap<>();
+            fleetControllers.put(music.context.cluster.getName(), music);
+            return fleetControllers;
         }, ccSockets);
     }
 

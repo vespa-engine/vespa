@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import java.util.logging.Level;
@@ -12,7 +12,13 @@ import java.util.logging.Logger;
  * Used to fake timing for unit test purposes.
  */
 public class FakeTimer implements Timer {
-    private static Logger log = Logger.getLogger(FakeTimer.class.getName());
+
+    private static final Logger log = Logger.getLogger(FakeTimer.class.getName());
+
+    static {
+        LogFormatter.initializeLogging();
+    }
+
     // Don't start at zero. Clock users may initialize a 'last run' entry with 0, and we want first time to always look like a timeout
     private long currentTime = (long) 30 * 365 * 24 * 60 * 60 * 1000;
 
@@ -25,10 +31,6 @@ public class FakeTimer implements Timer {
         this.currentTime += time;
         log.log(Level.FINE, "Time advanced by " + time + " ms. Time increased from " + currentTime + " to " + (currentTime + time));
         notifyAll();
-    }
-
-    static {
-        LogFormatter.initializeLogging();
     }
 
 }

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.lang.MutableBoolean;
@@ -164,7 +164,7 @@ public class NodeStateChangeChecker {
 
         Optional<Metrics.Value> bucketsMetric;
         bucketsMetric = hostInfo.getMetrics().getValueAt(BUCKETS_METRIC_NAME, BUCKETS_METRIC_DIMENSIONS);
-        if (!bucketsMetric.isPresent() || bucketsMetric.get().getLast() == null) {
+        if (bucketsMetric.isEmpty() || bucketsMetric.get().getLast() == null) {
             return Result.createDisallowed("Missing last value of the " + BUCKETS_METRIC_NAME +
                     " metric for storage node " + nodeInfo.getNodeIndex());
         }

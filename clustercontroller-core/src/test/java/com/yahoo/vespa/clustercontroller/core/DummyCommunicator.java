@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.collections.Pair;
@@ -16,9 +16,9 @@ import java.util.TreeMap;
 public class DummyCommunicator implements Communicator, NodeLookup {
 
     List<Node> newNodes;
-    private Timer timer;
+    private final Timer timer;
     private boolean shouldDeferDistributorClusterStateAcks = false;
-    private List<Pair<Waiter<SetClusterStateRequest>, DummySetClusterStateRequest>> deferredClusterStateAcks = new ArrayList<>();
+    private final List<Pair<Waiter<SetClusterStateRequest>, DummySetClusterStateRequest>> deferredClusterStateAcks = new ArrayList<>();
 
     void setShouldDeferDistributorClusterStateAcks(boolean shouldDeferDistributorClusterStateAcks) {
         this.shouldDeferDistributorClusterStateAcks = shouldDeferDistributorClusterStateAcks;
@@ -55,7 +55,7 @@ public class DummyCommunicator implements Communicator, NodeLookup {
 
     }
 
-    private Map<Node, DummyGetNodeStateRequest> getNodeStateRequests = new TreeMap<>();
+    private final Map<Node, DummyGetNodeStateRequest> getNodeStateRequests = new TreeMap<>();
 
     DummyCommunicator(List<Node> nodeList, Timer timer) {
         this.newNodes = nodeList;

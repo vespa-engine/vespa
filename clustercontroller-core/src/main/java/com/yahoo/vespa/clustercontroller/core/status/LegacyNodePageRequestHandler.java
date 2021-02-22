@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.status;
 
 import com.yahoo.vdslib.state.Node;
@@ -36,7 +36,7 @@ public class LegacyNodePageRequestHandler implements StatusPageServer.RequestHan
         TimeZone tz = TimeZone.getTimeZone("UTC");
         long currentTime = timer.getCurrentTimeInMillis();
         NodeType nodeType = NodeType.get(m.group(1));
-        int index = Integer.valueOf(m.group(2));
+        int index = Integer.parseInt(m.group(2));
         Node node = new Node(nodeType, index);
 
         StatusPageResponse response = new StatusPageResponse();
@@ -58,4 +58,5 @@ public class LegacyNodePageRequestHandler implements StatusPageServer.RequestHan
         response.writeContent(content.toString());
         return response;
     }
+
 }

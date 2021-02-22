@@ -51,11 +51,10 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         communicator = new DummyCommunicator(nodes, timer);
         MetricUpdater metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex);
         EventLog eventLog = new EventLog(timer, metricUpdater);
-        ContentCluster cluster = new ContentCluster(options.clusterName, options.nodes, options.storageDistribution,
-                options.minStorageNodesUp, options.minRatioOfStorageNodesUp);
+        ContentCluster cluster = new ContentCluster(options.clusterName, options.nodes, options.storageDistribution);
         NodeStateGatherer stateGatherer = new NodeStateGatherer(timer, timer, eventLog);
         DatabaseHandler database = new DatabaseHandler(new ZooKeeperDatabaseFactory(), timer, options.zooKeeperServerAddress, options.fleetControllerIndex, timer);
-        StateChangeHandler stateGenerator = new StateChangeHandler(timer, eventLog, metricUpdater);
+        StateChangeHandler stateGenerator = new StateChangeHandler(timer, eventLog);
         SystemStateBroadcaster stateBroadcaster = new SystemStateBroadcaster(timer, timer);
         MasterElectionHandler masterElectionHandler = new MasterElectionHandler(options.fleetControllerIndex, options.fleetControllerCount, timer, timer);
         ctrl = new FleetController(timer, eventLog, cluster, stateGatherer, communicator, null, null, communicator, database, stateGenerator, stateBroadcaster, masterElectionHandler, metricUpdater, options);
