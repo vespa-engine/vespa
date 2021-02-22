@@ -67,7 +67,7 @@ public class ScalingSuggestionsMaintainer extends NodeRepositoryMaintainer {
         Optional<Cluster> cluster = application.cluster(clusterId);
         if (cluster.isEmpty()) return true;
         var suggestion = autoscaler.suggest(application, cluster.get(), clusterNodes);
-        if (suggestion.isEmpty()) return false;
+        if (suggestion.isEmpty()) return true;
         // Wait only a short time for the lock to avoid interfering with change deployments
         try (Mutex lock = nodeRepository().nodes().lock(applicationId, Duration.ofSeconds(1))) {
             // empty suggested resources == keep the current allocation, so we record that
