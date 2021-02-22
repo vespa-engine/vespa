@@ -32,7 +32,7 @@ public class HttpEndpoint implements Endpoint {
         this.endpoint = requireNonNull(endpoint);
         this.authenticator = requireNonNull(authenticator);
         SSLParameters sslParameters = new SSLParameters();
-        sslParameters.setProtocols(new String[] {"TLSv1.2" });
+        sslParameters.setProtocols(new String[] { "TLSv1.2" });
         this.client = HttpClient.newBuilder()
                                 .sslContext(authenticator.sslContext())
                                 .connectTimeout(Duration.ofSeconds(5))
