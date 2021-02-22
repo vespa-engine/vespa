@@ -296,21 +296,17 @@ public class ContentCluster extends AbstractConfigProducer implements
 
             if (overlappingCluster != null && overlappingCluster.getClusterControllers() != null) {
                 // Borrow the cluster controllers of the other cluster in this case.
-                // This condition only obtains on non-hosted systems with a shared config server,
-                // a combination which only exists in system tests
+                // This condition only occurs on non-hosted systems with a shared config server,
+                // a combination which only exists in system tests.
                 clusterControllers = overlappingCluster.getClusterControllers();
             }
             else if (admin.multitenant()) {
                 String clusterName = contentClusterName + "-controllers";
-                Optional<NodesSpecification> nodesSpecification = NodesSpecification.optionalDedicatedFromParent(contentElement.child("controllers"), context);
-                if (nodesSpecification.isEmpty() && context.properties().dedicatedClusterControllerCluster())
+                if (context.properties().dedicatedClusterControllerCluster())
                     clusterControllers = getDedicatedSharedControllers(contentElement, admin, context);
                 else {
-                    Collection<HostResource> hosts = nodesSpecification.isPresent() && nodesSpecification.get().isDedicated()
-                                                     ? getControllerHosts(nodesSpecification.get(), admin, clusterName, context)
-                                                     : drawControllerHosts(nodesSpecification.map(spec -> spec.minResources().nodes()).orElse(3), rootGroup);
                     clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone"),
-                                                                  hosts,
+                                                                  drawControllerHosts(3, rootGroup),
                                                                   clusterName,
                                                                   true,
                                                                   context.getDeployState());
@@ -332,8 +328,9 @@ public class ContentCluster extends AbstractConfigProducer implements
 
             addClusterControllerComponentsForThisCluster(clusterControllers, contentCluster);
             ReindexingContext reindexingContext = clusterControllers.reindexingContext();
-            contentCluster.documentDefinitions.values()
-                    .forEach(type -> reindexingContext.addDocumentType(contentCluster.clusterId, type));
+            for (NewDocumentType type : contentCluster.documentDefinitions.values()) {
+                reindexingContext.addDocumentType(contentCluster.clusterId, type);
+            }
         }
 
         /** Returns any other content cluster which shares nodes with this, or null if none are built */

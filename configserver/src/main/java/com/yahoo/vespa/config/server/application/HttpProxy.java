@@ -6,6 +6,9 @@ import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.PortInfo;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.container.jdisc.HttpResponse;
+
+import java.util.HashSet;
+import java.util.List;
 import java.util.logging.Level;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
 import com.yahoo.vespa.config.server.http.HttpFetcher;
@@ -44,10 +47,9 @@ public class HttpProxy {
 
         // "http" and "state" seems to uniquely identify an interesting HTTP port on each service
         PortInfo port = service.getPorts().stream()
-                .filter(portInfo -> portInfo.getTags().stream().collect(Collectors.toSet()).containsAll(
-                        Stream.of("http", "state").collect(Collectors.toSet())))
-                .findFirst()
-                .orElseThrow(() -> new NotFoundException("Failed to find HTTP state port"));
+                               .filter(portInfo -> portInfo.getTags().containsAll(List.of("http", "state")))
+                               .findFirst()
+                               .orElseThrow(() -> new NotFoundException("Failed to find HTTP state port"));
 
         return internalGet(host.getHostname(), port.getPort(), relativePath);
     }
