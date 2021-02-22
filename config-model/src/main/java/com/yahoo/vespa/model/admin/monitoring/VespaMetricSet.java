@@ -432,6 +432,12 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.ready.lid_space.lid_limit.last"));
         metrics.add(new Metric("content.proton.documentdb.notready.lid_space.lid_limit.last"));
         metrics.add(new Metric("content.proton.documentdb.removed.lid_space.lid_limit.last"));
+        metrics.add(new Metric("content.proton.documentdb.ready.lid_space.highest_used_lid.last"));
+        metrics.add(new Metric("content.proton.documentdb.notready.lid_space.highest_used_lid.last"));
+        metrics.add(new Metric("content.proton.documentdb.removed.lid_space.highest_used_lid.last"));
+        metrics.add(new Metric("content.proton.documentdb.ready.lid_space.used_lids.last"));
+        metrics.add(new Metric("content.proton.documentdb.notready.lid_space.used_lids.last"));
+        metrics.add(new Metric("content.proton.documentdb.removed.lid_space.used_lids.last"));
 
         // resource usage
         metrics.add(new Metric("content.proton.resource_usage.disk.average"));
