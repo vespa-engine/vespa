@@ -4,6 +4,7 @@
 #include <vespa/searchlib/common/feature.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
+#include <memory>
 
 namespace search::features::fieldmatch {
 

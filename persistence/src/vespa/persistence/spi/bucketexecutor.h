@@ -3,6 +3,7 @@
 #pragma once
 
 #include "bucket.h"
+#include <memory>
 
 namespace vespalib { class IDestructorCallback; }
 

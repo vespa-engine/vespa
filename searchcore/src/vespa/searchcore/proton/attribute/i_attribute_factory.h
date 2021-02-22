@@ -4,11 +4,10 @@
 
 #include <vespa/searchlib/common/serialnum.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <memory>
 
-namespace search {
-class AttributeVector;
-namespace attribute { class Config; }
-}
+namespace search { class AttributeVector; }
+namespace search::attribute { class Config; }
 
 namespace proton {
 

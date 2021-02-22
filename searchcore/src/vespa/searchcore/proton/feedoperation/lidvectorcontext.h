@@ -3,6 +3,7 @@
 
 #include <vespa/searchlib/query/base.h>
 #include <vector>
+#include <memory>
 
 namespace vespalib { class nbostream; }
 

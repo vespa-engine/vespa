@@ -6,6 +6,7 @@
 #include <mutex>
 #include <vector>
 #include <map>
+#include <memory>
 
 namespace vespalib::eval {
 

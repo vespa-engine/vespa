@@ -2,8 +2,9 @@
 
 #pragma once
 
-#include <vector>
 #include <vespa/vespalib/stllike/string.h>
+#include <vector>
+#include <memory>
 
 namespace vespalib {
     class nbostream;

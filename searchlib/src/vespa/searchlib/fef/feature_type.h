@@ -3,9 +3,9 @@
 #pragma once
 
 #include <vespa/eval/eval/value_type.h>
+#include <memory>
 
-namespace search {
-namespace fef {
+namespace search::fef {
 
 /**
  * The full type of a feature calculated by the ranking framework. The
@@ -33,5 +33,4 @@ public:
     static FeatureType object(const TYPE &type_in);
 };
 
-} // namespace fef
-} // namespace search
+}

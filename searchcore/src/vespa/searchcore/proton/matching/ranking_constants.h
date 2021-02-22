@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <map>
 #include <vector>
+#include <memory>
 
 namespace proton::matching {
 

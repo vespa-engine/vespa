@@ -7,6 +7,7 @@
 #include <map>
 #include <vector>
 #include <mutex>
+#include <memory>
 
 class FNET_Transport;
 class FRT_Supervisor;
@@ -58,11 +59,11 @@ private:
     vespalib::string                   _rpcTarget;
     SessionMap                         _sessions;
     //Brute force lock for subscriptions. For multithread safety.
-    std::mutex   _lock;
+    std::mutex                         _lock;
     std::unique_ptr<FastOS_ThreadPool> _threadPool;
     std::unique_ptr<FNET_Transport>    _transport;
     std::unique_ptr<FRT_Supervisor>    _supervisor;
-    FRT_Target     * _target;
+    FRT_Target                       * _target;
 };
 
 }

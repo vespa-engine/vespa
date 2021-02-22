@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <memory>
 
 namespace proton {
 
@@ -13,7 +14,7 @@ class IDocumentDBReference;
 class IDocumentDBReferenceRegistry
 {
 public:
-    virtual ~IDocumentDBReferenceRegistry() { }
+    virtual ~IDocumentDBReferenceRegistry() = default;
 
     /*
      * Get named IDocumentDBReference.  Block while it doesn't exist.

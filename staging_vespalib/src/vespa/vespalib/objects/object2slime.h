@@ -4,6 +4,7 @@
 
 #include "objectvisitor.h"
 #include <vector>
+#include <memory>
 
 namespace vespalib {
 

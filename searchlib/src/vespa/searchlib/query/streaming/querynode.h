@@ -3,6 +3,7 @@
 
 #include "hit.h"
 #include <vespa/vespalib/stllike/string.h>
+#include <memory>
 
 namespace search { class SimpleQueryStackDumpIterator; }
 

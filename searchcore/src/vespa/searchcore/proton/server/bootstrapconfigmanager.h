@@ -4,6 +4,7 @@
 
 #include <vespa/config/retriever/configkeyset.h>
 #include <mutex>
+#include <memory>
 
 namespace config { class ConfigSnapshot; };
 namespace proton {

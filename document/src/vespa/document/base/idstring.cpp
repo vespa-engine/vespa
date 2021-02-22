@@ -5,6 +5,7 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/vespalib/util/md5.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/optimized.h>
 #include <cerrno>
 
 using vespalib::string;

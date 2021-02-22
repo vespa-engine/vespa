@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <set>
 #include <mutex>
+#include <memory>
 
 namespace searchcorespi::index {
 
