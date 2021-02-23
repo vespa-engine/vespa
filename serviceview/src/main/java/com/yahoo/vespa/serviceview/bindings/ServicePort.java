@@ -10,7 +10,7 @@ import com.google.common.base.Splitter;
  * View of {@link com.yahoo.cloud.config.ModelConfig.Hosts.Services.Ports}.
  *
  * @author mortent
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 @JsonIgnoreProperties(value = { "splitOnSpace" }, ignoreUnknown = true)
 public class ServicePort {

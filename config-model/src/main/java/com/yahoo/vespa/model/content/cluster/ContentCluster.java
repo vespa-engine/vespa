@@ -436,9 +436,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                             new ClusterControllerContainer(clusterControllers, index, multitenant, deployState);
                     clusterControllerContainer.setHostResource(host);
                     clusterControllerContainer.initService(deployState.getDeployLogger());
-                    clusterControllerContainer.setProp("clustertype", "admin")
-                            .setProp("clustername", clusterControllers.getName())
-                            .setProp("index", String.valueOf(index));
+                    clusterControllerContainer.setProp("clustertype", "admin");
                     containers.add(clusterControllerContainer);
                     ++index;
                 }
