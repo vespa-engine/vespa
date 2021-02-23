@@ -79,11 +79,27 @@ DirectTensorAttribute::setTensor(DocId lid, const vespalib::eval::Value &tensor)
 void
 DirectTensorAttribute::update_tensor(DocId docId,
                                      const document::TensorUpdate &update,
-                                     const vespalib::eval::Value &old_tensor)
+                                     bool create_if_non_existing)
 {
-    auto new_value = update.apply_to(old_tensor, FastValueBuilderFactory::get());
-    if (new_value) {
-        set_tensor(docId, std::move(new_value));
+    EntryRef ref;
+    if (docId < getCommittedDocIdLimit()) {
+        ref = _refVector[docId];
+    }
+    if (ref.valid()) {
+        auto ptr = _direct_store.get_tensor(ref);
+        if (ptr) {
+            auto new_value = update.apply_to(*ptr, FastValueBuilderFactory::get());
+            if (new_value) {
+                set_tensor(docId, std::move(new_value));
+            }
+            return;
+        }
+    }
+    if (create_if_non_existing) {
+        auto new_value = update.apply_to(*_emptyTensor, FastValueBuilderFactory::get());
+        if (new_value) {
+            set_tensor(docId, std::move(new_value));
+        }
     }
 }
 
