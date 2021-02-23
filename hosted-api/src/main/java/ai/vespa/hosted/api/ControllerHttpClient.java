@@ -30,12 +30,14 @@ import java.net.http.HttpRequest;
 import java.net.http.HttpResponse;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.OptionalLong;
 import java.util.concurrent.Callable;
 import java.util.function.Consumer;
@@ -61,11 +63,18 @@ public abstract class ControllerHttpClient {
     private final URI endpoint;
 
     /** Creates an HTTP client against the given endpoint, using the given HTTP client builder to create a client. */
-    protected ControllerHttpClient(URI endpoint, HttpClient.Builder client) {
+    protected ControllerHttpClient(URI endpoint, SSLContext sslContext) {
+        if (sslContext == null) {
+            try { sslContext = SSLContext.getDefault(); }
+            catch (NoSuchAlgorithmException e) { throw new IllegalStateException(e); }
+        }
+
         this.endpoint = endpoint.resolve("/");
-        this.client = client.connectTimeout(Duration.ofSeconds(5))
-                            .version(HttpClient.Version.HTTP_1_1)
-                            .build();
+        this.client = HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(5))
+                                .version(HttpClient.Version.HTTP_1_1)
+                                .sslContext(sslContext)
+                                .sslParameters(tlsv12Parameters(sslContext))
+                                .build();
     }
 
     /** Creates an HTTP client against the given endpoint, which uses the given key to authenticate as the given application. */
@@ -407,6 +416,12 @@ public abstract class ControllerHttpClient {
         }
     }
 
+    private static SSLParameters tlsv12Parameters(SSLContext sslContext) {
+        SSLParameters parameters = sslContext.getDefaultSSLParameters();
+        parameters.setProtocols(new String[]{ "TLSv1.2" });
+        return parameters;
+    }
+
 
     /** Client that signs requests with a private key whose public part is assigned to an application in the remote controller. */
     private static class SigningControllerHttpClient extends ControllerHttpClient {
@@ -414,7 +429,7 @@ public abstract class ControllerHttpClient {
         private final RequestSigner signer;
 
         private SigningControllerHttpClient(URI endpoint, String privateKey, ApplicationId id) {
-            super(endpoint, HttpClient.newBuilder());
+            super(endpoint, null);
             this.signer = new RequestSigner(privateKey, id.serializedForm());
         }
 
@@ -434,17 +449,11 @@ public abstract class ControllerHttpClient {
     private static class MutualTlsControllerHttpClient extends ControllerHttpClient {
 
         private MutualTlsControllerHttpClient(URI endpoint, SSLContext sslContext) {
-            super(endpoint, HttpClient.newBuilder().sslContext(sslContext).sslParameters(tlsv12Parameters(sslContext)));
+            super(endpoint, Objects.requireNonNull(sslContext));
         }
 
         private MutualTlsControllerHttpClient(URI endpoint, PrivateKey privateKey, List<X509Certificate> certs) {
             this(endpoint, new SslContextBuilder().withKeyStore(privateKey, certs).build());
-        }
-
-        private static SSLParameters tlsv12Parameters(SSLContext sslContext) {
-            SSLParameters parameters = sslContext.getDefaultSSLParameters();
-            parameters.setProtocols(new String[]{ "TLSv1.2" });
-            return parameters;
         }
 
     }
