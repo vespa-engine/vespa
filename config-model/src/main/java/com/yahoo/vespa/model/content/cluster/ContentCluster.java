@@ -430,8 +430,11 @@ public class ContentCluster extends AbstractConfigProducer implements
             if (clusterControllers.getContainers().isEmpty()) {
                 int index = 0;
                 for (HostResource host : hosts) {
+                    int ccIndex = deployState.getProperties().dedicatedClusterControllerCluster()
+                                  ? host.spec().membership().map(ClusterMembership::index).orElse(index)
+                                  : index;
                     boolean retired = host.spec().membership().map(ClusterMembership::retired).orElse(false);
-                    var clusterControllerContainer = new ClusterControllerContainer(clusterControllers, index, multitenant, deployState, retired);
+                    var clusterControllerContainer = new ClusterControllerContainer(clusterControllers, ccIndex, multitenant, deployState, retired);
                     clusterControllerContainer.setHostResource(host);
                     clusterControllerContainer.initService(deployState.getDeployLogger());
                     clusterControllerContainer.setProp("clustertype", "admin");
