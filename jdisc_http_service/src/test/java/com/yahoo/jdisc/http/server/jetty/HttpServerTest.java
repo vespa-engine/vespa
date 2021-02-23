@@ -44,6 +44,7 @@ import org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V2;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
+import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
@@ -102,6 +103,7 @@ import static org.hamcrest.CoreMatchers.instanceOf;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.Matchers.anyOf;
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
@@ -971,7 +973,8 @@ public class HttpServerTest {
         } catch (SSLException e) {
             // This exception is thrown if Apache httpclient's write thread detects the handshake failure before the read thread.
             log.log(Level.WARNING, "Client failed to get a proper TLS handshake response: " + e.getMessage(), e);
-            assertThat(e.getMessage(), containsString("readHandshakeRecord")); // Only ignore this specific ssl exception
+            // Only ignore a subset of exceptions
+            assertThat(e.getMessage(), anyOf(containsString("readHandshakeRecord"), containsString("Broken pipe")));
         }
     }
 
