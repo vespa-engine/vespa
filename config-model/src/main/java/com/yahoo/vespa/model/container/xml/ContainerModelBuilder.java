@@ -425,7 +425,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private static void addHostedImplicitHttpIfNotPresent(ApplicationContainerCluster cluster) {
-        if (cluster.getHttp() == null) {
+        if(cluster.getHttp() == null) {
             cluster.setHttp(new Http(new FilterChains(cluster)));
         }
         JettyHttpServer httpServer = cluster.getHttp().getHttpServer().orElse(null);

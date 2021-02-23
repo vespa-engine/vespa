@@ -79,7 +79,7 @@ public class ClusterControllerContainer extends Container implements
 
     @Override
     public boolean requiresWantedPort() {
-        return false;
+        return index() == 0;
     }
 
     @Override

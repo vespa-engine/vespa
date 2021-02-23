@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
@@ -45,7 +44,6 @@ public class DedicatedClusterControllerClusterMigrator extends ApplicationMainta
 
         ZonedDateTime date = ZonedDateTime.ofInstant(clock().instant(), java.time.ZoneId.of("Europe/Oslo"));
         if (   ! nodeRepository().zone().system().isCd()
-            &&   nodeRepository().zone().environment() != Environment.staging
             &&   (List.of(SATURDAY, SUNDAY).contains(date.getDayOfWeek()) || date.getHour() < 8 || 12 < date.getHour()))
             return Set.of();
 
