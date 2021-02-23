@@ -3,6 +3,7 @@ package com.yahoo.jdisc.http.filter.security.rule;
 
 import com.google.inject.Inject;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.base.JsonSecurityRequestFilterBase;
 import com.yahoo.jdisc.http.filter.security.rule.RuleBasedFilterConfig.Rule.Action;
@@ -56,7 +57,11 @@ public class RuleBasedRequestFilter extends JsonSecurityRequestFilterBase {
     private static ErrorResponse createDefaultResponse(RuleBasedFilterConfig.DefaultRule defaultRule) {
         switch (defaultRule.action()) {
             case ALLOW: return null;
-            case BLOCK: return new ErrorResponse(defaultRule.blockResponseCode(), defaultRule.blockResponseMessage());
+            case BLOCK: {
+                Response response = new Response(defaultRule.blockResponseCode());
+                defaultRule.blockResponseHeaders().forEach(h -> response.headers().add(h.name(), h.value()));
+                return new ErrorResponse(response, defaultRule.blockResponseMessage());
+            }
             default: throw new IllegalArgumentException(defaultRule.action().name());
         }
     }
@@ -100,9 +105,13 @@ public class RuleBasedRequestFilter extends JsonSecurityRequestFilterBase {
                     .map(m -> m.name().toUpperCase())
                     .collect(Collectors.toSet());
             this.pathGlobExpressions = Set.copyOf(config.pathExpressions());
-            this.response = config.action() == Action.Enum.BLOCK
-                    ? new ErrorResponse(config.blockResponseCode(), config.blockResponseMessage())
-                    : null;
+            this.response = config.action() == Action.Enum.BLOCK ? createResponse(config) : null;
+        }
+
+        private static ErrorResponse createResponse(RuleBasedFilterConfig.Rule config) {
+            Response response = new Response(config.blockResponseCode());
+            config.blockResponseHeaders().forEach(h -> response.headers().add(h.name(), h.value()));
+            return new ErrorResponse(response, config.blockResponseMessage());
         }
 
         boolean matches(String method, URI uri) {

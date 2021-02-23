@@ -5,6 +5,8 @@ dryrun bool default=false
 defaultRule.action enum { ALLOW, BLOCK }
 defaultRule.blockResponseCode int default=403
 defaultRule.blockResponseMessage string default=""
+defaultRule.blockResponseHeaders[].name string
+defaultRule.blockResponseHeaders[].value string
 rule[].name string
 rule[].action enum { ALLOW, BLOCK }
 rule[].hostNames[] string
@@ -12,5 +14,5 @@ rule[].methods[] enum { GET, POST, PUT, PATCH, DELETE }
 rule[].pathExpressions[] string
 rule[].blockResponseCode int default=403
 rule[].blockResponseMessage string default=""
-
-
+rule[].blockResponseHeaders[].name string
+rule[].blockResponseHeaders[].value string
