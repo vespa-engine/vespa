@@ -51,7 +51,10 @@ public class BlockFeedGlobalEndpointsFilter extends Filter implements RuleBasedF
                     .action(BLOCK)
                     .name("block-feed-global-endpoints")
                     .blockResponseMessage("Feed to global endpoints are not allowed")
-                    .blockResponseCode(404);
+                    .blockResponseCode(405)
+                    .blockResponseHeaders(new RuleBasedFilterConfig.Rule.BlockResponseHeaders.Builder()
+                            .name("Allow")
+                            .value("GET, OPTIONS, HEAD"));
             builder.rule(rule);
         }
         builder.dryrun(dryRun);

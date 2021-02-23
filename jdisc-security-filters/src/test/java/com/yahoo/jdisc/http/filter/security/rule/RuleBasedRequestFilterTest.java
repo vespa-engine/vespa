@@ -11,11 +11,11 @@ import com.yahoo.jdisc.http.filter.DiscFilterRequest;
 import com.yahoo.jdisc.http.filter.security.rule.RuleBasedFilterConfig.DefaultRule;
 import com.yahoo.jdisc.http.filter.security.rule.RuleBasedFilterConfig.Rule;
 import com.yahoo.test.json.JsonTestHelper;
-import com.yahoo.vespa.jdk8compat.List;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 import java.net.URI;
+import java.util.List;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -146,6 +146,75 @@ class RuleBasedRequestFilterTest {
         filter.filter(request("DELETE", "http://myserver:80/"), responseHandler);
 
         assertAllowed(responseHandler, metric);
+    }
+
+    @Test
+    void includes_default_rule_response_headers_in_response_for_blocked_request() throws IOException {
+        RuleBasedFilterConfig config = new RuleBasedFilterConfig.Builder()
+                .dryrun(false)
+                .defaultRule(new DefaultRule.Builder()
+                        .action(DefaultRule.Action.Enum.BLOCK)
+                        .blockResponseHeaders(new DefaultRule.BlockResponseHeaders.Builder()
+                                .name("Response-Header-1").value("first-header"))
+                        .blockResponseHeaders(new DefaultRule.BlockResponseHeaders.Builder()
+                                .name("Response-Header-2").value("second-header")))
+                .build();
+
+        Metric metric = mock(Metric.class);
+        RuleBasedRequestFilter filter = new RuleBasedRequestFilter(metric, config);
+        MockResponseHandler responseHandler = new MockResponseHandler();
+        filter.filter(request("GET", "http://myserver:80/"), responseHandler);
+
+        assertBlocked(responseHandler, metric, 403, "");
+        Response response = responseHandler.getResponse();
+        assertResponseHeader(response, "Response-Header-1", "first-header");
+        assertResponseHeader(response, "Response-Header-2", "second-header");
+    }
+
+    @Test
+    void includes_rule_response_headers_in_response_for_blocked_request() throws IOException {
+        RuleBasedFilterConfig config = new RuleBasedFilterConfig.Builder()
+                .dryrun(false)
+                .defaultRule(new DefaultRule.Builder()
+                        .action(DefaultRule.Action.Enum.ALLOW))
+                .rule(new Rule.Builder()
+                        .name("rule")
+                        .pathExpressions("/path-to-resource")
+                        .action(Rule.Action.Enum.BLOCK)
+                        .blockResponseHeaders(new Rule.BlockResponseHeaders.Builder()
+                                .name("Response-Header-1").value("first-header")))
+                .build();
+
+        Metric metric = mock(Metric.class);
+        RuleBasedRequestFilter filter = new RuleBasedRequestFilter(metric, config);
+        MockResponseHandler responseHandler = new MockResponseHandler();
+        filter.filter(request("GET", "http://myserver/path-to-resource"), responseHandler);
+
+        assertBlocked(responseHandler, metric, 403, "");
+        Response response = responseHandler.getResponse();
+        assertResponseHeader(response, "Response-Header-1", "first-header");
+    }
+
+    @Test
+    void dryrun_does_not_block() {
+        RuleBasedFilterConfig config = new RuleBasedFilterConfig.Builder()
+                .dryrun(true)
+                .defaultRule(new DefaultRule.Builder()
+                        .action(DefaultRule.Action.Enum.BLOCK))
+                .build();
+
+        Metric metric = mock(Metric.class);
+        RuleBasedRequestFilter filter = new RuleBasedRequestFilter(metric, config);
+        MockResponseHandler responseHandler = new MockResponseHandler();
+        filter.filter(request("GET", "http://myserver/"), responseHandler);
+        assertNull(responseHandler.getResponse());
+    }
+
+    private void assertResponseHeader(Response response, String name, String expectedValue) {
+        List<String> actualValues = response.headers().get(name);
+        assertNotNull(actualValues);
+        assertEquals(1, actualValues.size());
+        assertEquals(expectedValue, actualValues.get(0));
     }
 
     private static DiscFilterRequest request(String method, String uri) {
