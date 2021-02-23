@@ -78,6 +78,8 @@ public class NodeRepositoryNode {
     public String orchestratorStatus;
     @JsonProperty("archiveUri")
     public String archiveUri;
+    @JsonProperty("exclusiveTo")
+    public String exclusiveTo;
 
     @JsonProperty("reports")
     public Map<String, JsonNode> reports = null;
@@ -117,6 +119,7 @@ public class NodeRepositoryNode {
                 ", orchestratorStatus=" + orchestratorStatus +
                 ", archiveUri=" + archiveUri +
                 ", reports=" + reports +
+                ", exclusiveTo=" + exclusiveTo +
                 '}';
     }
 
