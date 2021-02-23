@@ -37,6 +37,7 @@ private:
     void moveDocument(const search::DocumentMetaData & meta, std::shared_ptr<IDestructorCallback> onDone);
     void onStop() override;
     bool inSync() const override;
+    void failOperation();
 public:
     CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                   std::shared_ptr<ILidSpaceCompactionHandler> handler,

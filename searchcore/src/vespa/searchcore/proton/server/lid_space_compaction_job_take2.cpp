@@ -21,6 +21,26 @@ using vespalib::makeLambdaTask;
 
 namespace proton::lidspace {
 
+namespace {
+
+class IncOnDestruct {
+public:
+    IncOnDestruct(std::atomic<size_t> & count) : _count(count) {}
+    ~IncOnDestruct() {
+        _count.fetch_add(1, std::memory_order_relaxed);
+    }
+private:
+    std::atomic<size_t> & _count;
+};
+
+}
+
+void
+CompactionJob::failOperation() {
+    _executedCount.fetch_add(1, std::memory_order_relaxed);
+    _scanItr.reset();
+}
+
 bool
 CompactionJob::scanDocuments(const LidUsageStats &stats)
 {
@@ -29,32 +49,21 @@ CompactionJob::scanDocuments(const LidUsageStats &stats)
         if (document.valid()) {
             Bucket metaBucket(document::Bucket(_bucketSpace, document.bucketId));
             IDestructorCallback::SP context = getLimiter().beginOperation();
-            auto failed = _bucketExecutor.execute(metaBucket, makeBucketTask([this, meta=document, opsTracker=std::move(context)]
+            auto bucketTask = makeBucketTask([this, meta=document, opsTracker=std::move(context)]
             (const Bucket & bucket, std::shared_ptr<IDestructorCallback> onDone) {
                 assert(bucket.getBucketId() == meta.bucketId);
                 using DoneContext = vespalib::KeepAlive<std::pair<IDestructorCallback::SP, IDestructorCallback::SP>>;
                 moveDocument(meta, std::make_shared<DoneContext>(std::make_pair(std::move(opsTracker), std::move(onDone))));
-            }));
-            if (failed) return false;
+            }, [this](const Bucket &) { _master.execute(makeLambdaTask([this] { failOperation(); } )); });
+
             _startedCount.fetch_add(1, std::memory_order_relaxed);
+            _bucketExecutor.execute(metaBucket, std::move(bucketTask));
             if (isBlocked(BlockedReason::OUTSTANDING_OPS)) {
                 return true;
             }
         }
     }
     return false;
-}
-
-namespace {
-    class IncOnDestruct {
-    public:
-        IncOnDestruct(std::atomic<size_t> & count) : _count(count) {}
-        ~IncOnDestruct() {
-            _count.fetch_add(1, std::memory_order_relaxed);
-        }
-    private:
-        std::atomic<size_t> & _count;
-    };
 }
 
 void

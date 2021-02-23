@@ -189,7 +189,11 @@ RunTaskCommand::RunTaskCommand(const spi::Bucket &bucket, std::unique_ptr<spi::B
       _bucket(bucket)
 { }
 
-RunTaskCommand::~RunTaskCommand() = default;
+RunTaskCommand::~RunTaskCommand() {
+    if (_task) {
+        _task->fail(_bucket);
+    }
+}
 
 void
 RunTaskCommand::print(std::ostream& out, bool verbose, const std::string& indent) const {
@@ -206,12 +210,15 @@ RunTaskCommand::run(const spi::Bucket & bucket, std::shared_ptr<vespalib::IDestr
 {
     if (_task) {
         _task->run(bucket, std::move(onComplete));
+        _task.reset();
     }
 }
 
 RunTaskReply::RunTaskReply(const RunTaskCommand& cmd)
     : api::InternalReply(ID, cmd)
-{}
+{ }
+
+RunTaskReply::~RunTaskReply() = default;
 
 void
 RunTaskReply::print(std::ostream& out, bool verbose, const std::string& indent) const {

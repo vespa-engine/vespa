@@ -174,7 +174,7 @@ private:
     void propagateClusterStates();
     void update_reported_state_after_db_init();
 
-    std::unique_ptr<spi::BucketTask> execute(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task) override;
+    void execute(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task) override;
 };
 
 } // storage

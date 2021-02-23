@@ -150,31 +150,6 @@ BucketMoveJobV2::needMove(const ScanIterator &itr) const {
     return {true, wantReady};
 }
 
-void
-BucketMoveJobV2::startMove(BucketMoverSP mover, size_t maxDocsToMove) {
-    auto [keys, done] = mover->getKeysToMove(maxDocsToMove);
-    if (done) {
-        mover->setBucketDone();
-    }
-    if (keys.empty()) return;
-    if (_stopped.load(std::memory_order_relaxed)) return;
-    mover->updateLastValidGid(keys.back()._gid);
-    Bucket spiBucket(document::Bucket(_bucketSpace, mover->getBucket()));
-    auto bucketTask = makeBucketTask(
-            [this, mover=std::move(mover), keys=std::move(keys),opsTracker=getLimiter().beginOperation()]
-            (const Bucket & bucket, std::shared_ptr<IDestructorCallback> onDone) mutable
-    {
-        assert(mover->getBucket() == bucket.getBucketId());
-        using DoneContext = vespalib::KeepAlive<std::pair<IDestructorCallbackSP, IDestructorCallbackSP>>;
-        prepareMove(std::move(mover), std::move(keys),
-                    std::make_shared<DoneContext>(std::make_pair(std::move(opsTracker), std::move(onDone))));
-    });
-    auto failed = _bucketExecutor.execute(spiBucket, std::move(bucketTask));
-    if (!failed) {
-        _startedCount.fetch_add(1, std::memory_order_relaxed);
-    }
-}
-
 namespace {
 
 class IncOnDestruct {
@@ -187,6 +162,59 @@ private:
     std::atomic<size_t> & _count;
 };
 
+}
+
+class StartMove : public storage::spi::BucketTask {
+public:
+    using IDestructorCallbackSP = std::shared_ptr<vespalib::IDestructorCallback>;
+    StartMove(BucketMoveJobV2 & job, std::shared_ptr<BucketMover> mover,
+              std::vector<BucketMover::MoveKey> keys,
+              IDestructorCallbackSP opsTracker)
+        : _job(job),
+          _mover(std::move(mover)),
+          _keys(std::move(keys)),
+          _opsTracker(std::move(opsTracker))
+    {}
+
+    void run(const Bucket &bucket, IDestructorCallbackSP onDone) override {
+        assert(_mover->getBucket() == bucket.getBucketId());
+        using DoneContext = vespalib::KeepAlive<std::pair<IDestructorCallbackSP, IDestructorCallbackSP>>;
+        _job.prepareMove(std::move(_mover), std::move(_keys),
+                         std::make_shared<DoneContext>(std::make_pair(std::move(_opsTracker), std::move(onDone))));
+    }
+
+    void fail(const Bucket &bucket) override {
+        _job._master.execute(makeLambdaTask([this, bucketId=bucket.getBucketId()]() {
+            _job.failOperation(bucketId);
+        }));
+    }
+
+private:
+    BucketMoveJobV2                   & _job;
+    std::shared_ptr<BucketMover>        _mover;
+    std::vector<BucketMover::MoveKey>   _keys;
+    IDestructorCallbackSP               _opsTracker;
+};
+
+void
+BucketMoveJobV2::failOperation(BucketId bucketId) {
+    IncOnDestruct countGuard(_executedCount);
+    considerBucket(_ready.meta_store()->getBucketDB().takeGuard(), bucketId);
+}
+
+void
+BucketMoveJobV2::startMove(BucketMoverSP mover, size_t maxDocsToMove) {
+    auto [keys, done] = mover->getKeysToMove(maxDocsToMove);
+    if (done) {
+        mover->setBucketDone();
+    }
+    if (keys.empty()) return;
+    if (_stopped.load(std::memory_order_relaxed)) return;
+    mover->updateLastValidGid(keys.back()._gid);
+    Bucket spiBucket(document::Bucket(_bucketSpace, mover->getBucket()));
+    auto bucketTask = std::make_unique<StartMove>(*this, std::move(mover), std::move(keys), getLimiter().beginOperation());
+    _startedCount.fetch_add(1, std::memory_order_relaxed);
+    _bucketExecutor.execute(spiBucket, std::move(bucketTask));
 }
 
 void

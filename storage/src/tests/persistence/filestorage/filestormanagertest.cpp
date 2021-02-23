@@ -425,14 +425,13 @@ TEST_F(FileStorManagerTest, running_task_against_unknown_bucket_fails) {
     ASSERT_TRUE(executor);
 
     spi::Bucket b1 = makeSpiBucket(document::BucketId(1));
-    std::atomic<size_t> numInvocations(0);
-    auto response = executor->execute(b1, spi::makeBucketTask([&numInvocations](const spi::Bucket &, std::shared_ptr<IDestructorCallback>) {
-        numInvocations++;
-    }));
-    ASSERT_TRUE(response);
-    EXPECT_EQ(0, numInvocations);
-    response->run(spi::Bucket(), {});
-    EXPECT_EQ(1, numInvocations);
+    std::atomic<size_t> success(0);
+    std::atomic<size_t> failures(0);
+    auto task = spi::makeBucketTask([&success](const spi::Bucket &, std::shared_ptr<IDestructorCallback>) { success++;},
+                                    [&failures](const spi::Bucket &) { failures++; });
+    executor->execute(b1, std::move(task));
+    EXPECT_EQ(0, success);
+    EXPECT_EQ(1, failures);
 }
 
 TEST_F(FileStorManagerTest, running_task_against_existing_bucket_works) {
@@ -448,15 +447,16 @@ TEST_F(FileStorManagerTest, running_task_against_existing_bucket_works) {
 
     createBucket(b1.getBucketId());
 
-    std::atomic<size_t> numInvocations(0);
+    std::atomic<size_t> success(0);
+    std::atomic<size_t> failures(0);
     vespalib::Gate gate;
-    auto response = executor->execute(b1, spi::makeBucketTask([&numInvocations, &gate](const spi::Bucket &, std::shared_ptr<IDestructorCallback>) {
-        numInvocations++;
+    executor->execute(b1, spi::makeBucketTask([&success, &gate](const spi::Bucket &, std::shared_ptr<IDestructorCallback>) {
+        success++;
         gate.countDown();
-    }));
-    EXPECT_FALSE(response);
+    }, [&failures](const spi::Bucket &) { failures++; }));
     gate.await();
-    EXPECT_EQ(1, numInvocations);
+    EXPECT_EQ(1, success);
+    EXPECT_EQ(0, failures);
 }
 
 TEST_F(FileStorManagerTest, state_change) {

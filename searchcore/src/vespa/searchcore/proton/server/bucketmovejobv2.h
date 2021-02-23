@@ -86,6 +86,8 @@ private:
     void backFillMovers();
     void cancelMovesForBucket(BucketId bucket);
     bool moveDocs(size_t maxDocsToMove);
+    void failOperation(BucketId bucket);
+    friend class StartMove;
 public:
     BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &calc,
                     IDocumentMoveHandler &moveHandler,

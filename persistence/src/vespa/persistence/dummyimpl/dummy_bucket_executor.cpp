@@ -22,9 +22,9 @@ DummyBucketExecutor::~DummyBucketExecutor() {
     sync();
 }
 
-std::unique_ptr<BucketTask>
+void
 DummyBucketExecutor::execute(const Bucket & bucket, std::unique_ptr<BucketTask> task) {
-    _executor->execute(makeLambdaTask([this, bucket, bucketTask=std::move(task)]() {
+    auto failed = _executor->execute(makeLambdaTask([this, bucket, bucketTask=std::move(task)]() {
         {
             std::unique_lock guard(_lock);
             // Use contains when dropping support for gcc 8.
@@ -41,7 +41,9 @@ DummyBucketExecutor::execute(const Bucket & bucket, std::unique_ptr<BucketTask> 
             _cond.notify_all();
         }));
     }));
-    return task;
+    if (failed) {
+        failed->run();
+    }
 }
 
 void
