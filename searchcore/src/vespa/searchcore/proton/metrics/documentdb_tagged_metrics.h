@@ -186,7 +186,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     };
 
     struct BucketMoveMetrics : metrics::MetricSet {
-        metrics::LongCountMetric bucketsPending;
+        metrics::LongValueMetric bucketsPending;
 
         BucketMoveMetrics(metrics::MetricSet *parent);
         ~BucketMoveMetrics() override;

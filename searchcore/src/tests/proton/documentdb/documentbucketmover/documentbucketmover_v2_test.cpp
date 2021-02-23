@@ -78,7 +78,7 @@ struct ControllerFixtureBase : public ::testing::Test
     }
     size_t numPending() {
         _bmj.updateMetrics(_metrics);
-        return _metrics.bucketMove.bucketsPending.getValue();
+        return _metrics.bucketMove.bucketsPending.getLast();
     }
     void runLoop() {
         while (!_bmj.isBlocked() && !_bmj.run()) {
