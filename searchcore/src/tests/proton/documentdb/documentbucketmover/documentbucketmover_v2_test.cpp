@@ -6,6 +6,8 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
+#include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
+
 LOG_SETUP("document_bucket_mover_test");
 
 using namespace proton;
@@ -35,6 +37,7 @@ struct ControllerFixtureBase : public ::testing::Test
     ExecutorThreadService       _master;
     DummyBucketExecutor         _bucketExecutor;
     MyMoveHandler               _moveHandler;
+    DocumentDBTaggedMetrics     _metrics;
     BucketMoveJobV2             _bmj;
     MyCountJobRunner            _runner;
     ControllerFixtureBase(const BlockableMaintenanceJobConfig &blockableConfig, bool storeMoveDoneContexts);
@@ -73,6 +76,10 @@ struct ControllerFixtureBase : public ::testing::Test
     const BucketId::List &calcAsked() const {
         return _calc->asked();
     }
+    size_t numPending() {
+        _bmj.updateMetrics(_metrics);
+        return _metrics.bucketMove.bucketsPending.getValue();
+    }
     void runLoop() {
         while (!_bmj.isBlocked() && !_bmj.run()) {
         }
@@ -98,6 +105,7 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
       _master(_singleExecutor),
       _bucketExecutor(4),
       _moveHandler(*_bucketDB, storeMoveDoneContexts),
+      _metrics("test", 1),
       _bmj(_calc, _moveHandler, _modifiedHandler, _master, _bucketExecutor, _ready._subDb,
            _notReady._subDb, _bucketCreateNotifier, _clusterStateHandler, _bucketHandler,
            _diskMemUsageNotifier, blockableConfig,
@@ -156,11 +164,15 @@ TEST_F(ControllerFixture, require_that_not_ready_bucket_is_moved_to_ready_if_buc
     addReady(_ready.bucket(1));
     addReady(_ready.bucket(2));
     addReady(_notReady.bucket(4));
+
+    EXPECT_EQ(0, numPending());
     _bmj.recompute();
+    EXPECT_EQ(1, numPending());
     EXPECT_FALSE(_bmj.done());
     EXPECT_TRUE(_bmj.scanAndMove(4, 3));
     EXPECT_TRUE(_bmj.done());
     sync();
+    EXPECT_EQ(0, numPending());
     EXPECT_EQ(3u, docsMoved().size());
     assertEqual(_notReady.bucket(4), _notReady.docs(4)[0], 2, 1, docsMoved()[0]);
     assertEqual(_notReady.bucket(4), _notReady.docs(4)[1], 2, 1, docsMoved()[1]);
@@ -194,27 +206,32 @@ TEST_F(ControllerFixture, require_that_we_move_buckets_in_several_steps)
     addReady(_notReady.bucket(4));
 
     _bmj.recompute();
+    EXPECT_EQ(3, numPending());
     EXPECT_FALSE(_bmj.done());
 
     EXPECT_FALSE(_bmj.scanAndMove(1, 2));
     EXPECT_FALSE(_bmj.done());
     sync();
+    EXPECT_EQ(2, numPending());
     EXPECT_EQ(2u, docsMoved().size());
 
     EXPECT_FALSE(_bmj.scanAndMove(1, 2));
     EXPECT_FALSE(_bmj.done());
     sync();
+    EXPECT_EQ(2, numPending());
     EXPECT_EQ(4u, docsMoved().size());
 
     EXPECT_FALSE(_bmj.scanAndMove(1, 2));
     EXPECT_FALSE(_bmj.done());
     sync();
+    EXPECT_EQ(1, numPending());
     EXPECT_EQ(6u, docsMoved().size());
 
     // move bucket 4, docs 3
     EXPECT_TRUE(_bmj.scanAndMove(1,2));
     EXPECT_TRUE(_bmj.done());
     sync();
+    EXPECT_EQ(0, numPending());
     EXPECT_EQ(7u, docsMoved().size());
     EXPECT_EQ(3u, bucketsModified().size());
     EXPECT_EQ(_ready.bucket(2), bucketsModified()[0]);

@@ -37,9 +37,10 @@ public:
     MoveOperationLimiter(IBlockableMaintenanceJob *job, uint32_t maxOutstandingOps);
     ~MoveOperationLimiter() override;
     void clearJob();
-    bool isAboveLimit() const;
-    bool hasPending() const;
+    bool isAboveLimit() const { return numPending() >= _maxOutstandingOps; }
+    bool hasPending() const { return numPending() > 0;}
     std::shared_ptr<vespalib::IDestructorCallback> beginOperation() override;
+    size_t numPending() const override;
 };
 
 }

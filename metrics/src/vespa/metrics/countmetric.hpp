@@ -23,7 +23,13 @@ CountMetric<T, SumOnAdd>::CountMetric(const CountMetric<T, SumOnAdd>& other,
 }
 
 template <typename T, bool SumOnAdd>
-CountMetric<T, SumOnAdd>::~CountMetric() { }
+CountMetric<T, SumOnAdd>::~CountMetric() = default;
+
+template <typename T, bool SumOnAdd>
+MetricValueClass::UP
+CountMetric<T, SumOnAdd>::getValues() const {
+    return std::make_unique<Values>(_values.getValues());
+}
 
 template <typename T, bool SumOnAdd>
 CountMetric<T, SumOnAdd>&

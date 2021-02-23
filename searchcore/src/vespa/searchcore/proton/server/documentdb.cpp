@@ -191,7 +191,8 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
     _writeFilter.setConfig(loaded_config->getMaintenanceConfigSP()->getAttributeUsageFilterConfig());
 }
 
-void DocumentDB::registerReference()
+void
+DocumentDB::registerReference()
 {
     if (_state.getAllowReconfig()) {
         auto registry = _owner.getDocumentDBReferenceRegistry();
@@ -204,7 +205,8 @@ void DocumentDB::registerReference()
     }
 }
 
-void DocumentDB::setActiveConfig(const DocumentDBConfig::SP &config, int64_t generation) {
+void
+DocumentDB::setActiveConfig(const DocumentDBConfig::SP &config, int64_t generation) {
     lock_guard guard(_configMutex);
     registerReference();
     _activeConfigSnapshot = config;
@@ -215,7 +217,8 @@ void DocumentDB::setActiveConfig(const DocumentDBConfig::SP &config, int64_t gen
     _configCV.notify_all();
 }
 
-DocumentDBConfig::SP DocumentDB::getActiveConfig() const {
+DocumentDBConfig::SP
+DocumentDB::getActiveConfig() const {
     lock_guard guard(_configMutex);
     return _activeConfigSnapshot;
 }
@@ -868,7 +871,8 @@ DocumentDB::replayConfig(search::SerialNum serialNum)
               _docTypeName.toString().c_str(), serialNum);
 }
 
-int64_t DocumentDB::getActiveGeneration() const {
+int64_t
+DocumentDB::getActiveGeneration() const {
     lock_guard guard(_configMutex);
     return _activeConfigSnapshotGeneration;
 }
@@ -1004,7 +1008,8 @@ DocumentDB::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculat
 
 namespace {
 
-void notifyBucketsChanged(const documentmetastore::IBucketHandler &metaStore,
+void
+notifyBucketsChanged(const documentmetastore::IBucketHandler &metaStore,
                           IBucketModifiedHandler &handler,
                           const vespalib::string &name)
 {
@@ -1037,6 +1042,7 @@ DocumentDB::updateMetrics(const metrics::MetricLockGuard & guard)
         return;
     }
     _metricsUpdater.updateMetrics(guard, _metrics);
+    _maintenanceController.updateMetrics(_metrics);
 }
 
 void
