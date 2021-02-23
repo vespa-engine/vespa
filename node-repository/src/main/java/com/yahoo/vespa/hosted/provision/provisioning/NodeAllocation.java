@@ -154,7 +154,7 @@ class NodeAllocation {
         if (violatesParentHostPolicy(candidate)) return true;
         if ( ! hasCompatibleFlavor(candidate)) return true;
         if (candidate.wantToRetire()) return true;
-        if (candidate.preferToRetire() && !candidate.replacementIncreasesSkew(candidates)) return true;
+        if (candidate.preferToRetire() && candidate.replacableBy(candidates)) return true;
         if (violatesExclusivity(candidate)) return true;
         return false;
     }
