@@ -184,9 +184,7 @@ public:
     }
 
     void fail(const Bucket &bucket) override {
-        _job._master.execute(makeLambdaTask([this, bucketId=bucket.getBucketId()]() {
-            _job.failOperation(bucketId);
-        }));
+        _job.failOperation(bucket.getBucketId());
     }
 
 private:
@@ -199,7 +197,11 @@ private:
 void
 BucketMoveJobV2::failOperation(BucketId bucketId) {
     IncOnDestruct countGuard(_executedCount);
-    considerBucket(_ready.meta_store()->getBucketDB().takeGuard(), bucketId);
+    if (_stopped.load(std::memory_order_relaxed)) return;
+    _master.execute(makeLambdaTask([this, bucketId]() {
+        if (_stopped.load(std::memory_order_relaxed)) return;
+        considerBucket(_ready.meta_store()->getBucketDB().takeGuard(), bucketId);
+    }));
 }
 
 void
@@ -224,6 +226,7 @@ BucketMoveJobV2::prepareMove(BucketMoverSP mover, std::vector<MoveKey> keys, IDe
     if (_stopped.load(std::memory_order_relaxed)) return;
     auto moveOps = mover->createMoveOperations(keys);
     _master.execute(makeLambdaTask([this, mover=std::move(mover), moveOps=std::move(moveOps), onDone=std::move(onDone)]() mutable {
+        if (_stopped.load(std::memory_order_relaxed)) return;
         completeMove(std::move(mover), std::move(moveOps), std::move(onDone));
     }));
 }
