@@ -195,6 +195,21 @@ class RuleBasedRequestFilterTest {
         assertResponseHeader(response, "Response-Header-1", "first-header");
     }
 
+    @Test
+    void dryrun_does_not_block() {
+        RuleBasedFilterConfig config = new RuleBasedFilterConfig.Builder()
+                .dryrun(true)
+                .defaultRule(new DefaultRule.Builder()
+                        .action(DefaultRule.Action.Enum.BLOCK))
+                .build();
+
+        Metric metric = mock(Metric.class);
+        RuleBasedRequestFilter filter = new RuleBasedRequestFilter(metric, config);
+        MockResponseHandler responseHandler = new MockResponseHandler();
+        filter.filter(request("GET", "http://myserver/"), responseHandler);
+        assertNull(responseHandler.getResponse());
+    }
+
     private void assertResponseHeader(Response response, String name, String expectedValue) {
         List<String> actualValues = response.headers().get(name);
         assertNotNull(actualValues);
