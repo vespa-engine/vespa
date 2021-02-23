@@ -27,6 +27,7 @@ struct MyMoveOperationLimiter : public IMoveOperationLimiter {
         ++beginOpCount;
         return {};
     }
+    size_t numPending() const override { return beginOpCount; }
 };
 
 struct MyMoveHandler : public IDocumentMoveHandler {

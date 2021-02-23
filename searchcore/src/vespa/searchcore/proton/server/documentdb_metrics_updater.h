@@ -30,12 +30,12 @@ public:
 
 private:
     const DocumentSubDBCollection &_subDBs;
-    ExecutorThreadingService &_writeService;
-    DocumentDBJobTrackers &_jobTrackers;
-    matching::SessionManager &_sessionManager;
-    const AttributeUsageFilter &_writeFilter;
+    ExecutorThreadingService      &_writeService;
+    DocumentDBJobTrackers         &_jobTrackers;
+    matching::SessionManager      &_sessionManager;
+    const AttributeUsageFilter    &_writeFilter;
     // Last updated document store cache statistics. Necessary due to metrics implementation is upside down.
-    DocumentStoreCacheStats _lastDocStoreCacheStats;
+    DocumentStoreCacheStats        _lastDocStoreCacheStats;
 
     void updateMiscMetrics(DocumentDBTaggedMetrics &metrics, const ExecutorThreadingServiceStats &threadingServiceStats);
     void updateAttributeResourceUsageMetrics(DocumentDBTaggedMetrics::AttributeMetrics &metrics);

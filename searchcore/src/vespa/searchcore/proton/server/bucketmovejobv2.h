@@ -68,6 +68,7 @@ private:
     std::atomic<bool>                         _stopped;
     std::atomic<size_t>                       _startedCount;
     std::atomic<size_t>                       _executedCount;
+    std::atomic<size_t>                       _bucketsPending;
 
     bucketdb::IBucketCreateNotifier   &_bucketCreateNotifier;
     IClusterStateChangedNotifier      &_clusterStateChangedNotifier;
@@ -114,6 +115,7 @@ public:
     void notifyDiskMemUsage(DiskMemUsageState state) override;
     void notifyCreateBucket(const bucketdb::Guard & guard, const BucketId &bucket) override;
     void onStop() override;
+    void updateMetrics(DocumentDBTaggedMetrics & metrics) override;
 };
 
 } // namespace proton

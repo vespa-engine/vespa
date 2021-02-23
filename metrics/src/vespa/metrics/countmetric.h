@@ -54,11 +54,9 @@ public:
 
     CountMetric(const CountMetric<T, SumOnAdd>& other, CopyType, MetricSet* owner);
 
-    ~CountMetric();
+    ~CountMetric() override;
 
-    MetricValueClass::UP getValues() const override {
-        return MetricValueClass::UP(new Values(_values.getValues()));
-    }
+    MetricValueClass::UP getValues() const override;
 
     void set(T value);
     void inc(T value = 1);

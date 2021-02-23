@@ -52,6 +52,7 @@ public:
     void stop();
     void start(const DocumentDBMaintenanceConfigSP &config);
     void newConfig(const DocumentDBMaintenanceConfigSP &config);
+    void updateMetrics(DocumentDBTaggedMetrics & metrics);
 
     void
     syncSubDBs(const MaintenanceDocumentSubDB &readySubDB,

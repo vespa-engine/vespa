@@ -50,18 +50,11 @@ MoveOperationLimiter::clearJob()
     _job = nullptr;
 }
 
-bool
-MoveOperationLimiter::isAboveLimit() const
+size_t
+MoveOperationLimiter::numPending() const
 {
     LockGuard guard(_mutex);
-    return (_outstandingOps >= _maxOutstandingOps);
-}
-
-bool
-MoveOperationLimiter::hasPending() const
-{
-    LockGuard guard(_mutex);
-    return (_outstandingOps > 0);
+    return _outstandingOps;
 }
 
 std::shared_ptr<vespalib::IDestructorCallback>

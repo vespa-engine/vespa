@@ -9,6 +9,7 @@ namespace proton {
 
 class IBlockableMaintenanceJob;
 class IMaintenanceJobRunner;
+class DocumentDBTaggedMetrics;
 
 /**
  * Interface for a maintenance job that is executed after "delay" seconds and
@@ -40,6 +41,7 @@ public:
     virtual bool isBlocked() const { return false; }
     virtual IBlockableMaintenanceJob *asBlockable() { return nullptr; }
     virtual void onStop() {}
+    virtual void updateMetrics(DocumentDBTaggedMetrics &) {}
 
     /**
      * Register maintenance job runner, in case event passed to the

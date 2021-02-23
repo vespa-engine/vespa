@@ -185,6 +185,13 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
         ~DocumentsMetrics() override;
     };
 
+    struct BucketMoveMetrics : metrics::MetricSet {
+        metrics::LongValueMetric bucketsPending;
+
+        BucketMoveMetrics(metrics::MetricSet *parent);
+        ~BucketMoveMetrics() override;
+    };
+
     JobMetrics job;
     AttributeMetrics attribute;
     IndexMetrics index;
@@ -195,6 +202,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     MatchingMetrics matching;
     SessionCacheMetrics sessionCache;
     DocumentsMetrics documents;
+    BucketMoveMetrics bucketMove;
     MemoryUsageMetrics totalMemoryUsage;
     metrics::LongValueMetric totalDiskUsage;
     size_t maxNumThreads;

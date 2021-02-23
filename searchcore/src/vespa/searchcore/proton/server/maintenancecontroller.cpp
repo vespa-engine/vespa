@@ -107,6 +107,15 @@ MaintenanceController::killJobs()
 }
 
 void
+MaintenanceController::updateMetrics(DocumentDBTaggedMetrics & metrics)
+{
+    Guard guard(_jobsLock);
+    for (auto &job : _jobs) {
+        job->getJob().updateMetrics(metrics); // Make sure no more tasks are added to the executor
+    }
+}
+
+void
 MaintenanceController::performHoldJobs(JobList jobs)
 {
     // Called by master write thread

@@ -9,6 +9,7 @@
 #include "ibucketmodifiedhandler.h"
 #include "move_operation_limiter.h"
 #include "document_db_maintenance_config.h"
+#include "document_db_explorer.h"
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_notifier.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/documentmetastore/i_document_meta_store.h>
@@ -87,6 +88,7 @@ BucketMoveJobV2::BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &
       _stopped(false),
       _startedCount(0),
       _executedCount(0),
+      _bucketsPending(0),
       _bucketCreateNotifier(bucketCreateNotifier),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
       _bucketStateChangedNotifier(bucketStateChangedNotifier),
@@ -289,6 +291,7 @@ BucketMoveJobV2::moveDocs(size_t maxDocsToMove) {
             } else {
                 _movers.erase(_movers.begin() + index);
             }
+            _bucketsPending.store(_movers.size() + _buckets2Move.size(), std::memory_order_relaxed);
         }
     }
     return done();
@@ -338,6 +341,7 @@ BucketMoveJobV2::backFillMovers() {
     while ( ! _buckets2Move.empty() && (_movers.size() < _movers.capacity())) {
         _movers.push_back(greedyCreateMover());
     }
+    _bucketsPending.store(_movers.size() + _buckets2Move.size(), std::memory_order_relaxed);
 }
 void
 BucketMoveJobV2::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc)
@@ -378,6 +382,13 @@ BucketMoveJobV2::onStop() {
     while ( ! inSync() ) {
         std::this_thread::sleep_for(1ms);
     }
+}
+
+void
+BucketMoveJobV2::updateMetrics(DocumentDBTaggedMetrics & metrics) {
+    // This is an over estimate to ensure we do not count down to zero until everything has been and completed and acked.
+    metrics.bucketMove.bucketsPending.set(_bucketsPending.load(std::memory_order_relaxed) +
+                                          getLimiter().numPending());
 }
 
 } // namespace proton
