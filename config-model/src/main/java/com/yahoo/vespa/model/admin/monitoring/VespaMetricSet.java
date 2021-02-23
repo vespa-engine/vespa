@@ -439,6 +439,9 @@ public class VespaMetricSet {
         metrics.add(new Metric("content.proton.documentdb.notready.lid_space.used_lids.last"));
         metrics.add(new Metric("content.proton.documentdb.removed.lid_space.used_lids.last"));
 
+        // bucket move
+        metrics.add(new Metric("content.proton.documentdb.bucket_move.buckets_pending.last"));
+
         // resource usage
         metrics.add(new Metric("content.proton.resource_usage.disk.average"));
         metrics.add(new Metric("content.proton.resource_usage.disk_utilization.average"));
