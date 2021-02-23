@@ -73,6 +73,9 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
                             .pathWhitelist(INSECURE_WHITELISTED_PATHS)
                             .enable(enforceClientAuth));
         }
+        // Disables TLSv1.3 as it causes some browsers to prompt user for client certificate (when connector has 'want' auth)
+        connectorBuilder.ssl.enabledProtocols(List.of("TLSv1.2"));
+
         connectorBuilder
                 .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder().enabled(true).mixedMode(true))
                 .idleTimeout(Duration.ofMinutes(3).toSeconds())
