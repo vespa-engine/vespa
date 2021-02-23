@@ -8,6 +8,7 @@ import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
+import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
@@ -375,10 +376,6 @@ public class ContentCluster extends AbstractConfigProducer implements
             return admin.getClusterControllers();
         }
 
-        private Collection<HostResource> getControllerHosts(NodesSpecification nodesSpecification, Admin admin, String clusterName, ConfigModelContext context) {
-            return nodesSpecification.provision(admin.hostSystem(), ClusterSpec.Type.admin, ClusterSpec.Id.from(clusterName), context.getDeployLogger(), false).keySet();
-        }
-
         private List<HostResource> drawControllerHosts(int count, StorageGroup rootGroup) {
             List<HostResource> hosts = drawControllerHosts(count, false, rootGroup);
             List<HostResource> retiredHosts = drawControllerHosts(count, true, rootGroup);
@@ -433,8 +430,8 @@ public class ContentCluster extends AbstractConfigProducer implements
             if (clusterControllers.getContainers().isEmpty()) {
                 int index = 0;
                 for (HostResource host : hosts) {
-                    var clusterControllerContainer =
-                            new ClusterControllerContainer(clusterControllers, index, multitenant, deployState);
+                    boolean retired = host.spec().membership().map(ClusterMembership::retired).orElse(false);
+                    var clusterControllerContainer = new ClusterControllerContainer(clusterControllers, index, multitenant, deployState, retired);
                     clusterControllerContainer.setHostResource(host);
                     clusterControllerContainer.initService(deployState.getDeployLogger());
                     clusterControllerContainer.setProp("clustertype", "admin");
