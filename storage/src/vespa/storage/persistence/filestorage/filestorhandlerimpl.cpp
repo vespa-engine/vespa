@@ -622,6 +622,11 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
                 source.getBucketId().toString().c_str(), op);
             break;
         }
+        case RunTaskCommand::ID:
+            LOG(debug, "Remapping load for bucket %s for reason %u, "
+                       "for RunTaskCommand request for this bucket.",
+                source.getBucketId().toString().c_str(), op);
+            break;
         default:
             // Fail and log error
         {
