@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.provision.testutils.MockDeployer.ClusterContext;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -76,15 +77,19 @@ public class SwitchRebalancerTest {
         // allocates a new one
         provisionHost("switch2", hostResources, tester);
         provisionHost("switch3", hostResources, tester);
-        for (var cluster : List.of(cluster1, cluster2)) {
+        Set<ClusterSpec.Id> clusters = Set.of(cluster1, cluster2);
+        Set<ClusterSpec.Id> rebalancedClusters = new HashSet<>();
+        for (int i = 0; i < clusters.size(); i++) {
             tester.clock().advance(SwitchRebalancer.waitTimeAfterPreviousDeployment);
             rebalancer.maintain();
-            NodeList allNodes = tester.nodeRepository().nodes().list();
-            NodeList clusterNodes = allNodes.owner(app).cluster(cluster).state(Node.State.active);
-            NodeList retired = clusterNodes.retired();
-            assertEquals("Node is retired in " + cluster, 1, retired.size());
+            NodeList appNodes = tester.nodeRepository().nodes().list().owner(app).state(Node.State.active);
+            NodeList retired = appNodes.retired();
+            ClusterSpec.Id cluster = retired.first().get().allocation().get().membership().cluster().id();
+            assertEquals("Node is retired in " + cluster + " " + retired, 1, retired.size());
+            NodeList clusterNodes = appNodes.cluster(cluster);
             assertEquals("Cluster " + cluster + " allocates nodes on distinct switches", 2,
-                         tester.switchesOf(clusterNodes, allNodes).size());
+                         tester.switchesOf(clusterNodes, tester.nodeRepository().nodes().list()).size());
+            rebalancedClusters.add(cluster);
 
             // Retired node becomes inactive and makes zone stable
             try (var lock = tester.provisioner().lock(app)) {
@@ -93,6 +98,7 @@ public class SwitchRebalancerTest {
                 removeTransaction.commit();
             }
         }
+        assertEquals("Rebalanced all clusters", clusters, rebalancedClusters);
 
         // Next run does nothing
         tester.clock().advance(SwitchRebalancer.waitTimeAfterPreviousDeployment);
