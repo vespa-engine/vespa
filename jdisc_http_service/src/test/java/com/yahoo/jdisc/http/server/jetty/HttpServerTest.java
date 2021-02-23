@@ -48,6 +48,7 @@ import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
+import org.mockito.Mockito;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
@@ -110,6 +111,7 @@ import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
+import static org.mockito.Mockito.atLeast;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -648,7 +650,7 @@ public class HttpServerTest {
                 .build();
         assertHttpsRequestTriggersSslHandshakeException(
                 driver, clientCtx, null, null, "Received fatal alert: bad_certificate");
-        verify(metricConsumer.mockitoMock())
+        verify(metricConsumer.mockitoMock(), atLeast(1))
                 .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_MISSING_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
         Assertions.assertThat(connectionLog.logEntries()).hasSize(1);
@@ -674,7 +676,7 @@ public class HttpServerTest {
         assumeTrue("TLSv1.1 must be enabled in installed JDK", tlsv11Enabled);
 
         assertHttpsRequestTriggersSslHandshakeException(driver, clientCtx, "TLSv1.1", null, "protocol");
-        verify(metricConsumer.mockitoMock())
+        verify(metricConsumer.mockitoMock(), atLeast(1))
                 .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_PROTOCOLS, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
         Assertions.assertThat(connectionLog.logEntries()).hasSize(1);
@@ -698,7 +700,7 @@ public class HttpServerTest {
 
         assertHttpsRequestTriggersSslHandshakeException(
                 driver, clientCtx, null, "TLS_ECDHE_RSA_WITH_AES_128_CBC_SHA", "Received fatal alert: handshake_failure");
-        verify(metricConsumer.mockitoMock())
+        verify(metricConsumer.mockitoMock(), atLeast(1))
                 .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_INCOMPATIBLE_CIPHERS, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
         Assertions.assertThat(connectionLog.logEntries()).hasSize(1);
@@ -726,11 +728,10 @@ public class HttpServerTest {
 
         assertHttpsRequestTriggersSslHandshakeException(
                 driver, clientCtx, null, null, "Received fatal alert: certificate_unknown");
-        verify(metricConsumer.mockitoMock())
+        verify(metricConsumer.mockitoMock(), atLeast(1))
                 .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_INVALID_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
         Assertions.assertThat(connectionLog.logEntries()).hasSize(1);
-        ConnectionLogEntry logEntry = connectionLog.logEntries().get(0);
         assertSslHandshakeFailurePresent(
                 connectionLog.logEntries().get(0), SSLHandshakeException.class, SslHandshakeFailure.INVALID_CLIENT_CERT.failureType());
     }
@@ -754,7 +755,7 @@ public class HttpServerTest {
 
         assertHttpsRequestTriggersSslHandshakeException(
                 driver, clientCtx, null, null, "Received fatal alert: certificate_unknown");
-        verify(metricConsumer.mockitoMock())
+        verify(metricConsumer.mockitoMock(), atLeast(1))
                 .add(MetricDefinitions.SSL_HANDSHAKE_FAILURE_EXPIRED_CLIENT_CERT, 1L, MetricConsumerMock.STATIC_CONTEXT);
         assertTrue(driver.close());
         Assertions.assertThat(connectionLog.logEntries()).hasSize(1);
