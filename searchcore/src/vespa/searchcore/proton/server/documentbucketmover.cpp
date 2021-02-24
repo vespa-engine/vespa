@@ -22,9 +22,12 @@ typedef IDocumentMetaStore::Iterator Iterator;
 
 BucketMover::GuardedMoveOp
 BucketMover::createMoveOperation(MoveKey &key) {
-    if (_source->lidNeedsCommit(key._lid)) {
-        return {};
-    }
+    if (_source->lidNeedsCommit(key._lid)) return {};
+
+    const RawDocumentMetaData &metaNow = _source->meta_store()->getRawMetaData(key._lid);
+    if (metaNow.getGid() != key._gid) return {};
+    if (metaNow.getTimestamp() != key._timestamp) return {};
+
     Document::SP doc(_source->retriever()->getFullDocument(key._lid));
     if (!doc || doc->getId().getGlobalId() != key._gid)
         return {}; // Failed to retrieve document, removed or changed identity
@@ -86,7 +89,7 @@ BucketMover::getKeysToMove(size_t maxDocsToMove) {
 }
 
 std::vector<BucketMover::GuardedMoveOp>
-BucketMover::createMoveOperations(std::vector<MoveKey> &toMove) {
+BucketMover::createMoveOperations(std::vector<MoveKey> toMove) {
     std::vector<GuardedMoveOp> successfulReads;
     successfulReads.reserve(toMove.size());
     for (MoveKey &key : toMove) {
@@ -138,8 +141,9 @@ DocumentBucketMover::moveDocuments(size_t maxDocsToMove, IMoveOperationLimiter &
         return true;
     }
     auto [keys, done] = _impl->getKeysToMove(maxDocsToMove);
-    auto moveOps = _impl->createMoveOperations(keys);
-    bool allOk = keys.size() == moveOps.size();
+    size_t numKeys = keys.size();
+    auto moveOps = _impl->createMoveOperations(std::move(keys));
+    bool allOk = (numKeys == moveOps.size());
     if (done && allOk) {
         _impl->setBucketDone();
     }

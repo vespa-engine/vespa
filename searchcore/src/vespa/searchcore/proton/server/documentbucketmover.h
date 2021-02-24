@@ -76,7 +76,7 @@ public:
     /// Must be called in master thread
     std::pair<std::vector<MoveKey>, bool> getKeysToMove(size_t maxDocsToMove);
     /// Call from any thread
-    std::vector<GuardedMoveOp> createMoveOperations(std::vector<MoveKey> & toMove);
+    std::vector<GuardedMoveOp> createMoveOperations(std::vector<MoveKey> toMove);
     /// Must be called in master thread
     void moveDocuments(std::vector<GuardedMoveOp> moveOps, IDestructorCallbackSP onDone);
     void moveDocument(MoveOperationUP moveOp, IDestructorCallbackSP onDone);
