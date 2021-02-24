@@ -418,6 +418,40 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testCombinedClusterWithZooKeeperFails() {
+        var containerElements = Set.of("jdisc", "container");
+        for (var containerElement : containerElements) {
+            String xmlWithNodes =
+                    "<?xml version='1.0' encoding='utf-8' ?>" +
+                    "<services>" +
+                    "  <" + containerElement + " version='1.0' id='container1'>" +
+                    "     <search/>" +
+                    "     <nodes of='content1'/>" +
+                    "     <zookeeper />" +
+                    "  </" + containerElement + ">" +
+                    "  <content version='1.0' id='content1'>" +
+                    "     <redundancy>2</redundancy>" +
+                    "     <documents>" +
+                    "       <document type='type1' mode='index'/>" +
+                    "     </documents>" +
+                    "     <nodes count='2'>" +
+                    "       <resources vcpu='1' memory='3Gb' disk='9Gb'/>" +
+                    "     </nodes>" +
+                    "   </content>" +
+                    "</services>";
+            VespaModelTester tester = new VespaModelTester();
+            tester.addHosts(2);
+            try {
+                tester.createModel(xmlWithNodes, true);
+                fail("ZooKeeper should not be allowed on combined clusters");
+            }
+            catch (IllegalArgumentException e) {
+                assertEquals("A combined cluster cannot run ZooKeeper", e.getMessage());
+            }
+        }
+    }
+
+    @Test
     public void testUsingNodesAndGroupCountAttributes() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +

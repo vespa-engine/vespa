@@ -225,7 +225,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private void addZooKeeper(ApplicationContainerCluster cluster, Element spec) {
-        if (!hasZooKeeper(spec)) return;
+        if ( ! hasZooKeeper(spec)) return;
         Element nodesElement = XML.getChild(spec, "nodes");
         boolean isCombined = nodesElement != null && nodesElement.hasAttribute("of");
         if (isCombined) {

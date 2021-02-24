@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing
 
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -51,15 +52,15 @@ public class GroupPreparer {
      * @param requestedNodes     a specification of the requested nodes
      * @param surplusActiveNodes currently active nodes which are available to be assigned to this group.
      *                           This method will remove from this list if it finds it needs additional nodes
-     * @param highestIndex       the current highest node index among all active nodes in this cluster.
-     *                           This method will increase this number when it allocates new nodes to the cluster.
+     * @param indices            the next available node indices for this cluster.
+     *                           This method will consume these when it allocates new nodes to the cluster.
      * @return the list of nodes this cluster group will have allocated if activated
      */
     // Note: This operation may make persisted changes to the set of reserved and inactive nodes,
     // but it may not change the set of active nodes, as the active nodes must stay in sync with the
     // active config model which is changed on activate
     public List<Node> prepare(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
-                              List<Node> surplusActiveNodes, MutableInteger highestIndex, int wantedGroups) {
+                              List<Node> surplusActiveNodes, NodeIndices indices, int wantedGroups) {
 
         String allocateOsRequirement = allocateOsRequirementFlag
                 .with(FetchVector.Dimension.APPLICATION_ID, application.serializedForm())
@@ -68,16 +69,16 @@ public class GroupPreparer {
         // Try preparing in memory without global unallocated lock. Most of the time there should be no changes and we
         // can return nodes previously allocated.
         {
-            MutableInteger probePrepareHighestIndex = new MutableInteger(highestIndex.get());
             NodeAllocation probeAllocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                                                               probePrepareHighestIndex, wantedGroups, PROBE_LOCK,
+                                                               indices::probeNext, wantedGroups, PROBE_LOCK,
                                                                allocateOsRequirement);
             if (probeAllocation.fulfilledAndNoChanges()) {
                 List<Node> acceptedNodes = probeAllocation.finalNodes();
                 surplusActiveNodes.removeAll(acceptedNodes);
-                highestIndex.set(probePrepareHighestIndex.get());
+                indices.commitProbe();
                 return acceptedNodes;
             }
+            indices.resetProbe();
         }
 
         // There were some changes, so re-do the allocation with locks
@@ -85,7 +86,7 @@ public class GroupPreparer {
              Mutex allocationLock = nodeRepository.nodes().lockUnallocated()) {
 
             NodeAllocation allocation = prepareAllocation(application, cluster, requestedNodes, surplusActiveNodes,
-                                                          highestIndex, wantedGroups, allocationLock,
+                                                          indices::next, wantedGroups, allocationLock,
                                                           allocateOsRequirement);
 
             if (nodeRepository.zone().getCloud().dynamicProvisioning()) {
@@ -133,11 +134,11 @@ public class GroupPreparer {
     }
 
     private NodeAllocation prepareAllocation(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
-                                             List<Node> surplusActiveNodes, MutableInteger highestIndex, int wantedGroups,
+                                             List<Node> surplusActiveNodes, Supplier<Integer> nextIndex, int wantedGroups,
                                              Mutex allocationLock, String allocateOsRequirement) {
         LockedNodeList allNodes = nodeRepository.nodes().list(allocationLock);
         NodeAllocation allocation = new NodeAllocation(allNodes, application, cluster, requestedNodes,
-                highestIndex, nodeRepository);
+                nextIndex, nodeRepository);
         NodePrioritizer prioritizer = new NodePrioritizer(
                 allNodes, application, cluster, requestedNodes, wantedGroups,
                 nodeRepository.zone().getCloud().dynamicProvisioning(), nodeRepository.nameResolver(),
