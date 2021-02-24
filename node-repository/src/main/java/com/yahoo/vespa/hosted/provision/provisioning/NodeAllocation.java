@@ -6,8 +6,8 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -120,7 +120,7 @@ class NodeAllocation {
                 }
             }
             else if (! saturated() && hasCompatibleFlavor(candidate)) {
-                if ( ! nodeResourceLimits.isWithinRealLimits(candidate, cluster)) {
+                if (requestedNodes.type() == NodeType.tenant && ! nodeResourceLimits.isWithinRealLimits(candidate, cluster)) {
                     ++rejectedDueToInsufficientRealResources;
                     continue;
                 }
