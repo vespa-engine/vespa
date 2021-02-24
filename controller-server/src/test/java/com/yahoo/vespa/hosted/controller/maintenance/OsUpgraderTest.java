@@ -164,6 +164,48 @@ public class OsUpgraderTest {
                                                         .allMatch(node -> node.currentVersion().equals(version)));
     }
 
+    @Test
+    public void upgrade_os_nodes_choose_newer_version() {
+        CloudName cloud = CloudName.from("cloud");
+        ZoneApi zone1 = zone("dev.us-east-1", cloud);
+        ZoneApi zone2 = zone("prod.us-west-1", cloud);
+        UpgradePolicy upgradePolicy = UpgradePolicy.create()
+                                                   .upgrade(zone1)
+                                                   .upgrade(zone2);
+        OsUpgrader osUpgrader = osUpgrader(upgradePolicy, SystemName.cd, cloud, false);
+
+        // Bootstrap system
+        tester.configServer().bootstrap(List.of(zone1.getId(), zone2.getId()),
+                                        List.of(SystemApplication.tenantHost));
+
+        // New OS version released
+        Version version = Version.fromString("7.1");
+        tester.controller().upgradeOsIn(cloud, Version.fromString("7.0"), Optional.empty(), false);
+        tester.controller().upgradeOsIn(cloud, version, Optional.empty(), false);
+        statusUpdater.maintain();
+
+        // zone 1 upgrades
+        osUpgrader.maintain();
+        assertWanted(version, SystemApplication.tenantHost, zone1.getId());
+        Version chosenVersion = Version.fromString("7.1.1"); // Upgrade mechanism chooses a slightly newer version
+        completeUpgrade(version, chosenVersion, SystemApplication.tenantHost, zone1.getId());
+        statusUpdater.maintain();
+        assertEquals(3, nodesOn(chosenVersion).size());
+
+        // zone 2 upgrades
+        osUpgrader.maintain();
+        assertWanted(version, SystemApplication.tenantHost, zone2.getId());
+        completeUpgrade(version, chosenVersion, SystemApplication.tenantHost, zone2.getId());
+        statusUpdater.maintain();
+        assertEquals(6, nodesOn(chosenVersion).size());
+
+        // No more upgrades
+        osUpgrader.maintain();
+        assertWanted(version, SystemApplication.tenantHost, zone1.getId(), zone2.getId());
+        assertTrue("All nodes on target version or newer", tester.controller().osVersionStatus().nodesIn(cloud).stream()
+                                                                 .noneMatch(node -> node.currentVersion().isBefore(version)));
+    }
+
     private Duration upgradeBudget(ZoneId zone, SystemApplication application, Version version) {
         var upgradeBudget = tester.configServer().nodeRepository().osUpgradeBudget(zone, application.nodeType(), version);
         assertTrue("Expected budget for upgrade to " + version + " of " + application.id() + " in " + zone,
@@ -216,7 +258,11 @@ public class OsUpgraderTest {
 
     /** Simulate OS upgrade of nodes allocated to application. In a real system this is done by the node itself */
     private void completeUpgrade(Version version, SystemApplication application, ZoneId... zones) {
-        assertWanted(version, application, zones);
+        completeUpgrade(version, version, application, zones);
+    }
+
+    private void completeUpgrade(Version wantedVersion, Version version, SystemApplication application, ZoneId... zones) {
+        assertWanted(wantedVersion, application, zones);
         for (ZoneId zone : zones) {
             for (Node node : nodesRequiredToUpgrade(zone, application)) {
                 nodeRepository().putNodes(zone, new Node.Builder(node).wantedOsVersion(version).currentOsVersion(version).build());
