@@ -61,10 +61,11 @@ class Preparer {
     private List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
         List<Node> surplusNodes = findNodesInRemovableGroups(application, cluster, wantedGroups);
 
-        NodeList nodesInCluster = nodeRepository.nodes().list(Node.State.allocatedStates().toArray(new Node.State[0]))
-                                                .owner(application)
-                                                .matching(node -> node.allocation().get().membership().cluster().satisfies(cluster));
-        NodeIndices indices = new NodeIndices(nodesInCluster, ! cluster.type().isContent());
+        List<Integer> usedIndices = nodeRepository.nodes().list(Node.State.allocatedStates().toArray(new Node.State[0]))
+                                                  .owner(application)
+                                                  .cluster(cluster.id())
+                                                  .mapToList(node -> node.allocation().get().membership().index());
+        NodeIndices indices = new NodeIndices(usedIndices, ! cluster.type().isContent());
         List<Node> acceptedNodes = new ArrayList<>();
         for (int groupIndex = 0; groupIndex < wantedGroups; groupIndex++) {
             ClusterSpec clusterGroup = cluster.with(Optional.of(ClusterSpec.Group.from(groupIndex)));

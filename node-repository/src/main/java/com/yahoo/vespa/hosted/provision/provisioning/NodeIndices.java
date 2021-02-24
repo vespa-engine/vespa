@@ -15,15 +15,14 @@ import static java.util.Comparator.naturalOrder;
  */
 class NodeIndices {
 
-    private final boolean compact;
     private final List<Integer> used;
 
     private int last;
     private int probe;
 
-    NodeIndices(NodeList nodes, boolean compact) {
-        this.compact = compact;
-        this.used = nodes.mapToList(node -> node.allocation().get().membership().index());
+    /** Pass the list of current indices in the cluster, and whether to fill gaps or not. */
+    NodeIndices(List<Integer> used, boolean compact) {
+        this.used = List.copyOf(used);
         this.last = compact ? -1 : used.stream().max(naturalOrder()).orElse(-1);
         this.probe = last;
     }
@@ -38,13 +37,13 @@ class NodeIndices {
         return last;
     }
 
-    /** Returns the next available index, without committing to using it. May be called multiple times. */
+    /** Returns the next available index, without committing to using it. Yields increasing indices when called multiple times. */
     int probeNext() {
         while (used.contains(++probe));
         return probe;
     }
 
-    /** Commits to using any indices returned by an ongoing probe. */
+    /** Commits to using all indices returned by an ongoing probe. */
     void commitProbe() {
         last = probe;
     }
