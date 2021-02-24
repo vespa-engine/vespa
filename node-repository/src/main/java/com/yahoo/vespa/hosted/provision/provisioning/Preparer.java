@@ -61,7 +61,7 @@ class Preparer {
     private List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
         List<Node> surplusNodes = findNodesInRemovableGroups(application, cluster, wantedGroups);
 
-        List<Integer> usedIndices = nodeRepository.nodes().list(Node.State.allocatedStates().toArray(new Node.State[0]))
+        List<Integer> usedIndices = nodeRepository.nodes().list()
                                                   .owner(application)
                                                   .cluster(cluster.id())
                                                   .mapToList(node -> node.allocation().get().membership().index());
