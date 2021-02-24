@@ -414,15 +414,16 @@ HTTPClient::ContentLengthReader::Read(HTTPClient &client,
         client._bufpos += fromBuffer;
         client._dataRead += fromBuffer;
         res = fromBuffer;
-        if (client._dataRead >= client._contentLength) {
-            client._dataDone = true;
-            return res;
-        }
+    }
+    if (client._dataRead >= client._contentLength) {
+        client._dataDone = true;
+        return res;
     }
     if ((len - fromBuffer) > (len >> 1)) {
         readLen = (len - fromBuffer
                    < client._contentLength - client._dataRead) ?
                   len - fromBuffer : client._contentLength - client._dataRead;
+        assert(readLen > 0);
         readRes = client._socket->read(static_cast<char *>(buf)
                                        + fromBuffer, readLen);
         if (readRes < 0) {
