@@ -8,6 +8,7 @@ import com.yahoo.config.model.ConfigModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
+import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
@@ -169,7 +170,7 @@ public class ContentCluster extends AbstractConfigProducer implements
 
             if (context.getParentProducer().getRoot() == null) return c;
 
-            addClusterControllers(context, c.rootGroup, contentElement, c.clusterId, c);
+            addClusterControllers(context, c.rootGroup, contentElement, c.clusterId, c, deployState);
             return c;
         }
 
@@ -286,7 +287,8 @@ public class ContentCluster extends AbstractConfigProducer implements
                                            StorageGroup rootGroup,
                                            ModelElement contentElement,
                                            String contentClusterName,
-                                           ContentCluster contentCluster) {
+                                           ContentCluster contentCluster,
+                                           DeployState deployState) {
             if (admin == null) return; // only in tests
             if (contentCluster.getPersistence() == null) return;
 
@@ -303,9 +305,9 @@ public class ContentCluster extends AbstractConfigProducer implements
             else if (admin.multitenant()) {
                 String clusterName = contentClusterName + "-controllers";
                 if (context.properties().dedicatedClusterControllerCluster())
-                    clusterControllers = getDedicatedSharedControllers(contentElement, admin, context);
+                    clusterControllers = getDedicatedSharedControllers(contentElement, admin, context, deployState);
                 else {
-                    clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone"),
+                    clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone", deployState),
                                                                   drawControllerHosts(3, rootGroup),
                                                                   clusterName,
                                                                   true,
@@ -351,7 +353,7 @@ public class ContentCluster extends AbstractConfigProducer implements
         public static final NodeResources clusterControllerResources = new NodeResources(0.5, 2, 10, 0.3, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);
 
         private ClusterControllerContainerCluster getDedicatedSharedControllers(ModelElement contentElement, Admin admin,
-                                                                                ConfigModelContext context) {
+                                                                                ConfigModelContext context, DeployState deployState) {
             if (admin.getClusterControllers() == null) {
                 NodesSpecification spec = NodesSpecification.exclusiveAndRequiredFromSharedParents(3,
                                                                                                    clusterControllerResources,
@@ -365,17 +367,13 @@ public class ContentCluster extends AbstractConfigProducer implements
                                                                 true)
                                                      .keySet();
 
-                admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(admin, "standalone"),
+                admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(admin, "standalone", deployState),
                                                                      hosts,
                                                                      "cluster-controllers",
                                                                      true,
                                                                      context.getDeployState()));
             }
             return admin.getClusterControllers();
-        }
-
-        private Collection<HostResource> getControllerHosts(NodesSpecification nodesSpecification, Admin admin, String clusterName, ConfigModelContext context) {
-            return nodesSpecification.provision(admin.hostSystem(), ClusterSpec.Type.admin, ClusterSpec.Id.from(clusterName), context.getDeployLogger(), false).keySet();
         }
 
         private List<HostResource> drawControllerHosts(int count, StorageGroup rootGroup) {
@@ -432,8 +430,11 @@ public class ContentCluster extends AbstractConfigProducer implements
             if (clusterControllers.getContainers().isEmpty()) {
                 int index = 0;
                 for (HostResource host : hosts) {
-                    var clusterControllerContainer =
-                            new ClusterControllerContainer(clusterControllers, index, multitenant, deployState);
+                    int ccIndex = deployState.getProperties().dedicatedClusterControllerCluster()
+                                  ? host.spec().membership().map(ClusterMembership::index).orElse(index)
+                                  : index;
+                    boolean retired = host.spec().membership().map(ClusterMembership::retired).orElse(false);
+                    var clusterControllerContainer = new ClusterControllerContainer(clusterControllers, ccIndex, multitenant, deployState, retired);
                     clusterControllerContainer.setHostResource(host);
                     clusterControllerContainer.initService(deployState.getDeployLogger());
                     clusterControllerContainer.setProp("clustertype", "admin");

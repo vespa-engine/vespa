@@ -18,7 +18,7 @@ import java.lang.annotation.Target;
  * This is different the inheritance that {@link java.lang.annotation.Inherited} provides, where sub-classes can either
  * inherit or override the annotation from the super class.
  *
- * NOTE: This annotation is will only have effect on subclasses of {@link com.yahoo.vespa.model.Service}.
+ * NOTE: This annotation will only have effect on subclasses of {@link com.yahoo.vespa.model.Service}.
  *       Do not use this annotation on other types config producers.
  *
  * @author bjorncs

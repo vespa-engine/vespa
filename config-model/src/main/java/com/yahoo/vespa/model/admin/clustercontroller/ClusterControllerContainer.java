@@ -47,8 +47,9 @@ public class ClusterControllerContainer extends Container implements
             AbstractConfigProducer<?> parent,
             int index,
             boolean runStandaloneZooKeeper,
-            DeployState deployState) {
-        super(parent, "" + index, index, deployState.isHosted());
+            DeployState deployState,
+            boolean retired) {
+        super(parent, "" + index, retired, index, deployState.isHosted());
         this.featureFlags = deployState.featureFlags();
         addHandler("clustercontroller-status",
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StatusHandler",
