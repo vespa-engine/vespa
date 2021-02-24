@@ -243,7 +243,7 @@ public class MetricsReporterTest {
         metricsReporter.maintain();
         assertEquals(1D, getMetric("nodes.nonActiveFraction", metric, dimensions).doubleValue(), Double.MIN_VALUE);
         assertEquals(0, getMetric("nodes.active", metric, dimensions));
-        assertEquals(3, getMetric("nodes.nonActive", metric, dimensions));
+        assertEquals(4, getMetric("nodes.nonActive", metric, dimensions));
     }
 
     @Test

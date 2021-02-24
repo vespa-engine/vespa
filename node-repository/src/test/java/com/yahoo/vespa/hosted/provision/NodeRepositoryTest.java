@@ -11,8 +11,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Arrays;
-import java.util.HashSet;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -66,19 +64,16 @@ public class NodeRepositoryTest {
     @Test
     public void only_remove_tenant_docker_containers_for_new_allocations() {
         NodeRepositoryTester tester = new NodeRepositoryTester();
-        tester.addHost("host1", "host1", "default", NodeType.tenant);
-        tester.addHost("host2", "host2", "docker", NodeType.tenant);
+        tester.addHost("host1", "host1", "default", NodeType.host);
+        tester.addHost("tenant1", "tenant1", "docker", NodeType.tenant);
         tester.addHost("cfg1", "cfg1", "docker", NodeType.config);
-
-        tester.setNodeState("host1", Node.State.dirty);
-        tester.setNodeState("host2", Node.State.dirty);
-        tester.setNodeState("cfg1", Node.State.dirty);
 
         tester.nodeRepository().nodes().markNodeAvailableForNewAllocation("host1", Agent.system, getClass().getSimpleName());
         assertEquals(Node.State.ready, tester.nodeRepository().nodes().node("host1").get().state());
 
-        tester.nodeRepository().nodes().markNodeAvailableForNewAllocation("host2", Agent.system, getClass().getSimpleName());
-        assertFalse(tester.nodeRepository().nodes().node("host2").isPresent());
+        tester.nodeRepository().nodes().deallocateRecursively("tenant1", Agent.system, getClass().getSimpleName());
+        tester.nodeRepository().nodes().markNodeAvailableForNewAllocation("tenant1", Agent.system, getClass().getSimpleName());
+        assertFalse(tester.nodeRepository().nodes().node("tenant1").isPresent());
 
         tester.nodeRepository().nodes().markNodeAvailableForNewAllocation("cfg1", Agent.system, getClass().getSimpleName());
         assertEquals(Node.State.ready, tester.nodeRepository().nodes().node("cfg1").get().state());
@@ -89,8 +84,6 @@ public class NodeRepositoryTest {
         NodeRepositoryTester tester = new NodeRepositoryTester();
         tester.addHost("host1", "host1", "default", NodeType.tenant);
         tester.addHost("host2", "host2", "default", NodeType.tenant);
-        tester.setNodeState("host1", Node.State.dirty);
-        tester.setNodeState("host2", Node.State.dirty);
 
         Node node2 = tester.nodeRepository().nodes().node("host2").orElseThrow();
         var reportsBuilder = new Reports.Builder(node2.reports());
@@ -229,7 +222,7 @@ public class NodeRepositoryTest {
 
         // Should be OK to dirty host2 as it is in provisioned and its only child is in failed
         tester.nodeRepository().nodes().deallocateRecursively("host2", Agent.system, NodeRepositoryTest.class.getSimpleName());
-        assertEquals(asSet("host2", "node20"), filterNodes(tester, node -> node.state() == Node.State.dirty));
+        assertEquals(Set.of("host2", "node20"), filterNodes(tester, node -> node.state() == Node.State.dirty));
 
         // Cant dirty host1, node11 is ready and node12 is active
         try {
@@ -237,7 +230,7 @@ public class NodeRepositoryTest {
             fail("Should not be able to dirty host1");
         } catch (IllegalArgumentException ignored) { } // Expected;
 
-        assertEquals(asSet("host2", "node20"), filterNodes(tester, node -> node.state() == Node.State.dirty));
+        assertEquals(Set.of("host2", "node20"), filterNodes(tester, node -> node.state() == Node.State.dirty));
     }
 
     @Test
@@ -273,14 +266,8 @@ public class NodeRepositoryTest {
         assertEquals(Node.State.breakfixed, node.state());
     }
 
-    private static Set<String> asSet(String... elements) {
-        return new HashSet<>(Arrays.asList(elements));
-    }
-
     private static Set<String> filterNodes(NodeRepositoryTester tester, Predicate<Node> filter) {
-        return tester.nodeRepository().nodes()
-                .list().stream()
-                .filter(filter)
+        return tester.nodeRepository().nodes().list().matching(filter).stream()
                 .map(Node::hostname)
                 .collect(Collectors.toSet());
     }

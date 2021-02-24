@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -509,7 +510,7 @@ public final class Node implements Nodelike {
         }
 
         public static Set<State> allocatedStates() {
-            return Set.of(reserved, active, inactive, failed, parked);
+            return EnumSet.of(reserved, active, inactive, dirty, failed, parked);
         }
 
     }
