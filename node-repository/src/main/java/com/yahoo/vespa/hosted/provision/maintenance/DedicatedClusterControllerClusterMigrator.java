@@ -51,6 +51,7 @@ public class DedicatedClusterControllerClusterMigrator extends ApplicationMainta
 
         return nodeRepository().applications().ids().stream()
                                .sorted()
+                               .filter(id -> ! id.instance().isTester())
                                .filter(this::isEligible)
                                .filter(this::hasNotSwitched)
                                .filter(this::isQuiescent)
