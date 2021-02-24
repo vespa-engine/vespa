@@ -31,21 +31,40 @@ public class SyncFileInfoTest {
     private static final Path vespaLogPath2 = fileSystem.getPath("/opt/vespa/logs/vespa.log-2021-02-12");
 
     @Test
-    public void log_files_test() {
-        assertForLogFile(accessLogPath1, null, null);
-        assertForLogFile(accessLogPath2, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/access/access.log.20210212.zst", NONE);
-        assertForLogFile(accessLogPath3, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/access/access-json.log.20210213.zst", NONE);
-        assertForLogFile(accessLogPath4, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/access/JsonAccessLog.default.20210214.zst", NONE);
+    public void access_logs() {
+        assertForLogFile(accessLogPath1, null, null, true);
+        assertForLogFile(accessLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/access/access.log.20210211.zst", ZSTD, false);
 
-        assertForLogFile(connectionLogPath1, null, null);
-        assertForLogFile(connectionLogPath2, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/connection/ConnectionLog.default.20210212.zst", NONE);
+        assertForLogFile(accessLogPath2, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/access/access.log.20210212.zst", NONE, true);
+        assertForLogFile(accessLogPath2, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/access/access.log.20210212.zst", NONE, false);
 
-        assertForLogFile(vespaLogPath1, null, null);
-        assertForLogFile(vespaLogPath2, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/vespa/vespa.log-2021-02-12.zst", ZSTD);
+        assertForLogFile(accessLogPath3, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/access/access-json.log.20210213.zst", NONE, true);
+        assertForLogFile(accessLogPath3, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/access/access-json.log.20210213.zst", NONE, false);
+
+        assertForLogFile(accessLogPath4, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/access/JsonAccessLog.default.20210214.zst", NONE, true);
+        assertForLogFile(accessLogPath4, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/access/JsonAccessLog.default.20210214.zst", NONE, false);
     }
 
-    private static void assertForLogFile(Path srcPath, String destination, SyncFileInfo.Compression compression) {
-        Optional<SyncFileInfo> sfi = SyncFileInfo.forLogFile(nodeArchiveUri, srcPath);
+    @Test
+    public void connection_logs() {
+        assertForLogFile(connectionLogPath1, null, null, true);
+        assertForLogFile(connectionLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/connection/ConnectionLog.default.20210210.zst", ZSTD, false);
+
+        assertForLogFile(connectionLogPath2, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/connection/ConnectionLog.default.20210212.zst", NONE, true);
+        assertForLogFile(connectionLogPath2, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/connection/ConnectionLog.default.20210212.zst", NONE, false);
+    }
+
+    @Test
+    public void vespa_logs() {
+        assertForLogFile(vespaLogPath1, null, null, true);
+        assertForLogFile(vespaLogPath1, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/vespa/vespa.log.zst", ZSTD, false);
+
+        assertForLogFile(vespaLogPath2, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/vespa/vespa.log-2021-02-12.zst", ZSTD, true);
+        assertForLogFile(vespaLogPath2, "s3://vespa-data-bucket/vespa/music/main/h432a/logs/vespa/vespa.log-2021-02-12.zst", ZSTD, false);
+    }
+
+    private static void assertForLogFile(Path srcPath, String destination, SyncFileInfo.Compression compression, boolean rotatedOnly) {
+        Optional<SyncFileInfo> sfi = SyncFileInfo.forLogFile(nodeArchiveUri, srcPath, rotatedOnly);
         assertEquals(destination, sfi.map(SyncFileInfo::destination).map(URI::toString).orElse(null));
         assertEquals(compression, sfi.map(SyncFileInfo::uploadCompression).orElse(null));
     }

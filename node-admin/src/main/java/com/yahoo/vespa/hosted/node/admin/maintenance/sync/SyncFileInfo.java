@@ -35,16 +35,19 @@ public class SyncFileInfo {
         return uploadCompression;
     }
 
-    public static Optional<SyncFileInfo> forLogFile(URI uri, Path logFile) {
+    public static Optional<SyncFileInfo> forLogFile(URI uri, Path logFile, boolean rotatedOnly) {
         String filename = logFile.getFileName().toString();
-        Compression compression = Compression.NONE;
+        Compression compression;
         String dir = null;
 
-        if (filename.startsWith("vespa.log-")) {
+        if ((!rotatedOnly && filename.equals("vespa.log")) || filename.startsWith("vespa.log-")) {
             dir = "logs/vespa/";
             compression = Compression.ZSTD;
-        } else if (filename.endsWith(".zst")) {
-            if (filename.startsWith("JsonAccessLog.") || filename.startsWith("access"))
+        } else {
+            compression = filename.endsWith(".zst") ? Compression.NONE : Compression.ZSTD;
+            if (rotatedOnly && compression != Compression.NONE)
+                dir = null;
+            else if (filename.startsWith("JsonAccessLog.") || filename.startsWith("access"))
                 dir = "logs/access/";
             else if (filename.startsWith("ConnectionLog."))
                 dir = "logs/connection/";

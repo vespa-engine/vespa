@@ -452,6 +452,7 @@ public class NodeAgentImpl implements NodeAgent {
                 stopServicesIfNeeded(context);
                 break;
             case active:
+                storageMaintainer.syncLogs(context, true);
                 storageMaintainer.cleanDiskIfFull(context);
                 storageMaintainer.handleCoreDumpsForContainer(context, container);
 
@@ -499,7 +500,6 @@ public class NodeAgentImpl implements NodeAgent {
                     orchestrator.resume(context.hostname().value());
                     suspendedInOrchestrator = false;
                 }
-                storageMaintainer.syncLogs(context);
                 break;
             case provisioned:
                 nodeRepository.setNodeState(context.hostname().value(), NodeState.dirty);
@@ -508,6 +508,7 @@ public class NodeAgentImpl implements NodeAgent {
                 removeContainerIfNeededUpdateContainerState(context, container);
                 context.log(logger, "State is " + node.state() + ", will delete application storage and mark node as ready");
                 credentialsMaintainers.forEach(maintainer -> maintainer.clearCredentials(context));
+                storageMaintainer.syncLogs(context, false);
                 storageMaintainer.archiveNodeStorage(context);
                 updateNodeRepoWithCurrentAttributes(context);
                 nodeRepository.setNodeState(context.hostname().value(), NodeState.ready);
