@@ -118,7 +118,9 @@ public class ConfigFileBasedTlsContext implements TlsContext {
                 .build();
         List<String> acceptedCiphers = options.getAcceptedCiphers();
         Set<String> ciphers = acceptedCiphers.isEmpty() ? TlsContext.ALLOWED_CIPHER_SUITES : new HashSet<>(acceptedCiphers);
-        return new DefaultTlsContext(sslContext, ciphers, peerAuthentication);
+        List<String> acceptedProtocols = options.getAcceptedProtocols();
+        Set<String> protocols = acceptedProtocols.isEmpty() ? TlsContext.ALLOWED_PROTOCOLS : new HashSet<>(acceptedProtocols);
+        return new DefaultTlsContext(sslContext, ciphers, protocols, peerAuthentication);
     }
 
     // Wrapped methods from TlsContext
