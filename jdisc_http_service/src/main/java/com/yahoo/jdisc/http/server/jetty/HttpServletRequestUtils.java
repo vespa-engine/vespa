@@ -2,7 +2,6 @@
 package com.yahoo.jdisc.http.server.jetty;
 
 import org.eclipse.jetty.server.HttpConnection;
-import org.eclipse.jetty.server.ServerConnector;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -21,8 +20,19 @@ public class HttpServletRequestUtils {
      * @return the actual local port of the underlying Jetty connector
      */
     public static int getConnectorLocalPort(HttpServletRequest request) {
-        ServerConnector jettyConnector = (ServerConnector) getConnection(request).getConnector();
-        return jettyConnector.getLocalPort();
+        JDiscServerConnector connector = (JDiscServerConnector) getConnection(request).getConnector();
+        int actualLocalPort = connector.getLocalPort();
+        int localPortIfConnectorUnopened = -1;
+        int localPortIfConnectorClosed = -2;
+        if (actualLocalPort == localPortIfConnectorUnopened || actualLocalPort == localPortIfConnectorClosed) {
+            int configuredLocalPort = connector.listenPort();
+            int localPortEphemeralPort = 0;
+            if (configuredLocalPort == localPortEphemeralPort) {
+                throw new IllegalStateException("Unable to determine connector's listen port");
+            }
+            return configuredLocalPort;
+        }
+        return actualLocalPort;
     }
 
 }
