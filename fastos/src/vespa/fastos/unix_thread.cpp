@@ -4,6 +4,10 @@
 #include <thread>
 #include <unistd.h>
 
+#ifdef __linux__
+extern "C" { size_t __pthread_get_minstack(const pthread_attr_t *); }
+#endif
+
 namespace {
 #ifdef __linux__
    std::atomic_size_t _G_nextCpuId(0);
@@ -40,8 +44,6 @@ bool FastOS_UNIX_Thread::Initialize (int stackSize, int stackGuardSize)
     pthread_attr_init(&attr);
 
     pthread_attr_setscope(&attr, PTHREAD_SCOPE_SYSTEM);
-
-    pthread_attr_setstacksize(&attr, stackSize);
 #ifdef __linux__
     if (_G_maxNumCpus > 0) {
         int cpuid = _G_nextCpuId.fetch_add(1)%_G_maxNumCpus;
@@ -60,6 +62,13 @@ bool FastOS_UNIX_Thread::Initialize (int stackSize, int stackGuardSize)
     }
 
     pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_JOINABLE);
+
+    size_t adjusted_stack_size = stackSize;
+#ifdef __linux__
+    ssize_t stack_needed_by_system = __pthread_get_minstack(&attr);
+    adjusted_stack_size += stack_needed_by_system;
+#endif
+    pthread_attr_setstacksize(&attr, adjusted_stack_size);
 
     rc = (0 == pthread_create(&_handle, &attr, FastOS_ThreadHook, this));
     if (rc)
