@@ -32,7 +32,7 @@ class InternalCommand : public StorageCommand {
 
 public:
     InternalCommand(uint32_t type);
-    ~InternalCommand();
+    ~InternalCommand() override;
 
     uint32_t getType() const { return _type; }
 
@@ -54,7 +54,7 @@ class InternalReply : public StorageReply {
 
 public:
     InternalReply(uint32_t type, const InternalCommand& cmd);
-    ~InternalReply();
+    ~InternalReply() override;
 
     uint32_t getType() const { return _type; }
 

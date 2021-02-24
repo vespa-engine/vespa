@@ -9,11 +9,12 @@ namespace storage::spi {
 /**
  * Simple Bucket task that wraps a lambda that does the job.
  */
-template<class FunctionType>
+template<class FunctionType, class FailedFunction>
 class LambdaBucketTask : public BucketTask {
 public:
-    explicit LambdaBucketTask(FunctionType &&func)
-            : _func(std::move(func))
+    explicit LambdaBucketTask(FunctionType &&func, FailedFunction &&failed)
+        : _func(std::move(func)),
+          _failed(std::move(failed))
     {}
 
     ~LambdaBucketTask() override = default;
@@ -21,16 +22,20 @@ public:
     void run(const Bucket & bucket, std::shared_ptr<vespalib::IDestructorCallback> onComplete) override {
         _func(bucket, std::move(onComplete));
     }
+    void fail(const Bucket & bucket) override {
+        _failed(bucket);
+    }
 
 private:
-    FunctionType _func;
+    FunctionType   _func;
+    FailedFunction _failed;
 };
 
-template<class FunctionType>
+template<class FunctionType, class FailedFunction>
 std::unique_ptr<BucketTask>
-makeBucketTask(FunctionType &&function) {
-    return std::make_unique<LambdaBucketTask<std::decay_t<FunctionType>>>
-    (std::forward<FunctionType>(function));
+makeBucketTask(FunctionType &&function, FailedFunction && failed) {
+    return std::make_unique<LambdaBucketTask<std::decay_t<FunctionType>, std::decay_t<FailedFunction>>>
+    (std::forward<FunctionType>(function), std::forward<FailedFunction>(failed));
 }
     
 }

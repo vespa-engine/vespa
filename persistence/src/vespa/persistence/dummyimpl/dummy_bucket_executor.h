@@ -17,7 +17,7 @@ class DummyBucketExecutor : public BucketExecutor {
 public:
     DummyBucketExecutor(size_t numExecutors);
     ~DummyBucketExecutor() override;
-    std::unique_ptr<BucketTask> execute(const Bucket & bucket, std::unique_ptr<BucketTask> task) override;
+    void execute(const Bucket & bucket, std::unique_ptr<BucketTask> task) override;
     void sync();
 private:
     std::unique_ptr<vespalib::SyncableThreadExecutor> _executor;

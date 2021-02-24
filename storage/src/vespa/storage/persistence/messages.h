@@ -263,6 +263,7 @@ class RunTaskReply : public api::InternalReply
 {
 public:
     explicit RunTaskReply(const RunTaskCommand&);
+    ~RunTaskReply();
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
 private:
     static constexpr uint32_t ID = 1012;

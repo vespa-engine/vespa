@@ -565,8 +565,7 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
         // Fail with bucket not found if op != MOVE
         api::BucketCommand& cmd(static_cast<api::BucketCommand&>(msg));
         if (cmd.getBucket() == source) {
-            if (op == MOVE) {
-            } else {
+            if (op != MOVE) {
                 returnCode = api::ReturnCode(api::ReturnCode::BUCKET_DELETED, splitOrJoin(op));
             }
         }
@@ -597,8 +596,7 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
             // Move to correct queue if op == MOVE
             // Fail with bucket not found if op != MOVE
             if (bucket == source) {
-                if (op == MOVE) {
-                } else {
+                if (op != MOVE) {
                     returnCode = api::ReturnCode(api::ReturnCode::BUCKET_DELETED, splitOrJoin(op));
                 }
             }
@@ -608,8 +606,7 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
             // Move to correct queue if op == MOVE
             // Fail with bucket not found if op != MOVE
             if (bucket == source) {
-                if (op == MOVE) {
-                } else {
+                if (op != MOVE) {
                     returnCode = api::ReturnCode(api::ReturnCode::BUCKET_DELETED, splitOrJoin(op));
                 }
             }
@@ -622,6 +619,13 @@ FileStorHandlerImpl::remapMessage(api::StorageMessage& msg, const document::Buck
                 source.getBucketId().toString().c_str(), op);
             break;
         }
+        case RunTaskCommand::ID:
+            LOG(debug, "While remapping load for bucket %s for reason %u, "
+                       "we fail the RunTaskCommand.",
+                source.getBucketId().toString().c_str(), op);
+            returnCode = api::ReturnCode(api::ReturnCode::INTERNAL_FAILURE,
+                                         "Will not run task that should be remapped.");
+            break;
         default:
             // Fail and log error
         {

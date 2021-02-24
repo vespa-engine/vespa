@@ -20,16 +20,16 @@ class BucketTask {
 public:
     virtual ~BucketTask() = default;
     virtual void run(const Bucket & bucket, std::shared_ptr<vespalib::IDestructorCallback> onComplete) = 0;
+    virtual void fail(const Bucket &) = 0;
 };
 
 /**
- * Interface for running a BucketTask. If it fails the task will be returned.
- * That would normally indicate a fatal error.
- * sync() will be called during detatching to ensure the implementation is drained.
+ * Interface for running a BucketTask. If running the task fails either synchronously or asynchronously.
+ * The fail method will be invoked, either synchronously or asynchronously.
  */
 struct BucketExecutor {
     virtual ~BucketExecutor() = default;
-    virtual std::unique_ptr<BucketTask> execute(const Bucket & bucket, std::unique_ptr<BucketTask> task) = 0;
+    virtual void execute(const Bucket & bucket, std::unique_ptr<BucketTask> task) = 0;
 };
 
 }
