@@ -1042,6 +1042,10 @@ DocumentDB::updateMetrics(const metrics::MetricLockGuard & guard)
     if (_state.getState() < DDBState::State::REPLAY_TRANSACTION_LOG) {
         return;
     }
+    vespalib::Gate gate;
+    _feedView.get()->forceCommit(CommitParam(_feedHandler->getSerialNum(), true),
+                                 std::make_shared<vespalib::GateCallback>(gate));
+    gate.await();
     _metricsUpdater.updateMetrics(guard, _metrics);
     _maintenanceController.updateMetrics(_metrics);
 }
