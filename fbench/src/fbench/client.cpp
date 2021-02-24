@@ -109,6 +109,10 @@ int UrlReader::findUrl(char *buf, int buflen)
 int UrlReader::nextUrl(char *buf, int buflen)
 {
     if (_leftOvers) {
+        if ( _args._usePostMode && _args._singleQueryFile && _reader.GetFilePos() >= _args._queryfileEndOffset ) {
+            // reached logical EOF
+            return -1;
+        }
         int sz = std::min(_leftOversLen, buflen-1);
         strncpy(buf, _leftOvers, sz);
         buf[sz] = '\0';
