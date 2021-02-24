@@ -76,6 +76,12 @@ public class TransportSecurityOptionsJsonSerializer {
             }
             builder.withAcceptedCiphers(entity.acceptedCiphers);
         }
+        if (entity.acceptedProtocols != null) {
+            if (entity.acceptedProtocols.isEmpty()) {
+                throw new IllegalArgumentException("'accepted-protocols' cannot be empty");
+            }
+            builder.withAcceptedProtocols(entity.acceptedProtocols);
+        }
         if (entity.isHostnameValidationDisabled != null) {
             builder.withHostnameValidationDisabled(entity.isHostnameValidationDisabled);
         }
@@ -161,6 +167,9 @@ public class TransportSecurityOptionsJsonSerializer {
                         .collect(toList()));
         if (!options.getAcceptedCiphers().isEmpty()) {
             entity.acceptedCiphers = options.getAcceptedCiphers();
+        }
+        if (!options.getAcceptedProtocols().isEmpty()) {
+            entity.acceptedProtocols = options.getAcceptedProtocols();
         }
         if (options.isHostnameValidationDisabled()) {
             entity.isHostnameValidationDisabled = true;
