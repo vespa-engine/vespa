@@ -27,9 +27,9 @@ ActiveCopy::ActiveCopy(uint16_t node, const BucketDatabase::Entry& e, const std:
     _ideal(0xffff)
 {
     const BucketCopy* copy = e->getNode(node);
-    assert(copy != 0);
+    assert(copy != nullptr);
+    _doc_count = copy->getDocumentCount();
     _ready = copy->ready();
-    _trusted = copy->trusted();
     _active = copy->active();
     for (uint32_t i=0; i<idealState.size(); ++i) {
         if (idealState[i] == node) {
@@ -41,20 +41,27 @@ ActiveCopy::ActiveCopy(uint16_t node, const BucketDatabase::Entry& e, const std:
 
 vespalib::string
 ActiveCopy::getReason() const {
-    if (_ready && _trusted && _ideal < 0xffff) {
+    if (_ready && (_doc_count > 0) && (_ideal < 0xffff)) {
         vespalib::asciistream ost;
-        ost << "copy is ready, trusted and ideal state priority " << _ideal;
+        ost << "copy is ready, has " << _doc_count
+            << " docs and ideal state priority " << _ideal;
         return ost.str();
-    } else if (_ready && _trusted) {
-        return "copy is ready and trusted";
+    } else if (_ready && (_doc_count > 0)) {
+        vespalib::asciistream ost;
+        ost << "copy is ready with " << _doc_count << " docs";
+        return ost.str();
     } else if (_ready) {
         return "copy is ready";
-    } else if (_trusted && _ideal < 0xffff) {
+    } else if ((_doc_count > 0) && (_ideal < 0xffff)) {
         vespalib::asciistream ost;
-        ost << "copy is trusted and ideal state priority " << _ideal;
+        ost << "copy has " << _doc_count << " docs and ideal state priority " << _ideal;
         return ost.str();
-    } else if (_trusted) {
-        return "copy is trusted";
+    } else if (_doc_count > 0) {
+        vespalib::asciistream ost;
+        ost << "copy has " << _doc_count << " docs";
+        return ost.str();
+    } else if (_active) {
+        return "copy is already active";
     } else if (_ideal < 0xffff) {
         vespalib::asciistream ost;
         ost << "copy is ideal state priority " << _ideal;
@@ -67,9 +74,15 @@ ActiveCopy::getReason() const {
 std::ostream&
 operator<<(std::ostream& out, const ActiveCopy & e) {
     out << "Entry(Node " << e._nodeIndex;
-    if (e._ready) out << ", ready";
-    if (e._trusted) out << ", trusted";
-    if (e._ideal < 0xffff) out << ", ideal pri " << e._ideal;
+    if (e._ready) {
+        out << ", ready";
+    }
+    if (e._doc_count > 0) {
+        out << ", doc_count " << e._doc_count;
+    }
+    if (e._ideal < 0xffff) {
+        out << ", ideal pri " << e._ideal;
+    }
     out << ")";
     return out;
 }
@@ -78,10 +91,18 @@ namespace {
 
     struct ActiveStateOrder {
         bool operator()(const ActiveCopy & e1, const ActiveCopy & e2) {
-            if (e1._ready != e2._ready) return e1._ready;
-            if (e1._trusted != e2._trusted) return e1._trusted;
-            if (e1._ideal != e2._ideal) return e1._ideal < e2._ideal;
-            if (e1._active != e2._active) return e1._active;
+            if (e1._ready != e2._ready) {
+                return e1._ready;
+            }
+            if (e1._doc_count != e2._doc_count) {
+                return e1._doc_count > e2._doc_count;
+            }
+            if (e1._ideal != e2._ideal) {
+                return e1._ideal < e2._ideal;
+            }
+            if (e1._active != e2._active) {
+                return e1._active;
+            }
             return e1._nodeIndex < e2._nodeIndex;
         }
     };
