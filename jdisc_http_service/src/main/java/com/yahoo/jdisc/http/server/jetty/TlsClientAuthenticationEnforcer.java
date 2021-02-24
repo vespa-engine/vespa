@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnectorLocalPort;
+import static com.yahoo.jdisc.http.server.jetty.HttpServletRequestUtils.getConnectorLocalPort;
 
 /**
  * A Jetty handler that enforces TLS client authentication with configurable white list.

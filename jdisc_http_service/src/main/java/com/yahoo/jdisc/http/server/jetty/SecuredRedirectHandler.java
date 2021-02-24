@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnectorLocalPort;
+import static com.yahoo.jdisc.http.server.jetty.HttpServletRequestUtils.getConnectorLocalPort;
 
 /**
  * A secure redirect handler inspired by {@link org.eclipse.jetty.server.handler.SecuredRedirectHandler}.

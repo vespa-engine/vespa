@@ -40,7 +40,7 @@ import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnectorLocalPort;
+import static com.yahoo.jdisc.http.server.jetty.HttpServletRequestUtils.getConnectorLocalPort;
 
 /**
  * A handler that proxies status.html health checks

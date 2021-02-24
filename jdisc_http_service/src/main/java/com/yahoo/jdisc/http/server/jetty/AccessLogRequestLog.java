@@ -24,7 +24,7 @@ import java.util.function.BiConsumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnectorLocalPort;
+import static com.yahoo.jdisc.http.server.jetty.HttpServletRequestUtils.getConnectorLocalPort;
 
 /**
  * This class is a bridge between Jetty's {@link org.eclipse.jetty.server.handler.RequestLogHandler}
