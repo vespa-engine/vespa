@@ -224,7 +224,7 @@ BucketMoveJobV2::prepareMove(BucketMoverSP mover, std::vector<MoveKey> keys, IDe
 {
     IncOnDestruct countGuard(_executedCount);
     if (_stopped.load(std::memory_order_relaxed)) return;
-    auto moveOps = mover->createMoveOperations(keys);
+    auto moveOps = mover->createMoveOperations(std::move(keys));
     _master.execute(makeLambdaTask([this, mover=std::move(mover), moveOps=std::move(moveOps), onDone=std::move(onDone)]() mutable {
         if (_stopped.load(std::memory_order_relaxed)) return;
         completeMove(std::move(mover), std::move(moveOps), std::move(onDone));
