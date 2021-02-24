@@ -52,7 +52,7 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
 
     @Override
     protected boolean convergedOn(OsVersionTarget target, SystemApplication application, ZoneApi zone) {
-        return currentVersion(zone, application, target.osVersion().version()).equals(target.osVersion().version());
+        return !currentVersion(zone, application, target.osVersion().version()).isBefore(target.osVersion().version());
     }
 
     @Override
