@@ -50,7 +50,7 @@ BucketDBHandler::handleSplit(search::SerialNum serialNum, const BucketId &source
         if (serialNum > desc._flushedSerialNum) {
             BucketDeltaPair deltas = dms->handleSplit(session);
             session.applyDeltas(deltas);
-            dms->commit(serialNum, serialNum);
+            dms->commit(search::CommitParam(serialNum));
         }
     }
     session.finish();
@@ -69,7 +69,7 @@ BucketDBHandler::handleJoin(search::SerialNum serialNum, const BucketId &source1
         if (serialNum > desc._flushedSerialNum) {
             BucketDeltaPair deltas = dms->handleJoin(session);
             session.applyDeltas(deltas);
-            dms->commit(serialNum, serialNum);
+            dms->commit(search::CommitParam(serialNum));
         }
     }
     session.finish();

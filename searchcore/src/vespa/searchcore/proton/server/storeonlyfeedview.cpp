@@ -236,18 +236,18 @@ StoreOnlyFeedView::sync()
 }
 
 void
-StoreOnlyFeedView::forceCommit(SerialNum serialNum, DoneCallback onDone)
+StoreOnlyFeedView::forceCommit(const CommitParam & param, DoneCallback onDone)
 {
-    internalForceCommit(serialNum, std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore,
-                                                                        _pendingLidsForCommit->produceSnapshot(),
-                                                                        _gidToLidChangeHandler.grab_pending_changes(),
-                                                                        std::move(onDone)));
+    internalForceCommit(param, std::make_shared<ForceCommitContext>(_writeService.master(), _metaStore,
+                                                                    _pendingLidsForCommit->produceSnapshot(),
+                                                                    _gidToLidChangeHandler.grab_pending_changes(),
+                                                                    std::move(onDone)));
 }
 
 void
-StoreOnlyFeedView::internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone)
+StoreOnlyFeedView::internalForceCommit(const CommitParam & param, OnForceCommitDoneType onCommitDone)
 {
-    LOG(debug, "internalForceCommit: serial=%" PRIu64 ".", serialNum);
+    LOG(debug, "internalForceCommit: serial=%" PRIu64 ".", param.lastSerialNum());
     _writeService.summary().execute(makeLambdaTask([onDone=onCommitDone]() {(void) onDone;}));
     _writeService.summary().wakeup();
     std::vector<uint32_t> lidsToReuse;
@@ -449,7 +449,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
         bool updateOk = _metaStore.updateMetaData(updOp.getLid(), updOp.getBucketId(), updOp.getTimestamp());
         assert(updateOk);
         (void) updateOk;
-        _metaStore.commit(serialNum, serialNum);
+        _metaStore.commit(CommitParam(serialNum));
     }
     auto uncommitted = get_pending_lid_token(updOp);
 
@@ -470,9 +470,7 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
         if (useDocumentStore(serialNum)) {
             putSummary(serialNum, lid, std::move(futureStream), onWriteDone);
         }
-        _writeService
-                .shared()
-                .execute(makeLambdaTask(
+        _writeService.shared().execute(makeLambdaTask(
                          [upd = updOp.getUpdate(), serialNum, lid, onWriteDone, promisedDoc = std::move(promisedDoc),
                           promisedStream = std::move(promisedStream), this]() mutable
                           {
@@ -645,7 +643,7 @@ StoreOnlyFeedView::adjustMetaStore(const DocumentOperation &op, const GlobalId &
             gate.await();
             removeMetaData(_metaStore, gid, docId, op, _params._subDbType == SubDbType::REMOVED);
         }
-        _metaStore.commit(serialNum, serialNum);
+        _metaStore.commit(CommitParam(serialNum));
     }
 }
 
@@ -662,7 +660,7 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
     const LidVectorContext::SP &ctx = op.getLidsToRemove(_params._subDbId);
     if (!ctx) {
         if (useDocumentMetaStore(serialNum)) {
-            _metaStore.commit(serialNum, serialNum);
+            _metaStore.commit(CommitParam(serialNum));
         }
         return 0;
     }
@@ -681,7 +679,7 @@ StoreOnlyFeedView::removeDocuments(const RemoveDocumentsOperation &op, bool remo
         }
         gate.await();
         _metaStore.removeBatch(lidsToRemove, ctx->getDocIdLimit());
-        _metaStore.commit(serialNum, serialNum);
+        _metaStore.commit(CommitParam(serialNum));
         explicitReuseLids = _lidReuseDelayer.delayReuse(lidsToRemove);
     }
     std::shared_ptr<vespalib::IDestructorCallback> onWriteDone;
@@ -786,7 +784,7 @@ StoreOnlyFeedView::heartBeat(SerialNum serialNum)
     assert(_writeService.master().isCurrentThread());
     _metaStore.removeAllOldGenerations();
     if (serialNum > _metaStore.getLastSerialNum()) {
-        _metaStore.commit(serialNum, serialNum);
+        _metaStore.commit(CommitParam(serialNum));
     }
     heartBeatSummary(serialNum);
     heartBeatIndexedFields(serialNum);
@@ -819,10 +817,12 @@ StoreOnlyFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
                                                                 _gidToLidChangeHandler.grab_pending_changes(),
                                                                 DoneCallback()));
         commitContext->holdUnblockShrinkLidSpace();
-        internalForceCommit(serialNum, commitContext);
+        internalForceCommit(CommitParam(serialNum), commitContext);
     }
     if (useDocumentStore(serialNum)) {
-        _writeService.summary().execute(makeLambdaTask([this, &op]() { _summaryAdapter->compactLidSpace(op.getLidLimit()); }));
+        _writeService.summary().execute(makeLambdaTask([this, &op]() {
+            _summaryAdapter->compactLidSpace(op.getLidLimit());
+        }));
         _writeService.summary().sync();
     }
 }

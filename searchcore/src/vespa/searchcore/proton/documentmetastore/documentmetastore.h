@@ -93,16 +93,13 @@ private:
 
     template <typename TreeView>
     typename TreeView::Iterator
-    lowerBound(const BucketId &bucketId,
-               const TreeView &treeView) const;
+    lowerBound(const BucketId &bucketId, const TreeView &treeView) const;
 
     template <typename TreeView>
     typename TreeView::Iterator
-    upperBound(const BucketId &bucketId,
-               const TreeView &treeView) const;
+    upperBound(const BucketId &bucketId, const TreeView &treeView) const;
 
-    void updateMetaDataAndBucketDB(const GlobalId &gid,
-                                   DocId lid,
+    void updateMetaDataAndBucketDB(const GlobalId &gid, DocId lid,
                                    const RawDocumentMetaData &newMetaData);
 
     void unload();
@@ -111,8 +108,8 @@ private:
     /**
      * Implements DocumentMetaStoreAdapter
      */
-    void doCommit(SerialNum firstSerialNum, SerialNum lastSerialNum) override {
-        commit(firstSerialNum, lastSerialNum);
+    void doCommit(const CommitParam & param) override {
+        commit(param);
     }
     DocId doGetCommittedDocIdLimit() const override {
         return getCommittedDocIdLimit();

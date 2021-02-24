@@ -5,9 +5,7 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchlib/attribute/integerbase.h>
 
-namespace proton {
-
-namespace test {
+namespace proton::test {
 
 struct AttributeUtils
 {
@@ -18,7 +16,7 @@ struct AttributeUtils
         for (uint32_t i = 1; i < ia.getNumDocs(); ++i) {
             ia.update(i, value);
         }
-        ia.commit(lastSyncToken, lastSyncToken);
+        ia.commit(search::CommitParam(lastSyncToken));
     }
     static void fillAttribute(const search::AttributeVector::SP &attr,
                               uint32_t from, uint32_t to, int64_t value, uint64_t lastSyncToken) {
@@ -30,7 +28,7 @@ struct AttributeUtils
         for (uint32_t i = from; i < to; ++i) {
             ia.update(i, value);
         }
-        ia.commit(lastSyncToken, lastSyncToken);
+        ia.commit(search::CommitParam(lastSyncToken));
     }
     static search::attribute::Config getInt32Config() {
         return search::attribute::Config(search::attribute::BasicType::INT32);
@@ -50,7 +48,5 @@ struct AttributeUtils
     }
 };
 
-} // namespace test
-
-} // namespace proton
+}
 

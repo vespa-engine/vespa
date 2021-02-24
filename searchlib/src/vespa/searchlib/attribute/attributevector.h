@@ -15,6 +15,7 @@
 #include <vespa/searchcommon/common/undefinedvalues.h>
 #include <vespa/searchlib/common/i_compactable_lid_space.h>
 #include <vespa/searchlib/common/identifiable.h>
+#include <vespa/searchlib/common/commit_param.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/vespalib/objects/identifiable.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -70,7 +71,6 @@ namespace search {
 
 namespace search {
 
-
 using search::attribute::WeightedType;
 using search::attribute::Status;
 using document::ArithmeticValueUpdate;
@@ -120,7 +120,6 @@ protected:
     using BasicType = search::attribute::BasicType;
     using QueryTermSimpleUP = std::unique_ptr<QueryTermSimple>;
     using QueryPacketT = vespalib::stringref;
-    using LoadedBufferUP = std::unique_ptr<fileutil::LoadedBuffer>;
     using stringref = vespalib::stringref;
 public:
     typedef std::shared_ptr<AttributeVector> SP;
@@ -449,8 +448,9 @@ public:
 
     bool isEnumeratedSaveFormat() const;
     bool load();
-    void commit(bool forceStatUpdate = false);
-    void commit(uint64_t firstSyncToken, uint64_t lastSyncToken);
+    void commit() { commit(false); }
+    void commit(bool forceUpdateStats);
+    void commit(const CommitParam & param);
     void setCreateSerialNum(uint64_t createSerialNum);
     uint64_t getCreateSerialNum() const;
     virtual uint32_t getVersion() const;

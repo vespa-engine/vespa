@@ -338,7 +338,7 @@ DocumentDB::enterOnlineState()
 {
     // Called by executor thread
     // Ensure that all replayed operations are committed to memory structures
-    _feedView.get()->forceCommit(_feedHandler->getSerialNum());
+    _feedView.get()->forceCommit(CommitParam(_feedHandler->getSerialNum()));
     _writeService.sync();
 
     (void) _state.enterOnlineState();
@@ -426,7 +426,8 @@ DocumentDB::applyConfig(DocumentDBConfig::SP configSnapshot, SerialNum serialNum
     {
         bool elidedConfigSave = equalReplayConfig && tlsReplayDone;
         // Flush changes to attributes and memory index, cf. visibilityDelay
-        _feedView.get()->forceCommit(elidedConfigSave ? serialNum : serialNum - 1, std::make_shared<vespalib::KeepAlive<FeedHandler::CommitResult>>(std::move(commit_result)));
+        _feedView.get()->forceCommit(CommitParam(elidedConfigSave ? serialNum : serialNum - 1),
+                                     std::make_shared<vespalib::KeepAlive<FeedHandler::CommitResult>>(std::move(commit_result)));
         _writeService.sync();
     }
     if (params.shouldMaintenanceControllerChange()) {
@@ -1021,7 +1022,6 @@ notifyBucketsChanged(const documentmetastore::IBucketHandler &metaStore,
 }
 
 }
-
 
 void
 DocumentDB::notifyAllBucketsChanged()

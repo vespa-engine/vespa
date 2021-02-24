@@ -15,6 +15,7 @@ using document::Document;
 using vespalib::IDestructorCallback;
 using search::LidUsageStats;
 using search::DocumentMetaData;
+using search::CommitParam;
 using storage::spi::Timestamp;
 
 namespace proton {
@@ -93,7 +94,7 @@ LidSpaceCompactionHandler::handleCompactLidSpace(const CompactLidSpaceOperation 
 {
     assert(_subDb.sub_db_id() == op.getSubDbId());
     _subDb.feed_view()->handleCompactLidSpace(op);
-    _subDb.feed_view()->forceCommit(op.getSerialNum(), std::move(compact_done_context));
+    _subDb.feed_view()->forceCommit(CommitParam(op.getSerialNum()), std::move(compact_done_context));
 }
 
 } // namespace proton

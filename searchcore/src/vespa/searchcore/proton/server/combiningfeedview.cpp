@@ -233,10 +233,10 @@ CombiningFeedView::sync()
 }
 
 void
-CombiningFeedView::forceCommit(search::SerialNum serialNum, DoneCallback onDone)
+CombiningFeedView::forceCommit(const CommitParam & param, DoneCallback onDone)
 {
     for (const auto &view : _views) {
-        view->forceCommit(serialNum, onDone);
+        view->forceCommit(param, onDone);
     }
 }
 

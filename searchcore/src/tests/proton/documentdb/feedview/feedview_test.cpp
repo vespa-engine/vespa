@@ -368,9 +368,9 @@ struct MyAttributeWriter : public IAttributeWriter
     const proton::IAttributeManager::SP &getAttributeManager() const override {
         return _mgr;
     }
-    void forceCommit(SerialNum serialNum, OnWriteDoneType) override {
+    void forceCommit(const CommitParam & param, OnWriteDoneType) override {
         ++_commitCount;
-        _tracer.traceCommit(attributeAdapterTypeName, serialNum);
+        _tracer.traceCommit(attributeAdapterTypeName, param.lastSerialNum());
     }
 
     void onReplayDone(uint32_t ) override { }

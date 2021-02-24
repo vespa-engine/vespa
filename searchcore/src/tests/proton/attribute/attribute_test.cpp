@@ -95,7 +95,7 @@ using LidVector = LidVectorContext::LidVector;
 
 namespace {
 
-const uint64_t createSerialNum = 42u;
+constexpr uint64_t createSerialNum = 42u;
 
 }
 
@@ -933,7 +933,7 @@ TEST_F(TwoPhasePutTest, handles_put_in_two_phases_when_specified_for_tensor_attr
 TEST_F(TwoPhasePutTest, put_is_ignored_when_serial_number_is_older_or_equal_to_attribute)
 {
     auto doc = make_doc();
-    attr->commit(7, 7);
+    attr->commit(CommitParam(7));
     put(7, *doc, 1);
     expect_tensor_attr_calls(0, 0);
     expect_shared_executor_tasks(1);

@@ -13,14 +13,13 @@ namespace proton {
 class DocumentMetaStoreAdapter : public IDocumentMetaStore
 {
 protected:
-    using SerialNum = search::SerialNum;
-    virtual void doCommit(SerialNum firstSerialNum, SerialNum lastSerialNum) = 0;
+    virtual void doCommit(const CommitParam & param) = 0;
     virtual DocId doGetCommittedDocIdLimit() const = 0;
     virtual void doRemoveAllOldGenerations() = 0;
     virtual uint64_t doGetCurrentGeneration() const = 0;
 public:
-    void commit(SerialNum firstSerialNum, SerialNum lastSerialNum) override {
-        doCommit(firstSerialNum, lastSerialNum);
+    void commit(const CommitParam & param) override {
+        doCommit(param);
     }
     DocId getCommittedDocIdLimit() const override {
         return doGetCommittedDocIdLimit();
