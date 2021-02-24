@@ -8,6 +8,7 @@ import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 
@@ -60,13 +61,16 @@ class Preparer {
     private List<Node> prepareNodes(ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes, int wantedGroups) {
         List<Node> surplusNodes = findNodesInRemovableGroups(application, cluster, wantedGroups);
 
-        MutableInteger highestIndex = new MutableInteger(findHighestIndex(application, cluster));
+        NodeList nodesInCluster = nodeRepository.nodes().list(Node.State.allocatedStates().toArray(new Node.State[0]))
+                                                .owner(application)
+                                                .matching(node -> node.allocation().get().membership().cluster().satisfies(cluster));
+        NodeIndices indices = new NodeIndices(nodesInCluster, ! cluster.type().isContent());
         List<Node> acceptedNodes = new ArrayList<>();
         for (int groupIndex = 0; groupIndex < wantedGroups; groupIndex++) {
             ClusterSpec clusterGroup = cluster.with(Optional.of(ClusterSpec.Group.from(groupIndex)));
             List<Node> accepted = groupPreparer.prepare(application, clusterGroup,
                                                         requestedNodes.fraction(wantedGroups), surplusNodes,
-                                                        highestIndex, wantedGroups);
+                                                        indices, wantedGroups);
             replace(acceptedNodes, accepted);
         }
         moveToActiveGroup(surplusNodes, wantedGroups, cluster.group());
@@ -118,23 +122,6 @@ class Preparer {
         list.removeAll(changed);
         list.addAll(changed);
         return list;
-    }
-
-    /**
-     * Returns the highest index number of all active and failed nodes in this cluster, or -1 if there are no nodes.
-     * We include failed nodes to avoid reusing the index of the failed node in the case where the failed node is the
-     * node with the highest index.
-     */
-    private int findHighestIndex(ApplicationId application, ClusterSpec cluster) {
-        int highestIndex = -1;
-        for (Node node : nodeRepository.nodes().list(Node.State.allocatedStates().toArray(new Node.State[0])).owner(application)) {
-            ClusterSpec nodeCluster = node.allocation().get().membership().cluster();
-            if ( ! nodeCluster.id().equals(cluster.id())) continue;
-            if ( ! nodeCluster.type().equals(cluster.type())) continue;
-
-            highestIndex = Math.max(node.allocation().get().membership().index(), highestIndex);
-        }
-        return highestIndex;
     }
 
 }
