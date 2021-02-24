@@ -49,11 +49,14 @@ public class ClusterControllerCluster extends AbstractConfigProducer<ClusterCont
     public void getConfig(ZookeeperServerConfig.Builder builder) {
         builder.clientPort(ZK_CLIENT_PORT);
         builder.juteMaxBuffer(1024 * 1024); // 1 Mb should be more than enough for cluster controller
+        boolean oldQuorumExists = containerCluster.getContainers().stream() // More than half the previous hosts must be present in the new config for quorum to persist.
+                                                  .filter(container -> previousHosts.contains(container.getHostName())) // Set intersection is symmetric.
+                                                  .count() > previousHosts.size() / 2;
         for (ClusterControllerContainer container : containerCluster.getContainers()) {
             ZookeeperServerConfig.Server.Builder serverBuilder = new ZookeeperServerConfig.Server.Builder();
             serverBuilder.hostname(container.getHostName());
             serverBuilder.id(container.index());
-            serverBuilder.joining( ! previousHosts.isEmpty() && ! previousHosts.contains(container.getHostName()));
+            serverBuilder.joining(oldQuorumExists && ! previousHosts.contains(container.getHostName()));
             builder.server(serverBuilder);
         }
     }
