@@ -954,7 +954,7 @@ public class StateChangeTest extends FleetControllerTest {
         options.minTimeBeforeFirstSystemStateBroadcast = 3 * 60 * 1000;
         setUpSystem(true, options);
         setUpVdsNodes(true, new DummyVdsNodeOptions(), true);
-            // Leave one node down to avoid sending cluster state due to having seen all node states.
+        // Leave one node down to avoid sending cluster state due to having seen all node states.
         for (int i=0; i<nodes.size(); ++i) {
             if (i != 3) {
                 nodes.get(i).connect();
@@ -973,7 +973,7 @@ public class StateChangeTest extends FleetControllerTest {
             @Override int expectedMessageCount(final DummyVdsNode node) { return 0; }
         };
 
-            // Pass time and see that the nodes get state
+        // Pass time and see that the nodes get state
         timer.advanceTime(3 * 60 * 1000);
         waiter.waitForState("version:\\d+ distributor:10 storage:10 .1.s:d", timeoutMS);
 

@@ -28,6 +28,7 @@ public class SystemStateBroadcaster {
 
     private int lastStateVersionBundleAcked = 0;
     private int lastClusterStateVersionConverged = 0;
+    private int lastClusterStateVersionWrittenToZooKeeper = 0;
     private ClusterStateBundle lastClusterStateBundleConverged;
 
     private final SetClusterStateWaiter setClusterStateWaiter = new SetClusterStateWaiter();
@@ -255,8 +256,19 @@ public class SystemStateBroadcaster {
         return lastClusterStateVersionConverged == clusterStateBundle.getVersion();
     }
 
-    public boolean broadcastNewStateBundleIfRequired(DatabaseHandler.Context dbContext, Communicator communicator) {
+    public void setLastClusterStateVersionWrittenToZooKeeper(int version) {
+        lastClusterStateVersionWrittenToZooKeeper = version;
+    }
+
+    private boolean currentStateVersionHasBeenWrittenToZooKeeper() {
         if (clusterStateBundle == null) {
+            return false;
+        }
+        return clusterStateBundle.getVersion() == lastClusterStateVersionWrittenToZooKeeper;
+    }
+
+    public boolean broadcastNewStateBundleIfRequired(DatabaseHandler.Context dbContext, Communicator communicator) {
+        if (!currentStateVersionHasBeenWrittenToZooKeeper()) {
             return false;
         }
 

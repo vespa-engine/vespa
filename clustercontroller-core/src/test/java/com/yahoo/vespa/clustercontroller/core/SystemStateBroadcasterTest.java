@@ -144,6 +144,34 @@ public class SystemStateBroadcasterTest {
         verify(f.mockCommunicator).setSystemState(eq(expectedDistr0Bundle), eq(cf.cluster().getNodeInfo(Node.ofDistributor(0))), any());
     }
 
+    @Test
+    public void state_not_broadcast_if_version_not_tagged_as_written_to_zookeeper() {
+        Fixture f = new Fixture();
+        ClusterStateBundle stateBundle = ClusterStateBundleUtil.makeBundle("version:100 distributor:2 storage:2");
+        ClusterFixture cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
+        f.broadcaster.handleNewClusterStates(stateBundle);
+        f.broadcaster.setLastClusterStateVersionWrittenToZooKeeper(99);
+        f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator);
+
+        cf.cluster().getNodeInfo().forEach(nodeInfo -> {
+            verify(f.mockCommunicator, times(0)).setSystemState(any(), eq(nodeInfo), any());
+        });
+    }
+
+    @Test
+    public void state_is_broadcast_if_version_is_tagged_as_written_to_zookeeper() {
+        Fixture f = new Fixture();
+        ClusterStateBundle stateBundle = ClusterStateBundleUtil.makeBundle("version:100 distributor:2 storage:2");
+        ClusterFixture cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
+        f.broadcaster.handleNewClusterStates(stateBundle);
+        f.broadcaster.setLastClusterStateVersionWrittenToZooKeeper(100);
+        f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator);
+
+        cf.cluster().getNodeInfo().forEach(nodeInfo -> {
+            verify(f.mockCommunicator, times(1)).setSystemState(any(), eq(nodeInfo), any());
+        });
+    }
+
     private static class MockSetClusterStateRequest extends SetClusterStateRequest {
         MockSetClusterStateRequest(NodeInfo nodeInfo, int clusterStateVersion) {
             super(nodeInfo, clusterStateVersion);
@@ -202,6 +230,7 @@ public class SystemStateBroadcasterTest {
                     .deriveAndBuild();
             cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
             broadcaster.handleNewClusterStates(stateBundle);
+            broadcaster.setLastClusterStateVersionWrittenToZooKeeper(stateBundle.getVersion());
             broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), mockCommunicator);
 
             d0Waiter = ArgumentCaptor.forClass(Communicator.Waiter.class);
