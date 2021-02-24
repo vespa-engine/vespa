@@ -33,6 +33,7 @@ import com.yahoo.security.Pkcs10CsrBuilder;
 import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.security.tls.TlsContext;
 import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.mime.FormBodyPart;
@@ -853,7 +854,7 @@ public class HttpServerTest {
         Assertions.assertThat(logEntry.localPort()).hasValue(listenPort);
         Assertions.assertThat(logEntry.httpBytesReceived()).hasValueSatisfying(value -> Assertions.assertThat(value).isPositive());
         Assertions.assertThat(logEntry.httpBytesSent()).hasValueSatisfying(value -> Assertions.assertThat(value).isPositive());
-        Assertions.assertThat(logEntry.sslProtocol()).hasValue("TLSv1.3");
+        Assertions.assertThat(logEntry.sslProtocol()).hasValueSatisfying(TlsContext.ALLOWED_PROTOCOLS::contains);
         Assertions.assertThat(logEntry.sslPeerSubject()).hasValue("CN=localhost");
         Assertions.assertThat(logEntry.sslCipherSuite()).hasValueSatisfying(cipher -> Assertions.assertThat(cipher).isNotBlank());
         Assertions.assertThat(logEntry.sslSessionId()).hasValueSatisfying(sessionId -> Assertions.assertThat(sessionId).hasSize(64));
