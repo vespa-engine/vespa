@@ -48,11 +48,11 @@ private:
     void heartBeatAttributes(SerialNum serialNum) override;
 
 protected:
-    void internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone) override;
+    void internalForceCommit(const CommitParam & param, OnForceCommitDoneType onCommitDone) override;
 
 public:
     FastAccessFeedView(StoreOnlyFeedView::Context storeOnlyCtx, const PersistentParams &params, const Context &ctx);
-    ~FastAccessFeedView();
+    ~FastAccessFeedView() override;
 
     virtual const IAttributeWriter::SP &getAttributeWriter() const {
         return _attributeWriter;

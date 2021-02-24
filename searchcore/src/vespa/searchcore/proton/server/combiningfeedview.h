@@ -49,7 +49,7 @@ private:
     }
 
     vespalib::Trinary shouldBeReady(const document::BucketId &bucket) const;
-    void forceCommit(search::SerialNum serialNum, DoneCallback onDone) override;
+    void forceCommit(const CommitParam & param, DoneCallback onDone) override;
 public:
     typedef std::shared_ptr<CombiningFeedView> SP;
 

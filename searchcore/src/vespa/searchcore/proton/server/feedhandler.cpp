@@ -42,6 +42,7 @@ using vespalib::makeLambdaTask;
 using vespalib::make_string;
 using std::make_unique;
 using std::make_shared;
+using search::CommitParam;
 
 namespace proton {
 
@@ -547,7 +548,7 @@ FeedHandler::initiateCommit() {
     if (_activeFeedView) {
         using KeepAlivePair = vespalib::KeepAlive<std::pair<CommitResult, DoneCallback>>;
         auto pair = std::make_pair(std::move(commitResult), std::move(onCommitDoneContext));
-        _activeFeedView->forceCommit(_serialNum, std::make_shared<KeepAlivePair>(std::move(pair)));
+        _activeFeedView->forceCommit(CommitParam(_serialNum, false), std::make_shared<KeepAlivePair>(std::move(pair)));
     }
 }
 

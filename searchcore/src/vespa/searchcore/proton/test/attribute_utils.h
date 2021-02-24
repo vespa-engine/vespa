@@ -18,7 +18,7 @@ struct AttributeUtils
         for (uint32_t i = 1; i < ia.getNumDocs(); ++i) {
             ia.update(i, value);
         }
-        ia.commit(lastSyncToken, lastSyncToken);
+        ia.commit(search::CommitParam(lastSyncToken, true));
     }
     static void fillAttribute(const search::AttributeVector::SP &attr,
                               uint32_t from, uint32_t to, int64_t value, uint64_t lastSyncToken) {
@@ -30,7 +30,7 @@ struct AttributeUtils
         for (uint32_t i = from; i < to; ++i) {
             ia.update(i, value);
         }
-        ia.commit(lastSyncToken, lastSyncToken);
+        ia.commit(search::CommitParam(lastSyncToken, true));
     }
     static search::attribute::Config getInt32Config() {
         return search::attribute::Config(search::attribute::BasicType::INT32);

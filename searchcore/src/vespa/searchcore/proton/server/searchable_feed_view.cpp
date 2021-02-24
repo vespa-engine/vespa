@@ -191,16 +191,19 @@ SearchableFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
     Parent::handleCompactLidSpace(op);
     _writeService.index().execute(
             makeLambdaTask([this, &op]() {
-                               _indexWriter->compactLidSpace(op.getSerialNum(), op.getLidLimit());
-                           }));
+                _indexWriter->compactLidSpace(op.getSerialNum(), op.getLidLimit());
+            }));
     _writeService.index().sync();
 }
 
 void
-SearchableFeedView::internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone)
+SearchableFeedView::internalForceCommit(const CommitParam & param, OnForceCommitDoneType onCommitDone)
 {
-    Parent::internalForceCommit(serialNum, onCommitDone);
-    _writeService.index().execute(makeLambdaTask([this, serialNum, onCommitDone]() { performIndexForceCommit(serialNum, onCommitDone); }));
+    Parent::internalForceCommit(param, onCommitDone);
+    _writeService.index().execute(
+            makeLambdaTask([this, serialNum=param._lastSerialNum, onCommitDone]() {
+                performIndexForceCommit(serialNum, onCommitDone);
+            }));
     _writeService.index().wakeup();
 }
 

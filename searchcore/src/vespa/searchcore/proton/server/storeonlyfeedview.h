@@ -207,7 +207,7 @@ private:
 protected:
     virtual void removeAttributes(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone);
     virtual void removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone);
-    virtual void internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone);
+    virtual void internalForceCommit(const CommitParam & param, OnForceCommitDoneType onCommitDone);
 public:
     StoreOnlyFeedView(Context ctx, const PersistentParams &params);
     ~StoreOnlyFeedView() override;
@@ -235,7 +235,7 @@ public:
     void handleMove(const MoveOperation &putOp, std::shared_ptr<vespalib::IDestructorCallback> doneCtx) override;
     void heartBeat(search::SerialNum serialNum) override;
     void sync() override;
-    void forceCommit(SerialNum serialNum, DoneCallback onDone) override;
+    void forceCommit(const CommitParam & param, DoneCallback onDone) override;
 
     /**
      * Prune lids present in operation.  Caller must call doneSegment()

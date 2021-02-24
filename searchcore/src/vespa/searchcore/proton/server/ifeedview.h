@@ -3,7 +3,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/common/feedtoken.h>
-#include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchlib/common/commit_param.h>
 
 namespace document { class DocumentTypeRepo; }
 
@@ -30,6 +30,7 @@ protected:
 public:
     using SP = std::shared_ptr<IFeedView>;
     using DoneCallback = std::shared_ptr<vespalib::IDestructorCallback>;
+    using CommitParam = search::CommitParam;
 
     IFeedView(const IFeedView &) = delete;
     IFeedView & operator = (const IFeedView &) = delete;
@@ -59,8 +60,9 @@ public:
     virtual void handleMove(const MoveOperation &putOp, DoneCallback onDone) = 0;
     virtual void heartBeat(search::SerialNum serialNum) = 0;
     virtual void sync() = 0;
-    virtual void forceCommit(search::SerialNum serialNum, DoneCallback onDone) = 0;
-    void forceCommit(search::SerialNum serialNum) { forceCommit(serialNum, DoneCallback()); }
+    virtual void forceCommit(const CommitParam & param, DoneCallback onDone) = 0;
+    void forceCommit(CommitParam param) { forceCommit(param, DoneCallback()); }
+    void forceCommit(search::SerialNum serialNum) { forceCommit(CommitParam(serialNum)); }
     virtual void handlePruneRemovedDocuments(const PruneRemovedDocumentsOperation & pruneOp) = 0;
     virtual void handleCompactLidSpace(const CompactLidSpaceOperation &op) = 0;
 };

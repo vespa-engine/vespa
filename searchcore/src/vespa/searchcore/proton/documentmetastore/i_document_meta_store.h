@@ -7,7 +7,7 @@
 #include "i_simple_document_meta_store.h"
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
-#include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchlib/common/commit_param.h>
 #include <vespa/vespalib/btree/btree.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
 
@@ -30,19 +30,21 @@ struct IDocumentMetaStore : public search::IDocumentMetaStore,
     using search::IDocumentMetaStore::GlobalId;
     using search::IDocumentMetaStore::BucketId;
     using search::IDocumentMetaStore::Timestamp;
+    using CommitParam = search::CommitParam;
+    using SerialNum = search::SerialNum;
 
     // Typedef for the tree used to map from gid -> lid
     // Lids are stored as keys in the tree, sorted by their gid counterpart.
     // The LidGidKeyComparator class maps from lids -> metadata by using the metadata store.
     // TODO(geirst): move this typedef and iterator functions away from this interface.
-    typedef vespalib::btree::BTree<documentmetastore::GidToLidMapKey,
-            vespalib::btree::BTreeNoLeafData,
-            vespalib::btree::NoAggregated,
-            const documentmetastore::LidGidKeyComparator &> TreeType;
-    typedef TreeType::Iterator Iterator;
-    typedef std::shared_ptr<IDocumentMetaStore> SP;
+    using TreeType = vespalib::btree::BTree<documentmetastore::GidToLidMapKey,
+                                            vespalib::btree::BTreeNoLeafData,
+                                            vespalib::btree::NoAggregated,
+                                            const documentmetastore::LidGidKeyComparator &>;
+    using Iterator = TreeType::Iterator;
+    using SP = std::shared_ptr<IDocumentMetaStore>;
 
-    virtual ~IDocumentMetaStore() {}
+    virtual ~IDocumentMetaStore() = default;
 
     /**
      * Constructs a new underlying free list for lids.
@@ -51,15 +53,10 @@ struct IDocumentMetaStore : public search::IDocumentMetaStore,
     virtual void constructFreeList() = 0;
 
     virtual Iterator begin() const = 0;
-
     virtual Iterator lowerBound(const BucketId &bucketId) const = 0;
-
     virtual Iterator upperBound(const BucketId &bucketId) const = 0;
-
     virtual Iterator lowerBound(const GlobalId &gid) const = 0;
-
     virtual Iterator upperBound(const GlobalId &gid) const = 0;
-
     virtual void getLids(const BucketId &bucketId, std::vector<DocId> &lids) = 0;
 
     /*
@@ -70,11 +67,10 @@ struct IDocumentMetaStore : public search::IDocumentMetaStore,
     virtual void holdUnblockShrinkLidSpace() = 0;
 
     // Functions that are also defined search::AttributeVector
-    virtual void commit(search::SerialNum firstSerialNum,
-                        search::SerialNum lastSerialNum) = 0;
+    virtual void commit(const CommitParam & param) = 0;
     virtual void removeAllOldGenerations() = 0;
     virtual bool canShrinkLidSpace() const = 0;
-    virtual search::SerialNum getLastSerialNum() const = 0;
+    virtual SerialNum getLastSerialNum() const = 0;
 
     /*
      * Adjust committedDocIdLimit downwards and prepare for shrinking

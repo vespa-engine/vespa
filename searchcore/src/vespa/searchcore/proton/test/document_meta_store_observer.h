@@ -164,9 +164,8 @@ struct DocumentMetaStoreObserver : public IDocumentMetaStore
         ++_holdUnblockShrinkLidSpaceCnt;
         _store.holdUnblockShrinkLidSpace();
     }
-    void commit(search::SerialNum firstSerialNum,
-                search::SerialNum lastSerialNum) override {
-        _store.commit(firstSerialNum, lastSerialNum);
+    void commit(const CommitParam & param) override {
+        _store.commit(param);
     }
     DocId getCommittedDocIdLimit() const override {
         return _store.getCommittedDocIdLimit();
