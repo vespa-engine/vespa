@@ -37,7 +37,8 @@ bool
 isSameDocument(const search::DocumentMetaData & a, const search::DocumentMetaData & b) {
     return (a.lid == b.lid) &&
            (a.bucketId == b.bucketId) &&
-           (a.gid == b.gid);
+           (a.gid == b.gid) &&
+           (a.timestamp == b.timestamp); // Timestamp check can be removed once logic has proved itself in large scale.
 }
 
 }
