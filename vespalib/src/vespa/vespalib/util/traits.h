@@ -36,6 +36,7 @@ struct can_skip_destruction : std::is_trivially_destructible<T> {};
     template <>                                         \
     struct can_skip_destruction<T> : std::true_type {}; \
     }
+template <typename T> constexpr bool can_skip_destruction_v = can_skip_destruction<T>::value;
 
 //-----------------------------------------------------------------------------
 
