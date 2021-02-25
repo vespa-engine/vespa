@@ -8,7 +8,10 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+
+import java.util.function.Supplier;
 
 /**
  * Defines the policies for assigning cluster capacity in various environments
@@ -19,9 +22,11 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 public class CapacityPolicies {
 
     private final Zone zone;
+    private final Supplier<Boolean> sharedHosts;
 
     public CapacityPolicies(NodeRepository nodeRepository) {
         this.zone = nodeRepository.zone();
+        this.sharedHosts = PermanentFlags.SHARED_HOST.bindTo(nodeRepository.flagSource()).value()::isEnabled;
     }
 
     public int decideSize(int requested, Capacity capacity, ClusterSpec cluster, ApplicationId application) {
@@ -61,7 +66,7 @@ public class CapacityPolicies {
                 // Use small logserver in dev system
                 return new NodeResources(0.1, 1, 10, 0.3);
             }
-            return zone.getCloud().dynamicProvisioning() ?
+            return zone.getCloud().dynamicProvisioning() && ! sharedHosts.get() ?
                    new NodeResources(0.5, 4, 50, 0.3) :
                    new NodeResources(0.5, 2, 50, 0.3);
         }
