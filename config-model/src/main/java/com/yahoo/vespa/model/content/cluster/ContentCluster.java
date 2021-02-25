@@ -355,7 +355,7 @@ public class ContentCluster extends AbstractConfigProducer implements
         private ClusterControllerContainerCluster getDedicatedSharedControllers(ModelElement contentElement, Admin admin,
                                                                                 ConfigModelContext context, DeployState deployState) {
             if (admin.getClusterControllers() == null) {
-                NodesSpecification spec = NodesSpecification.requiredFromSharedParents(3,
+                NodesSpecification spec = NodesSpecification.requiredFromSharedParents(deployState.zone().environment().isTest() ? 1 : 3,
                                                                                        clusterControllerResources,
                                                                                        contentElement,
                                                                                        context);
