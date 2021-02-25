@@ -12,6 +12,8 @@
     <component id="com.yahoo.vespa.config.server.ConfigServerBootstrap" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.monitoring.Metrics" bundle="configserver" />
     <component id="com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer" bundle="zookeeper-server" />
+    <component id="com.yahoo.vespa.zookeeper.Reconfigurer" bundle="zookeeper-server" />
+    <component id="com.yahoo.vespa.zookeeper.VespaZooKeeperAdminImpl" bundle="zookeeper-server" />
     <component id="com.yahoo.vespa.config.server.rpc.RpcServer" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.ConfigServerDB" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.filedistribution.FileDistributionFactory" bundle="configserver" />
