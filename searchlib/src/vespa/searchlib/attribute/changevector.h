@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/searchcommon/common/undefinedvalues.h>
+#include <vector>
 
 namespace vespalib { class MemoryUsage; }
 
@@ -141,8 +142,8 @@ protected:
 template <typename T>
 class ChangeVectorT : public ChangeVectorBase {
 private:
-    typedef vespalib::hash_map<uint32_t, uint32_t> Map;
-    typedef vespalib::Array<T> Vector;
+    using Map = vespalib::hash_map<uint32_t, uint32_t>;
+    using Vector = std::vector<T>;
 public:
     ChangeVectorT();
     ~ChangeVectorT();
@@ -175,8 +176,8 @@ public:
     vespalib::MemoryUsage getMemoryUsage() const;
 private:
     void linkIn(uint32_t doc, size_t index, size_t last);
-    Vector _v;
-    Map    _docs;
+    Vector   _v;
+    Map      _docs;
     uint32_t _tail;
 };
 
