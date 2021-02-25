@@ -47,7 +47,7 @@ TrivialIndex::size() const
 }
 
 std::unique_ptr<Value::Index::View>
-TrivialIndex::create_view(const std::vector<size_t> &) const
+TrivialIndex::create_view(ConstArrayRef<size_t>) const
 {
     return std::make_unique<TrivialView>();
 }

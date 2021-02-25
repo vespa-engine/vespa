@@ -59,9 +59,9 @@ struct FastFilterView : public Value::Index::View {
         return true;
     }
 
-    FastFilterView(const FastAddrMap &map_in, const std::vector<size_t> &match_dims_in)
-        : map(map_in), match_dims(match_dims_in),
-          extract_dims(), query(match_dims.size()), pos(FastAddrMap::npos())
+    FastFilterView(const FastAddrMap &map_in, ConstArrayRef<size_t> match_dims_in)
+      : map(map_in), match_dims(match_dims_in.begin(), match_dims_in.end()),
+        extract_dims(), query(match_dims.size()), pos(FastAddrMap::npos())
     {
         auto my_pos = match_dims.begin();
         for (size_t i = 0; i < map.addr_size(); ++i) {
@@ -142,7 +142,7 @@ struct FastValueIndex final : Value::Index {
     FastValueIndex(size_t num_mapped_dims_in, const std::vector<string_id> &labels, size_t expected_subspaces_in)
         : map(num_mapped_dims_in, labels, expected_subspaces_in) {}
     size_t size() const override { return map.size(); }
-    std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
+    std::unique_ptr<View> create_view(ConstArrayRef<size_t> dims) const override;
 };
 
 inline bool is_fast(const Value::Index &index) {
