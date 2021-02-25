@@ -3,6 +3,7 @@
   "type": "CLOUD",
   "creator": "administrator@tenant",
   "pemDeveloperKeys": [],
+  "secretStores": [],
   "quota": {
     "budget": null,
     "budgetUsed": 0.0,
