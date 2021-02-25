@@ -147,7 +147,8 @@ template< typename Key, typename Value, typename Hash, typename Equal, typename 
 void
 hashtable<Key, Value, Hash, Equal, KeyExtract, Modulator>::clear() {
     _nodes.clear();
-    resize(getTableSize());
+    _count = 0;
+    _nodes.resize(getTableSize());
 }
 
 template< typename Key, typename Value, typename Hash, typename Equal, typename KeyExtract, typename Modulator >
