@@ -111,17 +111,22 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                 modelVersion,
                 wantedNodeVespaVersion);
 
+        ModelCreateResult result = createAndValidateModel(modelFactory, applicationId, modelVersion, modelContext);
+        return new PreparedModelResult(modelVersion, result.getModel(), fileDistributionProvider, result.getConfigChangeActions());
+    }
 
+    private ModelCreateResult createAndValidateModel(ModelFactory modelFactory, ApplicationId applicationId, Version modelVersion, ModelContext modelContext) {
         log.log(properties.zone().system().isCd() ? Level.INFO : Level.FINE,
-                "Create and validate model " + modelVersion + " for " + applicationId + ", previous model is " + modelOf(modelVersion));
+                "Create and validate model " + modelVersion + " for " + applicationId + ", previous model is " +
+                modelOf(modelVersion).map(Model::version).map(Version::toFullString).orElse("non-existing"));
         ValidationParameters validationParameters =
                 new ValidationParameters(params.ignoreValidationErrors() ? IgnoreValidationErrors.TRUE : IgnoreValidationErrors.FALSE);
         ModelCreateResult result = modelFactory.createAndValidateModel(modelContext, validationParameters);
         validateModelHosts(hostValidator, applicationId, result.getModel());
         log.log(Level.FINE, "Done building model " + modelVersion + " for " + applicationId);
         params.getTimeoutBudget().assertNotTimedOut(() -> "prepare timed out after building model " + modelVersion +
-                " (timeout " + params.getTimeoutBudget().timeout() + "): " + applicationId);
-        return new PreparedModelResult(modelVersion, result.getModel(), fileDistributionProvider, result.getConfigChangeActions());
+                                                          " (timeout " + params.getTimeoutBudget().timeout() + "): " + applicationId);
+        return result;
     }
 
     private Optional<Model> modelOf(Version version) {
