@@ -366,6 +366,7 @@ class LogFileHandler <LOGTYPE> {
                 throw new RuntimeException("Couldn't open log file '" + fileName + "'", e);
             }
 
+            if(oldFileName == null) oldFileName = getOldFileNameFromSymlink(); // To compress previous file, if so configured
             createSymlinkToCurrentFile();
 
             nextRotationTime = 0; //figure it out later (lazy evaluation)
@@ -465,6 +466,15 @@ class LogFileHandler <LOGTYPE> {
             }
         }
 
+        private String getOldFileNameFromSymlink() {
+            if(symlinkName == null) return null;
+            try {
+                return Paths.get(fileName).resolveSibling(symlinkName).toRealPath().toString();
+            } catch (IOException e) {
+                return null;
+            }
+        }
+
         private static final long lengthOfDayMillis = 24 * 60 * 60 * 1000;
         private static long timeOfDayMillis(long time) {
             return time % lengthOfDayMillis;
@@ -474,8 +484,6 @@ class LogFileHandler <LOGTYPE> {
 
     private static class Operation<LOGTYPE> {
         enum Type {log, flush, close, rotate}
-
-        ;
 
         final Type type;
 

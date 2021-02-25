@@ -125,6 +125,30 @@ public class LogFileHandlerTestCase {
     }
 
     @Test(timeout = /*5 minutes*/300_000)
+    public void compresses_previous_log_file() throws InterruptedException, IOException {
+        File root = temporaryFolder.newFolder("compressespreviouslogfile");
+        LogFileHandler<String> firstHandler = new LogFileHandler<>(
+                Compression.ZSTD, root.getAbsolutePath() + "/compressespreviouslogfile.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", 2048, "thread-name", new StringLogWriter());
+        firstHandler.publishAndWait("test");
+        firstHandler.shutdown();
+
+        assertThat(Files.size(Paths.get(firstHandler.getFileName()))).isEqualTo(5);
+        assertThat(root.toPath().resolve("symlink").toRealPath().toString()).isEqualTo(firstHandler.getFileName());
+
+        LogFileHandler<String> secondHandler = new LogFileHandler<>(
+                Compression.ZSTD, root.getAbsolutePath() + "/compressespreviouslogfile.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", 2048, "thread-name", new StringLogWriter());
+        secondHandler.publishAndWait("test");
+        secondHandler.rotateNow();
+
+        assertThat(root.toPath().resolve("symlink").toRealPath().toString()).isEqualTo(secondHandler.getFileName());
+
+        while (Files.exists(root.toPath().resolve(firstHandler.getFileName()))) Thread.sleep(1);
+
+        assertThat(Files.exists(Paths.get(firstHandler.getFileName() + ".zst"))).isTrue();
+        secondHandler.shutdown();
+    }
+
+    @Test(timeout = /*5 minutes*/300_000)
     public void testcompression_gzip() throws InterruptedException, IOException {
         testcompression(
                 Compression.GZIP, "gz",
