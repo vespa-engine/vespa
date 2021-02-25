@@ -3,6 +3,7 @@
 #include <atomic>
 #include <thread>
 #include <unistd.h>
+#include <limits.h>
 
 #ifdef __linux__
 extern "C" { size_t __pthread_get_minstack(const pthread_attr_t *); }
@@ -67,6 +68,8 @@ bool FastOS_UNIX_Thread::Initialize (int stackSize, int stackGuardSize)
 #ifdef __linux__
     ssize_t stack_needed_by_system = __pthread_get_minstack(&attr);
     adjusted_stack_size += stack_needed_by_system;
+#else
+    adjusted_stack_size += PTHREAD_STACK_MIN;
 #endif
     pthread_attr_setstacksize(&attr, adjusted_stack_size);
 
