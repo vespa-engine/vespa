@@ -9,7 +9,7 @@ namespace proton {
 
 class IBlockableMaintenanceJob;
 class IMaintenanceJobRunner;
-class DocumentDBTaggedMetrics;
+struct DocumentDBTaggedMetrics;
 
 /**
  * Interface for a maintenance job that is executed after "delay" seconds and
