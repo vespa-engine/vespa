@@ -197,7 +197,7 @@ public class NodesSpecification {
                                                                                            .orElse(List.of())
                                                                                            .stream()
                                                                                            .map(content -> new ModelElement(content).child("nodes"))
-                                                                                           .filter(nodes -> nodes != null && nodes.integerAttribute("count") != null)
+                                                                                           .filter(nodes -> nodes != null && nodes.stringAttribute("count") != null)
                                                                                            .map(nodes -> from(nodes, context))
                                                                                            .collect(toList());
         return new NodesSpecification(new ClusterResources(count, 1, resources),
