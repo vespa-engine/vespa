@@ -356,7 +356,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                                                                                 ConfigModelContext context, DeployState deployState) {
             if (admin.getClusterControllers() == null) {
                 NodesSpecification spec = NodesSpecification.requiredFromSharedParents(deployState.zone().environment().isTest() ? 1 : 3,
-                                                                                       clusterControllerResources,
+                                                                                       deployState.featureFlags().dedicatedClusterControllerFlavor().orElse(clusterControllerResources),
                                                                                        contentElement,
                                                                                        context);
 
