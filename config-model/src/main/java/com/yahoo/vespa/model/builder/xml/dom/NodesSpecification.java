@@ -188,11 +188,11 @@ public class NodesSpecification {
     }
 
     /**
-     * Returns a requirement for {@code count} nodes with {@code exclusive} and {@code required} taken as
+     * Returns a requirement for {@code count} shared nodes with {@code required} taken as
      * the OR over all content clusters, and with the given resources.
      */
-    public static NodesSpecification exclusiveAndRequiredFromSharedParents(int count, NodeResources resources,
-                                                                           ModelElement element, ConfigModelContext context) {
+    public static NodesSpecification requiredFromSharedParents(int count, NodeResources resources,
+                                                               ModelElement element, ConfigModelContext context) {
         List<NodesSpecification> allContent = findParentByTag("services", element.getXml()).map(services -> XML.getChildren(services, "content"))
                                                                                            .orElse(List.of())
                                                                                            .stream()
@@ -206,7 +206,7 @@ public class NodesSpecification {
                                       context.getDeployState().getWantedNodeVespaVersion(),
                                       allContent.stream().anyMatch(content -> content.required),
                                       ! context.getDeployState().getProperties().isBootstrap(),
-                                      allContent.stream().anyMatch(content -> content.exclusive),
+                                      false,
                                       context.getDeployState().getWantedDockerImageRepo(),
                                       Optional.empty());
     }

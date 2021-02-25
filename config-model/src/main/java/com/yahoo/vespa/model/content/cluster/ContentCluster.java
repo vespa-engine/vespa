@@ -355,10 +355,10 @@ public class ContentCluster extends AbstractConfigProducer implements
         private ClusterControllerContainerCluster getDedicatedSharedControllers(ModelElement contentElement, Admin admin,
                                                                                 ConfigModelContext context, DeployState deployState) {
             if (admin.getClusterControllers() == null) {
-                NodesSpecification spec = NodesSpecification.exclusiveAndRequiredFromSharedParents(3,
-                                                                                                   clusterControllerResources,
-                                                                                                   contentElement,
-                                                                                                   context);
+                NodesSpecification spec = NodesSpecification.requiredFromSharedParents(3,
+                                                                                       clusterControllerResources,
+                                                                                       contentElement,
+                                                                                       context);
 
                 Collection<HostResource> hosts = spec.provision(admin.hostSystem(),
                                                                 ClusterSpec.Type.admin,

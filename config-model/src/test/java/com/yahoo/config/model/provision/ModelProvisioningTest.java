@@ -1053,29 +1053,6 @@ public class ModelProvisioningTest {
     }
 
     @Test
-    public void testExclusiveDedicatedClusterControllers() {
-        String services =
-                "<?xml version='1.0' encoding='utf-8' ?>\n" +
-                "<services>" +
-                "  <content version='1.0' id='foo'>" +
-                "     <redundancy>1</redundancy>" +
-                "     <documents>" +
-                "       <document type='type1' mode='index'/>" +
-                "     </documents>" +
-                "     <nodes count='2' exclusive='true'/>" +
-                "  </content>" +
-                "</services>";
-
-        int numberOfHosts = 5;
-        VespaModelTester tester = new VespaModelTester();
-        tester.addHosts(numberOfHosts);
-        tester.dedicatedClusterControllerCluster(true);
-        VespaModel model = tester.createModel(services);
-        assertEquals(5, model.hostSystem().getHosts().size());
-        model.hostSystem().getHosts().forEach(host -> assertTrue(host.spec().membership().get().cluster().isExclusive()));
-    }
-
-    @Test
     public void testExclusiveNodes() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
