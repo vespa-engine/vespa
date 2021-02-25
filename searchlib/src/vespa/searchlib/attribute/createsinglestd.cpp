@@ -4,9 +4,9 @@
 #include "predicate_attribute.h"
 #include "singlesmallnumericattribute.h"
 #include "reference_attribute.h"
-#include "singlenumericattribute.hpp"
 #include "singlestringattribute.h"
 #include "singleboolattribute.h"
+#include "singlenumericattribute.hpp"
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/serialized_tensor_attribute.h>
@@ -57,5 +57,10 @@ AttributeFactory::createSingleStd(stringref name, const Config & info)
     }
     return AttributeVector::SP();
 }
+
+template class SingleValueNumericAttribute<IntegerAttributeTemplate<int8_t>>;
+template class SingleValueNumericAttribute<IntegerAttributeTemplate<int16_t>>;
+template class SingleValueNumericAttribute<IntegerAttributeTemplate<int32_t>>;
+template class SingleValueNumericAttribute<IntegerAttributeTemplate<int64_t>>;
 
 }  // namespace search

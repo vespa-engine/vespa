@@ -2,13 +2,9 @@
 
 #include <vespa/searchlib/attribute/attributefactory.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
-#include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/attrvector.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
-#include <vespa/searchlib/attribute/multinumericattribute.h>
-#include <vespa/searchlib/attribute/multinumericpostattribute.hpp>
-#include <vespa/searchlib/attribute/singlenumericattribute.h>
+#include <vespa/searchlib/attribute/integerbase.h>
 #include <vespa/searchlib/common/geo_location.h>
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/locationiterators.h>

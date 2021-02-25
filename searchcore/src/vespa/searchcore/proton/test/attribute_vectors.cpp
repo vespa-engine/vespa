@@ -2,7 +2,6 @@
 
 #include "attribute_vectors.h"
 #include "attribute_utils.h"
-#include <vespa/searchlib/attribute/singlenumericattribute.hpp>
 
 namespace proton::test {
 
