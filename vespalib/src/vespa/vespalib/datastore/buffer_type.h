@@ -10,6 +10,7 @@ namespace vespalib::alloc { class MemoryAllocator; }
 namespace vespalib::datastore {
 
 using ElemCount = uint64_t;
+
 /**
  * Abstract class used to manage allocation and de-allocation of a specific data type in underlying memory buffers in a data store.
  * Each buffer is owned by an instance of BufferState.
@@ -42,11 +43,17 @@ public:
     virtual ~BufferTypeBase();
     virtual void destroyElements(void *buffer, ElemCount numElems) = 0;
     virtual void fallbackCopy(void *newBuffer, const void *oldBuffer, ElemCount numElems) = 0;
-    // Return number of reserved elements at start of buffer, to avoid
-    // invalid reference and handle data at negative offset (alignment
-    // hacks) as used by dense tensor store.
+
+    /**
+     * Return number of reserved elements at start of buffer, to avoid
+     * invalid reference and handle data at negative offset (alignment
+     * hacks) as used by dense tensor store.
+     */
     virtual ElemCount getReservedElements(uint32_t bufferId) const;
-    // Initialize reserved elements at start of buffer.
+
+    /**
+     * Initialize reserved elements at start of buffer.
+     */
     virtual void initializeReservedElements(void *buffer, ElemCount reservedElements) = 0;
     virtual size_t elementSize() const = 0;
     virtual void cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx) = 0;
@@ -76,9 +83,9 @@ protected:
     float    _allocGrowFactor;
     uint32_t _activeBuffers;
     uint32_t _holdBuffers;
-    size_t   _activeUsedElems;    // used elements in all but last active buffer
-    size_t   _holdUsedElems;  // used elements in all held buffers
-    const ElemCount *_lastUsedElems; // used elements in last active buffer
+    size_t   _activeUsedElems; // Number of used elements in all but the last active buffer for this type.
+    size_t   _holdUsedElems;  // Number of used elements in all held buffers for this type.
+    const ElemCount *_lastUsedElems; // Number of used elements in the last active buffer for this type.
 };
 
 /**
