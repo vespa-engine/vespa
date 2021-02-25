@@ -555,7 +555,7 @@ TEST("test that begin and end are identical with empty hashtables") {
     EXPECT_TRUE(empty_but_reserved.begin() == empty_but_reserved.end());
 }
 
-TEST ("test that large_allocator works fine with std::vector") {
+TEST("test that large_allocator works fine with std::vector") {
     using V = std::vector<uint64_t, allocator_large<uint64_t>>;
     V a;
     a.push_back(1);
@@ -566,6 +566,20 @@ TEST ("test that large_allocator works fine with std::vector") {
     V b = std::move(a);
     V c = b;
     ASSERT_EQUAL(b.size(), c.size());
+}
+
+TEST("test that hash table clear does not resize hashtable") {
+    hash_set<int> a(100);
+    EXPECT_EQUAL(0u, a.size());
+    EXPECT_EQUAL(128u, a.capacity());
+    for (size_t i(0); i < 100; i++) {
+        a.insert(i);
+    }
+    EXPECT_EQUAL(100u, a.size());
+    EXPECT_EQUAL(128u, a.capacity());
+    a.clear();
+    EXPECT_EQUAL(0u, a.size());
+    EXPECT_EQUAL(128u, a.capacity());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

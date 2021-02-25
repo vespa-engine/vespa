@@ -80,8 +80,14 @@ private:
 
 namespace vespalib {
 
+/// Rounds up to the closest number that is a power of 2
 inline size_t roundUp2inN(size_t minimum) {
     return 2ul << Optimized::msbIdx(minimum - 1);
+}
+
+/// Rounds minElems up to the closest number where minElems*elemSize is a power of 2
+inline size_t roundUp2inN(size_t minElems, size_t elemSize) {
+    return roundUp2inN(minElems * elemSize)/elemSize;
 }
 
 }
