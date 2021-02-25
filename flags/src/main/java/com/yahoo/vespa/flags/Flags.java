@@ -120,13 +120,7 @@ public class Flags {
             "Whether to use TLS for ZooKeeper clients",
             "Takes effect on restart of process",
             NODE_TYPE, HOSTNAME);
-
-    public static final UnboundStringFlag YUM_DIST_HOST = defineStringFlag(
-            "yum-dist-host", "",
-            List.of("aressem"), "2020-12-02", "2021-03-01",
-            "Override the default dist host for yum.",
-            "Takes effect on next tick or on host-admin restart (may vary where used).");
-
+    
     public static final UnboundBooleanFlag PROVISION_TENANT_ROLES = defineFeatureFlag(
             "provision-tenant-roles", false,
             List.of("tokle"), "2020-12-02", "2021-04-01",
