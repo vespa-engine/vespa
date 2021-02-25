@@ -29,8 +29,8 @@ public class NodeResourceLimits {
     public void ensureWithinAdvertisedLimits(String type, NodeResources requested, ClusterSpec cluster) {
         if (requested.isUnspecified()) return;
 
-        if (requested.vcpu() < minAdvertisedVcpu())
-            illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu());
+        if (requested.vcpu() < minAdvertisedVcpu(cluster.type()))
+            illegal(type, "vcpu", "", cluster, requested.vcpu(), minAdvertisedVcpu(cluster.type()));
         if (requested.memoryGb() < minAdvertisedMemoryGb(cluster.type()))
             illegal(type, "memoryGb", "Gb", cluster, requested.memoryGb(), minAdvertisedMemoryGb(cluster.type()));
         if (requested.diskGb() < minAdvertisedDiskGb(requested, cluster.isExclusive()))
@@ -47,7 +47,7 @@ public class NodeResourceLimits {
     public boolean isWithinRealLimits(NodeResources realResources, ClusterSpec.Type clusterType) {
         if (realResources.isUnspecified()) return true;
 
-        if (realResources.vcpu() < minRealVcpu()) return false;
+        if (realResources.vcpu() < minRealVcpu(clusterType)) return false;
         if (realResources.memoryGb() < minRealMemoryGb(clusterType)) return false;
         if (realResources.diskGb() < minRealDiskGb()) return false;
        return true;
@@ -56,19 +56,20 @@ public class NodeResourceLimits {
     public NodeResources enlargeToLegal(NodeResources requested, ClusterSpec.Type clusterType, boolean exclusive) {
         if (requested.isUnspecified()) return requested;
 
-        return requested.withVcpu(Math.max(minAdvertisedVcpu(), requested.vcpu()))
+        return requested.withVcpu(Math.max(minAdvertisedVcpu(clusterType), requested.vcpu()))
                         .withMemoryGb(Math.max(minAdvertisedMemoryGb(clusterType), requested.memoryGb()))
                         .withDiskGb(Math.max(minAdvertisedDiskGb(requested, exclusive), requested.diskGb()));
     }
 
-    private double minAdvertisedVcpu() {
+    private double minAdvertisedVcpu(ClusterSpec.Type clusterType) {
         if (zone().environment() == Environment.dev && !zone().getCloud().dynamicProvisioning()) return 0.1;
+        if (clusterType == ClusterSpec.Type.admin) return 0.1;
         return 0.5;
     }
 
     private double minAdvertisedMemoryGb(ClusterSpec.Type clusterType) {
         if (zone().system() == SystemName.dev) return 1; // Allow small containers in dev system
-        if (clusterType == ClusterSpec.Type.admin) return 2;
+        if (clusterType == ClusterSpec.Type.admin) return 1;
         return 4;
     }
 
@@ -84,7 +85,7 @@ public class NodeResourceLimits {
             return 4;
     }
 
-    private double minRealVcpu() { return minAdvertisedVcpu(); }
+    private double minRealVcpu(ClusterSpec.Type clusterType) { return minAdvertisedVcpu(clusterType); }
 
     private double minRealMemoryGb(ClusterSpec.Type clusterType) {
         return minAdvertisedMemoryGb(clusterType) - 1.7;
