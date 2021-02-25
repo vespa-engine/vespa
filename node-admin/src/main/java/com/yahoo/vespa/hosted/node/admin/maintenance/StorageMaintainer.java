@@ -79,7 +79,7 @@ public class StorageMaintainer {
         this.archiveContainerStoragePath = archiveContainerStoragePath;
     }
 
-    public boolean syncLogs(NodeAgentContext context) {
+    public boolean syncLogs(NodeAgentContext context, boolean throttle) {
         Optional<URI> archiveUri = context.node().archiveUri();
         if (archiveUri.isEmpty()) return false;
 
@@ -87,10 +87,10 @@ public class StorageMaintainer {
                 .maxDepth(2)
                 .stream()
                 .sorted(Comparator.comparing(FileFinder.FileAttributes::lastModifiedTime))
-                .flatMap(fa -> SyncFileInfo.forLogFile(archiveUri.get(), fa.path()).stream())
+                .flatMap(fa -> SyncFileInfo.forLogFile(archiveUri.get(), fa.path(), throttle).stream())
                 .collect(Collectors.toList());
 
-        return syncClient.sync(context, syncFileInfos, 1);
+        return syncClient.sync(context, syncFileInfos, throttle ? 1 : 100);
     }
 
     public Optional<DiskSize> diskUsageFor(NodeAgentContext context) {
