@@ -175,7 +175,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
 
         // PUT in a new secret store for the tenant
         tester.assertResponse(request("/application/v4/tenant/my-tenant/secret-store/", PUT)
-                        .principal("developer@tenant")
+                        .principal("admin@tenant")
                         .roles(Set.of(Role.administrator(id.tenant())))
                         .data("{\"name\":\"secret-foo\",\"awsId\":\"123\",\"role\":\"secret-role\",\"externalId\":\"abc\"}"),
                 "{\"message\":\"Configured secret store: TenantSecretStore{name='secret-foo', awsId='123', role='secret-role'}\"}",
@@ -183,9 +183,8 @@ public class UserApiTest extends ControllerContainerCloudTest {
 
         // GET a tenant with secret stores configured
         tester.assertResponse(request("/application/v4/tenant/my-tenant")
-                        .principal("developer@tenant")
-                        .roles(Set.of(Role.reader(id.tenant())))
-                        .data("{\"name\":\"secret-foo\",\"awsId\":\"123\",\"role\":\"secret-role\",\"externalId\":\"abc\"}"),
+                        .principal("reader@tenant")
+                        .roles(Set.of(Role.reader(id.tenant()))),
                 new File("tenant-with-secrets.json"));
 
         // DELETE an application is available to developers.
