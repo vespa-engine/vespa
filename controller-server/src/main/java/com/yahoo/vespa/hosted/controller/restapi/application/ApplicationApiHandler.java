@@ -1961,6 +1961,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                     keyObject.setString("user", user.getName());
                 });
 
+                Cursor secretStore = object.setArray("secretStores");
+                cloudTenant.tenantSecretStores().forEach(store -> {
+                    Cursor storeObject = secretStore.addObject();
+                    storeObject.setString("name", store.getName());
+                    storeObject.setString("awsId", store.getAwsId());
+                    storeObject.setString("role", store.getRole());
+                });
+
                 var tenantQuota = controller.serviceRegistry().billingController().getQuota(tenant.name());
                 var usedQuota = applications.stream()
                         .map(com.yahoo.vespa.hosted.controller.Application::quotaUsage)

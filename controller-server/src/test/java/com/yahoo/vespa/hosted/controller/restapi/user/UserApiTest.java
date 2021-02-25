@@ -20,6 +20,7 @@ import java.util.Set;
 
 import static com.yahoo.application.container.handler.Request.Method.DELETE;
 import static com.yahoo.application.container.handler.Request.Method.POST;
+import static com.yahoo.application.container.handler.Request.Method.PUT;
 import static org.junit.Assert.assertEquals;
 
 /**
@@ -171,6 +172,21 @@ public class UserApiTest extends ControllerContainerCloudTest {
                                       .roles(Set.of(Role.developer(id.tenant())))
                                       .data("{\"key\":\"" + pemPublicKey + "\"}"),
                               new File("second-developer-key.json"));
+
+        // PUT in a new secret store for the tenant
+        tester.assertResponse(request("/application/v4/tenant/my-tenant/secret-store/", PUT)
+                        .principal("developer@tenant")
+                        .roles(Set.of(Role.administrator(id.tenant())))
+                        .data("{\"name\":\"secret-foo\",\"awsId\":\"123\",\"role\":\"secret-role\",\"externalId\":\"abc\"}"),
+                "{\"message\":\"Configured secret store: TenantSecretStore{name='secret-foo', awsId='123', role='secret-role'}\"}",
+                200);
+
+        // GET a tenant with secret stores configured
+        tester.assertResponse(request("/application/v4/tenant/my-tenant")
+                        .principal("developer@tenant")
+                        .roles(Set.of(Role.reader(id.tenant())))
+                        .data("{\"name\":\"secret-foo\",\"awsId\":\"123\",\"role\":\"secret-role\",\"externalId\":\"abc\"}"),
+                new File("tenant-with-secrets.json"));
 
         // DELETE an application is available to developers.
         tester.assertResponse(request("/application/v4/tenant/my-tenant/application/my-app", DELETE)
