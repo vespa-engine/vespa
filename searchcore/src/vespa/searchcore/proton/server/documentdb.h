@@ -120,13 +120,13 @@ private:
     DiskMemUsageForwarder         _dmUsageForwarder;
     AttributeUsageFilter          _writeFilter;
     std::shared_ptr<TransientMemoryUsageProvider> _transient_memory_usage_provider;
-    std::unique_ptr<FeedHandler>  _feedHandler;
-    DocumentSubDBCollection       _subDBs;
-    MaintenanceController         _maintenanceController;
-    ILidSpaceCompactionHandler::Vector _lidSpaceCompactionHandlers;
-    DocumentDBJobTrackers         _jobTrackers;
-    IBucketStateCalculator::SP    _calc;
-    DocumentDBMetricsUpdater      _metricsUpdater;
+    std::unique_ptr<FeedHandler>                  _feedHandler;
+    DocumentSubDBCollection                       _subDBs;
+    MaintenanceController                         _maintenanceController;
+    ILidSpaceCompactionHandler::Vector            _lidSpaceCompactionHandlers;
+    DocumentDBJobTrackers                         _jobTrackers;
+    std::shared_ptr<IBucketStateCalculator>       _calc;
+    DocumentDBMetricsUpdater                      _metricsUpdater;
 
     void registerReference();
     void setActiveConfig(const DocumentDBConfig::SP &config, int64_t generation);
@@ -190,7 +190,7 @@ private:
     /**
      * Implements IClusterStateChangedHandler
      */
-    void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
+    void notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc) override;
     void notifyAllBucketsChanged();
 
     /*

@@ -2,6 +2,7 @@
 
 #include "futf8strchrfieldsearcher.h"
 #include "fold.h"
+#include <vespa/vespalib/util/size_literals.h>
 
 using search::byte;
 using search::streaming::QueryTerm;
@@ -18,11 +19,11 @@ FUTF8StrChrFieldSearcher::duplicate() const
 
 FUTF8StrChrFieldSearcher::FUTF8StrChrFieldSearcher()
     : UTF8StrChrFieldSearcher(),
-      _folded(4096)
+      _folded(4_Ki)
 { }
 FUTF8StrChrFieldSearcher::FUTF8StrChrFieldSearcher(FieldIdT fId)
     : UTF8StrChrFieldSearcher(fId),
-      _folded(4096)
+      _folded(4_Ki)
 { }
 FUTF8StrChrFieldSearcher::~FUTF8StrChrFieldSearcher() {}
 

@@ -17,6 +17,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/foreground_thread_executor.h>
 #include <vespa/vespalib/util/foregroundtaskexecutor.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <thread>
 
@@ -77,7 +78,7 @@ public:
     GateSP gate;
 
     FlushHandler()
-        : _executor(1, 65536),
+        : _executor(1, 64_Ki),
           gate()
     { }
     ~FlushHandler();
@@ -581,7 +582,7 @@ Test::requireThatShrinkWorks()
     EXPECT_EQUAL(1000u, av->getNumDocs());
     EXPECT_EQUAL(100u, av->getCommittedDocIdLimit());
     EXPECT_EQUAL(createSerialNum - 1, ft->getFlushedSerialNum());
-    vespalib::ThreadStackExecutor exec(1, 128 * 1024);
+    vespalib::ThreadStackExecutor exec(1, 128_Ki);
     vespalib::Executor::Task::UP task = ft->initFlush(53, std::make_shared<search::FlushToken>());
     exec.execute(std::move(task));
     exec.sync();

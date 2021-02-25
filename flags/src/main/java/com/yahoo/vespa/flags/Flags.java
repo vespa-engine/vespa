@@ -120,13 +120,7 @@ public class Flags {
             "Whether to use TLS for ZooKeeper clients",
             "Takes effect on restart of process",
             NODE_TYPE, HOSTNAME);
-
-    public static final UnboundStringFlag YUM_DIST_HOST = defineStringFlag(
-            "yum-dist-host", "",
-            List.of("aressem"), "2020-12-02", "2021-03-01",
-            "Override the default dist host for yum.",
-            "Takes effect on next tick or on host-admin restart (may vary where used).");
-
+    
     public static final UnboundBooleanFlag PROVISION_TENANT_ROLES = defineFeatureFlag(
             "provision-tenant-roles", false,
             List.of("tokle"), "2020-12-02", "2021-04-01",
@@ -245,11 +239,39 @@ public class Flags {
             "JVM max heap size for cluster controller in Mb",
             "Takes effect when restarting cluster controller");
 
+    public static final UnboundBooleanFlag DEDICATED_CLUSTER_CONTROLLER_CLUSTER = defineFeatureFlag(
+            "dedicated-cluster-controller-cluster", false,
+            List.of("jonmv"), "2021-02-15", "2021-04-15",
+            "Makes application eligible for switching to a dedicated, shared cluster controller cluster, by a maintainer",
+            "Takes effect immediately",
+            APPLICATION_ID);
+
+    public static final UnboundStringFlag DEDICATED_CLUSTER_CONTROLLER_FLAVOR = defineStringFlag(
+            "dedicated-cluster-controller-flavor", "", List.of("jonmv"), "2021-02-25", "2021-04-25",
+            "Flavor as <vpu>-<memgb>-<diskgb> to use for dedicated cluster controller nodes",
+            "Takes effect immediately, for subsequent provisioning",
+            APPLICATION_ID);
+
     public static final UnboundListFlag<String> ALLOWED_ATHENZ_PROXY_IDENTITIES = defineListFlag(
             "allowed-athenz-proxy-identities", List.of(), String.class,
             List.of("bjorncs", "tokle"), "2021-02-10", "2021-08-01",
             "Allowed Athenz proxy identities",
             "takes effect at redeployment");
+
+    public static final UnboundBooleanFlag GENERATE_NON_MTLS_ENDPOINT = defineFeatureFlag(
+            "generate-non-mtls-endpoint", true,
+            List.of("tokle"), "2021-02-18", "2021-10-01",
+            "Whether to generate the non-mtls endpoint",
+            "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
+    public static final UnboundIntFlag MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS = defineIntFlag(
+            "max-activation-inhibited-out-of-sync-groups", 0,
+            List.of("vekterli"), "2021-02-19", "2021-05-01",
+            "Allows replicas in up to N content groups to not be activated " +
+            "for query visibility if they are out of sync with a majority of other replicas",
+            "Takes effect at redeployment",
+            ZONE_ID, APPLICATION_ID);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

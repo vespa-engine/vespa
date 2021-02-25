@@ -8,11 +8,12 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.serialization.NetworkPortsSerializer;
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
-import com.yahoo.slime.JsonFormat;
-import com.yahoo.slime.Slime;
 import com.yahoo.vespa.applicationmodel.HostName;
+import com.yahoo.vespa.flags.FetchVector;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Address;
@@ -22,8 +23,6 @@ import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.net.URI;
 import java.util.List;
 import java.util.Optional;
@@ -33,7 +32,7 @@ import java.util.function.Function;
 /**
 * @author bratseth
 */
-class NodesResponse extends HttpResponse {
+class NodesResponse extends SlimeJsonResponse {
 
     /** The responses this can create */
     public enum ResponseType { nodeList, stateList, nodesInStateList, singleNode }
@@ -48,19 +47,16 @@ class NodesResponse extends HttpResponse {
     private final boolean recursive;
     private final Function<HostName, Optional<HostInfo>> orchestrator;
     private final NodeRepository nodeRepository;
-    private final Slime slime;
 
-    public NodesResponse(ResponseType responseType, HttpRequest request,  
+    public NodesResponse(ResponseType responseType, HttpRequest request,
                          Orchestrator orchestrator, NodeRepository nodeRepository) {
-        super(200);
         this.parentUrl = toParentUrl(request);
         this.nodeParentUrl = toNodeParentUrl(request);
-        filter = NodesV2ApiHandler.toNodeFilter(request);
+        this.filter = NodesV2ApiHandler.toNodeFilter(request);
         this.recursive = request.getBooleanProperty("recursive");
         this.orchestrator = orchestrator.getHostResolver();
         this.nodeRepository = nodeRepository;
 
-        slime = new Slime();
         Cursor root = slime.setObject();
         switch (responseType) {
             case nodeList: nodesToSlime(root); break;
@@ -82,16 +78,6 @@ class NodesResponse extends HttpResponse {
     private String toNodeParentUrl(HttpRequest request) {
         URI uri = request.getUri();
         return uri.getScheme() + "://" + uri.getHost() + ":" + uri.getPort() + "/nodes/v2/node/";
-    }
-
-    @Override
-    public void render(OutputStream stream) throws IOException {
-        new JsonFormat(true).encode(stream, slime);
-    }
-
-    @Override
-    public String getContentType() {
-        return "application/json";
     }
 
     private void statesToSlime(Cursor root) {
@@ -184,6 +170,7 @@ class NodesResponse extends HttpResponse {
         currentDockerImage(node).ifPresent(dockerImage -> object.setString("currentDockerImage", dockerImage.asString()));
         object.setLong("failCount", node.status().failCount());
         object.setBool("wantToRetire", node.status().wantToRetire());
+        object.setBool("preferToRetire", node.status().preferToRetire());
         object.setBool("wantToDeprovision", node.status().wantToDeprovision());
         toSlime(node.history(), object.setArray("history"));
         ipAddressesToSlime(node.ipConfig().primary(), object.setArray("ipAddresses"));
@@ -192,6 +179,7 @@ class NodesResponse extends HttpResponse {
         node.reports().toSlime(object, "reports");
         node.modelName().ifPresent(modelName -> object.setString("modelName", modelName));
         node.switchHostname().ifPresent(switchHostname -> object.setString("switchHostname", switchHostname));
+        archiveUri(nodeRepository.flagSource(), node).ifPresent(uri -> object.setString("archiveUri", uri));
     }
 
     private void toSlime(ApplicationId id, Cursor object) {
@@ -244,6 +232,32 @@ class NodesResponse extends HttpResponse {
         int lastSlash = path.lastIndexOf("/");
         if (lastSlash < 0) return path;
         return path.substring(lastSlash+1);
+    }
+
+    // TODO (freva): Store this in Application or Node
+    static Optional<String> archiveUri(FlagSource flagSource, Node node) {
+        String bucket = Flags.SYNC_HOST_LOGS_TO_S3_BUCKET.bindTo(flagSource)
+                .with(FetchVector.Dimension.NODE_TYPE, node.type().name())
+                .with(FetchVector.Dimension.APPLICATION_ID, node.allocation().map(alloc -> alloc.owner().serializedForm()).orElse(null))
+                .value();
+        if (bucket.isBlank()) return Optional.empty();
+
+        StringBuilder sb = new StringBuilder(100).append("s3://").append(bucket).append('/');
+        if (node.type() == NodeType.tenant) {
+            if (node.allocation().isEmpty()) return Optional.empty();
+            ApplicationId app = node.allocation().get().owner();
+
+            sb.append(app.tenant().value()).append('/').append(app.application().value()).append('/').append(app.instance().value()).append('/');
+        } else {
+            sb.append("hosted-vespa/");
+        }
+
+        for (char c: node.hostname().toCharArray()) {
+            if (c == '.') break;
+            sb.append(c);
+        }
+
+        return Optional.of(sb.append('/').toString());
     }
 
 }

@@ -3,6 +3,7 @@
 #include "extractkeywordstest.h"
 #include <vespa/searchsummary/docsummary/keywordextractor.h>
 #include "simplequerystack.h"
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/time.h>
 
 #define NUMTESTS 5
@@ -157,7 +158,7 @@ bool
 ExtractKeywordsTest::RunTest(int testno, bool verify)
 {
     search::SimpleQueryStack stack;
-    search::RawBuf buf(32768);
+    search::RawBuf buf(32_Ki);
     const char *correct = nullptr;
     const char *keywords = nullptr;
 

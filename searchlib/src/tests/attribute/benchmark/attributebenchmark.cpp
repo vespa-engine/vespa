@@ -4,12 +4,6 @@
 #include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/singlenumericattribute.h>
-#include <vespa/searchlib/attribute/multinumericattribute.h>
-#include <vespa/searchlib/attribute/singlestringattribute.h>
-#include <vespa/searchlib/attribute/multistringattribute.h>
-#include <vespa/searchlib/attribute/attrvector.h>
-#include <vespa/searchlib/attribute/attributevector.hpp>
 #include <vespa/fastos/thread.h>
 #include <vespa/fastos/app.h>
 #include <iostream>
@@ -25,13 +19,14 @@ using std::shared_ptr;
 
 typedef std::vector<uint32_t> NumVector;
 typedef std::vector<vespalib::string> StringVector;
-typedef AttributeVector::SP AttributePtr;
-typedef AttributeVector::DocId DocId;
 typedef search::attribute::Config AttrConfig;
 using search::attribute::BasicType;
 using search::attribute::CollectionType;
 
 namespace search {
+
+using AttributePtr = AttributeVector::SP;
+using DocId = AttributeVector::DocId;
 
 class AttributeBenchmark : public FastOS_Application
 {

@@ -7,6 +7,7 @@
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fastos/file.h>
 
 #include <vespa/log/log.h>
@@ -19,15 +20,15 @@ namespace search {
 
 namespace {
 
-const uint32_t headerAlign = 4096;
-const uint32_t MIN_ALIGNMENT = 4096;
+const uint32_t headerAlign = 4_Ki;
+const uint32_t MIN_ALIGNMENT = 4_Ki;
 
 void
 writeDirectIOAligned(FastOS_FileInterface &file, const void *buf, size_t length)
 {
     const char * data(static_cast<const char *>(buf));
     size_t remaining(length);
-    for (size_t maxChunk(2048*1024); maxChunk >= MIN_ALIGNMENT; maxChunk >>= 1) {
+    for (size_t maxChunk(2_Mi); maxChunk >= MIN_ALIGNMENT; maxChunk >>= 1) {
         for ( ; remaining > maxChunk; remaining -= maxChunk, data += maxChunk) {
             file.WriteBuf(data, maxChunk);
         }

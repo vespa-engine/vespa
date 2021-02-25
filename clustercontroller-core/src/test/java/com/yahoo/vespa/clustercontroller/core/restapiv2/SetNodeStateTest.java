@@ -48,11 +48,10 @@ public class SetNodeStateTest extends StateRestApiTest {
     public ExpectedException expectedException = ExpectedException.none();
 
     public static class SetUnitStateRequestImpl extends StateRequest implements SetUnitStateRequest {
-        private Map<String, UnitState> newStates = new LinkedHashMap<>();
+        private final Map<String, UnitState> newStates = new LinkedHashMap<>();
         private Condition condition = Condition.FORCE;
         private ResponseWait responseWait = ResponseWait.WAIT_UNTIL_CLUSTER_ACKED;
-        private TimeBudget timeBudget = TimeBudget.fromNow(Clock.systemUTC(), Duration.ofSeconds(10));
-        private boolean probe = false;
+        private final TimeBudget timeBudget = TimeBudget.fromNow(Clock.systemUTC(), Duration.ofSeconds(10));
 
         SetUnitStateRequestImpl(String req) {
             super(req, 0);
@@ -108,7 +107,7 @@ public class SetNodeStateTest extends StateRestApiTest {
 
         @Override
         public boolean isProbe() {
-            return probe;
+            return false;
         }
     }
 
@@ -206,7 +205,7 @@ public class SetNodeStateTest extends StateRestApiTest {
     @Test
     public void testShouldModifyStorageSafeOk() throws Exception {
         setUp(false);
-        SetResponse setResponse = restAPI.setUnitState(new SetUnitStateRequestImpl("music/storage/1")
+        SetResponse setResponse = restAPI.setUnitState(new SetUnitStateRequestImpl("music/storage/2")
                 .setNewState("user", "maintenance", "whatever reason.")
                 .setCondition(SetUnitStateRequest.Condition.SAFE));
         assertThat(setResponse.getReason(), is("ok"));
@@ -265,20 +264,22 @@ public class SetNodeStateTest extends StateRestApiTest {
         assertSetUnitState(1, State.MAINTENANCE, null);  // sanity-check
 
         // Because 2 is in a different group maintenance should be denied
-        assertSetUnitStateCausesAlreadyInMaintenance(2, State.MAINTENANCE);
+        assertSetUnitStateCausesAlreadyInWantedMaintenance(2, State.MAINTENANCE);
 
         // Because 3 and 5 are in the same group as 1, these should be OK
         assertSetUnitState(3, State.MAINTENANCE, null);
         assertUnitState(1, "user", State.MAINTENANCE, "whatever reason.");  // sanity-check
         assertUnitState(3, "user", State.MAINTENANCE, "whatever reason.");  // sanity-check
         assertSetUnitState(5, State.MAINTENANCE, null);
-        assertSetUnitStateCausesAlreadyInMaintenance(2, State.MAINTENANCE);  // sanity-check
+        assertSetUnitStateCausesAlreadyInWantedMaintenance(2, State.MAINTENANCE);  // sanity-check
 
         // Set all to up
         assertSetUnitState(1, State.UP, null);
         assertSetUnitState(1, State.UP, null); // sanity-check
         assertSetUnitState(3, State.UP, null);
-        assertSetUnitStateCausesAlreadyInMaintenance(2, State.MAINTENANCE);  // sanity-check
+        // Because 1 is in maintenance, even though user wanted state is UP, trying to set 2 to
+        // maintenance will fail.
+        assertSetUnitStateCausesAlreadyInMaintenance(2, State.MAINTENANCE);
         assertSetUnitState(5, State.UP, null);
     }
 
@@ -306,11 +307,11 @@ public class SetNodeStateTest extends StateRestApiTest {
     }
 
     private void assertSetUnitStateCausesAlreadyInWantedMaintenance(int index, State state) throws StateRestApiException {
-        assertSetUnitStateCausesAlreadyInMaintenance(index, state, "^Another node wants maintenance:([0-9]+)$");
+        assertSetUnitStateCausesAlreadyInMaintenance(index, state, "^Another storage node wants state MAINTENANCE: ([0-9]+)$");
     }
 
     private void assertSetUnitStateCausesAlreadyInMaintenance(int index, State state) throws StateRestApiException {
-        assertSetUnitStateCausesAlreadyInMaintenance(index, state, "^Another node is already in maintenance:([0-9]+)$");
+        assertSetUnitStateCausesAlreadyInMaintenance(index, state, "^Another storage node has state MAINTENANCE: ([0-9]+)$");
     }
 
     private void assertSetUnitStateCausesAlreadyInMaintenance(int index, State state, String reasonRegex)

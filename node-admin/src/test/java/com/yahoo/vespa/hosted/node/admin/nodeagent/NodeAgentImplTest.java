@@ -32,6 +32,7 @@ import org.mockito.InOrder;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -737,7 +738,7 @@ public class NodeAgentImplTest {
 
         return new NodeAgentImpl(contextSupplier, nodeRepository, orchestrator, containerOperations,
                                  () -> RegistryCredentials.none, storageMaintainer, flagSource,
-                                 Optional.of(credentialsMaintainer), Optional.of(aclMaintainer),
+                                 List.of(credentialsMaintainer), Optional.of(aclMaintainer),
                                  Optional.of(healthChecker), clock, warmUpDuration);
     }
 

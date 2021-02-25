@@ -22,7 +22,7 @@ import java.util.Set;
  * <p>
  * A span will usually be used indirectly through Interpretation.
  *
- * @author <a href="mailto:arnebef@yahoo-inc.com">Arne Bergene Fossaa</a>
+ * @author Arne Bergene Fossaa
  */
 public class Span {
 
@@ -32,7 +32,6 @@ public class Span {
     private Span parent; //Yes, this _should_ be final, but might be changed when adding an annotation
     private final int from;
     private final int to;
-
 
     /**
      * Creates a new root span based on the modfication
@@ -44,15 +43,13 @@ public class Span {
         this.to = modification.getText().length();
     }
 
-    //This constructor is private to ensure that all child spans for a span is contained inside it.
+    // This constructor is private to ensure that all child spans for a span is contained inside it.
     private Span(int from, int to, Span parent) {
         this.parent = parent;
         this.modification = parent.modification;
         this.from = from;
         this.to = to;
     }
-
-
 
     /**
      * Returns the text that this spans is
@@ -61,11 +58,10 @@ public class Span {
         return modification.getText().substring(from, to);
     }
 
-
+    @Override
     public String toString() {
         return "SPAN: " + getText();
     }
-
 
     public Annotations annotate(AnnotationClass clazz) {
         Annotations annotations = this.annotations.get(clazz);
@@ -82,7 +78,6 @@ public class Span {
     public Annotations annotate(int from, int to, AnnotationClass clazz) {
         return addAnnotation(from, to, clazz);
     }
-
 
     /**
      * Returns all annotations that are contained in either this subspan or in any of its subannotations
@@ -124,7 +119,7 @@ public class Span {
      * @throws RuntimeException if (from,to) is not contained in the span
      */
     public Annotations getAnnotation(int from, int to, AnnotationClass clazz) {
-        if(from < this.from || to > this.to) {
+        if (from < this.from || to > this.to) {
             throw new RuntimeException("Trying to get a range that is outside this span");
         }
         if (this.parent != null) {
@@ -140,13 +135,12 @@ public class Span {
      */
     public Set<AnnotationClass> getClasses() {
         return getClasses(from, to);
-
     }
 
     /**
      * Returns all AnnotationClasses that are defined for the range (from,to).
      *
-     * @throws RuntimeException if (from,to) is not contained in the span
+     * @throws RuntimeException if (from, to) is not contained in the span
      */
     public Set<AnnotationClass> getClasses(int from, int to) {
         if(from < this.from || to > this.to) {
@@ -160,8 +154,6 @@ public class Span {
             return classes;
         }
     }
-
-
 
     /**
      * Returns an unmodifiable list of all spans below this span that is a leaf node
@@ -191,26 +183,25 @@ public class Span {
 
     /** hack */
     public int getFrom() { return from; }
+
     /** hack */
     public int getTo() { return to; }
 
-    //Needed by addAnnotation
+    // Needed by addAnnotation
     private List<Span> getRemovableSubSpan() {
         return subSpans == null ?
                 Collections.<Span>emptyList() :
                 subSpans;
     }
 
-
     private void addSubSpan(Span span) {
-       if(subSpans == null) {
+       if (subSpans == null) {
            subSpans = new ArrayList<>();
        }
        subSpans.add(span);
    }
 
-
-    /*
+    /**
      * How this works:
      *
      * First we check if any excisting subannotation can contain this annotation. If so, we leave it to them to add
@@ -222,7 +213,7 @@ public class Span {
      */
     private Annotations addAnnotation(int from, int to, AnnotationClass clazz) {
         if (equalsRange(from, to)) {
-            //We simply add everything from the new span to this
+            // We simply add everything from the new span to this
             if (annotations.containsKey(clazz)) {
                 return annotations.get(clazz);
             } else {
@@ -232,7 +223,7 @@ public class Span {
             }
         }
 
-        //We then check if any of the children intersects
+        // We then check if any of the children intersects
         for (Span subSpan : getSubSpans()) {
             if (subSpan.intersects(from, to)) {
                 throw new RuntimeException("Trying to add span that intersects already excisting span");
@@ -241,14 +232,13 @@ public class Span {
             }
         }
 
-        //We now know that we have to add the new span to this span
+        // We now know that we have to add the new span to this span
         Span span = new Span(from, to, this);
         Annotations nAnnotations = new Annotations(span);
         span.annotations.put(clazz,nAnnotations);
         addSubSpan(span);
 
-
-        //We then add any subannotation that is inside the span
+        // We then add any subannotation that is inside the span
         Iterator<Span> subIterator = getRemovableSubSpan().iterator();
 
         while (subIterator.hasNext()) {
@@ -256,7 +246,7 @@ public class Span {
             if (subSpan.contains(from, to)) {
                 return subSpan.addAnnotation(from, to, clazz);
             } else if (subSpan.isInside(from, to)) {
-                //Overtake the subannotation
+                // Take over the subannotation
                 subSpan.parent = span;
                 span.addSubSpan(subSpan);
                 subIterator.remove();
@@ -264,7 +254,6 @@ public class Span {
         }
         return nAnnotations;
     }
-
 
     private boolean contains(int from, int to) {
         return this.from <= from && this.to >= to;
@@ -274,12 +263,9 @@ public class Span {
         return this.from >= from && this.to <= to;
     }
 
-
     private boolean intersects(int from, int to) {
         return (this.from < from && this.to > from && this.to < to)
                 || (this.from < to && this.to > to && this.from > from);
-
-
     }
 
     private boolean equalsRange(int from, int to) {
@@ -336,7 +322,7 @@ public class Span {
         if (!contains(from, to)) {
             return null;
         }
-        //First yourself, then the subs
+        // First yourself, then the subs
         Annotations annotations = this.annotations.get(clazz);
         for (Span subSpan : getSubSpans()) {
             Annotations subAnnotations = subSpan.getBestAnnotation(from, to, clazz);
@@ -346,4 +332,5 @@ public class Span {
         }
         return annotations;
     }
+
 }

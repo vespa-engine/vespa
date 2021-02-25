@@ -20,6 +20,7 @@ import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -64,6 +65,9 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         maintainers.add(new AutoscalingMaintainer(nodeRepository, metricsDb, deployer, metric, defaults.autoscalingInterval));
         maintainers.add(new ScalingSuggestionsMaintainer(nodeRepository, metricsDb, defaults.scalingSuggestionsInterval, metric));
         maintainers.add(new SwitchRebalancer(nodeRepository, defaults.switchRebalancerInterval, metric, deployer));
+        if (Set.of(Environment.staging, Environment.perf, Environment.prod).contains(zone.environment())
+            || (zone.system().isCd() && zone.environment() == Environment.dev))  // TODO: Temporarily when testing the feature
+            maintainers.add(new DedicatedClusterControllerClusterMigrator(deployer, metric, nodeRepository, defaults.dedicatedClusterControllerMigratorInterval, flagSource, orchestrator));
 
         provisionServiceProvider.getLoadBalancerService(nodeRepository)
                                 .map(lbService -> new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService, metric))
@@ -113,6 +117,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration autoscalingInterval;
         private final Duration scalingSuggestionsInterval;
         private final Duration switchRebalancerInterval;
+        private final Duration dedicatedClusterControllerMigratorInterval;
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
@@ -140,17 +145,18 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             spareCapacityMaintenanceInterval = Duration.ofMinutes(30);
             switchRebalancerInterval = Duration.ofHours(1);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
+            retiredExpiry = Duration.ofDays(4); // give up migrating data after 4 days
+            dedicatedClusterControllerMigratorInterval = zone.environment() == Environment.staging || zone.system().isCd() ? Duration.ofMinutes(3)
+                                                                                                                           : Duration.ofHours(3);
 
-            if (zone.environment().equals(Environment.prod) && ! zone.system().isCd()) {
+            if (zone.environment()  == Environment.prod && ! zone.system().isCd()) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
                 retiredInterval = Duration.ofMinutes(30);
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
-                retiredExpiry = Duration.ofDays(4); // give up migrating data after 4 days
             } else {
                 inactiveExpiry = Duration.ofSeconds(2); // support interactive wipe start over
                 retiredInterval = Duration.ofMinutes(1);
                 dirtyExpiry = Duration.ofMinutes(30);
-                retiredExpiry = Duration.ofMinutes(20);
             }
         }
 

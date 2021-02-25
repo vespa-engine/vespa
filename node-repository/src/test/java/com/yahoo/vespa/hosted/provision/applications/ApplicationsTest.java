@@ -27,7 +27,7 @@ public class ApplicationsTest {
 
         assertTrue(applications.get(app1).isEmpty());
         assertEquals(List.of(), applications.ids());
-        applications.put(new Application(app1), () -> {});
+        applications.put(Application.empty(app1), () -> {});
         assertEquals(app1, applications.get(app1).get().id());
         assertEquals(List.of(app1), applications.ids());
         NestedTransaction t = new NestedTransaction();
@@ -36,10 +36,10 @@ public class ApplicationsTest {
         assertTrue(applications.get(app1).isEmpty());
         assertEquals(List.of(), applications.ids());
 
-        applications.put(new Application(app1), () -> {});
-        applications.put(new Application(app2), () -> {});
+        applications.put(Application.empty(app1), () -> {});
+        applications.put(Application.empty(app2), () -> {});
         t = new NestedTransaction();
-        applications.put(new Application(app3), new ApplicationTransaction(provisionLock(app1), t));
+        applications.put(Application.empty(app3), new ApplicationTransaction(provisionLock(app1), t));
         assertEquals(List.of(app1, app2), applications.ids());
         t.commit();
         assertEquals(List.of(app1, app2, app3), applications.ids());

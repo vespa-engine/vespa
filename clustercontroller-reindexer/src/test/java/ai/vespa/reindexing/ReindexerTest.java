@@ -91,9 +91,9 @@ class ReindexerTest {
     @Test
     @Timeout(10)
     void testReindexing() throws ReindexingLockException {
-        // Reindexer is created without any ready document types, which means nothing should run.
-        new Reindexer(cluster, Map.of(), database, ReindexerTest::failIfCalled, metric, clock).reindex();
-        Reindexing reindexing = Reindexing.empty();
+        // Reindexer is created against en empty database, so any ready document types are assumed already done.
+        new Reindexer(cluster, Map.of(music, Instant.ofEpochMilli(-10)), database, ReindexerTest::failIfCalled, metric, clock).reindex();
+        Reindexing reindexing = Reindexing.empty().with(music, Status.ready(Instant.EPOCH).running().successful(Instant.EPOCH));
         assertEquals(reindexing, database.readReindexing("cluster"));
 
         // New config tells reindexer to reindex "music" documents no earlier than at 10 millis after EPOCH, which isn't yet.
@@ -155,6 +155,10 @@ class ReindexerTest {
                            .get(Map.of("documenttype", "music",
                                        "clusterid", "cluster",
                                        "state", "pending")));
+
+        // Reindexer is created without any ready document types, which means nothing should run.
+        new Reindexer(cluster, Map.of(), database, ReindexerTest::failIfCalled, metric, clock).reindex();
+        assertEquals(reindexing, database.readReindexing("cluster"));
 
         // Last reindexing fails.
         clock.advance(Duration.ofMillis(10));

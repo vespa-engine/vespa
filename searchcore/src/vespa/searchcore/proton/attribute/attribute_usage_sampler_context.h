@@ -4,6 +4,7 @@
 
 #include "attribute_usage_stats.h"
 #include <mutex>
+#include <memory>
 
 namespace proton {
 

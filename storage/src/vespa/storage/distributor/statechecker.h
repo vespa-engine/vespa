@@ -6,17 +6,16 @@
 #include <vespa/storage/distributor/operations/idealstate/idealstateoperation.h>
 #include <vespa/storage/common/storagecomponent.h>
 #include <vespa/storage/bucketdb/bucketdatabase.h>
-#include <vespa/vdslib/distribution/distribution.h>
-#include <vespa/vdslib/state/clusterstate.h>
 #include <unordered_set>
 #include <map>
 #include <set>
 
-namespace storage {
+namespace storage::lib {
+    class ClusterState;
+}
+namespace storage { class DistributorConfiguration; }
 
-class DistributorConfiguration;
-
-namespace distributor {
+namespace storage::distributor {
 
 class DistributorComponent;
 class DistributorBucketSpace;
@@ -165,6 +164,3 @@ public:
 };
 
 }
-
-}
-

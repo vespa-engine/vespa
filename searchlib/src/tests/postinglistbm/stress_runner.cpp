@@ -8,6 +8,7 @@
 #include <vespa/searchlib/test/fakedata/fakeword.h>
 #include <vespa/searchlib/test/fakedata/fakewordset.h>
 #include <vespa/searchlib/test/fakedata/fpfactory.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/time.h>
 #include <condition_variable>
 #include <mutex>
@@ -159,7 +160,7 @@ StressMaster::StressMaster(vespalib::Rand48 &rnd,
 {
     LOG(info, "StressMaster::StressMaster()");
 
-    _threadPool = new FastOS_ThreadPool(128 * 1024, 400);
+    _threadPool = new FastOS_ThreadPool(128_Ki, 400);
 }
 
 StressMaster::~StressMaster()

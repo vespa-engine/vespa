@@ -3,6 +3,8 @@
 #include <vespa/storage/distributor/idealstatemanager.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <array>
 
 #include <vespa/log/bufferedlogger.h>
@@ -10,7 +12,7 @@ LOG_SETUP(".distributor.operation.idealstate.merge");
 
 namespace storage::distributor {
 
-MergeOperation::~MergeOperation() {}
+MergeOperation::~MergeOperation() = default;
 
 std::string
 MergeOperation::getStatus() const

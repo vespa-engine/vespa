@@ -4,6 +4,7 @@
 #include "ibucketstatechangedhandler.h"
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <cassert>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.buckethandler");
@@ -35,12 +36,8 @@ BucketHandler::performSetCurrentState(BucketId bucketId,
     LOG(debug, "performSetCurrentState(%s, %s)",
         bucketId.toString().c_str(), (active ? "ACTIVE" : "NOT_ACTIVE"));
     _ready->setBucketState(bucketId, active);
-    if (!_changedHandlers.empty()) {
-        typedef std::vector<IBucketStateChangedHandler *> Chv;
-        Chv &chs(_changedHandlers);
-        for (Chv::const_iterator itr = chs.begin(); itr != chs.end(); ++itr) {
-            (*itr)->notifyBucketStateChanged(bucketId, newState);
-        }
+    for (const auto & ch : _changedHandlers) {
+        ch->notifyBucketStateChanged(bucketId, newState);
     }
     resultHandler->handle(Result());
 }
@@ -69,7 +66,7 @@ BucketHandler::BucketHandler(vespalib::Executor &executor)
     : IClusterStateChangedHandler(),
       IBucketStateChangedNotifier(),
       _executor(executor),
-      _ready(NULL),
+      _ready(nullptr),
       _changedHandlers(),
       _nodeUp(false)
 {
@@ -142,13 +139,11 @@ BucketHandler::handlePopulateActiveBuckets(document::BucketId::List &buckets,
 }
 
 void
-BucketHandler::notifyClusterStateChanged(const IBucketStateCalculator::SP & newCalc)
+BucketHandler::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> & newCalc)
 {
     bool oldNodeUp = _nodeUp;
     _nodeUp = newCalc->nodeUp();
-    LOG(spam, "notifyClusterStateChanged: %s -> %s",
-        oldNodeUp ? "up" : "down",
-        _nodeUp ? "up" : "down");
+    LOG(spam, "notifyClusterStateChanged: %s -> %s", oldNodeUp ? "up" : "down", _nodeUp ? "up" : "down");
     if (oldNodeUp && !_nodeUp) {
         deactivateAllActiveBuckets();
     }

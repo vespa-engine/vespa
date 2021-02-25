@@ -254,10 +254,21 @@ TensorAttribute::getRefCopy() const
 void
 TensorAttribute::update_tensor(DocId docId,
                                const document::TensorUpdate &update,
-                               const vespalib::eval::Value &old_tensor)
+                               bool create_empty_if_non_existing)
 {
-    auto new_value = update.apply_to(old_tensor, FastValueBuilderFactory::get());
-    setTensor(docId, *new_value);
+    const vespalib::eval::Value * old_v = nullptr;
+    auto old_tensor = getTensor(docId);
+    if (old_tensor) {
+        old_v = old_tensor.get();
+    } else if (create_empty_if_non_existing) {
+        old_v = _emptyTensor.get();
+    } else {
+        return;
+    }
+    auto new_value = update.apply_to(*old_v, FastValueBuilderFactory::get());
+    if (new_value) {
+        setTensor(docId, *new_value);
+    }
 }
 
 std::unique_ptr<PrepareResult>

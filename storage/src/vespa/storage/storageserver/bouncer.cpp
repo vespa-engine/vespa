@@ -4,6 +4,7 @@
 #include "bouncer_metrics.h"
 #include "config_logging.h"
 #include <vespa/vdslib/state/cluster_state_bundle.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/persistence/spi/bucket_limits.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageapi/message/persistence.h>

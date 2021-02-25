@@ -1,5 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <tests/common/teststorageapp.h>
+#include <tests/common/testhelper.h>
+#include <tests/common/dummystoragelink.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/storage/bucketdb/storbucketdb.h>
 #include <vespa/storage/persistence/messages.h>
@@ -8,13 +11,13 @@
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/storageapi/message/persistence.h>
-#include <tests/common/teststorageapp.h>
-#include <tests/common/testhelper.h>
-#include <tests/common/dummystoragelink.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/storageserver/changedbucketownershiphandler.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
+
 #include <vespa/vespalib/gtest/gtest.h>
 
 using document::test::makeDocumentBucket;

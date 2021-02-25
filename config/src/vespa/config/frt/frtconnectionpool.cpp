@@ -2,6 +2,7 @@
 
 #include "frtconnectionpool.h"
 #include <vespa/vespalib/util/host_name.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/transport.h>
 #include <vespa/fastos/thread.h>
@@ -27,7 +28,7 @@ FRTConnectionPool::FRTConnectionKey::operator==(const FRTConnectionKey& right) c
 }
 
 FRTConnectionPool::FRTConnectionPool(const ServerSpec & spec, const TimingValues & timingValues)
-    :  _threadPool(std::make_unique<FastOS_ThreadPool>(1024*60)),
+    :  _threadPool(std::make_unique<FastOS_ThreadPool>(60_Ki)),
        _transport(std::make_unique<FNET_Transport>()),
        _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())),
       _selectIdx(0),

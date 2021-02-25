@@ -96,7 +96,7 @@ public class LoggingTestCase {
     }
 
     @Test
-    public final void testFailed() throws IOException, InterruptedException {
+    public final void testFailed() throws IOException {
         stream.send(createData());
         stream.send(createData());
         stream.send(createData());

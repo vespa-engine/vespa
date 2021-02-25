@@ -30,6 +30,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.time.Clock;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -87,7 +88,7 @@ public class DockerTester implements AutoCloseable {
         NodeAgentFactory nodeAgentFactory = (contextSupplier, nodeContext) -> new NodeAgentImpl(
                 contextSupplier, nodeRepository, orchestrator, containerOperations, () -> RegistryCredentials.none,
                 storageMaintainer, flagSource,
-                Optional.empty(), Optional.empty(), Optional.empty(), clock, Duration.ofSeconds(-1));
+                Collections.emptyList(), Optional.empty(), Optional.empty(), clock, Duration.ofSeconds(-1));
         nodeAdmin = new NodeAdminImpl(nodeAgentFactory, metrics, clock, Duration.ofMillis(10), Duration.ZERO);
         NodeAgentContextFactory nodeAgentContextFactory = (nodeSpec, acl) ->
                 new NodeAgentContextImpl.Builder(nodeSpec).acl(acl).fileSystem(fileSystem).build();

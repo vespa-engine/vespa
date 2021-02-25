@@ -1,6 +1,8 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include <cstdint>
+
 namespace storage::distributor {
 
 /*
@@ -17,8 +19,7 @@ class BucketOwnershipFlags {
 public:
     BucketOwnershipFlags() noexcept
         : _flags(0)
-    {
-    }
+    { }
 
     bool owned_in_current_state() const noexcept { return ((_flags & owned_in_current_state_flag) != 0); }
     bool owned_in_pending_state() const noexcept {  return ((_flags & owned_in_pending_state_flag) != 0); }

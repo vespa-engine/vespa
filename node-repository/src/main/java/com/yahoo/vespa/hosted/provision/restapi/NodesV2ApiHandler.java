@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -71,14 +72,16 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
 
     private final Orchestrator orchestrator;
     private final NodeRepository nodeRepository;
+    private final MetricsDb metricsDb;
     private final NodeFlavors nodeFlavors;
 
     @Inject
     public NodesV2ApiHandler(LoggingRequestHandler.Context parentCtx, Orchestrator orchestrator,
-                             NodeRepository nodeRepository, NodeFlavors flavors) {
+                             NodeRepository nodeRepository, MetricsDb metricsDb, NodeFlavors flavors) {
         super(parentCtx);
         this.orchestrator = orchestrator;
         this.nodeRepository = nodeRepository;
+        this.metricsDb = metricsDb;
         this.nodeFlavors = flavors;
     }
 
@@ -158,8 +161,9 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handlePATCH(HttpRequest request) {
-        String path = request.getUri().getPath();
-        if (path.startsWith("/nodes/v2/node/")) {
+        Path path = new Path(request.getUri());
+        String pathS = request.getUri().getPath();
+        if (pathS.startsWith("/nodes/v2/node/")) {
             try (NodePatcher patcher = new NodePatcher(nodeFlavors, request.getData(), nodeFromRequest(request), nodeRepository)) {
                 var patchedNodes = patcher.apply();
                 nodeRepository.nodes().write(patchedNodes, patcher.nodeMutexOfHost());
@@ -167,7 +171,15 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
                 return new MessageResponse("Updated " + patcher.nodeMutexOfHost().node().hostname());
             }
         }
-        else if (path.startsWith("/nodes/v2/upgrade/")) {
+        else if (path.matches("/nodes/v2/application/{applicationId}")) {
+            try (ApplicationPatcher patcher = new ApplicationPatcher(request.getData(),
+                                                                     ApplicationId.fromFullString(path.get("applicationId")),
+                                                                     nodeRepository)) {
+                nodeRepository.applications().put(patcher.apply(), patcher.lock());
+                return new MessageResponse("Updated " + patcher.application());
+            }
+        }
+        else if (pathS.startsWith("/nodes/v2/upgrade/")) {
             return setTargetVersions(request);
         }
 
@@ -436,6 +448,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
             return ErrorResponse.notFoundError("No application '" + id + "'");
         Slime slime = ApplicationSerializer.toSlime(application.get(),
                                                     nodeRepository.nodes().list(Node.State.active).owner(id).asList(),
+                                                    metricsDb,
                                                     withPath("/nodes/v2/applications/" + id, uri));
         return new SlimeJsonResponse(slime);
     }

@@ -8,6 +8,7 @@
 #include <vespa/searchlib/bitcompression/compression.h>
 #include <vespa/searchlib/bitcompression/posocccompression.h>
 #include <vespa/searchlib/bitcompression/posocc_fields_params.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 using search::fef::TermFieldMatchData;
 using search::fef::TermFieldMatchDataPosition;
@@ -232,7 +233,7 @@ FakeWord::fakeup(search::BitVector &bitmap,
         wpf.clear();
         for (unsigned int j = 0; j < positions; ++j) {
             DocWordPosFeature dwpf;
-            dwpf._wordPos = rnd.lrand48() % 8192;
+            dwpf._wordPos = rnd.lrand48() % 8_Ki;
             dwpf._elementId = 0;
             if (_fieldsParams.getFieldParams()[0]._hasElements) {
                 dwpf._elementId = rnd.lrand48() % 4;
@@ -258,7 +259,7 @@ FakeWord::fakeup(search::BitVector &bitmap,
                     lastwordpos = i->_wordPos;
                     ++i;
                 }
-                uint32_t elementLen = (rnd.lrand48() % 8192) + 1 + lastwordpos;
+                uint32_t elementLen = (rnd.lrand48() % 8_Ki) + 1 + lastwordpos;
                 int32_t elementWeight = 1;
                 if (_fieldsParams.getFieldParams()[0].
                     _hasElementWeights) {

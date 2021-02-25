@@ -3,13 +3,14 @@
 #include "rpcsendv2.h"
 #include "rpcnetwork.h"
 #include "rpcserviceaddress.h"
+#include <vespa/fnet/frt/reflection.h>
 #include <vespa/messagebus/emptyreply.h>
 #include <vespa/messagebus/error.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/util/compressor.h>
-#include <vespa/fnet/frt/reflection.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::make_string;
 using vespalib::compression::CompressionConfig;
@@ -124,7 +125,7 @@ RPCSendV2::encodeRequest(FRT_RPCRequest &req, const Version &version, const Rout
     root.setLong(TRACELEVEL_F, traceLevel);
     filler.fill(BLOB_F, root);
 
-    OutputBuf rBuf(8192);
+    OutputBuf rBuf(8_Ki);
     BinaryFormat::encode(slime, rBuf);
     ConstBufferRef toCompress(rBuf.getBuf().getData(), rBuf.getBuf().getDataLen());
     DataBuffer buf(vespalib::roundUp2inN(rBuf.getBuf().getDataLen()));
@@ -254,7 +255,7 @@ RPCSendV2::createResponse(FRT_Values & ret, const string & version, Reply & repl
         }
     }
 
-    OutputBuf rBuf(8192);
+    OutputBuf rBuf(8_Ki);
     BinaryFormat::encode(slime, rBuf);
     ConstBufferRef toCompress(rBuf.getBuf().getData(), rBuf.getBuf().getDataLen());
     DataBuffer buf(vespalib::roundUp2inN(rBuf.getBuf().getDataLen()));

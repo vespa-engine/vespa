@@ -8,11 +8,7 @@
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributecontext.h>
 #include <vespa/searchlib/attribute/attributefactory.h>
-#include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/extendableattributes.h>
-#include <vespa/searchlib/attribute/singlenumericattribute.h>
-#include <vespa/searchlib/attribute/singlenumericattribute.hpp>
-#include <vespa/searchlib/attribute/singlenumericpostattribute.hpp>
+#include <vespa/searchlib/attribute/attribute.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/query/tree/location.h>
 #include <vespa/searchlib/query/tree/point.h>
@@ -30,7 +26,6 @@ LOG_SETUP("attributeblueprint_test");
 using search::AttributeGuard;
 using search::AttributeVector;
 using search::IAttributeManager;
-using search::SingleStringExtAttribute;
 using search::attribute::IAttributeContext;
 using search::fef::MatchData;
 using search::fef::TermFieldMatchData;

@@ -5,6 +5,7 @@
 #include <vespa/vespalib/net/socket_address.h>
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <set>
 
 using vespalib::SocketAddress;
@@ -18,7 +19,7 @@ std::set<vespalib::string> make_ip_set() {
 }
 
 vespalib::string get_hostname() {
-    std::vector<char> result(4096, '\0');
+    std::vector<char> result(4_Ki, '\0');
     gethostname(&result[0], 4000);
     return SocketAddress::normalize(&result[0]);
 }

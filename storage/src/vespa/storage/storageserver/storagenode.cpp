@@ -14,6 +14,7 @@
 #include <vespa/storage/common/storage_chain_builder.h>
 #include <vespa/storage/frameworkimpl/status/statuswebserver.h>
 #include <vespa/storage/frameworkimpl/thread/deadlockdetector.h>
+#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/time.h>
@@ -107,7 +108,7 @@ StorageNode::StorageNode(
 void
 StorageNode::subscribeToConfigs()
 {
-    _configFetcher.reset(new config::ConfigFetcher(_configUri.getContext()));
+    _configFetcher = std::make_unique<config::ConfigFetcher>(_configUri.getContext());
     _configFetcher->subscribe<StorDistributionConfig>(_configUri.getConfigId(), this);
     _configFetcher->subscribe<UpgradingConfig>(_configUri.getConfigId(), this);
     _configFetcher->subscribe<StorServerConfig>(_configUri.getConfigId(), this);
@@ -181,7 +182,7 @@ StorageNode::initialize()
             _generationFetcher);
 
     // Start deadlock detector
-    _deadLockDetector.reset(new DeadLockDetector(_context.getComponentRegister()));
+    _deadLockDetector = std::make_unique<DeadLockDetector>(_context.getComponentRegister());
     _deadLockDetector->enableWarning(_serverConfig->enableDeadLockDetectorWarnings);
     _deadLockDetector->enableShutdown(_serverConfig->enableDeadLockDetector);
     _deadLockDetector->setProcessSlack(vespalib::from_s(_serverConfig->deadLockDetectorTimeoutSlack));

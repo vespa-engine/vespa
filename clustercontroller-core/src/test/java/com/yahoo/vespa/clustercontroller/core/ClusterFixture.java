@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
@@ -9,7 +9,6 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChangeHandler;
-import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
 
 import java.util.Collection;
 import java.util.HashSet;
@@ -21,6 +20,7 @@ import java.util.TreeMap;
 import static org.mockito.Mockito.mock;
 
 public class ClusterFixture {
+
     public final ContentCluster cluster;
     public final Distribution distribution;
     public final FakeTimer timer;
@@ -38,9 +38,7 @@ public class ClusterFixture {
     }
 
     private StateChangeHandler createNodeStateChangeHandlerForCluster() {
-        final int controllerIndex = 0;
-        MetricUpdater metricUpdater = new MetricUpdater(new NoMetricReporter(), controllerIndex);
-        return new StateChangeHandler(timer, eventLog, metricUpdater);
+        return new StateChangeHandler(timer, eventLog);
     }
 
     public ClusterFixture bringEntireClusterUp() {
@@ -131,22 +129,19 @@ public class ClusterFixture {
         return this;
     }
 
-    ClusterFixture disableAutoClusterTakedown() {
+    void disableAutoClusterTakedown() {
         setMinNodesUp(0, 0, 0.0, 0.0);
-        return this;
     }
 
-    ClusterFixture setMinNodesUp(int minDistNodes, int minStorNodes, double minDistRatio, double minStorRatio) {
+    void setMinNodesUp(int minDistNodes, int minStorNodes, double minDistRatio, double minStorRatio) {
         params.minStorageNodesUp(minStorNodes)
               .minDistributorNodesUp(minDistNodes)
               .minRatioOfStorageNodesUp(minStorRatio)
               .minRatioOfDistributorNodesUp(minDistRatio);
-        return this;
     }
 
-    ClusterFixture setMinNodeRatioPerGroup(double upRatio) {
+    void setMinNodeRatioPerGroup(double upRatio) {
         params.minNodeRatioPerGroup(upRatio);
-        return this;
     }
 
     public ClusterFixture assignDummyRpcAddresses() {
@@ -202,7 +197,7 @@ public class ClusterFixture {
         Collection<ConfiguredNode> nodes = DistributionBuilder.buildConfiguredNodes(nodeCount);
 
         Distribution distribution = DistributionBuilder.forFlatCluster(nodeCount);
-        ContentCluster cluster = new ContentCluster("foo", nodes, distribution, 0, 0.0);
+        ContentCluster cluster = new ContentCluster("foo", nodes, distribution);
 
         return new ClusterFixture(cluster, distribution);
     }
@@ -210,7 +205,7 @@ public class ClusterFixture {
     static ClusterFixture forHierarchicCluster(DistributionBuilder.GroupBuilder root) {
         List<ConfiguredNode> nodes = DistributionBuilder.buildConfiguredNodes(root.totalNodeCount());
         Distribution distribution = DistributionBuilder.forHierarchicCluster(root);
-        ContentCluster cluster = new ContentCluster("foo", nodes, distribution, 0, 0.0);
+        ContentCluster cluster = new ContentCluster("foo", nodes, distribution);
 
         return new ClusterFixture(cluster, distribution);
     }

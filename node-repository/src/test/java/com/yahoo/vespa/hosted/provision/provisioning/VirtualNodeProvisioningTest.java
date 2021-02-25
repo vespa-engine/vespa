@@ -12,6 +12,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -39,7 +40,7 @@ public class VirtualNodeProvisioningTest {
     private static final ClusterSpec containerClusterSpec = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("myContainer")).vespaVersion("6.42").build();
 
     private ProvisioningTester tester = new ProvisioningTester.Builder().build();
-    private ApplicationId applicationId = ProvisioningTester.applicationId("test");
+    private final ApplicationId applicationId = ProvisioningTester.applicationId("test");
 
     @Test
     public void distinct_parent_host_for_each_node_in_a_cluster() {
@@ -59,13 +60,18 @@ public class VirtualNodeProvisioningTest {
 
         // Go down to 3 nodes in container cluster
         List<HostSpec> containerHosts2 = tester.prepare(applicationId, containerClusterSpec, containerNodeCount - 1, groups, resources);
-        activate(containerHosts2);
+        activate(containerHosts2, contentHosts);
         List<Node> nodes2 = getNodes(applicationId);
         assertDistinctParentHosts(nodes2, ClusterSpec.Type.container, containerNodeCount - 1);
 
+        // The surplus node is dirtied and then readied for new allocations
+        List<Node> dirtyNode = tester.nodeRepository().nodes().list(Node.State.dirty).owner(applicationId).asList();
+        assertEquals(1, dirtyNode.size());
+        tester.nodeRepository().nodes().setReady(dirtyNode, Agent.system, getClass().getSimpleName());
+
         // Go up to 4 nodes again in container cluster
         List<HostSpec> containerHosts3 = tester.prepare(applicationId, containerClusterSpec, containerNodeCount, groups, resources);
-        activate(containerHosts3);
+        activate(containerHosts3, contentHosts);
         List<Node> nodes3 = getNodes(applicationId);
         assertDistinctParentHosts(nodes3, ClusterSpec.Type.container, containerNodeCount);
     }
@@ -209,7 +215,7 @@ public class VirtualNodeProvisioningTest {
         List<String> parentHosts = getParentHostsFromNodes(nodes, Optional.of(clusterType));
 
         assertEquals(expectedCount, parentHosts.size());
-        assertEquals(expectedCount, getDistinctParentHosts(parentHosts).size());
+        assertEquals(expectedCount, Set.copyOf(parentHosts).size());
     }
 
     private List<String> getParentHostsFromNodes(List<Node> nodes, Optional<ClusterSpec.Type> clusterType) {
@@ -220,12 +226,6 @@ public class VirtualNodeProvisioningTest {
             }
         }
         return parentHosts;
-    }
-
-    private Set<String> getDistinctParentHosts(List<String> hostnames) {
-        return hostnames.stream()
-                .distinct()
-                .collect(Collectors.<String>toSet());
     }
 
     private List<Node> getNodes(ApplicationId applicationId) {
@@ -241,7 +241,7 @@ public class VirtualNodeProvisioningTest {
     }
 
     @SafeVarargs
-    private final void activate(List<HostSpec>... hostLists) {
+    private void activate(List<HostSpec>... hostLists) {
         HashSet<HostSpec> hosts = new HashSet<>();
         for (List<HostSpec> h : hostLists) {
            hosts.addAll(h);

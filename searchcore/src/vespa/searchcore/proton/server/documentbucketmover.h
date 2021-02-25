@@ -5,6 +5,7 @@
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/base/globalid.h>
 #include <persistence/spi/types.h>
+#include <atomic>
 
 namespace vespalib { class IDestructorCallback; }
 
@@ -30,40 +31,60 @@ public:
     using MoveOperationUP = std::unique_ptr<MoveOperation>;
     using IDestructorCallback = vespalib::IDestructorCallback;
     using IDestructorCallbackSP = std::shared_ptr<IDestructorCallback>;
+    class MoveGuard {
+    public:
+        MoveGuard() noexcept : _mover(nullptr) {}
+        MoveGuard(BucketMover & mover) noexcept
+            : _mover(&mover)
+        {
+            _mover->_started.fetch_add(1, std::memory_order_relaxed);
+        }
+        MoveGuard(MoveGuard && rhs) noexcept : _mover(rhs._mover) { rhs._mover = nullptr; }
+        MoveGuard & operator = (MoveGuard && mover) = delete;
+        MoveGuard(const MoveGuard & rhs) = delete;
+        MoveGuard & operator = (const MoveGuard & mover) = delete;
+        ~MoveGuard() {
+            if (_mover) {
+                _mover->_completed.fetch_add(1, std::memory_order_relaxed);
+            }
+        }
+    private:
+        BucketMover *_mover;
+    };
     struct MoveKey
     {
         using Timestamp = storage::spi::Timestamp;
-        MoveKey(uint32_t lid, const document::GlobalId &gid, Timestamp timestamp) noexcept
-            : _lid(lid),
-              _gid(gid),
-              _timestamp(timestamp)
-        { }
+        MoveKey(uint32_t lid, const document::GlobalId &gid, Timestamp timestamp, MoveGuard guard) noexcept;
+        MoveKey(MoveKey &&) noexcept = default;
+        ~MoveKey();
 
         uint32_t           _lid;
         document::GlobalId _gid;
         Timestamp          _timestamp;
+        MoveGuard          _guard;
     };
 
-    BucketMover(const document::BucketId &bucket, const MaintenanceDocumentSubDB *source, uint32_t targetSubDbId,
-                IDocumentMoveHandler &handler, BucketDBOwner &bucketDb) noexcept;
-    BucketMover(BucketMover &&) noexcept = default;
+    BucketMover(const document::BucketId &bucket, const MaintenanceDocumentSubDB *source,
+                uint32_t targetSubDbId, IDocumentMoveHandler &handler) noexcept;
+    BucketMover(BucketMover &&) noexcept = delete;
     BucketMover & operator=(BucketMover &&) noexcept = delete;
     BucketMover(const BucketMover &) = delete;
     BucketMover & operator=(const BucketMover &) = delete;
+    ~BucketMover();
 
-    // TODO remove once we have switched bucket move job
-    bool moveDocuments(size_t maxDocsToMove, IMoveOperationLimiter &limiter);
-
+    using GuardedMoveOp = std::pair<MoveOperationUP, MoveGuard>;
     /// Must be called in master thread
-    std::pair<std::vector<MoveKey>, bool> getKeysToMove(size_t maxDocsToMove) const;
+    std::pair<std::vector<MoveKey>, bool> getKeysToMove(size_t maxDocsToMove);
     /// Call from any thread
-    std::vector<MoveOperationUP> createMoveOperations(const std::vector<MoveKey> & toMove);
+    std::vector<GuardedMoveOp> createMoveOperations(std::vector<MoveKey> toMove);
     /// Must be called in master thread
-    void moveDocuments(std::vector<MoveOperationUP> moveOps, IDestructorCallbackSP onDone);
+    void moveDocuments(std::vector<GuardedMoveOp> moveOps, IDestructorCallbackSP onDone);
+    void moveDocument(MoveOperationUP moveOp, IDestructorCallbackSP onDone);
 
     const document::BucketId &getBucket() const { return _bucket; }
     void cancel() { setBucketDone(); }
     void setBucketDone() { _bucketDone = true; }
+    /// Signals all documents have been scheduled for move
     bool bucketDone() const { return _bucketDone; }
     const MaintenanceDocumentSubDB * getSource() const { return _source; }
     /// Must be called in master thread
@@ -71,19 +92,24 @@ public:
         _lastGid = gid;
         _lastGidValid = true;
     }
+    bool inSync() const {
+        return pending() == 0;
+    }
 private:
     const MaintenanceDocumentSubDB *_source;
     IDocumentMoveHandler           *_handler;
-    BucketDBOwner                  *_bucketDb;
     const document::BucketId        _bucket;
     const uint32_t                  _targetSubDbId;
 
-    bool                            _bucketDone;
-    document::GlobalId              _lastGid;
+    std::atomic<uint32_t>           _started;
+    std::atomic<uint32_t>           _completed;
+    bool                            _bucketDone; // All moves started, or operation has been cancelled
     bool                            _lastGidValid;
-
-    void moveDocument(MoveOperationUP moveOp, IDestructorCallbackSP onDone);
-    MoveOperationUP createMoveOperation(const MoveKey & key);
+    document::GlobalId              _lastGid;
+    GuardedMoveOp createMoveOperation(MoveKey & key);
+    size_t pending() const {
+        return _started.load(std::memory_order_relaxed) - _completed.load(std::memory_order_relaxed);
+    }
 };
 }
 
@@ -95,10 +121,13 @@ private:
 class DocumentBucketMover
 {
 private:
-    IMoveOperationLimiter  &_limiter;
-    std::unique_ptr<bucketdb::BucketMover> _impl;
+    IMoveOperationLimiter                  &_limiter;
+    bucketdb::BucketDBOwner                *_bucketDb;
+    std::unique_ptr<bucketdb::BucketMover>  _impl;
+
+    bool moveDocuments(size_t maxDocsToMove, IMoveOperationLimiter &limiter);
 public:
-    DocumentBucketMover(IMoveOperationLimiter &limiter) noexcept;
+    DocumentBucketMover(IMoveOperationLimiter &limiter, bucketdb::BucketDBOwner &bucketDb) noexcept;
     DocumentBucketMover(DocumentBucketMover &&) noexcept = default;
     DocumentBucketMover & operator=(DocumentBucketMover &&) noexcept = delete;
     DocumentBucketMover(const DocumentBucketMover &) = delete;
@@ -106,8 +135,7 @@ public:
     void setupForBucket(const document::BucketId &bucket,
                         const MaintenanceDocumentSubDB *source,
                         uint32_t targetSubDbId,
-                        IDocumentMoveHandler &handler,
-                        bucketdb::BucketDBOwner &bucketDb);
+                        IDocumentMoveHandler &handler);
     const document::BucketId &getBucket() const { return _impl->getBucket(); }
     bool moveDocuments(size_t maxDocsToMove);
     void cancel() { _impl->cancel(); }

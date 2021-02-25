@@ -39,12 +39,12 @@ public:
     // FIXME make ClusterState parsing not require null termination of string,
     // then move to vespalib::stringref
     explicit ClusterState(const vespalib::string& serialized);
+    ClusterState& operator=(const ClusterState& other) = delete;
     ~ClusterState();
 
     std::string getTextualDifference(const ClusterState& other) const;
     void serialize(vespalib::asciistream & out, bool ignoreNewFeatures) const;
 
-    ClusterState& operator=(const ClusterState& other);
     bool operator==(const ClusterState& other) const;
     bool operator!=(const ClusterState& other) const;
 

@@ -116,8 +116,8 @@ public class ClusterControllerStateRestAPI implements StateRestAPI {
     public SetResponse setUnitState(final SetUnitStateRequest request) throws StateRestApiException {
         UnitPathResolver<SetResponse> resolver = new UnitPathResolver<>(fleetControllerResolver.getFleetControllers());
         Request<? extends SetResponse> req = resolver.visit(request.getUnitPath(),
-                new UnitPathResolver.AbstractVisitor<SetResponse>(request.getUnitPath(),
-                                                     "State can only be set at cluster or node level")
+                new UnitPathResolver.AbstractVisitor<>(request.getUnitPath(),
+                                                       "State can only be set at cluster or node level")
         {
             @Override
             public Request<? extends SetResponse> visitCluster(Id.Cluster id) throws StateRestApiException {

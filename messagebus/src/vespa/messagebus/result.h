@@ -3,6 +3,7 @@
 #pragma once
 
 #include "error.h"
+#include <memory>
 
 namespace mbus {
 

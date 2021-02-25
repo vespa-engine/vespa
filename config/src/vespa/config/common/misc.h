@@ -4,6 +4,7 @@
 #include "configkey.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
+#include <memory>
 
 namespace vespalib {
     class Slime;

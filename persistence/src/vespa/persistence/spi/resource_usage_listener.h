@@ -4,6 +4,7 @@
 
 #include "i_resource_usage_listener.h"
 #include "resource_usage.h"
+#include <memory>
 
 namespace vespalib { class IDestructorCallback; }
 

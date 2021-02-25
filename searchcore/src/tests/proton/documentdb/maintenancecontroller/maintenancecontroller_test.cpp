@@ -29,17 +29,18 @@
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/searchcore/proton/test/mock_attribute_manager.h>
 #include <vespa/searchcore/proton/test/test.h>
-#include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
+#include <vespa/config-attributes.h>
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/document/test/make_bucket_space.h>
-#include <vespa/config-attributes.h>
-#include <vespa/vespalib/util/destructor_callbacks.h>
+#include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/searchlib/common/idocumentmetastore.h>
 #include <vespa/searchlib/index/docbuilder.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/testkit/testapp.h>
-#include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/gate.h>
+#include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/fastos/thread.h>
 #include <unistd.h>
@@ -747,7 +748,7 @@ MyFeedHandler::appendOperation(const FeedOperation &op, DoneCallback)
 }
 
 MyExecutor::MyExecutor()
-    : vespalib::ThreadStackExecutor(1, 128 * 1024),
+    : vespalib::ThreadStackExecutor(1, 128_Ki),
       _threadId()
 {
     execute(makeLambdaTask([this]() {

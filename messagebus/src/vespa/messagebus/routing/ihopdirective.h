@@ -2,6 +2,7 @@
 #pragma once
 
 #include <vespa/messagebus/common.h>
+#include <memory>
 
 namespace mbus {
 

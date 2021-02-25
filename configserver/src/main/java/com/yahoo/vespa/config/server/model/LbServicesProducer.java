@@ -36,11 +36,13 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
     private final Map<TenantName, Set<ApplicationInfo>> models;
     private final Zone zone;
     private final BooleanFlag usePowerOfTwoChoicesLb;
+    private final BooleanFlag generateNonMtlsEndpoint;
 
     public LbServicesProducer(Map<TenantName, Set<ApplicationInfo>> models, Zone zone, FlagSource flagSource) {
         this.models = models;
         this.zone = zone;
         usePowerOfTwoChoicesLb = Flags.USE_POWER_OF_TWO_CHOICES_LOAD_BALANCING.bindTo(flagSource);
+        generateNonMtlsEndpoint = Flags.GENERATE_NON_MTLS_ENDPOINT.bindTo(flagSource);
     }
 
     @Override
@@ -73,6 +75,7 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
         LbServicesConfig.Tenants.Applications.Builder ab = new LbServicesConfig.Tenants.Applications.Builder();
         ab.activeRotation(getActiveRotation(app));
         ab.usePowerOfTwoChoicesLb(usePowerOfTwoChoicesLb(app));
+        ab.generateNonMtlsEndpoint(generateNonMtlsEndpoint(app));
         app.getModel().getHosts().stream()
                 .sorted((a, b) -> a.getHostname().compareTo(b.getHostname()))
                 .forEach(hostInfo -> ab.hosts(hostInfo.getHostname(), getHostsConfig(hostInfo)));
@@ -95,6 +98,10 @@ public class LbServicesProducer implements LbServicesConfig.Producer {
 
     private boolean usePowerOfTwoChoicesLb(ApplicationInfo app) {
         return usePowerOfTwoChoicesLb.with(FetchVector.Dimension.APPLICATION_ID, app.getApplicationId().serializedForm()).value();
+    }
+
+    private boolean generateNonMtlsEndpoint(ApplicationInfo app) {
+        return generateNonMtlsEndpoint.with(FetchVector.Dimension.APPLICATION_ID, app.getApplicationId().serializedForm()).value();
     }
 
     private LbServicesConfig.Tenants.Applications.Hosts.Builder getHostsConfig(HostInfo hostInfo) {

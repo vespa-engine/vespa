@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 package com.yahoo.vespa.clustercontroller.core.restapiv2.requests;
 
@@ -31,14 +31,14 @@ import static org.mockito.Mockito.when;
 
 public class SetNodeStateRequestTest {
     private static final String REASON = "operator";
-    private ContentCluster cluster = mock(ContentCluster.class);
-    private SetUnitStateRequest.Condition condition = SetUnitStateRequest.Condition.SAFE;
-    private Map<String, UnitState> newStates = new HashMap<>();
-    private UnitState unitState = mock(UnitState.class);
+    private final ContentCluster cluster = mock(ContentCluster.class);
+    private final SetUnitStateRequest.Condition condition = SetUnitStateRequest.Condition.SAFE;
+    private final Map<String, UnitState> newStates = new HashMap<>();
+    private final UnitState unitState = mock(UnitState.class);
     private final int NODE_INDEX = 2;
-    private Node storageNode = new Node(NodeType.STORAGE, NODE_INDEX);
-    private NodeStateOrHostInfoChangeHandler stateListener = mock(NodeStateOrHostInfoChangeHandler.class);
-    private ClusterState currentClusterState = mock(ClusterState.class);
+    private final Node storageNode = new Node(NodeType.STORAGE, NODE_INDEX);
+    private final NodeStateOrHostInfoChangeHandler stateListener = mock(NodeStateOrHostInfoChangeHandler.class);
+    private final ClusterState currentClusterState = mock(ClusterState.class);
     private boolean probe = false;
 
     @Before

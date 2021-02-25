@@ -17,6 +17,7 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockLogRetriever;
 import com.yahoo.vespa.config.server.MockProvisioner;
+import com.yahoo.vespa.config.server.MockSecretStoreValidator;
 import com.yahoo.vespa.config.server.MockTesterClient;
 import com.yahoo.vespa.config.server.application.ApplicationCuratorDatabase;
 import com.yahoo.vespa.config.server.application.ApplicationReindexing;
@@ -28,6 +29,7 @@ import com.yahoo.vespa.config.server.deploy.DeployTester;
 import com.yahoo.vespa.config.server.filedistribution.MockFileDistributionFactory;
 import com.yahoo.vespa.config.server.http.HandlerTest;
 import com.yahoo.vespa.config.server.http.HttpErrorResponse;
+import com.yahoo.vespa.config.server.http.SecretStoreValidator;
 import com.yahoo.vespa.config.server.http.SessionHandlerTest;
 import com.yahoo.vespa.config.server.http.StaticResponse;
 import com.yahoo.vespa.config.server.http.v2.ApplicationHandler.ReindexingResponse;
@@ -89,6 +91,7 @@ public class ApplicationHandlerTest {
     private final static MockTesterClient testerClient = new MockTesterClient();
     private static final MockLogRetriever logRetriever = new MockLogRetriever();
     private static final Version vespaVersion = Version.fromString("7.8.9");
+    private static final SecretStoreValidator secretStoreValidator = new MockSecretStoreValidator();
 
     private TenantRepository tenantRepository;
     private ApplicationRepository applicationRepository;
@@ -126,6 +129,7 @@ public class ApplicationHandlerTest {
                 .withTesterClient(testerClient)
                 .withLogRetriever(logRetriever)
                 .withConfigserverConfig(configserverConfig)
+                .withSecretStoreValidator(secretStoreValidator)
                 .build();
     }
 
@@ -392,6 +396,22 @@ public class ApplicationHandlerTest {
         assertEquals(200, response.getStatus());
 
         assertEquals("log line", getRenderedString(response));
+    }
+
+    @Test
+    public void testValidateSecretStore() throws IOException {
+        applicationRepository.deploy(new File("src/test/apps/app-logserver-with-container"), prepareParams(applicationId));
+        var url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/validate-secret-store/some-secret-name";
+        var mockHandler = createApplicationHandler();
+
+        var requestData = new ByteArrayInputStream("{\"name\": \"store\", \"awsId\":\"aws-id\", \"role\":\"role\"}".getBytes(StandardCharsets.UTF_8));
+        var response = mockHandler.handle(createTestRequest(url, POST, requestData));
+        assertEquals(200, response.getStatus());
+
+
+        // MockSecretStoreValidator returns response on format tenantSecretStore.toString() - tenantSecretName
+        var expectedResponse = "TenantSecretStore{name='store', awsId='aws-id', role='role'} - some-secret-name";
+        assertEquals(expectedResponse, getRenderedString(response));
     }
 
     @Test

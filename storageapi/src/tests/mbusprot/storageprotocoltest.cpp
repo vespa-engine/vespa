@@ -10,12 +10,14 @@
 #include <vespa/storageapi/mbusprot/storagecommand.h>
 #include <vespa/storageapi/mbusprot/storagereply.h>
 #include <vespa/storageapi/message/visitor.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/document/base/testdocman.h>
 #include <vespa/document/document.h>
 #include <vespa/document/update/fieldpathupdates.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/vespalib/util/growablebytebuffer.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <sstream>
 
@@ -626,7 +628,7 @@ TEST_P(StorageProtocolTest, get_bucket_diff) {
     entries.back()._gid = document::GlobalId("1234567890abcdef");
     entries.back()._timestamp = 123456;
     entries.back()._headerSize = 100;
-    entries.back()._bodySize = 65536;
+    entries.back()._bodySize = 64_Ki;
     entries.back()._flags = 1;
     entries.back()._hasMask = 3;
 

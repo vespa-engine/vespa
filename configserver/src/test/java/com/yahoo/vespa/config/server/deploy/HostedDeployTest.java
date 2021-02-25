@@ -18,6 +18,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
@@ -49,8 +50,6 @@ import static com.yahoo.vespa.config.server.deploy.DeployTester.createFailingMod
 import static com.yahoo.vespa.config.server.deploy.DeployTester.createHostedModelFactory;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -414,6 +413,37 @@ public class HostedDeployTest {
         assertEquals(Optional.of(ApplicationReindexing.empty()
                                                       .withPending("cluster", "music", prepareResult.sessionId())),
                      tester.tenant().getApplicationRepo().database().readReindexingStatus(tester.applicationId()));
+    }
+
+    @Test
+    public void testDedicatedClusterControllerCluster() throws IOException {
+        DeployTester tester = new DeployTester.Builder()
+                .modelFactory(createHostedModelFactory())
+                .configserverConfig(createConfigserverConfig())
+                .hostProvisioner(new InMemoryProvisioner(7, new NodeResources(1, 4, 10, 0.3), false))
+                .build();
+        ApplicationId appId = tester.applicationId();
+
+        // Dedicated CCC is off until turned on.
+        tester.deployApp("src/test/apps/hosted/");
+        assertFalse(tester.applicationRepository().getActiveSession(appId).getMetaData().isInternalRedeploy());
+        assertEquals(4, tester.getAllocatedHostsOf(appId).getHosts().size());
+        assertFalse(tester.applicationRepository().getActiveSession(appId).getDedicatedClusterControllerCluster());
+
+        // Turn on dedicated CCC.
+        tester.applicationRepository().setDedicatedClusterControllerCluster(appId);
+        Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive();
+        assertTrue(deployment.isPresent());
+        deployment.get().activate();
+        assertTrue(tester.applicationRepository().getActiveSession(appId).getMetaData().isInternalRedeploy());
+        assertEquals(7, tester.getAllocatedHostsOf(appId).getHosts().size());
+        assertTrue(tester.applicationRepository().getActiveSession(appId).getDedicatedClusterControllerCluster());
+
+        // Setting persists through new deployments.
+        tester.deployApp("src/test/apps/hosted/");
+        assertFalse(tester.applicationRepository().getActiveSession(appId).getMetaData().isInternalRedeploy());
+        assertEquals(7, tester.getAllocatedHostsOf(appId).getHosts().size());
+        assertTrue(tester.applicationRepository().getActiveSession(appId).getDedicatedClusterControllerCluster());
     }
 
     private ConfigserverConfig createConfigserverConfig() throws IOException {

@@ -21,6 +21,7 @@ class TransportSecurityOptionsEntity {
     @JsonProperty("files") Files files;
     @JsonProperty("authorized-peers") @JsonInclude(NON_EMPTY) List<AuthorizedPeer> authorizedPeers;
     @JsonProperty("accepted-ciphers") @JsonInclude(NON_EMPTY) List<String> acceptedCiphers;
+    @JsonProperty("accepted-protocols") @JsonInclude(NON_EMPTY) List<String> acceptedProtocols;
     @JsonProperty("disable-hostname-validation") @JsonInclude(NON_NULL) Boolean isHostnameValidationDisabled;
 
     @JsonIgnoreProperties(ignoreUnknown = true)

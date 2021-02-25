@@ -5,6 +5,7 @@
 #include <vespa/searchlib/common/bitvector.h>
 #include <vespa/searchlib/common/fileheadercontext.h>
 #include <vespa/vespalib/data/fileheader.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <cassert>
 
 namespace search::diskindex {
@@ -17,13 +18,13 @@ namespace {
 void
 readHeader(vespalib::FileHeader &h, const vespalib::string &name)
 {
-    Fast_BufferedFile file(32768u);
+    Fast_BufferedFile file(32_Ki);
     file.OpenReadOnly(name.c_str());
     h.readFile(file);
     file.Close();
 }
 
-const size_t FILE_HEADERSIZE_ALIGNMENT = 4096;
+const size_t FILE_HEADERSIZE_ALIGNMENT = 4_Ki;
 
 }
 

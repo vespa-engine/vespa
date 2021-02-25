@@ -21,6 +21,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <thread>
 
@@ -1896,7 +1897,7 @@ TEST(DocumentMetaStoreTest, shrink_via_flush_target_works)
     EXPECT_TRUE(ft->getApproxMemoryGain().getBefore() >
                 ft->getApproxMemoryGain().getAfter());
 
-    vespalib::ThreadStackExecutor exec(1, 128 * 1024);
+    vespalib::ThreadStackExecutor exec(1, 128_Ki);
     vespalib::Executor::Task::UP task = ft->initFlush(11, std::make_shared<search::FlushToken>());
     exec.execute(std::move(task));
     exec.sync();

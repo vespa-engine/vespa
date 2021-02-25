@@ -20,7 +20,7 @@ private:
     const std::shared_ptr<const document::DocumentTypeRepo>          _repo;
     std::vector<IFeedView::SP>                    _views;
     std::vector<const ISimpleDocumentMetaStore *> _metaStores;
-    IBucketStateCalculator::SP                    _calc;
+    std::shared_ptr<IBucketStateCalculator>       _calc;
     bool                                          _clusterUp;
     bool                                          _forceReady;
     document::BucketSpace                         _bucketSpace;
@@ -48,14 +48,14 @@ private:
         return _views.size() > getNotReadyFeedViewId();
     }
 
-    bool shouldBeReady(const document::BucketId &bucket) const;
+    vespalib::Trinary shouldBeReady(const document::BucketId &bucket) const;
     void forceCommit(search::SerialNum serialNum, DoneCallback onDone) override;
 public:
     typedef std::shared_ptr<CombiningFeedView> SP;
 
     CombiningFeedView(const std::vector<IFeedView::SP> &views,
                       document::BucketSpace bucketSpace,
-                      const IBucketStateCalculator::SP &calc);
+                      const std::shared_ptr<IBucketStateCalculator> &calc);
 
     ~CombiningFeedView() override;
 
@@ -81,7 +81,7 @@ public:
     void handleCompactLidSpace(const CompactLidSpaceOperation &op) override;
 
     // Called by document db executor
-    void setCalculator(const IBucketStateCalculator::SP &newCalc);
+    void setCalculator(const std::shared_ptr<IBucketStateCalculator> &newCalc);
 };
 
 } // namespace proton

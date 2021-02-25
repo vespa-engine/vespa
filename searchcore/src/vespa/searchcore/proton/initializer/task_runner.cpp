@@ -2,6 +2,7 @@
 
 #include "task_runner.h"
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <future>
 
@@ -93,7 +94,7 @@ TaskRunner::internalRunTasks(const TaskList &taskList, Context::SP context)
 void
 TaskRunner::runTask(InitializerTask::SP task)
 {
-    vespalib::ThreadStackExecutor executor(1, 128 * 1024, task_runner);
+    vespalib::ThreadStackExecutor executor(1, 128_Ki, task_runner);
     std::promise<void> promise;
     auto future = promise.get_future();
     runTask(task, executor, makeLambdaTask([&]() { promise.set_value(); }));

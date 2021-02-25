@@ -26,6 +26,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/nosyncproxy.h>
 #include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 using namespace config;
 using namespace document;
@@ -165,7 +166,7 @@ Fixture::Fixture()
       _queryLimiter(),
       _constantValueFactory(),
       _constantValueRepo(_constantValueFactory),
-      _summaryExecutor(8, 128*1024),
+      _summaryExecutor(8, 128_Ki),
       _pendingLidsForCommit(std::make_shared<PendingLidTracker>()),
       _views(),
       _resolver(),

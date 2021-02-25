@@ -14,6 +14,7 @@
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fnet/databuffer.h>
 #include "matching_elements_filler.h"
 
@@ -113,7 +114,7 @@ SearchVisitor::SummaryGenerator::SummaryGenerator() :
     _docsumState(_callback),
     _docsumFilter(),
     _docsumWriter(nullptr),
-    _rawBuf(4096)
+    _rawBuf(4_Ki)
 {
 }
 

@@ -225,18 +225,6 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>processing</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>chain</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>docproc</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
@@ -303,6 +291,12 @@
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>jdisc_http_service</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>jdisc-security-filters</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
     </dependency>

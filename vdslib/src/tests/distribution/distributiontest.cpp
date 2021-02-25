@@ -7,6 +7,7 @@
 #include <vespa/fastos/file.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/distribution/idealnodecalculator.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vdslib/state/random.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -14,6 +15,7 @@
 #include <vespa/vespalib/stllike/lexical_cast.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 #include <vespa/vespalib/util/benchmark_timer.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <gmock/gmock.h>
 #include <chrono>
 #include <thread>
@@ -38,14 +40,13 @@ TEST(DistributionTest, test_verify_java_distributions)
     tests.push_back("retired");
     for (uint32_t i=0; i<tests.size(); ++i) {
         std::string test = tests[i];
-        ClusterState state;
+        std::string mystate;
         {
             std::ifstream in("distribution/testdata/java_" + test + ".state");
-            std::string mystate;
             in >> mystate;
             in.close();
-            state = ClusterState(mystate);
         }
+        ClusterState state(mystate);
         Distribution distr(readConfig<vespa::config::content::StorDistributionConfig>(
                 "file:distribution/testdata/java_" + test + ".cfg"));
         std::ofstream of("distribution/testdata/cpp_" + test + ".distribution");
@@ -221,7 +222,7 @@ TEST(DistributionTest, test_unchanged_distribution)
     Distribution distr(Distribution::getDefaultDistributionConfig(3, 10));
     std::ifstream in("distribution/testdata/41-distributordistribution");
 
-    for (unsigned i = 0; i < 65536; i++) {
+    for (unsigned i = 0; i < 64_Ki; i++) {
         uint16_t node = distr.getIdealDistributorNode(
                 state, document::BucketId(16, i), "u");
 
@@ -403,8 +404,8 @@ TEST(DistributionTest, testHighSplitBit)
 
 TEST(DistributionTest, test_distribution)
 {
-    const int min_buckets = 1024*64;
-    const int max_buckets = 1024*64;
+    const int min_buckets = 64_Ki;
+    const int max_buckets = 64_Ki;
     const int min_nodes = 2;
     const int max_nodes = 50;
 
@@ -498,21 +499,21 @@ TEST(DistributionTest, test_move)
 
 TEST(DistributionTest, test_move_constraints)
 {
-    ClusterState systemState("storage:10");
+    ClusterState clusterState("storage:10");
 
     Distribution distr(Distribution::getDefaultDistributionConfig(3, 12));
 
     std::vector<std::vector<uint16_t> > initBuckets(10000);
     for (unsigned i = 0; i < initBuckets.size(); i++) {
         initBuckets[i] = distr.getIdealStorageNodes(
-                systemState, document::BucketId(16, i));
+                clusterState, document::BucketId(16, i));
         sort(initBuckets[i].begin(), initBuckets[i].end());
     }
 
     {
         // Check that adding a down node has no effect
         std::vector<std::vector<uint16_t> > addedDownBuckets(10000);
-        systemState = ClusterState("storage:11 .10.s:d");
+        ClusterState systemState("storage:11 .10.s:d");
 
         for (unsigned i = 0; i < addedDownBuckets.size(); i++) {
             addedDownBuckets[i] = distr.getIdealStorageNodes(
@@ -536,7 +537,7 @@ TEST(DistributionTest, test_move_constraints)
         // Check that if we disable one node, we're not moving stuff away from
         // any other node
         std::vector<std::vector<uint16_t> > removed0Buckets(10000);
-        systemState = ClusterState("storage:10 .0.s:d");
+        ClusterState systemState("storage:10 .0.s:d");
 
         for (unsigned i = 0; i < removed0Buckets.size(); i++) {
             removed0Buckets[i] = distr.getIdealStorageNodes(
@@ -567,7 +568,7 @@ TEST(DistributionTest, test_move_constraints)
         // Check that if we're adding one node, we're not moving stuff to any
         // other node
         std::vector<std::vector<uint16_t> > added10Buckets(10000);
-        systemState = ClusterState("storage:11");
+        ClusterState systemState("storage:11");
 
         for (unsigned i = 0; i < added10Buckets.size(); i++) {
             added10Buckets[i] = distr.getIdealStorageNodes(
@@ -822,10 +823,9 @@ TEST(DistributionTest, test_hierarchical_no_redistribution)
     EXPECT_EQ(0, v.size());
     v.clear();
 
-    state = ClusterState(
-            "distributor:5 .0.s:d storage:5 .0.s:d .1.s:d .1.m:foo\\x20bar");
+    ClusterState state2("distributor:5 .0.s:d storage:5 .0.s:d .1.s:d .1.m:foo\\x20bar");
     std::ostringstream ost;
-    state.printStateGroupwise(ost, distribution, true, "");
+    state2.printStateGroupwise(ost, distribution, true, "");
     EXPECT_EQ(std::string("\n"
         "ClusterState(Version: 0, Cluster state: Up, Distribution bits: 16) {\n"
         "  Top group. 2 branches with distribution *|* {\n"

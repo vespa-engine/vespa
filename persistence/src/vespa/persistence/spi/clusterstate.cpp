@@ -8,6 +8,8 @@
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <cassert>
 
+using vespalib::Trinary;
+
 namespace storage::spi {
 
 ClusterState::ClusterState(const lib::ClusterState& state,
@@ -43,20 +45,17 @@ ClusterState::ClusterState(const ClusterState& other) {
 
 ClusterState::~ClusterState() = default;
 
-ClusterState& ClusterState::operator=(const ClusterState& other) {
-    ClusterState copy(other);
-    _state = std::move(copy._state);
-    _nodeIndex = copy._nodeIndex;
-    _distribution = std::move(copy._distribution);
-    return *this;
-}
-
-bool ClusterState::shouldBeReady(const Bucket& b) const {
+Trinary
+ClusterState::shouldBeReady(const Bucket& b) const {
     assert(_distribution);
     assert(_state);
 
+    if (b.getBucketId().getUsedBits() < _state->getDistributionBitCount()) {
+        return Trinary::Undefined;
+    }
+
     if (_distribution->getReadyCopies() >= _distribution->getRedundancy()) {
-        return true; // all copies should be ready
+        return Trinary::True; // all copies should be ready
     }
 
     std::vector<uint16_t> idealNodes;
@@ -64,9 +63,9 @@ bool ClusterState::shouldBeReady(const Bucket& b) const {
                                  b.getBucketId(), idealNodes,
                                  "uim", _distribution->getReadyCopies());
     for (uint32_t i=0, n=idealNodes.size(); i<n; ++i) {
-        if (idealNodes[i] == _nodeIndex) return true;
+        if (idealNodes[i] == _nodeIndex) return Trinary::True;
     }
-    return false;
+    return Trinary::False;
 }
 
 bool ClusterState::clusterUp() const {

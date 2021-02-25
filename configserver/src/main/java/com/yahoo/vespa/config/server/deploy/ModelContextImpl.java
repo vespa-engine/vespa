@@ -20,7 +20,10 @@ import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.DockerImage;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
@@ -147,6 +150,7 @@ public class ModelContextImpl implements ModelContext {
 
     public static class FeatureFlags implements ModelContext.FeatureFlags {
 
+        private final NodeResources dedicatedClusterControllerFlavor;
         private final double defaultTermwiseLimit;
         private final boolean useThreePhaseUpdates;
         private final String feedSequencer;
@@ -166,8 +170,11 @@ public class ModelContextImpl implements ModelContext {
         private final double maxDeadBytesRatio;
         private final int clusterControllerMaxHeapSizeInMb;
         private final List<String> allowedAthenzProxyIdentities;
+        private final boolean tenantIamRole;
+        private final int maxActivationInhibitedOutOfSyncGroups;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
+            this.dedicatedClusterControllerFlavor = parseDedicatedClusterControllerFlavor(flagValue(source, appId, Flags.DEDICATED_CLUSTER_CONTROLLER_FLAVOR));
             this.defaultTermwiseLimit = flagValue(source, appId, Flags.DEFAULT_TERM_WISE_LIMIT);
             this.useThreePhaseUpdates = flagValue(source, appId, Flags.USE_THREE_PHASE_UPDATES);
             this.feedSequencer = flagValue(source, appId, Flags.FEED_SEQUENCER_TYPE);
@@ -187,8 +194,11 @@ public class ModelContextImpl implements ModelContext {
             this.maxDeadBytesRatio = flagValue(source, appId, Flags.MAX_DEAD_BYTES_RATIO);
             this.clusterControllerMaxHeapSizeInMb = flagValue(source, appId, Flags.CLUSTER_CONTROLLER_MAX_HEAP_SIZE_IN_MB);
             this.allowedAthenzProxyIdentities = flagValue(source, appId, Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES);
+            this.tenantIamRole = flagValue(source, appId.tenant(), Flags.TENANT_IAM_ROLE);
+            this.maxActivationInhibitedOutOfSyncGroups = flagValue(source, appId, Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS);
         }
 
+        @Override public Optional<NodeResources> dedicatedClusterControllerFlavor() { return Optional.ofNullable(dedicatedClusterControllerFlavor); }
         @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
         @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
         @Override public String feedSequencerType() { return feedSequencer; }
@@ -208,10 +218,18 @@ public class ModelContextImpl implements ModelContext {
         @Override public double maxDeadBytesRatio() { return maxDeadBytesRatio; }
         @Override public int clusterControllerMaxHeapSizeInMb() { return clusterControllerMaxHeapSizeInMb; }
         @Override public List<String> allowedAthenzProxyIdentities() { return allowedAthenzProxyIdentities; }
+        @Override public boolean tenantIamRole() { return tenantIamRole; }
+        @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
                     .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
+                    .boxedValue();
+        }
+
+        private static <V> V flagValue(FlagSource source, TenantName tenant, UnboundFlag<? extends V, ?, ?> flag) {
+            return flag.bindTo(source)
+                    .with(FetchVector.Dimension.TENANT_ID, tenant.value())
                     .boxedValue();
         }
 
@@ -235,6 +253,7 @@ public class ModelContextImpl implements ModelContext {
         private final Optional<AthenzDomain> athenzDomain;
         private final Optional<ApplicationRoles> applicationRoles;
         private final Quota quota;
+        private final boolean dedicatedClusterControllerCluster;
 
         private final String jvmGcOptions;
 
@@ -248,7 +267,8 @@ public class ModelContextImpl implements ModelContext {
                           Optional<EndpointCertificateSecrets> endpointCertificateSecrets,
                           Optional<AthenzDomain> athenzDomain,
                           Optional<ApplicationRoles> applicationRoles,
-                          Optional<Quota> maybeQuota) {
+                          Optional<Quota> maybeQuota,
+                          boolean dedicatedClusterControllerCluster) {
             this.featureFlags = new FeatureFlags(flagSource, applicationId);
             this.applicationId = applicationId;
             this.multitenant = configserverConfig.multitenant() || configserverConfig.hostedVespa() || Boolean.getBoolean("multitenant");
@@ -265,6 +285,7 @@ public class ModelContextImpl implements ModelContext {
             this.athenzDomain = athenzDomain;
             this.applicationRoles = applicationRoles;
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
+            this.dedicatedClusterControllerCluster = zoneHasRedundancyOrIsCD(zone) && dedicatedClusterControllerCluster;
 
             jvmGcOptions = flagValue(flagSource, applicationId, PermanentFlags.JVM_GC_OPTIONS);
         }
@@ -323,11 +344,31 @@ public class ModelContextImpl implements ModelContext {
 
         @Override public String jvmGCOptions() { return jvmGcOptions; }
 
+        @Override public boolean dedicatedClusterControllerCluster() { return dedicatedClusterControllerCluster; }
+
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
                     .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
                     .boxedValue();
         }
+    }
+
+    private static boolean zoneHasRedundancyOrIsCD(Zone zone) {
+        return    zone.system().isCd() && zone.environment() == Environment.dev
+               || List.of(Environment.staging, Environment.perf, Environment.prod).contains(zone.environment());
+    }
+
+    private static NodeResources parseDedicatedClusterControllerFlavor(String flagValue) {
+        String[] parts = flagValue.split("-");
+        if (parts.length != 3)
+            return null;
+
+        return new NodeResources(Double.parseDouble(parts[0]),
+                                 Double.parseDouble(parts[1]),
+                                 Double.parseDouble(parts[2]),
+                                 0.3,
+                                 NodeResources.DiskSpeed.any,
+                                 NodeResources.StorageType.any);
     }
 
 }

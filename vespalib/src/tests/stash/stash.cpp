@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stash.h>
 #include <vespa/vespalib/util/traits.h>
 
@@ -171,7 +172,7 @@ TEST("require that large object creation and destruction works") {
         Stash stash;
         stash.create<Large>(destructed);
         EXPECT_EQUAL(0u, stash.count_used());
-        EXPECT_GREATER(sizeof(Large), 1024u);
+        EXPECT_GREATER(sizeof(Large), 1_Ki);
         EXPECT_FALSE(destructed);
     }
     EXPECT_TRUE(destructed);
@@ -193,7 +194,7 @@ TEST("require that large objects can skip destruction") {
         Stash stash;
         stash.create<Large_NoDelete>(destructed);
         EXPECT_EQUAL(0u, stash.count_used());
-        EXPECT_GREATER(sizeof(Large_NoDelete), 1024u);
+        EXPECT_GREATER(sizeof(Large_NoDelete), 1_Ki);
     }
     EXPECT_FALSE(destructed);
 }
@@ -245,7 +246,7 @@ TEST("require that multiple chunks can be used by the stash") {
 
 TEST("require that default chunk size is 4096") {
     Stash stash;
-    EXPECT_EQUAL(4096u, stash.get_chunk_size());
+    EXPECT_EQUAL(4_Ki, stash.get_chunk_size());
 }
 
 TEST("require that the chunk size can be adjusted") {
@@ -460,7 +461,7 @@ void check_array(ArrayRef<float> arr, size_t expect_size) {
 }
 
 TEST("require that uninitialized arrays can be created") {
-    Stash stash(4096);
+    Stash stash(4_Ki);
     EXPECT_EQUAL(0u, stash.count_used());
     ArrayRef<float> small_arr = stash.create_uninitialized_array<float>(64);
     TEST_DO(check_array(small_arr, 64));

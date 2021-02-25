@@ -5,5 +5,6 @@
     "ca-certificates": "my_cas.pem",
     "certificates": "certs.pem"
   },
-  "accepted-ciphers": ["TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_AES_256_GCM_SHA384"]
+  "accepted-ciphers": ["TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", "TLS_AES_256_GCM_SHA384"],
+  "accepted-protocols": ["TLSv1.2"]
 }

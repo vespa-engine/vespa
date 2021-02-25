@@ -28,6 +28,8 @@ public class ClusterData {
     public ClusterResourcesData suggested;
     @JsonProperty("target")
     public ClusterResourcesData target;
+    @JsonProperty("utilization")
+    public ClusterUtilizationData utilization;
     @JsonProperty("scalingEvents")
     public List<ScalingEventData> scalingEvents;
     @JsonProperty("autoscalingStatus")
@@ -40,6 +42,7 @@ public class ClusterData {
                            current.toClusterResources(),
                            target == null ? Optional.empty() : Optional.of(target.toClusterResources()),
                            suggested == null ? Optional.empty() : Optional.of(suggested.toClusterResources()),
+                           utilization == null ? Cluster.Utilization.empty() : utilization.toClusterUtilization(),
                            scalingEvents == null ? List.of()
                                                  : scalingEvents.stream().map(data -> data.toScalingEvent()).collect(Collectors.toList()),
                            autoscalingStatus);

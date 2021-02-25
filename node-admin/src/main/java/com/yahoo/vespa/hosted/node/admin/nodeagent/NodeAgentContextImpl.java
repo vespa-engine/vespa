@@ -1,6 +1,7 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneApi;
@@ -46,12 +47,14 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     private final String vespaUserOnHost;
     private final double cpuSpeedup;
     private final Set<NodeAgentTask> disabledNodeAgentTasks;
+    private final Optional<ApplicationId> hostExclusiveTo;
 
     public NodeAgentContextImpl(NodeSpec node, Acl acl, AthenzIdentity identity,
                                 ContainerNetworkMode containerNetworkMode, ZoneApi zone,
                                 FileSystem fileSystem, FlagSource flagSource,
                                 Path pathToContainerStorage, Path pathToVespaHome,
-                                String vespaUser, String vespaUserOnHost, double cpuSpeedup) {
+                                String vespaUser, String vespaUserOnHost, double cpuSpeedup,
+                                Optional<ApplicationId> hostExclusiveTo) {
         if (cpuSpeedup <= 0)
             throw new IllegalArgumentException("cpuSpeedUp must be positive, was: " + cpuSpeedup);
 
@@ -70,6 +73,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         this.cpuSpeedup = cpuSpeedup;
         this.disabledNodeAgentTasks = NodeAgentTask.fromString(
                 PermanentFlags.DISABLED_HOST_ADMIN_TASKS.bindTo(flagSource).with(FetchVector.Dimension.HOSTNAME, node.hostname()).value());
+        this.hostExclusiveTo = hostExclusiveTo;
     }
 
     @Override
@@ -161,6 +165,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     }
 
     @Override
+    public Optional<ApplicationId> hostExclusiveTo() {
+        return hostExclusiveTo;
+    }
+
+    @Override
     public void recordSystemModification(Logger logger, String message) {
         log(logger, message);
     }
@@ -188,6 +197,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                ", pathToVespaHome=" + pathToVespaHome +
                ", vespaUser='" + vespaUser + '\'' +
                ", vespaUserOnHost='" + vespaUserOnHost + '\'' +
+               ", hostExclusiveTo='" + hostExclusiveTo + '\'' +
                '}';
     }
 
@@ -216,6 +226,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         private FlagSource flagSource;
         private double cpuSpeedUp = 1;
         private Path containerStorage;
+        private Optional<ApplicationId> hostExclusiveTo = Optional.empty();
 
         public Builder(NodeSpec node) {
             this.nodeSpecBuilder = new NodeSpec.Builder(node);
@@ -286,6 +297,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
             return this;
         }
 
+        public Builder hostExclusiveTo(ApplicationId applicationId) {
+            this.hostExclusiveTo = Optional.ofNullable(applicationId);
+            return this;
+        }
+
         public NodeAgentContextImpl build() {
             return new NodeAgentContextImpl(
                     nodeSpecBuilder.build(),
@@ -319,7 +335,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                     fileSystem.getPath("/opt/vespa"),
                     Optional.ofNullable(vespaUser).orElse("vespa"),
                     Optional.ofNullable(vespaUserOnHost).orElse("container_vespa"),
-                    cpuSpeedUp);
+                    cpuSpeedUp, hostExclusiveTo);
         }
     }
 }

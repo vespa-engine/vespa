@@ -96,8 +96,15 @@ BuildRequires: gmock-devel
 %endif
 %if 0%{?fc34}
 BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 11.0.0
-BuildRequires: boost-devel >= 1.73
+BuildRequires: llvm-devel >= 11.1.0
+BuildRequires: boost-devel >= 1.75
+BuildRequires: gtest-devel
+BuildRequires: gmock-devel
+%endif
+%if 0%{?fc35}
+BuildRequires: protobuf-devel
+BuildRequires: llvm-devel >= 11.1.0
+BuildRequires: boost-devel >= 1.75
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
@@ -201,7 +208,12 @@ Requires: llvm-libs >= 11.0.0
 %endif
 %if 0%{?fc34}
 Requires: protobuf
-Requires: llvm-libs >= 11.0.0
+Requires: llvm-libs >= 11.1.0
+%define _vespa_llvm_version 11
+%endif
+%if 0%{?fc35}
+Requires: protobuf
+Requires: llvm-libs >= 11.1.0
 %define _vespa_llvm_version 11
 %endif
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
@@ -217,7 +229,7 @@ Requires: %{name}-tools = %{version}-%{release}
 
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
 # _dl_sym function. Exclude automated reqires for libraries in /opt/vespa-deps/lib64.
-%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|(crypto|icui18n|icuuc|lz4|protobuf|ssl|zstd|onnxruntime)\\.so\\.[0-9.]*\\([A-Z._0-9]*\\))\\(64bit\\)$
+%global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(crypto|icui18n|icuuc|lz4|protobuf|ssl|zstd|onnxruntime)\\.so\\.[0-9.]*\\([A-Z._0-9]*\\))\\(64bit\\)$
 
 
 %description

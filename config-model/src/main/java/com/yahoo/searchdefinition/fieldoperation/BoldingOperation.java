@@ -5,7 +5,7 @@ import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.documentmodel.SummaryField;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class BoldingOperation implements FieldOperation {
 
@@ -21,4 +21,5 @@ public class BoldingOperation implements FieldOperation {
         summaryField.addDestination("default");
         summaryField.setTransform(bold ? summaryField.getTransform().bold() : summaryField.getTransform().unbold());
     }
+
 }

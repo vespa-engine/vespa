@@ -13,6 +13,7 @@ namespace proton {
 struct IMoveOperationLimiter {
     virtual ~IMoveOperationLimiter() = default;
     virtual std::shared_ptr<vespalib::IDestructorCallback> beginOperation() = 0;
+    virtual size_t numPending() const = 0;
 };
 
 }

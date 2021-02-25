@@ -5,19 +5,20 @@
 #include "rpcsendv2.h"
 #include "rpctargetpool.h"
 #include "rpcnetworkparams.h"
-#include <vespa/messagebus/errorcode.h>
-#include <vespa/messagebus/iprotocol.h>
-#include <vespa/messagebus/emptyreply.h>
-#include <vespa/messagebus/routing/routingnode.h>
-#include <vespa/slobrok/sbregister.h>
-#include <vespa/slobrok/sbmirror.h>
-#include <vespa/vespalib/component/vtag.h>
-#include <vespa/vespalib/stllike/asciistream.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
+#include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/scheduler.h>
 #include <vespa/fnet/transport.h>
-#include <vespa/fnet/frt/supervisor.h>
+#include <vespa/messagebus/emptyreply.h>
+#include <vespa/messagebus/errorcode.h>
+#include <vespa/messagebus/iprotocol.h>
+#include <vespa/messagebus/routing/routingnode.h>
+#include <vespa/slobrok/sbmirror.h>
+#include <vespa/slobrok/sbregister.h>
+#include <vespa/vespalib/component/vtag.h>
+#include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/fastos/thread.h>
 #include <thread>
 
@@ -134,8 +135,8 @@ RPCNetwork::RPCNetwork(const RPCNetworkParams &params) :
     _requestedPort(params.getListenPort()),
     _targetPool(std::make_unique<RPCTargetPool>(params.getConnectionExpireSecs())),
     _targetPoolTask(std::make_unique<TargetPoolTask>(_scheduler, *_targetPool)),
-    _servicePool(std::make_unique<RPCServicePool>(*_mirror, 4096)),
-    _executor(std::make_unique<vespalib::ThreadStackExecutor>(params.getNumThreads(), 65536)),
+    _servicePool(std::make_unique<RPCServicePool>(*_mirror, 4_Ki)),
+    _executor(std::make_unique<vespalib::ThreadStackExecutor>(params.getNumThreads(), 64_Ki)),
     _sendV1(std::make_unique<RPCSendV1>()),
     _sendV2(std::make_unique<RPCSendV2>()),
     _sendAdapters(),

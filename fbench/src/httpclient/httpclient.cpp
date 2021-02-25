@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "httpclient.h"
 #include <vespa/vespalib/net/socket_spec.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <util/authority.h>
 #include <cassert>
 #include <cstring>
@@ -33,7 +34,7 @@ HTTPClient::HTTPClient(vespalib::CryptoEngine::SP engine, const char *hostname, 
     _sni_spec(make_sni_spec(authority, hostname, port, _engine->use_tls_when_client())),
     _host_header_value(make_host_header_value(_sni_spec, _engine->use_tls_when_client())),
     _reuseCount(0),
-    _bufsize(10240),
+    _bufsize(10_Ki),
     _buf(new char[_bufsize]),
     _bufused(0),
     _bufpos(0),
@@ -201,7 +202,7 @@ bool
 HTTPClient::ReadHTTPHeader(std::string & headerinfo)
 {
     int     lineLen;
-    char    line[4096];
+    char    line[4_Ki];
     int     argc;
     char   *argv[32];
     int     i;
@@ -213,7 +214,7 @@ HTTPClient::ReadHTTPHeader(std::string & headerinfo)
     _keepAliveGiven       = false;
 
     // read and split status line
-    if ((lineLen = ReadLine(line, 4096)) <= 0)
+    if ((lineLen = ReadLine(line, 4_Ki)) <= 0)
         return false;
     SplitString(line, argc, argv, 32);
 
@@ -232,7 +233,7 @@ HTTPClient::ReadHTTPHeader(std::string & headerinfo)
     // printf("HTTP: status: %d\n", _requestStatus);
 
     // read and parse rest of header
-    while((lineLen = ReadLine(line, 4096)) > 0) {
+    while((lineLen = ReadLine(line, 4_Ki)) > 0) {
 
         // DEBUG
         // printf("HTTP-Header: '%s'\n", line);
@@ -413,15 +414,16 @@ HTTPClient::ContentLengthReader::Read(HTTPClient &client,
         client._bufpos += fromBuffer;
         client._dataRead += fromBuffer;
         res = fromBuffer;
-        if (client._dataRead >= client._contentLength) {
-            client._dataDone = true;
-            return res;
-        }
+    }
+    if (client._dataRead >= client._contentLength) {
+        client._dataDone = true;
+        return res;
     }
     if ((len - fromBuffer) > (len >> 1)) {
         readLen = (len - fromBuffer
                    < client._contentLength - client._dataRead) ?
                   len - fromBuffer : client._contentLength - client._dataRead;
+        assert(readLen > 0);
         readRes = client._socket->read(static_cast<char *>(buf)
                                        + fromBuffer, readLen);
         if (readRes < 0) {

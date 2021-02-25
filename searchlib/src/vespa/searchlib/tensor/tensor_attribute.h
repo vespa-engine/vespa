@@ -61,7 +61,7 @@ public:
     virtual void setTensor(DocId docId, const vespalib::eval::Value &tensor) = 0;
     virtual void update_tensor(DocId docId,
                                const document::TensorUpdate &update,
-                               const vespalib::eval::Value &oldTensor);
+                               bool create_empty_if_non_existing);
     /**
      * Performs the prepare step in a two-phase operation to set a tensor for a document.
      *

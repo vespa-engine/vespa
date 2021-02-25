@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/child_process.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/thread.h>
 #include <atomic>
@@ -13,7 +14,7 @@ static const int PORT1 = 18571;
 using vespalib::ChildProcess;
 
 bool runProc(ChildProcess &proc, std::atomic<bool> &done) {
-    char buf[4096];
+    char buf[4_Ki];
     proc.close(); // close stdin
     while (proc.running() && !done) {
         if (!proc.eof()) {

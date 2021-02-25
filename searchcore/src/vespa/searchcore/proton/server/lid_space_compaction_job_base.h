@@ -64,7 +64,7 @@ public:
     ~LidSpaceCompactionJobBase() override;
 
     void notifyDiskMemUsage(DiskMemUsageState state) override;
-    void notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
+    void notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc) override;
     bool run() override;
 };
 

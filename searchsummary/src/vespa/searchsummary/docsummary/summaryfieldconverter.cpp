@@ -30,6 +30,7 @@
 #include <vespa/vespalib/encoding/base64.h>
 #include <vespa/vespalib/geo/zcurve.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -556,7 +557,7 @@ public:
         SlimeInserter inserter(slime);
         SlimeFiller visitor(inserter, _tokenize, _matching_elems);
         input.accept(visitor);
-        search::RawBuf rbuf(4096);
+        search::RawBuf rbuf(4_Ki);
         search::SlimeOutputRawBufAdapter adapter(rbuf);
         vespalib::slime::BinaryFormat::encode(slime, adapter);
         return std::make_unique<RawFieldValue>(rbuf.GetDrainPos(), rbuf.GetUsedLen());

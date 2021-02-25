@@ -759,13 +759,14 @@ PersistenceEngine::register_executor(std::shared_ptr<BucketExecutor> executor)
     return std::make_unique<ExecutorRegistration>(executor);
 }
 
-std::unique_ptr<BucketTask>
+void
 PersistenceEngine::execute(const storage::spi::Bucket &bucket, std::unique_ptr<BucketTask> task) {
     auto bucketExecutor = get_bucket_executor();
     if (bucketExecutor) {
         bucketExecutor->execute(bucket, std::move(task));
+    } else {
+        return task->fail(bucket);
     }
-    return task;
 }
 
 } // storage

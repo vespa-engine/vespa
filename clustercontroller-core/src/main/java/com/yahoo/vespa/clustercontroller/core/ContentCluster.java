@@ -1,9 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/**
- * @class VdsCluster
- *
- * Represents a VDS cluster.
- */
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
@@ -41,16 +37,11 @@ public class ContentCluster {
     private int pollingFrequency = 5000;
 
     private Distribution distribution;
-    private int minStorageNodesUp;
-    private double minRatioOfStorageNodesUp;
 
-    public ContentCluster(String clusterName, Collection<ConfiguredNode> configuredNodes, Distribution distribution,
-                          int minStorageNodesUp, double minRatioOfStorageNodesUp) {
+    public ContentCluster(String clusterName, Collection<ConfiguredNode> configuredNodes, Distribution distribution) {
         if (configuredNodes == null) throw new IllegalArgumentException("Nodes must be set");
         this.clusterName = clusterName;
         this.distribution = distribution;
-        this.minStorageNodesUp = minStorageNodesUp;
-        this.minRatioOfStorageNodesUp = minRatioOfStorageNodesUp;
         setNodes(configuredNodes);
     }
 
@@ -178,17 +169,6 @@ public class ContentCluster {
 
     public void setSlobrokGenerationCount(int count) { slobrokGenerationCount = count; }
 
-    private void getLeaves(Group node, List<Group> leaves, List<String> names, String name) {
-        if (node.isLeafGroup()) {
-            leaves.add(node);
-            names.add(name + "/" + node.getName());
-            return;
-        }
-        for (Group g : node.getSubgroups().values()) {
-            getLeaves(g, leaves, names, name + (node.getName() != null ? "/" + node.getName() : ""));
-        }
-    }
-
     /**
      * Checks if a node can be upgraded
      *
@@ -203,8 +183,6 @@ public class ContentCluster {
             NodeState oldState, NodeState newState) {
 
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
-                minStorageNodesUp,
-                minRatioOfStorageNodesUp,
                 distribution.getRedundancy(),
                 new HierarchicalGroupVisitingAdapter(distribution),
                 clusterInfo
@@ -232,15 +210,8 @@ public class ContentCluster {
         }
     }
 
-    public void setMinStorageNodesUp(int minStorageNodesUp) {
-        this.minStorageNodesUp = minStorageNodesUp;
-    }
-
-    public void setMinRatioOfStorageNodesUp(double minRatioOfStorageNodesUp) {
-        this.minRatioOfStorageNodesUp = minRatioOfStorageNodesUp;
-    }
-
     public boolean hasConfiguredNode(int index) {
         return clusterInfo.hasConfiguredNode(index);
     }
+
 }

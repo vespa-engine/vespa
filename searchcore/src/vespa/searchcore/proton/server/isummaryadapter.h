@@ -3,6 +3,7 @@
 
 #include <vespa/searchlib/query/base.h>
 #include <vespa/searchlib/common/serialnum.h>
+#include <memory>
 
 namespace document {
     class Document;

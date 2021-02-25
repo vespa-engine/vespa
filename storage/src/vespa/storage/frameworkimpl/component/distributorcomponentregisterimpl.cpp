@@ -2,11 +2,13 @@
 #include "distributorcomponentregisterimpl.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
+#include <vespa/vdslib/state/clusterstate.h>
 
 namespace storage {
 
 DistributorComponentRegisterImpl::DistributorComponentRegisterImpl()
-    : _timeCalculator(0)
+    : _timeCalculator(0),
+      _clusterState(std::make_shared<lib::ClusterState>())
 {
 }
 
@@ -16,7 +18,7 @@ void
 DistributorComponentRegisterImpl::handleNewState()
 {
     auto clusterStateBundle = getNodeStateUpdater().getClusterStateBundle();
-    _clusterState = *clusterStateBundle->getBaselineClusterState();
+    _clusterState = std::make_shared<lib::ClusterState>(*clusterStateBundle->getBaselineClusterState());
 }
 
 void
@@ -72,7 +74,7 @@ DistributorComponentRegisterImpl::setNodeStateUpdater(NodeStateUpdater& updater)
     StorageComponentRegisterImpl::setNodeStateUpdater(updater);
     auto clusterStateBundle = updater.getClusterStateBundle();
     if (clusterStateBundle) {
-        _clusterState = *clusterStateBundle->getBaselineClusterState();
+        _clusterState = std::make_shared<lib::ClusterState>(*clusterStateBundle->getBaselineClusterState());
     }
     updater.addStateListener(*this);
 }

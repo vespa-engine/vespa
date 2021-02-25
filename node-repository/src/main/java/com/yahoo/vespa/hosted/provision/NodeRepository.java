@@ -60,6 +60,7 @@ public class NodeRepository extends AbstractComponent {
     private final JobControl jobControl;
     private final Applications applications;
     private final LoadBalancers loadBalancers;
+    private final FlagSource flagSource;
     private final int spareCount;
 
     /**
@@ -102,11 +103,10 @@ public class NodeRepository extends AbstractComponent {
                           boolean useCuratorClientCache,
                           int spareCount,
                           long nodeCacheSize) {
-        // TODO (valerijf): Uncomment when exception for prod.cd-aws is removed
-//        if (provisionServiceProvider.getHostProvisioner().isPresent() != zone.getCloud().dynamicProvisioning())
-//            throw new IllegalArgumentException(String.format(
-//                    "dynamicProvisioning property must be 1-to-1 with availability of HostProvisioner, was: dynamicProvisioning=%s, hostProvisioner=%s",
-//                    zone.getCloud().dynamicProvisioning(), provisionServiceProvider.getHostProvisioner().map(__ -> "present").orElse("empty")));
+        if (provisionServiceProvider.getHostProvisioner().isPresent() != zone.getCloud().dynamicProvisioning())
+            throw new IllegalArgumentException(String.format(
+                    "dynamicProvisioning property must be 1-to-1 with availability of HostProvisioner, was: dynamicProvisioning=%s, hostProvisioner=%s",
+                    zone.getCloud().dynamicProvisioning(), provisionServiceProvider.getHostProvisioner().map(__ -> "present").orElse("empty")));
 
         this.db = new CuratorDatabaseClient(flavors, curator, clock, zone, useCuratorClientCache, nodeCacheSize);
         this.zone = zone;
@@ -122,6 +122,7 @@ public class NodeRepository extends AbstractComponent {
         this.jobControl = new JobControl(new JobControlFlags(db, flagSource));
         this.applications = new Applications(db);
         this.loadBalancers = new LoadBalancers(db);
+        this.flagSource = flagSource;
         this.spareCount = spareCount;
         rewriteNodes();
     }
@@ -158,7 +159,7 @@ public class NodeRepository extends AbstractComponent {
     /** Returns the status of firmware checks for hosts managed by this. */
     public FirmwareChecks firmwareChecks() { return firmwareChecks; }
 
-    /** Returns the docker images to use for nodes in this. */
+    /** Returns the container images to use for nodes in this. */
     public ContainerImages containerImages() { return containerImages; }
 
     /** Returns the status of maintenance jobs managed by this. */
@@ -173,6 +174,14 @@ public class NodeRepository extends AbstractComponent {
     public NodeFlavors flavors() { return flavors; }
 
     public HostResourcesCalculator resourcesCalculator() { return resourcesCalculator; }
+
+    public FlagSource flagSource() { return flagSource; }
+
+    /** Returns the time keeper of this system */
+    public Clock clock() { return clock; }
+
+    /** Returns the zone of this system */
+    public Zone zone() { return zone; }
 
     /** The number of nodes we should ensure has free capacity for node failures whenever possible */
     public int spareCount() { return spareCount; }
@@ -203,11 +212,5 @@ public class NodeRepository extends AbstractComponent {
                    transaction.nested());
         applications.remove(transaction);
     }
-
-    /** Returns the time keeper of this system */
-    public Clock clock() { return clock; }
-
-    /** Returns the zone of this system */
-    public Zone zone() { return zone; }
 
 }

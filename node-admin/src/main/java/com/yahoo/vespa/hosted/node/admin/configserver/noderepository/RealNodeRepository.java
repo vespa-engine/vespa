@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.Ge
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeMessageResponse;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.bindings.NodeRepositoryNode;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.List;
 import java.util.Map;
@@ -181,7 +182,9 @@ public class RealNodeRepository implements NodeRepository {
                 node.ipAddresses,
                 node.additionalIpAddresses,
                 reports,
-                Optional.ofNullable(node.parentHostname));
+                Optional.ofNullable(node.parentHostname),
+                Optional.ofNullable(node.archiveUri).map(URI::create),
+                Optional.ofNullable(node.exclusiveTo).map(ApplicationId::fromSerializedForm));
     }
 
     private static NodeResources.DiskSpeed diskSpeedFromString(String diskSpeed) {

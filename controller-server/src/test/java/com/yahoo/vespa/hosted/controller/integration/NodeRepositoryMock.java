@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.integration;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
@@ -40,6 +41,7 @@ public class NodeRepositoryMock implements NodeRepository {
     private final Map<ZoneId, Map<ApplicationId, Application>> applications = new HashMap<>();
     private final Map<ZoneId, TargetVersions> targetVersions = new HashMap<>();
     private final Map<Integer, Duration> osUpgradeBudgets = new HashMap<>();
+    private final Map<DeploymentId, Pair<Double, Double>> trafficFractions = new HashMap<>();
 
     private boolean allowPatching = false;
 
@@ -53,6 +55,10 @@ public class NodeRepositoryMock implements NodeRepository {
     public void putApplication(ZoneId zone, Application application) {
         applications.putIfAbsent(zone, new HashMap<>());
         applications.get(zone).put(application.id(), application);
+    }
+
+    public Pair<Double, Double> getTrafficFraction(ApplicationId application, ZoneId zone) {
+        return trafficFractions.get(new DeploymentId(application, zone));
     }
 
     /** Add or update given node in zone */
@@ -177,6 +183,12 @@ public class NodeRepositoryMock implements NodeRepository {
     @Override
     public Application getApplication(ZoneId zone, ApplicationId applicationId) {
         return applications.get(zone).get(applicationId);
+    }
+
+    @Override
+    public void patchApplication(ZoneId zone, ApplicationId application,
+                                 double currentReadShare, double maxReadShare) {
+        trafficFractions.put(new DeploymentId(application, zone), new Pair<>(currentReadShare, maxReadShare));
     }
 
     @Override

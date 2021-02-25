@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
@@ -16,9 +16,7 @@ import org.junit.Test;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 import static org.hamcrest.core.Is.is;
 import static org.hamcrest.core.StringContains.containsString;
@@ -32,10 +30,8 @@ import static org.mockito.Mockito.when;
 
 public class NodeStateChangeCheckerTest {
 
-    private static final int minStorageNodesUp = 3;
     private static final int requiredRedundancy = 4;
     private static final int currentClusterStateVersion = 2;
-    private static final double minRatioOfStorageNodesUp = 0.9;
 
     private static final Node nodeDistributor = new Node(NodeType.DISTRIBUTOR, 1);
     private static final Node nodeStorage = new Node(NodeType.STORAGE, 1);
@@ -61,30 +57,14 @@ public class NodeStateChangeCheckerTest {
     }
 
     private NodeStateChangeChecker createChangeChecker(ContentCluster cluster) {
-        return new NodeStateChangeChecker(minStorageNodesUp, minRatioOfStorageNodesUp, requiredRedundancy,
-                visitor -> {}, cluster.clusterInfo());
+        return new NodeStateChangeChecker(requiredRedundancy, visitor -> {}, cluster.clusterInfo());
     }
 
     private ContentCluster createCluster(Collection<ConfiguredNode> nodes) {
         Distribution distribution = mock(Distribution.class);
         Group group = new Group(2, "to");
         when(distribution.getRootGroup()).thenReturn(group);
-        return new ContentCluster("Clustername", nodes, distribution, minStorageNodesUp, 0.0);
-    }
-
-    private StorageNodeInfo createStorageNodeInfo(int index, State state) {
-        Distribution distribution = mock(Distribution.class);
-        Group group = new Group(2, "to");
-        when(distribution.getRootGroup()).thenReturn(group);
-
-        String clusterName = "Clustername";
-        Set<ConfiguredNode> configuredNodeIndexes = new HashSet<>();
-        ContentCluster cluster = new ContentCluster(clusterName, configuredNodeIndexes, distribution, minStorageNodesUp, 0.0);
-
-        String rpcAddress = "";
-        StorageNodeInfo storageNodeInfo = new StorageNodeInfo(cluster, index, false, rpcAddress, distribution);
-        storageNodeInfo.setReportedState(new NodeState(NodeType.STORAGE, state), 3 /* time */);
-        return storageNodeInfo;
+        return new ContentCluster("Clustername", nodes, distribution);
     }
 
     private String createDistributorHostInfo(int replicationfactor1, int replicationfactor2, int replicationfactor3) {
@@ -137,8 +117,7 @@ public class NodeStateChangeCheckerTest {
     public void testUnknownStorageNode() {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
-                5 /* min storage nodes */, minRatioOfStorageNodesUp, requiredRedundancy,
-                visitor -> {}, cluster.clusterInfo());
+                requiredRedundancy, visitor -> {}, cluster.clusterInfo());
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 new Node(NodeType.STORAGE, 10), defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);
@@ -160,17 +139,23 @@ public class NodeStateChangeCheckerTest {
 
     @Test
     public void testCanUpgradeSafeMissingStorage() {
+        // Create a content cluster with 4 nodes, and storage node with index 3 down.
         ContentCluster cluster = createCluster(createNodes(4));
         setAllNodesUp(cluster, HostInfo.createHostInfo(createDistributorHostInfo(4, 5, 6)));
+        cluster.clusterInfo().getStorageNodeInfo(3).setReportedState(new NodeState(NodeType.STORAGE, State.DOWN), 0);
+        ClusterState clusterStateWith3Down = clusterState(String.format(
+                "version:%d distributor:4 storage:4 .3.s:d",
+                currentClusterStateVersion));
+
+        // We should then be denied setting storage node 1 safely to maintenance.
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
-                5 /* min storage nodes */, minRatioOfStorageNodesUp, requiredRedundancy, visitor -> {},
-                cluster.clusterInfo());
+                requiredRedundancy, visitor -> {}, cluster.clusterInfo());
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
-                nodeStorage, defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
+                nodeStorage, clusterStateWith3Down, SetUnitStateRequest.Condition.SAFE,
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
-        assertThat(result.getReason(), is("There are only 4 storage nodes up, while config requires at least 5"));
+        assertThat(result.getReason(), is("Another storage node has state DOWN: 3"));
     }
 
     @Test
@@ -402,7 +387,7 @@ public class NodeStateChangeCheckerTest {
         NodeStateChangeChecker.Result result = transitionToMaintenanceWithOneStorageNodeDown(otherIndex);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
-        assertThat(result.getReason(), containsString("Not enough storage nodes running"));
+        assertThat(result.getReason(), containsString("Another storage node has state DOWN: 2"));
     }
 
     @Test

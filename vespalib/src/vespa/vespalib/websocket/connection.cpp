@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "connection.h"
+#include <vespa/vespalib/util/size_literals.h>
 #include <cstdarg>
 #include <cassert>
 
@@ -52,7 +53,7 @@ bool
 Connection::fill_input(size_t min_bytes)
 {
     while (_input.used() < min_bytes) {
-        size_t max_read = (8 * 1024);
+        size_t max_read = (8_Ki);
         char *ptr = _input.reserve(max_read);
         ssize_t read_res = _socket->read(ptr, max_read);
         if (read_res > 0) {

@@ -7,6 +7,7 @@
 #include <vespa/searchlib/common/location.h>
 #include <vespa/searchlib/common/matching_elements.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
@@ -65,7 +66,7 @@ DocsumReply::UP
 DocsumContext::createReply()
 {
     auto reply = std::make_unique<DocsumReply>();
-    search::RawBuf buf(4096);
+    search::RawBuf buf(4_Ki);
     _docsumWriter.InitState(_attrMgr, &_docsumState);
     reply->docsums.resize(_docsumState._docsumcnt);
     SymbolTable::UP symbols = std::make_unique<SymbolTable>();

@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
 import com.yahoo.vdslib.state.Node;
@@ -121,7 +121,7 @@ public class NodeTest extends StateRestApiTest {
     public void testNodeNotSeenInSlobrok() throws Exception {
         setUp(true);
         ContentCluster old = music.context.cluster;
-        music.context.cluster = new ContentCluster(old.getName(), old.getConfiguredNodes().values(), old.getDistribution(), 0, 0.0);
+        music.context.cluster = new ContentCluster(old.getName(), old.getConfiguredNodes().values(), old.getDistribution());
         NodeState currentState = new NodeState(NodeType.STORAGE, State.DOWN);
         currentState.setDescription("Not seen");
         music.context.currentConsolidatedState.setNodeState(new Node(NodeType.STORAGE, 1), currentState);

@@ -5,6 +5,7 @@ import com.fasterxml.jackson.core.JsonEncoding;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonGenerator;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.yahoo.container.logging.ConnectionLogEntry.SslHandshakeFailure.ExceptionEntry;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -46,13 +47,11 @@ class JsonConnectionLogWriter implements LogWriter<ConnectionLogEntry> {
             Instant sslPeerNotBefore = unwrap(record.sslPeerNotBefore());
             Instant sslPeerNotAfter = unwrap(record.sslPeerNotAfter());
             String sslSniServerName = unwrap(record.sslSniServerName());
-            String sslHandshakeFailureException = unwrap(record.sslHandshakeFailureException());
-            String sslHandshakeFailureMessage = unwrap(record.sslHandshakeFailureMessage());
-            String sslHandshakeFailureType = unwrap(record.sslHandshakeFailureType());
+            ConnectionLogEntry.SslHandshakeFailure sslHandshakeFailure = unwrap(record.sslHandshakeFailure());
 
             if (isAnyValuePresent(
                     sslProtocol, sslSessionId, sslCipherSuite, sslPeerSubject, sslPeerNotBefore, sslPeerNotAfter,
-                    sslSniServerName, sslHandshakeFailureException, sslHandshakeFailureMessage, sslHandshakeFailureType)) {
+                    sslSniServerName, sslHandshakeFailure)) {
                 generator.writeObjectFieldStart("ssl");
 
                 writeOptionalString(generator, "protocol", sslProtocol);
@@ -63,11 +62,17 @@ class JsonConnectionLogWriter implements LogWriter<ConnectionLogEntry> {
                 writeOptionalTimestamp(generator, "peerNotAfter", sslPeerNotAfter);
                 writeOptionalString(generator, "sniServerName", sslSniServerName);
 
-                if (isAnyValuePresent(sslHandshakeFailureException, sslHandshakeFailureMessage, sslHandshakeFailureType)) {
+                if (sslHandshakeFailure != null) {
                     generator.writeObjectFieldStart("handshake-failure");
-                    writeOptionalString(generator, "exception", sslHandshakeFailureException);
-                    writeOptionalString(generator, "message", sslHandshakeFailureMessage);
-                    writeOptionalString(generator, "type", sslHandshakeFailureType);
+                    generator.writeArrayFieldStart("exception");
+                    for (ExceptionEntry entry : sslHandshakeFailure.exceptionChain()) {
+                        generator.writeStartObject();
+                        generator.writeStringField("cause", entry.name());
+                        generator.writeStringField("message", entry.message());
+                        generator.writeEndObject();
+                    }
+                    generator.writeEndArray();
+                    generator.writeStringField("type", sslHandshakeFailure.type());
                     generator.writeEndObject();
                 }
 

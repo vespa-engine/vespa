@@ -20,6 +20,8 @@ import java.util.Collections;
  */
 public class ContainerDocumentApi {
 
+    public static final String DOCUMENT_V1_PREFIX = "/document/v1";
+
     private static final int FALLBACK_MAX_POOL_SIZE = 0; // Use fallback based on actual logical core count on host
     private static final int FALLBACK_CORE_POOL_SIZE = 0; // Use fallback based on actual logical core count on host
 
@@ -39,7 +41,7 @@ public class ContainerDocumentApi {
 
 
     private static void addRestApiHandler(ContainerCluster<?> cluster, Options options) {
-        var handler = newVespaClientHandler("com.yahoo.document.restapi.resource.DocumentV1ApiHandler", "/document/v1/*", options);
+        var handler = newVespaClientHandler("com.yahoo.document.restapi.resource.DocumentV1ApiHandler", DOCUMENT_V1_PREFIX + "/*", options);
         cluster.addComponent(handler);
 
         // We need to include a dummy implementation of the previous restapi handler (using the same class name).

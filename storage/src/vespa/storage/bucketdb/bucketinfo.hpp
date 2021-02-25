@@ -2,6 +2,7 @@
 
 #include "bucketcopy.h"
 #include <vespa/vespalib/util/arrayref.h>
+#include <vespa/vespalib/stllike/hash_map.hpp>
 #include <iostream>
 #include <sstream>
 
@@ -63,6 +64,55 @@ bool BucketInfoBase<NodeSeq>::consistentNodes(bool countInvalidAsConsistent) con
                                       countInvalidAsConsistent)) return false;
     }
     return true;
+}
+
+namespace {
+
+// BucketInfo wrapper which only concerns itself with fields that indicate
+// whether replicas are in sync.
+struct ReplicaMetadata {
+    api::BucketInfo info;
+
+    ReplicaMetadata() noexcept = default;
+    explicit ReplicaMetadata(const api::BucketInfo& info_) noexcept
+        : info(info_)
+    {}
+    bool operator==(const ReplicaMetadata& rhs) const noexcept {
+        // TODO merge state checker itself only considers checksum, should we do the same...?
+        return ((info.getChecksum() == rhs.info.getChecksum()) &&
+                (info.getDocumentCount() == rhs.info.getDocumentCount()));
+    }
+    struct hash {
+        size_t operator()(const ReplicaMetadata& rm) const noexcept {
+            // We assume that just using the checksum is extremely likely to be unique in the table.
+            return rm.info.getChecksum();
+        }
+    };
+};
+
+constexpr bool is_majority(size_t n, size_t m) {
+    return (n >= (m / 2) + 1);
+}
+
+}
+
+template <typename NodeSeq>
+api::BucketInfo BucketInfoBase<NodeSeq>::majority_consistent_bucket_info() const noexcept {
+    if (_nodes.size() < 3) {
+        return {};
+    }
+    vespalib::hash_map<ReplicaMetadata, uint16_t, ReplicaMetadata::hash> meta_tracker;
+    for (const auto& n : _nodes) {
+        if (n.valid()) {
+            meta_tracker[ReplicaMetadata(n.getBucketInfo())]++;
+        }
+    }
+    for (const auto& meta : meta_tracker) {
+        if (is_majority(meta.second, _nodes.size())) {
+            return meta.first.info;
+        }
+    }
+    return {};
 }
 
 template <typename NodeSeq>

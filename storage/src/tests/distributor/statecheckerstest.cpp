@@ -12,6 +12,7 @@
 #include <vespa/storage/distributor/statecheckers.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/stat.h>
+#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
 
@@ -958,45 +959,38 @@ TEST_F(StateCheckersTest, bucket_state) {
               testBucketState(""));
 
     // Node 1 is in ideal state
-    EXPECT_EQ("[Setting node 1 as active:"
-              " copy is ideal state priority 0] (pri 90)",
+    EXPECT_EQ("[Setting node 1 as active: copy has 3 docs and ideal state priority 0] (pri 90)",
               testBucketState("1=2/3/4", 2, true));
 
     // Node 3 is in ideal state
-    EXPECT_EQ("[Setting node 3 as active:"
-              " copy is ideal state priority 1]",
+    EXPECT_EQ("[Setting node 3 as active: copy has 3 docs and ideal state priority 1]",
               testBucketState("3=2/3/4"));
 
-    // No trusted nodes, but node 1 is first in ideal state.
+    // No ready replicas. Node 1 is first in ideal state but node 2 has
+    // more docs and should remain active.
     // Also check bad case where more than 1 node is set as active just
     // to ensure we can get out of that situation if it should ever happen.
-    // Nothing done with node 3 since is't not active and shouldn't be.
-    EXPECT_EQ("[Setting node 1 as active:"
-              " copy is ideal state priority 0]"
-              "[Setting node 0 as inactive]"
-              "[Setting node 2 as inactive] (pri 120)",
+    // Nothing done with node 3 since it's not active and shouldn't be.
+    EXPECT_EQ("[Setting node 0 as inactive] (pri 90)",
               testBucketState("0=3/4/5/u/a,1=3,2=4/5/6/u/a,3=3", 2, true));
 
     // Test setting active when only node available is not contained
     // within the resolved ideal state.
-    EXPECT_EQ("[Setting node 0 as active: first available copy]",
+    EXPECT_EQ("[Setting node 0 as active: copy has 3 docs]",
               testBucketState("0=2/3/4"));
 
-    // A trusted ideal state copy should be set active rather than a non-trusted
-    // ideal state copy
-    EXPECT_EQ("[Setting node 3 as active:"
-              " copy is trusted and ideal state priority 1]"
+    // A replica with more documents should be preferred over one with fewer.
+    EXPECT_EQ("[Setting node 3 as active: copy has 6 docs and ideal state priority 1]"
               "[Setting node 1 as inactive]",
               testBucketState("1=2/3/4/u/a,3=5/6/7/t"));
 
-    // None of the ideal state copies are trusted but a non-ideal copy is.
-    // The trusted copy should be active.
-    EXPECT_EQ("[Setting node 2 as active: copy is trusted]",
+    // Replica 2 has most documents and should be activated
+    EXPECT_EQ("[Setting node 2 as active: copy has 9 docs]",
               testBucketState("1=2/3/4,3=5/6/7/,2=8/9/10/t"));
 
     // Make sure bucket db ordering does not matter
-    EXPECT_EQ("[Setting node 2 as active: copy is trusted]",
-              testBucketState("2=8/9/10/t,1=2/3/4,3=5/6/7"));
+    EXPECT_EQ("[Setting node 2 as active: copy has 9 docs]",
+              testBucketState("1=2/3/4,3=5/6/7,2=8/9/10/t"));
 
     // If copy is already active, we shouldn't generate operations
     EXPECT_EQ("NO OPERATIONS GENERATED",
@@ -1015,26 +1009,26 @@ TEST_F(StateCheckersTest, bucket_state) {
     EXPECT_EQ("NO OPERATIONS GENERATED",
               testBucketState("1=0/0/1,3=0/0/1"));
 
-    // Ready preferred over trusted & ideal state
+    // Ready preferred over ideal state
     EXPECT_EQ("NO OPERATIONS GENERATED",
               testBucketState("2=8/9/10/t/i/u,1=2/3/4/u/a/r,3=5/6/7"));
-    EXPECT_EQ("[Setting node 2 as active: copy is ready]"
+    EXPECT_EQ("[Setting node 2 as active: copy is ready with 9 docs]"
               "[Setting node 1 as inactive]",
               testBucketState("2=8/9/10/u/i/r,1=2/3/4/u/a/u,3=5/6/7/u/i/u"));
 
     // Prefer in ideal state if multiple copies ready
-    EXPECT_EQ("[Setting node 3 as active: copy is ready]"
+    EXPECT_EQ("[Setting node 3 as active: copy is ready, has 9 docs and ideal state priority 1]"
               "[Setting node 1 as inactive]",
-              testBucketState("2=8/9/10/u/i/r,1=2/3/4/u/a/u,3=5/6/7/u/i/r"));
+              testBucketState("2=8/9/10/u/i/r,1=2/3/4/u/a/u,3=8/9/10/u/i/r"));
 
-    // Prefer ideal state if all ready but no trusted
-    EXPECT_EQ("[Setting node 1 as active: copy is ready]",
-              testBucketState("2=8/9/10/u/i/r,1=2/3/4/u/i/r,3=5/6/7/u/i/r"));
+    // Prefer ideal state if all ready
+    EXPECT_EQ("[Setting node 1 as active: copy is ready, has 9 docs and ideal state priority 0]",
+              testBucketState("2=8/9/10/u/i/r,1=8/9/10/u/i/r,3=8/9/10/u/i/r"));
 
-    // Prefer trusted over ideal state
-    EXPECT_EQ("[Setting node 2 as active: copy is ready and trusted]"
+    // Ready with more documents is preferred over ideal state or trusted
+    EXPECT_EQ("[Setting node 2 as active: copy is ready with 9 docs]"
               "[Setting node 1 as inactive]",
-              testBucketState("2=8/9/10/t/i/r,1=2/3/4/u/a/r,3=5/6/7"));
+              testBucketState("2=8/9/10/u/i/r,1=2/3/4/u/a/r,3=5/6/7/u/i/r"));
 }
 
 /**
@@ -1049,7 +1043,7 @@ TEST_F(StateCheckersTest, do_not_activate_non_ready_copies_when_ideal_node_in_ma
     EXPECT_EQ("NO OPERATIONS GENERATED",
               testBucketState("2=8/9/10/t/i/u,3=5/6/7"));
     // But we should activate another copy iff there's another ready copy.
-    EXPECT_EQ("[Setting node 2 as active: copy is ready]",
+    EXPECT_EQ("[Setting node 2 as active: copy is ready with 9 docs]",
               testBucketState("2=8/9/10/u/i/r,3=5/6/7/u/i/u"));
 }
 
@@ -1109,8 +1103,7 @@ std::string StateCheckersTest::testBucketStatePerGroup(
                             includePriority);
 }
 
-TEST_F(StateCheckersTest, bucket_state_per_group) {
-    setupDistributor(6, 20, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
+std::shared_ptr<lib::Distribution> make_3x3_group_config() {
     vespa::config::content::StorDistributionConfigBuilder config;
     config.activePerLeafGroup = true;
     config.redundancy = 6;
@@ -1136,8 +1129,12 @@ TEST_F(StateCheckersTest, bucket_state_per_group) {
     config.group[3].nodes[0].index = 9;
     config.group[3].nodes[1].index = 10;
     config.group[3].nodes[2].index = 11;
-    auto distr = std::make_shared<lib::Distribution>(config);
-    triggerDistributionChange(std::move(distr));
+    return std::make_shared<lib::Distribution>(config);
+}
+
+TEST_F(StateCheckersTest, bucket_state_per_group) {
+    setupDistributor(6, 20, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
+    triggerDistributionChange(make_3x3_group_config());
 
     {
         DistributorConfiguration::MaintenancePriorities mp;
@@ -1147,18 +1144,14 @@ TEST_F(StateCheckersTest, bucket_state_per_group) {
     }
 
     // Node 1 and 8 is is ideal state
-    EXPECT_EQ("[Setting node 1 as active: "
-              "copy is trusted and ideal state priority 4]"
-              "[Setting node 6 as active: "
-              "copy is trusted and ideal state priority 0] (pri 90)",
+    EXPECT_EQ("[Setting node 1 as active: copy has 3 docs and ideal state priority 4]"
+              "[Setting node 6 as active: copy has 3 docs and ideal state priority 0] (pri 90)",
               testBucketStatePerGroup("0=2/3/4/t, 1=2/3/4/t, 3=2/3/4/t, "
                                       "5=2/3/4/t, 6=2/3/4/t, 8=2/3/4/t", true));
 
     // Data differ between groups
-    EXPECT_EQ("[Setting node 1 as active: "
-              "copy is trusted and ideal state priority 4]"
-              "[Setting node 6 as active: "
-              "copy is ideal state priority 0] (pri 90)",
+    EXPECT_EQ("[Setting node 1 as active: copy has 3 docs and ideal state priority 4]"
+              "[Setting node 6 as active: copy has 6 docs and ideal state priority 0] (pri 90)",
               testBucketStatePerGroup("0=2/3/4/t, 1=2/3/4/t, 3=2/3/4/t, "
                                       "5=5/6/7, 6=5/6/7, 8=5/6/7", true));
 
@@ -1172,16 +1165,77 @@ TEST_F(StateCheckersTest, bucket_state_per_group) {
                                       true));
 
     // Node 1 and 8 is is ideal state
-    EXPECT_EQ("[Setting node 1 as active: "
-              "copy is trusted and ideal state priority 4]"
-              "[Setting node 6 as active: "
-              "copy is trusted and ideal state priority 0]"
-              "[Setting node 9 as active: "
-              "copy is trusted and ideal state priority 2] (pri 90)",
+    EXPECT_EQ("[Setting node 1 as active: copy has 3 docs and ideal state priority 4]"
+              "[Setting node 6 as active: copy has 3 docs and ideal state priority 0]"
+              "[Setting node 9 as active: copy has 3 docs and ideal state priority 2] (pri 90)",
               testBucketStatePerGroup("0=2/3/4/t, 1=2/3/4/t, 3=2/3/4/t, "
                                       "5=2/3/4/t, 6=2/3/4/t, 8=2/3/4/t, "
                                       "9=2/3/4/t, 10=2/3/4/t, 11=2/3/4/t",
                                       true));
+}
+
+TEST_F(StateCheckersTest, do_not_activate_replicas_that_are_out_of_sync_with_majority) {
+    // TODO why this strange distribution...
+    // groups: [0, 1, 3] [5, 6, 8] [9, 10, 11]
+    setupDistributor(6, 12, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
+    triggerDistributionChange(make_3x3_group_config());
+    getConfig().set_max_activation_inhibited_out_of_sync_groups(3);
+
+    // 5 is out of sync with 0 and 9 and will NOT be activated.
+    EXPECT_EQ("[Setting node 0 as active: copy has 3 docs]"
+              "[Setting node 9 as active: copy has 3 docs and ideal state priority 2]",
+              testBucketStatePerGroup("0=2/3/4, 5=3/4/5, 9=2/3/4"));
+
+    // We also try the other indices:...
+    // 0 out of sync, 5 and 9 in sync (one hopes..!)
+    EXPECT_EQ("[Setting node 5 as active: copy has 3 docs]"
+              "[Setting node 9 as active: copy has 3 docs and ideal state priority 2]",
+              testBucketStatePerGroup("0=4/5/6, 5=2/3/4, 9=2/3/4"));
+
+    // 9 out of sync, 0 and 5 in sync
+    EXPECT_EQ("[Setting node 0 as active: copy has 3 docs]"
+              "[Setting node 5 as active: copy has 3 docs]",
+              testBucketStatePerGroup("0=2/3/4, 5=2/3/4, 9=5/3/4"));
+
+    // If there's no majority, we activate everything because there's really nothing
+    // better we can do.
+    EXPECT_EQ("[Setting node 0 as active: copy has 3 docs]"
+              "[Setting node 5 as active: copy has 6 docs]"
+              "[Setting node 9 as active: copy has 9 docs and ideal state priority 2]",
+              testBucketStatePerGroup("0=2/3/4, 5=5/6/7, 9=8/9/10"));
+
+    // However, if a replica is _already_ active, we will not deactivate it.
+    EXPECT_EQ("[Setting node 0 as active: copy has 3 docs]"
+              "[Setting node 9 as active: copy has 3 docs and ideal state priority 2]",
+              testBucketStatePerGroup("0=2/3/4, 5=3/4/5/u/a, 9=2/3/4"));
+}
+
+TEST_F(StateCheckersTest, replica_activation_inhibition_can_be_limited_to_max_n_groups) {
+    // groups: [0, 1, 3] [5, 6, 8] [9, 10, 11]
+    setupDistributor(6, 12, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
+    triggerDistributionChange(make_3x3_group_config());
+    getConfig().set_max_activation_inhibited_out_of_sync_groups(1);
+
+    // We count metadata majorities independent of groups. Let there be 3 in-sync replicas in
+    // group 0, 1 out of sync in group 1 and 1 out of sync in group 2. Unless we have
+    // mechanisms in place to limit the number of affected groups, both groups 1 and 2 would
+    // be inhibited for activation. Since we limit to 1, only group 1 should be affected.
+    EXPECT_EQ("[Setting node 1 as active: copy has 3 docs and ideal state priority 4]"
+              "[Setting node 9 as active: copy has 6 docs and ideal state priority 2]",
+              testBucketStatePerGroup("0=2/3/4, 1=2/3/4, 3=2/3/4, 5=3/4/5, 9=5/6/7"));
+}
+
+TEST_F(StateCheckersTest, activate_replicas_that_are_out_of_sync_with_majority_if_inhibition_config_disabled) {
+    // groups: [0, 1, 3] [5, 6, 8] [9, 10, 11]
+    setupDistributor(6, 12, "distributor:1 storage:12 .2.s:d .4.s:d .7.s:d");
+    triggerDistributionChange(make_3x3_group_config());
+    getConfig().set_max_activation_inhibited_out_of_sync_groups(0);
+
+    // 5 is out of sync with 0 and 9 but will still be activated since the config is false.
+    EXPECT_EQ("[Setting node 0 as active: copy has 3 docs]"
+              "[Setting node 5 as active: copy has 4 docs]"
+              "[Setting node 9 as active: copy has 3 docs and ideal state priority 2]",
+              testBucketStatePerGroup("0=2/3/4, 5=3/4/5, 9=2/3/4"));
 }
 
 TEST_F(StateCheckersTest, allow_activation_of_retired_nodes) {
@@ -1189,7 +1243,7 @@ TEST_F(StateCheckersTest, allow_activation_of_retired_nodes) {
     // we still want to be able to shuffle bucket activations around in order
     // to preserve coverage.
     setupDistributor(2, 2, "distributor:1 storage:2 .0.s:r .1.s:r");
-    EXPECT_EQ("[Setting node 1 as active: copy is trusted]"
+    EXPECT_EQ("[Setting node 1 as active: copy has 6 docs]"
               "[Setting node 0 as inactive]",
               testBucketState("0=2/3/4/u/a,1=5/6/7/t"));
 }

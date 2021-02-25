@@ -12,7 +12,9 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
+import java.util.TreeMap;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.regex.Pattern;
@@ -47,6 +49,7 @@ public class CommandLine {
     public static final Duration DEFAULT_SIGKILL_GRACE_PERIOD = Duration.ofMinutes(30);
 
     private final List<String> arguments = new ArrayList<>();
+    private final TreeMap<String, String> environment = new TreeMap<>();
     private final TaskContext taskContext;
     private final ProcessFactory processFactory;
 
@@ -78,6 +81,25 @@ public class CommandLine {
     /** Add arguments by splitting arguments by space. */
     public CommandLine addTokens(String arguments) {
         return add(arguments.split("\\s+"));
+    }
+
+    /** Set an environment variable, overriding any existing. */
+    public CommandLine setEnvironmentVariable(String name, String value) {
+        if (name.indexOf('=') != -1) {
+            throw new IllegalArgumentException("name contains '=': " + name);
+        }
+        Objects.requireNonNull(value, "cannot set environment variable to null");
+
+        environment.put(name, value);
+        return this;
+    }
+
+    public CommandLine removeEnvironmentVariable(String name) {
+        if (name.indexOf('=') != -1) {
+            throw new IllegalArgumentException("name contains '=': " + name);
+        }
+        environment.put(name, null);
+        return this;
     }
 
     /**
@@ -153,15 +175,30 @@ public class CommandLine {
     /** Returns a shell-like representation of the command. */
     @Override
     public String toString() {
-        String command = arguments.stream()
+        var command = new StringBuilder();
+
+        if (!environment.isEmpty()) {
+            // Pretend environment is propagated through the env program for display purposes
+            command.append(environment.entrySet().stream()
+                    .map(entry -> {
+                        if (entry.getValue() == null) {
+                            return "-u " + maybeEscapeArgument(entry.getKey());
+                        } else {
+                            return maybeEscapeArgument(entry.getKey() + "=" + entry.getValue());
+                        }
+                    })
+                    .collect(Collectors.joining(" ", "env ", " ")));
+        }
+
+        command.append(arguments.stream()
                 .map(CommandLine::maybeEscapeArgument)
-                .collect(Collectors.joining(" "));
+                .collect(Collectors.joining(" ")));
 
         // Note: Both of these cannot be confused with an argument since they would
         // require escaping.
-        command += redirectStderrToStdoutInsteadOfDiscard ? " 2>&1" : " 2>/dev/null";
+        command.append(redirectStderrToStdoutInsteadOfDiscard ? " 2>&1" : " 2>/dev/null");
 
-        return command;
+        return command.toString();
     }
 
 
@@ -253,6 +290,9 @@ public class CommandLine {
     }
 
     public List<String> getArguments() { return Collections.unmodifiableList(arguments); }
+
+    /** Returns a copy of the environment overrides.  A null value means the environment variable should be removed. */
+    public TreeMap<String, String> getEnvironmentOverrides() { return new TreeMap<>(environment); }
 
     // Accessor fields necessary for classes in this package. Could be public if necessary.
     boolean getRedirectStderrToStdoutInsteadOfDiscard() { return redirectStderrToStdoutInsteadOfDiscard; }

@@ -4,8 +4,9 @@ LOG_SETUP("task_runner_test");
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchcore/proton/initializer/initializer_task.h>
 #include <vespa/searchcore/proton/initializer/task_runner.h>
-#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <mutex>
 
 using proton::initializer::InitializerTask;
@@ -113,7 +114,7 @@ struct Fixture
     TaskRunner _taskRunner;
 
     Fixture(uint32_t numThreads = 1)
-        : _executor(numThreads, 128 * 1024),
+        : _executor(numThreads, 128_Ki),
           _taskRunner(_executor)
     {
     }

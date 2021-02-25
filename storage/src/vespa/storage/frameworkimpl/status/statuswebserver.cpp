@@ -4,6 +4,7 @@
 #include <vespa/storageframework/storageframework.h>
 #include <vespa/vespalib/util/host_name.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/component/vtag.h>
 #include <vespa/vespalib/net/crypto_engine.h>
 #include <functional>
@@ -77,7 +78,7 @@ void StatusWebServer::configure(std::unique_ptr<vespa::config::content::core::St
 StatusWebServer::WebServer::WebServer(StatusWebServer& status, uint16_t port)
     : _status(status),
       _server(vespalib::Portal::create(vespalib::CryptoEngine::get_default(), port)),
-      _executor(1, 256 * 1024),
+      _executor(1, 256_Ki),
       _root(_server->bind("/", *this))
 {
 }

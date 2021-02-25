@@ -24,7 +24,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
+import static com.yahoo.jdisc.http.server.jetty.HttpServletRequestUtils.getConnection;
 
 /**
  * Mutable wrapper to use a {@link javax.servlet.http.HttpServletRequest}

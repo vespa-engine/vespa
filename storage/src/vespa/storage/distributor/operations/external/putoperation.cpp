@@ -8,7 +8,9 @@
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/vdslib/distribution/idealnodecalculatorimpl.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
+#include <vespa/vdslib/distribution/distribution.h>
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -109,7 +111,8 @@ PutOperation::insertDatabaseEntryAndScheduleCreateBucket(const OperationTargetLi
         BucketDatabase::Entry entry(_bucketSpace.getBucketDatabase().get(lastBucket));
         std::vector<uint16_t> idealState(
                 _bucketSpace.get_ideal_service_layer_nodes_bundle(lastBucket).get_available_nodes());
-        active = ActiveCopy::calculate(idealState, _bucketSpace.getDistribution(), entry);
+        active = ActiveCopy::calculate(idealState, _bucketSpace.getDistribution(), entry,
+                                       _op_ctx.distributor_config().max_activation_inhibited_out_of_sync_groups());
         LOG(debug, "Active copies for bucket %s: %s", entry.getBucketId().toString().c_str(), active.toString().c_str());
         for (uint32_t i=0; i<active.size(); ++i) {
             BucketCopy copy(*entry->getNode(active[i]._nodeIndex));

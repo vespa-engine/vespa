@@ -27,9 +27,9 @@ ActiveCopy::ActiveCopy(uint16_t node, const BucketDatabase::Entry& e, const std:
     _ideal(0xffff)
 {
     const BucketCopy* copy = e->getNode(node);
-    assert(copy != 0);
+    assert(copy != nullptr);
+    _doc_count = copy->getDocumentCount();
     _ready = copy->ready();
-    _trusted = copy->trusted();
     _active = copy->active();
     for (uint32_t i=0; i<idealState.size(); ++i) {
         if (idealState[i] == node) {
@@ -41,20 +41,27 @@ ActiveCopy::ActiveCopy(uint16_t node, const BucketDatabase::Entry& e, const std:
 
 vespalib::string
 ActiveCopy::getReason() const {
-    if (_ready && _trusted && _ideal < 0xffff) {
+    if (_ready && (_doc_count > 0) && (_ideal < 0xffff)) {
         vespalib::asciistream ost;
-        ost << "copy is ready, trusted and ideal state priority " << _ideal;
+        ost << "copy is ready, has " << _doc_count
+            << " docs and ideal state priority " << _ideal;
         return ost.str();
-    } else if (_ready && _trusted) {
-        return "copy is ready and trusted";
+    } else if (_ready && (_doc_count > 0)) {
+        vespalib::asciistream ost;
+        ost << "copy is ready with " << _doc_count << " docs";
+        return ost.str();
     } else if (_ready) {
         return "copy is ready";
-    } else if (_trusted && _ideal < 0xffff) {
+    } else if ((_doc_count > 0) && (_ideal < 0xffff)) {
         vespalib::asciistream ost;
-        ost << "copy is trusted and ideal state priority " << _ideal;
+        ost << "copy has " << _doc_count << " docs and ideal state priority " << _ideal;
         return ost.str();
-    } else if (_trusted) {
-        return "copy is trusted";
+    } else if (_doc_count > 0) {
+        vespalib::asciistream ost;
+        ost << "copy has " << _doc_count << " docs";
+        return ost.str();
+    } else if (_active) {
+        return "copy is already active";
     } else if (_ideal < 0xffff) {
         vespalib::asciistream ost;
         ost << "copy is ideal state priority " << _ideal;
@@ -67,9 +74,15 @@ ActiveCopy::getReason() const {
 std::ostream&
 operator<<(std::ostream& out, const ActiveCopy & e) {
     out << "Entry(Node " << e._nodeIndex;
-    if (e._ready) out << ", ready";
-    if (e._trusted) out << ", trusted";
-    if (e._ideal < 0xffff) out << ", ideal pri " << e._ideal;
+    if (e._ready) {
+        out << ", ready";
+    }
+    if (e._doc_count > 0) {
+        out << ", doc_count " << e._doc_count;
+    }
+    if (e._ideal < 0xffff) {
+        out << ", ideal pri " << e._ideal;
+    }
     out << ")";
     return out;
 }
@@ -78,10 +91,18 @@ namespace {
 
     struct ActiveStateOrder {
         bool operator()(const ActiveCopy & e1, const ActiveCopy & e2) {
-            if (e1._ready != e2._ready) return e1._ready;
-            if (e1._trusted != e2._trusted) return e1._trusted;
-            if (e1._ideal != e2._ideal) return e1._ideal < e2._ideal;
-            if (e1._active != e2._active) return e1._active;
+            if (e1._ready != e2._ready) {
+                return e1._ready;
+            }
+            if (e1._doc_count != e2._doc_count) {
+                return e1._doc_count > e2._doc_count;
+            }
+            if (e1._ideal != e2._ideal) {
+                return e1._ideal < e2._ideal;
+            }
+            if (e1._active != e2._active) {
+                return e1._active;
+            }
             return e1._nodeIndex < e2._nodeIndex;
         }
     };
@@ -112,24 +133,17 @@ namespace {
     }
 }
 
-#undef DEBUG
-#if 0
-#define DEBUG(a) a
-#else
-#define DEBUG(a)
-#endif
-
 ActiveList
 ActiveCopy::calculate(const std::vector<uint16_t>& idealState,
                       const lib::Distribution& distribution,
-                      BucketDatabase::Entry& e)
+                      BucketDatabase::Entry& e,
+                      uint32_t max_activation_inhibited_out_of_sync_groups)
 {
-    DEBUG(std::cerr << "Ideal state is " << idealState << "\n");
     std::vector<uint16_t> validNodesWithCopy = buildValidNodeIndexList(e);
     if (validNodesWithCopy.empty()) {
         return ActiveList();
     }
-    typedef std::vector<uint16_t> IndexList;
+    using IndexList = std::vector<uint16_t>;
     std::vector<IndexList> groups;
     if (distribution.activePerGroup()) {
         groups = distribution.splitNodesIntoLeafGroups(std::move(validNodesWithCopy));
@@ -138,11 +152,24 @@ ActiveCopy::calculate(const std::vector<uint16_t>& idealState,
     }
     std::vector<ActiveCopy> result;
     result.reserve(groups.size());
-    for (uint32_t i=0; i<groups.size(); ++i) {
-        std::vector<ActiveCopy> entries = buildNodeList(e, groups[i], idealState);
-        DEBUG(std::cerr << "Finding active for group " << entries << "\n");
+
+    auto maybe_majority_info = ((max_activation_inhibited_out_of_sync_groups > 0)
+                                ? e->majority_consistent_bucket_info()
+                                : api::BucketInfo()); // Invalid by default
+    uint32_t inhibited_groups = 0;
+    for (const auto& group_nodes : groups) {
+        std::vector<ActiveCopy> entries = buildNodeList(e, group_nodes, idealState);
         auto best = std::min_element(entries.begin(), entries.end(), ActiveStateOrder());
-        DEBUG(std::cerr << "Best copy " << *best << "\n");
+        if ((groups.size() > 1) &&
+            (inhibited_groups < max_activation_inhibited_out_of_sync_groups) &&
+            maybe_majority_info.valid())
+        {
+            const auto* candidate = e->getNode(best->_nodeIndex);
+            if (!candidate->getBucketInfo().equalDocumentInfo(maybe_majority_info) && !candidate->active()) {
+                ++inhibited_groups;
+                continue; // Do _not_ add candidate as activation target since it's out of sync with the majority
+            }
+        }
         result.emplace_back(*best);
     }
     return ActiveList(std::move(result));

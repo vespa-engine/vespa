@@ -6,6 +6,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -59,6 +60,7 @@ public class LoadBalancerExpirerTest {
         assertNotSame(LoadBalancer.State.inactive, loadBalancers.get().get(lb2).state());
 
         // Expirer defers removal while nodes are still allocated to application
+        tester.nodeRepository().nodes().setReady(tester.nodeRepository().nodes().list(Node.State.dirty).asList(), Agent.system, getClass().getSimpleName());
         expirer.maintain();
         assertEquals(Set.of(), tester.loadBalancerService().instances().get(lb1).reals());
         assertEquals(Set.of(), loadBalancers.get().get(lb1).instance().reals());
@@ -85,7 +87,7 @@ public class LoadBalancerExpirerTest {
         // Expirer defers removal while nodes are still allocated to cluster
         expirer.maintain();
         assertEquals(2, tester.loadBalancerService().instances().size());
-        dirtyNodesOf(app2, cluster2);
+        removeNodesOf(app2, cluster2);
 
         // Expirer removes load balancer for removed cluster
         tester.clock().advance(Duration.ofHours(1).plus(Duration.ofSeconds(1)));
@@ -115,8 +117,8 @@ public class LoadBalancerExpirerTest {
         expirer.maintain();
         assertSame(LoadBalancer.State.reserved, loadBalancers.get().get(lb).state());
 
-        // Application never activates and nodes are dirtied. Expirer moves load balancer to inactive after timeout
-        dirtyNodesOf(app, cluster);
+        // Application never activates and nodes are dirtied and readied. Expirer moves load balancer to inactive after timeout
+        removeNodesOf(app, cluster);
         tester.clock().advance(Duration.ofHours(1).plus(Duration.ofSeconds(1)));
         expirer.maintain();
         assertSame(LoadBalancer.State.inactive, loadBalancers.get().get(lb).state());
@@ -131,12 +133,13 @@ public class LoadBalancerExpirerTest {
         assertFalse("Inactive load balancer removed", loadBalancers.get().containsKey(lb));
     }
 
-    private void dirtyNodesOf(ApplicationId application, ClusterSpec.Id cluster) {
-        tester.nodeRepository().nodes().deallocate(tester.nodeRepository().nodes().list().owner(application).stream()
-                                                         .filter(node -> node.allocation().isPresent())
-                                                         .filter(node -> node.allocation().get().membership().cluster().id().equals(cluster))
-                                                         .collect(Collectors.toList()),
-                                           Agent.system, this.getClass().getSimpleName());
+    private void removeNodesOf(ApplicationId application, ClusterSpec.Id cluster) {
+        var nodes = tester.nodeRepository().nodes().list().owner(application).stream()
+                .filter(node -> node.allocation().isPresent())
+                .filter(node -> node.allocation().get().membership().cluster().id().equals(cluster))
+                .collect(Collectors.toList());
+        nodes = tester.nodeRepository().nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
+        tester.nodeRepository().nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
     private void deployApplication(ApplicationId application, ClusterSpec.Id... clusters) {

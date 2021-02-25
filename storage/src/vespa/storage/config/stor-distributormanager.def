@@ -259,3 +259,17 @@ max_consecutively_inhibited_maintenance_ticks int default=20
 ## This is a live config for that reason, i.e. it can be disabled in an emergency
 ## situation if needed.
 prioritize_global_bucket_merges bool default=true
+
+## If set, activation of bucket replicas is limited to only those replicas that have
+## bucket info consistent with a majority of the other replicas for that bucket.
+## Multiple active replicas is only a feature that is enabled for grouped clusters,
+## and this feature is intended to prevent nodes in stale groups (whose buckets are
+## likely to be out of sync) from serving query traffic until they have gotten back
+## into sync.
+## Up to the given number of groups can have their replica activation inhibited
+## by this feature. If zero, the feature is functionally disabled.
+## If more groups are out of sync than the configured number N, the inhibited groups
+## will be the N first groups present in the distribution config.
+## Note: this feature only kicks in if the number of groups in the cluster is greater
+## than 1.
+max_activation_inhibited_out_of_sync_groups int default=0

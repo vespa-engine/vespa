@@ -20,30 +20,31 @@
 // implementations against each other, a smoke test is performed by
 // verifying that all implementations produce the same result.
 
-#include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/interpreted_function.h>
+#include <vespa/eval/eval/operation.h>
+#include <vespa/eval/eval/optimize_tensor_function.h>
+#include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/tensor_function.h>
+#include <vespa/eval/eval/tensor_spec.h>
+#include <vespa/eval/eval/test/gen_spec.h>
+#include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/instruction/generic_concat.h>
 #include <vespa/eval/instruction/generic_join.h>
-#include <vespa/eval/instruction/generic_reduce.h>
-#include <vespa/eval/instruction/generic_rename.h>
 #include <vespa/eval/instruction/generic_map.h>
 #include <vespa/eval/instruction/generic_merge.h>
-#include <vespa/eval/eval/tensor_spec.h>
-#include <vespa/eval/eval/value_codec.h>
-#include <vespa/eval/eval/operation.h>
-#include <vespa/eval/eval/tensor_function.h>
-#include <vespa/eval/eval/optimize_tensor_function.h>
-#include <vespa/vespalib/util/benchmark_timer.h>
-#include <vespa/vespalib/util/stringfmt.h>
-#include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/util/stash.h>
-#include <vespa/vespalib/gtest/gtest.h>
-#include <vespa/vespalib/io/mapped_file_input.h>
-#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/eval/instruction/generic_reduce.h>
+#include <vespa/eval/instruction/generic_rename.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/smart_buffer.h>
-#include <vespa/eval/eval/test/gen_spec.h>
+#include <vespa/vespalib/gtest/gtest.h>
+#include <vespa/vespalib/io/fileutil.h>
+#include <vespa/vespalib/io/mapped_file_input.h>
+#include <vespa/vespalib/objects/nbostream.h>
+#include <vespa/vespalib/util/benchmark_timer.h>
+#include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/stash.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <optional>
 #include <algorithm>
 
@@ -315,7 +316,7 @@ void load_ghost(const vespalib::string &file_name) {
 }
 
 void save_result(const vespalib::string &file_name) {
-    SmartBuffer output(4096);
+    SmartBuffer output(4_Ki);
     JsonFormat::encode(prod_result, output, false);
     Memory memory = output.obtain();
     File file(file_name);

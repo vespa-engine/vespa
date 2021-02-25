@@ -3,7 +3,6 @@
 package com.yahoo.vespa.hosted.node.admin.task.util.process;
 
 import com.yahoo.jdisc.Timer;
-import java.util.logging.Level;
 
 import java.io.File;
 import java.io.IOException;
@@ -14,6 +13,7 @@ import java.nio.file.attribute.PosixFilePermission;
 import java.nio.file.attribute.PosixFilePermissions;
 import java.util.List;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -41,6 +41,14 @@ public class ProcessFactoryImpl implements ProcessFactory {
         }
 
         ProcessBuilder processBuilder = new ProcessBuilder(arguments);
+
+        for (var entry : commandLine.getEnvironmentOverrides().entrySet()) {
+            if (entry.getValue() == null) {
+                processBuilder.environment().remove(entry.getKey());
+            } else {
+                processBuilder.environment().put(entry.getKey(), entry.getValue());
+            }
+        }
 
         if (commandLine.getRedirectStderrToStdoutInsteadOfDiscard()) {
             processBuilder.redirectErrorStream(true);

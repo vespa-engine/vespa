@@ -3,6 +3,7 @@
 #include "fileutil.h"
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/fastos/file.h>
 #include <ostream>
@@ -369,7 +370,7 @@ File::readAll() const
 
     // Limit ourselves to 4K on the stack. If this becomes a problem we should
     // allocate on the heap.
-    char buffer[4096];
+    char buffer[4_Ki];
     off_t offset = 0;
 
     while (true) {
@@ -702,8 +703,8 @@ rename(const string & frompath, const string & topath,
 
 namespace {
 
-    uint32_t bufferSize = 1024 * 1024;
-    uint32_t diskAlignmentSize = 4096;
+    uint32_t bufferSize = 1_Mi;
+    uint32_t diskAlignmentSize = 4_Ki;
 
 }
 

@@ -250,6 +250,13 @@ DocumentDBTaggedMetrics::DocumentsMetrics::DocumentsMetrics(metrics::MetricSet *
 
 DocumentDBTaggedMetrics::DocumentsMetrics::~DocumentsMetrics() = default;
 
+DocumentDBTaggedMetrics::BucketMoveMetrics::BucketMoveMetrics(metrics::MetricSet *parent)
+        : metrics::MetricSet("bucket_move", {}, "Metrics for bucket move job in this document db", parent),
+          bucketsPending("buckets_pending", {}, "The number of buckets left to move", this)
+{ }
+
+DocumentDBTaggedMetrics::BucketMoveMetrics::~BucketMoveMetrics() = default;
+
 DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docTypeName, size_t maxNumThreads_)
     : MetricSet("documentdb", {{"documenttype", docTypeName}}, "Document DB metrics", nullptr),
       job(this),
@@ -262,6 +269,7 @@ DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docType
       matching(this),
       sessionCache(this),
       documents(this),
+      bucketMove(this),
       totalMemoryUsage(this),
       totalDiskUsage("disk_usage", {}, "The total disk usage (in bytes) for this document db", this),
       maxNumThreads(maxNumThreads_)

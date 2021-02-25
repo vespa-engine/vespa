@@ -3,6 +3,7 @@
 #include "documentsummary.h"
 #include <vespa/vespalib/util/growablebytebuffer.h>
 #include <vespa/document/util/bytebuffer.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <algorithm>
 
 namespace vdslib {
@@ -12,7 +13,7 @@ DocumentSummary::DocumentSummary() :
     _summary(),
     _summarySize(0)
 {
-    _summaryBuffer.reset(new vespalib::MallocPtr(4096));
+    _summaryBuffer.reset(new vespalib::MallocPtr(4_Ki));
 }
 
 DocumentSummary::DocumentSummary(document::ByteBuffer& buf) :

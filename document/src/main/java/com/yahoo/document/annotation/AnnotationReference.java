@@ -12,8 +12,8 @@ import com.yahoo.vespa.objects.Ids;
 /**
  * A FieldValue which holds a reference to an annotation of a specified type.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
  * @see Annotation#setFieldValue(com.yahoo.document.datatypes.FieldValue)
+ * @author Einar M R Rosenvinge
  */
 public class AnnotationReference extends FieldValue {
 
@@ -123,7 +123,7 @@ public class AnnotationReference extends FieldValue {
 
     @Override
     public void printXml(XmlStream xml) {
-        //TODO: Implement AnnotationReference.printXml()
+        // TODO: Implement AnnotationReference.printXml()
     }
 
     @Override
@@ -182,4 +182,5 @@ public class AnnotationReference extends FieldValue {
         }
         return comp;
     }
+
 }

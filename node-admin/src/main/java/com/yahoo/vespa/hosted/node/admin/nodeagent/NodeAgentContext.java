@@ -1,6 +1,7 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.zone.ZoneApi;
@@ -13,6 +14,7 @@ import com.yahoo.vespa.hosted.node.admin.docker.ContainerNetworkMode;
 
 import java.nio.file.FileSystem;
 import java.nio.file.Path;
+import java.util.Optional;
 
 public interface NodeAgentContext extends TaskContext {
 
@@ -94,4 +96,6 @@ public interface NodeAgentContext extends TaskContext {
     default Path pathInNodeUnderVespaHome(String relativePath) {
         return pathInNodeUnderVespaHome(fileSystem().getPath(relativePath));
     }
+
+    Optional<ApplicationId> hostExclusiveTo();
 }

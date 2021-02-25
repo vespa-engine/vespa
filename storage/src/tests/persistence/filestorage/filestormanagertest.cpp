@@ -24,8 +24,11 @@
 #include <vespa/storage/storageserver/statemanager.h>
 #include <vespa/storageapi/message/bucketsplitting.h>
 #include <vespa/vdslib/state/random.h>
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/util/gate.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <atomic>
 #include <thread>
 
@@ -422,14 +425,13 @@ TEST_F(FileStorManagerTest, running_task_against_unknown_bucket_fails) {
     ASSERT_TRUE(executor);
 
     spi::Bucket b1 = makeSpiBucket(document::BucketId(1));
-    std::atomic<size_t> numInvocations(0);
-    auto response = executor->execute(b1, spi::makeBucketTask([&numInvocations](const spi::Bucket &, std::shared_ptr<IDestructorCallback>) {
-        numInvocations++;
-    }));
-    ASSERT_TRUE(response);
-    EXPECT_EQ(0, numInvocations);
-    response->run(spi::Bucket(), {});
-    EXPECT_EQ(1, numInvocations);
+    std::atomic<size_t> success(0);
+    std::atomic<size_t> failures(0);
+    auto task = spi::makeBucketTask([&success](const spi::Bucket &, std::shared_ptr<IDestructorCallback>) { success++;},
+                                    [&failures](const spi::Bucket &) { failures++; });
+    executor->execute(b1, std::move(task));
+    EXPECT_EQ(0, success);
+    EXPECT_EQ(1, failures);
 }
 
 TEST_F(FileStorManagerTest, running_task_against_existing_bucket_works) {
@@ -445,15 +447,16 @@ TEST_F(FileStorManagerTest, running_task_against_existing_bucket_works) {
 
     createBucket(b1.getBucketId());
 
-    std::atomic<size_t> numInvocations(0);
+    std::atomic<size_t> success(0);
+    std::atomic<size_t> failures(0);
     vespalib::Gate gate;
-    auto response = executor->execute(b1, spi::makeBucketTask([&numInvocations, &gate](const spi::Bucket &, std::shared_ptr<IDestructorCallback>) {
-        numInvocations++;
+    executor->execute(b1, spi::makeBucketTask([&success, &gate](const spi::Bucket &, std::shared_ptr<IDestructorCallback>) {
+        success++;
         gate.countDown();
-    }));
-    EXPECT_FALSE(response);
+    }, [&failures](const spi::Bucket &) { failures++; }));
     gate.await();
-    EXPECT_EQ(1, numInvocations);
+    EXPECT_EQ(1, success);
+    EXPECT_EQ(0, failures);
 }
 
 TEST_F(FileStorManagerTest, state_change) {
@@ -593,7 +596,7 @@ TEST_F(FileStorManagerTest, handler_paused_multi_thread) {
 
     Document::SP doc(createDocument(content, "id:footype:testdoctype1:n=1234:bar").release());
 
-    FastOS_ThreadPool pool(512 * 1024);
+    FastOS_ThreadPool pool(512_Ki);
     MessagePusherThread pushthread(filestorHandler, doc);
     pushthread.start(pool);
 
@@ -1277,7 +1280,7 @@ TEST_F(FileStorManagerTest, visiting) {
     // Visit bucket with no split, using no selection
     {
         spi::IteratorId iterId(createIterator(top, ids[0], "true"));
-        auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[0]), iterId, 16*1024);
+        auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[0]), iterId, 16_Ki);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
         ASSERT_EQ(1, top.getNumReplies());
@@ -1293,7 +1296,7 @@ TEST_F(FileStorManagerTest, visiting) {
         uint32_t totalDocs = 0;
         spi::IteratorId iterId(createIterator(top, ids[1], "testdoctype1.hstringval = \"John Doe\""));
         while (true) {
-            auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[1]), iterId, 16*1024);
+            auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[1]), iterId, 16_Ki);
             top.sendDown(cmd);
             top.waitForMessages(1, _waitTime);
             ASSERT_EQ(1, top.getNumReplies());
@@ -1320,7 +1323,7 @@ TEST_F(FileStorManagerTest, visiting) {
                                framework::MicroSecTime(40)));
         uint32_t totalDocs = 0;
         while (true) {
-            auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[1]), iterId, 16*1024);
+            auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(ids[1]), iterId, 16_Ki);
             top.sendDown(cmd);
             top.waitForMessages(1, _waitTime);
             ASSERT_EQ(1, top.getNumReplies());
@@ -1631,7 +1634,7 @@ TEST_F(FileStorManagerTest, get_iter) {
     // Sending a getiter request that will only visit some of the docs
     spi::IteratorId iterId(createIterator(top, bid, ""));
     {
-        auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(bid), iterId, 2048);
+        auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(bid), iterId, 2_Ki);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
         ASSERT_EQ(1, top.getNumReplies());
@@ -1656,7 +1659,7 @@ TEST_F(FileStorManagerTest, get_iter) {
         EXPECT_EQ(ReturnCode(ReturnCode::OK), reply->getResult());
     }
     {
-        auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(bid), iterId, 2048);
+        auto cmd = std::make_shared<GetIterCommand>(makeDocumentBucket(bid), iterId, 2_Ki);
         top.sendDown(cmd);
         top.waitForMessages(1, _waitTime);
         ASSERT_EQ(1, top.getNumReplies());

@@ -5,9 +5,10 @@ import com.yahoo.searchdefinition.document.SDDocumentType;
 import com.yahoo.searchdefinition.document.SDField;
 
 /**
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class IdOperation implements FieldOperation {
+
     private SDDocumentType document;
     private int fieldId;
 
@@ -30,4 +31,5 @@ public class IdOperation implements FieldOperation {
     public void apply(SDField field) {
          document.setFieldId(field, fieldId);
     }
+
 }

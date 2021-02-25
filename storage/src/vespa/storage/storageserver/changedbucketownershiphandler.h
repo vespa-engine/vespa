@@ -3,7 +3,6 @@
 
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/storage/common/storagelink.h>
-#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/config/config.h>
 #include <vespa/config-persistence.h>
 #include <vespa/storage/common/servicelayercomponent.h>
@@ -18,8 +17,9 @@
 namespace storage {
 
 namespace lib {
-class ClusterState;
-class ClusterStateBundle;
+    class ClusterState;
+    class ClusterStateBundle;
+    class Distribution;
 }
 
 /**

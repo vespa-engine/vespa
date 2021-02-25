@@ -88,7 +88,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
 
         boolean standaloneZooKeeper = "true".equals(controllersElements.getAttribute(ATTRIBUTE_CLUSTER_CONTROLLER_STANDALONE_ZK)) || multitenant;
         if (standaloneZooKeeper) {
-            parent = new ClusterControllerCluster(parent, "standalone");
+            parent = new ClusterControllerCluster(parent, "standalone", deployState);
         }
         var cluster = new ClusterControllerContainerCluster(parent,
                                                             "cluster-controllers",
@@ -205,7 +205,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
 
         @Override
         protected ClusterControllerContainer doBuild(DeployState deployState, AbstractConfigProducer parent, Element spec) {
-            return new ClusterControllerContainer(parent, i, runStandaloneZooKeeper, deployState);
+            return new ClusterControllerContainer(parent, i, runStandaloneZooKeeper, deployState, false);
         }
     }
 }

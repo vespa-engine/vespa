@@ -19,6 +19,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static org.junit.Assert.*;
 
@@ -80,35 +81,34 @@ public class ResourceMeterMaintainerTest {
         tester.configServer().nodeRepository().setFixedNodes(awsZone2.getId());
         tester.configServer().nodeRepository().putNodes(
                 awsZone1.getId(),
-                createNodesInState(
-                        Node.State.provisioned,
-                        Node.State.ready,
-                        Node.State.dirty,
-                        Node.State.failed,
-                        Node.State.parked
-                )
+                createNodes()
         );
     }
 
-    private List<Node> createNodesInState(Node.State ...states) {
-        return Arrays.stream(states)
-                .map(state -> {
-                    return new Node.Builder()
-                            .hostname(HostName.from("host" + state))
-                            .parentHostname(HostName.from("parenthost" + state))
-                            .state(state)
-                            .type(NodeType.tenant)
-                            .owner(ApplicationId.from("tenant1", "app1", "default"))
-                            .currentVersion(Version.fromString("7.42"))
-                            .wantedVersion(Version.fromString("7.42"))
-                            .currentOsVersion(Version.fromString("7.6"))
-                            .wantedOsVersion(Version.fromString("7.6"))
-                            .serviceState(Node.ServiceState.expectedUp)
-                            .resources(new NodeResources(24, 24, 500, 1))
-                            .clusterId("clusterA")
-                            .clusterType(Node.ClusterType.container)
-                            .build();
-                })
-                .collect(Collectors.toUnmodifiableList());
+    private List<Node> createNodes() {
+        return Stream.of(Node.State.provisioned,
+                         Node.State.ready,
+                         Node.State.dirty,
+                         Node.State.failed,
+                         Node.State.parked,
+                         Node.State.active)
+                     .map(state -> {
+                         return new Node.Builder()
+                                 .hostname(HostName.from("host" + state))
+                                 .parentHostname(HostName.from("parenthost" + state))
+                                 .state(state)
+                                 .type(NodeType.tenant)
+                                 .owner(ApplicationId.from("tenant1", "app1", "default"))
+                                 .currentVersion(Version.fromString("7.42"))
+                                 .wantedVersion(Version.fromString("7.42"))
+                                 .currentOsVersion(Version.fromString("7.6"))
+                                 .wantedOsVersion(Version.fromString("7.6"))
+                                 .serviceState(Node.ServiceState.expectedUp)
+                                 .resources(new NodeResources(24, 24, 500, 1))
+                                 .clusterId("clusterA")
+                                 .clusterType(state == Node.State.active ? Node.ClusterType.admin : Node.ClusterType.container)
+                                 .build();
+                     })
+                     .collect(Collectors.toUnmodifiableList());
     }
 }

@@ -99,18 +99,18 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
     /** Returns whether this node can - as far as we know - be used to run the application workload */
     public abstract boolean isValid();
 
-    /** Returns whether replacing this with any of the reserved candidates will increase skew */
-    public boolean replacementIncreasesSkew(List<NodeCandidate> candidates) {
+    /** Returns whether this can be replaced by any of the reserved candidates */
+    public boolean replacableBy(List<NodeCandidate> candidates) {
         return candidates.stream()
                          .filter(candidate -> candidate.state() == Node.State.reserved)
-                         .allMatch(reserved -> {
-                             int switchPriority = switchPriority(reserved);
+                         .anyMatch(candidate -> {
+                             int switchPriority = candidate.switchPriority(this);
                              if (switchPriority < 0) {
                                  return true;
                              } else if (switchPriority > 0) {
                                  return false;
                              }
-                             return hostPriority(reserved) < 0;
+                             return candidate.hostPriority(this) < 0;
                          });
     }
 
@@ -405,12 +405,12 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
                                                 "Failed when allocating address on host");
             }
 
-            Node node = Node.createDockerNode(allocation.get().addresses(),
-                                              allocation.get().hostname(),
-                                              parentHostname().get(),
-                                              resources.with(parent.get().resources().diskSpeed())
+            Node node = Node.reserve(allocation.get().addresses(),
+                                     allocation.get().hostname(),
+                                     parentHostname().get(),
+                                     resources.with(parent.get().resources().diskSpeed())
                                                        .with(parent.get().resources().storageType()),
-                                              NodeType.tenant).build();
+                                     NodeType.tenant).build();
             return new ConcreteNodeCandidate(node, freeParentCapacity, parent, violatesSpares, exclusiveSwitch, isSurplus, isNew, isResizable);
 
         }

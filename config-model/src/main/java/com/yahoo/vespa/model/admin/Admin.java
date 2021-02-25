@@ -142,7 +142,6 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     public ClusterControllerContainerCluster getClusterControllers() { return clusterControllers; }
 
     public void setClusterControllers(ClusterControllerContainerCluster clusterControllers) {
-        if (multitenant) throw new RuntimeException("Should not use admin cluster controller in a multitenant environment");
         this.clusterControllers = clusterControllers;
     }
 

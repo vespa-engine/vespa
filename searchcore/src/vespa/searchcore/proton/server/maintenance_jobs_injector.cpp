@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketmovejob.h"
+#include "bucketmovejobv2.h"
 #include "heart_beat_job.h"
 #include "job_tracked_maintenance_job.h"
 #include "lid_space_compaction_job.h"
@@ -37,8 +38,7 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
                              document::BucketSpace bucketSpace)
 {
     for (auto &lidHandler : lscHandlers) {
-
-        IMaintenanceJob::UP job;
+        std::unique_ptr<IMaintenanceJob> job;
         if (config.getLidSpaceCompactionConfig().useBucketExecutor()) {
             job = std::make_unique<lidspace::CompactionJob>(
                     config.getLidSpaceCompactionConfig(),
@@ -65,6 +65,7 @@ void
 injectBucketMoveJob(MaintenanceController &controller,
                     const DocumentDBMaintenanceConfig &config,
                     IFrozenBucketHandler &fbHandler,
+                    storage::spi::BucketExecutor & bucketExecutor,
                     bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                     const vespalib::string &docTypeName,
                     document::BucketSpace bucketSpace,
@@ -76,18 +77,35 @@ injectBucketMoveJob(MaintenanceController &controller,
                     DocumentDBJobTrackers &jobTrackers,
                     IDiskMemUsageNotifier &diskMemUsageNotifier)
 {
-    auto bmj = std::make_unique<BucketMoveJob>(calc,
-                                moveHandler,
-                                bucketModifiedHandler,
-                                controller.getReadySubDB(),
-                                controller.getNotReadySubDB(),
-                                fbHandler,
-                                bucketCreateNotifier,
-                                clusterStateChangedNotifier,
-                                bucketStateChangedNotifier,
-                                diskMemUsageNotifier,
-                                config.getBlockableJobConfig(),
-                                docTypeName, bucketSpace);
+    std::unique_ptr<IMaintenanceJob> bmj;
+    if (config.getBucketMoveConfig().useBucketExecutor()) {
+        bmj = std::make_unique<BucketMoveJobV2>(calc,
+                                                moveHandler,
+                                                bucketModifiedHandler,
+                                                controller.masterThread(),
+                                                bucketExecutor,
+                                                controller.getReadySubDB(),
+                                                controller.getNotReadySubDB(),
+                                                bucketCreateNotifier,
+                                                clusterStateChangedNotifier,
+                                                bucketStateChangedNotifier,
+                                                diskMemUsageNotifier,
+                                                config.getBlockableJobConfig(),
+                                                docTypeName, bucketSpace);
+    } else {
+        bmj = std::make_unique<BucketMoveJob>(calc,
+                                              moveHandler,
+                                              bucketModifiedHandler,
+                                              controller.getReadySubDB(),
+                                              controller.getNotReadySubDB(),
+                                              fbHandler,
+                                              bucketCreateNotifier,
+                                              clusterStateChangedNotifier,
+                                              bucketStateChangedNotifier,
+                                              diskMemUsageNotifier,
+                                              config.getBlockableJobConfig(),
+                                              docTypeName, bucketSpace);
+    }
     controller.registerJobInMasterThread(trackJob(jobTrackers.getBucketMove(), std::move(bmj)));
 }
 
@@ -133,9 +151,9 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                      clusterStateChangedNotifier, calc, bucketSpace);
     }
 
-    injectBucketMoveJob(controller, config, fbHandler, bucketCreateNotifier, docTypeName, bucketSpace, moveHandler,
-                        bucketModifiedHandler, clusterStateChangedNotifier, bucketStateChangedNotifier, calc,
-                        jobTrackers, diskMemUsageNotifier);
+    injectBucketMoveJob(controller, config, fbHandler, bucketExecutor, bucketCreateNotifier, docTypeName, bucketSpace,
+                        moveHandler, bucketModifiedHandler, clusterStateChangedNotifier, bucketStateChangedNotifier,
+                        calc, jobTrackers, diskMemUsageNotifier);
 
     controller.registerJobInMasterThread(
             std::make_unique<SampleAttributeUsageJob>(readyAttributeManager, notReadyAttributeManager,

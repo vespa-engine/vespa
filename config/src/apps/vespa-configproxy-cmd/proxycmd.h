@@ -3,6 +3,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
+#include <memory>
 
 class FRT_Target;
 class FRT_RPCRequest;

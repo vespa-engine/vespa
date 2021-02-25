@@ -24,7 +24,6 @@
 
   <content id="search" version="1.0">
     <redundancy>2</redundancy>
-    <controllers><nodes count="3" dedicated="true"/></controllers>
     <nodes count="7" flavor="large" groups="12"/>
   </content>
 

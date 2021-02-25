@@ -7,6 +7,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <fstream>
 #include <regex>
 #include <thread>
@@ -127,7 +128,7 @@ public:
 };
 
 WatcherTest::WatcherTest()
-    : _executor(1, 256 * 1024)
+    : _executor(1, 256_Ki)
 {
     remove_files();
     setenv("VESPA_LOG_TARGET", "file:vespa.log", true);

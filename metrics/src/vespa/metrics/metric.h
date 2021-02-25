@@ -1,9 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "name_repo.h"
 #include <vespa/vespalib/util/printable.h>
 #include <vespa/vespalib/stllike/string.h>
-#include "name_repo.h"
+#include <memory>
 
 namespace metrics {
 

@@ -6,6 +6,7 @@
 #include "randreaders.h"
 #include <vespa/searchlib/util/filekit.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/stllike/asciistream.h>
@@ -343,7 +344,7 @@ FileChunk::appendTo(vespalib::ThreadExecutor & executor, const IGetLid & db, IWr
     vespalib::GenerationHandler::Guard lidReadGuard(db.getLidReadGuard());
     assert(numChunks <= getNumChunks());
     FixedParams fixedParams = {db, dest, lidReadGuard, getFileId().getId(), visitorProgress};
-    vespalib::BlockingThreadStackExecutor singleExecutor(1, 64*1024, executor.getNumThreads()*2);
+    vespalib::BlockingThreadStackExecutor singleExecutor(1, 64_Ki, executor.getNumThreads()*2);
     for (size_t chunkId(0); chunkId < numChunks; chunkId++) {
         std::promise<Chunk::UP> promisedChunk;
         std::future<Chunk::UP> futureChunk = promisedChunk.get_future();

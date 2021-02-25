@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import java.util.logging.Level;
@@ -12,11 +12,11 @@ import java.util.logging.Logger;
  */
 public class MasterElectionHandler implements MasterInterface {
 
-    private static Logger log = Logger.getLogger(MasterElectionHandler.class.getName());
+    private static final Logger log = Logger.getLogger(MasterElectionHandler.class.getName());
 
     private final Object monitor;
     private final Timer timer;
-    private int index;
+    private final int index;
     private int totalCount;
     private Integer masterCandidate; // The lowest indexed node in zookeeper
     private int nextInLineCount; // Our position in line of the nodes in zookeeper
@@ -56,7 +56,7 @@ public class MasterElectionHandler implements MasterInterface {
     @Override
     public boolean isMaster() {
         Integer master = getMaster();
-        return (master == null ? false : master == index);
+        return (master != null && master == index);
     }
 
     @Override

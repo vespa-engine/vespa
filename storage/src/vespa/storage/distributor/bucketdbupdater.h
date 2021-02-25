@@ -33,7 +33,6 @@ class BucketDBUpdater : public framework::StatusReporter,
                         public api::MessageHandler
 {
 public:
-    using OutdatedNodes = dbtransition::OutdatedNodes;
     using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
     BucketDBUpdater(Distributor& owner,
                     DistributorBucketSpaceRepo& bucketSpaceRepo,
@@ -229,6 +228,7 @@ private:
         std::vector<bool> _available_nodes;
         std::vector<BucketDatabase::Entry> _nonOwnedBuckets;
         size_t _removed_buckets;
+        size_t _removed_documents;
 
         uint16_t _localIndex;
         const lib::Distribution& _distribution;

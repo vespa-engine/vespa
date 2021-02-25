@@ -40,6 +40,11 @@ public class Applications {
         return db.readApplication(id);
     }
 
+    /** Returns the application with the given id, or throws IllegalArgumentException if it does not exist */
+    public Application require(ApplicationId id) {
+        return db.readApplication(id).orElseThrow(() -> new IllegalArgumentException("No application '" + id + "' was found"));
+    }
+
     // TODO: Require ProvisionLock instead of Mutex
     public void put(Application application, Mutex applicationLock) {
         NestedTransaction transaction = new NestedTransaction();

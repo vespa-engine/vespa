@@ -3,7 +3,6 @@
 
 #include <vector>
 #include <vespa/document/bucket/bucket.h>
-#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storageapi/buckets/bucketinfo.h>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/storage/common/servicelayercomponent.h>

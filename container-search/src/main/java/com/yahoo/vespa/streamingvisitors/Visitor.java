@@ -15,7 +15,7 @@ import java.util.Map;
 /**
  * Visitor for performing searches and accessing results.
  *
- * @author <a href="mailto:ulf@yahoo-inc.com">Ulf Carlin</a>
+ * @author Ulf Carlin
  */
 interface Visitor {
 

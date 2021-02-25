@@ -152,7 +152,7 @@ public class MetricsReporterTest {
     }
 
     @Test
-    public void docker_metrics() {
+    public void container_metrics() {
         NodeFlavors nodeFlavors = FlavorConfigBuilder.createDummies("host", "docker", "docker2");
         ProvisioningTester tester = new ProvisioningTester.Builder().flavors(nodeFlavors.getFlavors()).build();
         NodeRepository nodeRepository = tester.nodeRepository();
@@ -166,18 +166,18 @@ public class MetricsReporterTest {
         nodeRepository.nodes().deallocateRecursively("dockerHost", Agent.system, getClass().getSimpleName());
         nodeRepository.nodes().setReady("dockerHost", Agent.system, getClass().getSimpleName());
 
-        Node container1 = Node.createDockerNode(Set.of("::2"), "container1",
-                                                "dockerHost", new NodeResources(1, 3, 2, 1), NodeType.tenant).build();
+        Node container1 = Node.reserve(Set.of("::2"), "container1",
+                                       "dockerHost", new NodeResources(1, 3, 2, 1), NodeType.tenant).build();
         container1 = container1.with(allocation(Optional.of("app1"), container1).get());
         try (Mutex lock = nodeRepository.nodes().lockUnallocated()) {
-            nodeRepository.nodes().addDockerNodes(new LockedNodeList(List.of(container1), lock));
+            nodeRepository.nodes().addReservedNodes(new LockedNodeList(List.of(container1), lock));
         }
 
-        Node container2 = Node.createDockerNode(Set.of("::3"), "container2",
-                                                "dockerHost", new NodeResources(2, 4, 4, 1), NodeType.tenant).build();
+        Node container2 = Node.reserve(Set.of("::3"), "container2",
+                                       "dockerHost", new NodeResources(2, 4, 4, 1), NodeType.tenant).build();
         container2 = container2.with(allocation(Optional.of("app2"), container2).get());
         try (Mutex lock = nodeRepository.nodes().lockUnallocated()) {
-            nodeRepository.nodes().addDockerNodes(new LockedNodeList(List.of(container2), lock));
+            nodeRepository.nodes().addReservedNodes(new LockedNodeList(List.of(container2), lock));
         }
 
         NestedTransaction transaction = new NestedTransaction();
@@ -243,7 +243,7 @@ public class MetricsReporterTest {
         metricsReporter.maintain();
         assertEquals(1D, getMetric("nodes.nonActiveFraction", metric, dimensions).doubleValue(), Double.MIN_VALUE);
         assertEquals(0, getMetric("nodes.active", metric, dimensions));
-        assertEquals(3, getMetric("nodes.nonActive", metric, dimensions));
+        assertEquals(4, getMetric("nodes.nonActive", metric, dimensions));
     }
 
     @Test

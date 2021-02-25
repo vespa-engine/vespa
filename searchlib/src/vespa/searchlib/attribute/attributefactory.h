@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchcommon/attribute/config.h>
+#include <memory>
 
 namespace search {
 

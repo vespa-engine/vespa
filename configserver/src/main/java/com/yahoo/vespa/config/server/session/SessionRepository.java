@@ -124,7 +124,7 @@ public class SessionRepository {
     public SessionRepository(TenantName tenantName,
                              TenantApplications applicationRepo,
                              SessionPreparer sessionPreparer,
-                             Curator curator,
+                             ConfigCurator configCurator,
                              Metrics metrics,
                              StripedExecutor<TenantName> zkWatcherExecutor,
                              PermanentApplicationPackage permanentApplicationPackage,
@@ -140,11 +140,11 @@ public class SessionRepository {
                              ConfigDefinitionRepo configDefinitionRepo,
                              TenantListener tenantListener) {
         this.tenantName = tenantName;
-        this.configCurator = ConfigCurator.create(curator);
+        this.configCurator = configCurator;
         sessionCounter = new SessionCounter(configCurator, tenantName);
         this.sessionsPath = TenantRepository.getSessionsPath(tenantName);
         this.clock = clock;
-        this.curator = curator;
+        this.curator = configCurator.curator();
         this.sessionLifetime = Duration.ofSeconds(configserverConfig.sessionLifetime());
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
         this.permanentApplicationPackage = permanentApplicationPackage;
@@ -212,7 +212,7 @@ public class SessionRepository {
         futures.forEach((sessionId, future) -> {
             try {
                 future.get();
-                log.log(Level.INFO, () -> "Local session " + sessionId + " loaded");
+                log.log(Level.FINE, () -> "Local session " + sessionId + " loaded");
             } catch (ExecutionException | InterruptedException e) {
                 log.log(Level.WARNING, "Could not load session " + sessionId, e);
             }
@@ -255,6 +255,8 @@ public class SessionRepository {
         session.setVespaVersion(existingSession.getVespaVersion());
         session.setDockerImageRepository(existingSession.getDockerImageRepository());
         session.setAthenzDomain(existingSession.getAthenzDomain());
+        if (existingSession.getDedicatedClusterControllerCluster())
+            session.setDedicatedClusterControllerCluster();
         return session;
     }
 
@@ -371,7 +373,7 @@ public class SessionRepository {
         futures.forEach((sessionId, future) -> {
             try {
                 future.get();
-                log.log(Level.INFO, () -> "Remote session " + sessionId + " loaded");
+                log.log(Level.FINE, () -> "Remote session " + sessionId + " loaded");
             } catch (ExecutionException | InterruptedException e) {
                 log.log(Level.WARNING, "Could not load session " + sessionId, e);
             }

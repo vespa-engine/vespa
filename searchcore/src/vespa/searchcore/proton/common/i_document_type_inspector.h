@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/stllike/string.h>
+#include <memory>
 
 namespace proton {
 
@@ -13,7 +14,7 @@ struct IDocumentTypeInspector
 {
     typedef std::shared_ptr<IDocumentTypeInspector> SP;
 
-    virtual ~IDocumentTypeInspector() {}
+    virtual ~IDocumentTypeInspector() =default;
 
     virtual bool hasUnchangedField(const vespalib::string &name) const = 0;
 };

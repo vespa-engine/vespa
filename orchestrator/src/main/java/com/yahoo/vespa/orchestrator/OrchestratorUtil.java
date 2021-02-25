@@ -46,23 +46,6 @@ public class OrchestratorUtil {
                 .collect(toSet());
     }
 
-    public static Set<ServiceCluster> getServiceClustersUsingHost(Collection<ServiceCluster> serviceClusters,
-                                                                         HostName hostName) {
-        return serviceClusters.stream()
-                .filter(serviceCluster -> hasServiceInstanceOnHost(serviceCluster, hostName))
-                .collect(toSet());
-    }
-
-    private static boolean hasServiceInstanceOnHost(ServiceCluster serviceCluster, HostName hostName) {
-        return serviceInstancesOnHost(serviceCluster, hostName).count() > 0;
-    }
-
-    public static Stream<ServiceInstance> serviceInstancesOnHost(ServiceCluster serviceCluster,
-                                                                        HostName hostName) {
-        return serviceCluster.serviceInstances().stream()
-                .filter(instance -> instance.hostName().equals(hostName));
-    }
-
     private static final Pattern APPLICATION_INSTANCE_REFERENCE_REST_FORMAT_PATTERN = Pattern.compile("^([^:]+):(.+)$");
 
     /** Returns an ApplicationInstanceReference constructed from the serialized format used in the REST API. */

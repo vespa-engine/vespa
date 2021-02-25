@@ -46,7 +46,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     /** Metric for number of hosts that we want to fail, but cannot due to throttling */
     static final String throttledHostFailuresMetric = "throttledHostFailures";
 
-    /** Metric for number of nodes (docker containers) that we want to fail, but cannot due to throttling */
+    /** Metric for number of nodes that we want to fail, but cannot due to throttling */
     static final String throttledNodeFailuresMetric = "throttledNodeFailures";
 
     /** Metric that indicates whether throttling is active where 1 means active and 0 means inactive */

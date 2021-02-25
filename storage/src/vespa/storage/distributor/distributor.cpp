@@ -15,7 +15,9 @@
 #include <vespa/storage/common/nodestateupdater.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
+#include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/memoryusage.h>
+#include <algorithm>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor-main");
@@ -372,17 +374,13 @@ Distributor::enableClusterStateBundle(const lib::ClusterStateBundle& state)
     enterRecoveryMode();
 
     // Clear all active messages on nodes that are down.
-    for (uint16_t i = 0; i < baselineState.getNodeCount(lib::NodeType::STORAGE); ++i) {
-        if (!baselineState.getNodeState(lib::Node(lib::NodeType::STORAGE, i)).getState()
-                .oneOf(getStorageNodeUpStates()))
-        {
-            std::vector<uint64_t> msgIds(
-                    _pendingMessageTracker.clearMessagesForNode(i));
-
-            LOG(debug,
-                "Node %d is down, clearing %d pending maintenance operations",
-                (int)i,
-                (int)msgIds.size());
+    const uint16_t old_node_count = oldState.getBaselineClusterState()->getNodeCount(lib::NodeType::STORAGE);
+    const uint16_t new_node_count = baselineState.getNodeCount(lib::NodeType::STORAGE);
+    for (uint16_t i = 0; i < std::max(old_node_count, new_node_count); ++i) {
+        const auto& node_state = baselineState.getNodeState(lib::Node(lib::NodeType::STORAGE, i)).getState();
+        if (!node_state.oneOf(getStorageNodeUpStates())) {
+            std::vector<uint64_t> msgIds = _pendingMessageTracker.clearMessagesForNode(i);
+            LOG(debug, "Node %u is down, clearing %zu pending maintenance operations", i, msgIds.size());
 
             for (uint32_t j = 0; j < msgIds.size(); ++j) {
                 _maintenanceOperationOwner.erase(msgIds[j]);

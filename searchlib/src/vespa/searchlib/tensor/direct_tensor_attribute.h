@@ -19,7 +19,7 @@ public:
     virtual void setTensor(DocId docId, const vespalib::eval::Value &tensor) override;
     void update_tensor(DocId docId,
                        const document::TensorUpdate &update,
-                       const vespalib::eval::Value &old_tensor) override;
+                       bool create_empty_if_non_existing) override;
     virtual std::unique_ptr<vespalib::eval::Value> getTensor(DocId docId) const override;
     virtual bool onLoad() override;
     virtual std::unique_ptr<AttributeSaver> onInitSave(vespalib::stringref fileName) override;

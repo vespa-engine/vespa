@@ -61,8 +61,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
-import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceClusterSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -92,7 +92,7 @@ public class HostResourceTest {
                         new ApplicationInstance(
                                 TENANT_ID,
                                 APPLICATION_INSTANCE_ID,
-                                makeServiceClusterSet())));
+                                Set.of())));
     }
 
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();

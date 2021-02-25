@@ -5,6 +5,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.function.Predicate;
@@ -22,9 +23,9 @@ public class ClusterTimeseries {
     /** The measurements for all nodes in this snapshot */
     private final List<NodeTimeseries> allTimeseries;
 
-    public ClusterTimeseries(Instant startTime, Cluster cluster, NodeList clusterNodes, MetricsDb db) {
+    public ClusterTimeseries(Duration period, Cluster cluster, NodeList clusterNodes, MetricsDb db) {
         this.clusterNodes = clusterNodes;
-        var timeseries = db.getNodeTimeseries(startTime, clusterNodes);
+        var timeseries = db.getNodeTimeseries(period, clusterNodes);
 
         if (cluster.lastScalingEvent().isPresent())
             timeseries = filter(timeseries, snapshot -> snapshot.generation() < 0 || // Content nodes do not yet send generation
@@ -48,6 +49,7 @@ public class ClusterTimeseries {
     /** Returns the average load of this resource in this */
     public double averageLoad(Resource resource) {
         int measurementCount = allTimeseries.stream().mapToInt(m -> m.size()).sum();
+        if (measurementCount == 0) return 0;
         double measurementSum = allTimeseries.stream().flatMap(m -> m.asList().stream()).mapToDouble(m -> value(resource, m)).sum();
         return measurementSum / measurementCount;
     }

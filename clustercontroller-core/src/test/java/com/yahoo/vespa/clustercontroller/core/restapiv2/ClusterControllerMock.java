@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
 import com.yahoo.vdslib.state.ClusterState;
@@ -11,9 +11,9 @@ import com.yahoo.vespa.clustercontroller.core.listeners.NodeStateOrHostInfoChang
 public class ClusterControllerMock implements RemoteClusterControllerTaskScheduler {
     public RemoteClusterControllerTask.Context context = new RemoteClusterControllerTask.Context();
 
-    private int fleetControllerIndex;
+    private final int fleetControllerIndex;
     Integer fleetControllerMaster;
-    private StringBuilder events = new StringBuilder();
+    private final StringBuilder events = new StringBuilder();
 
     ClusterControllerMock(ContentCluster cluster, ClusterState state,
                           ClusterStateBundle publishedClusterStateBundle,
@@ -84,4 +84,5 @@ public class ClusterControllerMock implements RemoteClusterControllerTaskSchedul
         task.doRemoteFleetControllerTask(context);
         task.notifyCompleted();
     }
+
 }

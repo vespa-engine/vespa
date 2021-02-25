@@ -25,6 +25,7 @@
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/transactionlog/translogserver.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/config-bucketspaces.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 
@@ -84,7 +85,7 @@ struct Fixture {
 Fixture::Fixture()
     : _dummy(),
       _myDBOwner(),
-      _summaryExecutor(8, 128*1024),
+      _summaryExecutor(8, 128_Ki),
       _hwInfo(),
       _bucketExecutor(2),
       _db(),
@@ -110,7 +111,7 @@ Fixture::Fixture()
                              makeBucketSpace(),
                              *b->getProtonConfigSP(), _myDBOwner, _summaryExecutor, _summaryExecutor, _bucketExecutor, _tls, _dummy,
                              _fileHeaderContext, std::make_unique<MemoryConfigStore>(),
-                             std::make_shared<vespalib::ThreadStackExecutor>(16, 128 * 1024), _hwInfo);
+                             std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), _hwInfo);
     _db->start();
     _db->waitForOnlineState();
 }

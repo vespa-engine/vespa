@@ -8,6 +8,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
+import com.yahoo.vespa.hosted.provision.applications.Status;
 import org.junit.Test;
 
 import java.time.Instant;
@@ -51,12 +52,15 @@ public class ApplicationSerializerTest {
                                                           Optional.of(Instant.ofEpochMilli(67890L)))),
                                  "Autoscaling status"));
         Application original = new Application(ApplicationId.from("myTenant", "myApplication", "myInstance"),
+                                               Status.initial().withCurrentReadShare(0.3).withMaxReadShare(0.5),
                                                clusters);
 
         Application serialized = ApplicationSerializer.fromJson(ApplicationSerializer.toJson(original));
         assertNotSame(original, serialized);
         assertEquals(original, serialized);
         assertEquals(original.id(), serialized.id());
+        assertNotSame(original.status(), serialized.status());
+        assertEquals(original.status(), serialized.status());
         assertEquals(original.clusters(), serialized.clusters());
         for (Cluster originalCluster : original.clusters().values()) {
             Cluster serializedCluster = serialized.clusters().get(originalCluster.id());

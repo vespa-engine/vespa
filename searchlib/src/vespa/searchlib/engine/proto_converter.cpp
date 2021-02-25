@@ -5,6 +5,7 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/data/smart_buffer.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 namespace search::engine {
 
@@ -149,7 +150,7 @@ void
 ProtoConverter::docsum_reply_to_proto(const DocsumReply &reply, ProtoDocsumReply &proto)
 {
     if (reply._root) {
-        vespalib::SmartBuffer buf(4096);
+        vespalib::SmartBuffer buf(4_Ki);
         vespalib::slime::BinaryFormat::encode(*reply._root, buf);
         proto.set_slime_summaries(buf.obtain().data, buf.obtain().size);
     }

@@ -17,17 +17,15 @@ private:
     bool                _running;
 
 public:
-    JobTrackedMaintenanceJob(const IJobTracker::SP &tracker,
-                             IMaintenanceJob::UP job);
-    ~JobTrackedMaintenanceJob();
+    JobTrackedMaintenanceJob(const IJobTracker::SP &tracker, IMaintenanceJob::UP job);
+    ~JobTrackedMaintenanceJob() override;
 
-    // Implements IMaintenanceJob
-    virtual bool isBlocked() const override { return _job->isBlocked(); }
-    virtual IBlockableMaintenanceJob *asBlockable() override { return _job->asBlockable(); }
-    virtual void registerRunner(IMaintenanceJobRunner *runner) override {
+    bool isBlocked() const override { return _job->isBlocked(); }
+    IBlockableMaintenanceJob *asBlockable() override { return _job->asBlockable(); }
+    void registerRunner(IMaintenanceJobRunner *runner) override {
         _job->registerRunner(runner);
     }
-    virtual bool run() override;
+    bool run() override;
 };
 
 } // namespace proton

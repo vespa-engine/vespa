@@ -10,6 +10,10 @@
 
 #include <vespa/storage/common/nodestateupdater.h>
 
+namespace storage::lib {
+    class ClusterState;
+    class ClusterStateBundle;
+}
 namespace storage {
 
 struct TestNodeStateUpdater : public NodeStateUpdater
@@ -46,7 +50,7 @@ public:
         _current = std::make_shared<lib::NodeState>(state);
     }
 
-    void setClusterState(lib::ClusterState::CSP c);
+    void setClusterState(std::shared_ptr<const lib::ClusterState> c);
     void setClusterStateBundle(std::shared_ptr<const lib::ClusterStateBundle> clusterStateBundle);
 
     size_t explicit_node_state_reply_send_invocations() const noexcept {

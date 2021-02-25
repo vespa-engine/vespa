@@ -13,6 +13,7 @@ LOG_SETUP(".proton.server.combiningfeedview");
 using document::DocumentTypeRepo;
 using document::DocumentId;
 using vespalib::IDestructorCallback;
+using vespalib::Trinary;
 
 namespace proton {
 
@@ -29,11 +30,16 @@ getRepo(const std::vector<IFeedView::SP> &views)
     LOG_ABORT("should not be reached");
 }
 
-};
+const char *
+toStr(Trinary v) {
+    return (v == Trinary::True) ? "true" : ((v == Trinary::False) ? "false" : "undefined");
+}
+
+}
 
 CombiningFeedView::CombiningFeedView(const std::vector<IFeedView::SP> &views,
                                      document::BucketSpace bucketSpace,
-                                     const IBucketStateCalculator::SP &calc)
+                                     const std::shared_ptr<IBucketStateCalculator> &calc)
     : _repo(getRepo(views)),
       _views(views),
       _metaStores(),
@@ -99,7 +105,7 @@ CombiningFeedView::getDocumentTypeRepo() const
 void
 CombiningFeedView::preparePut(PutOperation &putOp)
 {
-    if (shouldBeReady(putOp.getBucketId())) {
+    if (shouldBeReady(putOp.getBucketId()) == Trinary::True) {
         getReadyFeedView()->preparePut(putOp);
     } else {
         getNotReadyFeedView()->preparePut(putOp);
@@ -250,7 +256,7 @@ CombiningFeedView::handleCompactLidSpace(const CompactLidSpaceOperation &op)
 }
 
 void
-CombiningFeedView::setCalculator(const IBucketStateCalculator::SP &newCalc)
+CombiningFeedView::setCalculator(const std::shared_ptr<IBucketStateCalculator> &newCalc)
 {
     // Called by document db executor
     _calc = newCalc;
@@ -258,7 +264,7 @@ CombiningFeedView::setCalculator(const IBucketStateCalculator::SP &newCalc)
     _forceReady = !_clusterUp || !hasNotReadyFeedView();
 }
 
-bool
+Trinary
 CombiningFeedView::shouldBeReady(const document::BucketId &bucket) const
 {
     document::Bucket dbucket(_bucketSpace, bucket);
@@ -267,11 +273,10 @@ CombiningFeedView::shouldBeReady(const document::BucketId &bucket) const
         bucket.toString().c_str(),
         (_forceReady ? "true" : "false"),
         (_clusterUp ? "true" : "false"),
-        (_calc ? (_calc->shouldBeReady(dbucket) ? "true" : "false") : "null"));
-    const documentmetastore::IBucketHandler *readyMetaStore =
-        _metaStores[getReadyFeedViewId()];
+        (_calc ? toStr(_calc->shouldBeReady(dbucket)) : "null"));
+    const documentmetastore::IBucketHandler *readyMetaStore = _metaStores[getReadyFeedViewId()];
     bool isActive = readyMetaStore->getBucketDB().takeGuard()->isActiveBucket(bucket);
-    return _forceReady || isActive || _calc->shouldBeReady(dbucket);
+    return (_forceReady || isActive) ? Trinary::True : _calc->shouldBeReady(dbucket);
 }
 
 } // namespace proton

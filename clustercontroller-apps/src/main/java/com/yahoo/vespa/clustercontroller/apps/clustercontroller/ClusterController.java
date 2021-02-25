@@ -16,6 +16,7 @@ import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -98,7 +99,8 @@ public class ClusterController extends AbstractComponent
     private void verifyThatZooKeeperWorks(FleetControllerOptions options) throws Exception {
         if (options.zooKeeperServerAddress != null && !"".equals(options.zooKeeperServerAddress)) {
             try (Curator curator = Curator.create(options.zooKeeperServerAddress)) {
-                curator.framework().blockUntilConnected();
+                if ( ! curator.framework().blockUntilConnected(600, TimeUnit.SECONDS))
+                    com.yahoo.protect.Process.logAndDie("Failed to connect to ZK, dying and restarting container");
             }
         }
     }

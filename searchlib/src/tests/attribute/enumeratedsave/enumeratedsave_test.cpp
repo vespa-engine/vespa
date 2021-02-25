@@ -9,9 +9,6 @@
 #include <vespa/searchlib/attribute/attributememoryfilebufferwriter.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributesaver.h>
-#include <vespa/searchlib/attribute/multinumericattribute.h>
-#include <vespa/searchlib/attribute/singlenumericattribute.h>
-#include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -20,6 +17,7 @@
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/searchlib/util/bufferwriter.h>
 #include <vespa/vespalib/util/compress.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/data/databuffer.h>
 
 #include <limits>
@@ -58,7 +56,7 @@ public:
     }
 
     virtual Buffer allocBuf(size_t size) override {
-        return std::make_unique<BufferBuf>(size, 4096);
+        return std::make_unique<BufferBuf>(size, 4_Ki);
     }
 
     virtual void writeBuf(Buffer buf_in) override {

@@ -3,7 +3,6 @@
 
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/distributor/distributorcomponent.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <atomic>
@@ -11,12 +10,10 @@
 #include <mutex>
 
 namespace documentapi { class TestAndSetCondition; }
+namespace storage::lib { class ClusterState; }
+namespace storage { class PersistenceOperationMetricSet; }
 
-namespace storage {
-
-class PersistenceOperationMetricSet;
-
-namespace distributor {
+namespace storage::distributor {
 
 class DistributorMetricSet;
 class Distributor;
@@ -139,6 +136,3 @@ private:
 };
 
 }
-
-}
-

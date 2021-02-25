@@ -4,6 +4,7 @@
 
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/time.h>
+#include <memory>
 
 namespace vespalib { class Slime; }
 namespace vespalib::slime { struct Cursor; }

@@ -116,10 +116,10 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     }
 
     @Override
-    public List<NodeTimeseries> getNodeTimeseries(Instant startTime, Set<String> hostnames) {
+    public List<NodeTimeseries> getNodeTimeseries(Duration period, Set<String> hostnames) {
         try (SqlCompiler compiler = new SqlCompiler(engine)) {
             SqlExecutionContext context = newContext();
-            var snapshots = getSnapshots(startTime, hostnames, compiler, context);
+            var snapshots = getSnapshots(clock.instant().minus(period), hostnames, compiler, context);
             return snapshots.entrySet().stream()
                             .map(entry -> new NodeTimeseries(entry.getKey(), entry.getValue()))
                             .collect(Collectors.toList());

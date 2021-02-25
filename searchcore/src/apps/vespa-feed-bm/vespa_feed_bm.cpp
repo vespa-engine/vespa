@@ -74,6 +74,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <getopt.h>
 #include <iostream>
 #include <thread>
@@ -722,7 +723,7 @@ PersistenceProviderFixture::PersistenceProviderFixture(const BMParams& params)
       _clock(),
       _metrics_wire_service(),
       _config_stores(),
-      _summary_executor(8, 128 * 1024),
+      _summary_executor(8, 128_Ki),
       _document_db_owner(),
       _bucket_space(makeBucketSpace(_doc_type_name.getName())),
       _document_db(),
@@ -813,7 +814,7 @@ PersistenceProviderFixture::create_document_db(const BMParams & params)
                                                 _metrics_wire_service,
                                                 _file_header_context,
                                                 _config_stores.getConfigStore(_doc_type_name.toString()),
-                                                std::make_shared<vespalib::ThreadStackExecutor>(16, 128 * 1024),
+                                                std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki),
                                                 HwInfo());
     _document_db->start();
     _document_db->waitForOnlineState();
@@ -1327,7 +1328,7 @@ void benchmark_async_spi(const BMParams &bm_params)
         f.start_message_bus();
     }
     f.create_feed_handler(bm_params);
-    vespalib::ThreadStackExecutor executor(bm_params.get_client_threads(), 128 * 1024);
+    vespalib::ThreadStackExecutor executor(bm_params.get_client_threads(), 128_Ki);
     auto put_feed = make_feed(executor, bm_params, [&f](BMRange range, BucketSelector bucket_selector) { return make_put_feed(f, range, bucket_selector); }, f.num_buckets(), "put");
     auto update_feed = make_feed(executor, bm_params, [&f](BMRange range, BucketSelector bucket_selector) { return make_update_feed(f, range, bucket_selector); }, f.num_buckets(), "update");
     auto remove_feed = make_feed(executor, bm_params, [&f](BMRange range, BucketSelector bucket_selector) { return make_remove_feed(f, range, bucket_selector); }, f.num_buckets(), "remove");

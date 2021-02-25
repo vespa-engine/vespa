@@ -3,6 +3,7 @@
 #include "chunk.h"
 #include "chunkformats.h"
 #include <vespa/vespalib/stllike/hash_map.hpp>
+#include <vespa/vespalib/util/size_literals.h>
 
 namespace search {
 
@@ -59,7 +60,7 @@ Chunk::Chunk(uint32_t id, const Config & config) :
     _lastSerial(static_cast<uint64_t>(-1l)),
     _format(std::make_unique<ChunkFormatV2>(config.getMaxBytes()))
 {
-    _lids.reserve(4096/sizeof(Entry));
+    _lids.reserve(4_Ki/sizeof(Entry));
 }
 
 Chunk::Chunk(uint32_t id, const void * buffer, size_t len, bool skipcrc) :

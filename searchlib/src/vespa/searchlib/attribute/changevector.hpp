@@ -3,16 +3,28 @@
 #pragma once
 
 #include "changevector.h"
-#include <vespa/vespalib/util/array.hpp>
 #include <vespa/vespalib/util/memoryusage.h>
 
 namespace search {
 
+namespace {
+
+// This number is selected to be large enough to hold bursts between commits
+constexpr size_t NUM_ELEMS_TO_RESERVE = 200;
+
+}
+
 template <typename T>
-ChangeVectorT<T>::ChangeVectorT() : _tail(0) { }
-    
+ChangeVectorT<T>::ChangeVectorT()
+    : _v(),
+      _docs(NUM_ELEMS_TO_RESERVE*2),
+      _tail(0)
+{
+    _v.reserve(vespalib::roundUp2inN(NUM_ELEMS_TO_RESERVE, sizeof(T)));
+}
+
 template <typename T>
-ChangeVectorT<T>::~ChangeVectorT() { }
+ChangeVectorT<T>::~ChangeVectorT() = default;
 
 template <typename T>
 void
@@ -38,7 +50,7 @@ ChangeVectorT<T>::push_back(uint32_t doc, Accessor & ac)
     if (ac.size() <= 0) { return; }
 
     size_t index(size());
-    _v.reserve(vespalib::roundUp2inN(index + ac.size()));
+    _v.reserve(vespalib::roundUp2inN(index + ac.size(), sizeof(T)));
     for (size_t i(0), m(ac.size()); i < m; i++, ac.next()) {
         _v.push_back(T(ChangeBase::APPEND, doc, typename T::DataType(ac.value()), ac.weight()));
         _v.back().setNext(index + i + 1);

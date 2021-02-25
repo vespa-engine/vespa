@@ -6,6 +6,7 @@
 #include <vespa/fastlib/io/bufferedfile.h>
 #include <vespa/searchlib/util/filesizecalculator.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".search.attribute.readerbase");
@@ -18,7 +19,7 @@ const vespalib::string versionTag = "version";
 const vespalib::string docIdLimitTag = "docIdLimit";
 const vespalib::string createSerialNumTag = "createSerialNum";
 
-constexpr size_t DIRECTIO_ALIGNMENT(4096);
+constexpr size_t DIRECTIO_ALIGNMENT(4_Ki);
 
 uint64_t
 extractCreateSerialNum(const vespalib::GenericHeader &header)

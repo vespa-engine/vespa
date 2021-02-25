@@ -102,6 +102,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
         return nodes.stream()
                 .filter(this::unlessNodeOwnerIsHostedVespa)
                 .filter(this::isNodeStateMeterable)
+                .filter(this::isNodeTypeMeterable)
                 .collect(Collectors.groupingBy(node ->
                                 node.owner().get(),
                                 Collectors.collectingAndThen(Collectors.toList(),
@@ -130,6 +131,10 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
 
     private boolean isNodeStateMeterable(Node node) {
         return METERABLE_NODE_STATES.contains(node.state());
+    }
+
+    private boolean isNodeTypeMeterable(Node node) {
+        return node.clusterType() != Node.ClusterType.admin; // log servers and shared cluster controllers
     }
 
     private boolean needsRefresh(long lastRefreshTimestamp) {

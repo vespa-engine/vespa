@@ -18,9 +18,8 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
-import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceClusterSet;
-import static com.yahoo.vespa.orchestrator.TestUtil.makeServiceInstanceSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -50,7 +49,7 @@ public class VespaModelUtilTest {
             new ServiceCluster(
                     new ClusterId(CONTENT_CLUSTER_ID.s() + "-controller"),
                     ServiceType.CLUSTER_CONTROLLER,
-                    makeServiceInstanceSet(controller1, controller0));
+                    Set.of(controller1, controller0));
 
     // Distributor Service Cluster
 
@@ -64,7 +63,7 @@ public class VespaModelUtilTest {
             new ServiceCluster(
                     CONTENT_CLUSTER_ID,
                     ServiceType.DISTRIBUTOR,
-                    makeServiceInstanceSet(distributor0));
+                    Set.of(distributor0));
 
     // Storage Node Service Cluster
 
@@ -78,7 +77,7 @@ public class VespaModelUtilTest {
             new ServiceCluster(
                     CONTENT_CLUSTER_ID,
                     ServiceType.STORAGE,
-                    makeServiceInstanceSet(storage0));
+                    Set.of(storage0));
 
     // Secondary Distributor Service Cluster
 
@@ -92,7 +91,7 @@ public class VespaModelUtilTest {
             new ServiceCluster(
                     SECONDARY_CONTENT_CLUSTER_ID,
                     ServiceType.DISTRIBUTOR,
-                    makeServiceInstanceSet(secondaryDistributor0));
+                    Set.of(secondaryDistributor0));
 
     // Secondary Storage Node Service Cluster
 
@@ -106,7 +105,7 @@ public class VespaModelUtilTest {
             new ServiceCluster(
                     SECONDARY_CONTENT_CLUSTER_ID,
                     ServiceType.STORAGE,
-                    makeServiceInstanceSet(secondaryStorage0));
+                    Set.of(secondaryStorage0));
 
     // The Application Instance
 
@@ -114,7 +113,7 @@ public class VespaModelUtilTest {
             new ApplicationInstance(
                     new TenantId("tenant-0"),
                     new ApplicationInstanceId("application-0"),
-                    makeServiceClusterSet(
+                    Set.of(
                             controllerCluster,
                             distributorCluster,
                             storageCluster,

@@ -12,6 +12,7 @@ namespace vespalib { class IDestructorCallback; }
 namespace proton {
     class IDiskMemUsageNotifier;
     class IClusterStateChangedNotifier;
+    class MoveOperation;
 }
 
 namespace proton::lidspace {
@@ -34,9 +35,12 @@ private:
     std::atomic<size_t>      _executedCount;
 
     bool scanDocuments(const search::LidUsageStats &stats) override;
-    void moveDocument(const search::DocumentMetaData & meta, std::shared_ptr<IDestructorCallback> onDone);
+    void moveDocument(const search::DocumentMetaData & metaThen, std::shared_ptr<IDestructorCallback> onDone);
+    void completeMove(const search::DocumentMetaData & metaThen, std::unique_ptr<MoveOperation> moveOp,
+                      std::shared_ptr<IDestructorCallback> onDone);
     void onStop() override;
     bool inSync() const override;
+    void failOperation();
 public:
     CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                   std::shared_ptr<ILidSpaceCompactionHandler> handler,

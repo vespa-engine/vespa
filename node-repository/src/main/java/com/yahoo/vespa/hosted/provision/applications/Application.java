@@ -21,22 +21,27 @@ import java.util.stream.Collectors;
 public class Application {
 
     private final ApplicationId id;
+    private final Status status;
     private final Map<ClusterSpec.Id, Cluster> clusters;
 
-    public Application(ApplicationId id) {
-        this(id, Map.of());
+    /** Do not use */
+    public Application(ApplicationId id, Status status, Collection<Cluster> clusters) {
+        this(id, status, clusters.stream().collect(Collectors.toMap(c -> c.id(), c -> c)));
     }
 
-    public Application(ApplicationId id, Collection<Cluster> clusters) {
-        this(id, clusters.stream().collect(Collectors.toMap(c -> c.id(), c -> c)));
-    }
-
-    private Application(ApplicationId id, Map<ClusterSpec.Id, Cluster> clusters) {
+    private Application(ApplicationId id, Status status, Map<ClusterSpec.Id, Cluster> clusters) {
         this.id = id;
         this.clusters = clusters;
+        this.status = status;
     }
 
     public ApplicationId id() { return id; }
+
+    public Status status() { return status; }
+
+    public Application with(Status status) {
+        return new Application(id, status, clusters);
+    }
 
     public Map<ClusterSpec.Id, Cluster> clusters() { return clusters; }
 
@@ -47,7 +52,7 @@ public class Application {
     public Application with(Cluster cluster) {
         Map<ClusterSpec.Id, Cluster> clusters = new HashMap<>(this.clusters);
         clusters.put(cluster.id(), cluster);
-        return new Application(id, clusters);
+        return new Application(id, status, clusters);
     }
 
     /**
@@ -78,6 +83,10 @@ public class Application {
     @Override
     public String toString() {
         return "application '" + id + "'";
+    }
+
+    public static Application empty(ApplicationId id) {
+        return new Application(id, Status.initial(), Map.of());
     }
 
 }

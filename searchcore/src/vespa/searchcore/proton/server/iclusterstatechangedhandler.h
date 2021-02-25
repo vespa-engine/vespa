@@ -3,6 +3,7 @@
 #pragma once
 
 #include "ibucketstatecalculator.h"
+#include <memory>
 
 namespace proton {
 

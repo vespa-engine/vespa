@@ -1,10 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "docsum_by_slime.h"
-#include <vespa/vespalib/util/compressor.h>
-#include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
-#include <vespa/searchlib/common/packets.h>
 #include <vespa/fnet/frt/rpcrequest.h>
+#include <vespa/searchlib/common/packets.h>
+#include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/data/databuffer.h>
+#include <vespa/vespalib/util/compressor.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.summaryengine.docsum_by_slime");
@@ -123,7 +124,7 @@ DocsumByRPC::getDocsums(FRT_RPCRequest & req)
     vespalib::Slime::UP summaries = _slimeDocsumServer.getDocsums(summariesToGet.get());
     assert(summaries);  // Mandatory, not optional.
 
-    search::RawBuf rbuf(4096);
+    search::RawBuf rbuf(4_Ki);
     search::SlimeOutputRawBufAdapter output(rbuf);
     BinaryFormat::encode(*summaries, output);
     ConstBufferRef buf(rbuf.GetDrainPos(), rbuf.GetUsedLen());

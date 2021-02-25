@@ -2,11 +2,12 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include "attribute_usage_stats.h"
 #include "attribute_usage_filter_config.h"
+#include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <mutex>
 #include <atomic>
+#include <memory>
 
 namespace proton {
 

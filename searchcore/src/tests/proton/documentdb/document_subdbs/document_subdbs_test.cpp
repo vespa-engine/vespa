@@ -29,6 +29,7 @@
 #include <vespa/vespalib/test/insertion_operators.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 using namespace cloud::config::filedistribution;
 using namespace document;
@@ -293,7 +294,7 @@ struct FixtureBase
     typename Traits::SubDB _subDb;
     IFeedView::SP _tmpFeedView;
     FixtureBase()
-        : _summaryExecutor(1, 64 * 1024),
+        : _summaryExecutor(1, 64_Ki),
           _writeService(_summaryExecutor),
           _cfg(),
           _bucketDB(std::make_shared<bucketdb::BucketDBOwner>()),
@@ -319,7 +320,7 @@ struct FixtureBase
     void init() {
         DocumentSubDbInitializer::SP task =
             _subDb.createInitializer(*_snapshot->_cfg, Traits::configSerial(), IndexConfig());
-        vespalib::ThreadStackExecutor executor(1, 1024 * 1024);
+        vespalib::ThreadStackExecutor executor(1, 1_Mi);
         initializer::TaskRunner taskRunner(executor);
         taskRunner.runTask(task);
         auto sessionMgr = std::make_shared<SessionManager>(1);

@@ -57,7 +57,7 @@ public class BufferedLogStore {
         long lastChunkId = buffer.getLogChunkIds(id, type).max().orElse(0);
         long numberOfChunks = Math.max(1, buffer.getLogChunkIds(id, type).count());
         if (numberOfChunks > maxLogSize / chunkSize)
-            return; // Max size exceeded — store no more.
+            return; // Max size exceeded — store no more.
 
         byte[] emptyChunk = "[]".getBytes();
         byte[] lastChunk = buffer.readLog(id, type, lastChunkId).orElse(emptyChunk);

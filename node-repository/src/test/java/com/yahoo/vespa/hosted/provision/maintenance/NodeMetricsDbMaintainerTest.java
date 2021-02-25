@@ -46,7 +46,7 @@ public class NodeMetricsDbMaintainerTest {
                                                                          Duration.ofHours(1),
                                                                          new TestMetric());
         assertTrue(maintainer.maintain());
-        List<NodeTimeseries> timeseriesList = db.getNodeTimeseries(Instant.ofEpochMilli(0),
+        List<NodeTimeseries> timeseriesList = db.getNodeTimeseries(Duration.ofDays(1),
                                                                    Set.of("host-1.yahoo.com", "host-2.yahoo.com"));
         assertEquals(2, timeseriesList.size());
         List<MetricSnapshot> allSnapshots = timeseriesList.stream()

@@ -4,6 +4,7 @@
 #include <vespa/vespalib/util/alloc.h>
 #include <vespa/vespalib/util/mmap_file_allocator.h>
 #include <vespa/vespalib/util/exceptions.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <cstddef>
 #include <sys/mman.h>
 
@@ -24,11 +25,11 @@ testSwap(T & a, T & b)
 {
     void * tmpA(a.get());
     void * tmpB(b.get());
-    EXPECT_EQUAL(4096ul, a.size());
-    EXPECT_EQUAL(8192ul, b.size());
+    EXPECT_EQUAL(4_Ki, a.size());
+    EXPECT_EQUAL(8_Ki, b.size());
     std::swap(a, b);
-    EXPECT_EQUAL(4096ul, b.size());
-    EXPECT_EQUAL(8192ul, a.size());
+    EXPECT_EQUAL(4_Ki, b.size());
+    EXPECT_EQUAL(8_Ki, a.size());
     EXPECT_EQUAL(tmpA, b.get());
     EXPECT_EQUAL(tmpB, a.get());
 }
@@ -46,6 +47,21 @@ TEST("test roundUp2inN") {
     EXPECT_EQUAL(16u, roundUp2inN(9));
 }
 
+TEST("test roundUp2inN elems") {
+    EXPECT_EQUAL(0u, roundUp2inN(0, 17));
+    EXPECT_EQUAL(1u, roundUp2inN(1, 17));
+    EXPECT_EQUAL(3u, roundUp2inN(2, 17));
+    EXPECT_EQUAL(3u, roundUp2inN(3, 17));
+    EXPECT_EQUAL(7u, roundUp2inN(4, 17));
+    EXPECT_EQUAL(7u, roundUp2inN(5, 17));
+    EXPECT_EQUAL(7u, roundUp2inN(6, 17));
+    EXPECT_EQUAL(7u, roundUp2inN(7, 17));
+    EXPECT_EQUAL(15u, roundUp2inN(8, 17));
+    EXPECT_EQUAL(15u, roundUp2inN(9, 17));
+    EXPECT_EQUAL(15u, roundUp2inN(15, 17));
+    EXPECT_EQUAL(30u, roundUp2inN(16, 17));
+}
+
 TEST("test basics") {
     {
         Alloc h = Alloc::allocHeap(100);
@@ -54,30 +70,30 @@ TEST("test basics") {
     }
     {
         EXPECT_EXCEPTION(Alloc::allocAlignedHeap(100, 7), IllegalArgumentException, "Alloc::allocAlignedHeap(100, 7) does not support 7 alignment");
-        Alloc h = Alloc::allocAlignedHeap(100, 1024);
+        Alloc h = Alloc::allocAlignedHeap(100, 1_Ki);
         EXPECT_EQUAL(100u, h.size());
         EXPECT_TRUE(h.get() != nullptr);
     }
     {
         Alloc h = Alloc::allocMMap(100);
-        EXPECT_EQUAL(4096u, h.size());
+        EXPECT_EQUAL(4_Ki, h.size());
         EXPECT_TRUE(h.get() != nullptr);
     }
     {
-        Alloc a = Alloc::allocHeap(4096), b = Alloc::allocHeap(8192);
+        Alloc a = Alloc::allocHeap(4_Ki), b = Alloc::allocHeap(8_Ki);
         testSwap(a, b);
     }
     {
-        Alloc a = Alloc::allocMMap(4096), b = Alloc::allocMMap(8192);
+        Alloc a = Alloc::allocMMap(4_Ki), b = Alloc::allocMMap(8_Ki);
         testSwap(a, b);
     }
     {
-        Alloc a = Alloc::allocAlignedHeap(4096, 1024), b = Alloc::allocAlignedHeap(8192, 1024);
+        Alloc a = Alloc::allocAlignedHeap(4_Ki, 1_Ki), b = Alloc::allocAlignedHeap(8_Ki, 1_Ki);
         testSwap(a, b);
     }
     {
-        Alloc a = Alloc::allocHeap(4096);
-        Alloc b = Alloc::allocMMap(8192);
+        Alloc a = Alloc::allocHeap(4_Ki);
+        Alloc b = Alloc::allocMMap(8_Ki);
         testSwap(a, b);
     }
     {
@@ -90,8 +106,8 @@ TEST("test basics") {
 
 TEST("test correct alignment") {
     {
-        Alloc buf = Alloc::alloc(10, MemoryAllocator::HUGEPAGE_SIZE, 1024);
-        EXPECT_TRUE(reinterpret_cast<ptrdiff_t>(buf.get()) % 1024 == 0);
+        Alloc buf = Alloc::alloc(10, MemoryAllocator::HUGEPAGE_SIZE, 1_Ki);
+        EXPECT_TRUE(reinterpret_cast<ptrdiff_t>(buf.get()) % 1_Ki == 0);
     }
 
     {
@@ -215,7 +231,7 @@ TEST("mmap alloc can be extended if room") {
     Alloc buf = Alloc::allocMMap(100);
 
     TEST_DO(ensureRoomForExtension(buf, reserved));
-    TEST_DO(verifyExtension(buf, 4096, 4096*2));
+    TEST_DO(verifyExtension(buf, 4_Ki, 4_Ki*2));
 }
 
 TEST("mmap alloc can not be extended if no room") {
@@ -223,7 +239,7 @@ TEST("mmap alloc can not be extended if no room") {
     Alloc reserved = Alloc::allocMMap(100);
     Alloc buf = Alloc::allocMMap(100);
 
-    TEST_DO(verifyNoExtensionWhenNoRoom(buf, reserved, 4096));
+    TEST_DO(verifyNoExtensionWhenNoRoom(buf, reserved, 4_Ki));
 }
 #endif
 #endif
@@ -240,10 +256,10 @@ TEST("heap alloc can not be shrinked") {
 TEST("mmap alloc can be shrinked") {
     Alloc buf = Alloc::allocMMap(4097);
     void * oldPtr = buf.get();
-    EXPECT_EQUAL(8192ul, buf.size());
+    EXPECT_EQUAL(8_Ki, buf.size());
     EXPECT_TRUE(buf.resize_inplace(4095));
     EXPECT_EQUAL(oldPtr, buf.get());
-    EXPECT_EQUAL(4096ul, buf.size());
+    EXPECT_EQUAL(4_Ki, buf.size());
 }
 
 TEST("auto alloced heap alloc can not be shrinked") {

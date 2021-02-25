@@ -70,7 +70,6 @@ public class ZkStatusServiceTest {
     private final Timer timer = mock(Timer.class);
     private final Metric metric = mock(Metric.class);
     private final OrchestratorContext context = mock(OrchestratorContext.class);
-    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final CriticalRegion criticalRegion = mock(CriticalRegion.class);
     private final AntiServiceMonitor antiServiceMonitor = mock(AntiServiceMonitor.class);
 
@@ -163,24 +162,26 @@ public class ZkStatusServiceTest {
     }
 
     @Test
-    public void failing_to_get_lock_closes_SessionFailRetryLoop() throws Exception {
+    public void failing_to_get_lock_closes_SessionFailRetryLoop() {
+        when(context.getTimeLeft()).thenReturn(Duration.ofMillis(100));
         ZkStatusService zkStatusService2 =
                 new ZkStatusService(curator, mock(Metric.class), new TestTimer(), antiServiceMonitor);
 
         try (ApplicationLock lock = statusService
                 .lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE)) {
 
-            //must run in separate thread, since having 2 locks in the same thread fails
+            // must run in separate thread, since having 2 locks in the same thread fails
             CompletableFuture<Void> resultOfZkOperationAfterLockFailure = CompletableFuture.runAsync(() -> {
                 try {
                     zkStatusService2.lockApplication(context, TestIds.APPLICATION_INSTANCE_REFERENCE);
                     fail("Both zookeeper host status services locked simultaneously for the same application instance");
-                } catch (RuntimeException e) {
+                }
+                catch (RuntimeException expected) { }
+                finally {
+                    killSession(curator.framework(), testingServer);
                 }
 
-                killSession(curator.framework(), testingServer);
-
-                //Throws SessionFailedException if the SessionFailRetryLoop has not been closed.
+                // Throws SessionFailedException if the SessionFailRetryLoop has not been closed.
                 lock.getHostInfos().getOrNoRemarks(TestIds.HOST_NAME1);
             });
 
@@ -192,19 +193,21 @@ public class ZkStatusServiceTest {
     //https://code.google.com/p/hamcrest/issues/detail?id=107  Confusing failure description when using negation
     //Creating not(holdsException) directly instead.
     private Matcher<Future<?>> notHoldsException() {
-        return new TypeSafeMatcher<Future<?>>() {
+        return new TypeSafeMatcher<>() {
             @Override
             protected boolean matchesSafely(Future<?> item) {
-                return !getException(item).isPresent();
+                return getException(item).isEmpty();
             }
 
             private Optional<Throwable> getException(Future<?> item) {
                 try {
                     item.get();
                     return Optional.empty();
-                } catch (ExecutionException e) {
+                }
+                catch (ExecutionException e) {
                     return Optional.of(e.getCause());
-                } catch (InterruptedException e) {
+                }
+                catch (InterruptedException e) {
                     return Optional.of(e);
                 }
             }
@@ -216,11 +219,11 @@ public class ZkStatusServiceTest {
 
             @Override
             protected void describeMismatchSafely(Future<?> item, Description mismatchDescription) {
-                getException(item).ifPresent( throwable ->
-                        mismatchDescription
-                                .appendText("Got exception: ")
-                                .appendText(Exceptions.toMessageString(throwable))
-                                .appendText(ExceptionUtils.getStackTraceRecursivelyAsString(throwable)));
+                getException(item).ifPresent(throwable ->
+                                                     mismatchDescription
+                                                             .appendText("Got exception: ")
+                                                             .appendText(Exceptions.toMessageString(throwable))
+                                                             .appendText(ExceptionUtils.getStackTraceRecursivelyAsString(throwable)));
             }
         };
     }

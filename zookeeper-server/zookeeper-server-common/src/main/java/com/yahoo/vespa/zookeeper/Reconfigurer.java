@@ -13,6 +13,8 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -34,6 +36,7 @@ public class Reconfigurer extends AbstractComponent {
     private final VespaZooKeeperAdmin vespaZooKeeperAdmin;
     private final Sleeper sleeper;
 
+    private QuorumPeer peer;
     private ZooKeeperRunner zooKeeperRunner;
     private ZookeeperServerConfig activeConfig;
 
@@ -48,12 +51,16 @@ public class Reconfigurer extends AbstractComponent {
         log.log(Level.FINE, "Created ZooKeeperReconfigurer");
     }
 
-    void startOrReconfigure(ZookeeperServerConfig newConfig, VespaZooKeeperServer server) {
-        if (zooKeeperRunner == null)
+    void startOrReconfigure(ZookeeperServerConfig newConfig, VespaZooKeeperServer server,
+                            Supplier<QuorumPeer> quorumPeerGetter, Consumer<QuorumPeer> quorumPeerSetter) {
+        if (zooKeeperRunner == null) {
+            peer = quorumPeerGetter.get(); // Obtain the peer from the server. This will be shared with later servers.
             zooKeeperRunner = startServer(newConfig, server);
+        }
+        quorumPeerSetter.accept(peer);
 
         if (shouldReconfigure(newConfig)) {
-            reconfigure(newConfig, server);
+            reconfigure(newConfig);
         }
     }
 
@@ -79,19 +86,21 @@ public class Reconfigurer extends AbstractComponent {
         return runner;
     }
 
-    private void reconfigure(ZookeeperServerConfig newConfig, VespaZooKeeperServer server) {
+    private void reconfigure(ZookeeperServerConfig newConfig) {
         Instant reconfigTriggered = Instant.now();
         // No point in trying to reconfigure if there is only one server in the new ensemble,
         // the others will be shutdown or are about to be shutdown
-        if (newConfig.server().size() == 1) shutdownAndDie(server, Duration.ZERO);
+        if (newConfig.server().size() == 1) shutdownAndDie(Duration.ZERO);
 
         List<String> newServers = difference(servers(newConfig), servers(activeConfig));
-        String leavingServers = String.join(",", difference(serverIds(activeConfig), serverIds(newConfig)));
-        String joiningServers = String.join(",", newServers);
-        leavingServers = leavingServers.isEmpty() ? null : leavingServers;
-        joiningServers = joiningServers.isEmpty() ? null : joiningServers;
-        log.log(Level.INFO, "Will reconfigure ZooKeeper cluster. Joining servers: " + joiningServers +
-                            ", leaving servers: " + leavingServers);
+        String leavingServerIds = String.join(",", serverIdsDifference(activeConfig, newConfig));
+        String joiningServersSpec = String.join(",", newServers);
+        leavingServerIds = leavingServerIds.isEmpty() ? null : leavingServerIds;
+        joiningServersSpec = joiningServersSpec.isEmpty() ? null : joiningServersSpec;
+        log.log(Level.INFO, "Will reconfigure ZooKeeper cluster. \nJoining servers: " + joiningServersSpec +
+                            "\nleaving servers: " + leavingServerIds +
+                            "\nServers in active config:" + servers(activeConfig) +
+                            "\nServers in new config:" + servers(newConfig));
         String connectionSpec = localConnectionSpec(activeConfig);
         Instant now = Instant.now();
         Duration reconfigTimeout = reconfigTimeout(newServers.size());
@@ -100,7 +109,7 @@ public class Reconfigurer extends AbstractComponent {
         for (int attempt = 1; now.isBefore(end); attempt++) {
             try {
                 Instant reconfigStarted = Instant.now();
-                vespaZooKeeperAdmin.reconfigure(connectionSpec, joiningServers, leavingServers);
+                vespaZooKeeperAdmin.reconfigure(connectionSpec, joiningServersSpec, leavingServerIds);
                 Instant reconfigEnded = Instant.now();
                 log.log(Level.INFO, "Reconfiguration completed in " +
                                     Duration.between(reconfigTriggered, reconfigEnded) +
@@ -120,18 +129,18 @@ public class Reconfigurer extends AbstractComponent {
         }
 
         // Reconfiguration failed
-        shutdownAndDie(server, reconfigTimeout);
+        shutdownAndDie(reconfigTimeout);
     }
 
-    private void shutdownAndDie(VespaZooKeeperServer server, Duration reconfigTimeout) {
-        server.shutdown();
-        Process.logAndDie("Reconfiguration did not complete within timeout " + reconfigTimeout + ". Forcing shutdown");
+    private void shutdownAndDie(Duration reconfigTimeout) {
+        shutdown();
+        Process.logAndDie("Reconfiguration did not complete within timeout " + reconfigTimeout + ". Forcing container shutdown.");
     }
 
     /** Returns the timeout to use for the given joining server count */
     private static Duration reconfigTimeout(int joiningServers) {
-        // For reconfig to succeed, the current ensemble must have a majority. When an ensemble grows and the joining
-        // servers outnumber the existing ones, we have to wait for enough of them to start to have a majority.
+        // For reconfig to succeed, the current and resulting ensembles must have a majority. When an ensemble grows and
+        // the joining servers outnumber the existing ones, we have to wait for enough of them to start to have a majority.
         return Duration.ofMillis(Math.max(joiningServers * NODE_TIMEOUT.toMillis(), MIN_TIMEOUT.toMillis()));
     }
 
@@ -139,11 +148,10 @@ public class Reconfigurer extends AbstractComponent {
         return HostName.getLocalhost() + ":" + config.clientPort();
     }
 
-    private static List<String> serverIds(ZookeeperServerConfig config) {
-        return config.server().stream()
-                     .map(ZookeeperServerConfig.Server::id)
-                     .map(String::valueOf)
-                     .collect(Collectors.toList());
+    private static List<String> serverIdsDifference(ZookeeperServerConfig oldConfig, ZookeeperServerConfig newConfig) {
+        return difference(servers(oldConfig), servers(newConfig)).stream()
+                                                                 .map(server -> server.substring(0, server.indexOf('=')))
+                                                                 .collect(Collectors.toList());
     }
 
     private static List<String> servers(ZookeeperServerConfig config) {

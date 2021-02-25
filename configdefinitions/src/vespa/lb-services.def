@@ -8,6 +8,7 @@ namespace=cloud.config
 # Default true for now (since code in config-model to set it is not ready yet), should have no default value
 tenants{}.applications{}.activeRotation                         bool default=true
 tenants{}.applications{}.usePowerOfTwoChoicesLb                 bool default=false
+tenants{}.applications{}.generateNonMtlsEndpoint                bool default=true
 
 tenants{}.applications{}.hosts{}.hostname                       string default="(unknownhostname)"
 tenants{}.applications{}.hosts{}.services{}.type                string default="(noservicetype)"

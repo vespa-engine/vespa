@@ -14,6 +14,7 @@
 
 #include "exception.h"
 #include "stringfmt.h"
+#include <memory>
 
 namespace vespalib {
 

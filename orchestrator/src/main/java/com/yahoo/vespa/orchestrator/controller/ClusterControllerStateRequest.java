@@ -92,7 +92,7 @@ public class ClusterControllerStateRequest {
 
         @Override
         public String toString() {
-            return "reason: " + reason.toString() + ", state: " + state.toString();
+            return "reason: " + reason + ", state: " + state;
         }
     }
 

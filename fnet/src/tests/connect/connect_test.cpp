@@ -10,6 +10,7 @@
 #include <vespa/fnet/controlpacket.h>
 #include <vespa/vespalib/net/server_socket.h>
 #include <vespa/vespalib/net/crypto_engine.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using namespace vespalib;
@@ -90,19 +91,19 @@ struct TransportFixture : FNET_IPacketHandler, FNET_IConnectionCleanupHandler {
     FNET_Transport transport;
     Gate conn_lost;
     Gate conn_deleted;
-    TransportFixture() : streamer(nullptr), pool(128 * 1024), transport(),
+    TransportFixture() : streamer(nullptr), pool(128_Ki), transport(),
                          conn_lost(), conn_deleted()
     {
         transport.Start(&pool);
     }
     TransportFixture(AsyncResolver::HostResolver::SP host_resolver)
-        : streamer(nullptr), pool(128 * 1024), transport(TransportConfig().resolver(make_resolver(std::move(host_resolver)))),
+        : streamer(nullptr), pool(128_Ki), transport(TransportConfig().resolver(make_resolver(std::move(host_resolver)))),
           conn_lost(), conn_deleted()
     {
         transport.Start(&pool);
     }
     TransportFixture(CryptoEngine::SP crypto)
-        : streamer(nullptr), pool(128 * 1024), transport(TransportConfig().crypto(std::move(crypto))),
+        : streamer(nullptr), pool(128_Ki), transport(TransportConfig().crypto(std::move(crypto))),
           conn_lost(), conn_deleted()
     {
         transport.Start(&pool);

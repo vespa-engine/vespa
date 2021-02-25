@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/time.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <set>
 
@@ -162,7 +163,7 @@ TEST("require that cache usage works") {
 }
 
 TEST("require that async cache usage works") {
-    auto executor = std::make_shared<ThreadStackExecutor>(8, 256*1024);
+    auto executor = std::make_shared<ThreadStackExecutor>(8, 256_Ki);
     auto binding = CompileCache::bind(executor);
     CompileCache::Token::UP token_a = CompileCache::compile(*Function::parse("x+y"), PassParams::SEPARATE);
     EXPECT_EQUAL(5.0, token_a->get().get_function<2>()(2.0, 3.0));
@@ -290,7 +291,7 @@ TEST_F("compile sequentially, then run all conformance tests", test::EvalSpec())
 
 TEST_F("compile concurrently (8 threads), then run all conformance tests", test::EvalSpec()) {
     f1.add_all_cases();
-    auto executor = std::make_shared<ThreadStackExecutor>(8, 256*1024);
+    auto executor = std::make_shared<ThreadStackExecutor>(8, 256_Ki);
     auto binding = CompileCache::bind(executor);
     while (executor->num_idle_workers() < 8) {
         std::this_thread::sleep_for(1ms);
@@ -325,7 +326,7 @@ TEST_MT_FF("require that deadlock is avoided with blocking executor", 8, std::sh
     size_t loop = 16;
     if (thread_id == 0) {
         auto t0 = steady_clock::now();
-        f1 = std::make_shared<BlockingThreadStackExecutor>(2, 256*1024, 3);
+        f1 = std::make_shared<BlockingThreadStackExecutor>(2, 256_Ki, 3);
         auto binding = CompileCache::bind(f1);
         TEST_BARRIER(); // #1
         for (size_t i = 0; i < num_threads; ++i) {

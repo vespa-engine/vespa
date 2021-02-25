@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.provision;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
-import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.config.provisioning.FlavorsConfig;
@@ -54,7 +53,7 @@ public class NodeRepositoryTester {
     public List<Node> getNodes(NodeType type, Node.State ... inState) {
         return nodeRepository.nodes().list(inState).nodeType(type).asList();
     }
-    
+
     public Node addHost(String id, String hostname, String flavor, NodeType type) {
         return addNode(id, hostname, null, nodeFlavors.getFlavorOrThrow(flavor), type);
     }
@@ -63,12 +62,9 @@ public class NodeRepositoryTester {
         return addNode(id, hostname, parentHostname, nodeFlavors.getFlavorOrThrow(flavor), type);
     }
 
-    public Node addNode(String id, String hostname, String parentHostname, NodeResources resources) {
-        return addNode(id, hostname, parentHostname, new Flavor(resources), NodeType.tenant);
-    }
-
     private Node addNode(String id, String hostname, String parentHostname, Flavor flavor, NodeType type) {
-        IP.Config ipConfig = new IP.Config(nodeRepository.nameResolver().resolveAll(hostname), Set.of());
+        Set<String> ips = nodeRepository.nameResolver().resolveAll(hostname);
+        IP.Config ipConfig = new IP.Config(ips, type.isHost() ? ips : Set.of());
         Node node = Node.create(id, ipConfig, hostname, flavor, type).parentHostname(parentHostname).build();
         return nodeRepository.nodes().addNodes(List.of(node), Agent.system).get(0);
     }

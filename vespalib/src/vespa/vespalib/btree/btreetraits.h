@@ -8,10 +8,10 @@ namespace vespalib::btree {
 
 template <size_t LS, size_t IS, size_t PS, bool BS>
 struct BTreeTraits {
-    static const size_t LEAF_SLOTS = LS;
-    static const size_t INTERNAL_SLOTS = IS;
-    static const size_t PATH_SIZE = PS;
-    static const bool BINARY_SEEK = BS;
+    static constexpr size_t LEAF_SLOTS = LS;
+    static constexpr size_t INTERNAL_SLOTS = IS;
+    static constexpr size_t PATH_SIZE = PS;
+    static constexpr bool BINARY_SEEK = BS;
 };
 
 using BTreeDefaultTraits = BTreeTraits<16, 16, 10, true>;

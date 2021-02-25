@@ -383,7 +383,7 @@ public class ContainerClusterTest {
                                              ClusterControllerContainerCluster cluster,
                                              String hostName,
                                              DeployState deployState) {
-        ClusterControllerContainer container = new ClusterControllerContainer(cluster, 1, false, deployState);
+        ClusterControllerContainer container = new ClusterControllerContainer(cluster, 1, false, deployState, false);
         container.setHostResource(new HostResource(new Host(null, hostName)));
         container.initService(deployLogger);
         cluster.addContainer(container);

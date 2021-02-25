@@ -7,6 +7,7 @@
 #include <vespa/searchlib/docstore/storebybucket.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/hash_set.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
@@ -66,7 +67,7 @@ private:
 TEST("require that StoreByBucket gives bucket by bucket and ordered within")
 {
     vespalib::MemoryDataStore backing;
-    vespalib::ThreadStackExecutor executor(8, 128*1024);
+    vespalib::ThreadStackExecutor executor(8, 128_Ki);
     StoreByBucket sbb(backing, executor, CompressionConfig::LZ4);
     for (size_t i(1); i <=500; i++) {
         add(sbb, i);

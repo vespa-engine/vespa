@@ -4,6 +4,7 @@
 #include "connection.h"
 #include <vespa/config/common/timingvalues.h>
 #include <atomic>
+#include <memory>
 
 class FRT_Supervisor;
 class FRT_Target;

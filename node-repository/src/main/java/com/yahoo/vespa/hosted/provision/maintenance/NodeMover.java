@@ -12,6 +12,8 @@ import com.yahoo.vespa.hosted.provision.provisioning.HostCapacity;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Random;
+import java.util.Set;
 
 /**
  * Base class for maintainers that move nodes.
@@ -24,11 +26,13 @@ public abstract class NodeMover<MOVE> extends NodeRepositoryMaintainer {
 
     private final Deployer deployer;
     private final MOVE emptyMove;
+    private final Random random;
 
     public NodeMover(Deployer deployer, NodeRepository nodeRepository, Duration interval, Metric metric, MOVE emptyMove) {
         super(nodeRepository, interval, metric);
         this.deployer = deployer;
         this.emptyMove = emptyMove;
+        this.random = new Random(nodeRepository.clock().millis());
     }
 
     /** Returns a suggested move for given node */
@@ -38,7 +42,12 @@ public abstract class NodeMover<MOVE> extends NodeRepositoryMaintainer {
     protected final MOVE findBestMove(NodeList allNodes) {
         HostCapacity capacity = new HostCapacity(allNodes, nodeRepository().resourcesCalculator());
         MOVE bestMove = emptyMove;
-        NodeList activeNodes = allNodes.nodeType(NodeType.tenant).state(Node.State.active);
+        // Shuffle nodes so we did not get stuck if the chosen move is consistently discarded. Node moves happen through
+        // a soft request to retire (preferToRetire), which node allocation can disregard
+        NodeList activeNodes = allNodes.nodeType(NodeType.tenant)
+                                       .state(Node.State.active)
+                                       .shuffle(random);
+        Set<Node> spares = capacity.findSpareHosts(allNodes.asList(), nodeRepository().spareCount());
         for (Node node : activeNodes) {
             if (node.parentHostname().isEmpty()) continue;
             ApplicationId applicationId = node.allocation().get().owner();
@@ -46,6 +55,7 @@ public abstract class NodeMover<MOVE> extends NodeRepositoryMaintainer {
             if (deployedRecently(applicationId)) continue;
             for (Node toHost : allNodes.matching(nodeRepository().nodes()::canAllocateTenantNodeTo)) {
                 if (toHost.hostname().equals(node.parentHostname().get())) continue;
+                if (spares.contains(toHost)) continue; // Do not offer spares as a valid move as they are reserved for replacement of failed nodes
                 if ( ! capacity.freeCapacityOf(toHost).satisfies(node.resources())) continue;
 
                 MOVE suggestedMove = suggestedMove(node, allNodes.parentOf(node).get(), toHost, allNodes);

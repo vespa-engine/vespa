@@ -2,11 +2,11 @@
 
 #pragma once
 
-#include <vespa/searchcore/proton/documentmetastore/i_bucket_handler.h>
-#include <vespa/searchcore/proton/persistenceengine/resulthandler.h>
-#include <vespa/vespalib/util/threadstackexecutorbase.h>
 #include "iclusterstatechangedhandler.h"
 #include "ibucketstatechangednotifier.h"
+#include <vespa/searchcore/proton/documentmetastore/i_bucket_handler.h>
+#include <vespa/searchcore/proton/persistenceengine/resulthandler.h>
+#include <vespa/vespalib/util/executor.h>
 
 namespace proton {
 
@@ -30,15 +30,13 @@ private:
                                 storage::spi::BucketInfo::ActiveState newState,
                                 IGenericResultHandler *resultHandler);
 
-    void
-    performPopulateActiveBuckets(document::BucketId::List buckets,
-                                 IGenericResultHandler *resultHandler);
+    void performPopulateActiveBuckets(document::BucketId::List buckets,
+                                      IGenericResultHandler *resultHandler);
     /**
      * Deactivate all active buckets when this node transitions from
      * up to down in cluster state.  Called by document db executor thread.
      */
-    void
-    deactivateAllActiveBuckets();
+    void deactivateAllActiveBuckets();
 
 public:
     /**
@@ -47,9 +45,7 @@ public:
      * @param executor The executor in which to run all tasks.
      */
     BucketHandler(vespalib::Executor &executor);
-
-    virtual
-    ~BucketHandler();
+    ~BucketHandler() override;
 
     void setReadyBucketHandler(documentmetastore::IBucketHandler &ready);
 
@@ -67,14 +63,11 @@ public:
                                      IGenericResultHandler &resultHandler);
 
     // Implements IClusterStateChangedHandler
-    virtual void
-    notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc) override;
+    void notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc) override;
 
     // Implement IBucketStateChangedNotifier
-    virtual void
-    addBucketStateChangedHandler(IBucketStateChangedHandler *handler) override;
-    virtual void
-    removeBucketStateChangedHandler(IBucketStateChangedHandler *handler) override;
+    void addBucketStateChangedHandler(IBucketStateChangedHandler *handler) override;
+    void removeBucketStateChangedHandler(IBucketStateChangedHandler *handler) override;
 };
 
 } // namespace proton

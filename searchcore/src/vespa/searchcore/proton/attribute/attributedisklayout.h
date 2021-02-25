@@ -8,6 +8,7 @@
 #include <shared_mutex>
 #include <map>
 #include <vector>
+#include <memory>
 
 namespace proton {
 

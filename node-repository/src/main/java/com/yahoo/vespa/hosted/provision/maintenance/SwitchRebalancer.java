@@ -54,7 +54,7 @@ public class SwitchRebalancer extends NodeMover<Move> {
 
     @Override
     protected Move bestMoveOf(Move a, Move b) {
-        if (b.isEmpty()) return a;
+        if (!a.isEmpty()) return a;
         return b;
     }
 

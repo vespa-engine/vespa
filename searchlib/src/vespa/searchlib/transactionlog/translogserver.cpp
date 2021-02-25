@@ -7,6 +7,7 @@
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/fnet/frt/supervisor.h>
 #include <vespa/fnet/frt/rpcrequest.h>
 #include <vespa/fnet/transport.h>
@@ -96,8 +97,8 @@ TransLogServer::TransLogServer(const vespalib::string &name, int listenPort, con
       _name(name),
       _baseDir(baseDir),
       _domainConfig(cfg),
-      _executor(maxThreads, 128 * 1024, tls_executor),
-      _threadPool(std::make_unique<FastOS_ThreadPool>(1024*120)),
+      _executor(maxThreads, 128_Ki, tls_executor),
+      _threadPool(std::make_unique<FastOS_ThreadPool>(120_Ki)),
       _transport(std::make_unique<FNET_Transport>()),
       _supervisor(std::make_unique<FRT_Supervisor>(_transport.get())),
       _domains(),

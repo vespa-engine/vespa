@@ -12,8 +12,6 @@
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
-#include <vespa/searchlib/attribute/singlenumericattribute.hpp>
-#include <vespa/searchlib/attribute/singlenumericpostattribute.hpp>
 #include <vespa/searchlib/predicate/predicate_index.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/query/tree/location.h>
@@ -27,7 +25,7 @@
 #include <vespa/searchlib/queryeval/field_spec.h>
 #include <vespa/searchlib/queryeval/searchiterator.h>
 #include <vespa/searchlib/queryeval/wand/parallel_weak_and_search.h>
-#include <memory>
+#include <vespa/searchlib/attribute/singlenumericpostattribute.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP("attribute_searchable_adapter_test");

@@ -74,9 +74,8 @@ public class ResourceUsageStats {
     }
 
     private static int calculateNodesAboveLimit(Optional<ClusterStateBundle.FeedBlock> feedBlock) {
-        if (!feedBlock.isPresent()) {
-            return 0;
-        }
+        if (feedBlock.isEmpty()) return 0;
+
         var exhaustions = feedBlock.get().getConcreteExhaustions();
         return (int) exhaustions.stream().map(resource -> resource.node).distinct().count();
     }

@@ -11,6 +11,7 @@
 #include <vespa/vespalib/datastore/array_store.hpp>
 #include <vespa/vespalib/util/memory_allocator.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/log/log.h>
 
 LOG_SETUP(".searchlib.tensor.hnsw_index");
@@ -23,8 +24,8 @@ using vespalib::datastore::EntryRef;
 namespace {
 
 // TODO: Move this to MemoryAllocator, with name PAGE_SIZE.
-constexpr size_t small_page_size = 4 * 1024;
-constexpr size_t min_num_arrays_for_new_buffer = 8 * 1024;
+constexpr size_t small_page_size = 4_Ki;
+constexpr size_t min_num_arrays_for_new_buffer = 8_Ki;
 constexpr float alloc_grow_factor = 0.2;
 // TODO: Adjust these numbers to what we accept as max in config.
 constexpr size_t max_level_array_size = 16;

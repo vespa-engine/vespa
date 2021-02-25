@@ -13,8 +13,8 @@ import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
-import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
-import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnectorLocalPort;
+import static com.yahoo.jdisc.http.server.jetty.HttpServletRequestUtils.getConnection;
+import static com.yahoo.jdisc.http.server.jetty.HttpServletRequestUtils.getConnectorLocalPort;
 
 /**
  * @author Simon Thoresen Hult

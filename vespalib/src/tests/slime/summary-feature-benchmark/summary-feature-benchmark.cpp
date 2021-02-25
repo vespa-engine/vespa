@@ -1,5 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
@@ -9,7 +10,7 @@ using namespace vespalib::slime::convenience;
 struct MyBuffer : public Output {
     std::vector<char> data;
     size_t            used;
-    MyBuffer() : data(1024 * 1024), used(0) {}
+    MyBuffer() : data(1_Mi), used(0) {}
     ~MyBuffer();
     WritableMemory reserve(size_t bytes) override {
         assert(data.size() >= (used + bytes));

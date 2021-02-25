@@ -29,6 +29,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
@@ -207,10 +208,24 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         // Must be added after nodes:
         addAthensCopperArgos(cluster, context);
         addZooKeeper(cluster, spec);
+
+        addParameterStoreValidationHandler(cluster, deployState);
+    }
+
+
+    private void addParameterStoreValidationHandler(ApplicationContainerCluster cluster, DeployState deployState) {
+        if (deployState.featureFlags().tenantIamRole()) {
+            BindingPattern bindingPattern = SystemBindingPattern.fromHttpPath("/validate-secret-store");
+            Handler<AbstractConfigProducer<?>> handler = new Handler<>(
+                    new ComponentModel("com.yahoo.jdisc.cloud.aws.AwsParameterStoreValidationHandler", null, "jdisc-cloud-aws", null));
+            handler.addServerBindings(bindingPattern);
+            cluster.addPlatformBundle(PlatformBundles.absoluteBundlePath("jdisc-cloud-aws"));
+            cluster.addComponent(handler);
+        }
     }
 
     private void addZooKeeper(ApplicationContainerCluster cluster, Element spec) {
-        if (!hasZooKeeper(spec)) return;
+        if ( ! hasZooKeeper(spec)) return;
         Element nodesElement = XML.getChild(spec, "nodes");
         boolean isCombined = nodesElement != null && nodesElement.hasAttribute("of");
         if (isCombined) {
@@ -411,7 +426,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private static void addHostedImplicitHttpIfNotPresent(ApplicationContainerCluster cluster) {
-        if(cluster.getHttp() == null) {
+        if (cluster.getHttp() == null) {
             cluster.setHttp(new Http(new FilterChains(cluster)));
         }
         JettyHttpServer httpServer = cluster.getHttp().getHttpServer().orElse(null);

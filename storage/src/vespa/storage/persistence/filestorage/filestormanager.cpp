@@ -7,6 +7,7 @@
 #include <vespa/storage/common/content_bucket_space_repo.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/vdslib/state/cluster_state_bundle.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/messagebucket.h>
 #include <vespa/storage/config/config-stor-server.h>
@@ -34,7 +35,7 @@ using vespalib::make_string_short::fmt;
 
 namespace {
 
-    VESPA_THREAD_STACK_TAG(response_executor)
+VESPA_THREAD_STACK_TAG(response_executor)
 
 }
 
@@ -45,8 +46,8 @@ class BucketExecutorWrapper : public spi::BucketExecutor {
 public:
     BucketExecutorWrapper(spi::BucketExecutor & executor) noexcept : _executor(executor) { }
 
-    std::unique_ptr<spi::BucketTask> execute(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task) override {
-        return _executor.execute(bucket, std::move(task));
+    void execute(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task) override {
+        _executor.execute(bucket, std::move(task));
     }
 
 private:
@@ -974,17 +975,16 @@ void FileStorManager::initialize_bucket_databases_from_provider() {
     _init_handler.notifyDoneInitializing();
 }
 
-std::unique_ptr<spi::BucketTask>
+void
 FileStorManager::execute(const spi::Bucket &bucket, std::unique_ptr<spi::BucketTask> task) {
     StorBucketDatabase::WrappedEntry entry(_component.getBucketDatabase(bucket.getBucketSpace()).get(
             bucket.getBucketId(), "FileStorManager::execute"));
     if (entry.exist()) {
         auto cmd = std::make_shared<RunTaskCommand>(bucket, std::move(task));
-        if ( ! _filestorHandler->schedule(cmd) ) {
-            task = cmd->stealTask();
-        }
+        _filestorHandler->schedule(cmd);
+    } else {
+        task->fail(bucket);
     }
-    return task;
 }
 
 } // storage

@@ -21,6 +21,34 @@ using vespalib::makeLambdaTask;
 
 namespace proton::lidspace {
 
+namespace {
+
+class IncOnDestruct {
+public:
+    IncOnDestruct(std::atomic<size_t> & count) : _count(count) {}
+    ~IncOnDestruct() {
+        _count.fetch_add(1, std::memory_order_relaxed);
+    }
+private:
+    std::atomic<size_t> & _count;
+};
+
+bool
+isSameDocument(const search::DocumentMetaData & a, const search::DocumentMetaData & b) {
+    return (a.lid == b.lid) &&
+           (a.bucketId == b.bucketId) &&
+           (a.gid == b.gid) &&
+           (a.timestamp == b.timestamp); // Timestamp check can be removed once logic has proved itself in large scale.
+}
+
+}
+
+void
+CompactionJob::failOperation() {
+    _executedCount.fetch_add(1, std::memory_order_relaxed);
+    _scanItr.reset();
+}
+
 bool
 CompactionJob::scanDocuments(const LidUsageStats &stats)
 {
@@ -29,14 +57,15 @@ CompactionJob::scanDocuments(const LidUsageStats &stats)
         if (document.valid()) {
             Bucket metaBucket(document::Bucket(_bucketSpace, document.bucketId));
             IDestructorCallback::SP context = getLimiter().beginOperation();
-            auto failed = _bucketExecutor.execute(metaBucket, makeBucketTask([this, meta=document, opsTracker=std::move(context)]
+            auto bucketTask = makeBucketTask([this, meta=document, opsTracker=std::move(context)]
             (const Bucket & bucket, std::shared_ptr<IDestructorCallback> onDone) {
                 assert(bucket.getBucketId() == meta.bucketId);
                 using DoneContext = vespalib::KeepAlive<std::pair<IDestructorCallback::SP, IDestructorCallback::SP>>;
                 moveDocument(meta, std::make_shared<DoneContext>(std::make_pair(std::move(opsTracker), std::move(onDone))));
-            }));
-            if (failed) return false;
+            }, [this](const Bucket &) { _master.execute(makeLambdaTask([this] { failOperation(); } )); });
+
             _startedCount.fetch_add(1, std::memory_order_relaxed);
+            _bucketExecutor.execute(metaBucket, std::move(bucketTask));
             if (isBlocked(BlockedReason::OUTSTANDING_OPS)) {
                 return true;
             }
@@ -45,42 +74,41 @@ CompactionJob::scanDocuments(const LidUsageStats &stats)
     return false;
 }
 
-namespace {
-    class IncOnDestruct {
-    public:
-        IncOnDestruct(std::atomic<size_t> & count) : _count(count) {}
-        ~IncOnDestruct() {
-            _count.fetch_add(1, std::memory_order_relaxed);
-        }
-    private:
-        std::atomic<size_t> & _count;
-    };
-}
-
 void
-CompactionJob::moveDocument(const search::DocumentMetaData & meta, std::shared_ptr<IDestructorCallback> context) {
+CompactionJob::moveDocument(const search::DocumentMetaData & metaThen, std::shared_ptr<IDestructorCallback> context) {
     IncOnDestruct countGuard(_executedCount);
     if (_stopped.load(std::memory_order_relaxed)) return;
     // The real lid must be sampled in the master thread.
     //TODO remove target lid from createMoveOperation interface
-    auto op = _handler->createMoveOperation(meta, 0);
+    // Reread meta data as document might have been altered after move was initiated
+    // If so it will fail the timestamp sanity check later on.
+    search::DocumentMetaData metaNow = _handler->getMetaData(metaThen.lid);
+    if ( ! isSameDocument(metaThen, metaNow)) return;
+    auto op = _handler->createMoveOperation(metaNow, 0);
     if (!op || !op->getDocument()) return;
     // Early detection and force md5 calculation outside of master thread
-    if (meta.gid != op->getDocument()->getId().getGlobalId()) return;
+    if (metaThen.gid != op->getDocument()->getId().getGlobalId()) return;
 
-    _master.execute(makeLambdaTask([this, metaThen=meta, moveOp=std::move(op), onDone=std::move(context)]() {
+    _master.execute(makeLambdaTask([this, metaNow, moveOp=std::move(op), onDone=std::move(context)]() mutable {
         if (_stopped.load(std::memory_order_relaxed)) return;
-        search::DocumentMetaData metaNow = _handler->getMetaData(metaThen.lid);
-        if (metaNow.lid != metaThen.lid) return;
-        if (metaNow.bucketId != metaThen.bucketId) return;
-        if (metaNow.gid != moveOp->getDocument()->getId().getGlobalId()) return;
-
-        uint32_t lowestLid = _handler->getLidStatus().getLowestFreeLid();
-        if (lowestLid >= metaNow.lid) return;
-        moveOp->setTargetLid(lowestLid);
-        _opStorer.appendOperation(*moveOp, onDone);
-        _handler->handleMove(*moveOp, std::move(onDone));
+        completeMove(metaNow, std::move(moveOp), std::move(onDone));
     }));
+}
+
+void
+CompactionJob::completeMove(const search::DocumentMetaData & metaThen, std::unique_ptr<MoveOperation> moveOp,
+                            std::shared_ptr<IDestructorCallback> onDone)
+{
+    search::DocumentMetaData metaNow = _handler->getMetaData(metaThen.lid);
+    // This should be impossible and should probably be an assert
+    if ( ! isSameDocument(metaThen, metaNow)) return;
+    if (metaNow.gid != moveOp->getDocument()->getId().getGlobalId()) return;
+
+    uint32_t lowestLid = _handler->getLidStatus().getLowestFreeLid();
+    if (lowestLid >= metaNow.lid) return;
+    moveOp->setTargetLid(lowestLid);
+    _opStorer.appendOperation(*moveOp, onDone);
+    _handler->handleMove(*moveOp, std::move(onDone));
 }
 
 CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,

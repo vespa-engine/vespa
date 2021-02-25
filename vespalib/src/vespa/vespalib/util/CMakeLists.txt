@@ -31,6 +31,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     left_right_heap.cpp
     lz4compressor.cpp
     md5.c
+    memoryusage.cpp
     mmap_file_allocator.cpp
     mmap_file_allocator_factory.cpp
     printable.cpp

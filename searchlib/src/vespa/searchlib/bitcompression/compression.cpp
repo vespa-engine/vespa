@@ -6,10 +6,11 @@
 #include <vespa/vespalib/data/fileheader.h>
 #include <vespa/vespalib/data/databuffer.h>
 #include <vespa/vespalib/util/arrayref.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 namespace search::bitcompression {
 
-uint8_t CodingTables::_log2Table[65536];
+uint8_t CodingTables::_log2Table[64_Ki];
 
 CodingTables tables;  // Static initializer
 
@@ -18,7 +19,7 @@ CodingTables::CodingTables()
     unsigned int x;
     uint8_t log2Val;
 
-    for (x = 0; x < 65536; x++) {
+    for (x = 0; x < 64_Ki; x++) {
         unsigned int val = x;
         for (log2Val = 0; (val >>= 1) != 0; log2Val++) {
         }
@@ -172,7 +173,7 @@ readHeader(vespalib::GenericHeader &header, int64_t fileSize)
 {
     size_t hhSize = vespalib::GenericHeader::getMinSize();
     assert(static_cast<int64_t>(hhSize) <= fileSize);
-    vespalib::DataBuffer dataBuffer(32768u);
+    vespalib::DataBuffer dataBuffer(32_Ki);
     dataBuffer.ensureFree(hhSize);
     readBytes(reinterpret_cast<uint8_t *>(dataBuffer.getFree()),
               hhSize);
@@ -297,7 +298,7 @@ void
 FeatureEncodeContext<bigEndian>::
 writeHeader(const vespalib::GenericHeader &header)
 {
-    vespalib::DataBuffer dataBuffer(32768u);
+    vespalib::DataBuffer dataBuffer(32_Ki);
     vespalib::GenericHeader::BufferWriter bufferWriter(dataBuffer);
     dataBuffer.ensureFree(header.getSize());
     header.write(bufferWriter);

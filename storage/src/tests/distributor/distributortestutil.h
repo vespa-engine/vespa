@@ -141,7 +141,7 @@ public:
     // "End to end" distribution change trigger, which will invoke the bucket
     // DB updater as expected based on the previous and new cluster state
     // and config.
-    void triggerDistributionChange(lib::Distribution::SP distr);
+    void triggerDistributionChange(std::shared_ptr<lib::Distribution> distr);
     
     framework::defaultimplementation::FakeClock& getClock() { return _node->getClock(); }
     DistributorComponentRegister& getComponentRegister() { return _node->getComponentRegister(); }

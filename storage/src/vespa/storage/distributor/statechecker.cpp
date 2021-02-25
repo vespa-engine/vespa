@@ -2,6 +2,8 @@
 #include "statechecker.h"
 #include "distributorcomponent.h"
 #include "distributor_bucket_space.h"
+#include <vespa/vdslib/distribution/distribution.h>
+#include <vespa/vdslib/state/clusterstate.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".distributor.statechecker");

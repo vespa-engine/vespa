@@ -2,6 +2,7 @@
 
 #include "bucket.h"
 #include <vespa/document/fieldvalue/document.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/array.hpp>

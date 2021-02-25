@@ -43,12 +43,12 @@ import static java.nio.charset.StandardCharsets.UTF_8;
  * @author jonmv
  */
 class LogReader {
-
     static final Pattern logArchivePathPattern = Pattern.compile("(\\d{4})/(\\d{2})/(\\d{2})/(\\d{2})-\\d+(.gz)?");
     static final Pattern vespaLogPathPattern = Pattern.compile("vespa\\.log(?:-(\\d{4})-(\\d{2})-(\\d{2})\\.(\\d{2})-(\\d{2})-(\\d{2})(?:.gz)?)?");
 
     private final Path logDirectory;
     private final Pattern logFilePattern;
+
 
     LogReader(String logDirectory, String logFilePattern) {
         this(Paths.get(Defaults.getDefaults().underVespaHome(logDirectory)), Pattern.compile(logFilePattern));
@@ -72,12 +72,10 @@ class LogReader {
 
                 Iterator<LineWithTimestamp> lines = Iterators.mergeSorted(logLineIterators,
                                                                           Comparator.comparingDouble(LineWithTimestamp::timestamp));
-                long linesWritten = 0;
                 while (lines.hasNext()) {
-                    writer.write(lines.next().line());
+                    String line = lines.next().line();
+                    writer.write(line);
                     writer.newLine();
-                    if ((++linesWritten & ((1 << 16) - 1)) == 0)
-                        writer.flush();
                 }
             }
             catch (IOException e) {
@@ -188,9 +186,11 @@ class LogReader {
 
                 @Override
                 public FileVisitResult visitFile(Path file, BasicFileAttributes attrs) {
-                    if (     logFilePattern.matcher(file.getFileName().toString()).matches()
+                    if (logFilePattern.matcher(file.getFileName().toString()).matches()
                         && ! attrs.lastModifiedTime().toInstant().isBefore(from))
+                    {
                         paths.add(file);
+                    }
 
                     return FileVisitResult.CONTINUE;
                 }

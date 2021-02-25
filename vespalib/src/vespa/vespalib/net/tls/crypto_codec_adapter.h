@@ -5,6 +5,7 @@
 #include "tls_crypto_socket.h"
 #include <vespa/vespalib/net/socket_handle.h>
 #include <vespa/vespalib/data/smart_buffer.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include "crypto_codec.h"
 
 namespace vespalib::net::tls {
@@ -32,7 +33,7 @@ private:
     ssize_t flush_all();  // -1/0 -> error/ok
 public:
     CryptoCodecAdapter(SocketHandle socket, std::unique_ptr<CryptoCodec> codec)
-        : _input(64 * 1024), _output(64 * 1024), _socket(std::move(socket)), _codec(std::move(codec)),
+        : _input(64_Ki), _output(64_Ki), _socket(std::move(socket)), _codec(std::move(codec)),
           _got_tls_close(false), _encoded_tls_close(false) {}
     void inject_read_data(const char *buf, size_t len) override;
     int get_fd() const override { return _socket.get(); }

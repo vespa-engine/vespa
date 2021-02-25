@@ -25,14 +25,13 @@ import com.yahoo.vespa.orchestrator.Orchestrator;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -69,13 +68,11 @@ public class InactiveAndFailedExpirerTest {
         assertEquals(0, tester.nodeRepository().nodes().list(Node.State.inactive).size());
         NodeList dirty = tester.nodeRepository().nodes().list(Node.State.dirty);
         assertEquals(2, dirty.size());
-        assertFalse(dirty.asList().get(0).allocation().isPresent());
-        assertFalse(dirty.asList().get(1).allocation().isPresent());
 
         // One node is set back to ready
-        Node ready = tester.nodeRepository().nodes().setReady(Collections.singletonList(dirty.asList().get(0)), Agent.system, getClass().getSimpleName()).get(0);
+        Node ready = tester.nodeRepository().nodes().setReady(List.of(dirty.asList().get(0)), Agent.system, getClass().getSimpleName()).get(0);
         assertEquals("Allocated history is removed on readying",
-                Arrays.asList(History.Event.Type.provisioned, History.Event.Type.readied),
+                List.of(History.Event.Type.provisioned, History.Event.Type.readied),
                 ready.history().events().stream().map(History.Event::type).collect(Collectors.toList()));
 
         // Dirty times out for the other one
@@ -185,7 +182,7 @@ public class InactiveAndFailedExpirerTest {
         assertEquals(0, tester.nodeRepository().nodes().list(Node.State.inactive).size());
         NodeList dirty = tester.nodeRepository().nodes().list(Node.State.dirty);
         assertEquals(1, dirty.size());
-        assertFalse(dirty.first().get().allocation().isPresent());
+        assertTrue(dirty.first().get().allocation().isPresent());
     }
 
     @Test

@@ -6,6 +6,7 @@
 #include "termnodes.h"
 #include <vespa/vespalib/objects/nbo.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/searchlib/parsequery/parse.h>
 
 using vespalib::string;
@@ -271,7 +272,7 @@ class QueryNodeConverter : public QueryVisitor {
 
 public:
     QueryNodeConverter()
-        : _buf(4096)
+        : _buf(4_Ki)
     {
     }
 

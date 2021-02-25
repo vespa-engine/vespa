@@ -9,6 +9,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.DiskSize;
 
+import java.net.URI;
 import java.time.Instant;
 import java.util.EnumSet;
 import java.util.Objects;
@@ -59,6 +60,9 @@ public class NodeSpec {
     private final NodeReports reports;
 
     private final Optional<String> parentHostname;
+    private final Optional<URI> archiveUri;
+
+    private final Optional<ApplicationId> exclusiveTo;
 
     public NodeSpec(
             String hostname,
@@ -85,7 +89,9 @@ public class NodeSpec {
             Set<String> ipAddresses,
             Set<String> additionalIpAddresses,
             NodeReports reports,
-            Optional<String> parentHostname) {
+            Optional<String> parentHostname,
+            Optional<URI> archiveUri,
+            Optional<ApplicationId> exclusiveTo) {
         if (state == NodeState.active) {
             requireOptional(owner, "owner");
             requireOptional(membership, "membership");
@@ -120,6 +126,8 @@ public class NodeSpec {
         this.additionalIpAddresses = Objects.requireNonNull(additionalIpAddresses);
         this.reports = Objects.requireNonNull(reports);
         this.parentHostname = Objects.requireNonNull(parentHostname);
+        this.archiveUri = Objects.requireNonNull(archiveUri);
+        this.exclusiveTo = Objects.requireNonNull(exclusiveTo);
     }
 
     public String hostname() {
@@ -244,6 +252,14 @@ public class NodeSpec {
         return parentHostname;
     }
 
+    public Optional<URI> archiveUri() {
+        return archiveUri;
+    }
+
+    public Optional<ApplicationId> exclusiveTo() {
+        return exclusiveTo;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -274,7 +290,9 @@ public class NodeSpec {
                 Objects.equals(ipAddresses, that.ipAddresses) &&
                 Objects.equals(additionalIpAddresses, that.additionalIpAddresses) &&
                 Objects.equals(reports, that.reports) &&
-                Objects.equals(parentHostname, that.parentHostname);
+                Objects.equals(parentHostname, that.parentHostname) &&
+                Objects.equals(archiveUri, that.archiveUri) &&
+                Objects.equals(exclusiveTo, that.exclusiveTo);
     }
 
     @Override
@@ -303,7 +321,9 @@ public class NodeSpec {
                 ipAddresses,
                 additionalIpAddresses,
                 reports,
-                parentHostname);
+                parentHostname,
+                archiveUri,
+                exclusiveTo);
     }
 
     @Override
@@ -333,6 +353,8 @@ public class NodeSpec {
                 + " additionalIpAddresses=" + additionalIpAddresses
                 + " reports=" + reports
                 + " parentHostname=" + parentHostname
+                + " archiveUri=" + archiveUri
+                + " exclusiveTo=" + exclusiveTo
                 + " }";
     }
 
@@ -362,6 +384,8 @@ public class NodeSpec {
         private Set<String> additionalIpAddresses = Set.of();
         private NodeReports reports = new NodeReports();
         private Optional<String> parentHostname = Optional.empty();
+        private Optional<URI> archiveUri = Optional.empty();
+        private Optional<ApplicationId> exclusiveTo = Optional.empty();
 
         public Builder() {}
 
@@ -390,6 +414,8 @@ public class NodeSpec {
             node.wantedFirmwareCheck.ifPresent(this::wantedFirmwareCheck);
             node.currentFirmwareCheck.ifPresent(this::currentFirmwareCheck);
             node.parentHostname.ifPresent(this::parentHostname);
+            node.archiveUri.ifPresent(this::archiveUri);
+            node.exclusiveTo.ifPresent(this::exclusiveTo);
         }
 
         public Builder hostname(String hostname) {
@@ -542,6 +568,16 @@ public class NodeSpec {
             return this;
         }
 
+        public Builder archiveUri(URI archiveUri) {
+            this.archiveUri = Optional.of(archiveUri);
+            return this;
+        }
+
+        public Builder exclusiveTo(ApplicationId applicationId) {
+            this.exclusiveTo = Optional.of(applicationId);
+            return this;
+        }
+
         public Builder updateFromNodeAttributes(NodeAttributes attributes) {
             attributes.getDockerImage().ifPresent(this::currentDockerImage);
             attributes.getCurrentOsVersion().ifPresent(this::currentOsVersion);
@@ -640,6 +676,10 @@ public class NodeSpec {
             return parentHostname;
         }
 
+        public Optional<URI> archiveUri() {
+            return archiveUri;
+        }
+
         public NodeSpec build() {
             return new NodeSpec(hostname, wantedDockerImage, currentDockerImage, state, type, flavor,
                     wantedVespaVersion, currentVespaVersion, wantedOsVersion, currentOsVersion, orchestratorStatus,
@@ -648,7 +688,7 @@ public class NodeSpec {
                     wantedRebootGeneration, currentRebootGeneration,
                     wantedFirmwareCheck, currentFirmwareCheck, modelName,
                     resources, ipAddresses, additionalIpAddresses,
-                    reports, parentHostname);
+                    reports, parentHostname, archiveUri, exclusiveTo);
         }
 
 

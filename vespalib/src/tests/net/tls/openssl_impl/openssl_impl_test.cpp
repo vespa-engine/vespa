@@ -12,6 +12,7 @@
 #include <vespa/vespalib/net/tls/impl/openssl_tls_context_impl.h>
 #include <vespa/vespalib/test/make_tls_options_for_testing.h>
 #include <vespa/vespalib/test/peer_policy_utils.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <stdexcept>
 #include <stdlib.h>
 
@@ -83,8 +84,8 @@ struct Fixture {
           tls_ctx(TlsContext::create_default_context(tls_opts, AuthorizationMode::Enforce)),
           client(create_openssl_codec(tls_ctx, CryptoCodec::Mode::Client)),
           server(create_openssl_codec(tls_ctx, CryptoCodec::Mode::Server)),
-          client_to_server(64 * 1024),
-          server_to_client(64 * 1024)
+          client_to_server(64_Ki),
+          server_to_client(64_Ki)
     {}
     ~Fixture();
 

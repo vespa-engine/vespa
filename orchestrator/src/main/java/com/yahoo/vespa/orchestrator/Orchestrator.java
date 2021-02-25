@@ -127,4 +127,9 @@ public interface Orchestrator {
      */
     void suspend(ApplicationId appId) throws ApplicationStateChangeDeniedException, ApplicationIdNotFoundException;
 
+    /**
+     * Whether each content cluster is currently allowed to go down. This indicates the deployment is "in sync".
+     */
+    default boolean isQuiescent(ApplicationId id) { return false; }
+
 }

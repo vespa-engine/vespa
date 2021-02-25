@@ -12,6 +12,7 @@
 #include <vespa/document/fieldvalue/document.h>
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/asciistream.h>
+#include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 #include <vespa/log/log.h>
@@ -236,8 +237,8 @@ Fixture::Fixture()
       _repo(makeDocTypeRepoConfig()),
       _storeConfig(DocumentStore::Config(CompressionConfig::NONE, 0, 0),
                    LogDataStore::Config().setMaxFileSize(50000).setMaxBucketSpread(3.0)
-                           .setFileConfig(WriteableFileChunk::Config(CompressionConfig(), 16384))),
-      _executor(1, 128 * 1024),
+                           .setFileConfig(WriteableFileChunk::Config(CompressionConfig(), 16_Ki))),
+      _executor(1, 128_Ki),
       _fileHeaderContext(),
       _tlSyncer(),
       _store(),

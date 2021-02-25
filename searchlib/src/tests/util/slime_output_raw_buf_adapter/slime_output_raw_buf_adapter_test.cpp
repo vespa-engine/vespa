@@ -2,12 +2,13 @@
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/searchlib/util/slime_output_raw_buf_adapter.h>
 #include <vespa/vespalib/data/slime/slime.h>
+#include <vespa/vespalib/util/size_literals.h>
 
 using namespace search;
 using namespace vespalib::slime::convenience;
 
 TEST("use slime with rawbuf") {
-    RawBuf buffer(4096);
+    RawBuf buffer(4_Ki);
     Slime src;
     Slime dst;
     {

@@ -4,13 +4,13 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.container.logging.RequestLog;
 import com.yahoo.container.logging.RequestLogEntry;
+import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
 import org.eclipse.jetty.http.MetaData;
 import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.HttpConnection;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
-import org.eclipse.jetty.server.ServerConnector;
 import org.junit.Test;
 
 import java.util.List;
@@ -129,8 +129,10 @@ public class AccessLogRequestLogTest {
     }
 
     private static Request createRequestMock() {
-        ServerConnector serverConnector = mock(ServerConnector.class);
-        when(serverConnector.getLocalPort()).thenReturn(1234);
+        JDiscServerConnector serverConnector = mock(JDiscServerConnector.class);
+        int localPort = 1234;
+        when(serverConnector.connectorConfig()).thenReturn(new ConnectorConfig(new ConnectorConfig.Builder().listenPort(localPort)));
+        when(serverConnector.getLocalPort()).thenReturn(localPort);
         HttpConnection httpConnection = mock(HttpConnection.class);
         when(httpConnection.getConnector()).thenReturn(serverConnector);
         Request request = mock(Request.class);

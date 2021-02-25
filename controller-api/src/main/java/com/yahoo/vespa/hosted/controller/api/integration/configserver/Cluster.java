@@ -19,6 +19,7 @@ public class Cluster {
     private final ClusterResources current;
     private final Optional<ClusterResources> target;
     private final Optional<ClusterResources> suggested;
+    private final Utilization utilization;
     private final List<ScalingEvent> scalingEvents;
     private final String autoscalingStatus;
 
@@ -28,6 +29,7 @@ public class Cluster {
                    ClusterResources current,
                    Optional<ClusterResources> target,
                    Optional<ClusterResources> suggested,
+                   Utilization utilization,
                    List<ScalingEvent> scalingEvents,
                    String autoscalingStatus) {
         this.id = id;
@@ -36,6 +38,7 @@ public class Cluster {
         this.current = current;
         this.target = target;
         this.suggested = suggested;
+        this.utilization = utilization;
         this.scalingEvents = scalingEvents;
         this.autoscalingStatus = autoscalingStatus;
     }
@@ -46,12 +49,31 @@ public class Cluster {
     public ClusterResources current() { return current; }
     public Optional<ClusterResources> target() { return target; }
     public Optional<ClusterResources> suggested() { return suggested; }
+    public Utilization utilization() { return utilization; }
     public List<ScalingEvent> scalingEvents() { return scalingEvents; }
     public String autoscalingStatus() { return autoscalingStatus; }
 
     @Override
     public String toString() {
         return "cluster '" + id + "'";
+    }
+
+    public static class Utilization {
+
+        private final double cpu, memory, disk;
+
+        public Utilization(double cpu, double memory, double disk) {
+            this.cpu = cpu;
+            this.memory = memory;
+            this.disk = disk;
+        }
+
+        public double cpu() { return cpu; }
+        public double memory() { return memory; }
+        public double disk() { return disk; }
+
+        public static Utilization empty() { return new Utilization(0, 0, 0); }
+
     }
 
     public static class ScalingEvent {

@@ -1,83 +1,69 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.sync;
 
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.HostName;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Files;
+import java.net.URI;
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.util.Optional;
 
 /**
  * @author freva
  */
 public class SyncFileInfo {
 
-    private final String bucketName;
-    private final Path srcPath;
-    private final Path destPath;
-    private final boolean compressWithZstd;
+    private final Path source;
+    private final URI destination;
+    private final Compression uploadCompression;
 
-    private SyncFileInfo(String bucketName, Path srcPath, Path destPath, boolean compressWithZstd) {
-        this.bucketName = bucketName;
-        this.srcPath = srcPath;
-        this.destPath = destPath;
-        this.compressWithZstd = compressWithZstd;
+    private SyncFileInfo(Path source, URI destination, Compression uploadCompression) {
+        this.source = source;
+        this.destination = destination;
+        this.uploadCompression = uploadCompression;
     }
 
-    public String bucketName() {
-        return bucketName;
+    /** Source path of the file to sync */
+    public Path source() {
+        return source;
     }
 
-    public Path srcPath() {
-        return srcPath;
+    /** Remote URI to store the file at */
+    public URI destination() {
+        return destination;
     }
 
-    public Path destPath() {
-        return destPath;
+    /** Compression algorithm to use when uploading the file */
+    public Compression uploadCompression() {
+        return uploadCompression;
     }
 
-    public InputStream inputStream() throws IOException {
-        InputStream is = Files.newInputStream(srcPath);
-        if (compressWithZstd) return new ZstdCompressingInputStream(is, 4 << 20);
-        return is;
-    }
+    public static Optional<SyncFileInfo> forLogFile(URI uri, Path logFile, boolean rotatedOnly) {
+        String filename = logFile.getFileName().toString();
+        Compression compression;
+        String dir = null;
 
-
-    public static SyncFileInfo tenantVespaLog(String bucketName, ApplicationId applicationId, HostName hostName, Path vespaLogFile) {
-        return new SyncFileInfo(bucketName, vespaLogFile, destination(applicationId, hostName, "logs/vespa", vespaLogFile, ".zst"), true);
-    }
-
-    public static SyncFileInfo tenantAccessLog(String bucketName, ApplicationId applicationId, HostName hostName, Path accessLogFile) {
-        return new SyncFileInfo(bucketName, accessLogFile, destination(applicationId, hostName, "logs/access", accessLogFile, null), false);
-    }
-
-    public static SyncFileInfo infrastructureVespaLog(String bucketName, HostName hostName, Path vespaLogFile) {
-        return new SyncFileInfo(bucketName, vespaLogFile, destination(null, hostName, "logs/vespa", vespaLogFile, ".zst"), true);
-    }
-
-    public static SyncFileInfo infrastructureAccessLog(String bucketName, HostName hostName, Path accessLogFile) {
-        return new SyncFileInfo(bucketName, accessLogFile, destination(null, hostName, "logs/access", accessLogFile, null), false);
-    }
-
-    private static Path destination(ApplicationId app, HostName hostName, String dir, Path filename, String extension) {
-        StringBuilder sb = new StringBuilder(100).append('/');
-
-        if (app == null) sb.append("infrastructure");
-        else sb.append(app.tenant().value()).append('.').append(app.application().value()).append('.').append(app.instance().value());
-
-        sb.append('/');
-        for (char c: hostName.value().toCharArray()) {
-            if (c == '.') break;
-            sb.append(c);
+        if ((!rotatedOnly && filename.equals("vespa.log")) || filename.startsWith("vespa.log-")) {
+            dir = "logs/vespa/";
+            compression = Compression.ZSTD;
+        } else {
+            compression = filename.endsWith(".zst") ? Compression.NONE : Compression.ZSTD;
+            if (rotatedOnly && compression != Compression.NONE)
+                dir = null;
+            else if (filename.startsWith("JsonAccessLog.") || filename.startsWith("access"))
+                dir = "logs/access/";
+            else if (filename.startsWith("ConnectionLog."))
+                dir = "logs/connection/";
         }
 
-        sb.append('/').append(dir).append('/').append(filename.getFileName().toString());
+        if (dir == null) return Optional.empty();
+        return Optional.of(new SyncFileInfo(
+                logFile, uri.resolve(dir + logFile.getFileName() + compression.extension), compression));
+    }
 
-        if (extension != null) sb.append(extension);
+    public enum Compression {
+        NONE(""), ZSTD(".zst");
 
-        return Paths.get(sb.toString());
+        private final String extension;
+        Compression(String extension) {
+            this.extension = extension;
+        }
     }
 }

@@ -3,6 +3,7 @@ package ai.vespa.reindexing;
 
 import ai.vespa.reindexing.Reindexing.Status;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
+import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentTypeManager;
 import com.yahoo.documentapi.ProgressToken;
 import com.yahoo.path.Path;
@@ -16,6 +17,8 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.Collection;
+import java.util.Map;
 import java.util.function.Function;
 
 import static java.util.Objects.requireNonNull;
@@ -40,6 +43,26 @@ public class ReindexingCurator {
         this.curator = curator;
         this.serializer = new ReindexingSerializer(manager);
         this.lockTimeout = lockTimeout;
+    }
+
+    /** If no reindexing data exists (has been wiped), assume current ready documents are already done. */
+    public void initializeIfEmpty(String cluster, Map<DocumentType, Instant> ready, Instant now) {
+        if ( ! curator.exists(statusPath(cluster))) {
+            try (Lock lock = lockReindexing(cluster)) {
+                if (curator.exists(statusPath(cluster)))
+                    return; // Some other node already did this.
+
+                Reindexing reindexing = Reindexing.empty();
+                for (DocumentType type : ready.keySet())
+                    if (ready.get(type).isBefore(now))
+                        reindexing = reindexing.with(type, Status.ready(now).running().successful(now));
+
+                writeReindexing(reindexing, cluster);
+            }
+            catch (ReindexingLockException ignored) {
+                // Some other node took ownership and is doing this.
+            }
+        }
     }
 
     public Reindexing readReindexing(String cluster) {

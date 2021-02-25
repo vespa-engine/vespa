@@ -74,6 +74,9 @@ public interface NodeRepository {
 
     Application getApplication(ZoneId zone, ApplicationId application);
 
+    void patchApplication(ZoneId zone, ApplicationId application,
+                          double currentReadShare, double maxReadShare);
+
     /** Upgrade all nodes of given type to a new version */
     void upgrade(ZoneId zone, NodeType type, Version version);
 

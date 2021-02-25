@@ -6,8 +6,8 @@ import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.SystemName;
-import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 /**
@@ -71,18 +72,18 @@ class NodeAllocation {
     private final Set<Integer> indexes = new HashSet<>();
 
     /** The next membership index to assign to a new node */
-    private final MutableInteger highestIndex;
+    private final Supplier<Integer> nextIndex;
 
     private final NodeRepository nodeRepository;
     private final NodeResourceLimits nodeResourceLimits;
 
     NodeAllocation(NodeList allNodes, ApplicationId application, ClusterSpec cluster, NodeSpec requestedNodes,
-                   MutableInteger highestIndex, NodeRepository nodeRepository) {
+                   Supplier<Integer> nextIndex, NodeRepository nodeRepository) {
         this.allNodes = allNodes;
         this.application = application;
         this.cluster = cluster;
         this.requestedNodes = requestedNodes;
-        this.highestIndex = highestIndex;
+        this.nextIndex = nextIndex;
         this.nodeRepository = nodeRepository;
         nodeResourceLimits = new NodeResourceLimits(nodeRepository);
     }
@@ -119,7 +120,7 @@ class NodeAllocation {
                 }
             }
             else if (! saturated() && hasCompatibleFlavor(candidate)) {
-                if ( ! nodeResourceLimits.isWithinRealLimits(candidate, cluster)) {
+                if (requestedNodes.type() == NodeType.tenant && ! nodeResourceLimits.isWithinRealLimits(candidate, cluster)) {
                     ++rejectedDueToInsufficientRealResources;
                     continue;
                 }
@@ -135,7 +136,7 @@ class NodeAllocation {
                     continue;
                 }
                 candidate = candidate.allocate(application,
-                                               ClusterMembership.from(cluster, highestIndex.add(1)),
+                                               ClusterMembership.from(cluster, nextIndex.get()),
                                                requestedNodes.resources().orElse(candidate.resources()),
                                                nodeRepository.clock().instant());
                 if (candidate.isValid())
@@ -154,7 +155,7 @@ class NodeAllocation {
         if (violatesParentHostPolicy(candidate)) return true;
         if ( ! hasCompatibleFlavor(candidate)) return true;
         if (candidate.wantToRetire()) return true;
-        if (candidate.preferToRetire() && !candidate.replacementIncreasesSkew(candidates)) return true;
+        if (candidate.preferToRetire() && candidate.replacableBy(candidates)) return true;
         if (violatesExclusivity(candidate)) return true;
         return false;
     }
@@ -257,7 +258,6 @@ class NodeAllocation {
         }
         candidate = candidate.withNode(node);
         indexes.add(node.allocation().get().membership().index());
-        highestIndex.set(Math.max(highestIndex.get(), node.allocation().get().membership().index()));
         nodes.put(node.hostname(), candidate);
         return node;
     }
@@ -284,7 +284,7 @@ class NodeAllocation {
         return requestedNodes.fulfilledBy(accepted);
     }
 
-    /** Returns true this allocation was already fulfilled and resulted in no new changes */
+    /** Returns true if this allocation was already fulfilled and resulted in no new changes */
     public boolean fulfilledAndNoChanges() {
         return fulfilled() && reservableNodes().isEmpty() && newNodes().isEmpty();
     }

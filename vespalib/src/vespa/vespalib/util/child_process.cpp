@@ -3,6 +3,7 @@
 #include "guard.h"
 #include "child_process.h"
 #include <cstring>
+#include <vespa/vespalib/util/size_literals.h>
 
 namespace vespalib {
 
@@ -296,7 +297,7 @@ ChildProcess::run(const std::string &input, const char *cmd,
 {
     ChildProcess proc(cmd);
     child_process::Timer timer(msTimeout);
-    char buf[4096];
+    char buf[4_Ki];
     proc.write(input.data(), input.length());
     proc.close(); // close stdin
     while (!proc.eof() && !timer.timeOut()) {

@@ -224,7 +224,7 @@ public class NodesV2ApiTest {
                        "{\"message\":\"Updated dockerhost2.yahoo.com\"}");
         // Make sure that wantToRetire is applied recursively, but wantToDeprovision isn't
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"),
-                "\"wantToRetire\":true,\"wantToDeprovision\":false,");
+                "\"wantToRetire\":true,\"preferToRetire\":false,\"wantToDeprovision\":false,");
 
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "\"modelName\":\"foo\"");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
@@ -257,6 +257,12 @@ public class NodesV2ApiTest {
                    "application1.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/application/tenant2.application2.instance2"),
                    "application2.json");
+
+        // Update (PATCH) an application
+        assertResponse(new Request("http://localhost:8080/nodes/v2/application/tenant1.application1.instance1",
+                                   Utf8.toBytes("{\"currentReadShare\": 0.3, " +
+                                                "\"maxReadShare\": 0.5 }"), Request.Method.PATCH),
+                       "{\"message\":\"Updated application 'tenant1.application1.instance1'\"}");
     }
 
     @Test

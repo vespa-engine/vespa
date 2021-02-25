@@ -16,12 +16,21 @@ LOG_SETUP(".proton.server.bucketmovejob");
 
 using document::BucketId;
 using storage::spi::BucketInfo;
+using vespalib::Trinary;
 
 namespace proton {
 
 namespace {
 
-const char * bool2str(bool v) { return (v ? "T" : "F"); }
+const char *
+toStr(bool v) {
+    return (v ? "T" : "F");
+}
+
+const char *
+toStr(Trinary v) {
+    return (v == Trinary::True) ? "T" : ((v == Trinary::False) ? "F" : "U");
+}
 
 }
 
@@ -42,10 +51,13 @@ BucketMoveJob::checkBucket(const BucketId &bucket,
     if (_calc->nodeRetired() && !isActive) {
         return;
     }
-    const bool shouldBeReady = _calc->shouldBeReady(document::Bucket(_bucketSpace, bucket));
-    const bool wantReady = shouldBeReady || isActive;
+    Trinary shouldBeReady = _calc->shouldBeReady(document::Bucket(_bucketSpace, bucket));
+    if (shouldBeReady == vespalib::Trinary::Undefined) {
+        return;
+    }
+    const bool wantReady = (shouldBeReady == Trinary::True) || isActive;
     LOG(spam, "checkBucket(): bucket(%s), shouldBeReady(%s), active(%s)",
-              bucket.toString().c_str(), bool2str(shouldBeReady), bool2str(isActive));
+              bucket.toString().c_str(), toStr(shouldBeReady), toStr(isActive));
     if (wantReady) {
         if (!hasNotReadyDocs)
             return; // No notready bucket to make ready
@@ -64,8 +76,7 @@ BucketMoveJob::checkBucket(const BucketId &bucket,
     const MaintenanceDocumentSubDB &target(wantReady ? _ready : _notReady);
     LOG(debug, "checkBucket(): mover.setupForBucket(%s, source:%u, target:%u)",
         bucket.toString().c_str(), source.sub_db_id(), target.sub_db_id());
-    mover.setupForBucket(bucket, &source, target.sub_db_id(),
-                         _moveHandler, _ready.meta_store()->getBucketDB());
+    mover.setupForBucket(bucket, &source, target.sub_db_id(), _moveHandler);
 }
 
 BucketMoveJob::ScanResult
@@ -116,7 +127,7 @@ BucketMoveJob::moveDocuments(DocumentBucketMover &mover,
 namespace {
 
 bool
-blockedDueToClusterState(const IBucketStateCalculator::SP &calc)
+blockedDueToClusterState(const std::shared_ptr<IBucketStateCalculator> &calc)
 {
     bool clusterUp = calc.get() != nullptr && calc->clusterUp();
     bool nodeUp = calc.get() != nullptr && calc->nodeUp();
@@ -127,7 +138,7 @@ blockedDueToClusterState(const IBucketStateCalculator::SP &calc)
 }
 
 BucketMoveJob::
-BucketMoveJob(const IBucketStateCalculator::SP &calc,
+BucketMoveJob(const std::shared_ptr<IBucketStateCalculator> &calc,
               IDocumentMoveHandler &moveHandler,
               IBucketModifiedHandler &modifiedHandler,
               const MaintenanceDocumentSubDB &ready,
@@ -151,7 +162,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
       _modifiedHandler(modifiedHandler),
       _ready(ready),
       _notReady(notReady),
-      _mover(getLimiter()),
+      _mover(getLimiter(), _ready.meta_store()->getBucketDB()),
       _doneScan(false),
       _scanPos(),
       _scanPass(ScanPass::FIRST),
@@ -161,7 +172,7 @@ BucketMoveJob(const IBucketStateCalculator::SP &calc,
       _delayedBucketsFrozen(),
       _frozenBuckets(frozenBuckets),
       _bucketCreateNotifier(bucketCreateNotifier),
-      _delayedMover(getLimiter()),
+      _delayedMover(getLimiter(), _ready.meta_store()->getBucketDB()),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
       _bucketStateChangedNotifier(bucketStateChangedNotifier),
       _diskMemUsageNotifier(diskMemUsageNotifier)
@@ -192,8 +203,11 @@ BucketMoveJob::maybeCancelMover(DocumentBucketMover &mover)
     // Cancel bucket if moving in wrong direction
     if (!mover.bucketDone()) {
         bool ready = mover.getSource() == &_ready;
+        Trinary shouldBeReady = _calc->shouldBeReady(document::Bucket(_bucketSpace, mover.getBucket()));
         if (isBlocked() ||
-            _calc->shouldBeReady(document::Bucket(_bucketSpace, mover.getBucket())) == ready) {
+            (shouldBeReady == Trinary::Undefined) ||
+            (ready == (shouldBeReady == Trinary::True)))
+        {
             mover.cancel();
         }
     }
@@ -320,7 +334,7 @@ BucketMoveJob::run()
 }
 
 void
-BucketMoveJob::notifyClusterStateChanged(const IBucketStateCalculator::SP &newCalc)
+BucketMoveJob::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc)
 {
     // Called by master write thread
     _calc = newCalc;

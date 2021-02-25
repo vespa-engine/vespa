@@ -4,10 +4,11 @@ package com.yahoo.document;
 /**
  * The id of a document type.
  *
- * @author <a href="mailto:einarmr@yahoo-inc.com">Einar M R Rosenvinge</a>
+ * @author Einar M R Rosenvinge
  */
 public class DocumentTypeId {
-    private int id;
+
+    private final int id;
 
     public DocumentTypeId(int id) {
         this.id = id;
@@ -17,17 +18,21 @@ public class DocumentTypeId {
         return id;
     }
 
+    @Override
     public boolean equals(Object o) {
         if (!(o instanceof DocumentTypeId)) return false;
         DocumentTypeId other = (DocumentTypeId) o;
         return other.id == this.id;
     }
 
+    @Override
     public int hashCode() {
         return id;
     }
 
+    @Override
     public String toString() {
         return "" + id;
     }
+
 }

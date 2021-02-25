@@ -13,6 +13,8 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.disk.CoredumpCleanupRule;
 import com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanup;
 import com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanupRule;
 import com.yahoo.vespa.hosted.node.admin.maintenance.disk.LinearCleanupRule;
+import com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncClient;
+import com.yahoo.vespa.hosted.node.admin.maintenance.sync.SyncFileInfo;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentTask;
@@ -21,6 +23,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
 import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 
+import java.net.URI;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -31,6 +34,7 @@ import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -39,6 +43,7 @@ import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.node.admin.maintenance.disk.DiskCleanupRule.Priority;
 import static com.yahoo.yolean.Exceptions.uncheck;
@@ -53,9 +58,10 @@ public class StorageMaintainer {
 
     private final Terminal terminal;
     private final CoredumpHandler coredumpHandler;
-    private final Path archiveContainerStoragePath;
     private final DiskCleanup diskCleanup;
+    private final SyncClient syncClient;
     private final Clock clock;
+    private final Path archiveContainerStoragePath;
 
     // We cache disk usage to avoid doing expensive disk operations so often
     private final Cache<ContainerName, DiskSize> diskUsage = CacheBuilder.newBuilder()
@@ -63,16 +69,28 @@ public class StorageMaintainer {
             .expireAfterWrite(5, TimeUnit.MINUTES)
             .build();
 
-    public StorageMaintainer(Terminal terminal, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath) {
-        this(terminal, coredumpHandler, archiveContainerStoragePath, new DiskCleanup(), Clock.systemUTC());
-    }
-
-    public StorageMaintainer(Terminal terminal, CoredumpHandler coredumpHandler, Path archiveContainerStoragePath, DiskCleanup diskCleanup, Clock clock) {
+    public StorageMaintainer(Terminal terminal, CoredumpHandler coredumpHandler, DiskCleanup diskCleanup,
+                             SyncClient syncClient, Clock clock, Path archiveContainerStoragePath) {
         this.terminal = terminal;
         this.coredumpHandler = coredumpHandler;
-        this.archiveContainerStoragePath = archiveContainerStoragePath;
         this.diskCleanup = diskCleanup;
+        this.syncClient = syncClient;
         this.clock = clock;
+        this.archiveContainerStoragePath = archiveContainerStoragePath;
+    }
+
+    public boolean syncLogs(NodeAgentContext context, boolean throttle) {
+        Optional<URI> archiveUri = context.node().archiveUri();
+        if (archiveUri.isEmpty()) return false;
+
+        List<SyncFileInfo> syncFileInfos = FileFinder.files(pathOnHostUnderContainerVespaHome(context, "logs/vespa"))
+                .maxDepth(2)
+                .stream()
+                .sorted(Comparator.comparing(FileFinder.FileAttributes::lastModifiedTime))
+                .flatMap(fa -> SyncFileInfo.forLogFile(archiveUri.get(), fa.path(), throttle).stream())
+                .collect(Collectors.toList());
+
+        return syncClient.sync(context, syncFileInfos, throttle ? 1 : 100);
     }
 
     public Optional<DiskSize> diskUsageFor(NodeAgentContext context) {
@@ -127,22 +145,20 @@ public class StorageMaintainer {
         Instant start = clock.instant();
         double oneMonthSeconds = Duration.ofDays(30).getSeconds();
         Function<Instant, Double> monthNormalizer = instant -> Duration.between(instant, start).getSeconds() / oneMonthSeconds;
-        Function<String, Path> pathOnHostUnderContainerVespaHome = path ->
-                context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome(path));
         List<DiskCleanupRule> rules = new ArrayList<>();
 
-        rules.add(CoredumpCleanupRule.forContainer(pathOnHostUnderContainerVespaHome.apply("var/crash")));
+        rules.add(CoredumpCleanupRule.forContainer(pathOnHostUnderContainerVespaHome(context, "var/crash")));
 
         if (context.node().membership().map(m -> m.type().isContainer()).orElse(false))
-            rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome.apply("logs/vespa/qrs")).list(),
+            rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome(context, "logs/vespa/qrs")).list(),
                     fa -> monthNormalizer.apply(fa.lastModifiedTime()), Priority.LOWEST, Priority.HIGHEST));
 
         if (context.nodeType() == NodeType.tenant && context.node().membership().map(m -> m.type().isAdmin()).orElse(false))
-            rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome.apply("logs/vespa/logarchive")).list(),
+            rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome(context, "logs/vespa/logarchive")).list(),
                     fa -> monthNormalizer.apply(fa.lastModifiedTime()), Priority.LOWEST, Priority.HIGHEST));
 
         if (context.nodeType() == NodeType.proxy)
-            rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome.apply("logs/nginx")).list(),
+            rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome(context, "logs/nginx")).list(),
                     fa -> monthNormalizer.apply(fa.lastModifiedTime()), Priority.LOWEST, Priority.MEDIUM));
 
         return rules;
@@ -211,5 +227,9 @@ public class StorageMaintainer {
                         .map(DockerImage::asString)
                         .orElse("<none>")
                 );
+    }
+
+    private static Path pathOnHostUnderContainerVespaHome(NodeAgentContext context, String path) {
+        return context.pathOnHostFromPathInNode(context.pathInNodeUnderVespaHome(path));
     }
 }
