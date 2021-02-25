@@ -5,16 +5,8 @@
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
-#include <vespa/searchlib/attribute/attributevector.h>
-#include <vespa/searchlib/attribute/attrvector.h>
 #include <vespa/searchlib/attribute/i_document_weight_attribute.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
-#include <vespa/searchlib/attribute/multinumericattribute.h>
-#include <vespa/searchlib/attribute/multinumericpostattribute.hpp>
-#include <vespa/searchlib/attribute/multistringattribute.h>
-#include <vespa/searchlib/attribute/multistringpostattribute.hpp>
-#include <vespa/searchlib/attribute/singlenumericattribute.h>
-#include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
 #include <vespa/searchlib/query/tree/location.h>
 #include <vespa/searchlib/query/tree/simplequery.h>

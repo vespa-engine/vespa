@@ -15,7 +15,6 @@
 #include <vespa/searchlib/attribute/multinumericattribute.h>
 #include <vespa/searchlib/attribute/multistringattribute.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
-#include <vespa/searchlib/attribute/singlenumericattribute.h>
 #include <vespa/searchlib/attribute/singlenumericpostattribute.h>
 #include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/multivalueattribute.hpp>

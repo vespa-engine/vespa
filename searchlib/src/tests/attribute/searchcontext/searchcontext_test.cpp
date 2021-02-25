@@ -5,8 +5,7 @@
 #include <vespa/searchlib/attribute/searchcontextelementiterator.h>
 #include <vespa/searchlib/attribute/flagattribute.h>
 #include <vespa/searchlib/attribute/singleboolattribute.h>
-#include <vespa/searchlib/attribute/singlenumericattribute.h>
-#include <vespa/searchlib/attribute/singlestringattribute.h>
+#include <vespa/searchlib/attribute/stringbase.h>
 #include <vespa/searchlib/common/bitvectoriterator.h>
 #include <vespa/searchlib/fef/matchdata.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
@@ -19,6 +18,7 @@
 #include <vespa/searchlib/test/searchiteratorverifier.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vespalib/util/compress.h>
+#include <vespa/vespalib/util/stringfmt.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("searchcontext_test");
