@@ -7,10 +7,10 @@ import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.RequestHandler;
+import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
 import org.eclipse.jetty.server.HttpConnection;
-import org.eclipse.jetty.server.ServerConnector;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -144,7 +144,8 @@ public class HttpRequestFactoryTest {
     private static HttpServletRequest createMockRequest(String scheme, String serverName, String path, String queryString) {
         HttpServletRequest request = mock(HttpServletRequest.class);
         HttpConnection connection = mock(HttpConnection.class);
-        ServerConnector connector = mock(ServerConnector.class);
+        JDiscServerConnector connector = mock(JDiscServerConnector.class);
+        when(connector.connectorConfig()).thenReturn(new ConnectorConfig(new ConnectorConfig.Builder().listenPort(LOCAL_PORT)));
         when(connector.getLocalPort()).thenReturn(LOCAL_PORT);
         when(connection.getCreatedTimeStamp()).thenReturn(System.currentTimeMillis());
         when(connection.getConnector()).thenReturn(connector);

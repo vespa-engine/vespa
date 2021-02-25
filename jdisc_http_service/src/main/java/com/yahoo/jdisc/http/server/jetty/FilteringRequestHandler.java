@@ -12,7 +12,6 @@ import com.yahoo.jdisc.handler.RequestDeniedException;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest;
-import com.yahoo.jdisc.http.core.CompletionHandlers;
 import com.yahoo.jdisc.http.filter.RequestFilter;
 import com.yahoo.jdisc.http.filter.ResponseFilter;
 

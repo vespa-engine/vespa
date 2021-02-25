@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.jdisc.http.core.HttpServletRequestUtils.getConnection;
+import static com.yahoo.jdisc.http.server.jetty.HttpServletRequestUtils.getConnection;
 
 /**
  * @author Simon Thoresen Hult
