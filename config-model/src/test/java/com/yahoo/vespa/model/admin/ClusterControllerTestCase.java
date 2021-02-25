@@ -514,7 +514,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
     }
 
     private VespaModel createVespaModel(String servicesXml) throws IOException, SAXException {
-        return createVespaModel(servicesXml, new DeployState.Builder().properties(new TestProperties().enableAutomaticReindexing(true)));
+        return createVespaModel(servicesXml, new DeployState.Builder());
     }
 
     private VespaModel createVespaModel(String servicesXml, DeployState.Builder deployStateBuilder) throws IOException, SAXException {
