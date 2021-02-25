@@ -5,6 +5,7 @@
 #include "operation.h"
 #include "visit_stuff.h"
 #include "string_stuff.h"
+#include <vespa/eval/instruction/generic_cell_cast.h>
 #include <vespa/eval/instruction/generic_concat.h>
 #include <vespa/eval/instruction/generic_create.h>
 #include <vespa/eval/instruction/generic_join.h>
@@ -307,6 +308,14 @@ Lambda::visit_self(vespalib::ObjectVisitor &visitor) const
 {
     Super::visit_self(visitor);
     ::visit(visitor, "bindings", _bindings);
+}
+
+//-----------------------------------------------------------------------------
+
+InterpretedFunction::Instruction
+CellCast::compile_self(const ValueBuilderFactory &, Stash &stash) const
+{
+    return instruction::GenericCellCast::make_instruction(result_type(), child().result_type(), stash);
 }
 
 //-----------------------------------------------------------------------------

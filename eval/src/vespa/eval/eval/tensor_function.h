@@ -355,6 +355,20 @@ public:
 
 //-----------------------------------------------------------------------------
 
+class CellCast : public Op1
+{
+private:
+    using Super = Op1;
+public:
+    CellCast(const ValueType &result_type_in, const TensorFunction &child_in)
+      : Super(result_type_in, child_in)
+    {}
+    bool result_is_mutable() const override { return true; }
+    InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
+};
+
+//-----------------------------------------------------------------------------
+
 class Peek : public Node
 {
     using Super = Node;

@@ -15,6 +15,7 @@ vespa_add_library(eval_instruction OBJECT
     dense_tensor_peek_function.cpp
     dense_xw_product_function.cpp
     fast_rename_optimizer.cpp
+    generic_cell_cast.cpp
     generic_concat.cpp
     generic_create.cpp
     generic_join.cpp

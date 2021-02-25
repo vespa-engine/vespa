@@ -72,6 +72,18 @@ vespalib::string rename_dimension(const vespalib::string &name, const std::vecto
 
 } // namespace <unnamed>
 
+TensorSpec ReferenceOperations::cell_cast(const TensorSpec &a, CellType to) {
+    ValueType a_type = ValueType::from_spec(a.type());
+    ValueType res_type = ValueType::make_type(to, a_type.dimensions());
+    TensorSpec result(res_type.to_spec());
+    if (res_type.is_error()) {
+        return result;
+    }
+    for (const auto & [ addr, value ]: a.cells()) {
+        result.add(addr, value);
+    }
+    return result;
+}
 
 TensorSpec ReferenceOperations::concat(const TensorSpec &a, const TensorSpec &b, const std::string &concat_dim) {
     ValueType a_type = ValueType::from_spec(a.type());
