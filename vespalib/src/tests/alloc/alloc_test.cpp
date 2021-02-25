@@ -47,6 +47,21 @@ TEST("test roundUp2inN") {
     EXPECT_EQUAL(16u, roundUp2inN(9));
 }
 
+TEST("test roundUp2inN elems") {
+    EXPECT_EQUAL(0u, roundUp2inN(0, 17));
+    EXPECT_EQUAL(1u, roundUp2inN(1, 17));
+    EXPECT_EQUAL(3u, roundUp2inN(2, 17));
+    EXPECT_EQUAL(3u, roundUp2inN(3, 17));
+    EXPECT_EQUAL(7u, roundUp2inN(4, 17));
+    EXPECT_EQUAL(7u, roundUp2inN(5, 17));
+    EXPECT_EQUAL(7u, roundUp2inN(6, 17));
+    EXPECT_EQUAL(7u, roundUp2inN(7, 17));
+    EXPECT_EQUAL(15u, roundUp2inN(8, 17));
+    EXPECT_EQUAL(15u, roundUp2inN(9, 17));
+    EXPECT_EQUAL(15u, roundUp2inN(15, 17));
+    EXPECT_EQUAL(30u, roundUp2inN(16, 17));
+}
+
 TEST("test basics") {
     {
         Alloc h = Alloc::allocHeap(100);
