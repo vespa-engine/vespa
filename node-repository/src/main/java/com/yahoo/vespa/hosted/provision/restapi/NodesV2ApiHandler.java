@@ -111,13 +111,14 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     private HttpResponse handleGET(HttpRequest request) {
         Path path = new Path(request.getUri());
         String pathS = request.getUri().getPath();
-        if (path.matches(    "/nodes/v2")) return new ResourceResponse(request.getUri(), "state", "node", "command", "maintenance", "upgrade", "application");
+        if (path.matches(    "/nodes/v2")) return new ResourceResponse(request.getUri(), "state", "node", "command", "maintenance", "upgrade", "application", "archive", "locks");
         if (path.matches(    "/nodes/v2/node")) return new NodesResponse(ResponseType.nodeList, request, orchestrator, nodeRepository);
         if (pathS.startsWith("/nodes/v2/node/")) return new NodesResponse(ResponseType.singleNode, request, orchestrator, nodeRepository);
         if (path.matches(    "/nodes/v2/state")) return new NodesResponse(ResponseType.stateList, request, orchestrator, nodeRepository);
         if (pathS.startsWith("/nodes/v2/state/")) return new NodesResponse(ResponseType.nodesInStateList, request, orchestrator, nodeRepository);
         if (path.matches(    "/nodes/v2/acl/{hostname}")) return new NodeAclResponse(request, nodeRepository, path.get("hostname"));
         if (path.matches(    "/nodes/v2/command")) return new ResourceResponse(request.getUri(), "restart", "reboot");
+        if (path.matches(    "/nodes/v2/archive")) return new ArchiveResponse(nodeRepository);
         if (path.matches(    "/nodes/v2/locks")) return new LocksResponse();
         if (path.matches(    "/nodes/v2/maintenance")) return new JobsResponse(nodeRepository.jobControl());
         if (path.matches(    "/nodes/v2/upgrade")) return new UpgradeResponse(nodeRepository.infrastructureVersions(), nodeRepository.osVersions(), nodeRepository.containerImages());
@@ -176,6 +177,10 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
                 return new MessageResponse("Updated " + patcher.application());
             }
         }
+        else if (path.matches("/nodes/v2/archive/{tenant}")) {
+            String uri = requiredField(toSlime(request), "uri", Inspector::asString);
+            return setTenantArchiveUri(path.get("tenant"), Optional.of(uri));
+        }
         else if (path.matches("/nodes/v2/upgrade/{nodeType}")) {
             return setTargetVersions(path.get("nodeType"), toSlime(request));
         }
@@ -206,6 +211,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     private HttpResponse handleDELETE(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/nodes/v2/node/{hostname}")) return deleteNode(path.get("hostname"));
+        if (path.matches("/nodes/v2/archive/{tenant}")) return setTenantArchiveUri(path.get("tenant"), Optional.empty());
         if (path.matches("/nodes/v2/upgrade/firmware")) return cancelFirmwareCheckResponse();
 
         throw new NotFoundException("Nothing at path '" + request.getUri().getPath() + "'");
@@ -410,6 +416,11 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     private MessageResponse requestFirmwareCheckResponse() {
         nodeRepository.firmwareChecks().request();
         return new MessageResponse("Will request firmware checks on all hosts.");
+    }
+
+    private HttpResponse setTenantArchiveUri(String tenant, Optional<String> archiveUri) {
+        nodeRepository.archiveUris().setArchiveUri(TenantName.from(tenant), archiveUri);
+        return new MessageResponse(archiveUri.map(a -> "Updated").orElse("Removed") + " archive URI for " + tenant);
     }
 
     private static String hostnamesAsString(List<Node> nodes) {

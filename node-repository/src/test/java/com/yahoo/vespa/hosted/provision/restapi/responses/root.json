@@ -17,6 +17,12 @@
     },
     {
       "url":"http://localhost:8080/nodes/v2/application/"
+    },
+    {
+      "url":"http://localhost:8080/nodes/v2/archive/"
+    },
+    {
+      "url":"http://localhost:8080/nodes/v2/locks/"
     }
   ]
 }
