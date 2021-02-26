@@ -114,8 +114,8 @@ public class ClusterApiImplTest {
         } catch (HostStateChangeDeniedException e) {
             assertThat(e.getMessage(),
                     containsString("Changing the state of cfg1 would violate enough-services-up: " +
-                            "Suspension of service with type 'configserver' would increase from 33% to 66%, " +
-                            "over the limit of 10%. Services down on resumed hosts: [1 missing config server]."));
+                            "Suspension of service with type 'configserver' not allowed: 33% are suspended already. " +
+                            "Services down on resumed hosts: [1 missing config server]."));
         }
 
         flagSource.withBooleanFlag(Flags.GROUP_SUSPENSION.id(), true);
