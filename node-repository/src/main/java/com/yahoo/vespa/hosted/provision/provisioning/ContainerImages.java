@@ -65,7 +65,7 @@ public class ContainerImages {
             image.ifPresentOrElse(img -> images.put(nodeType, img),
                                   () -> images.remove(nodeType));
             db.writeContainerImages(images);
-            this.images.refresh(); // Throw away current cache
+            this.images.invalidate(); // Throw away current cache
             log.info("Set container image for " + nodeType + " nodes to " + image.map(DockerImage::asString).orElse(null));
         }
     }

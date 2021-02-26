@@ -42,13 +42,13 @@ public class FirmwareChecks {
     /** Requests a firmware check for all hosts managed by this node repository. */
     public void request() {
         database.writeFirmwareCheck(Optional.of(clock.instant()));
-        checkAfter.refresh();
+        checkAfter.invalidate();
     }
 
     /** Clears any outstanding firmware checks for this node repository. */
     public void cancel() {
         database.writeFirmwareCheck(Optional.empty());
-        checkAfter.refresh();
+        checkAfter.invalidate();
     }
 
 }

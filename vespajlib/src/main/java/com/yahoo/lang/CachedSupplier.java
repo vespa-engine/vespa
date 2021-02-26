@@ -7,12 +7,14 @@ import java.time.Instant;
 import java.util.function.Supplier;
 
 /**
- * Supplier that caches the value for a given duration with ability to invalidate at demand.
+ * Supplier that caches the value for a given duration with ability to invalidate on demand.
  * Is thread safe.
  *
  * @author freva
  */
 public class CachedSupplier<T> implements Supplier<T> {
+
+    private final Object monitor = new Object();
 
     private final Supplier<T> delegate;
     private final Duration period;
@@ -34,18 +36,19 @@ public class CachedSupplier<T> implements Supplier<T> {
 
     @Override
     public T get() {
-        synchronized (this) {
-            if (clock.instant().isAfter(nextRefresh))
-                refresh();
+        synchronized (monitor) {
+            if (clock.instant().isAfter(nextRefresh)) {
+                this.value = delegate.get();
+                this.nextRefresh = clock.instant().plus(period);
+            }
         }
 
         return value;
     }
 
-    public void refresh() {
-        synchronized (this) {
-            this.value = delegate.get();
-            this.nextRefresh = clock.instant().plus(period);
+    public void invalidate() {
+        synchronized (monitor) {
+            this.nextRefresh = Instant.MIN;
         }
     }
 

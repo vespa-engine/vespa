@@ -29,7 +29,7 @@ public class CachedSupplierTest {
         assertEquals(2, supplier.get().intValue());
         assertEquals(2, supplier.get().intValue());
 
-        supplier.refresh();
+        supplier.invalidate();
         assertEquals(3, supplier.get().intValue());
         assertEquals(3, supplier.get().intValue());
 

@@ -72,7 +72,7 @@ public class ArchiveUris {
             archiveUri.map(ArchiveUris::normalizeUri).ifPresentOrElse(uri -> archiveUris.put(tenant, uri),
                                                                       () -> archiveUris.remove(tenant));
             db.writeArchiveUris(archiveUris);
-            this.archiveUris.refresh(); // Throw away current cache
+            this.archiveUris.invalidate(); // Throw away current cache
             log.info("Set archive URI for " + tenant + " to " + archiveUri.orElse(null));
         }
     }
