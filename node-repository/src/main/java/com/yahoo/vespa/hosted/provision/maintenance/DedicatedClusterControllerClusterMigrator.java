@@ -12,10 +12,8 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
-import java.time.DayOfWeek;
 import java.time.Duration;
 import java.time.ZonedDateTime;
-import java.util.Date;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;

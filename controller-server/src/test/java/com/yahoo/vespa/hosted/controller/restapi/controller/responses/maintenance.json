@@ -73,6 +73,9 @@
       "name": "SystemUpgrader"
     },
     {
+      "name": "TrafficShareUpdater"
+    },
+    {
       "name": "Upgrader"
     },
     {
