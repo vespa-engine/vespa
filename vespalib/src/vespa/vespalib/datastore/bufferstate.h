@@ -14,16 +14,21 @@ namespace vespalib::datastore {
  * Represents a memory allocated buffer (used in a data store) with its state.
  *
  * This class has no direct knowledge of what kind of data is stored in the buffer.
- * It uses a type handler (BufferTypeBase) to calculate how much memory to allocate,
- * and how to destruct elements in a buffer.
+ * It uses a type handler (BufferTypeBase) to manage allocation and de-allocation of a specific data type.
  *
- * It also supports use of free lists, where previously allocated elements can be re-used.
- * First the element is put on hold, then on the free list (counted as dead).
+ * A newly allocated buffer starts in state FREE where no memory is allocated.
+ * It then transitions to state ACTIVE via onActive(), where memory is allocated based on calculation from BufferTypeBase.
+ * It then transitions to state HOLD via onHold() when the buffer is no longer needed.
+ * It is kept in this state until all reader threads are no longer accessing the buffer.
+ * Finally, it transitions back to FREE via onFree() and memory is de-allocated.
+ *
+ * This class also supports use of free lists, where previously allocated elements in the buffer can be re-used.
+ * First the element is put on hold, then on the free list (counted as dead) to be re-used.
  */
 class BufferState
 {
 public:
-    typedef vespalib::alloc::Alloc Alloc;
+    using Alloc = vespalib::alloc::Alloc;
 
     class FreeListList
     {
@@ -67,10 +72,11 @@ private:
     State           _state : 8;
     bool            _disableElemHoldList : 1;
     bool            _compacting : 1;
+
 public:
-    /*
+    /**
      * TODO: Check if per-buffer free lists are useful, or if
-     *compaction should always be used to free up whole buffers.
+     * compaction should always be used to free up whole buffers.
      */
 
     BufferState();
@@ -82,10 +88,10 @@ public:
      * Transition from FREE to ACTIVE state.
      *
      * @param bufferId       Id of buffer to be active.
-     * @param typeId         registered data type for buffer.
-     * @param typeHandler    type handler for registered data type.
-     * @param elementsNeeded Number of elements needed to be free
-     * @param buffer         start of buffer.
+     * @param typeId         Registered data type id for buffer.
+     * @param typeHandler    Type handler for registered data type.
+     * @param elementsNeeded Number of elements needed to be free in the memory allocated.
+     * @param buffer         Start of allocated buffer return value.
      */
     void onActive(uint32_t bufferId, uint32_t typeId, BufferTypeBase *typeHandler,
                   size_t elementsNeeded, void *&buffer);
@@ -103,8 +109,7 @@ public:
     /**
      * Set list of buffer states with nonempty free lists.
      *
-     * @param freeListList  List of buffer states.  If nullptr then free lists
-     *              are disabled.
+     * @param freeListList  List of buffer states. If nullptr then free lists are disabled.
      */
     void setFreeListList(FreeListList *freeListList);
 
@@ -121,9 +126,8 @@ public:
     void removeFromFreeListList();
 
     /**
-     * Disable hold of elements, just mark then as dead without
-     * cleanup.  Typically used when tearing down data structure in a
-     * controlled manner.
+     * Disable hold of elements, just mark then as dead without cleanup.
+     * Typically used when tearing down data structure in a controlled manner.
      */
     void disableElemHoldList();
 

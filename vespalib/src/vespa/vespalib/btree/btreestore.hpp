@@ -48,7 +48,7 @@ BTreeStore(bool init)
     _store.addType(&_small8Type);
     _store.addType(&_treeType);
     if (init) {
-        _store.initActiveBuffers();
+        _store.init_primary_buffers();
         _store.enableFreeLists();
     }
 }

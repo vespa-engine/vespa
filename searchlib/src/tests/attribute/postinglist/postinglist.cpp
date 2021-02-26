@@ -597,7 +597,7 @@ AttributePostingListTest::doCompactEnumStore(Tree &tree,
             // Freelists already disabled due to variable sized data
         }
     }
-    valueHandle.switchActiveBuffer(0, 0u);
+    valueHandle.switch_primary_buffer(0, 0u);
 
     for (; i.valid(); ++i)
     {

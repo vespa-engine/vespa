@@ -95,11 +95,11 @@ class DataStore : public DataStoreT<RefT>
 protected:
     typedef DataStoreT<RefT> ParentType;
     using ParentType::ensureBufferCapacity;
-    using ParentType::_activeBufferIds;
+    using ParentType::_primary_buffer_ids;
     using ParentType::_freeListLists;
     using ParentType::getEntry;
     using ParentType::dropBuffers;
-    using ParentType::initActiveBuffers;
+    using ParentType::init_primary_buffers;
     using ParentType::addType;
     using BufferTypeUP = std::unique_ptr<BufferType<EntryType>>;
 

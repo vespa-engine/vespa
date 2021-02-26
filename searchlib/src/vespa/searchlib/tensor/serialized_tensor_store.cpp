@@ -23,7 +23,7 @@ SerializedTensorStore::SerializedTensorStore()
                   RefType::offsetSize() / RefType::align(1))
 {
     _store.addType(&_bufferType);
-    _store.initActiveBuffers();
+    _store.init_primary_buffers();
 }
 
 SerializedTensorStore::~SerializedTensorStore()

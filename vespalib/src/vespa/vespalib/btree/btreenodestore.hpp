@@ -41,7 +41,7 @@ BTreeNodeStore()
 {
     _store.addType(&_internalNodeType);
     _store.addType(&_leafNodeType);
-    _store.initActiveBuffers();
+    _store.init_primary_buffers();
     _store.enableFreeLists();
 }
 

@@ -20,7 +20,7 @@ UniqueStoreAllocator<EntryT, RefT>::UniqueStoreAllocator()
 {
     auto typeId = _store.addType(&_typeHandler);
     assert(typeId == 0u);
-    _store.initActiveBuffers();
+    _store.init_primary_buffers();
     _store.enableFreeLists();
 }
 

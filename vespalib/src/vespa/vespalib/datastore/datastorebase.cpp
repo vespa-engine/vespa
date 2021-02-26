@@ -2,6 +2,7 @@
 
 #include "datastore.h"
 #include <vespa/vespalib/util/array.hpp>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <limits>
 #include <cassert>
 
@@ -14,25 +15,25 @@ namespace vespalib::datastore {
 
 namespace {
 
-/*
- * Minimum dead bytes in active write buffer before switching to new
- * active write buffer even if another active buffer has more dead
- * bytes due to considering the active write buffer as too dead.
+/**
+ * Minimum dead bytes in primary write buffer before switching to new
+ * primary write buffer even if another active buffer has more dead
+ * bytes due to considering the primary write buffer as too dead.
  */
-constexpr size_t TOODEAD_SLACK = 0x4000u;
+constexpr size_t TOO_DEAD_SLACK = 0x4000u;
 
-/*
- * Check if active write buffer is too dead for further use, i.e. if it
+/**
+ * Check if primary write buffer is too dead for further use, i.e. if it
  * is likely to be the worst buffer at next compaction.  If so, filling it
  * up completely will be wasted work, as data will have to be moved again
  * rather soon.
  */
 bool
-activeWriteBufferTooDead(const BufferState &state)
+primary_buffer_too_dead(const BufferState &state)
 {
     size_t deadElems = state.getDeadElems();
     size_t deadBytes = deadElems * state.getArraySize();
-    return ((deadBytes >= TOODEAD_SLACK) && (deadElems * 2 >= state.size()));
+    return ((deadBytes >= TOO_DEAD_SLACK) && (deadElems * 2 >= state.size()));
 }
 
 }
@@ -75,7 +76,7 @@ public:
 
 DataStoreBase::DataStoreBase(uint32_t numBuffers, size_t maxArrays)
     : _buffers(numBuffers),
-      _activeBufferIds(),
+      _primary_buffer_ids(),
       _states(numBuffers),
       _typeHandlers(),
       _freeListLists(),
@@ -99,65 +100,66 @@ DataStoreBase::~DataStoreBase()
 }
 
 void
-DataStoreBase::switchActiveBuffer(uint32_t typeId, size_t elemsNeeded)
+DataStoreBase::switch_primary_buffer(uint32_t typeId, size_t elemsNeeded)
 {
-    size_t activeBufferId = _activeBufferIds[typeId];
+    size_t buffer_id = _primary_buffer_ids[typeId];
     for (size_t i = 0; i < getNumBuffers(); ++i) {
         // start using next buffer
-        activeBufferId = nextBufferId(activeBufferId);
-        if (_states[activeBufferId].isFree()) {
+        buffer_id = nextBufferId(buffer_id);
+        if (_states[buffer_id].isFree()) {
             break;
         }
     }
-    if (!_states[activeBufferId].isFree()) {
-        LOG_ABORT("did not find free buffer");
+    if (!_states[buffer_id].isFree()) {
+        LOG_ABORT(vespalib::make_string("switch_primary_buffer(%u, %zu): did not find a free buffer",
+                                        typeId, elemsNeeded).c_str());
     }
-    onActive(activeBufferId, typeId, elemsNeeded);
-    _activeBufferIds[typeId] = activeBufferId;
+    onActive(buffer_id, typeId, elemsNeeded);
+    _primary_buffer_ids[typeId] = buffer_id;
 }
 
 void
-DataStoreBase::switchOrGrowActiveBuffer(uint32_t typeId, size_t elemsNeeded)
+DataStoreBase::switch_or_grow_primary_buffer(uint32_t typeId, size_t elemsNeeded)
 {
     auto typeHandler = _typeHandlers[typeId];
     uint32_t arraySize = typeHandler->getArraySize();
     size_t numArraysForNewBuffer = typeHandler->getNumArraysForNewBuffer();
     size_t numEntriesForNewBuffer = numArraysForNewBuffer * arraySize;
-    uint32_t bufferId = _activeBufferIds[typeId];
+    uint32_t bufferId = _primary_buffer_ids[typeId];
     if (elemsNeeded + _states[bufferId].size() >= numEntriesForNewBuffer) {
         // Don't try to resize existing buffer, new buffer will be large enough
-        switchActiveBuffer(typeId, elemsNeeded);
+        switch_primary_buffer(typeId, elemsNeeded);
     } else {
         fallbackResize(bufferId, elemsNeeded);
     }
 }
 
 void
-DataStoreBase::initActiveBuffers()
+DataStoreBase::init_primary_buffers()
 {
-    uint32_t numTypes = _activeBufferIds.size();
+    uint32_t numTypes = _primary_buffer_ids.size();
     for (uint32_t typeId = 0; typeId < numTypes; ++typeId) {
-        size_t activeBufferId = 0;
+        size_t buffer_id = 0;
         for (size_t i = 0; i < getNumBuffers(); ++i) {
-            if (_states[activeBufferId].isFree()) {
+            if (_states[buffer_id].isFree()) {
                  break;
             }
             // start using next buffer
-            activeBufferId = nextBufferId(activeBufferId);
+            buffer_id = nextBufferId(buffer_id);
         }
-        assert(_states[activeBufferId].isFree());
-        onActive(activeBufferId, typeId, 0u);
-        _activeBufferIds[typeId] = activeBufferId;
+        assert(_states[buffer_id].isFree());
+        onActive(buffer_id, typeId, 0u);
+        _primary_buffer_ids[typeId] = buffer_id;
     }
 }
 
 uint32_t
 DataStoreBase::addType(BufferTypeBase *typeHandler)
 {
-    uint32_t typeId = _activeBufferIds.size();
+    uint32_t typeId = _primary_buffer_ids.size();
     assert(typeId == _typeHandlers.size());
     typeHandler->clampMaxArrays(_maxArrays);
-    _activeBufferIds.push_back(0);
+    _primary_buffer_ids.push_back(0);
     _typeHandlers.push_back(typeHandler);
     _freeListLists.push_back(BufferState::FreeListList());
     return typeId;
@@ -383,7 +385,7 @@ DataStoreBase::startCompact(uint32_t typeId)
             disableFreeList(bufferId);
         }
     }
-    switchActiveBuffer(typeId, 0u);
+    switch_primary_buffer(typeId, 0u);
     inc_compaction_count();
     return toHold;
 }
@@ -421,19 +423,19 @@ DataStoreBase::fallbackResize(uint32_t bufferId, size_t elemsNeeded)
 uint32_t
 DataStoreBase::startCompactWorstBuffer(uint32_t typeId)
 {
-    uint32_t activeBufferId = getActiveBufferId(typeId);
+    uint32_t buffer_id = get_primary_buffer_id(typeId);
     const BufferTypeBase *typeHandler = _typeHandlers[typeId];
     assert(typeHandler->getActiveBuffers() >= 1u);
     if (typeHandler->getActiveBuffers() == 1u) {
         // Single active buffer for type, no need for scan
-        _states[activeBufferId].setCompacting();
-        _states[activeBufferId].disableElemHoldList();
-        disableFreeList(activeBufferId);
-        switchActiveBuffer(typeId, 0u);
-        return activeBufferId;
+        _states[buffer_id].setCompacting();
+        _states[buffer_id].disableElemHoldList();
+        disableFreeList(buffer_id);
+        switch_primary_buffer(typeId, 0u);
+        return buffer_id;
     }
     // Multiple active buffers for type, must perform full scan
-    return startCompactWorstBuffer(activeBufferId,
+    return startCompactWorstBuffer(buffer_id,
                                    [=](const BufferState &state) { return state.isActive(typeId); });
 }
 
@@ -462,9 +464,9 @@ DataStoreBase::markCompacting(uint32_t bufferId)
 {
     auto &state = getBufferState(bufferId);
     uint32_t typeId = state.getTypeId();
-    uint32_t activeBufferId = getActiveBufferId(typeId);
-    if ((bufferId == activeBufferId) || activeWriteBufferTooDead(getBufferState(activeBufferId))) {
-        switchActiveBuffer(typeId, 0u);
+    uint32_t buffer_id = get_primary_buffer_id(typeId);
+    if ((bufferId == buffer_id) || primary_buffer_too_dead(getBufferState(buffer_id))) {
+        switch_primary_buffer(typeId, 0u);
     }
     state.setCompacting();
     state.disableElemHoldList();
