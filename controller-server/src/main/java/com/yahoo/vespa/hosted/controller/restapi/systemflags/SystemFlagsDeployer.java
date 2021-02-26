@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.restapi.systemflags;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.config.provision.SystemName;
-import java.util.logging.Level;
 import com.yahoo.vespa.athenz.identity.ServiceIdentityProvider;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.Flags;
@@ -25,6 +24,7 @@ import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.function.Function;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -181,9 +181,11 @@ class SystemFlagsDeployer  {
                                                            Map<FlagId, FlagData> currentFlagData,
                                                            List<FlagId> definedFlags,
                                                            List<OperationError> errors) {
+        String errorMessage = "Flag not defined in target zone. If zone/configserver cluster is new, add an empty flag " +
+                "data file for this zone as a temporary measure until the stale flag data files are removed.";
         for (FlagId flagId : wantedFlagData.keySet()) {
             if (!currentFlagData.containsKey(flagId) && !definedFlags.contains(flagId)) {
-                errors.add(OperationError.createFailed("Flag not defined in target zone", target, wantedFlagData.get(flagId)));
+                errors.add(OperationError.createFailed(errorMessage, target, wantedFlagData.get(flagId)));
             }
         }
     }
