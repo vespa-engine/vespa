@@ -133,10 +133,6 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
         if (!this.isSurplus && other.isSurplus) return -1;
         if (!other.isSurplus && this.isSurplus) return 1;
 
-        // Prefer node on exclusive switch
-        int switchPriority = switchPriority(other);
-        if (switchPriority != 0) return switchPriority;
-
         // Choose reserved nodes from a previous allocation attempt (which exist in node repo)
         if (this.isInNodeRepoAndReserved() && ! other.isInNodeRepoAndReserved()) return -1;
         if (other.isInNodeRepoAndReserved() && ! this.isInNodeRepoAndReserved()) return 1;
@@ -157,6 +153,11 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
             if ( this.parent.get().reservedTo().isPresent() && ! other.parent.get().reservedTo().isPresent()) return -1;
             if ( ! this.parent.get().reservedTo().isPresent() && other.parent.get().reservedTo().isPresent()) return 1;
 
+            // Prefer node on exclusive switch
+            int switchPriority = switchPriority(other);
+            if (switchPriority != 0) return switchPriority;
+
+            // Prefer node with cheapest storage
             int diskCostDifference = NodeResources.DiskSpeed.compare(this.parent.get().flavor().resources().diskSpeed(),
                                                                      other.parent.get().flavor().resources().diskSpeed());
             if (diskCostDifference != 0)
@@ -173,14 +174,15 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
             if ( ! lessThanHalfTheHost(this) && lessThanHalfTheHost(other)) return 1;
         }
 
+        // Prefer host with least skew
         int hostPriority = hostPriority(other);
         if (hostPriority != 0) return hostPriority;
 
-        // Choose cheapest node
+        // Prefer node with cheapest flavor
         if (this.flavor().cost() < other.flavor().cost()) return -1;
         if (other.flavor().cost() < this.flavor().cost()) return 1;
 
-        // Choose nodes where host is in more desirable state
+        // Prefer node where host is in more desirable state
         int thisHostStatePri = this.parent.map(host -> HOST_STATE_PRIORITY.indexOf(host.state())).orElse(-2);
         int otherHostStatePri = other.parent.map(host -> HOST_STATE_PRIORITY.indexOf(host.state())).orElse(-2);
         if (thisHostStatePri != otherHostStatePri) return otherHostStatePri - thisHostStatePri;
