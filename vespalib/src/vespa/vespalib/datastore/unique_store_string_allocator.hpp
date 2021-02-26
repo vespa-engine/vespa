@@ -23,7 +23,7 @@ UniqueStoreStringAllocator<RefT>::UniqueStoreStringAllocator()
         assert(type_id == exp_type_id);
         ++exp_type_id;
     }
-    _store.initActiveBuffers();
+    _store.init_primary_buffers();
     _store.enableFreeLists();
 }
 

@@ -54,7 +54,7 @@ ArrayStore<EntryT, RefT>::ArrayStore(const ArrayStoreConfig &cfg)
       _largeArrayType(cfg.specForSize(0))
 {
     initArrayTypes(cfg);
-    _store.initActiveBuffers();
+    _store.init_primary_buffers();
     if (cfg.enable_free_lists()) {
         _store.enableFreeLists();
     }

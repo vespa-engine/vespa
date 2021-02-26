@@ -70,7 +70,7 @@ PostingStore<DataT>::PostingStore(EnumPostingTree &dict, Status &status,
 {
     // TODO: Add type for bitvector
     _store.addType(&_bvType);
-    _store.initActiveBuffers();
+    _store.init_primary_buffers();
     _store.enableFreeLists();
 }
 

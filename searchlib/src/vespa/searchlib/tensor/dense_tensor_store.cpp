@@ -77,7 +77,7 @@ DenseTensorStore::DenseTensorStore(const ValueType &type, std::unique_ptr<vespal
 {
     _emptySpace.resize(getBufSize(), 0);
     _store.addType(&_bufferType);
-    _store.initActiveBuffers();
+    _store.init_primary_buffers();
     _store.enableFreeLists();
 }
 

@@ -88,7 +88,7 @@ FeatureStore::FeatureStore(const Schema &schema)
         _fieldsParams[it.getIndex()].setSchemaParams(_schema, it.getIndex());
     }
     _store.addType(&_type);
-    _store.initActiveBuffers();
+    _store.init_primary_buffers();
 }
 
 FeatureStore::~FeatureStore()

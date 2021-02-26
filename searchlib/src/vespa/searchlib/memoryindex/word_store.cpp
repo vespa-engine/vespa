@@ -16,7 +16,7 @@ WordStore::WordStore()
       _typeId(0)
 {
     _store.addType(&_type);
-    _store.initActiveBuffers();
+    _store.init_primary_buffers();
 }
 
 

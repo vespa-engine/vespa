@@ -17,7 +17,7 @@ using vespalib::alloc::MemoryAllocator;
 class MyStore : public DataStore<int, EntryRefT<3, 2> > {
 private:
     using ParentType = DataStore<int, EntryRefT<3, 2> >;
-    using ParentType::_activeBufferIds;
+    using ParentType::_primary_buffer_ids;
 public:
     MyStore() {}
     explicit MyStore(std::unique_ptr<BufferType<int>> type)
@@ -44,12 +44,12 @@ public:
     void enableFreeLists() {
         ParentType::enableFreeLists();
     }
-    void switchActiveBuffer() {
-        ParentType::switchActiveBuffer(0, 0u);
+    void switch_primary_buffer() {
+        ParentType::switch_primary_buffer(0, 0u);
     }
-    size_t activeBufferId() const { return _activeBufferIds[0]; }
+    size_t primary_buffer_id() const { return _primary_buffer_ids[0]; }
     BufferState& get_active_buffer_state() {
-        return ParentType::getBufferState(activeBufferId());
+        return ParentType::getBufferState(primary_buffer_id());
     }
 };
 
@@ -76,7 +76,7 @@ public:
     {
         (void) _store.addType(&_firstType);
         _typeId = _store.addType(&_type);
-        _store.initActiveBuffers();
+        _store.init_primary_buffers();
     }
     ~GrowStore() { _store.dropBuffers(); }
 
@@ -244,20 +244,20 @@ TEST(DataStoreTest, require_that_we_can_hold_and_trim_buffers)
 {
     MyStore s;
     EXPECT_EQ(0u, MyRef(s.addEntry(1)).bufferId());
-    s.switchActiveBuffer();
-    EXPECT_EQ(1u, s.activeBufferId());
+    s.switch_primary_buffer();
+    EXPECT_EQ(1u, s.primary_buffer_id());
     s.holdBuffer(0); // hold last buffer
     s.transferHoldLists(10);
 
     EXPECT_EQ(1u, MyRef(s.addEntry(2)).bufferId());
-    s.switchActiveBuffer();
-    EXPECT_EQ(2u, s.activeBufferId());
+    s.switch_primary_buffer();
+    EXPECT_EQ(2u, s.primary_buffer_id());
     s.holdBuffer(1); // hold last buffer
     s.transferHoldLists(20);
 
     EXPECT_EQ(2u, MyRef(s.addEntry(3)).bufferId());
-    s.switchActiveBuffer();
-    EXPECT_EQ(3u, s.activeBufferId());
+    s.switch_primary_buffer();
+    EXPECT_EQ(3u, s.primary_buffer_id());
     s.holdBuffer(2); // hold last buffer
     s.transferHoldLists(30);
 
@@ -275,8 +275,8 @@ TEST(DataStoreTest, require_that_we_can_hold_and_trim_buffers)
     EXPECT_TRUE(s.getBufferState(2).size() != 0);
     EXPECT_TRUE(s.getBufferState(3).size() != 0);
 
-    s.switchActiveBuffer();
-    EXPECT_EQ(0u, s.activeBufferId());
+    s.switch_primary_buffer();
+    EXPECT_EQ(0u, s.primary_buffer_id());
     EXPECT_EQ(0u, MyRef(s.addEntry(5)).bufferId());
     s.trimHoldLists(41);
     EXPECT_TRUE(s.getBufferState(0).size() != 0);
@@ -429,7 +429,7 @@ TEST(DataStoreTest, require_that_memory_stats_are_calculated)
     assertMemStats(m, s.getMemStats());
 
     // new active buffer
-    s.switchActiveBuffer();
+    s.switch_primary_buffer();
     s.addEntry(40);
     m._allocElems += MyRef::offsetSize();
     m._usedElems++;
@@ -623,7 +623,7 @@ TEST(DataStoreTest, can_set_memory_allocator)
         auto ref2 = s.addEntry(43);
         EXPECT_EQ(0u, MyRef(ref2).bufferId());
         EXPECT_EQ(AllocStats(2, 0), stats);
-        s.switchActiveBuffer();
+        s.switch_primary_buffer();
         EXPECT_EQ(AllocStats(3, 0), stats);
         s.holdBuffer(0);
         s.transferHoldLists(10);

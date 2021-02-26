@@ -149,7 +149,7 @@ DataStore<EntryType, RefT>::DataStore(BufferTypeUP type)
       _type(std::move(type))
 {
     addType(_type.get());
-    initActiveBuffers();
+    init_primary_buffers();
 }
 
 template <typename EntryType, typename RefT>

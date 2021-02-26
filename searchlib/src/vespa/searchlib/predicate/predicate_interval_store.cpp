@@ -26,7 +26,7 @@ PredicateIntervalStore::PredicateIntervalStore()
     // This order determines type ids.
     _store.addType(&_size1Type);
 
-    _store.initActiveBuffers();
+    _store.init_primary_buffers();
 }
 
 PredicateIntervalStore::~PredicateIntervalStore() {

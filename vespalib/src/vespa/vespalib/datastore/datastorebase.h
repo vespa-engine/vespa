@@ -55,7 +55,9 @@ private:
     };
     std::vector<BufferAndTypeId> _buffers; // For fast mapping with known types
 protected:
-    std::vector<uint32_t> _activeBufferIds; // typeId -> active buffer
+    // Provides a mapping from typeId -> primary buffer for that type.
+    // The primary buffer is used for allocations of new element(s) if no available slots are found in free lists.
+    std::vector<uint32_t> _primary_buffer_ids;
 
     void * getBuffer(uint32_t bufferId) { return _buffers[bufferId].getBuffer(); }
 
@@ -176,10 +178,10 @@ protected:
     }
 
     /**
-     * Get the active buffer for the given type id.
+     * Get the primary buffer for the given type id.
      */
-    void *activeBuffer(uint32_t typeId) {
-        return _buffers[_activeBufferIds[typeId]].getBuffer();
+    void* primary_buffer(uint32_t typeId) {
+        return _buffers[_primary_buffer_ids[typeId]].getBuffer();
     }
 
     /**
@@ -196,20 +198,20 @@ protected:
     void markCompacting(uint32_t bufferId);
 public:
     uint32_t addType(BufferTypeBase *typeHandler);
-    void initActiveBuffers();
+    void init_primary_buffers();
 
     /**
-     * Ensure that active buffer has a given number of elements free at end.
+     * Ensure that the primary buffer for the given type has a given number of elements free at end.
      * Switch to new buffer if current buffer is too full.
      *
-     * @param typeId      registered data type for buffer.
-     * @param elemsNeeded Number of elements needed to be free
+     * @param typeId      Registered data type for buffer.
+     * @param elemsNeeded Number of elements needed to be free.
      */
     void ensureBufferCapacity(uint32_t typeId, size_t elemsNeeded) {
         if (__builtin_expect(elemsNeeded >
-                             _states[_activeBufferIds[typeId]].remaining(),
+                             _states[_primary_buffer_ids[typeId]].remaining(),
                              false)) {
-            switchOrGrowActiveBuffer(typeId, elemsNeeded);
+            switch_or_grow_primary_buffer(typeId, elemsNeeded);
         }
     }
 
@@ -221,24 +223,24 @@ public:
     void holdBuffer(uint32_t bufferId);
 
     /**
-     * Switch to new active buffer, typically in preparation for compaction
-     * or when current active buffer no longer has free space.
+     * Switch to a new primary buffer, typically in preparation for compaction
+     * or when the current primary buffer no longer has free space.
      *
-     * @param typeId      registered data type for buffer.
-     * @param elemsNeeded Number of elements needed to be free
+     * @param typeId      Registered data type for buffer.
+     * @param elemsNeeded Number of elements needed to be free.
      */
-    void switchActiveBuffer(uint32_t typeId, size_t elemsNeeded);
+    void switch_primary_buffer(uint32_t typeId, size_t elemsNeeded);
 
-    void switchOrGrowActiveBuffer(uint32_t typeId, size_t elemsNeeded);
+    void switch_or_grow_primary_buffer(uint32_t typeId, size_t elemsNeeded);
 
     vespalib::MemoryUsage getMemoryUsage() const;
 
     vespalib::AddressSpace getAddressSpaceUsage() const;
 
     /**
-     * Get active buffer id for the given type id.
+     * Get the primary buffer id for the given type id.
      */
-    uint32_t getActiveBufferId(uint32_t typeId) const { return _activeBufferIds[typeId]; }
+    uint32_t get_primary_buffer_id(uint32_t typeId) const { return _primary_buffer_ids[typeId]; }
     const BufferState &getBufferState(uint32_t bufferId) const { return _states[bufferId]; }
     BufferState &getBufferState(uint32_t bufferId) { return _states[bufferId]; }
     uint32_t getNumBuffers() const { return _numBuffers; }
@@ -340,11 +342,11 @@ public:
 
 private:
     /**
-     * Switch buffer state to active.
+     * Switch buffer state to active for the given buffer.
      *
      * @param bufferId    Id of buffer to be active.
-     * @param typeId      registered data type for buffer.
-     * @param elemsNeeded Number of elements needed to be free
+     * @param typeId      Registered data type for buffer.
+     * @param elemsNeeded Number of elements needed to be free.
      */
     void onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded);
 
