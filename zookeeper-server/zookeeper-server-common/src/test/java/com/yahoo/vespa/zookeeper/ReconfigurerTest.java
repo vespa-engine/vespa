@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -81,6 +82,14 @@ public class ReconfigurerTest {
         assertEquals("1=node2:2182:2183;2181,2=node3:2182:2183;2181", reconfigurer.joiningServers());
         assertEquals("1,2", reconfigurer.leavingServers());
         assertSame(nextConfig, reconfigurer.activeConfig());
+
+        // Reconfigure without using config
+        reconfigurer.reconfigure(List.of(new ZooKeeperServer(0, "node0"),
+                                         new ZooKeeperServer(1, "node2"),
+                                         new ZooKeeperServer(3, "node4")));
+        assertEquals(4, reconfigurer.reconfigurations());
+        assertEquals("3=node4:2182:2183;2181", reconfigurer.joiningServers());
+        assertEquals("2", reconfigurer.leavingServers());
     }
 
     @Test
