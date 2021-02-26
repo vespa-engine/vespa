@@ -20,7 +20,9 @@ namespace vespalib::datastore {
 class DataStoreBase
 {
 public:
-    // Hold list before freeze, before knowing how long elements must be held
+    /**
+     * Hold list before freeze, before knowing how long elements must be held.
+     */
     class ElemHold1ListElem
     {
     public:
@@ -34,21 +36,21 @@ public:
     };
 
 protected:
-    typedef vespalib::GenerationHandler::generation_t generation_t;
-    typedef vespalib::GenerationHandler::sgeneration_t sgeneration_t;
+    using generation_t = vespalib::GenerationHandler::generation_t;
+    using sgeneration_t = vespalib::GenerationHandler::sgeneration_t;
 
 private:
     class BufferAndTypeId {
     public:
-        using B = void *;
+        using MemPtr = void *;
         BufferAndTypeId() : BufferAndTypeId(nullptr, 0) { }
-        BufferAndTypeId(B buffer, uint32_t typeId) : _buffer(buffer), _typeId(typeId) { }
-        B getBuffer() const { return _buffer; }
-        B & getBuffer() { return _buffer; }
+        BufferAndTypeId(MemPtr buffer, uint32_t typeId) : _buffer(buffer), _typeId(typeId) { }
+        MemPtr getBuffer() const { return _buffer; }
+        MemPtr & getBuffer() { return _buffer; }
         uint32_t getTypeId() const { return _typeId; }
         void setTypeId(uint32_t typeId) { _typeId = typeId; }
     private:
-        B          _buffer;
+        MemPtr     _buffer;
         uint32_t   _typeId;
     };
     std::vector<BufferAndTypeId> _buffers; // For fast mapping with known types
@@ -56,7 +58,10 @@ protected:
     std::vector<uint32_t> _activeBufferIds; // typeId -> active buffer
 
     void * getBuffer(uint32_t bufferId) { return _buffers[bufferId].getBuffer(); }
-    // Hold list at freeze, when knowing how long elements must be held
+
+    /**
+     * Hold list at freeze, when knowing how long elements must be held
+     */
     class ElemHold2ListElem : public ElemHold1ListElem
     {
     public:
@@ -68,9 +73,12 @@ protected:
         { }
     };
 
-    typedef vespalib::Array<ElemHold1ListElem> ElemHold1List;
-    typedef std::deque<ElemHold2ListElem> ElemHold2List;
+    using ElemHold1List = vespalib::Array<ElemHold1ListElem>;
+    using ElemHold2List = std::deque<ElemHold2ListElem>;
 
+    /**
+     * Class used to hold the old buffer as part of fallbackResize().
+     */
     class FallbackHold : public vespalib::GenerationHeldBase
     {
     public:
@@ -117,9 +125,7 @@ public:
               _holdBuffers(0)
         { }
 
-        MemStats &
-        operator+=(const MemStats &rhs)
-        {
+        MemStats& operator+=(const MemStats &rhs) {
             _allocElems += rhs._allocElems;
             _usedElems += rhs._usedElems;
             _deadElems += rhs._deadElems;
@@ -160,10 +166,7 @@ protected:
     virtual ~DataStoreBase();
 
     /**
-     * Get next buffer id
-     *
-     * @param bufferId current buffer id
-     * @return         next buffer id
+     * Get the next buffer id after the given buffer id.
      */
     uint32_t nextBufferId(uint32_t bufferId) {
         uint32_t ret = bufferId + 1;
@@ -173,9 +176,7 @@ protected:
     }
 
     /**
-     * Get active buffer
-     *
-     * @return          active buffer
+     * Get the active buffer for the given type id.
      */
     void *activeBuffer(uint32_t typeId) {
         return _buffers[_activeBufferIds[typeId]].getBuffer();
@@ -296,7 +297,8 @@ public:
     }
 
     /**
-     * Enable free list management.  This only works for fixed size elements.
+     * Enable free list management.
+     * This only works for fixed size elements.
      */
     void enableFreeLists();
 
@@ -306,7 +308,8 @@ public:
     void disableFreeLists();
 
     /**
-     * Enable free list management.  This only works for fixed size elements.
+     * Enable free list management.
+     * This only works for fixed size elements.
      */
     void enableFreeList(uint32_t bufferId);
 
@@ -325,11 +328,13 @@ public:
         return _freeListLists[typeId];
     }
 
+    /**
+     * Returns aggregated memory statistics for all buffers in this data store.
+     */
     MemStats getMemStats() const;
 
-    /*
-     * Assume that no readers are present while data structure is being
-     * intialized.
+    /**
+     * Assume that no readers are present while data structure is being initialized.
      */
     void setInitializing(bool initializing) { _initializing = initializing; }
 
