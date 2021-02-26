@@ -1,15 +1,17 @@
-// Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vespa.clustercontroller.core.database.CasWriteFailed;
 import com.yahoo.vespa.clustercontroller.core.database.Database;
 import com.yahoo.vespa.clustercontroller.core.database.ZooKeeperDatabase;
+import com.yahoo.vespa.curator.Curator;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.io.IOException;
 import java.time.Duration;
+import java.util.Optional;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
@@ -30,6 +32,13 @@ public class ZooKeeperDatabaseTest {
 
         Fixture() throws IOException {
             zkServer = new ZooKeeperTestServer();
+            try (Curator curator = Curator.create("localhost:" + zkServer.getPort(), Optional.empty())) {
+                try {
+                    curator.framework().blockUntilConnected();
+                } catch (InterruptedException interruptedException) {
+                    throw new RuntimeException(interruptedException);
+                }
+            }
             clusterFixture = ClusterFixture.forFlatCluster(10);
         }
 
@@ -51,7 +60,7 @@ public class ZooKeeperDatabaseTest {
         @Override
         public void close() {
             closeDatabaseIfOpen();
-            zkServer.shutdown(true);
+            zkServer.shutdown();
         }
     }
 

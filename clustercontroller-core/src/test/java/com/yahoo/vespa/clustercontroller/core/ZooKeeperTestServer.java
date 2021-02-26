@@ -1,66 +1,35 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
-import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
-import com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl;
 import com.yahoo.vespa.zookeeper.VespaZooKeeperTestServer;
 
-import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
-import java.nio.file.Paths;
 import java.time.Duration;
-import java.util.Optional;
 
 /**
  * This class sets up a zookeeper server, such that we can test fleetcontroller zookeeper parts without stubbing in the client.
  */
 public class ZooKeeperTestServer {
-    private final File zooKeeperDir;
     private final VespaZooKeeperServer server;
     private static final Duration tickTime = Duration.ofMillis(2000);
-    private static final String DIR_PREFIX = "test_fltctrl_zk";
-    private static final String DIR_POSTFIX = "sdir";
+
+
     private final int port;
 
     ZooKeeperTestServer() throws IOException {
-        this(0);
+        this(0, tickTime);
     }
 
-    private ZooKeeperTestServer(int wantedPort) throws IOException {
+    ZooKeeperTestServer(int wantedPort, Duration tickTime) throws IOException {
         this.port = findFreePort(wantedPort);
-        zooKeeperDir = getTempDir();
-        delete(zooKeeperDir);
-        if (!zooKeeperDir.mkdir()) {
-            throw new IllegalStateException("Failed to create directory " + zooKeeperDir);
-        }
-        zooKeeperDir.deleteOnExit();
-        ZookeeperServerConfig config = new ZookeeperServerConfig.Builder()
-                .tickTime((int) tickTime.toMillis())
-                .clientPort(this.port)
-                .server(new ZookeeperServerConfig.Server.Builder().hostname("localhost").id(0))
-                .myid(0)
-                .zooKeeperConfigFile(zooKeeperDir.toPath().resolve("zookeeper.cfg").toFile().getAbsolutePath())
-                .dataDir(zooKeeperDir.toPath().toFile().getAbsolutePath())
-                .myidFile(zooKeeperDir.toPath().resolve("myId").toFile().getAbsolutePath())
-                .build();
-        server = new VespaZooKeeperTestServer(config);
-        server.start(Paths.get(config.zooKeeperConfigFile()));
-
-        try (Curator curator = Curator.create("localhost:" + port, Optional.empty())) {
-            try {
-                curator.framework().blockUntilConnected();
-            } catch (InterruptedException interruptedException) {
-                throw new RuntimeException(interruptedException);
-            }
-        }
+        server = VespaZooKeeperTestServer.createAndStartServer(port, (int) tickTime.toMillis());
     }
 
     static ZooKeeperTestServer createWithFixedPort(int port) throws IOException {
-        return new ZooKeeperTestServer(port);
+        return new ZooKeeperTestServer(port, tickTime);
     }
 
     private int findFreePort(int port) {
@@ -72,39 +41,14 @@ public class ZooKeeperTestServer {
         }
     }
 
-    private int getPort() { return port; }
+    public int getPort() { return port; }
 
     String getAddress() {
         return HostName.getLocalhost() + ":" + getPort();
     }
 
-    public void shutdown(boolean cleanupZooKeeperDir) {
+    public void shutdown() {
         server.shutdown();
-
-        if (cleanupZooKeeperDir) {
-            delete(zooKeeperDir);
-        }
-    }
-
-    private void delete(File f) {
-        if (f.isDirectory()) {
-            for (File file : f.listFiles()) {
-                delete(file);
-            }
-        }
-        f.delete();
-    }
-
-    private static File getTempDir() throws IOException {
-        // The pom file sets java.io.tmpdir to ${project.build.directory}. This doesn't happen within (e.g.) IntelliJ, but happens
-        // on Screwdriver (tm). So if we're running tests on Screwdriver (tm), put the log in 'surefire-reports' instead so the
-        // user can find them along with the other test reports.
-        final File surefireReportsDir = new File(System.getProperty("java.io.tmpdir") + File.separator + "surefire-reports");
-        if (surefireReportsDir.isDirectory()) {
-            return File.createTempFile(DIR_PREFIX, DIR_POSTFIX, surefireReportsDir);
-        }
-
-        return File.createTempFile(DIR_PREFIX, DIR_POSTFIX);
     }
 
 }

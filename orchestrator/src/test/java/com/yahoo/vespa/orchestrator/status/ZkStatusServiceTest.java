@@ -10,16 +10,13 @@ import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.curator.Curator;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.OrchestratorContext;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
 import com.yahoo.vespa.orchestrator.TestIds;
 import com.yahoo.vespa.service.monitor.AntiServiceMonitor;
 import com.yahoo.vespa.service.monitor.CriticalRegion;
+import com.yahoo.vespa.zookeeper.VespaZooKeeperTestServer;
 import com.yahoo.yolean.Exceptions;
-import org.apache.curator.framework.CuratorFramework;
-import org.apache.curator.test.KillSession;
-import org.apache.curator.test.TestingServer;
 import org.apache.zookeeper.data.Stat;
 import org.hamcrest.Description;
 import org.hamcrest.Matcher;
@@ -28,17 +25,16 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.mockito.ArgumentCaptor;
-import org.mockito.Captor;
 import org.mockito.junit.MockitoJUnitRunner;
 
+import java.io.IOException;
+import java.net.ServerSocket;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.CompletableFuture;
@@ -64,7 +60,7 @@ import static org.mockito.Mockito.when;
 
 @RunWith(MockitoJUnitRunner.class)
 public class ZkStatusServiceTest {
-    private TestingServer testingServer;
+    private VespaZooKeeperTestServer testingServer;
     private ZkStatusService statusService;
     private Curator curator;
     private final Timer timer = mock(Timer.class);
@@ -73,15 +69,12 @@ public class ZkStatusServiceTest {
     private final CriticalRegion criticalRegion = mock(CriticalRegion.class);
     private final AntiServiceMonitor antiServiceMonitor = mock(AntiServiceMonitor.class);
 
-    @Captor
-    private ArgumentCaptor<Map<String, String>> captor;
-
     @Before
     public void setUp() throws Exception {
         Logger.getLogger("").setLevel(Level.WARNING);
-
-        testingServer = new TestingServer();
-        curator = createConnectedCurator(testingServer);
+        int port = findFreePort();
+        testingServer = VespaZooKeeperTestServer.createAndStartServer(port, 10_000);
+        curator = createConnectedCurator(port);
         statusService = new ZkStatusService(curator, metric, timer, antiServiceMonitor);
         when(context.getTimeLeft()).thenReturn(Duration.ofSeconds(10));
         when(context.isProbe()).thenReturn(false);
@@ -90,32 +83,31 @@ public class ZkStatusServiceTest {
         when(antiServiceMonitor.disallowDuperModelLockAcquisition(any())).thenReturn(criticalRegion);
     }
 
-    private static Curator createConnectedCurator(TestingServer server) throws InterruptedException {
-        Curator curator = Curator.create(server.getConnectString(), Optional.empty());
+    private static Curator createConnectedCurator(int port) throws InterruptedException {
+        Curator curator = Curator.create("localhost:" + port, Optional.empty());
         curator.framework().blockUntilConnected(1, TimeUnit.MINUTES);
         return curator;
     }
 
     @After
-    public void tearDown() throws Exception {
+    public void tearDown() {
         if (curator != null) { //teardown is called even if setUp fails.
             curator.close();
             curator = null;
         }
         if (testingServer != null) {
-            testingServer.close();
+            testingServer.shutdown();
         }
     }
 
     @Test
-    public void host_state_for_unknown_hosts_is_no_remarks() throws Exception {
-        assertThat(
-                statusService.getHostInfo(TestIds.APPLICATION_INSTANCE_REFERENCE, TestIds.HOST_NAME1).status(),
-                is(HostStatus.NO_REMARKS));
+    public void host_state_for_unknown_hosts_is_no_remarks() {
+        assertEquals(HostStatus.NO_REMARKS,
+                     statusService.getHostInfo(TestIds.APPLICATION_INSTANCE_REFERENCE, TestIds.HOST_NAME1).status());
     }
 
     @Test
-    public void setting_host_state_is_idempotent() throws Exception {
+    public void setting_host_state_is_idempotent() {
         when(timer.currentTime()).thenReturn(
                 Instant.ofEpochMilli((1)),
                 Instant.ofEpochMilli((3)),
@@ -177,9 +169,6 @@ public class ZkStatusServiceTest {
                     fail("Both zookeeper host status services locked simultaneously for the same application instance");
                 }
                 catch (RuntimeException expected) { }
-                finally {
-                    killSession(curator.framework(), testingServer);
-                }
 
                 // Throws SessionFailedException if the SessionFailRetryLoop has not been closed.
                 lock.getHostInfos().getOrNoRemarks(TestIds.HOST_NAME1);
@@ -228,17 +217,8 @@ public class ZkStatusServiceTest {
         };
     }
 
-    @SuppressWarnings("deprecation")
-    private static void killSession(CuratorFramework curatorFramework, TestingServer testingServer) {
-        try {
-            KillSession.kill(curatorFramework.getZookeeperClient().getZooKeeper(), testingServer.getConnectString());
-        } catch (Exception e) {
-            throw new RuntimeException("Failed killing session. ", e);
-        }
-    }
-
     @Test
-    public void suspend_and_resume_application_works_and_is_symmetric() throws Exception {
+    public void suspend_and_resume_application_works_and_is_symmetric() {
 
         // Initial state is NO_REMARK
         assertThat(
@@ -270,7 +250,7 @@ public class ZkStatusServiceTest {
     }
 
     @Test
-    public void suspending_two_applications_returns_two_applications() throws Exception {
+    public void suspending_two_applications_returns_two_applications() {
         Set<ApplicationInstanceReference> suspendedApps = statusService.getAllSuspendedApplications();
         assertThat(suspendedApps.size(), is(0));
 
@@ -291,7 +271,7 @@ public class ZkStatusServiceTest {
     }
 
     @Test
-    public void zookeeper_cleanup() throws Exception {
+    public void zookeeper_cleanup() {
         HostName strayHostname = new HostName("stray1.com");
 
         verify(antiServiceMonitor, times(0)).disallowDuperModelLockAcquisition(any());
@@ -405,6 +385,14 @@ public class ZkStatusServiceTest {
         List<T> list = new ArrayList<>(Arrays.asList(values));
         Collections.shuffle(list);
         return list;
+    }
+
+    private int findFreePort() {
+        try (ServerSocket serverSocket = new ServerSocket(0)) {
+            return serverSocket.getLocalPort();
+        } catch (IOException e) {
+            throw new NullPointerException("Could not find any free port");
+        }
     }
 
 }

@@ -28,10 +28,6 @@ import com.yahoo.vespa.clustercontroller.core.testutils.WaitTask;
 import com.yahoo.vespa.clustercontroller.core.testutils.Waiter;
 import com.yahoo.vespa.clustercontroller.utils.util.NoMetricReporter;
 import org.junit.After;
-import org.junit.Rule;
-import org.junit.rules.TestRule;
-import org.junit.rules.TestWatcher;
-import org.junit.runner.Description;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -95,30 +91,6 @@ public abstract class FleetControllerTest implements Waiter {
         public boolean shouldWarn(double v) { return ((counter % 1000) == 10); }
     }
 
-    protected class CleanupZookeeperLogsOnSuccess extends TestWatcher {
-        @Override
-        protected void failed(Throwable e, Description description) {
-            System.err.println("TEST FAILED - NOT cleaning up zookeeper directory");
-            shutdownZooKeeper(false);
-        }
-
-        @Override
-        protected void succeeded(Description description) {
-            System.err.println("TEST SUCCEEDED - cleaning up zookeeper directory");
-            shutdownZooKeeper(true);
-        }
-
-        private void shutdownZooKeeper(boolean cleanupZooKeeperDir) {
-            if (zooKeeperServer != null) {
-                zooKeeperServer.shutdown(cleanupZooKeeperDir);
-                zooKeeperServer = null;
-            }
-        }
-    }
-
-    @Rule
-    public TestRule cleanupZookeeperLogsOnSuccess = new CleanupZookeeperLogsOnSuccess();
-
     protected void startingTest(String name) {
         System.err.println("STARTING TEST: " + name);
         testName = name;
@@ -134,6 +106,12 @@ public abstract class FleetControllerTest implements Waiter {
         var opts = new FleetControllerOptions(clusterName, nodes);
         opts.enableTwoPhaseClusterStateActivation = true; // Enable by default, tests can explicitly disable.
         return opts;
+    }
+
+    @After
+    public void shutdown() {
+        if (zooKeeperServer != null)
+            zooKeeperServer.shutdown();
     }
 
     void setUpSystem(boolean useFakeTimer, FleetControllerOptions options) throws Exception {
@@ -189,6 +167,7 @@ public abstract class FleetControllerTest implements Waiter {
     protected void setUpFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread) throws Exception {
         setUpFleetController(useFakeTimer, options, startThread, new StatusHandler.ContainerStatusPageServer());
     }
+
     protected void setUpFleetController(boolean useFakeTimer, FleetControllerOptions options, boolean startThread, StatusPageServerInterface status) throws Exception {
         if (slobrok == null) setUpSystem(useFakeTimer, options);
         if (fleetController == null) {

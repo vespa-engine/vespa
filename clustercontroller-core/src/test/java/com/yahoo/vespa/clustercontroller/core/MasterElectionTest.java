@@ -7,21 +7,24 @@ import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.server.Slobrok;
-import java.util.logging.Level;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.status.StatusHandler;
+import com.yahoo.vespa.curator.Curator;
 import org.junit.Ignore;
 import org.junit.Rule;
 import org.junit.Test;
-import org.junit.rules.TestRule;
 import org.junit.rules.Timeout;
 
+import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Stream;
 
@@ -39,16 +42,15 @@ public class MasterElectionTest extends FleetControllerTest {
     private final List<FleetController> fleetControllers = new ArrayList<>();
 
     @Rule
-    public TestRule cleanupZookeeperLogsOnSuccess = new CleanupZookeeperLogsOnSuccess();
-
-    @Rule
-    public Timeout globalTimeout= Timeout.seconds(120);
+    public Timeout globalTimeout = Timeout.seconds(120);
 
     private static int defaultZkSessionTimeoutInMillis() { return 30_000; }
 
     protected void setUpFleetController(int count, boolean useFakeTimer, FleetControllerOptions options) throws Exception {
         if (zooKeeperServer == null) {
-            zooKeeperServer = new ZooKeeperTestServer();
+            System.out.println("setting up new test server");
+            zooKeeperServer = new ZooKeeperTestServer(0, Duration.ofMillis(defaultZkSessionTimeoutInMillis()));
+            waitUntilZooKeeperServerIsUp();
         }
         slobrok = new Slobrok();
         usingFakeTimer = useFakeTimer;
@@ -63,6 +65,21 @@ public class MasterElectionTest extends FleetControllerTest {
             nodeOptions.fleetControllerIndex = i;
             fleetControllers.add(createFleetController(usingFakeTimer, nodeOptions, true, new StatusHandler.ContainerStatusPageServer()));
         }
+    }
+
+    private void waitUntilZooKeeperServerIsUp() {
+        try (Curator curator = Curator.create("localhost:" + zooKeeperServer.getPort(), Optional.empty())) {
+            try {
+                curator.framework().blockUntilConnected(30, TimeUnit.SECONDS);
+            } catch (InterruptedException interruptedException) {
+                throw new RuntimeException(interruptedException);
+            }
+        }
+    }
+
+    public void shutdown() {
+        if (zooKeeperServer != null)
+            zooKeeperServer.shutdown();
     }
 
     private FleetControllerOptions adjustConfig(FleetControllerOptions o,
@@ -255,15 +272,17 @@ public class MasterElectionTest extends FleetControllerTest {
         // "Magic" port value is in range allocated to module for testing.
         zooKeeperServer = ZooKeeperTestServer.createWithFixedPort(18342);
         options.masterZooKeeperCooldownPeriod = 100;
+        waitUntilZooKeeperServerIsUp();
         setUpFleetController(2, false, options);
         waitForMaster(0);
 
-        zooKeeperServer.shutdown(true);
+        zooKeeperServer.shutdown();
         waitForCompleteCycles();
         timer.advanceTime(options.zooKeeperSessionTimeout);
         waitForZookeeperDisconnected();
 
         zooKeeperServer = ZooKeeperTestServer.createWithFixedPort(18342);
+        waitUntilZooKeeperServerIsUp();
         timer.advanceTime(10 * 1000); // Wait long enough for fleetcontroller wanting to retry zookeeper connection
 
         log.log(Level.INFO, "WAITING FOR 0 TO BE MASTER");
@@ -281,7 +300,7 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForMaster(0);
 
         log.log(Level.INFO, "STOPPING ZOOKEEPER SERVER AT " + zooKeeperServer.getAddress());
-        zooKeeperServer.shutdown(true);
+        zooKeeperServer.shutdown();
         waitForCompleteCycles();
         timer.advanceTime(options.zooKeeperSessionTimeout);
         waitForZookeeperDisconnected();
@@ -327,7 +346,7 @@ public class MasterElectionTest extends FleetControllerTest {
         waitForMaster(1);
     }
 
-    private void waitForMasterReason(String reason, Integer master, List<Target> connections, int nodes[]) {
+    private void waitForMasterReason(String reason, Integer master, List<Target> connections, int[] nodes) {
         long endTime = System.currentTimeMillis() + timeoutMS;
         while (System.currentTimeMillis() < endTime) {
             boolean allOk = true;
