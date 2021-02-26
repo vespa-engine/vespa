@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
+import com.yahoo.component.Vtag;
 import com.yahoo.config.provision.ActivationContext;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -441,11 +442,19 @@ public class ProvisioningTester {
         return nodes;
     }
 
-    public NodeList makeConfigServers(int n, String flavor, Version configServersVersion) {
+    public NodeList makeConfigServers(int n, int startIndex, String flavor) {
+        return makeConfigServers(n, startIndex, flavor, Vtag.currentVersion);
+    }
+
+    public NodeList makeConfigServers(int n, String flavor, Version version) {
+        return makeConfigServers(n, 1, flavor, version);
+    }
+
+    public NodeList makeConfigServers(int n, int startIndex, String flavor, Version version) {
         List<Node> nodes = new ArrayList<>(n);
         MockNameResolver nameResolver = (MockNameResolver)nodeRepository().nameResolver();
 
-        for (int i = 1; i <= n; i++) {
+        for (int i = startIndex; i < startIndex + n; i++) {
             String hostname = "cfg" + i;
             String ipv4 = "127.0.1." + i;
 
@@ -461,7 +470,7 @@ public class ProvisioningTester {
 
         ConfigServerApplication application = new ConfigServerApplication();
         List<HostSpec> hosts = prepare(application.getApplicationId(),
-                                       application.getClusterSpecWithVersion(configServersVersion),
+                                       application.getClusterSpecWithVersion(version),
                                        application.getCapacity());
         activate(application.getApplicationId(), new HashSet<>(hosts));
         return nodeRepository.nodes().list(Node.State.active).owner(application.getApplicationId());

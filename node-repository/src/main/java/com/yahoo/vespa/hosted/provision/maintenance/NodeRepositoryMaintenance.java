@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
+import com.yahoo.vespa.zookeeper.Reconfigurer;
 
 import java.time.Duration;
 import java.util.List;
@@ -38,7 +39,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Orchestrator orchestrator, Metric metric,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource,
-                                     MetricsFetcher metricsFetcher, MetricsDb metricsDb) {
+                                     MetricsFetcher metricsFetcher, MetricsDb metricsDb,
+                                     Reconfigurer reconfigurer) {
         DefaultTimes defaults = new DefaultTimes(zone, deployer);
 
         PeriodicApplicationMaintainer periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, metric, nodeRepository, defaults.redeployMaintainerInterval,
@@ -65,6 +67,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         maintainers.add(new AutoscalingMaintainer(nodeRepository, metricsDb, deployer, metric, defaults.autoscalingInterval));
         maintainers.add(new ScalingSuggestionsMaintainer(nodeRepository, metricsDb, defaults.scalingSuggestionsInterval, metric));
         maintainers.add(new SwitchRebalancer(nodeRepository, defaults.switchRebalancerInterval, metric, deployer));
+        maintainers.add(new ConfigServerReconfigurer(nodeRepository, defaults.configServerReconfigurerInterval, metric, reconfigurer));
         if (Set.of(Environment.staging, Environment.perf, Environment.prod).contains(zone.environment())
             || (zone.system().isCd() && zone.environment() == Environment.dev))  // TODO: Temporarily when testing the feature
             maintainers.add(new DedicatedClusterControllerClusterMigrator(deployer, metric, nodeRepository, defaults.dedicatedClusterControllerMigratorInterval, flagSource, orchestrator));
@@ -117,6 +120,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration autoscalingInterval;
         private final Duration scalingSuggestionsInterval;
         private final Duration switchRebalancerInterval;
+        private final Duration configServerReconfigurerInterval;
         private final Duration dedicatedClusterControllerMigratorInterval;
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
@@ -144,6 +148,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             scalingSuggestionsInterval = Duration.ofMinutes(31);
             spareCapacityMaintenanceInterval = Duration.ofMinutes(30);
             switchRebalancerInterval = Duration.ofHours(1);
+            configServerReconfigurerInterval = Duration.ofSeconds(90);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             retiredExpiry = Duration.ofDays(4); // give up migrating data after 4 days
             dedicatedClusterControllerMigratorInterval = zone.environment() == Environment.staging || zone.system().isCd() ? Duration.ofMinutes(3)
