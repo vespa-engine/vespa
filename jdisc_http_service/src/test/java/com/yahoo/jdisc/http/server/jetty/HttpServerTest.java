@@ -45,11 +45,9 @@ import org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V2;
 import org.eclipse.jetty.client.api.ContentResponse;
 import org.eclipse.jetty.server.handler.AbstractHandlerContainer;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
-import org.hamcrest.Matchers;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.TemporaryFolder;
-import org.mockito.Mockito;
 
 import javax.net.ssl.SSLContext;
 import javax.net.ssl.SSLException;
@@ -66,10 +64,10 @@ import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
+import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -106,7 +104,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.startsWith;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
-import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
@@ -183,7 +180,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatAccessLogIsCalledForRequestRejectedByJetty() throws Exception {
-        InMemoryRequestLog requestLogMock = new InMemoryRequestLog();
+        BlockingQueueRequestLog requestLogMock = new BlockingQueueRequestLog();
         final TestDriver driver = TestDrivers.newConfiguredInstance(
                 mockRequestHandler(),
                 new ServerConfig.Builder(),
@@ -192,8 +189,7 @@ public class HttpServerTest {
         driver.client().get("/status.html")
                 .expectStatusCode(is(REQUEST_URI_TOO_LONG));
         assertThat(driver.close(), is(true));
-        assertThat(requestLogMock.entries().size(), equalTo(1));
-        RequestLogEntry entry = requestLogMock.entries().get(0);
+        RequestLogEntry entry = requestLogMock.poll(Duration.ofSeconds(30));
         assertEquals(414, entry.statusCode().getAsInt());
     }
 
