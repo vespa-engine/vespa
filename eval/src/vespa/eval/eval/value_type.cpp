@@ -388,6 +388,12 @@ ValueType::either(const ValueType &one, const ValueType &other) {
     return one;
 }
 
+ValueType
+ValueType::cell_cast(const ValueType &from, CellType to_cell_type) {
+    // XXX we want to change this and use make_type later:
+    return tensor_type(from.dimensions(), to_cell_type);
+}
+
 std::ostream &
 operator<<(std::ostream &os, const ValueType &type) {
     return os << type.to_spec();

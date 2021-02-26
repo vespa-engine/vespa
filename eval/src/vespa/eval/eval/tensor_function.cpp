@@ -315,7 +315,7 @@ Lambda::visit_self(vespalib::ObjectVisitor &visitor) const
 InterpretedFunction::Instruction
 CellCast::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
-    return instruction::GenericCellCast::make_instruction(result_type(), child().result_type(), stash);
+    return instruction::GenericCellCast::make_instruction(result_type(), child().result_type(), result_type().cell_type(), stash);
 }
 
 //-----------------------------------------------------------------------------

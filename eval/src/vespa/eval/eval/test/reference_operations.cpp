@@ -70,18 +70,27 @@ vespalib::string rename_dimension(const vespalib::string &name, const std::vecto
     return name;
 }
 
+struct CopyCellsWithCast {
+    template<typename CT>
+    static void invoke(const TensorSpec &input, TensorSpec &output) {
+        for (const auto & [ addr, value ]: input.cells()) {
+            CT tmp = (CT) value;
+            output.add(addr, tmp);
+        }
+    }
+};
+
 } // namespace <unnamed>
 
 TensorSpec ReferenceOperations::cell_cast(const TensorSpec &a, CellType to) {
     ValueType a_type = ValueType::from_spec(a.type());
-    ValueType res_type = ValueType::make_type(to, a_type.dimensions());
+    ValueType res_type = ValueType::cell_cast(a_type, to);
     TensorSpec result(res_type.to_spec());
     if (res_type.is_error()) {
         return result;
     }
-    for (const auto & [ addr, value ]: a.cells()) {
-        result.add(addr, value);
-    }
+    typify_invoke<1,TypifyCellType,CopyCellsWithCast>(
+        res_type.cell_type(), a, result);
     return result;
 }
 
