@@ -147,8 +147,10 @@ public class SystemFlagsDeployerTest {
                 .build();
         SystemFlagsDeployer deployer = new SystemFlagsDeployer(flagsClient, SYSTEM, Set.of(prodUsEast3Target));
         SystemFlagsDeployResult result = deployer.deployFlags(archive, true);
+        String expectedErrorMessage = "Flag not defined in target zone. If zone/configserver cluster is new, " +
+                "add an empty flag data file for this zone as a temporary measure until the stale flag data files are removed.";
         assertThat(result.errors())
-                .containsOnly(SystemFlagsDeployResult.OperationError.createFailed("Flag not defined in target zone", prodUsEast3Target, prodUsEast3Data));
+                .containsOnly(SystemFlagsDeployResult.OperationError.createFailed(expectedErrorMessage, prodUsEast3Target, prodUsEast3Data));
     }
 
     @Test

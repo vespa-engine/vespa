@@ -2,7 +2,9 @@
 package com.yahoo.vespa.hosted.controller.restapi.systemflags;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.yahoo.vespa.flags.FlagDefinition;
 import com.yahoo.vespa.flags.FlagId;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.FlagsTarget;
 import com.yahoo.vespa.hosted.controller.api.systemflags.v1.wire.WireSystemFlagsDeployResult;
@@ -100,6 +102,7 @@ class SystemFlagsDeployResult {
         for (FlagDataChange change : flagChanges) {
             var wireChange = new WireFlagDataChange();
             wireChange.flagId = change.flagId().toString();
+            wireChange.owners = owners(change.flagId());
             wireChange.operation = change.operation().asString();
             wireChange.targets = change.targets().stream().map(FlagsTarget::asString).collect(toList());
             wireChange.data = change.data().map(FlagData::toWire).orElse(null);
@@ -113,6 +116,7 @@ class SystemFlagsDeployResult {
             wireError.operation = error.operation().asString();
             wireError.targets = error.targets().stream().map(FlagsTarget::asString).collect(toList());
             wireError.flagId = error.flagId().map(FlagId::toString).orElse(null);
+            wireError.owners = error.flagId().map(id -> owners(id)).orElse(List.of());
             wireError.data = error.flagData().map(FlagData::toWire).orElse(null);
             wireResult.errors.add(wireError);
         }
@@ -121,10 +125,15 @@ class SystemFlagsDeployResult {
             var wireWarning = new WireWarning();
             wireWarning.message = warning.message();
             wireWarning.flagId = warning.flagId().toString();
+            wireWarning.owners = owners(warning.flagId());
             wireWarning.targets = warning.targets().stream().map(FlagsTarget::asString).collect(toList());
             wireResult.warnings.add(wireWarning);
         }
         return wireResult;
+    }
+
+    private static List<String> owners(FlagId id) {
+        return Flags.getFlag(id).map(FlagDefinition::getOwners).orElse(List.of());
     }
 
     static class FlagDataChange {
@@ -296,7 +305,9 @@ class SystemFlagsDeployResult {
         }
 
         static Warning dataForUndefinedFlag(FlagsTarget target, FlagId flagId) {
-            return new Warning("Flag data present for undefined flag", Set.of(target), flagId);
+            return new Warning(
+                    "Flag data present for undefined flag. Remove flag data files if flag's definition is already removed from Flags/PermanentFlags. " +
+                            "Consult ModelContext.FeatureFlags for safe removal of flag used by config-model.", Set.of(target), flagId);
         }
 
         String message() { return message; }

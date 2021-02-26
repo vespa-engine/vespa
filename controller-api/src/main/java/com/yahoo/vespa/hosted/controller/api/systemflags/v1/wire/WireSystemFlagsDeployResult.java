@@ -24,6 +24,7 @@ public class WireSystemFlagsDeployResult {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class WireFlagDataChange {
         @JsonProperty("flag-id") public String flagId;
+        @JsonProperty("owners") @JsonInclude(JsonInclude.Include.NON_EMPTY) public List<String> owners;
         @JsonProperty("targets") public List<String> targets;
         @JsonProperty("operation") public String operation;
         @JsonProperty("data") public WireFlagData data;
@@ -34,6 +35,7 @@ public class WireSystemFlagsDeployResult {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class WireOperationFailure {
         @JsonProperty("flag-id") public String flagId;
+        @JsonProperty("owners") @JsonInclude(JsonInclude.Include.NON_EMPTY) public List<String> owners;
         @JsonProperty("message") public String message;
         @JsonProperty("targets") public List<String> targets;
         @JsonProperty("operation") public String operation;
@@ -44,6 +46,7 @@ public class WireSystemFlagsDeployResult {
     @JsonInclude(JsonInclude.Include.NON_NULL)
     public static class WireWarning {
         @JsonProperty("flag-id") public String flagId;
+        @JsonProperty("owners") @JsonInclude(JsonInclude.Include.NON_EMPTY) public List<String> owners;
         @JsonProperty("message") public String message;
         @JsonProperty("targets") public List<String> targets;
     }
