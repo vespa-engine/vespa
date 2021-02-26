@@ -5,8 +5,8 @@
 
 using namespace vespalib;
 
-template <typename uint32_t, size_t N>
-void verify(const SmallVector<uint32_t,N> &vec, std::vector<uint32_t> expect, size_t expect_capacity = 0) {
+template <typename T, size_t N>
+void verify(const SmallVector<T,N> &vec, std::vector<uint32_t> expect, size_t expect_capacity = 0) {
     if (expect_capacity == 0) {
         expect_capacity = (expect.size() <= N) ? N : roundUp2inN(expect.size());
     }
@@ -119,6 +119,46 @@ TEST(SmallVectorTest, inplace_edit) {
     vec[1] = 10;
     vec[3] = 20;
     verify(vec, {4,10,8,20});
+}
+
+struct MyUInt32 {
+    uint32_t value = 42;
+    operator uint32_t() const { return value; }
+};
+
+TEST(SmallVectorTest, create_with_default_elements) {
+    SmallVector<uint32_t,4> vec1(2);
+    SmallVector<uint32_t,4> vec2(6);
+    SmallVector<MyUInt32,4> vec3(2);
+    SmallVector<MyUInt32,4> vec4(6);
+    verify(vec1, {0, 0});
+    verify(vec2, {0, 0, 0, 0, 0, 0});
+    verify(vec3, {42, 42});
+    verify(vec4, {42, 42, 42, 42, 42, 42});
+}
+
+TEST(SmallVectorTest, create_with_copied_elements) {
+    SmallVector<uint32_t,4> vec1(2, 5);
+    SmallVector<uint32_t,4> vec2(6, 5);
+    SmallVector<MyUInt32,4> vec3(2, MyUInt32{5});
+    SmallVector<MyUInt32,4> vec4(6, MyUInt32{5});
+    verify(vec1, {5, 5});
+    verify(vec2, {5, 5, 5, 5, 5, 5});
+    verify(vec3, {5, 5});
+    verify(vec4, {5, 5, 5, 5, 5, 5});
+}
+
+TEST(SmallVectorTest, create_with_unique_pointers) {
+    SmallVector<std::unique_ptr<uint32_t>,2> vec1(1);
+    SmallVector<std::unique_ptr<uint32_t>,2> vec2(3);
+    EXPECT_EQ(vec1.capacity(), 2);
+    EXPECT_EQ(vec2.capacity(), 4);
+    ASSERT_EQ(vec1.size(), 1);
+    ASSERT_EQ(vec2.size(), 3);
+    EXPECT_TRUE(vec1[0].get() == nullptr);
+    EXPECT_TRUE(vec2[0].get() == nullptr);
+    EXPECT_TRUE(vec2[1].get() == nullptr);
+    EXPECT_TRUE(vec2[2].get() == nullptr);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

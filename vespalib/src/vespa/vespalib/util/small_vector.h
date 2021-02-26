@@ -1,5 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#pragma once
+
 #include "alloc.h"
 #include "traits.h"
 #include <string.h>
@@ -36,6 +38,13 @@ void copy_objects(T *dst, const T *src, uint32_t n) {
         for (size_t i = 0; i < n; ++i) {
             create_at(dst + i, src[i]);
         }
+    }
+}
+
+template <typename T, typename... Args>
+void create_objects(T *dst, uint32_t n, Args &&...args) {
+    for (size_t i = 0; i < n; ++i) {
+        create_at(dst + i, std::forward<Args>(args)...);
     }
 }
 
@@ -87,6 +96,16 @@ private:
 public:
     constexpr SmallVector() noexcept : _data(local()), _size(0), _capacity(N) {
         static_assert(N > 0);
+    }
+    SmallVector(size_t n) : SmallVector() {
+        reserve(n);
+        small_vector::create_objects(_data, n);
+        _size = n;
+    }
+    SmallVector(size_t n, const T &obj) : SmallVector() {
+        reserve(n);
+        small_vector::create_objects(_data, n, obj);
+        _size = n;
     }
     SmallVector(SmallVector &&rhs) : SmallVector() {
         reserve(rhs._size);
