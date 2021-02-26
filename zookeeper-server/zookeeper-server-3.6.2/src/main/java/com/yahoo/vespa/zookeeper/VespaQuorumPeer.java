@@ -20,8 +20,7 @@ import java.util.logging.Logger;
  */
 class VespaQuorumPeer extends QuorumPeerMain implements QuorumPeer {
 
-    private static final Logger log = java.util.logging.Logger.getLogger(Reconfigurer.class.getName());
-    private static final Duration timeToWaitForShutdown = Duration.ofSeconds(60);
+    private static final Logger log = java.util.logging.Logger.getLogger(VespaQuorumPeer.class.getName());
 
     @Override
     public void start(Path path) {

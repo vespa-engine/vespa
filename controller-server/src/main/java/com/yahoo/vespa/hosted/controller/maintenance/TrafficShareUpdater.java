@@ -29,7 +29,7 @@ public class TrafficShareUpdater extends ControllerMaintainer {
     private final NodeRepository nodeRepository;
 
     public TrafficShareUpdater(Controller controller, Duration duration) {
-        super(controller, duration, DeploymentMetricsMaintainer.class.getSimpleName(), SystemName.all());
+        super(controller, duration, TrafficShareUpdater.class.getSimpleName(), SystemName.all());
         this.applications = controller.applications();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
     }
