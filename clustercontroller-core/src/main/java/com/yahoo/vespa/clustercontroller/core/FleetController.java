@@ -407,10 +407,6 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         try {
             database.saveLatestSystemStateVersion(databaseContext, stateBundle.getVersion());
             database.saveLatestClusterStateBundle(databaseContext, stateBundle);
-            // It's possible that due to transient ZK quorum errors, we were not able to actually
-            // fully store the state. Gate state broadcasting on the actually synchronously ACKed
-            // stored state instead of what's _hopefully_ stored.
-            systemStateBroadcaster.setLastClusterStateVersionWrittenToZooKeeper(database.getLastKnownStateBundleVersionWrittenBySelf());
         } catch (InterruptedException e) {
             // Rethrow as RuntimeException to propagate exception up to main thread method.
             // Don't want to hide failures to write cluster state version.
@@ -583,9 +579,6 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         synchronized (monitor) {
             boolean didWork;
             didWork = database.doNextZooKeeperTask(databaseContext);
-            // In case of delayed ZK writes caused by intermittent failures, make sure to tag any newly written versions.
-            systemStateBroadcaster.setLastClusterStateVersionWrittenToZooKeeper(
-                    database.getLastKnownStateBundleVersionWrittenBySelf());
             didWork |= updateMasterElectionState();
             didWork |= handleLeadershipEdgeTransitions();
             stateChangeHandler.setMaster(isMaster);
@@ -702,7 +695,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 // Reset timer to only see warning once.
                 firstAllowedStateBroadcast = currentTime;
             }
-            sentAny = systemStateBroadcaster.broadcastNewStateBundleIfRequired(databaseContext, communicator);
+            sentAny = systemStateBroadcaster.broadcastNewStateBundleIfRequired(
+                    databaseContext, communicator, database.getLastKnownStateBundleVersionWrittenBySelf());
             if (sentAny) {
                 // FIXME won't this inhibit resending to unresponsive nodes?
                 nextStateSendTime = currentTime + options.minTimeBetweenNewSystemStates;
