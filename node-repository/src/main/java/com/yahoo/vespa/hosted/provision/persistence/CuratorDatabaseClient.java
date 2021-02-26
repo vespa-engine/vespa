@@ -10,6 +10,7 @@ import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
@@ -69,6 +70,7 @@ public class CuratorDatabaseClient {
     private static final Path osVersionsPath = root.append("osVersions");
     private static final Path containerImagesPath = root.append("dockerImages");
     private static final Path firmwareCheckPath = root.append("firmwareCheck");
+    private static final Path archiveUrisPath = root.append("archiveUris");
 
     private static final Duration defaultLockTimeout = Duration.ofMinutes(6);
 
@@ -102,6 +104,7 @@ public class CuratorDatabaseClient {
         db.create(osVersionsPath);
         db.create(containerImagesPath);
         db.create(firmwareCheckPath);
+        db.create(archiveUrisPath);
         db.create(loadBalancersPath);
         provisionIndexCounter.initialize(100);
     }
@@ -459,6 +462,24 @@ public class CuratorDatabaseClient {
     /** Returns the instant after which a firmware check is required, if any. */
     public Optional<Instant> readFirmwareCheck() {
         return read(firmwareCheckPath, data -> Instant.ofEpochMilli(Long.parseLong(new String(data))));
+    }
+
+    // Archive URIs -----------------------------------------------------------
+
+    public void writeArchiveUris(Map<TenantName, String> archiveUris) {
+        byte[] data = TenantArchiveUriSerializer.toJson(archiveUris);
+        NestedTransaction transaction = new NestedTransaction();
+        CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
+        curatorTransaction.add(CuratorOperations.setData(archiveUrisPath.getAbsolute(), data));
+        transaction.commit();
+    }
+
+    public Map<TenantName, String> readArchiveUris() {
+        return read(archiveUrisPath, TenantArchiveUriSerializer::fromJson).orElseGet(Map::of);
+    }
+
+    public Lock lockArchiveUris() {
+        return db.lock(lockPath.append("archiveUris"), defaultLockTimeout);
     }
 
     // Load balancers -----------------------------------------------------------

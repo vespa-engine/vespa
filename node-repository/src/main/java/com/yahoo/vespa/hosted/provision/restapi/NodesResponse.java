@@ -11,9 +11,6 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
 import com.yahoo.vespa.applicationmodel.HostName;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Address;
@@ -179,7 +176,7 @@ class NodesResponse extends SlimeJsonResponse {
         node.reports().toSlime(object, "reports");
         node.modelName().ifPresent(modelName -> object.setString("modelName", modelName));
         node.switchHostname().ifPresent(switchHostname -> object.setString("switchHostname", switchHostname));
-        archiveUri(nodeRepository.flagSource(), node).ifPresent(uri -> object.setString("archiveUri", uri));
+        nodeRepository.archiveUris().archiveUriFor(node).ifPresent(uri -> object.setString("archiveUri", uri));
     }
 
     private void toSlime(ApplicationId id, Cursor object) {
@@ -232,32 +229,6 @@ class NodesResponse extends SlimeJsonResponse {
         int lastSlash = path.lastIndexOf("/");
         if (lastSlash < 0) return path;
         return path.substring(lastSlash+1);
-    }
-
-    // TODO (freva): Store this in Application or Node
-    static Optional<String> archiveUri(FlagSource flagSource, Node node) {
-        String bucket = Flags.SYNC_HOST_LOGS_TO_S3_BUCKET.bindTo(flagSource)
-                .with(FetchVector.Dimension.NODE_TYPE, node.type().name())
-                .with(FetchVector.Dimension.APPLICATION_ID, node.allocation().map(alloc -> alloc.owner().serializedForm()).orElse(null))
-                .value();
-        if (bucket.isBlank()) return Optional.empty();
-
-        StringBuilder sb = new StringBuilder(100).append("s3://").append(bucket).append('/');
-        if (node.type() == NodeType.tenant) {
-            if (node.allocation().isEmpty()) return Optional.empty();
-            ApplicationId app = node.allocation().get().owner();
-
-            sb.append(app.tenant().value()).append('/').append(app.application().value()).append('/').append(app.instance().value()).append('/');
-        } else {
-            sb.append("hosted-vespa/");
-        }
-
-        for (char c: node.hostname().toCharArray()) {
-            if (c == '.') break;
-            sb.append(c);
-        }
-
-        return Optional.of(sb.append('/').toString());
     }
 
 }

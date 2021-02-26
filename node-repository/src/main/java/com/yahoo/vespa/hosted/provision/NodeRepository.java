@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.JobControlFlags;
 import com.yahoo.vespa.hosted.provision.persistence.NameResolver;
+import com.yahoo.vespa.hosted.provision.provisioning.ArchiveUris;
 import com.yahoo.vespa.hosted.provision.provisioning.ContainerImages;
 import com.yahoo.vespa.hosted.provision.provisioning.FirmwareChecks;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
@@ -57,6 +58,7 @@ public class NodeRepository extends AbstractComponent {
     private final InfrastructureVersions infrastructureVersions;
     private final FirmwareChecks firmwareChecks;
     private final ContainerImages containerImages;
+    private final ArchiveUris archiveUris;
     private final JobControl jobControl;
     private final Applications applications;
     private final LoadBalancers loadBalancers;
@@ -119,6 +121,7 @@ public class NodeRepository extends AbstractComponent {
         this.infrastructureVersions = new InfrastructureVersions(db);
         this.firmwareChecks = new FirmwareChecks(db, clock);
         this.containerImages = new ContainerImages(db, containerImage);
+        this.archiveUris = new ArchiveUris(db);
         this.jobControl = new JobControl(new JobControlFlags(db, flagSource));
         this.applications = new Applications(db);
         this.loadBalancers = new LoadBalancers(db);
@@ -161,6 +164,9 @@ public class NodeRepository extends AbstractComponent {
 
     /** Returns the container images to use for nodes in this. */
     public ContainerImages containerImages() { return containerImages; }
+
+    /** Returns the archive URIs to use for nodes in this. */
+    public ArchiveUris archiveUris() { return archiveUris; }
 
     /** Returns the status of maintenance jobs managed by this. */
     public JobControl jobControl() { return jobControl; }
