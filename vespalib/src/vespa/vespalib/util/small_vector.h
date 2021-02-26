@@ -8,12 +8,24 @@
 #include <cstdint>
 #include <cassert>
 #include <memory>
+#include <iterator>
 
 namespace vespalib {
 
 namespace small_vector {
 
-template<typename T, typename... Args>
+template <typename T>
+constexpr size_t select_N() {
+    if constexpr (sizeof(T) <= 16) {
+        return (48 / sizeof(T));
+    } else {
+        static_assert(sizeof(T) <= 16,
+                      "auto-selecting N is only supported for small objects (16 bytes or less)");
+        return 1;
+    }
+}
+
+template <typename T, typename... Args>
 void create_at(T *ptr, Args &&...args) {
     // https://en.cppreference.com/w/cpp/memory/construct_at
     ::new (const_cast<void*>(static_cast<const volatile void*>(ptr))) T(std::forward<Args>(args)...);
@@ -22,7 +34,8 @@ void create_at(T *ptr, Args &&...args) {
 template <typename T>
 void move_objects(T *dst, T *src, uint32_t n) {
     if constexpr (std::is_trivially_copyable_v<T>) {
-        memcpy(dst, src, n * sizeof(T));
+        // need to cast dst to void to avoid compiler warning caused by some trivially copyable objects not being copy assignable.
+        memcpy(static_cast<void *>(dst), src, n * sizeof(T));
     } else {
         for (size_t i = 0; i < n; ++i) {
             create_at(dst + i, std::move(src[i]));
@@ -72,7 +85,7 @@ std::pair<T*,size_t> alloc_objects(size_t wanted) {
  * inside the object itself. Intended use is to contain lists of
  * simple objects/values that are small in both size and number.
  **/
-template <typename T, size_t N>
+template <typename T, size_t N = small_vector::select_N<T>()>
 class SmallVector
 {
 private:
@@ -93,6 +106,19 @@ private:
             free(old_data);
         }
     }
+    template <typename InputIt>
+    void init(InputIt first, InputIt last, std::random_access_iterator_tag) {
+        reserve(last - first);
+        while (first != last) {
+            small_vector::create_at((_data + _size++), *first++);
+        }
+    }
+    template <typename InputIt>
+    void init(InputIt first, InputIt last, std::input_iterator_tag) {
+        while (first != last) {
+            emplace_back(*first++);
+        }
+    }
 public:
     constexpr SmallVector() noexcept : _data(local()), _size(0), _capacity(N) {
         static_assert(N > 0);
@@ -106,6 +132,17 @@ public:
         reserve(n);
         small_vector::create_objects(_data, n, obj);
         _size = n;
+    }
+    SmallVector(std::initializer_list<T> list) : SmallVector() {
+        reserve(list.size());
+        for (const T &value: list) {
+            small_vector::create_at((_data + _size++), value);
+        }
+    }
+    template <typename InputIt, std::enable_if_t<std::is_base_of_v<std::input_iterator_tag, typename std::iterator_traits<InputIt>::iterator_category>, bool> = true>
+    SmallVector(InputIt first, InputIt last) : SmallVector()
+    {
+        init(first, last, typename std::iterator_traits<InputIt>::iterator_category());
     }
     SmallVector(SmallVector &&rhs) : SmallVector() {
         reserve(rhs._size);
@@ -170,5 +207,20 @@ public:
         return *this;
     }
 };
+
+template <typename T, size_t N, size_t M>
+bool operator==(const SmallVector<T,N> &a,
+                const SmallVector<T,M> &b)
+{
+    if (a.size() != b.size()) {
+        return false;
+    }
+    for (size_t i = 0; i < a.size(); ++i) {
+        if (!(a[i] == b[i])) {
+            return false;
+        }
+    }
+    return true;
+}
 
 } // namespace

@@ -2,6 +2,8 @@
 
 #include <vespa/vespalib/util/small_vector.h>
 #include <vespa/vespalib/gtest/gtest.h>
+#include <vector>
+#include <map>
 
 using namespace vespalib;
 
@@ -23,6 +25,18 @@ void verify(const SmallVector<T,N> &vec, std::vector<uint32_t> expect, size_t ex
         ++pos;
     }
     EXPECT_EQ(pos, end);
+}
+
+template <typename T, size_t N, size_t M>
+void verify_eq(const SmallVector<T,N> &a, const SmallVector<T,M> &b) {
+    EXPECT_TRUE(a == b);
+    EXPECT_TRUE(b == a);
+}
+
+template <typename T, size_t N, size_t M>
+void verify_not_eq(const SmallVector<T,N> &a, const SmallVector<T,M> &b) {
+    EXPECT_FALSE(a == b);
+    EXPECT_FALSE(b == a);
 }
 
 TEST(SmallVectorTest, basic_usage) {
@@ -159,6 +173,74 @@ TEST(SmallVectorTest, create_with_unique_pointers) {
     EXPECT_TRUE(vec2[0].get() == nullptr);
     EXPECT_TRUE(vec2[1].get() == nullptr);
     EXPECT_TRUE(vec2[2].get() == nullptr);
+}
+
+TEST(SmallVectorTest, create_with_initializer_list) {
+    SmallVector<uint32_t,4> vec1({1, 2});
+    SmallVector<uint32_t,4> vec2({3, 4, 5, 6, 7, 8});
+    verify(vec1, {1, 2});
+    verify(vec2, {3, 4, 5, 6, 7, 8});
+}
+
+TEST(SmallVectorTest, create_with_pointer_range) {
+    SmallVector<uint32_t,4> vec1({1, 2});
+    SmallVector<uint32_t,4> vec2({3, 4, 5, 6, 7, 8});
+    SmallVector<uint32_t,4> vec3(&vec1[0], &vec1[0] + vec1.size());
+    SmallVector<uint32_t,4> vec4(&vec2[0], &vec2[0] + vec2.size());
+    verify(vec3, {1, 2});
+    verify(vec4, {3, 4, 5, 6, 7, 8});
+}
+
+TEST(SmallVectorTest, create_with_random_access_iterator) {
+    std::vector<uint32_t> vec1({1, 2});
+    std::vector<uint32_t> vec2({3, 4, 5, 6, 7, 8});
+    SmallVector<uint32_t,4> vec3(vec1.begin(), vec1.end());
+    SmallVector<uint32_t,4> vec4(vec2.begin(), vec2.end());
+    verify(vec3, {1, 2});
+    verify(vec4, {3, 4, 5, 6, 7, 8});
+}
+
+TEST(SmallVectorTest, create_with_akward_input_iterator_and_value_type) {
+    std::map<uint32_t,uint32_t> map;
+    map[1] = 2;
+    map[3] = 4;
+    map[5] = 6;
+    SmallVector<std::pair<const uint32_t, uint32_t>,2> vec(map.begin(), map.end());
+    ASSERT_EQ(vec.size(), 3);
+    EXPECT_EQ(vec[0].first, 1);
+    EXPECT_EQ(vec[0].second, 2);
+    EXPECT_EQ(vec[1].first, 3);
+    EXPECT_EQ(vec[1].second, 4);
+    EXPECT_EQ(vec[2].first, 5);
+    EXPECT_EQ(vec[2].second, 6);
+}
+
+TEST(SmallVectorTest, auto_select_N) {
+    SmallVector<uint32_t> vec1;
+    SmallVector<uint64_t> vec2;
+    SmallVector<MyStruct> vec3;
+    EXPECT_EQ(sizeof(vec1), 64);
+    EXPECT_EQ(sizeof(vec2), 64);
+    EXPECT_EQ(sizeof(vec3), 64);
+    EXPECT_EQ(vec1.capacity(), 12);
+    EXPECT_EQ(vec2.capacity(), 6);
+    EXPECT_EQ(vec3.capacity(), 4);
+}
+
+struct EqOnly {
+    int value;
+    bool operator==(const EqOnly &rhs) const { return (value == rhs.value); }
+};
+
+TEST(SmallVectorTest, equal_operator) {
+    verify_eq(SmallVector<int,2>(), SmallVector<int,8>());
+    verify_eq(SmallVector<int,2>({1,2,3}), SmallVector<int,8>({1,2,3}));
+    verify_eq(SmallVector<EqOnly>({EqOnly{1},EqOnly{2},EqOnly{3}}),
+              SmallVector<EqOnly>({EqOnly{1},EqOnly{2},EqOnly{3}}));
+    verify_not_eq(SmallVector<EqOnly>({EqOnly{1},EqOnly{2},EqOnly{3}}),
+                  SmallVector<EqOnly>({EqOnly{1},EqOnly{2}}));
+    verify_not_eq(SmallVector<EqOnly>({EqOnly{1},EqOnly{2},EqOnly{3}}),
+                  SmallVector<EqOnly>({EqOnly{1},EqOnly{5},EqOnly{3}}));
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
