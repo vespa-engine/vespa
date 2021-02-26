@@ -255,8 +255,12 @@ public class SystemStateBroadcaster {
         return lastClusterStateVersionConverged == clusterStateBundle.getVersion();
     }
 
-    public boolean broadcastNewStateBundleIfRequired(DatabaseHandler.Context dbContext, Communicator communicator) {
+    public boolean broadcastNewStateBundleIfRequired(DatabaseHandler.Context dbContext, Communicator communicator,
+                                                     int lastClusterStateVersionWrittenToZooKeeper) {
         if (clusterStateBundle == null) {
+            return false;
+        }
+        if (clusterStateBundle.getVersion() != lastClusterStateVersionWrittenToZooKeeper) {
             return false;
         }
 

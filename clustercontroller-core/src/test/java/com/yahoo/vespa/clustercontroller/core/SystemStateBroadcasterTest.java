@@ -42,9 +42,9 @@ public class SystemStateBroadcasterTest {
             cf.cluster().getNodeInfo(Node.ofDistributor(0)).setReportedState(new NodeState(NodeType.DISTRIBUTOR, State.UP).setStartTimestamp(500), 3000);
         }
 
-        void simulateBroadcastTick(ClusterFixture cf) {
+        void simulateBroadcastTick(ClusterFixture cf, int stateVersion) {
             broadcaster.processResponses();
-            broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), mockCommunicator);
+            broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), mockCommunicator, stateVersion);
             try {
                 broadcaster.checkIfClusterStateIsAckedByAllDistributors(
                         mockDatabaseHandler, dbContextFrom(cf.cluster()), mockFleetController);
@@ -89,7 +89,7 @@ public class SystemStateBroadcasterTest {
         ClusterStateBundle stateBundle = ClusterStateBundleUtil.makeBundle("distributor:2 storage:2");
         ClusterFixture cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
         f.broadcaster.handleNewClusterStates(stateBundle);
-        f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator);
+        f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator, 0);
         cf.cluster().getNodeInfo().forEach(nodeInfo -> verify(f.mockCommunicator).setSystemState(eq(stateBundle), eq(nodeInfo), any()));
     }
 
@@ -100,7 +100,7 @@ public class SystemStateBroadcasterTest {
         ClusterFixture cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
         f.simulateNodePartitionedAwaySilently(cf);
         f.broadcaster.handleNewClusterStates(stateBundle);
-        f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator);
+        f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator, 0);
 
         clusterNodeInfos(cf.cluster(), Node.ofDistributor(1), Node.ofStorage(0), Node.ofStorage(1)).forEach(nodeInfo -> {
             // Only distributor 0 should observe startup timestamps
@@ -118,7 +118,7 @@ public class SystemStateBroadcasterTest {
                 StateMapping.of("upsidedown", "distributor:2 .0.s:d storage:2"));
         ClusterFixture cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
         f.broadcaster.handleNewClusterStates(stateBundle);
-        f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator);
+        f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator, 0);
 
         cf.cluster().getNodeInfo().forEach(nodeInfo -> verify(f.mockCommunicator).setSystemState(eq(stateBundle), eq(nodeInfo), any()));
     }
@@ -132,7 +132,7 @@ public class SystemStateBroadcasterTest {
         ClusterFixture cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
         f.simulateNodePartitionedAwaySilently(cf);
         f.broadcaster.handleNewClusterStates(stateBundle);
-        f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator);
+        f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator, 0);
 
         clusterNodeInfos(cf.cluster(), Node.ofDistributor(1), Node.ofStorage(0), Node.ofStorage(1)).forEach(nodeInfo -> {
             // Only distributor 0 should observe startup timestamps
@@ -142,6 +142,32 @@ public class SystemStateBroadcasterTest {
                 StateMapping.of("default", "distributor:2 storage:2 .0.s:d .0.t:600 .1.t:700"),
                 StateMapping.of("upsidedown", "distributor:2 .0.s:d storage:2 .0.t:600 .1.t:700"));
         verify(f.mockCommunicator).setSystemState(eq(expectedDistr0Bundle), eq(cf.cluster().getNodeInfo(Node.ofDistributor(0))), any());
+    }
+
+    @Test
+    public void state_not_broadcast_if_version_not_tagged_as_written_to_zookeeper() {
+        Fixture f = new Fixture();
+        ClusterStateBundle stateBundle = ClusterStateBundleUtil.makeBundle("version:100 distributor:2 storage:2");
+        ClusterFixture cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
+        f.broadcaster.handleNewClusterStates(stateBundle);
+        f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator, 99);
+
+        cf.cluster().getNodeInfo().forEach(nodeInfo -> {
+            verify(f.mockCommunicator, times(0)).setSystemState(any(), eq(nodeInfo), any());
+        });
+    }
+
+    @Test
+    public void state_is_broadcast_if_version_is_tagged_as_written_to_zookeeper() {
+        Fixture f = new Fixture();
+        ClusterStateBundle stateBundle = ClusterStateBundleUtil.makeBundle("version:100 distributor:2 storage:2");
+        ClusterFixture cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
+        f.broadcaster.handleNewClusterStates(stateBundle);
+        f.broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), f.mockCommunicator, 100);
+
+        cf.cluster().getNodeInfo().forEach(nodeInfo -> {
+            verify(f.mockCommunicator, times(1)).setSystemState(any(), eq(nodeInfo), any());
+        });
     }
 
     private static class MockSetClusterStateRequest extends SetClusterStateRequest {
@@ -202,7 +228,7 @@ public class SystemStateBroadcasterTest {
                     .deriveAndBuild();
             cf = ClusterFixture.forFlatCluster(2).bringEntireClusterUp().assignDummyRpcAddresses();
             broadcaster.handleNewClusterStates(stateBundle);
-            broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), mockCommunicator);
+            broadcaster.broadcastNewStateBundleIfRequired(dbContextFrom(cf.cluster()), mockCommunicator, stateBundle.getVersion());
 
             d0Waiter = ArgumentCaptor.forClass(Communicator.Waiter.class);
             d1Waiter = ArgumentCaptor.forClass(Communicator.Waiter.class);
@@ -219,11 +245,11 @@ public class SystemStateBroadcasterTest {
         @SuppressWarnings("unchecked") // Type erasure of Waiter in mocked argument capture
         void ackStateBundleFromBothDistributors() {
             expectSetSystemStateInvocationsToBothDistributors();
-            simulateBroadcastTick(cf);
+            simulateBroadcastTick(cf, 123);
 
             respondToSetClusterStateBundle(cf.cluster.getNodeInfo(Node.ofDistributor(0)), stateBundle, d0Waiter.getValue());
             respondToSetClusterStateBundle(cf.cluster.getNodeInfo(Node.ofDistributor(1)), stateBundle, d1Waiter.getValue());
-            simulateBroadcastTick(cf);
+            simulateBroadcastTick(cf, 123);
         }
 
         static StateActivationFixture withTwoPhaseEnabled() {
@@ -242,11 +268,11 @@ public class SystemStateBroadcasterTest {
         var cf = f.cf;
 
         f.expectSetSystemStateInvocationsToBothDistributors();
-        f.simulateBroadcastTick(cf);
+        f.simulateBroadcastTick(cf, 123);
 
         // Respond from distributor 0, but not yet from distributor 1
         respondToSetClusterStateBundle(cf.cluster.getNodeInfo(Node.ofDistributor(0)), f.stateBundle, f.d0Waiter.getValue());
-        f.simulateBroadcastTick(cf);
+        f.simulateBroadcastTick(cf, 123);
 
         // No activations should be sent yet
         cf.cluster().getNodeInfo().forEach(nodeInfo -> {
@@ -255,7 +281,7 @@ public class SystemStateBroadcasterTest {
         assertNull(f.broadcaster.getLastClusterStateBundleConverged());
 
         respondToSetClusterStateBundle(cf.cluster.getNodeInfo(Node.ofDistributor(1)), f.stateBundle, f.d1Waiter.getValue());
-        f.simulateBroadcastTick(cf);
+        f.simulateBroadcastTick(cf, 123);
 
         // Activation should now be sent to _all_ nodes (distributor and storage)
         cf.cluster().getNodeInfo().forEach(nodeInfo -> {
@@ -283,13 +309,13 @@ public class SystemStateBroadcasterTest {
 
         respondToActivateClusterStateVersion(cf.cluster.getNodeInfo(Node.ofDistributor(0)),
                                              f.stateBundle, d0ActivateWaiter.getValue());
-        f.simulateBroadcastTick(cf);
+        f.simulateBroadcastTick(cf, 123);
 
         assertNull(f.broadcaster.getLastClusterStateBundleConverged()); // Not yet converged
 
         respondToActivateClusterStateVersion(cf.cluster.getNodeInfo(Node.ofDistributor(1)),
                                              f.stateBundle, d1ActivateWaiter.getValue());
-        f.simulateBroadcastTick(cf);
+        f.simulateBroadcastTick(cf, 123);
 
         // Finally, all distributors have ACKed the version! State is marked as converged.
         assertEquals(f.stateBundle, f.broadcaster.getLastClusterStateBundleConverged());
@@ -334,7 +360,7 @@ public class SystemStateBroadcasterTest {
         // considered converged since it's not an exact version match.
         respondToActivateClusterStateVersion(cf.cluster.getNodeInfo(Node.ofDistributor(1)),
                 f.stateBundle, 124, d1ActivateWaiter.getValue());
-        f.simulateBroadcastTick(cf);
+        f.simulateBroadcastTick(cf, 123);
 
         assertNull(f.broadcaster.getLastClusterStateBundleConverged());
     }

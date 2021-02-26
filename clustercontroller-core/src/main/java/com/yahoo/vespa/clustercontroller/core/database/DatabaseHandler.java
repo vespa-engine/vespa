@@ -83,6 +83,7 @@ public class DatabaseHandler {
     private final DatabaseListener dbListener = new DatabaseListener();
     private final Data currentlyStored = new Data();
     private final Data pendingStore = new Data();
+    private int lastKnownStateBundleVersionWrittenBySelf = 0;
     private long lastZooKeeperConnectionAttempt = 0;
     private static final int minimumWaitBetweenFailedConnectionAttempts = 10000;
     private boolean lostZooKeeperConnectionEvent = false;
@@ -110,6 +111,10 @@ public class DatabaseHandler {
     }
 
     public boolean isClosed() { return database == null || database.isClosed(); }
+
+    public int getLastKnownStateBundleVersionWrittenBySelf() {
+        return lastKnownStateBundleVersionWrittenBySelf;
+    }
 
     public void reset() {
         final boolean wasRunning;
@@ -222,7 +227,7 @@ public class DatabaseHandler {
                 didWork = true;
             }
         }
-        if (isDatabaseClosedSafe()) {
+        if (isDatabaseClosedSafe() && zooKeeperIsConfigured()) {
             long currentTime = timer.getCurrentTimeInMillis();
             if (currentTime - lastZooKeeperConnectionAttempt < minimumWaitBetweenFailedConnectionAttempts) {
                 return false; // Not time to attempt connection yet.
@@ -245,6 +250,11 @@ public class DatabaseHandler {
             relinquishDatabaseConnectivity(context.getFleetController());
         }
         return didWork;
+    }
+
+    private boolean zooKeeperIsConfigured() {
+        // This should only ever be null during unit testing.
+        return zooKeeperAddress != null;
     }
 
     private void relinquishDatabaseConnectivity(FleetController fleetController) {
@@ -304,7 +314,10 @@ public class DatabaseHandler {
         }
         if (pendingStore.clusterStateBundle != null) {
             didWork = true;
+            log.fine(() -> String.format("Fleetcontroller %d: Attempting to store last cluster state bundle with version %d into zookeeper.",
+                                         nodeIndex, pendingStore.clusterStateBundle.getVersion()));
             if (database.storeLastPublishedStateBundle(pendingStore.clusterStateBundle)) {
+                lastKnownStateBundleVersionWrittenBySelf = pendingStore.clusterStateBundle.getVersion();
                 currentlyStored.clusterStateBundle = pendingStore.clusterStateBundle;
                 pendingStore.clusterStateBundle = null;
             } else {
@@ -365,6 +378,14 @@ public class DatabaseHandler {
         log.log(Level.FINE, () -> String.format("Fleetcontroller %d: Scheduling bundle %s to be saved to ZooKeeper", nodeIndex, clusterStateBundle));
         pendingStore.clusterStateBundle = clusterStateBundle;
         doNextZooKeeperTask(context);
+        // FIXME this is a nasty hack to get around the fact that a massive amount of unit tests
+        // set up the system with a null ZooKeeper server address. If we don't fake that we have
+        // written the state version, the tests will never progress past waiting for state broadcasts.
+        if (zooKeeperAddress == null) {
+            log.warning(() -> String.format("Fleetcontroller %d: Simulating ZK write of version %d. This should not happen in production!",
+                                             nodeIndex, clusterStateBundle.getVersion()));
+            lastKnownStateBundleVersionWrittenBySelf = clusterStateBundle.getVersion();
+        }
     }
 
     // TODO should we expand this to cover _any_ pending ZK write?

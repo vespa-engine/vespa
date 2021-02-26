@@ -695,7 +695,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 // Reset timer to only see warning once.
                 firstAllowedStateBroadcast = currentTime;
             }
-            sentAny = systemStateBroadcaster.broadcastNewStateBundleIfRequired(databaseContext, communicator);
+            sentAny = systemStateBroadcaster.broadcastNewStateBundleIfRequired(
+                    databaseContext, communicator, database.getLastKnownStateBundleVersionWrittenBySelf());
             if (sentAny) {
                 // FIXME won't this inhibit resending to unresponsive nodes?
                 nextStateSendTime = currentTime + options.minTimeBetweenNewSystemStates;
