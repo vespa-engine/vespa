@@ -90,6 +90,7 @@ public class Reconfigurer extends AbstractComponent {
     private boolean shouldReconfigure(ZookeeperServerConfig newConfig) {
         if (!newConfig.dynamicReconfiguration()) return false;
         if (activeConfig == null) return false;
+        if (newConfig.server().isEmpty()) return false;
         return !newConfig.equals(activeConfig());
     }
 

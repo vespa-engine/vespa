@@ -66,6 +66,11 @@ public class ReconfigurerTest {
         assertEquals(1, reconfigurer.reconfigurations());
         assertSame(nextConfig, reconfigurer.activeConfig());
 
+        // No reconfiguration happens with empty config
+        reconfigurer.startOrReconfigure(createConfig(0, true));
+        assertEquals(1, reconfigurer.reconfigurations());
+        assertSame(nextConfig, reconfigurer.activeConfig());
+
         // Cluster shrinks
         nextConfig = createConfig(3, true);
         reconfigurer.startOrReconfigure(nextConfig);
