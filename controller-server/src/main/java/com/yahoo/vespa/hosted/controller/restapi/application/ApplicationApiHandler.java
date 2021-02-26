@@ -675,7 +675,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
 
         controller.serviceRegistry().roleService().createTenantPolicy(TenantName.from(tenantName), name, awsId, role);
-        controller.serviceRegistry().tenantSecretService().addSecretStore(tenantSecretStore, externalId);
+        controller.serviceRegistry().tenantSecretService().addSecretStore(tenant.name(), tenantSecretStore, externalId);
         // Store changes
         controller.tenants().lockOrThrow(tenant.name(), LockedTenant.Cloud.class, lockedTenant -> {
             lockedTenant = lockedTenant.withSecretStore(tenantSecretStore);
