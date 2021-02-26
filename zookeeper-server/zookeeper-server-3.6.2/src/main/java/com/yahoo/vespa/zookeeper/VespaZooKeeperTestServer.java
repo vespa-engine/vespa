@@ -1,19 +1,14 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.zookeeper;
 
-import com.google.inject.Inject;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
-import com.yahoo.component.AbstractComponent;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.security.tls.TransportSecurityUtils;
-import org.apache.zookeeper.server.quorum.QuorumPeer;
 
 import java.nio.file.Path;
-import java.nio.file.Paths;
+import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-
-import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 /**
  * For use in unit tests only
@@ -27,7 +22,6 @@ public class VespaZooKeeperTestServer implements VespaZooKeeperServer, Runnable 
     private final VespaQuorumPeer peer;
     private Path configFilePath;
 
-    @Inject
     public VespaZooKeeperTestServer(ZookeeperServerConfig zookeeperServerConfig) {
         this.peer = new VespaQuorumPeer();
         new Configurator(zookeeperServerConfig).writeConfigToDisk(TransportSecurityUtils.getOptions());
@@ -35,7 +29,7 @@ public class VespaZooKeeperTestServer implements VespaZooKeeperServer, Runnable 
 
     @Override
     public void shutdown() {
-        peer.shutdown();
+        peer.shutdown(Duration.ofMinutes(1));
         executorService.shutdownNow();
     }
 
