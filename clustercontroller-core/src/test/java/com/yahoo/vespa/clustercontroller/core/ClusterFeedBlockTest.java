@@ -95,10 +95,14 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         return createOptions(feedBlockLimits, 0.0);
     }
 
-    private void reportResourceUsageFromNode(int nodeIndex, Set<FeedBlockUtil.UsageDetails> resourceUsages) throws Exception {
+    private void reportResourceUsageFromNode(int nodeIndex, State nodeState, Set<FeedBlockUtil.UsageDetails> resourceUsages) throws Exception {
         String hostInfo = createResourceUsageJson(resourceUsages);
-        communicator.setNodeState(new Node(NodeType.STORAGE, nodeIndex), new NodeState(NodeType.STORAGE, State.UP), hostInfo);
+        communicator.setNodeState(new Node(NodeType.STORAGE, nodeIndex), new NodeState(NodeType.STORAGE, nodeState), hostInfo);
         ctrl.tick();
+    }
+
+    private void reportResourceUsageFromNode(int nodeIndex, Set<FeedBlockUtil.UsageDetails> resourceUsages) throws Exception {
+        reportResourceUsageFromNode(nodeIndex, State.UP, resourceUsages);
     }
 
     @Test
@@ -210,6 +214,16 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         reportResourceUsageFromNode(1, setOf(usage("cheese", 0.59), usage("wine", 0.2)));
         bundle = ctrl.getClusterStateBundle();
         assertFalse(bundle.clusterFeedIsBlocked());
+    }
+
+    @Test
+    public void unavailable_nodes_are_not_considered_when_computing_feed_blocked_state() throws Exception {
+        initialize(createOptions(mapOf(usage("cheese", 0.7), usage("wine", 0.4)), 0.1));
+        assertFalse(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
+
+        reportResourceUsageFromNode(1, State.DOWN, setOf(usage("cheese", 0.8), usage("wine", 0.5)));
+        // Not blocked, node with exhaustion is marked as Down
+        assertFalse(ctrl.getClusterStateBundle().clusterFeedIsBlocked());
     }
 
     // FIXME implicit changes in limits due to hysteresis adds spurious exhaustion remove+add node event pair

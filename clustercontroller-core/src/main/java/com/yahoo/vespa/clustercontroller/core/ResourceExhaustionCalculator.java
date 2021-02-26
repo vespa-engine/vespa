@@ -127,10 +127,16 @@ public class ResourceExhaustionCalculator {
         return resourceExhaustionsFromHostInfo(nodeInfo, nodeInfo.getHostInfo());
     }
 
+    private static boolean nodeMayContributeToFeedBlocked(NodeInfo info) {
+        return (info.getWantedState().getState().oneOf("ur") &&
+                info.getReportedState().getState().oneOf("ui"));
+    }
+
     // Returns 0-n entries per content node in the cluster, where n is the number of exhausted
     // resource types on any given node.
     public Set<NodeResourceExhaustion> enumerateNodeResourceExhaustionsAcrossAllNodes(Collection<NodeInfo> nodeInfos) {
         return nodeInfos.stream()
+                .filter(info -> nodeMayContributeToFeedBlocked(info))
                 .flatMap(info -> enumerateNodeResourceExhaustions(info).stream())
                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
