@@ -2,39 +2,30 @@
 package com.yahoo.vespa.hosted.provision.restapi;
 
 import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
-import com.yahoo.slime.JsonFormat;
-import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.List;
 import java.util.Set;
 
 /**
  * @author mpolden
  */
-public class NodeAclResponse extends HttpResponse {
+public class NodeAclResponse extends SlimeJsonResponse {
 
     private static final String CHILDREN_REQUEST_PROPERTY = "children";
 
     private final NodeRepository nodeRepository;
-    private final Slime slime;
     private final boolean aclsForChildren;
 
-    public NodeAclResponse(HttpRequest request, NodeRepository nodeRepository) {
-        super(200);
+    public NodeAclResponse(HttpRequest request, NodeRepository nodeRepository, String hostname) {
         this.nodeRepository = nodeRepository;
-        this.slime = new Slime();
         this.aclsForChildren = request.getBooleanProperty(CHILDREN_REQUEST_PROPERTY); // This is always true?
 
         Cursor root = slime.setObject();
-        String hostname = baseName(request.getUri().getPath());
         toSlime(hostname, root);
     }
 
@@ -79,19 +70,5 @@ public class NodeAclResponse extends HttpResponse {
             object.setLong("port", port);
             object.setString("trustedBy", trustedBy.node().hostname());
         });
-    }
-
-    @Override
-    public void render(OutputStream stream) throws IOException {
-        new JsonFormat(true).encode(stream, slime);
-    }
-
-    @Override
-    public String getContentType() {
-        return "application/json";
-    }
-
-    private static String baseName(String path) {
-        return new File(path).getName();
     }
 }

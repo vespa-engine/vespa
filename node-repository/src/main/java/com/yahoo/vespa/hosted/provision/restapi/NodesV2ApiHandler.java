@@ -46,7 +46,6 @@ import com.yahoo.yolean.Exceptions;
 
 import javax.inject.Inject;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -112,48 +111,47 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     private HttpResponse handleGET(HttpRequest request) {
         Path path = new Path(request.getUri());
         String pathS = request.getUri().getPath();
-        if (pathS.equals(    "/nodes/v2/")) return new ResourceResponse(request.getUri(), "state", "node", "command", "maintenance", "upgrade", "application");
-        if (pathS.equals(    "/nodes/v2/node/")) return new NodesResponse(ResponseType.nodeList, request, orchestrator, nodeRepository);
+        if (path.matches(    "/nodes/v2")) return new ResourceResponse(request.getUri(), "state", "node", "command", "maintenance", "upgrade", "application");
+        if (path.matches(    "/nodes/v2/node")) return new NodesResponse(ResponseType.nodeList, request, orchestrator, nodeRepository);
         if (pathS.startsWith("/nodes/v2/node/")) return new NodesResponse(ResponseType.singleNode, request, orchestrator, nodeRepository);
-        if (pathS.equals(    "/nodes/v2/state/")) return new NodesResponse(ResponseType.stateList, request, orchestrator, nodeRepository);
+        if (path.matches(    "/nodes/v2/state")) return new NodesResponse(ResponseType.stateList, request, orchestrator, nodeRepository);
         if (pathS.startsWith("/nodes/v2/state/")) return new NodesResponse(ResponseType.nodesInStateList, request, orchestrator, nodeRepository);
-        if (pathS.startsWith("/nodes/v2/acl/")) return new NodeAclResponse(request, nodeRepository);
-        if (pathS.equals(    "/nodes/v2/command/")) return new ResourceResponse(request.getUri(), "restart", "reboot");
-        if (pathS.equals(    "/nodes/v2/locks")) return new LocksResponse();
-        if (pathS.equals(    "/nodes/v2/maintenance/")) return new JobsResponse(nodeRepository.jobControl());
-        if (pathS.equals(    "/nodes/v2/upgrade/")) return new UpgradeResponse(nodeRepository.infrastructureVersions(), nodeRepository.osVersions(), nodeRepository.containerImages());
-        if (pathS.startsWith("/nodes/v2/capacity")) return new HostCapacityResponse(nodeRepository, request);
-        if (path.matches("/nodes/v2/application")) return applicationList(request.getUri());
-        if (path.matches("/nodes/v2/application/{applicationId}")) return application(path.get("applicationId"), request.getUri());
+        if (path.matches(    "/nodes/v2/acl/{hostname}")) return new NodeAclResponse(request, nodeRepository, path.get("hostname"));
+        if (path.matches(    "/nodes/v2/command")) return new ResourceResponse(request.getUri(), "restart", "reboot");
+        if (path.matches(    "/nodes/v2/locks")) return new LocksResponse();
+        if (path.matches(    "/nodes/v2/maintenance")) return new JobsResponse(nodeRepository.jobControl());
+        if (path.matches(    "/nodes/v2/upgrade")) return new UpgradeResponse(nodeRepository.infrastructureVersions(), nodeRepository.osVersions(), nodeRepository.containerImages());
+        if (path.matches(    "/nodes/v2/capacity")) return new HostCapacityResponse(nodeRepository, request);
+        if (path.matches(    "/nodes/v2/application")) return applicationList(request.getUri());
+        if (path.matches(    "/nodes/v2/application/{applicationId}")) return application(path.get("applicationId"), request.getUri());
         throw new NotFoundException("Nothing at " + path);
     }
 
     private HttpResponse handlePUT(HttpRequest request) {
-        String path = request.getUri().getPath();
+        Path path = new Path(request.getUri());
         // Check paths to disallow illegal state changes
-        if (path.startsWith("/nodes/v2/state/ready/") ||
-            path.startsWith("/nodes/v2/state/availablefornewallocations/")) {
-            nodeRepository.nodes().markNodeAvailableForNewAllocation(lastElement(path), Agent.operator, "Readied through the nodes/v2 API");
-            return new MessageResponse("Moved " + lastElement(path) + " to ready");
+        if (path.matches("/nodes/v2/state/ready/{hostname}")) {
+            nodeRepository.nodes().markNodeAvailableForNewAllocation(path.get("hostname"), Agent.operator, "Readied through the nodes/v2 API");
+            return new MessageResponse("Moved " + path.get("hostname") + " to ready");
         }
-        else if (path.startsWith("/nodes/v2/state/failed/")) {
-            List<Node> failedNodes = nodeRepository.nodes().failRecursively(lastElement(path), Agent.operator, "Failed through the nodes/v2 API");
+        else if (path.matches("/nodes/v2/state/failed/{hostname}")) {
+            List<Node> failedNodes = nodeRepository.nodes().failRecursively(path.get("hostname"), Agent.operator, "Failed through the nodes/v2 API");
             return new MessageResponse("Moved " + hostnamesAsString(failedNodes) + " to failed");
         }
-        else if (path.startsWith("/nodes/v2/state/parked/")) {
-            List<Node> parkedNodes = nodeRepository.nodes().parkRecursively(lastElement(path), Agent.operator, "Parked through the nodes/v2 API");
+        else if (path.matches("/nodes/v2/state/parked/{hostname}")) {
+            List<Node> parkedNodes = nodeRepository.nodes().parkRecursively(path.get("hostname"), Agent.operator, "Parked through the nodes/v2 API");
             return new MessageResponse("Moved " + hostnamesAsString(parkedNodes) + " to parked");
         }
-        else if (path.startsWith("/nodes/v2/state/dirty/")) {
-            List<Node> dirtiedNodes = nodeRepository.nodes().deallocateRecursively(lastElement(path), Agent.operator, "Dirtied through the nodes/v2 API");
+        else if (path.matches("/nodes/v2/state/dirty/{hostname}")) {
+            List<Node> dirtiedNodes = nodeRepository.nodes().deallocateRecursively(path.get("hostname"), Agent.operator, "Dirtied through the nodes/v2 API");
             return new MessageResponse("Moved " + hostnamesAsString(dirtiedNodes) + " to dirty");
         }
-        else if (path.startsWith("/nodes/v2/state/active/")) {
-            nodeRepository.nodes().reactivate(lastElement(path), Agent.operator, "Reactivated through nodes/v2 API");
-            return new MessageResponse("Moved " + lastElement(path) + " to active");
+        else if (path.matches("/nodes/v2/state/active/{hostname}")) {
+            nodeRepository.nodes().reactivate(path.get("hostname"), Agent.operator, "Reactivated through nodes/v2 API");
+            return new MessageResponse("Moved " + path.get("hostname") + " to active");
         }
-        else if (path.startsWith("/nodes/v2/state/breakfixed/")) {
-            List<Node> breakfixedNodes = nodeRepository.nodes().breakfixRecursively(lastElement(path), Agent.operator, "Breakfixed through the nodes/v2 API");
+        else if (path.matches("/nodes/v2/state/breakfixed/{hostname}")) {
+            List<Node> breakfixedNodes = nodeRepository.nodes().breakfixRecursively(path.get("hostname"), Agent.operator, "Breakfixed through the nodes/v2 API");
             return new MessageResponse("Breakfixed " + hostnamesAsString(breakfixedNodes));
         }
 
@@ -162,9 +160,8 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
 
     private HttpResponse handlePATCH(HttpRequest request) {
         Path path = new Path(request.getUri());
-        String pathS = request.getUri().getPath();
-        if (pathS.startsWith("/nodes/v2/node/")) {
-            try (NodePatcher patcher = new NodePatcher(nodeFlavors, request.getData(), nodeFromRequest(request), nodeRepository)) {
+        if (path.matches("/nodes/v2/node/{hostname}")) {
+            try (NodePatcher patcher = new NodePatcher(nodeFlavors, request.getData(), nodeFromHostname(path.get("hostname")), nodeRepository)) {
                 var patchedNodes = patcher.apply();
                 nodeRepository.nodes().write(patchedNodes, patcher.nodeMutexOfHost());
 
@@ -179,8 +176,8 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
                 return new MessageResponse("Updated " + patcher.application());
             }
         }
-        else if (pathS.startsWith("/nodes/v2/upgrade/")) {
-            return setTargetVersions(request);
+        else if (path.matches("/nodes/v2/upgrade/{nodeType}")) {
+            return setTargetVersions(path.get("nodeType"), toSlime(request));
         }
 
         throw new NotFoundException("Nothing at '" + path + "'");
@@ -197,7 +194,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Scheduled reboot of " + rebootCount + " matching nodes");
         }
         if (path.matches("/nodes/v2/node")) {
-            int addedNodes = addNodes(request.getData());
+            int addedNodes = addNodes(toSlime(request));
             return new MessageResponse("Added " + addedNodes + " nodes to the provisioned state");
         }
         if (path.matches("/nodes/v2/maintenance/run/{job}")) return runJob(path.get("job"));
@@ -233,21 +230,20 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         }
     }
 
-    private Node nodeFromRequest(HttpRequest request) {
-        String hostname = lastElement(request.getUri().getPath());
+    private Node nodeFromHostname(String hostname) {
         return nodeRepository.nodes().node(hostname).orElseThrow(() ->
                 new NotFoundException("No node found with hostname " + hostname));
     }
 
-    public int addNodes(InputStream jsonStream) {
-        List<Node> nodes = createNodesFromSlime(toSlime(jsonStream).get());
+    public int addNodes(Inspector inspector) {
+        List<Node> nodes = createNodesFromSlime(inspector);
         return nodeRepository.nodes().addNodes(nodes, Agent.operator).size();
     }
 
-    private Slime toSlime(InputStream jsonStream) {
+    private Inspector toSlime(HttpRequest request) {
         try {
-            byte[] jsonBytes = IOUtils.readBytes(jsonStream, 1000 * 1000);
-            return SlimeUtils.jsonToSlime(jsonBytes);
+            byte[] jsonBytes = IOUtils.readBytes(request.getData(), 1000 * 1000);
+            return SlimeUtils.jsonToSlime(jsonBytes).get();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
@@ -337,14 +333,6 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         return filter;
     }
 
-    private static String lastElement(String path) {
-        if (path.endsWith("/"))
-            path = path.substring(0, path.length()-1);
-        int lastSlash = path.lastIndexOf("/");
-        if (lastSlash < 0) return path;
-        return path.substring(lastSlash + 1);
-    }
-
     private static boolean isPatchOverride(HttpRequest request) {
         // Since Jersey's HttpUrlConnector does not support PATCH we support this by override this on POST requests.
         String override = request.getHeader("X-HTTP-Method-Override");
@@ -359,9 +347,8 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         return false;
     }
 
-    private MessageResponse setTargetVersions(HttpRequest request) {
-        NodeType nodeType = NodeType.valueOf(lastElement(request.getUri().getPath()).toLowerCase());
-        Inspector inspector = toSlime(request.getData()).get();
+    private MessageResponse setTargetVersions(String nodeTypeS, Inspector inspector) {
+        NodeType nodeType = NodeType.valueOf(nodeTypeS.toLowerCase());
         List<String> messageParts = new ArrayList<>(4);
 
         boolean force = inspector.field("force").asBool();
