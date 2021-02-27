@@ -108,7 +108,8 @@ TEST(StreamedValueTest, streamed_value_can_be_built_and_inspected) {
     }
     std::unique_ptr<Value> value = builder->build(std::move(builder));
     EXPECT_EQ(value->index().size(), 6);
-    auto view = value->index().create_view({0});
+    std::vector<size_t> view_dims = { 0 };
+    auto view = value->index().create_view(view_dims);
     Handle query_handle("b");
     string_id query = query_handle.id();
     string_id label;

@@ -45,7 +45,7 @@ public:
     const ValueType &type() const override { return _type; }
     const Value::Index &index() const override { return *this; }
     size_t size() const override { return _index.size(); }
-    std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
+    std::unique_ptr<View> create_view(ConstArrayRef<size_t> dims) const override;
     static Value::UP from_spec(const TensorSpec &spec);
     static Value::UP from_value(const Value &value);
     static Value::UP from_stream(nbostream &stream);

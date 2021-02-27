@@ -20,9 +20,9 @@ struct StreamedFilterView : Value::Index::View
     std::vector<size_t> view_dims;
     std::vector<string_id> to_match;
 
-    StreamedFilterView(LabelBlockStream labels, std::vector<size_t> view_dims_in)
+    StreamedFilterView(LabelBlockStream labels, ConstArrayRef<size_t> view_dims_in)
       : label_blocks(std::move(labels)),
-        view_dims(std::move(view_dims_in)),
+        view_dims(view_dims_in.begin(), view_dims_in.end()),
         to_match()
     {
         to_match.reserve(view_dims.size());
@@ -88,7 +88,7 @@ struct StreamedIterationView : Value::Index::View
 } // namespace <unnamed>
 
 std::unique_ptr<Value::Index::View>
-StreamedValueIndex::create_view(const std::vector<size_t> &dims) const
+StreamedValueIndex::create_view(ConstArrayRef<size_t> dims) const
 {
     LabelBlockStream label_stream(_num_subspaces, _labels_ref, _num_mapped_dims);
     if (dims.empty()) {

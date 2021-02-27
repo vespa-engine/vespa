@@ -83,8 +83,9 @@ struct SimpleFilterView : public Value::Index::View {
         return true;
     }
 
-    SimpleFilterView(const Map &map_in, const std::vector<size_t> &match_dims_in, size_t num_dims)
-        : map(map_in), match_dims(match_dims_in), extract_dims(), query(match_dims.size()), pos(map.end())
+    SimpleFilterView(const Map &map_in, ConstArrayRef<size_t> match_dims_in, size_t num_dims)
+      : map(map_in), match_dims(match_dims_in.begin(), match_dims_in.end()),
+        extract_dims(), query(match_dims.size()), pos(map.end())
     {
         auto my_pos = match_dims.begin();
         for (size_t i = 0; i < num_dims; ++i) {
@@ -208,7 +209,7 @@ SimpleValue::estimate_extra_memory_usage() const
 }
 
 std::unique_ptr<Value::Index::View>
-SimpleValue::create_view(const std::vector<size_t> &dims) const
+SimpleValue::create_view(ConstArrayRef<size_t> dims) const
 {
     if (dims.empty()) {
         return std::make_unique<SimpleIterateView>(_index);

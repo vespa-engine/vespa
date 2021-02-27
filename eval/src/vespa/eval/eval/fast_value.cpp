@@ -30,7 +30,7 @@ struct CreateFastValueBuilderBase {
 //-----------------------------------------------------------------------------
 
 std::unique_ptr<Value::Index::View>
-FastValueIndex::create_view(const std::vector<size_t> &dims) const
+FastValueIndex::create_view(ConstArrayRef<size_t> dims) const
 {
     if (map.addr_size() == 0) {
         return TrivialIndex::get().create_view(dims);

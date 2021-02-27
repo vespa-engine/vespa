@@ -53,7 +53,7 @@ struct Value {
 
         // create a view able to look up dense subspaces based on
         // labels from a subset of the mapped dimensions.
-        virtual std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const = 0;
+        virtual std::unique_ptr<View> create_view(ConstArrayRef<size_t> dims) const = 0;
 
         virtual ~Index() {}
     };
@@ -81,7 +81,7 @@ private:
 public:
     static const TrivialIndex &get() { return _index; }
     size_t size() const override;
-    std::unique_ptr<View> create_view(const std::vector<size_t> &dims) const override;
+    std::unique_ptr<View> create_view(ConstArrayRef<size_t> dims) const override;
 };
 
 template <typename T>
