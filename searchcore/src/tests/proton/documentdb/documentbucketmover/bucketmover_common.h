@@ -85,6 +85,7 @@ struct MyBucketModifiedHandler : public IBucketModifiedHandler {
     using BucketId = document::BucketId;
     std::vector<BucketId> _modified;
 
+    ~MyBucketModifiedHandler() override;
     void notifyBucketModified(const BucketId &bucket) override;
 
     void reset() { _modified.clear(); }
