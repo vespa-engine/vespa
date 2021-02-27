@@ -12,22 +12,23 @@ namespace search {
 class CommitParam
 {
 public:
-    CommitParam(SerialNum serialNum) noexcept : CommitParam(serialNum, false) {}
-    CommitParam(SerialNum serialNum, bool forceUpdateStats) noexcept : CommitParam(serialNum, serialNum, forceUpdateStats) {}
-    CommitParam(SerialNum firstSerialNum, SerialNum lastSerialNum, bool forceUpdateStats) noexcept
+    enum class UpdateStats { SKIP, FORCE};
+    CommitParam(SerialNum serialNum) noexcept : CommitParam(serialNum, UpdateStats::SKIP) {}
+    CommitParam(SerialNum serialNum, UpdateStats updateStats) noexcept : CommitParam(serialNum, serialNum, updateStats) {}
+    CommitParam(SerialNum firstSerialNum, SerialNum lastSerialNum, UpdateStats updateStats) noexcept
         : _firstSerialNum(firstSerialNum),
           _lastSerialNum(lastSerialNum),
-          _forceUpdateStats(forceUpdateStats)
+          _updateStats(updateStats)
     {}
 
-    bool forceUpdateStats() const { return _forceUpdateStats; }
+    bool forceUpdateStats() const { return _updateStats == UpdateStats::FORCE; }
     SerialNum firstSerialNum() const { return _firstSerialNum; }
     SerialNum lastSerialNum() const { return _lastSerialNum; }
 
 private:
-    const SerialNum _firstSerialNum;
-    const SerialNum _lastSerialNum;
-    const bool      _forceUpdateStats;
+    const SerialNum    _firstSerialNum;
+    const SerialNum    _lastSerialNum;
+    const UpdateStats  _updateStats;
 };
 
 }

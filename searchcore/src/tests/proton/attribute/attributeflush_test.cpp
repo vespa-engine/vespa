@@ -161,7 +161,7 @@ UpdaterTask::run()
             }
             ia.update(j, i);
         }
-        ia.commit(CommitParam(i-1, i)); // save i as last sync token
+        ia.commit(CommitParam(i-1, i, CommitParam::UpdateStats::SKIP)); // save i as last sync token
         needFlushToken = i;
         assert(i + 1 == ag->getNumDocs());
         if ((commits++ % 20 == 0) &&
