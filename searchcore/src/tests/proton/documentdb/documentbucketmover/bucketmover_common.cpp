@@ -7,6 +7,8 @@ using vespalib::IDestructorCallback;
 
 namespace proton::move::test {
 
+MyBucketModifiedHandler::~MyBucketModifiedHandler() = default;
+
 void
 MyBucketModifiedHandler::notifyBucketModified(const BucketId &bucket) {
     auto itr = std::find(_modified.begin(), _modified.end(), bucket);
