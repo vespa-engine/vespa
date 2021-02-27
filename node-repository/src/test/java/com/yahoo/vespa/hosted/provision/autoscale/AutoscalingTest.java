@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
@@ -135,6 +136,36 @@ public class AutoscalingTest {
         tester.deploy(application1, cluster1, scaledResources);
         tester.nodeRepository().nodes().list().owner(application1).stream()
               .allMatch(n -> n.allocation().get().requestedResources().diskSpeed() == NodeResources.DiskSpeed.any);
+    }
+
+    @Test
+    public void autoscaling_target_preserves_any() {
+        NodeResources hostResources = new NodeResources(3, 100, 100, 1);
+        AutoscalingTester tester = new AutoscalingTester(hostResources);
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.content, "cluster1");
+
+        // Initial deployment
+        NodeResources resources = new NodeResources(1, 10, 10, 1);
+        var min = new ClusterResources( 2, 1, resources.with(NodeResources.DiskSpeed.any));
+        var max = new ClusterResources( 10, 1, resources.with(NodeResources.DiskSpeed.any));
+        tester.deploy(application1, cluster1, Capacity.from(min, max));
+
+        // Redeployment without target: Uses current resource numbers with *requested* non-numbers (i.e disk-speed any)
+        assertTrue(tester.nodeRepository().applications().get(application1).get().cluster(cluster1.id()).get().targetResources().isEmpty());
+        tester.deploy(application1, cluster1, Capacity.from(min, max));
+        assertEquals(NodeResources.DiskSpeed.any,
+                     tester.nodeRepository().nodes().list().owner(application1).cluster(cluster1.id()).first().get()
+                           .allocation().get().requestedResources().diskSpeed());
+
+        // Autoscaling: Uses disk-speed any as well
+        tester.clock().advance(Duration.ofDays(2));
+        tester.addCpuMeasurements(0.8f, 1f, 120, application1);
+        Autoscaler.Advice advice = tester.autoscale(application1, cluster1.id(), min, max);
+        assertEquals(NodeResources.DiskSpeed.any, advice.target().get().nodeResources().diskSpeed());
+
+
     }
 
     @Test
