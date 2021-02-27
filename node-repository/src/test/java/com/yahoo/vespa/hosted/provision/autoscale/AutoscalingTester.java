@@ -74,6 +74,8 @@ class AutoscalingTester {
         autoscaler = new Autoscaler(db, nodeRepository());
     }
 
+    public ProvisioningTester provisioning() { return provisioningTester; }
+
     public ApplicationId applicationId(String applicationName) {
         return ApplicationId.from("tenant1", applicationName, "instance1");
     }
@@ -87,7 +89,11 @@ class AutoscalingTester {
     }
 
     public List<HostSpec> deploy(ApplicationId application, ClusterSpec cluster, int nodes, int groups, NodeResources resources) {
-        List<HostSpec> hosts = provisioningTester.prepare(application, cluster, Capacity.from(new ClusterResources(nodes, groups, resources)));
+        return deploy(application, cluster, Capacity.from(new ClusterResources(nodes, groups, resources)));
+    }
+
+    public List<HostSpec> deploy(ApplicationId application, ClusterSpec cluster, Capacity capacity) {
+        List<HostSpec> hosts = provisioningTester.prepare(application, cluster, capacity);
         for (HostSpec host : hosts)
             makeReady(host.hostname());
         provisioningTester.activateTenantHosts();

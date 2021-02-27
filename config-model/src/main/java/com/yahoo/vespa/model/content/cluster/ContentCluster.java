@@ -514,6 +514,7 @@ public class ContentCluster extends AbstractConfigProducer implements
 
     /**
      * The list of documentdefinitions declared at the cluster level.
+     *
      * @return the set of documenttype names
      */
     public Map<String, NewDocumentType> getDocumentDefinitions() { return documentDefinitions; }
