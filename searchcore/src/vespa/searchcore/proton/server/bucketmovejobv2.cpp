@@ -18,6 +18,7 @@
 #include <vespa/vespalib/util/destructor_callbacks.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <thread>
+#include <vespa/vespalib/stllike/hash_set.hpp>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.bucketmovejob");
@@ -84,6 +85,7 @@ BucketMoveJobV2::BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &
       _bucketSpace(bucketSpace),
       _iterateCount(0),
       _movers(),
+      _movers2Complete(),
       _buckets2Move(),
       _stopped(false),
       _startedCount(0),
@@ -235,6 +237,8 @@ void
 BucketMoveJobV2::completeMove(BucketMoverSP mover, std::vector<GuardedMoveOp> ops, IDestructorCallbackSP onDone) {
     mover->moveDocuments(std::move(ops), std::move(onDone));
     if (mover->bucketDone() && mover->inSync()) {
+        assert(_movers2Complete.find(mover->getBucket()) != _movers2Complete.end());
+        _movers2Complete.erase(mover->getBucket());
         _modifiedHandler.notifyBucketModified(mover->getBucket());
     }
 }
@@ -243,6 +247,9 @@ void
 BucketMoveJobV2::cancelMovesForBucket(BucketId bucket) {
     for (auto itr = _movers.begin(); itr != _movers.end(); itr++) {
         if (bucket == (*itr)->getBucket()) {
+            if ( ! (*itr)->inSync() ) {
+                _movers2Complete.insert(bucket);
+            }
             _movers.erase(itr);
             backFillMovers();
             return;
@@ -260,6 +267,13 @@ BucketMoveJobV2::considerBucket(const bucketdb::Guard & guard, BucketId bucket)
     } else {
         _buckets2Move.erase(bucket);
         cancelMovesForBucket(bucket);
+        if (_movers2Complete.find(bucket) != _movers2Complete.end()) {
+            // This will continue until all inflight operations on this bucket is completed
+            _master.execute(makeLambdaTask([this, bucket]() {
+                if (_stopped.load(std::memory_order_relaxed)) return;
+                considerBucket(_ready.meta_store()->getBucketDB().takeGuard(), bucket);
+            }));
+        }
     }
     backFillMovers();
     considerRun();
@@ -271,10 +285,10 @@ BucketMoveJobV2::notifyCreateBucket(const bucketdb::Guard & guard, const BucketI
     considerBucket(guard, bucket);
 }
 
-BucketMoveJobV2::BucketSet
+BucketMoveJobV2::BucketDestinationMap
 BucketMoveJobV2::computeBuckets2Move()
 {
-    BucketMoveJobV2::BucketSet toMove;
+    BucketMoveJobV2::BucketDestinationMap toMove;
     for (ScanIterator itr(_ready.meta_store()->getBucketDB().takeGuard(), BucketId()); itr.valid(); ++itr) {
         auto [mustMove, wantReady] = needMove(itr);
         if (mustMove) {
@@ -316,6 +330,8 @@ BucketMoveJobV2::moveDocs(size_t maxDocsToMove) {
     if (!mover->bucketDone()) {
         startMove(mover, maxDocsToMove);
         if (mover->bucketDone()) {
+            assert( _movers2Complete.find(mover->getBucket()) == _movers2Complete.end());
+            _movers2Complete.insert(mover->getBucket());
             auto next = greedyCreateMover();
             if (next) {
                 _movers[index] = next;

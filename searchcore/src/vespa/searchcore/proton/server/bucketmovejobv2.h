@@ -9,6 +9,7 @@
 #include "iclusterstatechangedhandler.h"
 #include <vespa/searchcore/proton/bucketdb/bucketscaniterator.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
+#include <vespa/vespalib/stllike/hash_set.h>
 
 namespace storage::spi { struct BucketExecutor; }
 namespace searchcorespi::index { struct IThreadService; }
@@ -46,12 +47,13 @@ private:
     using IThreadService = searchcorespi::index::IThreadService;
     using BucketId = document::BucketId;
     using ScanIterator = bucketdb::ScanIterator;
-    using BucketSet = std::map<BucketId, bool>;
+    using BucketDestinationMap = std::map<BucketId, bool>;
     using NeedResult = std::pair<bool, bool>;
     using ActiveState = storage::spi::BucketInfo::ActiveState;
     using BucketMover = bucketdb::BucketMover;
     using BucketMoverSP = std::shared_ptr<BucketMover>;
     using Movers = std::vector<std::shared_ptr<BucketMover>>;
+    using BucketSet = vespalib::hash_set<BucketId, BucketId::hash>;
     using MoveKey = BucketMover::MoveKey;
     using GuardedMoveOp = BucketMover::GuardedMoveOp;
     std::shared_ptr<IBucketStateCalculator>   _calc;
@@ -64,7 +66,8 @@ private:
     const document::BucketSpace               _bucketSpace;
     size_t                                    _iterateCount;
     Movers                                    _movers;
-    BucketSet                                 _buckets2Move;
+    BucketSet                                 _movers2Complete;
+    BucketDestinationMap                      _buckets2Move;
     std::atomic<bool>                         _stopped;
     std::atomic<size_t>                       _startedCount;
     std::atomic<size_t>                       _executedCount;
@@ -80,7 +83,7 @@ private:
     void completeMove(BucketMoverSP mover, std::vector<GuardedMoveOp> keys, IDestructorCallbackSP context);
     void considerBucket(const bucketdb::Guard & guard, BucketId bucket);
     NeedResult needMove(const ScanIterator &itr) const;
-    BucketSet computeBuckets2Move();
+    BucketDestinationMap computeBuckets2Move();
     BucketMoverSP createMover(BucketId bucket, bool wantReady);
     BucketMoverSP greedyCreateMover();
     void backFillMovers();
