@@ -5,7 +5,7 @@
 #include <vespa/searchcore/proton/feedoperation/lidvectorcontext.h>
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/query/base.h>
-#include <vespa/searchlib/common/serialnum.h>
+#include <vespa/searchlib/common/commit_param.h>
 
 namespace vespalib { class IDestructorCallback; }
 namespace document {
@@ -23,14 +23,14 @@ struct IFieldUpdateCallback;
  */
 class IAttributeWriter {
 public:
-    typedef std::unique_ptr<IAttributeWriter> UP;
-    typedef std::shared_ptr<IAttributeWriter> SP;
-    typedef std::vector<search::AttributeGuard> AttributeGuardList;
-    typedef LidVectorContext::LidVector LidVector;
-    typedef search::SerialNum SerialNum;
-    typedef search::DocumentIdT DocumentIdT;
-    typedef document::DocumentUpdate DocumentUpdate;
-    typedef document::Document Document;
+    using UP = std::unique_ptr<IAttributeWriter>;
+    using SP = std::shared_ptr<IAttributeWriter>;
+    using LidVector = LidVectorContext::LidVector;
+    using SerialNum = search::SerialNum;
+    using CommitParam = search::CommitParam;
+    using DocumentIdT = search::DocumentIdT;
+    using DocumentUpdate = document::DocumentUpdate;
+    using Document = document::Document;
     using OnWriteDoneType = const std::shared_ptr<vespalib::IDestructorCallback> &;
 
     virtual ~IAttributeWriter() = default;
@@ -54,16 +54,15 @@ public:
     /**
      * Compact the lid space of the underlying attribute vectors.
      */
-    virtual void compactLidSpace(uint32_t wantedLidLimi, SerialNum serialNum) = 0;
+    virtual void compactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum) = 0;
     virtual const proton::IAttributeManager::SP &getAttributeManager() const = 0;
 
     /**
-     * Commit all underlying attribute vectors with the given serial number.
+     * Commit all underlying attribute vectors with the given param.
      */
-    virtual void forceCommit(SerialNum serialNum, OnWriteDoneType onWriteDone) = 0;
+    virtual void forceCommit(const CommitParam & param, OnWriteDoneType onWriteDone) = 0;
 
     virtual void onReplayDone(uint32_t docIdLimit) = 0;
-
     virtual bool hasStructFieldAttribute() const = 0;
 };
 

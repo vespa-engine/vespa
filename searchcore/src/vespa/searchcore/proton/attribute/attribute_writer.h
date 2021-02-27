@@ -104,7 +104,7 @@ public:
     const proton::IAttributeManager::SP &getAttributeManager() const override {
         return _mgr;
     }
-    void forceCommit(SerialNum serialNum, OnWriteDoneType onWriteDone) override;
+    void forceCommit(const CommitParam & param, OnWriteDoneType onWriteDone) override;
 
     void onReplayDone(uint32_t docIdLimit) override;
     bool hasStructFieldAttribute() const override;

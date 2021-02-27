@@ -130,7 +130,8 @@ AttributeVector::AttributeVector(vespalib::stringref baseFileName, const Config 
 
 AttributeVector::~AttributeVector() = default;
 
-void AttributeVector::updateStat(bool force) {
+void
+AttributeVector::updateStat(bool force) {
     if (force) {
         onUpdateStat();
     } else if (_nextStatUpdateTime < vespalib::steady_clock::now()) {
@@ -150,24 +151,24 @@ AttributeVector::isEnumerated(const vespalib::GenericHeader &header)
 }
 
 void
-AttributeVector::commit(bool forceUpdateStat)
+AttributeVector::commit(bool forceUpdateStats)
 {
     onCommit();
     updateCommittedDocIdLimit();
-    updateStat(forceUpdateStat);
+    updateStat(forceUpdateStats);
     _loaded = true;
 }
 
 void
-AttributeVector::commit(uint64_t firstSyncToken, uint64_t lastSyncToken)
+AttributeVector::commit(const CommitParam & param)
 {
-    if (firstSyncToken < getStatus().getLastSyncToken()) {
+    if (param.firstSerialNum() < getStatus().getLastSyncToken()) {
         LOG(error, "Expected first token to be >= %" PRIu64 ", got %" PRIu64 ".",
-            getStatus().getLastSyncToken(), firstSyncToken);
+            getStatus().getLastSyncToken(), param.firstSerialNum());
         LOG_ABORT("should not be reached");
     }
-    commit();
-    _status.setLastSyncToken(lastSyncToken);
+    commit(param.forceUpdateStats());
+    _status.setLastSyncToken(param.lastSerialNum());
 }
 
 bool

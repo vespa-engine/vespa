@@ -51,7 +51,7 @@ private:
     void removeIndexedFields(SerialNum serialNum, const LidVector &lidsToRemove, OnWriteDoneType onWriteDone) override;
 
     void performIndexForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone);
-    void internalForceCommit(SerialNum serialNum, OnForceCommitDoneType onCommitDone) override;
+    void internalForceCommit(const CommitParam & param, OnForceCommitDoneType onCommitDone) override;
 
 public:
     SearchableFeedView(StoreOnlyFeedView::Context storeOnlyCtx, const PersistentParams &params,

@@ -183,18 +183,19 @@ applyHeartBeat(SerialNum serialNum, AttributeVector &attr)
 {
     attr.removeAllOldGenerations();
     if (attr.getStatus().getLastSyncToken() <= serialNum) {
-        attr.commit(serialNum, serialNum);
+        attr.commit(search::CommitParam(serialNum));
     }
 }
 
 void
-applyCommit(SerialNum serialNum, AttributeWriter::OnWriteDoneType , AttributeVector &attr)
+applyCommit(CommitParam param, AttributeWriter::OnWriteDoneType , AttributeVector &attr)
 {
+    SerialNum serialNum = param.lastSerialNum();
     if (attr.getStatus().getLastSyncToken() <= serialNum) {
         if (serialNum > attr.getCreateSerialNum()) {
-            attr.commit(serialNum, serialNum);
+            attr.commit(param);
         } else {
-            attr.commit();
+            attr.commit(param.forceUpdateStats());
         }
     }
 }
@@ -208,11 +209,11 @@ applyCompactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum, AttributeVect
          * later config changes removing the attribute then it might
          * be smaller than expected during transaction log replay.
          */
-        attr.commit();
+        attr.commit(false);
         if (wantedLidLimit <= attr.getCommittedDocIdLimit()) {
             attr.compactLidSpace(wantedLidLimit);
         }
-        attr.commit(serialNum, serialNum);
+        attr.commit(CommitParam(serialNum));
     }
 }
 
@@ -488,18 +489,18 @@ BatchRemoveTask::~BatchRemoveTask() = default;
 class CommitTask : public vespalib::Executor::Task
 {
     const AttributeWriter::WriteContext  &_wc;
-    const SerialNum      _serialNum;
+    const CommitParam                     _param;
     std::remove_reference_t<AttributeWriter::OnWriteDoneType> _onWriteDone;
 public:
-    CommitTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, AttributeWriter::OnWriteDoneType onWriteDone);
+    CommitTask(const AttributeWriter::WriteContext &wc, CommitParam param, AttributeWriter::OnWriteDoneType onWriteDone);
     ~CommitTask() override;
     void run() override;
 };
 
 
-CommitTask::CommitTask(const AttributeWriter::WriteContext &wc, SerialNum serialNum, AttributeWriter::OnWriteDoneType onWriteDone)
+CommitTask::CommitTask(const AttributeWriter::WriteContext &wc, CommitParam param, AttributeWriter::OnWriteDoneType onWriteDone)
     : _wc(wc),
-      _serialNum(serialNum),
+      _param(param),
       _onWriteDone(onWriteDone)
 {
 }
@@ -512,7 +513,7 @@ CommitTask::run()
     const auto &fields = _wc.getFields();
     for (auto &field : fields) {
         AttributeVector &attr = field.getAttribute();
-        applyCommit(_serialNum, _onWriteDone, attr);
+        applyCommit(_param, _onWriteDone, attr);
     }
 }
 
@@ -715,7 +716,7 @@ AttributeWriter::heartBeat(SerialNum serialNum)
 
 
 void
-AttributeWriter::forceCommit(SerialNum serialNum, OnWriteDoneType onWriteDone)
+AttributeWriter::forceCommit(const CommitParam & param, OnWriteDoneType onWriteDone)
 {
     if (_mgr->getImportedAttributes() != nullptr) {
         std::vector<std::shared_ptr<ImportedAttributeVector>> importedAttrs;
@@ -725,7 +726,7 @@ AttributeWriter::forceCommit(SerialNum serialNum, OnWriteDoneType onWriteDone)
         }
     }
     for (const auto &wc : _writeContexts) {
-        auto commitTask = std::make_unique<CommitTask>(wc, serialNum, onWriteDone);
+        auto commitTask = std::make_unique<CommitTask>(wc, param, onWriteDone);
         _attributeFieldWriter.executeTask(wc.getExecutorId(), std::move(commitTask));
     }
     _attributeFieldWriter.wakeup();
@@ -748,10 +749,9 @@ void
 AttributeWriter::compactLidSpace(uint32_t wantedLidLimit, SerialNum serialNum)
 {
     for (auto entry : _attrMap) {
-        _attributeFieldWriter.
-            execute(entry.second.second,
-                    [wantedLidLimit, serialNum, attr=entry.second.first]()
-                    { applyCompactLidSpace(wantedLidLimit, serialNum, *attr); });
+        _attributeFieldWriter.execute(entry.second.second,
+                                      [wantedLidLimit, serialNum, attr=entry.second.first]()
+                                      { applyCompactLidSpace(wantedLidLimit, serialNum, *attr); });
     }
     _attributeFieldWriter.sync();
 }

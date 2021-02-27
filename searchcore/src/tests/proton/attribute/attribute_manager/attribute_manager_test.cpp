@@ -394,7 +394,7 @@ TEST_F("require that predicate attributes are flushed and loaded", BaseFixture)
         uint32_t doc_id;
         a1->addDoc(doc_id);
         index.indexEmptyDocument(doc_id);
-        pa.commit(100, 100);
+        pa.commit(CommitParam(100));
 
         EXPECT_EQUAL(2u, a1->getNumDocs());
 
@@ -416,7 +416,7 @@ TEST_F("require that predicate attributes are flushed and loaded", BaseFixture)
         PredicateTreeAnnotations annotations(3);
         annotations.interval_map[123] = {{ 0x0001ffff }};
         index.indexDocument(1, annotations);
-        pa.commit(200, 200);
+        pa.commit(CommitParam(200));
 
         EXPECT_EQUAL(3u, a1->getNumDocs());
         EXPECT_TRUE(ia1.load());
@@ -540,7 +540,7 @@ TEST_F("require that extra attribute is not treated as removed", Fixture)
 {
     AttributeVector::SP ex(createInt32Attribute("ex"));
     f._m.addExtraAttribute(ex);
-    ex->commit(1,1);
+    ex->commit(CommitParam(1));
 
     AttrSpecList ns;
     SequentialAttributeManager am2(f._m, AttrMgrSpec(ns, 2, 1));
