@@ -12,6 +12,8 @@ import java.nio.file.Paths;
 import java.time.Duration;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * For use in unit tests only
@@ -20,20 +22,25 @@ import java.util.concurrent.Executors;
  */
 public class VespaZooKeeperTestServer implements VespaZooKeeperServer, Runnable {
 
+    private static final Logger log = java.util.logging.Logger.getLogger(VespaZooKeeperTestServer.class.getName());
+
     ExecutorService executorService = Executors.newSingleThreadExecutor(new DaemonThreadFactory("zookeeper test server"));
 
+    private final ZookeeperServerConfig zookeeperServerConfig;
     private final VespaQuorumPeer peer;
     private Path configFilePath;
 
     private VespaZooKeeperTestServer(ZookeeperServerConfig zookeeperServerConfig) {
+        this.zookeeperServerConfig = zookeeperServerConfig;
         this.peer = new VespaQuorumPeer();
-        new Configurator(zookeeperServerConfig).writeConfigToDisk(TransportSecurityUtils.getOptions());
+
     }
 
     public static VespaZooKeeperTestServer createAndStartServer(int port, int tickTime) throws IOException {
         Path zooKeeperDir = Files.createTempDirectory("zookeeper");
         ZookeeperServerConfig config = getZookeeperServerConfig(zooKeeperDir, port, tickTime);
         VespaZooKeeperTestServer server = new VespaZooKeeperTestServer(config);
+        log.log(Level.INFO, "Starting ZooKeeper test server on port " + port);
         server.start(Paths.get(config.zooKeeperConfigFile()));
         return server;
     }
@@ -47,6 +54,7 @@ public class VespaZooKeeperTestServer implements VespaZooKeeperServer, Runnable 
     @Override
     public void start(Path configFilePath) {
         this.configFilePath = configFilePath;
+        new Configurator(zookeeperServerConfig).writeConfigToDisk(TransportSecurityUtils.getOptions());
         executorService.submit(this);
     }
 
