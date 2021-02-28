@@ -304,9 +304,9 @@ BucketMoveJobV2::greedyCreateMover() {
     return {};
 }
 
-bool
+void
 BucketMoveJobV2::moveDocs(size_t maxDocsToMove) {
-    if (done()) return true;
+    if (done()) return;
 
     // Select mover
     size_t index = _iterateCount++ % _movers.size();
@@ -325,7 +325,6 @@ BucketMoveJobV2::moveDocs(size_t maxDocsToMove) {
             _bucketsPending.store(_movers.size() + _buckets2Move.size(), std::memory_order_relaxed);
         }
     }
-    return done();
 }
 
 bool

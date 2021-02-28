@@ -85,7 +85,7 @@ private:
     BucketMoverSP greedyCreateMover();
     void backFillMovers();
     void cancelMovesForBucket(BucketId bucket);
-    bool moveDocs(size_t maxDocsToMove);
+    void moveDocs(size_t maxDocsToMove);
     void failOperation(BucketId bucket);
     friend class StartMove;
 public:
