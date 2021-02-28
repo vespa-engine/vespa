@@ -67,8 +67,8 @@ template <typename F> void execute_many(size_t idx1, size_t idx2, const size_t *
 } // implementation details
 
 // Run a nested loop and pass indexes to 'f'
-template <typename F>
-void run_nested_loop(size_t idx, const std::vector<size_t> &loop, const std::vector<size_t> &stride, const F &f) {
+template <typename F, typename V>
+void run_nested_loop(size_t idx, const V &loop, const V &stride, const F &f) {
     size_t levels = loop.size();
     switch(levels) {
     case 0: return f(idx);
@@ -82,8 +82,8 @@ void run_nested_loop(size_t idx, const std::vector<size_t> &loop, const std::vec
 // Run two nested loops in parallel and pass both indexes to 'f'. Note
 // that 'loop' is shared, which means that only individual strides may
 // differ between the two loops.
-template <typename F>
-void run_nested_loop(size_t idx1, size_t idx2, const std::vector<size_t> &loop, const std::vector<size_t> &stride1, const std::vector<size_t> &stride2, const F &f) {
+template <typename F, typename V>
+void run_nested_loop(size_t idx1, size_t idx2, const V &loop, const V &stride1, const V &stride2, const F &f) {
     size_t levels = loop.size();
     switch(levels) {
     case 0: return f(idx1, idx2);
