@@ -37,8 +37,7 @@ TensorSpec perform_generic_cell_cast(const TensorSpec &a, CellType to, const Val
 {
     Stash stash;
     auto lhs = value_from_spec(a, factory);
-    auto res_type = ValueType::cell_cast(lhs->type(), to);
-    auto my_op = GenericCellCast::make_instruction(res_type, lhs->type(), res_type.cell_type(), stash);
+    auto my_op = GenericCellCast::make_instruction(lhs->type(), to, stash);
     InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs})));
 }

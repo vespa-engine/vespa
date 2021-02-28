@@ -89,8 +89,7 @@ TensorSpec ReferenceOperations::cell_cast(const TensorSpec &a, CellType to) {
     if (res_type.is_error()) {
         return result;
     }
-    typify_invoke<1,TypifyCellType,CopyCellsWithCast>(
-        res_type.cell_type(), a, result);
+    typify_invoke<1,TypifyCellType,CopyCellsWithCast>(to, a, result);
     return result;
 }
 
