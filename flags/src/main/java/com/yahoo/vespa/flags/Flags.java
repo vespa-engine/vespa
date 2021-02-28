@@ -207,7 +207,7 @@ public class Flags {
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag RECONFIGURABLE_ZOOKEEPER_SERVER_FOR_CLUSTER_CONTROLLER = defineFeatureFlag(
-            "reconfigurable-zookeeper-server-for-cluster-controller", false,
+            "reconfigurable-zookeeper-server-for-cluster-controller", true,
             List.of("musum", "mpolden"), "2020-12-16", "2021-03-16",
             "Whether to use reconfigurable zookeeper server for cluster controller",
             "Takes effect on (re)redeployment",
