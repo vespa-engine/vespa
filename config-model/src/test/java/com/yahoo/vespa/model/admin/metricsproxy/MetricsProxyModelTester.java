@@ -1,7 +1,4 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-/*
- * Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
- */
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 package com.yahoo.vespa.model.admin.metricsproxy;
 
@@ -11,11 +8,14 @@ import ai.vespa.metricsproxy.metric.dimensions.ApplicationDimensionsConfig;
 import ai.vespa.metricsproxy.metric.dimensions.NodeDimensionsConfig;
 import ai.vespa.metricsproxy.rpc.RpcConnectorConfig;
 import ai.vespa.metricsproxy.service.VespaServicesConfig;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.monitoring.Metric;
 import com.yahoo.vespa.model.admin.monitoring.MetricsConsumer;
 import com.yahoo.vespa.model.test.VespaModelTester;
+
+import java.util.Optional;
 
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.hosted;
 import static com.yahoo.vespa.model.admin.metricsproxy.MetricsProxyModelTester.TestMode.self_hosted;
@@ -40,12 +40,16 @@ class MetricsProxyModelTester {
     }
 
     static VespaModel getModel(String servicesXml, TestMode testMode) {
+        return getModel(servicesXml, testMode, new DeployState.Builder());
+    }
+
+    static VespaModel getModel(String servicesXml, TestMode testMode, DeployState.Builder builder) {
         var numberOfHosts = testMode == hosted ? 2 : 1;
         var tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         tester.setHosted(testMode == hosted);
         if (testMode == hosted) tester.setApplicationId(MY_TENANT, MY_APPLICATION, MY_INSTANCE);
-        return tester.createModel(servicesXml, true);
+        return tester.createModel(servicesXml, true, builder);
     }
 
     static String containerConfigId(VespaModel model, MetricsProxyModelTester.TestMode mode) {
@@ -98,8 +102,8 @@ class MetricsProxyModelTester {
         return model.getConfig(ApplicationDimensionsConfig.class, CLUSTER_CONFIG_ID);
     }
 
-    static QrStartConfig getQrStartConfig(VespaModel model) {
-        return model.getConfig(QrStartConfig.class, CLUSTER_CONFIG_ID);
+    static QrStartConfig getQrStartConfig(VespaModel model, String hostname) {
+        return model.getConfig(QrStartConfig.class, CLUSTER_CONFIG_ID + "/" + hostname);
     }
 
     static NodeDimensionsConfig getNodeDimensionsConfig(VespaModel model, String configId) {

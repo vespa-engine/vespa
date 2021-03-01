@@ -75,7 +75,7 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     private Optional<LogserverContainerCluster> logServerContainerCluster = Optional.empty();
 
     private ZooKeepersConfigProvider zooKeepersConfigProvider;
-    private FileDistributionConfigProducer fileDistribution;
+    private final FileDistributionConfigProducer fileDistribution;
     private final boolean multitenant;
 
     public Admin(AbstractConfigProducer parent,
@@ -220,7 +220,7 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
         for (var host : hosts) {
             // Send hostname to be used in configId (instead of index), as the sorting of hosts seems to be unstable
             // between config changes, even when the set of hosts is unchanged.
-            var container = new MetricsProxyContainer(metricsProxyCluster, host.getHostname(), index, deployState.isHosted());
+            var container = new MetricsProxyContainer(metricsProxyCluster, host, index, deployState);
             addAndInitializeService(deployState.getDeployLogger(), host, container);
             metricsProxyCluster.addContainer(container);
         }
