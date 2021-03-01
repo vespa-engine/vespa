@@ -29,7 +29,6 @@ public class ContainerConfig {
                "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockMetricsFetcher'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockNodeRepository'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockProvisionServiceProvider'/>\n" +
-               "  <component id='com.yahoo.vespa.hosted.provision.testutils.MockReconfigurer'/>\n" +
                "  <component id='com.yahoo.vespa.hosted.provision.maintenance.NodeRepositoryMaintenance'/>\n" +
                "  <component id='com.yahoo.vespa.flags.InMemoryFlagSource'/>\n" +
                "  <component id='com.yahoo.config.provision.Zone'/>\n" +
