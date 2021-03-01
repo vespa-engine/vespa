@@ -223,6 +223,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return tenantInfo(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"));
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/compile-version")) return compileVersion(path.get("tenant"), path.get("application"));
@@ -268,7 +269,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePUT(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return updateTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return updateTenantInfo(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/secret-store")) return addSecretStore(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}")) return addSecretStore(path.get("tenant"), path.get("name"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
         return ErrorResponse.notFoundError("Nothing at " + path);
@@ -297,7 +298,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/reindexing")) return enableReindexing(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/suspend")) return suspend(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), true);
-        if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/validate-parameter-store")) return validateParameterStore(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/deploy")) return deploy(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request); // legacy synonym of the above
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/restart")) return restart(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), request);
@@ -583,23 +583,42 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
 
-    private HttpResponse validateParameterStore(String tenantName, String applicationName, String instanceName, String environment, String region, HttpRequest request) {
+    private HttpResponse validateSecretStore(String tenantName, String name) {
         var tenant = TenantName.from(tenantName);
         if (controller.tenants().require(tenant).type() != Tenant.Type.cloud)
-            throw new IllegalArgumentException("Tenant '" + tenant + "' is not a cloud tenant");
+            return ErrorResponse.badRequest("Tenant '" + tenant + "' is not a cloud tenant");
 
-        var application = ApplicationId.from(tenantName, applicationName, instanceName);
-        var zone = requireZone(environment, region);
-        var deployment = new DeploymentId(application, zone);
+        var cloudTenant = (CloudTenant)controller.tenants().require(tenant);
+        var tenantSecretStore = cloudTenant.tenantSecretStores()
+                .stream()
+                .filter(secretStore -> secretStore.getName().equals(name))
+                .findFirst();
+        var deployment = getActiveDeployment(tenant);
 
-        var data = toSlime(request.getData()).get();
-        var awsId = mandatory("awsId", data).asString();
-        var name = mandatory("name", data).asString();
-        var role = mandatory("role", data).asString();
-        var tenantSecretStore = new TenantSecretStore(name, awsId, role);
+        if (deployment.isEmpty())
+            return ErrorResponse.badRequest("Tenant '" + tenantName + "' has no active deployments");
+        if (tenantSecretStore.isEmpty())
+            return ErrorResponse.notFoundError("No secret store '" + name + "' configured for tenant '" + tenantName + "'");
 
-        var response = controller.serviceRegistry().configServer().validateSecretStore(deployment, tenantSecretStore);
+        var response = controller.serviceRegistry().configServer().validateSecretStore(deployment.get(), tenantSecretStore.get());
         return new MessageResponse(response);
+    }
+
+    private Optional<DeploymentId> getActiveDeployment(TenantName tenant) {
+        for (var application : controller.applications().asList(tenant)) {
+            var optionalInstance = application.instances().values()
+                    .stream()
+                    .filter(instance -> instance.deployments().keySet().size() > 0)
+                    .findFirst();
+
+            if (optionalInstance.isPresent()) {
+                var instance = optionalInstance.get();
+                var applicationId = instance.id();
+                var zoneId = instance.deployments().keySet().stream().findFirst().orElseThrow();
+                return Optional.of(new DeploymentId(applicationId, zoneId));
+            }
+        }
+        return Optional.empty();
     }
 
     private HttpResponse removeDeveloperKey(String tenantName, HttpRequest request) {
@@ -654,14 +673,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(root);
     }
 
-    private HttpResponse addSecretStore(String tenantName, HttpRequest request) {
+    private HttpResponse addSecretStore(String tenantName, String name, HttpRequest request) {
         if (controller.tenants().require(TenantName.from(tenantName)).type() != Tenant.Type.cloud)
             throw new IllegalArgumentException("Tenant '" + tenantName + "' is not a cloud tenant");
 
         var data = toSlime(request.getData()).get();
         var awsId = mandatory("awsId", data).asString();
         var externalId = mandatory("externalId", data).asString();
-        var name = mandatory("name", data).asString();
         var role = mandatory("role", data).asString();
 
         var tenant = (CloudTenant) controller.tenants().require(TenantName.from(tenantName));

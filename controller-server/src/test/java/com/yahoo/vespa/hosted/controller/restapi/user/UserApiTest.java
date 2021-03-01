@@ -174,10 +174,10 @@ public class UserApiTest extends ControllerContainerCloudTest {
                               new File("second-developer-key.json"));
 
         // PUT in a new secret store for the tenant
-        tester.assertResponse(request("/application/v4/tenant/my-tenant/secret-store/", PUT)
+        tester.assertResponse(request("/application/v4/tenant/my-tenant/secret-store/secret-foo", PUT)
                         .principal("admin@tenant")
                         .roles(Set.of(Role.administrator(id.tenant())))
-                        .data("{\"name\":\"secret-foo\",\"awsId\":\"123\",\"role\":\"secret-role\",\"externalId\":\"abc\"}"),
+                        .data("{\"awsId\":\"123\",\"role\":\"secret-role\",\"externalId\":\"abc\"}"),
                 "{\"message\":\"Configured secret store: TenantSecretStore{name='secret-foo', awsId='123', role='secret-role'}\"}",
                 200);
 
