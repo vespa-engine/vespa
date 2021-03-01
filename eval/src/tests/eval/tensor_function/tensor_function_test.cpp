@@ -31,6 +31,9 @@ struct EvalCtx {
         tensors.push_back(std::move(tensor));
         return id;
     }
+    ValueType type_of(size_t idx) {
+        return params[idx].get().type();
+    }
     void replace_tensor(size_t idx, Value::UP tensor) {
         params[idx] = *tensor;
         tensors[idx] = std::move(tensor);
@@ -86,6 +89,14 @@ struct EvalCtx {
     Value::UP make_tensor_matrix() {
         return value_from_spec(
                 TensorSpec("tensor(x[2],y[2])")
+                .add({{"x", 0}, {"y", 0}}, 1.0)
+                .add({{"x", 0}, {"y", 1}}, 2.0)
+                .add({{"x", 1}, {"y", 0}}, 3.0)
+                .add({{"x", 1}, {"y", 1}}, 4.0), factory);
+    }
+    Value::UP make_float_tensor_matrix() {
+        return value_from_spec(
+                TensorSpec("tensor<float>(x[2],y[2])")
                 .add({{"x", 0}, {"y", 0}}, 1.0)
                 .add({{"x", 0}, {"y", 1}}, 2.0)
                 .add({{"x", 1}, {"y", 0}}, 3.0)
@@ -273,6 +284,16 @@ TEST("require that tensor concat works") {
     TEST_DO(verify_equal(*expect, ctx.eval(fun)));
 }
 
+TEST("require that tensor cell cast works") {
+    EvalCtx ctx(simple_factory);
+    size_t a_id = ctx.add_tensor(ctx.make_tensor_matrix());
+    Value::UP expect = ctx.make_float_tensor_matrix();
+    const auto &fun = cell_cast(inject(ctx.type_of(a_id), a_id, ctx.stash), CellType::FLOAT, ctx.stash);
+    EXPECT_TRUE(fun.result_is_mutable());
+    EXPECT_EQUAL(expect->type(), fun.result_type());
+    TEST_DO(verify_equal(*expect, ctx.eval(fun)));
+}
+
 TEST("require that tensor create works") {
     EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_double(1.0));
@@ -450,6 +471,10 @@ TEST("require that push_children works") {
     EXPECT_EQUAL(&refs[10].get().get(), &b);
     EXPECT_EQUAL(&refs[11].get().get(), &c);
     //-------------------------------------------------------------------------
+    cell_cast(a, CellType::FLOAT, stash).push_children(refs);
+    ASSERT_EQUAL(refs.size(), 13u);
+    EXPECT_EQUAL(&refs[12].get().get(), &a);
+    //-------------------------------------------------------------------------
 }
 
 TEST("require that tensor function can be dumped for debugging") {
@@ -459,7 +484,9 @@ TEST("require that tensor function can be dumped for debugging") {
     auto my_value_3 = stash.create<DoubleValue>(3.0);
     //-------------------------------------------------------------------------
     const auto &x5 = inject(ValueType::from_spec("tensor(x[5])"), 0, stash);
-    const auto &mapped_x5 = map(x5, operation::Relu::f, stash);
+    const auto &float_x5 = cell_cast(x5, CellType::FLOAT, stash);
+    const auto &double_x5 = cell_cast(float_x5, CellType::DOUBLE, stash);
+    const auto &mapped_x5 = map(double_x5, operation::Relu::f, stash);
     const auto &const_1 = const_value(my_value_1, stash);
     const auto &joined_x5 = join(mapped_x5, const_1, operation::Mul::f, stash);
     //-------------------------------------------------------------------------

@@ -8,15 +8,25 @@
 
 namespace vespalib::eval::value_type {
 
-namespace {
+std::optional<CellType> cell_type_from_name(const vespalib::string &name) {
+    if (name == "double") {
+        return CellType::DOUBLE;
+    } else if (name == "float") {
+        return CellType::FLOAT;
+    } else {
+        return std::nullopt;
+    }
+}
 
-const char *to_name(CellType cell_type) {
+vespalib::string cell_type_to_name(CellType cell_type) {
     switch (cell_type) {
     case CellType::DOUBLE: return "double";
     case CellType::FLOAT: return "float";
     }
     abort();
 }
+
+namespace {
 
 class ParseContext
 {
@@ -232,11 +242,11 @@ to_spec(const ValueType &type)
     if (type.is_error()) {
         os << "error";
     } else if (type.is_scalar()) {
-        os << to_name(type.cell_type());
+        os << cell_type_to_name(type.cell_type());
     } else {
         os << "tensor";
         if (type.cell_type() != CellType::DOUBLE) {
-            os << "<" << to_name(type.cell_type()) << ">";
+            os << "<" << cell_type_to_name(type.cell_type()) << ">";
         }
         os << "(";
         for (const auto &d: type.dimensions()) {

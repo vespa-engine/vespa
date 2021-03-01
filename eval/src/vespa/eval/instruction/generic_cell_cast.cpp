@@ -46,7 +46,7 @@ GenericCellCast::make_instruction(const ValueType &input_type,
                                   Stash &stash)
 {
     CellType from = input_type.cell_type();
-    auto result_type = ValueType::cell_cast(input_type, to_cell_type);
+    auto result_type = input_type.cell_cast(to_cell_type);
     auto &param = stash.create<ValueType>(result_type);
     CellType to = result_type.cell_type();
     auto op = typify_invoke<2,TypifyCellType,SelectGenericCellCastOp>(from, to);

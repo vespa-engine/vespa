@@ -830,6 +830,19 @@ void parse_tensor_concat(ParseContext &ctx) {
     ctx.push_expression(std::make_unique<nodes::TensorConcat>(std::move(lhs), std::move(rhs), dimension));
 }
 
+void parse_tensor_cell_cast(ParseContext &ctx) {
+    Node_UP child = get_expression(ctx);
+    ctx.eat(',');
+    auto cell_type_name = get_ident(ctx, false);
+    auto cell_type = value_type::cell_type_from_name(cell_type_name);
+    ctx.skip_spaces();
+    if (cell_type.has_value()) {
+        ctx.push_expression(std::make_unique<nodes::TensorCellCast>(std::move(child), cell_type.value()));
+    } else {
+        ctx.fail(make_string("unknown cell type: '%s'", cell_type_name.c_str()));
+    }
+}
+
 bool maybe_parse_call(ParseContext &ctx, const vespalib::string &name) {
     ctx.skip_spaces();
     if (ctx.get() == '(') {
@@ -852,6 +865,8 @@ bool maybe_parse_call(ParseContext &ctx, const vespalib::string &name) {
                 parse_tensor_rename(ctx);
             } else if (name == "concat") {
                 parse_tensor_concat(ctx);
+            } else if (name == "cell_cast") {
+                parse_tensor_cell_cast(ctx);
             } else {
                 ctx.fail(make_string("unknown function: '%s'", name.c_str()));
                 return false;

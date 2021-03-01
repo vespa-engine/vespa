@@ -177,6 +177,9 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
         bind(ValueType::concat(type(node.get_child(0)),
                                type(node.get_child(1)), node.dimension()), node);
     }
+    void visit(const TensorCellCast &node) override {
+        bind(type(node.get_child(0)).cell_cast(node.cell_type()), node);
+    }
     void visit(const TensorCreate &node) override {
         for (size_t i = 0; i < node.num_children(); ++i) {
             if (!type(node.get_child(i)).is_double()) {

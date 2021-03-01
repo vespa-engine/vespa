@@ -81,6 +81,10 @@ struct EvalNode : public NodeVisitor {
         result = ReferenceOperations::concat(eval_node(a, params), eval_node(b, params), dimension);
     }
 
+    void eval_cell_cast(const Node &a, CellType cell_type) {
+        result = ReferenceOperations::cell_cast(eval_node(a, params), cell_type);
+    }
+
     void eval_create(const TensorCreate &node) {
         std::map<TensorSpec::Address, size_t> spec;
         std::vector<TensorSpec> children;
@@ -192,6 +196,9 @@ struct EvalNode : public NodeVisitor {
     }
     void visit(const TensorConcat &node) override {
         eval_concat(node.lhs(), node.rhs(), node.dimension());
+    }
+    void visit(const TensorCellCast &node) override {
+        eval_cell_cast(node.child(), node.cell_type());
     }
     void visit(const TensorCreate &node) override {
         eval_create(node);

@@ -5,6 +5,7 @@
 #include "operation.h"
 #include "visit_stuff.h"
 #include "string_stuff.h"
+#include "value_type_spec.h"
 #include <vespa/eval/instruction/generic_cell_cast.h>
 #include <vespa/eval/instruction/generic_concat.h>
 #include <vespa/eval/instruction/generic_create.h>
@@ -216,6 +217,21 @@ Concat::visit_self(vespalib::ObjectVisitor &visitor) const
 
 //-----------------------------------------------------------------------------
 
+InterpretedFunction::Instruction
+CellCast::compile_self(const ValueBuilderFactory &, Stash &stash) const
+{
+    return instruction::GenericCellCast::make_instruction(child().result_type(), cell_type(), stash);
+}
+
+void
+CellCast::visit_self(vespalib::ObjectVisitor &visitor) const
+{
+    Super::visit_self(visitor);
+    visitor.visitString("cell_type", value_type::cell_type_to_name(cell_type()));
+}
+
+//-----------------------------------------------------------------------------
+
 void
 Create::push_children(std::vector<Child::CREF> &children) const
 {
@@ -308,14 +324,6 @@ Lambda::visit_self(vespalib::ObjectVisitor &visitor) const
 {
     Super::visit_self(visitor);
     ::visit(visitor, "bindings", _bindings);
-}
-
-//-----------------------------------------------------------------------------
-
-InterpretedFunction::Instruction
-CellCast::compile_self(const ValueBuilderFactory &, Stash &stash) const
-{
-    return instruction::GenericCellCast::make_instruction(child().result_type(), result_type().cell_type(), stash);
 }
 
 //-----------------------------------------------------------------------------
@@ -464,6 +472,11 @@ const TensorFunction &create(const ValueType &type, const std::map<TensorSpec::A
 
 const TensorFunction &lambda(const ValueType &type, const std::vector<size_t> &bindings, const Function &function, NodeTypes node_types, Stash &stash) {
     return stash.create<Lambda>(type, bindings, function, std::move(node_types));
+}
+
+const TensorFunction &cell_cast(const TensorFunction &child, CellType cell_type, Stash &stash) {
+    ValueType result_type = child.result_type().cell_cast(cell_type);
+    return stash.create<CellCast>(result_type, child, cell_type);
 }
 
 const TensorFunction &peek(const TensorFunction &param, const std::map<vespalib::string, std::variant<TensorSpec::Label, TensorFunction::CREF>> &spec, Stash &stash) {

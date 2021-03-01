@@ -151,6 +151,12 @@ TEST(ReferenceEvaluationTest, concat_expression_works) {
     EXPECT_EQ(ref_eval("concat(a,b,x)", {a, b}), expect);
 }
 
+TEST(ReferenceEvaluationTest, cell_cast_expression_works) {
+    auto a = make_val("tensor<double>(x[4]):[1,2,3,4]");
+    auto expect = make_val("tensor<float>(x[4]):[1,2,3,4]");
+    EXPECT_EQ(ref_eval("cell_cast(a,float)", {a}), expect);
+}
+
 TEST(ReferenceEvaluationTest, rename_expression_works) {
     auto a = make_val("tensor(x[2]):[1,2]");
     auto expect = make_val("tensor(y[2]):[1,2]");

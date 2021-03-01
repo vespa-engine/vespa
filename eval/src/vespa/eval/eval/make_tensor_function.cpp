@@ -75,6 +75,12 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
         stack.back() = tensor_function::concat(a, b, dimension, stash);
     }
 
+    void make_cell_cast(const Node &, CellType cell_type) {
+        assert(stack.size() >= 1);
+        const auto &a = stack.back().get();
+        stack.back() = tensor_function::cell_cast(a, cell_type, stash);
+    }
+
     bool maybe_make_const(const Node &node) {
         if (auto create = as<TensorCreate>(node)) {
             bool is_const = true;
@@ -212,6 +218,9 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     }
     void visit(const TensorConcat &node) override {
         make_concat(node, node.dimension());
+    }
+    void visit(const TensorCellCast &node) override {
+        make_cell_cast(node, node.cell_type());
     }
     void visit(const TensorCreate &node) override {
         make_create(node);

@@ -287,6 +287,16 @@ ValueType::rename(const std::vector<vespalib::string> &from,
 }
 
 ValueType
+ValueType::cell_cast(CellType to_cell_type) const
+{
+    if (is_error()) {
+        return error_type();
+    }
+    // TODO: return make_type(to_cell_type, _dimensions);
+    return tensor_type(_dimensions, to_cell_type);
+}
+
+ValueType
 ValueType::make_type(CellType cell_type, std::vector<Dimension> dimensions_in)
 {
     sort_dimensions(dimensions_in);
@@ -386,11 +396,6 @@ ValueType::either(const ValueType &one, const ValueType &other) {
         return error_type();
     }
     return one;
-}
-
-ValueType
-ValueType::cell_cast(const ValueType &from, CellType to_cell_type) {
-    return make_type(to_cell_type, from.dimensions());
 }
 
 std::ostream &

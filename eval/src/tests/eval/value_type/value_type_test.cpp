@@ -501,4 +501,51 @@ TEST("require that cell type is handled correctly for concat") {
     TEST_DO(verify_concat(type("tensor<float>(x[3])"), type("double"), "x", type("tensor<float>(x[4])")));
 }
 
+void verify_cell_cast(const ValueType &type) {
+    for (CellType cell_type: CellTypeUtils::list_types()) {
+        auto res_type = type.cell_cast(cell_type);
+        if (type.is_error()) {
+            EXPECT_TRUE(res_type.is_error());
+            EXPECT_EQUAL(res_type, type);
+        } else if (type.is_scalar()) {
+            EXPECT_TRUE(res_type.is_double()); // NB
+        } else {
+            EXPECT_FALSE(res_type.is_error());
+            EXPECT_EQUAL(int(res_type.cell_type()), int(cell_type));
+            EXPECT_TRUE(res_type.dimensions() == type.dimensions());
+        }
+    }
+}
+
+TEST("require that value type cell cast works correctly") {
+    TEST_DO(verify_cell_cast(type("error")));
+    TEST_DO(verify_cell_cast(type("float")));
+    TEST_DO(verify_cell_cast(type("double")));
+    TEST_DO(verify_cell_cast(type("tensor<float>(x[10])")));
+    TEST_DO(verify_cell_cast(type("tensor<double>(x[10])")));
+    TEST_DO(verify_cell_cast(type("tensor<float>(x{})")));
+    TEST_DO(verify_cell_cast(type("tensor<double>(x{})")));
+    TEST_DO(verify_cell_cast(type("tensor<float>(x{},y[5])")));
+    TEST_DO(verify_cell_cast(type("tensor<double>(x{},y[5])")));
+}
+
+TEST("require that actual cell type can be converted to cell type name") {
+    EXPECT_EQUAL(value_type::cell_type_to_name(CellType::FLOAT), "float");
+    EXPECT_EQUAL(value_type::cell_type_to_name(CellType::DOUBLE), "double");
+}
+
+TEST("require that cell type name can be converted to actual cell type") {
+    EXPECT_EQUAL(int(value_type::cell_type_from_name("float").value()), int(CellType::FLOAT));
+    EXPECT_EQUAL(int(value_type::cell_type_from_name("double").value()), int(CellType::DOUBLE));
+    EXPECT_FALSE(value_type::cell_type_from_name("int7").has_value());
+}
+
+TEST("require that cell type name recognition is strict") {
+    EXPECT_FALSE(value_type::cell_type_from_name("Float").has_value());
+    EXPECT_FALSE(value_type::cell_type_from_name(" float").has_value());
+    EXPECT_FALSE(value_type::cell_type_from_name("float ").has_value());
+    EXPECT_FALSE(value_type::cell_type_from_name("f").has_value());
+    EXPECT_FALSE(value_type::cell_type_from_name("").has_value());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }

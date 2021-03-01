@@ -7,6 +7,7 @@
 #include <vespa/eval/eval/aggr.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/simple_value.h>
+#include <vespa/eval/eval/value_type_spec.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/objects/nbostream.h>
@@ -557,6 +558,28 @@ struct TestContext {
 
     //-------------------------------------------------------------------------
 
+    void test_cell_cast(const GenSpec &a) {
+        for (CellType cell_type: CellTypeUtils::list_types()) {
+            vespalib::string expr = fmt("cell_cast(a,%s)", value_type::cell_type_to_name(cell_type).c_str());
+            TEST_DO(verify_result(factory, expr, {a}, a.cpy().cells(cell_type)));
+        }
+    }
+
+    void test_cell_cast() {
+        std::vector<GenSpec> gen_list;
+        for (CellType cell_type: CellTypeUtils::list_types()) {
+            gen_list.push_back(GenSpec(-3).cells(cell_type));
+        }
+        for (const auto &gen: gen_list) {
+            TEST_DO(test_cell_cast(gen));
+            TEST_DO(test_cell_cast(gen.cpy().idx("x", 10)));
+            TEST_DO(test_cell_cast(gen.cpy().map("x", 10, 1)));
+            TEST_DO(test_cell_cast(gen.cpy().map("x", 4, 1).idx("y", 4)));
+        }
+    }
+
+    //-------------------------------------------------------------------------
+
     void test_rename(const vespalib::string &expr,
                      const TensorSpec &input,
                      const TensorSpec &expect)
@@ -735,6 +758,7 @@ struct TestContext {
         TEST_DO(test_tensor_apply());
         TEST_DO(test_dot_product());
         TEST_DO(test_concat());
+        TEST_DO(test_cell_cast());
         TEST_DO(test_rename());
         TEST_DO(test_tensor_lambda());
         TEST_DO(test_tensor_create());
