@@ -35,7 +35,6 @@ import java.util.stream.Collectors;
 public class FileReferenceDownloader {
 
     private final static Logger log = Logger.getLogger(FileReferenceDownloader.class.getName());
-    private final static Duration rpcTimeout = Duration.ofSeconds(10);
 
     private final ExecutorService downloadExecutor =
             Executors.newFixedThreadPool(Math.max(8, Runtime.getRuntime().availableProcessors()),
@@ -47,6 +46,7 @@ public class FileReferenceDownloader {
     private final DownloadStatuses downloadStatuses = new DownloadStatuses();
     private final Duration downloadTimeout;
     private final Duration sleepBetweenRetries;
+    private final Duration rpcTimeout;
 
     FileReferenceDownloader(File downloadDirectory, File tmpDirectory, ConnectionPool connectionPool, Duration timeout, Duration sleepBetweenRetries) {
         this.connectionPool = connectionPool;
@@ -54,6 +54,8 @@ public class FileReferenceDownloader {
         this.sleepBetweenRetries = sleepBetweenRetries;
         // Needed to receive RPC calls receiveFile* from server after asking for files
         new FileReceiver(connectionPool.getSupervisor(), this, downloadDirectory, tmpDirectory);
+        String timeoutString = System.getenv("VESPA_CONFIGPROXY_FILEDOWNLOAD_RPC_TIMEOUT");
+        this.rpcTimeout = Duration.ofSeconds(timeoutString == null ? 30 : Integer.parseInt(timeoutString));
     }
 
     private void startDownload(FileReferenceDownload fileReferenceDownload) {
@@ -128,8 +130,8 @@ public class FileReferenceDownloader {
             }
         } else {
             log.log(logLevel, () -> "Request failed. Req: " + request + "\nSpec: " + connection.getAddress() +
-            ", error code: " + request.errorCode() + ", set error for spec, use another spec for next request" +
-            ", retry count " + retryCount);
+            ", error code: " + request.errorCode() + ", will use another spec for next request" +
+            ", retry count " + retryCount + ", rpc timeout " + rpcTimeout.getSeconds());
             connectionPool.setError(connection, request.errorCode());
             return false;
         }
