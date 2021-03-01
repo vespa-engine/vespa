@@ -133,7 +133,7 @@ BufferState::onActive(uint32_t bufferId, uint32_t typeId,
     assert(typeId <= std::numeric_limits<uint16_t>::max());
     _typeId = typeId;
     _arraySize = _typeHandler->getArraySize();
-    typeHandler->onActive(bufferId, &_usedElems, _deadElems, buffer);
+    typeHandler->onActive(bufferId, &_usedElems, &_deadElems, buffer);
 }
 
 
@@ -148,7 +148,7 @@ BufferState::onHold()
     assert(_holdElems <= (_usedElems - _deadElems));
     _deadElems = 0;
     _holdElems = _usedElems; // Put everyting on hold
-    _typeHandler->onHold(&_usedElems);
+    _typeHandler->onHold(&_usedElems, &_deadElems);
     if ( ! isFreeListEmpty()) {
         removeFromFreeListList();
         FreeList().swap(_freeList);
