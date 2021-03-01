@@ -11,13 +11,11 @@
 
 namespace vespalib::eval { struct ValueBuilderFactory; }
 
-namespace vespalib::eval { using SizesVector = SmallVector<size_t>; }
-
 namespace vespalib::eval::instruction {
  
 struct DenseRenamePlan {
-    SizesVector loop_cnt;
-    SizesVector stride;
+    SmallVector<size_t> loop_cnt;
+    SmallVector<size_t> stride;
     const size_t subspace_size;
     DenseRenamePlan(const ValueType &lhs_type,
                     const ValueType &output_type,
@@ -31,7 +29,7 @@ struct DenseRenamePlan {
 
 struct SparseRenamePlan {
     size_t mapped_dims;
-    SizesVector output_dimensions;
+    SmallVector<size_t> output_dimensions;
     bool can_forward_index;
     SparseRenamePlan(const ValueType &input_type,
                      const ValueType &output_type,
