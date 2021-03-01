@@ -60,8 +60,8 @@ public:
     virtual size_t elementSize() const = 0;
     virtual void cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx) = 0;
     size_t getArraySize() const { return _arraySize; }
-    virtual void onActive(uint32_t bufferId, ElemCount *usedElems, ElemCount &deadElems, void *buffer);
-    void onHold(const ElemCount *usedElems);
+    virtual void onActive(uint32_t bufferId, ElemCount* usedElems, ElemCount* deadElems, void* buffer);
+    void onHold(const ElemCount* usedElems, const ElemCount* deadElems);
     virtual void onFree(ElemCount usedElems);
     virtual const alloc::MemoryAllocator* get_memory_allocator() const;
 
@@ -103,8 +103,8 @@ protected:
 
     public:
         AggregatedBufferCounts();
-        void add_buffer(const ElemCount* used_elems);
-        void remove_buffer(const ElemCount* used_elems);
+        void add_buffer(const ElemCount* used_elems, const ElemCount* dead_elems);
+        void remove_buffer(const ElemCount* used_elems, const ElemCount* dead_elems);
         BufferCounts last_buffer() const;
         BufferCounts all_buffers() const;
         bool empty() const { return _counts.empty(); }
