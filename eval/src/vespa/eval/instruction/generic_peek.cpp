@@ -39,19 +39,18 @@ size_t count_children(const Spec &spec)
 
 struct DimSpec {
     enum class DimType { CHILD_IDX, LABEL_IDX, LABEL_STR };
-    vespalib::string name;
     DimType dim_type;
-    size_t idx;
     Handle str;
-    static DimSpec from_child(const vespalib::string &name_in, size_t child_idx) {
-        return {name_in, DimType::CHILD_IDX, child_idx, Handle()};
+    size_t idx;
+    static DimSpec from_child(size_t child_idx) {
+        return {DimType::CHILD_IDX, Handle(), child_idx};
     }
-    static DimSpec from_label(const vespalib::string &name_in, const TensorSpec::Label &label) {
+    static DimSpec from_label(const TensorSpec::Label &label) {
         if (label.is_mapped()) {
-            return {name_in, DimType::LABEL_STR, 0, Handle(label.name)};
+            return {DimType::LABEL_STR, Handle(label.name), 0};
         } else {
             assert(label.is_indexed());
-            return {name_in, DimType::LABEL_IDX, label.index, Handle()};
+            return {DimType::LABEL_IDX, Handle(), label.index};
         }
     }
     ~DimSpec();
@@ -83,7 +82,11 @@ struct ExtractedSpecs {
         bool operator() (const Spec::value_type &a, const Dimension &b) { return a.first < b.name; }
     };
     std::vector<Dimension> dimensions;
-    std::vector<DimSpec> specs;
+    struct NamedDimSpec {
+        const vespalib::string & name;
+        DimSpec spec;
+    };
+    SmallVector<NamedDimSpec,4> specs;
 
     ExtractedSpecs(bool indexed,
                    const std::vector<Dimension> &input_dims,
@@ -104,9 +107,11 @@ struct ExtractedSpecs {
                     const auto & [spec_dim_name, child_or_label] = b;
                     assert(a.name == spec_dim_name);
                     if (std::holds_alternative<size_t>(child_or_label)) {
-                        specs.push_back(DimSpec::from_child(a.name, std::get<size_t>(child_or_label)));
+                        NamedDimSpec nds{a.name, DimSpec::from_child(std::get<size_t>(child_or_label))};
+                        specs.push_back(nds);
                     } else {
-                        specs.push_back(DimSpec::from_label(a.name, std::get<TensorSpec::Label>(child_or_label)));
+                        NamedDimSpec nds{a.name, DimSpec::from_label(std::get<TensorSpec::Label>(child_or_label))};
+                        specs.push_back(nds);
                     }
                 }
             }
@@ -167,11 +172,11 @@ struct DensePlan {
                 out_dense_size *= sizes.size[i];
             } else {
                 assert(dim.name == pos->name);
-                if (pos->has_child()) {
-                    children.push_back(Child{pos->get_child_idx(), sizes.stride[i], sizes.size[i]});
+                if (pos->spec.has_child()) {
+                    children.push_back(Child{pos->spec.get_child_idx(), sizes.stride[i], sizes.size[i]});
                 } else {
-                    assert(pos->has_label());
-                    size_t label_index = pos->get_label_index();
+                    assert(pos->spec.has_label());
+                    size_t label_index = pos->spec.get_label_index();
                     assert(label_index < sizes.size[i]);
                     verbatim_offset += label_index * sizes.stride[i];
                 }
@@ -228,7 +233,7 @@ SparseState::~SparseState() = default;
 
 struct SparsePlan {
     size_t out_mapped_dims;
-    std::vector<DimSpec> lookup_specs;
+    SmallVector<DimSpec> lookup_specs;
     SmallVector<size_t> view_dims;
 
     SparsePlan(const ValueType &input_type,
@@ -237,19 +242,19 @@ struct SparsePlan {
           view_dims()
     {
         ExtractedSpecs mine(false, input_type.dimensions(), spec);
-        lookup_specs = std::move(mine.specs);
-        auto pos = lookup_specs.begin();
+        auto pos = mine.specs.begin();
         for (size_t dim_idx = 0; dim_idx < mine.dimensions.size(); ++dim_idx) {
             const auto & dim = mine.dimensions[dim_idx];
-            if ((pos == lookup_specs.end()) || (dim.name < pos->name)) {
+            if ((pos == mine.specs.end()) || (dim.name < pos->name)) {
                 ++out_mapped_dims;
             } else {
                 assert(dim.name == pos->name);
                 view_dims.push_back(dim_idx);
+                lookup_specs.push_back(pos->spec);
                 ++pos;
             }
         }
-        assert(pos == lookup_specs.end());
+        assert(pos == mine.specs.end());
     }
 
     ~SparsePlan();
