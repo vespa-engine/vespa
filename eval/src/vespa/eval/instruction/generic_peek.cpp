@@ -150,7 +150,7 @@ struct DensePlan {
         size_t stride;
         size_t limit;
     };
-    SmallVector<Child,3> children;
+    SmallVector<Child,4> children;
 
     DensePlan(const ValueType &input_type, const Spec &spec)
     {
