@@ -183,8 +183,17 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
 
     private List<Node> candidatesForRemoval(List<Node> nodes) {
         Map<String, Node> hostsByHostname = new HashMap<>(nodes.stream()
-                .filter(node -> node.type() == NodeType.host)
-                .filter(host -> host.state() != Node.State.parked || host.status().wantToDeprovision())
+                .filter(node -> {
+                    switch (node.type()) {
+                        case host:
+                            // TODO: Mark empty tenant hosts as wanttoretire & wanttodeprovision elsewhere, then handle as confighost here
+                            return node.state() != Node.State.parked || node.status().wantToDeprovision();
+                        case confighost:
+                            return node.state() == Node.State.parked && node.status().wantToDeprovision();
+                        default:
+                            return false;
+                    }
+                })
                 .collect(Collectors.toMap(Node::hostname, Function.identity())));
 
         nodes.stream()
