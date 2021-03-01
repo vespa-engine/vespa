@@ -69,10 +69,10 @@ generic_rename(const Value &a,
                const ValueType &res_type, const ValueBuilderFactory &factory)
 {
     auto cells = a.cells().typify<CT>();
-    std::vector<string_id> output_address(sparse_plan.mapped_dims);
-    std::vector<string_id*> input_address;
+    SmallVector<string_id> output_address(sparse_plan.mapped_dims);
+    SmallVector<string_id*> input_address;
     for (size_t maps_to : sparse_plan.output_dimensions) {
-        input_address.push_back(&output_address[maps_to]);
+        input_address.emplace_back(&output_address[maps_to]);
     }
     auto builder = factory.create_transient_value_builder<CT>(res_type,
                                                               sparse_plan.mapped_dims,
@@ -152,7 +152,7 @@ SparseRenamePlan::SparseRenamePlan(const ValueType &input_type,
         if (index != output_dimensions.size()) {
             can_forward_index = false;
         }
-        output_dimensions.push_back(index);
+        output_dimensions.emplace_back(index);
     }
     assert(output_dimensions.size() == mapped_dims);
 }
@@ -172,8 +172,8 @@ DenseRenamePlan::DenseRenamePlan(const ValueType &lhs_type,
     const auto out_dims = output_type.nontrivial_indexed_dimensions();
     size_t num_dense_dims = lhs_dims.size();
     assert(num_dense_dims == out_dims.size());
-    std::vector<size_t> lhs_loopcnt(num_dense_dims);
-    std::vector<size_t> lhs_stride(num_dense_dims, 1);
+    SmallVector<size_t> lhs_loopcnt(num_dense_dims);
+    SmallVector<size_t> lhs_stride(num_dense_dims, 1);
     size_t lhs_size = 1;
     for (size_t i = num_dense_dims; i-- > 0; ) {
         lhs_stride[i] = lhs_size;
@@ -191,8 +191,8 @@ DenseRenamePlan::DenseRenamePlan(const ValueType &lhs_type,
             loop_cnt.back() *= lhs_loopcnt[index];
             stride.back() = lhs_stride[index];
         } else {
-            loop_cnt.push_back(lhs_loopcnt[index]);
-            stride.push_back(lhs_stride[index]);
+            loop_cnt.emplace_back(lhs_loopcnt[index]);
+            stride.emplace_back(lhs_stride[index]);
         }
         prev_index = index;
     }

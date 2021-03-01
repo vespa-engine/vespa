@@ -2,6 +2,7 @@
 #pragma once
 
 #include "array.h"
+#include "small_vector.h"
 #include <vector>
 
 namespace vespalib {
@@ -17,6 +18,8 @@ public:
     ArrayRef(T * v, size_t sz) noexcept : _v(v), _sz(sz) { }
     template<typename A=std::allocator<T>>
     ArrayRef(std::vector<T, A> & v) noexcept : _v(&v[0]), _sz(v.size()) { }
+    template<size_t N>
+    ArrayRef(SmallVector<T, N> &v) noexcept :  _v(&v[0]), _sz(v.size()) { }
     ArrayRef(Array<T> &v) noexcept : _v(&v[0]), _sz(v.size()) { }
     T & operator [] (size_t i) { return _v[i]; }
     const T & operator [] (size_t i) const { return _v[i]; }
@@ -35,6 +38,8 @@ public:
     ConstArrayRef(const T *v, size_t sz) noexcept : _v(v), _sz(sz) { }
     template<typename A=std::allocator<T>>
     ConstArrayRef(const std::vector<T, A> & v) noexcept : _v(&v[0]), _sz(v.size()) { }
+    template<size_t N>
+    ConstArrayRef(const SmallVector<T, N> &v) noexcept :  _v(&v[0]), _sz(v.size()) { }
     ConstArrayRef(const ArrayRef<T> & v) noexcept : _v(&v[0]), _sz(v.size()) { }
     ConstArrayRef(const Array<T> &v) noexcept : _v(&v[0]), _sz(v.size()) { }
     ConstArrayRef() noexcept : _v(nullptr), _sz(0) {}

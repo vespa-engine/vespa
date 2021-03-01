@@ -186,6 +186,8 @@ public:
     const T *end() const { return (_data + _size); }
     T &operator[](size_t idx) { return _data[idx]; }
     const T &operator[](size_t idx) const { return _data[idx]; }
+    T &back() { return _data[_size - 1]; }
+    const T &back() const { return _data[_size - 1]; }
     void clear() {
         small_vector::destroy_objects(_data, _size);
         _size = 0;
