@@ -188,9 +188,9 @@ public class HttpServerTest {
                 binder -> binder.bind(RequestLog.class).toInstance(requestLogMock));
         driver.client().get("/status.html")
                 .expectStatusCode(is(REQUEST_URI_TOO_LONG));
-        assertThat(driver.close(), is(true));
         RequestLogEntry entry = requestLogMock.poll(Duration.ofSeconds(30));
         assertEquals(414, entry.statusCode().getAsInt());
+        assertThat(driver.close(), is(true));
     }
 
     @Test
