@@ -53,8 +53,8 @@ TEST(GenericRenameTest, dense_rename_plan_can_be_created_and_executed) {
     std::vector<vespalib::string>   to({"f", "a", "b"});
     ValueType renamed = lhs.rename(from, to);
     auto plan = DenseRenamePlan(lhs, renamed, from, to);
-    std::vector<size_t> expect_loop = {15,2,7};
-    std::vector<size_t> expect_stride = {7,105,1};
+    SmallVector<size_t> expect_loop = {15,2,7};
+    SmallVector<size_t> expect_stride = {7,105,1};
     EXPECT_EQ(plan.subspace_size, 210);
     EXPECT_EQ(plan.loop_cnt, expect_loop);
     EXPECT_EQ(plan.stride, expect_stride);
@@ -84,7 +84,7 @@ TEST(GenericRenameTest, sparse_rename_plan_can_be_created) {
     ValueType renamed = lhs.rename(from, to);
     auto plan = SparseRenamePlan(lhs, renamed, from, to);
     EXPECT_EQ(plan.mapped_dims, 4);
-    std::vector<size_t> expect = {2,0,1,3};
+    SmallVector<size_t> expect = {2,0,1,3};
     EXPECT_EQ(plan.output_dimensions, expect);
 }
 

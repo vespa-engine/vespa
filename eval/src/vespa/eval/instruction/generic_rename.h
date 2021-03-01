@@ -6,15 +6,18 @@
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/eval/eval/interpreted_function.h>
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/small_vector.h>
 #include <vector>
 
 namespace vespalib::eval { struct ValueBuilderFactory; }
 
+namespace vespalib::eval { using SizesVector = SmallVector<size_t>; }
+
 namespace vespalib::eval::instruction {
  
 struct DenseRenamePlan {
-    std::vector<size_t> loop_cnt;
-    std::vector<size_t> stride;
+    SizesVector loop_cnt;
+    SizesVector stride;
     const size_t subspace_size;
     DenseRenamePlan(const ValueType &lhs_type,
                     const ValueType &output_type,
@@ -28,7 +31,7 @@ struct DenseRenamePlan {
 
 struct SparseRenamePlan {
     size_t mapped_dims;
-    std::vector<size_t> output_dimensions;
+    SizesVector output_dimensions;
     bool can_forward_index;
     SparseRenamePlan(const ValueType &input_type,
                      const ValueType &output_type,
