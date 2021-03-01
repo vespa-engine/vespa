@@ -24,9 +24,9 @@ struct DenseConcatPlan {
     size_t output_size;
     struct InOutLoop {
         size_t input_size;
-        std::vector<size_t> in_loop_cnt;
-        std::vector<size_t> in_stride;
-        std::vector<size_t> out_stride;
+        SmallVector<size_t> in_loop_cnt;
+        SmallVector<size_t> in_stride;
+        SmallVector<size_t> out_stride;
         // returns computed concat offset and output size
         std::pair<size_t, size_t> fill_from(const ValueType &in_type,
                                             std::string concat_dimension,
