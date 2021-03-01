@@ -227,7 +227,10 @@ public class ProvisioningTester {
     }
 
     public void prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType, Version version) {
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(nodeType.toString())).vespaVersion(version).build();
+        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(nodeType.toString()))
+                                         .vespaVersion(version)
+                                         .stateful(nodeType == NodeType.config || nodeType == NodeType.controller)
+                                         .build();
         Capacity capacity = Capacity.fromRequiredNodeType(nodeType);
         List<HostSpec> hostSpecs = prepare(application, cluster, capacity);
         activate(application, hostSpecs);
