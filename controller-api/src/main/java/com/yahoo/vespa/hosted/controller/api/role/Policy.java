@@ -186,7 +186,12 @@ enum Policy {
     /** Listing endpoint certificate request info */
     endpointCertificateRequestInfo(Privilege.grant(Action.read)
             .on(PathGroup.endpointCertificateRequestInfo)
-            .in(SystemName.all()));
+            .in(SystemName.all())),
+
+    /** Secret store operations */
+    secretStoreOperations(Privilege.grant(Action.all())
+                                .on(PathGroup.secretStore)
+                                .in(SystemName.PublicCd, SystemName.Public));
 
     private final Set<Privilege> privileges;
 

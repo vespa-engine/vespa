@@ -58,7 +58,6 @@ enum PathGroup {
     tenantInfo(Matcher.tenant,
                PathPrefix.api,
                "/application/v4/tenant/{tenant}/application/",
-               "/application/v4/tenant/{tenant}/secret-store/",
                "/application/v4/tenant/{tenant}/info/",
                "/routing/v1/status/tenant/{tenant}/{*}"),
 
@@ -244,7 +243,10 @@ enum PathGroup {
             "/billing/v1/billing"),
 
     /** Path used for listing endpoint certificate request info */
-    endpointCertificateRequestInfo(PathPrefix.none, "/certificateRequests/");
+    endpointCertificateRequestInfo(PathPrefix.none, "/certificateRequests/"),
+
+    /** Path used for secret store management */
+    secretStore(Matcher.tenant, PathPrefix.api, "/application/v4/tenant/{tenant}/secret-store/{*}");
 
     final List<String> pathSpecs;
     final PathPrefix prefix;
