@@ -635,7 +635,7 @@ TEST(DataStoreTest, can_set_memory_allocator)
 }
 
 TEST(DataStoreTest, control_static_sizes) {
-    EXPECT_EQ(64, sizeof(BufferTypeBase));
+    EXPECT_EQ(72, sizeof(BufferTypeBase));
     EXPECT_EQ(32, sizeof(BufferState::FreeList));
     EXPECT_EQ(1, sizeof(BufferState::State));
     EXPECT_EQ(144, sizeof(BufferState));

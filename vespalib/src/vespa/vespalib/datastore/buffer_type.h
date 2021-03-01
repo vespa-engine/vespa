@@ -4,6 +4,7 @@
 
 #include "atomic_entry_ref.h"
 #include <string>
+#include <vector>
 
 namespace vespalib::alloc { class MemoryAllocator; }
 
@@ -33,6 +34,7 @@ public:
         {}
         void extraBytesCleaned(size_t value);
     };
+
     BufferTypeBase(const BufferTypeBase &rhs) = delete;
     BufferTypeBase & operator=(const BufferTypeBase &rhs) = delete;
     BufferTypeBase(BufferTypeBase &&rhs) noexcept = default;
@@ -58,7 +60,6 @@ public:
     virtual size_t elementSize() const = 0;
     virtual void cleanHold(void *buffer, size_t offset, ElemCount numElems, CleanContext cleanCtx) = 0;
     size_t getArraySize() const { return _arraySize; }
-    void flushLastUsed();
     virtual void onActive(uint32_t bufferId, ElemCount *usedElems, ElemCount &deadElems, void *buffer);
     void onHold(const ElemCount *usedElems);
     virtual void onFree(ElemCount usedElems);
@@ -75,6 +76,40 @@ public:
     size_t getMaxArrays() const { return _maxArrays; }
     uint32_t getNumArraysForNewBuffer() const { return _numArraysForNewBuffer; }
 protected:
+
+    struct BufferCounts {
+        ElemCount used_elems;
+        ElemCount dead_elems;
+        BufferCounts() : used_elems(0), dead_elems(0) {}
+        BufferCounts(ElemCount used_elems_in, ElemCount dead_elems_in)
+                : used_elems(used_elems_in), dead_elems(dead_elems_in)
+        {}
+    };
+
+    /**
+     * Tracks aggregated counts for all buffers that are in state ACTIVE.
+     */
+    class AggregatedBufferCounts {
+    private:
+        struct Element {
+            const ElemCount* used_ptr;
+            const ElemCount* dead_ptr;
+            Element() noexcept : used_ptr(nullptr), dead_ptr(nullptr) {}
+            Element(const ElemCount* used_ptr_in, const ElemCount* dead_ptr_in) noexcept
+                    : used_ptr(used_ptr_in), dead_ptr(dead_ptr_in)
+            {}
+        };
+        std::vector<Element> _counts;
+
+    public:
+        AggregatedBufferCounts();
+        void add_buffer(const ElemCount* used_elems);
+        void remove_buffer(const ElemCount* used_elems);
+        BufferCounts last_buffer() const;
+        BufferCounts all_buffers() const;
+        bool empty() const { return _counts.empty(); }
+    };
+
     uint32_t _arraySize;  // Number of elements in an allocation unit
     uint32_t _minArrays;  // Minimum number of arrays to allocate in a buffer
     uint32_t _maxArrays;  // Maximum number of arrays to allocate in a buffer
@@ -83,9 +118,8 @@ protected:
     float    _allocGrowFactor;
     uint32_t _activeBuffers;
     uint32_t _holdBuffers;
-    size_t   _activeUsedElems; // Number of used elements in all but the last active buffer for this type.
     size_t   _holdUsedElems;  // Number of used elements in all held buffers for this type.
-    const ElemCount *_lastUsedElems; // Number of used elements in the last active buffer for this type.
+    AggregatedBufferCounts _aggr_counts;
 };
 
 /**
