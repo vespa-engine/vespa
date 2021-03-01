@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import com.yahoo.vdslib.state.State;
 import org.junit.Test;
 
 import static com.yahoo.vespa.clustercontroller.core.ClusterFixture.storageNode;
@@ -137,6 +138,28 @@ public class ResourceExhaustionCalculatorTest {
         // Node 2 is at 0.49 but was not previously blocked and should not be blocked now either.
         var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", 0.3), usage("memory", 0.39)),
                                                  forNode(2, usage("disk", 0.3), usage("memory", 0.49)));
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfo());
+        assertNull(feedBlock);
+    }
+
+    @Test
+    public void node_must_be_available_in_reported_state_to_trigger_feed_block() {
+        var calc = new ResourceExhaustionCalculator(true, mapOf(usage("disk", 0.5), usage("memory", 0.8)));
+        var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", 0.51), usage("memory", 0.79)),
+                                                 forNode(2, usage("disk", 0.6), usage("memory", 0.6)));
+        cf.reportStorageNodeState(1, State.DOWN);
+        cf.reportStorageNodeState(2, State.DOWN);
+        var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfo());
+        assertNull(feedBlock);
+    }
+
+    @Test
+    public void node_must_be_available_in_wanted_state_to_trigger_feed_block() {
+        var calc = new ResourceExhaustionCalculator(true, mapOf(usage("disk", 0.5), usage("memory", 0.8)));
+        var cf = createFixtureWithReportedUsages(forNode(1, usage("disk", 0.51), usage("memory", 0.79)),
+                                                 forNode(2, usage("disk", 0.6), usage("memory", 0.6)));
+        cf.proposeStorageNodeWantedState(1, State.DOWN);
+        cf.proposeStorageNodeWantedState(2, State.MAINTENANCE);
         var feedBlock = calc.inferContentClusterFeedBlockOrNull(cf.cluster().getNodeInfo());
         assertNull(feedBlock);
     }
