@@ -148,8 +148,8 @@ public class MetricsProxyContainer extends Container implements
     public void getConfig(QrStartConfig.Builder builder) {
         cluster.getConfig(builder);
 
-        if (clusterMembership.isPresent() && clusterMembership.get().cluster().type() == ClusterSpec.Type.admin) {
-            int maxHeapSize = featureFlags.metricsProxyMaxHeapSizeInMb();
+        if (clusterMembership.isPresent()) {
+            int maxHeapSize = featureFlags.metricsProxyMaxHeapSizeInMb(clusterMembership.get().cluster().type());
             boolean verboseGc = (maxHeapSize < 512);
             builder.jvm
                     .verbosegc(verboseGc)

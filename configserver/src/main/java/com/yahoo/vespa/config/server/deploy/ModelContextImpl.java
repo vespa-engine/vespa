@@ -19,6 +19,7 @@ import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
@@ -28,6 +29,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.UnboundFlag;
 
@@ -36,8 +38,10 @@ import java.net.URI;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.ToIntFunction;
 
 import static com.yahoo.vespa.config.server.ConfigServerSpec.fromConfig;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
 
 /**
  * Implementation of {@link ModelContext} for configserver.
@@ -169,7 +173,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean enableFeedBlockInDistributor;
         private final double maxDeadBytesRatio;
         private final int clusterControllerMaxHeapSizeInMb;
-        private final int metricsProxyMaxHeapSizeInMb;
+        private final ToIntFunction<ClusterSpec.Type> metricsProxyMaxHeapSizeInMb;
         private final List<String> allowedAthenzProxyIdentities;
         private final boolean tenantIamRole;
         private final int maxActivationInhibitedOutOfSyncGroups;
@@ -194,7 +198,7 @@ public class ModelContextImpl implements ModelContext {
             this.enableFeedBlockInDistributor = flagValue(source, appId, Flags.ENABLE_FEED_BLOCK_IN_DISTRIBUTOR);
             this.maxDeadBytesRatio = flagValue(source, appId, Flags.MAX_DEAD_BYTES_RATIO);
             this.clusterControllerMaxHeapSizeInMb = flagValue(source, appId, Flags.CLUSTER_CONTROLLER_MAX_HEAP_SIZE_IN_MB);
-            this.metricsProxyMaxHeapSizeInMb = flagValue(source, appId, Flags.METRICS_PROXY_MAX_HEAP_SIZE_IN_MB);
+            this.metricsProxyMaxHeapSizeInMb = type -> Flags.METRICS_PROXY_MAX_HEAP_SIZE_IN_MB.bindTo(source).with(CLUSTER_TYPE, type.name()).value();
             this.allowedAthenzProxyIdentities = flagValue(source, appId, Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES);
             this.tenantIamRole = flagValue(source, appId.tenant(), Flags.TENANT_IAM_ROLE);
             this.maxActivationInhibitedOutOfSyncGroups = flagValue(source, appId, Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS);
@@ -219,7 +223,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
         @Override public double maxDeadBytesRatio() { return maxDeadBytesRatio; }
         @Override public int clusterControllerMaxHeapSizeInMb() { return clusterControllerMaxHeapSizeInMb; }
-        @Override public int metricsProxyMaxHeapSizeInMb() { return metricsProxyMaxHeapSizeInMb; }
+        @Override public int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return metricsProxyMaxHeapSizeInMb.applyAsInt(type); }
         @Override public List<String> allowedAthenzProxyIdentities() { return allowedAthenzProxyIdentities; }
         @Override public boolean tenantIamRole() { return tenantIamRole; }
         @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }

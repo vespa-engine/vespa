@@ -10,6 +10,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 
@@ -96,7 +97,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
     @Override public double maxDeadBytesRatio() { return maxDeadBytesRatio; }
     @Override public int clusterControllerMaxHeapSizeInMb() { return clusterControllerMaxHeapSizeInMb; }
-    @Override public int metricsProxyMaxHeapSizeInMb() { return metricsProxyMaxHeapSizeInMb; }
+    @Override public int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return metricsProxyMaxHeapSizeInMb; }
     @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
 
     public TestProperties setFeedConcurrency(double feedConcurrency) {
