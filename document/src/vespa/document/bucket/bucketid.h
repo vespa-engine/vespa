@@ -49,7 +49,7 @@ public:
     using Type = uint64_t;
     using List = bucket::BucketIdList;
     /** Create an initially unset bucket id. */
-    BucketId() noexcept : _id(0) {}
+    constexpr BucketId() noexcept : _id(0) {}
     /** Create a bucket id with the given raw unchecked content. */
     explicit BucketId(Type id) noexcept : _id(id) {}
     /** Create a bucket id using a set of bits from a raw unchecked value. */
