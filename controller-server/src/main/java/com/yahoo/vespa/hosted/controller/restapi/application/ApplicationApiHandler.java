@@ -223,6 +223,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return tenantInfo(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"));
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/compile-version")) return compileVersion(path.get("tenant"), path.get("application"));
@@ -277,7 +278,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePOST(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return createTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/key")) return addDeveloperKey(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return createApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/platform")) return deployPlatform(path.get("tenant"), path.get("application"), "default", false, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying/pin")) return deployPlatform(path.get("tenant"), path.get("application"), "default", true, request);
@@ -583,7 +583,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
 
-    private HttpResponse validateSecretStore(String tenantName, String name, HttpRequest request) {
+    private HttpResponse validateSecretStore(String tenantName, String name) {
         var tenant = TenantName.from(tenantName);
         if (controller.tenants().require(tenant).type() != Tenant.Type.cloud)
             return ErrorResponse.badRequest("Tenant '" + tenant + "' is not a cloud tenant");
