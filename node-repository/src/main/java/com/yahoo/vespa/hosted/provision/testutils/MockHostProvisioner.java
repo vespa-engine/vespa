@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.node.Address;
@@ -52,18 +53,20 @@ public class MockHostProvisioner implements HostProvisioner {
     }
 
     @Override
-    public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources,
+    public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndices, NodeType hostType, NodeResources resources,
                                                 ApplicationId applicationId, Version osVersion, HostSharing sharing) {
         Flavor hostFlavor = this.hostFlavor.orElseGet(() -> flavors.stream().filter(f -> compatible(f, resources))
                                                                    .findFirst()
                                                                    .orElseThrow(() -> new OutOfCapacityException("No host flavor matches " + resources)));
         List<ProvisionedHost> hosts = new ArrayList<>();
-        for (int index : provisionIndexes) {
-            hosts.add(new ProvisionedHost("host" + index,
-                                          "hostname" + index,
+        for (int index : provisionIndices) {
+            String hostHostname = hostType == NodeType.host ? "hostname" + index : hostType.name() + index;
+            hosts.add(new ProvisionedHost("id-of-" + hostType.name() + index,
+                                          hostHostname,
                                           hostFlavor,
+                                          hostType,
                                           Optional.empty(),
-                                          createAddressesForHost(hostFlavor, index),
+                                          createAddressesForHost(hostType, hostFlavor, index),
                                           resources,
                                           osVersion));
         }
@@ -132,15 +135,22 @@ public class MockHostProvisioner implements HostProvisioner {
         return flavor.resources().compatibleWith(resourcesToVerify);
     }
 
-    private List<Address> createAddressesForHost(Flavor flavor, int hostIndex) {
+    private List<Address> createAddressesForHost(NodeType hostType, Flavor flavor, int hostIndex) {
         long numAddresses = Math.max(1, Math.round(flavor.resources().bandwidthGbps()));
         return IntStream.range(0, (int) numAddresses)
-                        .mapToObj(i -> new Address("nodename" + hostIndex + "_" + i))
+                        .mapToObj(i -> {
+                            String hostname = hostType == NodeType.host
+                                    ? "nodename" + hostIndex + "_" + i
+                                    : hostType.childNodeType().name() + i;
+                            return new Address(hostname);
+                        })
                         .collect(Collectors.toList());
     }
 
     private Node withIpAssigned(Node node) {
-        if (node.parentHostname().isPresent()) return node;
+        if (!node.type().isHost()) {
+            return node.with(node.ipConfig().withPrimary(nameResolver.resolveAll(node.hostname())));
+        }
         int hostIndex = Integer.parseInt(node.hostname().replaceAll("^[a-z]+|-\\d+$", ""));
         Set<String> addresses = Set.of("::" + hostIndex + ":0");
         Set<String> ipAddressPool = new HashSet<>();
@@ -152,7 +162,6 @@ public class MockHostProvisioner implements HostProvisioner {
                 nameResolver.addRecord(node.hostname() + "-" + i, ip);
             }
         }
-
         IP.Pool pool = node.ipConfig().pool().withIpAddresses(ipAddressPool);
         return node.with(node.ipConfig().withPrimary(addresses).withPool(pool));
     }

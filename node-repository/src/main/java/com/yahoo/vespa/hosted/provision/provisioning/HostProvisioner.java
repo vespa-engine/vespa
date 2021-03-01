@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.provision.provisioning;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.List;
@@ -32,8 +33,9 @@ public interface HostProvisioner {
     /**
      * Schedule provisioning of a given number of hosts.
      *
-     * @param provisionIndexes list of unique provision indexes which will be used to generate the node hostnames
+     * @param provisionIndices list of unique provision indices which will be used to generate the node hostnames
      *                         on the form of <code>[prefix][index].[domain]</code>
+     * @param hostType The host type to provision
      * @param resources the resources needed per node - the provisioned host may be significantly larger
      * @param applicationId id of the application that will own the provisioned host
      * @param osVersion the OS version to use. If this version does not exist, implementations may choose a suitable
@@ -41,8 +43,11 @@ public interface HostProvisioner {
      * @param sharing puts requirements on sharing or exclusivity of the host to be provisioned.
      * @return list of {@link ProvisionedHost} describing the provisioned nodes
      */
-    List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources,
-                                         ApplicationId applicationId, Version osVersion,
+    List<ProvisionedHost> provisionHosts(List<Integer> provisionIndices,
+                                         NodeType hostType,
+                                         NodeResources resources,
+                                         ApplicationId applicationId,
+                                         Version osVersion,
                                          HostSharing sharing);
 
     /**

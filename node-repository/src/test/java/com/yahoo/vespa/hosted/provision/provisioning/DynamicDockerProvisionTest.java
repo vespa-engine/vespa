@@ -71,7 +71,7 @@ public class DynamicDockerProvisionTest {
 
         mockHostProvisioner(hostProvisioner, "large", 3, null); // Provision shared hosts
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, resources);
-        verify(hostProvisioner).provisionHosts(List.of(100, 101, 102, 103), resources, application1,
+        verify(hostProvisioner).provisionHosts(List.of(100, 101, 102, 103), NodeType.host, resources, application1,
                 Version.emptyVersion, HostSharing.any);
 
         // Total of 8 nodes should now be in node-repo, 4 active hosts and 4 active nodes
@@ -97,7 +97,7 @@ public class DynamicDockerProvisionTest {
         ApplicationId application3 = ProvisioningTester.applicationId();
         mockHostProvisioner(hostProvisioner, "large", 3, application3);
         prepareAndActivate(application3, clusterSpec("mycluster", true), 4, 1, resources);
-        verify(hostProvisioner).provisionHosts(List.of(104, 105, 106, 107), resources, application3,
+        verify(hostProvisioner).provisionHosts(List.of(104, 105, 106, 107), NodeType.host, resources, application3,
                 Version.emptyVersion, HostSharing.exclusive);
 
         // Total of 20 nodes should now be in node-repo, 8 active hosts and 12 active nodes
@@ -427,7 +427,7 @@ public class DynamicDockerProvisionTest {
         doAnswer(invocation -> {
             Flavor hostFlavor = tester.nodeRepository().flavors().getFlavorOrThrow(hostFlavorName);
             List<Integer> provisionIndexes = (List<Integer>) invocation.getArguments()[0];
-            NodeResources nodeResources = (NodeResources) invocation.getArguments()[1];
+            NodeResources nodeResources = (NodeResources) invocation.getArguments()[2];
 
             return provisionIndexes.stream()
                     .map(hostIndex -> {
@@ -449,7 +449,7 @@ public class DynamicDockerProvisionTest {
                         return provisionedHost;
                     })
                     .collect(Collectors.toList());
-        }).when(hostProvisioner).provisionHosts(any(), any(), any(), any(), any());
+        }).when(hostProvisioner).provisionHosts(any(), any(), any(), any(), any(), any());
     }
 
 }

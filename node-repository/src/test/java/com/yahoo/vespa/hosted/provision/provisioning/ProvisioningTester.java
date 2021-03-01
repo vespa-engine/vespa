@@ -513,22 +513,29 @@ public class ProvisioningTester {
                                      index -> UUID.randomUUID().toString());
     }
 
-    /** Creates a set of virtual nodes on a single parent host */
-    public List<Node> makeReadyChildren(int count, int startIndex, NodeResources resources, String parentHostname,
-                                        Function<Integer, String> nodeNamer) {
+    /** Create one or more child nodes on given parent host */
+    public List<Node> makeReadyChildren(int count, int startIndex, NodeResources resources, NodeType nodeType,
+                                        String parentHostname, Function<Integer, String> nodeNamer) {
+        if (nodeType.isHost()) throw new IllegalArgumentException("Non-child node type: " + nodeType);
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < count + startIndex; i++) {
             String hostname = nodeNamer.apply(i);
             IP.Config ipConfig = new IP.Config(nodeRepository.nameResolver().resolveAll(hostname), Set.of());
-
-            Node.Builder builder = Node.create("node-id", ipConfig, hostname, new Flavor(resources), NodeType.tenant);
-            builder.parentHostname(parentHostname);
-            nodes.add(builder.build());
+            Node node = Node.create("node-id", ipConfig, hostname, new Flavor(resources), nodeType)
+                            .parentHostname(parentHostname)
+                            .build();
+            nodes.add(node);
         }
         nodes = nodeRepository.nodes().addNodes(nodes, Agent.system);
         nodes = nodeRepository.nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
         nodeRepository.nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
         return nodes;
+    }
+
+    /** Create one or more child nodes on given parent host */
+    public List<Node> makeReadyChildren(int count, int startIndex, NodeResources resources, String parentHostname,
+                                        Function<Integer, String> nodeNamer) {
+        return makeReadyChildren(count, startIndex, resources, NodeType.tenant, parentHostname, nodeNamer);
     }
 
     public void activateTenantHosts() {
