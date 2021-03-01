@@ -243,4 +243,24 @@ TEST(SmallVectorTest, equal_operator) {
                   SmallVector<EqOnly>({EqOnly{1},EqOnly{5},EqOnly{3}}));
 }
 
+// to check "back() const"
+template<size_t N>
+int last_value_of(const SmallVector<int,N> &v) {
+    return v.back();
+}
+
+TEST(SmallVectorTest, check_back_method) {
+    SmallVector<int> vec;
+    for (int i = 0; i < 1000; ++i) {
+        vec.emplace_back(17);
+        EXPECT_EQ(vec.back(), 17);
+        EXPECT_EQ(last_value_of(vec), 17);
+        vec.back() = 42;
+        EXPECT_EQ(vec[i], 42);
+        vec.back() = i;
+        EXPECT_EQ(last_value_of(vec), i);
+    }
+    EXPECT_EQ(&vec.back(), vec.end() - 1);
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
