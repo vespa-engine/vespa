@@ -47,9 +47,9 @@ GenericCellCast::make_instruction(const ValueType &input_type,
 {
     CellType from = input_type.cell_type();
     auto result_type = ValueType::cell_cast(input_type, to_cell_type);
-    assert(result_type.cell_type() == to_cell_type);
     auto &param = stash.create<ValueType>(result_type);
-    auto op = typify_invoke<2,TypifyCellType,SelectGenericCellCastOp>(from, to_cell_type);
+    CellType to = result_type.cell_type();
+    auto op = typify_invoke<2,TypifyCellType,SelectGenericCellCastOp>(from, to);
     return Instruction(op, wrap_param<ValueType>(param));
 }
 
