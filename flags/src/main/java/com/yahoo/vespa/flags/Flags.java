@@ -231,7 +231,7 @@ public class Flags {
             "sync-host-logs-to-s3-bucket", "", List.of("andreer", "valerijf"), "2021-02-10", "2021-04-01",
             "Host-admin should sync host logs to an S3 bucket named by this flag. If left empty, sync is disabled",
             "Takes effect on next run of S3 log sync task in host-admin",
-            APPLICATION_ID, NODE_TYPE);
+            TENANT_ID, ZONE_ID);
 
     public static final UnboundIntFlag CLUSTER_CONTROLLER_MAX_HEAP_SIZE_IN_MB = defineIntFlag(
             "cluster-controller-max-heap-size-in-mb", 512,
