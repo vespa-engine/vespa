@@ -239,6 +239,12 @@ public class Flags {
             "JVM max heap size for cluster controller in Mb",
             "Takes effect when restarting cluster controller");
 
+    public static final UnboundIntFlag METRICS_PROXY_MAX_HEAP_SIZE_IN_MB = defineIntFlag(
+            "metrics-proxy-max-heap-size-in-mb", 512,
+            List.of("hmusum"), "2021-03-01", "2021-05-01",
+            "JVM max heap size for metrics proxy in Mb",
+            "Takes effect when restarting metrics proxy");
+
     public static final UnboundBooleanFlag DEDICATED_CLUSTER_CONTROLLER_CLUSTER = defineFeatureFlag(
             "dedicated-cluster-controller-cluster", false,
             List.of("jonmv"), "2021-02-15", "2021-04-15",

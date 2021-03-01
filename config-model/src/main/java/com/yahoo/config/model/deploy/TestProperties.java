@@ -10,6 +10,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.Zone;
 
@@ -56,6 +57,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean enableFeedBlockInDistributor = false;
     private double maxDeadBytesRatio = 0.2;
     private int clusterControllerMaxHeapSizeInMb = 512;
+    private int metricsProxyMaxHeapSizeInMb = 512;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
@@ -95,6 +97,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
     @Override public double maxDeadBytesRatio() { return maxDeadBytesRatio; }
     @Override public int clusterControllerMaxHeapSizeInMb() { return clusterControllerMaxHeapSizeInMb; }
+    @Override public int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return metricsProxyMaxHeapSizeInMb; }
     @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
 
     public TestProperties setFeedConcurrency(double feedConcurrency) {
@@ -224,6 +227,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties clusterControllerMaxHeapSizeInMb(int heapSize) {
         clusterControllerMaxHeapSizeInMb = heapSize;
+        return this;
+    }
+
+    public TestProperties metricsProxyMaxHeapSizeInMb(int heapSize) {
+        metricsProxyMaxHeapSizeInMb = heapSize;
         return this;
     }
 

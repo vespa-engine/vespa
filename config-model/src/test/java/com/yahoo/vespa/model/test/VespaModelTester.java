@@ -6,14 +6,12 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.ConfigModelRegistry;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.HostProvisioner;
-import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
 import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
 import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
-import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterSpec;
@@ -21,7 +19,6 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.ProvisionLogger;
-import com.yahoo.config.provision.Provisioner;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.test.utils.ApplicationPackageUtils;
@@ -116,22 +113,38 @@ public class VespaModelTester {
 
     /** Creates a model which uses 0 as start index */
     public VespaModel createModel(String services, boolean failOnOutOfCapacity, String ... retiredHostNames) {
-        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, false, 0, Optional.empty(), retiredHostNames);
+        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, false, 0,
+                           Optional.empty(), new DeployState.Builder(), retiredHostNames);
+    }
+
+    /** Creates a model which uses 0 as start index */
+    public VespaModel createModel(String services, boolean failOnOutOfCapacity, DeployState.Builder builder) {
+        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, false, 0, Optional.empty(), builder);
     }
 
     /** Creates a model which uses 0 as start index */
     public VespaModel createModel(String services, boolean failOnOutOfCapacity, boolean useMaxResources, String ... retiredHostNames) {
-        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, useMaxResources, 0, Optional.empty(), retiredHostNames);
+        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, useMaxResources, 0,
+                           Optional.empty(), new DeployState.Builder(), retiredHostNames);
     }
 
     /** Creates a model which uses 0 as start index */
     public VespaModel createModel(String services, boolean failOnOutOfCapacity, int startIndexForClusters, String ... retiredHostNames) {
-        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, false, startIndexForClusters, Optional.empty(), retiredHostNames);
+        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, false, startIndexForClusters,
+                           Optional.empty(), new DeployState.Builder(), retiredHostNames);
     }
 
     /** Creates a model which uses 0 as start index */
     public VespaModel createModel(Zone zone, String services, boolean failOnOutOfCapacity, String ... retiredHostNames) {
-        return createModel(zone, services, failOnOutOfCapacity, false, 0, Optional.empty(), retiredHostNames);
+        return createModel(zone, services, failOnOutOfCapacity, false, 0,
+                           Optional.empty(), new DeployState.Builder(), retiredHostNames);
+    }
+
+    /** Creates a model which uses 0 as start index */
+    public VespaModel createModel(Zone zone, String services, boolean failOnOutOfCapacity,
+                                  DeployState.Builder deployStateBuilder, String ... retiredHostNames) {
+        return createModel(zone, services, failOnOutOfCapacity, false, 0,
+                           Optional.empty(), deployStateBuilder, retiredHostNames);
     }
 
     /**
@@ -144,7 +157,8 @@ public class VespaModelTester {
      * @return the resulting model
      */
     public VespaModel createModel(Zone zone, String services, boolean failOnOutOfCapacity, boolean useMaxResources,
-                                  int startIndexForClusters, Optional<VespaModel> previousModel, String ... retiredHostNames) {
+                                  int startIndexForClusters, Optional<VespaModel> previousModel,
+                                  DeployState.Builder deployStatebuilder, String ... retiredHostNames) {
         VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(null, services, ApplicationPackageUtils.generateSearchDefinition("type1"));
         ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
 
@@ -164,7 +178,7 @@ public class VespaModelTester {
                 .setUseDedicatedNodeForLogserver(useDedicatedNodeForLogserver)
                 .setDedicatedClusterControllerCluster(dedicatedClusterControllerCluster);
 
-        DeployState.Builder deployState = new DeployState.Builder()
+        DeployState.Builder deployState = deployStatebuilder
                 .applicationPackage(appPkg)
                 .modelHostProvisioner(provisioner)
                 .properties(properties)

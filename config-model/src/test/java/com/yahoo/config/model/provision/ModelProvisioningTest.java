@@ -1795,7 +1795,7 @@ public class ModelProvisioningTest {
             assertTrue("Initial servers are not joining", config.build().server().stream().noneMatch(ZookeeperServerConfig.Server::joining));
         }
         {
-            VespaModel nextModel = tester.createModel(Zone.defaultZone(), servicesXml.apply(5), true, false, 0, Optional.of(model));
+            VespaModel nextModel = tester.createModel(Zone.defaultZone(), servicesXml.apply(5), true, false, 0, Optional.of(model), new DeployState.Builder());
             ApplicationContainerCluster cluster = nextModel.getContainerClusters().get("zk");
             ZookeeperServerConfig.Builder config = new ZookeeperServerConfig.Builder();
             cluster.getContainers().forEach(c -> c.getConfig(config));
