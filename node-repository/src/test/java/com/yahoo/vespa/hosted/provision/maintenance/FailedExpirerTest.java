@@ -274,7 +274,7 @@ public class FailedExpirerTest {
 
         public FailureScenario withNode(NodeType type, NodeResources resources, String hostname, String parentHostname) {
             if (parentHostname != null) {
-                tester.makeReadyVirtualNodes(1, 0, resources, Optional.of(parentHostname), (index) -> hostname);
+                tester.makeReadyChildren(1, 0, resources, parentHostname, (index) -> hostname);
             } else {
                 tester.makeProvisionedNodes(1, (index) -> hostname, new Flavor(resources), Optional.empty(), type, 0, false);
             }

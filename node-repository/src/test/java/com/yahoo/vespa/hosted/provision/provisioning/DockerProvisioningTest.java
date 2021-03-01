@@ -81,7 +81,7 @@ public class DockerProvisioningTest {
 
         List<Node> parents = tester.makeReadyNodes(10, new NodeResources(2, 4, 20, 2), NodeType.host, 1);
         for (Node parent : parents)
-            tester.makeReadyVirtualDockerNodes(1, dockerResources, parent.hostname());
+            tester.makeReadyChildren(1, dockerResources, parent.hostname());
 
         ApplicationId application1 = ProvisioningTester.applicationId();
         Version wantedVespaVersion = Version.fromString("6.39");
@@ -256,8 +256,8 @@ public class DockerProvisioningTest {
             ProvisioningTester tester = new ProvisioningTester.Builder()
                                                 .zone(new Zone(Environment.prod, RegionName.from("us-east-1"))).build();
             ApplicationId application1 = ProvisioningTester.applicationId("app1");
-            tester.makeReadyVirtualDockerNodes(1, dockerResources, "dockerHost1");
-            tester.makeReadyVirtualDockerNodes(1, dockerResources, "dockerHost2");
+            tester.makeReadyChildren(1, dockerResources, "dockerHost1");
+            tester.makeReadyChildren(1, dockerResources, "dockerHost2");
 
             tester.prepare(application1,
                            ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("myContent")).vespaVersion("6.42").build(),

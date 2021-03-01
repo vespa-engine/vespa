@@ -20,7 +20,6 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -138,8 +137,8 @@ public class VirtualNodeProvisioningTest {
 
     @Test(expected = OutOfCapacityException.class)
     public void fail_when_too_few_distinct_parent_hosts() {
-        tester.makeReadyVirtualDockerNodes(2, resources, "parentHost1");
-        tester.makeReadyVirtualDockerNodes(1, resources, "parentHost2");
+        tester.makeReadyChildren(2, resources, "parentHost1");
+        tester.makeReadyChildren(1, resources, "parentHost2");
 
         int contentNodeCount = 3;
         List<HostSpec> hosts = prepare(contentClusterSpec, contentNodeCount, 1);
@@ -151,7 +150,7 @@ public class VirtualNodeProvisioningTest {
 
     @Test
     public void indistinct_distribution_with_known_ready_nodes() {
-        tester.makeReadyVirtualNodes(3, resources);
+        tester.makeReadyChildren(3, resources);
 
         final int contentNodeCount = 3;
         final int groups = 1;
@@ -168,8 +167,8 @@ public class VirtualNodeProvisioningTest {
         nodes = getNodes(applicationId);
         assertEquals(3, nodes.stream().filter(n -> n.parentHostname().isPresent()).count());
 
-        tester.makeReadyVirtualDockerNodes(1, resources, "parentHost1");
-        tester.makeReadyVirtualDockerNodes(2, resources, "parentHost2");
+        tester.makeReadyChildren(1, resources, "parentHost1");
+        tester.makeReadyChildren(2, resources, "parentHost2");
 
         OutOfCapacityException expectedException = null;
         try {
@@ -182,7 +181,7 @@ public class VirtualNodeProvisioningTest {
 
     @Test
     public void unknown_distribution_with_known_ready_nodes() {
-        tester.makeReadyVirtualNodes(3, resources);
+        tester.makeReadyChildren(3, resources);
 
         final int contentNodeCount = 3;
         final int groups = 1;
@@ -190,15 +189,15 @@ public class VirtualNodeProvisioningTest {
         activate(contentHosts);
         assertEquals(3, getNodes(applicationId).size());
 
-        tester.makeReadyVirtualDockerNodes(1, resources, "parentHost1");
-        tester.makeReadyVirtualDockerNodes(1, resources, "parentHost2");
-        tester.makeReadyVirtualDockerNodes(1, resources, "parentHost3");
+        tester.makeReadyChildren(1, resources, "parentHost1");
+        tester.makeReadyChildren(1, resources, "parentHost2");
+        tester.makeReadyChildren(1, resources, "parentHost3");
         assertEquals(contentHosts, prepare(contentClusterSpec, contentNodeCount, groups));
     }
 
     @Test
     public void unknown_distribution_with_known_and_unknown_ready_nodes() {
-        tester.makeReadyVirtualNodes(3, resources);
+        tester.makeReadyChildren(3, resources);
 
         int contentNodeCount = 3;
         int groups = 1;
@@ -206,8 +205,8 @@ public class VirtualNodeProvisioningTest {
         activate(contentHosts);
         assertEquals(3, getNodes(applicationId).size());
 
-        tester.makeReadyVirtualDockerNodes(1, resources, "parentHost1");
-        tester.makeReadyVirtualNodes(1, resources);
+        tester.makeReadyChildren(1, resources, "parentHost1");
+        tester.makeReadyChildren(1, resources);
         assertEquals(contentHosts, prepare(contentClusterSpec, contentNodeCount, groups));
     }
 

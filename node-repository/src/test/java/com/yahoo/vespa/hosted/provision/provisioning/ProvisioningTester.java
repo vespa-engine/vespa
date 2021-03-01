@@ -498,28 +498,28 @@ public class ProvisioningTester {
         return flavor.get();
     }
 
-    /** Creates a set of virtual docker nodes on a single docker host starting with index 1 and increasing */
-    public List<Node> makeReadyVirtualDockerNodes(int n, NodeResources resources, String dockerHostId) {
-        return makeReadyVirtualNodes(n, 1, resources, Optional.of(dockerHostId),
-                                     i -> String.format("%s-%03d", dockerHostId, i));
+    /** Create one or more child nodes on a single host starting with index 1 */
+    public List<Node> makeReadyChildren(int n, NodeResources resources, String parentHostname) {
+        return makeReadyChildren(n, 1, resources, parentHostname,
+                                     index -> String.format("%s-%03d", parentHostname, index));
     }
 
-    /** Creates a set of virtual nodes without a parent host */
-    public List<Node> makeReadyVirtualNodes(int n, NodeResources resources) {
-        return makeReadyVirtualNodes(n, 0, resources, Optional.empty(),
-                                     i -> UUID.randomUUID().toString());
+    /** Create one or more child nodes without a parent starting with index 1 */
+    public List<Node> makeReadyChildren(int n, NodeResources resources) {
+        return makeReadyChildren(n, 1, resources, null,
+                                     index -> UUID.randomUUID().toString());
     }
 
     /** Creates a set of virtual nodes on a single parent host */
-    public List<Node> makeReadyVirtualNodes(int count, int startIndex, NodeResources resources, Optional<String> parentHostname,
-                                             Function<Integer, String> nodeNamer) {
+    public List<Node> makeReadyChildren(int count, int startIndex, NodeResources resources, String parentHostname,
+                                        Function<Integer, String> nodeNamer) {
         List<Node> nodes = new ArrayList<>(count);
         for (int i = startIndex; i < count + startIndex; i++) {
             String hostname = nodeNamer.apply(i);
             IP.Config ipConfig = new IP.Config(nodeRepository.nameResolver().resolveAll(hostname), Set.of());
 
             Node.Builder builder = Node.create("node-id", ipConfig, hostname, new Flavor(resources), NodeType.tenant);
-            parentHostname.ifPresent(builder::parentHostname);
+            builder.parentHostname(parentHostname);
             nodes.add(builder.build());
         }
         nodes = nodeRepository.nodes().addNodes(nodes, Agent.system);
@@ -529,11 +529,7 @@ public class ProvisioningTester {
     }
 
     public void activateTenantHosts() {
-        ApplicationId applicationId = applicationId();
-        List<HostSpec> list = prepare(applicationId,
-                                      ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build(),
-                                      Capacity.fromRequiredNodeType(NodeType.host));
-        activate(applicationId, Set.copyOf(list));
+        prepareAndActivateInfraApplication(applicationId(), NodeType.host);
     }
 
     public static ClusterSpec containerClusterSpec() {

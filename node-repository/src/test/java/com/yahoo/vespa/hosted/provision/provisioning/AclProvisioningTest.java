@@ -41,8 +41,8 @@ public class AclProvisioningTest {
         List<Node> dockerHost = tester.makeReadyNodes(1, new NodeResources(1, 4, 10, 1), NodeType.host);
         ApplicationId zoneApplication = ProvisioningTester.applicationId();
         tester.deploy(zoneApplication, Capacity.fromRequiredNodeType(NodeType.host));
-        tester.makeReadyVirtualDockerNodes(1,new NodeResources(1, 4, 10, 1),
-                                           dockerHost.get(0).hostname());
+        tester.makeReadyChildren(1, new NodeResources(1, 4, 10, 1),
+                                 dockerHost.get(0).hostname());
         List<Node> proxyNodes = tester.makeReadyNodes(3, new NodeResources(1, 4, 10, 1), NodeType.proxy);
 
         // Allocate 2 nodes
@@ -130,8 +130,8 @@ public class AclProvisioningTest {
         // Populate repo
         List<Node> dockerHostNodes = tester.makeReadyNodes(2, "default", NodeType.host);
         Node dockerHostNodeUnderTest = dockerHostNodes.get(0);
-        List<Node> dockerNodes = tester.makeReadyVirtualDockerNodes(5, new NodeResources(1, 4, 10, 1),
-                                                                    dockerHostNodeUnderTest.hostname());
+        List<Node> dockerNodes = tester.makeReadyChildren(5, new NodeResources(1, 4, 10, 1),
+                                                          dockerHostNodeUnderTest.hostname());
 
         List<NodeAcl> acls = tester.nodeRepository().getChildAcls(dockerHostNodeUnderTest);
 
@@ -168,8 +168,8 @@ public class AclProvisioningTest {
         var hosts = tester.makeReadyNodes(2, "default", NodeType.host);
         tester.activateTenantHosts();
         for (var host : hosts) {
-            tester.makeReadyVirtualDockerNodes(2, new NodeResources(2, 8, 50, 1),
-                                               host.hostname());
+            tester.makeReadyChildren(2, new NodeResources(2, 8, 50, 1),
+                                     host.hostname());
         }
 
         // Deploy application
