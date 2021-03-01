@@ -66,6 +66,16 @@
       <groupId>org.apache.felix</groupId>
       <artifactId>org.apache.felix.main</artifactId>
     </dependency>
+
+    <!-- Dependencies used by container-core -->
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jsr310</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>com.fasterxml.jackson.datatype</groupId>
+      <artifactId>jackson-datatype-jdk8</artifactId>
+    </dependency>
   </dependencies>
   <build>
     <plugins>
