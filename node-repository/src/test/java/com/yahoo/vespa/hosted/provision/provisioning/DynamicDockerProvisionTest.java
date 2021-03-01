@@ -14,22 +14,20 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
-import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
+import com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -452,51 +450,6 @@ public class DynamicDockerProvisionTest {
                     })
                     .collect(Collectors.toList());
         }).when(hostProvisioner).provisionHosts(any(), any(), any(), any(), any());
-    }
-
-    private static class MockHostProvisioner implements HostProvisioner {
-
-        private final List<Flavor> hostFlavors;
-        private final int memoryTaxGb;
-
-        public MockHostProvisioner(List<Flavor> hostFlavors, int memoryTaxGb) {
-            this.hostFlavors = List.copyOf(hostFlavors);
-            this.memoryTaxGb = memoryTaxGb;
-        }
-
-        @Override
-        public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources,
-                                                    ApplicationId applicationId, Version osVersion, HostSharing sharing) {
-            Optional<Flavor> hostFlavor = hostFlavors.stream().filter(f -> compatible(f, resources)).findFirst();
-            if (hostFlavor.isEmpty())
-                throw new OutOfCapacityException("No host flavor matches " + resources);
-            return provisionIndexes.stream()
-                                   .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor.get(), Optional.empty(),
-                                           List.of(new Address("host-" + i + "-1")), resources, osVersion))
-                                   .collect(Collectors.toList());
-        }
-
-        private boolean compatible(Flavor hostFlavor, NodeResources resources) {
-            NodeResources resourcesToVerify = resources.withMemoryGb(resources.memoryGb() - memoryTaxGb);
-
-            if (hostFlavor.resources().storageType() == NodeResources.StorageType.remote
-                && hostFlavor.resources().diskGb() >= resources.diskGb())
-                resourcesToVerify = resourcesToVerify.withDiskGb(hostFlavor.resources().diskGb());
-            if (hostFlavor.resources().bandwidthGbps() >= resources.bandwidthGbps())
-                resourcesToVerify = resourcesToVerify.withBandwidthGbps(hostFlavor.resources().bandwidthGbps());
-            return hostFlavor.resources().compatibleWith(resourcesToVerify);
-        }
-
-        @Override
-        public List<Node> provision(Node host, Set<Node> children) throws FatalProvisioningException {
-            throw new RuntimeException("Not implemented: provision");
-        }
-
-        @Override
-        public void deprovision(Node host) {
-            throw new RuntimeException("Not implemented: deprovision");
-        }
-
     }
 
 }
