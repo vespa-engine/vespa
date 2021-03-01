@@ -19,10 +19,9 @@ public class VespaZooKeeperAdminImpl implements VespaZooKeeperAdmin {
 
     @Override
     public void reconfigure(String connectionSpec, String joiningServers, String leavingServers) throws ReconfigException {
+        ZooKeeperAdmin zooKeeperAdmin = null;
         try {
-            ZooKeeperAdmin zooKeeperAdmin = new ZooKeeperAdmin(connectionSpec,
-                                                               (int) sessionTimeout().toMillis(),
-                                                               (event) -> log.log(Level.INFO, event.toString()));
+            zooKeeperAdmin = createAdmin(connectionSpec);
             long fromConfig = -1;
             // Using string parameters because the List variant of reconfigure fails to join empty lists (observed on 3.5.6, fixed in 3.7.0)
             byte[] appliedConfig = zooKeeperAdmin.reconfigure(joiningServers, leavingServers, null, fromConfig, null);
@@ -34,7 +33,19 @@ public class VespaZooKeeperAdminImpl implements VespaZooKeeperAdmin {
                 throw new RuntimeException(e);
         } catch (IOException | InterruptedException e) {
             throw new RuntimeException(e);
+        } finally {
+            if (zooKeeperAdmin != null) {
+                try {
+                    zooKeeperAdmin.close();
+                } catch (InterruptedException e) {
+                }
+            }
         }
+    }
+
+    private ZooKeeperAdmin createAdmin(String connectionSpec) throws IOException {
+        return new ZooKeeperAdmin(connectionSpec, (int) sessionTimeout().toMillis(),
+                                  (event) -> log.log(Level.INFO, event.toString()));
     }
 
     private static boolean retryOn(KeeperException e) {
