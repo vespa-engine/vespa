@@ -46,9 +46,9 @@ ReduceParam::~ReduceParam() = default;
 //-----------------------------------------------------------------------------
 
 struct SparseReduceState {
-    std::vector<string_id>  full_address;
-    std::vector<string_id*> fetch_address;
-    std::vector<string_id*> keep_address;
+    SmallVector<string_id>  full_address;
+    SmallVector<string_id*> fetch_address;
+    SmallVector<string_id*> keep_address;
     size_t                  subspace;
 
     SparseReduceState(const SparseReducePlan &plan)
