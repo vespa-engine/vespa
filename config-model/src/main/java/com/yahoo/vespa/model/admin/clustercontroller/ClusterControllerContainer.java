@@ -174,4 +174,9 @@ public class ClusterControllerContainer extends Container implements
         }
     }
 
+    @Override
+    protected String defaultPreload() {
+        return "";
+    }
+
 }

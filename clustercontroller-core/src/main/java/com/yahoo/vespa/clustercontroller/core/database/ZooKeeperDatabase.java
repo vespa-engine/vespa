@@ -6,18 +6,26 @@ import com.yahoo.vespa.clustercontroller.core.ClusterStateBundle;
 import com.yahoo.vespa.clustercontroller.core.ContentCluster;
 import com.yahoo.vespa.clustercontroller.core.rpc.EnvelopedClusterStateBundleCodec;
 import com.yahoo.vespa.clustercontroller.core.rpc.SlimeClusterStateBundleCodec;
-import org.apache.zookeeper.*;
+import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
+import org.apache.zookeeper.WatchedEvent;
+import org.apache.zookeeper.Watcher;
+import org.apache.zookeeper.ZooDefs;
+import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.data.ACL;
 
 import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+import java.util.StringTokenizer;
+import java.util.TreeMap;
 import java.util.logging.Level;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vdslib.state.Node;
 
 import java.util.logging.Logger;
-import java.util.*;
 import java.io.IOException;
 import java.io.StringWriter;
 import java.io.PrintWriter;
