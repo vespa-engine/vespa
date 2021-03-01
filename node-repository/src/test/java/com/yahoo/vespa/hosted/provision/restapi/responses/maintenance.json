@@ -4,9 +4,6 @@
       "name": "AutoscalingMaintainer"
     },
     {
-      "name": "ConfigServerReconfigurer"
-    },
-    {
       "name": "DedicatedClusterControllerClusterMigrator"
     },
     {

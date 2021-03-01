@@ -20,7 +20,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
- * Starts or reconfigures a ZooKeeper server as necessary. This is created as a component
+ * Starts zookeeper server and supports reconfiguring zookeeper cluster. Created as a component
  * without any config injected, to make sure that it is not recreated when config changes.
  *
  * @author hmusum
@@ -45,13 +45,12 @@ public class Reconfigurer extends AbstractComponent {
         this(vespaZooKeeperAdmin, new Sleeper());
     }
 
-    public Reconfigurer(VespaZooKeeperAdmin vespaZooKeeperAdmin, Sleeper sleeper) {
+    Reconfigurer(VespaZooKeeperAdmin vespaZooKeeperAdmin, Sleeper sleeper) {
         this.vespaZooKeeperAdmin = Objects.requireNonNull(vespaZooKeeperAdmin);
         this.sleeper = Objects.requireNonNull(sleeper);
         log.log(Level.FINE, "Created ZooKeeperReconfigurer");
     }
 
-    /** Start a ZooKeeper server or reconfigure a currently running cluster */
     void startOrReconfigure(ZookeeperServerConfig newConfig, VespaZooKeeperServer server,
                             Supplier<QuorumPeer> quorumPeerGetter, Consumer<QuorumPeer> quorumPeerSetter) {
         if (zooKeeperRunner == null) {
@@ -59,22 +58,10 @@ public class Reconfigurer extends AbstractComponent {
             zooKeeperRunner = startServer(newConfig, server);
         }
         quorumPeerSetter.accept(peer);
-        reconfigure(newConfig);
-    }
 
-    /** Reconfigure a running ZooKeeper cluster with given servers. This is a no-op if servers are unchanged */
-    public void reconfigure(List<ZooKeeperServer> wantedServers) {
-        ZookeeperServerConfig.Builder b = new ZookeeperServerConfig.Builder();
-        b.myid(-1) // Required by ZookeeperServerConfig, but not used for reconfiguration
-         .dynamicReconfiguration(true);
-        for (var server : wantedServers) {
-            ZookeeperServerConfig.Server.Builder serverBuilder = new ZookeeperServerConfig.Server.Builder();
-            serverBuilder.id(server.id())
-                         .hostname(server.hostname());
-            b.server(serverBuilder);
+        if (shouldReconfigure(newConfig)) {
+            reconfigure(newConfig);
         }
-        ZookeeperServerConfig newConfig = b.build();
-        reconfigure(newConfig);
     }
 
     ZookeeperServerConfig activeConfig() {
@@ -90,7 +77,6 @@ public class Reconfigurer extends AbstractComponent {
     private boolean shouldReconfigure(ZookeeperServerConfig newConfig) {
         if (!newConfig.dynamicReconfiguration()) return false;
         if (activeConfig == null) return false;
-        if (newConfig.server().isEmpty()) return false;
         return !newConfig.equals(activeConfig());
     }
 
@@ -100,9 +86,7 @@ public class Reconfigurer extends AbstractComponent {
         return runner;
     }
 
-    /** Reconfigure ZooKeeper cluster with given config, if necessary */
     private void reconfigure(ZookeeperServerConfig newConfig) {
-        if (!shouldReconfigure(newConfig)) return;
         Instant reconfigTriggered = Instant.now();
         // No point in trying to reconfigure if there is only one server in the new ensemble,
         // the others will be shutdown or are about to be shutdown
