@@ -1,0 +1,12 @@
+{
+  "archives": [
+    {
+      "tenant": "tenant2",
+      "uri": "s3://my-bucket/dir/"
+    },
+    {
+      "tenant": "tenant3",
+      "uri": "ftp://host/dir/"
+    }
+  ]
+}

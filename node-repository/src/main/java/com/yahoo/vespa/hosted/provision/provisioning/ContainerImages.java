@@ -1,10 +1,9 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.google.common.base.Supplier;
-import com.google.common.base.Suppliers;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.lang.CachedSupplier;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
@@ -12,7 +11,6 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
-import java.util.concurrent.TimeUnit;
 import java.util.logging.Logger;
 
 /**
@@ -34,17 +32,12 @@ public class ContainerImages {
      * unnecessary ZK reads. When images change, some nodes may need to wait for TTL until they see the new image,
      * this is fine.
      */
-    private volatile Supplier<Map<NodeType, DockerImage>> images;
+    private final CachedSupplier<Map<NodeType, DockerImage>> images;
 
     public ContainerImages(CuratorDatabaseClient db, DockerImage defaultImage) {
         this.db = db;
         this.defaultImage = defaultImage;
-        createCache();
-    }
-
-    private void createCache() {
-        this.images = Suppliers.memoizeWithExpiration(() -> Collections.unmodifiableMap(db.readContainerImages()),
-                                                      cacheTtl.toMillis(), TimeUnit.MILLISECONDS);
+        this.images = new CachedSupplier<>(() -> Collections.unmodifiableMap(db.readContainerImages()), cacheTtl);
     }
 
     /** Returns the current images for each node type */
@@ -72,7 +65,7 @@ public class ContainerImages {
             image.ifPresentOrElse(img -> images.put(nodeType, img),
                                   () -> images.remove(nodeType));
             db.writeContainerImages(images);
-            createCache(); // Throw away current cache
+            this.images.invalidate(); // Throw away current cache
             log.info("Set container image for " + nodeType + " nodes to " + image.map(DockerImage::asString).orElse(null));
         }
     }
