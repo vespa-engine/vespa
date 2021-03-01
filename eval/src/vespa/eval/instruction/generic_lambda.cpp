@@ -28,10 +28,10 @@ bool step_labels(double *labels, const ValueType &type) {
 }
 
 struct ParamProxy : public LazyParams {
-    const std::vector<double> &labels;
+    const SmallVector<double> &labels;
     const LazyParams          &params;
     const std::vector<size_t> &bindings;
-    ParamProxy(const std::vector<double> &labels_in, const LazyParams &params_in, const std::vector<size_t> &bindings_in)
+    ParamProxy(const SmallVector<double> &labels_in, const LazyParams &params_in, const std::vector<size_t> &bindings_in)
         : labels(labels_in), params(params_in), bindings(bindings_in) {}
     const Value &resolve(size_t idx, Stash &stash) const override {
         if (idx < labels.size()) {
@@ -61,7 +61,7 @@ struct CompiledParams {
 template <typename CT>
 void my_compiled_lambda_op(InterpretedFunction::State &state, uint64_t param) {
     const CompiledParams &params = unwrap_param<CompiledParams>(param);
-    std::vector<double> args(params.result_type.dimensions().size() + params.bindings.size(), 0.0);
+    SmallVector<double> args(params.result_type.dimensions().size() + params.bindings.size(), 0.0);
     double *bind_next = &args[params.result_type.dimensions().size()];
     for (size_t binding: params.bindings) {
         *bind_next++ = state.params->resolve(binding, state.stash).as_double();
@@ -100,7 +100,7 @@ struct InterpretedParams {
 template <typename CT>
 void my_interpreted_lambda_op(InterpretedFunction::State &state, uint64_t param) {
     const InterpretedParams &params = unwrap_param<InterpretedParams>(param);
-    std::vector<double> labels(params.result_type.dimensions().size(), 0.0);
+    SmallVector<double> labels(params.result_type.dimensions().size(), 0.0);
     ParamProxy param_proxy(labels, *state.params, params.bindings);
     InterpretedFunction::Context ctx(params.fun);
     ArrayRef<CT> dst_cells = state.stash.create_uninitialized_array<CT>(params.num_cells);
