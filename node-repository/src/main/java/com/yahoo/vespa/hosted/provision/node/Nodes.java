@@ -560,6 +560,22 @@ public class Nodes {
         return performOn(filter, (node, lock) -> write(node.withWantToRetire(true, agent, instant), lock));
     }
 
+    /** Retire and deprovision given host and all of its children */
+    public List<Node> deprovision(Node host, Agent agent, Instant instant) {
+        if (!host.type().isHost()) throw new IllegalArgumentException("Cannot deprovision non-host " + host);
+        Optional<NodeMutex> nodeMutex = lockAndGet(host);
+        if (nodeMutex.isEmpty()) return List.of();
+        List<Node> result;
+        try (NodeMutex lock = nodeMutex.get(); Mutex allocationLock = lockUnallocated()) {
+            // This takes allocationLock to prevent any further allocation of nodes on this host
+            host = lock.node();
+            NodeList children = list(allocationLock).childrenOf(host);
+            result = retire(NodeListFilter.from(children.asList()), agent, instant);
+            result.add(write(host.withWantToRetire(true, true, agent, instant), lock));
+        }
+        return result;
+    }
+
     /**
      * Writes this node after it has changed some internal state but NOT changed its state field.
      * This does NOT lock the node repository implicitly, but callers are expected to already hold the lock.
