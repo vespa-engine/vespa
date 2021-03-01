@@ -69,10 +69,7 @@ generic_rename(const Value &a,
                const ValueType &res_type, const ValueBuilderFactory &factory)
 {
     auto cells = a.cells().typify<CT>();
-    SmallVector<string_id> output_address;
-    for (size_t i = 0; i < sparse_plan.mapped_dims; ++i) {
-        output_address.emplace_back(string_id{});
-    }
+    SmallVector<string_id> output_address(sparse_plan.mapped_dims);
     SmallVector<string_id*> input_address;
     for (size_t maps_to : sparse_plan.output_dimensions) {
         input_address.emplace_back(&output_address[maps_to]);
@@ -175,12 +172,8 @@ DenseRenamePlan::DenseRenamePlan(const ValueType &lhs_type,
     const auto out_dims = output_type.nontrivial_indexed_dimensions();
     size_t num_dense_dims = lhs_dims.size();
     assert(num_dense_dims == out_dims.size());
-    SmallVector<size_t> lhs_loopcnt;
-    SmallVector<size_t> lhs_stride;
-    for (size_t i = 0; i < num_dense_dims; ++i) {
-        lhs_loopcnt.emplace_back(0);
-        lhs_stride.emplace_back(1);
-    }
+    SmallVector<size_t> lhs_loopcnt(num_dense_dims);
+    SmallVector<size_t> lhs_stride(num_dense_dims, 1);
     size_t lhs_size = 1;
     for (size_t i = num_dense_dims; i-- > 0; ) {
         lhs_stride[i] = lhs_size;
