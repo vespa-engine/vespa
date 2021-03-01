@@ -23,6 +23,7 @@ import ai.vespa.metricsproxy.service.SystemPollerProvider;
 import ai.vespa.metricsproxy.telegraf.Telegraf;
 import ai.vespa.metricsproxy.telegraf.TelegrafConfig;
 import ai.vespa.metricsproxy.telegraf.TelegrafRegistry;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.model.producer.AbstractConfigProducerRoot;
@@ -30,6 +31,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.ThreadedHttpRequestHandler;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.admin.Admin;
 import com.yahoo.vespa.model.admin.monitoring.MetricSet;
@@ -67,7 +69,8 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
         ConsumersConfig.Producer,
         MonitoringConfig.Producer,
         TelegrafConfig.Producer,
-        MetricsNodesConfig.Producer
+        MetricsNodesConfig.Producer,
+        QrStartConfig.Producer
 {
     public static final Logger log = Logger.getLogger(MetricsProxyContainerCluster.class.getName());
 
@@ -85,11 +88,12 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
     private final AbstractConfigProducer<?> parent;
     private final ApplicationId applicationId;
-
+    private final ModelContext.FeatureFlags featureFlags;
 
     public MetricsProxyContainerCluster(AbstractConfigProducer<?> parent, String name, DeployState deployState) {
         super(parent, name, name, deployState, true);
         this.parent = parent;
+        this.featureFlags = deployState.featureFlags();
         applicationId = deployState.getProperties().applicationId();
 
         setRpcServerEnabled(true);
@@ -196,6 +200,16 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
                 builder.cloudWatch(cloudWatchBuilder);
             }
         }
+    }
+
+    @Override
+    public void getConfig(QrStartConfig.Builder builder) {
+        super.getConfig(builder);
+        int maxHeapSize = featureFlags.metricsProxyMaxHeapSizeInMb();
+        boolean verboseGc = (maxHeapSize < 512);
+        builder.jvm
+                .verbosegc(verboseGc)
+                .heapsize(maxHeapSize);
     }
 
     protected boolean messageBusEnabled() { return false; }

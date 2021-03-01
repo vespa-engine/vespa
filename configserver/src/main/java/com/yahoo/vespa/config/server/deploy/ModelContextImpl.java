@@ -169,6 +169,7 @@ public class ModelContextImpl implements ModelContext {
         private final boolean enableFeedBlockInDistributor;
         private final double maxDeadBytesRatio;
         private final int clusterControllerMaxHeapSizeInMb;
+        private final int metricsProxyMaxHeapSizeInMb;
         private final List<String> allowedAthenzProxyIdentities;
         private final boolean tenantIamRole;
         private final int maxActivationInhibitedOutOfSyncGroups;
@@ -193,6 +194,7 @@ public class ModelContextImpl implements ModelContext {
             this.enableFeedBlockInDistributor = flagValue(source, appId, Flags.ENABLE_FEED_BLOCK_IN_DISTRIBUTOR);
             this.maxDeadBytesRatio = flagValue(source, appId, Flags.MAX_DEAD_BYTES_RATIO);
             this.clusterControllerMaxHeapSizeInMb = flagValue(source, appId, Flags.CLUSTER_CONTROLLER_MAX_HEAP_SIZE_IN_MB);
+            this.metricsProxyMaxHeapSizeInMb = flagValue(source, appId, Flags.METRICS_PROXY_MAX_HEAP_SIZE_IN_MB);
             this.allowedAthenzProxyIdentities = flagValue(source, appId, Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES);
             this.tenantIamRole = flagValue(source, appId.tenant(), Flags.TENANT_IAM_ROLE);
             this.maxActivationInhibitedOutOfSyncGroups = flagValue(source, appId, Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS);
@@ -217,6 +219,7 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
         @Override public double maxDeadBytesRatio() { return maxDeadBytesRatio; }
         @Override public int clusterControllerMaxHeapSizeInMb() { return clusterControllerMaxHeapSizeInMb; }
+        @Override public int metricsProxyMaxHeapSizeInMb() { return metricsProxyMaxHeapSizeInMb; }
         @Override public List<String> allowedAthenzProxyIdentities() { return allowedAthenzProxyIdentities; }
         @Override public boolean tenantIamRole() { return tenantIamRole; }
         @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
