@@ -388,6 +388,11 @@ ValueType::either(const ValueType &one, const ValueType &other) {
     return one;
 }
 
+ValueType
+ValueType::cell_cast(const ValueType &from, CellType to_cell_type) {
+    return make_type(to_cell_type, from.dimensions());
+}
+
 std::ostream &
 operator<<(std::ostream &os, const ValueType &type) {
     return os << type.to_spec();

@@ -28,6 +28,7 @@ struct ReferenceOperations {
     // start at 1.
     using PeekSpec = tensor_function::Peek::Spec;
 
+    static TensorSpec cell_cast(const TensorSpec &a, CellType to);
     static TensorSpec concat(const TensorSpec &a, const TensorSpec &b, const std::string &concat_dim);
     static TensorSpec create(const vespalib::string &type, const CreateSpec &spec, const std::vector<TensorSpec> &children);
     static TensorSpec join(const TensorSpec &a, const TensorSpec &b, join_fun_t function);
