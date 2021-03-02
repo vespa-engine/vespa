@@ -17,6 +17,7 @@
 #include <vespa/searchcore/proton/reference/i_document_db_reference.h>
 #include <vespa/searchcore/proton/server/bootstrapconfig.h>
 #include <vespa/searchcore/proton/server/document_db_explorer.h>
+#include <vespa/searchcore/proton/server/documentdb.h>
 #include <vespa/searchcore/proton/server/documentdbconfigmanager.h>
 #include <vespa/searchcore/proton/server/memoryconfigstore.h>
 #include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>

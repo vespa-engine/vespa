@@ -2,7 +2,10 @@
 
 #include "bucketmover_common.h"
 #include <vespa/searchcore/proton/server/bucketmovejobv2.h>
+#include <vespa/searchcore/proton/server/executor_thread_service.h>
+#include <vespa/searchcore/proton/server/document_db_maintenance_config.h>
 #include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>

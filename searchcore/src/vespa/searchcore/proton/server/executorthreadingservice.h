@@ -52,13 +52,14 @@ public:
     void setTaskLimit(uint32_t taskLimit, uint32_t summaryTaskLimit);
 
     // Expose the underlying executors for stats fetching and testing.
-    vespalib::ThreadStackExecutorBase &getMasterExecutor() {
+    // TOD: Remove - This is only used for casting to check the underlying type
+    vespalib::ThreadExecutor &getMasterExecutor() {
         return _masterExecutor;
     }
-    vespalib::SyncableThreadExecutor &getIndexExecutor() {
+    vespalib::ThreadExecutor &getIndexExecutor() {
         return *_indexExecutor;
     }
-    vespalib::SyncableThreadExecutor &getSummaryExecutor() {
+    vespalib::ThreadExecutor &getSummaryExecutor() {
         return *_summaryExecutor;
     }
 

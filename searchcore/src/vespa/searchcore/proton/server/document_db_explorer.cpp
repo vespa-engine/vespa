@@ -5,6 +5,7 @@
 #include "document_subdb_collection_explorer.h"
 #include "executor_threading_service_explorer.h"
 #include "maintenance_controller_explorer.h"
+#include "documentdb.h"
 #include <vespa/searchcore/proton/bucketdb/bucket_db_explorer.h>
 #include <vespa/searchcore/proton/common/state_reporter_utils.h>
 #include <vespa/searchcore/proton/matching/session_manager_explorer.h>
@@ -15,12 +16,12 @@ using namespace vespalib::slime;
 
 namespace proton {
 
-DocumentDBExplorer::DocumentDBExplorer(const DocumentDB::SP &docDb)
-    : _docDb(docDb)
+DocumentDBExplorer::DocumentDBExplorer(std::shared_ptr<DocumentDB> docDb)
+    : _docDb(std::move(docDb))
 {
 }
 
-DocumentDBExplorer::~DocumentDBExplorer() {}
+DocumentDBExplorer::~DocumentDBExplorer() = default;
 
 void
 DocumentDBExplorer::get_state(const Inserter &inserter, bool full) const

@@ -9,6 +9,7 @@
 #include <vespa/searchcore/proton/server/remove_operations_rate_tracker.h>
 #include <vespa/searchcore/proton/server/maintenancedocumentsubdb.h>
 #include <vespa/searchcore/proton/server/i_operation_storer.h>
+#include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
 #include <vespa/searchcore/proton/feedoperation/moveoperation.h>
 #include <vespa/searchcore/proton/feedoperation/compact_lid_space_operation.h>
@@ -46,6 +47,7 @@ using LidPair = std::pair<uint32_t, uint32_t>;
 using LidPairVector = std::vector<LidPair>;
 struct MyHandler;
 
+namespace proton::test { class DummyDocumentSubDb; }
 struct MyScanIterator : public IDocumentScanIterator {
     const MyHandler & _handler;
     LidVector _lids;
@@ -137,7 +139,7 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
 };
 
 struct MySubDb {
-    test::DummyDocumentSubDb sub_db;
+    std::unique_ptr<proton::test::DummyDocumentSubDb> sub_db;
     MaintenanceDocumentSubDB maintenance_sub_db;
     PendingLidTracker _pendingLidsForCommit;
     MySubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucket_db, const MyDocumentStore& store, const std::shared_ptr<const DocumentTypeRepo> & repo);

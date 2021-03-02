@@ -4,6 +4,7 @@
 #include <vespa/searchcore/proton/feedoperation/operations.h>
 #include <vespa/searchcore/proton/server/combiningfeedview.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/vespalib/util/idestructorcallback.h>
 #include <vespa/document/update/documentupdate.h>

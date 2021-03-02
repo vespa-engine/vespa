@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketmover_common.h"
+#include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/vespalib/testkit/test_macros.h>
 
 using vespalib::IDestructorCallback;
@@ -79,6 +80,11 @@ assertEqual(const document::BucketId &bucket, const proton::test::Document &doc,
     if (!EXPECT_EQUAL(0u, op.getTargetDbdId().getLid())) return false;
     if (!EXPECT_EQUAL(targetSubDbId, op.getTargetDbdId().getSubDbId())) return false;
     return true;
+}
+
+void
+MySubDb::setBucketState(const BucketId &bucketId, bool active) {
+    _metaStore.setBucketState(bucketId, active);
 }
 
 }
