@@ -29,6 +29,8 @@ public class ResourceUsageStatsTest {
                 Optional.empty());
         assertEquals(0.4 / 0.8, stats.getMaxDiskUtilization(), DELTA);
         assertEquals(0.6 / 0.9, stats.getMaxMemoryUtilization(), DELTA);
+        assertEquals(0.8, stats.getDiskLimit(), DELTA);
+        assertEquals(0.9, stats.getMemoryLimit(), DELTA);
     }
 
     @Test
@@ -39,6 +41,8 @@ public class ResourceUsageStatsTest {
                 Optional.empty());
         assertEquals(0.0, stats.getMaxDiskUtilization(), DELTA);
         assertEquals(0.0, stats.getMaxMemoryUtilization(), DELTA);
+        assertEquals(0.8, stats.getDiskLimit(), DELTA);
+        assertEquals(0.9, stats.getMemoryLimit(), DELTA);
     }
 
     @Test
