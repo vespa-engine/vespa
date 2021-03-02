@@ -25,26 +25,6 @@ private:
         uint16_t u1;
         uint16_t u2;
     };
-public:
-    constexpr BFloat16(float value) noexcept : _bits(float_to_bits(value)) {}
-    BFloat16() noexcept = default;
-    ~BFloat16() noexcept = default;
-    constexpr BFloat16(const BFloat16 &other) noexcept = default;
-    constexpr BFloat16(BFloat16 &&other) noexcept = default;
-    constexpr BFloat16& operator=(const BFloat16 &other) noexcept = default;
-    constexpr BFloat16& operator=(BFloat16 &&other) noexcept = default;
-    constexpr BFloat16& operator=(float value) noexcept {
-        _bits = float_to_bits(value);
-        return *this;
-    }
-
-    constexpr operator float () const noexcept { return bits_to_float(_bits); }
-
-    constexpr float to_float() const noexcept { return bits_to_float(_bits); }
-    constexpr void assign(float value) noexcept { _bits = float_to_bits(value); }
-
-    constexpr uint16_t get_bits() const { return _bits; }
-    constexpr void assign_bits(uint16_t value) noexcept { _bits = value; }
 
     template<std::endian native_endian = std::endian::native>
     static constexpr uint16_t float_to_bits(float value) noexcept {
@@ -75,6 +55,26 @@ public:
         memcpy(&result, &both, sizeof(float));
         return result;
     }
+public:
+    constexpr BFloat16(float value) noexcept : _bits(float_to_bits(value)) {}
+    BFloat16() noexcept = default;
+    ~BFloat16() noexcept = default;
+    constexpr BFloat16(const BFloat16 &other) noexcept = default;
+    constexpr BFloat16(BFloat16 &&other) noexcept = default;
+    constexpr BFloat16& operator=(const BFloat16 &other) noexcept = default;
+    constexpr BFloat16& operator=(BFloat16 &&other) noexcept = default;
+    constexpr BFloat16& operator=(float value) noexcept {
+        _bits = float_to_bits(value);
+        return *this;
+    }
+
+    constexpr operator float () const noexcept { return bits_to_float(_bits); }
+
+    constexpr float to_float() const noexcept { return bits_to_float(_bits); }
+    constexpr void assign(float value) noexcept { _bits = float_to_bits(value); }
+
+    constexpr uint16_t get_bits() const { return _bits; }
+    constexpr void assign_bits(uint16_t value) noexcept { _bits = value; }
 };
 
 }
