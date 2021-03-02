@@ -86,10 +86,11 @@ AccessLog = element accesslog {
 }
 
 SecretStore = element secret-store {
-    attribute type { string "oath-ckms" } &
+    attribute type { string "oath-ckms" | string "cloud" } &
     element group {
       attribute name { string } &
-      attribute environment { string "alpha" | string "corp" | string "prod" | string "aws" | string "aws_stage" }
+      (attribute environment { string "alpha" | string "corp" | string "prod" | string "aws" | string "aws_stage" } |
+      attribute region { string } )
     } +
 }
 

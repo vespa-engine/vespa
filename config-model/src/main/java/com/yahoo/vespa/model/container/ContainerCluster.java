@@ -4,6 +4,7 @@ package com.yahoo.vespa.model.container;
 import com.yahoo.cloud.config.ClusterInfoConfig;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.CuratorConfig;
+import com.yahoo.cloud.config.SecretStoreConfig;
 import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.docproc.DocprocConfig;
@@ -101,7 +102,8 @@ public abstract class ContainerCluster<CONTAINER extends Container>
         DocprocConfig.Producer,
         ClusterInfoConfig.Producer,
         ConfigserverConfig.Producer,
-        CuratorConfig.Producer
+        CuratorConfig.Producer,
+        SecretStoreConfig.Producer
 {
 
     /**
@@ -575,6 +577,16 @@ public abstract class ContainerCluster<CONTAINER extends Container>
             builder.server(new CuratorConfig.Server.Builder().hostname(container.getHostResource().getHostname()));
         }
         builder.zookeeperLocalhostAffinity(zooKeeperLocalhostAffinity);
+    }
+
+    @Override
+    public void getConfig(SecretStoreConfig.Builder builder) {
+        secretStore.getGroups().forEach(group ->
+            builder.groups(new SecretStoreConfig.Groups.Builder()
+                    .name(group.name)
+                    .region(group.environment)
+            )
+        );
     }
 
     private List<ClusterInfoConfig.Services.Ports.Builder> getPorts(Service service) {

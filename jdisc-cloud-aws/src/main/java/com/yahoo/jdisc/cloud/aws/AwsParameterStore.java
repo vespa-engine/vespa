@@ -9,6 +9,7 @@ import com.amazonaws.services.simplesystemsmanagement.AWSSimpleSystemsManagement
 import com.amazonaws.services.simplesystemsmanagement.AWSSimpleSystemsManagementClient;
 import com.amazonaws.services.simplesystemsmanagement.model.GetParametersRequest;
 import com.amazonaws.services.simplesystemsmanagement.model.GetParametersResult;
+import com.yahoo.cloud.config.SecretStoreConfig;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 
@@ -20,18 +21,20 @@ public class AwsParameterStore implements SecretStore {
     private final VespaAwsCredentialsProvider credentialsProvider;
     private final String roleToAssume;
     private final String externalId;
+    private final String region;
 
-    AwsParameterStore(VespaAwsCredentialsProvider credentialsProvider, String roleToAssume, String externalId) {
+    AwsParameterStore(VespaAwsCredentialsProvider credentialsProvider, String roleToAssume, String externalId, String region) {
         this.credentialsProvider = credentialsProvider;
         this.roleToAssume = roleToAssume;
         this.externalId = externalId;
+        this.region = region;
     }
 
     @Override
     public String getSecret(String key) {
         AWSSecurityTokenService tokenService = AWSSecurityTokenServiceClientBuilder
                 .standard()
-                .withRegion("us-east-1")
+                .withRegion(region)
                 .withCredentials(credentialsProvider)
                 .build();
 
@@ -43,7 +46,7 @@ public class AwsParameterStore implements SecretStore {
 
         AWSSimpleSystemsManagement client = AWSSimpleSystemsManagementClient.builder()
                 .withCredentials(assumeExtAccountRole)
-                .withRegion("us-east-1")
+                .withRegion(region)
                 .build();
 
         GetParametersRequest parametersRequest = new GetParametersRequest().withNames(key).withWithDecryption(true);

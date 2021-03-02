@@ -7,7 +7,10 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.IdentityProvider;
+import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
+
+import java.util.List;
 
 /**
  * Validates the requirements for setting up a secret store.
@@ -16,14 +19,23 @@ import com.yahoo.vespa.model.container.component.Component;
  */
 public class SecretStoreValidator extends Validator {
 
+    private final List<String> VALID_TYPES = List.of("oath-ckms", "cloud");
+
     @Override
     public void validate(VespaModel model, DeployState deployState) {
         if (! deployState.isHosted()) return;
         if (model.getAdmin().getApplicationType() != ApplicationType.DEFAULT) return;
 
         for (ContainerCluster cluster : model.getContainerClusters().values()) {
-            if (cluster.getSecretStore().isPresent() && ! hasIdentityProvider(cluster)) {
-                throw new IllegalArgumentException(String.format(
+
+            if (cluster.getSecretStore().isPresent() ) {
+                var secretStore = (SecretStore) cluster.getSecretStore().get();
+
+                if (!isValidType(secretStore.getType())) {
+                    throw new IllegalArgumentException("Secret store must be one of the following types: " + VALID_TYPES);
+                }
+                if (! secretStore.isCloud() && ! hasIdentityProvider(cluster))
+                    throw new IllegalArgumentException(String.format(
                         "Container cluster '%s' uses a secret store, so an Athenz domain and an Athenz service" +
                                 " must be declared in deployment.xml.", cluster.getName()));
             }
@@ -35,5 +47,9 @@ public class SecretStoreValidator extends Validator {
             if (component instanceof IdentityProvider) return true;
         }
         return false;
+    }
+
+    private boolean isValidType(String type) {
+        return VALID_TYPES.contains(type);
     }
 }

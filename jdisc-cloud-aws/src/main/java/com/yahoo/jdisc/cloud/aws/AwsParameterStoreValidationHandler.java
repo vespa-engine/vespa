@@ -2,6 +2,7 @@
 package com.yahoo.jdisc.cloud.aws;
 
 import com.google.inject.Inject;
+import com.yahoo.cloud.config.SecretStoreConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -28,16 +29,18 @@ public class AwsParameterStoreValidationHandler extends LoggingRequestHandler {
 
     private static final Logger log = Logger.getLogger(AwsParameterStoreValidationHandler.class.getName());
     private final VespaAwsCredentialsProvider credentialsProvider;
+    private final SecretStoreConfig secretStoreConfig;
 
     @Inject
-    public AwsParameterStoreValidationHandler(Context ctx) {
-        this(ctx, new VespaAwsCredentialsProvider());
+    public AwsParameterStoreValidationHandler(Context ctx, SecretStoreConfig secretStoreConfig) {
+        this(ctx, secretStoreConfig, new VespaAwsCredentialsProvider());
     }
 
 
-    public AwsParameterStoreValidationHandler(Context ctx, VespaAwsCredentialsProvider credentialsProvider) {
+    public AwsParameterStoreValidationHandler(Context ctx, SecretStoreConfig secretStoreConfig, VespaAwsCredentialsProvider credentialsProvider) {
         super(ctx);
         this.credentialsProvider = credentialsProvider;
+        this.secretStoreConfig = secretStoreConfig;
     }
 
 
@@ -64,7 +67,8 @@ public class AwsParameterStoreValidationHandler extends LoggingRequestHandler {
 
         try {
             var arn = "arn:aws:iam::" + settings.awsId + ":role/" + settings.role;
-            var store = new AwsParameterStore(this.credentialsProvider, arn, settings.externalId);
+            var region = getRegion(settings);
+            var store = new AwsParameterStore(this.credentialsProvider, arn, settings.externalId, region);
             store.getSecret("vespa-secret");
             root.setString("status", "ok");
         } catch (RuntimeException e) {
@@ -84,6 +88,15 @@ public class AwsParameterStoreValidationHandler extends LoggingRequestHandler {
         } catch (IOException e) {
             throw new RuntimeException();
         }
+    }
+
+    private String getRegion(AwsSettings settings) {
+        return secretStoreConfig.groups()
+                .stream()
+                .filter(group -> group.name().equals(settings.name))
+                .map(SecretStoreConfig.Groups::region)
+                .findFirst()
+                .orElseThrow(() -> new RuntimeException("No secret store named '" + settings.name + "' configured in services.xml"));
     }
 
     private static class AwsSettings {

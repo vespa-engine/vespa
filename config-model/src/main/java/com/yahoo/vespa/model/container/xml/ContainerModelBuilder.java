@@ -29,7 +29,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.logging.FileConnectionLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
@@ -258,9 +257,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     private void addSecretStore(ApplicationContainerCluster cluster, Element spec) {
         Element secretStoreElement = XML.getChild(spec, "secret-store");
         if (secretStoreElement != null) {
-            SecretStore secretStore = new SecretStore();
+            SecretStore secretStore = new SecretStore(secretStoreElement.getAttribute("type"));
+            String attributeName = secretStore.isCloud() ? "region" : "environment";
             for (Element group : XML.getChildren(secretStoreElement, "group")) {
-                secretStore.addGroup(group.getAttribute("name"), group.getAttribute("environment"));
+                secretStore.addGroup(group.getAttribute("name"), group.getAttribute(attributeName));
             }
             cluster.setSecretStore(secretStore);
         }
