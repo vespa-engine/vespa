@@ -1,6 +1,8 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.noderepository;
 
+import com.yahoo.config.provision.TenantName;
+
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
@@ -11,6 +13,7 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
+import java.net.URI;
 import java.util.Collection;
 
 /**
@@ -107,5 +110,17 @@ public interface ProvisionResource {
     @Path("/upgrade/firmware")
     String cancelFirmwareChecks();
 
+    @GET
+    @Path("/archive")
+    ArchiveList listArchives();
+
+    @POST
+    @Path("/archive/{tenant}")
+    String patchArchiveUri(@PathParam("tenant") TenantName tenant, URI uri,
+                           @HeaderParam("X-HTTP-Method-Override") String patchOverride);
+
+    @DELETE
+    @Path("/archive/{tenant}")
+    String removeArchiveUri(@PathParam("tenant") TenantName tenant);
 }
 

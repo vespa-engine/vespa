@@ -15,10 +15,12 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepo
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.OrchestratorStatus;
 
+import java.net.URI;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -76,6 +78,12 @@ public interface NodeRepository {
 
     void patchApplication(ZoneId zone, ApplicationId application,
                           double currentReadShare, double maxReadShare);
+
+    Map<TenantName, URI> getArchiveUris(ZoneId zone);
+
+    void setArchiveUri(ZoneId zone, TenantName tenantName, URI archiveUri);
+
+    void removeArchiveUri(ZoneId zone, TenantName tenantName);
 
     /** Upgrade all nodes of given type to a new version */
     void upgrade(ZoneId zone, NodeType type, Version version);

@@ -8,6 +8,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Application;
@@ -18,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 
+import java.net.URI;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.Collections;
@@ -42,6 +44,7 @@ public class NodeRepositoryMock implements NodeRepository {
     private final Map<ZoneId, TargetVersions> targetVersions = new HashMap<>();
     private final Map<Integer, Duration> osUpgradeBudgets = new HashMap<>();
     private final Map<DeploymentId, Pair<Double, Double>> trafficFractions = new HashMap<>();
+    private final Map<ZoneId, Map<TenantName, URI>> archiveUris = new HashMap<>();
 
     private boolean allowPatching = false;
 
@@ -189,6 +192,21 @@ public class NodeRepositoryMock implements NodeRepository {
     public void patchApplication(ZoneId zone, ApplicationId application,
                                  double currentReadShare, double maxReadShare) {
         trafficFractions.put(new DeploymentId(application, zone), new Pair<>(currentReadShare, maxReadShare));
+    }
+
+    @Override
+    public Map<TenantName, URI> getArchiveUris(ZoneId zone) {
+        return Map.copyOf(archiveUris.getOrDefault(zone, Map.of()));
+    }
+
+    @Override
+    public void setArchiveUri(ZoneId zone, TenantName tenantName, URI archiveUri) {
+        archiveUris.computeIfAbsent(zone, z -> new HashMap<>()).put(tenantName, archiveUri);
+    }
+
+    @Override
+    public void removeArchiveUri(ZoneId zone, TenantName tenantName) {
+        Optional.ofNullable(archiveUris.get(zone)).ifPresent(map -> map.remove(tenantName));
     }
 
     @Override
