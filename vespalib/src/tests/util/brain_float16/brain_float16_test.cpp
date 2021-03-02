@@ -1,15 +1,51 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/util/brain_float16.h>
+#include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <stdio.h>
 #include <cmath>
 #include <cmath>
 #include <cfenv>
+#include <vector>
 
 using namespace vespalib;
 
 using Limits = std::numeric_limits<BrainFloat16>;
+
+static std::vector<float> simple_values = {
+    0.0, 1.0, -1.0, -0.0, 1.75, 0x1.02p20, -0x1.02p-20, 0x3.0p-100, 0x7.0p100
+};
+
+TEST(BrainFloat16Test, normal_usage) {
+    EXPECT_EQ(sizeof(float), 4);
+    EXPECT_EQ(sizeof(BrainFloat16), 2);
+    BrainFloat16 answer = 42;
+    double fortytwo = answer;
+    EXPECT_EQ(fortytwo, 42);
+    std::vector<BrainFloat16> vec;
+    for (float value : simple_values) {
+        BrainFloat16 b = value;
+        float recover = b;
+        EXPECT_EQ(value, recover);
+    }
+    BrainFloat16 b1 = 0x101;
+    EXPECT_EQ(float(b1), 0x100);
+    BrainFloat16 b2 = 0x111;
+    EXPECT_EQ(float(b2), 0x110);
+}
+
+TEST(BrainFloat16Test, with_nbostream) {
+    nbostream buf;
+    for (BrainFloat16 value : simple_values) {
+        buf << value;
+    }
+    for (float value : simple_values) {
+        BrainFloat16 stored;
+        buf >> stored;
+        EXPECT_EQ(float(stored), value);
+    }
+}
 
 TEST(BrainFloat16Test, constants_check) {
 	EXPECT_EQ(0x1.0p-7, (1.0/128.0));
@@ -95,7 +131,6 @@ TEST(BrainFloat16Test, check_special_values) {
     BrainFloat16 b_from_f_neg = f_neg;
     BrainFloat16 b_from_f_qnan = f_qnan;
     BrainFloat16 b_from_f_snan = f_snan;
-    EXPECT_EQ(sizeof(b_inf), 2);
     EXPECT_EQ(memcmp(&b_inf, &b_from_f_inf, sizeof(BrainFloat16)), 0);
     EXPECT_EQ(memcmp(&b_qnan, &b_from_f_qnan, sizeof(BrainFloat16)), 0);
     EXPECT_EQ(memcmp(&b_snan, &b_from_f_snan, sizeof(BrainFloat16)), 0);

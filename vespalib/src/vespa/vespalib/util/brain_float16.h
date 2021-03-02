@@ -23,12 +23,18 @@ public:
     constexpr BrainFloat16(BrainFloat16 &&other) noexcept = default;
     constexpr BrainFloat16& operator=(const BrainFloat16 &other) noexcept = default;
     constexpr BrainFloat16& operator=(BrainFloat16 &&other) noexcept = default;
+    constexpr BrainFloat16& operator=(float value) noexcept {
+        _bits = float_to_bits(value);
+        return *this;
+    }
 
     constexpr operator float () const noexcept { return bits_to_float(_bits); }
 
     constexpr float to_float() const noexcept { return bits_to_float(_bits); }
-
     constexpr void assign(float value) noexcept { _bits = float_to_bits(value); }
+
+    constexpr uint16_t get_bits() const { return _bits; }
+    constexpr void assign_bits(uint16_t value) noexcept { _bits = value; }
 
     static constexpr uint16_t float_to_bits(float value) noexcept {
         TwoU16 both{0,0};

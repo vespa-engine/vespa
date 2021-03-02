@@ -5,6 +5,7 @@
 #include <vespa/vespalib/stllike/string.h>
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/buffer.h>
+#include <vespa/vespalib/util/brain_float16.h>
 #include "nbo.h"
 
 namespace vespalib {
@@ -38,6 +39,8 @@ public:
     nbostream & operator >> (double & v)   { double n; read8(&n); v = nbo::n2h(n); return *this; }
     nbostream & operator << (float v)      { float n(nbo::n2h(v)); write4(&n); return *this; }
     nbostream & operator >> (float & v)    { float n; read4(&n); v = nbo::n2h(n); return *this; }
+    nbostream & operator << (BrainFloat16 v)   { uint16_t n(nbo::n2h(v.get_bits())); write2(&n); return *this; }
+    nbostream & operator >> (BrainFloat16 & v) { uint16_t n; read2(&n); v.assign_bits(nbo::n2h(n)); return *this; }
     nbostream & operator << (int64_t v)    { int64_t n(nbo::n2h(v)); write8(&n); return *this; }
     nbostream & operator >> (int64_t & v)  { int64_t n; read8(&n); v = nbo::n2h(n); return *this; }
     nbostream & operator << (uint64_t v)   { uint64_t n(nbo::n2h(v)); write8(&n); return *this; }
