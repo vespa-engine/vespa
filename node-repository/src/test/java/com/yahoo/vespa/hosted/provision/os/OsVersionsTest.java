@@ -164,7 +164,7 @@ public class OsVersionsTest {
         List<Node> hosts = provisionInfraApplication(hostCount);
         NodeResources resources = new NodeResources(2, 4, 8, 1);
         for (var host : hosts) {
-            tester.makeReadyVirtualDockerNodes(2, resources, host.hostname());
+            tester.makeReadyChildren(2, resources, host.hostname());
         }
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list()
                                                    .hosts()

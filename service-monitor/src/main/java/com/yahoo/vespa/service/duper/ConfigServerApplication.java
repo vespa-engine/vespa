@@ -7,9 +7,13 @@ import com.yahoo.vespa.applicationmodel.ServiceType;
 
 /**
  * A service/application model of the config server with health status.
+ *
+ * @author hakonhall
  */
 public class ConfigServerApplication extends ConfigServerLikeApplication {
+
     public ConfigServerApplication() {
         super("zone-config-servers", NodeType.config, ClusterSpec.Type.admin, ServiceType.CONFIG_SERVER);
     }
+
 }

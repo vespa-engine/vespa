@@ -35,7 +35,7 @@ public class ContainerImagesTest {
         // Tenant node uses tenant default image
         var resources = new NodeResources(2, 8, 50, 1);
         for (var host : hosts) {
-            var nodes = tester.makeReadyVirtualDockerNodes(2, resources, host.hostname());
+            var nodes = tester.makeReadyChildren(2, resources, host.hostname());
             for (var node : nodes) {
                 assertEquals(defaultImage, tester.nodeRepository().containerImages().imageFor(node.type()));
             }
