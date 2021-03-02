@@ -46,27 +46,29 @@ public:
     constexpr uint16_t get_bits() const { return _bits; }
     constexpr void assign_bits(uint16_t value) noexcept { _bits = value; }
 
+    template<std::endian native_endian = std::endian::native>
     static constexpr uint16_t float_to_bits(float value) noexcept {
         TwoU16 both{0,0};
         static_assert(sizeof(TwoU16) == sizeof(float));
         memcpy(&both, &value, sizeof(float));
-        if constexpr (std::endian::native == std::endian::big) {
+        if constexpr (native_endian == std::endian::big) {
             return both.u1;
-        } else if constexpr (std::endian::native == std::endian::little) {
-            return both.u2;
         } else {
-            return 0;
+            static_assert(native_endian == std::endian::little,
+                          "Unknown endian, cannot handle");
+            return both.u2;
         }
     }
 
+    template<std::endian native_endian = std::endian::native>
     static constexpr float bits_to_float(uint16_t bits) noexcept {
         TwoU16 both{0,0};
-        if constexpr (std::endian::native == std::endian::big) {
+        if constexpr (native_endian == std::endian::big) {
             both.u1 = bits;
-        } else if constexpr (std::endian::native == std::endian::little) {
-            both.u2 = bits;
         } else {
-            return 0.0;
+            static_assert(native_endian == std::endian::little,
+                          "Unknown endian, cannot handle");
+            both.u2 = bits;
         }
         float result = 0.0;
         static_assert(sizeof(TwoU16) == sizeof(float));
