@@ -33,9 +33,12 @@ import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
+import com.yahoo.vespa.service.duper.ConfigServerApplication;
+import com.yahoo.vespa.service.duper.ConfigServerHostApplication;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -395,6 +398,43 @@ public class DynamicProvisioningMaintainerTest {
                    provisioning.get().stream().noneMatch(host -> host.ipConfig().pool().getIpSet().isEmpty()));
     }
 
+    @Test
+    public void deprovision_empty_confighost() {
+        // cfghost1, cfg1, cfghost2, cfg2, cfghost3, and NOT cfg3.
+        var tester = new DynamicProvisioningTester();
+        tester.addCfghost(1, true);
+        tester.addCfghost(2, true);
+        Node cfghost3 = tester.addCfghost(3, false);
+
+        // cfghost3 is active before maintain, and active after:
+        assertCfghost3IsActive(tester);
+        tester.maintainer.maintain();
+        assertCfghost3IsActive(tester);
+
+        // But when cfghost3 is moved to parked w/wantToDeprovision, maintain() should deprovision
+        Node parkedWithWantToDeprovision = cfghost3.withWantToRetire(true, // wantToRetire
+                                                                     true, // wantToDeprovision
+                                                                     Agent.operator,
+                                                                     Instant.now());
+        tester.nodeRepository.database().writeTo(Node.State.parked, parkedWithWantToDeprovision, Agent.operator, Optional.empty());
+        tester.maintainer.maintain();
+        assertCfghost3IsDeprovisioned(tester);
+    }
+
+    private void assertCfghost3IsActive(DynamicProvisioningTester tester) {
+        assertEquals(5, tester.nodeRepository.nodes().list(Node.State.active).size());
+        assertEquals(3, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.confighost).size());
+        Optional<Node> cfghost3 = tester.nodeRepository.nodes().node("cfghost3");
+        assertTrue(cfghost3.isPresent());
+        assertEquals(Node.State.active, cfghost3.get().state());
+    }
+
+    private void assertCfghost3IsDeprovisioned(DynamicProvisioningTester tester) {
+        assertEquals(4, tester.nodeRepository.nodes().list(Node.State.active).size());
+        assertEquals(2, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.confighost).size());
+        assertTrue(tester.nodeRepository.nodes().node("cfghost3").isEmpty());
+    }
+
     private static class DynamicProvisioningTester {
 
         private static final ApplicationId tenantApp = ApplicationId.from("mytenant", "myapp", "default");
@@ -447,6 +487,18 @@ public class DynamicProvisioningMaintainerTest {
                     createNode("proxy2", Optional.of("proxyhost2"), NodeType.proxy, Node.State.active, Optional.of(proxyApp)))
                 .forEach(node -> nodeRepository.database().addNodesInState(List.of(node), node.state(), Agent.system));
             return this;
+        }
+
+        private Node addCfghost(int index, boolean makeChild) {
+            Node cfghost = addNode("cfghost" + index, Optional.empty(), NodeType.confighost,
+                    Node.State.active, new ConfigServerHostApplication().getApplicationId());
+
+            if (makeChild) {
+                addNode("cfg" + index, Optional.of("cfghost" + index), NodeType.config,
+                        Node.State.active, new ConfigServerApplication().getApplicationId());
+            }
+
+            return cfghost;
         }
 
         private Node addNode(String hostname, Optional<String> parentHostname, NodeType nodeType, Node.State state) {
