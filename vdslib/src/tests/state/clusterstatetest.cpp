@@ -87,8 +87,8 @@ TEST(ClusterStateTest, test_basic_functionality)
     // Test other storage node propertise
     // (Messages is excluded from system states to not make them too long as
     // most nodes have no use for them)
-    VERIFYNEW("storage:9 .3.c:2.3 .4.r:8 .7.m:foo\\x20bar",
-              "storage:9 .3.c:2.3 .4.r:8");
+    VERIFYNEW("storage:9 .3.c:2.3 .7.m:foo\\x20bar",
+              "storage:9 .3.c:2.3");
 
     // Test that messages are kept in verbose mode, even if last index
     {
@@ -159,7 +159,7 @@ TEST(ClusterStateTest, test_detailed)
     ClusterState state(
             "version:314 cluster:i "
             "distributor:8 .1.s:i .3.s:i .3.i:0.5 .5.s:d .7.m:foo\\x20bar "
-            "storage:10 .2.d:16 .2.d.3:d .4.s:d .5.c:1.3 .5.r:4"
+            "storage:10 .2.d:16 .2.d.3:d .4.s:d .5.c:1.3 "
             " .6.m:bar\\tfoo .7.s:m .8.d:10 .8.d.4.c:0.6 .8.d.4.m:small"
     );
     EXPECT_EQ(314u, state.getVersion());
@@ -170,7 +170,7 @@ TEST(ClusterStateTest, test_detailed)
     // Testing distributor node states
     for (uint16_t i = 0; i <= 20; ++i) {
         const NodeState& ns(state.getNodeState(Node(NodeType::DISTRIBUTOR, i)));
-            // Test node states
+        // Test node states
         if (i == 1 || i == 3) {
             EXPECT_EQ(State::INITIALIZING, ns.getState());
         } else if (i == 5 || i >= 8) {
@@ -178,7 +178,7 @@ TEST(ClusterStateTest, test_detailed)
         } else {
             EXPECT_EQ(State::UP, ns.getState());
         }
-            // Test initialize progress
+        // Test initialize progress
         if (i == 1) {
             EXPECT_EQ(vespalib::Double(0.0), ns.getInitProgress());
         } else if (i == 3) {
@@ -186,7 +186,7 @@ TEST(ClusterStateTest, test_detailed)
         } else {
             EXPECT_EQ(vespalib::Double(0.0), ns.getInitProgress());
         }
-            // Test message
+        // Test message
         if (i == 7) {
             EXPECT_EQ(string("foo bar"), ns.getDescription());
         } else {
@@ -197,7 +197,7 @@ TEST(ClusterStateTest, test_detailed)
     // Testing storage node states
     for (uint16_t i = 0; i <= 20; ++i) {
         const NodeState& ns(state.getNodeState(Node(NodeType::STORAGE, i)));
-            // Test node states
+        // Test node states
         if (i == 4 || i >= 10) {
             EXPECT_EQ(State::DOWN, ns.getState());
         } else if (i == 7) {
@@ -211,13 +211,7 @@ TEST(ClusterStateTest, test_detailed)
         } else {
             EXPECT_EQ(string(""), ns.getDescription());
         }
-            // Test reliability
-        if (i == 5) {
-            EXPECT_EQ(uint16_t(4), ns.getReliability());
-        } else {
-            EXPECT_EQ(uint16_t(1), ns.getReliability());
-        }
-            // Test capacity
+        // Test capacity
         if (i == 5) {
             EXPECT_EQ(vespalib::Double(1.3), ns.getCapacity());
         } else {

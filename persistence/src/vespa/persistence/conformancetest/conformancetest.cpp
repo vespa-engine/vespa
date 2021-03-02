@@ -90,8 +90,7 @@ createClusterState(const lib::State& nodeState = lib::State::UP)
                         NodeState(NodeType::STORAGE,
                                   nodeState,
                                   "dummy desc",
-                                  1.0,
-                                  1));
+                                  1.0));
     cstate.setClusterState(State::UP);
     dc.redundancy = 1;
     dc.readyCopies = 1;

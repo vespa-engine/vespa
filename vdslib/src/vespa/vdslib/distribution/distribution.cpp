@@ -225,50 +225,27 @@ namespace {
 
     /** Used to record scored nodes during ideal nodes calculation. */
     struct ScoredNode {
-        double _score;
+        double   _score;
         uint16_t _index;
-        uint16_t _reliability;
 
-        ScoredNode() noexcept : _score(0), _index(0), _reliability(0) {}
-        ScoredNode(double score, uint16_t index, uint16_t reliability) noexcept
-            : _score(score), _index(index), _reliability(reliability) {}
+        constexpr ScoredNode() noexcept : _score(0), _index(UINT16_MAX) {}
+        constexpr ScoredNode(double score, uint16_t index) noexcept
+            : _score(score), _index(index) {}
 
-        bool operator<(const ScoredNode& other) const noexcept {
+        constexpr bool operator<(const ScoredNode& other) const noexcept {
             return (_score < other._score);
+        }
+        constexpr bool valid() const noexcept {
+            return (_index != UINT16_MAX);
         }
     };
 
-    /**
-     * Throw away last entries until throwing away another would
-     * decrease redundancy below total reliability. If redundancy !=
-     * total reliability, see if non-last entries can be removed.
-     */
+    // Trim the input vector so that no trailing invalid entries remain and that
+    // it has a maximum size of `redundancy`.
     void
     trimResult(std::vector<ScoredNode>& nodes, uint16_t redundancy) {
-            // Initially record total reliability and use the first elements
-            // until satisfied.
-        uint32_t totalReliability = 0;
-        for (auto it = nodes.begin(); it != nodes.end(); ++it) {
-            if (totalReliability >= redundancy || it->_reliability == 0) {
-                nodes.erase(it, nodes.end());
-                break;
-            }
-            totalReliability += it->_reliability;
-        }
-            // If we have too high reliability, see if we can remove something
-            // else
-        if (totalReliability > redundancy) {
-            for (auto it = nodes.rbegin(); it != nodes.rend();) {
-                if (it->_reliability <= (totalReliability - redundancy)) {
-                    totalReliability -= it->_reliability;
-                    auto deleteIt(it.base());
-                    ++it;
-                    nodes.erase(--deleteIt);
-                    if (totalReliability == redundancy) break;
-                } else {
-                    ++it;
-                }
-            }
+        while (!nodes.empty() && (!nodes.back().valid() || (nodes.size() > redundancy))) {
+            nodes.pop_back();
         }
     }
 
@@ -456,7 +433,7 @@ Distribution::getIdealNodes(const NodeType& nodeType,
                 score = std::pow(score, 1.0 / nodeState.getCapacity().getValue());
             }
             if (score > tmpResults.back()._score) {
-                insertOrdered(tmpResults, ScoredNode(score, nodes[j], nodeState.getReliability()));
+                insertOrdered(tmpResults, ScoredNode(score, nodes[j]));
             }
         }
         trimResult(tmpResults, groupRedundancy);

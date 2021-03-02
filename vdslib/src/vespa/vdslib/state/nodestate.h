@@ -23,7 +23,6 @@ class NodeState : public document::Printable
     const State* _state;
     vespalib::string _description;
     vespalib::Double _capacity;
-    uint16_t _reliability;
     vespalib::Double _initProgress;
     uint32_t _minUsedBits;
     uint64_t _startTimestamp;
@@ -42,7 +41,7 @@ public:
     NodeState & operator = (NodeState &&) noexcept;
     NodeState(const NodeType& nodeType, const State&,
               vespalib::stringref description = "",
-              double capacity = 1.0, uint16_t reliability = 1);
+              double capacity = 1.0);
     /** Set type if you want to verify that content fit with the given type. */
     NodeState(vespalib::stringref serialized, const NodeType* nodeType = 0);
     ~NodeState();
@@ -58,7 +57,6 @@ public:
     const State& getState() const { return *_state; }
     vespalib::Double getCapacity() const { return _capacity; }
     uint32_t getMinUsedBits() const { return _minUsedBits; }
-    uint16_t getReliability() const { return _reliability; }
     vespalib::Double getInitProgress() const { return _initProgress; }
     const vespalib::string& getDescription() const { return _description; }
     uint64_t getStartTimestamp() const { return _startTimestamp; }
@@ -66,7 +64,6 @@ public:
     void setState(const State& state);
     void setCapacity(vespalib::Double capacity);
     void setMinUsedBits(uint32_t usedBits);
-    void setReliability(uint16_t reliability);
     void setInitProgress(vespalib::Double initProgress);
     void setStartTimestamp(uint64_t startTimestamp);
     void setDescription(vespalib::stringref desc) { _description = desc; }
