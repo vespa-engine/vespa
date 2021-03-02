@@ -68,7 +68,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
+import java.util.stream.IntStream;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.core.Is.is;
@@ -276,11 +276,18 @@ public class ApplicationRepositoryTest {
         Duration keepFileReferences = Duration.ofHours(48);
 
         // Add file reference that is not in use and should be deleted (older than 'keepFileReferences')
-        File filereferenceDir = createFilereferenceOnDisk(new File(fileReferencesDir, "foo"),
-                                                          Instant.now().minus(keepFileReferences.plus(Duration.ofHours(1))));
+
+        Instant now = Instant.now();
+        File filereferenceDirOldest = createFilereferenceOnDisk(new File(fileReferencesDir, "foo"),
+                                                                now.minus(keepFileReferences.plus(Duration.ofHours(2))));
+
+        // Add file references that are not in use and some of them should be deleted (all are older than 'keepFileReferences')
+        IntStream.range(0, 6)
+                 .forEach(i -> createFilereferenceOnDisk(new File(fileReferencesDir, "bar" + i),
+                                                         now.minus(keepFileReferences.plus(Duration.ofHours(1).minus(Duration.ofMinutes(i))))));
+
         // Add file reference that is not in use, but should not be deleted (newer than 'keepFileReferences')
-        File filereferenceDir2 = createFilereferenceOnDisk(new File(fileReferencesDir, "baz"),
-                                                           Instant.now());
+        File filereferenceDirNewest = createFilereferenceOnDisk(new File(fileReferencesDir, "baz"), now);
 
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
@@ -293,10 +300,13 @@ public class ApplicationRepositoryTest {
         PrepareParams prepareParams = new PrepareParams.Builder().applicationId(applicationId()).ignoreValidationErrors(true).build();
         deployApp(new File("src/test/apps/app"), prepareParams);
 
-        Set<String> toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, keepFileReferences);
-        assertEquals(Set.of("foo"), toBeDeleted);
-        assertFalse(filereferenceDir.exists());
-        assertTrue(filereferenceDir2.exists());
+        List<String> toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, keepFileReferences);
+        Collections.sort(toBeDeleted);
+        assertEquals(List.of("bar0", "foo"), toBeDeleted);
+        // bar0 and foo are the only ones that will be deleted (keeps 5 newest no matter how old they are)
+        assertFalse(filereferenceDirOldest.exists());
+        assertFalse(new File(fileReferencesDir, "bar0").exists());
+        assertTrue(filereferenceDirNewest.exists());
     }
 
     private File createFilereferenceOnDisk(File filereferenceDir, Instant lastModifiedTime) {

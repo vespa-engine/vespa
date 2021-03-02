@@ -569,35 +569,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         return fileDistributionStatus.status(getApplication(applicationId), timeout);
     }
 
-    public Set<String> deleteUnusedFiledistributionReferences(File fileReferencesPath, Duration keepFileReferences) {
+    public List<String> deleteUnusedFiledistributionReferences(File fileReferencesPath, Duration keepFileReferences) {
+        log.log(Level.FINE, "Keep unused file references for " + keepFileReferences);
         if (!fileReferencesPath.isDirectory()) throw new RuntimeException(fileReferencesPath + " is not a directory");
 
-        Set<String> fileReferencesInUse = new HashSet<>();
-        // Intentionally skip applications that we for some reason do not find
-        // or that we fail to get file references for (they will be retried on the next run)
-        for (var applicationId : listApplications()) {
-            try {
-                Optional<Application> app = getOptionalApplication(applicationId);
-                if (app.isEmpty()) continue;
-                fileReferencesInUse.addAll(app.get().getModel().fileReferences().stream()
-                                                   .map(FileReference::value)
-                                                   .collect(Collectors.toSet()));
-            } catch (Exception e) {
-                log.log(Level.WARNING, "Getting file references in use for '" + applicationId + "' failed", e);
-            }
-        }
+        Set<String> fileReferencesInUse = getFileReferencesInUse();
         log.log(Level.FINE, "File references in use : " + fileReferencesInUse);
 
-        // Find those on disk that are not in use
-        Set<String> fileReferencesOnDisk = getFileReferencesOnDisk(fileReferencesPath);
-        log.log(Level.FINE, "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
-
-        Instant instant = Instant.now().minus(keepFileReferences);
-        Set<String> fileReferencesToDelete = fileReferencesOnDisk
-                .stream()
-                .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
-                .filter(fileReference -> isFileLastModifiedBefore(new File(fileReferencesPath, fileReference), instant))
-                .collect(Collectors.toSet());
+        List<String> candidates = sortedUnusedFileReferences(fileReferencesPath, fileReferencesInUse, keepFileReferences);
+        // Do not delete the newest ones
+        List<String> fileReferencesToDelete = candidates.subList(0, Math.max(0, candidates.size() - 5));
         if (fileReferencesToDelete.size() > 0) {
             log.log(Level.FINE, "Will delete file references not in use: " + fileReferencesToDelete);
             fileReferencesToDelete.forEach(fileReference -> {
@@ -607,6 +588,36 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             });
         }
         return fileReferencesToDelete;
+    }
+
+    private Set<String> getFileReferencesInUse() {
+        Set<String> fileReferencesInUse = new HashSet<>();
+        // Intentionally skip applications that we for some reason do not find
+        // or that we fail to get file references for (they will be retried on the next run)
+        for (var applicationId : listApplications()) {
+            try {
+                Optional<Application> app = getOptionalApplication(applicationId);
+                if (app.isEmpty()) continue;
+                fileReferencesInUse.addAll(app.get().getModel().fileReferences().stream()
+                                              .map(FileReference::value)
+                                              .collect(Collectors.toSet()));
+            } catch (Exception e) {
+                log.log(Level.WARNING, "Getting file references in use for '" + applicationId + "' failed", e);
+            }
+        }
+        return fileReferencesInUse;
+    }
+
+    private List<String> sortedUnusedFileReferences(File fileReferencesPath, Set<String> fileReferencesInUse, Duration keepFileReferences) {
+        Set<String> fileReferencesOnDisk = getFileReferencesOnDisk(fileReferencesPath);
+        log.log(Level.INFO, "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
+        Instant instant = Instant.now().minus(keepFileReferences);
+        return fileReferencesOnDisk
+                .stream()
+                .filter(fileReference -> ! fileReferencesInUse.contains(fileReference))
+                .filter(fileReference -> isFileLastModifiedBefore(new File(fileReferencesPath, fileReference), instant))
+                .sorted((a, b) -> lastModified(new File(fileReferencesPath, a)).isBefore(lastModified(new File(fileReferencesPath, b))) ? -1 : 1)
+                .collect(Collectors.toList());
     }
 
     public Set<FileReference> getFileReferences(ApplicationId applicationId) {
@@ -659,10 +670,14 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private boolean isFileLastModifiedBefore(File fileReference, Instant instant) {
+        return lastModified(fileReference).isBefore(instant);
+    }
+
+    private Instant lastModified(File fileReference) {
         BasicFileAttributes fileAttributes;
         try {
             fileAttributes = readAttributes(fileReference.toPath(), BasicFileAttributes.class);
-            return fileAttributes.lastModifiedTime().toInstant().isBefore(instant);
+            return fileAttributes.lastModifiedTime().toInstant();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
         }
