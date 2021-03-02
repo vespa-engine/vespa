@@ -167,6 +167,12 @@ public abstract class LockedTenant {
             secretStores.add(tenantSecretStore);
             return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, secretStores);
         }
+
+        public Cloud withoutSecretStore(TenantSecretStore tenantSecretStore) {
+            ArrayList<TenantSecretStore> secretStores = new ArrayList<>(tenantSecretStores);
+            secretStores.remove(tenantSecretStore);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, secretStores);
+        }
     }
 
 }

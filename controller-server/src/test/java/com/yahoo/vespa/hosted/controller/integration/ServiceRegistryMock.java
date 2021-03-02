@@ -212,7 +212,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     }
 
     @Override
-    public TenantSecretService tenantSecretService() {
+    public NoopTenantSecretService tenantSecretService() {
         return tenantSecretService;
     }
 

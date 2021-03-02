@@ -313,6 +313,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse handleDELETE(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return deleteTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/key")) return removeDeveloperKey(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}")) return deleteSecretStore(path.get("tenant"), path.get("name"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deployment")) return removeAllProdDeployments(path.get("tenant"), path.get("application"));
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deploying")) return cancelDeploy(path.get("tenant"), path.get("application"), "default", "all");
@@ -700,6 +701,30 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             controller.tenants().store(lockedTenant);
         });
         return new MessageResponse("Configured secret store: " + tenantSecretStore);
+    }
+
+    private HttpResponse deleteSecretStore(String tenantName, String name, HttpRequest request) {
+        var tenant = (CloudTenant) controller.tenants().require(TenantName.from(tenantName));
+
+        var optionalSecretStore = tenant.tenantSecretStores().stream()
+                .filter(secretStore -> secretStore.getName().equals(name))
+                .findFirst();
+
+        if (optionalSecretStore.isEmpty())
+            return ErrorResponse.notFoundError("Could not delete secret store '" + name + "': Secret store not found");
+
+        var tenantSecretStore = optionalSecretStore.get();
+        controller.serviceRegistry().tenantSecretService().deleteSecretStore(tenant.name(), tenantSecretStore);
+        controller.tenants().lockOrThrow(tenant.name(), LockedTenant.Cloud.class, lockedTenant -> {
+            lockedTenant = lockedTenant.withoutSecretStore(tenantSecretStore);
+            controller.tenants().store(lockedTenant);
+        });
+        var slime = new Slime();
+        var cursor = slime.setObject();
+        cursor.setString("name", tenantSecretStore.getName());
+        cursor.setString("awsId", tenantSecretStore.getAwsId());
+        cursor.setString("role", tenantSecretStore.getRole());
+        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse patchApplication(String tenantName, String applicationName, HttpRequest request) {
