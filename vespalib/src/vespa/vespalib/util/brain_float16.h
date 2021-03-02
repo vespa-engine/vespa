@@ -8,6 +8,16 @@
 
 namespace vespalib {
 
+/**
+ * Class holding 16-bit floating-point numbers.
+ * Truncated version of normal 32-bit float; the sign and
+ * exponent are kept as-is but the mantissa has only 8-bit
+ * precision.  Well suited for ML / AI, halving memory
+ * requirements for large vectors and similar data.
+ * Direct HW support possible (AVX-512 BF16 extension etc.)
+ * See also:
+ * https://en.wikipedia.org/wiki/Bfloat16_floating-point_format
+ **/
 class BrainFloat16 {
 private:
     uint16_t _bits;
