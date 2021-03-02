@@ -53,7 +53,7 @@ blockedDueToClusterState(const std::shared_ptr<IBucketStateCalculator> &calc)
     return !(clusterUp && nodeUp && !nodeInitializing);
 }
 
-constexpr BucketId RECOMPUTE_BUCKETID;
+constexpr BucketId RECOMPUTE_TOKEN;
 
 }
 
@@ -254,10 +254,11 @@ BucketMoveJobV2::handleMoveResult(BucketMoverSP mover) {
         _bucketsInFlight.erase(bucket);
         updatePending();
         if (_postponedUntilSafe.contains(bucket)) {
+            _postponedUntilSafe.erase(bucket);
             reconsiderBucket(_ready.meta_store()->getBucketDB().takeGuard(), bucket);
         }
-        if (_bucketsInFlight.empty() && _postponedUntilSafe.contains(RECOMPUTE_BUCKETID)) {
-            _postponedUntilSafe.erase(RECOMPUTE_BUCKETID);
+        if (_bucketsInFlight.empty() && _postponedUntilSafe.contains(RECOMPUTE_TOKEN)) {
+            _postponedUntilSafe.erase(RECOMPUTE_TOKEN);
             recompute();
         }
     }
@@ -419,7 +420,7 @@ BucketMoveJobV2::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCal
         if (_bucketsInFlight.empty()) {
             recompute();
         } else {
-            _postponedUntilSafe.insert(RECOMPUTE_BUCKETID);
+            _postponedUntilSafe.insert(RECOMPUTE_TOKEN);
         }
     }
 }
