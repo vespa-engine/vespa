@@ -194,7 +194,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         try (SqlCompiler compiler = new SqlCompiler(engine)) {
             compiler.compile("create table " + table +
                              " (hostname string, at timestamp, cpu_util float, mem_total_util float, disk_util float," +
-                             "  application_generation long, inService boolean, stable boolean, query_rate float)" +
+                             "  application_generation long, inService boolean, stable boolean, queries_rate float)" +
                              " timestamp(at)" +
                              "PARTITION BY DAY;",
                              context);
@@ -209,7 +209,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     private void ensureTableIsUpdated(String table, SqlExecutionContext context) {
         try (SqlCompiler compiler = new SqlCompiler(engine)) {
             if (0 == engine.getStatus(context.getCairoSecurityContext(), new Path(), table)) {
-                ensureColumnExists("query_rate", "float", table, compiler, context); // TODO: Remove after March 2021
+                ensureColumnExists("queries_rate", "float", table, compiler, context); // TODO: Remove after March 2021
             }
         } catch (SqlException e) {
             repair(e);

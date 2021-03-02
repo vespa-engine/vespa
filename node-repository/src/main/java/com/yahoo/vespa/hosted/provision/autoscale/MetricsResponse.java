@@ -118,7 +118,7 @@ public class MetricsResponse {
             double defaultValue() { return 1.0; }
         },
         queryRate { // queries per second
-            public String metricResponseName() { return "query.rate"; }
+            public String metricResponseName() { return "queries.rate"; }
             double convertValue(double metricValue) { return (float)metricValue; }
             double defaultValue() { return 0.0; }
         };
