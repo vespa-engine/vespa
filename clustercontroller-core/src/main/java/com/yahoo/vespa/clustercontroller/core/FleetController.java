@@ -391,7 +391,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     private boolean maybePublishOldMetrics() {
         verifyInControllerThread();
-        if (cycleCount > 300 + lastMetricUpdateCycleCount) {
+        if (isMaster() && cycleCount > 300 + lastMetricUpdateCycleCount) {
             ClusterStateBundle stateBundle = stateVersionTracker.getVersionedClusterStateBundle();
             ClusterState baselineState = stateBundle.getBaselineClusterState();
             metricUpdater.updateClusterStateMetrics(cluster, baselineState,
