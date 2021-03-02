@@ -69,8 +69,8 @@ public:
     static constexpr bool is_integer = false;
     static constexpr bool is_exact = false;
     static constexpr bool has_infinity = false;
-    static constexpr bool has_quiet_NaN = false;
-    static constexpr bool has_signaling_NaN = false;
+    static constexpr bool has_quiet_NaN = true;
+    static constexpr bool has_signaling_NaN = true;
     static constexpr bool has_denorm = true;
     static constexpr bool has_denorm_loss = false;
     static constexpr bool is_iec559 = false;
@@ -98,7 +98,15 @@ public:
     static constexpr vespalib::BrainFloat16 max() noexcept { return 0x1.FEp127; }
     static constexpr vespalib::BrainFloat16 min() noexcept { return 0x1.0p-126; }
     static constexpr vespalib::BrainFloat16 round_error() noexcept { return 1.0; }
-
+    static constexpr vespalib::BrainFloat16 infinity() noexcept {
+        return std::numeric_limits<float>::infinity();
+    }
+    static constexpr vespalib::BrainFloat16 quiet_NaN() noexcept {
+        return std::numeric_limits<float>::quiet_NaN();
+    }
+    static constexpr vespalib::BrainFloat16 signaling_NaN() noexcept {
+        return std::numeric_limits<float>::signaling_NaN();
+    }
 };
 
 }
