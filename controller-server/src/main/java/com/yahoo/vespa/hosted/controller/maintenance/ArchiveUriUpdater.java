@@ -13,8 +13,8 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Set;
 import java.util.Map;
+import java.util.Set;
 
 /**
  * Updates archive URIs for tenants in all zones.
@@ -22,6 +22,8 @@ import java.util.Map;
  * @author freva
  */
 public class ArchiveUriUpdater extends ControllerMaintainer {
+
+    private static final Set<TenantName> INFRASTRUCTURE_TENANTS = Set.of(TenantName.from("hosted-vespa"));
 
     private final ApplicationController applications;
     private final NodeRepository nodeRepository;
@@ -40,7 +42,8 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
         for (var application : applications.asList()) {
             for (var instance : application.instances().values()) {
                 for (var deployment : instance.deployments().values()) {
-                    tenantsByZone.computeIfAbsent(deployment.zone(), zone -> new HashSet<>())
+                    tenantsByZone
+                            .computeIfAbsent(deployment.zone(), zone -> new HashSet<>(INFRASTRUCTURE_TENANTS))
                             .add(instance.id().tenant());
                 }
             }

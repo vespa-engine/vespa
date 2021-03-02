@@ -33,6 +33,7 @@ public class ArchiveUriUpdaterTest {
 
         var tenant1 = TenantName.from("tenant1");
         var tenant2 = TenantName.from("tenant2");
+        var tenantInfra = TenantName.from("hosted-vespa");
         var application = tester.newDeploymentContext(tenant1.value(), "app1", "instance1");
         ZoneId zone = ZoneId.from("prod", "ap-northeast-1");
 
@@ -42,17 +43,18 @@ public class ArchiveUriUpdaterTest {
 
         // Archive service now has URI for tenant1, but tenant1 is not deployed in zone
         setArchiveUriInService(Map.of(tenant1, "uri-1"), zone);
+        setArchiveUriInService(Map.of(tenantInfra, "uri-3"), zone);
         updater.maintain();
         assertArchiveUris(Map.of(), zone);
 
         deploy(application, zone);
         updater.maintain();
-        assertArchiveUris(Map.of(tenant1, "uri-1"), zone);
+        assertArchiveUris(Map.of(tenant1, "uri-1", tenantInfra, "uri-3"), zone);
 
         // URI for tenant1 should be updated and removed for tenant2
         setArchiveUriInNodeRepo(Map.of(tenant1, "wrong-uri", tenant2, "uri-2"), zone);
         updater.maintain();
-        assertArchiveUris(Map.of(tenant1, "uri-1"), zone);
+        assertArchiveUris(Map.of(tenant1, "uri-1", tenantInfra, "uri-3"), zone);
     }
 
     private void assertArchiveUris(Map<TenantName, String> expectedUris, ZoneId zone) {
