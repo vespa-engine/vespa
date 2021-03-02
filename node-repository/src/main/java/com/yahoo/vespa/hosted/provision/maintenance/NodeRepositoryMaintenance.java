@@ -147,7 +147,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             retiredExpiry = Duration.ofDays(4); // give up migrating data after 4 days
             dedicatedClusterControllerMigratorInterval = zone.environment() == Environment.staging || zone.system().isCd() ? Duration.ofMinutes(3)
-                                                                                                                           : Duration.ofHours(3);
+                                                                                                                           : Duration.ofHours(2);
 
             if (zone.environment()  == Environment.prod && ! zone.system().isCd()) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
