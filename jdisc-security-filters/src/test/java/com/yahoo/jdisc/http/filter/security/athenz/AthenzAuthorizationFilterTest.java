@@ -225,6 +225,20 @@ public class AthenzAuthorizationFilterTest {
         assertMetrics(metric, ACCEPTED_METRIC_NAME, Map.of("authz-required", "true"));
     }
 
+    @Test
+    public void ignores_access_token_if_client_has_role_certificate() {
+        AthenzAuthorizationFilter filter = createFilter(new AllowingZpe(), List.of());
+
+        MockResponseHandler responseHandler = new MockResponseHandler();
+        DiscFilterRequest request = createRequest(null, ACCESS_TOKEN, ROLE_CERTIFICATE);
+        filter.filter(request, responseHandler);
+
+        assertAuthorizationResult(request, Type.ALLOW);
+        assertRequestNotFiltered(responseHandler);
+        assertMatchedCredentialType(request, EnabledCredentials.ROLE_CERTIFICATE);
+        assertMatchedRole(request, ROLE);
+    }
+
     private void assertMetrics(MetricMock metric, String metricName, Map<String, String> dimensions) {
         assertThat(metric.addInvocations.keySet(), hasItem(metricName));
         SimpleMetricContext metricContext = metric.addInvocations.get(metricName);
