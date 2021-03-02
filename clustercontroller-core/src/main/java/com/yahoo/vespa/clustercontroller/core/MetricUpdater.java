@@ -64,6 +64,8 @@ public class MetricUpdater {
         metricReporter.set("resource_usage.max_disk_utilization", resourceUsage.getMaxDiskUtilization(), context);
         metricReporter.set("resource_usage.max_memory_utilization", resourceUsage.getMaxMemoryUtilization(), context);
         metricReporter.set("resource_usage.nodes_above_limit", resourceUsage.getNodesAboveLimit(), context);
+        metricReporter.set("resource_usage.disk_limit", resourceUsage.getDiskLimit(), context);
+        metricReporter.set("resource_usage.memory_limit", resourceUsage.getMemoryLimit(), context);
     }
 
     public void updateMasterElectionMetrics(Map<Integer, Integer> data) {

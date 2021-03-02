@@ -22,6 +22,9 @@ public class ResourceUsageStats {
     // When this is above zero feed is blocked in the cluster.
     private final int nodesAboveLimit;
 
+    private final double diskLimit;
+    private final double memoryLimit;
+
     private static final String diskResource = "disk";
     private static final String memoryResource = "memory";
 
@@ -29,14 +32,20 @@ public class ResourceUsageStats {
         this.maxDiskUtilization = 0.0;
         this.maxMemoryUtilization = 0.0;
         this.nodesAboveLimit = 0;
+        this.diskLimit = 0.0;
+        this.memoryLimit = 0.0;
     }
 
     public ResourceUsageStats(double maxDiskUtilization,
                               double maxMemoryUtilization,
-                              int nodesAboveLimit) {
+                              int nodesAboveLimit,
+                              double diskLimit,
+                              double memoryLimit) {
         this.maxDiskUtilization = maxDiskUtilization;
         this.maxMemoryUtilization = maxMemoryUtilization;
         this.nodesAboveLimit = nodesAboveLimit;
+        this.diskLimit = diskLimit;
+        this.memoryLimit = memoryLimit;
     }
 
     public double getMaxDiskUtilization() {
@@ -51,6 +60,14 @@ public class ResourceUsageStats {
         return nodesAboveLimit;
     }
 
+    public double getDiskLimit() {
+        return diskLimit;
+    }
+
+    public double getMemoryLimit() {
+        return memoryLimit;
+    }
+
     public static ResourceUsageStats calculateFrom(Collection<NodeInfo> nodeInfos,
                                                    Map<String, Double> feedBlockLimits,
                                                    Optional<ClusterStateBundle.FeedBlock> feedBlock) {
@@ -63,9 +80,12 @@ public class ResourceUsageStats {
                 maxMemoryUsage = Double.max(maxMemoryUsage, resourceUsageOf(memoryResource, node));
             }
         }
-        return new ResourceUsageStats(maxDiskUsage / limitOf(diskResource, feedBlockLimits),
-                maxMemoryUsage / limitOf(memoryResource, feedBlockLimits),
-                calculateNodesAboveLimit(feedBlock));
+        double diskLimit = limitOf(diskResource, feedBlockLimits);
+        double memoryLimit = limitOf(memoryResource, feedBlockLimits);
+        return new ResourceUsageStats(maxDiskUsage / diskLimit,
+                maxMemoryUsage / memoryLimit,
+                calculateNodesAboveLimit(feedBlock),
+                diskLimit, memoryLimit);
     }
 
     private static double resourceUsageOf(String type, ContentNode node) {
