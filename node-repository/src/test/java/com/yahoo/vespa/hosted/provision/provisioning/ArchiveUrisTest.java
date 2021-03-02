@@ -54,7 +54,7 @@ public class ArchiveUrisTest {
     public void normalize_test() {
         assertEquals("ftp://domain/legal-dir123/", normalizeUri("ftp://domain/legal-dir123"));
         assertEquals("ftp://domain/legal-dir123/", normalizeUri("ftp://domain/legal-dir123/"));
-        assertEquals("s3://my-bucket-name/my-tenant-123/", normalizeUri("s3://my-bucket-name/my-tenant-123/"));
+        assertEquals("s3://my-bucket-prod.region/my-tenant-123/", normalizeUri("s3://my-bucket-prod.region/my-tenant-123/"));
         assertThrows(IllegalArgumentException.class, () -> normalizeUri("domain/dir/"));
         assertThrows(IllegalArgumentException.class, () -> normalizeUri("ftp:/domain/dir/"));
         assertThrows(IllegalArgumentException.class, () -> normalizeUri("ftp:/domain//dir/"));

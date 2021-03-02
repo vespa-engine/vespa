@@ -24,7 +24,7 @@ import java.util.regex.Pattern;
 public class ArchiveUris {
 
     private static final Logger log = Logger.getLogger(ArchiveUris.class.getName());
-    private static final Pattern validUriPattern = Pattern.compile("[a-z0-9]+://(?:(?:[a-z0-9]+(?:-[a-z0-9])*)+/)+");
+    private static final Pattern validUriPattern = Pattern.compile("[a-z0-9]+://(?:(?:[a-z0-9]+(?:-[a-z0-9.]+)*)+/)+");
     private static final Duration cacheTtl = Duration.ofMinutes(1);
 
     private final CuratorDatabaseClient db;
