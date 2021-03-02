@@ -89,7 +89,7 @@ public class ClusterControllerContainer extends Container implements
     }
 
     private void configureZooKeeperServer(boolean runStandaloneZooKeeper, boolean reconfigurable) {
-        if (reconfigurable) {
+        if (reconfigurable && runStandaloneZooKeeper) {
             ContainerModelBuilder.addReconfigurableZooKeeperServerComponents(this);
         } else {
             addComponent("clustercontroller-zookeeper-server",
