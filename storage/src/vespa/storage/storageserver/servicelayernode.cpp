@@ -87,14 +87,12 @@ void
 ServiceLayerNode::initializeNodeSpecific()
 {
     // Give node state to mount point initialization, such that we can
-    // get capacity and reliability set in reported node state.
+    // get capacity set in reported node state.
     NodeStateUpdater::Lock::SP lock(_component->getStateUpdater().grabStateChangeLock());
     lib::NodeState ns(*_component->getStateUpdater().getReportedNodeState());
 
     ns.setCapacity(_serverConfig->nodeCapacity);
-    ns.setReliability(_serverConfig->nodeReliability);
-    LOG(debug, "Adjusting reported node state to include capacity and reliability: %s",
-        ns.toString().c_str());
+    LOG(debug, "Adjusting reported node state to include capacity: %s", ns.toString().c_str());
     _component->getStateUpdater().setReportedNodeState(ns);
 }
 
@@ -117,12 +115,6 @@ ServiceLayerNode::handleLiveConfigUpdate(const InitialGuard & initGuard)
                     oldC.nodeCapacity, newC.nodeCapacity);
                 ASSIGN(nodeCapacity);
                 ns.setCapacity(newC.nodeCapacity);
-            }
-            if (DIFFER(nodeReliability)) {
-                LOG(info, "Live config update: Node reliability changed from %u to %u.",
-                    oldC.nodeReliability, newC.nodeReliability);
-                ASSIGN(nodeReliability);
-                ns.setReliability(newC.nodeReliability);
             }
             if (updated) {
                 _serverConfig.reset(new vespa::config::content::core::StorServerConfig(oldC));

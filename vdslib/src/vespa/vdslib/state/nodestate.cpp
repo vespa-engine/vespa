@@ -26,7 +26,6 @@ NodeState::NodeState()
       _state(0),
       _description(""),
       _capacity(1.0),
-      _reliability(1),
       _initProgress(0.0),
       _minUsedBits(16),
       _startTimestamp(0)
@@ -35,13 +34,11 @@ NodeState::NodeState()
 }
 
 NodeState::NodeState(const NodeType& type, const State& state,
-                     vespalib::stringref description,
-                     double capacity, uint16_t reliability)
+                     vespalib::stringref description, double capacity)
     : _type(&type),
       _state(0),
       _description(description),
       _capacity(1.0),
-      _reliability(1),
       _initProgress(0.0),
       _minUsedBits(16),
       _startTimestamp(0)
@@ -49,7 +46,6 @@ NodeState::NodeState(const NodeType& type, const State& state,
     setState(state);
     if (type == NodeType::STORAGE) {
         setCapacity(capacity);
-        setReliability(reliability);
     }
 }
 
@@ -58,7 +54,6 @@ NodeState::NodeState(vespalib::stringref serialized, const NodeType* type)
       _state(&State::UP),
       _description(),
       _capacity(1.0),
-      _reliability(1),
       _initProgress(0.0),
       _minUsedBits(16),
       _startTimestamp(0)
@@ -103,18 +98,6 @@ NodeState::NodeState(vespalib::stringref serialized, const NodeType* type)
                     throw vespalib::IllegalArgumentException(
                             "Illegal capacity '" + value + "'. Capacity must be"
                             "a positive floating point number", VESPA_STRLOC);
-                }
-                continue;
-            case 'r':
-                if (_type != 0 && *type != NodeType::STORAGE) break;
-                if (key.size() > 1) break;
-                try{
-                    setReliability(boost::lexical_cast<uint16_t>(value));
-                } catch (...) {
-                    throw vespalib::IllegalArgumentException(
-                            "Illegal reliability '" + value + "'. Reliability "
-                            "must be a positive integer",
-                            VESPA_STRLOC);
                 }
                 continue;
             case 'i':
@@ -180,17 +163,14 @@ NodeState::serialize(vespalib::asciistream & out, vespalib::stringref prefix,
                      bool includeDescription) const
 {
     SeparatorPrinter sep;
-        // Always give node state if not part of a system state
-        // to prevent empty serialization
+    // Always give node state if not part of a system state
+    // to prevent empty serialization
     if (*_state != State::UP || prefix.size() == 0) {
         out << sep << prefix << "s:";
         out << _state->serialize();
     }
     if (_capacity != 1.0) {
         out << sep << prefix << "c:" << _capacity;
-    }
-    if (_reliability != 1) {
-        out << sep << prefix << "r:" << _reliability;
     }
     if (_minUsedBits != 16) {
         out << sep << prefix << "b:" << _minUsedBits;
@@ -211,8 +191,8 @@ void
 NodeState::setState(const State& state)
 {
     if (_type != 0) {
-            // We don't know whether you want to store reported, wanted or
-            // current node state, so we must accept any.
+        // We don't know whether you want to store reported, wanted or
+        // current node state, so we must accept any.
         if (!state.validReportedNodeState(*_type)
             && !state.validWantedNodeState(*_type))
         {
@@ -253,22 +233,6 @@ NodeState::setCapacity(vespalib::Double capacity)
 }
 
 void
-NodeState::setReliability(uint16_t reliability)
-{
-    if (reliability == 0) {
-        std::ostringstream ost;
-        ost << "Illegal reliability '" << reliability << "'. Reliability "
-                "must be a positive integer.";
-        throw vespalib::IllegalArgumentException(ost.str(), VESPA_STRLOC);
-    }
-    if (_type != 0 && *_type != NodeType::STORAGE) {
-        throw vespalib::IllegalArgumentException(
-                "Reliability only make sense for storage nodes.", VESPA_STRLOC);
-    }
-    _reliability = reliability;
-}
-
-void
 NodeState::setInitProgress(vespalib::Double initProgress)
 {
     if (initProgress < 0 || initProgress > 1.0) {
@@ -300,9 +264,6 @@ NodeState::print(std::ostream& out, bool verbose,
     if (_capacity != 1.0) {
         out << ", capacity " << _capacity;
     }
-    if (_reliability != 1) {
-        out << ", reliability " << _reliability;
-    }
     if (_minUsedBits != 16) {
         out << ", minimum used bits " << _minUsedBits;
     }
@@ -322,7 +283,6 @@ NodeState::operator==(const NodeState& other) const
 {
     if (_state != other._state ||
         _capacity != other._capacity ||
-        _reliability != other._reliability ||
         _minUsedBits != other._minUsedBits ||
         _startTimestamp != other._startTimestamp ||
         (*_state == State::INITIALIZING
@@ -338,7 +298,6 @@ NodeState::similarTo(const NodeState& other) const
 {
     if (_state != other._state ||
         _capacity != other._capacity ||
-        _reliability != other._reliability ||
         _minUsedBits != other._minUsedBits ||
         _startTimestamp < other._startTimestamp)
     {
@@ -370,10 +329,6 @@ NodeState::verifySupportForNodeType(const NodeType& type) const
         throw vespalib::IllegalArgumentException("Capacity should not be "
                 "set for a distributor node.", VESPA_STRLOC);
     }
-    if (type == NodeType::DISTRIBUTOR && _reliability != 1) {
-        throw vespalib::IllegalArgumentException("Reliability should not be "
-                "set for a distributor node.", VESPA_STRLOC);
-    }
 }
 
 std::string
@@ -388,10 +343,6 @@ NodeState::getTextualDifference(const NodeState& other) const {
     if (_capacity != other._capacity) {
         source << ", capacity " << _capacity;
         target << ", capacity " << other._capacity;
-    }
-    if (_reliability != other._reliability) {
-        source << ", reliability " << _reliability;
-        target << ", reliability " << other._reliability;
     }
     if (_minUsedBits != other._minUsedBits) {
         source << ", minUsedBits " << _minUsedBits;

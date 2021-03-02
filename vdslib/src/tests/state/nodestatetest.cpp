@@ -11,13 +11,11 @@ TEST(NodeStateTest, test_parsing)
         NodeState ns = NodeState("s:u");
         EXPECT_EQ(std::string("s:u"), ns.toString());
         EXPECT_EQ(vespalib::Double(1.0), ns.getCapacity());
-        EXPECT_EQ(uint16_t(1), ns.getReliability());
     }
     {
         NodeState ns = NodeState("s:m");
         EXPECT_EQ(std::string("s:m"), ns.toString());
         EXPECT_EQ(vespalib::Double(1.0), ns.getCapacity());
-        EXPECT_EQ(uint16_t(1), ns.getReliability());
     }
     {
         NodeState ns = NodeState("t:4");
@@ -25,31 +23,27 @@ TEST(NodeStateTest, test_parsing)
         EXPECT_EQ(uint64_t(4), ns.getStartTimestamp());
     }
     {
-        NodeState ns = NodeState("s:u c:2.4 r:3 b:12");
-        EXPECT_EQ(std::string("s:u c:2.4 r:3 b:12"), ns.toString());
+        NodeState ns = NodeState("s:u c:2.4 b:12");
+        EXPECT_EQ(std::string("s:u c:2.4 b:12"), ns.toString());
         EXPECT_EQ(vespalib::Double(2.4), ns.getCapacity());
-        EXPECT_EQ(uint16_t(3), ns.getReliability());
         EXPECT_EQ(12, (int)ns.getMinUsedBits());
 
         EXPECT_NE(NodeState("s:u b:12"), NodeState("s:u b:13"));
     }
     {
-        NodeState ns = NodeState("c:2.4\ns:u\nr:5");
-        EXPECT_EQ(std::string("s:u c:2.4 r:5"), ns.toString());
-        EXPECT_EQ(vespalib::Double(2.4), ns.getCapacity());
-        EXPECT_EQ(uint16_t(5), ns.getReliability());
-    }
-    {
-        NodeState ns = NodeState("c:2.4 r:1");
+        NodeState ns = NodeState("c:2.4\ns:u");
         EXPECT_EQ(std::string("s:u c:2.4"), ns.toString());
         EXPECT_EQ(vespalib::Double(2.4), ns.getCapacity());
-        EXPECT_EQ(uint16_t(1), ns.getReliability());
+    }
+    {
+        NodeState ns = NodeState("c:2.4");
+        EXPECT_EQ(std::string("s:u c:2.4"), ns.toString());
+        EXPECT_EQ(vespalib::Double(2.4), ns.getCapacity());
     }
     {
         NodeState ns = NodeState("c:2.4 k:2.6");
         EXPECT_EQ(std::string("s:u c:2.4"), ns.toString());
         EXPECT_EQ(vespalib::Double(2.4), ns.getCapacity());
-        EXPECT_EQ(uint16_t(1), ns.getReliability());
     }
 }
 

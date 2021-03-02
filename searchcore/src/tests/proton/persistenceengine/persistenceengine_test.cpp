@@ -87,7 +87,7 @@ createClusterState(const storage::lib::State& nodeState = storage::lib::State::U
     StorDistributionConfigBuilder dc;
 
     cstate.setNodeState(Node(NodeType::STORAGE, 0),
-                        NodeState(NodeType::STORAGE, nodeState, "dummy desc", 1.0, 1));
+                        NodeState(NodeType::STORAGE, nodeState, "dummy desc", 1.0));
     cstate.setClusterState(State::UP);
     dc.redundancy = 1;
     dc.readyCopies = 1;
