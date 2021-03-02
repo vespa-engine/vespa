@@ -42,20 +42,6 @@ public class NodeStateTestCase {
     }
 
     @Test
-    public void testTrivialitiesToIncreaseCoverage() throws ParseException {
-        NodeState ns = new NodeState(NodeType.STORAGE, State.UP);
-        assertEquals(1, ns.getReliability());
-        assertEquals(false, ns.isAnyDiskDown());
-
-        assertEquals(ns.setReliability(2).serialize(), NodeState.deserialize(NodeType.STORAGE, "r:2").serialize());
-        assertEquals(ns.setDiskCount(1).serialize(), NodeState.deserialize(NodeType.STORAGE, "r:2 d:1").serialize());
-        assertEquals(ns.setReliability(1).serialize(), NodeState.deserialize(NodeType.STORAGE, "d:1").serialize());
-
-        assertEquals(ns.setDiskState(0, new DiskState(State.DOWN, "", 1)), NodeState.deserialize(NodeType.STORAGE, "s:u d:1 d.0.s:d"));
-        assertEquals(ns, NodeState.deserialize(NodeType.STORAGE, "s:u d:1 d.0:d"));
-    }
-
-    @Test
     public void testDiskState() throws ParseException {
         NodeState ns = NodeState.deserialize(NodeType.STORAGE, "s:m");
         assertEquals(new DiskState(State.UP, "", 1), ns.getDiskState(0));
@@ -110,10 +96,6 @@ public class NodeStateTestCase {
         } catch (Exception e) {}
         try {
             NodeState.deserialize(NodeType.STORAGE, "s:m c:badvalue");
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
-        try {
-            NodeState.deserialize(NodeType.STORAGE, "s:m r:badvalue");
             assertTrue("Should fail", false);
         } catch (Exception e) {}
         try {
@@ -222,12 +204,12 @@ public class NodeStateTestCase {
         String expected = "Maintenance => Up";
         assertEquals(expected, ns.getTextualDifference(new NodeState(NodeType.STORAGE, State.UP)).substring(0, expected.length()));
 
-        NodeState ns1 = new NodeState(NodeType.STORAGE, State.MAINTENANCE).setDescription("Foo bar").setCapacity(1.2).setReliability(2).setDiskCount(4)
+        NodeState ns1 = new NodeState(NodeType.STORAGE, State.MAINTENANCE).setDescription("Foo bar").setCapacity(1.2).setDiskCount(4)
                 .setMinUsedBits(12).setStartTimestamp(5).setDiskState(1, new DiskState(State.DOWN, "bad disk", 1))
                 .setDiskState(3, new DiskState(State.UP, "", 2));
         ns1.toString();
         ns1.toString(true);
-        expected = "Maintenance => Up, capacity: 1.2 => 1.0, reliability: 2 => 1, minUsedBits: 12 => 16, startTimestamp: 5 => 0, disks: 4 => 0, description: Foo bar => ";
+        expected = "Maintenance => Up, capacity: 1.2 => 1.0, minUsedBits: 12 => 16, startTimestamp: 5 => 0, disks: 4 => 0, description: Foo bar => ";
         assertEquals(expected, ns1.getTextualDifference(new NodeState(NodeType.STORAGE, State.UP)).substring(0, expected.length()));
     }
 
@@ -239,10 +221,6 @@ public class NodeStateTestCase {
         } catch (Exception e) {}
         try{
             new NodeState(NodeType.DISTRIBUTOR, State.UP).setCapacity(3).verifyValidInSystemState(NodeType.DISTRIBUTOR);
-            assertTrue("Should not be valid", false);
-        } catch (Exception e) {}
-        try{
-            new NodeState(NodeType.DISTRIBUTOR, State.UP).setReliability(3).verifyValidInSystemState(NodeType.DISTRIBUTOR);
             assertTrue("Should not be valid", false);
         } catch (Exception e) {}
         try{

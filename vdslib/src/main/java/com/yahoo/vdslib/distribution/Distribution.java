@@ -215,11 +215,19 @@ public class Distribution {
     }
 
     private static class ScoredNode {
-        int index;
-        int reliability;
-        double score;
+        final double score;
+        final int index;
 
-        ScoredNode(int index, int reliability, double score) { this.index = index; this.reliability = reliability; this.score = score; }
+        ScoredNode(int index, double score) {
+            this.score = score;
+            this.index = index;
+        }
+
+        boolean valid() { return index != -1; }
+
+        static ScoredNode makeInvalid() {
+            return new ScoredNode(-1, 0.0);
+        }
     }
 
     private static boolean allDistributorsDown(Group g, ClusterState clusterState) {
@@ -409,7 +417,7 @@ public class Distribution {
             // avoid needing to check size during iteration.
             LinkedList<ScoredNode> tmpResults = new LinkedList<>();
             for (int i = 0; i < redundancy; ++i) {
-                tmpResults.add(new ScoredNode(0, 0, 0.0));
+                tmpResults.add(ScoredNode.makeInvalid());
             }
 
             for (ConfiguredNode configuredNode : nodes) {
@@ -449,7 +457,7 @@ public class Distribution {
                 if (score > tmpResults.getLast().score) {
                     for (int i = 0; i < tmpResults.size(); ++i) {
                         if (score > tmpResults.get(i).score) {
-                            tmpResults.add(i, new ScoredNode(configuredNode.index(), nodeState.getReliability(), score));
+                            tmpResults.add(i, new ScoredNode(configuredNode.index(), score));
                             break;
                         }
                     }
@@ -458,7 +466,9 @@ public class Distribution {
             }
 
             for (ScoredNode node : tmpResults) {
-                resultNodes.add(node.index);
+                if (node.valid()) {
+                    resultNodes.add(node.index);
+                }
             }
         }
 
@@ -492,7 +502,7 @@ public class Distribution {
         RandomGen random = new RandomGen(seed);
         int randomIndex = 0;
         List<ConfiguredNode> configuredNodes = idealGroup.getNodes();
-        ScoredNode node = new ScoredNode(0, 0, 0);
+        ScoredNode node = ScoredNode.makeInvalid();
         for (ConfiguredNode configuredNode : configuredNodes) {
             NodeState nodeState = state.getNodeState(new Node(NodeType.DISTRIBUTOR, configuredNode.index()));
             if (!nodeState.getState().oneOf(upStates)) continue;
@@ -512,10 +522,10 @@ public class Distribution {
                 score = Math.pow(score, 1.0 / nodeState.getCapacity());
             }
             if (score > node.score) {
-                node = new ScoredNode(configuredNode.index(), 1, score);
+                node = new ScoredNode(configuredNode.index(), score);
             }
         }
-        if (node.reliability == 0) {
+        if (!node.valid()) {
             throw new NoDistributorsAvailableException(
                     "No available distributors in any of the given upstates '"
                     + upStates + "'.");
