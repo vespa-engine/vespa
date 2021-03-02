@@ -110,7 +110,6 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
             row.putLong(5, snapshot.getSecond().generation());
             row.putBool(6, snapshot.getSecond().inService());
             row.putBool(7, snapshot.getSecond().stable());
-            row.putFloat(8, (float)snapshot.getSecond().queryRate());
             row.append();
         }
         writer.commit();
@@ -184,17 +183,28 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     private void ensureExists(String table) {
         SqlExecutionContext context = newContext();
         if (0 == engine.getStatus(context.getCairoSecurityContext(), new Path(), table)) { // table exists
-            ensureTableIsUpdated(table, context);
+            ensureUpdated(table, context);
         } else {
-            createTable(table, context);
+            create(table, context);
         }
     }
 
-    private void createTable(String table, SqlExecutionContext context) {
+    private void ensureUpdated(String table, SqlExecutionContext context) {
+        try (SqlCompiler compiler = new SqlCompiler(engine)) {
+            if (0 == engine.getStatus(context.getCairoSecurityContext(), new Path(), table)) {
+                ensureColumnExists("inService", "boolean", table, compiler, context); // TODO: Remove after December 2020
+                ensureColumnExists("stable", "boolean", table, compiler, context); // TODO: Remove after December 2020
+            }
+        } catch (SqlException e) {
+            repair(e);
+        }
+    }
+
+    private void create(String table, SqlExecutionContext context) {
         try (SqlCompiler compiler = new SqlCompiler(engine)) {
             compiler.compile("create table " + table +
                              " (hostname string, at timestamp, cpu_util float, mem_total_util float, disk_util float," +
-                             "  application_generation long, inService boolean, stable boolean, queries_rate float)" +
+                             "  application_generation long, inService boolean, stable boolean)" +
                              " timestamp(at)" +
                              "PARTITION BY DAY;",
                              context);
@@ -203,16 +213,6 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         }
         catch (SqlException e) {
             throw new IllegalStateException("Could not create Quest db table '" + table + "'", e);
-        }
-    }
-
-    private void ensureTableIsUpdated(String table, SqlExecutionContext context) {
-        try (SqlCompiler compiler = new SqlCompiler(engine)) {
-            if (0 == engine.getStatus(context.getCairoSecurityContext(), new Path(), table)) {
-                ensureColumnExists("queries_rate", "float", table, compiler, context); // TODO: Remove after March 2021
-            }
-        } catch (SqlException e) {
-            repair(e);
         }
     }
 
@@ -272,8 +272,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
                                                          record.getFloat(4),
                                                          record.getLong(5),
                                                          record.getBool(6),
-                                                         record.getBool(7),
-                                                         record.getFloat(8)));
+                                                         record.getBool(7)));
                     }
                 }
             }

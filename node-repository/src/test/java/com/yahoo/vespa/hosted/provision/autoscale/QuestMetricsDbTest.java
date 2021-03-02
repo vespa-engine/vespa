@@ -54,7 +54,6 @@ public class QuestMetricsDbTest {
         assertEquals(0.2, snapshot.memory(), delta);
         assertEquals(0.4, snapshot.disk(), delta);
         assertEquals(1, snapshot.generation(), delta);
-        assertEquals(30, snapshot.queryRate(), delta);
 
         // Read all from 2 hosts
         List<NodeTimeseries> nodeTimeSeries2 = db.getNodeTimeseries(Duration.between(startTime, clock.instant()),
@@ -182,8 +181,7 @@ public class QuestMetricsDbTest {
                                                                    i * 0.4,
                                                                    i % 100,
                                                                    true,
-                                                                   true,
-                                                                   30.0)));
+                                                                   true)));
             clock.advance(sampleRate);
         }
         return timeseries;
@@ -199,8 +197,7 @@ public class QuestMetricsDbTest {
                                                                    i * 0.4,
                                                                    i % 100,
                                                                    true,
-                                                                   false,
-                                                                   0.0)));
+                                                                   false)));
         }
         return timeseries;
     }
