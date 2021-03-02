@@ -2,7 +2,7 @@
 
 #pragma once
 
-namespace vespalib { class SyncableThreadExecutor; }
+namespace vespalib { class ThreadExecutor; }
 namespace vespalib::slime { struct Cursor; }
 
 namespace proton::explorer {
@@ -10,7 +10,7 @@ namespace proton::explorer {
 /**
  * Utility to convert an executor to slime for use with a state explorer.
  */
-void convert_executor_to_slime(const vespalib::SyncableThreadExecutor* executor, vespalib::slime::Cursor& object);
+void convert_executor_to_slime(const vespalib::ThreadExecutor* executor, vespalib::slime::Cursor& object);
 
 }
 

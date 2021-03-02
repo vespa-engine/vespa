@@ -17,7 +17,7 @@ class ThreadingServiceConfig;
 class ExecutorThreadingService : public searchcorespi::index::IThreadingService
 {
 private:
-    vespalib::SyncableThreadExecutor                   & _sharedExecutor;
+    vespalib::ThreadExecutor                   & _sharedExecutor;
     vespalib::ThreadStackExecutor                        _masterExecutor;
     std::unique_ptr<vespalib::SyncableThreadExecutor>    _indexExecutor;
     std::unique_ptr<vespalib::SyncableThreadExecutor>    _summaryExecutor;
@@ -37,9 +37,9 @@ public:
      * @stackSize The size of the stack of the underlying executors.
      * @cfg config used to set up all executors.
      */
-    ExecutorThreadingService(vespalib::SyncableThreadExecutor &sharedExecutor,
+    ExecutorThreadingService(vespalib::ThreadExecutor &sharedExecutor,
                              const ThreadingServiceConfig & cfg, uint32_t stackSize = 128 * 1024);
-    ExecutorThreadingService(vespalib::SyncableThreadExecutor &sharedExecutor, uint32_t num_treads = 1);
+    ExecutorThreadingService(vespalib::ThreadExecutor &sharedExecutor, uint32_t num_treads = 1);
     ~ExecutorThreadingService() override;
 
     /**
@@ -75,7 +75,7 @@ public:
     searchcorespi::index::IThreadService &summary() override {
         return _summaryService;
     }
-    vespalib::SyncableThreadExecutor &shared() override {
+    vespalib::ThreadExecutor &shared() override {
         return _sharedExecutor;
     }
 
