@@ -51,7 +51,7 @@ struct CreateParam {
     {
         size_t last_child = num_children - 1;
         for (const auto & entry : spec_in) {
-            std::vector<Handle> sparse_key;
+            SmallVector<Handle> sparse_key;
             size_t dense_key = 0;
             auto dim = res_type.dimensions().begin();
             auto binding = entry.first.begin();
@@ -82,7 +82,7 @@ void my_generic_create_op(State &state, uint64_t param_in) {
                                                                    param.num_mapped_dims,
                                                                    param.dense_subspace_size,
                                                                    param.my_spec.size());
-    std::vector<string_id> sparse_addr;
+    SmallVector<string_id> sparse_addr;
     param.my_spec.each_entry([&](const auto &key, const auto &values)
         {
             sparse_addr.clear();

@@ -208,6 +208,8 @@ public:
         emplace_back(std::forward<Args>(args)...);
         return *this;
     }
+    void push_back(const T &obj) { emplace_back(obj); }
+    void push_back(T &&obj) { emplace_back(std::move(obj)); }
 };
 
 template <typename T, size_t N, size_t M>

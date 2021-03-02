@@ -64,9 +64,9 @@ TEST(GenericJoinTest, dense_join_plan_can_be_created) {
     auto lhs = ValueType::from_spec("tensor(a{},b[6],c[5],e[3],f[2],g{})");
     auto rhs = ValueType::from_spec("tensor(a{},b[6],c[5],d[4],h{})");
     auto plan = DenseJoinPlan(lhs, rhs);
-    std::vector<size_t> expect_loop = {30,4,6};
-    std::vector<size_t> expect_lhs_stride = {6,0,1};
-    std::vector<size_t> expect_rhs_stride = {4,1,0};
+    SmallVector<size_t> expect_loop = {30,4,6};
+    SmallVector<size_t> expect_lhs_stride = {6,0,1};
+    SmallVector<size_t> expect_rhs_stride = {4,1,0};
     EXPECT_EQ(plan.lhs_size, 180);
     EXPECT_EQ(plan.rhs_size, 120);
     EXPECT_EQ(plan.out_size, 720);
@@ -80,9 +80,9 @@ TEST(GenericJoinTest, sparse_join_plan_can_be_created) {
     auto rhs = ValueType::from_spec("tensor(b[6],c[5],d[4],g{},h{})");
     auto plan = SparseJoinPlan(lhs, rhs);
     using SRC = SparseJoinPlan::Source;
-    std::vector<SRC> expect_sources = {SRC::LHS,SRC::BOTH,SRC::RHS};
-    std::vector<size_t> expect_lhs_overlap = {1};
-    std::vector<size_t> expect_rhs_overlap = {0};
+    SmallVector<SRC> expect_sources = {SRC::LHS,SRC::BOTH,SRC::RHS};
+    SmallVector<size_t> expect_lhs_overlap = {1};
+    SmallVector<size_t> expect_rhs_overlap = {0};
     EXPECT_EQ(plan.sources, expect_sources);
     EXPECT_EQ(plan.lhs_overlap, expect_lhs_overlap);
     EXPECT_EQ(plan.rhs_overlap, expect_rhs_overlap);

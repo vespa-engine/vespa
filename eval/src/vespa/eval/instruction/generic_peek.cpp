@@ -120,18 +120,17 @@ struct ExtractedSpecs {
 ExtractedSpecs::~ExtractedSpecs() = default;
 
 struct DenseSizes {
-    std::vector<size_t> size;
-    std::vector<size_t> stride;
+    SmallVector<size_t> size;
+    SmallVector<size_t> stride;
     size_t cur_size;
 
     DenseSizes(const std::vector<ValueType::Dimension> &dims)
-        : size(), stride(), cur_size(1)
+        : size(), stride(dims.size()), cur_size(1)
     {
         for (const auto &dim : dims) {
             assert(dim.is_indexed());
             size.push_back(dim.size);
         }
-        stride.resize(size.size());
         for (size_t i = size.size(); i-- > 0; ) {
             stride[i] = cur_size;
             cur_size *= size[i];
@@ -143,15 +142,15 @@ struct DenseSizes {
 struct DensePlan {
     size_t in_dense_size;
     size_t out_dense_size;
-    std::vector<size_t> loop_cnt;
-    std::vector<size_t> in_stride;
+    SmallVector<size_t> loop_cnt;
+    SmallVector<size_t> in_stride;
     size_t verbatim_offset = 0;
     struct Child {
         size_t idx;
         size_t stride;
         size_t limit;
     };
-    std::vector<Child> children;
+    SmallVector<Child,4> children;
 
     DensePlan(const ValueType &input_type, const Spec &spec)
     {
@@ -203,13 +202,13 @@ struct DensePlan {
 };
 
 struct SparseState {
-    std::vector<Handle> handles;
-    std::vector<string_id> view_addr;
-    std::vector<const string_id *> lookup_refs;
-    std::vector<string_id> output_addr;
-    std::vector<string_id *> fetch_addr;
+    SmallVector<Handle> handles;
+    SmallVector<string_id> view_addr;
+    SmallVector<const string_id *> lookup_refs;
+    SmallVector<string_id> output_addr;
+    SmallVector<string_id *> fetch_addr;
 
-    SparseState(std::vector<Handle> handles_in, std::vector<string_id> view_addr_in, size_t out_dims)
+    SparseState(SmallVector<Handle> handles_in, SmallVector<string_id> view_addr_in, size_t out_dims)
         : handles(std::move(handles_in)),
           view_addr(std::move(view_addr_in)),
           lookup_refs(view_addr.size()),
@@ -230,7 +229,7 @@ SparseState::~SparseState() = default;
 struct SparsePlan {
     size_t out_mapped_dims;
     std::vector<DimSpec> lookup_specs;
-    std::vector<size_t> view_dims;
+    SmallVector<size_t> view_dims;
 
     SparsePlan(const ValueType &input_type,
                const GenericPeek::SpecMap &spec)
@@ -257,8 +256,8 @@ struct SparsePlan {
 
     template <typename Getter>
     SparseState make_state(const Getter &get_child_value) const {
-        std::vector<Handle> handles;
-        std::vector<string_id> view_addr;
+        SmallVector<Handle> handles;
+        SmallVector<string_id> view_addr;
         for (const auto & dim : lookup_specs) {
             if (dim.has_child()) {
                 int64_t child_value = get_child_value(dim.get_child_idx());

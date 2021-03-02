@@ -40,9 +40,9 @@ struct DenseJoinPlan {
     size_t lhs_size;
     size_t rhs_size;
     size_t out_size;
-    std::vector<size_t> loop_cnt;
-    std::vector<size_t> lhs_stride;
-    std::vector<size_t> rhs_stride;
+    SmallVector<size_t> loop_cnt;
+    SmallVector<size_t> lhs_stride;
+    SmallVector<size_t> rhs_stride;
     DenseJoinPlan(const ValueType &lhs_type, const ValueType &rhs_type);
     ~DenseJoinPlan();
     template <typename F> void execute(size_t lhs, size_t rhs, const F &f) const {
@@ -57,9 +57,9 @@ struct DenseJoinPlan {
  **/
 struct SparseJoinPlan {
     enum class Source { LHS, RHS, BOTH };
-    std::vector<Source> sources;
-    std::vector<size_t> lhs_overlap;
-    std::vector<size_t> rhs_overlap;
+    SmallVector<Source> sources;
+    SmallVector<size_t> lhs_overlap;
+    SmallVector<size_t> rhs_overlap;
     bool should_forward_lhs_index() const;
     bool should_forward_rhs_index() const;
     SparseJoinPlan(const ValueType &lhs_type, const ValueType &rhs_type);
@@ -75,11 +75,11 @@ struct SparseJoinState {
     bool                                    swapped;
     const Value::Index                     &first_index;
     const Value::Index                     &second_index;
-    const std::vector<size_t>              &second_view_dims;
-    std::vector<string_id>                  full_address;
-    std::vector<string_id*>                 first_address;
-    std::vector<const string_id*>           address_overlap;
-    std::vector<string_id*>                 second_only_address;
+    const SmallVector<size_t>              &second_view_dims;
+    SmallVector<string_id>                  full_address;
+    SmallVector<string_id*>                 first_address;
+    SmallVector<const string_id*>           address_overlap;
+    SmallVector<string_id*>                 second_only_address;
     size_t                                  lhs_subspace;
     size_t                                  rhs_subspace;
     size_t                                 &first_subspace;
