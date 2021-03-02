@@ -257,6 +257,7 @@ BucketMoveJobV2::handleMoveResult(BucketMoverSP mover) {
             reconsiderBucket(_ready.meta_store()->getBucketDB().takeGuard(), bucket);
         }
         if (_bucketsInFlight.empty() && _postponedUntilSafe.contains(RECOMPUTE_BUCKETID)) {
+            _postponedUntilSafe.erase(RECOMPUTE_BUCKETID);
             recompute();
         }
     }
@@ -270,7 +271,7 @@ BucketMoveJobV2::cancelBucket(BucketId bucket) {
         _movers.erase(std::remove_if(_movers.begin(), _movers.end(),
                                      [bucket](const BucketMoverSP &mover) { return mover->getBucket() == bucket; }),
                       _movers.end());
-        handleMoveResult(std::move(inFlight->second));
+        handleMoveResult(inFlight->second);
     }
 }
 
