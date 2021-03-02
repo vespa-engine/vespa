@@ -13,7 +13,6 @@ import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
 import javax.ws.rs.core.MediaType;
-import java.net.URI;
 import java.util.Collection;
 
 /**
@@ -116,8 +115,8 @@ public interface ProvisionResource {
 
     @POST
     @Path("/archive/{tenant}")
-    String patchArchiveUri(@PathParam("tenant") TenantName tenant, URI uri,
-                           @HeaderParam("X-HTTP-Method-Override") String patchOverride);
+    String patchArchive(@PathParam("tenant") TenantName tenant, ArchivePatch archivePatch,
+                        @HeaderParam("X-HTTP-Method-Override") String patchOverride);
 
     @DELETE
     @Path("/archive/{tenant}")
