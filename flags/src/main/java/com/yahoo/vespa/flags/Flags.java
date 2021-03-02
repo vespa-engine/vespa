@@ -180,7 +180,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_LID_SPACE_COMPACT = defineFeatureFlag(
             "use-bucket-executor-for-lid-space-compact", false,
-            List.of("baldersheim"), "2021-01-24", "2021-03-01",
+            List.of("baldersheim"), "2021-01-24", "2021-04-01",
             "Wheter to use content-level bucket executor or legacy frozen buckets",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
