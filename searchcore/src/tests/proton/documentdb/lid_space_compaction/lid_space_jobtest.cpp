@@ -3,7 +3,9 @@
 #include "lid_space_jobtest.h"
 #include <vespa/searchcore/proton/server/lid_space_compaction_job.h>
 #include <vespa/searchcore/proton/server/lid_space_compaction_job_take2.h>
+#include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 using BlockedReason = IBlockableMaintenanceJob::BlockedReason;
 

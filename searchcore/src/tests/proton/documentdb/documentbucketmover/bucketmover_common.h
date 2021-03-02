@@ -16,6 +16,9 @@
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/document/test/make_bucket_space.h>
 
+namespace proton {
+    class DocumentMetaStore;
+}
 namespace proton::move::test {
 
 struct MyMoveOperationLimiter : public IMoveOperationLimiter {
@@ -97,7 +100,7 @@ struct MySubDb {
     using DocumentTypeRepo = document::DocumentTypeRepo;
     using DocumentVector = proton::test::DocumentVector;
     using UserDocuments = proton::test::UserDocuments;
-    DocumentMetaStore::SP                 _metaStoreSP;
+    std::shared_ptr<DocumentMetaStore>    _metaStoreSP;
     DocumentMetaStore                    &_metaStore;
     std::shared_ptr<MyDocumentRetriever>  _realRetriever;
     std::shared_ptr<IDocumentRetriever>   _retriever;
@@ -120,9 +123,7 @@ struct MySubDb {
         return _docs.getGidOrderDocs(userId);
     }
 
-    void setBucketState(const BucketId &bucketId, bool active) {
-        _metaStore.setBucketState(bucketId, active);
-    }
+    void setBucketState(const BucketId &bucketId, bool active);
 };
 
 struct MyCountJobRunner : public IMaintenanceJobRunner {

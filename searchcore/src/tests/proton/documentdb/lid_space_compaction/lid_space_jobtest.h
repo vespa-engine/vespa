@@ -3,6 +3,7 @@
 #include "lid_space_common.h"
 #include <vespa/searchcore/proton/server/blockable_maintenance_job.h>
 #include <vespa/persistence/spi/bucketexecutor.h>
+#include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 namespace storage::spi::dummy { class DummyBucketExecutor; }

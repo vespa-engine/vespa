@@ -59,7 +59,7 @@ struct IThreadingService : public vespalib::Syncable
     IThreadingService(const IThreadingService &) = delete;
     IThreadingService & operator = (const IThreadingService &) = delete;
     IThreadingService() = default;
-    virtual ~IThreadingService() {}
+    virtual ~IThreadingService() = default;
 
     virtual IThreadService &master() = 0;
     virtual IThreadService &index() = 0;

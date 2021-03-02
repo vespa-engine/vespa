@@ -2,10 +2,11 @@
 
 #pragma once
 
-#include "documentdb.h"
 #include <vespa/vespalib/net/state_explorer.h>
 
 namespace proton {
+
+class DocumentDB;
 
 /**
  * Class used to explore the state of a document database and its components.
@@ -13,11 +14,11 @@ namespace proton {
 class DocumentDBExplorer : public vespalib::StateExplorer
 {
 private:
-    DocumentDB::SP _docDb;
+    std::shared_ptr<DocumentDB> _docDb;
 
 public:
-    DocumentDBExplorer(const DocumentDB::SP &docDb);
-    ~DocumentDBExplorer();
+    DocumentDBExplorer(std::shared_ptr<DocumentDB> docDb);
+    ~DocumentDBExplorer() override;
 
     void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
     std::vector<vespalib::string> get_children_names() const override;

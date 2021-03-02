@@ -194,7 +194,7 @@ IndexManagerTest::resetIndexManager()
 {
     _index_manager.reset();
     _index_manager = std::make_unique<IndexManager>(index_dir, IndexConfig(), getSchema(), 1,
-                             _reconfigurer, _writeService, _writeService.getMasterExecutor(),
+                             _reconfigurer, _writeService, _writeService.master(),
                              TuneFileIndexManager(), TuneFileAttributes(),_fileHeaderContext);
 }
 

@@ -9,6 +9,7 @@
 #include <vespa/searchcore/proton/persistenceengine/commit_and_wait_document_retriever.h>
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
 #include <vespa/vespalib/util/lambdatask.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 
 using proton::matching::SessionManager;
 using search::GrowStrategy;

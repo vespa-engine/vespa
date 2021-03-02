@@ -6,7 +6,6 @@
 #include "bucketstatecalculator.h"
 #include "document.h"
 #include "dummy_document_store.h"
-#include "dummy_document_sub_db.h"
 #include "dummy_feed_view.h"
 #include "dummy_summary_manager.h"
 #include "resulthandler.h"

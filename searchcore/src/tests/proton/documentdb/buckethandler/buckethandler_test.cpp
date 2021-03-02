@@ -3,8 +3,10 @@
 #include <vespa/searchcore/proton/server/ibucketstatechangedhandler.h>
 #include <vespa/searchcore/proton/server/ibucketmodifiedhandler.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_db_owner.h>
+#include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
 #include <vespa/searchcore/proton/test/test.h>
 #include <vespa/persistence/spi/test.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/testkit/testapp.h>
 
 #include <vespa/log/log.h>

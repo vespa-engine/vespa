@@ -4,12 +4,11 @@
 #include <vespa/vespalib/data/slime/cursor.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 #include <vespa/vespalib/util/singleexecutor.h>
-#include <vespa/vespalib/util/threadexecutor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
 
 using vespalib::BlockingThreadStackExecutor;
 using vespalib::SingleExecutor;
-using vespalib::SyncableThreadExecutor;
+using vespalib::ThreadExecutor;
 using vespalib::ThreadStackExecutor;
 using vespalib::slime::Cursor;
 
@@ -19,7 +18,7 @@ namespace proton::explorer {
 namespace {
 
 void
-convert_syncable_executor_to_slime(const SyncableThreadExecutor& executor, const vespalib::string& type, Cursor& object)
+convert_syncable_executor_to_slime(const ThreadExecutor& executor, const vespalib::string& type, Cursor& object)
 {
     object.setString("type", type);
     object.setLong("num_threads", executor.getNumThreads());
@@ -37,7 +36,7 @@ convert_single_executor_to_slime(const SingleExecutor& executor, Cursor& object)
 }
 
 void
-convert_executor_to_slime(const SyncableThreadExecutor* executor, Cursor& object)
+convert_executor_to_slime(const ThreadExecutor* executor, Cursor& object)
 {
     if (executor == nullptr) {
         return;
@@ -49,7 +48,7 @@ convert_executor_to_slime(const SyncableThreadExecutor* executor, Cursor& object
     } else if (const auto* thread = dynamic_cast<const ThreadStackExecutor*>(executor)) {
         convert_syncable_executor_to_slime(*thread, "ThreadStackExecutor", object);
     } else {
-        convert_syncable_executor_to_slime(*executor, "SyncableThreadExecutor", object);
+        convert_syncable_executor_to_slime(*executor, "ThreadExecutor", object);
     }
 }
 

@@ -2,6 +2,7 @@
 
 #include "bucketmover_common.h"
 #include <vespa/searchcore/proton/server/documentbucketmover.h>
+#include <vespa/searchcore/proton/common/pendinglidtracker.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>

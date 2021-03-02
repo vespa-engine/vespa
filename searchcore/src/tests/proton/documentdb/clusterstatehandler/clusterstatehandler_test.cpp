@@ -2,6 +2,7 @@
 #include <vespa/searchcore/proton/server/clusterstatehandler.h>
 #include <vespa/searchcore/proton/server/iclusterstatechangedhandler.h>
 #include <vespa/searchcore/proton/test/test.h>
+#include <vespa/vespalib/util/threadstackexecutor.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>

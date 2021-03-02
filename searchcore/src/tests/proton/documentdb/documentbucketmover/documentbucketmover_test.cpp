@@ -2,6 +2,7 @@
 
 #include "bucketmover_common.h"
 #include <vespa/searchcore/proton/server/bucketmovejob.h>
+#include <vespa/searchcore/proton/server/document_db_maintenance_config.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>

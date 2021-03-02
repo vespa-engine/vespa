@@ -7,7 +7,6 @@
 #include <vespa/vespalib/util/singleexecutor.h>
 #include <vespa/vespalib/util/blockingthreadstackexecutor.h>
 
-
 using vespalib::SyncableThreadExecutor;
 using vespalib::BlockingThreadStackExecutor;
 using vespalib::SingleExecutor;
@@ -37,11 +36,11 @@ VESPA_THREAD_STACK_TAG(attribute_executor)
 
 }
 
-ExecutorThreadingService::ExecutorThreadingService(vespalib::SyncableThreadExecutor &sharedExecutor, uint32_t num_treads)
+ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor &sharedExecutor, uint32_t num_treads)
     : ExecutorThreadingService(sharedExecutor, ThreadingServiceConfig::make(num_treads))
 {}
 
-ExecutorThreadingService::ExecutorThreadingService(vespalib::SyncableThreadExecutor & sharedExecutor,
+ExecutorThreadingService::ExecutorThreadingService(vespalib::ThreadExecutor & sharedExecutor,
                                                    const ThreadingServiceConfig & cfg,  uint32_t stackSize)
 
     : _sharedExecutor(sharedExecutor),

@@ -1,8 +1,10 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "lid_space_common.h"
+#include <vespa/searchcore/proton/test/dummy_document_sub_db.h>
 
 using vespalib::make_string_short::fmt;
+using proton::test::DummyDocumentSubDb;
 
 MyScanIterator::MyScanIterator(const MyHandler & handler, const LidVector &lids)
     : _handler(handler),
@@ -214,8 +216,8 @@ MyDocumentRetriever::parseSelect(const vespalib::string&) const {
 }
 
 MySubDb::MySubDb(std::shared_ptr<bucketdb::BucketDBOwner> bucket_db, const MyDocumentStore& store, const std::shared_ptr<const DocumentTypeRepo> & repo)
-    : sub_db(std::move(bucket_db), SUBDB_ID),
-      maintenance_sub_db(sub_db.getName(), sub_db.getSubDbId(), sub_db.getDocumentMetaStoreContext().getSP(),
+    : sub_db(std::make_unique<DummyDocumentSubDb>(std::move(bucket_db), SUBDB_ID)),
+      maintenance_sub_db(sub_db->getName(), sub_db->getSubDbId(), sub_db->getDocumentMetaStoreContext().getSP(),
                          std::make_shared<MyDocumentRetriever>(repo, store),
                          std::make_shared<MyFeedView>(repo),
                          &_pendingLidsForCommit)
