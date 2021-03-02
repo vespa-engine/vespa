@@ -1,4 +1,4 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 namespace=cloud.config
 
 # Ports
@@ -51,7 +51,7 @@ ztsUrl string default=""
 
 # Maintainers
 maintainerIntervalMinutes int default=30
-keepUnusedFileReferencesHours int default=2
+keepUnusedFileReferencesMinutes int default=240
 
 # Bootstrapping
 # How long bootstrapping can take before giving up (in seconds)

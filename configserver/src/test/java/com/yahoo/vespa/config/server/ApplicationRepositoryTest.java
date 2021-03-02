@@ -273,27 +273,28 @@ public class ApplicationRepositoryTest {
     @Test
     public void deleteUnusedFileReferences() throws IOException {
         File fileReferencesDir = temporaryFolder.newFolder();
+        Duration keepFileReferences = Duration.ofHours(48);
 
-        // Add file reference that is not in use and should be deleted (older than 14 days)
-        File filereferenceDir = createFilereferenceOnDisk(new File(fileReferencesDir, "foo"), Instant.now().minus(Duration.ofDays(15)));
-        // Add file reference that is not in use, but should not be deleted (not older than 14 days)
-        File filereferenceDir2 = createFilereferenceOnDisk(new File(fileReferencesDir, "baz"), Instant.now());
+        // Add file reference that is not in use and should be deleted (older than 'keepFileReferences')
+        File filereferenceDir = createFilereferenceOnDisk(new File(fileReferencesDir, "foo"),
+                                                          Instant.now().minus(keepFileReferences.plus(Duration.ofHours(1))));
+        // Add file reference that is not in use, but should not be deleted (newer than 'keepFileReferences')
+        File filereferenceDir2 = createFilereferenceOnDisk(new File(fileReferencesDir, "baz"),
+                                                           Instant.now());
 
-        tenantRepository.addTenant(tenant1);
         applicationRepository = new ApplicationRepository.Builder()
                 .withTenantRepository(tenantRepository)
                 .withProvisioner(provisioner)
                 .withOrchestrator(orchestrator)
                 .withClock(clock)
                 .build();
-        timeoutBudget = new TimeoutBudget(clock, Duration.ofSeconds(60));
 
         // TODO: Deploy an app with a bundle or file that will be a file reference, too much missing in test setup to get this working now
         PrepareParams prepareParams = new PrepareParams.Builder().applicationId(applicationId()).ignoreValidationErrors(true).build();
         deployApp(new File("src/test/apps/app"), prepareParams);
 
-        Set<String> toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, Duration.ofHours(48));
-        assertEquals(Collections.singleton("foo"), toBeDeleted);
+        Set<String> toBeDeleted = applicationRepository.deleteUnusedFiledistributionReferences(fileReferencesDir, keepFileReferences);
+        assertEquals(Set.of("foo"), toBeDeleted);
         assertFalse(filereferenceDir.exists());
         assertTrue(filereferenceDir2.exists());
     }
