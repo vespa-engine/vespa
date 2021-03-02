@@ -11,4 +11,7 @@ public class NoopTenantSecretService implements TenantSecretService {
     @Override
     public void addSecretStore(TenantName tenant, TenantSecretStore tenantSecretStore, String externalId) {}
 
+    @Override
+    public void deleteSecretStore(TenantName tenant, TenantSecretStore tenantSecretStore) {}
+
 }

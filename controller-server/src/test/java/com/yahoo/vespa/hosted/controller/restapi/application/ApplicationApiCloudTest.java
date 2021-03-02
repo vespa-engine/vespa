@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
 import com.yahoo.vespa.hosted.controller.security.Auth0Credentials;
 import com.yahoo.vespa.hosted.controller.security.CloudTenantSpec;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
+import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -28,9 +29,7 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.yahoo.application.container.handler.Request.Method.GET;
-import static com.yahoo.application.container.handler.Request.Method.POST;
-import static com.yahoo.application.container.handler.Request.Method.PUT;
+import static com.yahoo.application.container.handler.Request.Method.*;
 import static com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiTest.createApplicationSubmissionData;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -181,6 +180,27 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         tester.assertResponse(secretStoreRequest, "{" +
                 "\"message\":\"scoober.albums in prod.us-central-1 - TenantSecretStore{name='secret-foo', awsId='123', role='some-role'}\"" +
                 "}", 200);
+    }
+
+    @Test
+    public void delete_secret_store() {
+        var deleteRequest =
+                request("/application/v4/tenant/scoober/secret-store/secret-foo", DELETE)
+                        .roles(Set.of(Role.administrator(tenantName)));
+        tester.assertResponse(deleteRequest, "{" +
+                "\"error-code\":\"NOT_FOUND\"," +
+                "\"message\":\"Could not delete secret store 'secret-foo': Secret store not found\"" +
+                "}", 404);
+
+        tester.controller().tenants().lockOrThrow(tenantName, LockedTenant.Cloud.class, lockedTenant -> {
+            lockedTenant = lockedTenant.withSecretStore(new TenantSecretStore("secret-foo", "123", "some-role"));
+            tester.controller().tenants().store(lockedTenant);
+        });
+        var tenant = (CloudTenant) tester.controller().tenants().require(tenantName);
+        assertEquals(1, tenant.tenantSecretStores().size());
+        tester.assertResponse(deleteRequest, "{\"name\":\"secret-foo\",\"awsId\":\"123\",\"role\":\"some-role\"}", 200);
+        tenant = (CloudTenant) tester.controller().tenants().require(tenantName);
+        assertEquals(0, tenant.tenantSecretStores().size());
     }
 
     private ApplicationPackageBuilder prodBuilder() {

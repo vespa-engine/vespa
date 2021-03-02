@@ -10,4 +10,6 @@ public interface TenantSecretService {
 
     void addSecretStore(TenantName tenant, TenantSecretStore tenantSecretStore, String externalId);
 
+    void deleteSecretStore(TenantName tenant, TenantSecretStore tenantSecretStore);
+
 }
