@@ -77,7 +77,6 @@ public class NodeState implements Cloneable {
         NodeState ns = (NodeState) o;
         if (state != ns.state
             || Math.abs(capacity - ns.capacity)         > 0.0000000001
-            || Math.abs(reliability - ns.reliability)   > 0.0000000001
             || Math.abs(initProgress - ns.initProgress) > 0.0000000001
             || startTimestamp != ns.startTimestamp
             || minUsedBits != ns.minUsedBits)
@@ -105,7 +104,7 @@ public class NodeState implements Cloneable {
         return true;
     }
     public int hashCode() {
-        return state.hashCode() ^ diskStates.hashCode() ^ Double.valueOf(capacity).hashCode() ^ Double.valueOf(reliability).hashCode();
+        return state.hashCode() ^ diskStates.hashCode() ^ Double.valueOf(capacity).hashCode();
     }
 
     /**
@@ -127,7 +126,6 @@ public class NodeState implements Cloneable {
     private boolean similarToImpl(final NodeState other, boolean considerInitProgress) {
         if (state != other.state) return false;
         if (Math.abs(capacity - other.capacity) > 0.0000000001) return false;
-        if (Math.abs(reliability - other.reliability) > 0.0000000001) return false;
         if (startTimestamp != other.startTimestamp) return false;
 
         // Init progress on different sides of the init progress limit boundary is not similar.
@@ -168,9 +166,6 @@ public class NodeState implements Cloneable {
         if (Math.abs(capacity - other.capacity) > 0.000000001) {
             diff.add(new Diff.Entry("capacity", capacity, other.capacity));
         }
-        if (Math.abs(reliability - other.reliability) > 0.000000001) {
-            diff.add(new Diff.Entry("reliability", reliability, other.reliability));
-        }
         if (minUsedBits != other.minUsedBits) {
             diff.add(new Diff.Entry("minUsedBits", minUsedBits, other.minUsedBits));
         }
@@ -206,7 +201,6 @@ public class NodeState implements Cloneable {
     /** Capacity is set by deserializing a node state. This seems odd, as it is config */
     public NodeState setCapacity(double c) { this.capacity = c; return this; }
 
-    public NodeState setReliability(int r) { this.reliability = r; return this; }
     public NodeState setInitProgress(double p) { this.initProgress = p; return this; }
     public NodeState setDescription(String desc) { this.description = desc; return this; }
     public NodeState setMinUsedBits(int u) { this.minUsedBits = u; return this; }
@@ -214,7 +208,6 @@ public class NodeState implements Cloneable {
     public NodeState setStartTimestamp(long ts) { this.startTimestamp = ts; return this; }
 
     public double getCapacity() { return this.capacity; }
-    public int getReliability() { return this.reliability; }
     public double getInitProgress() { return this.initProgress; }
     public boolean hasDescription() { return (description.length() > 0); }
     public String getDescription() { return description; }
@@ -237,9 +230,6 @@ public class NodeState implements Cloneable {
         }
         if (Math.abs(capacity - 1.0) > 0.000000001) {
             sb.append(compact ? ", c " : ", capacity ").append(compact ? String.format(Locale.ENGLISH, "%.3g", capacity) : capacity);
-        }
-        if (Math.abs(reliability - 1.0) > 0.000000001) {
-            sb.append(compact ? ", r " : ", reliability ").append(reliability);
         }
         if (state.equals(State.INITIALIZING)) {
             sb.append(compact ? ", i " : ", init progress ").append(compact ? String.format(Locale.ENGLISH, "%.3g", initProgress) : initProgress);
@@ -323,10 +313,6 @@ public class NodeState implements Cloneable {
         if (Math.abs(capacity - 1.0) > 0.000000001) {
             if (empty) { empty = false; } else { sb.append(' '); }
             sb.append(prefix).append("c:").append(capacity);
-        }
-        if (Math.abs(reliability - 1.0) > 0.000000001) {
-            if (empty) { empty = false; } else { sb.append(' '); }
-            sb.append(prefix).append("r:").append(reliability);
         }
         if (state == State.INITIALIZING) {
             sb.append(' ');
@@ -416,15 +402,6 @@ public class NodeState implements Cloneable {
                     throw new ParseException("Illegal capacity '" + value + "'. Capacity must be a positive floating point number", 0);
                 }
                 continue;
-            case 'r':
-                if (key.length() > 1) break;
-                if (type != null && !type.equals(NodeType.STORAGE)) break;
-                try{
-                    newState.setReliability(Integer.valueOf(value));
-                } catch (Exception e) {
-                    throw new ParseException("Illegal reliability '" + value + "'. Reliability must be a positive integer number", 0);
-                }
-                continue;
             case 'i':
                 if (key.length() > 1) break;
                 try{
@@ -499,9 +476,6 @@ public class NodeState implements Cloneable {
         }
         if (type.equals(NodeType.DISTRIBUTOR) && Math.abs(capacity - 1.0) > 0.000000001) {
             throw new IllegalArgumentException("Capacity should not be set for a distributor node");
-        }
-        if (type.equals(NodeType.DISTRIBUTOR) && Math.abs(reliability - 1.0) > 0.000000001) {
-            throw new IllegalArgumentException("Reliability should not be set for a distributor node");
         }
         if (type.equals(NodeType.DISTRIBUTOR) && !diskStates.isEmpty()) {
             throw new IllegalArgumentException("Disk states should not be set for a distributor node");

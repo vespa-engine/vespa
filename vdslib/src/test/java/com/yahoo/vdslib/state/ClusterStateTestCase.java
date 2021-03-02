@@ -34,7 +34,7 @@ public class ClusterStateTestCase{
     public void testClone() throws ParseException {
         ClusterState state = new ClusterState("");
         state.setNodeState(new Node(NodeType.DISTRIBUTOR, 1), new NodeState(NodeType.DISTRIBUTOR, State.UP).setDescription("available"));
-        state.setNodeState(new Node(NodeType.STORAGE, 0), new NodeState(NodeType.STORAGE, State.UP).setCapacity(1.2).setReliability(2));
+        state.setNodeState(new Node(NodeType.STORAGE, 0), new NodeState(NodeType.STORAGE, State.UP).setCapacity(1.2));
         state.setNodeState(new Node(NodeType.STORAGE, 2), new NodeState(NodeType.STORAGE, State.UP).setDiskCount(2).setDiskState(1, new DiskState(State.DOWN)));
         ClusterState other = state.clone();
         assertEquals(state.toString(true), other.toString(true));
