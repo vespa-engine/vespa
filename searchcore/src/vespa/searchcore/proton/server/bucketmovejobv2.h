@@ -9,6 +9,7 @@
 #include "iclusterstatechangedhandler.h"
 #include <vespa/searchcore/proton/bucketdb/bucketscaniterator.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
+#include <vespa/vespalib/stllike/hash_set.h>
 
 namespace storage::spi { struct BucketExecutor; }
 namespace searchcorespi::index { struct IThreadService; }
@@ -46,14 +47,16 @@ private:
     using IThreadService = searchcorespi::index::IThreadService;
     using BucketId = document::BucketId;
     using ScanIterator = bucketdb::ScanIterator;
-    using BucketSet = std::map<BucketId, bool>;
+    using BucketMoveSet = std::map<BucketId, bool>;
     using NeedResult = std::pair<bool, bool>;
     using ActiveState = storage::spi::BucketInfo::ActiveState;
     using BucketMover = bucketdb::BucketMover;
     using BucketMoverSP = std::shared_ptr<BucketMover>;
-    using Movers = std::vector<std::shared_ptr<BucketMover>>;
+    using Bucket2Mover = std::map<BucketId, BucketMoverSP>;
+    using Movers = std::vector<BucketMoverSP>;
     using MoveKey = BucketMover::MoveKey;
     using GuardedMoveOp = BucketMover::GuardedMoveOp;
+    using BucketSet = vespalib::hash_set<BucketId, BucketId::hash>;
     std::shared_ptr<IBucketStateCalculator>   _calc;
     IDocumentMoveHandler                     &_moveHandler;
     IBucketModifiedHandler                   &_modifiedHandler;
@@ -64,7 +67,10 @@ private:
     const document::BucketSpace               _bucketSpace;
     size_t                                    _iterateCount;
     Movers                                    _movers;
-    BucketSet                                 _buckets2Move;
+    Bucket2Mover                              _bucketsInFlight;
+    BucketMoveSet                             _buckets2Move;
+    BucketSet                                 _postponedUntilSafe;
+
     std::atomic<bool>                         _stopped;
     std::atomic<size_t>                       _startedCount;
     std::atomic<size_t>                       _executedCount;
@@ -78,13 +84,16 @@ private:
     void startMove(BucketMoverSP mover, size_t maxDocsToMove);
     void prepareMove(BucketMoverSP mover, std::vector<MoveKey> keysToMove, IDestructorCallbackSP context);
     void completeMove(BucketMoverSP mover, std::vector<GuardedMoveOp> keys, IDestructorCallbackSP context);
+    void handleMoveResult(BucketMoverSP mover);
     void considerBucket(const bucketdb::Guard & guard, BucketId bucket);
+    void reconsiderBucket(const bucketdb::Guard & guard, BucketId bucket);
+    void updatePending();
+    void cancelBucket(BucketId bucket); // True if something to cancel
     NeedResult needMove(const ScanIterator &itr) const;
-    BucketSet computeBuckets2Move();
+    BucketMoveSet computeBuckets2Move();
     BucketMoverSP createMover(BucketId bucket, bool wantReady);
     BucketMoverSP greedyCreateMover();
     void backFillMovers();
-    void cancelMovesForBucket(BucketId bucket);
     void moveDocs(size_t maxDocsToMove);
     void failOperation(BucketId bucket);
     friend class StartMove;

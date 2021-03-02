@@ -53,6 +53,8 @@ blockedDueToClusterState(const std::shared_ptr<IBucketStateCalculator> &calc)
     return !(clusterUp && nodeUp && !nodeInitializing);
 }
 
+constexpr BucketId RECOMPUTE_TOKEN;
+
 }
 
 BucketMoveJobV2::BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &calc,
@@ -84,7 +86,9 @@ BucketMoveJobV2::BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &
       _bucketSpace(bucketSpace),
       _iterateCount(0),
       _movers(),
+      _bucketsInFlight(),
       _buckets2Move(),
+      _postponedUntilSafe(),
       _stopped(false),
       _startedCount(0),
       _executedCount(0),
@@ -200,6 +204,10 @@ BucketMoveJobV2::failOperation(BucketId bucketId) {
     if (_stopped.load(std::memory_order_relaxed)) return;
     _master.execute(makeLambdaTask([this, bucketId]() {
         if (_stopped.load(std::memory_order_relaxed)) return;
+        cancelBucket(bucketId);
+        if (_bucketsInFlight.contains(bucketId)) {
+            handleMoveResult(_bucketsInFlight[bucketId]);
+        }
         considerBucket(_ready.meta_store()->getBucketDB().takeGuard(), bucketId);
     }));
 }
@@ -234,34 +242,60 @@ BucketMoveJobV2::prepareMove(BucketMoverSP mover, std::vector<MoveKey> keys, IDe
 void
 BucketMoveJobV2::completeMove(BucketMoverSP mover, std::vector<GuardedMoveOp> ops, IDestructorCallbackSP onDone) {
     mover->moveDocuments(std::move(ops), std::move(onDone));
-    if (mover->bucketDone() && mover->inSync()) {
-        _modifiedHandler.notifyBucketModified(mover->getBucket());
-    }
+    handleMoveResult(std::move(mover));
 }
 
 void
-BucketMoveJobV2::cancelMovesForBucket(BucketId bucket) {
-    for (auto itr = _movers.begin(); itr != _movers.end(); itr++) {
-        if (bucket == (*itr)->getBucket()) {
-            _movers.erase(itr);
-            backFillMovers();
-            return;
+BucketMoveJobV2::handleMoveResult(BucketMoverSP mover) {
+    if (mover->bucketDone() && mover->inSync()) {
+        BucketId bucket = mover->getBucket();
+        assert(_bucketsInFlight.contains(bucket));
+        _modifiedHandler.notifyBucketModified(bucket);
+        _bucketsInFlight.erase(bucket);
+        updatePending();
+        if (_postponedUntilSafe.contains(bucket)) {
+            _postponedUntilSafe.erase(bucket);
+            reconsiderBucket(_ready.meta_store()->getBucketDB().takeGuard(), bucket);
+        }
+        if (_bucketsInFlight.empty() && _postponedUntilSafe.contains(RECOMPUTE_TOKEN)) {
+            _postponedUntilSafe.erase(RECOMPUTE_TOKEN);
+            recompute();
         }
     }
 }
 
 void
-BucketMoveJobV2::considerBucket(const bucketdb::Guard & guard, BucketId bucket)
-{
+BucketMoveJobV2::cancelBucket(BucketId bucket) {
+    auto inFlight = _bucketsInFlight.find(bucket);
+    if (inFlight != _bucketsInFlight.end()) {
+        inFlight->second->cancel();
+        _movers.erase(std::remove_if(_movers.begin(), _movers.end(),
+                                     [bucket](const BucketMoverSP &mover) { return mover->getBucket() == bucket; }),
+                      _movers.end());
+        handleMoveResult(inFlight->second);
+    }
+}
+
+void
+BucketMoveJobV2::considerBucket(const bucketdb::Guard & guard, BucketId bucket) {
+    cancelBucket(bucket);
+    if (_bucketsInFlight.contains(bucket)) {
+        _postponedUntilSafe.insert(bucket);
+    } else {
+        reconsiderBucket(guard, bucket);
+    }
+}
+
+void
+BucketMoveJobV2::reconsiderBucket(const bucketdb::Guard & guard, BucketId bucket) {
+    assert( ! _bucketsInFlight.contains(bucket));
     ScanIterator itr(guard, bucket);
     auto [mustMove, wantReady] = needMove(itr);
     if (mustMove) {
         _buckets2Move[bucket] = wantReady;
     } else {
         _buckets2Move.erase(bucket);
-        cancelMovesForBucket(bucket);
     }
-    backFillMovers();
     considerRun();
 }
 
@@ -271,10 +305,10 @@ BucketMoveJobV2::notifyCreateBucket(const bucketdb::Guard & guard, const BucketI
     considerBucket(guard, bucket);
 }
 
-BucketMoveJobV2::BucketSet
+BucketMoveJobV2::BucketMoveSet
 BucketMoveJobV2::computeBuckets2Move()
 {
-    BucketMoveJobV2::BucketSet toMove;
+    BucketMoveJobV2::BucketMoveSet toMove;
     for (ScanIterator itr(_ready.meta_store()->getBucketDB().takeGuard(), BucketId()); itr.valid(); ++itr) {
         auto [mustMove, wantReady] = needMove(itr);
         if (mustMove) {
@@ -306,7 +340,8 @@ BucketMoveJobV2::greedyCreateMover() {
 
 void
 BucketMoveJobV2::moveDocs(size_t maxDocsToMove) {
-    if (done()) return;
+    backFillMovers();
+    if (_movers.empty()) return;
 
     // Select mover
     size_t index = _iterateCount++ % _movers.size();
@@ -316,13 +351,7 @@ BucketMoveJobV2::moveDocs(size_t maxDocsToMove) {
     if (!mover->bucketDone()) {
         startMove(mover, maxDocsToMove);
         if (mover->bucketDone()) {
-            auto next = greedyCreateMover();
-            if (next) {
-                _movers[index] = next;
-            } else {
-                _movers.erase(_movers.begin() + index);
-            }
-            _bucketsPending.store(_movers.size() + _buckets2Move.size(), std::memory_order_relaxed);
+            _movers.erase(_movers.begin() + index);
         }
     }
 }
@@ -337,7 +366,7 @@ BucketMoveJobV2::scanAndMove(size_t maxBuckets2Move, size_t maxDocsToMovePerBuck
 
 bool
 BucketMoveJobV2::done() const {
-    return _buckets2Move.empty() && _movers.empty() && !isBlocked();
+    return _buckets2Move.empty() && _movers.empty() && _postponedUntilSafe.empty() && !isBlocked();
 }
 
 bool
@@ -360,19 +389,22 @@ BucketMoveJobV2::run()
 
 void
 BucketMoveJobV2::recompute() {
-    _movers.clear();
     _buckets2Move = computeBuckets2Move();
-    backFillMovers();
+    updatePending();
 }
 
 void
 BucketMoveJobV2::backFillMovers() {
     // Ensure we have enough movers.
     while ( ! _buckets2Move.empty() && (_movers.size() < _movers.capacity())) {
-        _movers.push_back(greedyCreateMover());
+        auto mover = greedyCreateMover();
+        _movers.push_back(mover);
+        auto bucketId = mover->getBucket();
+        _bucketsInFlight[bucketId] = std::move(mover);
     }
-    _bucketsPending.store(_movers.size() + _buckets2Move.size(), std::memory_order_relaxed);
+    updatePending();
 }
+
 void
 BucketMoveJobV2::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc)
 {
@@ -382,7 +414,14 @@ BucketMoveJobV2::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCal
         setBlocked(BlockedReason::CLUSTER_STATE);
     } else {
         unBlock(BlockedReason::CLUSTER_STATE);
-        recompute();
+        _movers.clear();
+        std::for_each(_bucketsInFlight.begin(), _bucketsInFlight.end(), [](auto & entry) { entry.second->cancel();});
+        std::erase_if(_bucketsInFlight, [](auto & entry) { return entry.second->inSync(); });
+        if (_bucketsInFlight.empty()) {
+            recompute();
+        } else {
+            _postponedUntilSafe.insert(RECOMPUTE_TOKEN);
+        }
     }
 }
 
@@ -412,6 +451,11 @@ BucketMoveJobV2::onStop() {
     while ( ! inSync() ) {
         std::this_thread::sleep_for(1ms);
     }
+}
+
+void
+BucketMoveJobV2::updatePending() {
+    _bucketsPending.store(_bucketsInFlight.size() + _buckets2Move.size(), std::memory_order_relaxed);
 }
 
 void
