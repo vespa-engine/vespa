@@ -43,14 +43,15 @@ public class MetricReporterTest {
         // Dimensions that are always present
         HasMetricContext.Dimension controllerDim = withDimension("controller-index", "0");
         HasMetricContext.Dimension clusterDim = withDimension("cluster", "foo");
-        return new HasMetricContext.Dimension[] { controllerDim, clusterDim };
+        HasMetricContext.Dimension clusteridDim = withDimension("clusterid", "foo");
+        return new HasMetricContext.Dimension[] { controllerDim, clusterDim, clusteridDim };
     }
 
     private static HasMetricContext.Dimension[] withNodeTypeDimension(String type) {
         // Node type-specific dimension
         HasMetricContext.Dimension nodeType = withDimension("node-type", type);
         var otherDims = withClusterDimension();
-        return new HasMetricContext.Dimension[] { otherDims[0], otherDims[1], nodeType };
+        return new HasMetricContext.Dimension[] { otherDims[0], otherDims[1], otherDims[2], nodeType };
     }
 
     @Test

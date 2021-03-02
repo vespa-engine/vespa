@@ -35,6 +35,7 @@ public class MetricUpdater {
     public void updateClusterStateMetrics(ContentCluster cluster, ClusterState state, ResourceUsageStats resourceUsage) {
         Map<String, String> dimensions = new HashMap<>();
         dimensions.put("cluster", cluster.getName());
+        dimensions.put("clusterid", cluster.getName());
         for (NodeType type : NodeType.getTypes()) {
             dimensions.put("node-type", type.toString().toLowerCase());
             MetricReporter.Context context = createContext(dimensions);
