@@ -9,6 +9,7 @@
 #include <vespa/vespalib/util/visit_ranges.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
 #include <cassert>
+#include <map>
 
 using namespace vespalib::eval::tensor_function;
 
@@ -82,11 +83,7 @@ struct ExtractedSpecs {
         bool operator() (const Spec::value_type &a, const Dimension &b) { return a.first < b.name; }
     };
     std::vector<Dimension> dimensions;
-    struct NamedDimSpec {
-        const vespalib::string & name;
-        DimSpec spec;
-    };
-    SmallVector<NamedDimSpec,4> specs;
+    std::map<vespalib::string, DimSpec> specs;
 
     ExtractedSpecs(bool indexed,
                    const std::vector<Dimension> &input_dims,
@@ -107,11 +104,9 @@ struct ExtractedSpecs {
                     const auto & [spec_dim_name, child_or_label] = b;
                     assert(a.name == spec_dim_name);
                     if (std::holds_alternative<size_t>(child_or_label)) {
-                        NamedDimSpec nds{a.name, DimSpec::from_child(std::get<size_t>(child_or_label))};
-                        specs.push_back(nds);
+                        specs[a.name] = DimSpec::from_child(std::get<size_t>(child_or_label));
                     } else {
-                        NamedDimSpec nds{a.name, DimSpec::from_label(std::get<TensorSpec::Label>(child_or_label))};
-                        specs.push_back(nds);
+                        specs[a.name] = DimSpec::from_label(std::get<TensorSpec::Label>(child_or_label));
                     }
                 }
             }
@@ -163,27 +158,24 @@ struct DensePlan {
         DenseSizes sizes(mine.dimensions);
         in_dense_size = sizes.cur_size;
         out_dense_size = 1;
-        auto pos = mine.specs.begin();
         for (size_t i = 0; i < mine.dimensions.size(); ++i) {
             const auto &dim = mine.dimensions[i];
-            if ((pos == mine.specs.end()) || (dim.name < pos->name)) {
+            auto pos = mine.specs.find(dim.name);
+            if (pos == mine.specs.end()) {
                 loop_cnt.push_back(sizes.size[i]);
                 in_stride.push_back(sizes.stride[i]);
                 out_dense_size *= sizes.size[i];
             } else {
-                assert(dim.name == pos->name);
-                if (pos->spec.has_child()) {
-                    children.push_back(Child{pos->spec.get_child_idx(), sizes.stride[i], sizes.size[i]});
+                if (pos->second.has_child()) {
+                    children.push_back(Child{pos->second.get_child_idx(), sizes.stride[i], sizes.size[i]});
                 } else {
-                    assert(pos->spec.has_label());
-                    size_t label_index = pos->spec.get_label_index();
+                    assert(pos->second.has_label());
+                    size_t label_index = pos->second.get_label_index();
                     assert(label_index < sizes.size[i]);
                     verbatim_offset += label_index * sizes.stride[i];
                 }
-                ++pos;
             }
         }
-        assert(pos == mine.specs.end());
     }
 
     /** Get initial offset (from verbatim labels and child values) */
@@ -242,19 +234,16 @@ struct SparsePlan {
           view_dims()
     {
         ExtractedSpecs mine(false, input_type.dimensions(), spec);
-        auto pos = mine.specs.begin();
         for (size_t dim_idx = 0; dim_idx < mine.dimensions.size(); ++dim_idx) {
             const auto & dim = mine.dimensions[dim_idx];
-            if ((pos == mine.specs.end()) || (dim.name < pos->name)) {
+            auto pos = mine.specs.find(dim.name);
+            if (pos == mine.specs.end()) {
                 ++out_mapped_dims;
             } else {
-                assert(dim.name == pos->name);
                 view_dims.push_back(dim_idx);
-                lookup_specs.push_back(pos->spec);
-                ++pos;
+                lookup_specs.push_back(pos->second);
             }
         }
-        assert(pos == mine.specs.end());
     }
 
     ~SparsePlan();
