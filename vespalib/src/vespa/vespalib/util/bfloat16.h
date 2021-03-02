@@ -18,7 +18,7 @@ namespace vespalib {
  * See also:
  * https://en.wikipedia.org/wiki/Bfloat16_floating-point_format
  **/
-class BrainFloat16 {
+class BFloat16 {
 private:
     uint16_t _bits;
     struct TwoU16 {
@@ -26,14 +26,14 @@ private:
         uint16_t u2;
     };
 public:
-    constexpr BrainFloat16(float value) noexcept : _bits(float_to_bits(value)) {}
-    BrainFloat16() noexcept = default;
-    ~BrainFloat16() noexcept = default;
-    constexpr BrainFloat16(const BrainFloat16 &other) noexcept = default;
-    constexpr BrainFloat16(BrainFloat16 &&other) noexcept = default;
-    constexpr BrainFloat16& operator=(const BrainFloat16 &other) noexcept = default;
-    constexpr BrainFloat16& operator=(BrainFloat16 &&other) noexcept = default;
-    constexpr BrainFloat16& operator=(float value) noexcept {
+    constexpr BFloat16(float value) noexcept : _bits(float_to_bits(value)) {}
+    BFloat16() noexcept = default;
+    ~BFloat16() noexcept = default;
+    constexpr BFloat16(const BFloat16 &other) noexcept = default;
+    constexpr BFloat16(BFloat16 &&other) noexcept = default;
+    constexpr BFloat16& operator=(const BFloat16 &other) noexcept = default;
+    constexpr BFloat16& operator=(BFloat16 &&other) noexcept = default;
+    constexpr BFloat16& operator=(float value) noexcept {
         _bits = float_to_bits(value);
         return *this;
     }
@@ -78,7 +78,7 @@ public:
 }
 
 namespace std {
-template<> class numeric_limits<vespalib::BrainFloat16> {
+template<> class numeric_limits<vespalib::BFloat16> {
 public:
     static constexpr bool is_specialized = true;
     static constexpr bool is_signed = true;
@@ -108,19 +108,19 @@ public:
     static constexpr int max_exponent = 128;
     static constexpr int max_exponent10 = 38;
 
-    static constexpr vespalib::BrainFloat16 denorm_min() noexcept { return 0x1.0p-133; }
-    static constexpr vespalib::BrainFloat16 epsilon() noexcept { return 0x1.0p-7; }
-    static constexpr vespalib::BrainFloat16 lowest() noexcept { return -0x1.FEp127; }
-    static constexpr vespalib::BrainFloat16 max() noexcept { return 0x1.FEp127; }
-    static constexpr vespalib::BrainFloat16 min() noexcept { return 0x1.0p-126; }
-    static constexpr vespalib::BrainFloat16 round_error() noexcept { return 1.0; }
-    static constexpr vespalib::BrainFloat16 infinity() noexcept {
+    static constexpr vespalib::BFloat16 denorm_min() noexcept { return 0x1.0p-133; }
+    static constexpr vespalib::BFloat16 epsilon() noexcept { return 0x1.0p-7; }
+    static constexpr vespalib::BFloat16 lowest() noexcept { return -0x1.FEp127; }
+    static constexpr vespalib::BFloat16 max() noexcept { return 0x1.FEp127; }
+    static constexpr vespalib::BFloat16 min() noexcept { return 0x1.0p-126; }
+    static constexpr vespalib::BFloat16 round_error() noexcept { return 1.0; }
+    static constexpr vespalib::BFloat16 infinity() noexcept {
         return std::numeric_limits<float>::infinity();
     }
-    static constexpr vespalib::BrainFloat16 quiet_NaN() noexcept {
+    static constexpr vespalib::BFloat16 quiet_NaN() noexcept {
         return std::numeric_limits<float>::quiet_NaN();
     }
-    static constexpr vespalib::BrainFloat16 signaling_NaN() noexcept {
+    static constexpr vespalib::BFloat16 signaling_NaN() noexcept {
         return std::numeric_limits<float>::signaling_NaN();
     }
 };

@@ -1,6 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/util/brain_float16.h>
+#include <vespa/vespalib/util/bfloat16.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <stdio.h>
@@ -11,43 +11,43 @@
 
 using namespace vespalib;
 
-using Limits = std::numeric_limits<BrainFloat16>;
+using Limits = std::numeric_limits<BFloat16>;
 
 static std::vector<float> simple_values = {
     0.0, 1.0, -1.0, -0.0, 1.75, 0x1.02p20, -0x1.02p-20, 0x3.0p-100, 0x7.0p100
 };
 
-TEST(BrainFloat16Test, normal_usage) {
+TEST(BFloat16Test, normal_usage) {
     EXPECT_EQ(sizeof(float), 4);
-    EXPECT_EQ(sizeof(BrainFloat16), 2);
-    BrainFloat16 answer = 42;
+    EXPECT_EQ(sizeof(BFloat16), 2);
+    BFloat16 answer = 42;
     double fortytwo = answer;
     EXPECT_EQ(fortytwo, 42);
-    std::vector<BrainFloat16> vec;
+    std::vector<BFloat16> vec;
     for (float value : simple_values) {
-        BrainFloat16 b = value;
+        BFloat16 b = value;
         float recover = b;
         EXPECT_EQ(value, recover);
     }
-    BrainFloat16 b1 = 0x101;
+    BFloat16 b1 = 0x101;
     EXPECT_EQ(float(b1), 0x100);
-    BrainFloat16 b2 = 0x111;
+    BFloat16 b2 = 0x111;
     EXPECT_EQ(float(b2), 0x110);
 }
 
-TEST(BrainFloat16Test, with_nbostream) {
+TEST(BFloat16Test, with_nbostream) {
     nbostream buf;
-    for (BrainFloat16 value : simple_values) {
+    for (BFloat16 value : simple_values) {
         buf << value;
     }
     for (float value : simple_values) {
-        BrainFloat16 stored;
+        BFloat16 stored;
         buf >> stored;
         EXPECT_EQ(float(stored), value);
     }
 }
 
-TEST(BrainFloat16Test, constants_check) {
+TEST(BFloat16Test, constants_check) {
 	EXPECT_EQ(0x1.0p-7, (1.0/128.0));
 
 	float n_min = Limits::min();
@@ -66,9 +66,9 @@ TEST(BrainFloat16Test, constants_check) {
 	EXPECT_EQ(d_min, n_min / 128.0);
 	EXPECT_GT(eps, std::numeric_limits<float>::epsilon());
 
-	BrainFloat16 try_epsilon = 1.0f + eps;
+	BFloat16 try_epsilon = 1.0f + eps;
 	EXPECT_GT(try_epsilon.to_float(), 1.0f);
-	BrainFloat16 try_half_epsilon = 1.0f + (0.5f * eps);
+	BFloat16 try_half_epsilon = 1.0f + (0.5f * eps);
 	EXPECT_EQ(try_half_epsilon.to_float(), 1.0f);
 
 	EXPECT_LT(big, std::numeric_limits<float>::max());
@@ -81,18 +81,18 @@ TEST(BrainFloat16Test, constants_check) {
 	printf("bfloat16 lowest: %.20g (float has %.20g)\n", low, std::numeric_limits<float>::lowest());
 }
 
-TEST(BrainFloat16Test, traits_check) {
-        EXPECT_TRUE(std::is_trivially_constructible<BrainFloat16>::value);
-        EXPECT_TRUE(std::is_trivially_move_constructible<BrainFloat16>::value);
-        EXPECT_TRUE(std::is_trivially_default_constructible<BrainFloat16>::value);
-        EXPECT_TRUE((std::is_trivially_assignable<BrainFloat16,BrainFloat16>::value));
-        EXPECT_TRUE(std::is_trivially_move_assignable<BrainFloat16>::value);
-        EXPECT_TRUE(std::is_trivially_copy_assignable<BrainFloat16>::value);
-        EXPECT_TRUE(std::is_trivially_copyable<BrainFloat16>::value);
-        EXPECT_TRUE(std::is_trivially_destructible<BrainFloat16>::value);
-        EXPECT_TRUE(std::is_trivial<BrainFloat16>::value);
-        EXPECT_TRUE(std::is_swappable<BrainFloat16>::value);
-        EXPECT_TRUE(std::has_unique_object_representations<BrainFloat16>::value);
+TEST(BFloat16Test, traits_check) {
+        EXPECT_TRUE(std::is_trivially_constructible<BFloat16>::value);
+        EXPECT_TRUE(std::is_trivially_move_constructible<BFloat16>::value);
+        EXPECT_TRUE(std::is_trivially_default_constructible<BFloat16>::value);
+        EXPECT_TRUE((std::is_trivially_assignable<BFloat16,BFloat16>::value));
+        EXPECT_TRUE(std::is_trivially_move_assignable<BFloat16>::value);
+        EXPECT_TRUE(std::is_trivially_copy_assignable<BFloat16>::value);
+        EXPECT_TRUE(std::is_trivially_copyable<BFloat16>::value);
+        EXPECT_TRUE(std::is_trivially_destructible<BFloat16>::value);
+        EXPECT_TRUE(std::is_trivial<BFloat16>::value);
+        EXPECT_TRUE(std::is_swappable<BFloat16>::value);
+        EXPECT_TRUE(std::has_unique_object_representations<BFloat16>::value);
 }
 
 static std::string hexdump(const void *p, size_t sz) {
@@ -112,28 +112,28 @@ static std::string hexdump(const void *p, size_t sz) {
 }
 #define HEX_DUMP(arg) hexdump(&arg, sizeof(arg)).c_str()
 
-TEST(BrainFloat16Test, check_special_values) {
+TEST(BFloat16Test, check_special_values) {
     // we should not need to support HW without normal float support:
     EXPECT_TRUE(std::numeric_limits<float>::has_quiet_NaN);
     EXPECT_TRUE(std::numeric_limits<float>::has_signaling_NaN);
-    EXPECT_TRUE(std::numeric_limits<BrainFloat16>::has_quiet_NaN);
-    EXPECT_TRUE(std::numeric_limits<BrainFloat16>::has_signaling_NaN);
+    EXPECT_TRUE(std::numeric_limits<BFloat16>::has_quiet_NaN);
+    EXPECT_TRUE(std::numeric_limits<BFloat16>::has_signaling_NaN);
     std::feclearexcept(FE_ALL_EXCEPT);
     EXPECT_TRUE(std::fetestexcept(FE_INVALID) == 0);
     float f_inf = std::numeric_limits<float>::infinity();
     float f_neg = -f_inf;
     float f_qnan = std::numeric_limits<float>::quiet_NaN();
     float f_snan = std::numeric_limits<float>::signaling_NaN();
-    BrainFloat16 b_inf = std::numeric_limits<BrainFloat16>::infinity();
-    BrainFloat16 b_qnan = std::numeric_limits<BrainFloat16>::quiet_NaN();
-    BrainFloat16 b_snan = std::numeric_limits<BrainFloat16>::signaling_NaN();
-    BrainFloat16 b_from_f_inf = f_inf;
-    BrainFloat16 b_from_f_neg = f_neg;
-    BrainFloat16 b_from_f_qnan = f_qnan;
-    BrainFloat16 b_from_f_snan = f_snan;
-    EXPECT_EQ(memcmp(&b_inf, &b_from_f_inf, sizeof(BrainFloat16)), 0);
-    EXPECT_EQ(memcmp(&b_qnan, &b_from_f_qnan, sizeof(BrainFloat16)), 0);
-    EXPECT_EQ(memcmp(&b_snan, &b_from_f_snan, sizeof(BrainFloat16)), 0);
+    BFloat16 b_inf = std::numeric_limits<BFloat16>::infinity();
+    BFloat16 b_qnan = std::numeric_limits<BFloat16>::quiet_NaN();
+    BFloat16 b_snan = std::numeric_limits<BFloat16>::signaling_NaN();
+    BFloat16 b_from_f_inf = f_inf;
+    BFloat16 b_from_f_neg = f_neg;
+    BFloat16 b_from_f_qnan = f_qnan;
+    BFloat16 b_from_f_snan = f_snan;
+    EXPECT_EQ(memcmp(&b_inf, &b_from_f_inf, sizeof(BFloat16)), 0);
+    EXPECT_EQ(memcmp(&b_qnan, &b_from_f_qnan, sizeof(BFloat16)), 0);
+    EXPECT_EQ(memcmp(&b_snan, &b_from_f_snan, sizeof(BFloat16)), 0);
     printf("+inf float is '%s' / bf16 is '%s'\n", HEX_DUMP(f_inf), HEX_DUMP(b_from_f_inf));
     printf("-inf float is '%s' / bf16 is '%s'\n", HEX_DUMP(f_neg), HEX_DUMP(b_from_f_neg));
     printf("qNaN float is '%s' / bf16 is '%s'\n", HEX_DUMP(f_qnan), HEX_DUMP(b_from_f_qnan));
