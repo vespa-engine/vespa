@@ -10,6 +10,7 @@ import org.junit.Test;
 import java.util.Arrays;
 import java.util.List;
 
+import static com.yahoo.vespa.model.search.NodeResourcesTuning.reservedMemoryGb;
 import static org.junit.Assert.assertEquals;
 import static com.yahoo.vespa.model.search.NodeResourcesTuning.MB;
 import static com.yahoo.vespa.model.search.NodeResourcesTuning.GB;
@@ -19,9 +20,8 @@ import static com.yahoo.vespa.model.search.NodeResourcesTuning.GB;
  */
 public class NodeResourcesTuningTest {
 
-    private static double delta = 0.00001;
-    private static double combinedFactor = 1 - 17.0/100;
-    private static int reservedMemoryGb = (int)NodeResourcesTuning.reservedMemoryGb;
+    private static final double delta = 0.00001;
+    private static final double combinedFactor = 1 - 17.0/100;
 
     @Test
     public void require_that_hwinfo_disk_size_is_set() {
@@ -36,11 +36,11 @@ public class NodeResourcesTuningTest {
     }
 
     @Test
-    public void reserved_memory_on_content_node_is_1_gb() {
-        assertEquals(1.0, NodeResourcesTuning.reservedMemoryGb, delta);
+    public void reserved_memory_on_content_node_is_0_5_gb() {
+        assertEquals(0.5, reservedMemoryGb, delta);
     }
 
-    private ProtonConfig getProtonMemoryConfig(List<Pair<String, String>> sdAndMode, int gb, int redundancy, int searchableCopies) {
+    private ProtonConfig getProtonMemoryConfig(List<Pair<String, String>> sdAndMode, double gb, int redundancy, int searchableCopies) {
         ProtonConfig.Builder builder = new ProtonConfig.Builder();
         for (Pair<String, String> sdMode : sdAndMode) {
             builder.documentdb.add(new ProtonConfig.Documentdb.Builder()
@@ -206,11 +206,11 @@ public class NodeResourcesTuningTest {
         return getConfig(new FlavorsConfig.Flavor.Builder().minDiskAvailableGb(diskGb), false);
     }
 
-    private static ProtonConfig configFromMemorySetting(int memoryGb, boolean combined) {
+    private static ProtonConfig configFromMemorySetting(double memoryGb, boolean combined) {
         return getConfig(new FlavorsConfig.Flavor.Builder().minMainMemoryAvailableGb(memoryGb), combined);
     }
 
-    private static ProtonConfig configFromMemorySetting(int memoryGb, ProtonConfig.Builder builder, int redundancy, int searchableCopies) {
+    private static ProtonConfig configFromMemorySetting(double memoryGb, ProtonConfig.Builder builder, int redundancy, int searchableCopies) {
         return getConfig(new FlavorsConfig.Flavor.Builder()
                                  .minMainMemoryAvailableGb(memoryGb), builder, redundancy, searchableCopies, false);
     }
