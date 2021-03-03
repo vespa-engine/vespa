@@ -20,8 +20,7 @@ public class AutoscalingMetrics {
                                      "mem.util",
                                      "disk.util",
                                      "application_generation",
-                                     "in_service",
-                                     "queries.rate"));
+                                     "in_service"));
     }
 
     private static Set<Metric> metrics(String ... metrics) {
