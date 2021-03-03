@@ -16,6 +16,7 @@ import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
@@ -425,6 +426,7 @@ public class DynamicProvisioningMaintainerTest {
         DynamicProvisioningTester dynamicProvisioningTester = new DynamicProvisioningTester(cloud, new MockNameResolver().mockAnyLookup());
         ProvisioningTester tester = dynamicProvisioningTester.provisioningTester;
         dynamicProvisioningTester.hostProvisioner.overrideHostFlavor("default");
+        dynamicProvisioningTester.flagSource.withBooleanFlag(Flags.DYNAMIC_CONFIG_SERVER_PROVISIONING.id(), true);
 
         // Initial config server hosts are provisioned manually
         ApplicationId hostApp = ApplicationId.from("hosted-vespa", "configserver-host", "default");
@@ -555,6 +557,7 @@ public class DynamicProvisioningMaintainerTest {
                                                                                      RegionName.defaultName()))
                                                                       .flavors(flavors.getFlavors())
                                                                       .nameResolver(nameResolver)
+                                                                      .flagSource(flagSource)
                                                                       .hostProvisioner(hostProvisioner)
                                                                       .build();
             this.nodeRepository = provisioningTester.nodeRepository();
