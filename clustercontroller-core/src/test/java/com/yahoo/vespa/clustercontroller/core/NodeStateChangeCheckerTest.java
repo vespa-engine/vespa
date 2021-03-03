@@ -273,7 +273,7 @@ public class NodeStateChangeCheckerTest {
                 nodeStorage, defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
-        assertThat(result.getReason(), is("Distributor node (0) has not reported any cluster state version yet."));
+        assertThat(result.getReason(), is("Distributor node 0 has not reported any cluster state version yet."));
     }
 
     private NodeStateChangeChecker.Result transitionToSameState(State state, String oldDescription, String newDescription) {
