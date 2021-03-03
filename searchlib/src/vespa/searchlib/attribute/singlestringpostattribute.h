@@ -43,7 +43,6 @@ private:
     using Dictionary = EnumPostingTree;
     using DocId = typename SingleValueStringAttributeT<B>::DocId;
     using EnumIndex = typename SingleValueStringAttributeT<B>::EnumIndex;
-    using FoldedComparatorType = typename EnumStore::FoldedComparatorType;
     using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using PostingList = typename PostingParent::PostingList;
     using PostingMap = typename PostingParent::PostingMap;

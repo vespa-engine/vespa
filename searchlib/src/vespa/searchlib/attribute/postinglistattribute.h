@@ -50,7 +50,6 @@ protected:
     PostingList _postingList;
     AttributeVector &_attr;
     EnumPostingTree &_dict;
-    IEnumStore      &_esb;
 
     PostingListAttributeBase(AttributeVector &attr, IEnumStore &enumStore);
     virtual ~PostingListAttributeBase();
