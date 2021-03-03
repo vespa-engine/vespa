@@ -75,7 +75,7 @@ public abstract class InfraApplication implements InfraApplicationApi {
 
     @Override
     public ClusterSpec getClusterSpecWithVersion(Version version) {
-        return ClusterSpec.request(clusterSpecType, clusterSpecId).vespaVersion(version).exclusive(true).build();
+        return ClusterSpec.request(clusterSpecType, clusterSpecId).vespaVersion(version).build();
     }
 
     public ClusterSpec.Type getClusterSpecType() {

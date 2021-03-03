@@ -21,7 +21,6 @@ public abstract class ConfigServerLikeApplication extends InfraApplication {
         return ClusterSpec.request(getClusterSpecType(), getClusterSpecId())
                           .vespaVersion(version)
                           .stateful(true)
-                          .exclusive(true)
                           .build();
     }
 
