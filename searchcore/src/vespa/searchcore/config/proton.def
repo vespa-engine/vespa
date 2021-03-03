@@ -363,7 +363,7 @@ lidspacecompaction.interval double default=10.0
 ##
 ## When considering compaction the lid bloat is calculated as (docIdLimit - numDocs).
 ## The lid bloat must be >= allowedlidbloat before considering compaction.
-lidspacecompaction.allowedlidbloat int default=1000
+lidspacecompaction.allowedlidbloat int default=1
 
 ## The allowed lid bloat factor (relative) before considering lid space compaction.
 ##
