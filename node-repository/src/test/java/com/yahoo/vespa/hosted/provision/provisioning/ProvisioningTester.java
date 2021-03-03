@@ -230,6 +230,7 @@ public class ProvisioningTester {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(nodeType.toString()))
                                          .vespaVersion(version)
                                          .stateful(nodeType == NodeType.config || nodeType == NodeType.controller)
+                                         .exclusive(nodeType != NodeType.tenant)
                                          .build();
         Capacity capacity = Capacity.fromRequiredNodeType(nodeType);
         List<HostSpec> hostSpecs = prepare(application, cluster, capacity);

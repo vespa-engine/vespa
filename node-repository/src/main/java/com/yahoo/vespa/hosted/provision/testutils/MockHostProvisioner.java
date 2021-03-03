@@ -58,6 +58,10 @@ public class MockHostProvisioner implements HostProvisioner {
         Flavor hostFlavor = this.hostFlavor.orElseGet(() -> flavors.stream().filter(f -> compatible(f, resources))
                                                                    .findFirst()
                                                                    .orElseThrow(() -> new OutOfCapacityException("No host flavor matches " + resources)));
+        Optional<ApplicationId> exclusiveTo = Optional.empty();
+        if (sharing == HostSharing.exclusive) {
+            exclusiveTo = Optional.of(applicationId);
+        }
         List<ProvisionedHost> hosts = new ArrayList<>();
         for (int index : provisionIndices) {
             String hostHostname = hostType == NodeType.host ? "hostname" + index : hostType.name() + index;
@@ -65,7 +69,7 @@ public class MockHostProvisioner implements HostProvisioner {
                                           hostHostname,
                                           hostFlavor,
                                           hostType,
-                                          Optional.empty(),
+                                          exclusiveTo,
                                           createAddressesForHost(hostType, hostFlavor, index),
                                           resources,
                                           osVersion));
