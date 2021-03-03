@@ -19,6 +19,7 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
@@ -104,7 +105,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         else {
             groups = 1; // type request with multiple groups is not supported
             resources = requested.minResources().nodeResources();
-            nodeSpec = NodeSpec.from(requested.type(), cluster.isExclusive());
+            nodeSpec = NodeSpec.from(requested.type());
         }
         return asSortedHosts(preparer.prepare(application, cluster, nodeSpec, groups), resources);
     }
