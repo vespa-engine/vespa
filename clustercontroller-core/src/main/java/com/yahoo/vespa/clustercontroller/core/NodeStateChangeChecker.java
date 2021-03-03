@@ -334,13 +334,13 @@ public class NodeStateChangeChecker {
         for (DistributorNodeInfo distributorNodeInfo : clusterInfo.getDistributorNodeInfo()) {
             Integer distributorClusterStateVersion = distributorNodeInfo.getHostInfo().getClusterStateVersionOrNull();
             if (distributorClusterStateVersion == null) {
-                return Result.createDisallowed("Distributor node (" + distributorNodeInfo.getNodeIndex()
-                        + ") has not reported any cluster state version yet.");
+                return Result.createDisallowed("Distributor node " + distributorNodeInfo.getNodeIndex()
+                                               + " has not reported any cluster state version yet.");
             } else if (distributorClusterStateVersion != clusterStateVersion) {
-                return Result.createDisallowed("Distributor node (" + distributorNodeInfo.getNodeIndex()
-                        + ") does not report same version ("
-                        + distributorNodeInfo.getHostInfo().getClusterStateVersionOrNull()
-                        + ") as fleetcontroller has (" + clusterStateVersion + ")");
+                return Result.createDisallowed("Distributor node " + distributorNodeInfo.getNodeIndex()
+                                               + " does not report same version ("
+                                               + distributorNodeInfo.getHostInfo().getClusterStateVersionOrNull()
+                                               + ") as fleetcontroller (" + clusterStateVersion + ")");
             }
 
             List<StorageNode> storageNodes = distributorNodeInfo.getHostInfo().getDistributor().getStorageNodes();
