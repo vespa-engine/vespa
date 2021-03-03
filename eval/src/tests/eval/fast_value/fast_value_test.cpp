@@ -159,9 +159,8 @@ const std::vector<GenSpec> layouts = {
 TEST(FastValueBuilderFactoryTest, fast_values_can_be_copied) {
     auto factory = FastValueBuilderFactory::get();
     for (const auto &layout: layouts) {
-        for (TensorSpec expect : { layout.cpy().cells_float(),
-                                   layout.cpy().cells_double() })
-        {
+        for (CellType ct : CellTypeUtils::list_types()) {
+            TensorSpec expect = layout.cpy().cells(ct);
             std::unique_ptr<Value> value = value_from_spec(expect, factory);
             std::unique_ptr<Value> copy = factory.copy(*value);
             TensorSpec actual = spec_from_value(*copy);
