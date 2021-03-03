@@ -63,6 +63,7 @@ public enum RoleDefinition {
                   Policy.tenantManager,
                   Policy.tenantDelete,
                   Policy.applicationManager,
+                  Policy.keyRevokal,
                   Policy.paymentInstrumentRead,
                   Policy.paymentInstrumentUpdate,
                   Policy.paymentInstrumentDelete,
