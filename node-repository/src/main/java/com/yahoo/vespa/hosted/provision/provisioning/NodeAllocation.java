@@ -436,9 +436,9 @@ class NodeAllocation {
     }
 
     private static Integer parseIndex(String hostname) {
-        // Node index is the first number appearing in the hostname, before the first dot
+        // Node index is the first number appearing in the hostname
         try {
-            return Integer.parseInt(hostname.replaceFirst("^\\D+(\\d+)\\..*", "$1"));
+            return Integer.parseInt(hostname.replaceFirst("^\\D+(\\d+).*", "$1"));
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Could not parse index from hostname '" + hostname + "'", e);
         }

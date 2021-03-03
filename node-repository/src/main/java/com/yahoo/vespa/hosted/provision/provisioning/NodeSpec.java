@@ -77,8 +77,8 @@ public interface NodeSpec {
         return new CountNodeSpec(nodeCount, resources, exclusive, canFail);
     }
 
-    static NodeSpec from(NodeType type) {
-        return new TypeNodeSpec(type);
+    static NodeSpec from(NodeType type, boolean exclusive) {
+        return new TypeNodeSpec(type, exclusive);
     }
 
     /** A node spec specifying a node count and a flavor */
@@ -174,16 +174,18 @@ public interface NodeSpec {
         private static final Map<NodeType, Integer> WANTED_NODE_COUNT = Map.of(NodeType.config, 3);
 
         private final NodeType type;
+        private final boolean exclusive;
 
-        public TypeNodeSpec(NodeType type) {
+        public TypeNodeSpec(NodeType type, boolean exclusive) {
             this.type = type;
+            this.exclusive = exclusive;
         }
 
         @Override
         public NodeType type() { return type; }
 
         @Override
-        public boolean isExclusive() { return false; }
+        public boolean isExclusive() { return exclusive; }
 
         @Override
         public boolean isCompatible(Flavor flavor, NodeFlavors flavors) { return true; }
