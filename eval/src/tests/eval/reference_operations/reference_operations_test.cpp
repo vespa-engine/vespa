@@ -168,7 +168,7 @@ TEST(ReferenceCreateTest, simple_create_works) {
         .add({{"x",1},{"y","foo"}}, 1.5)
         .add({{"x",0},{"y","bar"}}, 5.0)
         .add({{"x",1},{"y","bar"}}, 4.0);
-    EXPECT_EQ(output, expect);
+    EXPECT_EQ(output, expect.normalize());
 }
 
 //-----------------------------------------------------------------------------
@@ -181,7 +181,7 @@ TEST(ReferenceJoinTest, join_numbers) {
 }
 
 TEST(ReferenceJoinTest, join_mixed_tensors) {
-    const auto expect_sq = mixed_5d_some_cells(true);
+    const auto expect_sq = mixed_5d_some_cells(true).normalize();
     auto a = mixed_5d_some_cells(false);
     auto b = TensorSpec("double").add({}, 2.0);
     auto output = ReferenceOperations::join(a, b, operation::Pow::f);
@@ -189,7 +189,7 @@ TEST(ReferenceJoinTest, join_mixed_tensors) {
     output = ReferenceOperations::join(a, a, operation::Mul::f);        
     EXPECT_EQ(output, expect_sq);
     auto c = ReferenceOperations::join(output, a, operation::Div::f);
-    EXPECT_EQ(c, a);
+    EXPECT_EQ(c, a.normalize());
     b = dense_1d_all_two();
     output = ReferenceOperations::join(a, b, operation::Pow::f);
     EXPECT_EQ(output, expect_sq);
@@ -211,7 +211,7 @@ TEST(ReferenceMapTest, map_numbers) {
 TEST(ReferenceMapTest, map_dense_tensor) {
     auto input = dense_2d_some_cells(false);
     auto output = ReferenceOperations::map(input, operation::Square::f);
-    EXPECT_EQ(output, dense_2d_some_cells(true));
+    EXPECT_EQ(output, dense_2d_some_cells(true).normalize());
 }
 
 TEST(ReferenceMapTest, map_sparse_tensor) {
@@ -223,7 +223,7 @@ TEST(ReferenceMapTest, map_sparse_tensor) {
 TEST(ReferenceMapTest, map_mixed_tensor) {
     auto input = mixed_5d_some_cells(false);
     auto output = ReferenceOperations::map(input, operation::Square::f);
-    EXPECT_EQ(output, mixed_5d_some_cells(true));
+    EXPECT_EQ(output, mixed_5d_some_cells(true).normalize());
 }
 
 //-----------------------------------------------------------------------------
@@ -242,7 +242,7 @@ TEST(ReferenceMergeTest, simple_mixed_merge) {
         .add({{"a", 1}, {"b", 0}, {"c", "bar"}, {"d", 0}, {"e", "qux"}}, 42.0)
         .add({{"a", 2}, {"b", 0}, {"c", "qux"}, {"d", 1}, {"e", "foo"}}, 6.0)
         .add({{"a", 0}, {"b", 0}, {"c", "new"}, {"d", 0}, {"e", "new"}}, 1.0);
-    EXPECT_EQ(output, expect);
+    EXPECT_EQ(output, expect.normalize());
 }
 
 //-----------------------------------------------------------------------------
@@ -272,7 +272,7 @@ TEST(ReferencePeekTest, verbatim_labels) {
     spec.emplace("e", "nomatch");
     // peek all mapped dimensions, non-matching verbatim labels
     output = ReferenceOperations::peek(spec, {input});
-    expect = TensorSpec("double");
+    expect = TensorSpec("double").normalize();
     EXPECT_EQ(output, expect);    
 
     input = dense_2d_some_cells(false);
@@ -283,7 +283,7 @@ TEST(ReferencePeekTest, verbatim_labels) {
     expect = TensorSpec("tensor(d[5])")
         .add({{"d", 2}}, 3.0)
         .add({{"d", 0}}, 5.0);
-    EXPECT_EQ(output, expect);
+    EXPECT_EQ(output, expect.normalize());
     spec.emplace("d", TensorSpec::Label(2));
     // peek all indexed dimensions, verbatim labels
     output = ReferenceOperations::peek(spec, {input});    
@@ -307,7 +307,7 @@ TEST(ReferencePeekTest, labels_from_children) {
     auto expect = TensorSpec("tensor(d[5])")
         .add({{"d", 2}}, 3.0)
         .add({{"d", 0}}, 5.0);
-    EXPECT_EQ(output, expect);
+    EXPECT_EQ(output, expect.normalize());
     spec.emplace("d", size_t(3));
     // peek 2 indexed dimensions (both children)
     output = ReferenceOperations::peek(spec, children);
@@ -317,13 +317,13 @@ TEST(ReferencePeekTest, labels_from_children) {
     spec.emplace("a", size_t(1));
     // peek 1 indexed dimension, child (evaluating to 42.0)
     output = ReferenceOperations::peek(spec, children);
-    expect = TensorSpec("tensor(d[5])");
+    expect = TensorSpec("tensor(d[5])").normalize();
     EXPECT_EQ(output, expect);
     spec.clear();
     spec.emplace("a", size_t(5));
     // peek 1 indexed dimension, child (evaluating to -2.0)
     output = ReferenceOperations::peek(spec, children);
-    expect = TensorSpec("tensor(d[5])");
+    expect = TensorSpec("tensor(d[5])").normalize();
     EXPECT_EQ(output, expect);
 
     input = TensorSpec("tensor(c{},e{})")
@@ -438,7 +438,7 @@ TEST(ReferenceReduceTest, various_reductions_of_big_mixed_tensor) {
         .add({{"b", 0}, {"c", "foo"}, {"d", 3}, {"e", "foo"}},  11.0)
         .add({{"b", 0}, {"c", "foo"}, {"d", 4}, {"e", "foo"}},  2.0)
         .add({{"b", 0}, {"c", "qux"}, {"d", 1}, {"e", "foo"}},  14.0);
-    EXPECT_EQ(output, expect);
+    EXPECT_EQ(output, expect.normalize());
 
     output = ReferenceOperations::reduce(input, Aggr::SUM, {"a", "b", "d"});
     expect = TensorSpec("tensor(c{},e{})")
@@ -464,7 +464,7 @@ TEST(ReferenceReduceTest, various_reductions_of_big_mixed_tensor) {
         .add({{"a", 2}, {"b", 0}, {"d", 2}, {"e", "bar"}},  13.0)
         .add({{"a", 2}, {"b", 0}, {"d", 3}, {"e", "bar"}},  12.0)
         .add({{"a", 2}, {"b", 0}, {"d", 3}, {"e", "foo"}},  11.0);
-    EXPECT_EQ(output, expect);
+    EXPECT_EQ(output, expect.normalize());
     
     output = ReferenceOperations::reduce(input, Aggr::SUM, {"a", "c"});
     expect = TensorSpec("tensor(b[1],d[5],e{})")
@@ -477,7 +477,7 @@ TEST(ReferenceReduceTest, various_reductions_of_big_mixed_tensor) {
         .add({{"b", 0}, {"d", 3}, {"e", "bar"}},  12.0)
         .add({{"b", 0}, {"d", 3}, {"e", "foo"}},  11.0)
         .add({{"b", 0}, {"d", 4}, {"e", "foo"}},  5.0);
-    EXPECT_EQ(output, expect);
+    EXPECT_EQ(output, expect.normalize());
 
     output = ReferenceOperations::reduce(input, Aggr::SUM, {"a", "c", "d"});
     expect = TensorSpec("tensor(b[1],e{})")
@@ -506,7 +506,7 @@ TEST(ReferenceRenameTest, swap_and_rename_dimensions) {
         .add({{"e", 0}, {"x", 0}, {"b", "foo"}, {"d", 4}, {"a", "foo"}}, 4.0)
         .add({{"e", 1}, {"x", 0}, {"b", "bar"}, {"d", 0}, {"a", "qux"}}, 5.0)
         .add({{"e", 2}, {"x", 0}, {"b", "qux"}, {"d", 1}, {"a", "foo"}}, 6.0);
-    EXPECT_EQ(output, expect);
+    EXPECT_EQ(output, expect.normalize());
 }
 
 //-----------------------------------------------------------------------------
