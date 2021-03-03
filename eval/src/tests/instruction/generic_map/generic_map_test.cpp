@@ -43,9 +43,8 @@ TensorSpec perform_generic_map(const TensorSpec &a, map_fun_t func, const ValueB
 
 void test_generic_map_with(const ValueBuilderFactory &factory) {
     for (const auto &layout : map_layouts) {
-        for (TensorSpec lhs : { layout.cpy().cells_float(),
-                                layout.cpy().cells_double() })
-        {
+        for (CellType ct : CellTypeUtils::list_types()) {
+            TensorSpec lhs = layout.cpy().cells(ct);
             for (auto func : {operation::Floor::f, operation::Fabs::f, operation::Square::f, operation::Inv::f}) {
                 SCOPED_TRACE(fmt("\n===\nLHS: %s\n===\n", lhs.to_string().c_str()));
                 auto expect = ReferenceOperations::map(lhs, func);
