@@ -131,9 +131,11 @@ vespa_define_module(
     src/tests/tutorial/threads
     src/tests/typify
     src/tests/util/bfloat16
+    src/tests/util/file_area_freelist
     src/tests/util/generationhandler
     src/tests/util/generationhandler_stress
     src/tests/util/md5
+    src/tests/util/mmap_file_allocator
     src/tests/util/mmap_file_allocator_factory
     src/tests/util/rcuvector
     src/tests/util/reusable_set
