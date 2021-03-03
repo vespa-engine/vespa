@@ -8,22 +8,21 @@
 
 namespace vespalib::eval::value_type {
 
-std::optional<CellType> cell_type_from_name(const vespalib::string &name) {
-    if (name == "double") {
-        return CellType::DOUBLE;
-    } else if (name == "float") {
-        return CellType::FLOAT;
-    } else {
-        return std::nullopt;
-    }
-}
-
 vespalib::string cell_type_to_name(CellType cell_type) {
     switch (cell_type) {
     case CellType::DOUBLE: return "double";
     case CellType::FLOAT: return "float";
     }
     abort();
+}
+
+std::optional<CellType> cell_type_from_name(const vespalib::string &name) {
+    for (CellType t : CellTypeUtils::list_types()) {
+        if (name == cell_type_to_name(t)) {
+            return t;
+        }
+    }
+    return std::nullopt;
 }
 
 namespace {
