@@ -142,9 +142,8 @@ TEST(BFloat16Test, check_special_values) {
     double d_neg = b_from_f_neg;
     double d_qnan = b_qnan;
     EXPECT_TRUE(std::fetestexcept(FE_INVALID) == 0);
-    // float->double conversion of signaling NaN:
     double d_snan = b_snan;
-    EXPECT_TRUE(std::fetestexcept(FE_INVALID) != 0);
+    // float->double conversion of signaling NaN may trigger
     std::feclearexcept(FE_ALL_EXCEPT);
     EXPECT_TRUE(std::fetestexcept(FE_INVALID) == 0);
     EXPECT_EQ(d_inf, std::numeric_limits<double>::infinity());
