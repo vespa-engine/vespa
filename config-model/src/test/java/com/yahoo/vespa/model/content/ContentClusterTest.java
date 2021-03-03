@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.content;
 
-import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -46,11 +45,8 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.function.Function;
-import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
-import static java.util.stream.Collectors.toSet;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
@@ -255,7 +251,7 @@ public class ContentClusterTest extends ContentBaseTest {
         List<String> sds = ApplicationPackageUtils.generateSchemas("type1", "type2");
         VespaModel model = new VespaModelCreatorWithMockPkg(null, xml, sds).create();
         assertEquals(2, model.getContentClusters().get("bar").getDocumentDefinitions().size());
-        ContainerCluster cluster = model.getAdmin().getClusterControllers();
+        ContainerCluster<?> cluster = model.getAdmin().getClusterControllers();
         assertEquals(3, cluster.getContainers().size());
     }
 
@@ -305,7 +301,7 @@ public class ContentClusterTest extends ContentBaseTest {
         VespaModel model = createEnd2EndOneNode(new TestProperties());
 
         assertEquals(1, model.getContentClusters().get("storage").getDocumentDefinitions().size());
-        ContainerCluster cluster = model.getAdmin().getClusterControllers();
+        ContainerCluster<?> cluster = model.getAdmin().getClusterControllers();
         assertEquals(1, cluster.getContainers().size());
     }
 
@@ -399,8 +395,7 @@ public class ContentClusterTest extends ContentBaseTest {
                 "</content>"
             );
             fail("no exception thrown");
-        } catch (Exception e) {
-        }
+        } catch (Exception e) { /* ignore */ }
     }
 
     @Test
@@ -420,8 +415,7 @@ public class ContentClusterTest extends ContentBaseTest {
                 "</content>"
             );
             fail("no exception thrown");
-        } catch (Exception e) {
-        }
+        } catch (Exception e) { /* ignore */ }
     }
 
     FleetcontrollerConfig getFleetControllerConfig(String xml) {
@@ -1027,11 +1021,8 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(0.1, resolveMaxDeadBytesRatio(0.1), 1e-5);
     }
 
-    void assertZookeeperServerImplementation(boolean reconfigurable, String expectedClassName) {
-        VespaModel model = createEnd2EndOneNode(
-                new TestProperties()
-                        .reconfigurableZookeeperServer(reconfigurable)
-                        .setMultitenant(true));
+    void assertZookeeperServerImplementation(String expectedClassName) {
+        VespaModel model = createEnd2EndOneNode(new TestProperties().setMultitenant(true));
 
         ContentCluster cc = model.getContentClusters().get("storage");
         for (ClusterControllerContainer c : cc.getClusterControllers().getContainers()) {
@@ -1040,19 +1031,14 @@ public class ContentClusterTest extends ContentBaseTest {
             assertEquals(1, new ComponentsConfig(builder).components().stream()
                     .filter(component -> component.classId().equals(expectedClassName))
                     .count());
-
-            var zBuilder = new ZookeeperServerConfig.Builder();
-            c.getConfig(zBuilder);
-            assertEquals(reconfigurable, new ZookeeperServerConfig(zBuilder).dynamicReconfiguration());
         }
     }
 
     @Test
-    public void reconfigurableZookeeperServerForClusterController() {
-        assertZookeeperServerImplementation(false, "com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl");
-        assertZookeeperServerImplementation(true, "com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer");
-        assertZookeeperServerImplementation(true, "com.yahoo.vespa.zookeeper.Reconfigurer");
-        assertZookeeperServerImplementation(true, "com.yahoo.vespa.zookeeper.VespaZooKeeperAdminImpl");
+    public void reconfigurableZookeeperServerComponentsForClusterController() {
+        assertZookeeperServerImplementation("com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer");
+        assertZookeeperServerImplementation("com.yahoo.vespa.zookeeper.Reconfigurer");
+        assertZookeeperServerImplementation("com.yahoo.vespa.zookeeper.VespaZooKeeperAdminImpl");
     }
 
     private int resolveMaxInhibitedGroupsConfigWithFeatureFlag(int maxGroups) {
