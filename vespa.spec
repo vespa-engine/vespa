@@ -18,7 +18,7 @@
 %define _defattr_is_vespa_vespa 0
 
 Name:           vespa
-Version:        _VESPA_VERSION_
+Version:        7.368.3
 Release:        1%{?dist}
 Summary:        Vespa - The open big data serving engine
 Group:          Applications/Databases
