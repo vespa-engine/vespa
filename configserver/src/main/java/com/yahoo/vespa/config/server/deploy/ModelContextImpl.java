@@ -167,7 +167,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useAccessControlTlsHandshakeClientAuth;
         private final boolean useAsyncMessageHandlingOnSchedule;
         private final double feedConcurrency;
-        private final boolean reconfigurableZookeeperServer;
         private final boolean useBucketExecutorForLidSpaceCompact;
         private final boolean useBucketExecutorForBucketMove;
         private final boolean enableFeedBlockInDistributor;
@@ -192,7 +191,6 @@ public class ModelContextImpl implements ModelContext {
             this.useAccessControlTlsHandshakeClientAuth = flagValue(source, appId, Flags.USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION);
             this.useAsyncMessageHandlingOnSchedule = flagValue(source, appId, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
             this.feedConcurrency = flagValue(source, appId, Flags.FEED_CONCURRENCY);
-            this.reconfigurableZookeeperServer = flagValue(source, appId, Flags.RECONFIGURABLE_ZOOKEEPER_SERVER_FOR_CLUSTER_CONTROLLER);
             this.useBucketExecutorForLidSpaceCompact = flagValue(source, appId, Flags.USE_BUCKET_EXECUTOR_FOR_LID_SPACE_COMPACT);
             this.useBucketExecutorForBucketMove = flagValue(source, appId, Flags.USE_BUCKET_EXECUTOR_FOR_BUCKET_MOVE);
             this.enableFeedBlockInDistributor = flagValue(source, appId, Flags.ENABLE_FEED_BLOCK_IN_DISTRIBUTOR);
@@ -217,7 +215,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
         @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
         @Override public double feedConcurrency() { return feedConcurrency; }
-        @Override public boolean reconfigurableZookeeperServer() { return reconfigurableZookeeperServer; }
         @Override public boolean useBucketExecutorForLidSpaceCompact() { return useBucketExecutorForLidSpaceCompact; }
         @Override public boolean useBucketExecutorForBucketMove() { return useBucketExecutorForBucketMove; }
         @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }

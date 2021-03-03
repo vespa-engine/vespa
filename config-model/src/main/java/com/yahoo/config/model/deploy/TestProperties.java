@@ -51,7 +51,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useAccessControlTlsHandshakeClientAuth;
     private boolean useAsyncMessageHandlingOnSchedule = false;
     private double feedConcurrency = 0.5;
-    private boolean reconfigurableZookeeperServer = false;
     private boolean useBucketExecutorForLidSpaceCompact;
     private boolean useBucketExecutorForBucketMove;
     private boolean enableFeedBlockInDistributor = false;
@@ -91,7 +90,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
     @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
     @Override public double feedConcurrency() { return feedConcurrency; }
-    @Override public boolean reconfigurableZookeeperServer() { return reconfigurableZookeeperServer; }
     @Override public boolean useBucketExecutorForLidSpaceCompact() { return useBucketExecutorForLidSpaceCompact; }
     @Override public boolean useBucketExecutorForBucketMove() { return useBucketExecutorForBucketMove; }
     @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
@@ -197,11 +195,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties useAccessControlTlsHandshakeClientAuth(boolean useAccessControlTlsHandshakeClientAuth) {
         this.useAccessControlTlsHandshakeClientAuth = useAccessControlTlsHandshakeClientAuth;
-        return this;
-    }
-
-    public TestProperties reconfigurableZookeeperServer(boolean enabled) {
-        this.reconfigurableZookeeperServer = enabled;
         return this;
     }
 

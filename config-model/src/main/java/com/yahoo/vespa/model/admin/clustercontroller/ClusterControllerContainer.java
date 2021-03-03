@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.admin.clustercontroller;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentSpecification;
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -41,16 +40,13 @@ public class ClusterControllerContainer extends Container implements
     private static final ComponentSpecification REINDEXING_CONTROLLER_BUNDLE = new ComponentSpecification("clustercontroller-reindexer");
 
     private final Set<String> bundles = new TreeSet<>();
-    private final ModelContext.FeatureFlags featureFlags;
 
-    public ClusterControllerContainer(
-            AbstractConfigProducer<?> parent,
-            int index,
-            boolean runStandaloneZooKeeper,
-            DeployState deployState,
-            boolean retired) {
+    public ClusterControllerContainer(AbstractConfigProducer<?> parent,
+                                      int index,
+                                      boolean runStandaloneZooKeeper,
+                                      DeployState deployState,
+                                      boolean retired) {
         super(parent, "" + index, retired, index, deployState.isHosted());
-        this.featureFlags = deployState.featureFlags();
         addHandler("clustercontroller-status",
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StatusHandler",
                    "/clustercontroller-status/*",
@@ -70,7 +66,7 @@ public class ClusterControllerContainer extends Container implements
         addFileBundle("clustercontroller-utils");
         addFileBundle("zookeeper-server");
         configureReindexing();
-        configureZooKeeperServer(runStandaloneZooKeeper, deployState.featureFlags().reconfigurableZookeeperServer());
+        configureZooKeeperServer(runStandaloneZooKeeper);
     }
 
     @Override
@@ -88,16 +84,13 @@ public class ClusterControllerContainer extends Container implements
         return ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
     }
 
-    private void configureZooKeeperServer(boolean runStandaloneZooKeeper, boolean reconfigurable) {
-        if (reconfigurable && runStandaloneZooKeeper) {
+    private void configureZooKeeperServer(boolean runStandaloneZooKeeper) {
+        if (runStandaloneZooKeeper)
             ContainerModelBuilder.addReconfigurableZooKeeperServerComponents(this);
-        } else {
+        else
             addComponent("clustercontroller-zookeeper-server",
-                         runStandaloneZooKeeper
-                                 ? "com.yahoo.vespa.zookeeper.VespaZooKeeperServerImpl"
-                                 : "com.yahoo.vespa.zookeeper.DummyVespaZooKeeperServer",
+                         "com.yahoo.vespa.zookeeper.DummyVespaZooKeeperServer",
                          ZOOKEEPER_SERVER_BUNDLE);
-        }
     }
 
     private void addHandler(Handler<?> h, String path) {
@@ -148,7 +141,7 @@ public class ClusterControllerContainer extends Container implements
     @Override
     public void getConfig(ZookeeperServerConfig.Builder builder) {
         builder.myid(index());
-        builder.dynamicReconfiguration(featureFlags.reconfigurableZookeeperServer());
+        builder.dynamicReconfiguration(true);
     }
 
     @Override
