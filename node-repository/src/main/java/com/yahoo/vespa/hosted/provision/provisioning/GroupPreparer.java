@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
-import com.yahoo.lang.MutableInteger;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
@@ -90,19 +89,23 @@ public class GroupPreparer {
                                                           allocateOsRequirement);
 
             if (nodeRepository.zone().getCloud().dynamicProvisioning()) {
+                NodeType hostType = allocation.nodeType().hostType();
                 final Version osVersion;
                 if (allocateOsRequirement.equals("rhel8")) {
                     osVersion = new Version(8, Integer.MAX_VALUE /* always use latest 8 version */, 0);
                 } else {
-                    osVersion = nodeRepository.osVersions().targetFor(NodeType.host).orElse(Version.emptyVersion);
+                    osVersion = nodeRepository.osVersions().targetFor(hostType).orElse(Version.emptyVersion);
                 }
-
-                List<ProvisionedHost> provisionedHosts = allocation.getFulfilledDockerDeficit()
-                        .map(deficit -> hostProvisioner.get().provisionHosts(nodeRepository.database().getProvisionIndexes(deficit.getCount()),
-                                                                             deficit.getFlavor(),
-                                                                             application,
-                                                                             osVersion,
-                                                                             requestedNodes.isExclusive() ? HostSharing.exclusive : HostSharing.any))
+                List<ProvisionedHost> provisionedHosts = allocation.nodeDeficit()
+                        .map(deficit -> {
+                            HostSharing sharing = requestedNodes.isExclusive() ? HostSharing.exclusive : HostSharing.any;
+                            return hostProvisioner.get().provisionHosts(allocation.provisionIndices(deficit.getCount()),
+                                                                        hostType,
+                                                                        deficit.getFlavor(),
+                                                                        application,
+                                                                        osVersion,
+                                                                        sharing);
+                        })
                         .orElseGet(List::of);
 
                 // At this point we have started provisioning of the hosts, the first priority is to make sure that

@@ -33,7 +33,6 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.util.Collection;
-import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -1017,7 +1016,7 @@ public class ProvisioningTest {
 
     private Set<HostSpec> prepare(ApplicationId application, ProvisioningTester tester, ClusterSpec cluster, int nodeCount, int groups,
                                   boolean required, NodeResources nodeResources) {
-        if (nodeCount == 0) return Collections.emptySet(); // this is a shady practice
+        if (nodeCount == 0) return Set.of(); // this is a shady practice
         return new HashSet<>(tester.prepare(application, cluster, nodeCount, groups, required, nodeResources));
     }
 

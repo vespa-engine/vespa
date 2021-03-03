@@ -7,6 +7,7 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 
@@ -170,6 +171,8 @@ public interface NodeSpec {
     /** A node spec specifying a node type. This will accept all nodes of this type. */
     class TypeNodeSpec implements NodeSpec {
 
+        private static final Map<NodeType, Integer> WANTED_NODE_COUNT = Map.of(NodeType.config, 3);
+
         private final NodeType type;
 
         public TypeNodeSpec(NodeType type) {
@@ -204,14 +207,17 @@ public interface NodeSpec {
 
         @Override
         public int fulfilledDeficitCount(int count) {
-            return 0;
+            // If no wanted count is specified for this node type, then any count fulfills the deficit
+            return Math.max(0, WANTED_NODE_COUNT.getOrDefault(type, 0) - count);
         }
 
         @Override
         public NodeSpec fraction(int divisor) { return this; }
 
         @Override
-        public Optional<NodeResources> resources() { return Optional.empty(); }
+        public Optional<NodeResources> resources() {
+            return Optional.empty();
+        }
 
         @Override
         public boolean needsResize(Node node) { return false; }

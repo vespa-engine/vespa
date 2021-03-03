@@ -14,22 +14,20 @@ import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeResources.DiskSpeed;
 import com.yahoo.config.provision.NodeResources.StorageType;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
-import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner.HostSharing;
+import com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import org.junit.Test;
 
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -73,7 +71,7 @@ public class DynamicDockerProvisionTest {
 
         mockHostProvisioner(hostProvisioner, "large", 3, null); // Provision shared hosts
         prepareAndActivate(application1, clusterSpec("mycluster"), 4, 1, resources);
-        verify(hostProvisioner).provisionHosts(List.of(100, 101, 102, 103), resources, application1,
+        verify(hostProvisioner).provisionHosts(List.of(100, 101, 102, 103), NodeType.host, resources, application1,
                 Version.emptyVersion, HostSharing.any);
 
         // Total of 8 nodes should now be in node-repo, 4 active hosts and 4 active nodes
@@ -99,7 +97,7 @@ public class DynamicDockerProvisionTest {
         ApplicationId application3 = ProvisioningTester.applicationId();
         mockHostProvisioner(hostProvisioner, "large", 3, application3);
         prepareAndActivate(application3, clusterSpec("mycluster", true), 4, 1, resources);
-        verify(hostProvisioner).provisionHosts(List.of(104, 105, 106, 107), resources, application3,
+        verify(hostProvisioner).provisionHosts(List.of(104, 105, 106, 107), NodeType.host, resources, application3,
                 Version.emptyVersion, HostSharing.exclusive);
 
         // Total of 20 nodes should now be in node-repo, 8 active hosts and 12 active nodes
@@ -429,7 +427,7 @@ public class DynamicDockerProvisionTest {
         doAnswer(invocation -> {
             Flavor hostFlavor = tester.nodeRepository().flavors().getFlavorOrThrow(hostFlavorName);
             List<Integer> provisionIndexes = (List<Integer>) invocation.getArguments()[0];
-            NodeResources nodeResources = (NodeResources) invocation.getArguments()[1];
+            NodeResources nodeResources = (NodeResources) invocation.getArguments()[2];
 
             return provisionIndexes.stream()
                     .map(hostIndex -> {
@@ -451,52 +449,7 @@ public class DynamicDockerProvisionTest {
                         return provisionedHost;
                     })
                     .collect(Collectors.toList());
-        }).when(hostProvisioner).provisionHosts(any(), any(), any(), any(), any());
-    }
-
-    private static class MockHostProvisioner implements HostProvisioner {
-
-        private final List<Flavor> hostFlavors;
-        private final int memoryTaxGb;
-
-        public MockHostProvisioner(List<Flavor> hostFlavors, int memoryTaxGb) {
-            this.hostFlavors = List.copyOf(hostFlavors);
-            this.memoryTaxGb = memoryTaxGb;
-        }
-
-        @Override
-        public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources,
-                                                    ApplicationId applicationId, Version osVersion, HostSharing sharing) {
-            Optional<Flavor> hostFlavor = hostFlavors.stream().filter(f -> compatible(f, resources)).findFirst();
-            if (hostFlavor.isEmpty())
-                throw new OutOfCapacityException("No host flavor matches " + resources);
-            return provisionIndexes.stream()
-                                   .map(i -> new ProvisionedHost("id-" + i, "host-" + i, hostFlavor.get(), Optional.empty(),
-                                           List.of(new Address("host-" + i + "-1")), resources, osVersion))
-                                   .collect(Collectors.toList());
-        }
-
-        private boolean compatible(Flavor hostFlavor, NodeResources resources) {
-            NodeResources resourcesToVerify = resources.withMemoryGb(resources.memoryGb() - memoryTaxGb);
-
-            if (hostFlavor.resources().storageType() == NodeResources.StorageType.remote
-                && hostFlavor.resources().diskGb() >= resources.diskGb())
-                resourcesToVerify = resourcesToVerify.withDiskGb(hostFlavor.resources().diskGb());
-            if (hostFlavor.resources().bandwidthGbps() >= resources.bandwidthGbps())
-                resourcesToVerify = resourcesToVerify.withBandwidthGbps(hostFlavor.resources().bandwidthGbps());
-            return hostFlavor.resources().compatibleWith(resourcesToVerify);
-        }
-
-        @Override
-        public List<Node> provision(Node host, Set<Node> children) throws FatalProvisioningException {
-            throw new RuntimeException("Not implemented: provision");
-        }
-
-        @Override
-        public void deprovision(Node host) {
-            throw new RuntimeException("Not implemented: deprovision");
-        }
-
+        }).when(hostProvisioner).provisionHosts(any(), any(), any(), any(), any(), any());
     }
 
 }

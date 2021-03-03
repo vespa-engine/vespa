@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.collections.Pair;
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
@@ -21,17 +20,12 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.applications.Application;
-import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
-import com.yahoo.vespa.hosted.provision.provisioning.FatalProvisioningException;
-import com.yahoo.vespa.hosted.provision.provisioning.HostProvisioner;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
-import com.yahoo.vespa.hosted.provision.provisioning.ProvisionedHost;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 
 import java.time.Duration;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
@@ -39,6 +33,9 @@ import java.util.Set;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
+/**
+ * @author bratseth
+ */
 class AutoscalingTester {
 
     private final ProvisioningTester provisioningTester;
@@ -296,45 +293,14 @@ class AutoscalingTester {
 
     }
 
-    private class MockHostProvisioner implements HostProvisioner {
+    private class MockHostProvisioner extends com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner {
 
-        private final List<Flavor> hostFlavors;
-
-        public MockHostProvisioner(List<Flavor> hostFlavors) {
-            this.hostFlavors = hostFlavors;
+        public MockHostProvisioner(List<Flavor> flavors) {
+            super(flavors);
         }
 
         @Override
-        public List<ProvisionedHost> provisionHosts(List<Integer> provisionIndexes, NodeResources resources,
-                                                    ApplicationId applicationId, Version osVersion,
-                                                    HostSharing sharing) {
-            Flavor hostFlavor = hostFlavors.stream().filter(f -> matches(f, resources)).findAny()
-                                           .orElseThrow(() -> new RuntimeException("No flavor matching " + resources + ". Flavors: " + hostFlavors));
-
-            List<ProvisionedHost> hosts = new ArrayList<>();
-            for (int index : provisionIndexes) {
-                hosts.add(new ProvisionedHost("host" + index,
-                                              "hostname" + index,
-                                              hostFlavor,
-                                              Optional.empty(),
-                                              List.of(new Address("nodename" + index)),
-                                              resources,
-                                              osVersion));
-            }
-            return hosts;
-        }
-
-        @Override
-        public List<Node> provision(Node host, Set<Node> children) throws FatalProvisioningException {
-            throw new RuntimeException("Not implemented");
-        }
-
-        @Override
-        public void deprovision(Node host) {
-            throw new RuntimeException("Not implemented");
-        }
-
-        private boolean matches(Flavor flavor, NodeResources resources) {
+        public boolean compatible(Flavor flavor, NodeResources resources) {
             NodeResources flavorResources = hostResourcesCalculator.advertisedResourcesOf(flavor);
             if (flavorResources.storageType() == NodeResources.StorageType.remote
                 && resources.diskGb() <= flavorResources.diskGb())

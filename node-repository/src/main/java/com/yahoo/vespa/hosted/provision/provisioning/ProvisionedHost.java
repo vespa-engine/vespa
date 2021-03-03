@@ -27,20 +27,23 @@ public class ProvisionedHost {
     private final String id;
     private final String hostHostname;
     private final Flavor hostFlavor;
+    private final NodeType hostType;
     private final Optional<ApplicationId> exclusiveTo;
     private final List<Address> nodeAddresses;
     private final NodeResources nodeResources;
     private final Version osVersion;
 
-    public ProvisionedHost(String id, String hostHostname, Flavor hostFlavor, Optional<ApplicationId> exclusiveTo,
+    public ProvisionedHost(String id, String hostHostname, Flavor hostFlavor, NodeType hostType, Optional<ApplicationId> exclusiveTo,
                            List<Address> nodeAddresses, NodeResources nodeResources, Version osVersion) {
         this.id = Objects.requireNonNull(id, "Host id must be set");
         this.hostHostname = Objects.requireNonNull(hostHostname, "Host hostname must be set");
         this.hostFlavor = Objects.requireNonNull(hostFlavor, "Host flavor must be set");
+        this.hostType = Objects.requireNonNull(hostType, "Host type must be set");
         this.exclusiveTo = Objects.requireNonNull(exclusiveTo, "exclusiveTo must be set");
         this.nodeAddresses = validateNodeAddresses(nodeAddresses);
         this.nodeResources = Objects.requireNonNull(nodeResources, "Node resources must be set");
         this.osVersion = Objects.requireNonNull(osVersion, "OS version must be set");
+        if (!hostType.isHost()) throw new IllegalArgumentException(hostType + " is not a host");
     }
 
     private static List<Address> validateNodeAddresses(List<Address> nodeAddresses) {
@@ -54,7 +57,7 @@ public class ProvisionedHost {
     /** Generate {@link Node} instance representing the provisioned physical host */
     public Node generateHost() {
         Node.Builder builder = Node
-                .create(id, IP.Config.of(Set.of(), Set.of(), nodeAddresses), hostHostname, hostFlavor, NodeType.host)
+                .create(id, IP.Config.of(Set.of(), Set.of(), nodeAddresses), hostHostname, hostFlavor, hostType)
                 .status(Status.initial().withOsVersion(OsVersion.EMPTY.withCurrent(Optional.of(osVersion))));
         exclusiveTo.ifPresent(builder::exclusiveTo);
         return builder.build();
@@ -62,7 +65,7 @@ public class ProvisionedHost {
 
     /** Generate {@link Node} instance representing the node running on this physical host */
     public Node generateNode() {
-        return Node.reserve(Set.of(), nodeHostname(), hostHostname, nodeResources, NodeType.tenant).build();
+        return Node.reserve(Set.of(), nodeHostname(), hostHostname, nodeResources, hostType.childNodeType()).build();
     }
 
     public String getId() {

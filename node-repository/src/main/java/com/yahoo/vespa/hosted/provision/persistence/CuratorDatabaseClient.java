@@ -533,15 +533,15 @@ public class CuratorDatabaseClient {
                  .collect(Collectors.toUnmodifiableList());
     }
 
-    /** Returns a given number of unique provision indexes */
-    public List<Integer> getProvisionIndexes(int numIndexes) {
-        if (numIndexes < 1)
-            throw new IllegalArgumentException("numIndexes must be a positive integer, was " + numIndexes);
+    /** Returns a given number of unique provision indices */
+    public List<Integer> readProvisionIndices(int count) {
+        if (count < 1)
+            throw new IllegalArgumentException("count must be a positive integer, was " + count);
 
-        int firstProvisionIndex = (int) provisionIndexCounter.add(numIndexes) - numIndexes;
-        return IntStream.range(0, numIndexes)
-                .mapToObj(i -> firstProvisionIndex + i)
-                .collect(Collectors.toList());
+        int firstIndex = (int) provisionIndexCounter.add(count) - count;
+        return IntStream.range(0, count)
+                        .mapToObj(i -> firstIndex + i)
+                        .collect(Collectors.toList());
     }
 
     public CacheStats cacheStats() {

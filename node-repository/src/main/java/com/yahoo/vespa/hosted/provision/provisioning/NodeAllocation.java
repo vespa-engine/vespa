@@ -281,7 +281,7 @@ class NodeAllocation {
 
     /** Returns true if the content of this list is sufficient to meet the request */
     boolean fulfilled() {
-        return requestedNodes.fulfilledBy(accepted);
+        return requestedNodes.fulfilledBy(accepted());
     }
 
     /** Returns true if this allocation was already fulfilled and resulted in no new changes */
@@ -290,17 +290,49 @@ class NodeAllocation {
     }
 
     /**
-     * Returns {@link FlavorCount} describing the docker node deficit for the given {@link NodeSpec}.
+     * Returns {@link FlavorCount} describing the node deficit for the given {@link NodeSpec}.
      *
-     * @return empty if the requested spec is not count based or the requested flavor type is not docker or
-     *         the request is already fulfilled. Otherwise returns {@link FlavorCount} containing the required flavor
-     *         and node count to cover the deficit.
+     * @return empty if the requested spec is already fulfilled. Otherwise returns {@link FlavorCount} containing the
+     * flavor and node count required to cover the deficit.
      */
-    Optional<FlavorCount> getFulfilledDockerDeficit() {
-        return Optional.of(requestedNodes)
-                .filter(NodeSpec.CountNodeSpec.class::isInstance)
-                .map(spec -> new FlavorCount(spec.resources().get(), spec.fulfilledDeficitCount(accepted)))
-                .filter(flavorCount -> flavorCount.getCount() > 0);
+    Optional<FlavorCount> nodeDeficit() {
+        if (nodeType() != NodeType.config && nodeType() != NodeType.tenant) {
+            return Optional.empty(); // Requests for these node types never have a deficit
+        }
+        return Optional.of(new FlavorCount(requestedNodes.resources().orElseGet(NodeResources::unspecified),
+                                           requestedNodes.fulfilledDeficitCount(accepted())))
+                       .filter(flavorCount -> flavorCount.getCount() > 0);
+    }
+
+    /** Returns the indices to use when provisioning hosts for this */
+    List<Integer> provisionIndices(int count) {
+        if (count < 1) throw new IllegalArgumentException("Count must be positive");
+        NodeType hostType = requestedNodes.type().hostType();
+
+        // Tenant hosts have a continuously increasing index
+        if (hostType == NodeType.host) return nodeRepository.database().readProvisionIndices(count);
+
+        // Infrastructure hosts have fixed indices, starting at 1
+        Set<Integer> currentIndices = allNodes.nodeType(hostType)
+                                              .stream()
+                                              .map(Node::hostname)
+                                              // TODO(mpolden): Use cluster index instead of parsing hostname, once all
+                                              //                config servers have been replaced once and have switched
+                                              //                to compact indices
+                                              .map(NodeAllocation::parseIndex)
+                                              .collect(Collectors.toSet());
+        List<Integer> indices = new ArrayList<>(count);
+        for (int i = 1; indices.size() < count; i++) {
+            if (!currentIndices.contains(i)) {
+                indices.add(i);
+            }
+        }
+        return indices;
+    }
+
+    /** The node type this is allocating */
+    NodeType nodeType() {
+        return requestedNodes.type();
     }
 
     /**
@@ -367,6 +399,14 @@ class NodeAllocation {
                 .collect(Collectors.toList());
     }
 
+    /** Returns the number of nodes accepted this far */
+    private int accepted() {
+        if (nodeType() == NodeType.tenant) return accepted;
+        // Infrastructure nodes are always allocated by type. Count all nodes as accepted so that we never exceed
+        // the wanted number of nodes for the type.
+        return allNodes.nodeType(nodeType()).size();
+    }
+
     /** Prefer to retire nodes we want the least */
     private List<NodeCandidate> byRetiringPriority(Collection<NodeCandidate> candidates) {
         return candidates.stream().sorted(Comparator.reverseOrder()).collect(Collectors.toList());
@@ -393,6 +433,15 @@ class NodeAllocation {
 
         if (reasons.isEmpty()) return "";
         return ": Not enough nodes available due to " + String.join(", ", reasons);
+    }
+
+    private static Integer parseIndex(String hostname) {
+        // Node index is the first number appearing in the hostname, before the first dot
+        try {
+            return Integer.parseInt(hostname.replaceFirst("^\\D+(\\d+)\\..*", "$1"));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Could not parse index from hostname '" + hostname + "'", e);
+        }
     }
 
     static class FlavorCount {

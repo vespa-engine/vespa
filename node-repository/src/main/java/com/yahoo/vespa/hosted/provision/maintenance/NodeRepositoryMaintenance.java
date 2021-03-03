@@ -8,18 +8,20 @@ import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.InfraDeployer;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.autoscale.MetricsFetcher;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsFetcher;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 
 import java.time.Duration;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -52,7 +54,9 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         maintainers.add(new OperatorChangeApplicationMaintainer(deployer, metric, nodeRepository, defaults.operatorChangeRedeployInterval));
         maintainers.add(new ReservationExpirer(nodeRepository, defaults.reservationExpiry, metric));
         maintainers.add(new RetiredExpirer(nodeRepository, orchestrator, deployer, metric, defaults.retiredInterval, defaults.retiredExpiry));
-        maintainers.add(new InactiveExpirer(nodeRepository, defaults.inactiveExpiry, metric));
+        maintainers.add(new InactiveExpirer(nodeRepository, defaults.inactiveExpiry, Map.of(NodeType.config, defaults.inactiveConfigServerExpiry,
+                                                                                            NodeType.controller, defaults.inactiveControllerExpiry),
+                                            metric));
         maintainers.add(new FailedExpirer(nodeRepository, zone, defaults.failedExpirerInterval, metric));
         maintainers.add(new DirtyExpirer(nodeRepository, defaults.dirtyExpiry, metric));
         maintainers.add(new ProvisionedExpirer(nodeRepository, defaults.provisionedExpiry, metric));
@@ -99,6 +103,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         
         private final Duration reservationExpiry;
         private final Duration inactiveExpiry;
+        private final Duration inactiveConfigServerExpiry;
+        private final Duration inactiveControllerExpiry;
         private final Duration retiredExpiry;
         private final Duration failedExpirerInterval;
         private final Duration dirtyExpiry;
@@ -148,6 +154,8 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             retiredExpiry = Duration.ofDays(4); // give up migrating data after 4 days
             dedicatedClusterControllerMigratorInterval = zone.environment() == Environment.staging || zone.system().isCd() ? Duration.ofMinutes(3)
                                                                                                                            : Duration.ofHours(2);
+            inactiveConfigServerExpiry = Duration.ofMinutes(5);
+            inactiveControllerExpiry = Duration.ofMinutes(5);
 
             if (zone.environment()  == Environment.prod && ! zone.system().isCd()) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
