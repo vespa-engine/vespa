@@ -5,7 +5,7 @@ import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.SecretStoreProvider;
 import com.yahoo.restapi.StringResponse;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.application.TenantSecretStore;
+import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.vespa.config.server.http.SecretStoreValidator;
 
 /**

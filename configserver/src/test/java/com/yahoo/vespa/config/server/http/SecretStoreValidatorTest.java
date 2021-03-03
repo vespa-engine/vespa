@@ -6,7 +6,7 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.application.TenantSecretStore;
+import com.yahoo.config.model.api.TenantSecretStore;
 import org.junit.Rule;
 import org.junit.Test;
 

@@ -115,6 +115,8 @@ public interface ModelContext {
 
         default Quota quota() { return Quota.unlimited(); }
 
+        default List<TenantSecretStore> tenantSecretStores() { return List.of(); }
+
         /// Default setting for the gc-options attribute if not specified explicit by application
         String jvmGCOptions();
 

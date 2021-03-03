@@ -25,6 +25,9 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.model.api.TenantSecretStore;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
+import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -255,6 +258,8 @@ public class ModelContextImpl implements ModelContext {
         private final Optional<AthenzDomain> athenzDomain;
         private final Optional<ApplicationRoles> applicationRoles;
         private final Quota quota;
+        private final List<TenantSecretStore> tenantSecretStores;
+        private final SecretStore secretStore;
         private final boolean dedicatedClusterControllerCluster;
 
         private final String jvmGcOptions;
@@ -270,6 +275,8 @@ public class ModelContextImpl implements ModelContext {
                           Optional<AthenzDomain> athenzDomain,
                           Optional<ApplicationRoles> applicationRoles,
                           Optional<Quota> maybeQuota,
+                          List<TenantSecretStore> tenantSecretStores,
+                          SecretStore secretStore,
                           boolean dedicatedClusterControllerCluster) {
             this.featureFlags = new FeatureFlags(flagSource, applicationId);
             this.applicationId = applicationId;
@@ -288,6 +295,8 @@ public class ModelContextImpl implements ModelContext {
             this.applicationRoles = applicationRoles;
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
             this.dedicatedClusterControllerCluster = dedicatedClusterControllerCluster;
+            this.tenantSecretStores = tenantSecretStores;
+            this.secretStore = secretStore;
 
             jvmGcOptions = flagValue(flagSource, applicationId, PermanentFlags.JVM_GC_OPTIONS);
         }
@@ -343,6 +352,11 @@ public class ModelContextImpl implements ModelContext {
         }
 
         @Override public Quota quota() { return quota; }
+
+        @Override
+        public List<TenantSecretStore> tenantSecretStores() {
+            return SecretStoreExternalIdRetriever.populateExternalId(secretStore, applicationId.tenant(), zone.system(), tenantSecretStores);
+        }
 
         @Override public String jvmGCOptions() { return jvmGcOptions; }
 

@@ -11,11 +11,6 @@ import java.util.List;
  */
 public class SecretStore {
     private final List<Group> groups = new ArrayList<>();
-    private final String type;
-
-    public SecretStore(String type) {
-        this.type = type;
-    }
 
     public void addGroup(String name, String environment) {
         groups.add(new Group(name, environment));
@@ -23,14 +18,6 @@ public class SecretStore {
 
     public List<Group> getGroups() {
         return ImmutableList.copyOf(groups);
-    }
-
-    public String getType() {
-        return type;
-    }
-
-    public boolean isCloud() {
-        return "cloud".equals(type);
     }
 
     public static class Group {

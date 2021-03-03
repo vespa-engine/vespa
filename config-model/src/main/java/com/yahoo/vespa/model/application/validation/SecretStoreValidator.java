@@ -19,26 +19,16 @@ import java.util.List;
  */
 public class SecretStoreValidator extends Validator {
 
-    private final List<String> VALID_TYPES = List.of("oath-ckms", "cloud");
-
     @Override
     public void validate(VespaModel model, DeployState deployState) {
         if (! deployState.isHosted()) return;
         if (model.getAdmin().getApplicationType() != ApplicationType.DEFAULT) return;
 
         for (ContainerCluster cluster : model.getContainerClusters().values()) {
-
-            if (cluster.getSecretStore().isPresent() ) {
-                var secretStore = (SecretStore) cluster.getSecretStore().get();
-
-                if (!isValidType(secretStore.getType())) {
-                    throw new IllegalArgumentException("Secret store must be one of the following types: " + VALID_TYPES);
-                }
-                if (! secretStore.isCloud() && ! hasIdentityProvider(cluster))
+            if (cluster.getSecretStore().isPresent() && ! hasIdentityProvider(cluster))
                     throw new IllegalArgumentException(String.format(
                         "Container cluster '%s' uses a secret store, so an Athenz domain and an Athenz service" +
                                 " must be declared in deployment.xml.", cluster.getName()));
-            }
         }
     }
 
@@ -49,7 +39,4 @@ public class SecretStoreValidator extends Validator {
         return false;
     }
 
-    private boolean isValidType(String type) {
-        return VALID_TYPES.contains(type);
-    }
 }

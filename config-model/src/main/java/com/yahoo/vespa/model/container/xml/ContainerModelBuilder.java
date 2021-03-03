@@ -14,6 +14,7 @@ import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.api.ConfigServerSpec;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
+import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.application.provider.IncludeDirs;
 import com.yahoo.config.model.builder.xml.ConfigModelBuilder;
 import com.yahoo.config.model.builder.xml.ConfigModelId;
@@ -180,7 +181,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         DeployState deployState = context.getDeployState();
         DocumentFactoryBuilder.buildDocumentFactories(cluster, spec);
         addConfiguredComponents(deployState, cluster, spec);
-        addSecretStore(cluster, spec);
+        addSecretStore(cluster, spec, deployState);
 
         addRestApis(deployState, spec, cluster);
         addServlets(deployState, spec, cluster);
@@ -254,16 +255,47 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         return new SimpleComponent(new ComponentModel(idSpec, null, "zookeeper-server", configId));
     }
 
-    private void addSecretStore(ApplicationContainerCluster cluster, Element spec) {
+    private void addSecretStore(ApplicationContainerCluster cluster, Element spec, DeployState deployState) {
+
         Element secretStoreElement = XML.getChild(spec, "secret-store");
         if (secretStoreElement != null) {
-            SecretStore secretStore = new SecretStore(secretStoreElement.getAttribute("type"));
-            String attributeName = secretStore.isCloud() ? "region" : "environment";
-            for (Element group : XML.getChildren(secretStoreElement, "group")) {
-                secretStore.addGroup(group.getAttribute("name"), group.getAttribute(attributeName));
+            String type = secretStoreElement.getAttribute("type");
+            if ("cloud".equals(type)) {
+                addCloudSecretStore(cluster, secretStoreElement, deployState);
+            } else {
+                SecretStore secretStore = new SecretStore();
+                for (Element group : XML.getChildren(secretStoreElement, "group")) {
+                    secretStore.addGroup(group.getAttribute("name"), group.getAttribute("environment"));
+                }
+                cluster.setSecretStore(secretStore);
             }
-            cluster.setSecretStore(secretStore);
         }
+    }
+
+    private void addCloudSecretStore(ApplicationContainerCluster cluster, Element secretStoreElement, DeployState deployState) {
+        CloudSecretStore cloudSecretStore = new CloudSecretStore();
+        Map<String, TenantSecretStore> secretStoresByName = deployState.getProperties().tenantSecretStores()
+                .stream()
+                .collect(Collectors.toMap(
+                        TenantSecretStore::getName,
+                        store -> store
+                ));
+
+        for (Element group : XML.getChildren(secretStoreElement, "group")) {
+            String name = group.getAttribute("name");
+            String region = group.getAttribute("region");
+            TenantSecretStore secretStore = secretStoresByName.get(name);
+
+            if (secretStore == null)
+                throw new RuntimeException("No configured secret store named " + name);
+
+            if (secretStore.getExternalId().isEmpty())
+                throw new RuntimeException("No external ID has been set");
+
+            cloudSecretStore.addConfig(name, region, secretStore.getAwsId(), secretStore.getRole(), secretStore.getExternalId().get());
+        }
+
+        cluster.addComponent(cloudSecretStore);
     }
 
     private void addAthensCopperArgos(ApplicationContainerCluster cluster, ConfigModelContext context) {
