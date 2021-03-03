@@ -90,7 +90,7 @@ TensorSpec ReferenceOperations::cell_cast(const TensorSpec &a, CellType to) {
         return result;
     }
     typify_invoke<1,TypifyCellType,CopyCellsWithCast>(to, a, result);
-    return result;
+    return result.normalize();
 }
 
 TensorSpec ReferenceOperations::concat(const TensorSpec &a, const TensorSpec &b, const std::string &concat_dim) {
@@ -118,7 +118,7 @@ TensorSpec ReferenceOperations::concat(const TensorSpec &a, const TensorSpec &b,
             }
         }
     }
-    return result;
+    return result.normalize();
 }
 
 
@@ -133,7 +133,7 @@ TensorSpec ReferenceOperations::create(const vespalib::string &type, const Creat
         double val = value_from_child(child);
         result.add(addr, val);
     }
-    return result;
+    return result.normalize();
 }
 
 
@@ -153,7 +153,7 @@ TensorSpec ReferenceOperations::join(const TensorSpec &a, const TensorSpec &b, j
             }
         }
     }
-    return result;
+    return result.normalize();
 }
 
 
@@ -166,7 +166,7 @@ TensorSpec ReferenceOperations::map(const TensorSpec &a, map_fun_t func) {
     for (const auto & [ addr, value ]: a.cells()) {
         result.add(addr, func(value));
     }
-    return result;
+    return result.normalize();
 }
 
 
@@ -191,7 +191,7 @@ TensorSpec ReferenceOperations::merge(const TensorSpec &a, const TensorSpec &b, 
             result.add(addr, value);
         }
     }
-    return result;
+    return result.normalize();
 }
 
 
@@ -253,7 +253,7 @@ TensorSpec ReferenceOperations::peek(const PeekSpec &peek_spec, const std::vecto
             result.add(my_addr, cell.second);
         }
     }
-    return result;
+    return result.normalize();
 }
 
 
@@ -283,7 +283,7 @@ TensorSpec ReferenceOperations::reduce(const TensorSpec &a, Aggr aggr, const std
     for (const auto &my_entry: my_map) {
         result.add(my_entry.first, my_entry.second.value()->result());
     }
-    return result;
+    return result.normalize();
 }
 
 
@@ -301,7 +301,7 @@ TensorSpec ReferenceOperations::rename(const TensorSpec &a, const std::vector<ve
         }
         result.add(addr, cell.second);
     }
-    return result;
+    return result.normalize();
 }
 
 TensorSpec ReferenceOperations::lambda(const vespalib::string &type_in, lambda_fun_t fun) {
@@ -325,7 +325,7 @@ TensorSpec ReferenceOperations::lambda(const vespalib::string &type_in, lambda_f
         }
     };
     loop(0);
-    return result;
+    return result.normalize();
 }
 
 } // namespace
