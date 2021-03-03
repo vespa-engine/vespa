@@ -9,7 +9,7 @@ jobs:
     requires: [~pr, ~commit]
     image: vespaengine/vespa-build-centos7
     annotations:
-      screwdriver.cd/cpu: 8
+      screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
       screwdriver.cd/disk: HIGH
       screwdriver.cd/timeout: 600
