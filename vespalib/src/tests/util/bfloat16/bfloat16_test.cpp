@@ -6,7 +6,6 @@
 #include <stdio.h>
 #include <cmath>
 #include <cmath>
-#include <cfenv>
 #include <vector>
 
 using namespace vespalib;
@@ -118,8 +117,6 @@ TEST(BFloat16Test, check_special_values) {
     EXPECT_TRUE(std::numeric_limits<float>::has_signaling_NaN);
     EXPECT_TRUE(std::numeric_limits<BFloat16>::has_quiet_NaN);
     EXPECT_TRUE(std::numeric_limits<BFloat16>::has_signaling_NaN);
-    std::feclearexcept(FE_ALL_EXCEPT);
-    EXPECT_TRUE(std::fetestexcept(FE_INVALID) == 0);
     float f_inf = std::numeric_limits<float>::infinity();
     float f_neg = -f_inf;
     float f_qnan = std::numeric_limits<float>::quiet_NaN();
@@ -141,11 +138,7 @@ TEST(BFloat16Test, check_special_values) {
     double d_inf = b_inf;
     double d_neg = b_from_f_neg;
     double d_qnan = b_qnan;
-    EXPECT_TRUE(std::fetestexcept(FE_INVALID) == 0);
     double d_snan = b_snan;
-    // float->double conversion of signaling NaN may trigger
-    std::feclearexcept(FE_ALL_EXCEPT);
-    EXPECT_TRUE(std::fetestexcept(FE_INVALID) == 0);
     EXPECT_EQ(d_inf, std::numeric_limits<double>::infinity());
     EXPECT_EQ(d_neg, -std::numeric_limits<double>::infinity());
     EXPECT_TRUE(std::isnan(d_qnan));
@@ -158,8 +151,6 @@ TEST(BFloat16Test, check_special_values) {
     EXPECT_EQ(memcmp(&f_neg, &f_from_b_neg, sizeof(float)), 0);
     EXPECT_EQ(memcmp(&f_qnan, &f_from_b_qnan, sizeof(float)), 0);
     EXPECT_EQ(memcmp(&f_snan, &f_from_b_snan, sizeof(float)), 0);
-    // none of the BF16 operations should trigger FPE:
-    EXPECT_TRUE(std::fetestexcept(FE_INVALID) == 0);
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
