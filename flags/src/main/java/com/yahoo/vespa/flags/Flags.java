@@ -234,7 +234,7 @@ public class Flags {
             TENANT_ID, ZONE_ID);
 
     public static final UnboundIntFlag CLUSTER_CONTROLLER_MAX_HEAP_SIZE_IN_MB = defineIntFlag(
-            "cluster-controller-max-heap-size-in-mb", 512,
+            "cluster-controller-max-heap-size-in-mb", 256,
             List.of("hmusum"), "2021-02-10", "2021-04-10",
             "JVM max heap size for cluster controller in Mb",
             "Takes effect when restarting cluster controller");
