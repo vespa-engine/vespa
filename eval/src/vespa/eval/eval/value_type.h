@@ -86,6 +86,7 @@ public:
     ValueType reduce(const std::vector<vespalib::string> &dimensions_in) const;
     ValueType rename(const std::vector<vespalib::string> &from,
                      const std::vector<vespalib::string> &to) const;
+    ValueType cell_cast(CellType to_cell_type) const;
 
     static ValueType error_type() { return ValueType(); }
     static ValueType make_type(CellType cell_type, std::vector<Dimension> dimensions_in);
@@ -105,8 +106,6 @@ public:
     static CellType unify_cell_types(const ValueType &a, const ValueType &b);
     static ValueType concat(const ValueType &lhs, const ValueType &rhs, const vespalib::string &dimension);
     static ValueType either(const ValueType &one, const ValueType &other);
-    static ValueType cell_cast(const ValueType &from, CellType to_cell_type);
-    
 };
 
 std::ostream &operator<<(std::ostream &os, const ValueType &type);

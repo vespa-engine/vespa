@@ -84,7 +84,7 @@ struct CopyCellsWithCast {
 
 TensorSpec ReferenceOperations::cell_cast(const TensorSpec &a, CellType to) {
     ValueType a_type = ValueType::from_spec(a.type());
-    ValueType res_type = ValueType::cell_cast(a_type, to);
+    ValueType res_type = a_type.cell_cast(to);
     TensorSpec result(res_type.to_spec());
     if (res_type.is_error()) {
         return result;

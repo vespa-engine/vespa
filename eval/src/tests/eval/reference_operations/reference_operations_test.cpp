@@ -1,11 +1,14 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
+#include <vespa/eval/eval/cell_type.h>
 #include <vespa/eval/eval/test/reference_operations.h>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <iostream>
 
 using namespace vespalib;
 using namespace vespalib::eval;
+using vespalib::eval::test::GenSpec;
 
 TensorSpec dense_2d_some_cells(bool square) {
     return TensorSpec("tensor(a[3],d[5])")
@@ -47,7 +50,6 @@ TensorSpec sparse_1d_all_two() {
 }
 
 //-----------------------------------------------------------------------------
-
 
 TEST(ReferenceConcatTest, concat_numbers) {
     auto a = TensorSpec("double").add({}, 7.0);
@@ -128,6 +130,27 @@ TEST(ReferenceConcatTest, concat_mixed_tensors) {
         .add({{"a","bar"},{"b",1},{"x",1}}, 14.0)
         .add({{"a","bar"},{"b",2},{"x",1}}, 15.0);
     EXPECT_EQ(output, expect);
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(ReferenceCellCastTest, cell_cast_works) {
+    std::vector<GenSpec> gen_list = {
+        GenSpec(42),
+        GenSpec(-3).idx("x", 10),
+        GenSpec(-3).map("x", 10, 1),
+        GenSpec(-3).map("x", 4, 1).idx("y", 4)
+    };
+    for (CellType from_type: CellTypeUtils::list_types()) {
+        for (CellType to_type: CellTypeUtils::list_types()) {
+            for (const auto &gen: gen_list) {
+                TensorSpec input = gen.cpy().cells(from_type);
+                TensorSpec expect = gen.cpy().cells(to_type);
+                auto actual = ReferenceOperations::cell_cast(input, to_type);
+                EXPECT_EQ(actual, expect);
+            }
+        }
+    }
 }
 
 //-----------------------------------------------------------------------------
@@ -525,4 +548,3 @@ TEST(ReferenceLambdaTest, make_matrix) {
 //-----------------------------------------------------------------------------
 
 GTEST_MAIN_RUN_ALL_TESTS()
-

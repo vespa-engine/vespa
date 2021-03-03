@@ -1018,6 +1018,17 @@ TEST("require that tensor concat can be parsed") {
 
 //-----------------------------------------------------------------------------
 
+TEST("require that tensor cell cast can be parsed") {
+    EXPECT_EQUAL("cell_cast(a,float)", Function::parse({"a"}, "cell_cast(a,float)")->dump());
+    EXPECT_EQUAL("cell_cast(a,double)", Function::parse({"a"}, " cell_cast ( a , double ) ")->dump());
+}
+
+TEST("require that tensor cell cast must have valid cell type") {
+    TEST_DO(verify_error("cell_cast(x,int7)", "[cell_cast(x,int7]...[unknown cell type: 'int7']...[)]"));
+}
+
+//-----------------------------------------------------------------------------
+
 struct CheckExpressions : test::EvalSpec::EvalTest {
     bool failed = false;
     size_t seen_cnt = 0;

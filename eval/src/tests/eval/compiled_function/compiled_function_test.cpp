@@ -55,7 +55,8 @@ std::vector<vespalib::string> unsupported = {
     "reduce(",
     "rename(",
     "tensor(",
-    "concat("
+    "concat(",
+    "cell_cast("
 };
 
 bool is_unsupported(const vespalib::string &expression) {

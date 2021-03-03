@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/vespalib/util/typify.h>
+#include <vector>
 #include <cstdint>
 
 namespace vespalib::eval {
@@ -42,6 +43,10 @@ struct CellTypeUtils {
         case CellType::FLOAT:  return sz * sizeof(float);
         default: bad_argument((uint32_t)cell_type);
         }
+    }
+
+    static std::vector<CellType> list_types() {
+        return {CellType::FLOAT, CellType::DOUBLE};
     }
 };
 

@@ -7,6 +7,7 @@
 #include "tensor_spec.h"
 #include "aggr.h"
 #include "string_stuff.h"
+#include "value_type_spec.h"
 #include <vespa/vespalib/stllike/string.h>
 #include <vector>
 #include <map>
@@ -67,7 +68,7 @@ public:
         str += ")";
         return str;
     }
-    void accept(NodeVisitor &visitor) const override ;
+    void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 2; }
     const Node &get_child(size_t idx) const override {
         assert(idx < 2);
@@ -101,7 +102,7 @@ public:
         str += ")";
         return str;
     }
-    void accept(NodeVisitor &visitor) const override ;
+    void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 2; }
     const Node &get_child(size_t idx) const override {
         assert(idx < 2);
@@ -217,7 +218,7 @@ public:
         str += ")";
         return str;
     }
-    void accept(NodeVisitor &visitor) const override ;
+    void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return 2; }
     const Node &get_child(size_t idx) const override {
         assert(idx < 2);
@@ -226,6 +227,36 @@ public:
     void detach_children(NodeHandler &handler) override {
         handler.handle(std::move(_lhs));
         handler.handle(std::move(_rhs));
+    }
+};
+
+class TensorCellCast : public Node {
+private:
+    Node_UP  _child;
+    CellType _cell_type;
+public:
+    TensorCellCast(Node_UP child, CellType cell_type)
+        : _child(std::move(child)), _cell_type(cell_type) {}
+    const Node &child() const { return *_child; }
+    CellType cell_type() const { return _cell_type; }
+    vespalib::string dump(DumpContext &ctx) const override {
+        vespalib::string str;
+        str += "cell_cast(";
+        str += _child->dump(ctx);
+        str += ",";
+        str += value_type::cell_type_to_name(_cell_type);
+        str += ")";
+        return str;
+    }
+    void accept(NodeVisitor &visitor) const override;
+    size_t num_children() const override { return 1; }
+    const Node &get_child(size_t idx) const override {
+        (void) idx;
+        assert(idx == 0);
+        return *_child;
+    }
+    void detach_children(NodeHandler &handler) override {
+        handler.handle(std::move(_child));
     }
 };
 
@@ -259,7 +290,7 @@ public:
         str += "}";
         return str;
     }
-    void accept(NodeVisitor &visitor) const override ;
+    void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return _cells.size(); }
     const Node &get_child(size_t idx) const override {
         assert(idx < _cells.size());
@@ -365,7 +396,7 @@ public:
         str += "}";
         return str;
     }
-    void accept(NodeVisitor &visitor) const override ;
+    void accept(NodeVisitor &visitor) const override;
     size_t num_children() const override { return (1 + _expr_dims.size()); }
     const Node &get_child(size_t idx) const override {
         assert(idx < num_children());

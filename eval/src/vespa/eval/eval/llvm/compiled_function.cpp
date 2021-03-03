@@ -132,6 +132,7 @@ CompiledFunction::detect_issues(const nodes::Node &node)
                                   nodes::TensorReduce,
                                   nodes::TensorRename,
                                   nodes::TensorConcat,
+                                  nodes::TensorCellCast,
                                   nodes::TensorCreate,
                                   nodes::TensorLambda,
                                   nodes::TensorPeek>(node))

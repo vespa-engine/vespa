@@ -292,6 +292,14 @@ TEST("require that tensor concat resolves correct type") {
     TEST_DO(verify("concat(tensor<float>(x[2]),double,x)", "tensor<float>(x[3])"));
 }
 
+TEST("require that tensor cell_cast resolves correct type") {
+    TEST_DO(verify("cell_cast(double,float)", "double")); // NB
+    TEST_DO(verify("cell_cast(float,double)", "double"));
+    TEST_DO(verify("cell_cast(tensor<double>(x{},y[5]),float)", "tensor<float>(x{},y[5])"));
+    TEST_DO(verify("cell_cast(tensor<float>(x{},y[5]),double)", "tensor<double>(x{},y[5])"));
+    TEST_DO(verify("cell_cast(tensor<float>(x{},y[5]),float)", "tensor<float>(x{},y[5])"));
+}
+
 TEST("require that double only expressions can be detected") {
     auto plain_fun = Function::parse("1+2");
     auto complex_fun = Function::parse("reduce(a,sum)");
