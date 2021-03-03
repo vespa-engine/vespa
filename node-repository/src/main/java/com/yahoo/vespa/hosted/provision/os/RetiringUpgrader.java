@@ -65,8 +65,7 @@ public class RetiringUpgrader implements Upgrader {
                  ", want " + target);
         nodeRepository.nodes().deprovision(host, Agent.RetiringUpgrader, now);
         nodeRepository.nodes().upgradeOs(NodeListFilter.from(host), Optional.of(target));
-        NodeType nodeType = host.type();
-        nodeRepository.osVersions().writeChange((change) -> change.withRetirementAt(now, nodeType));
+        nodeRepository.osVersions().writeChange((change) -> change.withRetirementAt(now, host.type()));
     }
 
 }
