@@ -171,12 +171,13 @@ CellType parse_cell_type(ParseContext &ctx) {
     ctx.eat('>');
     if (ctx.failed()) {
         ctx.revert(mark);
-        return CellType::DOUBLE;
-    }
-    if (cell_type == "float") {
-        return CellType::FLOAT;
-    } else if (cell_type != "double") {
-        ctx.fail();
+    } else {
+        auto result = cell_type_from_name(cell_type);
+        if (result.has_value()) {
+            return result.value();
+        } else {
+            ctx.fail();
+        }
     }
     return CellType::DOUBLE;
 }
