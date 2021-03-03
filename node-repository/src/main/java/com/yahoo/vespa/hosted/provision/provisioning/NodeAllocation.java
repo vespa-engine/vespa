@@ -306,21 +306,23 @@ class NodeAllocation {
 
     /** Returns the indices to use when provisioning hosts for this */
     List<Integer> provisionIndices(int count) {
-        if (count == 0) return List.of();
+        if (count < 1) throw new IllegalArgumentException("Count must be positive");
         NodeType hostType = requestedNodes.type().hostType();
 
         // Tenant hosts have a continuously increasing index
         if (hostType == NodeType.host) return nodeRepository.database().readProvisionIndices(count);
 
-        // Infrastructure hosts have fixed indices: Their cluster index + 1
-        int offset = 1;
+        // Infrastructure hosts have fixed indices, starting at 1
         Set<Integer> currentIndices = allNodes.nodeType(hostType)
                                               .stream()
-                                              .map(node -> node.allocation().get().membership().index())
-                                              .map(index -> index + offset)
+                                              .map(Node::hostname)
+                                              // TODO(mpolden): Use cluster index instead of parsing hostname, once all
+                                              //                config servers have been replaced once and have switched
+                                              //                to compact indices
+                                              .map(NodeAllocation::parseIndex)
                                               .collect(Collectors.toSet());
         List<Integer> indices = new ArrayList<>(count);
-        for (int i = offset; indices.size() < count; i++) {
+        for (int i = 1; indices.size() < count; i++) {
             if (!currentIndices.contains(i)) {
                 indices.add(i);
             }
@@ -431,6 +433,15 @@ class NodeAllocation {
 
         if (reasons.isEmpty()) return "";
         return ": Not enough nodes available due to " + String.join(", ", reasons);
+    }
+
+    private static Integer parseIndex(String hostname) {
+        // Node index is the first number appearing in the hostname, before the first dot
+        try {
+            return Integer.parseInt(hostname.replaceFirst("^\\D+(\\d+)\\..*", "$1"));
+        } catch (NumberFormatException e) {
+            throw new IllegalArgumentException("Could not parse index from hostname '" + hostname + "'", e);
+        }
     }
 
     static class FlavorCount {
