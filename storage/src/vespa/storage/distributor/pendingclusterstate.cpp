@@ -219,7 +219,7 @@ PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
         "and distribution hash '%s'",
         bucketSpaceAndNode.bucketSpace.getId(),
         bucketSpaceAndNode.node,
-        getNewClusterStateBundleString().c_str(),
+        _newClusterStateBundle.getDerivedClusterState(bucketSpaceAndNode.bucketSpace)->toString().c_str(),
         distributionHash.c_str());
 
     std::shared_ptr<api::RequestBucketInfoCommand> cmd(
