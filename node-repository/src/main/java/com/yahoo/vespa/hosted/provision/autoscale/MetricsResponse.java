@@ -65,8 +65,7 @@ public class MetricsResponse {
                                                                 Metric.disk.from(values),
                                                                 (long)Metric.generation.from(values),
                                                                 Metric.inService.from(values) > 0,
-                                                                clusterIsStable(node.get(), applicationNodes, nodeRepository),
-                                                                Metric.queryRate.from(values))));
+                                                                 clusterIsStable(node.get(), applicationNodes, nodeRepository))));
     }
 
     private boolean clusterIsStable(Node node, NodeList applicationNodes, NodeRepository nodeRepository) {
@@ -116,11 +115,6 @@ public class MetricsResponse {
             public String metricResponseName() { return "in_service"; }
             double convertValue(double metricValue) { return (float)metricValue; } // Really a boolean
             double defaultValue() { return 1.0; }
-        },
-        queryRate { // queries per second
-            public String metricResponseName() { return "queries.rate"; }
-            double convertValue(double metricValue) { return (float)metricValue; }
-            double defaultValue() { return 0.0; }
         };
 
         /** The name of this metric as emitted from its source */

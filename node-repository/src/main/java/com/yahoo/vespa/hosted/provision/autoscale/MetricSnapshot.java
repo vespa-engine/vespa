@@ -18,11 +18,9 @@ public class MetricSnapshot implements Comparable<MetricSnapshot> {
     private final long generation;
     private final boolean inService;
     private final boolean stable;
-    private final double queryRate;
 
-    public MetricSnapshot(Instant at, double cpu, double memory, double disk,
-                          long generation, boolean inService, boolean stable,
-                          double queryRate) {
+    public MetricSnapshot(Instant at, double cpu, double memory, double disk, long generation,
+                          boolean inService, boolean stable) {
         this.at = at;
         this.cpu = cpu;
         this.memory = memory;
@@ -30,16 +28,12 @@ public class MetricSnapshot implements Comparable<MetricSnapshot> {
         this.generation = generation;
         this.inService = inService;
         this.stable = stable;
-        this.queryRate = queryRate;
     }
 
     public Instant at() { return at; }
     public double cpu() { return cpu; }
     public double memory() { return memory; }
     public double disk() { return disk; }
-
-    /** Queries per second */
-    public double queryRate() { return queryRate; }
 
     /** The configuration generation at the time of this measurement, or -1 if not known */
     public long generation() { return generation; }
@@ -59,8 +53,7 @@ public class MetricSnapshot implements Comparable<MetricSnapshot> {
                                       " disk: " + disk +
                                       " generation: " + generation +
                                       " inService: " + inService +
-                                      " stable: " + stable +
-                                      " queryRate: " + queryRate;
+                                      " stable: " + stable;
     }
 
 }
