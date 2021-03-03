@@ -119,7 +119,7 @@ ValueType decode_type(nbostream &input, const Format &format) {
     if (dim_list.empty()) {
         assert(cell_type == CellType::DOUBLE);
     }
-    return ValueType::tensor_type(std::move(dim_list), cell_type);
+    return ValueType::make_type(cell_type, std::move(dim_list));
 }
 
 size_t maybe_decode_num_blocks(nbostream &input, bool has_mapped_dims, const Format &format) {

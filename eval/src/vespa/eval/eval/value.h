@@ -22,7 +22,6 @@ struct Value {
     virtual const ValueType &type() const = 0;
     virtual ~Value() {}
 
-// ---- new interface enabling separation of values and operations
     // Root lookup structure for mapping labels to dense subspace indexes
     struct Index {
 
@@ -59,16 +58,9 @@ struct Value {
     };
     virtual TypedCells cells() const = 0;
     virtual const Index &index() const = 0;
-// --- end of new interface
-
     virtual MemoryUsage get_memory_usage() const = 0;
-
-// --- old interface that may be (partially) removed in the future
-    virtual bool is_double() const { return type().is_double(); }
-    virtual bool is_tensor() const { return type().is_tensor(); }
     virtual double as_double() const;
     bool as_bool() const { return (as_double() != 0.0); }
-// --- end of old interface
 };
 
 /**
@@ -84,27 +76,20 @@ public:
     std::unique_ptr<View> create_view(ConstArrayRef<size_t> dims) const override;
 };
 
-template <typename T>
-class ScalarValue final : public Value
+class DoubleValue final : public Value
 {
 private:
-    T _value;
+    double _value;
     static ValueType _type;
 public:
-    ScalarValue(T value) : _value(value) {}
-    TypedCells cells() const final override { return TypedCells(ConstArrayRef<T>(&_value, 1)); }
+    DoubleValue(double value) : _value(value) {}
+    TypedCells cells() const final override { return TypedCells(ConstArrayRef<double>(&_value, 1)); }
     const Index &index() const final override { return TrivialIndex::get(); }
-    MemoryUsage get_memory_usage() const final override { return self_memory_usage<ScalarValue<T>>(); }
-    bool is_double() const final override { return std::is_same_v<T,double>; }
+    MemoryUsage get_memory_usage() const final override { return self_memory_usage<DoubleValue>(); }
     double as_double() const final override { return _value; }
     const ValueType &type() const final override { return _type; }
     static const ValueType &shared_type() { return _type; }
 };
-
-extern template class ScalarValue<double>;
-extern template class ScalarValue<float>;
-
-using DoubleValue = ScalarValue<double>;
 
 /**
  * A generic value without any mapped dimensions referencing its
@@ -227,7 +212,6 @@ protected:
 
 }
 
-VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::ScalarValue<double>);
-VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::ScalarValue<float>);
+VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::DoubleValue);
 VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::DenseValueView);
 VESPA_CAN_SKIP_DESTRUCTION(::vespalib::eval::ValueView);

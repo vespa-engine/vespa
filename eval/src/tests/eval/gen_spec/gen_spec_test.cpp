@@ -61,9 +61,8 @@ TEST(GenSpecTest, scalar_double) {
     EXPECT_EQ(GenSpec(5.0).gen(), scalar_5);
 }
 
-TEST(GenSpecTest, not_scalar_float_just_yet) {
-    EXPECT_EQ(GenSpec().cells_float().gen(), scalar_1);
-    EXPECT_EQ(GenSpec(5.0).cells_float().gen(), scalar_5);
+TEST(GenSpecTest, scalar_float_is_bad_scalar) {
+    EXPECT_TRUE(GenSpec().cells_float().bad_scalar());
 }
 
 //-----------------------------------------------------------------------------
@@ -126,7 +125,6 @@ GenSpec dbl() { return GenSpec().cells_double(); }
 
 TEST(GenSpecTest, value_type) {
     EXPECT_EQ(dbl().type().to_spec(), "double");
-    EXPECT_EQ(flt().type().to_spec(), "double"); // NB
     EXPECT_EQ(dbl().idx("x", 10).type().to_spec(), "tensor(x[10])");
     EXPECT_EQ(flt().idx("x", 10).type().to_spec(), "tensor<float>(x[10])");
     EXPECT_EQ(dbl().map("y", {}).type().to_spec(), "tensor(y{})");

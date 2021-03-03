@@ -109,7 +109,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
     }
 
     void resolve_op1(const Node &node) {
-        bind(type(node.get_child(0)), node);
+        bind(type(node.get_child(0)).map(), node);
     }
 
     void resolve_op2(const Node &node) {
@@ -234,7 +234,7 @@ struct TypeResolver : public NodeVisitor, public NodeTraverser {
                 }
             }
         }
-        bind(param_type.reduce(dimensions), node);
+        bind(param_type.peek(dimensions), node);
     }
     void visit(const Add &node) override { resolve_op2(node); }
     void visit(const Sub &node) override { resolve_op2(node); }

@@ -105,7 +105,7 @@ MixedInnerProductFunction::compile_self(const ValueBuilderFactory &, Stash &stas
 bool
 MixedInnerProductFunction::compatible_types(const ValueType &res, const ValueType &mixed, const ValueType &vector)
 {
-    if (vector.is_dense() && ! res.is_scalar()) {
+    if (vector.is_dense() && ! res.is_double()) {
         auto dense_dims = vector.nontrivial_indexed_dimensions();
         auto mixed_dims = mixed.nontrivial_indexed_dimensions();
         while (! dense_dims.empty()) {
@@ -139,7 +139,7 @@ MixedInnerProductFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
     const auto & res_type = expr.result_type();
     auto reduce = as<Reduce>(expr);
-    if ((! res_type.is_scalar()) && reduce && (reduce->aggr() == Aggr::SUM)) {
+    if ((! res_type.is_double()) && reduce && (reduce->aggr() == Aggr::SUM)) {
         auto join = as<Join>(reduce->child());
         if (join && (join->function() == Mul::f)) {
             const TensorFunction &lhs = join->lhs();
