@@ -430,18 +430,13 @@ public class DynamicProvisioningMaintainerTest {
 
         // Initial config server hosts are provisioned manually
         ApplicationId hostApp = ApplicationId.from("hosted-vespa", "configserver-host", "default");
-        ApplicationId configSrvApp = ApplicationId.from("hosted-vespa", "zone-config-servers", "default");
         List<Node> provisionedHosts = tester.makeReadyNodes(3, "default", NodeType.confighost).stream()
                                             .sorted(Comparator.comparing(Node::hostname))
                                             .collect(Collectors.toList());
         tester.prepareAndActivateInfraApplication(hostApp, NodeType.confighost);
-        tester.patchNodes(provisionedHosts, (node) -> node.withExclusiveTo(configSrvApp));
-        assertTrue("All hosts are exclusive", tester.nodeRepository().nodes().list()
-                                                    .nodeType(NodeType.confighost)
-                                                    .stream()
-                                                    .allMatch(node -> node.allocation().get().membership().cluster().isExclusive()));
 
         // Provision config servers
+        ApplicationId configSrvApp = ApplicationId.from("hosted-vespa", "zone-config-servers", "default");
         for (int i = 0; i < provisionedHosts.size(); i++) {
             tester.makeReadyChildren(1, i + 1, NodeResources.unspecified(), NodeType.config,
                                      provisionedHosts.get(i).hostname(), (nodeIndex) -> "cfg" + nodeIndex);
@@ -505,10 +500,6 @@ public class DynamicProvisioningMaintainerTest {
         newNode = tester.nodeRepository().nodes().node(newNode.hostname()).get();
         assertSame(Node.State.active, newNode.state());
         assertEquals("Removed index is reused", removedIndex, newNode.allocation().get().membership().index());
-        assertTrue("All nodes are exclusive", tester.nodeRepository().nodes().list()
-                                                    .nodeType(NodeType.config)
-                                                    .stream()
-                                                    .allMatch(node -> node.allocation().get().membership().cluster().isExclusive()));
 
         // Next redeployment does nothing
         NodeList nodesBefore = tester.nodeRepository().nodes().list().nodeType(NodeType.config);
