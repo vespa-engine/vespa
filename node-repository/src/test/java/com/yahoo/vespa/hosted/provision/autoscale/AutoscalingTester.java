@@ -143,7 +143,8 @@ class AutoscalingTester {
                                                                               disk,
                                                                               0,
                                                                               true,
-                                                                              true))));
+                                                                              true,
+                                                                              0.0))));
             }
         }
     }
@@ -174,7 +175,8 @@ class AutoscalingTester {
                                                                               disk,
                                                                               0,
                                                                               true,
-                                                                              true))));
+                                                                              true,
+                                                                              0.0))));
             }
         }
     }
@@ -195,7 +197,8 @@ class AutoscalingTester {
                                                                               disk,
                                                                               generation,
                                                                               inService,
-                                                                              stable))));
+                                                                              stable,
+                                                                              0.0))));
             }
         }
     }
