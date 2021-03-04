@@ -30,7 +30,7 @@ QueryTermUCS4::QueryTermUCS4() :
 
 QueryTermUCS4::~QueryTermUCS4() = default;
 
-QueryTermUCS4::QueryTermUCS4(const string & termS, SearchTerm type) :
+QueryTermUCS4::QueryTermUCS4(const string & termS, Type type) :
     QueryTermSimple(termS, type),
     _cachedTermLen(0),
     _termUCS4()

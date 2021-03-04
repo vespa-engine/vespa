@@ -21,6 +21,7 @@ using search::streaming::HitList;
 using search::streaming::QueryNodeResultFactory;
 using search::streaming::QueryTerm;
 using search::streaming::QueryTermList;
+using TermType = QueryTerm::Type;
 using namespace vsm;
 
 template <typename T>
@@ -66,7 +67,7 @@ private:
     }
 public:
     typedef std::pair<std::string, std::string> ParsedQueryTerm;
-    typedef std::pair<std::string, QueryTerm::SearchTerm> ParsedTerm;
+    typedef std::pair<std::string, TermType> ParsedTerm;
     QueryNodeResultFactory   eqnr;
     std::vector<QueryTerm> qtv;
     QueryTermList          qtl;
@@ -81,13 +82,13 @@ public:
     }
     static ParsedTerm parseTerm(const std::string & term) {
         if (term[0] == '*' && term[term.size() - 1] == '*') {
-            return std::make_pair(term.substr(1, term.size() - 2), QueryTerm::SUBSTRINGTERM);
+            return std::make_pair(term.substr(1, term.size() - 2), TermType::SUBSTRINGTERM);
         } else if (term[0] == '*') {
-            return std::make_pair(term.substr(1, term.size() - 1), QueryTerm::SUFFIXTERM);
+            return std::make_pair(term.substr(1, term.size() - 1), TermType::SUFFIXTERM);
         } else if (term[term.size() - 1] == '*') {
-            return std::make_pair(term.substr(0, term.size() - 1), QueryTerm::PREFIXTERM);
+            return std::make_pair(term.substr(0, term.size() - 1), TermType::PREFIXTERM);
         } else {
-            return std::make_pair(term, QueryTerm::WORD);
+            return std::make_pair(term, TermType::WORD);
         }
     }
 };
@@ -95,7 +96,7 @@ public:
 Query::Query(const StringList & terms) : eqnr(), qtv(), qtl() {
     setupQuery(terms);
 }
-Query::~Query() {}
+Query::~Query() = default;
 
 struct SnippetModifierSetup
 {
@@ -284,8 +285,8 @@ bool
 assertMatchTermSuffix(const std::string & term, const std::string & word)
 {
     QueryNodeResultFactory eqnr;
-    QueryTerm qa(eqnr.create(), term, "index", QueryTerm::WORD);
-    QueryTerm qb(eqnr.create(), word, "index", QueryTerm::WORD);
+    QueryTerm qa(eqnr.create(), term, "index", TermType::WORD);
+    QueryTerm qb(eqnr.create(), word, "index", TermType::WORD);
     const ucs4_t * a;
     size_t alen = qa.term(a);
     const ucs4_t * b;
@@ -467,13 +468,13 @@ testStrChrFieldSearcher(StrChrFieldSearcher & fs)
         ASSERT_TRUE(Query::parseQueryTerm("term").first == "");
         ASSERT_TRUE(Query::parseQueryTerm("term").second == "term");
         ASSERT_TRUE(Query::parseTerm("*substr*").first == "substr");
-        ASSERT_TRUE(Query::parseTerm("*substr*").second == QueryTerm::SUBSTRINGTERM);
+        ASSERT_TRUE(Query::parseTerm("*substr*").second == TermType::SUBSTRINGTERM);
         ASSERT_TRUE(Query::parseTerm("*suffix").first == "suffix");
-        ASSERT_TRUE(Query::parseTerm("*suffix").second == QueryTerm::SUFFIXTERM);
+        ASSERT_TRUE(Query::parseTerm("*suffix").second == TermType::SUFFIXTERM);
         ASSERT_TRUE(Query::parseTerm("prefix*").first == "prefix");
-        ASSERT_TRUE(Query::parseTerm("prefix*").second == QueryTerm::PREFIXTERM);
+        ASSERT_TRUE(Query::parseTerm("prefix*").second == TermType::PREFIXTERM);
         ASSERT_TRUE(Query::parseTerm("term").first == "term");
-        ASSERT_TRUE(Query::parseTerm("term").second == QueryTerm::WORD);
+        ASSERT_TRUE(Query::parseTerm("term").second == TermType::WORD);
     }
 
     TEST("suffix matching") {

@@ -55,7 +55,7 @@ GlobalId dummy_gid(uint32_t doc_index) {
 }
 
 std::unique_ptr<QueryTermSimple> word_term(vespalib::stringref term) {
-    return std::make_unique<QueryTermSimple>(term, QueryTermSimple::WORD);
+    return std::make_unique<QueryTermSimple>(term, QueryTermSimple::Type::WORD);
 }
 
 

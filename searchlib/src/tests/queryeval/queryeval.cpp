@@ -350,7 +350,7 @@ public:
             _a.update(docId, 1);
         }
         _a.commit();
-        _sc = _a.getSearch(std::make_unique<search::QueryTermSimple>("1", search::QueryTermSimple::WORD),
+        _sc = _a.getSearch(std::make_unique<search::QueryTermSimple>("1", search::QueryTermSimple::Type::WORD),
                            SearchContextParams().useBitVector(true));
     }
     SearchIterator::UP

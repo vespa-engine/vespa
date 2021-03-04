@@ -70,7 +70,7 @@ QueryTerm::visitMembers(vespalib::ObjectVisitor & visitor) const
     visit(visitor, "uniqueid", _uniqueId);
 }
 
-QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, const string & termS, const string & indexS, SearchTerm type) :
+QueryTerm::QueryTerm(std::unique_ptr<QueryNodeResultBase> org, const string & termS, const string & indexS, Type type) :
     QueryTermUCS4(termS, type),
     _index(indexS),
     _encoding(0x01),
