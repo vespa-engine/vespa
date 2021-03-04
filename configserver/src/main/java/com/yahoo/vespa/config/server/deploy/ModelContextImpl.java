@@ -346,7 +346,7 @@ public class ModelContextImpl implements ModelContext {
 
         @Override public String jvmGCOptions() { return jvmGcOptions; }
 
-        @Override public boolean dedicatedClusterControllerCluster() { return dedicatedClusterControllerCluster; }
+        @Override public boolean dedicatedClusterControllerCluster() { return hostedVespa && dedicatedClusterControllerCluster; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
