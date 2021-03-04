@@ -82,7 +82,8 @@ struct CopyCellsWithCast {
 
 } // namespace <unnamed>
 
-TensorSpec ReferenceOperations::cell_cast(const TensorSpec &a, CellType to) {
+TensorSpec ReferenceOperations::cell_cast(const TensorSpec &in_a, CellType to) {
+    auto a = in_a.normalize();
     ValueType a_type = ValueType::from_spec(a.type());
     ValueType res_type = a_type.cell_cast(to);
     TensorSpec result(res_type.to_spec());
@@ -93,7 +94,9 @@ TensorSpec ReferenceOperations::cell_cast(const TensorSpec &a, CellType to) {
     return result.normalize();
 }
 
-TensorSpec ReferenceOperations::concat(const TensorSpec &a, const TensorSpec &b, const std::string &concat_dim) {
+TensorSpec ReferenceOperations::concat(const TensorSpec &in_a, const TensorSpec &in_b, const std::string &concat_dim) {
+    auto a = in_a.normalize();
+    auto b = in_b.normalize();
     ValueType a_type = ValueType::from_spec(a.type());
     ValueType b_type = ValueType::from_spec(b.type());
     ValueType res_type = ValueType::concat(a_type, b_type, concat_dim);
@@ -137,7 +140,9 @@ TensorSpec ReferenceOperations::create(const vespalib::string &type, const Creat
 }
 
 
-TensorSpec ReferenceOperations::join(const TensorSpec &a, const TensorSpec &b, join_fun_t function) {
+TensorSpec ReferenceOperations::join(const TensorSpec &in_a, const TensorSpec &in_b, join_fun_t function) {
+    auto a = in_a.normalize();
+    auto b = in_b.normalize();
     ValueType res_type = ValueType::join(ValueType::from_spec(a.type()), ValueType::from_spec(b.type()));
     TensorSpec result(res_type.to_spec());
     if (res_type.is_error()) {
@@ -157,7 +162,8 @@ TensorSpec ReferenceOperations::join(const TensorSpec &a, const TensorSpec &b, j
 }
 
 
-TensorSpec ReferenceOperations::map(const TensorSpec &a, map_fun_t func) {
+TensorSpec ReferenceOperations::map(const TensorSpec &in_a, map_fun_t func) {
+    auto a = in_a.normalize();
     ValueType res_type = ValueType::from_spec(a.type());
     TensorSpec result(res_type.to_spec());
     if (res_type.is_error()) {
@@ -170,7 +176,9 @@ TensorSpec ReferenceOperations::map(const TensorSpec &a, map_fun_t func) {
 }
 
 
-TensorSpec ReferenceOperations::merge(const TensorSpec &a, const TensorSpec &b, join_fun_t fun) {
+TensorSpec ReferenceOperations::merge(const TensorSpec &in_a, const TensorSpec &in_b, join_fun_t fun) {
+    auto a = in_a.normalize();
+    auto b = in_b.normalize();
     ValueType res_type = ValueType::merge(ValueType::from_spec(a.type()),
                                           ValueType::from_spec(b.type()));
     TensorSpec result(res_type.to_spec());
@@ -203,7 +211,7 @@ TensorSpec ReferenceOperations::peek(const PeekSpec &peek_spec, const std::vecto
     for (const auto & [dim_name, label_or_child] : peek_spec) {
         peek_dims.push_back(dim_name);
     }
-    const TensorSpec &param = children[0];
+    TensorSpec param = children[0].normalize();
     ValueType param_type = ValueType::from_spec(param.type());
     ValueType result_type = param_type.reduce(peek_dims);
     TensorSpec result(result_type.to_spec());
@@ -226,7 +234,7 @@ TensorSpec ReferenceOperations::peek(const PeekSpec &peek_spec, const std::vecto
                        },
                        [&](const size_t &child_idx) {
                            assert(child_idx < children.size());
-                           const auto &child = children[child_idx];
+                           auto &child = children[child_idx];
                            double child_value = value_from_child(child);
                            if (is_mapped_dim(dim)) {
                                addr.emplace(dim, vespalib::make_string("%" PRId64, int64_t(child_value)));
@@ -257,7 +265,8 @@ TensorSpec ReferenceOperations::peek(const PeekSpec &peek_spec, const std::vecto
 }
 
 
-TensorSpec ReferenceOperations::reduce(const TensorSpec &a, Aggr aggr, const std::vector<vespalib::string> &dims) {
+TensorSpec ReferenceOperations::reduce(const TensorSpec &in_a, Aggr aggr, const std::vector<vespalib::string> &dims) {
+    auto a = in_a.normalize();
     ValueType res_type = ValueType::from_spec(a.type()).reduce(dims);
     TensorSpec result(res_type.to_spec());
     if (res_type.is_error()) {
@@ -287,7 +296,8 @@ TensorSpec ReferenceOperations::reduce(const TensorSpec &a, Aggr aggr, const std
 }
 
 
-TensorSpec ReferenceOperations::rename(const TensorSpec &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) {
+TensorSpec ReferenceOperations::rename(const TensorSpec &in_a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) {
+    auto a = in_a.normalize();
     assert(from.size() == to.size());
     ValueType res_type = ValueType::from_spec(a.type()).rename(from, to);
     TensorSpec result(res_type.to_spec());
