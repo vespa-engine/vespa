@@ -2,13 +2,12 @@
 package com.yahoo.restapi;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.databind.ObjectWriter;
 import com.yahoo.container.jdisc.HttpResponse;
-import java.util.logging.Level;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -19,30 +18,39 @@ import java.util.logging.Logger;
 public class JacksonJsonResponse<T> extends HttpResponse {
 
     private static final Logger log = Logger.getLogger(JacksonJsonResponse.class.getName());
-    private static final ObjectMapper defaultJsonMapper =
-            new ObjectMapper().registerModule(new JavaTimeModule()).registerModule(new Jdk8Module());
 
     private final ObjectMapper jsonMapper;
+    private final boolean prettyPrint;
     private final T entity;
 
     public JacksonJsonResponse(int statusCode, T entity) {
-        this(statusCode, entity, defaultJsonMapper);
+        this(statusCode, entity, false);
+    }
+
+    public JacksonJsonResponse(int statusCode, T entity, boolean prettyPrint) {
+        this(statusCode, entity, JacksonJsonMapper.instance, prettyPrint);
     }
 
     public JacksonJsonResponse(int statusCode, T entity, ObjectMapper jsonMapper) {
+        this(statusCode, entity, jsonMapper, false);
+    }
+
+    public JacksonJsonResponse(int statusCode, T entity, ObjectMapper jsonMapper, boolean prettyPrint) {
         super(statusCode);
         this.entity = entity;
         this.jsonMapper = jsonMapper;
+        this.prettyPrint = prettyPrint;
     }
 
     @Override
     public void render(OutputStream outputStream) throws IOException {
+        ObjectWriter writer = prettyPrint ? jsonMapper.writerWithDefaultPrettyPrinter() : jsonMapper.writer();
         if (log.isLoggable(Level.FINE)) {
-            String json = jsonMapper.writeValueAsString(entity);
+            String json = writer.writeValueAsString(entity);
             log.log(Level.FINE, "Writing the following JSON to response output stream:\n" + json);
             outputStream.write(json.getBytes());
         } else {
-            jsonMapper.writeValue(outputStream, entity);
+            writer.writeValue(outputStream, entity);
         }
     }
 
