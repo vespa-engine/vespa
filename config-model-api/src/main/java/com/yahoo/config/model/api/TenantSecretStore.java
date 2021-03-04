@@ -12,12 +12,17 @@ public class TenantSecretStore {
     private final String name;
     private final String awsId;
     private final String role;
-    private Optional<String> externalId;
+    private final Optional<String> externalId;
 
     public TenantSecretStore(String name, String awsId, String role) {
+        this(name, awsId, role, Optional.empty());
+    }
+
+    public TenantSecretStore(String name, String awsId, String role, Optional<String> externalId) {
         this.name = name;
         this.awsId = awsId;
         this.role = role;
+        this.externalId = externalId;
     }
 
     public String getName() {
@@ -36,8 +41,8 @@ public class TenantSecretStore {
         return externalId;
     }
 
-    public void setExternalId(String externalId) {
-        this.externalId = Optional.of(externalId);
+    public TenantSecretStore withExternalId(String externalId) {
+        return new TenantSecretStore(name, awsId, role, Optional.of(externalId));
     }
 
     @Override

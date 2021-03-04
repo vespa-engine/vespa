@@ -7,6 +7,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author olaa
@@ -16,11 +17,12 @@ public class SecretStoreExternalIdRetriever {
     private static final String SECRET_NAME_FORMAT = "%s.external.id.%s.%s";
 
     public static List<TenantSecretStore> populateExternalId(SecretStore secretStore, TenantName tenant, SystemName system, List<TenantSecretStore> tenantSecretStores) {
-        tenantSecretStores.forEach(tenantSecretStore -> {
-            var secretName = secretName(tenant, system, tenantSecretStore.getName());
-            tenantSecretStore.setExternalId(secretStore.getSecret(secretName));
-        });
-        return tenantSecretStores;
+        return tenantSecretStores.stream()
+                .map(tenantSecretStore -> {
+                    var secretName = secretName(tenant, system, tenantSecretStore.getName());
+                    return tenantSecretStore.withExternalId(secretStore.getSecret(secretName));
+                })
+                .collect(Collectors.toList());
     }
 
     private static String secretName(TenantName tenant, SystemName system, String storeName) {
