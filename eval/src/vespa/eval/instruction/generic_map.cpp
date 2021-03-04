@@ -53,9 +53,12 @@ struct SelectGenericMapOp {
 using MapTypify = TypifyValue<TypifyCellType,operation::TypifyOp1>;
  
 InterpretedFunction::Instruction
-GenericMap::make_instruction(const ValueType &lhs_type, map_fun_t function)
+GenericMap::make_instruction(const ValueType &result_type,
+                             const ValueType &input_type, map_fun_t function)
 {
-    auto op = typify_invoke<2,MapTypify,SelectGenericMapOp>(lhs_type.cell_type(), function, lhs_type);
+    // for now:
+    assert(result_type == input_type);
+    auto op = typify_invoke<2,MapTypify,SelectGenericMapOp>(input_type.cell_type(), function, input_type);
     return Instruction(op, to_param(function));
 }
 

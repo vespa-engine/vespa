@@ -14,7 +14,8 @@ namespace vespalib::eval::instruction {
 
 struct GenericConcat {
     static InterpretedFunction::Instruction
-    make_instruction(const ValueType &lhs_type, const ValueType &rhs_type,
+    make_instruction(const ValueType &result_type,
+                     const ValueType &lhs_type, const ValueType &rhs_type,
                      const vespalib::string &dimension,
                      const ValueBuilderFactory &factory, Stash &stash);
 };

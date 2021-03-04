@@ -114,13 +114,13 @@ struct SelectGenericCreateOp {
 } // namespace <unnamed>
 
 Instruction
-GenericCreate::make_instruction(const ValueType &res_type,
+GenericCreate::make_instruction(const ValueType &result_type,
                                 const SpecMap &spec,
                                 const ValueBuilderFactory &factory,
                                 Stash &stash)
 {
-    const auto &param = stash.create<CreateParam>(res_type, spec, factory);
-    auto fun = typify_invoke<1,TypifyCellType,SelectGenericCreateOp>(res_type.cell_type());
+    const auto &param = stash.create<CreateParam>(result_type, spec, factory);
+    auto fun = typify_invoke<1,TypifyCellType,SelectGenericCreateOp>(result_type.cell_type());
     return Instruction(fun, wrap_param<CreateParam>(param));
 }
 

@@ -201,14 +201,16 @@ DenseRenamePlan::DenseRenamePlan(const ValueType &lhs_type,
 DenseRenamePlan::~DenseRenamePlan() = default;
 
 InterpretedFunction::Instruction
-GenericRename::make_instruction(const ValueType &lhs_type,
+GenericRename::make_instruction(const ValueType &result_type,
+                                const ValueType &input_type,
                                 const std::vector<vespalib::string> &rename_dimension_from,
                                 const std::vector<vespalib::string> &rename_dimension_to,
                                 const ValueBuilderFactory &factory, Stash &stash)
 {
-    auto &param = stash.create<RenameParam>(lhs_type,
+    auto &param = stash.create<RenameParam>(input_type,
                                             rename_dimension_from, rename_dimension_to,
                                             factory);
+    assert(result_type == param.res_type);
     auto fun = typify_invoke<1,TypifyCellType,SelectGenericRenameOp>(param.res_type.cell_type(), param);
     return Instruction(fun, wrap_param<RenameParam>(param));
 }
