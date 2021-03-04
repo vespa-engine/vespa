@@ -206,13 +206,6 @@ public class Flags {
             "Takes effect on the next suspension request to the Orchestrator.",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag RECONFIGURABLE_ZOOKEEPER_SERVER_FOR_CLUSTER_CONTROLLER = defineFeatureFlag(
-            "reconfigurable-zookeeper-server-for-cluster-controller", true,
-            List.of("musum", "mpolden"), "2020-12-16", "2021-03-16",
-            "Whether to use reconfigurable zookeeper server for cluster controller",
-            "Takes effect on (re)redeployment",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
             "enable-feed-block-in-distributor", false,
             List.of("geirst"), "2021-01-27", "2021-04-01",
