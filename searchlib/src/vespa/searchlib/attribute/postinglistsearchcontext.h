@@ -186,7 +186,7 @@ private:
     using Parent::isRegex;
     using Parent::getRegex;
     bool useThis(const PostingListSearchContext::DictionaryConstIterator & it) const override {
-        return isRegex() ? (getRegex() ? getRegex()->partial_match(_enumStore.get_value(it.getKey())) : false ) : true;
+        return isRegex() ? (getRegex().valid() ? getRegex().partial_match(_enumStore.get_value(it.getKey())) : false ) : true;
     }
 public:
     StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched);
