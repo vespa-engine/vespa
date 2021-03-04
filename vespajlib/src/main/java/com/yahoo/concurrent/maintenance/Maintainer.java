@@ -44,7 +44,7 @@ public abstract class Maintainer implements Runnable {
         Objects.requireNonNull(startedAt);
         Objects.requireNonNull(clusterHostnames);
         Duration initialDelay = staggeredDelay(interval, startedAt, HostName.getLocalhost(), clusterHostnames)
-                                .plus(Duration.ofSeconds(30));
+                                .plus(Duration.ofSeconds(30)); // Let the system  stabilize before maintenance
         service = new ScheduledThreadPoolExecutor(1, r -> new Thread(r, name() + "-worker"));
         service.scheduleAtFixedRate(this, initialDelay.toMillis(), interval.toMillis(), TimeUnit.MILLISECONDS);
         jobControl.started(name(), this);
