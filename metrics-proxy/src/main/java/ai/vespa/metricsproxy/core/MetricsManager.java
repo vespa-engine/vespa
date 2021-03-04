@@ -77,7 +77,7 @@ public class MetricsManager {
      * Returns the metrics for the given services. The empty list is returned if no services are given.
      *
      * @param services the services to retrieve metrics for
-     * @return tetrics for all matching services
+     * @return metrics for all matching services
      */
     public List<MetricsPacket> getMetrics(List<VespaService> services, Instant startTime) {
         return getMetricsAsBuilders(services, startTime).stream()
