@@ -12,12 +12,12 @@ using re2::StringPiece;
 // All RE2 instances use a Quiet option to prevent the library from
 // complaining to stderr if pattern compilation fails.
 
-Regex::Regex(std::shared_ptr<const Impl> impl)
+Regex::Regex(std::unique_ptr<const Impl> impl)
     : _impl(std::move(impl))
 {}
 
-Regex::Regex(const Regex&) = default;
-Regex& Regex::operator=(const Regex&) = default;
+Regex::Regex() : _impl() {}
+
 Regex::Regex(Regex&&) noexcept = default;
 Regex& Regex::operator=(Regex&&) noexcept = default;
 
@@ -61,7 +61,7 @@ Regex Regex::from_pattern(std::string_view pattern, uint32_t opt_mask) {
     if ((opt_mask & Options::DotMatchesNewline) != 0) {
         opts.set_dot_nl(true);
     }
-    return Regex(std::make_shared<const Impl>(pattern, opts));
+    return Regex(std::make_unique<const Impl>(pattern, opts));
 }
 
 bool Regex::parsed_ok() const noexcept {

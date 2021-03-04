@@ -111,11 +111,11 @@ IDocumentWeightAttribute::LookupResult
 MultiValueStringPostingAttributeT<B, T>::DocumentWeightAttributeAdapter::lookup(const vespalib::string &term, vespalib::datastore::EntryRef dictionary_snapshot) const
 {
     const Dictionary &dictionary = self._enumStore.get_posting_dictionary();
-    DictionaryConstIterator dictItr(vespalib::btree::BTreeNode::Ref(), dictionary.getAllocator());
+    Dictionary::ConstIterator dictItr(vespalib::btree::BTreeNode::Ref(), dictionary.getAllocator());
     auto comp = self._enumStore.make_folded_comparator(term.c_str());
 
-    dictItr.lower_bound(dictionary_snapshot, EnumIndex(), comp);
-    if (dictItr.valid() && !comp(EnumIndex(), dictItr.getKey())) {
+    dictItr.lower_bound(dictionary_snapshot, enumstore::Index(), comp);
+    if (dictItr.valid() && !comp(enumstore::Index(), dictItr.getKey())) {
         vespalib::datastore::EntryRef pidx(dictItr.getData());
         if (pidx.valid()) {
             const PostingList &plist = self.getPostingList();
@@ -131,7 +131,7 @@ void
 MultiValueStringPostingAttributeT<B, T>::DocumentWeightAttributeAdapter::collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback) const
 {
     const Dictionary &dictionary = self._enumStore.get_posting_dictionary();
-    DictionaryConstIterator dictItr(vespalib::btree::BTreeNode::Ref(), dictionary.getAllocator());
+    Dictionary::ConstIterator dictItr(vespalib::btree::BTreeNode::Ref(), dictionary.getAllocator());
     auto comp = self._enumStore.make_folded_comparator();
     dictItr.lower_bound(dictionary_snapshot, enum_idx, comp);
     while (dictItr.valid() && !comp(enum_idx, dictItr.getKey())) {

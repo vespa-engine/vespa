@@ -46,9 +46,6 @@ protected:
     using WeightedString = StringAttribute::WeightedString;
     using generation_t = StringAttribute::generation_t;
 
-private:
-    friend class StringAttributeTest;
-
 public:
     MultiValueStringAttributeT(const vespalib::string & name, const AttributeVector::Config & c =
                               AttributeVector::Config(AttributeVector::BasicType::STRING,
