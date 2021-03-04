@@ -20,12 +20,6 @@ IMPLEMENT_IDENTIFIABLE_ABSTRACT(StringAttribute, AttributeVector);
 using attribute::LoadedEnumAttribute;
 using attribute::LoadedEnumAttributeVector;
 
-AttributeVector::SearchContext::UP
-StringAttribute::getSearch(QueryTermSimple::UP term, const attribute::SearchContextParams &) const
-{
-    return std::make_unique<StringSearchContext>(std::move(term), *this);
-}
-
 class SortDataChar {
 public:
     SortDataChar() { }
@@ -232,9 +226,7 @@ StringAttribute::StringSearchContext::StringSearchContext(QueryTermSimple::UP qT
     SearchContext(toBeSearched),
     _queryTerm(static_cast<QueryTermUCS4 *>(qTerm.release())),
     _termUCS4(queryTerm()->getUCS4Term()),
-    _buffer(nullptr),
     _regex(),
-    _bufferLen(toBeSearched.getMaxValueCount()),
     _isPrefix(_queryTerm->isPrefix()),
     _isRegex(_queryTerm->isRegex())
 {
@@ -243,12 +235,7 @@ StringAttribute::StringSearchContext::StringSearchContext(QueryTermSimple::UP qT
     }
 }
 
-StringAttribute::StringSearchContext::~StringSearchContext()
-{
-    if (_buffer != nullptr) {
-        delete [] _buffer;
-    }
-}
+StringAttribute::StringSearchContext::~StringSearchContext() = default;
 
 bool
 StringAttribute::StringSearchContext::valid() const
@@ -282,33 +269,6 @@ public:
     const char * get(const char * v) const { return v; }
 };
 
-}
-
-int32_t
-StringAttribute::StringSearchContext::onFind(DocId docId, int32_t elemId, int32_t &weight) const
-{
-    WeightedConstChar * buffer = getBuffer();
-    uint32_t valueCount = attribute().get(docId, buffer, _bufferLen);
-
-    CollectWeight collector;
-    DirectAccessor accessor;
-    int32_t foundElem = findNextMatch(vespalib::ConstArrayRef<WeightedConstChar>(buffer, std::min(valueCount, _bufferLen)), elemId, accessor, collector);
-    weight = collector.getWeight();
-    return foundElem;
-}
-
-int32_t
-StringAttribute::StringSearchContext::onFind(DocId docId, int32_t elemId) const
-{
-    WeightedConstChar * buffer = getBuffer();
-    uint32_t valueCount = attribute().get(docId, buffer, _bufferLen);
-    for (uint32_t i = elemId, m = std::min(valueCount, _bufferLen); (i < m); i++) {
-        if (isMatch(buffer[i].getValue())) {
-            return i;
-        }
-    }
-
-    return -1;
 }
 
 bool

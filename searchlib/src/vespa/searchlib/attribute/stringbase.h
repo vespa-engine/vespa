@@ -152,29 +152,16 @@ protected:
             return -1;
         }
 
-
-        int32_t onFind(DocId docId, int32_t elementId, int32_t &weight) const override;
-        int32_t onFind(DocId docId, int32_t elementId) const override;
-
         bool isPrefix() const { return _isPrefix; }
         bool  isRegex() const { return _isRegex; }
         const vespalib::Regex & getRegex() const { return _regex; }
     private:
-        WeightedConstChar * getBuffer() const {
-            if (_buffer == nullptr) {
-                _buffer = new WeightedConstChar[_bufferLen];
-            }
-            return _buffer;
-        }
         std::unique_ptr<QueryTermUCS4> _queryTerm;
         std::vector<ucs4_t>            _termUCS4;
-        mutable WeightedConstChar *    _buffer;
         vespalib::Regex                _regex;
-        unsigned                       _bufferLen;
         bool                           _isPrefix;
         bool                           _isRegex;
     };
-    SearchContext::UP getSearch(QueryTermSimpleUP term, const attribute::SearchContextParams & params) const override;
 };
 
 }

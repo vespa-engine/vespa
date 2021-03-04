@@ -8,7 +8,7 @@
 #include <vespa/searchlib/attribute/attributeguard.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/attribute_read_guard.h>
-#include <vespa/searchlib/attribute/extendableattributes.h>
+#include <vespa/searchlib/attribute/singlestringattribute.h>
 #include <vespa/searchlib/attribute/iattributemanager.h>
 #include <vespa/searchlib/attribute/predicate_attribute.h>
 #include <vespa/searchlib/attribute/singlenumericattribute.h>
@@ -35,7 +35,6 @@ using search::AttributeGuard;
 using search::AttributeVector;
 using search::IAttributeManager;
 using search::IntegerAttribute;
-using search::SingleStringExtAttribute;
 using search::attribute::IAttributeContext;
 using search::fef::MatchData;
 using search::fef::MatchDataLayout;
@@ -266,9 +265,11 @@ bool search(const string &term, IAttributeManager &attribute_manager,
 }
 
 template <typename T> struct AttributeVectorTypeFinder {
-    //typedef search::SingleValueStringAttribute Type;
-    typedef SingleStringExtAttribute Type;
-    static void add(Type & a, const T & v) { a.add(v, weight); }
+    typedef search::SingleValueStringAttribute Type;
+    static void add(Type & a, const T & v) {
+        a.update(a.getNumDocs()-1, v);
+        a.commit();
+    }
 };
 template <> struct AttributeVectorTypeFinder<int64_t> {
     typedef search::SingleValueNumericAttribute<search::IntegerAttributeTemplate<int64_t> > Type;
