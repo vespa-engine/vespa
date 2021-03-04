@@ -23,9 +23,9 @@ import java.util.Optional;
  */
 public class Autoscaler {
 
-    /** What cost difference factor is worth a reallocation? */
+    /** What cost difference is worth a reallocation? */
     private static final double costDifferenceWorthReallocation = 0.1;
-    /** What difference factor for a resource is worth a reallocation? */
+    /** What resource difference is worth a reallocation? */
     private static final double resourceDifferenceWorthReallocation = 0.1;
 
     private final MetricsDb metricsDb;
@@ -64,7 +64,7 @@ public class Autoscaler {
         if ( ! stable(clusterNodes, nodeRepository))
             return Advice.none("Cluster change in progress");
 
-        Duration scalingWindow = scalingWindow(clusterNodes.clusterSpec(), cluster);
+        Duration scalingWindow = cluster.scalingDuration(clusterNodes.clusterSpec());
         if (scaledIn(scalingWindow, cluster))
             return Advice.dontScale("Won't autoscale now: Less than " + scalingWindow + " since last rescaling");
 
@@ -84,11 +84,7 @@ public class Autoscaler {
             return Advice.none("Collecting more data before making new scaling decisions: " +
                                "Have measurements from " + nodesMeasured + " but require from " + clusterNodes.size());
 
-        double cpuLoad    = clusterTimeseries.averageLoad(Resource.cpu);
-        double memoryLoad = clusterTimeseries.averageLoad(Resource.memory);
-        double diskLoad   = clusterTimeseries.averageLoad(Resource.disk);
-
-        var target = ResourceTarget.idealLoad(cpuLoad, memoryLoad, diskLoad, currentAllocation, application);
+        var target = ResourceTarget.idealLoad(clusterTimeseries, currentAllocation, application);
 
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(target, currentAllocation, limits);
@@ -126,32 +122,6 @@ public class Autoscaler {
     private boolean scaledIn(Duration delay, Cluster cluster) {
         return cluster.lastScalingEvent().map(event -> event.at()).orElse(Instant.MIN)
                       .isAfter(nodeRepository.clock().instant().minus(delay));
-    }
-
-    /** The duration of the window we need to consider to make a scaling decision. See also minimumMeasurementsPerNode */
-    private Duration scalingWindow(ClusterSpec clusterSpec, Cluster cluster) {
-        int completedEventCount = 0;
-        Duration totalDuration = Duration.ZERO;
-        for (ScalingEvent event : cluster.scalingEvents()) {
-            if (event.duration().isEmpty()) continue;
-            completedEventCount++;
-            totalDuration = totalDuration.plus(event.duration().get());
-        }
-
-        if (completedEventCount == 0) { // Use defaults
-            if (clusterSpec.isStateful()) return Duration.ofHours(12);
-            return Duration.ofMinutes(10);
-        }
-        else {
-            Duration predictedDuration = totalDuration.dividedBy(completedEventCount);
-
-            // TODO: Remove when we have reliable completion for content clusters
-            if (clusterSpec.isStateful() && predictedDuration.minus(Duration.ofHours(12)).isNegative())
-                return Duration.ofHours(12);
-
-            if (predictedDuration.minus(Duration.ofMinutes(5)).isNegative()) return Duration.ofMinutes(5); // minimum
-            return predictedDuration;
-        }
     }
 
     static Duration maxScalingWindow() {

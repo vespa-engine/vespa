@@ -2,11 +2,9 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.vespa.hosted.provision.NodeList;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -18,12 +16,14 @@ import java.util.stream.Collectors;
  */
 public class ClusterTimeseries {
 
+    private final Cluster cluster;
     private final NodeList clusterNodes;
 
     /** The measurements for all nodes in this snapshot */
-    private final List<NodeTimeseries> allTimeseries;
+    private final List<NodeTimeseries> timeseries;
 
     public ClusterTimeseries(Duration period, Cluster cluster, NodeList clusterNodes, MetricsDb db) {
+        this.cluster = cluster;
         this.clusterNodes = clusterNodes;
         var timeseries = db.getNodeTimeseries(period, clusterNodes);
 
@@ -32,26 +32,42 @@ public class ClusterTimeseries {
                                                         snapshot.generation() >= cluster.lastScalingEvent().get().generation());
         timeseries = filter(timeseries, snapshot -> snapshot.inService() && snapshot.stable());
 
-        this.allTimeseries = timeseries;
+        this.timeseries = timeseries;
     }
+
+    /** The cluster this is a timeseries for */
+    public Cluster cluster() { return cluster; }
+
+    /** The nodes of the cluster this is a timeseries for */
+    public NodeList clusterNodes() { return clusterNodes; }
 
     /** Returns the average number of measurements per node */
     public int measurementsPerNode() {
-        int measurementCount = allTimeseries.stream().mapToInt(m -> m.size()).sum();
+        int measurementCount = timeseries.stream().mapToInt(m -> m.size()).sum();
         return measurementCount / clusterNodes.size();
     }
 
     /** Returns the number of nodes measured in this */
     public int nodesMeasured() {
-        return allTimeseries.size();
+        return timeseries.size();
     }
 
     /** Returns the average load of this resource in this */
     public double averageLoad(Resource resource) {
-        int measurementCount = allTimeseries.stream().mapToInt(m -> m.size()).sum();
+        int measurementCount = timeseries.stream().mapToInt(m -> m.size()).sum();
         if (measurementCount == 0) return 0;
-        double measurementSum = allTimeseries.stream().flatMap(m -> m.asList().stream()).mapToDouble(m -> value(resource, m)).sum();
+        double measurementSum = timeseries.stream().flatMap(m -> m.asList().stream()).mapToDouble(m -> value(resource, m)).sum();
         return measurementSum / measurementCount;
+    }
+
+    /** The max query growth rate we can predict from this time-series as a fraction of the current traffic per minute */
+    public double maxQueryGrowthRate() {
+        return 0.1; // default
+    }
+
+    /** The current query rate as a fraction of the peak rate in this timeseries */
+    public double currentQueryFractionOfMax() {
+        return 0.5; // default
     }
 
     private double value(Resource resource, MetricSnapshot snapshot) {
