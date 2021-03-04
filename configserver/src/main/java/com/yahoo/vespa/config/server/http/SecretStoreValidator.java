@@ -8,7 +8,7 @@ import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.application.TenantSecretStore;
+import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.yolean.Exceptions;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;

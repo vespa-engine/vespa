@@ -9,7 +9,9 @@ import com.yahoo.vespa.hosted.controller.api.integration.aws.TenantRoles;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 
@@ -32,6 +34,7 @@ public class DeploymentData {
     private final Optional<AthenzDomain> athenzDomain;
     private final Optional<TenantRoles> tenantRoles;
     private final Quota quota;
+    private final List<TenantSecretStore> tenantSecretStores;
 
     public DeploymentData(ApplicationId instance, ZoneId zone, byte[] applicationPackage, Version platform,
                           Set<ContainerEndpoint> containerEndpoints,
@@ -39,7 +42,8 @@ public class DeploymentData {
                           Optional<DockerImage> dockerImageRepo,
                           Optional<AthenzDomain> athenzDomain,
                           Optional<TenantRoles> tenantRoles,
-                          Quota quota) {
+                          Quota quota,
+                          List<TenantSecretStore> tenantSecretStores) {
         this.instance = requireNonNull(instance);
         this.zone = requireNonNull(zone);
         this.applicationPackage = requireNonNull(applicationPackage);
@@ -50,6 +54,7 @@ public class DeploymentData {
         this.athenzDomain = athenzDomain;
         this.tenantRoles = tenantRoles;
         this.quota = quota;
+        this.tenantSecretStores = tenantSecretStores;
     }
 
     public ApplicationId instance() {
@@ -90,6 +95,10 @@ public class DeploymentData {
 
     public Quota quota() {
         return quota;
+    }
+
+    public List<TenantSecretStore> tenantSecretStores() {
+        return tenantSecretStores;
     }
 
 }

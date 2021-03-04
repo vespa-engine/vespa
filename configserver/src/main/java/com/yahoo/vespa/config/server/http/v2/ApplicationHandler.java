@@ -29,7 +29,7 @@ import com.yahoo.vespa.config.server.http.HttpHandler;
 import com.yahoo.vespa.config.server.http.JSONResponse;
 import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.tenant.Tenant;
-import com.yahoo.vespa.config.server.application.TenantSecretStore;
+import com.yahoo.config.model.api.TenantSecretStore;
 
 import java.io.IOException;
 import java.net.URLDecoder;

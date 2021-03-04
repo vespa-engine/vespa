@@ -7,7 +7,10 @@ import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.IdentityProvider;
+import com.yahoo.vespa.model.container.SecretStore;
 import com.yahoo.vespa.model.container.component.Component;
+
+import java.util.List;
 
 /**
  * Validates the requirements for setting up a secret store.
@@ -22,11 +25,10 @@ public class SecretStoreValidator extends Validator {
         if (model.getAdmin().getApplicationType() != ApplicationType.DEFAULT) return;
 
         for (ContainerCluster cluster : model.getContainerClusters().values()) {
-            if (cluster.getSecretStore().isPresent() && ! hasIdentityProvider(cluster)) {
-                throw new IllegalArgumentException(String.format(
+            if (cluster.getSecretStore().isPresent() && ! hasIdentityProvider(cluster))
+                    throw new IllegalArgumentException(String.format(
                         "Container cluster '%s' uses a secret store, so an Athenz domain and an Athenz service" +
                                 " must be declared in deployment.xml.", cluster.getName()));
-            }
         }
     }
 
@@ -36,4 +38,5 @@ public class SecretStoreValidator extends Validator {
         }
         return false;
     }
+
 }

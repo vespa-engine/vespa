@@ -27,19 +27,13 @@ import java.util.logging.Logger;
 public class AwsParameterStoreValidationHandler extends LoggingRequestHandler {
 
     private static final Logger log = Logger.getLogger(AwsParameterStoreValidationHandler.class.getName());
-    private final VespaAwsCredentialsProvider credentialsProvider;
+    private final AwsParameterStore awsParameterStore;
 
     @Inject
-    public AwsParameterStoreValidationHandler(Context ctx) {
-        this(ctx, new VespaAwsCredentialsProvider());
-    }
-
-
-    public AwsParameterStoreValidationHandler(Context ctx, VespaAwsCredentialsProvider credentialsProvider) {
+    public AwsParameterStoreValidationHandler(Context ctx, AwsParameterStore awsParameterStore) {
         super(ctx);
-        this.credentialsProvider = credentialsProvider;
+        this.awsParameterStore = awsParameterStore;
     }
-
 
     @Override
     public HttpResponse handle(HttpRequest request) {
@@ -63,9 +57,7 @@ public class AwsParameterStoreValidationHandler extends LoggingRequestHandler {
         settings.toSlime(root.setObject("settings"));
 
         try {
-            var arn = "arn:aws:iam::" + settings.awsId + ":role/" + settings.role;
-            var store = new AwsParameterStore(this.credentialsProvider, arn, settings.externalId);
-            store.getSecret("vespa-secret");
+            awsParameterStore.getSecret("vespa-secret");
             root.setString("status", "ok");
         } catch (RuntimeException e) {
             root.setString("status", "error");

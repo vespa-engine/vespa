@@ -47,6 +47,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
+import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackageValidator;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -67,6 +68,7 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
+import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import com.yahoo.yolean.Exceptions;
@@ -594,10 +596,16 @@ public class ApplicationController {
             Quota deploymentQuota = DeploymentQuotaCalculator.calculate(billingController.getQuota(application.tenant()),
                     asList(application.tenant()), application, zone, applicationPackage.deploymentSpec());
 
+            List<TenantSecretStore> tenantSecretStores = controller.tenants()
+                    .get(application.tenant())
+                    .filter(tenant-> tenant instanceof CloudTenant)
+                    .map(tenant -> ((CloudTenant) tenant).tenantSecretStores())
+                    .orElse(List.of());
+
             ConfigServer.PreparedApplication preparedApplication =
                     configServer.deploy(new DeploymentData(application, zone, applicationPackage.zippedContent(), platform,
                                                            endpoints, endpointCertificateMetadata, dockerImageRepo, domain,
-                                                           tenantRoles, deploymentQuota));
+                                                           tenantRoles, deploymentQuota, tenantSecretStores));
 
             return new ActivateResult(new RevisionId(applicationPackage.hash()), preparedApplication.prepareResponse(),
                                       applicationPackage.zippedContent().length);

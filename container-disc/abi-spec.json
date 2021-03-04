@@ -59,5 +59,106 @@
       "public java.util.List listSecretVersions(java.lang.String)"
     ],
     "fields": []
+  },
+  "com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.config.ConfigInstance$Builder"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.container.jdisc.secretstore.SecretStoreConfig)",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Builder groups(com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Groups$Builder)",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Builder groups(java.util.List)",
+      "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
+      "public final java.lang.String getDefMd5()",
+      "public final java.lang.String getDefName()",
+      "public final java.lang.String getDefNamespace()",
+      "public final boolean getApplyOnRestart()",
+      "public final void setApplyOnRestart(boolean)",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig build()"
+    ],
+    "fields": [
+      "public java.util.List groups"
+    ]
+  },
+  "com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Groups$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.config.ConfigBuilder"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Groups)",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Groups$Builder name(java.lang.String)",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Groups$Builder region(java.lang.String)",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Groups$Builder awsId(java.lang.String)",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Groups$Builder role(java.lang.String)",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Groups$Builder externalId(java.lang.String)",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Groups build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Groups": {
+    "superClass": "com.yahoo.config.InnerNode",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Groups$Builder)",
+      "public java.lang.String name()",
+      "public java.lang.String region()",
+      "public java.lang.String awsId()",
+      "public java.lang.String role()",
+      "public java.lang.String externalId()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Producer": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.config.ConfigInstance$Producer"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract void getConfig(com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Builder)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.container.jdisc.secretstore.SecretStoreConfig": {
+    "superClass": "com.yahoo.config.ConfigInstance",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public static java.lang.String getDefMd5()",
+      "public static java.lang.String getDefName()",
+      "public static java.lang.String getDefNamespace()",
+      "public static java.lang.String getDefVersion()",
+      "public void <init>(com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Builder)",
+      "public java.util.List groups()",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Groups groups(int)"
+    ],
+    "fields": [
+      "public static final java.lang.String CONFIG_DEF_MD5",
+      "public static final java.lang.String CONFIG_DEF_NAME",
+      "public static final java.lang.String CONFIG_DEF_NAMESPACE",
+      "public static final java.lang.String CONFIG_DEF_VERSION",
+      "public static final java.lang.String[] CONFIG_DEF_SCHEMA"
+    ]
   }
 }
