@@ -81,7 +81,7 @@ public final class ApplicationContainerCluster extends ContainerCluster<Applicat
 
     private ContainerModelEvaluation modelEvaluation;
 
-    private Optional<String> tlsClientAuthority;
+    private final Optional<String> tlsClientAuthority;
 
     private MbusParams mbusParams;
     private boolean messageBusEnabled = true;
