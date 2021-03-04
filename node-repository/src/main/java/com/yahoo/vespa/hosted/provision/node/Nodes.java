@@ -290,6 +290,10 @@ public class Nodes {
         return move(hostname, true, Node.State.failed, agent, Optional.of(reason));
     }
 
+    public Node fail(String hostname, boolean keepAllocation, Agent agent, String reason) {
+        return move(hostname, keepAllocation, Node.State.failed, agent, Optional.of(reason));
+    }
+
     /**
      * Fails all the nodes that are children of hostname before finally failing the hostname itself.
      *
