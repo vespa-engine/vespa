@@ -60,7 +60,7 @@ public:
 protected:
     StringAttribute(const vespalib::string & name);
     StringAttribute(const vespalib::string & name, const Config & c);
-    ~StringAttribute();
+    ~StringAttribute() override;
     static const char * defaultValue() { return ""; }
     using Change = ChangeTemplate<StringChangeData>;
     using ChangeVector = ChangeVectorT<Change>;
@@ -71,9 +71,9 @@ protected:
 
     bool onLoadEnumerated(ReaderBase &attrReader);
 
-    virtual bool onAddDoc(DocId doc) override;
+    bool onAddDoc(DocId doc) override;
 
-    virtual vespalib::MemoryUsage getChangeVectorMemoryUsage() const override;
+    vespalib::MemoryUsage getChangeVectorMemoryUsage() const override;
 private:
     virtual void load_posting_lists(LoadedVector& loaded);
     virtual void load_enum_store(LoadedVector& loaded);

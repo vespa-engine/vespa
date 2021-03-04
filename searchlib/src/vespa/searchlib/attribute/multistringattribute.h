@@ -33,13 +33,11 @@ protected:
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     using WeightedIndex = typename MultiValueAttribute<B, M>::MultiValueType;
     using WeightedIndexArrayRef = typename MultiValueAttribute<B, M>::MultiValueArrayRef;
-    using WeightedIndexVector = typename MultiValueAttribute<B, M>::ValueVector;
 
     using Change = StringAttribute::Change;
     using ChangeVector = StringAttribute::ChangeVector;
     using DocId = StringAttribute::DocId;
     using EnumHandle = StringAttribute::EnumHandle;
-    using EnumModifier = StringAttribute::EnumModifier;
     using LoadedVector = StringAttribute::LoadedVector;
     using SearchContext = StringAttribute::SearchContext;
     using ValueModifier = StringAttribute::ValueModifier;
@@ -159,7 +157,6 @@ public:
     {
         using BT::queryTerm;
         using AttrType = MultiValueStringAttributeT<B, M>;
-        using FoldedComparatorType = typename EnumStore::FoldedComparatorType;
     public:
         StringTemplSearchContext(SearchContext::QueryTermSimpleUP qTerm, const AttrType & toBeSearched);
     };

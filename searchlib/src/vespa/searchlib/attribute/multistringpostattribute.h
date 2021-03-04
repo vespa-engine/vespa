@@ -58,8 +58,6 @@ private:
     using DocId = typename MultiValueStringAttributeT<B, T>::DocId;
     using DocIndices = typename MultiValueStringAttributeT<B, T>::DocIndices;
     using EnumIndex = typename EnumStore::Index;
-    using FoldedComparatorType = typename EnumStore::FoldedComparatorType;
-    using FrozenDictionary = typename Dictionary::FrozenView;
     using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using Posting = typename PostingParent::Posting;
     using PostingList = typename PostingParent::PostingList;

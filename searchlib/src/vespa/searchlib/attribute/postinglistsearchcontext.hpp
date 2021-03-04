@@ -21,9 +21,9 @@ namespace search::attribute {
 template <typename DataT>
 PostingListSearchContextT<DataT>::
 PostingListSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
-                          const PostingList &postingList, const IEnumStore &esb,
-                          uint32_t minBvDocFreq, bool useBitVector, const ISearchContext &searchContext)
-    : PostingListSearchContext(dictionary, docIdLimit, numValues, hasWeight, esb, minBvDocFreq, useBitVector, searchContext),
+                          const PostingList &postingList, uint32_t minBvDocFreq,
+                          bool useBitVector, const ISearchContext &searchContext)
+    : PostingListSearchContext(dictionary, docIdLimit, numValues, hasWeight, minBvDocFreq, useBitVector, searchContext),
       _postingList(postingList),
       _merger(docIdLimit)
 {
@@ -283,9 +283,9 @@ PostingListSearchContextT<DataT>::applyRangeLimit(int rangeLimit)
 template <typename DataT>
 PostingListFoldedSearchContextT<DataT>::
 PostingListFoldedSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues,
-                                bool hasWeight, const PostingList &postingList, const IEnumStore &esb,
-                                uint32_t minBvDocFreq, bool useBitVector, const ISearchContext &searchContext)
-    : Parent(dictionary, docIdLimit, numValues, hasWeight, postingList, esb, minBvDocFreq, useBitVector, searchContext)
+                                bool hasWeight, const PostingList &postingList, uint32_t minBvDocFreq,
+                                bool useBitVector, const ISearchContext &searchContext)
+    : Parent(dictionary, docIdLimit, numValues, hasWeight, postingList, minBvDocFreq, useBitVector, searchContext)
 {
 }
 

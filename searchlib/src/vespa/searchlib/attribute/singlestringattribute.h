@@ -25,7 +25,6 @@ protected:
     using EnumHintSearchContext = attribute::EnumHintSearchContext;
     using EnumIndex = typename SingleValueEnumAttributeBase::EnumIndex;
     using EnumIndexVector = typename SingleValueEnumAttributeBase::EnumIndexVector;
-    using EnumModifier = StringAttribute::EnumModifier;
     using EnumStore = typename SingleValueEnumAttribute<B>::EnumStore;
     using LoadedVector = StringAttribute::LoadedVector;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
@@ -107,7 +106,6 @@ public:
                                      public EnumHintSearchContext
     {
         using AttrType = SingleValueStringAttributeT<B>;
-        using FoldedComparatorType = typename EnumStore::FoldedComparatorType;
         using StringSingleImplSearchContext::queryTerm;
     public:
         StringTemplSearchContext(QueryTermSimpleUP qTerm, const AttrType & toBeSearched);

@@ -17,8 +17,7 @@ PostingListAttributeBase(AttributeVector &attr,
       _postingList(enumStore.get_dictionary().get_posting_dictionary(), attr.getStatus(),
                    attr.getConfig()),
       _attr(attr),
-      _dict(enumStore.get_dictionary().get_posting_dictionary()),
-      _esb(enumStore)
+      _dict(enumStore.get_dictionary().get_posting_dictionary())
 { }
 
 template <typename P>
