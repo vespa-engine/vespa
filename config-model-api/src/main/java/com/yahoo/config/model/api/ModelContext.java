@@ -86,7 +86,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"geirst"}) default boolean enableFeedBlockInDistributor() { return false; }
         @ModelFeatureFlag(owners = {"baldersheim", "geirst", "toregge"}) default double maxDeadBytesRatio() { return 0.2; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int clusterControllerMaxHeapSizeInMb() { return 256; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return 512; }
+        @ModelFeatureFlag(owners = {"hmusum"}) default int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return 256; }
         @ModelFeatureFlag(owners = {"bjorncs", "tokle"}) default List<String> allowedAthenzProxyIdentities() { return List.of(); }
         @ModelFeatureFlag(owners = {"tokle"}) default boolean tenantIamRole() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxActivationInhibitedOutOfSyncGroups() { return 0; }
