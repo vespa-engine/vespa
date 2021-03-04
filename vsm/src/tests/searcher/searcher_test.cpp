@@ -320,7 +320,7 @@ performSearch(FieldSearcher & fs, const StringList & query, const FieldValue & f
     doc.setField(0, document::FieldValue::UP(fv.clone()));
 
     fs.search(doc);
-    return q.qtv;
+    return std::move(q.qtv);
 }
 
 void

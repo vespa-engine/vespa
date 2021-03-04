@@ -51,8 +51,6 @@ QueryTerm::QueryTerm() :
     _fieldInfo()
 { }
 
-QueryTerm::QueryTerm(const QueryTerm &) = default;
-QueryTerm & QueryTerm::operator = (const QueryTerm &) = default;
 QueryTerm::QueryTerm(QueryTerm &&) noexcept = default;
 QueryTerm & QueryTerm::operator = (QueryTerm &&) noexcept = default;
 
