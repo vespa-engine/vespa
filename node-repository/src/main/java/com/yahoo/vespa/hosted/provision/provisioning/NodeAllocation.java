@@ -290,12 +290,12 @@ class NodeAllocation {
     }
 
     /**
-     * Returns {@link FlavorCount} describing the node deficit for the given {@link NodeSpec}.
+     * Returns {@link FlavorCount} describing the host deficit for the given {@link NodeSpec}.
      *
      * @return empty if the requested spec is already fulfilled. Otherwise returns {@link FlavorCount} containing the
-     * flavor and node count required to cover the deficit.
+     * flavor and host count required to cover the deficit.
      */
-    Optional<FlavorCount> nodeDeficit() {
+    Optional<FlavorCount> hostDeficit() {
         if (nodeType() != NodeType.config && nodeType() != NodeType.tenant) {
             return Optional.empty(); // Requests for these node types never have a deficit
         }
