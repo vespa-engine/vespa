@@ -15,7 +15,6 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterMembership;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.PortAllocBridge;
@@ -150,9 +149,8 @@ public class MetricsProxyContainer extends Container implements
 
         if (clusterMembership.isPresent()) {
             int maxHeapSize = featureFlags.metricsProxyMaxHeapSizeInMb(clusterMembership.get().cluster().type());
-            boolean verboseGc = (maxHeapSize < 512);
             builder.jvm
-                    .verbosegc(verboseGc)
+                    .verbosegc(true)
                     .heapsize(maxHeapSize);
         }
     }
@@ -173,4 +171,5 @@ public class MetricsProxyContainer extends Container implements
     protected String defaultPreload() {
         return "";
     }
+
 }

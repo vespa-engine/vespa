@@ -55,7 +55,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private boolean useBucketExecutorForBucketMove;
     private boolean enableFeedBlockInDistributor = false;
     private double maxDeadBytesRatio = 0.2;
-    private int clusterControllerMaxHeapSizeInMb = 512;
+    private int clusterControllerMaxHeapSizeInMb = 256;
     private int metricsProxyMaxHeapSizeInMb = 512;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
 
