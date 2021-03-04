@@ -41,12 +41,12 @@ struct EvalNode : public NodeVisitor {
     //-------------------------------------------------------------------------
 
     void eval_const(TensorSpec spec) {
-        result = spec;
+        result = spec.normalize();
     }
 
     void eval_param(size_t idx) {
         assert(idx < params.size());
-        result = params[idx];
+        result = params[idx].normalize();
     }
 
     void eval_if(const If &node) {
@@ -340,7 +340,7 @@ struct EvalNode : public NodeVisitor {
 TensorSpec eval_node(const Node &node, const std::vector<TensorSpec> &params) {
     EvalNode my_eval(params);
     node.accept(my_eval);
-    return my_eval.result.normalize();
+    return my_eval.result;
 }
 
 } // <unnamed>

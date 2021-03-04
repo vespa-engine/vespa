@@ -151,7 +151,7 @@ void verify_peek_equal(const TensorSpec &input,
     }
     if (reduce_dims.empty()) return;
     ValueType result_type = param_type.reduce(reduce_dims);
-    auto expect = reference_peek(input, spec).normalize();
+    auto expect = reference_peek(input, spec);
     SCOPED_TRACE(fmt("peek input: %s\n  peek spec: %s\n  peek result %s\n",
                      input.to_string().c_str(),
                      to_str(spec).c_str(),

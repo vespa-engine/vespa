@@ -78,11 +78,11 @@ void test_generic_reduce_with(const ValueBuilderFactory &factory) {
                 SCOPED_TRACE(fmt("aggregator: %s", AggrNames::name_of(aggr)->c_str()));
                 auto t = layout.type();
                 for (const auto & dim: t.dimensions()) {
-                    auto expect = ReferenceOperations::reduce(input, aggr, {dim.name}).normalize();
+                    auto expect = ReferenceOperations::reduce(input, aggr, {dim.name});
                     auto actual = perform_generic_reduce(input, aggr, {dim.name}, factory);
                     EXPECT_EQ(actual, expect);
                 }
-                auto expect = ReferenceOperations::reduce(input, aggr, {}).normalize();
+                auto expect = ReferenceOperations::reduce(input, aggr, {});
                 auto actual = perform_generic_reduce(input, aggr, {}, factory);
                 EXPECT_EQ(actual, expect);
             }
