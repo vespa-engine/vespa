@@ -49,6 +49,11 @@ public enum NodeType {
         return !childNodeTypes.isEmpty();
     }
 
+    /** Returns whether this supports host sharing */
+    public boolean isSharable() {
+        return this == NodeType.host;
+    }
+
     public String description() {
         return description;
     }

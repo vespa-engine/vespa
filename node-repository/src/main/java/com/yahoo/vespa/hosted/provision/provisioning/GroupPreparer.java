@@ -101,9 +101,9 @@ public class GroupPreparer {
                 } else {
                     osVersion = nodeRepository.osVersions().targetFor(hostType).orElse(Version.emptyVersion);
                 }
+                HostSharing sharing = hostSharing(requestedNodes, hostType);
                 List<ProvisionedHost> provisionedHosts = allocation.nodeDeficit()
                         .map(deficit -> {
-                            HostSharing sharing = requestedNodes.isExclusive() ? HostSharing.exclusive : HostSharing.any;
                             return hostProvisioner.get().provisionHosts(allocation.provisionIndices(deficit.getCount()),
                                                                         hostType,
                                                                         deficit.getFlavor(),
@@ -153,6 +153,14 @@ public class GroupPreparer {
                 nodeRepository.resourcesCalculator(), nodeRepository.spareCount(), allocateOsRequirement);
         allocation.offer(prioritizer.collect(surplusActiveNodes));
         return allocation;
+    }
+
+    private static HostSharing hostSharing(NodeSpec spec, NodeType hostType) {
+        HostSharing sharing = spec.isExclusive() ? HostSharing.exclusive : HostSharing.any;
+        if (!hostType.isSharable() && sharing != HostSharing.any) {
+            throw new IllegalArgumentException(hostType + " does not support sharing requirement");
+        }
+        return sharing;
     }
 
 }
