@@ -21,10 +21,9 @@ using attribute::LoadedEnumAttribute;
 using attribute::LoadedEnumAttributeVector;
 
 AttributeVector::SearchContext::UP
-StringAttribute::getSearch(QueryTermSimple::UP term, const attribute::SearchContextParams & params) const
+StringAttribute::getSearch(QueryTermSimple::UP term, const attribute::SearchContextParams &) const
 {
-    (void) params;
-    return SearchContext::UP(new StringSearchContext(std::move(term), *this));
+    return std::make_unique<StringSearchContext>(std::move(term), *this);
 }
 
 class SortDataChar {
@@ -94,7 +93,8 @@ public:
     }
 };
 
-size_t StringAttribute::countZero(const char * bt, size_t sz)
+size_t
+StringAttribute::countZero(const char * bt, size_t sz)
 {
     size_t size(0);
     for(size_t i(0); i < sz; i++) {
@@ -105,7 +105,8 @@ size_t StringAttribute::countZero(const char * bt, size_t sz)
     return size;
 }
 
-void StringAttribute::generateOffsets(const char * bt, size_t sz, OffsetVector & offsets)
+void
+StringAttribute::generateOffsets(const char * bt, size_t sz, OffsetVector & offsets)
 {
     offsets.clear();
     uint32_t start(0);
@@ -131,25 +132,27 @@ StringAttribute::StringAttribute(const vespalib::string & name, const Config & c
 {
 }
 
-StringAttribute::~StringAttribute() {}
+StringAttribute::~StringAttribute() = default;
 
-uint32_t StringAttribute::get(DocId doc, WeightedInt * v, uint32_t sz) const
+uint32_t
+StringAttribute::get(DocId doc, WeightedInt * v, uint32_t sz) const
 {
     WeightedConstChar * s = new WeightedConstChar[sz];
     uint32_t n = static_cast<const AttributeVector *>(this)->get(doc, s, sz);
     for(uint32_t i(0),m(std::min(n,sz)); i<m; i++) {
-        v[i] = WeightedInt(strtoll(s[i].getValue(), NULL, 0), s[i].getWeight());
+        v[i] = WeightedInt(strtoll(s[i].getValue(), nullptr, 0), s[i].getWeight());
     }
     delete [] s;
     return n;
 }
 
-uint32_t StringAttribute::get(DocId doc, WeightedFloat * v, uint32_t sz) const
+uint32_t
+StringAttribute::get(DocId doc, WeightedFloat * v, uint32_t sz) const
 {
     WeightedConstChar * s = new WeightedConstChar[sz];
     uint32_t n = static_cast<const AttributeVector *>(this)->get(doc, s, sz);
     for(uint32_t i(0),m(std::min(n,sz)); i<m; i++) {
-        v[i] = WeightedFloat(vespalib::locale::c::strtod(s[i].getValue(), NULL), s[i].getWeight());
+        v[i] = WeightedFloat(vespalib::locale::c::strtod(s[i].getValue(), nullptr), s[i].getWeight());
     }
     delete [] s;
     return n;
@@ -157,32 +160,35 @@ uint32_t StringAttribute::get(DocId doc, WeightedFloat * v, uint32_t sz) const
 
 double
 StringAttribute::getFloat(DocId doc) const {
-    return vespalib::locale::c::strtod(get(doc), NULL);
+    return vespalib::locale::c::strtod(get(doc), nullptr);
 }
 
-uint32_t StringAttribute::get(DocId doc, double * v, uint32_t sz) const
+uint32_t
+StringAttribute::get(DocId doc, double * v, uint32_t sz) const
 {
     const char ** s = new const char *[sz];
     uint32_t n = static_cast<const AttributeVector *>(this)->get(doc, s, sz);
     for(uint32_t i(0),m(std::min(n,sz)); i<m; i++) {
-        v[i] = vespalib::locale::c::strtod(s[i], NULL);
+        v[i] = vespalib::locale::c::strtod(s[i], nullptr);
     }
     delete [] s;
     return n;
 }
 
-uint32_t StringAttribute::get(DocId doc, largeint_t * v, uint32_t sz) const
+uint32_t
+StringAttribute::get(DocId doc, largeint_t * v, uint32_t sz) const
 {
     const char ** s = new const char *[sz];
     uint32_t n = static_cast<const AttributeVector *>(this)->get(doc, s, sz);
     for(uint32_t i(0),m(std::min(n,sz)); i<m; i++) {
-        v[i] = strtoll(s[i], NULL, 0);
+        v[i] = strtoll(s[i], nullptr, 0);
     }
     delete [] s;
     return n;
 }
 
-long StringAttribute::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
+long
+StringAttribute::onSerializeForAscendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
 {
     unsigned char *dst = static_cast<unsigned char *>(serTo);
     const char *value(get(doc));
@@ -199,7 +205,8 @@ long StringAttribute::onSerializeForAscendingSort(DocId doc, void * serTo, long 
     return buf.size();
 }
 
-long StringAttribute::onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
+long
+StringAttribute::onSerializeForDescendingSort(DocId doc, void * serTo, long available, const common::BlobConverter * bc) const
 {
     (void) bc;
     unsigned char *dst = static_cast<unsigned char *>(serTo);
@@ -223,13 +230,13 @@ long StringAttribute::onSerializeForDescendingSort(DocId doc, void * serTo, long
 StringAttribute::StringSearchContext::StringSearchContext(QueryTermSimple::UP qTerm,
                                                           const StringAttribute & toBeSearched) :
     SearchContext(toBeSearched),
-    _isPrefix(qTerm->isPrefix()),
-    _isRegex(qTerm->isRegex()),
-    _queryTerm(std::move(qTerm)),
+    _queryTerm(static_cast<QueryTermUCS4 *>(qTerm.release())),
     _termUCS4(queryTerm()->getUCS4Term()),
-    _bufferLen(toBeSearched.getMaxValueCount()),
     _buffer(nullptr),
-    _regex()
+    _regex(),
+    _bufferLen(toBeSearched.getMaxValueCount()),
+    _isPrefix(_queryTerm->isPrefix()),
+    _isRegex(_queryTerm->isRegex())
 {
     if (isRegex()) {
         _regex = vespalib::Regex::from_pattern(_queryTerm->getTerm(), vespalib::Regex::Options::IgnoreCase);
@@ -246,16 +253,17 @@ StringAttribute::StringSearchContext::~StringSearchContext()
 bool
 StringAttribute::StringSearchContext::valid() const
 {
-    return (_queryTerm.get() && (!_queryTerm->empty()));
+    return (_queryTerm && (!_queryTerm->empty()));
 }
 
 const QueryTermUCS4 *
 StringAttribute::StringSearchContext::queryTerm() const
 {
-    return static_cast<const QueryTermUCS4 *>(_queryTerm.get());
+    return _queryTerm.get();
 }
 
-uint32_t StringAttribute::clearDoc(DocId doc)
+uint32_t
+StringAttribute::clearDoc(DocId doc)
 {
     uint32_t removed(0);
     if (hasMultiValue() && (doc < getNumDocs())) {
@@ -303,19 +311,22 @@ StringAttribute::StringSearchContext::onFind(DocId docId, int32_t elemId) const
     return -1;
 }
 
-bool StringAttribute::applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust)
+bool
+StringAttribute::applyWeight(DocId doc, const FieldValue & fv, const ArithmeticValueUpdate & wAdjust)
 {
     vespalib::string v = fv.getAsString();
     return AttributeVector::adjustWeight(_changes, doc, StringChangeData(v), wAdjust);
 }
 
-bool StringAttribute::applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust)
+bool
+StringAttribute::applyWeight(DocId doc, const FieldValue& fv, const document::AssignValueUpdate& wAdjust)
 {
     vespalib::string v = fv.getAsString();
     return AttributeVector::adjustWeight(_changes, doc, StringChangeData(v), wAdjust);
 }
 
-bool StringAttribute::apply(DocId, const ArithmeticValueUpdate & )
+bool
+StringAttribute::apply(DocId, const ArithmeticValueUpdate & )
 {
     return false;
 }
@@ -358,7 +369,8 @@ StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
     return true;
 }
 
-bool StringAttribute::onLoad()
+bool
+StringAttribute::onLoad()
 {
     ReaderBase attrReader(*this);
     bool ok(attrReader.getHasLoadData());
@@ -379,15 +391,18 @@ StringAttribute::onAddDoc(DocId )
     return false;
 }
 
-void StringAttribute::load_posting_lists(LoadedVector&)
+void
+StringAttribute::load_posting_lists(LoadedVector&)
 {
 }
 
-void StringAttribute::load_enum_store(LoadedVector&)
+void
+StringAttribute::load_enum_store(LoadedVector&)
 {
 }
 
-void StringAttribute::fillValues(LoadedVector & )
+void
+StringAttribute::fillValues(LoadedVector & )
 {
 }
 
