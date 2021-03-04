@@ -26,7 +26,7 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
     @Override
     public void getConfig(QrStartConfig.Builder builder) {
         super.getConfig(builder);
-        builder.jvm.heapsize(384)
+        builder.jvm.heapsize(128)
                    .verbosegc(true);
     }
 
