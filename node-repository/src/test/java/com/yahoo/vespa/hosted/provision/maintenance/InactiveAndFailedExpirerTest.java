@@ -229,7 +229,7 @@ public class InactiveAndFailedExpirerTest {
         assertSame(Node.State.inactive, firstNode.get().state());
 
         // Config server expires
-        tester.clock().advance(Duration.ofMinutes(5));
+        tester.clock().advance(Duration.ofMinutes(5).plus(Duration.ofSeconds(1)));
         expirer.maintain();
         assertSame(Node.State.dirty, firstNode.get().state());
     }
