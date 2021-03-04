@@ -109,7 +109,7 @@ TEST(ElementIteratorTest, require_that_searchcontext)
     fef::TermFieldMatchData tfmd;
 
     SearchContextParams params;
-    ISearchContext::UP sc = attribute->createSearchContext(std::make_unique<QueryTermSimple>("1", QueryTermSimple::SearchTerm::WORD), params);
+    ISearchContext::UP sc = attribute->createSearchContext(std::make_unique<QueryTermSimple>("1", QueryTermSimple::Type::WORD), params);
     SearchContextElementIterator elemIt(sc->createIterator(&tfmd, false), *sc);
     verifyElementIterator(elemIt);
 }

@@ -21,7 +21,7 @@ public:
     QueryTermUCS4(QueryTermUCS4 &&) = default;
     QueryTermUCS4 & operator = (QueryTermUCS4 &&) = default;
     QueryTermUCS4();
-    QueryTermUCS4(const string & term_, SearchTerm type);
+    QueryTermUCS4(const string & term_, Type type);
     ~QueryTermUCS4();
     size_t getTermLen() const { return _cachedTermLen; }
     size_t term(const char * & t)     const { t = getTerm(); return _cachedTermLen; }

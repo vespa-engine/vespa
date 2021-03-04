@@ -54,7 +54,7 @@ public:
         uint32_t _fieldLength;
     };
     QueryTerm();
-    QueryTerm(std::unique_ptr<QueryNodeResultBase> resultBase, const string & term, const string & index, SearchTerm type);
+    QueryTerm(std::unique_ptr<QueryNodeResultBase> resultBase, const string & term, const string & index, Type type);
     QueryTerm(const QueryTerm &);
     QueryTerm & operator = (const QueryTerm &);
     QueryTerm(QueryTerm &&) noexcept;
