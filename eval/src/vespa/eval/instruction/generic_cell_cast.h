@@ -11,7 +11,8 @@ namespace vespalib::eval::instruction {
 
 struct GenericCellCast {
     static InterpretedFunction::Instruction
-    make_instruction(const ValueType &input_type, CellType to_cell_type,
+    make_instruction(const ValueType &result_type,
+                     const ValueType &input_type, CellType to_cell_type,
                      Stash &stash);
 };
 

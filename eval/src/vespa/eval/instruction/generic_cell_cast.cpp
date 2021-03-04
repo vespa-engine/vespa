@@ -41,12 +41,13 @@ struct SelectGenericCellCastOp {
 } // namespace <unnamed>
 
 InterpretedFunction::Instruction
-GenericCellCast::make_instruction(const ValueType &input_type,
+GenericCellCast::make_instruction(const ValueType &result_type,
+                                  const ValueType &input_type,
                                   CellType to_cell_type,
                                   Stash &stash)
 {
     CellType from = input_type.cell_type();
-    auto result_type = input_type.cell_cast(to_cell_type);
+    assert(result_type == input_type.cell_cast(to_cell_type));
     auto &param = stash.create<ValueType>(result_type);
     CellType to = result_type.cell_type();
     auto op = typify_invoke<2,TypifyCellType,SelectGenericCellCastOp>(from, to);

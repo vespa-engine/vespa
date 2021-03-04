@@ -103,7 +103,8 @@ TensorSpec perform_generic_rename(const TensorSpec &a,
 {
     Stash stash;
     auto lhs = value_from_spec(a, factory);
-    auto my_op = GenericRename::make_instruction(lhs->type(), ft.from, ft.to, factory, stash);
+    auto res_type = lhs->type().rename(ft.from, ft.to);
+    auto my_op = GenericRename::make_instruction(res_type, lhs->type(), ft.from, ft.to, factory, stash);
     InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs})));
 }

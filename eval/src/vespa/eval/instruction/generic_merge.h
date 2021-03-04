@@ -41,7 +41,8 @@ generic_mixed_merge(const Value &a, const Value &b,
 
 struct GenericMerge {
     static InterpretedFunction::Instruction
-    make_instruction(const ValueType &lhs_type, const ValueType &rhs_type,
+    make_instruction(const ValueType &result_type,
+                     const ValueType &lhs_type, const ValueType &rhs_type,
                      join_fun_t function,
                      const ValueBuilderFactory &factory, Stash &stash);
 };

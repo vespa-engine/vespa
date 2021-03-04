@@ -42,7 +42,8 @@ TensorSpec perform_generic_reduce(const TensorSpec &a, Aggr aggr, const std::vec
 {
     Stash stash;
     auto lhs = value_from_spec(a, factory);
-    auto my_op = GenericReduce::make_instruction(lhs->type(), aggr, dims, factory, stash);
+    auto res_type = lhs->type().reduce(dims);
+    auto my_op = GenericReduce::make_instruction(res_type, lhs->type(), aggr, dims, factory, stash);
     InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs})));
 }

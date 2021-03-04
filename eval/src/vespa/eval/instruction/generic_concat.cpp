@@ -238,11 +238,13 @@ DenseConcatPlan::InOutLoop::~InOutLoop() = default;
 
 
 InterpretedFunction::Instruction
-GenericConcat::make_instruction(const ValueType &lhs_type, const ValueType &rhs_type,
+GenericConcat::make_instruction(const ValueType &result_type,
+                                const ValueType &lhs_type, const ValueType &rhs_type,
                                 const vespalib::string &dimension,
                                 const ValueBuilderFactory &factory, Stash &stash)
 {
     auto &param = stash.create<ConcatParam>(lhs_type, rhs_type, dimension, factory);
+    assert(result_type == param.res_type);
     auto fun = typify_invoke<3,TypifyCellType,SelectGenericConcatOp>(
             lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(),
             param);

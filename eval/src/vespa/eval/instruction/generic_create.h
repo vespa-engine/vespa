@@ -20,7 +20,7 @@ struct GenericCreate {
     using SpecMap = tensor_function::Create::Spec;
 
     static InterpretedFunction::Instruction
-    make_instruction(const ValueType &res_type,
+    make_instruction(const ValueType &result_type,
                      const SpecMap &spec,
                      const ValueBuilderFactory &factory,
                      Stash &stash);

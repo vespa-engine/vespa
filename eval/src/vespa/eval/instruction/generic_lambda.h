@@ -10,7 +10,8 @@ namespace vespalib::eval::instruction {
 
 struct GenericLambda {
     static InterpretedFunction::Instruction
-    make_instruction(const tensor_function::Lambda &lambda_in,
+    make_instruction(const ValueType &result_type,
+                     const tensor_function::Lambda &lambda_in,
                      const ValueBuilderFactory &factory, Stash &stash);
 };
 

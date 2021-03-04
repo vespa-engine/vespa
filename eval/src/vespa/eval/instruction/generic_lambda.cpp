@@ -121,10 +121,10 @@ struct MyInterpretedLambdaOp {
 } // namespace <unnamed>
 
 Instruction
-GenericLambda::make_instruction(const tensor_function::Lambda &lambda_in,
+GenericLambda::make_instruction(const ValueType &result_type,
+                                const tensor_function::Lambda &lambda_in,
                                 const ValueBuilderFactory &factory, Stash &stash)
 {
-    const ValueType & result_type = lambda_in.result_type();
     assert(result_type.count_mapped_dimensions() == 0);
     if (!CompiledFunction::detect_issues(lambda_in.lambda()) &&
         lambda_in.types().all_types_are_double())

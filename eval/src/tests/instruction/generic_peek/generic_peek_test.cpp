@@ -84,7 +84,7 @@ TensorSpec perform_generic_peek(const TensorSpec &a, const ValueType &result_typ
             label_or_child = child_idx++;
         }
     }
-    auto my_op = GenericPeek::make_instruction(param->type(), result_type, spec, factory, stash);
+    auto my_op = GenericPeek::make_instruction(result_type, param->type(), spec, factory, stash);
     InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(my_stack));
 }

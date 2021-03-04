@@ -290,11 +290,13 @@ SparseReducePlan::~SparseReducePlan() = default;
 using ReduceTypify = TypifyValue<TypifyCellType,TypifyAggr>;
 
 Instruction
-GenericReduce::make_instruction(const ValueType &type, Aggr aggr, const std::vector<vespalib::string> &dimensions,
+GenericReduce::make_instruction(const ValueType &result_type,
+                                const ValueType &input_type, Aggr aggr, const std::vector<vespalib::string> &dimensions,
                                 const ValueBuilderFactory &factory, Stash &stash)
 {
-    auto &param = stash.create<ReduceParam>(type, dimensions, factory);
-    auto fun = typify_invoke<3,ReduceTypify,SelectGenericReduceOp>(type.cell_type(), param.res_type.cell_type(), aggr, param);
+    auto &param = stash.create<ReduceParam>(input_type, dimensions, factory);
+    assert(result_type == param.res_type);
+    auto fun = typify_invoke<3,ReduceTypify,SelectGenericReduceOp>(input_type.cell_type(), result_type.cell_type(), aggr, param);
     return Instruction(fun, wrap_param<ReduceParam>(param));
 }
 
