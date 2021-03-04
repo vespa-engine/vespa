@@ -33,8 +33,8 @@ public class MetricManager extends AbstractComponent implements Provider<MetricR
 
     private MetricManager(ManagerConfig settings, Updater<Bucket, Sample> updater) {
         log.log(Level.CONFIG, "setting up simple metrics gathering." +
-                    " reportPeriodSeconds=" + settings.reportPeriodSeconds() +
-                    ", pointsToKeepPerMetric=" + settings.pointsToKeepPerMetric());
+                              " reportPeriodSeconds=" + settings.reportPeriodSeconds() +
+                              ", pointsToKeepPerMetric=" + settings.pointsToKeepPerMetric());
         metricsCollection = new ThreadLocalDirectory<>(updater);
         final AtomicReference<Bucket> currentSnapshot = new AtomicReference<>(null);
         executor = new ScheduledThreadPoolExecutor(1);

@@ -10,7 +10,7 @@ import com.yahoo.metrics.ManagerConfig;
 /**
  * Worker thread to collect the data stored in worker threads and build
  * snapshots for external consumption. Using the correct executor gives the
- * necessary guarantuees for this being invoked from only a single thread.
+ * necessary guarantees for this being invoked from only a single thread.
  *
  * @author Steinar Knutsen
  */
@@ -26,9 +26,8 @@ class MetricAggregator implements Runnable {
     MetricAggregator(ThreadLocalDirectory<Bucket, Sample> metricsCollection, AtomicReference<Bucket> currentSnapshot,
             ManagerConfig settings) {
         if (settings.reportPeriodSeconds() < 10) {
-            throw new IllegalArgumentException(
-                    "Do not use this metrics implementation"
-                    + " if report periods of less than 10 seconds is desired.");
+            throw new IllegalArgumentException("Do not use this metrics implementation" +
+                                               " if report periods of less than 10 seconds is desired.");
         }
         buffer = new Bucket[settings.reportPeriodSeconds()];
         dimensions = new DimensionCache(settings.pointsToKeepPerMetric());
