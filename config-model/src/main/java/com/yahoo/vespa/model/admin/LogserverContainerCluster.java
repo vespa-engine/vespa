@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
 import com.yahoo.config.model.deploy.DeployState;
@@ -27,7 +27,7 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
     public void getConfig(QrStartConfig.Builder builder) {
         super.getConfig(builder);
         builder.jvm.heapsize(384)
-               .verbosegc(true);
+                   .verbosegc(true);
     }
 
     protected boolean messageBusEnabled() { return false; }

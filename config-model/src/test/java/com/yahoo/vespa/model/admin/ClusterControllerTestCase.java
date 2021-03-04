@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
 import com.google.common.collect.Collections2;
@@ -389,10 +389,10 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         model.getConfig(qrBuilder, "admin/cluster-controllers/0/components/clustercontroller-bar-configurer");
         QrStartConfig qrStartConfig = new QrStartConfig(qrBuilder);
         assertEquals(32, qrStartConfig.jvm().minHeapsize());
-        assertEquals(512, qrStartConfig.jvm().heapsize());
+        assertEquals(256, qrStartConfig.jvm().heapsize());
         assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
         assertEquals(2, qrStartConfig.jvm().availableProcessors());
-        assertFalse(qrStartConfig.jvm().verbosegc());
+        assertTrue(qrStartConfig.jvm().verbosegc());
         assertEquals("-XX:+UseG1GC -XX:MaxTenuringThreshold=15", qrStartConfig.jvm().gcopts());
         assertEquals(512, qrStartConfig.jvm().stacksize());
         assertEquals(0, qrStartConfig.jvm().directMemorySizeCache());

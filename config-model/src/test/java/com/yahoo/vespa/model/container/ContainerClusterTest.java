@@ -107,7 +107,7 @@ public class ContainerClusterTest {
     private void verifyHeapSizeAsPercentageOfPhysicalMemory(boolean isHosted, boolean isCombinedCluster,
                                                             Integer explicitMemoryPercentage,
                                                             int expectedMemoryPercentage) {
-        ContainerCluster cluster = createContainerCluster(createRoot(isHosted), isCombinedCluster, explicitMemoryPercentage);
+        ContainerCluster<?> cluster = createContainerCluster(createRoot(isHosted), isCombinedCluster, explicitMemoryPercentage);
         QrStartConfig.Builder qsB = new QrStartConfig.Builder();
         cluster.getConfig(qsB);
         QrStartConfig qsC= new QrStartConfig(qsB);
@@ -171,7 +171,7 @@ public class ContainerClusterTest {
         cluster.getConfig(qrBuilder);
         QrStartConfig qrStartConfig = new QrStartConfig(qrBuilder);
         assertEquals(32, qrStartConfig.jvm().minHeapsize());
-        assertEquals(512, qrStartConfig.jvm().heapsize());
+        assertEquals(256, qrStartConfig.jvm().heapsize());
         assertEquals(32, qrStartConfig.jvm().compressedClassSpaceSize());
         assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
         root.freezeModelTopology();
@@ -398,7 +398,7 @@ public class ContainerClusterTest {
         return cluster;
     }
 
-    private static ClusterInfoConfig getClusterInfoConfig(ContainerCluster cluster) {
+    private static ClusterInfoConfig getClusterInfoConfig(ContainerCluster<?> cluster) {
         ClusterInfoConfig.Builder builder = new ClusterInfoConfig.Builder();
         cluster.getConfig(builder);
         return new ClusterInfoConfig(builder);
