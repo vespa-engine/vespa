@@ -366,7 +366,7 @@ Peek::make_spec() const
 Instruction
 Peek::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    return instruction::GenericPeek::make_instruction(param_type(), result_type(), make_spec(), factory, stash);
+    return instruction::GenericPeek::make_instruction(result_type(), param_type(), make_spec(), factory, stash);
 }
 
 void
