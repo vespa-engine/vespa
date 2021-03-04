@@ -26,27 +26,41 @@ FileAreaFreeList::remove_from_size_set(uint64_t offset, size_t size)
     }
 }
 
-uint64_t
-FileAreaFreeList::alloc(size_t size)
+std::pair<uint64_t, size_t>
+FileAreaFreeList::prepare_reuse_area(size_t size)
 {
-    auto sitr = _free_sizes.lower_bound(size);
-    if (sitr == _free_sizes.end()) {
-        return bad_offset; // No free areas of sufficient size
+    auto itr = _free_sizes.lower_bound(size);
+    if (itr == _free_sizes.end()) {
+        return std::make_pair(bad_offset, 0); // No free areas of sufficient size
     }
-    auto old_size = sitr->first;
+    auto old_size = itr->first;
     assert(old_size >= size);
-    auto &offsets = sitr->second;
+    auto &offsets = itr->second;
     assert(!offsets.empty());
     auto oitr = offsets.begin();
     auto offset = *oitr;
     offsets.erase(oitr);
     if (offsets.empty()) {
-        _free_sizes.erase(sitr);
+        _free_sizes.erase(itr);
+    }
+    // Note: Caller must update _free_areas
+    return std::make_pair(offset, old_size);
+}
+
+uint64_t
+FileAreaFreeList::alloc(size_t size)
+{
+    auto reuse_candidate = prepare_reuse_area(size);
+    auto offset = reuse_candidate.first;
+    if (offset == bad_offset) {
+        return bad_offset; // No free areas of sufficient size
     }
     auto fa_itr = _free_areas.find(offset);
     assert(fa_itr != _free_areas.end());
     fa_itr = _free_areas.erase(fa_itr);
+    auto old_size = reuse_candidate.second;
     if (old_size > size) {
+        // Old area beyond what we reuse should still be a free area.
         auto ins_res = _free_sizes[old_size - size].insert(offset + size);
         assert(ins_res.second);
         _free_areas.emplace_hint(fa_itr, offset + size, old_size - size);

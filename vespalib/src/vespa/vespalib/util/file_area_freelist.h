@@ -13,9 +13,10 @@ namespace vespalib::alloc {
  * Class that tracks free areas in a file.
  */
 class FileAreaFreeList {
-    std::map<uint64_t, size_t> _free_areas;
-    std::map<size_t, std::set<uint64_t>> _free_sizes;
+    std::map<uint64_t, size_t> _free_areas; // map from offset to size
+    std::map<size_t, std::set<uint64_t>> _free_sizes; // map from size to set of offsets
     void remove_from_size_set(uint64_t offset, size_t size);
+    std::pair<uint64_t, size_t> prepare_reuse_area(size_t size);
 public:
     FileAreaFreeList();
     ~FileAreaFreeList();
