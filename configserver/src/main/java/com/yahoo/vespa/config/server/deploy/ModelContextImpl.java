@@ -21,7 +21,6 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
@@ -29,7 +28,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.UnboundFlag;
 
@@ -289,7 +287,7 @@ public class ModelContextImpl implements ModelContext {
             this.athenzDomain = athenzDomain;
             this.applicationRoles = applicationRoles;
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
-            this.dedicatedClusterControllerCluster = zoneHasRedundancyOrIsCD(zone) && dedicatedClusterControllerCluster;
+            this.dedicatedClusterControllerCluster = dedicatedClusterControllerCluster;
 
             jvmGcOptions = flagValue(flagSource, applicationId, PermanentFlags.JVM_GC_OPTIONS);
         }
@@ -355,11 +353,6 @@ public class ModelContextImpl implements ModelContext {
                     .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
                     .boxedValue();
         }
-    }
-
-    private static boolean zoneHasRedundancyOrIsCD(Zone zone) {
-        return    zone.system().isCd() && zone.environment() == Environment.dev
-               || List.of(Environment.staging, Environment.perf, Environment.prod).contains(zone.environment());
     }
 
     private static NodeResources parseDedicatedClusterControllerFlavor(String flagValue) {
