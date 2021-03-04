@@ -13,6 +13,7 @@ import java.util.Set;
  * @author Jo Kristian Bergum
  */
 public class Metric {
+
     private final long time;
     private final Number value;
     private final String description;

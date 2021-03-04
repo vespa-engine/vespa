@@ -25,11 +25,12 @@ import static java.util.logging.Level.FINE;
 import static java.util.stream.Collectors.toCollection;
 
 /**
- * This class is responsible for handling metrics received from external processes.
+ * Handling of metrics received from external processes.
  *
  * @author gjoranv
  */
 public class ExternalMetrics {
+
     private static final Logger log = Logger.getLogger(ExternalMetrics.class.getName());
 
     // NOTE: node service id must be kept in sync with the same constant _value_ used in docker-api:Metrics.java
@@ -52,7 +53,8 @@ public class ExternalMetrics {
 
     public void setExtraMetrics(List<MetricsPacket.Builder> externalPackets) {
         // TODO: Metrics filtering per consumer is not yet implemented.
-        //       Split each packet per metric, and re-aggregate based on the metrics each consumer wants. Then filter out all packages with no consumers.
+        //       Split each packet per metric, and re-aggregate based on the metrics each consumer wants.
+        //       Then filter out all packages with no consumers.
         log.log(FINE, () -> "Setting new external metrics with " + externalPackets.size() + " metrics packets.");
         externalPackets.forEach(packet -> {
             packet.addConsumers(consumers.getAllConsumers())
@@ -95,4 +97,5 @@ public class ExternalMetrics {
         dimensions.keySet().retainAll(Set.of(ROLE_DIMENSION, STATE_DIMENSION, ORCHESTRATOR_STATE_DIMENSION));
         return dimensions;
     }
+
 }

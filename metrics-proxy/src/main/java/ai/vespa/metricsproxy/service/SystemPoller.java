@@ -25,7 +25,7 @@ import java.util.logging.Logger;
  */
 public class SystemPoller {
 
-    final private static Logger log = Logger.getLogger(SystemPoller.class.getName());
+    private static final Logger log = Logger.getLogger(SystemPoller.class.getName());
 
     private final int pollingIntervalSecs;
     private final List<VespaService> services;
@@ -55,12 +55,10 @@ public class SystemPoller {
      * @return array[0] = memoryResident, array[1] = memoryVirtual (kB units)
      */
     long[] getMemoryUsage(VespaService service) {
-        long size[] = new long[2];
+        long[] size = new long[2];
         BufferedReader br;
         int pid = service.getPid();
 
-        size[0] = 0;
-        size[1] = 0;
         try {
             br = new BufferedReader(new FileReader("/proc/" + pid + "/smaps"));
         } catch (FileNotFoundException ex) {

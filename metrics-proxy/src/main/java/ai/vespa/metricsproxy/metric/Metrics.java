@@ -13,6 +13,7 @@ import java.util.List;
 // TODO: remove timestamp, only used as temporary storage.
 // TODO: instances of this class can probably be replaced by a simple freezable map.
 public class Metrics {
+
     private final List<Metric> metrics = new ArrayList<>();
     private long timestamp;
     private boolean isFrozen = false;
