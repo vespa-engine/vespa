@@ -14,7 +14,7 @@ import java.util.function.UnaryOperator;
 import java.util.logging.Logger;
 
 /**
- * Thread-safe class that manages an OS version change for nodes in this repository. An {@link Upgrader} decides how a
+ * Thread-safe class that manages an OS version change for nodes in this repository. An {@link OsUpgrader} decides how a
  * {@link OsVersionTarget} is applied to nodes.
  *
  * A version target is initially inactive. Activation decision is taken by
@@ -29,13 +29,13 @@ public class OsVersions {
     private static final Logger log = Logger.getLogger(OsVersions.class.getName());
 
     private final CuratorDatabaseClient db;
-    private final Upgrader upgrader;
+    private final OsUpgrader upgrader;
 
     public OsVersions(NodeRepository nodeRepository) {
         this(nodeRepository, upgraderIn(nodeRepository));
     }
 
-    OsVersions(NodeRepository nodeRepository, Upgrader upgrader) {
+    OsVersions(NodeRepository nodeRepository, OsUpgrader upgrader) {
         this.db = Objects.requireNonNull(nodeRepository).database();
         this.upgrader = Objects.requireNonNull(upgrader);
 
@@ -114,7 +114,7 @@ public class OsVersions {
     }
 
     private void requireUpgradeBudget(Optional<Duration> upgradeBudget) {
-        if (upgrader instanceof RetiringUpgrader && upgradeBudget.isEmpty()) {
+        if (upgrader instanceof RetiringOsUpgrader && upgradeBudget.isEmpty()) {
             throw new IllegalArgumentException("Zone requires a time budget for OS upgrades");
         }
     }
@@ -131,11 +131,11 @@ public class OsVersions {
         }
     }
 
-    private static Upgrader upgraderIn(NodeRepository nodeRepository) {
+    private static OsUpgrader upgraderIn(NodeRepository nodeRepository) {
         if (nodeRepository.zone().getCloud().reprovisionToUpgradeOs()) {
-            return new RetiringUpgrader(nodeRepository);
+            return new RetiringOsUpgrader(nodeRepository);
         }
-        return new DelegatingUpgrader(nodeRepository, 30);
+        return new DelegatingOsUpgrader(nodeRepository, 30);
     }
 
 }

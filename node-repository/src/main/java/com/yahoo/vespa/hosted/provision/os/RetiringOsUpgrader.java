@@ -22,13 +22,13 @@ import java.util.logging.Logger;
  *
  * @author mpolden
  */
-public class RetiringUpgrader implements Upgrader {
+public class RetiringOsUpgrader implements OsUpgrader {
 
-    private static final Logger LOG = Logger.getLogger(RetiringUpgrader.class.getName());
+    private static final Logger LOG = Logger.getLogger(RetiringOsUpgrader.class.getName());
 
     private final NodeRepository nodeRepository;
 
-    public RetiringUpgrader(NodeRepository nodeRepository) {
+    public RetiringOsUpgrader(NodeRepository nodeRepository) {
         this.nodeRepository = nodeRepository;
     }
 

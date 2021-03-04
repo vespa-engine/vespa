@@ -19,16 +19,16 @@ import java.util.logging.Logger;
  *
  * @author mpolden
  */
-public class DelegatingUpgrader implements Upgrader {
+public class DelegatingOsUpgrader implements OsUpgrader {
 
-    private static final Logger LOG = Logger.getLogger(DelegatingUpgrader.class.getName());
+    private static final Logger LOG = Logger.getLogger(DelegatingOsUpgrader.class.getName());
 
     private final NodeRepository nodeRepository;
 
     /** The maximum number of nodes, within a single node type, that can upgrade in parallel. */
     private final int maxActiveUpgrades;
 
-    public DelegatingUpgrader(NodeRepository nodeRepository, int maxActiveUpgrades) {
+    public DelegatingOsUpgrader(NodeRepository nodeRepository, int maxActiveUpgrades) {
         this.nodeRepository = Objects.requireNonNull(nodeRepository);
         this.maxActiveUpgrades = maxActiveUpgrades;
     }
