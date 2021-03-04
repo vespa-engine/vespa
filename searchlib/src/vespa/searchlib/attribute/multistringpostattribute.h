@@ -44,7 +44,6 @@ private:
     friend class PostingListAttributeTest;
     template <typename, typename, typename> 
     friend class attribute::PostingSearchContext; // getEnumStore()
-    friend class StringAttributeTest;
 
     using LoadedVector = typename B::LoadedVector;
     using PostingParent = PostingListAttributeSubBase<AttributeWeightPosting,
