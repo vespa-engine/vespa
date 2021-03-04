@@ -700,7 +700,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             lockedTenant = lockedTenant.withSecretStore(tenantSecretStore);
             controller.tenants().store(lockedTenant);
         });
-        return new MessageResponse("Configured secret store: " + tenantSecretStore);
+
+        tenant = (CloudTenant) controller.tenants().require(TenantName.from(tenantName));
+        var slime = new Slime();
+        toSlime(slime.setObject(), tenant.tenantSecretStores());
+        return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse deleteSecretStore(String tenantName, String name, HttpRequest request) {
@@ -715,15 +719,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         var tenantSecretStore = optionalSecretStore.get();
         controller.serviceRegistry().tenantSecretService().deleteSecretStore(tenant.name(), tenantSecretStore);
+        controller.serviceRegistry().roleService().deleteTenantPolicy(tenant.name(), tenantSecretStore.getName());
         controller.tenants().lockOrThrow(tenant.name(), LockedTenant.Cloud.class, lockedTenant -> {
             lockedTenant = lockedTenant.withoutSecretStore(tenantSecretStore);
             controller.tenants().store(lockedTenant);
         });
+
+        tenant = (CloudTenant) controller.tenants().require(TenantName.from(tenantName));
         var slime = new Slime();
-        var cursor = slime.setObject();
-        cursor.setString("name", tenantSecretStore.getName());
-        cursor.setString("awsId", tenantSecretStore.getAwsId());
-        cursor.setString("role", tenantSecretStore.getRole());
+        toSlime(slime.setObject(), tenant.tenantSecretStores());
         return new SlimeJsonResponse(slime);
     }
 
@@ -2004,13 +2008,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                     keyObject.setString("user", user.getName());
                 });
 
-                Cursor secretStore = object.setArray("secretStores");
-                cloudTenant.tenantSecretStores().forEach(store -> {
-                    Cursor storeObject = secretStore.addObject();
-                    storeObject.setString("name", store.getName());
-                    storeObject.setString("awsId", store.getAwsId());
-                    storeObject.setString("role", store.getRole());
-                });
+                toSlime(object, cloudTenant.tenantSecretStores());
 
                 var tenantQuota = controller.serviceRegistry().billingController().getQuota(tenant.name());
                 var usedQuota = applications.stream()
@@ -2267,6 +2265,16 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void stringsToSlime(List<String> strings, Cursor array) {
         for (String string : strings)
             array.addString(string);
+    }
+
+    private void toSlime(Cursor object, List<TenantSecretStore> tenantSecretStores) {
+        Cursor secretStore = object.setArray("secretStores");
+        tenantSecretStores.forEach(store -> {
+            Cursor storeObject = secretStore.addObject();
+            storeObject.setString("name", store.getName());
+            storeObject.setString("awsId", store.getAwsId());
+            storeObject.setString("role", store.getRole());
+        });
     }
 
     private String readToString(InputStream stream) {

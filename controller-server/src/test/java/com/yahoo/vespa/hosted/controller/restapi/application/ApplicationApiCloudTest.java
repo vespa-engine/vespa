@@ -129,7 +129,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                                 "\"externalId\": \"321\"" +
                                 "}")
                         .roles(Set.of(Role.administrator(tenantName)));
-        tester.assertResponse(secretStoreRequest, "{\"message\":\"Configured secret store: TenantSecretStore{name='some-name', awsId='123', role='role-id'}\"}", 200);
+        tester.assertResponse(secretStoreRequest, "{\"secretStores\":[{\"name\":\"some-name\",\"awsId\":\"123\",\"role\":\"role-id\"}]}", 200);
         tester.assertResponse(secretStoreRequest, "{" +
                 "\"error-code\":\"BAD_REQUEST\"," +
                 "\"message\":\"Secret store TenantSecretStore{name='some-name', awsId='123', role='role-id'} is already configured\"" +
@@ -198,7 +198,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         });
         var tenant = (CloudTenant) tester.controller().tenants().require(tenantName);
         assertEquals(1, tenant.tenantSecretStores().size());
-        tester.assertResponse(deleteRequest, "{\"name\":\"secret-foo\",\"awsId\":\"123\",\"role\":\"some-role\"}", 200);
+        tester.assertResponse(deleteRequest, "{\"secretStores\":[]}", 200);
         tenant = (CloudTenant) tester.controller().tenants().require(tenantName);
         assertEquals(0, tenant.tenantSecretStores().size());
     }
