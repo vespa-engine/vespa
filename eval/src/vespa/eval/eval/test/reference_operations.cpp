@@ -234,7 +234,7 @@ TensorSpec ReferenceOperations::peek(const PeekSpec &peek_spec, const std::vecto
                        },
                        [&](const size_t &child_idx) {
                            assert(child_idx < children.size());
-                           auto &child = children[child_idx];
+                           const auto &child = children[child_idx];
                            double child_value = value_from_child(child);
                            if (is_mapped_dim(dim)) {
                                addr.emplace(dim, vespalib::make_string("%" PRId64, int64_t(child_value)));
