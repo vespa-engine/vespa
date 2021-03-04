@@ -22,6 +22,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     error.cpp
     exception.cpp
     exceptions.cpp
+    file_area_freelist.cpp
     gencnt.cpp
     generationhandler.cpp
     generationholder.cpp
