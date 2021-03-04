@@ -10,10 +10,10 @@ import com.amazonaws.services.simplesystemsmanagement.AWSSimpleSystemsManagement
 import com.amazonaws.services.simplesystemsmanagement.model.GetParametersRequest;
 import com.amazonaws.services.simplesystemsmanagement.model.GetParametersResult;
 import com.google.inject.Inject;
-import com.yahoo.cloud.config.SecretStoreConfig;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
+import com.yahoo.container.jdisc.secretstore.SecretStoreConfig;
 
 /**
  * @author mortent

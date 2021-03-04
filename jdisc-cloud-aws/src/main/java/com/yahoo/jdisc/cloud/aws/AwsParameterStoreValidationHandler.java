@@ -2,7 +2,6 @@
 package com.yahoo.jdisc.cloud.aws;
 
 import com.google.inject.Inject;
-import com.yahoo.cloud.config.SecretStoreConfig;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
