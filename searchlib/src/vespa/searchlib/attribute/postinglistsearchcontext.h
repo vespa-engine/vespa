@@ -111,7 +111,7 @@ protected:
     static const long MIN_APPROXHITS_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 10;
 
     PostingListSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues,
-                              bool hasWeight, const PostingList &postingList, uint32_t minBvCocFreq,
+                              bool hasWeight, const PostingList &postingList, uint32_t minBvDocFreq,
                               bool useBitVector, const ISearchContext &baseSearchCtx);
     ~PostingListSearchContextT() override;
 
@@ -149,7 +149,7 @@ protected:
     using Parent::singleHits;
 
     PostingListFoldedSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues,
-                                    bool hasWeight, const PostingList &postingList, uint32_t minBvCocFreq,
+                                    bool hasWeight, const PostingList &postingList, uint32_t minBvDocFreq,
                                     bool useBitVector, const ISearchContext &baseSearchCtx);
 
     unsigned int approximateHits() const override;
