@@ -55,8 +55,10 @@ public:
     };
     QueryTerm();
     QueryTerm(std::unique_ptr<QueryNodeResultBase> resultBase, const string & term, const string & index, Type type);
-    QueryTerm(QueryTerm &&) noexcept;
-    QueryTerm & operator = (QueryTerm &&) noexcept;
+    QueryTerm(const QueryTerm &) = delete;
+    QueryTerm & operator = (const QueryTerm &) = delete;
+    QueryTerm(QueryTerm &&) = delete;
+    QueryTerm & operator = (QueryTerm &&) = delete;
     ~QueryTerm();
     bool evaluate() const override;
     const HitList & evaluateHits(HitList & hl) const override;

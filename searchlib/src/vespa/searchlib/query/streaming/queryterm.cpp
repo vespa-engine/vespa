@@ -51,9 +51,6 @@ QueryTerm::QueryTerm() :
     _fieldInfo()
 { }
 
-QueryTerm::QueryTerm(QueryTerm &&) noexcept = default;
-QueryTerm & QueryTerm::operator = (QueryTerm &&) noexcept = default;
-
 QueryTerm::~QueryTerm() = default;
 
 void
