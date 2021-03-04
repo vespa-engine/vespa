@@ -252,7 +252,7 @@ PostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &to
               toBeSearched.getStatus().getNumValues(),
               toBeSearched.hasWeightedSetType(),
               toBeSearched.getPostingList(),
-              toBeSearched._postingList._minBvDocFreq,
+              toBeSearched.getPostingList()._minBvDocFreq,
               useBitVector,
               *this),
       _toBeSearched(toBeSearched),

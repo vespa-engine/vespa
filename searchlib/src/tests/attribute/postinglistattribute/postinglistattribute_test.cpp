@@ -453,8 +453,7 @@ PostingListAttributeTest::checkPostingList(const VectorType & vec, const std::ve
         const uint32_t docBegin = range.getBegin(i);
         const uint32_t docEnd = range.getEnd(i);
 
-        auto itr = dict.find(typename VectorType::EnumIndex(),
-                             enumStore.make_comparator(values[i]));
+        auto itr = dict.find(enumstore::Index(), enumStore.make_comparator(values[i]));
         ASSERT_TRUE(itr.valid());
 
         typename VectorType::PostingList::Iterator postings;
