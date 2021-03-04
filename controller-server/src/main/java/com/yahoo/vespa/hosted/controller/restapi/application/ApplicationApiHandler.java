@@ -719,7 +719,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         var tenantSecretStore = optionalSecretStore.get();
         controller.serviceRegistry().tenantSecretService().deleteSecretStore(tenant.name(), tenantSecretStore);
-        controller.serviceRegistry().roleService().deleteTenantPolicy(tenant.name(), tenantSecretStore.getName());
+        controller.serviceRegistry().roleService().deleteTenantPolicy(tenant.name(), tenantSecretStore.getName(), tenantSecretStore.getRole());
         controller.tenants().lockOrThrow(tenant.name(), LockedTenant.Cloud.class, lockedTenant -> {
             lockedTenant = lockedTenant.withoutSecretStore(tenantSecretStore);
             controller.tenants().store(lockedTenant);
