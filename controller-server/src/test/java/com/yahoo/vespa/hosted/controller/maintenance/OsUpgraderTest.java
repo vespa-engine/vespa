@@ -140,9 +140,9 @@ public class OsUpgraderTest {
         osUpgrader.maintain();
 
         // First zone upgrades
-        assertWanted(Version.emptyVersion, SystemApplication.configServerHost, zone1.getId());
         assertEquals("Dev zone gets a zero budget", Duration.ZERO, upgradeBudget(zone1.getId(), SystemApplication.tenantHost, version));
         completeUpgrade(version, SystemApplication.tenantHost, zone1.getId());
+        completeUpgrade(version, SystemApplication.configServerHost, zone1.getId());
 
         // Next set of zones upgrade
         osUpgrader.maintain();
@@ -150,13 +150,15 @@ public class OsUpgraderTest {
             assertEquals("Parallel prod zones share the budget of a single zone", Duration.ofHours(6),
                          upgradeBudget(zone, SystemApplication.tenantHost, version));
             completeUpgrade(version, SystemApplication.tenantHost, zone);
+            completeUpgrade(version, SystemApplication.configServerHost, zone);
         }
 
         // Last zone upgrades
         osUpgrader.maintain();
-        assertEquals("Last prod zone gets the budget of a single zone", Duration.ofHours(6),
+        assertEquals("Tenant hosts in last prod zone gets the budget of a single zone", Duration.ofHours(6),
                      upgradeBudget(zone4.getId(), SystemApplication.tenantHost, version));
         completeUpgrade(version, SystemApplication.tenantHost, zone4.getId());
+        completeUpgrade(version, SystemApplication.configServerHost, zone4.getId());
 
         // All host applications upgraded
         statusUpdater.maintain();

@@ -61,9 +61,9 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
 
     @Override
     protected boolean expectUpgradeOf(Node node, SystemApplication application, ZoneApi zone) {
-        return cloud.equals(zone.getCloudName()) &&                  // Cloud is managed by this upgrader
-               application.shouldUpgradeOsIn(zone.getId(), controller()) && // Application should upgrade in this cloud
-               canUpgrade(node);                                            // Node is in an upgradable state
+        return cloud.equals(zone.getCloudName()) && // Cloud is managed by this upgrader
+               application.shouldUpgradeOsIn() &&   // Application should upgrade in this cloud
+               canUpgrade(node);                    // Node is in an upgradable state
     }
 
     @Override
@@ -76,7 +76,7 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
 
     @Override
     protected boolean changeTargetTo(OsVersionTarget target, SystemApplication application, ZoneApi zone) {
-        if (!application.shouldUpgradeOsIn(zone.getId(), controller())) return false;
+        if (!application.shouldUpgradeOsIn()) return false;
         return controller().serviceRegistry().configServer().nodeRepository()
                            .targetVersionsOf(zone.getId())
                            .osVersion(application.nodeType())
