@@ -4,6 +4,8 @@ package com.yahoo.vespa.hosted.controller.api.integration.aws;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 
+import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -17,7 +19,16 @@ public class NoopRoleService implements RoleService {
     }
 
     @Override
+    public void deleteTenantRole(TenantName tenant) { }
+
+    @Override
     public String createTenantPolicy(TenantName tenant, String policyName, String awsId, String role) {
         return "";
     }
+
+    @Override
+    public void deleteTenantPolicy(TenantName tenant, String policyName) { }
+
+    @Override
+    public void maintainRoles(List<TenantName> tenants) { }
 }
