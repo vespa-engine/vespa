@@ -26,4 +26,9 @@ public class LogserverContainer extends Container {
         return ContainerServiceType.LOGSERVER_CONTAINER;
     }
 
+    @Override
+    public String defaultPreload() {
+        return "";
+    }
+
 }
