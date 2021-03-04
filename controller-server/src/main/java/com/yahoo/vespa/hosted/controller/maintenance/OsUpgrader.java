@@ -16,7 +16,11 @@ import java.util.Set;
 import java.util.logging.Logger;
 
 /**
- * Maintenance job that schedules upgrades of OS / kernel on nodes in the system.
+ * Trigger OS upgrade of zones in the system, according to the current OS version target.
+ *
+ * Target OS version is set per cloud, and an instance of this exists per cloud in the system.
+ *
+ * {@link OsUpgradeScheduler} may update the target automatically in supported clouds.
  *
  * @author mpolden
  */

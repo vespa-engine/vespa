@@ -18,7 +18,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * Automatically schedule OS upgrades.
+ * Automatically set the OS version target on a schedule.
  *
  * This is used in clouds where new OS versions regularly become available.
  *
