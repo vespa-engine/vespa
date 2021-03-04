@@ -102,7 +102,7 @@ public class GroupPreparer {
                     osVersion = nodeRepository.osVersions().targetFor(hostType).orElse(Version.emptyVersion);
                 }
                 HostSharing sharing = hostSharing(requestedNodes, hostType);
-                List<ProvisionedHost> provisionedHosts = allocation.nodeDeficit()
+                List<ProvisionedHost> provisionedHosts = allocation.hostDeficit()
                         .map(deficit -> {
                             return hostProvisioner.get().provisionHosts(allocation.provisionIndices(deficit.getCount()),
                                                                         hostType,

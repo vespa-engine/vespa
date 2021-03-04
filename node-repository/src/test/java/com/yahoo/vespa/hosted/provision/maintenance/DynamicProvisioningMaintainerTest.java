@@ -16,6 +16,7 @@ import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.net.HostName;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
@@ -480,7 +481,13 @@ public class DynamicProvisioningMaintainerTest {
         dynamicProvisioningTester.maintainer.maintain();
         assertEquals(2, tester.nodeRepository().nodes().list().nodeType(NodeType.confighost).size());
 
-        // Next deployment starts provisioning a new host and child
+        // Deployment by the removed host has no effect
+        HostName.setHostNameForTestingOnly("cfg2.example.com");
+        tester.prepareAndActivateInfraApplication(configSrvApp, NodeType.config);
+        assertEquals(List.of(), dynamicProvisioningTester.hostProvisioner.provisionedHosts());
+
+        // Deployment on another config server starts provisioning a new host and child
+        HostName.setHostNameForTestingOnly("cfg3.example.com");
         try {
             tester.prepareAndActivateInfraApplication(configSrvApp, NodeType.config);
             fail("Expected provisioning to fail");
