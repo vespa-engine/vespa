@@ -60,8 +60,7 @@ BucketMover::BucketMover(const BucketId &bucket, const MaintenanceDocumentSubDB 
       _targetSubDbId(targetSubDbId),
       _started(0),
       _completed(0),
-      _needReschedule(false),
-      _allScheduled(false),
+      _bucketDone(false),
       _lastGidValid(false),
       _lastGid()
 { }
@@ -96,7 +95,6 @@ BucketMover::createMoveOperations(std::vector<MoveKey> toMove) {
     for (MoveKey &key : toMove) {
         auto moveOp = createMoveOperation(key);
         if (!moveOp.first) {
-            _needReschedule.store(true, std::memory_order_relaxed);
             break;
         }
         successfulReads.push_back(std::move(moveOp));
@@ -109,12 +107,6 @@ BucketMover::moveDocuments(std::vector<GuardedMoveOp> moveOps, IDestructorCallba
     for (auto & moveOp : moveOps) {
         moveDocument(std::move(moveOp.first), std::move(onDone));
     }
-}
-
-void
-BucketMover::cancel() {
-    setAllScheduled();
-    _needReschedule.store(true, std::memory_order_relaxed);
 }
 
 }
@@ -145,7 +137,7 @@ DocumentBucketMover::moveDocuments(size_t maxDocsToMove) {
 bool
 DocumentBucketMover::moveDocuments(size_t maxDocsToMove, IMoveOperationLimiter &limiter)
 {
-    if (_impl->allScheduled()) {
+    if (_impl->bucketDone()) {
         return true;
     }
     auto [keys, done] = _impl->getKeysToMove(maxDocsToMove);
@@ -153,7 +145,7 @@ DocumentBucketMover::moveDocuments(size_t maxDocsToMove, IMoveOperationLimiter &
     auto moveOps = _impl->createMoveOperations(std::move(keys));
     bool allOk = (numKeys == moveOps.size());
     if (done && allOk) {
-        _impl->setAllScheduled();
+        _impl->setBucketDone();
     }
     if (moveOps.empty()) return allOk;
 
