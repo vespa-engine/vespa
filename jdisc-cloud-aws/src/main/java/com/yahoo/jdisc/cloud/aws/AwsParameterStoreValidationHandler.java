@@ -8,13 +8,14 @@ import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.io.IOUtils;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.SlimeJsonResponse;
-import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.yolean.Exceptions;
+import com.yahoo.jdisc.cloud.aws.AwsParameterStore.AwsSettings;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -27,12 +28,10 @@ import java.util.logging.Logger;
 public class AwsParameterStoreValidationHandler extends LoggingRequestHandler {
 
     private static final Logger log = Logger.getLogger(AwsParameterStoreValidationHandler.class.getName());
-    private final AwsParameterStore awsParameterStore;
 
     @Inject
-    public AwsParameterStoreValidationHandler(Context ctx, AwsParameterStore awsParameterStore) {
+    public AwsParameterStoreValidationHandler(Context ctx) {
         super(ctx);
-        this.awsParameterStore = awsParameterStore;
     }
 
     @Override
@@ -57,7 +56,9 @@ public class AwsParameterStoreValidationHandler extends LoggingRequestHandler {
         settings.toSlime(root.setObject("settings"));
 
         try {
-            awsParameterStore.getSecret("vespa-secret");
+            var parameterName = json.get().field("parameterName").asString();
+            var store = new AwsParameterStore(List.of(settings));
+            store.getSecret(parameterName);
             root.setString("status", "ok");
         } catch (RuntimeException e) {
             root.setString("status", "error");
@@ -78,34 +79,4 @@ public class AwsParameterStoreValidationHandler extends LoggingRequestHandler {
         }
     }
 
-    private static class AwsSettings {
-        String name;
-        String role;
-        String awsId;
-        String externalId;
-
-        AwsSettings(String name, String role, String awsId, String externalId) {
-            this.name = name;
-            this.role = role;
-            this.awsId = awsId;
-            this.externalId = externalId;
-        }
-
-        static AwsSettings fromSlime(Slime slime) {
-            var json = slime.get();
-            return new AwsSettings(
-                    json.field("name").asString(),
-                    json.field("role").asString(),
-                    json.field("awsId").asString(),
-                    json.field("externalId").asString()
-            );
-        }
-
-        void toSlime(Cursor slime) {
-            slime.setString("name", name);
-            slime.setString("role", role);
-            slime.setString("awsId", awsId);
-            slime.setString("externalId", "*****");
-        }
-    }
 }

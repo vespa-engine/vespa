@@ -152,7 +152,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     @Test
     public void validate_secret_store() {
         var secretStoreRequest =
-                request("/application/v4/tenant/scoober/secret-store/secret-foo/validate", GET)
+                request("/application/v4/tenant/scoober/secret-store/secret-foo/region/us-west-1/parameter-name/foo/validate", GET)
                         .roles(Set.of(Role.administrator(tenantName)));
         tester.assertResponse(secretStoreRequest, "{" +
                 "\"error-code\":\"BAD_REQUEST\"," +
@@ -161,7 +161,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
         deployApplication();
         secretStoreRequest =
-                request("/application/v4/tenant/scoober/secret-store/secret-foo/validate", GET)
+                request("/application/v4/tenant/scoober/secret-store/secret-foo/region/us-west-1/parameter-name/foo/validate", GET)
                         .roles(Set.of(Role.administrator(tenantName)));
         tester.assertResponse(secretStoreRequest, "{" +
                 "\"error-code\":\"NOT_FOUND\"," +
@@ -175,7 +175,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
         // ConfigServerMock returns message on format deployment.toString() + " - " + tenantSecretStore.toString()
         secretStoreRequest =
-                request("/application/v4/tenant/scoober/secret-store/secret-foo/validate", GET)
+                request("/application/v4/tenant/scoober/secret-store/secret-foo/region/us-west-1/parameter-name/foo/validate", GET)
                         .roles(Set.of(Role.administrator(tenantName)));
         tester.assertResponse(secretStoreRequest, "{" +
                 "\"message\":\"scoober.albums in prod.us-central-1 - TenantSecretStore{name='secret-foo', awsId='123', role='some-role'}\"" +
