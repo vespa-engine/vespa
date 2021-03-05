@@ -255,6 +255,7 @@ public class SessionRepository {
         session.setVespaVersion(existingSession.getVespaVersion());
         session.setDockerImageRepository(existingSession.getDockerImageRepository());
         session.setAthenzDomain(existingSession.getAthenzDomain());
+        session.setTenantSecretStores(existingSession.getTenantSecretStores());
         if (existingSession.getDedicatedClusterControllerCluster())
             session.setDedicatedClusterControllerCluster();
         return session;
