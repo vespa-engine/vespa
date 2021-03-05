@@ -6,6 +6,7 @@ import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationFile;
 import com.yahoo.config.application.api.ApplicationMetaData;
 import com.yahoo.config.application.api.ApplicationPackage;
+import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
@@ -17,6 +18,7 @@ import com.yahoo.vespa.config.server.application.ApplicationSet;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -131,6 +133,10 @@ public abstract class Session implements Comparable<Session>  {
         sessionZooKeeperClient.writeAthenzDomain(athenzDomain);
     }
 
+    public void setTenantSecretStores(List<TenantSecretStore> tenantSecretStores) {
+        sessionZooKeeperClient.writeTenantSecretStores(tenantSecretStores);
+    }
+
     /** Returns application id read from ZooKeeper. Will throw RuntimeException if not found */
     public ApplicationId getApplicationId() {
         return sessionZooKeeperClient.readApplicationId()
@@ -168,6 +174,10 @@ public abstract class Session implements Comparable<Session>  {
 
     public Transaction createDeactivateTransaction() {
         return createSetStatusTransaction(Status.DEACTIVATE);
+    }
+
+    public List<TenantSecretStore> getTenantSecretStores() {
+        return sessionZooKeeperClient.readTenantSecretStores();
     }
 
     private Transaction createSetStatusTransaction(Status status) {
