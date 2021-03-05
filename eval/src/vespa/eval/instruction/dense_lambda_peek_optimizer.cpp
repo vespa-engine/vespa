@@ -65,9 +65,9 @@ Node_UP make_floor(Node_UP a) {
 }
 
 struct PeekAnalyzer {
-    std::vector<size_t> dst_dim_sizes;
-    std::vector<size_t> src_dim_sizes;
-    std::vector<CompiledFunction::UP> src_dim_funs;
+    SmallVector<size_t> dst_dim_sizes;
+    SmallVector<size_t> src_dim_sizes;
+    SmallVector<CompiledFunction::UP> src_dim_funs;
     std::shared_ptr<Function const> src_idx_fun;
 
     struct CellRange {
@@ -111,7 +111,7 @@ struct PeekAnalyzer {
         src_idx_fun = Function::create(std::move(idx_expr), dst_type.dimension_names());
     }
 
-    bool step_params(std::vector<double> &params) {
+    bool step_params(SmallVector<double> &params) {
         for (size_t idx = params.size(); idx-- > 0; ) {
             if (size_t(params[idx] += 1.0) < dst_dim_sizes[idx]) {
                 return true;
@@ -122,7 +122,7 @@ struct PeekAnalyzer {
         return false;
     }
 
-    size_t calculate_index(const std::vector<size_t> &src_address) {
+    size_t calculate_index(const SmallVector<size_t> &src_address) {
         size_t result = 0;
         for (size_t i = 0; i < src_address.size(); ++i) {
             result *= src_dim_sizes[i];
@@ -134,8 +134,8 @@ struct PeekAnalyzer {
     Result analyze_indexes() {
         CellRange range{0,0};
         bool is_complex = false;
-        std::vector<double> params(dst_dim_sizes.size(), 0.0);
-        std::vector<size_t> src_address(src_dim_sizes.size(), 0);
+        SmallVector<double> params(dst_dim_sizes.size(), 0.0);
+        SmallVector<size_t> src_address(src_dim_sizes.size(), 0);
         do {
             for (size_t i = 0; i < src_dim_funs.size(); ++i) {
                 auto dim_fun = src_dim_funs[i]->get_function();
