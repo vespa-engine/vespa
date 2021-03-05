@@ -128,14 +128,14 @@ MemoryFlushConfigUpdater::convertConfig(const ProtonConfig::Flush::Memory &confi
     const size_t hardMemoryLimit = getHardMemoryLimit(memory);
     size_t totalMaxMemory = config.maxmemory;
     if (totalMaxMemory > hardMemoryLimit) {
-        LOG(info, "flush.memory.maxmemory=%" PRId64 " cannot"
+        LOG(debug, "flush.memory.maxmemory=%" PRId64 " cannot"
             " be set above the hard limit of %ld so we cap it to the hard limit",
             config.maxmemory, hardMemoryLimit);
         totalMaxMemory = hardMemoryLimit;
     }
     size_t eachMaxMemory = config.each.maxmemory;
     if (eachMaxMemory > hardMemoryLimit) {
-        LOG(info, "flush.memory.each.maxmemory=%" PRId64 " cannot"
+        LOG(debug, "flush.memory.each.maxmemory=%" PRId64 " cannot"
             " be set above the hard limit of %ld so we cap it to the hard limit",
             config.maxmemory, hardMemoryLimit);
         eachMaxMemory = hardMemoryLimit;
