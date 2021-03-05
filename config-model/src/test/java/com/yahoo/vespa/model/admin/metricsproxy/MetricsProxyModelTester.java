@@ -44,7 +44,7 @@ class MetricsProxyModelTester {
     }
 
     static VespaModel getModel(String servicesXml, TestMode testMode, DeployState.Builder builder) {
-        var numberOfHosts = testMode == hosted ? 2 : 1;
+        var numberOfHosts = testMode == hosted ? 4 : 1;
         var tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         tester.setHosted(testMode == hosted);

@@ -33,7 +33,7 @@ public class MetricsProxyContainerTest {
 
     @Test
     public void one_metrics_proxy_container_is_added_to_every_node() {
-        var numberOfHosts = 4;
+        var numberOfHosts = 7;
         var tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
 
@@ -55,7 +55,6 @@ public class MetricsProxyContainerTest {
         var numberOfHosts = 7;
         var tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
-        tester.dedicatedClusterControllerCluster(true);
 
         VespaModel model = tester.createModel(servicesWithManyNodes(), true);
         assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
@@ -118,7 +117,7 @@ public class MetricsProxyContainerTest {
     public void hosted_application_propagates_node_dimensions() {
         String services = servicesWithContent();
         VespaModel hostedModel = getModel(services, hosted);
-        assertEquals(1, hostedModel.getHosts().size());
+        assertEquals(4, hostedModel.getHosts().size());
         String configId = containerConfigId(hostedModel, hosted);
         NodeDimensionsConfig config = getNodeDimensionsConfig(hostedModel, configId);
 

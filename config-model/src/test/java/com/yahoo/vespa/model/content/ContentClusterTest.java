@@ -1059,7 +1059,7 @@ public class ContentClusterTest extends ContentBaseTest {
 
     @Test
     public void testDedicatedClusterControllers() {
-        VespaModel noContentModel = createEnd2EndOneNode(new TestProperties().setDedicatedClusterControllerCluster(true)
+        VespaModel noContentModel = createEnd2EndOneNode(new TestProperties().setHostedVespa(true)
                                                                              .setMultitenant(true),
                                                          "<?xml version='1.0' encoding='UTF-8' ?>" +
                                                          "<services version='1.0'>" +
@@ -1068,7 +1068,7 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(Map.of(), noContentModel.getContentClusters());
         assertNull("No cluster controller without content", noContentModel.getAdmin().getClusterControllers());
 
-        VespaModel oneContentModel = createEnd2EndOneNode(new TestProperties().setDedicatedClusterControllerCluster(true)
+        VespaModel oneContentModel = createEnd2EndOneNode(new TestProperties().setHostedVespa(true)
                                                                               .setMultitenant(true),
                                                           "<?xml version='1.0' encoding='UTF-8' ?>" +
                                                           "<services version='1.0'>" +
@@ -1109,7 +1109,7 @@ public class ContentClusterTest extends ContentBaseTest {
                                     "    </tuning>" +
                                     "  </content>" +
                                     " </services>";
-        VespaModel twoContentModel = createEnd2EndOneNode(new TestProperties().setDedicatedClusterControllerCluster(true)
+        VespaModel twoContentModel = createEnd2EndOneNode(new TestProperties().setHostedVespa(true)
                                                                               .setMultitenant(true),
                                                           twoContentServices);
         assertNull("No own cluster controller for content", twoContentModel.getContentClusters().get("storage").getClusterControllers());

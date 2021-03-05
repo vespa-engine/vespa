@@ -74,7 +74,7 @@ public class ModelAmendingTestCase {
                 "    </content>" +
                 "</services>";
         VespaModelTester tester = new VespaModelTester(amendingModelRepo);
-        tester.addHosts(9);
+        tester.addHosts(12);
         VespaModel model = tester.createModel(services);
 
         // Check that all hosts are amended
@@ -121,7 +121,6 @@ public class ModelAmendingTestCase {
                 "    </content>" +
                 "</services>";
         VespaModelTester tester = new VespaModelTester(amendingModelRepo);
-        tester.dedicatedClusterControllerCluster(true);
         tester.addHosts(12);
         VespaModel model = tester.createModel(services);
 

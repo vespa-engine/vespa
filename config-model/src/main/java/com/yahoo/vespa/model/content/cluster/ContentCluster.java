@@ -413,7 +413,7 @@ public class ContentCluster extends AbstractConfigProducer implements
             }
 
             List<HostResource> sortedHosts = new ArrayList<>(hosts);
-            sortedHosts.sort((a, b) -> (a.comparePrimarilyByIndexTo(b)));
+            sortedHosts.sort(HostResource::comparePrimarilyByIndexTo);
             sortedHosts = sortedHosts.subList(0, Math.min(count, hosts.size()));
             return sortedHosts;
         }
