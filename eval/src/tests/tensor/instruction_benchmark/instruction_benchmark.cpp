@@ -62,6 +62,7 @@ template <typename T> using CREF = std::reference_wrapper<const T>;
 
 //-----------------------------------------------------------------------------
 
+TensorSpec NUM(double value) { return test::GenSpec(value).gen(); }
 test::GenSpec GS(double bias) { return test::GenSpec(bias).cells_float(); }
 
 //-----------------------------------------------------------------------------
@@ -567,7 +568,7 @@ void benchmark_tensor_create(const vespalib::string &desc, const TensorSpec &pro
     ASSERT_FALSE(proto_type.is_error());
     std::vector<CREF<TensorSpec>> stack_spec;
     for (const auto &cell: proto.cells()) {
-        stack_spec.emplace_back(stash.create<TensorSpec>(GS(cell.second)));
+        stack_spec.emplace_back(stash.create<TensorSpec>(NUM(cell.second)));
     }
     std::vector<EvalOp::UP> list;
     for (const Impl &impl: impl_list) {
@@ -603,7 +604,7 @@ void benchmark_tensor_peek(const vespalib::string &desc, const TensorSpec &lhs, 
     stack_spec.emplace_back(lhs);
     if (peek_spec.is_dynamic) {
         for (const auto &entry: peek_spec.spec) {
-            stack_spec.emplace_back(stash.create<TensorSpec>(GS(double(entry.second))));
+            stack_spec.emplace_back(stash.create<TensorSpec>(NUM(double(entry.second))));
         }
     }
     std::vector<EvalOp::UP> list;
@@ -618,12 +619,12 @@ void benchmark_tensor_peek(const vespalib::string &desc, const TensorSpec &lhs, 
 //-----------------------------------------------------------------------------
 
 TEST(MakeInputTest, print_some_test_input) {
-    auto number = GS(5.0);
+    auto number = NUM(5.0);
     auto sparse = GS(1.0).map("x", 5, 3);
     auto dense = GS(10.0).idx("x", 5);
     auto mixed = GS(100.0).map("x", 3, 7).idx("y", 2).idx("z", 2);
     fprintf(stderr, "--------------------------------------------------------\n");
-    fprintf(stderr, "simple number: %s\n", number.gen().to_string().c_str());
+    fprintf(stderr, "simple number: %s\n", number.to_string().c_str());
     fprintf(stderr, "sparse vector: %s\n", sparse.gen().to_string().c_str());
     fprintf(stderr, "dense vector: %s\n", dense.gen().to_string().c_str());
     fprintf(stderr, "mixed cube: %s\n", mixed.gen().to_string().c_str());
@@ -747,8 +748,8 @@ TEST(MixedConcat, large_mixed_b) {
 //-----------------------------------------------------------------------------
 
 TEST(NumberJoin, plain_op2) {
-    auto lhs = GS(2.0);
-    auto rhs = GS(3.0);
+    auto lhs = NUM(2.0);
+    auto rhs = NUM(3.0);
     benchmark_join("simple numbers multiply", lhs, rhs, operation::Mul::f);
 }
 
@@ -793,7 +794,7 @@ TEST(DenseJoin, simple_expand) {
 }
 
 TEST(DenseJoin, multiply_by_number) {
-    auto lhs = GS(3.0);
+    auto lhs = NUM(3.0);
     auto rhs = GS(2.0).idx("a", 16).idx("b", 16).idx("c", 16);
     benchmark_join("dense cube multiply by number", lhs, rhs, operation::Mul::f);
 }
@@ -837,7 +838,7 @@ TEST(SparseJoin, no_overlap) {
 }
 
 TEST(SparseJoin, multiply_by_number) {
-    auto lhs = GS(3.0);
+    auto lhs = NUM(3.0);
     auto rhs = GS(2.0).map("a", 16, 2).map("b", 16, 2).map("c", 16, 2);
     benchmark_join("sparse multiply by number", lhs, rhs, operation::Mul::f);
 }
@@ -863,7 +864,7 @@ TEST(MixedJoin, no_overlap) {
 }
 
 TEST(MixedJoin, multiply_by_number) {
-    auto lhs = GS(3.0);
+    auto lhs = NUM(3.0);
     auto rhs = GS(2.0).map("a", 16, 2).map("b", 16, 2).idx("c", 16);
     benchmark_join("mixed multiply by number", lhs, rhs, operation::Mul::f);
 }
@@ -871,7 +872,7 @@ TEST(MixedJoin, multiply_by_number) {
 //-----------------------------------------------------------------------------
 
 TEST(ReduceBench, number_reduce) {
-    auto lhs = GS(1.0);
+    auto lhs = NUM(1.0);
     benchmark_reduce("number reduce", lhs, Aggr::SUM, {});
 }
 
@@ -954,7 +955,7 @@ TEST(MergeBench, mixed_merge) {
 //-----------------------------------------------------------------------------
 
 TEST(MapBench, number_map) {
-    auto lhs = GS(1.75);
+    auto lhs = NUM(1.75);
     benchmark_map("number map", lhs, operation::Floor::f);
 }
 
@@ -999,7 +1000,7 @@ TEST(TensorCreateBench, create_mixed) {
 
 TEST(TensorLambdaBench, simple_lambda) {
     auto type = ValueType::from_spec("tensor<float>(a[64],b[64])");
-    auto p0 = GS(3.5);
+    auto p0 = NUM(3.5);
     auto function = Function::parse({"a", "b", "p0"}, "(a*64+b)*p0");
     ASSERT_FALSE(function->has_error());
     benchmark_tensor_lambda("simple tensor lambda", type, p0, *function);
