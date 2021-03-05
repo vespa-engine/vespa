@@ -70,6 +70,14 @@ struct ControllerFixtureBase : public ::testing::Test
         _bucketHandler.notifyBucketStateChanged(bucket, BucketInfo::ActiveState::NOT_ACTIVE);
         return *this;
     }
+    void failRetrieveForLid(uint32_t lid) {
+        _ready.failRetrieveForLid(lid);
+        _notReady.failRetrieveForLid(lid);
+    }
+    void fixRetriever() {
+        _ready.failRetrieveForLid(0);
+        _notReady.failRetrieveForLid(0);
+    }
     const MoveOperationVector &docsMoved() const {
         return _moveHandler._moves;
     }
@@ -190,6 +198,28 @@ TEST_F(ControllerFixture, require_that_ready_bucket_is_moved_to_not_ready_if_buc
     addReady(_ready.bucket(1));
     _bmj.recompute();
     EXPECT_FALSE(_bmj.done());
+    EXPECT_TRUE(_bmj.scanAndMove(4, 3));
+    EXPECT_TRUE(_bmj.done());
+    sync();
+    EXPECT_EQ(2u, docsMoved().size());
+    assertEqual(_ready.bucket(2), _ready.docs(2)[0], 1, 2, docsMoved()[0]);
+    assertEqual(_ready.bucket(2), _ready.docs(2)[1], 1, 2, docsMoved()[1]);
+    EXPECT_EQ(1u, bucketsModified().size());
+    EXPECT_EQ(_ready.bucket(2), bucketsModified()[0]);
+}
+
+TEST_F(ControllerFixture, require_that_bucket_is_moved_even_with_error)
+{
+    // bucket 2 should be moved
+    addReady(_ready.bucket(1));
+    _bmj.recompute();
+    failRetrieveForLid(5);
+    EXPECT_FALSE(_bmj.done());
+    EXPECT_TRUE(_bmj.scanAndMove(4, 3));
+    EXPECT_TRUE(_bmj.done());
+    sync();
+    EXPECT_FALSE(_bmj.done());
+    fixRetriever();
     EXPECT_TRUE(_bmj.scanAndMove(4, 3));
     EXPECT_TRUE(_bmj.done());
     sync();

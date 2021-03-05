@@ -216,7 +216,7 @@ void
 BucketMoveJobV2::startMove(BucketMoverSP mover, size_t maxDocsToMove) {
     auto [keys, done] = mover->getKeysToMove(maxDocsToMove);
     if (done) {
-        mover->setBucketDone();
+        mover->setAllScheduled();
     }
     if (keys.empty()) return;
     if (_stopped.load(std::memory_order_relaxed)) return;
@@ -247,12 +247,20 @@ BucketMoveJobV2::completeMove(BucketMoverSP mover, std::vector<GuardedMoveOp> op
 
 void
 BucketMoveJobV2::handleMoveResult(BucketMoverSP mover) {
-    if (mover->bucketDone() && mover->inSync()) {
+    bool bucketMoveComplete = mover->allScheduled() && mover->inSync();
+    if (bucketMoveComplete || mover->needReschedule()) {
         BucketId bucket = mover->getBucket();
-        assert(_bucketsInFlight.contains(bucket));
-        _modifiedHandler.notifyBucketModified(bucket);
+        assert(mover->needReschedule() || _bucketsInFlight.contains(bucket));
         _bucketsInFlight.erase(bucket);
-        updatePending();
+        if (mover->needReschedule()) {
+            reconsiderBucket(_ready.meta_store()->getBucketDB().takeGuard(), bucket);
+            if (!_buckets2Move.contains(bucket)) {
+                // It failed, but all was moved anyway
+                _modifiedHandler.notifyBucketModified(bucket);
+            }
+        } else {
+            _modifiedHandler.notifyBucketModified(bucket);
+        }
         if (_postponedUntilSafe.contains(bucket)) {
             _postponedUntilSafe.erase(bucket);
             reconsiderBucket(_ready.meta_store()->getBucketDB().takeGuard(), bucket);
@@ -261,6 +269,7 @@ BucketMoveJobV2::handleMoveResult(BucketMoverSP mover) {
             _postponedUntilSafe.erase(RECOMPUTE_TOKEN);
             recompute();
         }
+        updatePending();
     }
 }
 
@@ -348,9 +357,9 @@ BucketMoveJobV2::moveDocs(size_t maxDocsToMove) {
     const auto & mover = _movers[index];
 
     //Move, or reduce movers as we are tailing off
-    if (!mover->bucketDone()) {
+    if (!mover->allScheduled()) {
         startMove(mover, maxDocsToMove);
-        if (mover->bucketDone()) {
+        if (mover->allScheduled()) {
             _movers.erase(_movers.begin() + index);
         }
     }
