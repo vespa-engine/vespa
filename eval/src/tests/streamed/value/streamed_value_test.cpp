@@ -69,7 +69,8 @@ TensorSpec streamed_value_join(const TensorSpec &a, const TensorSpec &b, join_fu
 TEST(StreamedValueTest, streamed_values_can_be_converted_from_and_to_tensor_spec) {
     for (const auto &layout: layouts) {
         for (CellType ct : CellTypeUtils::list_types()) {
-            TensorSpec expect = layout.cpy().cells(ct);
+            auto expect = layout.cpy().cells(ct);
+            if (expect.bad_scalar()) continue;
             std::unique_ptr<Value> value = value_from_spec(expect, StreamedValueBuilderFactory::get());
             TensorSpec actual = spec_from_value(*value);
             EXPECT_EQ(actual, expect);
@@ -80,7 +81,8 @@ TEST(StreamedValueTest, streamed_values_can_be_converted_from_and_to_tensor_spec
 TEST(StreamedValueTest, streamed_values_can_be_copied) {
     for (const auto &layout: layouts) {
         for (CellType ct : CellTypeUtils::list_types()) {
-            TensorSpec expect = layout.cpy().cells(ct);
+            auto expect = layout.cpy().cells(ct);
+            if (expect.bad_scalar()) continue;
             std::unique_ptr<Value> value = value_from_spec(expect, StreamedValueBuilderFactory::get());
             std::unique_ptr<Value> copy = StreamedValueBuilderFactory::get().copy(*value);
             TensorSpec actual = spec_from_value(*copy);
@@ -131,11 +133,13 @@ TEST(StreamedValueTest, new_generic_join_works_for_streamed_values) {
         const auto l = join_layouts[i].cpy().seq(N_16ths);
         const auto r = join_layouts[i + 1].cpy().seq(N_16ths);
         for (CellType lct : CellTypeUtils::list_types()) {
-            TensorSpec lhs = l.cpy().cells(lct);
+            auto lhs = l.cpy().cells(lct);
+            if (lhs.bad_scalar()) continue;
             for (CellType rct : CellTypeUtils::list_types()) {
-                TensorSpec rhs = r.cpy().cells(rct);
+                auto rhs = r.cpy().cells(rct);
+                if (rhs.bad_scalar()) continue;
                 for (auto fun: {operation::Add::f, operation::Sub::f, operation::Mul::f, operation::Max::f}) {
-                    SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
+                    SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.gen().to_string().c_str(), rhs.gen().to_string().c_str()));
                     auto expect = ReferenceOperations::join(lhs, rhs, fun);
                     auto actual = streamed_value_join(lhs, rhs, fun);
                     EXPECT_EQ(actual, expect);

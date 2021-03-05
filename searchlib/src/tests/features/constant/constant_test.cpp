@@ -45,7 +45,7 @@ struct ExecFixture
     bool setup() { return test.setup(); }
     const Value &extractTensor(uint32_t docid) {
         Value::CREF value = test.resolveObjectFeature(docid);
-        ASSERT_TRUE(value.get().is_tensor());
+        ASSERT_TRUE(value.get().type().has_dimensions());
         return value.get();
     }
     const Value &executeTensor(uint32_t docId = 1) {
@@ -53,7 +53,7 @@ struct ExecFixture
     }
     double extractDouble(uint32_t docid) {
         Value::CREF value = test.resolveObjectFeature(docid);
-        ASSERT_TRUE(value.get().is_double());
+        ASSERT_TRUE(value.get().type().is_double());
         return value.get().as_double();
     }
     double executeDouble(uint32_t docId = 1) {

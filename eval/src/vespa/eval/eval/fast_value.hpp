@@ -332,12 +332,11 @@ template <typename T> FastDenseValue<T>::~FastDenseValue() = default;
 
 //-----------------------------------------------------------------------------
 
-template <typename T>
-struct FastScalarBuilder final : ValueBuilder<T> {
-    T _value;
-    ArrayRef<T> add_subspace(ConstArrayRef<vespalib::stringref>) final override { return ArrayRef<T>(&_value, 1); }
-    ArrayRef<T> add_subspace(ConstArrayRef<string_id>) final override { return ArrayRef<T>(&_value, 1); };
-    std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<T>>) final override { return std::make_unique<ScalarValue<T>>(_value); }
+struct FastDoubleValueBuilder final : ValueBuilder<double> {
+    double _value;
+    ArrayRef<double> add_subspace(ConstArrayRef<vespalib::stringref>) final override { return ArrayRef<double>(&_value, 1); }
+    ArrayRef<double> add_subspace(ConstArrayRef<string_id>) final override { return ArrayRef<double>(&_value, 1); };
+    std::unique_ptr<Value> build(std::unique_ptr<ValueBuilder<double>>) final override { return std::make_unique<DoubleValue>(_value); }
 };
 
 //-----------------------------------------------------------------------------

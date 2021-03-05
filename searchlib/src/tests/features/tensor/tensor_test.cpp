@@ -152,7 +152,7 @@ struct ExecFixture
     }
     const Value &extractTensor(uint32_t docid) {
         Value::CREF value = test.resolveObjectFeature(docid);
-        ASSERT_TRUE(value.get().is_tensor());
+        ASSERT_TRUE(value.get().type().has_dimensions());
         return value.get();
     }
     const Value &execute(uint32_t docId = 1) {

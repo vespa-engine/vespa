@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
     auto type = ValueType::from_spec(result.type());
     if (type.is_error()) {
         fprintf(stdout, "error\n");
-    } else if (type.is_scalar()) {
+    } else if (type.is_double()) {
         fprintf(stdout, "%.32g\n", result.as_double());
     } else {
         fprintf(stdout, "%s\n", result.to_string().c_str());

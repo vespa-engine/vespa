@@ -150,7 +150,7 @@ void verify_peek_equal(const TensorSpec &input,
         reduce_dims.push_back(dim_name);
     }
     if (reduce_dims.empty()) return;
-    ValueType result_type = param_type.reduce(reduce_dims);
+    ValueType result_type = param_type.peek(reduce_dims);
     auto expect = reference_peek(input, spec);
     SCOPED_TRACE(fmt("peek input: %s\n  peek spec: %s\n  peek result %s\n",
                      input.to_string().c_str(),
@@ -195,8 +195,8 @@ void fill_dims_and_check(const TensorSpec &input,
 void test_generic_peek_with(const ValueBuilderFactory &factory) {
     for (const auto &layout : peek_layouts) {
         for (CellType ct : CellTypeUtils::list_types()) {
-            TensorSpec input = layout.cpy().cells(ct);
-            ValueType input_type = ValueType::from_spec(input.type());
+            auto input = layout.cpy().cells(ct);
+            ValueType input_type = input.type();
             const auto &dims = input_type.dimensions();
             PeekSpec spec;
             fill_dims_and_check(input, spec, dims, factory);

@@ -297,7 +297,7 @@ Onnx::WirePlanner::make_output_type(const TensorInfo &onnx_out) const
         }
         dim_list.emplace_back(fmt("d%zu", dim_list.size()), dim_size);
     }
-    return ValueType::tensor_type(std::move(dim_list), to_cell_type(elements));
+    return ValueType::make_type(to_cell_type(elements), std::move(dim_list));
 }
 
 Onnx::WireInfo

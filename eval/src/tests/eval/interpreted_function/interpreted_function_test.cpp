@@ -80,7 +80,7 @@ struct MyEvalTest : test::EvalSpec::EvalTest {
         InterpretedFunction ifun(factory, function, node_types);
         InterpretedFunction::Context ictx(ifun);
         const Value &result_value = ifun.eval(ictx, params);
-        report_result(result_value.is_double(), result_value.as_double(), expected_result, description);
+        report_result(result_value.type().is_double(), result_value.as_double(), expected_result, description);
     }
 };
 

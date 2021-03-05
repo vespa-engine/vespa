@@ -28,7 +28,7 @@ RemoveTrivialDimensionOptimizer::optimize(const TensorFunction &expr, Stash &sta
 {
     if (auto reduce = as<Reduce>(expr)) {
         const TensorFunction &child = reduce->child();
-        if ((! expr.result_type().dimensions().empty()) &&
+        if (expr.result_type().has_dimensions() &&
             aggr::is_ident(reduce->aggr()) &&
             is_trivial_dim_list(child.result_type(), reduce->dimensions()))
         {

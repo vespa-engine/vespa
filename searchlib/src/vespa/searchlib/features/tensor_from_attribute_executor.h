@@ -8,6 +8,7 @@
 #include <vespa/vespalib/stllike/string.h>
 
 using vespalib::eval::FastValueBuilderFactory;
+using vespalib::eval::CellType;
 
 namespace search::features {
 
@@ -29,7 +30,7 @@ public:
     TensorFromAttributeExecutor(const search::attribute::IAttributeVector *attribute,
                                 const vespalib::string &dimension)
         : _attribute(attribute),
-          _type(vespalib::eval::ValueType::tensor_type({{dimension}})),
+          _type(vespalib::eval::ValueType::make_type(CellType::DOUBLE, {{dimension}})),
           _attrBuffer(),
           _addr_ref(),
           _tensor()

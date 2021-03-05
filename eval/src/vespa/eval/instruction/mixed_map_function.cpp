@@ -75,7 +75,7 @@ const TensorFunction &
 MixedMapFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
     if (auto map = as<Map>(expr)) {
-        if (! map->child().result_type().is_scalar()) {
+        if (! map->child().result_type().is_double()) {
             return stash.create<MixedMapFunction>(map->result_type(), map->child(), map->function());
         }
     }

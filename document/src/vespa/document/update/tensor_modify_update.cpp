@@ -22,6 +22,7 @@ using vespalib::IllegalArgumentException;
 using vespalib::IllegalStateException;
 using vespalib::make_string;
 using vespalib::eval::ValueType;
+using vespalib::eval::CellType;
 using vespalib::eval::FastValueBuilderFactory;
 
 using join_fun_t = double (*)(double, double);
@@ -77,7 +78,7 @@ convertToCompatibleType(const TensorDataType &tensorType)
     for (const auto &dim : tensorType.getTensorType().dimensions()) {
         list.emplace_back(dim.name);
     }
-    return std::make_unique<const TensorDataType>(ValueType::tensor_type(std::move(list), tensorType.getTensorType().cell_type()));
+    return std::make_unique<const TensorDataType>(ValueType::make_type(tensorType.getTensorType().cell_type(), std::move(list)));
 }
 
 }

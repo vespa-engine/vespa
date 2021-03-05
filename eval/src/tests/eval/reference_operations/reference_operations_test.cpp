@@ -144,8 +144,9 @@ TEST(ReferenceCellCastTest, cell_cast_works) {
     for (CellType from_type: CellTypeUtils::list_types()) {
         for (CellType to_type: CellTypeUtils::list_types()) {
             for (const auto &gen: gen_list) {
-                TensorSpec input = gen.cpy().cells(from_type);
-                TensorSpec expect = gen.cpy().cells(to_type);
+                auto input = gen.cpy().cells(from_type);
+                auto expect = gen.cpy().cells(to_type);
+                if (input.bad_scalar() || expect.bad_scalar()) continue;
                 auto actual = ReferenceOperations::cell_cast(input, to_type);
                 EXPECT_EQ(actual, expect);
             }

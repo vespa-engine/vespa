@@ -60,6 +60,12 @@ GenSpec &GenSpec::operator=(const GenSpec &other) = default;
 
 GenSpec::~GenSpec() = default;
 
+bool
+GenSpec::bad_scalar() const
+{
+    return (_dims.empty() && (_cells != CellType::DOUBLE));
+}
+
 ValueType
 GenSpec::type() const
 {
@@ -67,7 +73,7 @@ GenSpec::type() const
     for (const auto &dim: _dims) {
         dim_types.push_back(dim.type());
     }
-    auto type = ValueType::tensor_type(dim_types, _cells);
+    auto type = ValueType::make_type(_cells, dim_types);
     assert(!type.is_error());
     return type;
 }
@@ -77,6 +83,7 @@ GenSpec::gen() const
 {
     size_t idx = 0;
     TensorSpec::Address addr;   
+    assert(!bad_scalar());
     TensorSpec result(type().to_spec());
     std::function<void(size_t)> add_cells = [&](size_t dim_idx) {
         if (dim_idx == _dims.size()) {
