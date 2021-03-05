@@ -290,18 +290,18 @@ class NodeAllocation {
     }
 
     /**
-     * Returns {@link FlavorCount} describing the host deficit for the given {@link NodeSpec}.
+     * Returns {@link HostDeficit} describing the host deficit for the given {@link NodeSpec}.
      *
-     * @return empty if the requested spec is already fulfilled. Otherwise returns {@link FlavorCount} containing the
+     * @return empty if the requested spec is already fulfilled. Otherwise returns {@link HostDeficit} containing the
      * flavor and host count required to cover the deficit.
      */
-    Optional<FlavorCount> hostDeficit() {
+    Optional<HostDeficit> hostDeficit() {
         if (nodeType() != NodeType.config && nodeType() != NodeType.tenant) {
             return Optional.empty(); // Requests for these node types never have a deficit
         }
-        return Optional.of(new FlavorCount(requestedNodes.resources().orElseGet(NodeResources::unspecified),
+        return Optional.of(new HostDeficit(requestedNodes.resources().orElseGet(NodeResources::unspecified),
                                            requestedNodes.fulfilledDeficitCount(accepted())))
-                       .filter(flavorCount -> flavorCount.getCount() > 0);
+                       .filter(hostDeficit -> hostDeficit.count() > 0);
     }
 
     /** Returns the indices to use when provisioning hosts for this */
@@ -452,23 +452,25 @@ class NodeAllocation {
         }
     }
 
-    static class FlavorCount {
+    /** A host deficit, the number of missing hosts, for a deployment */
+    static class HostDeficit {
 
-        private final NodeResources flavor;
+        private final NodeResources resources;
         private final int count;
 
-        private FlavorCount(NodeResources flavor, int count) {
-            this.flavor = flavor;
+        private HostDeficit(NodeResources resources, int count) {
+            this.resources = resources;
             this.count = count;
         }
 
-        NodeResources getFlavor() {
-            return flavor;
+        NodeResources resources() {
+            return resources;
         }
 
-        int getCount() {
+        int count() {
             return count;
         }
+
     }
 
 }
