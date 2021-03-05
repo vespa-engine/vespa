@@ -6,7 +6,7 @@
 namespace vespalib::eval {
 
 using Child = TensorFunction::Child;
-using SpecVector = std::vector<std::pair<int64_t,size_t>>;
+using SpecVector = SmallVector<std::pair<int64_t,size_t>>;
 using namespace tensor_function;
 
 namespace {
@@ -42,7 +42,7 @@ struct MyTensorPeekOp {
 } // namespace <unnamed>
 
 DenseTensorPeekFunction::DenseTensorPeekFunction(std::vector<Child> children,
-                                                 std::vector<std::pair<int64_t,size_t>> spec)
+                                                 SmallVector<std::pair<int64_t,size_t>> spec)
     : TensorFunction(),
       _children(std::move(children)),
       _spec(std::move(spec))
@@ -73,7 +73,7 @@ DenseTensorPeekFunction::optimize(const TensorFunction &expr, Stash &stash)
     if (auto peek = as<Peek>(expr)) {
         const ValueType &peek_type = peek->param_type();
         if (expr.result_type().is_double() && peek_type.is_dense()) {
-            std::vector<std::pair<int64_t,size_t>> spec;
+            SmallVector<std::pair<int64_t,size_t>> spec;
             assert(peek_type.dimensions().size() == peek->map().size());
             for (auto dim = peek_type.dimensions().rbegin(); dim != peek_type.dimensions().rend(); ++dim) {
                 auto dim_spec = peek->map().find(dim->name);

@@ -20,9 +20,9 @@ private:
     // index and size of all dimensions in reverse order
     // when index is -1, use result of next child expression
     // (note that child expression order is inverted by the stack)
-    std::vector<std::pair<int64_t,size_t>> _spec;
+    SmallVector<std::pair<int64_t,size_t>> _spec;
 public:
-    DenseTensorPeekFunction(std::vector<Child> children, std::vector<std::pair<int64_t,size_t>> spec);
+    DenseTensorPeekFunction(std::vector<Child> children, SmallVector<std::pair<int64_t,size_t>> spec);
     ~DenseTensorPeekFunction();
     const ValueType &result_type() const override { return DoubleValue::shared_type(); }
     void push_children(std::vector<Child::CREF> &children) const override;
