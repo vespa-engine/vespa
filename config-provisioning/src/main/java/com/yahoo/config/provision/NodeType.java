@@ -49,6 +49,16 @@ public enum NodeType {
         return !childNodeTypes.isEmpty();
     }
 
+    /** either config server or controller */
+    public boolean isConfigServerLike() {
+        return this == config || this == controller;
+    }
+
+    /** either config server host or controller host */
+    public boolean isConfigServerHostLike() {
+        return this == confighost || this == controllerhost;
+    }
+
     /** Returns whether this supports host sharing */
     public boolean isSharable() {
         return this == NodeType.host;
