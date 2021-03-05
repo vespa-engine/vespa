@@ -53,7 +53,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double feedConcurrency = 0.5;
     private boolean useBucketExecutorForLidSpaceCompact;
     private boolean useBucketExecutorForBucketMove;
-    private boolean enableFeedBlockInDistributor = false;
+    private boolean enableFeedBlockInDistributor = true;
     private double maxDeadBytesRatio = 0.2;
     private int clusterControllerMaxHeapSizeInMb = 256;
     private int metricsProxyMaxHeapSizeInMb = 256;

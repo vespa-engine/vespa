@@ -28,7 +28,7 @@ public class FleetControllerClusterTest {
     }
 
     private ClusterControllerConfig parse(String xml) {
-        return parse(xml, false);
+        return parse(xml, true);
     }
 
     @Test
@@ -158,6 +158,6 @@ public class FleetControllerClusterTest {
     }
 
     private FleetcontrollerConfig getConfigForBasicCluster() {
-        return getConfigForBasicCluster(false);
+        return getConfigForBasicCluster(true);
     }
 }
