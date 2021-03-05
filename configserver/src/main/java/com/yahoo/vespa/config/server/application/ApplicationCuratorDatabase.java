@@ -111,10 +111,6 @@ public class ApplicationCuratorDatabase {
                : data.map(bytes -> Long.parseLong(Utf8.toString(bytes)));
     }
 
-    public boolean getDedicatedClusterControllerCluster(ApplicationId id) {
-        return curator.exists(dedicatedClusterControllerClusterPath(id));
-    }
-
     public void setDedicatedClusterControllerCluster(ApplicationId id) {
         curator.create(dedicatedClusterControllerClusterPath(id));
     }

@@ -68,7 +68,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         maintainers.add(new AutoscalingMaintainer(nodeRepository, metricsDb, deployer, metric, defaults.autoscalingInterval));
         maintainers.add(new ScalingSuggestionsMaintainer(nodeRepository, metricsDb, defaults.scalingSuggestionsInterval, metric));
         maintainers.add(new SwitchRebalancer(nodeRepository, defaults.switchRebalancerInterval, metric, deployer));
-        maintainers.add(new DedicatedClusterControllerClusterMigrator(deployer, metric, nodeRepository, defaults.dedicatedClusterControllerMigratorInterval, flagSource, orchestrator));
 
         provisionServiceProvider.getLoadBalancerService(nodeRepository)
                                 .map(lbService -> new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService, metric))
@@ -120,7 +119,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         private final Duration autoscalingInterval;
         private final Duration scalingSuggestionsInterval;
         private final Duration switchRebalancerInterval;
-        private final Duration dedicatedClusterControllerMigratorInterval;
 
         private final NodeFailer.ThrottlePolicy throttlePolicy;
 
@@ -149,8 +147,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             switchRebalancerInterval = Duration.ofHours(1);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
             retiredExpiry = Duration.ofDays(4); // give up migrating data after 4 days
-            dedicatedClusterControllerMigratorInterval = zone.environment() == Environment.staging || zone.system().isCd() ? Duration.ofMinutes(3)
-                                                                                                                           : Duration.ofHours(2);
             inactiveConfigServerExpiry = Duration.ofMinutes(5);
             inactiveControllerExpiry = Duration.ofMinutes(5);
 

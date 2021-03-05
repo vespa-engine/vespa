@@ -164,8 +164,7 @@ public class ActivatedModelsBuilder extends ModelsBuilder<Application> {
                                                        .readApplicationRoles(applicationId),
                                                zkClient.readQuota(),
                                                zkClient.readTenantSecretStores(),
-                                               secretStore,
-                                               zkClient.readDedicatedClusterControllerCluster());
+                                               secretStore);
     }
 
 }
