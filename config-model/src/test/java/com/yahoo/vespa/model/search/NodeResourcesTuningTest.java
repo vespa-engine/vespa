@@ -48,18 +48,17 @@ public class NodeResourcesTuningTest {
                                    .configid("some/config/id/" + sdMode.getFirst())
                                    .mode(ProtonConfig.Documentdb.Mode.Enum.valueOf(sdMode.getSecond())));
         }
-        return configFromMemorySetting(gb, builder, redundancy, searchableCopies);
+        return configFromMemorySetting(gb, builder);
     }
 
     private void verify_that_initial_numdocs_is_dependent_of_mode(int redundancy, int searchablecopies) {
-        int divisor = Math.max(redundancy, searchablecopies);
         ProtonConfig cfg = getProtonMemoryConfig(Arrays.asList(new Pair<>("a", "INDEX"), new Pair<>("b", "STREAMING"), new Pair<>("c", "STORE_ONLY")), 24 + reservedMemoryGb, redundancy, searchablecopies);
         assertEquals(3, cfg.documentdb().size());
         assertEquals(1024, cfg.documentdb(0).allocation().initialnumdocs());
         assertEquals("a", cfg.documentdb(0).inputdoctypename());
-        assertEquals(24 * GB / 64 / divisor, cfg.documentdb(1).allocation().initialnumdocs());
+        assertEquals(24 * GB / 64, cfg.documentdb(1).allocation().initialnumdocs());
         assertEquals("b", cfg.documentdb(1).inputdoctypename());
-        assertEquals(24 * GB / 64 / divisor, cfg.documentdb(2).allocation().initialnumdocs());
+        assertEquals(24 * GB / 64, cfg.documentdb(2).allocation().initialnumdocs());
         assertEquals("c", cfg.documentdb(2).inputdoctypename());
     }
 
@@ -210,9 +209,9 @@ public class NodeResourcesTuningTest {
         return getConfig(new FlavorsConfig.Flavor.Builder().minMainMemoryAvailableGb(memoryGb), combined);
     }
 
-    private static ProtonConfig configFromMemorySetting(int memoryGb, ProtonConfig.Builder builder, int redundancy, int searchableCopies) {
+    private static ProtonConfig configFromMemorySetting(int memoryGb, ProtonConfig.Builder builder) {
         return getConfig(new FlavorsConfig.Flavor.Builder()
-                                 .minMainMemoryAvailableGb(memoryGb), builder, redundancy, searchableCopies, false);
+                                 .minMainMemoryAvailableGb(memoryGb), builder, false);
     }
 
     private static ProtonConfig configFromNumCoresSetting(double numCores) {
@@ -221,7 +220,7 @@ public class NodeResourcesTuningTest {
 
     private static ProtonConfig configFromNumCoresSetting(double numCores, int numThreadsPerSearch) {
         return getConfig(new FlavorsConfig.Flavor.Builder().minCpuCores(numCores),
-                         new ProtonConfig.Builder(), 1, 1, numThreadsPerSearch, false);
+                         new ProtonConfig.Builder(), numThreadsPerSearch, false);
     }
 
     private static ProtonConfig configFromEnvironmentType(boolean docker) {
@@ -233,25 +232,17 @@ public class NodeResourcesTuningTest {
         return getConfig(flavorBuilder, new ProtonConfig.Builder(), combined);
     }
 
-    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder,
-                                          ProtonConfig.Builder protonBuilder, boolean combined) {
-        return getConfig(flavorBuilder, protonBuilder, 1, 1, combined);
-    }
-
-    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder,
-                                          int redundancy, int searchableCopies, boolean combined) {
+    private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder, boolean combined) {
         flavorBuilder.name("my_flavor");
-        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(),
-                                                             redundancy, searchableCopies, 1, combined);
+        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(), 1, combined);
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }
 
     private static ProtonConfig getConfig(FlavorsConfig.Flavor.Builder flavorBuilder, ProtonConfig.Builder protonBuilder,
-                                          int redundancy, int searchableCopies, int numThreadsPerSearch, boolean combined) {
+                                          int numThreadsPerSearch, boolean combined) {
         flavorBuilder.name("my_flavor");
-        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(),
-                                                             redundancy, searchableCopies, numThreadsPerSearch, combined);
+        NodeResourcesTuning tuning = new NodeResourcesTuning(new Flavor(new FlavorsConfig.Flavor(flavorBuilder)).resources(), numThreadsPerSearch, combined);
         tuning.getConfig(protonBuilder);
         return new ProtonConfig(protonBuilder);
     }
