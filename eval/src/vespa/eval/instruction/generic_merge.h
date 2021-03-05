@@ -11,7 +11,7 @@ struct MergeParam {
     const join_fun_t function;
     const size_t num_mapped_dimensions;
     const size_t dense_subspace_size;
-    std::vector<size_t> all_view_dims;
+    SmallVector<size_t> all_view_dims;
     const ValueBuilderFactory &factory;
     MergeParam(const ValueType &lhs_type, const ValueType &rhs_type,
                join_fun_t function_in, const ValueBuilderFactory &factory_in)

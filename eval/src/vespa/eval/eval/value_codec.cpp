@@ -6,6 +6,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/util/exceptions.h>
 #include <vespa/vespalib/util/typify.h>
+#include <vespa/vespalib/util/small_vector.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/shared_string_repo.h>
 
@@ -129,14 +130,14 @@ size_t maybe_decode_num_blocks(nbostream &input, bool has_mapped_dims, const For
     return 1;
 }
 
-void encode_mapped_labels(nbostream &output, size_t num_mapped_dims, const std::vector<string_id> &addr) {
+void encode_mapped_labels(nbostream &output, size_t num_mapped_dims, const SmallVector<string_id> &addr) {
     for (size_t i = 0; i < num_mapped_dims; ++i) {
         vespalib::string str = SharedStringRepo::Handle::string_from_id(addr[i]);
         output.writeSmallString(str);
     }
 }
 
-void decode_mapped_labels(nbostream &input, size_t num_mapped_dims, std::vector<vespalib::stringref> &addr) {
+void decode_mapped_labels(nbostream &input, size_t num_mapped_dims, SmallVector<vespalib::stringref> &addr) {
     for (size_t i = 0; i < num_mapped_dims; ++i) {
         size_t strSize = input.getInt1_4Bytes();
         addr[i] = vespalib::stringref(input.peek(), strSize);
@@ -163,7 +164,7 @@ struct DecodeState {
 struct ContentDecoder {
     template<typename T>
     static std::unique_ptr<Value> invoke(nbostream &input, const DecodeState &state, const ValueBuilderFactory &factory) {
-        std::vector<vespalib::stringref> address(state.num_mapped_dims);
+        SmallVector<vespalib::stringref> address(state.num_mapped_dims);
         if (state.num_blocks * state.subspace_size * sizeof(T) > input.size()) {
             auto err = fmt("serialized input claims %zu blocks of size %zu*%zu, but only %zu bytes available",
                            state.num_blocks, state.subspace_size, sizeof(T), input.size());
@@ -190,7 +191,7 @@ struct CreateValueFromTensorSpec {
         size_t dense_size = type.dense_subspace_size();
         ArrayArrayMap<vespalib::stringref,T> map(type.count_mapped_dimensions(), dense_size,
                                                  std::max(spec.cells().size() / dense_size, size_t(1)));
-        std::vector<vespalib::stringref> sparse_key;
+        SmallVector<vespalib::stringref> sparse_key;
         for (const auto &entry: spec.cells()) {
             sparse_key.clear();
             size_t dense_key = 0;
@@ -231,8 +232,8 @@ struct CreateTensorSpecFromValue {
         TensorSpec spec(value.type().to_spec());
         size_t subspace_id = 0;
         size_t subspace_size = value.type().dense_subspace_size();
-        std::vector<string_id> labels(value.type().count_mapped_dimensions());
-        std::vector<string_id*> label_refs;
+        SmallVector<string_id> labels(value.type().count_mapped_dimensions());
+        SmallVector<string_id*> label_refs;
         for (auto &label: labels) {
             label_refs.push_back(&label);
         }
@@ -272,8 +273,8 @@ struct EncodeState {
 struct ContentEncoder {
     template<typename T>
     static void invoke(const Value &value, const EncodeState &state, nbostream &output) {
-        std::vector<string_id> address(state.num_mapped_dims);
-        std::vector<string_id*> a_refs(state.num_mapped_dims);;
+        SmallVector<string_id> address(state.num_mapped_dims);
+        SmallVector<string_id*> a_refs(state.num_mapped_dims);;
         for (size_t i = 0; i < state.num_mapped_dims; ++i) {
             a_refs[i] = &address[i];
         }

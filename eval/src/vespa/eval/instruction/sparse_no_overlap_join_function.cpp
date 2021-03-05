@@ -22,9 +22,9 @@ const Value &my_fast_no_overlap_sparse_join(const FastAddrMap &lhs_map, const Fa
     const auto &addr_sources = param.sparse_plan.sources;
     size_t num_mapped_dims = addr_sources.size();
     auto &result = stash.create<FastValue<CT,true>>(param.res_type, num_mapped_dims, 1, lhs_map.size() * rhs_map.size());
-    std::vector<string_id> output_addr(num_mapped_dims);
-    std::vector<size_t> store_lhs_idx;
-    std::vector<size_t> store_rhs_idx;
+    SmallVector<string_id> output_addr(num_mapped_dims);
+    SmallVector<size_t> store_lhs_idx;
+    SmallVector<size_t> store_rhs_idx;
     size_t out_idx = 0;
     for (auto source: addr_sources) {
         switch (source) {

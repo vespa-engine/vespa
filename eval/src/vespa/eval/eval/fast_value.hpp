@@ -45,9 +45,9 @@ struct FastLookupView : public Value::Index::View {
 struct FastFilterView : public Value::Index::View {
 
     const FastAddrMap        &map;
-    std::vector<size_t>       match_dims;
-    std::vector<size_t>       extract_dims;
-    std::vector<string_id>    query;
+    SmallVector<size_t>       match_dims;
+    SmallVector<size_t>       extract_dims;
+    SmallVector<string_id>    query;
     size_t                    pos;
 
     bool is_match(ConstArrayRef<string_id> addr) const {
