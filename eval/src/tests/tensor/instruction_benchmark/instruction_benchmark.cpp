@@ -425,8 +425,9 @@ void benchmark(const vespalib::string &desc, const std::vector<EvalOp::UP> &list
     for (const auto &eval: list) {
         loop_cnt[eval->impl.order] = eval->suggest_loop_cnt();
     }
+    size_t ref_idx = (list.size() > 1 ? 1u : 0u);
     for (const auto &eval: list) {
-        double time = eval->estimate_cost_us(loop_cnt[eval->impl.order], loop_cnt[1]);
+        double time = eval->estimate_cost_us(loop_cnt[eval->impl.order], loop_cnt[ref_idx]);
         fprintf(stderr, "    %s(%s): %10.3f us\n", eval->impl.name.c_str(), eval->impl.short_name.c_str(), time);
         result.sample(eval->impl.order, time);
     }
