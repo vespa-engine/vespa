@@ -189,17 +189,6 @@ bool QueryTermSimple::getAsDoubleTerm(double & lower, double & upper) const
     return getAsNumericTerm(lower, upper, DoubleDecoder());
 }
 
-QueryTermSimple::QueryTermSimple()
-    : _rangeLimit(0),
-      _maxPerGroup(0),
-      _diversityCutoffGroups(std::numeric_limits<uint32_t>::max()),
-      _type(Type::WORD),
-      _diversityCutoffStrict(false),
-      _valid(true),
-      _term(),
-      _diversityAttribute()
-{ }
-
 QueryTermSimple::~QueryTermSimple() = default;
 
 namespace {

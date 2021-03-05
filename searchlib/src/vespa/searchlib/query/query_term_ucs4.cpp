@@ -11,22 +11,17 @@ namespace {
     std::mutex _globalMutex;
 }
 
-ucs4_t QueryTermUCS4::ZERO_TERM(0);
-
-QueryTermUCS4::QueryTermUCS4() :
-    QueryTermSimple(),
-    _termUCS4(),
-    _cachedTermLen(0),
-    _filled(true)
-{ }
-
-QueryTermUCS4::~QueryTermUCS4() = default;
+QueryTermUCS4::~QueryTermUCS4() {
+    ucs4_t * ucs4 = _termUCS4.load(std::memory_order_relaxed);
+    if (ucs4 != nullptr) {
+        delete [] ucs4;
+    }
+}
 
 QueryTermUCS4::QueryTermUCS4(const string & termS, Type type) :
     QueryTermSimple(termS, type),
-    _termUCS4(),
-    _cachedTermLen(0),
-    _filled(false)
+    _termUCS4(nullptr),
+    _cachedTermLen(0)
 {
     vespalib::Utf8Reader r(termS);
     while (r.hasMore()) {
@@ -36,7 +31,7 @@ QueryTermUCS4::QueryTermUCS4(const string & termS, Type type) :
     }
 }
 
-void
+const ucs4_t *
 QueryTermUCS4::fillUCS4() {
     /*
      * Double checked locking......
@@ -44,15 +39,17 @@ QueryTermUCS4::fillUCS4() {
      * you do not really need most of the time. That matters when qps is very high and query is wide, and hits are few.
      */
     std::lock_guard guard(_globalMutex);
-    if (_filled) return;
-    _termUCS4.reset(new ucs4_t[_cachedTermLen + 1]);
+    ucs4_t * ucs4 = _termUCS4.load(std::memory_order_relaxed);
+    if (ucs4 != nullptr) return ucs4;
+    ucs4 = new ucs4_t[_cachedTermLen + 1];
     vespalib::Utf8Reader r(getTermString());
     uint32_t i(0);
     while (r.hasMore()) {
-        _termUCS4.get()[i++] = r.getChar();
+        ucs4[i++] = r.getChar();
     }
-    _termUCS4.get()[_cachedTermLen] = 0;
-    _filled = true;
+    ucs4[_cachedTermLen] = 0;
+    _termUCS4.store(ucs4);
+    return ucs4;
 }
 
 void

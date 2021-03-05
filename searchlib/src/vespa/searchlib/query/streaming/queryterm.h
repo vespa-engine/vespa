@@ -53,7 +53,6 @@ public:
         uint32_t _hitCount;
         uint32_t _fieldLength;
     };
-    QueryTerm();
     QueryTerm(std::unique_ptr<QueryNodeResultBase> resultBase, const string & term, const string & index, Type type);
     QueryTerm(const QueryTerm &) = delete;
     QueryTerm & operator = (const QueryTerm &) = delete;
