@@ -204,8 +204,7 @@ public class SessionPreparer {
                                                               applicationRoles,
                                                               params.quota(),
                                                               params.tenantSecretStores(),
-                                                              secretStore,
-                                                              dedicatedClusterControllerCluster);
+                                                              secretStore);
             this.fileDistributionProvider = fileDistributionFactory.createProvider(serverDbSessionDir);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
                                                                    permanentApplicationPackage,
