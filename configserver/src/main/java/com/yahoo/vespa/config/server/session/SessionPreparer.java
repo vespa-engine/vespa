@@ -116,12 +116,9 @@ public class SessionPreparer {
                                  Optional<ApplicationSet> activeApplicationSet, Instant now, File serverDbSessionDir,
                                  ApplicationPackage applicationPackage, SessionZooKeeperClient sessionZooKeeperClient) {
         ApplicationId applicationId = params.getApplicationId();
-        boolean dedicatedClusterControllerCluster = new ApplicationCuratorDatabase(applicationId.tenant(), curator).getDedicatedClusterControllerCluster(applicationId);
-
         Preparation preparation = new Preparation(hostValidator, logger, params, activeApplicationSet,
                                                   TenantRepository.getTenantPath(applicationId.tenant()),
-                                                  serverDbSessionDir, applicationPackage, sessionZooKeeperClient,
-                                                  dedicatedClusterControllerCluster);
+                                                  serverDbSessionDir, applicationPackage, sessionZooKeeperClient, true);
         preparation.preprocess();
         try {
             AllocatedHosts allocatedHosts = preparation.buildModels(now);
