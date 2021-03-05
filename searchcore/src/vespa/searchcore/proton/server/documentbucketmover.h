@@ -82,11 +82,10 @@ public:
     void moveDocument(MoveOperationUP moveOp, IDestructorCallbackSP onDone);
 
     const document::BucketId &getBucket() const { return _bucket; }
-    void cancel();
-    void setAllScheduled() { _allScheduled = true; }
+    void cancel() { setBucketDone(); }
+    void setBucketDone() { _bucketDone = true; }
     /// Signals all documents have been scheduled for move
-    bool allScheduled() const { return _allScheduled; }
-    bool needReschedule() const { return _needReschedule.load(std::memory_order_relaxed); }
+    bool bucketDone() const { return _bucketDone; }
     const MaintenanceDocumentSubDB * getSource() const { return _source; }
     /// Must be called in master thread
     void updateLastValidGid(const document::GlobalId &gid) {
@@ -104,8 +103,7 @@ private:
 
     std::atomic<uint32_t>           _started;
     std::atomic<uint32_t>           _completed;
-    std::atomic<bool>               _needReschedule;
-    bool                            _allScheduled; // All moves started, or operation has been cancelled
+    bool                            _bucketDone; // All moves started, or operation has been cancelled
     bool                            _lastGidValid;
     document::GlobalId              _lastGid;
     GuardedMoveOp createMoveOperation(MoveKey & key);
@@ -141,9 +139,8 @@ public:
     const document::BucketId &getBucket() const { return _impl->getBucket(); }
     bool moveDocuments(size_t maxDocsToMove);
     void cancel() { _impl->cancel(); }
-    bool needReschedule() { return _impl && _impl->needReschedule(); }
     bool bucketDone() const {
-        return !_impl || _impl->allScheduled();
+        return !_impl || _impl->bucketDone();
     }
     const MaintenanceDocumentSubDB * getSource() const { return _impl->getSource(); }
 };

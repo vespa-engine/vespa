@@ -35,7 +35,6 @@ struct DocumentMoverTest : ::testing::Test
     test::UserDocumentsBuilder _builder;
     std::shared_ptr<bucketdb::BucketDBOwner> _bucketDB;
     MyMoveOperationLimiter     _limiter;
-    //TODO When we retire old bucket move job me must make rewrite this test to use the BucketMover directly.
     DocumentBucketMover        _mover;
     MySubDbTwoBuckets          _source;
     bucketdb::BucketDBOwner    _bucketDb;
@@ -72,10 +71,8 @@ TEST_F(DocumentMoverTest, require_that_initial_bucket_mover_is_done)
     MyMoveOperationLimiter limiter;
     DocumentBucketMover mover(limiter, _bucketDb);
     EXPECT_TRUE(mover.bucketDone());
-    EXPECT_FALSE(mover.needReschedule());
     mover.moveDocuments(2);
     EXPECT_TRUE(mover.bucketDone());
-    EXPECT_FALSE(mover.needReschedule());
 }
 
 TEST_F(DocumentMoverTest, require_that_we_can_move_all_documents)
@@ -137,18 +134,6 @@ TEST_F(DocumentMoverTest, require_that_we_can_move_documents_in_several_steps)
     EXPECT_TRUE(moveDocuments(2));
     EXPECT_TRUE(_mover.bucketDone());
     EXPECT_EQ(5u, _handler._moves.size());
-}
-
-TEST_F(DocumentMoverTest, require_that_cancel_signal_rescheduling_need) {
-    setupForBucket(_source.bucket(1), 6, 9);
-    EXPECT_FALSE(_mover.bucketDone());
-    EXPECT_FALSE(_mover.needReschedule());
-    EXPECT_TRUE(moveDocuments(2));
-    EXPECT_FALSE(_mover.bucketDone());
-    EXPECT_FALSE(_mover.needReschedule());
-    _mover.cancel();
-    EXPECT_TRUE(_mover.bucketDone());
-    EXPECT_TRUE(_mover.needReschedule());
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
