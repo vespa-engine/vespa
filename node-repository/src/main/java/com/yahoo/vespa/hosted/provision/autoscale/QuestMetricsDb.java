@@ -132,8 +132,9 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     @Override
     public void gc() {
-        // Since we remove full days at once we need to keep at least the scaling window + 1 day
-        Instant oldestToKeep = clock.instant().minus(Autoscaler.maxScalingWindow().plus(Duration.ofDays(1)));
+        // We remove full days at once and we want to see at least three days to not every only see
+        // query rates from weekends
+        Instant oldestToKeep = clock.instant().minus(Duration.ofDays(4));
         SqlExecutionContext context = newContext();
         int partitions = 0;
         try (SqlCompiler compiler = new SqlCompiler(engine)) {

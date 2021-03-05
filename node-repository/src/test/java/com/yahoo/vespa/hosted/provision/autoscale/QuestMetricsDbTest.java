@@ -116,10 +116,10 @@ public class QuestMetricsDbTest {
         assertEquals(24 * 10, db.getNodeTimeseries(Duration.between(startTime, clock.instant()),
                                                    Set.of("host1")).get(0).size());
         db.gc();
-        assertEquals(48 * 1 + dayOffset, db.getNodeTimeseries(Duration.between(startTime, clock.instant()),
+        assertEquals(75, db.getNodeTimeseries(Duration.between(startTime, clock.instant()),
                                                               Set.of("host1")).get(0).size());
         db.gc(); // no-op
-        assertEquals(48 * 1 + dayOffset, db.getNodeTimeseries(Duration.between(startTime, clock.instant()),
+        assertEquals(75, db.getNodeTimeseries(Duration.between(startTime, clock.instant()),
                                                               Set.of("host1")).get(0).size());
     }
 

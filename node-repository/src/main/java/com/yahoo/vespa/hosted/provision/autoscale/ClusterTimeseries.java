@@ -67,6 +67,7 @@ public class ClusterTimeseries {
 
     /** The current query rate as a fraction of the peak rate in this timeseries */
     public double currentQueryFractionOfMax() {
+
         return 0.5; // default
     }
 
