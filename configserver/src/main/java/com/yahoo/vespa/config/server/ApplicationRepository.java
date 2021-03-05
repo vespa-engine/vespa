@@ -29,6 +29,7 @@ import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
+import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.application.Application;
@@ -702,9 +703,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 : applicationSet.get().getAllVersions(applicationId);
     }
 
-    public HttpResponse validateSecretStore(ApplicationId applicationId, TenantSecretStore tenantSecretStore, String tenantSecretName) {
+    public HttpResponse validateSecretStore(ApplicationId applicationId, SystemName systemName, Slime slime) {
         Application application = getApplication(applicationId);
-        return secretStoreValidator.validateSecretStore(application, tenantSecretStore, tenantSecretName);
+        return secretStoreValidator.validateSecretStore(application, systemName, slime);
     }
 
     // ---------------- Convergence ----------------------------------------------------------------

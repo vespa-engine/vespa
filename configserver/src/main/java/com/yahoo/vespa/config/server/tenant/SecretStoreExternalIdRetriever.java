@@ -25,7 +25,7 @@ public class SecretStoreExternalIdRetriever {
                 .collect(Collectors.toList());
     }
 
-    private static String secretName(TenantName tenant, SystemName system, String storeName) {
+    public static String secretName(TenantName tenant, SystemName system, String storeName) {
         return String.format(SECRET_NAME_FORMAT, tenantSecretGroup(system), tenant.value(), storeName);
     }
 

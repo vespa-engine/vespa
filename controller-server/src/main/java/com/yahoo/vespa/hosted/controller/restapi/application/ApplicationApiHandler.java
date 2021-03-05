@@ -223,7 +223,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return tenantInfo(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"));
+        if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/region/{region}/parameter-name/{parameter-name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"), path.get("region"), path.get("parameter-name"));
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/compile-version")) return compileVersion(path.get("tenant"), path.get("application"));
@@ -584,7 +584,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
 
-    private HttpResponse validateSecretStore(String tenantName, String name) {
+    private HttpResponse validateSecretStore(String tenantName, String name, String region, String parameterName) {
         var tenant = TenantName.from(tenantName);
         if (controller.tenants().require(tenant).type() != Tenant.Type.cloud)
             return ErrorResponse.badRequest("Tenant '" + tenant + "' is not a cloud tenant");
@@ -601,7 +601,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (tenantSecretStore.isEmpty())
             return ErrorResponse.notFoundError("No secret store '" + name + "' configured for tenant '" + tenantName + "'");
 
-        var response = controller.serviceRegistry().configServer().validateSecretStore(deployment.get(), tenantSecretStore.get());
+        var response = controller.serviceRegistry().configServer().validateSecretStore(deployment.get(), tenantSecretStore.get(), region, parameterName);
         return new MessageResponse(response);
     }
 
