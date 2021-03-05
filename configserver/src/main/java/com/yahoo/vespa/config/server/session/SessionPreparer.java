@@ -118,7 +118,7 @@ public class SessionPreparer {
         ApplicationId applicationId = params.getApplicationId();
         Preparation preparation = new Preparation(hostValidator, logger, params, activeApplicationSet,
                                                   TenantRepository.getTenantPath(applicationId.tenant()),
-                                                  serverDbSessionDir, applicationPackage, sessionZooKeeperClient, true);
+                                                  serverDbSessionDir, applicationPackage, sessionZooKeeperClient);
         preparation.preprocess();
         try {
             AllocatedHosts allocatedHosts = preparation.buildModels(now);
@@ -172,7 +172,7 @@ public class SessionPreparer {
         Preparation(HostValidator<ApplicationId> hostValidator, DeployLogger logger, PrepareParams params,
                     Optional<ApplicationSet> currentActiveApplicationSet, Path tenantPath,
                     File serverDbSessionDir, ApplicationPackage applicationPackage,
-                    SessionZooKeeperClient sessionZooKeeperClient, boolean dedicatedClusterControllerCluster) {
+                    SessionZooKeeperClient sessionZooKeeperClient) {
             this.logger = logger;
             this.params = params;
             this.applicationPackage = applicationPackage;
@@ -277,8 +277,7 @@ public class SessionPreparer {
                                   prepareResult.allocatedHosts(),
                                   athenzDomain,
                                   params.quota(),
-                                  params.tenantSecretStores(),
-                                  properties.dedicatedClusterControllerCluster());
+                                  params.tenantSecretStores());
             checkTimeout("write state to zookeeper");
         }
 
@@ -328,8 +327,7 @@ public class SessionPreparer {
                                        AllocatedHosts allocatedHosts,
                                        Optional<AthenzDomain> athenzDomain,
                                        Optional<Quota> quota,
-                                       List<TenantSecretStore> tenantSecretStores,
-                                       boolean dedicatedClusterControllerCluster) {
+                                       List<TenantSecretStore> tenantSecretStores) {
         ZooKeeperDeployer zkDeployer = zooKeeperClient.createDeployer(deployLogger);
         try {
             zkDeployer.deploy(applicationPackage, fileRegistryMap, allocatedHosts);
@@ -341,8 +339,6 @@ public class SessionPreparer {
             zooKeeperClient.writeAthenzDomain(athenzDomain);
             zooKeeperClient.writeQuota(quota);
             zooKeeperClient.writeTenantSecretStores(tenantSecretStores);
-            if (dedicatedClusterControllerCluster)
-                zooKeeperClient.writeDedicatedClusterControllerCluster();
         } catch (RuntimeException | IOException e) {
             zkDeployer.cleanup();
             throw new RuntimeException("Error preparing session", e);
