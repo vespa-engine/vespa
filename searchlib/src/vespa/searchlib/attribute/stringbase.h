@@ -157,7 +157,7 @@ protected:
         const vespalib::Regex & getRegex() const { return _regex; }
     private:
         std::unique_ptr<QueryTermUCS4> _queryTerm;
-        std::vector<ucs4_t>            _termUCS4;
+        const ucs4_t                  *_termUCS4;
         vespalib::Regex                _regex;
         bool                           _isPrefix;
         bool                           _isRegex;

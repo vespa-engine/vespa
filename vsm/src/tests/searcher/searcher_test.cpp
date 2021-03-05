@@ -59,17 +59,17 @@ private:
         for (size_t i = 0; i < terms.size(); ++i) {
             ParsedQueryTerm pqt = parseQueryTerm(terms[i]);
             ParsedTerm pt = parseTerm(pqt.second);
-            qtv.push_back(QueryTerm(eqnr.create(), pt.first, pqt.first.empty() ? "index" : pqt.first, pt.second));
+            qtv.push_back(std::make_unique<QueryTerm>(eqnr.create(), pt.first, pqt.first.empty() ? "index" : pqt.first, pt.second));
         }
         for (size_t i = 0; i < qtv.size(); ++i) {
-            qtl.push_back(&qtv[i]);
+            qtl.push_back(qtv[i].get());
         }
     }
 public:
     typedef std::pair<std::string, std::string> ParsedQueryTerm;
     typedef std::pair<std::string, TermType> ParsedTerm;
     QueryNodeResultFactory   eqnr;
-    std::vector<QueryTerm> qtv;
+    std::vector<QueryTerm::UP> qtv;
     QueryTermList          qtl;
     Query(const StringList & terms);
     ~Query();
@@ -128,7 +128,7 @@ void assertSnippetModifier(const StringList &query, const std::string &fv, const
 void assertSnippetModifier(SnippetModifierSetup &setup, const FieldValue &fv, const std::string &exp);
 void assertQueryTerms(const SnippetModifierManager &man, FieldIdT fId, const StringList &terms);
 void assertNumeric(FieldSearcher &fs, const StringList &query, const FieldValue &fv, const BoolList &exp);
-std::vector<QueryTerm> performSearch(FieldSearcher &fs, const StringList &query, const FieldValue &fv);
+std::vector<QueryTerm::UP> performSearch(FieldSearcher &fs, const StringList &query, const FieldValue &fv);
 void assertSearch(FieldSearcher &fs, const StringList &query, const FieldValue &fv, const HitsList &exp);
 bool assertCountWords(size_t numWords, const std::string &field);
 bool assertFieldInfo(FieldSearcher &fs, const StringList &query, const FieldValue &fv, const FieldInfoList &exp);
@@ -304,7 +304,7 @@ assertNumeric(FieldSearcher & fs, const StringList & query, const FieldValue & f
     assertSearch(fs, query, fv, hl);
 }
 
-std::vector<QueryTerm>
+std::vector<QueryTerm::UP>
 performSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv)
 {
     Query q(query);
@@ -320,17 +320,17 @@ performSearch(FieldSearcher & fs, const StringList & query, const FieldValue & f
     doc.setField(0, document::FieldValue::UP(fv.clone()));
 
     fs.search(doc);
-    return q.qtv;
+    return std::move(q.qtv);
 }
 
 void
 assertSearch(FieldSearcher & fs, const StringList & query, const FieldValue & fv, const HitsList & exp)
 {
-    std::vector<QueryTerm> qtv = performSearch(fs, query, fv);
+    auto qtv = performSearch(fs, query, fv);
     EXPECT_EQUAL(qtv.size(), exp.size());
     ASSERT_TRUE(qtv.size() == exp.size());
     for (size_t i = 0; i < qtv.size(); ++i) {
-        const HitList & hl = qtv[i].getHitList();
+        const HitList & hl = qtv[i]->getHitList();
         EXPECT_EQUAL(hl.size(), exp[i].size());
         ASSERT_TRUE(hl.size() == exp[i].size());
         for (size_t j = 0; j < hl.size(); ++j) {
@@ -343,13 +343,13 @@ bool
 assertFieldInfo(FieldSearcher & fs, const StringList & query,
                               const FieldValue & fv, const FieldInfoList & exp)
 {
-    std::vector<QueryTerm> qtv = performSearch(fs, query, fv);
+    auto qtv = performSearch(fs, query, fv);
     if (!EXPECT_EQUAL(qtv.size(), exp.size())) return false;
     bool retval = true;
     for (size_t i = 0; i < qtv.size(); ++i) {
-        if (!EXPECT_EQUAL(qtv[i].getFieldInfo(0).getHitOffset(), exp[i].getHitOffset())) retval = false;
-        if (!EXPECT_EQUAL(qtv[i].getFieldInfo(0).getHitCount(), exp[i].getHitCount())) retval = false;
-        if (!EXPECT_EQUAL(qtv[i].getFieldInfo(0).getFieldLength(), exp[i].getFieldLength())) retval = false;
+        if (!EXPECT_EQUAL(qtv[i]->getFieldInfo(0).getHitOffset(), exp[i].getHitOffset())) retval = false;
+        if (!EXPECT_EQUAL(qtv[i]->getFieldInfo(0).getHitCount(), exp[i].getHitCount())) retval = false;
+        if (!EXPECT_EQUAL(qtv[i]->getFieldInfo(0).getFieldLength(), exp[i].getFieldLength())) retval = false;
     }
     return retval;
 }

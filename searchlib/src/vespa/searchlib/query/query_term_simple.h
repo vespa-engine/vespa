@@ -34,11 +34,10 @@ public:
         bool isEqual() const { return low == high; }
     };
 
-    QueryTermSimple(const QueryTermSimple &) = default;
-    QueryTermSimple & operator = (const QueryTermSimple &) = default;
-    QueryTermSimple(QueryTermSimple &&) = default;
-    QueryTermSimple & operator = (QueryTermSimple &&) = default;
-    QueryTermSimple();
+    QueryTermSimple(const QueryTermSimple &) = delete;
+    QueryTermSimple & operator = (const QueryTermSimple &) = delete;
+    QueryTermSimple(QueryTermSimple &&) = delete;
+    QueryTermSimple & operator = (QueryTermSimple &&) = delete;
     QueryTermSimple(const string & term_, Type type);
     virtual ~QueryTermSimple();
     /**

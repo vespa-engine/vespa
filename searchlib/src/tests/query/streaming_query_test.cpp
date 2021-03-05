@@ -24,201 +24,255 @@ TEST("testQueryLanguage") {
     int64_t ia(0), ib(0);
     double da(0), db(0);
 
-    QueryTerm q(factory.create(), "7", "index", TermType::WORD);
-    EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
-    EXPECT_EQUAL(ia, 7);
-    EXPECT_EQUAL(ib, 7);
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, 7);
-    EXPECT_EQUAL(db, 7);
+    {
+        QueryTerm q(factory.create(), "7", "index", TermType::WORD);
+        EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
+        EXPECT_EQUAL(ia, 7);
+        EXPECT_EQUAL(ib, 7);
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_EQUAL(da, 7);
+        EXPECT_EQUAL(db, 7);
+    }
 
-    q = QueryTerm(factory.create(), "-7", "index", TermType::WORD);
-    EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
-    EXPECT_EQUAL(ia, -7);
-    EXPECT_EQUAL(ib, -7);
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, -7);
-    EXPECT_EQUAL(db, -7);
+    {
+        QueryTerm q(factory.create(), "-7", "index", TermType::WORD);
+        EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
+        EXPECT_EQUAL(ia, -7);
+        EXPECT_EQUAL(ib, -7);
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_EQUAL(da, -7);
+        EXPECT_EQUAL(db, -7);
+    }
 
-    q = QueryTerm(factory.create(), "7.5", "index", TermType::WORD);
-    EXPECT_TRUE(!q.getAsIntegerTerm(ia, ib));
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, 7.5);
-    EXPECT_EQUAL(db, 7.5);
+    {
+        QueryTerm q(factory.create(), "7.5", "index", TermType::WORD);
+        EXPECT_TRUE(!q.getAsIntegerTerm(ia, ib));
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_EQUAL(da, 7.5);
+        EXPECT_EQUAL(db, 7.5);
+    }
 
-    q = QueryTerm(factory.create(), "-7.5", "index", TermType::WORD);
-    EXPECT_TRUE(!q.getAsIntegerTerm(ia, ib));
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, -7.5);
-    EXPECT_EQUAL(db, -7.5);
+    {
+        QueryTerm q(factory.create(), "-7.5", "index", TermType::WORD);
+        EXPECT_TRUE(!q.getAsIntegerTerm(ia, ib));
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_EQUAL(da, -7.5);
+        EXPECT_EQUAL(db, -7.5);
+    }
 
-    q = QueryTerm(factory.create(), "<7", "index", TermType::WORD);
-    EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
-    EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
-    EXPECT_EQUAL(ib, 6);
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, -std::numeric_limits<double>::max());
-    EXPECT_LESS(db, 7);
-    EXPECT_GREATER(db, 6.99);
+    {
+        QueryTerm q(factory.create(), "<7", "index", TermType::WORD);
+        EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
+        EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
+        EXPECT_EQUAL(ib, 6);
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_EQUAL(da, -std::numeric_limits<double>::max());
+        EXPECT_LESS(db, 7);
+        EXPECT_GREATER(db, 6.99);
+    }
 
-    q = QueryTerm(factory.create(), "[;7]", "index", TermType::WORD);
-    EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
-    EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
-    EXPECT_EQUAL(ib, 7);
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, -std::numeric_limits<double>::max());
-    EXPECT_EQUAL(db, 7);
+    {
+        QueryTerm q(factory.create(), "[;7]", "index", TermType::WORD);
+        EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
+        EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
+        EXPECT_EQUAL(ib, 7);
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_EQUAL(da, -std::numeric_limits<double>::max());
+        EXPECT_EQUAL(db, 7);
+    }
 
-    q = QueryTerm(factory.create(), ">7", "index", TermType::WORD);
-    EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
-    EXPECT_EQUAL(ia, 8);
-    EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_GREATER(da, 7);
-    EXPECT_LESS(da, 7.01);
-    EXPECT_EQUAL(db, std::numeric_limits<double>::max());
+    {
+        QueryTerm q(factory.create(), ">7", "index", TermType::WORD);
+        EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
+        EXPECT_EQUAL(ia, 8);
+        EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_GREATER(da, 7);
+        EXPECT_LESS(da, 7.01);
+        EXPECT_EQUAL(db, std::numeric_limits<double>::max());
+    }
 
-    q = QueryTerm(factory.create(), "[7;]", "index", TermType::WORD);
-    EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
-    EXPECT_EQUAL(ia, 7);
-    EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, 7);
-    EXPECT_EQUAL(db, std::numeric_limits<double>::max());
+    {
+        QueryTerm q(factory.create(), "[7;]", "index", TermType::WORD);
+        EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
+        EXPECT_EQUAL(ia, 7);
+        EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_EQUAL(da, 7);
+        EXPECT_EQUAL(db, std::numeric_limits<double>::max());
+    }
 
-    q = QueryTerm(factory.create(), "[-7;7]", "index", TermType::WORD);
-    EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
-    EXPECT_EQUAL(ia, -7);
-    EXPECT_EQUAL(ib, 7);
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, -7);
-    EXPECT_EQUAL(db, 7);
+    {
+        QueryTerm q(factory.create(), "[-7;7]", "index", TermType::WORD);
+        EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
+        EXPECT_EQUAL(ia, -7);
+        EXPECT_EQUAL(ib, 7);
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_EQUAL(da, -7);
+        EXPECT_EQUAL(db, 7);
+    }
 
-    q = QueryTerm(factory.create(), "[-7.1;7.1]", "index", TermType::WORD);
-    EXPECT_FALSE(q.getAsIntegerTerm(ia, ib)); // This is dubious and perhaps a regression.
-    EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
-    EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, -7.1);
-    EXPECT_EQUAL(db, 7.1);
+    {
+        QueryTerm q(factory.create(), "[-7.1;7.1]", "index", TermType::WORD);
+        EXPECT_FALSE(q.getAsIntegerTerm(ia, ib)); // This is dubious and perhaps a regression.
+        EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
+        EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_EQUAL(da, -7.1);
+        EXPECT_EQUAL(db, 7.1);
+    }
 
-    q = QueryTerm(factory.create(), "[500.0;1.7976931348623157E308]", "index", TermType::WORD);
-    EXPECT_FALSE(q.getAsIntegerTerm(ia, ib)); // This is dubious and perhaps a regression.
-    EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
-    EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, 500.0);
-    EXPECT_EQUAL(db, std::numeric_limits<double>::max());
+    {
+        QueryTerm q(factory.create(), "[500.0;1.7976931348623157E308]", "index", TermType::WORD);
+        EXPECT_FALSE(q.getAsIntegerTerm(ia, ib)); // This is dubious and perhaps a regression.
+        EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
+        EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_EQUAL(da, 500.0);
+        EXPECT_EQUAL(db, std::numeric_limits<double>::max());
+    }
 
     const double minusSeven(-7), seven(7);
-    q = QueryTerm(factory.create(), "<-7;7]", "index", TermType::WORD);
-    EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
-    EXPECT_EQUAL(ia, -6);
-    EXPECT_EQUAL(ib, 7);
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, std::nextafterf(minusSeven, seven));
-    EXPECT_EQUAL(db, seven);
+    {
+        QueryTerm q(factory.create(), "<-7;7]", "index", TermType::WORD);
+        EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
+        EXPECT_EQUAL(ia, -6);
+        EXPECT_EQUAL(ib, 7);
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_EQUAL(da, std::nextafterf(minusSeven, seven));
+        EXPECT_EQUAL(db, seven);
+    }
 
-    q = QueryTerm(factory.create(), "<-7;7>", "index", TermType::WORD);
-    EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
-    EXPECT_EQUAL(ia, -6);
-    EXPECT_EQUAL(ib, 6);
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, std::nextafterf(minusSeven, seven));
-    EXPECT_EQUAL(db, std::nextafterf(seven, minusSeven));
+    {
+        QueryTerm q(factory.create(), "<-7;7>", "index", TermType::WORD);
+        EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
+        EXPECT_EQUAL(ia, -6);
+        EXPECT_EQUAL(ib, 6);
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_EQUAL(da, std::nextafterf(minusSeven, seven));
+        EXPECT_EQUAL(db, std::nextafterf(seven, minusSeven));
+    }
 
-    q = QueryTerm(factory.create(), "<1;2>", "index", TermType::WORD);
-    EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
-    EXPECT_EQUAL(ia, 2);
-    EXPECT_EQUAL(ib, 1);
+    {
+        QueryTerm q(factory.create(), "<1;2>", "index", TermType::WORD);
+        EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
+        EXPECT_EQUAL(ia, 2);
+        EXPECT_EQUAL(ib, 1);
+    }
 
-    q = QueryTerm(factory.create(), "[-7;7>", "index", TermType::WORD);
-    EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
-    EXPECT_EQUAL(ia, -7);
-    EXPECT_EQUAL(ib, 6);
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, minusSeven);
-    EXPECT_EQUAL(db, std::nextafterf(seven, minusSeven));
+    {
+        QueryTerm q(factory.create(), "[-7;7>", "index", TermType::WORD);
+        EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
+        EXPECT_EQUAL(ia, -7);
+        EXPECT_EQUAL(ib, 6);
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_EQUAL(da, minusSeven);
+        EXPECT_EQUAL(db, std::nextafterf(seven, minusSeven));
+    }
 
-    q = QueryTerm(factory.create(), "<-7", "index", TermType::WORD);
-    EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
-    EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
-    EXPECT_EQUAL(ib, -8);
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, -std::numeric_limits<double>::max());
-    EXPECT_LESS(db, -7);
-    EXPECT_GREATER(db, -7.01);
+    {
+        QueryTerm q(factory.create(), "<-7", "index", TermType::WORD);
+        EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
+        EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
+        EXPECT_EQUAL(ib, -8);
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_EQUAL(da, -std::numeric_limits<double>::max());
+        EXPECT_LESS(db, -7);
+        EXPECT_GREATER(db, -7.01);
+    }
 
-    q = QueryTerm(factory.create(), "[;-7]", "index", TermType::WORD);
-    EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
-    EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
-    EXPECT_EQUAL(ib, -7);
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, -std::numeric_limits<double>::max());
-    EXPECT_EQUAL(db, -7);
+    {
+        QueryTerm q(factory.create(), "[;-7]", "index", TermType::WORD);
+        EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
+        EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
+        EXPECT_EQUAL(ib, -7);
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_EQUAL(da, -std::numeric_limits<double>::max());
+        EXPECT_EQUAL(db, -7);
+    }
 
-    q = QueryTerm(factory.create(), "<;-7]", "index", TermType::WORD);
-    EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
-    EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
-    EXPECT_EQUAL(ib, -7);
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, -std::numeric_limits<double>::max());
-    EXPECT_EQUAL(db, -7);
+    {
+        QueryTerm q(factory.create(), "<;-7]", "index", TermType::WORD);
+        EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
+        EXPECT_EQUAL(ia, std::numeric_limits<int64_t>::min());
+        EXPECT_EQUAL(ib, -7);
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_EQUAL(da, -std::numeric_limits<double>::max());
+        EXPECT_EQUAL(db, -7);
+    }
 
-    q = QueryTerm(factory.create(), ">-7", "index", TermType::WORD);
-    EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
-    EXPECT_EQUAL(ia, -6);
-    EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_GREATER(da, -7);
-    EXPECT_LESS(da, -6.99);
-    EXPECT_EQUAL(db, std::numeric_limits<double>::max());
+    {
+        QueryTerm q(factory.create(), ">-7", "index", TermType::WORD);
+        EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
+        EXPECT_EQUAL(ia, -6);
+        EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_GREATER(da, -7);
+        EXPECT_LESS(da, -6.99);
+        EXPECT_EQUAL(db, std::numeric_limits<double>::max());
+    }
 
-    q = QueryTerm(factory.create(), "[-7;]", "index", TermType::WORD);
-    EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
-    EXPECT_EQUAL(ia, -7);
-    EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, -7);
-    EXPECT_EQUAL(db, std::numeric_limits<double>::max());
+    {
+        QueryTerm q(factory.create(), "[-7;]", "index", TermType::WORD);
+        EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
+        EXPECT_EQUAL(ia, -7);
+        EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_EQUAL(da, -7);
+        EXPECT_EQUAL(db, std::numeric_limits<double>::max());
+    }
 
-    q = QueryTerm(factory.create(), "[-7;>", "index", TermType::WORD);
-    EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
-    EXPECT_EQUAL(ia, -7);
-    EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
-    EXPECT_TRUE(q.getAsDoubleTerm(da, db));
-    EXPECT_EQUAL(da, -7);
-    EXPECT_EQUAL(db, std::numeric_limits<double>::max());
+    {
+        QueryTerm q(factory.create(), "[-7;>", "index", TermType::WORD);
+        EXPECT_TRUE(q.getAsIntegerTerm(ia, ib));
+        EXPECT_EQUAL(ia, -7);
+        EXPECT_EQUAL(ib, std::numeric_limits<int64_t>::max());
+        EXPECT_TRUE(q.getAsDoubleTerm(da, db));
+        EXPECT_EQUAL(da, -7);
+        EXPECT_EQUAL(db, std::numeric_limits<double>::max());
+    }
 
-    q = QueryTerm(factory.create(), "a", "index", TermType::WORD);
-    EXPECT_TRUE(!q.getAsIntegerTerm(ia, ib));
-    EXPECT_TRUE(!q.getAsDoubleTerm(da, db));
+    {
+        QueryTerm q(factory.create(), "a", "index", TermType::WORD);
+        EXPECT_TRUE(!q.getAsIntegerTerm(ia, ib));
+        EXPECT_TRUE(!q.getAsDoubleTerm(da, db));
+    }
 
-    q = QueryTerm(factory.create(), "word", "index", TermType::WORD);
-    EXPECT_TRUE(!q.isPrefix());
-    EXPECT_TRUE(!q.isSubstring());
-    EXPECT_TRUE(!q.isSuffix());
+    {
+        QueryTerm q(factory.create(), "word", "index", TermType::WORD);
+        EXPECT_TRUE(!q.isPrefix());
+        EXPECT_TRUE(!q.isSubstring());
+        EXPECT_TRUE(!q.isSuffix());
+    }
 
-    q = QueryTerm(factory.create(), "prefix", "index", TermType::PREFIXTERM);
-    EXPECT_TRUE(q.isPrefix());
-    EXPECT_TRUE(!q.isSubstring());
-    EXPECT_TRUE(!q.isSuffix());
+    {
+        QueryTerm q(factory.create(), "prefix", "index", TermType::PREFIXTERM);
+        EXPECT_TRUE(q.isPrefix());
+        EXPECT_TRUE(!q.isSubstring());
+        EXPECT_TRUE(!q.isSuffix());
+    }
 
-    q = QueryTerm(factory.create(), "substring", "index", TermType::SUBSTRINGTERM);
-    EXPECT_TRUE(!q.isPrefix());
-    EXPECT_TRUE(q.isSubstring());
-    EXPECT_TRUE(!q.isSuffix());
+    {
+        QueryTerm q(factory.create(), "substring", "index", TermType::SUBSTRINGTERM);
+        EXPECT_TRUE(!q.isPrefix());
+        EXPECT_TRUE(q.isSubstring());
+        EXPECT_TRUE(!q.isSuffix());
+    }
 
-    q = QueryTerm(factory.create(), "suffix", "index", TermType::SUFFIXTERM);
-    EXPECT_TRUE(!q.isPrefix());
-    EXPECT_TRUE(!q.isSubstring());
-    EXPECT_TRUE(q.isSuffix());
+    {
+        QueryTerm q(factory.create(), "suffix", "index", TermType::SUFFIXTERM);
+        EXPECT_TRUE(!q.isPrefix());
+        EXPECT_TRUE(!q.isSubstring());
+        EXPECT_TRUE(q.isSuffix());
+    }
 
-    q = QueryTerm(factory.create(), "regexp", "index", TermType::REGEXP);
-    EXPECT_TRUE(!q.isPrefix());
-    EXPECT_TRUE(!q.isSubstring());
-    EXPECT_TRUE(!q.isSuffix());
-    EXPECT_TRUE(q.isRegex());
+    {
+        QueryTerm q(factory.create(), "regexp", "index", TermType::REGEXP);
+        EXPECT_TRUE(!q.isPrefix());
+        EXPECT_TRUE(!q.isSubstring());
+        EXPECT_TRUE(!q.isSuffix());
+        EXPECT_TRUE(q.isRegex());
+    }
 }
 
 class AllowRewrite : public QueryNodeResultFactory
@@ -734,8 +788,8 @@ TEST("testSameElementEvaluate") {
 
 TEST("Control the size of query terms") {
     EXPECT_EQUAL(104u, sizeof(QueryTermSimple));
-    EXPECT_EQUAL(136u, sizeof(QueryTermUCS4));
-    EXPECT_EQUAL(280u, sizeof(QueryTerm));
+    EXPECT_EQUAL(120u, sizeof(QueryTermUCS4));
+    EXPECT_EQUAL(264u, sizeof(QueryTerm));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

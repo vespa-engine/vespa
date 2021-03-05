@@ -40,22 +40,6 @@ static CharInfo _G_charTable;
 
 namespace search::streaming {
 
-QueryTerm::QueryTerm() :
-    QueryTermUCS4(),
-    _index(),
-    _encoding(),
-    _result(),
-    _hitList(),
-    _weight(100),
-    _uniqueId(0),
-    _fieldInfo()
-{ }
-
-QueryTerm::QueryTerm(const QueryTerm &) = default;
-QueryTerm & QueryTerm::operator = (const QueryTerm &) = default;
-QueryTerm::QueryTerm(QueryTerm &&) noexcept = default;
-QueryTerm & QueryTerm::operator = (QueryTerm &&) noexcept = default;
-
 QueryTerm::~QueryTerm() = default;
 
 void
