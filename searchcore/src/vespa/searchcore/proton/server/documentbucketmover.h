@@ -64,6 +64,12 @@ public:
         MoveGuard          _guard;
     };
 
+    using GuardedMoveOp = std::pair<MoveOperationUP, MoveGuard>;
+    struct GuardedMoveOps {
+        std::vector<GuardedMoveOp> success;
+        std::vector<MoveGuard> failed;
+    };
+
     BucketMover(const document::BucketId &bucket, const MaintenanceDocumentSubDB *source,
                 uint32_t targetSubDbId, IDocumentMoveHandler &handler) noexcept;
     BucketMover(BucketMover &&) noexcept = delete;
@@ -72,11 +78,10 @@ public:
     BucketMover & operator=(const BucketMover &) = delete;
     ~BucketMover();
 
-    using GuardedMoveOp = std::pair<MoveOperationUP, MoveGuard>;
     /// Must be called in master thread
     std::pair<std::vector<MoveKey>, bool> getKeysToMove(size_t maxDocsToMove);
     /// Call from any thread
-    std::vector<GuardedMoveOp> createMoveOperations(std::vector<MoveKey> toMove);
+    GuardedMoveOps createMoveOperations(std::vector<MoveKey> toMove);
     /// Must be called in master thread
     void moveDocuments(std::vector<GuardedMoveOp> moveOps, IDestructorCallbackSP onDone);
     void moveDocument(MoveOperationUP moveOp, IDestructorCallbackSP onDone);
@@ -108,7 +113,7 @@ private:
     bool                            _allScheduled; // All moves started, or operation has been cancelled
     bool                            _lastGidValid;
     document::GlobalId              _lastGid;
-    GuardedMoveOp createMoveOperation(MoveKey & key);
+    MoveOperationUP createMoveOperation(const MoveKey & key);
     size_t pending() const {
         return _started.load(std::memory_order_relaxed) - _completed.load(std::memory_order_relaxed);
     }

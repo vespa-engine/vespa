@@ -55,7 +55,7 @@ private:
     using Bucket2Mover = std::map<BucketId, BucketMoverSP>;
     using Movers = std::vector<BucketMoverSP>;
     using MoveKey = BucketMover::MoveKey;
-    using GuardedMoveOp = BucketMover::GuardedMoveOp;
+    using GuardedMoveOps = BucketMover::GuardedMoveOps;
     using BucketSet = vespalib::hash_set<BucketId, BucketId::hash>;
     std::shared_ptr<IBucketStateCalculator>   _calc;
     IDocumentMoveHandler                     &_moveHandler;
@@ -83,19 +83,21 @@ private:
 
     void startMove(BucketMoverSP mover, size_t maxDocsToMove);
     void prepareMove(BucketMoverSP mover, std::vector<MoveKey> keysToMove, IDestructorCallbackSP context);
-    void completeMove(BucketMoverSP mover, std::vector<GuardedMoveOp> keys, IDestructorCallbackSP context);
-    void handleMoveResult(BucketMoverSP mover);
+    void completeMove(BucketMoverSP mover, GuardedMoveOps moveOps, IDestructorCallbackSP context);
+    bool checkIfMoverComplete(const BucketMover & mover);
+    void checkForReschedule(const bucketdb::Guard & guard, BucketId bucket);
     void considerBucket(const bucketdb::Guard & guard, BucketId bucket);
     void reconsiderBucket(const bucketdb::Guard & guard, BucketId bucket);
     void updatePending();
     void cancelBucket(BucketId bucket); // True if something to cancel
     NeedResult needMove(const ScanIterator &itr) const;
-    BucketMoveSet computeBuckets2Move();
+    BucketMoveSet computeBuckets2Move(const bucketdb::Guard & guard);
     BucketMoverSP createMover(BucketId bucket, bool wantReady);
     BucketMoverSP greedyCreateMover();
     void backFillMovers();
     void moveDocs(size_t maxDocsToMove);
     void failOperation(BucketId bucket);
+    void recompute(const bucketdb::Guard & guard);
     friend class StartMove;
 public:
     BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &calc,
@@ -117,7 +119,7 @@ public:
 
     bool scanAndMove(size_t maxBuckets2Move, size_t maxDocsToMovePerBucket);
     bool done() const;
-    void recompute();
+    void recompute(); // Only for testing
     bool inSync() const;
 
     bool run() override;
