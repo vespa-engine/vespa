@@ -64,8 +64,13 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     using DocumentVector = std::vector<Document::SP>;
     std::shared_ptr<const DocumentTypeRepo> _repo;
     DocumentVector _docs;
+    uint32_t _lid2Fail;
 
-    MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo) : _repo(std::move(repo)), _docs() {
+    MyDocumentRetriever(std::shared_ptr<const DocumentTypeRepo> repo)
+        : _repo(std::move(repo)),
+          _docs(),
+          _lid2Fail(0)
+    {
         _docs.push_back(Document::UP()); // lid 0 invalid
     }
 
@@ -76,8 +81,10 @@ struct MyDocumentRetriever : public DocumentRetrieverBaseForTest {
     DocumentMetaData getDocumentMetaData(const DocumentId &) const override { return DocumentMetaData(); }
 
     Document::UP getFullDocument(DocumentIdT lid) const override {
-        return Document::UP(_docs[lid]->clone());
+        return (lid != _lid2Fail) ? Document::UP(_docs[lid]->clone()) : Document::UP();
     }
+
+    void failRetrieveForLid(uint32_t lid) { _lid2Fail = lid; }
 
     CachedSelect::SP parseSelect(const vespalib::string &) const override {
         return {};
@@ -114,6 +121,10 @@ struct MySubDb {
     ~MySubDb();
 
     void insertDocs(const UserDocuments &docs_);
+
+    void failRetrieveForLid(uint32_t lid) {
+        _realRetriever->failRetrieveForLid(lid);
+    }
 
     BucketId bucket(uint32_t userId) const {
         return _docs.getBucket(userId);

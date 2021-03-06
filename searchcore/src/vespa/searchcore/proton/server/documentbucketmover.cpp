@@ -20,8 +20,8 @@ namespace proton::bucketdb {
 
 typedef IDocumentMetaStore::Iterator Iterator;
 
-BucketMover::GuardedMoveOp
-BucketMover::createMoveOperation(MoveKey &key) {
+MoveOperation::UP
+BucketMover::createMoveOperation(const MoveKey &key) {
     if (_source->lidNeedsCommit(key._lid)) return {};
 
     const RawDocumentMetaData &metaNow = _source->meta_store()->getRawMetaData(key._lid);
@@ -29,13 +29,13 @@ BucketMover::createMoveOperation(MoveKey &key) {
     if (metaNow.getTimestamp() != key._timestamp) return {};
 
     Document::SP doc(_source->retriever()->getFullDocument(key._lid));
-    if (!doc || doc->getId().getGlobalId() != key._gid)
-        return {}; // Failed to retrieve document, removed or changed identity
+    if (!doc || doc->getId().getGlobalId() != key._gid) {
+        // Failed to retrieve document, removed or changed identity
+        return {};
+    }
     BucketId bucketId = _bucket.stripUnused();
-    return BucketMover::GuardedMoveOp(std::make_unique<MoveOperation>(bucketId, key._timestamp, std::move(doc),
-                                                                      DbDocumentId(_source->sub_db_id(), key._lid),
-                                                                      _targetSubDbId),
-                                      std::move(key._guard));
+    return std::make_unique<MoveOperation>(bucketId, key._timestamp, std::move(doc),
+                                           DbDocumentId(_source->sub_db_id(), key._lid), _targetSubDbId);
 }
 
 void
@@ -60,7 +60,8 @@ BucketMover::BucketMover(const BucketId &bucket, const MaintenanceDocumentSubDB 
       _targetSubDbId(targetSubDbId),
       _started(0),
       _completed(0),
-      _bucketDone(false),
+      _needReschedule(false),
+      _allScheduled(false),
       _lastGidValid(false),
       _lastGid()
 { }
@@ -88,18 +89,26 @@ BucketMover::getKeysToMove(size_t maxDocsToMove) {
     return result;
 }
 
-std::vector<BucketMover::GuardedMoveOp>
+BucketMover::GuardedMoveOps
 BucketMover::createMoveOperations(std::vector<MoveKey> toMove) {
-    std::vector<GuardedMoveOp> successfulReads;
-    successfulReads.reserve(toMove.size());
+    GuardedMoveOps moveOps;
+    moveOps.success.reserve(toMove.size());
     for (MoveKey &key : toMove) {
-        auto moveOp = createMoveOperation(key);
-        if (!moveOp.first) {
-            break;
+        if (moveOps.failed.empty()) {
+            auto moveOp = createMoveOperation(key);
+            if (moveOp) {
+                moveOps.success.emplace_back(std::move(moveOp), std::move(key._guard));
+            } else {
+                moveOps.failed.push_back(std::move(key._guard));
+            }
+        } else {
+            moveOps.failed.push_back(std::move(key._guard));
         }
-        successfulReads.push_back(std::move(moveOp));
     }
-    return successfulReads;
+    if ( ! moveOps.failed.empty()) {
+        _needReschedule.store(true, std::memory_order_relaxed);
+    }
+    return moveOps;
 }
 
 void
@@ -107,6 +116,12 @@ BucketMover::moveDocuments(std::vector<GuardedMoveOp> moveOps, IDestructorCallba
     for (auto & moveOp : moveOps) {
         moveDocument(std::move(moveOp.first), std::move(onDone));
     }
+}
+
+void
+BucketMover::cancel() {
+    setAllScheduled();
+    _needReschedule.store(true, std::memory_order_relaxed);
 }
 
 }
@@ -137,21 +152,20 @@ DocumentBucketMover::moveDocuments(size_t maxDocsToMove) {
 bool
 DocumentBucketMover::moveDocuments(size_t maxDocsToMove, IMoveOperationLimiter &limiter)
 {
-    if (_impl->bucketDone()) {
+    if (_impl->allScheduled()) {
         return true;
     }
     auto [keys, done] = _impl->getKeysToMove(maxDocsToMove);
-    size_t numKeys = keys.size();
     auto moveOps = _impl->createMoveOperations(std::move(keys));
-    bool allOk = (numKeys == moveOps.size());
+    bool allOk = moveOps.failed.empty();
     if (done && allOk) {
-        _impl->setBucketDone();
+        _impl->setAllScheduled();
     }
-    if (moveOps.empty()) return allOk;
+    if (moveOps.success.empty()) return allOk;
 
-    _impl->updateLastValidGid(moveOps.back().first->getDocument()->getId().getGlobalId());
+    _impl->updateLastValidGid(moveOps.success.back().first->getDocument()->getId().getGlobalId());
 
-    for (auto & moveOp : moveOps) {
+    for (auto & moveOp : moveOps.success) {
         // We cache the bucket for the document we are going to move to avoid getting
         // inconsistent bucket info (getBucketInfo()) while moving between ready and not-ready
         // sub dbs as the bucket info is not updated atomically in this case.
