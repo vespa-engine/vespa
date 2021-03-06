@@ -137,14 +137,14 @@ class AutoscalingTester {
                 float cpu = value * oneExtraNodeFactor;
                 float memory  = (float) Resource.memory.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
                 float disk = (float) Resource.disk.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
-                db.add(List.of(new Pair<>(node.hostname(), new MetricSnapshot(clock().instant(),
-                                                                              cpu,
-                                                                              memory,
-                                                                              disk,
-                                                                              0,
-                                                                              true,
-                                                                              true,
-                                                                              0.0))));
+                db.addNodeMetrics(List.of(new Pair<>(node.hostname(), new NodeMetricSnapshot(clock().instant(),
+                                                                                             cpu,
+                                                                                             memory,
+                                                                                             disk,
+                                                                                             0,
+                                                                                             true,
+                                                                                             true,
+                                                                                             0.0))));
             }
         }
     }
@@ -169,14 +169,14 @@ class AutoscalingTester {
                 float cpu  = (float) 0.2 * otherResourcesLoad * oneExtraNodeFactor;
                 float memory = value * oneExtraNodeFactor;
                 float disk = (float) Resource.disk.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
-                db.add(List.of(new Pair<>(node.hostname(), new MetricSnapshot(clock().instant(),
-                                                                              cpu,
-                                                                              memory,
-                                                                              disk,
-                                                                              0,
-                                                                              true,
-                                                                              true,
-                                                                              0.0))));
+                db.addNodeMetrics(List.of(new Pair<>(node.hostname(), new NodeMetricSnapshot(clock().instant(),
+                                                                                             cpu,
+                                                                                             memory,
+                                                                                             disk,
+                                                                                             0,
+                                                                                             true,
+                                                                                             true,
+                                                                                             0.0))));
             }
         }
     }
@@ -191,14 +191,14 @@ class AutoscalingTester {
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofMinutes(1));
             for (Node node : nodes) {
-                db.add(List.of(new Pair<>(node.hostname(), new MetricSnapshot(clock().instant(),
-                                                                              cpu,
-                                                                              memory,
-                                                                              disk,
-                                                                              generation,
-                                                                              inService,
-                                                                              stable,
-                                                                              0.0))));
+                db.addNodeMetrics(List.of(new Pair<>(node.hostname(), new NodeMetricSnapshot(clock().instant(),
+                                                                                             cpu,
+                                                                                             memory,
+                                                                                             disk,
+                                                                                             generation,
+                                                                                             inService,
+                                                                                             stable,
+                                                                                             0.0))));
             }
         }
     }

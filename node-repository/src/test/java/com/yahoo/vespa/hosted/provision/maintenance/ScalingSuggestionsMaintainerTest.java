@@ -17,7 +17,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
-import com.yahoo.vespa.hosted.provision.autoscale.MetricSnapshot;
+import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.autoscale.Resource;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
@@ -125,14 +125,14 @@ public class ScalingSuggestionsMaintainerTest {
         NodeList nodes = nodeRepository.nodes().list(Node.State.active).owner(applicationId);
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)
-                db.add(List.of(new Pair<>(node.hostname(), new MetricSnapshot(nodeRepository.clock().instant(),
-                                                                              cpu,
-                                                                              memory,
-                                                                              disk,
-                                                                              generation,
-                                                                              true,
-                                                                              true,
-                                                                              0.0))));
+                db.addNodeMetrics(List.of(new Pair<>(node.hostname(), new NodeMetricSnapshot(nodeRepository.clock().instant(),
+                                                                                             cpu,
+                                                                                             memory,
+                                                                                             disk,
+                                                                                             generation,
+                                                                                             true,
+                                                                                             true,
+                                                                                             0.0))));
         }
     }
 

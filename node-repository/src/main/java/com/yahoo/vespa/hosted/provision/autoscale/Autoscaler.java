@@ -2,14 +2,12 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
-import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -68,23 +66,23 @@ public class Autoscaler {
         if (scaledIn(scalingWindow, cluster))
             return Advice.dontScale("Won't autoscale now: Less than " + scalingWindow + " since last rescaling");
 
-        ClusterTimeseries clusterTimeseries =
-                new ClusterTimeseries(scalingWindow, cluster, clusterNodes, metricsDb);
-        AllocatableClusterResources currentAllocation =
-                new AllocatableClusterResources(clusterNodes.asList(), nodeRepository, cluster.exclusive());
+        var clusterNodesTimeseries = new ClusterNodesTimeseries(scalingWindow, cluster, clusterNodes, metricsDb);
+        var currentAllocation = new AllocatableClusterResources(clusterNodes.asList(), nodeRepository, cluster.exclusive());
 
-        int measurementsPerNode = clusterTimeseries.measurementsPerNode();
+        int measurementsPerNode = clusterNodesTimeseries.measurementsPerNode();
         if  (measurementsPerNode < minimumMeasurementsPerNode(scalingWindow))
             return Advice.none("Collecting more data before making new scaling decisions: " +
                                "Have " + measurementsPerNode + " measurements per node but require " +
                                minimumMeasurementsPerNode(scalingWindow));
 
-        int nodesMeasured = clusterTimeseries.nodesMeasured();
+        int nodesMeasured = clusterNodesTimeseries.nodesMeasured();
         if (nodesMeasured != clusterNodes.size())
             return Advice.none("Collecting more data before making new scaling decisions: " +
                                "Have measurements from " + nodesMeasured + " but require from " + clusterNodes.size());
 
-        var target = ResourceTarget.idealLoad(clusterTimeseries, currentAllocation, application);
+
+        var clusterTimeseries = metricsDb.getClusterTimeseries(cluster.id());
+        var target = ResourceTarget.idealLoad(clusterTimeseries, clusterNodesTimeseries, currentAllocation, application);
 
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(target, currentAllocation, limits);

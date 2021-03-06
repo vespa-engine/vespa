@@ -11,7 +11,6 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.applications.Application;
 
 import java.time.Instant;
 import java.util.ArrayList;
@@ -28,14 +27,21 @@ import java.util.Optional;
  */
 public class MetricsResponse {
 
-    private final Collection<Pair<String, MetricSnapshot>> nodeMetrics;
+    /** Node level metrics */
+    private final Collection<Pair<String, NodeMetricSnapshot>> nodeMetrics;
+
+    /**
+     * Cluster level metrics (collect in
+     * Must be aggregated at fetch time to avoid issues with nodes and nodes joining/leaving the cluster over time.
+     */
+    private final Map<ClusterSpec.Id, ClusterMetricSnapshot> clusterMetrics = new HashMap<>();
 
     /** Creates this from a metrics/V2 response */
     public MetricsResponse(String response, NodeList applicationNodes, NodeRepository nodeRepository) {
         this(SlimeUtils.jsonToSlime(response), applicationNodes, nodeRepository);
     }
 
-    public MetricsResponse(Collection<Pair<String, MetricSnapshot>> metrics) {
+    public MetricsResponse(Collection<Pair<String, NodeMetricSnapshot>> metrics) {
         this.nodeMetrics = metrics;
     }
 
@@ -46,7 +52,9 @@ public class MetricsResponse {
         nodes.traverse((ArrayTraverser)(__, node) -> consumeNode(node, applicationNodes, nodeRepository));
     }
 
-    public Collection<Pair<String, MetricSnapshot>> metrics() { return nodeMetrics; }
+    public Collection<Pair<String, NodeMetricSnapshot>> nodeMetrics() { return nodeMetrics; }
+
+    public Map<ClusterSpec.Id, ClusterMetricSnapshot> clusterMetrics() { return clusterMetrics; }
 
     private void consumeNode(Inspector node, NodeList applicationNodes, NodeRepository nodeRepository) {
         String hostname = node.field("hostname").asString();
@@ -59,14 +67,21 @@ public class MetricsResponse {
         if (node.isEmpty()) return; // Node is not part of this cluster any more
         long timestampSecond = nodeData.field("timestamp").asLong();
         Map<String, Double> values = consumeMetrics(nodeData.field("metrics"));
-        nodeMetrics.add(new Pair<>(hostname, new MetricSnapshot(Instant.ofEpochMilli(timestampSecond * 1000),
-                                                                Metric.cpu.from(values),
-                                                                Metric.memory.from(values),
-                                                                Metric.disk.from(values),
-                                                                (long)Metric.generation.from(values),
+        Instant at = Instant.ofEpochMilli(timestampSecond * 1000);
+
+        nodeMetrics.add(new Pair<>(hostname, new NodeMetricSnapshot(at,
+                                                                    Metric.cpu.from(values),
+                                                                    Metric.memory.from(values),
+                                                                    Metric.disk.from(values),
+                                                                    (long)Metric.generation.from(values),
                                                                 Metric.inService.from(values) > 0,
-                                                                clusterIsStable(node.get(), applicationNodes, nodeRepository),
-                                                                Metric.queryRate.from(values))));
+                                                                    clusterIsStable(node.get(), applicationNodes, nodeRepository),
+                                                                    Metric.queryRate.from(values))));
+
+        var cluster = node.get().allocation().get().membership().cluster().id();
+        var metrics = clusterMetrics.getOrDefault(cluster, new ClusterMetricSnapshot(at, 0.0));
+        metrics = metrics.withQueryRate(metrics.queryRate() + Metric.queryRate.from(values));
+        clusterMetrics.put(cluster, metrics);
     }
 
     private boolean clusterIsStable(Node node, NodeList applicationNodes, NodeRepository nodeRepository) {

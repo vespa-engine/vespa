@@ -50,13 +50,14 @@ public class ResourceTarget {
 
     /** Create a target of achieving ideal load given a current load */
     public static ResourceTarget idealLoad(ClusterTimeseries clusterTimeseries,
+                                           ClusterNodesTimeseries clusterNodesTimeseries,
                                            AllocatableClusterResources current,
                                            Application application) {
-        return new ResourceTarget(nodeUsage(Resource.cpu, clusterTimeseries.averageLoad(Resource.cpu), current)
-                                  / idealCpuLoad(clusterTimeseries, application),
-                                  nodeUsage(Resource.memory, clusterTimeseries.averageLoad(Resource.memory), current)
+        return new ResourceTarget(nodeUsage(Resource.cpu, clusterNodesTimeseries.averageLoad(Resource.cpu), current)
+                                  / idealCpuLoad(clusterTimeseries, clusterNodesTimeseries, application),
+                                  nodeUsage(Resource.memory, clusterNodesTimeseries.averageLoad(Resource.memory), current)
                                   / Resource.memory.idealAverageLoad(),
-                                  nodeUsage(Resource.disk, clusterTimeseries.averageLoad(Resource.disk), current)
+                                  nodeUsage(Resource.disk, clusterNodesTimeseries.averageLoad(Resource.disk), current)
                                   / Resource.disk.idealAverageLoad(),
                                   true);
     }
@@ -70,10 +71,12 @@ public class ResourceTarget {
     }
 
     /** Ideal cpu load must take the application traffic fraction into account */
-    private static double idealCpuLoad(ClusterTimeseries clusterTimeseries, Application application) {
+    private static double idealCpuLoad(ClusterTimeseries clusterTimeseries,
+                                       ClusterNodesTimeseries clusterNodesTimeseries,
+                                       Application application) {
         // What's needed to have headroom for growth during scale-up as a fraction of current resources?
         double maxGrowthRate = clusterTimeseries.maxQueryGrowthRate(); // in fraction per minute of the current traffic
-        Duration scalingDuration = clusterTimeseries.cluster().scalingDuration(clusterTimeseries.clusterNodes().clusterSpec());
+        Duration scalingDuration = clusterNodesTimeseries.cluster().scalingDuration(clusterNodesTimeseries.clusterNodes().clusterSpec());
         double growthRateHeadroom = 1 + maxGrowthRate * scalingDuration.toMinutes();
         // Cap headroom at 10% above the historical observed peak
         growthRateHeadroom = Math.min(growthRateHeadroom, 1 / clusterTimeseries.currentQueryFractionOfMax() + 0.1);

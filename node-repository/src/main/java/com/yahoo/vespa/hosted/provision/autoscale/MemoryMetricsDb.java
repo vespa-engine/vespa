@@ -2,9 +2,11 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
+import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -26,8 +28,10 @@ public class MemoryMetricsDb implements MetricsDb {
 
     private final NodeRepository nodeRepository;
 
-    /** Metric time seriest by node (hostname). Each list of metric snapshots is sorted by increasing timestamp */
-    private final Map<String, NodeTimeseries> db = new HashMap<>();
+    /** Metric time series by node (hostname). Each list of metric snapshots is sorted by increasing timestamp */
+    private final Map<String, NodeTimeseries> nodeTimeseries = new HashMap<>();
+
+    private final Map<ClusterSpec.Id, ClusterTimeseries> clusterTimeseries = new HashMap<>();
 
     /** Lock all access for now since we modify lists inside a map */
     private final Object lock = new Object();
@@ -37,10 +41,22 @@ public class MemoryMetricsDb implements MetricsDb {
     }
 
     @Override
-    public void add(Collection<Pair<String, MetricSnapshot>> nodeMetrics) {
+    public Clock clock() { return nodeRepository.clock(); }
+
+    @Override
+    public void addNodeMetrics(Collection<Pair<String, NodeMetricSnapshot>> nodeMetrics) {
         synchronized (lock) {
             for (var value : nodeMetrics) {
                 add(value.getFirst(), value.getSecond());
+            }
+        }
+    }
+
+    @Override
+    public void addClusterMetrics(Map<ClusterSpec.Id, ClusterMetricSnapshot> clusterMetrics) {
+        synchronized (lock) {
+            for (var value : clusterMetrics.entrySet()) {
+                add(value.getKey(), value.getValue());
             }
         }
     }
@@ -50,9 +66,14 @@ public class MemoryMetricsDb implements MetricsDb {
         Instant startTime = nodeRepository.clock().instant().minus(period);
         synchronized (lock) {
             return hostnames.stream()
-                            .map(hostname -> db.getOrDefault(hostname, new NodeTimeseries(hostname, List.of())).justAfter(startTime))
+                            .map(hostname -> nodeTimeseries.getOrDefault(hostname, new NodeTimeseries(hostname, List.of())).justAfter(startTime))
                             .collect(Collectors.toList());
         }
+    }
+
+    @Override
+    public ClusterTimeseries getClusterTimeseries(ClusterSpec.Id cluster) {
+        return clusterTimeseries.computeIfAbsent(cluster, __ -> new ClusterTimeseries(cluster, new ArrayList<>()));
     }
 
     @Override
@@ -60,13 +81,13 @@ public class MemoryMetricsDb implements MetricsDb {
         synchronized (lock) {
             // Each measurement is Object + long + float = 16 + 8 + 4 = 28 bytes
             // 12 hours with 1k nodes and 3 resources and 1 measurement/sec is about 5Gb
-            for (String hostname : db.keySet()) {
-                var timeseries = db.get(hostname);
+            for (String hostname : nodeTimeseries.keySet()) {
+                var timeseries = nodeTimeseries.get(hostname);
                 timeseries = timeseries.justAfter(nodeRepository.clock().instant().minus(Autoscaler.maxScalingWindow()));
                 if (timeseries.isEmpty())
-                    db.remove(hostname);
+                    nodeTimeseries.remove(hostname);
                 else
-                    db.put(hostname, timeseries);
+                    nodeTimeseries.put(hostname, timeseries);
             }
         }
     }
@@ -74,16 +95,21 @@ public class MemoryMetricsDb implements MetricsDb {
     @Override
     public void close() {}
 
-    private void add(String hostname, MetricSnapshot snapshot) {
-        NodeTimeseries timeseries = db.get(hostname);
+    private void add(String hostname, NodeMetricSnapshot snapshot) {
+        NodeTimeseries timeseries = nodeTimeseries.get(hostname);
         if (timeseries == null) { // new node
             Optional<Node> node = nodeRepository.nodes().node(hostname);
             if (node.isEmpty()) return;
             if (node.get().allocation().isEmpty()) return;
             timeseries = new NodeTimeseries(hostname, new ArrayList<>());
-            db.put(hostname, timeseries);
+            nodeTimeseries.put(hostname, timeseries);
         }
-        db.put(hostname, timeseries.add(snapshot));
+        nodeTimeseries.put(hostname, timeseries.add(snapshot));
+    }
+
+    private void add(ClusterSpec.Id cluster, ClusterMetricSnapshot snapshot) {
+        var existing = clusterTimeseries.computeIfAbsent(cluster, __ -> new ClusterTimeseries(cluster, new ArrayList<>()));
+        clusterTimeseries.put(cluster, existing.add(snapshot));
     }
 
 }

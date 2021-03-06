@@ -1,63 +1,48 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
-import java.time.Duration;
+import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 /**
- * A series of metric snapshots for all nodes in a cluster
+ * A list of metric snapshots from a cluster, sorted by increasing time (newest last).
  *
  * @author bratseth
  */
 public class ClusterTimeseries {
 
-    private final Cluster cluster;
-    private final NodeList clusterNodes;
+    private final ClusterSpec.Id cluster;
+    private final List<ClusterMetricSnapshot> snapshots;
 
-    /** The measurements for all nodes in this snapshot */
-    private final List<NodeTimeseries> timeseries;
-
-    public ClusterTimeseries(Duration period, Cluster cluster, NodeList clusterNodes, MetricsDb db) {
+    ClusterTimeseries(ClusterSpec.Id cluster, List<ClusterMetricSnapshot> snapshots) {
         this.cluster = cluster;
-        this.clusterNodes = clusterNodes;
-        var timeseries = db.getNodeTimeseries(period, clusterNodes);
-
-        if (cluster.lastScalingEvent().isPresent())
-            timeseries = filter(timeseries, snapshot -> snapshot.generation() < 0 || // Content nodes do not yet send generation
-                                                        snapshot.generation() >= cluster.lastScalingEvent().get().generation());
-        timeseries = filter(timeseries, snapshot -> snapshot.inService() && snapshot.stable());
-
-        this.timeseries = timeseries;
+        List<ClusterMetricSnapshot> sortedSnapshots = new ArrayList<>(snapshots);
+        Collections.sort(sortedSnapshots);
+        this.snapshots = Collections.unmodifiableList(sortedSnapshots);
     }
 
-    /** The cluster this is a timeseries for */
-    public Cluster cluster() { return cluster; }
+    public boolean isEmpty() { return snapshots.isEmpty(); }
 
-    /** The nodes of the cluster this is a timeseries for */
-    public NodeList clusterNodes() { return clusterNodes; }
+    public int size() { return snapshots.size(); }
 
-    /** Returns the average number of measurements per node */
-    public int measurementsPerNode() {
-        int measurementCount = timeseries.stream().mapToInt(m -> m.size()).sum();
-        return measurementCount / clusterNodes.size();
-    }
+    public ClusterMetricSnapshot get(int index) { return snapshots.get(index); }
 
-    /** Returns the number of nodes measured in this */
-    public int nodesMeasured() {
-        return timeseries.size();
-    }
+    public List<ClusterMetricSnapshot> asList() { return snapshots; }
 
-    /** Returns the average load of this resource in this */
-    public double averageLoad(Resource resource) {
-        int measurementCount = timeseries.stream().mapToInt(m -> m.size()).sum();
-        if (measurementCount == 0) return 0;
-        double measurementSum = timeseries.stream().flatMap(m -> m.asList().stream()).mapToDouble(m -> value(resource, m)).sum();
-        return measurementSum / measurementCount;
+    public ClusterSpec.Id cluster() { return cluster; }
+
+    public ClusterTimeseries add(ClusterMetricSnapshot snapshot) {
+        List<ClusterMetricSnapshot> list = new ArrayList<>(snapshots);
+        list.add(snapshot);
+        return new ClusterTimeseries(cluster, list);
     }
 
     /** The max query growth rate we can predict from this time-series as a fraction of the current traffic per minute */
@@ -67,21 +52,7 @@ public class ClusterTimeseries {
 
     /** The current query rate as a fraction of the peak rate in this timeseries */
     public double currentQueryFractionOfMax() {
-
         return 0.5; // default
-    }
-
-    private double value(Resource resource, MetricSnapshot snapshot) {
-        switch (resource) {
-            case cpu: return snapshot.cpu();
-            case memory: return snapshot.memory();
-            case disk: return snapshot.disk();
-            default: throw new IllegalArgumentException("Got an unknown resource " + resource);
-        }
-    }
-
-    private List<NodeTimeseries> filter(List<NodeTimeseries> timeseries, Predicate<MetricSnapshot> filter) {
-        return timeseries.stream().map(nodeTimeseries -> nodeTimeseries.filter(filter)).collect(Collectors.toList());
     }
 
 }
