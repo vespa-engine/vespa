@@ -96,14 +96,14 @@ BuildRequires: gmock-devel
 %endif
 %if 0%{?fc34}
 BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 11.1.0
+BuildRequires: llvm-devel >= 12.0.0
 BuildRequires: boost-devel >= 1.75
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
 %if 0%{?fc35}
 BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 11.1.0
+BuildRequires: llvm-devel >= 12.0.0
 BuildRequires: boost-devel >= 1.75
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
@@ -208,13 +208,13 @@ Requires: llvm-libs >= 11.0.0
 %endif
 %if 0%{?fc34}
 Requires: protobuf
-Requires: llvm-libs >= 11.1.0
-%define _vespa_llvm_version 11
+Requires: llvm-libs >= 12.0.0
+%define _vespa_llvm_version 12
 %endif
 %if 0%{?fc35}
 Requires: protobuf
-Requires: llvm-libs >= 11.1.0
-%define _vespa_llvm_version 11
+Requires: llvm-libs >= 12.0.0
+%define _vespa_llvm_version 12
 %endif
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
