@@ -251,9 +251,12 @@ BucketMoveJobV2::checkIfMoverComplete(const BucketMover & mover) {
     bool needReschedule = mover.needReschedule();
     if (bucketMoveComplete || needReschedule) {
         BucketId bucket = mover.getBucket();
-        assert(mover.needReschedule() || _bucketsInFlight.contains(bucket));
+        assert(needReschedule || _bucketsInFlight.contains(bucket));
         _bucketsInFlight.erase(bucket);
         if (needReschedule) {
+            _movers.erase(std::remove_if(_movers.begin(), _movers.end(),
+                                         [bucket](const BucketMoverSP &cand) { return cand->getBucket() == bucket; }),
+                          _movers.end());
             _postponedUntilSafe.insert(bucket);
         } else {
             _modifiedHandler.notifyBucketModified(bucket);
@@ -280,9 +283,6 @@ BucketMoveJobV2::cancelBucket(BucketId bucket) {
     auto inFlight = _bucketsInFlight.find(bucket);
     if (inFlight != _bucketsInFlight.end()) {
         inFlight->second->cancel();
-        _movers.erase(std::remove_if(_movers.begin(), _movers.end(),
-                                     [bucket](const BucketMoverSP &mover) { return mover->getBucket() == bucket; }),
-                      _movers.end());
         checkIfMoverComplete(*inFlight->second);
     }
 }
