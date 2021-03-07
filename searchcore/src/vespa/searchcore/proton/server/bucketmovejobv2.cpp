@@ -53,8 +53,6 @@ blockedDueToClusterState(const std::shared_ptr<IBucketStateCalculator> &calc)
     return !(clusterUp && nodeUp && !nodeInitializing);
 }
 
-constexpr BucketId RECOMPUTE_TOKEN;
-
 }
 
 BucketMoveJobV2::BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &calc,
@@ -204,7 +202,6 @@ BucketMoveJobV2::failOperation(BucketId bucketId) {
     if (_stopped.load(std::memory_order_relaxed)) return;
     _master.execute(makeLambdaTask([this, bucketId]() {
         if (_stopped.load(std::memory_order_relaxed)) return;
-        cancelBucket(bucketId);
         considerBucket(_ready.meta_store()->getBucketDB().takeGuard(), bucketId);
     }));
 }
@@ -251,29 +248,34 @@ BucketMoveJobV2::checkIfMoverComplete(const BucketMover & mover) {
     bool needReschedule = mover.needReschedule();
     if (bucketMoveComplete || needReschedule) {
         BucketId bucket = mover.getBucket();
-        assert(needReschedule || _bucketsInFlight.contains(bucket));
-        _bucketsInFlight.erase(bucket);
+        auto found = _bucketsInFlight.find(bucket);
         if (needReschedule) {
-            _movers.erase(std::remove_if(_movers.begin(), _movers.end(),
-                                         [bucket](const BucketMoverSP &cand) { return cand->getBucket() == bucket; }),
-                          _movers.end());
-            _postponedUntilSafe.insert(bucket);
+            if ((found != _bucketsInFlight.end()) && (&mover == found->second.get())) {
+                //Prevent old disconnected mover from creating havoc.
+                _bucketsInFlight.erase(found);
+                _movers.erase(std::remove_if(_movers.begin(), _movers.end(),
+                                             [bucket](const BucketMoverSP &cand) {
+                                                 return cand->getBucket() == bucket;
+                                             }),
+                              _movers.end());
+                _postponedUntilSafe.insert(bucket);
+                return true;
+            }
         } else {
+            assert(found != _bucketsInFlight.end());
+            _bucketsInFlight.erase(found);
             _modifiedHandler.notifyBucketModified(bucket);
+            return true;
         }
-        return true;
     }
     return _bucketsInFlight.empty();
 }
+
 void
 BucketMoveJobV2::checkForReschedule(const bucketdb::Guard & guard, BucketId bucket) {
     if (_postponedUntilSafe.contains(bucket)) {
         _postponedUntilSafe.erase(bucket);
         reconsiderBucket(guard, bucket);
-    }
-    if (_bucketsInFlight.empty() && _postponedUntilSafe.contains(RECOMPUTE_TOKEN)) {
-        _postponedUntilSafe.erase(RECOMPUTE_TOKEN);
-        recompute(guard);
     }
     updatePending();
 }
@@ -415,6 +417,7 @@ BucketMoveJobV2::backFillMovers() {
         auto mover = greedyCreateMover();
         _movers.push_back(mover);
         auto bucketId = mover->getBucket();
+        assert( ! _bucketsInFlight.contains(bucketId));
         _bucketsInFlight[bucketId] = std::move(mover);
     }
     updatePending();
@@ -431,12 +434,8 @@ BucketMoveJobV2::notifyClusterStateChanged(const std::shared_ptr<IBucketStateCal
         unBlock(BlockedReason::CLUSTER_STATE);
         _movers.clear();
         std::for_each(_bucketsInFlight.begin(), _bucketsInFlight.end(), [](auto & entry) { entry.second->cancel();});
-        std::erase_if(_bucketsInFlight, [](auto & entry) { return entry.second->inSync(); });
-        if (_bucketsInFlight.empty()) {
-            recompute(_ready.meta_store()->getBucketDB().takeGuard());
-        } else {
-            _postponedUntilSafe.insert(RECOMPUTE_TOKEN);
-        }
+        _bucketsInFlight.clear();
+        recompute(_ready.meta_store()->getBucketDB().takeGuard());
     }
 }
 
