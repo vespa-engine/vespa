@@ -5,6 +5,7 @@ import com.google.inject.Inject;
 import com.yahoo.collections.ListMap;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.AbstractComponent;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.io.IOUtils;
 import com.yahoo.vespa.defaults.Defaults;
@@ -125,30 +126,31 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     }
 
     @Override
-    public void addClusterMetrics(Map<ClusterSpec.Id, ClusterMetricSnapshot> snapshots) {
+    public void addClusterMetrics(ApplicationId application, Map<ClusterSpec.Id, ClusterMetricSnapshot> snapshots) {
         try (TableWriter writer = engine.getWriter(newContext().getCairoSecurityContext(), clusterTable)) {
-            addClusterMetrics(snapshots, writer);
+            addClusterMetrics(application, snapshots, writer);
         }
         catch (CairoException e) {
             if (e.getMessage().contains("Cannot read offset")) {
                 // This error seems non-recoverable
                 repair(e);
                 try (TableWriter writer = engine.getWriter(newContext().getCairoSecurityContext(), clusterTable)) {
-                    addClusterMetrics(snapshots, writer);
+                    addClusterMetrics(application, snapshots, writer);
                 }
             }
         }
     }
 
-    private void addClusterMetrics(Map<ClusterSpec.Id, ClusterMetricSnapshot> snapshots, TableWriter writer) {
+    private void addClusterMetrics(ApplicationId applicationId, Map<ClusterSpec.Id, ClusterMetricSnapshot> snapshots, TableWriter writer) {
         for (var snapshot : snapshots.entrySet()) {
             long atMillis = adjustIfRecent(snapshot.getValue().at().toEpochMilli(), highestTimestampAdded);
             if (atMillis < highestTimestampAdded) continue; // Ignore old data
             highestTimestampAdded = atMillis;
             TableWriter.Row row = writer.newRow(atMillis * 1000); // in microseconds
-            row.putStr(0, snapshot.getKey().value());
-            // (1 is timestamp)
-            row.putFloat(2, (float)snapshot.getValue().queryRate());
+            row.putStr(0, applicationId.serializedForm());
+            row.putStr(1, snapshot.getKey().value());
+            // (2 is timestamp)
+            row.putFloat(3, (float)snapshot.getValue().queryRate());
             row.append();
         }
         writer.commit();
@@ -169,10 +171,10 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     }
 
     @Override
-    public ClusterTimeseries getClusterTimeseries(ClusterSpec.Id clusterId) {
+    public ClusterTimeseries getClusterTimeseries(ApplicationId applicationId, ClusterSpec.Id clusterId) {
         try (SqlCompiler compiler = new SqlCompiler(engine)) {
             SqlExecutionContext context = newContext();
-            return getClusterSnapshots(clusterId, compiler, context);
+            return getClusterSnapshots(applicationId, clusterId, compiler, context);
         }
         catch (SqlException e) {
             throw new IllegalStateException("Could not read cluster timeseries data in Quest stored in " + dataDir, e);
@@ -271,7 +273,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     private void createClusterTable(SqlExecutionContext context) {
         try (SqlCompiler compiler = new SqlCompiler(engine)) {
             compiler.compile("create table " + clusterTable +
-                             " (cluster string, at timestamp, queries_rate float)" +
+                             " (application string, cluster string, at timestamp, queries_rate float)" +
                              " timestamp(at)" +
                              "PARTITION BY DAY;",
                              context);
@@ -362,7 +364,8 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         }
     }
 
-    private ClusterTimeseries getClusterSnapshots(ClusterSpec.Id cluster,
+    private ClusterTimeseries getClusterSnapshots(ApplicationId application,
+                                                  ClusterSpec.Id cluster,
                                                   SqlCompiler compiler,
                                                   SqlExecutionContext context) throws SqlException {
         String sql = "select * from " + clusterTable;
@@ -371,10 +374,12 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
             try (RecordCursor cursor = factory.getCursor(context)) {
                 Record record = cursor.getRecord();
                 while (cursor.hasNext()) {
-                    String clusterId = record.getStr(0).toString();
+                    String applicationIdString = record.getStr(0).toString();
+                    if ( ! application.serializedForm().equals(applicationIdString)) continue;
+                    String clusterId = record.getStr(1).toString();
                     if (cluster.value().equals(clusterId)) {
-                        snapshots.add(new ClusterMetricSnapshot(Instant.ofEpochMilli(record.getTimestamp(1) / 1000),
-                                                                record.getFloat(2)));
+                        snapshots.add(new ClusterMetricSnapshot(Instant.ofEpochMilli(record.getTimestamp(2) / 1000),
+                                                                record.getFloat(3)));
                     }
                 }
             }

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.io.IOUtils;
 import com.yahoo.test.ManualClock;
@@ -86,32 +87,45 @@ public class QuestMetricsDbTest {
         QuestMetricsDb db = new QuestMetricsDb(dataDir, clock);
         Instant startTime = clock.instant();
 
+        var application1 = ApplicationId.from("t1", "a1", "i1");
+        var application2 = ApplicationId.from("t1", "a2", "i1");
         var cluster1 = new ClusterSpec.Id("cluster1");
         var cluster2 = new ClusterSpec.Id("cluster2");
-        db.addClusterMetrics(Map.of(cluster1, new ClusterMetricSnapshot(clock.instant(), 30.0)));
-        db.addClusterMetrics(Map.of(cluster2, new ClusterMetricSnapshot(clock.instant(), 60.0)));
+        db.addClusterMetrics(application1, Map.of(cluster1, new ClusterMetricSnapshot(clock.instant(), 30.0)));
+        db.addClusterMetrics(application1, Map.of(cluster2, new ClusterMetricSnapshot(clock.instant(), 60.0)));
         clock.advance(Duration.ofMinutes(1));
-        db.addClusterMetrics(Map.of(cluster1, new ClusterMetricSnapshot(clock.instant(), 45.0)));
+        db.addClusterMetrics(application1, Map.of(cluster1, new ClusterMetricSnapshot(clock.instant(), 45.0)));
+        clock.advance(Duration.ofMinutes(1));
+        db.addClusterMetrics(application2, Map.of(cluster1, new ClusterMetricSnapshot(clock.instant(), 90.0)));
 
-        ClusterTimeseries clusterTimeseries1 = db.getClusterTimeseries(cluster1);
-        assertEquals(cluster1, clusterTimeseries1.cluster());
-        assertEquals(2, clusterTimeseries1.asList().size());
+        ClusterTimeseries clusterTimeseries11 = db.getClusterTimeseries(application1, cluster1);
+        assertEquals(cluster1, clusterTimeseries11.cluster());
+        assertEquals(2, clusterTimeseries11.asList().size());
 
-        ClusterMetricSnapshot snapshot11 = clusterTimeseries1.get(0);
-        assertEquals(startTime, snapshot11.at());
-        assertEquals(30, snapshot11.queryRate(), delta);
+        ClusterMetricSnapshot snapshot111 = clusterTimeseries11.get(0);
+        assertEquals(startTime, snapshot111.at());
+        assertEquals(30, snapshot111.queryRate(), delta);
+        ClusterMetricSnapshot snapshot112 = clusterTimeseries11.get(1);
+        assertEquals(startTime.plus(Duration.ofMinutes(1)), snapshot112.at());
+        assertEquals(45, snapshot112.queryRate(), delta);
 
-        ClusterMetricSnapshot snapshot12 = clusterTimeseries1.get(1);
-        assertEquals(startTime.plus(Duration.ofMinutes(1)), snapshot12.at());
-        assertEquals(45, snapshot12.queryRate(), delta);
 
-        ClusterTimeseries clusterTimeseries2 = db.getClusterTimeseries(cluster2);
-        assertEquals(cluster2, clusterTimeseries2.cluster());
-        assertEquals(1, clusterTimeseries2.asList().size());
+        ClusterTimeseries clusterTimeseries12 = db.getClusterTimeseries(application1, cluster2);
+        assertEquals(cluster2, clusterTimeseries12.cluster());
+        assertEquals(1, clusterTimeseries12.asList().size());
 
-        ClusterMetricSnapshot snapshot21 = clusterTimeseries2.get(0);
-        assertEquals(startTime, snapshot21.at());
-        assertEquals(60, snapshot21.queryRate(), delta);
+        ClusterMetricSnapshot snapshot121 = clusterTimeseries12.get(0);
+        assertEquals(startTime, snapshot121.at());
+        assertEquals(60, snapshot121.queryRate(), delta);
+
+
+        ClusterTimeseries clusterTimeseries21 = db.getClusterTimeseries(application2, cluster1);
+        assertEquals(cluster1, clusterTimeseries21.cluster());
+        assertEquals(1, clusterTimeseries21.asList().size());
+
+        ClusterMetricSnapshot snapshot211 = clusterTimeseries21.get(0);
+        assertEquals(startTime.plus(Duration.ofMinutes(2)), snapshot211.at());
+        assertEquals(90, snapshot211.queryRate(), delta);
     }
 
     @Test

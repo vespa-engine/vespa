@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -27,7 +28,7 @@ public interface MetricsDb {
     /** Adds node snapshots to this. */
     void addNodeMetrics(Collection<Pair<String, NodeMetricSnapshot>> nodeMetrics);
 
-    void addClusterMetrics(Map<ClusterSpec.Id,  ClusterMetricSnapshot> clusterMetrics);
+    void addClusterMetrics(ApplicationId application, Map<ClusterSpec.Id,  ClusterMetricSnapshot> clusterMetrics);
 
     /**
      * Returns a list with one entry for each hostname containing
@@ -42,14 +43,14 @@ public interface MetricsDb {
     }
 
     /** Returns all cluster level metric snapshots for a given cluster */
-    ClusterTimeseries getClusterTimeseries(ClusterSpec.Id clusterId);
+    ClusterTimeseries getClusterTimeseries(ApplicationId applicationId, ClusterSpec.Id clusterId);
 
     /** Must be called intermittently (as long as add is called) to gc old data */
     void gc();
 
     void close();
 
-    static MetricsDb createTestInstance(NodeRepository nodeRepository) {
+    static MemoryMetricsDb createTestInstance(NodeRepository nodeRepository) {
         return new MemoryMetricsDb(nodeRepository);
     }
 

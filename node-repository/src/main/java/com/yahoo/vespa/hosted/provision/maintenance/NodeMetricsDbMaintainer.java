@@ -74,7 +74,7 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
         }
         else if (response != null) {
             metricsDb.addNodeMetrics(response.nodeMetrics());
-            metricsDb.addClusterMetrics(response.clusterMetrics());
+            metricsDb.addClusterMetrics(application, response.clusterMetrics());
         }
     }
 

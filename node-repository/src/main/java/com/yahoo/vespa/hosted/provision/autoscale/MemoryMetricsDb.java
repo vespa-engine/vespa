@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -31,7 +32,7 @@ public class MemoryMetricsDb implements MetricsDb {
     /** Metric time series by node (hostname). Each list of metric snapshots is sorted by increasing timestamp */
     private final Map<String, NodeTimeseries> nodeTimeseries = new HashMap<>();
 
-    private final Map<ClusterSpec.Id, ClusterTimeseries> clusterTimeseries = new HashMap<>();
+    private final Map<Pair<ApplicationId, ClusterSpec.Id>, ClusterTimeseries> clusterTimeseries = new HashMap<>();
 
     /** Lock all access for now since we modify lists inside a map */
     private final Object lock = new Object();
@@ -53,11 +54,17 @@ public class MemoryMetricsDb implements MetricsDb {
     }
 
     @Override
-    public void addClusterMetrics(Map<ClusterSpec.Id, ClusterMetricSnapshot> clusterMetrics) {
+    public void addClusterMetrics(ApplicationId application, Map<ClusterSpec.Id, ClusterMetricSnapshot> clusterMetrics) {
         synchronized (lock) {
             for (var value : clusterMetrics.entrySet()) {
-                add(value.getKey(), value.getValue());
+                add(application, value.getKey(), value.getValue());
             }
+        }
+    }
+
+    public void clearClusterMetrics(ApplicationId application, ClusterSpec.Id cluster) {
+        synchronized (lock) {
+            clusterTimeseries.remove(new Pair<>(application, cluster));
         }
     }
 
@@ -72,8 +79,9 @@ public class MemoryMetricsDb implements MetricsDb {
     }
 
     @Override
-    public ClusterTimeseries getClusterTimeseries(ClusterSpec.Id cluster) {
-        return clusterTimeseries.computeIfAbsent(cluster, __ -> new ClusterTimeseries(cluster, new ArrayList<>()));
+    public ClusterTimeseries getClusterTimeseries(ApplicationId application, ClusterSpec.Id cluster) {
+        return clusterTimeseries.computeIfAbsent(new Pair<>(application, cluster),
+                                                 __ -> new ClusterTimeseries(cluster, new ArrayList<>()));
     }
 
     @Override
@@ -107,9 +115,10 @@ public class MemoryMetricsDb implements MetricsDb {
         nodeTimeseries.put(hostname, timeseries.add(snapshot));
     }
 
-    private void add(ClusterSpec.Id cluster, ClusterMetricSnapshot snapshot) {
-        var existing = clusterTimeseries.computeIfAbsent(cluster, __ -> new ClusterTimeseries(cluster, new ArrayList<>()));
-        clusterTimeseries.put(cluster, existing.add(snapshot));
+    private void add(ApplicationId application, ClusterSpec.Id cluster, ClusterMetricSnapshot snapshot) {
+        var key = new Pair<>(application, cluster);
+        var existing = clusterTimeseries.computeIfAbsent(key, __ -> new ClusterTimeseries(cluster, new ArrayList<>()));
+        clusterTimeseries.put(key, existing.add(snapshot));
     }
 
 }

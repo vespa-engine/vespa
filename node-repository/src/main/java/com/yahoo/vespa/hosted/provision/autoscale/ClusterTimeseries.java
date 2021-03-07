@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -47,12 +48,48 @@ public class ClusterTimeseries {
 
     /** The max query growth rate we can predict from this time-series as a fraction of the current traffic per minute */
     public double maxQueryGrowthRate() {
-        return 0.1; // default
+        if (snapshots.isEmpty()) return 0.1;
+
+        // Find the period having the highest growth rate, where total growth exceeds 30% increase
+        double maxGrowthRate = 0; // In query rate per minute
+        for (int start = 0; start < snapshots.size(); start++) {
+            for (int end = start + 1; end < snapshots.size(); end++) {
+                if (queryRateAt(end) >= queryRateAt(start) * 1.3) {
+                    Duration duration = durationBetween(start, end);
+                    if (duration.isZero()) continue;
+                    double growthRate = (queryRateAt(end) - queryRateAt(start)) / duration.toMinutes();
+                    if (growthRate > maxGrowthRate)
+                        maxGrowthRate = growthRate;
+                }
+            }
+        }
+        if (maxGrowthRate == 0) { // No periods of significant growth
+            if (durationBetween(0, snapshots.size() - 1).toHours() < 24)
+                return 0.1; //       ... because not much data
+            else
+                return 0.0; //       ... because load is stable
+        }
+        if (queryRateNow() == 0) return 0.1; // Growth not expressible as a fraction of the current rate
+        return maxGrowthRate / queryRateNow();
     }
 
     /** The current query rate as a fraction of the peak rate in this timeseries */
     public double currentQueryFractionOfMax() {
-        return 0.5; // default
+        if (snapshots.isEmpty()) return 0.5;
+        var max = snapshots.stream().mapToDouble(ClusterMetricSnapshot::queryRate).max().getAsDouble();
+        return snapshots.get(snapshots.size() - 1).queryRate() / max;
+    }
+
+    private double queryRateAt(int index) {
+        return snapshots.get(index).queryRate();
+    }
+
+    private double queryRateNow() {
+        return queryRateAt(snapshots.size() - 1);
+    }
+
+    private Duration durationBetween(int startIndex, int endIndex) {
+        return Duration.between(snapshots.get(startIndex).at(), snapshots.get(endIndex).at());
     }
 
 }

@@ -20,15 +20,21 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
 import com.yahoo.vespa.hosted.provision.applications.Application;
+import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 
 import java.time.Duration;
+import java.time.Instant;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.IntFunction;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -40,7 +46,7 @@ class AutoscalingTester {
 
     private final ProvisioningTester provisioningTester;
     private final Autoscaler autoscaler;
-    private final MetricsDb db;
+    private final MemoryMetricsDb db;
     private final MockHostResourcesCalculator hostResourcesCalculator;
 
     /** Creates an autoscaling tester with a single host type ready */
@@ -208,6 +214,41 @@ class AutoscalingTester {
         application = application.with(application.status().withCurrentReadShare(currentReadShare)
                                                            .withMaxReadShare(maxReadShare));
         nodeRepository().applications().put(application, nodeRepository().nodes().lock(applicationId));
+    }
+
+    /** Creates a single redeployment event with bogus data except for the given duration */
+    public void setScalingDuration(ApplicationId applicationId, ClusterSpec.Id clusterId, Duration duration) {
+        Application application = nodeRepository().applications().require(applicationId);
+        Cluster cluster = application.cluster(clusterId).get();
+        cluster = new Cluster(clusterId,
+                              cluster.exclusive(),
+                              cluster.minResources(),
+                              cluster.maxResources(),
+                              cluster.suggestedResources(),
+                              cluster.targetResources(),
+                              List.of(), // Remove scaling events
+                              cluster.autoscalingStatus());
+        cluster = cluster.with(ScalingEvent.create(cluster.minResources(), cluster.minResources(),
+                                                   0,
+                                                   clock().instant().minus(Duration.ofDays(1).minus(duration))).withCompletion(clock().instant().minus(Duration.ofDays(1))));
+        application = application.with(cluster);
+        nodeRepository().applications().put(application, nodeRepository().nodes().lock(applicationId));
+    }
+
+    /** Creates the given number of measurements, spaced 5 minutes between, using the given function */
+    public void addQueryRateMeasurements(ApplicationId application,
+                                         ClusterSpec.Id cluster,
+                                         int measurements,
+                                         IntFunction<Double> queryRate) {
+        Instant time = clock().instant();
+        for (int i = 0; i < measurements; i++) {
+            db.addClusterMetrics(application, Map.of(cluster, new ClusterMetricSnapshot(time, queryRate.apply(i))));
+            time = time.plus(Duration.ofMinutes(5));
+        }
+    }
+
+    public void clearQueryRateMeasurements(ApplicationId application, ClusterSpec.Id cluster) {
+        db.clearClusterMetrics(application, cluster);
     }
 
     public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId,

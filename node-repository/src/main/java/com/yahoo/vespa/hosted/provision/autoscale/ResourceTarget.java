@@ -49,7 +49,7 @@ public class ResourceTarget {
     }
 
     /** Create a target of achieving ideal load given a current load */
-    public static ResourceTarget idealLoad(ClusterTimeseries clusterTimeseries,
+    public static ResourceTarget  idealLoad(ClusterTimeseries clusterTimeseries,
                                            ClusterNodesTimeseries clusterNodesTimeseries,
                                            AllocatableClusterResources current,
                                            Application application) {

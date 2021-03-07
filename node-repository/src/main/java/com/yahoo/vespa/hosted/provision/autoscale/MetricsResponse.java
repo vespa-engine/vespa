@@ -74,7 +74,7 @@ public class MetricsResponse {
                                                                     Metric.memory.from(values),
                                                                     Metric.disk.from(values),
                                                                     (long)Metric.generation.from(values),
-                                                                Metric.inService.from(values) > 0,
+                                                                    Metric.inService.from(values) > 0,
                                                                     clusterIsStable(node.get(), applicationNodes, nodeRepository),
                                                                     Metric.queryRate.from(values))));
 

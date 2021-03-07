@@ -491,6 +491,44 @@ public class AutoscalingTest {
 
     }
 
+    @Test
+    public void test_autoscaling_considers_growth_rate() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        ClusterResources min = new ClusterResources( 1, 1, resources);
+        ClusterResources max = new ClusterResources(10, 1, resources);
+        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        tester.deploy(application1, cluster1, 5, 1, resources);
+        tester.addCpuMeasurements(0.25f, 1f, 120, application1);
+
+        // (no query rate data)
+        tester.assertResources("Advice to scale up sine we assume we need 2x cpu for growth when no data",
+                               7, 1, 3,  100, 100,
+                               tester.autoscale(application1, cluster1.id(), min, max).target());
+
+        tester.setScalingDuration(application1, cluster1.id(), Duration.ofMinutes(5));
+        tester.addQueryRateMeasurements(application1, cluster1.id(),
+                                        100,
+                                        t -> 10.0 + (t < 50 ? t : 100 - t));
+        tester.assertResources("Advice to scale down since observed growth is much slower than scaling time",
+                               4, 1, 3,  100, 100,
+                               tester.autoscale(application1, cluster1.id(), min, max).target());
+
+        tester.clearQueryRateMeasurements(application1, cluster1.id());
+
+        System.out.println("The fast growth one");
+        tester.setScalingDuration(application1, cluster1.id(), Duration.ofMinutes(60));
+        tester.addQueryRateMeasurements(application1, cluster1.id(),
+                                        100,
+                                        t -> 10.0 + (t < 50 ? t * t * t : 125000 - (t - 49) * (t - 49) * (t - 49)));
+        tester.assertResources("Advice to scale up since observed growth is much faster than scaling time",
+                               10, 1, 3,  100, 100,
+                               tester.autoscale(application1, cluster1.id(), min, max).target());
+    }
+
     /**
      * This calculator subtracts the memory tax when forecasting overhead, but not when actually
      * returning information about nodes. This is allowed because the forecast is a *worst case*.
