@@ -12,7 +12,7 @@ public enum Resource {
 
     /** Cpu utilization ratio */
     cpu {
-        public double idealAverageLoad() { return 0.8; }
+        public double idealAverageLoad() { return 0.4; }
         double valueFrom(NodeResources resources) { return resources.vcpu(); }
     },
 

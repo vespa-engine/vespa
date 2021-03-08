@@ -2,17 +2,15 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.collections.Pair;
-import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -23,12 +21,8 @@ import java.util.stream.Collectors;
  */
 public interface MetricsDb {
 
-    Clock clock();
-
-    /** Adds node snapshots to this. */
-    void addNodeMetrics(Collection<Pair<String, NodeMetricSnapshot>> nodeMetrics);
-
-    void addClusterMetrics(ApplicationId application, Map<ClusterSpec.Id,  ClusterMetricSnapshot> clusterMetrics);
+    /** Adds snapshots to this. */
+    void add(Collection<Pair<String, MetricSnapshot>> nodeMetrics);
 
     /**
      * Returns a list with one entry for each hostname containing
@@ -42,15 +36,12 @@ public interface MetricsDb {
         return getNodeTimeseries(period, nodes.stream().map(Node::hostname).collect(Collectors.toSet()));
     }
 
-    /** Returns all cluster level metric snapshots for a given cluster */
-    ClusterTimeseries getClusterTimeseries(ApplicationId applicationId, ClusterSpec.Id clusterId);
-
     /** Must be called intermittently (as long as add is called) to gc old data */
     void gc();
 
     void close();
 
-    static MemoryMetricsDb createTestInstance(NodeRepository nodeRepository) {
+    static MetricsDb createTestInstance(NodeRepository nodeRepository) {
         return new MemoryMetricsDb(nodeRepository);
     }
 
