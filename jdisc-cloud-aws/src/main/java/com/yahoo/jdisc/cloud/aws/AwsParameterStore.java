@@ -96,11 +96,11 @@ public class AwsParameterStore extends AbstractComponent implements SecretStore 
         String region;
 
         AwsSettings(String name, String role, String awsId, String externalId, String region) {
-            this.name = name;
-            this.role = role;
-            this.awsId = awsId;
-            this.externalId = externalId;
-            this.region = region;
+            this.name = validate(name, "name");
+            this.role = validate(role, "role");
+            this.awsId = validate(awsId, "awsId");
+            this.externalId = validate(externalId, "externalId");
+            this.region = validate(region, "region");
         }
 
 
@@ -141,6 +141,12 @@ public class AwsParameterStore extends AbstractComponent implements SecretStore 
             slime.setString("awsId", awsId);
             slime.setString("externalId", "*****");
             slime.setString("region", region);
+        }
+
+        static String validate(String value, String name) {
+            if (value == null || value.isBlank())
+                throw new IllegalArgumentException("Config parameter '" + name + "' was blank or empty");
+            return value;
         }
     }
 }

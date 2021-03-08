@@ -49,7 +49,13 @@ public class AwsParameterStoreValidationHandler extends LoggingRequestHandler {
 
     private HttpResponse handlePOST(HttpRequest request) {
         var json = toSlime(request.getData());
-        var settings = AwsSettings.fromSlime(json);
+        AwsSettings settings;
+
+        try {
+            settings = AwsSettings.fromSlime(json);
+        } catch (IllegalArgumentException e) {
+            return ErrorResponse.badRequest(Exceptions.toMessageString(e));
+        }
 
         var response = new Slime();
         var root = response.setObject();
