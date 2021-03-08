@@ -79,7 +79,6 @@ public class ApplicationCuratorDatabase {
         try (Lock lock = lock(id)) {
             curator.create(applicationPath(id));
             modifyReindexing(id, ApplicationReindexing.empty(), UnaryOperator.identity());
-            setDedicatedClusterControllerCluster(id);
         }
     }
 
