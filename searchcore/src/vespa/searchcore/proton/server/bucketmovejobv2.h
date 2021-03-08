@@ -9,7 +9,6 @@
 #include "iclusterstatechangedhandler.h"
 #include <vespa/searchcore/proton/bucketdb/bucketscaniterator.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
-#include <vespa/vespalib/stllike/hash_set.h>
 
 namespace storage::spi { struct BucketExecutor; }
 namespace searchcorespi::index { struct IThreadService; }
@@ -56,7 +55,6 @@ private:
     using Movers = std::vector<BucketMoverSP>;
     using MoveKey = BucketMover::MoveKey;
     using GuardedMoveOps = BucketMover::GuardedMoveOps;
-    using BucketSet = vespalib::hash_set<BucketId, BucketId::hash>;
     std::shared_ptr<IBucketStateCalculator>   _calc;
     IDocumentMoveHandler                     &_moveHandler;
     IBucketModifiedHandler                   &_modifiedHandler;
@@ -69,7 +67,6 @@ private:
     Movers                                    _movers;
     Bucket2Mover                              _bucketsInFlight;
     BucketMoveSet                             _buckets2Move;
-    BucketSet                                 _postponedUntilSafe;
 
     std::atomic<bool>                         _stopped;
     std::atomic<size_t>                       _startedCount;
