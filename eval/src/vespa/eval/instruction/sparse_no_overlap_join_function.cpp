@@ -102,7 +102,9 @@ SparseNoOverlapJoinFunction::SparseNoOverlapJoinFunction(const tensor_function::
 InterpretedFunction::Instruction
 SparseNoOverlapJoinFunction::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    const auto &param = stash.create<JoinParam>(lhs().result_type(), rhs().result_type(), function(), factory);
+    const auto &param = stash.create<JoinParam>(result_type(),
+                                                lhs().result_type(), rhs().result_type(),
+                                                function(), factory);
     auto op = typify_invoke<2,MyTypify,SelectSparseNoOverlapJoinOp>(result_type().cell_type(), function());
     return InterpretedFunction::Instruction(op, wrap_param<JoinParam>(param));
 }
