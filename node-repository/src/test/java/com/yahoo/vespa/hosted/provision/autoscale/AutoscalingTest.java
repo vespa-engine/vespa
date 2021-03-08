@@ -505,7 +505,7 @@ public class AutoscalingTest {
         tester.addCpuMeasurements(0.25f, 1f, 120, application1);
 
         // (no query rate data)
-        tester.assertResources("Advice to scale up sine we assume we need 2x cpu for growth when no data",
+        tester.assertResources("Advice to scale up since we assume we need 2x cpu for growth when no data",
                                7, 1, 3,  100, 100,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
 
