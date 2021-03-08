@@ -316,7 +316,7 @@ Lambda::create_spec_impl(const ValueType &type, const LazyParams &params, const 
 InterpretedFunction::Instruction
 Lambda::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    return instruction::GenericLambda::make_instruction(result_type(), *this, factory, stash);
+    return instruction::GenericLambda::make_instruction(*this, factory, stash);
 }
 
 void
