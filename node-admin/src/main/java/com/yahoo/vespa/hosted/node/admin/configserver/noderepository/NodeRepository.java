@@ -10,8 +10,6 @@ import java.util.Optional;
  */
 public interface NodeRepository {
 
-    void addNodes(List<AddNode> nodes);
-
     List<NodeSpec> getNodes(String baseHostName);
 
     default NodeSpec getNode(String hostName) {

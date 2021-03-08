@@ -40,7 +40,7 @@ public class RealNodeRepositoryTest {
 
     private static final double delta = 0.00000001;
     private JDisc container;
-    private NodeRepository nodeRepositoryApi;
+    private RealNodeRepository nodeRepository;
 
     private int findRandomOpenPort() throws IOException {
         try (ServerSocket socket = new ServerSocket(0)) {
@@ -79,10 +79,10 @@ public class RealNodeRepositoryTest {
 
     private void waitForJdiscContainerToServe(ConfigServerApi configServerApi) throws InterruptedException {
         Instant start = Instant.now();
-        nodeRepositoryApi = new RealNodeRepository(configServerApi);
+        nodeRepository = new RealNodeRepository(configServerApi);
         while (Instant.now().minusSeconds(120).isBefore(start)) {
             try {
-                nodeRepositoryApi.getNodes("foobar");
+                nodeRepository.getNodes("foobar");
                 return;
             } catch (Exception e) {
                 Thread.sleep(100);
@@ -102,7 +102,7 @@ public class RealNodeRepositoryTest {
     public void testGetContainersToRunApi() {
         String dockerHostHostname = "dockerhost1.yahoo.com";
 
-        List<NodeSpec> containersToRun = nodeRepositoryApi.getNodes(dockerHostHostname);
+        List<NodeSpec> containersToRun = nodeRepository.getNodes(dockerHostHostname);
         assertThat(containersToRun.size(), is(1));
         NodeSpec node = containersToRun.get(0);
         assertThat(node.hostname(), is("host4.yahoo.com"));
@@ -118,7 +118,7 @@ public class RealNodeRepositoryTest {
     @Test
     public void testGetContainer() {
         String hostname = "host4.yahoo.com";
-        Optional<NodeSpec> node = nodeRepositoryApi.getOptionalNode(hostname);
+        Optional<NodeSpec> node = nodeRepository.getOptionalNode(hostname);
         assertTrue(node.isPresent());
         assertEquals(hostname, node.get().hostname());
     }
@@ -126,14 +126,14 @@ public class RealNodeRepositoryTest {
     @Test
     public void testGetContainerForNonExistingNode() {
         String hostname = "host-that-does-not-exist";
-        Optional<NodeSpec> node = nodeRepositoryApi.getOptionalNode(hostname);
+        Optional<NodeSpec> node = nodeRepository.getOptionalNode(hostname);
         assertFalse(node.isPresent());
     }
 
     @Test
     public void testUpdateNodeAttributes() {
         String hostname = "host4.yahoo.com";
-        nodeRepositoryApi.updateNodeAttributes(
+        nodeRepository.updateNodeAttributes(
                 hostname,
                 new NodeAttributes()
                         .withRestartGeneration(1)
@@ -142,18 +142,18 @@ public class RealNodeRepositoryTest {
 
     @Test
     public void testMarkAsReady() {
-        nodeRepositoryApi.setNodeState("host5.yahoo.com", NodeState.dirty);
-        nodeRepositoryApi.setNodeState("host5.yahoo.com", NodeState.ready);
+        nodeRepository.setNodeState("host5.yahoo.com", NodeState.dirty);
+        nodeRepository.setNodeState("host5.yahoo.com", NodeState.ready);
 
         try {
-            nodeRepositoryApi.setNodeState("host4.yahoo.com", NodeState.ready);
+            nodeRepository.setNodeState("host4.yahoo.com", NodeState.ready);
             fail("Should not be allowed to be marked ready as it is not registered as provisioned, dirty, failed or parked");
         } catch (RuntimeException ignored) {
             // expected
         }
 
         try {
-            nodeRepositoryApi.setNodeState("host101.yahoo.com", NodeState.ready);
+            nodeRepository.setNodeState("host101.yahoo.com", NodeState.ready);
             fail("Expected failure because host101 does not exist");
         } catch (RuntimeException ignored) {
             // expected
@@ -163,6 +163,7 @@ public class RealNodeRepositoryTest {
     @Test
     public void testAddNodes() {
         AddNode host = AddNode.forHost("host123.domain.tld",
+                                       Optional.of("id1"),
                                        "default",
                                        Optional.of(FlavorOverrides.ofDisk(123)),
                                        NodeType.confighost,
@@ -171,15 +172,16 @@ public class RealNodeRepositoryTest {
         NodeResources nodeResources = new NodeResources(1, 2, 3, 4, NodeResources.DiskSpeed.slow, NodeResources.StorageType.local);
         AddNode node = AddNode.forNode("host123-1.domain.tld", "host123.domain.tld", nodeResources, NodeType.config, Set.of("::2", "::3"));
 
-        assertFalse(nodeRepositoryApi.getOptionalNode("host123.domain.tld").isPresent());
-        nodeRepositoryApi.addNodes(List.of(host, node));
+        assertFalse(nodeRepository.getOptionalNode("host123.domain.tld").isPresent());
+        nodeRepository.addNodes(List.of(host, node));
 
-        NodeSpec hostSpec = nodeRepositoryApi.getOptionalNode("host123.domain.tld").orElseThrow();
+        NodeSpec hostSpec = nodeRepository.getOptionalNode("host123.domain.tld").orElseThrow();
+        assertEquals("id1", hostSpec.id().orElseThrow());
         assertEquals("default", hostSpec.flavor());
         assertEquals(123, hostSpec.diskGb(), 0);
         assertEquals(NodeType.confighost, hostSpec.type());
 
-        NodeSpec nodeSpec = nodeRepositoryApi.getOptionalNode("host123-1.domain.tld").orElseThrow();
+        NodeSpec nodeSpec = nodeRepository.getOptionalNode("host123-1.domain.tld").orElseThrow();
         assertEquals(nodeResources, nodeSpec.resources());
         assertEquals(NodeType.config, nodeSpec.type());
     }
