@@ -55,7 +55,7 @@ public class ClusterTimeseries {
         for (int start = 0; start < snapshots.size(); start++) {
             if (start > 0) { // Optimization: Skip this point when starting from the previous is better relative to the best rate so far
                 Duration duration = durationBetween(start - 1, start);
-                if ( duration.toMinutes() != 0) {
+                if ( ! duration.isZero()) {
                     double growthRate = (queryRateAt(start - 1) - queryRateAt(start)) / duration.toMinutes();
                     if (growthRate >= maxGrowthRate)
                         continue;
@@ -64,7 +64,7 @@ public class ClusterTimeseries {
             for (int end = start + 1; end < snapshots.size(); end++) {
                 if (queryRateAt(end) >= queryRateAt(start) * 1.3) {
                     Duration duration = durationBetween(start, end);
-                    if (duration.toMinutes() == 0) continue;
+                    if (duration.isZero()) continue;
                     double growthRate = (queryRateAt(end) - queryRateAt(start)) / duration.toMinutes();
                     if (growthRate > maxGrowthRate)
                         maxGrowthRate = growthRate;
