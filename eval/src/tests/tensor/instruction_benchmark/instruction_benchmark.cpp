@@ -223,7 +223,7 @@ vespalib::string                                                  short_header("
 vespalib::string                   ghost_name("       loaded from ghost.json");
 vespalib::string                                              ghost_short_name("   ghost");
 
-constexpr double budget = 5.0;
+double budget = 5.0;
 constexpr double best_limit = 0.95; // everything within 95% of best performance gets a star
 constexpr double bad_limit = 0.90;  // BAD: optimized has performance lower than 90% of un-optimized
 constexpr double good_limit = 1.10; // GOOD: optimized has performance higher than 110% of un-optimized
@@ -366,6 +366,9 @@ struct EvalOp {
     }
     TensorSpec result() { return impl.create_spec(single.eval(stack)); }
     size_t suggest_loop_cnt() {
+        if (budget < 0.1) {
+            return 1;
+        }
         size_t loop_cnt = 1;
         auto my_loop = [&](){
             for (size_t i = 0; i < loop_cnt; ++i) {
@@ -390,19 +393,27 @@ struct EvalOp {
     }
     double estimate_cost_us(size_t self_loop_cnt, size_t ref_loop_cnt) {
         size_t loop_cnt = ((self_loop_cnt * 128) < ref_loop_cnt) ? self_loop_cnt : ref_loop_cnt;
-        assert((loop_cnt % 8) == 0);
-        auto my_loop = [&](){
-            for (size_t i = 0; (i + 7) < loop_cnt; i += 8) {
-                for (size_t j = 0; j < 8; ++j) {
-                    single.eval(stack);
-                }
-            }
-        };
         BenchmarkTimer timer(budget);
-        while (timer.has_budget()) {
-            timer.before();
-            my_loop();
-            timer.after();
+        if (loop_cnt == 1) {
+            while (timer.has_budget()) {
+                timer.before();
+                single.eval(stack);
+                timer.after();
+            }
+        } else {
+            assert((loop_cnt % 8) == 0);
+            auto my_loop = [&](){
+                for (size_t i = 0; (i + 7) < loop_cnt; i += 8) {
+                    for (size_t j = 0; j < 8; ++j) {
+                        single.eval(stack);
+                    }
+                }
+            };
+            while (timer.has_budget()) {
+                timer.before();
+                my_loop();
+                timer.after();
+            }
         }
         return timer.min_time() * 1000.0 * 1000.0 / double(loop_cnt);
     }
@@ -1091,13 +1102,21 @@ int main(int argc, char **argv) {
     load_ghost("ghost.json");
     const std::string run_only_prod_option = "--limit-implementations";
     const std::string ghost_mode_option = "--ghost-mode";
-    if ((argc > 1) && (argv[1] == run_only_prod_option )) {
+    const std::string smoke_test_option = "--smoke-test";
+    if ((argc > 1) && (argv[1] == run_only_prod_option)) {
         impl_list.clear();
         impl_list.push_back(optimized_fast_value_impl);
         impl_list.push_back(fast_value_impl);
         ++argv;
         --argc;
-    } else if ((argc > 1) && (argv[1] == ghost_mode_option )) {
+    } else if ((argc > 1) && (argv[1] == ghost_mode_option)) {
+        impl_list.clear();
+        impl_list.push_back(optimized_fast_value_impl);
+        has_ghost = true;
+        ++argv;
+        --argc;
+    } else if ((argc > 1) && (argv[1] == smoke_test_option)) {
+        budget = 0.001;
         impl_list.clear();
         impl_list.push_back(optimized_fast_value_impl);
         has_ghost = true;
