@@ -5,17 +5,17 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.OutOfCapacityException;
-import com.yahoo.lang.MutableInteger;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.Nodes;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 /**
  * Performs preparation of node activation changes for an application.
@@ -72,6 +72,15 @@ class Preparer {
             List<Node> accepted = groupPreparer.prepare(application, clusterGroup,
                                                         requestedNodes.fraction(wantedGroups), surplusNodes,
                                                         indices, wantedGroups);
+
+            if (requestedNodes.requireActiveParent()) {
+                Nodes nodes = nodeRepository.nodes();
+                NodeList activeHosts = nodes.list(Node.State.active).parents().nodeType(requestedNodes.type().hostType());
+                accepted = accepted.stream()
+                        .filter(node -> node.parentHostname().isEmpty() || activeHosts.parentOf(node).isPresent())
+                        .collect(Collectors.toList());
+            }
+
             replace(acceptedNodes, accepted);
         }
         moveToActiveGroup(surplusNodes, wantedGroups, cluster.group());
