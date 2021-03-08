@@ -31,7 +31,7 @@ public class MetricsResponse {
     private final Collection<Pair<String, NodeMetricSnapshot>> nodeMetrics;
 
     /**
-     * Cluster level metrics (collect in
+     * Cluster level metrics.
      * Must be aggregated at fetch time to avoid issues with nodes and nodes joining/leaving the cluster over time.
      */
     private final Map<ClusterSpec.Id, ClusterMetricSnapshot> clusterMetrics = new HashMap<>();
