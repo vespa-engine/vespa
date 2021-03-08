@@ -226,7 +226,7 @@ public class ProvisioningTester {
         }
     }
 
-    public void prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType, Version version) {
+    public List<HostSpec> prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType, Version version) {
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from(nodeType.toString()))
                                          .vespaVersion(version)
                                          .stateful(nodeType == NodeType.config || nodeType == NodeType.controller)
@@ -234,10 +234,11 @@ public class ProvisioningTester {
         Capacity capacity = Capacity.fromRequiredNodeType(nodeType);
         List<HostSpec> hostSpecs = prepare(application, cluster, capacity);
         activate(application, hostSpecs);
+        return hostSpecs;
     }
 
-    public void prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType) {
-        prepareAndActivateInfraApplication(application, nodeType, Version.fromString("6.42"));
+    public List<HostSpec> prepareAndActivateInfraApplication(ApplicationId application, NodeType nodeType) {
+        return prepareAndActivateInfraApplication(application, nodeType, Version.fromString("6.42"));
     }
 
     public void deactivate(ApplicationId applicationId) {
