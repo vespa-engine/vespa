@@ -303,12 +303,13 @@ public class ContentCluster extends AbstractConfigProducer implements
                 clusterControllers = overlappingCluster.getClusterControllers();
             }
             else if (admin.multitenant()) {
+                String clusterName = contentClusterName + "-controllers";
                 if (context.properties().dedicatedClusterControllerCluster())
                     clusterControllers = getDedicatedSharedControllers(contentElement, admin, context, deployState);
                 else {
                     clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone", deployState),
                                                                   drawControllerHosts(3, rootGroup),
-                                                                  contentClusterName + "-controllers",
+                                                                  clusterName,
                                                                   true,
                                                                   context.getDeployState());
                     contentCluster.clusterControllers = clusterControllers;
