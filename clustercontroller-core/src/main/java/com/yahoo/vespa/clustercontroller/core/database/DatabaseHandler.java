@@ -43,11 +43,15 @@ public class DatabaseHandler {
         ClusterStateBundle clusterStateBundle;
 
         void clear() {
-            masterVote = null;
+            clearNonClusterStateFields();
             lastSystemStateVersion = null;
+            clusterStateBundle = null;
+        }
+
+        void clearNonClusterStateFields() {
+            masterVote = null;
             wantedStates = null;
             startTimestamps = null;
-            clusterStateBundle = null;
         }
     }
     private class DatabaseListener implements Database.DatabaseListener {
@@ -96,7 +100,7 @@ public class DatabaseHandler {
         this.nodeIndex = ourIndex;
         pendingStore.masterVote = ourIndex; // To begin with we'll vote for ourselves.
         this.monitor = monitor;
-        // TODO: Require non-null, not possible now since at least ClusterFeedBlockTest usese null address
+        // TODO: Require non-null, not possible now since at least ClusterFeedBlockTest uses null address
         this.zooKeeperAddress = zooKeeperAddress;
     }
 
@@ -106,8 +110,8 @@ public class DatabaseHandler {
         }
     }
 
-    public void shutdown(FleetController fleetController) {
-        relinquishDatabaseConnectivity(fleetController);
+    public void shutdown(Context context) {
+        relinquishDatabaseConnectivity(context);
     }
 
     public boolean isClosed() { return database == null || database.isClosed(); }
@@ -116,7 +120,7 @@ public class DatabaseHandler {
         return lastKnownStateBundleVersionWrittenBySelf;
     }
 
-    public void reset() {
+    public void reset(Context context) {
         final boolean wasRunning;
         synchronized (databaseMonitor) {
             wasRunning = database != null;
@@ -126,37 +130,46 @@ public class DatabaseHandler {
                 database = null;
             }
         }
-        clearSessionMetaData();
+        clearSessionMetaData(true);
+        context.getFleetController().lostDatabaseConnection();
 
         if (wasRunning) {
             log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": Done resetting database state");
         }
     }
 
-    private void clearSessionMetaData() {
+    private void clearSessionMetaData(boolean clearPendingStateWrites) {
         // Preserve who we want to vote for
         Integer currentVote = (pendingStore.masterVote != null ? pendingStore.masterVote : currentlyStored.masterVote);
         currentlyStored.clear();
-        pendingStore.clear();
+        if (clearPendingStateWrites) {
+            pendingStore.clear();
+        } else {
+            // If we have pending cluster state writes we cannot drop these on the floor, as otherwise the
+            // core CC logic may keep thinking it has persisted writes it really has not. Clearing pending
+            // state writes woudl also prevent the controller from detecting itself being out of sync by
+            // triggering CaS violations upon znode writes.
+            pendingStore.clearNonClusterStateFields();
+        }
         pendingStore.masterVote = currentVote;
         log.log(Level.FINE, "Cleared session metadata. Pending master vote is now " + pendingStore.masterVote);
     }
 
-    public void setZooKeeperAddress(String address) {
+    public void setZooKeeperAddress(String address, Context context) {
         if (address == null && zooKeeperAddress == null) return;
         if (address != null && address.equals(zooKeeperAddress)) return;
         if (zooKeeperAddress != null) {
             log.log(Level.INFO, "Fleetcontroller " + nodeIndex + ": " + (address == null ? "Stopped using ZooKeeper." : "Got new ZooKeeper address to use: " + address));
         }
         zooKeeperAddress = address;
-        reset();
+        reset(context);
     }
 
-    public void setZooKeeperSessionTimeout(int timeout) {
+    public void setZooKeeperSessionTimeout(int timeout, Context context) {
         if (timeout == zooKeeperSessionTimeout) return;
         log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Got new ZooKeeper session timeout of " + timeout + " milliseconds.");
         zooKeeperSessionTimeout = timeout;
-        reset();
+        reset(context);
     }
 
     private boolean usingZooKeeper() { return (zooKeeperAddress != null); }
@@ -169,7 +182,9 @@ public class DatabaseHandler {
                     database.close();
                 }
                 // We still hold the database lock while calling this, we want to block callers.
-                clearSessionMetaData();
+                // Don't clear pending state writes in case they were attempted prior to connect()
+                // being called, but after receiving a database loss event.
+                clearSessionMetaData(false);
                 log.log(Level.INFO,
                         "Fleetcontroller " + nodeIndex + ": Setting up new ZooKeeper session at " + zooKeeperAddress);
                 DatabaseFactory.Params params = new DatabaseFactory.Params()
@@ -247,7 +262,7 @@ public class DatabaseHandler {
                     "has likely taken over ownership: %s", e.getMessage()));
             // Clear DB and master election state. This shall trigger a full re-fetch of all
             // version and election-related metadata.
-            relinquishDatabaseConnectivity(context.getFleetController());
+            relinquishDatabaseConnectivity(context);
         }
         return didWork;
     }
@@ -257,9 +272,9 @@ public class DatabaseHandler {
         return zooKeeperAddress != null;
     }
 
-    private void relinquishDatabaseConnectivity(FleetController fleetController) {
-        reset();
-        fleetController.lostDatabaseConnection();
+    private void relinquishDatabaseConnectivity(Context context) {
+        // reset() will handle both session clearing and trigger a database loss callback into the CC.
+        reset(context);
     }
 
     private boolean performZooKeeperWrites() throws InterruptedException {
