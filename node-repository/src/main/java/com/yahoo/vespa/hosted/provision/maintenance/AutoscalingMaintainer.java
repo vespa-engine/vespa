@@ -14,7 +14,7 @@ import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
-import com.yahoo.vespa.hosted.provision.autoscale.MetricSnapshot;
+import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeTimeseries;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -110,7 +110,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         // - 2. all nodes have switched to the right config generation
         for (NodeTimeseries nodeTimeseries : metricsDb.getNodeTimeseries(Duration.between(event.at(), clock().instant()),
                                                                          clusterNodes)) {
-            Optional<MetricSnapshot> firstOnNewGeneration =
+            Optional<NodeMetricSnapshot> firstOnNewGeneration =
                     nodeTimeseries.asList().stream()
                                            .filter(snapshot -> snapshot.generation() >= event.generation()).findFirst();
             if (firstOnNewGeneration.isEmpty()) return cluster; // Not completed
