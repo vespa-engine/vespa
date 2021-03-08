@@ -43,7 +43,6 @@ public class AwsParameterStore extends AbstractComponent implements SecretStore 
         for (var store : configuredStores) {
             AWSSecurityTokenService tokenService = AWSSecurityTokenServiceClientBuilder
                     .standard()
-                    .withRegion(store.getRegion())
                     .withCredentials(credentialsProvider)
                     .build();
 
