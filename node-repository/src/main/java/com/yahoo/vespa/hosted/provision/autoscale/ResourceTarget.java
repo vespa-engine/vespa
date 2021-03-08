@@ -89,7 +89,7 @@ public class ResourceTarget {
             trafficShiftHeadroom = application.status().maxReadShare() / application.status().currentReadShare();
 
         if (trafficShiftHeadroom > 2.0)  // The expectation that we have almost no load with almost no queries is incorrect due
-            trafficShiftHeadroom = 2.0;  // to write traffic; once that is separated we can increase this thrwshold
+            trafficShiftHeadroom = 2.0;  // to write traffic; once that is separated we can increase this threshold
 
         return 1 / growthRateHeadroom * 1 / trafficShiftHeadroom * Resource.cpu.idealAverageLoad();
     }
