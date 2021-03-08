@@ -73,7 +73,7 @@ class Preparer {
                                                         requestedNodes.fraction(wantedGroups), surplusNodes,
                                                         indices, wantedGroups);
 
-            if (requestedNodes.requireActiveParent()) {
+            if (requestedNodes.rejectNonActiveParent()) {
                 Nodes nodes = nodeRepository.nodes();
                 NodeList activeHosts = nodes.list(Node.State.active).parents().nodeType(requestedNodes.type().hostType());
                 accepted = accepted.stream()

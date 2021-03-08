@@ -64,8 +64,8 @@ public interface NodeSpec {
     /** Returns true if there exist some circumstance where we may accept to have this node allocated */
     boolean acceptable(NodeCandidate node);
 
-    /** Returns true if any parent host must be active */
-    boolean requireActiveParent();
+    /** Returns true if nodes with non-active parent hosts should be rejected */
+    boolean rejectNonActiveParent();
 
     /**
      * Returns true if a node with given current resources and current spare host resources can be resized
@@ -167,7 +167,7 @@ public interface NodeSpec {
         public boolean acceptable(NodeCandidate node) { return true; }
 
         @Override
-        public boolean requireActiveParent() {
+        public boolean rejectNonActiveParent() {
             return false;
         }
 
@@ -237,7 +237,7 @@ public interface NodeSpec {
         }
 
         @Override
-        public boolean requireActiveParent() {
+        public boolean rejectNonActiveParent() {
             return true;
         }
 
