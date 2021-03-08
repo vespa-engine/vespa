@@ -3,6 +3,7 @@
 package com.yahoo.jdisc.cloud.aws;
 
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.simplesystemsmanagement.AWSSimpleSystemsManagement;
@@ -43,6 +44,7 @@ public class AwsParameterStore extends AbstractComponent implements SecretStore 
         for (var store : configuredStores) {
             AWSSecurityTokenService tokenService = AWSSecurityTokenServiceClientBuilder
                     .standard()
+                    .withRegion(Regions.DEFAULT_REGION)
                     .withCredentials(credentialsProvider)
                     .build();
 
