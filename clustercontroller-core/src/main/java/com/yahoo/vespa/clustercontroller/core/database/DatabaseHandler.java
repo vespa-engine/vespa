@@ -147,7 +147,7 @@ public class DatabaseHandler {
         } else {
             // If we have pending cluster state writes we cannot drop these on the floor, as otherwise the
             // core CC logic may keep thinking it has persisted writes it really has not. Clearing pending
-            // state writes woudl also prevent the controller from detecting itself being out of sync by
+            // state writes would also prevent the controller from detecting itself being out of sync by
             // triggering CaS violations upon znode writes.
             pendingStore.clearNonClusterStateFields();
         }
