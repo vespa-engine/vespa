@@ -294,8 +294,8 @@ GenericJoin::make_instruction(const ValueType &result_type,
                               const ValueType &lhs_type, const ValueType &rhs_type, join_fun_t function,
                               const ValueBuilderFactory &factory, Stash &stash)
 {
-    auto &param = stash.create<JoinParam>(lhs_type, rhs_type, function, factory);
-    assert(result_type == param.res_type);
+    auto &param = stash.create<JoinParam>(result_type, lhs_type, rhs_type, function, factory);
+    assert(result_type == ValueType::join(lhs_type, rhs_type));
     auto fun = typify_invoke<4,JoinTypify,SelectGenericJoinOp>(lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(), function, param);
     return Instruction(fun, wrap_param<JoinParam>(param));
 }
