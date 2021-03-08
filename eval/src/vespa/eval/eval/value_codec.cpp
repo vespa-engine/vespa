@@ -117,8 +117,10 @@ ValueType decode_type(nbostream &input, const Format &format) {
             dim_list.emplace_back(name, input.getInt1_4Bytes());
         }
     }
-    if (dim_list.empty()) {
-        assert(cell_type == CellType::DOUBLE);
+    if (dim_list.empty() && (cell_type != CellType::DOUBLE)) {
+        throw IllegalArgumentException(fmt("Scalar values must have cell type DOUBLE (was %u)",
+                                           (uint32_t)cell_type));
+
     }
     return ValueType::make_type(cell_type, std::move(dim_list));
 }
