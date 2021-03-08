@@ -53,6 +53,14 @@ public class ClusterTimeseries {
         // Find the period having the highest growth rate, where total growth exceeds 30% increase
         double maxGrowthRate = 0; // In query rate per minute
         for (int start = 0; start < snapshots.size(); start++) {
+            if (start > 0) { // Optimization: Skip this point when starting from the previous is better relative to the best rate so far
+                Duration duration = durationBetween(start - 1, start);
+                if ( ! duration.isZero()) {
+                    double growthRate = (queryRateAt(start - 1) - queryRateAt(start)) / duration.toMinutes();
+                    if (growthRate >= maxGrowthRate)
+                        continue;
+                }
+            }
             for (int end = start + 1; end < snapshots.size(); end++) {
                 if (queryRateAt(end) >= queryRateAt(start) * 1.3) {
                     Duration duration = durationBetween(start, end);
