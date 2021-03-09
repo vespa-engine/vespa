@@ -664,10 +664,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    public Set<ApplicationId> listApplications() {
+    public List<ApplicationId> listApplications() {
         return tenantRepository.getAllTenants().stream()
                 .flatMap(tenant -> tenant.getApplicationRepo().activeApplications().stream())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
     }
 
     private boolean isFileLastModifiedBefore(File fileReference, Instant instant) {
