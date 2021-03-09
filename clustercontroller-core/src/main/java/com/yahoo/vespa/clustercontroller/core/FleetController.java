@@ -70,6 +70,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private final AtomicBoolean running = new AtomicBoolean(true);
     private FleetControllerOptions options;
     private FleetControllerOptions nextOptions;
+    private final int configuredIndex;
     private final List<SystemStateListener> systemStateListeners = new CopyOnWriteArrayList<>();
     private boolean processingCycle = false;
     private boolean wantedStateChanged = false;
@@ -125,6 +126,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                            MetricUpdater metricUpdater,
                            FleetControllerOptions options) {
         log.info("Starting up cluster controller " + options.fleetControllerIndex + " for cluster " + cluster.getName());
+        this.configuredIndex = options.fleetControllerIndex;
         this.timer = timer;
         this.monitor = timer;
         this.eventLog = eventLog;
@@ -487,6 +489,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     /** This is called when the options field has been set to a new set of options */
     private void propagateOptions() {
         verifyInControllerThread();
+        selfTerminateIfConfiguredNodeIndexHasChanged();
 
         if (changesConfiguredNodeSet(options.nodes)) {
             // Force slobrok node re-fetch in case of changes to the set of configured nodes
@@ -542,6 +545,16 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         nextStateSendTime = Math.min(currentTime + options.minTimeBetweenNewSystemStates, nextStateSendTime);
         configGeneration = nextConfigGeneration;
         nextConfigGeneration = -1;
+    }
+
+    private void selfTerminateIfConfiguredNodeIndexHasChanged() {
+        if (options.fleetControllerIndex != configuredIndex) {
+            log.warning(String.format("Got new configuration where CC index has changed from %d to %d. We do not support "+
+                                      "doing this live; immediately exiting now to force new configuration",
+                                      configuredIndex, options.fleetControllerIndex));
+            prepareShutdownEdge();
+            System.exit(1);
+        }
     }
 
     public StatusPageResponse fetchStatusPage(StatusPageServer.HttpRequest httpRequest) {
@@ -1103,10 +1116,14 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             synchronized (monitor) { running.set(false); }
             System.exit(1);
         } finally {
-            running.set(false);
-            failAllVersionDependentTasks();
-            synchronized (monitor) { monitor.notifyAll(); }
+            prepareShutdownEdge();
         }
+    }
+
+    private void prepareShutdownEdge() {
+        running.set(false);
+        failAllVersionDependentTasks();
+        synchronized (monitor) { monitor.notifyAll(); }
     }
 
     public DatabaseHandler.Context databaseContext = new DatabaseHandler.Context() {
