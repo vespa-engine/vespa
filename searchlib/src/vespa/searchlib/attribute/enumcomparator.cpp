@@ -26,10 +26,9 @@ EnumStoreComparator<EntryT>::EnumStoreComparator(const DataStoreType& data_store
 
 template <typename EntryT>
 bool
-EnumStoreComparator<EntryT>::equal(const EntryT& lhs, const EntryT& rhs)
+EnumStoreComparator<EntryT>::equal_helper(const EntryT& lhs, const EntryT& rhs)
 {
-    return !vespalib::datastore::UniqueStoreComparatorHelper<EntryT>::less(lhs, rhs) &&
-            !vespalib::datastore::UniqueStoreComparatorHelper<EntryT>::less(rhs, lhs);
+    return vespalib::datastore::UniqueStoreComparatorHelper<EntryT>::equal(lhs, rhs);
 }
 
 EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store)

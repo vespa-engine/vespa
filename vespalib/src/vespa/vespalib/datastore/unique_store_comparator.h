@@ -18,6 +18,9 @@ public:
     static bool less(const EntryT& lhs, const EntryT& rhs) {
         return lhs < rhs;
     }
+    static bool equal(const EntryT& lhs, const EntryT& rhs) {
+        return lhs == rhs;
+    }
 };
 
 /**
@@ -35,6 +38,15 @@ public:
             return false;
         } else {
             return (lhs < rhs);
+        }
+    }
+    static bool equal(EntryT lhs, const EntryT rhs) {
+        if (std::isnan(lhs)) {
+            return std::isnan(rhs);
+        } else if (std::isnan(rhs)) {
+            return false;
+        } else {
+            return (lhs == rhs);
         }
     }
 };
@@ -97,6 +109,11 @@ public:
         const EntryType &lhsValue = get(lhs);
         const EntryType &rhsValue = get(rhs);
         return UniqueStoreComparatorHelper<EntryT>::less(lhsValue, rhsValue);
+    }
+    bool equal(const EntryRef lhs, const EntryRef rhs) const override {
+        const EntryType &lhsValue = get(lhs);
+        const EntryType &rhsValue = get(rhs);
+        return UniqueStoreComparatorHelper<EntryT>::equal(lhsValue, rhsValue);
     }
 };
 

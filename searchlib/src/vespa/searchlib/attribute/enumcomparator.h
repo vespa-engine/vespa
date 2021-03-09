@@ -21,7 +21,7 @@ public:
     EnumStoreComparator(const DataStoreType& data_store, const EntryT& fallback_value, bool prefix = false);
     EnumStoreComparator(const DataStoreType& data_store);
 
-    static bool equal(const EntryT& lhs, const EntryT& rhs);
+    static bool equal_helper(const EntryT& lhs, const EntryT& rhs);
 };
 
 /**
@@ -53,6 +53,9 @@ public:
 
     bool less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override {
         return compare(get(lhs), get(rhs)) < 0;
+    }
+    bool equal(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override {
+        return compare(get(lhs), get(rhs)) == 0;
     }
 };
 
@@ -100,6 +103,9 @@ public:
             return compare_folded_prefix(get(lhs), get(rhs), _prefix_len) < 0;
         }
         return compare_folded(get(lhs), get(rhs)) < 0;
+    }
+    bool equal(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override {
+        return compare_folded(get(lhs), get(rhs)) == 0;
     }
 };
 
