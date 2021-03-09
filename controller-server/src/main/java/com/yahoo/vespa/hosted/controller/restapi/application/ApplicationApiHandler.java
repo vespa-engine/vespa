@@ -612,7 +612,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             SlimeUtils.copyObject(responseSlime.get(), responseResultCursor);
             return new SlimeJsonResponse(responseRoot);
         } catch (JsonParseException e) {
-            return new MessageResponse(response);
+            return ErrorResponse.internalServerError(response);
         }
     }
 
