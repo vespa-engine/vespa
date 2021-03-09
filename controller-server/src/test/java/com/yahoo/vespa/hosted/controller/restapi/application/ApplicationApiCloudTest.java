@@ -177,9 +177,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         secretStoreRequest =
                 request("/application/v4/tenant/scoober/secret-store/secret-foo/region/us-west-1/parameter-name/foo/validate", GET)
                         .roles(Set.of(Role.administrator(tenantName)));
-        tester.assertResponse(secretStoreRequest, "{" +
-                "\"message\":\"scoober.albums in prod.us-central-1 - TenantSecretStore{name='secret-foo', awsId='123', role='some-role'}\"" +
-                "}", 200);
+        tester.assertResponse(secretStoreRequest, "{\"target\":\"scoober.albums in prod.us-central-1\",\"result\":{\"settings\":{\"name\":\"foo\",\"role\":\"vespa-secretstore-access\",\"awsId\":\"892075328880\",\"externalId\":\"*****\",\"region\":\"us-east-1\"},\"status\":\"ok\"}}", 200);
     }
 
     @Test
