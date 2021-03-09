@@ -25,7 +25,7 @@ public:
     Comparator(uint32_t to_find)
         : _to_find(to_find)
     {}
-    bool operator()(const EntryRef lhs, const EntryRef rhs) const override {
+    bool less(const EntryRef lhs, const EntryRef rhs) const override {
         return resolve(lhs).ref() < resolve(rhs).ref();
     }
 };

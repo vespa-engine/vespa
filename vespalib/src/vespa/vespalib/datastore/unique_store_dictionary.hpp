@@ -29,7 +29,7 @@ UniqueStoreDictionary<DictionaryT, ParentT>::
 ReadSnapshotImpl::count(const EntryComparator& comp) const
 {
     auto itr = _frozen_view.lowerBound(EntryRef(), comp);
-    if (itr.valid() && !comp(EntryRef(), itr.getKey())) {
+    if (itr.valid() && !comp.less(EntryRef(), itr.getKey())) {
         return 1u;
     }
     return 0u;
@@ -43,7 +43,7 @@ ReadSnapshotImpl::count_in_range(const EntryComparator& low,
 {
     auto low_itr = _frozen_view.lowerBound(EntryRef(), low);
     auto high_itr = low_itr;
-    if (high_itr.valid() && !high(EntryRef(), high_itr.getKey())) {
+    if (high_itr.valid() && !high.less(EntryRef(), high_itr.getKey())) {
         high_itr.seekPast(EntryRef(), high);
     }
     return high_itr - low_itr;
@@ -94,7 +94,7 @@ UniqueStoreDictionary<DictionaryT, ParentT>::add(const EntryComparator &comp,
                                                  std::function<EntryRef(void)> insertEntry)
 {
     auto itr = _dict.lowerBound(EntryRef(), comp);
-    if (itr.valid() && !comp(EntryRef(), itr.getKey())) {
+    if (itr.valid() && !comp.less(EntryRef(), itr.getKey())) {
         return UniqueStoreAddResult(itr.getKey(), false);
 
     } else {
@@ -109,7 +109,7 @@ EntryRef
 UniqueStoreDictionary<DictionaryT, ParentT>::find(const EntryComparator &comp)
 {
     auto itr = _dict.lowerBound(EntryRef(), comp);
-    if (itr.valid() && !comp(EntryRef(), itr.getKey())) {
+    if (itr.valid() && !comp.less(EntryRef(), itr.getKey())) {
         return itr.getKey();
     } else {
         return EntryRef();

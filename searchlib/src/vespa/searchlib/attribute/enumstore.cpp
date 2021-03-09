@@ -35,7 +35,7 @@ EnumStoreT<const char*>::load_unique_value(const void* src,
 
     if (prev_idx.valid()) {
         auto cmp = make_comparator(value);
-        assert(cmp(prev_idx, Index()));
+        assert(cmp.less(prev_idx, Index()));
     }
     return sz;
 }

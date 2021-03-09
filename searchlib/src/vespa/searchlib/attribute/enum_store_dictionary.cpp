@@ -122,7 +122,7 @@ EnumStoreDictionary<DictionaryT>::find_matching_enums(const vespalib::datastore:
 {
     std::vector<IEnumStore::EnumHandle> result;
     auto itr = this->_dict.getFrozenView().find(Index(), cmp);
-    while (itr.valid() && !cmp(Index(), itr.getKey())) {
+    while (itr.valid() && !cmp.less(Index(), itr.getKey())) {
         result.push_back(itr.getKey().ref());
         ++itr;
     }
@@ -169,7 +169,7 @@ UniqueStoreAddResult
 EnumStoreFoldedDictionary::add(const EntryComparator& comp, std::function<EntryRef(void)> insertEntry)
 {
     auto it = _dict.lowerBound(EntryRef(), comp);
-    if (it.valid() && !comp(EntryRef(), it.getKey())) {
+    if (it.valid() && !comp.less(EntryRef(), it.getKey())) {
         // Entry already exists
         return UniqueStoreAddResult(it.getKey(), false);
     }
@@ -177,7 +177,7 @@ EnumStoreFoldedDictionary::add(const EntryComparator& comp, std::function<EntryR
     _dict.insert(it, newRef, EntryRef().ref());
     // Maybe move posting list reference from next entry
     ++it;
-    if (it.valid() && EntryRef(it.getData()).valid() && !(*_folded_compare)(newRef, it.getKey())) {
+    if (it.valid() && EntryRef(it.getData()).valid() && !_folded_compare->less(newRef, it.getKey())) {
         EntryRef posting_list_ref(it.getData());
         _dict.thaw(it);
         it.writeData(EntryRef().ref());
@@ -198,7 +198,7 @@ EnumStoreFoldedDictionary::remove(const EntryComparator& comp, EntryRef ref)
     _dict.remove(it);
     // Maybe copy posting list reference to next entry
     if (posting_list_ref.valid()) {
-        if (it.valid() && !EntryRef(it.getData()).valid() && !(*_folded_compare)(ref, it.getKey())) {
+        if (it.valid() && !EntryRef(it.getData()).valid() && !_folded_compare->less(ref, it.getKey())) {
             this->_dict.thaw(it);
             it.writeData(posting_list_ref.ref());
         } else {

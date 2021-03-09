@@ -66,7 +66,7 @@ EnumStoreT<EntryT>::load_unique_value(const void* src, size_t available, Index& 
 
     if (prev_idx.valid()) {
         auto cmp = make_comparator(*value);
-        assert(cmp(prev_idx, Index()));
+        assert(cmp.less(prev_idx, Index()));
     }
     return sizeof(EntryType);
 }
@@ -159,8 +159,8 @@ bool
 EnumStoreT<EntryT>::is_folded_change(Index idx1, Index idx2) const
 {
     auto cmp = make_folded_comparator();
-    assert(!cmp(idx2, idx1));
-    return cmp(idx1, idx2);
+    assert(!cmp.less(idx2, idx1));
+    return cmp.less(idx1, idx2);
 }
 
 template <typename EntryT>

@@ -19,7 +19,7 @@ public:
     /**
      * Returns true if the value represented by lhs ref is less than the value represented by rhs ref.
      */
-    virtual bool operator()(const EntryRef lhs, const EntryRef rhs) const = 0;
+    virtual bool less(const EntryRef lhs, const EntryRef rhs) const = 0;
 };
 
 }

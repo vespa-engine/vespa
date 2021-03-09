@@ -103,7 +103,7 @@ MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::lookup(
         auto comp = self._enumStore.make_comparator(int_term);
 
         dictItr.lower_bound(dictionary_snapshot, EnumIndex(), comp);
-        if (dictItr.valid() && !comp(EnumIndex(), dictItr.getKey())) {
+        if (dictItr.valid() && !comp.less(EnumIndex(), dictItr.getKey())) {
             vespalib::datastore::EntryRef pidx(dictItr.getData());
             if (pidx.valid()) {
                 const PostingList &plist = self.getPostingList();
