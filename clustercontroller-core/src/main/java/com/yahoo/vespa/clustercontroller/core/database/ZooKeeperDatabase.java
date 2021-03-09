@@ -238,6 +238,9 @@ public class ZooKeeperDatabase extends Database {
         } catch (InterruptedException e) {
             throw (InterruptedException) new InterruptedException("Interrupted").initCause(e);
         } catch (Exception e) {
+            // If we return a default, empty version, writes dependent on this bundle should only
+            // succeed if the previous znode version is 0, i.e. not yet created.
+            lastKnownStateVersionZNodeVersion = 0;
             maybeLogExceptionWarning(e, "Failed to retrieve latest system state version used. Returning null");
             return null;
         }
@@ -390,6 +393,9 @@ public class ZooKeeperDatabase extends Database {
             maybeLogExceptionWarning(e, "Failed to retrieve last published cluster state bundle from " +
                     "ZooKeeper, will use an empty state as baseline");
         }
+        // If we return a default, empty bundle, writes dependent on this bundle should only
+        // succeed if the previous znode version is 0, i.e. not yet created.
+        lastKnownStateBundleZNodeVersion = 0;
         return ClusterStateBundle.ofBaselineOnly(AnnotatedClusterState.emptyState());
     }
 

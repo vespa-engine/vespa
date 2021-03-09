@@ -284,7 +284,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         }
         log.log(Level.INFO,  "Fleetcontroller done shutting down event thread.");
         controllerThreadId = Thread.currentThread().getId();
-        database.shutdown(this);
+        database.shutdown(databaseContext);
 
         if (statusPageServer != null) {
             statusPageServer.shutdown();
@@ -436,7 +436,13 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
      */
     public void lostDatabaseConnection() {
         verifyInControllerThread();
+        boolean wasMaster = masterElectionHandler.isMaster();
         masterElectionHandler.lostDatabaseConnection();
+        if (wasMaster) {
+            // Enforce that we re-fetch all state information from ZooKeeper upon the next tick if we're still master.
+            dropLeadershipState();
+            metricUpdater.updateMasterState(false);
+        }
     }
 
     private void failAllVersionDependentTasks() {
@@ -501,8 +507,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         cluster.setPollingFrequency(options.statePollingFrequency);
         cluster.setDistribution(options.storageDistribution);
         cluster.setNodes(options.nodes);
-        database.setZooKeeperAddress(options.zooKeeperServerAddress);
-        database.setZooKeeperSessionTimeout(options.zooKeeperSessionTimeout);
+        database.setZooKeeperAddress(options.zooKeeperServerAddress, databaseContext);
+        database.setZooKeeperSessionTimeout(options.zooKeeperSessionTimeout, databaseContext);
         stateGatherer.setMaxSlobrokDisconnectGracePeriod(options.maxSlobrokDisconnectGracePeriod);
         stateGatherer.setNodeStateRequestTimeout(options.nodeStateRequestTimeoutMS);
 
@@ -1066,16 +1072,20 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 wantedStateChanged = false;
             }
         } else {
-            if (isMaster) {
-                eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION, "This node is no longer fleetcontroller master.", timer.getCurrentTimeInMillis()));
-                firstAllowedStateBroadcast = Long.MAX_VALUE;
-                failAllVersionDependentTasks();
-            }
-            wantedStateChanged = false;
-            isMaster = false;
+            dropLeadershipState();
         }
         metricUpdater.updateMasterState(isMaster);
         return didWork;
+    }
+
+    private void dropLeadershipState() {
+        if (isMaster) {
+            eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION, "This node is no longer fleetcontroller master.", timer.getCurrentTimeInMillis()));
+            firstAllowedStateBroadcast = Long.MAX_VALUE;
+            failAllVersionDependentTasks();
+        }
+        wantedStateChanged = false;
+        isMaster = false;
     }
 
     public void run() {
