@@ -31,6 +31,7 @@ DenseCellRangeFunction::DenseCellRangeFunction(const ValueType &result_type,
       _offset(offset),
       _length(length)
 {
+    assert(result_type.cell_type() == child.result_type().cell_type());
 }
 
 DenseCellRangeFunction::~DenseCellRangeFunction() = default;
