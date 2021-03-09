@@ -113,11 +113,11 @@ bool
 SparseNoOverlapJoinFunction::compatible_types(const ValueType &res, const ValueType &lhs, const ValueType &rhs)
 {
     if ((lhs.cell_type() == rhs.cell_type()) &&
+        (res.cell_type() == lhs.cell_type()) &&
         is_sparse_like(lhs) && is_sparse_like(rhs) &&
         (res.count_mapped_dimensions() == (lhs.count_mapped_dimensions() + rhs.count_mapped_dimensions())))
     {
         assert(is_sparse_like(res));
-        assert(res.cell_type() == lhs.cell_type());
         return true;
     }
     return false;
