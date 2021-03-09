@@ -4,7 +4,7 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 import com.yahoo.config.provision.Capacity;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.vespa.hosted.provision.autoscale.MetricSnapshot;
+import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsV2MetricsFetcher;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeTimeseries;
@@ -49,9 +49,9 @@ public class NodeMetricsDbMaintainerTest {
         List<NodeTimeseries> timeseriesList = db.getNodeTimeseries(Duration.ofDays(1),
                                                                    Set.of("host-1.yahoo.com", "host-2.yahoo.com"));
         assertEquals(2, timeseriesList.size());
-        List<MetricSnapshot> allSnapshots = timeseriesList.stream()
-                                                          .flatMap(timeseries -> timeseries.asList().stream())
-                                                          .collect(Collectors.toList());
+        List<NodeMetricSnapshot> allSnapshots = timeseriesList.stream()
+                                                              .flatMap(timeseries -> timeseries.asList().stream())
+                                                              .collect(Collectors.toList());
         assertTrue(allSnapshots.stream().anyMatch(snapshot -> snapshot.inService()));
         assertTrue(allSnapshots.stream().anyMatch(snapshot -> ! snapshot.inService()));
     }

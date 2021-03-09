@@ -9,8 +9,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
-import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
-import com.yahoo.vespa.hosted.provision.autoscale.ClusterTimeseries;
+import com.yahoo.vespa.hosted.provision.autoscale.ClusterNodesTimeseries;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.autoscale.Resource;
 
@@ -74,7 +73,7 @@ public class ApplicationSerializer {
     }
 
     private static void clusterUtilizationToSlime(Cluster cluster, NodeList nodes, MetricsDb metricsDb, Cursor utilizationObject) {
-        var timeseries = new ClusterTimeseries(Duration.ofHours(1), cluster, nodes, metricsDb);
+        var timeseries = new ClusterNodesTimeseries(Duration.ofHours(1), cluster, nodes, metricsDb);
 
         utilizationObject.setDouble("cpu", timeseries.averageLoad(Resource.cpu));
         utilizationObject.setDouble("memory", timeseries.averageLoad(Resource.memory));

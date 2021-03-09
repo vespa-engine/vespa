@@ -59,7 +59,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
             List<Node> retiredNodes = entry.getValue();
 
             try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
-                if ( ! deployment.isValid()) continue; // this will be done at another config server
+                if ( ! deployment.isValid()) continue;
 
                 List<Node> nodesToRemove = retiredNodes.stream().filter(this::canRemove).collect(Collectors.toList());
                 if (nodesToRemove.isEmpty()) continue;

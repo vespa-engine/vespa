@@ -16,8 +16,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
-import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
-import com.yahoo.vespa.hosted.provision.autoscale.MetricSnapshot;
+import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
@@ -75,14 +74,14 @@ public class AutoscalingMaintainerTester {
         NodeList nodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId);
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)
-                metricsDb.add(List.of(new Pair<>(node.hostname(), new MetricSnapshot(clock().instant(),
-                                                                                     cpu,
-                                                                                     mem,
-                                                                                     disk,
-                                                                                     generation,
-                                                                                     true,
-                                                                                     true,
-                                                                                     0.0))));
+                metricsDb.addNodeMetrics(List.of(new Pair<>(node.hostname(), new NodeMetricSnapshot(clock().instant(),
+                                                                                                    cpu,
+                                                                                                    mem,
+                                                                                                    disk,
+                                                                                                    generation,
+                                                                                                    true,
+                                                                                                    true,
+                                                                                                    0.0))));
         }
     }
 
