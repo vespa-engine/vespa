@@ -33,6 +33,7 @@ import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
+import com.yahoo.slime.JsonParseException;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -602,7 +603,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             return ErrorResponse.notFoundError("No secret store '" + name + "' configured for tenant '" + tenantName + "'");
 
         var response = controller.serviceRegistry().configServer().validateSecretStore(deployment.get(), tenantSecretStore.get(), region, parameterName);
-        return new MessageResponse(response);
+        try {
+            var responseRoot = new Slime();
+            var responseCursor = responseRoot.setObject();
+            responseCursor.setString("target", deployment.get().toString());
+            var responseResultCursor = responseCursor.setObject("result");
+            var responseSlime = SlimeUtils.jsonToSlime(response);
+            SlimeUtils.copyObject(responseSlime.get(), responseResultCursor);
+            return new SlimeJsonResponse(responseRoot);
+        } catch (JsonParseException e) {
+            return new MessageResponse(response);
+        }
     }
 
     private Optional<DeploymentId> getActiveDeployment(TenantName tenant) {
