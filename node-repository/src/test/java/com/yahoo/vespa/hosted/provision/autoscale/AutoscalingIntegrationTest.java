@@ -46,7 +46,7 @@ public class AutoscalingIntegrationTest {
 
         for (int i = 0; i < 1000; i++) {
             tester.clock().advance(Duration.ofSeconds(10));
-            fetcher.fetchMetrics(application1).whenComplete((r, e) -> tester.nodeMetricsDb().addNodeMetrics(r.nodeMetrics()));
+            fetcher.fetchMetrics(application1).whenComplete((r, e) -> tester.nodeMetricsDb().add(r.metrics()));
             tester.clock().advance(Duration.ofSeconds(10));
             tester.nodeMetricsDb().gc();
         }

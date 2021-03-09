@@ -45,7 +45,7 @@ public class MetricsV2MetricsFetcherTest {
 
         {
             httpClient.cannedResponse = cannedResponseForApplication1;
-            List<Pair<String, NodeMetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application1).get().nodeMetrics());
+            List<Pair<String, MetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application1).get().metrics());
             assertEquals("http://host-1.yahoo.com:4080/metrics/v2/values?consumer=autoscaling",
                          httpClient.requestsReceived.get(0));
             assertEquals(2, values.size());
@@ -63,7 +63,7 @@ public class MetricsV2MetricsFetcherTest {
 
         {
             httpClient.cannedResponse = cannedResponseForApplication2;
-            List<Pair<String, NodeMetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application2).get().nodeMetrics());
+            List<Pair<String, MetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application2).get().metrics());
             assertEquals("http://host-3.yahoo.com:4080/metrics/v2/values?consumer=autoscaling",
                          httpClient.requestsReceived.get(1));
             assertEquals(1, values.size());
@@ -81,7 +81,7 @@ public class MetricsV2MetricsFetcherTest {
                 tester.nodeRepository().nodes().write(tester.nodeRepository().nodes().list(Node.State.active).owner(application2)
                         .first().get().retire(tester.clock().instant()), lock);
             }
-            List<Pair<String, NodeMetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application2).get().nodeMetrics());
+            List<Pair<String, MetricSnapshot>> values = new ArrayList<>(fetcher.fetchMetrics(application2).get().metrics());
             assertFalse(values.get(0).getSecond().stable());
         }
     }

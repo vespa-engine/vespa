@@ -8,7 +8,7 @@ import java.time.Instant;
  *
  * @author bratseth
  */
-public class NodeMetricSnapshot implements Comparable<NodeMetricSnapshot> {
+public class MetricSnapshot implements Comparable<MetricSnapshot> {
 
     private final Instant at;
 
@@ -20,9 +20,9 @@ public class NodeMetricSnapshot implements Comparable<NodeMetricSnapshot> {
     private final boolean stable;
     private final double queryRate;
 
-    public NodeMetricSnapshot(Instant at, double cpu, double memory, double disk,
-                              long generation, boolean inService, boolean stable,
-                              double queryRate) {
+    public MetricSnapshot(Instant at, double cpu, double memory, double disk,
+                          long generation, boolean inService, boolean stable,
+                          double queryRate) {
         this.at = at;
         this.cpu = cpu;
         this.memory = memory;
@@ -48,7 +48,7 @@ public class NodeMetricSnapshot implements Comparable<NodeMetricSnapshot> {
     public boolean stable() { return stable; }
 
     @Override
-    public int compareTo(NodeMetricSnapshot other) {
+    public int compareTo(MetricSnapshot other) {
         return at.compareTo(other.at);
     }
 
