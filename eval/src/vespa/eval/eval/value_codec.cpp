@@ -117,10 +117,12 @@ ValueType decode_type(nbostream &input, const Format &format) {
             dim_list.emplace_back(name, input.getInt1_4Bytes());
         }
     }
-    if (dim_list.empty()) {
-        assert(cell_type == CellType::DOUBLE);
+    auto result = ValueType::make_type(cell_type, std::move(dim_list));
+    if (result.is_error()) {
+        throw IllegalArgumentException(fmt("Invalid type (with %zu dimensions and cell type %u)",
+                                           dim_list.size(), (uint32_t)cell_type));
     }
-    return ValueType::make_type(cell_type, std::move(dim_list));
+    return result;
 }
 
 size_t maybe_decode_num_blocks(nbostream &input, bool has_mapped_dims, const Format &format) {
