@@ -21,6 +21,7 @@ vespa_define_module(
     src/tests/eval/gbdt
     src/tests/eval/gen_spec
     src/tests/eval/inline_operation
+    src/tests/eval/int8float
     src/tests/eval/interpreted_function
     src/tests/eval/multiply_add
     src/tests/eval/nested_loop

@@ -34,6 +34,18 @@ TEST(BFloat16Test, normal_usage) {
     EXPECT_EQ(float(b2), 0x110);
 }
 
+TEST(BFloat16Test, has_range_of_int_8) {
+    for (int i = -128; i < 128; ++i) {
+        int8_t byte = i;
+        float flt = byte;
+        EXPECT_EQ(byte, i);
+        EXPECT_EQ(flt, i);
+        BFloat16 value = flt;
+        float recover = value;
+        EXPECT_EQ(recover, flt);
+    }
+}
+
 TEST(BFloat16Test, with_nbostream) {
     nbostream buf;
     for (BFloat16 value : simple_values) {
