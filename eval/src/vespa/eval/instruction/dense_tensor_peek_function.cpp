@@ -30,7 +30,7 @@ void my_tensor_peek_op(InterpretedFunction::State &state, uint64_t param) {
     }
     auto cells = state.peek(0).cells().typify<CT>();
     state.stack.pop_back();
-    const Value &result = state.stash.create<DoubleValue>(valid ? cells[idx] : 0.0);
+    const Value &result = state.stash.create<DoubleValue>(valid ? double(cells[idx]) : 0.0);
     state.stack.emplace_back(result);
 }
 
