@@ -16,11 +16,11 @@ import java.util.stream.Collectors;
 public class NodeTimeseries {
 
     private final String hostname;
-    private final List<MetricSnapshot> snapshots;
+    private final List<NodeMetricSnapshot> snapshots;
 
-    NodeTimeseries(String hostname, List<MetricSnapshot> snapshots) {
+    NodeTimeseries(String hostname, List<NodeMetricSnapshot> snapshots) {
         this.hostname = hostname;
-        List<MetricSnapshot> sortedSnapshots = new ArrayList<>(snapshots);
+        List<NodeMetricSnapshot> sortedSnapshots = new ArrayList<>(snapshots);
         Collections.sort(sortedSnapshots);
         this.snapshots = Collections.unmodifiableList(sortedSnapshots);
     }
@@ -29,19 +29,19 @@ public class NodeTimeseries {
 
     public int size() { return snapshots.size(); }
 
-    public MetricSnapshot get(int index) { return snapshots.get(index); }
+    public NodeMetricSnapshot get(int index) { return snapshots.get(index); }
 
-    public List<MetricSnapshot> asList() { return snapshots; }
+    public List<NodeMetricSnapshot> asList() { return snapshots; }
 
     public String hostname() { return hostname; }
 
-    public NodeTimeseries add(MetricSnapshot snapshot) {
-        List<MetricSnapshot> list = new ArrayList<>(snapshots);
+    public NodeTimeseries add(NodeMetricSnapshot snapshot) {
+        List<NodeMetricSnapshot> list = new ArrayList<>(snapshots);
         list.add(snapshot);
         return new NodeTimeseries(hostname(), list);
     }
 
-    public NodeTimeseries filter(Predicate<MetricSnapshot> filter) {
+    public NodeTimeseries filter(Predicate<NodeMetricSnapshot> filter) {
         return new NodeTimeseries(hostname, snapshots.stream().filter(filter).collect(Collectors.toList()));
     }
 
