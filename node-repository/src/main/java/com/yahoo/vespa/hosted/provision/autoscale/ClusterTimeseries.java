@@ -85,6 +85,7 @@ public class ClusterTimeseries {
     public double currentQueryFractionOfMax() {
         if (snapshots.isEmpty()) return 0.5;
         var max = snapshots.stream().mapToDouble(ClusterMetricSnapshot::queryRate).max().getAsDouble();
+        if (max == 0) return 1.0;
         return snapshots.get(snapshots.size() - 1).queryRate() / max;
     }
 
