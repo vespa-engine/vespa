@@ -28,6 +28,9 @@ public:
     bool less(const EntryRef lhs, const EntryRef rhs) const override {
         return resolve(lhs).ref() < resolve(rhs).ref();
     }
+    bool equal(const EntryRef lhs, const EntryRef rhs) const override {
+        return resolve(lhs).ref() == resolve(rhs).ref();
+    }
 };
 
 struct DictionaryReadTest : public ::testing::Test {

@@ -29,8 +29,11 @@ public:
           _revMapIdx()
     {
     }
-    bool operator<(const Reference &rhs) const {
+    bool operator < (const Reference &rhs) const {
         return _gid < rhs._gid;
+    }
+    bool operator == (const Reference &rhs) const {
+        return _gid == rhs._gid;
     }
     const GlobalId &gid() const { return _gid; }
     uint32_t lid() const { return _lid; }
