@@ -40,6 +40,10 @@ public:
     EntryRef revMapIdx() const { return _revMapIdx; }
     void setLid(uint32_t targetLid) const { _lid = targetLid; }
     void setRevMapIdx(EntryRef newRevMapIdx) const { _revMapIdx = newRevMapIdx; }
+    size_t hash() const noexcept {
+        GlobalId::hash hasher;
+        return hasher(_gid);
+    }
 };
 
 }
