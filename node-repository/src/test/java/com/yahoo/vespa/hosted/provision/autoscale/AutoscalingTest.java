@@ -519,13 +519,31 @@ public class AutoscalingTest {
 
         tester.clearQueryRateMeasurements(application1, cluster1.id());
 
-        System.out.println("The fast growth one");
         tester.setScalingDuration(application1, cluster1.id(), Duration.ofMinutes(60));
         tester.addQueryRateMeasurements(application1, cluster1.id(),
                                         100,
                                         t -> 10.0 + (t < 50 ? t * t * t : 125000 - (t - 49) * (t - 49) * (t - 49)));
         tester.assertResources("Advice to scale up since observed growth is much faster than scaling time",
                                10, 1, 3,  100, 100,
+                               tester.autoscale(application1, cluster1.id(), min, max).target());
+    }
+
+    @Test
+    public void test_cd_autoscaling_test() {
+        NodeResources resources = new NodeResources(1, 4, 50, 1);
+        ClusterResources min = new ClusterResources( 2, 1, resources);
+        ClusterResources max = new ClusterResources(3, 1, resources);
+        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        tester.deploy(application1, cluster1, 2, 1, resources);
+
+        tester.addCpuMeasurements(0.5f, 1f, 10, application1);
+        tester.addQueryRateMeasurements(application1, cluster1.id(),
+                                        500, t -> 0.5);
+
+        tester.assertResources("Advice to scale up since observed growth is much faster than scaling time",
+                               3, 1, 1,  4, 50,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
     }
 

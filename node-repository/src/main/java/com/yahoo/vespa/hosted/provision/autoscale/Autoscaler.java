@@ -95,7 +95,7 @@ public class Autoscaler {
         if (isDownscaling(bestAllocation.get(), currentAllocation) && scaledIn(scalingWindow.multipliedBy(3), cluster))
             return Advice.dontScale("Waiting " + scalingWindow.multipliedBy(3) + " since last rescaling before reducing resources");
 
-        return Advice.scaleTo(bestAllocation.get().advertisedResources());
+        return Advice.scaleTo(bestAllocation.get().advertisedResources(), "Limits " + limits + " target " + target);
     }
 
     /** Returns true if both total real resources and total cost are similar */
@@ -180,8 +180,8 @@ public class Autoscaler {
 
         private static Advice none(String reason) { return new Advice(Optional.empty(), false, reason); }
         private static Advice dontScale(String reason) { return new Advice(Optional.empty(), true, reason); }
-        private static Advice scaleTo(ClusterResources target) {
-            return new Advice(Optional.of(target), true, "Scaling to " + target + " due to load changes");
+        private static Advice scaleTo(ClusterResources target, String message) {
+            return new Advice(Optional.of(target), true, "Scaling to " + target + " due to load changes: " + message);
         }
 
         @Override
