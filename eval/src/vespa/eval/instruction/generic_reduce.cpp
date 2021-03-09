@@ -189,19 +189,21 @@ void my_full_reduce_op(State &state, uint64_t) {
 };
 
 struct SelectGenericReduceOp {
-    template <typename ICT, typename OCT, typename AGGR> static auto invoke(const ReduceParam &param) {
+    template <typename ICM, typename OCM, typename AGGR> static auto invoke(const ReduceParam &param) {
+        using ICT = decltype(get_cell_value<ICM::value.cell_type>());
+        using OCT = decltype(get_cell_value<OCM::value.cell_type>());
         using AggrType = typename AGGR::template templ<OCT>;
-        if (param.res_type.is_double()) {
-            assert((std::is_same_v<OCT,double>));
+        if constexpr (OCM::value.is_scalar) {
             return my_full_reduce_op<ICT, AggrType>;
+        } else {
+            if (param.sparse_plan.should_forward_index()) {
+                return my_generic_dense_reduce_op<ICT, OCT, AggrType, true>;
+            }
+            if (param.res_type.is_dense()) {
+                return my_generic_dense_reduce_op<ICT, OCT, AggrType, false>;
+            }
+            return my_generic_reduce_op<ICT, OCT, AggrType>;
         }
-        if (param.sparse_plan.should_forward_index()) {
-            return my_generic_dense_reduce_op<ICT, OCT, AggrType, true>;
-        }
-        if (param.res_type.is_dense()) {
-            return my_generic_dense_reduce_op<ICT, OCT, AggrType, false>;
-        }
-        return my_generic_reduce_op<ICT, OCT, AggrType>;
     }
 };
 
@@ -288,7 +290,7 @@ SparseReducePlan::~SparseReducePlan() = default;
 
 //-----------------------------------------------------------------------------
 
-using ReduceTypify = TypifyValue<TypifyCellType,TypifyAggr>;
+using ReduceTypify = TypifyValue<TypifyCellMeta,TypifyAggr>;
 
 Instruction
 GenericReduce::make_instruction(const ValueType &result_type,
@@ -297,7 +299,8 @@ GenericReduce::make_instruction(const ValueType &result_type,
 {
     auto &param = stash.create<ReduceParam>(input_type, dimensions, factory);
     assert(result_type == param.res_type);
-    auto fun = typify_invoke<3,ReduceTypify,SelectGenericReduceOp>(input_type.cell_type(), result_type.cell_type(), aggr, param);
+    assert(result_type.cell_meta().eq(CellMeta::reduce(input_type.cell_type(), result_type.is_double())));
+    auto fun = typify_invoke<3,ReduceTypify,SelectGenericReduceOp>(input_type.cell_meta(), result_type.cell_meta().limit(), aggr, param);
     return Instruction(fun, wrap_param<ReduceParam>(param));
 }
 

@@ -59,7 +59,7 @@ template <typename LCT, typename RCT, typename Fun, bool swap, Overlap overlap, 
 void my_simple_join_op(State &state, uint64_t param) {
     using PCT = typename std::conditional<swap,RCT,LCT>::type;
     using SCT = typename std::conditional<swap,LCT,RCT>::type;
-    using OCT = typename UnifyCellTypes<PCT,SCT>::type;
+    using OCT = decltype(unify_cell_types<LCT,RCT>());
     using OP = typename std::conditional<swap,SwapArgs2<Fun>,Fun>::type;
     const JoinParams &params = unwrap_param<JoinParams>(param);
     OP my_op(params.function);

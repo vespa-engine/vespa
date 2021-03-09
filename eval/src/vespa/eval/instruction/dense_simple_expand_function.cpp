@@ -36,7 +36,7 @@ template <typename LCT, typename RCT, typename Fun, bool rhs_inner>
 void my_simple_expand_op(State &state, uint64_t param) {
     using ICT = typename std::conditional<rhs_inner,RCT,LCT>::type;
     using OCT = typename std::conditional<rhs_inner,LCT,RCT>::type;
-    using DCT = typename UnifyCellTypes<ICT,OCT>::type;
+    using DCT = decltype(unify_cell_types<LCT,RCT>());
     using OP = typename std::conditional<rhs_inner,SwapArgs2<Fun>,Fun>::type;
     const ExpandParams &params = unwrap_param<ExpandParams>(param);
     OP my_op(params.function);
