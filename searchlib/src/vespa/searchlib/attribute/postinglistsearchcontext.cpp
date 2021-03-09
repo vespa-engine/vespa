@@ -46,7 +46,7 @@ PostingListSearchContext::lookupTerm(const vespalib::datastore::EntryComparator 
 {
     _lowerDictItr.lower_bound(_frozenDictionary.getRoot(), EnumIndex(), comp);
     _upperDictItr = _lowerDictItr;
-    if (_upperDictItr.valid() && !comp(EnumIndex(), _upperDictItr.getKey())) {
+    if (_upperDictItr.valid() && !comp.less(EnumIndex(), _upperDictItr.getKey())) {
         ++_upperDictItr;
         _uniqueValues = 1u;
     }
@@ -59,7 +59,7 @@ PostingListSearchContext::lookupRange(const vespalib::datastore::EntryComparator
 {
     _lowerDictItr.lower_bound(_frozenDictionary.getRoot(), EnumIndex(), low);
     _upperDictItr = _lowerDictItr;
-    if (_upperDictItr.valid() && !high(EnumIndex(), _upperDictItr.getKey())) {
+    if (_upperDictItr.valid() && !high.less(EnumIndex(), _upperDictItr.getKey())) {
         _upperDictItr.seekPast(EnumIndex(), high);
     }
     _uniqueValues = _upperDictItr - _lowerDictItr;

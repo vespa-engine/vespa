@@ -93,7 +93,7 @@ public:
     {
     }
 
-    bool operator()(const EntryRef lhs, const EntryRef rhs) const override {
+    bool less(const EntryRef lhs, const EntryRef rhs) const override {
         const EntryType &lhsValue = get(lhs);
         const EntryType &rhsValue = get(rhs);
         return UniqueStoreComparatorHelper<EntryT>::less(lhsValue, rhsValue);

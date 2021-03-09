@@ -115,7 +115,7 @@ MultiValueStringPostingAttributeT<B, T>::DocumentWeightAttributeAdapter::lookup(
     auto comp = self._enumStore.make_folded_comparator(term.c_str());
 
     dictItr.lower_bound(dictionary_snapshot, enumstore::Index(), comp);
-    if (dictItr.valid() && !comp(enumstore::Index(), dictItr.getKey())) {
+    if (dictItr.valid() && !comp.less(enumstore::Index(), dictItr.getKey())) {
         vespalib::datastore::EntryRef pidx(dictItr.getData());
         if (pidx.valid()) {
             const PostingList &plist = self.getPostingList();
@@ -134,7 +134,7 @@ MultiValueStringPostingAttributeT<B, T>::DocumentWeightAttributeAdapter::collect
     Dictionary::ConstIterator dictItr(vespalib::btree::BTreeNode::Ref(), dictionary.getAllocator());
     auto comp = self._enumStore.make_folded_comparator();
     dictItr.lower_bound(dictionary_snapshot, enum_idx, comp);
-    while (dictItr.valid() && !comp(enum_idx, dictItr.getKey())) {
+    while (dictItr.valid() && !comp.less(enum_idx, dictItr.getKey())) {
         callback(dictItr.getKey());
         ++dictItr;
     }

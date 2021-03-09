@@ -51,7 +51,7 @@ public:
         return compare(lhs, rhs) == 0;
     }
 
-    bool operator() (const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override {
+    bool less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override {
         return compare(get(lhs), get(rhs)) < 0;
     }
 };
@@ -95,7 +95,7 @@ public:
         return compare_folded(lhs, rhs) == 0;
     }
 
-    bool operator() (const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override {
+    bool less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override {
         if (use_prefix()) {
             return compare_folded_prefix(get(lhs), get(rhs), _prefix_len) < 0;
         }
