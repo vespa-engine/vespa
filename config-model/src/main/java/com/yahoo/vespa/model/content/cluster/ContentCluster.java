@@ -303,13 +303,12 @@ public class ContentCluster extends AbstractConfigProducer implements
                 clusterControllers = overlappingCluster.getClusterControllers();
             }
             else if (admin.multitenant()) {
-                String clusterName = contentClusterName + "-controllers";
                 if (context.properties().dedicatedClusterControllerCluster())
                     clusterControllers = getDedicatedSharedControllers(contentElement, admin, context, deployState);
                 else {
                     clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone", deployState),
                                                                   drawControllerHosts(3, rootGroup),
-                                                                  clusterName,
+                                                                  contentClusterName + "-controllers",
                                                                   true,
                                                                   context.getDeployState());
                     contentCluster.clusterControllers = clusterControllers;
@@ -355,7 +354,7 @@ public class ContentCluster extends AbstractConfigProducer implements
         private ClusterControllerContainerCluster getDedicatedSharedControllers(ModelElement contentElement, Admin admin,
                                                                                 ConfigModelContext context, DeployState deployState) {
             if (admin.getClusterControllers() == null) {
-                NodesSpecification spec = NodesSpecification.requiredFromSharedParents(deployState.zone().environment().isTest() ? 1 : 3,
+                NodesSpecification spec = NodesSpecification.requiredFromSharedParents(deployState.zone().environment().isProduction() ? 3 : 1,
                                                                                        deployState.featureFlags().dedicatedClusterControllerFlavor().orElse(clusterControllerResources),
                                                                                        contentElement,
                                                                                        context);

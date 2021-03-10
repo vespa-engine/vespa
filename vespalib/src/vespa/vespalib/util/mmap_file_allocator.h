@@ -3,6 +3,7 @@
 #pragma once
 
 #include "memory_allocator.h"
+#include "file_area_freelist.h"
 #include <vespa/vespalib/io/fileutil.h>
 #include <vespa/vespalib/stllike/hash_map.h>
 #include <vespa/vespalib/stllike/string.h>
@@ -16,10 +17,25 @@ namespace vespalib::alloc {
  * have been freed.
  */
 class MmapFileAllocator : public MemoryAllocator {
+    struct SizeAndOffset {
+        size_t   size;
+        uint64_t offset;
+        SizeAndOffset()
+            : SizeAndOffset(0u, 0u)
+        {
+        }
+        SizeAndOffset(size_t size_in, uint64_t offset_in)
+            : size(size_in),
+              offset(offset_in)
+        {
+        }
+    };
     vespalib::string _dir_name;
     mutable File _file;
     mutable uint64_t _end_offset;
-    mutable hash_map<void *, size_t> _allocations;
+    mutable hash_map<void *, SizeAndOffset> _allocations;
+    mutable FileAreaFreeList _freelist;
+    uint64_t alloc_area(size_t sz) const;
 public:
     MmapFileAllocator(const vespalib::string& dir_name);
     ~MmapFileAllocator();

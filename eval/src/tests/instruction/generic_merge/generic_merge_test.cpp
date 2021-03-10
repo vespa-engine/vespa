@@ -40,7 +40,8 @@ TensorSpec perform_generic_merge(const TensorSpec &a, const TensorSpec &b, join_
     Stash stash;
     auto lhs = value_from_spec(a, factory);
     auto rhs = value_from_spec(b, factory);
-    auto my_op = GenericMerge::make_instruction(lhs->type(), rhs->type(), fun, factory, stash);
+    auto res_type = ValueType::merge(lhs->type(), rhs->type());
+    auto my_op = GenericMerge::make_instruction(res_type, lhs->type(), rhs->type(), fun, factory, stash);
     InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs, *rhs})));
 }
@@ -51,10 +52,12 @@ void test_generic_merge_with(const ValueBuilderFactory &factory) {
         const auto l = merge_layouts[i];
         const auto r = merge_layouts[i+1].cpy().seq(N_16ths);
         for (CellType lct : CellTypeUtils::list_types()) {
-            TensorSpec lhs = l.cpy().cells(lct);
+            auto lhs = l.cpy().cells(lct);
+            if (lhs.bad_scalar()) continue;
             for (CellType rct : CellTypeUtils::list_types()) {
-                TensorSpec rhs = r.cpy().cells(rct);
-                SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
+                auto rhs = r.cpy().cells(rct);
+                if (rhs.bad_scalar()) continue;
+                SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.gen().to_string().c_str(), rhs.gen().to_string().c_str()));
                 for (auto fun: {operation::Add::f, operation::Mul::f, operation::Sub::f, operation::Max::f}) {
                     auto expect = ReferenceOperations::merge(lhs, rhs, fun);
                     auto actual = perform_generic_merge(lhs, rhs, fun, factory);

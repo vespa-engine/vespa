@@ -38,12 +38,19 @@ public class NodeMetricsDbTest {
 
         ManualClock clock = tester.clock();
         MetricsDb db = MetricsDb.createTestInstance(tester.nodeRepository());
-        Collection<Pair<String, MetricSnapshot>> values = new ArrayList<>();
+        Collection<Pair<String, NodeMetricSnapshot>> values = new ArrayList<>();
         for (int i = 0; i < 40; i++) {
-            values.add(new Pair<>(node0, new MetricSnapshot(clock.instant(), 0.9f, 0.6f, 0.6f, 0, true, false)));
+            values.add(new Pair<>(node0, new NodeMetricSnapshot(clock.instant(),
+                                                                0.9f,
+                                                                0.6f,
+                                                                0.6f,
+                                                                0,
+                                                                true,
+                                                                false,
+                                                                0.0)));
             clock.advance(Duration.ofMinutes(120));
         }
-        db.add(values);
+        db.addNodeMetrics(values);
 
         // Avoid off-by-one bug when the below windows starts exactly on one of the above getEpochSecond() timestamps.
         clock.advance(Duration.ofMinutes(1));

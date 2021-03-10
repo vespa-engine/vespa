@@ -17,6 +17,7 @@ import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.FileDistribution;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.Quota;
+import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.AllocatedHosts;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
@@ -41,9 +42,9 @@ import com.yahoo.vespa.config.server.modelfactory.PreparedModelsBuilder;
 import com.yahoo.vespa.config.server.provision.HostProvisionerProvider;
 import com.yahoo.vespa.config.server.tenant.ApplicationRolesStore;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointsCache;
-import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataSerializer;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateRetriever;
+import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
@@ -116,6 +117,7 @@ public class SessionPreparer {
                                  ApplicationPackage applicationPackage, SessionZooKeeperClient sessionZooKeeperClient) {
         ApplicationId applicationId = params.getApplicationId();
         boolean dedicatedClusterControllerCluster = new ApplicationCuratorDatabase(applicationId.tenant(), curator).getDedicatedClusterControllerCluster(applicationId);
+
         Preparation preparation = new Preparation(hostValidator, logger, params, activeApplicationSet,
                                                   TenantRepository.getTenantPath(applicationId.tenant()),
                                                   serverDbSessionDir, applicationPackage, sessionZooKeeperClient,
@@ -125,7 +127,7 @@ public class SessionPreparer {
             AllocatedHosts allocatedHosts = preparation.buildModels(now);
             preparation.makeResult(allocatedHosts);
             if ( ! params.isDryRun()) {
-                preparation.writeStateZK(preparation.distributeApplicationPackage());
+                preparation.writeStateZK();
                 preparation.writeEndpointCertificateMetadataZK();
                 preparation.writeContainerEndpointsZK();
                 preparation.writeApplicationRoles();
@@ -204,6 +206,8 @@ public class SessionPreparer {
                                                               athenzDomain,
                                                               applicationRoles,
                                                               params.quota(),
+                                                              params.tenantSecretStores(),
+                                                              secretStore,
                                                               dedicatedClusterControllerCluster);
             this.fileDistributionProvider = fileDistributionFactory.createProvider(serverDbSessionDir);
             this.preparedModelsBuilder = new PreparedModelsBuilder(modelFactoryRegistry,
@@ -229,7 +233,7 @@ public class SessionPreparer {
             }
         }
 
-        Optional<FileReference> distributeApplicationPackage() {
+        Optional<FileReference> distributedApplicationPackage() {
             FileRegistry fileRegistry = fileDistributionProvider.getFileRegistry();
             FileReference fileReference = fileRegistry.addApplicationPackage();
             FileDistribution fileDistribution = fileDistributionProvider.getFileDistribution();
@@ -264,19 +268,20 @@ public class SessionPreparer {
             checkTimeout("making result from models");
         }
 
-        void writeStateZK(Optional<FileReference> distributedApplicationPackage) {
+        void writeStateZK() {
             log.log(Level.FINE, "Writing application package state to zookeeper");
             writeStateToZooKeeper(sessionZooKeeperClient,
                                   preprocessedApplicationPackage,
                                   applicationId,
-                                  distributedApplicationPackage,
+                                  distributedApplicationPackage(),
                                   dockerImageRepository,
                                   vespaVersion,
                                   logger,
-                                  prepareResult.getFileRegistries(), 
+                                  prepareResult.getFileRegistries(),
                                   prepareResult.allocatedHosts(),
                                   athenzDomain,
                                   params.quota(),
+                                  params.tenantSecretStores(),
                                   properties.dedicatedClusterControllerCluster());
             checkTimeout("write state to zookeeper");
         }
@@ -327,6 +332,7 @@ public class SessionPreparer {
                                        AllocatedHosts allocatedHosts,
                                        Optional<AthenzDomain> athenzDomain,
                                        Optional<Quota> quota,
+                                       List<TenantSecretStore> tenantSecretStores,
                                        boolean dedicatedClusterControllerCluster) {
         ZooKeeperDeployer zkDeployer = zooKeeperClient.createDeployer(deployLogger);
         try {
@@ -338,6 +344,7 @@ public class SessionPreparer {
             zooKeeperClient.writeDockerImageRepository(dockerImageRepository);
             zooKeeperClient.writeAthenzDomain(athenzDomain);
             zooKeeperClient.writeQuota(quota);
+            zooKeeperClient.writeTenantSecretStores(tenantSecretStores);
             if (dedicatedClusterControllerCluster)
                 zooKeeperClient.writeDedicatedClusterControllerCluster();
         } catch (RuntimeException | IOException e) {

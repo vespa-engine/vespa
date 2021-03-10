@@ -704,7 +704,7 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
     public void secret_store_can_be_set_up() {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
-                "  <secret-store>",
+                "  <secret-store type='oath-ckms'>",
                 "    <group name='group1' environment='env1'/>",
                 "  </secret-store>",
                 "</container>");

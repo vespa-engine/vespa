@@ -22,7 +22,6 @@ import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
-import java.util.Set;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 /**
@@ -69,9 +68,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         maintainers.add(new AutoscalingMaintainer(nodeRepository, metricsDb, deployer, metric, defaults.autoscalingInterval));
         maintainers.add(new ScalingSuggestionsMaintainer(nodeRepository, metricsDb, defaults.scalingSuggestionsInterval, metric));
         maintainers.add(new SwitchRebalancer(nodeRepository, defaults.switchRebalancerInterval, metric, deployer));
-        if (Set.of(Environment.staging, Environment.perf, Environment.prod).contains(zone.environment())
-            || (zone.system().isCd() && zone.environment() == Environment.dev))  // TODO: Temporarily when testing the feature
-            maintainers.add(new DedicatedClusterControllerClusterMigrator(deployer, metric, nodeRepository, defaults.dedicatedClusterControllerMigratorInterval, flagSource, orchestrator));
+        maintainers.add(new DedicatedClusterControllerClusterMigrator(deployer, metric, nodeRepository, defaults.dedicatedClusterControllerMigratorInterval, flagSource, orchestrator));
 
         provisionServiceProvider.getLoadBalancerService(nodeRepository)
                                 .map(lbService -> new LoadBalancerExpirer(nodeRepository, defaults.loadBalancerExpirerInterval, lbService, metric))
@@ -142,7 +139,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             // Vespa upgrade frequency is higher in CD so (de)activate OS upgrades more frequently as well
             osUpgradeActivatorInterval = zone.system().isCd() ? Duration.ofSeconds(30) : Duration.ofMinutes(5);
             periodicRedeployInterval = Duration.ofMinutes(60);
-            provisionedExpiry = Duration.ofHours(4);
+            provisionedExpiry = zone.getCloud().dynamicProvisioning() ? Duration.ofMinutes(40) : Duration.ofHours(4);
             rebalancerInterval = Duration.ofMinutes(120);
             redeployMaintainerInterval = Duration.ofMinutes(1);
             // Need to be long enough for deployment to be finished for all config model versions

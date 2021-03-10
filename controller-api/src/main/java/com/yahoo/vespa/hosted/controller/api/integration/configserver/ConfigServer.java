@@ -151,6 +151,6 @@ public interface ConfigServer {
     void setSuspension(DeploymentId deploymentId, boolean suspend);
 
     /** Validates secret store configuration. */
-    String validateSecretStore(DeploymentId deploymentId, TenantSecretStore tenantSecretStore);
+    String validateSecretStore(DeploymentId deploymentId, TenantSecretStore tenantSecretStore, String region, String parameterName);
 
 }

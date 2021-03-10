@@ -102,10 +102,12 @@ struct SelectGenericMergeOp {
 using MergeTypify = TypifyValue<TypifyCellType,operation::TypifyOp2>;
 
 Instruction
-GenericMerge::make_instruction(const ValueType &lhs_type, const ValueType &rhs_type, join_fun_t function,
+GenericMerge::make_instruction(const ValueType &result_type,
+                               const ValueType &lhs_type, const ValueType &rhs_type, join_fun_t function,
                                const ValueBuilderFactory &factory, Stash &stash)
 {
-    const auto &param = stash.create<MergeParam>(lhs_type, rhs_type, function, factory);
+    const auto &param = stash.create<MergeParam>(result_type, lhs_type, rhs_type, function, factory);
+    assert(result_type == ValueType::merge(lhs_type, rhs_type));
     auto fun = typify_invoke<4,MergeTypify,SelectGenericMergeOp>(lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(), function);
     return Instruction(fun, wrap_param<MergeParam>(param));
 }

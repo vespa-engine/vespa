@@ -53,6 +53,7 @@ import org.apache.curator.framework.api.UnhandledErrorListener;
 import org.apache.curator.framework.api.VersionPathAndBytesable;
 import org.apache.curator.framework.api.WatchPathable;
 import org.apache.curator.framework.api.Watchable;
+import org.apache.curator.framework.api.WatchesBuilder;
 import org.apache.curator.framework.api.transaction.CuratorMultiTransaction;
 import org.apache.curator.framework.api.transaction.CuratorTransaction;
 import org.apache.curator.framework.api.transaction.CuratorTransactionBridge;
@@ -222,6 +223,9 @@ public class MockCuratorFramework implements CuratorFramework  {
     public RemoveWatchesBuilder watches() { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
 
     @Override
+    public WatchesBuilder watchers() { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
+
+    @Override
     public WatcherRemoveCuratorFramework newWatcherRemoveCuratorFramework() {
         class MockWatcherRemoveCuratorFramework extends MockCuratorFramework implements WatcherRemoveCuratorFramework {
 
@@ -245,7 +249,7 @@ public class MockCuratorFramework implements CuratorFramework  {
     public SchemaSet getSchemaSet() { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
 
     @Override
-    public boolean isZk34CompatibilityMode() { return false; }
+    public CompletableFuture<Void> postSafeNotify(Object monitorHolder) { throw new UnsupportedOperationException("Not implemented in MockCurator"); }
 
     @Override
     public CompletableFuture<Void> runSafe(Runnable runnable) { throw new UnsupportedOperationException("Not implemented in MockCurator"); }

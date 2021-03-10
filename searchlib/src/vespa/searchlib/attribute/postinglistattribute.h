@@ -28,7 +28,7 @@ public:
           _cmp(cmp)
     { }
 
-    bool operator<(const EnumPostingPair &rhs) const { return (*_cmp)(_idx, rhs._idx); }
+    bool operator<(const EnumPostingPair &rhs) const { return _cmp->less(_idx, rhs._idx); }
     IEnumStore::Index getEnumIdx() const { return _idx; }
 };
 
@@ -50,7 +50,6 @@ protected:
     PostingList _postingList;
     AttributeVector &_attr;
     EnumPostingTree &_dict;
-    IEnumStore      &_esb;
 
     PostingListAttributeBase(AttributeVector &attr, IEnumStore &enumStore);
     virtual ~PostingListAttributeBase();

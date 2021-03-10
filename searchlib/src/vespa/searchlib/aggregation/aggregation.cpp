@@ -91,7 +91,7 @@ AggregationResult::Configure::execute(vespalib::Identifiable &obj)
 AggregationResult &
 AggregationResult::setExpression(ExpressionNode::UP expr)
 {
-    _expressionTree.reset(new ExpressionTree(std::move(expr)));
+    _expressionTree = std::make_shared<ExpressionTree>(std::move(expr));
     prepare(&_expressionTree->getResult(), false);
     return *this;
 }

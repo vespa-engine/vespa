@@ -15,13 +15,13 @@ public:
     typedef std::unique_ptr<QueryTermSimple> UP;
     typedef vespalib::string string;
     typedef vespalib::stringref stringref;
-    enum SearchTerm {
-        WORD,
-        PREFIXTERM,
-        SUBSTRINGTERM,
-        EXACTSTRINGTERM,
-        SUFFIXTERM,
-        REGEXP
+    enum class Type : uint8_t {
+        WORD = 0,
+        PREFIXTERM = 1,
+        SUBSTRINGTERM = 2,
+        EXACTSTRINGTERM = 3,
+        SUFFIXTERM = 4,
+        REGEXP = 5
     };
 
     template <typename N>
@@ -34,12 +34,11 @@ public:
         bool isEqual() const { return low == high; }
     };
 
-    QueryTermSimple(const QueryTermSimple &) = default;
-    QueryTermSimple & operator = (const QueryTermSimple &) = default;
-    QueryTermSimple(QueryTermSimple &&) = default;
-    QueryTermSimple & operator = (QueryTermSimple &&) = default;
-    QueryTermSimple();
-    QueryTermSimple(const string & term_, SearchTerm type);
+    QueryTermSimple(const QueryTermSimple &) = delete;
+    QueryTermSimple & operator = (const QueryTermSimple &) = delete;
+    QueryTermSimple(QueryTermSimple &&) = delete;
+    QueryTermSimple & operator = (QueryTermSimple &&) = delete;
+    QueryTermSimple(const string & term_, Type type);
     virtual ~QueryTermSimple();
     /**
      * Extracts the content of this query term as a range with low and high values.
@@ -54,12 +53,12 @@ public:
     bool getAsIntegerTerm(int64_t & lower, int64_t & upper) const;
     bool getAsDoubleTerm(double & lower, double & upper) const;
     const char * getTerm() const { return _term.c_str(); }
-    bool isPrefix()        const { return (_type == PREFIXTERM); }
-    bool isSubstring()     const { return (_type == SUBSTRINGTERM); }
-    bool isExactstring()   const { return (_type == EXACTSTRINGTERM); }
-    bool isSuffix()        const { return (_type == SUFFIXTERM); }
-    bool isWord()          const { return (_type == WORD); }
-    bool isRegex()         const { return (_type == REGEXP); }
+    bool isPrefix()        const { return (_type == Type::PREFIXTERM); }
+    bool isSubstring()     const { return (_type == Type::SUBSTRINGTERM); }
+    bool isExactstring()   const { return (_type == Type::EXACTSTRINGTERM); }
+    bool isSuffix()        const { return (_type == Type::SUFFIXTERM); }
+    bool isWord()          const { return (_type == Type::WORD); }
+    bool isRegex()         const { return (_type == Type::REGEXP); }
     bool empty()           const { return _term.empty(); }
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
     vespalib::string getClassName() const;
@@ -72,10 +71,10 @@ private:
     RangeResult<N> getIntegerRange() const;
     template <typename N>
     RangeResult<N>    getFloatRange() const;
-    SearchTerm  _type;
     int         _rangeLimit;
     uint32_t    _maxPerGroup;
     uint32_t    _diversityCutoffGroups;
+    Type        _type;
     bool        _diversityCutoffStrict;
     bool        _valid;
     string      _term;

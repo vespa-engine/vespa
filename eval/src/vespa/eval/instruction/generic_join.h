@@ -23,7 +23,8 @@ Value::UP generic_mixed_join(const Value &lhs, const Value &rhs, const JoinParam
 
 struct GenericJoin {
     static InterpretedFunction::Instruction
-    make_instruction(const ValueType &lhs_type, const ValueType &rhs_type,
+    make_instruction(const ValueType &result_type,
+                     const ValueType &lhs_type, const ValueType &rhs_type,
                      join_fun_t function,
                      const ValueBuilderFactory &factory, Stash &stash);
 };
@@ -97,9 +98,10 @@ struct JoinParam {
     DenseJoinPlan dense_plan;
     join_fun_t function;
     const ValueBuilderFactory &factory;
-    JoinParam(const ValueType &lhs_type, const ValueType &rhs_type,
+    JoinParam(const ValueType &res_type_in,
+              const ValueType &lhs_type, const ValueType &rhs_type,
              join_fun_t function_in, const ValueBuilderFactory &factory_in)
-        : res_type(ValueType::join(lhs_type, rhs_type)),
+        : res_type(res_type_in),
           sparse_plan(lhs_type, rhs_type),
           dense_plan(lhs_type, rhs_type),
           function(function_in),

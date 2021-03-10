@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.node.admin.task.util.file;
 
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
-import org.apache.velocity.app.VelocityEngine;
 
 import java.io.StringWriter;
 import java.nio.file.Files;
@@ -19,16 +18,16 @@ import static com.yahoo.yolean.Exceptions.uncheck;
  */
 public class Template {
 
-    private final VelocityEngine velocityEngine = new VelocityEngine();
+    static {
+        Velocity.addProperty(Velocity.RUNTIME_LOG_LOGSYSTEM_CLASS, "org.apache.velocity.runtime.log.NullLogSystem");
+        Velocity.init();
+    }
+
     private final VelocityContext velocityContext = new VelocityContext();
     private final String template;
 
     private Template(String template) {
         this.template = template;
-
-        velocityEngine.addProperty(Velocity.RUNTIME_LOG_LOGSYSTEM_CLASS,
-                                   "org.apache.velocity.runtime.log.NullLogSystem");
-        velocityEngine.init();
     }
 
     public static Template at(Path templatePath) {
@@ -50,7 +49,7 @@ public class Template {
 
     public String render() {
         StringWriter writer = new StringWriter();
-        velocityEngine.evaluate(velocityContext, writer, "Template", template);
+        Velocity.evaluate(velocityContext, writer, "Template", template);
         return writer.toString();
     }
 

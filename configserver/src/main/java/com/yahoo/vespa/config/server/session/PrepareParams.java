@@ -13,9 +13,11 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.TimeoutBudget;
+import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.vespa.config.server.http.SessionHandler;
 import com.yahoo.vespa.config.server.tenant.ContainerEndpointSerializer;
 import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataSerializer;
+import com.yahoo.vespa.config.server.tenant.TenantSecretStoreSerializer;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -43,6 +45,7 @@ public final class PrepareParams {
     static final String APPLICATION_HOST_ROLE = "applicationHostRole";
     static final String APPLICATION_CONTAINER_ROLE = "applicationContainerRole";
     static final String QUOTA_PARAM_NAME = "quota";
+    static final String TENANT_SECRET_STORES_PARAM_NAME = "tenantSecretStores";
     static final String FORCE_PARAM_NAME = "force";
     static final String WAIT_FOR_RESOURCES_IN_PREPARE = "waitForResourcesInPrepare";
 
@@ -61,14 +64,15 @@ public final class PrepareParams {
     private final Optional<AthenzDomain> athenzDomain;
     private final Optional<ApplicationRoles> applicationRoles;
     private final Optional<Quota> quota;
+    private final List<TenantSecretStore> tenantSecretStores;
 
     private PrepareParams(ApplicationId applicationId, TimeoutBudget timeoutBudget, boolean ignoreValidationErrors,
                           boolean dryRun, boolean verbose, boolean isBootstrap, Optional<Version> vespaVersion,
                           List<ContainerEndpoint> containerEndpoints,
                           Optional<EndpointCertificateMetadata> endpointCertificateMetadata,
                           Optional<DockerImage> dockerImageRepository, Optional<AthenzDomain> athenzDomain,
-                          Optional<ApplicationRoles> applicationRoles, Optional<Quota> quota, boolean force,
-                          boolean waitForResourcesInPrepare) {
+                          Optional<ApplicationRoles> applicationRoles, Optional<Quota> quota, List<TenantSecretStore> tenantSecretStores,
+                          boolean force, boolean waitForResourcesInPrepare) {
         this.timeoutBudget = timeoutBudget;
         this.applicationId = Objects.requireNonNull(applicationId);
         this.ignoreValidationErrors = ignoreValidationErrors;
@@ -82,6 +86,7 @@ public final class PrepareParams {
         this.athenzDomain = athenzDomain;
         this.applicationRoles = applicationRoles;
         this.quota = quota;
+        this.tenantSecretStores = tenantSecretStores;
         this.force = force;
         this.waitForResourcesInPrepare = waitForResourcesInPrepare;
     }
@@ -103,6 +108,7 @@ public final class PrepareParams {
         private Optional<AthenzDomain> athenzDomain = Optional.empty();
         private Optional<ApplicationRoles> applicationRoles = Optional.empty();
         private Optional<Quota> quota = Optional.empty();
+        private List<TenantSecretStore> tenantSecretStores = List.of();
 
         public Builder() { }
 
@@ -198,6 +204,18 @@ public final class PrepareParams {
             return this;
         }
 
+        public Builder tenantSecretStores(String serialized) {
+            List<TenantSecretStore> secretStores = (serialized == null)
+                    ? List.of()
+                    : TenantSecretStoreSerializer.listFromSlime(SlimeUtils.jsonToSlime(serialized).get());
+            return tenantSecretStores(secretStores);
+        }
+
+        public Builder tenantSecretStores(List<TenantSecretStore> tenantSecretStores) {
+            this.tenantSecretStores = tenantSecretStores;
+            return this;
+        }
+
         public Builder waitForResourcesInPrepare(boolean waitForResourcesInPrepare) {
             this.waitForResourcesInPrepare = waitForResourcesInPrepare;
             return this;
@@ -212,7 +230,7 @@ public final class PrepareParams {
             return new PrepareParams(applicationId, timeoutBudget, ignoreValidationErrors, dryRun,
                                      verbose, isBootstrap, vespaVersion, containerEndpoints,
                                      endpointCertificateMetadata, dockerImageRepository, athenzDomain,
-                                     applicationRoles, quota, force, waitForResourcesInPrepare);
+                                     applicationRoles, quota, tenantSecretStores, force, waitForResourcesInPrepare);
         }
     }
 
@@ -229,6 +247,7 @@ public final class PrepareParams {
                             .athenzDomain(request.getProperty(ATHENZ_DOMAIN))
                             .applicationRoles(ApplicationRoles.fromString(request.getProperty(APPLICATION_HOST_ROLE), request.getProperty(APPLICATION_CONTAINER_ROLE)))
                             .quota(request.getProperty(QUOTA_PARAM_NAME))
+                            .tenantSecretStores(request.getProperty(TENANT_SECRET_STORES_PARAM_NAME))
                             .force(request.getBooleanProperty(FORCE_PARAM_NAME))
                             .waitForResourcesInPrepare(request.getBooleanProperty(WAIT_FOR_RESOURCES_IN_PREPARE))
                             .build();
@@ -302,5 +321,9 @@ public final class PrepareParams {
 
     public Optional<Quota> quota() {
         return quota;
+    }
+
+    public List<TenantSecretStore> tenantSecretStores() {
+        return tenantSecretStores;
     }
 }

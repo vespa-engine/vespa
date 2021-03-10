@@ -60,7 +60,8 @@ TensorSpec simple_value_join(const TensorSpec &a, const TensorSpec &b, join_fun_
     const auto &factory = SimpleValueBuilderFactory::get();
     auto lhs = value_from_spec(a, factory);
     auto rhs = value_from_spec(b, factory);
-    auto my_op = GenericJoin::make_instruction(lhs->type(), rhs->type(), function, factory, stash);
+    auto res_type = ValueType::join(lhs->type(), rhs->type());
+    auto my_op = GenericJoin::make_instruction(res_type, lhs->type(), rhs->type(), function, factory, stash);
     InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs,*rhs})));
 }
@@ -68,7 +69,8 @@ TensorSpec simple_value_join(const TensorSpec &a, const TensorSpec &b, join_fun_
 TEST(SimpleValueTest, simple_values_can_be_converted_from_and_to_tensor_spec) {
     for (const auto &layout: layouts) {
         for (CellType ct : CellTypeUtils::list_types()) {
-            TensorSpec expect = layout.cpy().cells(ct);
+            auto expect = layout.cpy().cells(ct);
+            if (expect.bad_scalar()) continue;
             std::unique_ptr<Value> value = value_from_spec(expect, SimpleValueBuilderFactory::get());
             TensorSpec actual = spec_from_value(*value);
             EXPECT_EQ(actual, expect);
@@ -79,7 +81,8 @@ TEST(SimpleValueTest, simple_values_can_be_converted_from_and_to_tensor_spec) {
 TEST(SimpleValueTest, simple_values_can_be_copied) {
     for (const auto &layout: layouts) {
         for (CellType ct : CellTypeUtils::list_types()) {
-            TensorSpec expect = layout.cpy().cells(ct);
+            auto expect = layout.cpy().cells(ct);
+            if (expect.bad_scalar()) continue;
             std::unique_ptr<Value> value = value_from_spec(expect, SimpleValueBuilderFactory::get());
             std::unique_ptr<Value> copy = SimpleValueBuilderFactory::get().copy(*value);
             TensorSpec actual = spec_from_value(*copy);
@@ -130,11 +133,13 @@ TEST(SimpleValueTest, new_generic_join_works_for_simple_values) {
         const auto l = join_layouts[i].cpy().seq(N_16ths);
         const auto r = join_layouts[i + 1].cpy().seq(N_16ths);
         for (CellType lct : CellTypeUtils::list_types()) {
-            TensorSpec lhs = l.cpy().cells(lct);
+            auto lhs = l.cpy().cells(lct);
+            if (lhs.bad_scalar()) continue;
             for (CellType rct : CellTypeUtils::list_types()) {
-                TensorSpec rhs = r.cpy().cells(rct);
+                auto rhs = r.cpy().cells(rct);
+                if (rhs.bad_scalar()) continue;
                 for (auto fun: {operation::Add::f, operation::Sub::f, operation::Mul::f, operation::Div::f}) {
-                    SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
+                    SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.gen().to_string().c_str(), rhs.gen().to_string().c_str()));
                     auto expect = ReferenceOperations::join(lhs, rhs, fun);
                     auto actual = simple_value_join(lhs, rhs, fun);
                     EXPECT_EQ(actual, expect);

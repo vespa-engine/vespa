@@ -256,8 +256,7 @@ public class VespaMetrics {
                     }
                 }
                 if (isForwarded) {
-                    b.append(formatter.format(s, alias, metric.getValue()))
-                            .append(" ");
+                    b.append(formatter.format(s, alias, metric.getValue())).append(" ");
                 }
             }
         }

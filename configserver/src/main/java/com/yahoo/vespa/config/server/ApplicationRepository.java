@@ -29,6 +29,7 @@ import com.yahoo.docproc.jdisc.metric.NullMetric;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.path.Path;
+import com.yahoo.slime.Slime;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.server.application.Application;
@@ -73,7 +74,7 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantMetaData;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.vespa.config.server.application.TenantSecretStore;
+import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.curator.stats.ThreadLockStats;
@@ -663,10 +664,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
     }
 
-    public Set<ApplicationId> listApplications() {
+    public List<ApplicationId> listApplications() {
         return tenantRepository.getAllTenants().stream()
                 .flatMap(tenant -> tenant.getApplicationRepo().activeApplications().stream())
-                .collect(Collectors.toSet());
+                .collect(Collectors.toList());
     }
 
     private boolean isFileLastModifiedBefore(File fileReference, Instant instant) {
@@ -702,9 +703,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                 : applicationSet.get().getAllVersions(applicationId);
     }
 
-    public HttpResponse validateSecretStore(ApplicationId applicationId, TenantSecretStore tenantSecretStore, String tenantSecretName) {
+    public HttpResponse validateSecretStore(ApplicationId applicationId, SystemName systemName, Slime slime) {
         Application application = getApplication(applicationId);
-        return secretStoreValidator.validateSecretStore(application, tenantSecretStore, tenantSecretName);
+        return secretStoreValidator.validateSecretStore(application, systemName, slime);
     }
 
     // ---------------- Convergence ----------------------------------------------------------------
@@ -867,8 +868,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     public void deleteExpiredLocalSessions() {
         Map<Tenant, Collection<LocalSession>> sessionsPerTenant = new HashMap<>();
         tenantRepository.getAllTenants()
-                        .forEach(tenant -> sessionsPerTenant.put(tenant,
-                                                                 List.copyOf(tenant.getSessionRepository().getLocalSessions())));
+                        .forEach(tenant -> sessionsPerTenant.put(tenant, tenant.getSessionRepository().getLocalSessions()));
 
         Set<ApplicationId> applicationIds = new HashSet<>();
         sessionsPerTenant.values()

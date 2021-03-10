@@ -25,7 +25,7 @@ void my_sum_max_dot_product_op(InterpretedFunction::State &state, uint64_t dp_si
             result += max_dp;
         }
     }
-    state.pop_pop_push(state.stash.create<ScalarValue<double>>(result));
+    state.pop_pop_push(state.stash.create<DoubleValue>(result));
 }
 
 const Reduce *check_reduce(const TensorFunction &expr, Aggr aggr) {
@@ -49,7 +49,7 @@ const Join *check_mul(const TensorFunction &expr) {
 bool check_params(const ValueType &res_type, const ValueType &query, const ValueType &document,
                   const vespalib::string &sum_dim, const vespalib::string &max_dim, const vespalib::string &dp_dim)
 {
-    if (res_type.is_scalar() && (res_type.cell_type() == CellType::DOUBLE) &&
+    if (res_type.is_double() &&
         (query.dimensions().size() == 2) && (query.cell_type() == CellType::FLOAT) &&
         (document.dimensions().size() == 2) && (document.cell_type() == CellType::FLOAT))
     {

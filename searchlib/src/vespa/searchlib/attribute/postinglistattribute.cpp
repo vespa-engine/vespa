@@ -17,8 +17,7 @@ PostingListAttributeBase(AttributeVector &attr,
       _postingList(enumStore.get_dictionary().get_posting_dictionary(), attr.getStatus(),
                    attr.getConfig()),
       _attr(attr),
-      _dict(enumStore.get_dictionary().get_posting_dictionary()),
-      _esb(enumStore)
+      _dict(enumStore.get_dictionary().get_posting_dictionary())
 { }
 
 template <typename P>
@@ -233,7 +232,7 @@ handle_load_posting_lists(LoadedVector& loaded)
             LoadedValueType prev = value.getValue();
             for (size_t i(0), m(loaded.size()); i < m; i++, loaded.next()) {
                 value = loaded.read();
-                if (FoldedComparatorType::equal(prev, value.getValue())) {
+                if (FoldedComparatorType::equal_helper(prev, value.getValue())) {
                     // for single value attributes loaded[numDocs] is used
                     // for default value but we don't want to add an
                     // invalid docId to the posting list.

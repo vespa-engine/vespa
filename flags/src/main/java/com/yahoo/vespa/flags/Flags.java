@@ -206,15 +206,8 @@ public class Flags {
             "Takes effect on the next suspension request to the Orchestrator.",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag RECONFIGURABLE_ZOOKEEPER_SERVER_FOR_CLUSTER_CONTROLLER = defineFeatureFlag(
-            "reconfigurable-zookeeper-server-for-cluster-controller", true,
-            List.of("musum", "mpolden"), "2020-12-16", "2021-03-16",
-            "Whether to use reconfigurable zookeeper server for cluster controller",
-            "Takes effect on (re)redeployment",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
-            "enable-feed-block-in-distributor", false,
+            "enable-feed-block-in-distributor", true,
             List.of("geirst"), "2021-01-27", "2021-04-01",
             "Enables blocking of feed in the distributor if resource usage is above limit on at least one content node",
             "Takes effect at redeployment",
@@ -240,7 +233,7 @@ public class Flags {
             "Takes effect when restarting cluster controller");
 
     public static final UnboundIntFlag METRICS_PROXY_MAX_HEAP_SIZE_IN_MB = defineIntFlag(
-            "metrics-proxy-max-heap-size-in-mb", 512,
+            "metrics-proxy-max-heap-size-in-mb", 256,
             List.of("hmusum"), "2021-03-01", "2021-05-01",
             "JVM max heap size for metrics proxy in Mb",
             "Takes effect when restarting metrics proxy");
@@ -278,6 +271,12 @@ public class Flags {
             "for query visibility if they are out of sync with a majority of other replicas",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundBooleanFlag DYNAMIC_CONFIG_SERVER_PROVISIONING = defineFeatureFlag(
+            "dynamic-config-server-provisioning", false,
+            List.of("mpolden", "hakon"), "2021-03-03", "2021-05-01",
+            "Enable dynamic provisioning of config servers",
+            "Takes effect immediately, for subsequent provisioning");
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

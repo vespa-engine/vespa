@@ -20,8 +20,8 @@ struct GenericPeek {
     using SpecMap = tensor_function::Peek::Spec;
 
     static InterpretedFunction::Instruction
-    make_instruction(const ValueType &input_type,
-                     const ValueType &res_type,
+    make_instruction(const ValueType &result_type,
+                     const ValueType &input_type,
                      const SpecMap &spec,
                      const ValueBuilderFactory &factory,
                      Stash &stash);

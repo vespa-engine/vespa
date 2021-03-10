@@ -74,7 +74,7 @@ public class StateHandler extends AbstractRequestHandler {
     }
 
     @Override
-    public ContentChannel handleRequest(final Request request, ResponseHandler handler) {
+    public ContentChannel handleRequest(Request request, ResponseHandler handler) {
         new ResponseDispatch() {
 
             @Override

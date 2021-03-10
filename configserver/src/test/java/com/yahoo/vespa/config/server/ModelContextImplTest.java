@@ -14,6 +14,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.container.jdisc.SecretStoreProvider;
 import com.yahoo.vespa.config.server.deploy.ModelContextImpl;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import org.junit.Test;
@@ -72,6 +73,8 @@ public class ModelContextImplTest {
                         Optional.empty(),
                         Optional.empty(),
                         Optional.empty(),
+                        List.of(),
+                        new SecretStoreProvider().get(),
                         false),
                 Optional.empty(),
                 Optional.empty(),

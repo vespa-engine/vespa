@@ -139,9 +139,15 @@ TEST("can create case-insensitive regex matcher") {
 
 TEST("regex is case sensitive by default") {
     auto re = Regex::from_pattern("hello");
+    ASSERT_TRUE(re.valid());
     ASSERT_TRUE(re.parsed_ok());
     EXPECT_FALSE(re.partial_match("HelLo world"));
     EXPECT_FALSE(re.full_match("HELLO"));
+}
+
+TEST("Test that default constructed regex is invalid.") {
+    Regex dummy;
+    ASSERT_FALSE(dummy.valid());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -576,8 +576,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public String validateSecretStore(DeploymentId deployment, TenantSecretStore tenantSecretStore) {
-        return deployment.toString() + " - " + tenantSecretStore.toString();
+    public String validateSecretStore(DeploymentId deployment, TenantSecretStore tenantSecretStore, String region, String parameterName) {
+        return "{\"settings\":{\"name\":\"foo\",\"role\":\"vespa-secretstore-access\",\"awsId\":\"892075328880\",\"externalId\":\"*****\",\"region\":\"us-east-1\"},\"status\":\"ok\"}";
     }
 
     public static class Application {

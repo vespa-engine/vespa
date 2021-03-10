@@ -1,7 +1,8 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.config.server.application;
+package com.yahoo.config.model.api;
 
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * @author olaa
@@ -11,11 +12,17 @@ public class TenantSecretStore {
     private final String name;
     private final String awsId;
     private final String role;
+    private final Optional<String> externalId;
 
     public TenantSecretStore(String name, String awsId, String role) {
+        this(name, awsId, role, Optional.empty());
+    }
+
+    public TenantSecretStore(String name, String awsId, String role, Optional<String> externalId) {
         this.name = name;
         this.awsId = awsId;
         this.role = role;
+        this.externalId = externalId;
     }
 
     public String getName() {
@@ -30,10 +37,12 @@ public class TenantSecretStore {
         return role;
     }
 
-    public boolean isValid() {
-        return !name.isBlank() &&
-                !awsId.isBlank() &&
-                !role.isBlank();
+    public Optional<String> getExternalId() {
+        return externalId;
+    }
+
+    public TenantSecretStore withExternalId(String externalId) {
+        return new TenantSecretStore(name, awsId, role, Optional.of(externalId));
     }
 
     @Override

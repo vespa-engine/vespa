@@ -42,7 +42,8 @@ TensorSpec perform_generic_reduce(const TensorSpec &a, Aggr aggr, const std::vec
 {
     Stash stash;
     auto lhs = value_from_spec(a, factory);
-    auto my_op = GenericReduce::make_instruction(lhs->type(), aggr, dims, factory, stash);
+    auto res_type = lhs->type().reduce(dims);
+    auto my_op = GenericReduce::make_instruction(res_type, lhs->type(), aggr, dims, factory, stash);
     InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs})));
 }
@@ -71,17 +72,18 @@ TEST(GenericReduceTest, sparse_reduce_plan_can_be_created) {
 void test_generic_reduce_with(const ValueBuilderFactory &factory) {
     for (const auto &layout: layouts) {
         for (CellType ct : CellTypeUtils::list_types()) {
-            TensorSpec input = layout.cpy().cells(ct);
-            SCOPED_TRACE(fmt("tensor type: %s, num_cells: %zu", input.type().c_str(), input.cells().size()));
+            auto input = layout.cpy().cells(ct);
+            if (input.bad_scalar()) continue;
+            SCOPED_TRACE(fmt("tensor type: %s, num_cells: %zu", input.gen().type().c_str(), input.gen().cells().size()));
             for (Aggr aggr: {Aggr::SUM, Aggr::AVG, Aggr::MIN, Aggr::MAX}) {
                 SCOPED_TRACE(fmt("aggregator: %s", AggrNames::name_of(aggr)->c_str()));
                 auto t = layout.type();
                 for (const auto & dim: t.dimensions()) {
-                    auto expect = ReferenceOperations::reduce(input, aggr, {dim.name}).normalize();
+                    auto expect = ReferenceOperations::reduce(input, aggr, {dim.name});
                     auto actual = perform_generic_reduce(input, aggr, {dim.name}, factory);
                     EXPECT_EQ(actual, expect);
                 }
-                auto expect = ReferenceOperations::reduce(input, aggr, {}).normalize();
+                auto expect = ReferenceOperations::reduce(input, aggr, {});
                 auto actual = perform_generic_reduce(input, aggr, {}, factory);
                 EXPECT_EQ(actual, expect);
             }

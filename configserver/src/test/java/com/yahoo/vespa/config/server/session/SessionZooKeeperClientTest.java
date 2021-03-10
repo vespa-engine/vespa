@@ -3,6 +3,7 @@ package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.config.FileReference;
 import com.yahoo.config.model.api.Quota;
+import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.path.Path;
@@ -18,6 +19,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import java.time.Instant;
+import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.core.Is.is;
@@ -146,6 +148,17 @@ public class SessionZooKeeperClientTest {
         var zkc = createSessionZKClient(4);
         zkc.writeQuota(quota);
         assertEquals(quota, zkc.readQuota());
+    }
+
+    @Test
+    public void require_tenant_secret_stores_written_and_parsed() {
+        var secretStores = List.of(
+                new TenantSecretStore("name1", "awsId1", "role1"),
+                new TenantSecretStore("name2", "awsId2", "role2")
+        );
+        var zkc = createSessionZKClient(4);
+        zkc.writeTenantSecretStores(secretStores);
+        assertEquals(secretStores, zkc.readTenantSecretStores());
     }
 
     private void assertApplicationIdParse(long sessionId, String idString, String expectedIdString) {

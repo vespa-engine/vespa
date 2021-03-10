@@ -24,10 +24,12 @@ public:
     struct TensorSizeCalc
     {
         size_t   _numCells; // product of dimension sizes
-        uint32_t _cellSize; // size of a cell (e.g. double => 8, float => 4)
+        vespalib::eval::CellType _cell_type;
 
         TensorSizeCalc(const ValueType &type);
-        size_t bufSize() const { return (_numCells * _cellSize); }
+        size_t bufSize() const {
+            return vespalib::eval::CellTypeUtils::mem_size(_cell_type, _numCells);
+        }
         size_t alignedSize() const;
     };
 
@@ -60,7 +62,6 @@ public:
 
     const ValueType &type() const { return _type; }
     size_t getNumCells() const { return _tensorSizeCalc._numCells; }
-    uint32_t getCellSize() const { return _tensorSizeCalc._cellSize; }
     size_t getBufSize() const { return _tensorSizeCalc.bufSize(); }
     const void *getRawBuffer(RefType ref) const;
     vespalib::datastore::Handle<char> allocRawBuffer();

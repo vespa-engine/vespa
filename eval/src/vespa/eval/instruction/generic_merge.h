@@ -11,11 +11,12 @@ struct MergeParam {
     const join_fun_t function;
     const size_t num_mapped_dimensions;
     const size_t dense_subspace_size;
-    std::vector<size_t> all_view_dims;
+    SmallVector<size_t> all_view_dims;
     const ValueBuilderFactory &factory;
-    MergeParam(const ValueType &lhs_type, const ValueType &rhs_type,
+    MergeParam(const ValueType &res_type_in,
+               const ValueType &lhs_type, const ValueType &rhs_type,
                join_fun_t function_in, const ValueBuilderFactory &factory_in)
-        : res_type(ValueType::merge(lhs_type, rhs_type)),
+        : res_type(res_type_in),
           function(function_in),
           num_mapped_dimensions(lhs_type.count_mapped_dimensions()),
           dense_subspace_size(lhs_type.dense_subspace_size()),
@@ -41,7 +42,8 @@ generic_mixed_merge(const Value &a, const Value &b,
 
 struct GenericMerge {
     static InterpretedFunction::Instruction
-    make_instruction(const ValueType &lhs_type, const ValueType &rhs_type,
+    make_instruction(const ValueType &result_type,
+                     const ValueType &lhs_type, const ValueType &rhs_type,
                      join_fun_t function,
                      const ValueBuilderFactory &factory, Stash &stash);
 };

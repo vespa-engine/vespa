@@ -411,7 +411,7 @@ void BucketManager::startWorkerThread()
 bool BucketManager::onRequestBucketInfo(
             const std::shared_ptr<api::RequestBucketInfoCommand>& cmd)
 {
-    LOG(debug, "Got request bucket info command");
+    LOG(debug, "Got request bucket info command %s", cmd->toString().c_str());
     if (cmd->getBuckets().size() == 0 && cmd->hasSystemState()) {
 
         std::lock_guard<std::mutex> guard(_workerLock);
@@ -542,9 +542,10 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
 
     const auto our_hash = distribution->getNodeGraph().getDistributionConfigHash();
 
-    LOG(debug, "Processing %zu queued request bucket info commands. "
+    LOG(debug, "Processing %zu queued request bucket info commands for bucket space %s. "
         "Using cluster state '%s' and distribution hash '%s'",
         reqs.size(),
+        bucketSpace.toString().c_str(),
         clusterState->toString().c_str(),
         our_hash.c_str());
 
@@ -555,7 +556,15 @@ BucketManager::processRequestBucketInfoCommands(document::BucketSpace bucketSpac
         const auto their_hash = (*it)->getDistributionHash();
 
         std::ostringstream error;
-        if ((*it)->getSystemState().getVersion() > _lastClusterStateSeen) {
+        if (clusterState->getVersion() != _lastClusterStateSeen) {
+            // Calling onSetSystemState() on _this_ component and actually switching over
+            // to another cluster state version does not happen atomically. Detect and
+            // gracefully deal with the case where we're not internally in sync.
+            error << "Inconsistent internal cluster state on node during transition; "
+                  << "failing request from distributor " << (*it)->getDistributor()
+                  << " so it can be retried. Node version is " << clusterState->getVersion()
+                  << ", but last version seen by the bucket manager is " << _lastClusterStateSeen;
+        } else if ((*it)->getSystemState().getVersion() > _lastClusterStateSeen) {
             error << "Ignoring bucket info request for cluster state version "
                   << (*it)->getSystemState().getVersion() << " as newest "
                   << "version we know of is " << _lastClusterStateSeen;

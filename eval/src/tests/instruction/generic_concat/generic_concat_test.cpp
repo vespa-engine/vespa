@@ -68,7 +68,8 @@ TensorSpec perform_generic_concat(const TensorSpec &a, const TensorSpec &b,
     Stash stash;
     auto lhs = value_from_spec(a, factory);
     auto rhs = value_from_spec(b, factory);
-    auto my_op = GenericConcat::make_instruction(lhs->type(), rhs->type(), concat_dim, factory, stash);
+    auto res_type = ValueType::concat(lhs->type(), rhs->type(), concat_dim);
+    auto my_op = GenericConcat::make_instruction(res_type, lhs->type(), rhs->type(), concat_dim, factory, stash);
     InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs,*rhs})));
 }
@@ -79,10 +80,12 @@ void test_generic_concat_with(const ValueBuilderFactory &factory) {
         const auto l = concat_layouts[i];
         const auto r = concat_layouts[i+1].cpy().seq(N_16ths);
         for (CellType lct : CellTypeUtils::list_types()) {
-            TensorSpec lhs = l.cpy().cells(lct);
+            auto lhs = l.cpy().cells(lct);
+            if (lhs.bad_scalar()) continue;
             for (CellType rct : CellTypeUtils::list_types()) {
-                TensorSpec rhs = r.cpy().cells(rct);
-                SCOPED_TRACE(fmt("\n===\nin LHS: %s\nin RHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
+                auto rhs = r.cpy().cells(rct);
+                if (rhs.bad_scalar()) continue;
+                SCOPED_TRACE(fmt("\n===\nin LHS: %s\nin RHS: %s\n===\n", lhs.gen().to_string().c_str(), rhs.gen().to_string().c_str()));
                 auto actual = perform_generic_concat(lhs, rhs, "y", factory);
                 auto expect = ReferenceOperations::concat(lhs, rhs, "y");
                 EXPECT_EQ(actual, expect);

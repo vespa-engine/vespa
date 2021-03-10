@@ -49,8 +49,8 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
 
     private static final Logger log = Logger.getLogger(JettyConnectionLogger.class.getName());
 
-    private final ConcurrentMap<SocketChannelEndPoint, ConnectionInfo> connectionInfo = new ConcurrentHashMap<>();
-    private final ConcurrentMap<SSLEngine, ConnectionInfo> sslToConnectionInfo = new ConcurrentHashMap<>();
+    private final ConcurrentMap<IdentityKey<SocketChannelEndPoint>, ConnectionInfo> connectionInfo = new ConcurrentHashMap<>();
+    private final ConcurrentMap<IdentityKey<SSLEngine>, ConnectionInfo> sslToConnectionInfo = new ConcurrentHashMap<>();
 
     private final boolean enabled;
     private final ConnectionLog connectionLog;
@@ -88,14 +88,15 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void onOpened(Connection connection) {
         handleListenerInvocation("Connection.Listener", "onOpened", "%h", List.of(connection), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(connection.getEndPoint());
-            ConnectionInfo info = connectionInfo.get(endpoint);
+            var endpointKey = IdentityKey.of(endpoint);
+            ConnectionInfo info = connectionInfo.get(endpointKey);
             if (info == null) {
                 info = ConnectionInfo.from(endpoint);
-                connectionInfo.put(endpoint, info);
+                connectionInfo.put(IdentityKey.of(endpoint), info);
             }
             if (connection instanceof SslConnection) {
                 SSLEngine sslEngine = ((SslConnection) connection).getSSLEngine();
-                sslToConnectionInfo.put(sslEngine, info);
+                sslToConnectionInfo.put(IdentityKey.of(sslEngine), info);
             }
             if (connection.getEndPoint() instanceof ProxyConnectionFactory.ProxyEndPoint) {
                 InetSocketAddress remoteAddress = connection.getEndPoint().getRemoteAddress();
@@ -108,7 +109,8 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void onClosed(Connection connection) {
         handleListenerInvocation("Connection.Listener", "onClosed", "%h", List.of(connection), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(connection.getEndPoint());
-            ConnectionInfo info = connectionInfo.get(endpoint);
+            var endpointKey = IdentityKey.of(endpoint);
+            ConnectionInfo info = connectionInfo.get(endpointKey);
             if (info == null) return; // Closed connection already handled
             if (connection instanceof HttpConnection) {
                 info.setHttpBytes(connection.getBytesIn(), connection.getBytesOut());
@@ -116,7 +118,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
             if (!endpoint.isOpen()) {
                 info.setClosedAt(System.currentTimeMillis());
                 connectionLog.log(info.toLogEntry());
-                connectionInfo.remove(endpoint);
+                connectionInfo.remove(endpointKey);
             }
         });
     }
@@ -131,7 +133,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void onRequestBegin(Request request) {
         handleListenerInvocation("HttpChannel.Listener", "onRequestBegin", "%h", List.of(request), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(request.getHttpChannel().getEndPoint());
-            ConnectionInfo info = Objects.requireNonNull(connectionInfo.get(endpoint));
+            ConnectionInfo info = Objects.requireNonNull(connectionInfo.get(IdentityKey.of(endpoint)));
             info.incrementRequests();
             request.setAttribute(CONNECTION_ID_REQUEST_ATTRIBUTE, info.uuid());
         });
@@ -141,7 +143,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void onResponseBegin(Request request) {
         handleListenerInvocation("HttpChannel.Listener", "onResponseBegin", "%h", List.of(request), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(request.getHttpChannel().getEndPoint());
-            ConnectionInfo info = Objects.requireNonNull(connectionInfo.get(endpoint));
+            ConnectionInfo info = Objects.requireNonNull(connectionInfo.get(IdentityKey.of(endpoint)));
             info.incrementResponses();
         });
     }
@@ -156,7 +158,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void handshakeSucceeded(Event event) {
         SSLEngine sslEngine = event.getSSLEngine();
         handleListenerInvocation("SslHandshakeListener", "handshakeSucceeded", "sslEngine=%h", List.of(sslEngine), () -> {
-            ConnectionInfo info = sslToConnectionInfo.remove(sslEngine);
+            ConnectionInfo info = sslToConnectionInfo.remove(IdentityKey.of(sslEngine));
             info.setSslSessionDetails(sslEngine.getSession());
         });
     }
@@ -166,7 +168,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         SSLEngine sslEngine = event.getSSLEngine();
         handleListenerInvocation("SslHandshakeListener", "handshakeFailed", "sslEngine=%h,failure=%s", List.of(sslEngine, failure), () -> {
             log.log(Level.FINE, failure, failure::toString);
-            ConnectionInfo info = sslToConnectionInfo.remove(sslEngine);
+            ConnectionInfo info = sslToConnectionInfo.remove(IdentityKey.of(sslEngine));
             info.setSslHandshakeFailure((SSLHandshakeException)failure);
         });
     }
@@ -349,5 +351,23 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
             return builder.build();
         }
 
+    }
+
+    private static class IdentityKey<T> {
+        final T instance;
+
+        IdentityKey(T instance) { this.instance = instance; }
+
+        static <T> IdentityKey<T> of(T instance) { return new IdentityKey<>(instance); }
+
+        @Override public int hashCode() { return System.identityHashCode(instance); }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (!(obj instanceof IdentityKey<?>)) return false;
+            IdentityKey<?> other = (IdentityKey<?>) obj;
+            return this.instance == other.instance;
+        }
     }
 }

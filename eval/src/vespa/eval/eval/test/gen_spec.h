@@ -128,6 +128,7 @@ public:
         _seq = seq_in;
         return *this;
     }
+    bool bad_scalar() const;
     ValueType type() const;
     TensorSpec gen() const;
     operator TensorSpec() const { return gen(); }

@@ -55,7 +55,8 @@ TensorSpec perform_generic_join(const TensorSpec &a, const TensorSpec &b,
     Stash stash;
     auto lhs = value_from_spec(a, factory);
     auto rhs = value_from_spec(b, factory);
-    auto my_op = GenericJoin::make_instruction(lhs->type(), rhs->type(), function, factory, stash);
+    auto res_type = ValueType::join(lhs->type(), rhs->type());
+    auto my_op = GenericJoin::make_instruction(res_type, lhs->type(), rhs->type(), function, factory, stash);
     InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs,*rhs})));
 }
@@ -108,11 +109,13 @@ TEST(GenericJoinTest, generic_join_works_for_simple_and_fast_values) {
         const auto &l = join_layouts[i];
         const auto &r = join_layouts[i+1];
         for (CellType lct : CellTypeUtils::list_types()) {
-            TensorSpec lhs = l.cpy().cells(lct);
+            auto lhs = l.cpy().cells(lct);
+            if (lhs.bad_scalar()) continue;
             for (CellType rct : CellTypeUtils::list_types()) {
-                TensorSpec rhs = r.cpy().cells(rct);
+                auto rhs = r.cpy().cells(rct);
+                if (rhs.bad_scalar()) continue;
                 for (auto fun: {operation::Add::f, operation::Sub::f, operation::Mul::f, operation::Div::f}) {
-                    SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.to_string().c_str(), rhs.to_string().c_str()));
+                    SCOPED_TRACE(fmt("\n===\nLHS: %s\nRHS: %s\n===\n", lhs.gen().to_string().c_str(), rhs.gen().to_string().c_str()));
                     auto expect = ReferenceOperations::join(lhs, rhs, fun);
                     auto simple = perform_generic_join(lhs, rhs, fun, SimpleValueBuilderFactory::get());
                     auto fast = perform_generic_join(lhs, rhs, fun, FastValueBuilderFactory::get());

@@ -196,8 +196,9 @@ public class SessionRepository {
         return localSessionCache.get(sessionId);
     }
 
+    /** Returns a copy of local sessions */
     public Collection<LocalSession> getLocalSessions() {
-        return localSessionCache.values();
+        return List.copyOf(localSessionCache.values());
     }
 
     private void loadLocalSessions(ExecutorService executor) {
@@ -255,6 +256,7 @@ public class SessionRepository {
         session.setVespaVersion(existingSession.getVespaVersion());
         session.setDockerImageRepository(existingSession.getDockerImageRepository());
         session.setAthenzDomain(existingSession.getAthenzDomain());
+        session.setTenantSecretStores(existingSession.getTenantSecretStores());
         if (existingSession.getDedicatedClusterControllerCluster())
             session.setDedicatedClusterControllerCluster();
         return session;
@@ -299,8 +301,7 @@ public class SessionRepository {
     }
 
     private void deleteAllSessions() {
-        List<LocalSession> sessions = new ArrayList<>(localSessionCache.values());
-        for (LocalSession session : sessions) {
+        for (LocalSession session : getLocalSessions()) {
             deleteLocalSession(session);
         }
     }
@@ -309,6 +310,11 @@ public class SessionRepository {
 
     public RemoteSession getRemoteSession(long sessionId) {
         return remoteSessionCache.get(sessionId);
+    }
+
+    /** Returns a copy of remote sessions */
+    public Collection<RemoteSession> getRemoteSessions() {
+        return List.copyOf(remoteSessionCache.values());
     }
 
     public List<Long> getRemoteSessionsFromZooKeeper() {
@@ -526,9 +532,7 @@ public class SessionRepository {
     private void nodeChanged() {
         zkWatcherExecutor.execute(() -> {
             Multiset<Session.Status> sessionMetrics = HashMultiset.create();
-            for (Session session : remoteSessionCache.values()) {
-                sessionMetrics.add(session.getStatus());
-            }
+            getRemoteSessions().forEach(session -> sessionMetrics.add(session.getStatus()));
             metricUpdater.setNewSessions(sessionMetrics.count(Session.Status.NEW));
             metricUpdater.setPreparedSessions(sessionMetrics.count(Session.Status.PREPARE));
             metricUpdater.setActivatedSessions(sessionMetrics.count(Session.Status.ACTIVATE));
@@ -558,7 +562,7 @@ public class SessionRepository {
         log.log(Level.FINE, () -> "Purging old sessions for tenant '" + tenantName + "'");
         Set<LocalSession> toDelete = new HashSet<>();
         try {
-            for (LocalSession candidate : List.copyOf(localSessionCache.values())) {
+            for (LocalSession candidate : getLocalSessions()) {
                 Instant createTime = candidate.getCreateTime();
                 log.log(Level.FINE, () -> "Candidate session for deletion: " + candidate.getSessionId() + ", created: " + createTime);
 

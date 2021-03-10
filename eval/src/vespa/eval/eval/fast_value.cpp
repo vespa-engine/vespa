@@ -15,8 +15,8 @@ struct CreateFastValueBuilderBase {
             size_t num_mapped_dims, size_t subspace_size, size_t expected_subspaces)
     {
         assert(check_cell_type<T>(type.cell_type()));
-        if (type.is_scalar()) {
-            return std::make_unique<FastScalarBuilder<T>>();
+        if (type.is_double()) {
+            return std::make_unique<FastDoubleValueBuilder>();
         } else if (num_mapped_dims == 0) {
             return std::make_unique<FastDenseValue<T>>(type, subspace_size);
         } else {

@@ -21,15 +21,16 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.DockerImage;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.config.model.api.TenantSecretStore;
+import com.yahoo.container.jdisc.secretstore.SecretStore;
+import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.UnboundFlag;
 
@@ -167,7 +168,6 @@ public class ModelContextImpl implements ModelContext {
         private final boolean useAccessControlTlsHandshakeClientAuth;
         private final boolean useAsyncMessageHandlingOnSchedule;
         private final double feedConcurrency;
-        private final boolean reconfigurableZookeeperServer;
         private final boolean useBucketExecutorForLidSpaceCompact;
         private final boolean useBucketExecutorForBucketMove;
         private final boolean enableFeedBlockInDistributor;
@@ -192,7 +192,6 @@ public class ModelContextImpl implements ModelContext {
             this.useAccessControlTlsHandshakeClientAuth = flagValue(source, appId, Flags.USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION);
             this.useAsyncMessageHandlingOnSchedule = flagValue(source, appId, Flags.USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE);
             this.feedConcurrency = flagValue(source, appId, Flags.FEED_CONCURRENCY);
-            this.reconfigurableZookeeperServer = flagValue(source, appId, Flags.RECONFIGURABLE_ZOOKEEPER_SERVER_FOR_CLUSTER_CONTROLLER);
             this.useBucketExecutorForLidSpaceCompact = flagValue(source, appId, Flags.USE_BUCKET_EXECUTOR_FOR_LID_SPACE_COMPACT);
             this.useBucketExecutorForBucketMove = flagValue(source, appId, Flags.USE_BUCKET_EXECUTOR_FOR_BUCKET_MOVE);
             this.enableFeedBlockInDistributor = flagValue(source, appId, Flags.ENABLE_FEED_BLOCK_IN_DISTRIBUTOR);
@@ -217,7 +216,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public boolean useAccessControlTlsHandshakeClientAuth() { return useAccessControlTlsHandshakeClientAuth; }
         @Override public boolean useAsyncMessageHandlingOnSchedule() { return useAsyncMessageHandlingOnSchedule; }
         @Override public double feedConcurrency() { return feedConcurrency; }
-        @Override public boolean reconfigurableZookeeperServer() { return reconfigurableZookeeperServer; }
         @Override public boolean useBucketExecutorForLidSpaceCompact() { return useBucketExecutorForLidSpaceCompact; }
         @Override public boolean useBucketExecutorForBucketMove() { return useBucketExecutorForBucketMove; }
         @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
@@ -260,6 +258,8 @@ public class ModelContextImpl implements ModelContext {
         private final Optional<AthenzDomain> athenzDomain;
         private final Optional<ApplicationRoles> applicationRoles;
         private final Quota quota;
+        private final List<TenantSecretStore> tenantSecretStores;
+        private final SecretStore secretStore;
         private final boolean dedicatedClusterControllerCluster;
 
         private final String jvmGcOptions;
@@ -275,6 +275,8 @@ public class ModelContextImpl implements ModelContext {
                           Optional<AthenzDomain> athenzDomain,
                           Optional<ApplicationRoles> applicationRoles,
                           Optional<Quota> maybeQuota,
+                          List<TenantSecretStore> tenantSecretStores,
+                          SecretStore secretStore,
                           boolean dedicatedClusterControllerCluster) {
             this.featureFlags = new FeatureFlags(flagSource, applicationId);
             this.applicationId = applicationId;
@@ -292,7 +294,9 @@ public class ModelContextImpl implements ModelContext {
             this.athenzDomain = athenzDomain;
             this.applicationRoles = applicationRoles;
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
-            this.dedicatedClusterControllerCluster = zoneHasRedundancyOrIsCD(zone) && dedicatedClusterControllerCluster;
+            this.dedicatedClusterControllerCluster = dedicatedClusterControllerCluster;
+            this.tenantSecretStores = tenantSecretStores;
+            this.secretStore = secretStore;
 
             jvmGcOptions = flagValue(flagSource, applicationId, PermanentFlags.JVM_GC_OPTIONS);
         }
@@ -349,20 +353,20 @@ public class ModelContextImpl implements ModelContext {
 
         @Override public Quota quota() { return quota; }
 
+        @Override
+        public List<TenantSecretStore> tenantSecretStores() {
+            return SecretStoreExternalIdRetriever.populateExternalId(secretStore, applicationId.tenant(), zone.system(), tenantSecretStores);
+        }
+
         @Override public String jvmGCOptions() { return jvmGcOptions; }
 
-        @Override public boolean dedicatedClusterControllerCluster() { return dedicatedClusterControllerCluster; }
+        @Override public boolean dedicatedClusterControllerCluster() { return hostedVespa && dedicatedClusterControllerCluster; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
                     .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
                     .boxedValue();
         }
-    }
-
-    private static boolean zoneHasRedundancyOrIsCD(Zone zone) {
-        return    zone.system().isCd() && zone.environment() == Environment.dev
-               || List.of(Environment.staging, Environment.perf, Environment.prod).contains(zone.environment());
     }
 
     private static NodeResources parseDedicatedClusterControllerFlavor(String flagValue) {

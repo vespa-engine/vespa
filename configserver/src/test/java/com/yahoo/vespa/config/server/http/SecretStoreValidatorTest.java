@@ -4,9 +4,13 @@ import com.github.tomakehurst.wiremock.junit.WireMockRule;
 import com.yahoo.config.model.api.HostInfo;
 import com.yahoo.config.model.api.Model;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
+import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.application.Application;
-import com.yahoo.vespa.config.server.application.TenantSecretStore;
+import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import org.junit.Rule;
 import org.junit.Test;
 
@@ -35,20 +39,26 @@ public class SecretStoreValidatorTest {
     @Test
     public void createsCorrectRequestData() throws IOException {
         var app = mockApplication();
-        var tenantSecretStore = new TenantSecretStore("store", "123", "role");
-        var tenantSecretName = "some-secret";
-        when(secretStore.getSecret(tenantSecretName)).thenReturn("some-secret-value");
-
+        var requestBody = SlimeUtils.jsonToSlime("{\"awsId\":\"123\"," +
+                "\"name\":\"store\"," +
+                "\"role\":\"role\"," +
+                "\"region\":\"some-region\"," +
+                "\"parameterName\":\"some-parameter\"" +
+                "}");
+        var expectedSecretName = SecretStoreExternalIdRetriever.secretName(TenantName.defaultName(), SystemName.PublicCd, "store");
+        when(secretStore.getSecret(expectedSecretName)).thenReturn("some-secret-value");
         stubFor(post(urlEqualTo("/validate-secret-store"))
-                .withRequestBody(equalToJson("{\"externalId\":\"some-secret-value\"," +
-                        "\"awsId\":\"123\"," +
+                .withRequestBody(equalToJson("{\"awsId\":\"123\"," +
                         "\"name\":\"store\"," +
-                        "\"role\":\"role\"" +
+                        "\"role\":\"role\"," +
+                        "\"region\":\"some-region\"," +
+                        "\"parameterName\":\"some-parameter\"," +
+                        "\"externalId\":\"some-secret-value\"" +
                         "}"))
                 .willReturn(aResponse()
                         .withStatus(200)
                         .withBody("is ok")));
-        var response = secretStoreValidator.validateSecretStore(app, tenantSecretStore, tenantSecretName);
+        var response = secretStoreValidator.validateSecretStore(app, SystemName.PublicCd, requestBody);
         var body = new ByteArrayOutputStream();
         response.render(body);
         assertEquals("is ok", body.toString());
@@ -60,6 +70,7 @@ public class SecretStoreValidatorTest {
         var hostList = createHostList();
         when(app.getModel()).thenReturn(model);
         when(model.getHosts()).thenReturn(hostList);
+        when(app.getId()).thenReturn(ApplicationId.defaultId());
         return app;
     }
 

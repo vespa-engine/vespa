@@ -16,9 +16,9 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
 
     final static long MB = 1024 * 1024;
     public final static long GB = MB * 1024;
+    // This is an approximate number base on observation of a node using 33G memory with 765M docs
+    private final static long MEMORY_COST_PER_DOCUMENT_STORE_ONLY = 46L;
     private final NodeResources resources;
-    private final int redundancy;
-    private final int searchableCopies;
     private final int threadsPerSearch;
     private final boolean combined;
 
@@ -26,13 +26,9 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     public static final double reservedMemoryGb = 0.5;
 
     public NodeResourcesTuning(NodeResources resources,
-                               int redundancy,
-                               int searchableCopies,
                                int threadsPerSearch,
                                boolean combined) {
         this.resources = resources;
-        this.redundancy = redundancy;
-        this.searchableCopies = searchableCopies;
         this.threadsPerSearch = threadsPerSearch;
         this.combined = combined;
     }
@@ -56,8 +52,8 @@ public class NodeResourcesTuning implements ProtonConfig.Producer {
     private void getConfig(ProtonConfig.Documentdb.Builder builder) {
         ProtonConfig.Documentdb dbCfg = builder.build();
         if (dbCfg.mode() != ProtonConfig.Documentdb.Mode.Enum.INDEX) {
-            long numDocs = (long)usableMemoryGb() * GB / 64L;
-            builder.allocation.initialnumdocs(numDocs/Math.max(searchableCopies, redundancy));
+            long numDocs = (long)usableMemoryGb() * GB / MEMORY_COST_PER_DOCUMENT_STORE_ONLY;
+            builder.allocation.initialnumdocs(numDocs);
         }
     }
 

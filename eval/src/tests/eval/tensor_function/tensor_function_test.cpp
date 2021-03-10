@@ -229,9 +229,9 @@ TEST("require that full tensor reduction works") {
     size_t a_id = ctx.add_tensor(ctx.make_tensor_reduce_input());
     const auto &fun = reduce(inject(ValueType::from_spec("tensor(x[3],y[2])"), a_id, ctx.stash), Aggr::SUM, {}, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
-    EXPECT_EQUAL(ValueType::from_spec("double"), fun.result_type());
+    EXPECT_EQUAL(ValueType::double_type(), fun.result_type());
     const Value &result = ctx.eval(fun);
-    EXPECT_TRUE(result.is_double());
+    EXPECT_TRUE(result.type().is_double());
     EXPECT_EQUAL(21.0, result.as_double());
 }
 
@@ -300,8 +300,8 @@ TEST("require that tensor create works") {
     size_t b_id = ctx.add_tensor(ctx.make_double(2.0));
     Value::UP my_const = ctx.make_double(3.0);
     Value::UP expect = ctx.make_vector({1.0, 2.0, 3.0});
-    const auto &a = inject(ValueType::from_spec("double"), a_id, ctx.stash);
-    const auto &b = inject(ValueType::from_spec("double"), b_id, ctx.stash);
+    const auto &a = inject(ValueType::double_type(), a_id, ctx.stash);
+    const auto &b = inject(ValueType::double_type(), b_id, ctx.stash);
     const auto &c = const_value(*my_const, ctx.stash);
     const auto &fun = create(ValueType::from_spec("tensor(x[3])"),
                              {
@@ -321,8 +321,8 @@ TEST("require that single value tensor peek works") {
     size_t b_id = ctx.add_tensor(ctx.make_double(1000.0));
     Value::UP my_const = ctx.make_mixed_tensor(1.0, 2.0, 3.0, 4.0);
     Value::UP expect = ctx.make_vector({2.0, 3.0, 0.0});
-    const auto &a = inject(ValueType::from_spec("double"), a_id, ctx.stash);
-    const auto &b = inject(ValueType::from_spec("double"), b_id, ctx.stash);
+    const auto &a = inject(ValueType::double_type(), a_id, ctx.stash);
+    const auto &b = inject(ValueType::double_type(), b_id, ctx.stash);
     const auto &t = const_value(*my_const, ctx.stash);
     const auto &peek1 = peek(t, {{"x", "foo"}, {"y", a}}, ctx.stash);
     const auto &peek2 = peek(t, {{"x", "bar"}, {"y", size_t(0)}}, ctx.stash);
@@ -354,13 +354,13 @@ TEST("require that automatic string conversion tensor peek works") {
     EvalCtx ctx(simple_factory);
     size_t a_id = ctx.add_tensor(ctx.make_double(1.0));
     Value::UP my_const = ctx.make_vector({1.0, 2.0, 3.0}, "x", true);
-    const auto &a = inject(ValueType::from_spec("double"), a_id, ctx.stash);
+    const auto &a = inject(ValueType::double_type(), a_id, ctx.stash);
     const auto &t = const_value(*my_const, ctx.stash);
     const auto &fun = peek(t, {{"x", a}}, ctx.stash);
     EXPECT_TRUE(fun.result_is_mutable());
     EXPECT_TRUE(fun.result_type().is_double());
     const Value &result = ctx.eval(fun);
-    EXPECT_TRUE(result.is_double());
+    EXPECT_TRUE(result.type().is_double());
     EXPECT_EQUAL(2.0, result.as_double());
 }
 

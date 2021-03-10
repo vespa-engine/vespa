@@ -44,10 +44,15 @@ public:
     {
     }
 
-    bool operator()(const EntryRef lhs, const EntryRef rhs) const override {
+    bool less(const EntryRef lhs, const EntryRef rhs) const override {
         const char *lhs_value = get(lhs);
         const char *rhs_value = get(rhs);
         return (strcmp(lhs_value, rhs_value) < 0);
+    }
+    bool equal(const EntryRef lhs, const EntryRef rhs) const override {
+        const char *lhs_value = get(lhs);
+        const char *rhs_value = get(rhs);
+        return (strcmp(lhs_value, rhs_value) == 0);
     }
 };
 

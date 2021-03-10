@@ -91,22 +91,23 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
             index = parent->getIndex() + "." + index;
         }
         vespalib::stringref term = queryRep.getTerm();
-        QueryTerm::SearchTerm sTerm(QueryTerm::WORD);
+        using TermType = QueryTerm::Type;
+        TermType sTerm(TermType::WORD);
         switch (type) {
         case ParseItem::ITEM_REGEXP:
-            sTerm = QueryTerm::REGEXP;
+            sTerm = TermType::REGEXP;
             break;
         case ParseItem::ITEM_PREFIXTERM:
-            sTerm = QueryTerm::PREFIXTERM;
+            sTerm = TermType::PREFIXTERM;
             break;
         case ParseItem::ITEM_SUBSTRINGTERM:
-            sTerm = QueryTerm::SUBSTRINGTERM;
+            sTerm = TermType::SUBSTRINGTERM;
             break;
         case ParseItem::ITEM_EXACTSTRINGTERM:
-            sTerm = QueryTerm::EXACTSTRINGTERM;
+            sTerm = TermType::EXACTSTRINGTERM;
             break;
         case ParseItem::ITEM_SUFFIXTERM:
-            sTerm = QueryTerm::SUFFIXTERM;
+            sTerm = TermType::SUFFIXTERM;
             break;
         default:
             break;
@@ -118,16 +119,16 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
             // But it will do for now as only correct sddocname queries are sent down.
             qn.reset(new TrueNode());
         } else {
-            std::unique_ptr<QueryTerm> qt(new QueryTerm(factory.create(), ssTerm, ssIndex, sTerm));
+            auto qt = std::make_unique<QueryTerm>(factory.create(), ssTerm, ssIndex, sTerm);
             qt->setWeight(queryRep.GetWeight());
             qt->setUniqueId(queryRep.getUniqueId());
             if ( qt->encoding().isBase10Integer() || ! qt->encoding().isFloat() || ! factory.getRewriteFloatTerms() || !allowRewrite || (ssTerm.find('.') == vespalib::string::npos)) {
                 qn = std::move(qt);
             } else {
-                std::unique_ptr<PhraseQueryNode> phrase(new PhraseQueryNode());
-                phrase->push_back(UP(new QueryTerm(factory.create(), ssTerm.substr(0, ssTerm.find('.')), ssIndex, QueryTerm::WORD)));
-                phrase->push_back(UP(new QueryTerm(factory.create(), ssTerm.substr(ssTerm.find('.') + 1), ssIndex, QueryTerm::WORD)));
-                std::unique_ptr<EquivQueryNode> orqn(new EquivQueryNode());
+                auto phrase = std::make_unique<PhraseQueryNode>();
+                phrase->push_back(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(0, ssTerm.find('.')), ssIndex, TermType::WORD));
+                phrase->push_back(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(ssTerm.find('.') + 1), ssIndex, TermType::WORD));
+                auto orqn = std::make_unique<EquivQueryNode>();
                 orqn->push_back(std::move(qt));
                 orqn->push_back(std::move(phrase));
                 qn.reset(orqn.release());

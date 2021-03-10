@@ -10,6 +10,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     backtrace.cpp
     barrier.cpp
     benchmark_timer.cpp
+    bfloat16.cpp
     blockingthreadstackexecutor.cpp
     box.cpp
     child_process.cpp
@@ -21,6 +22,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     error.cpp
     exception.cpp
     exceptions.cpp
+    file_area_freelist.cpp
     gencnt.cpp
     generationhandler.cpp
     generationholder.cpp

@@ -22,9 +22,9 @@ const Value &my_fast_no_overlap_sparse_join(const FastAddrMap &lhs_map, const Fa
     const auto &addr_sources = param.sparse_plan.sources;
     size_t num_mapped_dims = addr_sources.size();
     auto &result = stash.create<FastValue<CT,true>>(param.res_type, num_mapped_dims, 1, lhs_map.size() * rhs_map.size());
-    std::vector<string_id> output_addr(num_mapped_dims);
-    std::vector<size_t> store_lhs_idx;
-    std::vector<size_t> store_rhs_idx;
+    SmallVector<string_id> output_addr(num_mapped_dims);
+    SmallVector<size_t> store_lhs_idx;
+    SmallVector<size_t> store_rhs_idx;
     size_t out_idx = 0;
     for (auto source: addr_sources) {
         switch (source) {
@@ -102,7 +102,9 @@ SparseNoOverlapJoinFunction::SparseNoOverlapJoinFunction(const tensor_function::
 InterpretedFunction::Instruction
 SparseNoOverlapJoinFunction::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    const auto &param = stash.create<JoinParam>(lhs().result_type(), rhs().result_type(), function(), factory);
+    const auto &param = stash.create<JoinParam>(result_type(),
+                                                lhs().result_type(), rhs().result_type(),
+                                                function(), factory);
     auto op = typify_invoke<2,MyTypify,SelectSparseNoOverlapJoinOp>(result_type().cell_type(), function());
     return InterpretedFunction::Instruction(op, wrap_param<JoinParam>(param));
 }
@@ -111,11 +113,11 @@ bool
 SparseNoOverlapJoinFunction::compatible_types(const ValueType &res, const ValueType &lhs, const ValueType &rhs)
 {
     if ((lhs.cell_type() == rhs.cell_type()) &&
+        (res.cell_type() == lhs.cell_type()) &&
         is_sparse_like(lhs) && is_sparse_like(rhs) &&
         (res.count_mapped_dimensions() == (lhs.count_mapped_dimensions() + rhs.count_mapped_dimensions())))
     {
         assert(is_sparse_like(res));
-        assert(res.cell_type() == lhs.cell_type());
         return true;
     }
     return false;

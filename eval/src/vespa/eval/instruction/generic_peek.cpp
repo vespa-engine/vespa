@@ -274,8 +274,8 @@ struct PeekParam {
     size_t num_children;
     const ValueBuilderFactory &factory;
 
-    PeekParam(const ValueType &input_type,
-              const ValueType &res_type_in,
+    PeekParam(const ValueType &res_type_in,
+              const ValueType &input_type,
               const GenericPeek::SpecMap &spec_in,
               const ValueBuilderFactory &factory_in)
         : res_type(res_type_in),
@@ -356,14 +356,14 @@ struct SelectGenericPeekOp {
 } // namespace <unnamed>
 
 Instruction
-GenericPeek::make_instruction(const ValueType &input_type,
-                              const ValueType &res_type,
+GenericPeek::make_instruction(const ValueType &result_type,
+                              const ValueType &input_type,
                               const SpecMap &spec,
                               const ValueBuilderFactory &factory,
                               Stash &stash)
 {
-    const auto &param = stash.create<PeekParam>(input_type, res_type, spec, factory);
-    auto fun = typify_invoke<2,TypifyCellType,SelectGenericPeekOp>(input_type.cell_type(), res_type.cell_type());
+    const auto &param = stash.create<PeekParam>(result_type, input_type, spec, factory);
+    auto fun = typify_invoke<2,TypifyCellType,SelectGenericPeekOp>(input_type.cell_type(), result_type.cell_type());
     return Instruction(fun, wrap_param<PeekParam>(param));
 }
 

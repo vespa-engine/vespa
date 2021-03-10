@@ -560,8 +560,10 @@ struct TestContext {
 
     void test_cell_cast(const GenSpec &a) {
         for (CellType cell_type: CellTypeUtils::list_types()) {
+            auto expect = a.cpy().cells(cell_type);
+            if (expect.bad_scalar()) continue;
             vespalib::string expr = fmt("cell_cast(a,%s)", value_type::cell_type_to_name(cell_type).c_str());
-            TEST_DO(verify_result(factory, expr, {a}, a.cpy().cells(cell_type)));
+            TEST_DO(verify_result(factory, expr, {a}, expect));
         }
     }
 
@@ -570,8 +572,8 @@ struct TestContext {
         for (CellType cell_type: CellTypeUtils::list_types()) {
             gen_list.push_back(GenSpec(-3).cells(cell_type));
         }
+        TEST_DO(test_cell_cast(GenSpec(42)));
         for (const auto &gen: gen_list) {
-            TEST_DO(test_cell_cast(gen));
             TEST_DO(test_cell_cast(gen.cpy().idx("x", 10)));
             TEST_DO(test_cell_cast(gen.cpy().map("x", 10, 1)));
             TEST_DO(test_cell_cast(gen.cpy().map("x", 4, 1).idx("y", 4)));

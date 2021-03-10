@@ -93,7 +93,7 @@ JoinWithNumberFunction::visit_self(vespalib::ObjectVisitor &visitor) const
 const TensorFunction &
 JoinWithNumberFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
-    if (! expr.result_type().is_scalar()) {
+    if (! expr.result_type().is_double()) {
         if (const auto *join = as<Join>(expr)) {
             const ValueType &result_type = join->result_type();
             const TensorFunction &lhs = join->lhs();

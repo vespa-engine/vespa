@@ -67,7 +67,7 @@ TEST_F(RequestContextTest, query_tensor_can_be_retrieved)
 {
     auto tensor = get_query_tensor("my_tensor");
     ASSERT_TRUE(tensor);
-    EXPECT_TRUE(tensor->is_tensor());
+    EXPECT_TRUE(tensor->type().has_dimensions());
     EXPECT_EQ(expected_query_tensor(), spec_from_value(*tensor));
 }
 

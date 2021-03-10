@@ -162,7 +162,7 @@ HitCollector::getFeatureSet(IRankProgram &rankProgram,
         for (uint32_t j = 0; j < names.size(); ++j) {
             if (resolver.is_object(j)) {
                 auto obj = resolver.resolve(j).as_object(docId);
-                if (! obj.get().is_double()) {
+                if (! obj.get().type().is_double()) {
                     vespalib::nbostream buf;
                     encode_value(obj.get(), buf);
                     f[j].set_data(vespalib::Memory(buf.peek(), buf.size()));

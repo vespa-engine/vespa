@@ -27,7 +27,6 @@ public class VespaService implements Comparable<VespaService> {
     private final String monitoringPrefix;
     private final Map<DimensionId, String> dimensions;
 
-
     private volatile int pid = -1;
     private volatile String state = "UNKNOWN";
     private volatile boolean isAlive;
@@ -42,8 +41,8 @@ public class VespaService implements Comparable<VespaService> {
 
 
     // Used to keep track of log level when health or metrics requests fail
-    private AtomicInteger metricsFetchCount = new AtomicInteger(0);
-    private AtomicInteger healthFetchCount = new AtomicInteger(0);
+    private final AtomicInteger metricsFetchCount = new AtomicInteger(0);
+    private final AtomicInteger healthFetchCount = new AtomicInteger(0);
 
 
     public static VespaService create(String name, String id, int statePort) {

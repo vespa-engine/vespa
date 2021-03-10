@@ -154,7 +154,7 @@ void my_generic_dense_reduce_op(State &state, uint64_t param_in) {
     }
 };
 
-template <typename ICT, typename OCT, typename AGGR>
+template <typename ICT, typename AGGR>
 void my_full_reduce_op(State &state, uint64_t) {
     auto cells = state.peek(0).cells().typify<ICT>();
     if (cells.size() >= 8) {
@@ -176,23 +176,24 @@ void my_full_reduce_op(State &state, uint64_t) {
         aggrs[0].merge(aggrs[2]);
         aggrs[1].merge(aggrs[3]);
         aggrs[0].merge(aggrs[1]);
-        state.pop_push(state.stash.create<ScalarValue<OCT>>(aggrs[0].result()));
+        state.pop_push(state.stash.create<DoubleValue>(aggrs[0].result()));
     } else if (cells.size() > 0) {
         AGGR aggr;
         for (ICT value: cells) {
             aggr.sample(value);
         }
-        state.pop_push(state.stash.create<ScalarValue<OCT>>(aggr.result()));
+        state.pop_push(state.stash.create<DoubleValue>(aggr.result()));
     } else {
-        state.pop_push(state.stash.create<ScalarValue<OCT>>(OCT{0}));
+        state.pop_push(state.stash.create<DoubleValue>(0.0));
     }
 };
 
 struct SelectGenericReduceOp {
     template <typename ICT, typename OCT, typename AGGR> static auto invoke(const ReduceParam &param) {
         using AggrType = typename AGGR::template templ<OCT>;
-        if (param.res_type.is_scalar()) {
-            return my_full_reduce_op<ICT, OCT, AggrType>;
+        if (param.res_type.is_double()) {
+            assert((std::is_same_v<OCT,double>));
+            return my_full_reduce_op<ICT, AggrType>;
         }
         if (param.sparse_plan.should_forward_index()) {
             return my_generic_dense_reduce_op<ICT, OCT, AggrType, true>;
@@ -290,11 +291,13 @@ SparseReducePlan::~SparseReducePlan() = default;
 using ReduceTypify = TypifyValue<TypifyCellType,TypifyAggr>;
 
 Instruction
-GenericReduce::make_instruction(const ValueType &type, Aggr aggr, const std::vector<vespalib::string> &dimensions,
+GenericReduce::make_instruction(const ValueType &result_type,
+                                const ValueType &input_type, Aggr aggr, const std::vector<vespalib::string> &dimensions,
                                 const ValueBuilderFactory &factory, Stash &stash)
 {
-    auto &param = stash.create<ReduceParam>(type, dimensions, factory);
-    auto fun = typify_invoke<3,ReduceTypify,SelectGenericReduceOp>(type.cell_type(), param.res_type.cell_type(), aggr, param);
+    auto &param = stash.create<ReduceParam>(input_type, dimensions, factory);
+    assert(result_type == param.res_type);
+    auto fun = typify_invoke<3,ReduceTypify,SelectGenericReduceOp>(input_type.cell_type(), result_type.cell_type(), aggr, param);
     return Instruction(fun, wrap_param<ReduceParam>(param));
 }
 

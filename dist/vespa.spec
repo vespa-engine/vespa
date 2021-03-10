@@ -41,10 +41,20 @@ BuildRequires: rh-maven35
 %define _rhmaven35_enable /opt/rh/rh-maven35/enable
 %endif
 %if 0%{?el8}
+%if 0%{?centos}
+%global _centos_stream %(grep -qs '^NAME="CentOS Stream"' /etc/os-release && echo 1 || echo 0)
+%endif
+%if 0%{?_centos_stream}
+BuildRequires: gcc-toolset-10-gcc-c++
+BuildRequires: gcc-toolset-10-binutils
+%define _devtoolset_enable /opt/rh/gcc-toolset-10/enable
+BuildRequires: vespa-boost-devel >= 1.75.0-1
+%else
 BuildRequires: gcc-toolset-9-gcc-c++
 BuildRequires: gcc-toolset-9-binutils
-BuildRequires: maven
 %define _devtoolset_enable /opt/rh/gcc-toolset-9/enable
+%endif
+BuildRequires: maven
 %endif
 %if 0%{?fedora}
 BuildRequires: gcc-c++
@@ -64,7 +74,11 @@ BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
 %if 0%{?el8}
 BuildRequires: cmake >= 3.11.4-3
+%if 0%{?_centos_stream}
+BuildRequires: llvm-devel >= 11.0.0
+%else
 BuildRequires: llvm-devel >= 10.0.1
+%endif
 BuildRequires: boost-devel >= 1.66
 BuildRequires: openssl-devel
 BuildRequires: vespa-gtest >= 1.8.1-1
@@ -96,14 +110,14 @@ BuildRequires: gmock-devel
 %endif
 %if 0%{?fc34}
 BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 11.1.0
+BuildRequires: llvm-devel >= 12.0.0
 BuildRequires: boost-devel >= 1.75
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
 %if 0%{?fc35}
 BuildRequires: protobuf-devel
-BuildRequires: llvm-devel >= 11.1.0
+BuildRequires: llvm-devel >= 12.0.0
 BuildRequires: boost-devel >= 1.75
 BuildRequires: gtest-devel
 BuildRequires: gmock-devel
@@ -181,8 +195,13 @@ Requires: vespa-zstd >= 1.4.5-2
 %define _extra_include_directory /usr/include/llvm7.0;%{_vespa_deps_prefix}/include;/usr/include/openblas
 %endif
 %if 0%{?el8}
+%if 0%{?_centos_stream}
+Requires: llvm-libs >= 11.0.0
+%define _vespa_llvm_version 11
+%else
 Requires: llvm-libs >= 10.0.1
 %define _vespa_llvm_version 10
+%endif
 Requires: openssl-libs
 Requires: vespa-lz4 >= 1.9.2-2
 Requires: vespa-onnxruntime = 1.4.0
@@ -208,13 +227,13 @@ Requires: llvm-libs >= 11.0.0
 %endif
 %if 0%{?fc34}
 Requires: protobuf
-Requires: llvm-libs >= 11.1.0
-%define _vespa_llvm_version 11
+Requires: llvm-libs >= 12.0.0
+%define _vespa_llvm_version 12
 %endif
 %if 0%{?fc35}
 Requires: protobuf
-Requires: llvm-libs >= 11.1.0
-%define _vespa_llvm_version 11
+Requires: llvm-libs >= 12.0.0
+%define _vespa_llvm_version 12
 %endif
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas

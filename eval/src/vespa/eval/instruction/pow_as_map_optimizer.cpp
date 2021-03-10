@@ -15,7 +15,7 @@ PowAsMapOptimizer::optimize(const TensorFunction &expr, Stash &stash)
         const TensorFunction &lhs = join->lhs();
         const TensorFunction &rhs = join->rhs();
         if ((join->function() == Pow::f) &&
-            rhs.result_type().is_scalar())
+            rhs.result_type().is_double())
         {
             if (auto const_value = as<ConstValue>(rhs)) {
                 if (const_value->value().as_double() == 2.0) {

@@ -39,7 +39,8 @@ struct SparseReducePlan {
 
 struct GenericReduce {
     static InterpretedFunction::Instruction
-    make_instruction(const ValueType &type, Aggr aggr,
+    make_instruction(const ValueType &result_type,
+                     const ValueType &input_type, Aggr aggr,
                      const std::vector<vespalib::string> &dimensions,
                      const ValueBuilderFactory &factory, Stash &stash);
 };

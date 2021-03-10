@@ -56,9 +56,6 @@ protected:
 
     EnumStore _enumStore;
 
-    EnumStore &       getEnumStore()       { return _enumStore; }
-    const EnumStore & getEnumStore() const { return _enumStore; }
-
     const IEnumStore* getEnumStoreBase() const override { return &_enumStore; }
     IEnumStore* getEnumStoreBase() override { return &_enumStore; }
     EnumEntryType getFromEnum(EnumHandle e) const override { return _enumStore.get_value(e); }
@@ -81,6 +78,9 @@ public:
     EnumAttribute(const vespalib::string & baseFileName, const AttributeVector::Config & cfg);
     ~EnumAttribute();
     bool findEnum(EnumEntryType v, EnumHandle & e) const override { return _enumStore.find_enum(v, e); }
+    const EnumStore & getEnumStore() const { return _enumStore; }
+    EnumStore &       getEnumStore()       { return _enumStore; }
+
 };
 
 } // namespace search

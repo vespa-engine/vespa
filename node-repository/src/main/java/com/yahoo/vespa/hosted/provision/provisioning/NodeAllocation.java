@@ -290,12 +290,12 @@ class NodeAllocation {
     }
 
     /**
-     * Returns {@link FlavorCount} describing the node deficit for the given {@link NodeSpec}.
+     * Returns {@link FlavorCount} describing the host deficit for the given {@link NodeSpec}.
      *
      * @return empty if the requested spec is already fulfilled. Otherwise returns {@link FlavorCount} containing the
-     * flavor and node count required to cover the deficit.
+     * flavor and host count required to cover the deficit.
      */
-    Optional<FlavorCount> nodeDeficit() {
+    Optional<FlavorCount> hostDeficit() {
         if (nodeType() != NodeType.config && nodeType() != NodeType.tenant) {
             return Optional.empty(); // Requests for these node types never have a deficit
         }
@@ -327,6 +327,14 @@ class NodeAllocation {
                 indices.add(i);
             }
         }
+        // Ignore our own index as we should never try to provision ourself. This can happen in the following scenario:
+        // - cfg1 has been deprovisioned
+        // - cfg2 has triggered provisioning of a new cfg1
+        // - cfg1 is starting and redeploys its infrastructure application during bootstrap. A deficit is detected
+        //   (itself, because cfg1 is only added to the repository *after* it is up)
+        // - cfg1 tries to provision a new host for itself
+        Integer myIndex = parseIndex(com.yahoo.net.HostName.getLocalhost());
+        indices.remove(myIndex);
         return indices;
     }
 

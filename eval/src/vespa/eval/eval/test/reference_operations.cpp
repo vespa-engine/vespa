@@ -82,7 +82,8 @@ struct CopyCellsWithCast {
 
 } // namespace <unnamed>
 
-TensorSpec ReferenceOperations::cell_cast(const TensorSpec &a, CellType to) {
+TensorSpec ReferenceOperations::cell_cast(const TensorSpec &in_a, CellType to) {
+    auto a = in_a.normalize();
     ValueType a_type = ValueType::from_spec(a.type());
     ValueType res_type = a_type.cell_cast(to);
     TensorSpec result(res_type.to_spec());
@@ -90,10 +91,12 @@ TensorSpec ReferenceOperations::cell_cast(const TensorSpec &a, CellType to) {
         return result;
     }
     typify_invoke<1,TypifyCellType,CopyCellsWithCast>(to, a, result);
-    return result;
+    return result.normalize();
 }
 
-TensorSpec ReferenceOperations::concat(const TensorSpec &a, const TensorSpec &b, const std::string &concat_dim) {
+TensorSpec ReferenceOperations::concat(const TensorSpec &in_a, const TensorSpec &in_b, const std::string &concat_dim) {
+    auto a = in_a.normalize();
+    auto b = in_b.normalize();
     ValueType a_type = ValueType::from_spec(a.type());
     ValueType b_type = ValueType::from_spec(b.type());
     ValueType res_type = ValueType::concat(a_type, b_type, concat_dim);
@@ -118,7 +121,7 @@ TensorSpec ReferenceOperations::concat(const TensorSpec &a, const TensorSpec &b,
             }
         }
     }
-    return result;
+    return result.normalize();
 }
 
 
@@ -133,11 +136,13 @@ TensorSpec ReferenceOperations::create(const vespalib::string &type, const Creat
         double val = value_from_child(child);
         result.add(addr, val);
     }
-    return result;
+    return result.normalize();
 }
 
 
-TensorSpec ReferenceOperations::join(const TensorSpec &a, const TensorSpec &b, join_fun_t function) {
+TensorSpec ReferenceOperations::join(const TensorSpec &in_a, const TensorSpec &in_b, join_fun_t function) {
+    auto a = in_a.normalize();
+    auto b = in_b.normalize();
     ValueType res_type = ValueType::join(ValueType::from_spec(a.type()), ValueType::from_spec(b.type()));
     TensorSpec result(res_type.to_spec());
     if (res_type.is_error()) {
@@ -153,11 +158,12 @@ TensorSpec ReferenceOperations::join(const TensorSpec &a, const TensorSpec &b, j
             }
         }
     }
-    return result;
+    return result.normalize();
 }
 
 
-TensorSpec ReferenceOperations::map(const TensorSpec &a, map_fun_t func) {
+TensorSpec ReferenceOperations::map(const TensorSpec &in_a, map_fun_t func) {
+    auto a = in_a.normalize();
     ValueType res_type = ValueType::from_spec(a.type());
     TensorSpec result(res_type.to_spec());
     if (res_type.is_error()) {
@@ -166,11 +172,13 @@ TensorSpec ReferenceOperations::map(const TensorSpec &a, map_fun_t func) {
     for (const auto & [ addr, value ]: a.cells()) {
         result.add(addr, func(value));
     }
-    return result;
+    return result.normalize();
 }
 
 
-TensorSpec ReferenceOperations::merge(const TensorSpec &a, const TensorSpec &b, join_fun_t fun) {
+TensorSpec ReferenceOperations::merge(const TensorSpec &in_a, const TensorSpec &in_b, join_fun_t fun) {
+    auto a = in_a.normalize();
+    auto b = in_b.normalize();
     ValueType res_type = ValueType::merge(ValueType::from_spec(a.type()),
                                           ValueType::from_spec(b.type()));
     TensorSpec result(res_type.to_spec());
@@ -191,7 +199,7 @@ TensorSpec ReferenceOperations::merge(const TensorSpec &a, const TensorSpec &b, 
             result.add(addr, value);
         }
     }
-    return result;
+    return result.normalize();
 }
 
 
@@ -203,9 +211,9 @@ TensorSpec ReferenceOperations::peek(const PeekSpec &peek_spec, const std::vecto
     for (const auto & [dim_name, label_or_child] : peek_spec) {
         peek_dims.push_back(dim_name);
     }
-    const TensorSpec &param = children[0];
+    TensorSpec param = children[0].normalize();
     ValueType param_type = ValueType::from_spec(param.type());
-    ValueType result_type = param_type.reduce(peek_dims);
+    ValueType result_type = param_type.peek(peek_dims);
     TensorSpec result(result_type.to_spec());
     if (result_type.is_error()) {
         return result;
@@ -253,11 +261,12 @@ TensorSpec ReferenceOperations::peek(const PeekSpec &peek_spec, const std::vecto
             result.add(my_addr, cell.second);
         }
     }
-    return result;
+    return result.normalize();
 }
 
 
-TensorSpec ReferenceOperations::reduce(const TensorSpec &a, Aggr aggr, const std::vector<vespalib::string> &dims) {
+TensorSpec ReferenceOperations::reduce(const TensorSpec &in_a, Aggr aggr, const std::vector<vespalib::string> &dims) {
+    auto a = in_a.normalize();
     ValueType res_type = ValueType::from_spec(a.type()).reduce(dims);
     TensorSpec result(res_type.to_spec());
     if (res_type.is_error()) {
@@ -283,11 +292,12 @@ TensorSpec ReferenceOperations::reduce(const TensorSpec &a, Aggr aggr, const std
     for (const auto &my_entry: my_map) {
         result.add(my_entry.first, my_entry.second.value()->result());
     }
-    return result;
+    return result.normalize();
 }
 
 
-TensorSpec ReferenceOperations::rename(const TensorSpec &a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) {
+TensorSpec ReferenceOperations::rename(const TensorSpec &in_a, const std::vector<vespalib::string> &from, const std::vector<vespalib::string> &to) {
+    auto a = in_a.normalize();
     assert(from.size() == to.size());
     ValueType res_type = ValueType::from_spec(a.type()).rename(from, to);
     TensorSpec result(res_type.to_spec());
@@ -301,7 +311,7 @@ TensorSpec ReferenceOperations::rename(const TensorSpec &a, const std::vector<ve
         }
         result.add(addr, cell.second);
     }
-    return result;
+    return result.normalize();
 }
 
 TensorSpec ReferenceOperations::lambda(const vespalib::string &type_in, lambda_fun_t fun) {
@@ -325,7 +335,7 @@ TensorSpec ReferenceOperations::lambda(const vespalib::string &type_in, lambda_f
         }
     };
     loop(0);
-    return result;
+    return result.normalize();
 }
 
 } // namespace

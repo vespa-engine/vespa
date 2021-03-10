@@ -43,13 +43,13 @@ public class MetricSet {
 
     /**
      * Returns all metrics in this set, including all metrics in any contained metric sets.
-     * <br>
+     *
      * Joins this set's metrics with its child sets into a named flat map of metrics.
      * In the case of duplicate metrics, the metrics directly defined in this set
      * takes precedence with respect to output name, description and dimension value
      * (even if they are empty), while new dimensions from the children will be added.
      *
-     * @return All metrics contained in this set.
+     * @return all the metrics contained in this set
      */
     public final Map<String, Metric> getMetrics() {
         return unmodifiableMap(flatten(metrics, children));

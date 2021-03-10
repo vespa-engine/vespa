@@ -21,6 +21,7 @@ using search::attribute::WeightedConstCharContent;
 using search::attribute::WeightedStringContent;
 using vespalib::eval::FastValueBuilderFactory;
 using vespalib::eval::ValueType;
+using vespalib::eval::CellType;
 using search::fef::FeatureType;
 
 namespace search {
@@ -58,7 +59,7 @@ TensorFromWeightedSetBlueprint::setup(const search::fef::IIndexEnvironment &env,
     }
     describeOutput("tensor",
                    "The tensor created from the given weighted set source (attribute field or query parameter)",
-                   FeatureType::object(ValueType::tensor_type({{_dimension}})));
+                   FeatureType::object(ValueType::make_type(CellType::DOUBLE, {{_dimension}})));
     return validSource;
 }
 
@@ -74,13 +75,13 @@ createAttributeExecutor(const search::fef::IQueryEnvironment &env,
     if (attribute == NULL) {
         LOG(warning, "The attribute vector '%s' was not found in the attribute manager."
                 " Returning empty tensor.", attrName.c_str());
-        return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}), stash);
+        return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{dimension}}), stash);
     }
     if (attribute->getCollectionType() != search::attribute::CollectionType::WSET ||
             attribute->isFloatingPointType()) {
         LOG(warning, "The attribute vector '%s' is NOT of type weighted set of string or integer."
                 " Returning empty tensor.", attrName.c_str());
-        return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{dimension}}), stash);
+        return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{dimension}}), stash);
     }
     if (attribute->isIntegerType()) {
         // Using WeightedStringContent ensures that the integer values are converted
@@ -97,7 +98,7 @@ createQueryExecutor(const search::fef::IQueryEnvironment &env,
                     const vespalib::string &queryKey,
                     const vespalib::string &dimension, vespalib::Stash &stash)
 {
-    ValueType type = ValueType::tensor_type({{dimension}});
+    ValueType type = ValueType::make_type(CellType::DOUBLE, {{dimension}});
     search::fef::Property prop = env.getProperties().lookup(queryKey);
     if (prop.found() && !prop.get().empty()) {
         WeightedStringVector vector;
@@ -127,7 +128,7 @@ TensorFromWeightedSetBlueprint::createExecutor(const search::fef::IQueryEnvironm
     } else if (_sourceType == QUERY_SOURCE) {
         return createQueryExecutor(env, _sourceParam, _dimension, stash);
     }
-    return ConstantTensorExecutor::createEmpty(ValueType::tensor_type({{_dimension}}), stash);
+    return ConstantTensorExecutor::createEmpty(ValueType::make_type(CellType::DOUBLE, {{_dimension}}), stash);
 }
 
 } // namespace features

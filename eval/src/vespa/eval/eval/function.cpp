@@ -777,7 +777,7 @@ bool maybe_parse_tensor_generator(ParseContext &ctx) {
         ctx.restore_input_mark(my_mark);
         return false;
     }
-    bool is_create = (type.is_tensor() && (ctx.get() == ':'));
+    bool is_create = (type.has_dimensions() && (ctx.get() == ':'));
     bool is_lambda = (type.is_dense() && (ctx.get() == '('));
     if (is_create) {
         parse_tensor_create(ctx, type, dim_list);

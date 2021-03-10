@@ -144,7 +144,7 @@ Inject::visit_self(vespalib::ObjectVisitor &visitor) const
 Instruction
 Reduce::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    return instruction::GenericReduce::make_instruction(child().result_type(), aggr(), dimensions(), factory, stash);
+    return instruction::GenericReduce::make_instruction(result_type(), child().result_type(), aggr(), dimensions(), factory, stash);
 }
 
 void
@@ -160,7 +160,7 @@ Reduce::visit_self(vespalib::ObjectVisitor &visitor) const
 Instruction
 Map::compile_self(const ValueBuilderFactory &, Stash &) const
 {
-    return instruction::GenericMap::make_instruction(result_type(), _function);
+    return instruction::GenericMap::make_instruction(result_type(), child().result_type(), _function);
 }
 
 void
@@ -175,7 +175,7 @@ Map::visit_self(vespalib::ObjectVisitor &visitor) const
 Instruction
 Join::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    return instruction::GenericJoin::make_instruction(lhs().result_type(), rhs().result_type(), function(), factory, stash);
+    return instruction::GenericJoin::make_instruction(result_type(), lhs().result_type(), rhs().result_type(), function(), factory, stash);
 }
 
 void
@@ -190,7 +190,7 @@ Join::visit_self(vespalib::ObjectVisitor &visitor) const
 Instruction
 Merge::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    return instruction::GenericMerge::make_instruction(lhs().result_type(), rhs().result_type(), function(), factory, stash);
+    return instruction::GenericMerge::make_instruction(result_type(), lhs().result_type(), rhs().result_type(), function(), factory, stash);
 }
 
 void
@@ -205,7 +205,7 @@ Merge::visit_self(vespalib::ObjectVisitor &visitor) const
 Instruction
 Concat::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    return instruction::GenericConcat::make_instruction(lhs().result_type(), rhs().result_type(), dimension(), factory, stash);
+    return instruction::GenericConcat::make_instruction(result_type(), lhs().result_type(), rhs().result_type(), dimension(), factory, stash);
 }
 
 void
@@ -220,7 +220,7 @@ Concat::visit_self(vespalib::ObjectVisitor &visitor) const
 InterpretedFunction::Instruction
 CellCast::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
-    return instruction::GenericCellCast::make_instruction(child().result_type(), cell_type(), stash);
+    return instruction::GenericCellCast::make_instruction(result_type(), child().result_type(), cell_type(), stash);
 }
 
 void
@@ -366,7 +366,7 @@ Peek::make_spec() const
 Instruction
 Peek::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    return instruction::GenericPeek::make_instruction(param_type(), result_type(), make_spec(), factory, stash);
+    return instruction::GenericPeek::make_instruction(result_type(), param_type(), make_spec(), factory, stash);
 }
 
 void
@@ -395,7 +395,7 @@ Peek::visit_children(vespalib::ObjectVisitor &visitor) const
 Instruction
 Rename::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    return instruction::GenericRename::make_instruction(child().result_type(), from(), to(), factory, stash);
+    return instruction::GenericRename::make_instruction(result_type(), child().result_type(), from(), to(), factory, stash);
 }
 
 void
@@ -447,7 +447,7 @@ const TensorFunction &reduce(const TensorFunction &child, Aggr aggr, const std::
 }
 
 const TensorFunction &map(const TensorFunction &child, map_fun_t function, Stash &stash) {
-    ValueType result_type = child.result_type();
+    ValueType result_type = child.result_type().map();
     return stash.create<Map>(result_type, child, function);
 }
 
@@ -485,7 +485,7 @@ const TensorFunction &peek(const TensorFunction &param, const std::map<vespalib:
         dimensions.push_back(dim_spec.first);
     }
     assert(!dimensions.empty());
-    ValueType result_type = param.result_type().reduce(dimensions);
+    ValueType result_type = param.result_type().peek(dimensions);
     return stash.create<Peek>(result_type, param, spec);
 }
 

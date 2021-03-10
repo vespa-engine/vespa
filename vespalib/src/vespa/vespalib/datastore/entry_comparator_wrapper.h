@@ -16,7 +16,7 @@ public:
         : _comp(comp)
     { }
     bool operator()(const EntryRef &lhs, const EntryRef &rhs) const {
-        return _comp(lhs, rhs);
+        return _comp.less(lhs, rhs);
     }
 };
 

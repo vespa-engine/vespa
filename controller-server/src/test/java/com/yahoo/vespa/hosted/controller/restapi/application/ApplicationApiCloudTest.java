@@ -129,7 +129,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                                 "\"externalId\": \"321\"" +
                                 "}")
                         .roles(Set.of(Role.administrator(tenantName)));
-        tester.assertResponse(secretStoreRequest, "{\"message\":\"Configured secret store: TenantSecretStore{name='some-name', awsId='123', role='role-id'}\"}", 200);
+        tester.assertResponse(secretStoreRequest, "{\"secretStores\":[{\"name\":\"some-name\",\"awsId\":\"123\",\"role\":\"role-id\"}]}", 200);
         tester.assertResponse(secretStoreRequest, "{" +
                 "\"error-code\":\"BAD_REQUEST\"," +
                 "\"message\":\"Secret store TenantSecretStore{name='some-name', awsId='123', role='role-id'} is already configured\"" +
@@ -152,7 +152,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     @Test
     public void validate_secret_store() {
         var secretStoreRequest =
-                request("/application/v4/tenant/scoober/secret-store/secret-foo/validate", GET)
+                request("/application/v4/tenant/scoober/secret-store/secret-foo/region/us-west-1/parameter-name/foo/validate", GET)
                         .roles(Set.of(Role.administrator(tenantName)));
         tester.assertResponse(secretStoreRequest, "{" +
                 "\"error-code\":\"BAD_REQUEST\"," +
@@ -161,7 +161,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
         deployApplication();
         secretStoreRequest =
-                request("/application/v4/tenant/scoober/secret-store/secret-foo/validate", GET)
+                request("/application/v4/tenant/scoober/secret-store/secret-foo/region/us-west-1/parameter-name/foo/validate", GET)
                         .roles(Set.of(Role.administrator(tenantName)));
         tester.assertResponse(secretStoreRequest, "{" +
                 "\"error-code\":\"NOT_FOUND\"," +
@@ -175,11 +175,9 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
         // ConfigServerMock returns message on format deployment.toString() + " - " + tenantSecretStore.toString()
         secretStoreRequest =
-                request("/application/v4/tenant/scoober/secret-store/secret-foo/validate", GET)
+                request("/application/v4/tenant/scoober/secret-store/secret-foo/region/us-west-1/parameter-name/foo/validate", GET)
                         .roles(Set.of(Role.administrator(tenantName)));
-        tester.assertResponse(secretStoreRequest, "{" +
-                "\"message\":\"scoober.albums in prod.us-central-1 - TenantSecretStore{name='secret-foo', awsId='123', role='some-role'}\"" +
-                "}", 200);
+        tester.assertResponse(secretStoreRequest, "{\"target\":\"scoober.albums in prod.us-central-1\",\"result\":{\"settings\":{\"name\":\"foo\",\"role\":\"vespa-secretstore-access\",\"awsId\":\"892075328880\",\"externalId\":\"*****\",\"region\":\"us-east-1\"},\"status\":\"ok\"}}", 200);
     }
 
     @Test
@@ -198,7 +196,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         });
         var tenant = (CloudTenant) tester.controller().tenants().require(tenantName);
         assertEquals(1, tenant.tenantSecretStores().size());
-        tester.assertResponse(deleteRequest, "{\"name\":\"secret-foo\",\"awsId\":\"123\",\"role\":\"some-role\"}", 200);
+        tester.assertResponse(deleteRequest, "{\"secretStores\":[]}", 200);
         tenant = (CloudTenant) tester.controller().tenants().require(tenantName);
         assertEquals(0, tenant.tenantSecretStores().size());
     }

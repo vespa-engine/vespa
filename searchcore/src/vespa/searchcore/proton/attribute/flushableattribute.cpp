@@ -168,7 +168,8 @@ FlushableAttribute::FlushableAttribute(const AttributeVectorSP attr,
     _lastStats.setPathElementsToLog(8);
     auto &config = attr->getConfig();
     if (config.basicType() == search::attribute::BasicType::Type::TENSOR &&
-        config.tensorType().is_tensor() && config.tensorType().is_dense() && config.hnsw_index_params().has_value()) {
+        config.tensorType().is_dense() && config.hnsw_index_params().has_value())
+    {
         _replay_operation_cost = 100.0; // replaying operations to hnsw index is 100 times more expensive than reading from tls
     }
 }

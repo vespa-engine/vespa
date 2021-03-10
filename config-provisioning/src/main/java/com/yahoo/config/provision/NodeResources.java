@@ -214,8 +214,8 @@ public class NodeResources {
     }
 
     private static StringBuilder appendDouble(StringBuilder sb, double d) {
-        long x10 = Math.round(d*10);
-        sb.append(x10/10).append('.').append(x10%10);
+        long x10 = Math.round(d * 10);
+        sb.append(x10 / 10).append('.').append(x10 % 10);
         return sb;
     }
 

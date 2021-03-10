@@ -73,7 +73,7 @@ void my_sparse_dot_product_op(InterpretedFunction::State &state, uint64_t num_ma
     double result = __builtin_expect(are_fast(lhs_idx, rhs_idx), true)
                     ? my_fast_sparse_dot_product<CT,single_dim>(&as_fast(lhs_idx).map, &as_fast(rhs_idx).map, lhs_cells, rhs_cells)
                     : my_sparse_dot_product_fallback<CT>(lhs_idx, rhs_idx, lhs_cells, rhs_cells, num_mapped_dims);
-    state.pop_pop_push(state.stash.create<ScalarValue<double>>(result));
+    state.pop_pop_push(state.stash.create<DoubleValue>(result));
 }
 
 struct MyGetFun {
@@ -87,7 +87,7 @@ using MyTypify = TypifyValue<TypifyCellType,TypifyBool>;
 
 SparseDotProductFunction::SparseDotProductFunction(const TensorFunction &lhs_in,
                                                    const TensorFunction &rhs_in)
-    : tensor_function::Op2(ValueType::make_type(CellType::DOUBLE, {}), lhs_in, rhs_in)
+    : tensor_function::Op2(ValueType::double_type(), lhs_in, rhs_in)
 {
 }
 
@@ -103,7 +103,7 @@ SparseDotProductFunction::compile_self(const ValueBuilderFactory &, Stash &) con
 bool
 SparseDotProductFunction::compatible_types(const ValueType &res, const ValueType &lhs, const ValueType &rhs)
 {
-    return (res.is_scalar() && (res.cell_type() == CellType::DOUBLE) &&
+    return (res.is_double() &&
             lhs.is_sparse() && (rhs.dimensions() == lhs.dimensions()) &&
             lhs.cell_type() == rhs.cell_type());
 }

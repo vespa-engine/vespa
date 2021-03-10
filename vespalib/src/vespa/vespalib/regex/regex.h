@@ -37,9 +37,9 @@ namespace vespalib {
  */
 class Regex {
     class Impl;
-    std::shared_ptr<const Impl> _impl; // shared_ptr to allow for cheap copying.
+    std::unique_ptr<const Impl> _impl; // shared_ptr to allow for cheap copying.
 
-    explicit Regex(std::shared_ptr<const Impl> impl);
+    explicit Regex(std::unique_ptr<const Impl> impl);
 public:
     // TODO consider using type-safe parameter instead.
     enum Options {
@@ -48,11 +48,14 @@ public:
         DotMatchesNewline = 2
     };
 
+    //Default constructed object is invalid
+    Regex();
+
     ~Regex();
-    Regex(const Regex&);
-    Regex& operator=(const Regex&);
     Regex(Regex&&) noexcept;
     Regex& operator=(Regex&&) noexcept;
+
+    bool valid() const { return bool(_impl); }
 
     [[nodiscard]] bool parsed_ok() const noexcept;
 

@@ -62,8 +62,6 @@ public class SearchNode extends AbstractService implements
     private final boolean flushOnShutdown;
     private NodeSpec nodeSpec;
     private int distributionKey;
-    private int redundancy = 1;
-    private int searchableCopies = 1;
     private final String clusterName;
     private TransactionLogServer tls;
     private AbstractService serviceLayerService;
@@ -159,16 +157,6 @@ public class SearchNode extends AbstractService implements
 
     private String getBaseDir() {
         return getDefaults().underVespaHome("var/db/vespa/search/cluster." + getClusterName()) + "/n" + distributionKey;
-    }
-    public void setSearchableCopies(int searchableCopies) {
-        this.searchableCopies = searchableCopies;
-    }
-    public void setRedundancy(int redundancy) {
-        this.redundancy = redundancy;
-    }
-
-    void updatePartition(int partitionId) {
-        nodeSpec = new NodeSpec(nodeSpec.groupIndex(), partitionId);
     }
 
     @Override
@@ -286,8 +274,6 @@ public class SearchNode extends AbstractService implements
         }
         if (getHostResource() != null && ! getHostResource().realResources().isUnspecified()) {
             var nodeResourcesTuning = new NodeResourcesTuning(getHostResource().realResources(),
-                                                              redundancy,
-                                                              searchableCopies,
                                                               tuning.map(Tuning::threadsPerSearch).orElse(1),
                                                               combined);
             nodeResourcesTuning.getConfig(builder);

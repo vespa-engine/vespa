@@ -42,7 +42,8 @@ struct SparseRenamePlan {
 
 struct GenericRename {
     static InterpretedFunction::Instruction
-    make_instruction(const ValueType &lhs_type,
+    make_instruction(const ValueType &result_type,
+                     const ValueType &input_type,
                      const std::vector<vespalib::string> &rename_dimension_from,
                      const std::vector<vespalib::string> &rename_dimension_to,
                      const ValueBuilderFactory &factory, Stash &stash);

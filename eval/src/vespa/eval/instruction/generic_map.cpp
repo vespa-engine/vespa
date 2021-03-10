@@ -32,17 +32,17 @@ void my_generic_map_op(State &state, uint64_t param_in) {
     state.pop_push(result_ref);
 }
 
-template <typename CT, typename Func>
-void my_scalar_map_op(State &state, uint64_t param_in) {
-    Func function(to_map_fun(param_in));
-    const Value &a = state.peek(0);
-    state.pop_push(state.stash.create<ScalarValue<CT>>(function(a.cells().typify<CT>()[0])));
+template <typename Func>
+void my_double_map_op(State &state, uint64_t param_in) {
+    Func fun(to_map_fun(param_in));
+    state.pop_push(state.stash.create<DoubleValue>(fun(state.peek(0).as_double())));
 }
 
 struct SelectGenericMapOp {
     template <typename CT, typename Func> static auto invoke(const ValueType &type) {
-        if (type.is_scalar()) {
-            return my_scalar_map_op<CT, Func>;
+        if (type.is_double()) {
+            assert((std::is_same_v<CT,double>));
+            return my_double_map_op<Func>;
         }
         return my_generic_map_op<CT, Func>;
     }
@@ -53,9 +53,11 @@ struct SelectGenericMapOp {
 using MapTypify = TypifyValue<TypifyCellType,operation::TypifyOp1>;
  
 InterpretedFunction::Instruction
-GenericMap::make_instruction(const ValueType &lhs_type, map_fun_t function)
+GenericMap::make_instruction(const ValueType &result_type,
+                             const ValueType &input_type, map_fun_t function)
 {
-    auto op = typify_invoke<2,MapTypify,SelectGenericMapOp>(lhs_type.cell_type(), function, lhs_type);
+    assert(result_type == input_type.map());
+    auto op = typify_invoke<2,MapTypify,SelectGenericMapOp>(input_type.cell_type(), function, input_type);
     return Instruction(op, to_param(function));
 }
 

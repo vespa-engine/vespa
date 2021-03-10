@@ -15,47 +15,24 @@
 #include <vespa/log/log.h>
 LOG_SETUP("stringattribute_test");
 
-namespace search {
-
-using attribute::CollectionType;
-using attribute::IAttributeVector;
+using search::attribute::CollectionType;
+using search::attribute::IAttributeVector;
 using vespalib::datastore::EntryRef;
+using namespace search;
 
-class StringAttributeTest : public vespalib::TestApp
-{
-private:
-    typedef ArrayStringAttribute ArrayStr;
-    typedef WeightedSetStringAttribute WeightedSetStr;
-    typedef ArrayStringPostingAttribute ArrayStrPosting;
-    typedef WeightedSetStringPostingAttribute WeightedSetStrPosting;
-    typedef attribute::Config Config;
-    typedef attribute::BasicType BasicType;
-
-    template <typename Attribute>
-    void addDocs(Attribute & vec, uint32_t numDocs);
-    template <typename Attribute>
-    void checkCount(Attribute & vec, uint32_t doc, uint32_t valueCount,
-                    uint32_t numValues, const vespalib::string & value);
-    void testMultiValue();
-    template <typename Attribute>
-    void testMultiValue(Attribute & attr, uint32_t numDocs);
-    void testMultiValueMultipleClearDocBetweenCommit();
-    void testMultiValueRemove();
-    void testSingleValue();
-    void testDefaultValueOnAddDoc(AttributeVector & v);
-    template <typename Attribute>
-    void testSingleValue(Attribute & svsa, Config &cfg);
-
-public:
-    int Main() override;
-};
+typedef ArrayStringAttribute ArrayStr;
+typedef WeightedSetStringAttribute WeightedSetStr;
+typedef ArrayStringPostingAttribute ArrayStrPosting;
+typedef WeightedSetStringPostingAttribute WeightedSetStrPosting;
+typedef attribute::Config Config;
+typedef attribute::BasicType BasicType;
 
 template <typename Attribute>
 void
-StringAttributeTest::addDocs(Attribute & vec, uint32_t numDocs)
+addDocs(Attribute & vec, uint32_t numDocs)
 {
     for (uint32_t i = 0; i < numDocs; ++i) {
-        typename Attribute::DocId doc;
+        IAttributeVector::DocId doc;
         EXPECT_TRUE(vec.addDoc(doc));
         EXPECT_TRUE(doc == i);
         EXPECT_TRUE(vec.getNumDocs() == i + 1);
@@ -66,43 +43,13 @@ StringAttributeTest::addDocs(Attribute & vec, uint32_t numDocs)
 
 template <typename Attribute>
 void
-StringAttributeTest::checkCount(Attribute & vec, uint32_t doc, uint32_t valueCount,
+checkCount(Attribute & vec, uint32_t doc, uint32_t valueCount,
                                 uint32_t numValues, const vespalib::string & value)
 {
     std::vector<vespalib::string> buffer(valueCount);
     EXPECT_TRUE(static_cast<uint32_t>(vec.getValueCount(doc)) == valueCount);
     EXPECT_TRUE(vec.get(doc, &buffer[0], buffer.size()) == valueCount);
     EXPECT_TRUE(std::count(buffer.begin(), buffer.end(), value) == numValues);
-}
-
-
-void
-StringAttributeTest::testMultiValue()
-{
-    uint32_t numDocs = 16;
- 
-    { // Array String Attribute
-        ArrayStr attr("a-string");
-        testMultiValue(attr, numDocs);
-    }
-    { // Weighted Set String Attribute
-        WeightedSetStr attr("ws-string",
-                            Config(BasicType::STRING, CollectionType::WSET));
-        testMultiValue(attr, numDocs);
-    }
-    { // Array String Posting Attribute
-        Config cfg(BasicType::STRING, CollectionType::ARRAY);
-        cfg.setFastSearch(true);
-        ArrayStrPosting attr("a-fs-string", cfg);
-        testMultiValue(attr, numDocs);
-    }
-    { // Weighted Set String Posting Attribute
-        Config cfg(BasicType::STRING, CollectionType::WSET);
-        cfg.setFastSearch(true);
-        WeightedSetStrPosting attr("ws-fs-string", cfg);
-        testMultiValue(attr, numDocs);
-    }
-
 }
 
 namespace {
@@ -124,7 +71,7 @@ auto zipped_and_sorted_by_first(const std::vector<T0>& a, const std::vector<T1>&
 
 template <typename Attribute>
 void
-StringAttributeTest::testMultiValue(Attribute & attr, uint32_t numDocs)
+testMultiValue(Attribute & attr, uint32_t numDocs)
 {
     EXPECT_TRUE(attr.getNumDocs() == 0);
 
@@ -194,7 +141,7 @@ StringAttributeTest::testMultiValue(Attribute & attr, uint32_t numDocs)
 
     // check for correct refcounts
     for (uint32_t i = 0; i < uniqueStrings.size(); ++i) {
-        typename Attribute::EnumStore::Index idx;
+        enumstore::Index idx;
         EXPECT_TRUE(attr.getEnumStore().find_index(uniqueStrings[i].c_str(), idx));
         uint32_t expectedUsers = numDocs - 1 - i;
         EXPECT_EQUAL(expectedUsers, attr.getEnumStore().get_ref_count(idx));
@@ -242,15 +189,41 @@ StringAttributeTest::testMultiValue(Attribute & attr, uint32_t numDocs)
 
     // check for correct refcounts
     for (uint32_t i = 0; i < newUniques.size(); ++i) {
-        typename Attribute::EnumStore::Index idx;
+        enumstore::Index idx;
         EXPECT_TRUE(attr.getEnumStore().find_index(newUniques[i].c_str(), idx));
         uint32_t expectedUsers = numDocs - 1 - i;
         EXPECT_EQUAL(expectedUsers, attr.getEnumStore().get_ref_count(idx));
     }
 }
 
-void
-StringAttributeTest::testMultiValueMultipleClearDocBetweenCommit()
+TEST("testMultiValue")
+{
+    uint32_t numDocs = 16;
+
+    { // Array String Attribute
+        ArrayStr attr("a-string");
+        testMultiValue(attr, numDocs);
+    }
+    { // Weighted Set String Attribute
+        WeightedSetStr attr("ws-string",
+                            Config(BasicType::STRING, CollectionType::WSET));
+        testMultiValue(attr, numDocs);
+    }
+    { // Array String Posting Attribute
+        Config cfg(BasicType::STRING, CollectionType::ARRAY);
+        cfg.setFastSearch(true);
+        ArrayStrPosting attr("a-fs-string", cfg);
+        testMultiValue(attr, numDocs);
+    }
+    { // Weighted Set String Posting Attribute
+        Config cfg(BasicType::STRING, CollectionType::WSET);
+        cfg.setFastSearch(true);
+        WeightedSetStrPosting attr("ws-fs-string", cfg);
+        testMultiValue(attr, numDocs);
+    }
+}
+
+TEST("testMultiValueMultipleClearDocBetweenCommit")
 {
     // This is also tested for all array attributes in attribute unit test
     ArrayStr mvsa("a-string");
@@ -276,8 +249,7 @@ StringAttributeTest::testMultiValueMultipleClearDocBetweenCommit()
 }
 
 
-void
-StringAttributeTest::testMultiValueRemove()
+TEST("testMultiValueRemove")
 {
     // This is also tested for all array attributes in attribute unit test
     ArrayStr mvsa("a-string");
@@ -320,30 +292,7 @@ StringAttributeTest::testMultiValueRemove()
 }
 
 void
-StringAttributeTest::testSingleValue()
-{
-    {
-        Config cfg(BasicType::STRING, CollectionType::SINGLE);
-        SingleValueStringAttribute svsa("svsa", cfg);
-        const IAttributeVector * ia = &svsa;
-        EXPECT_TRUE(dynamic_cast<const SingleValueEnumAttributeBase *>(ia) != nullptr);
-        testSingleValue(svsa, cfg);
-
-        SingleValueStringAttribute svsb("svsa", cfg);
-        testDefaultValueOnAddDoc(svsb);
-    }
-    {
-        Config cfg(BasicType::STRING, CollectionType::SINGLE);
-        cfg.setFastSearch(true);
-        SingleValueStringPostingAttribute svsa("svspb", cfg);
-        testSingleValue(svsa, cfg);
-
-        SingleValueStringPostingAttribute svsb("svspb", cfg);
-        testDefaultValueOnAddDoc(svsb);
-    }
-}
-
-void StringAttributeTest::testDefaultValueOnAddDoc(AttributeVector & v)
+testDefaultValueOnAddDoc(AttributeVector & v)
 {
     EXPECT_EQUAL(0u, v.getNumDocs());
     v.addReservedDoc();
@@ -359,7 +308,7 @@ void StringAttributeTest::testDefaultValueOnAddDoc(AttributeVector & v)
 
 template <typename Attribute>
 void
-StringAttributeTest::testSingleValue(Attribute & svsa, Config &cfg)
+testSingleValue(Attribute & svsa, Config &cfg)
 {
     StringAttribute & v = svsa;
     const char * t = "not defined";
@@ -434,21 +383,29 @@ StringAttributeTest::testSingleValue(Attribute & svsa, Config &cfg)
     load.load();
 }
 
-
-
-int
-StringAttributeTest::Main()
+TEST("testSingleValue")
 {
-    TEST_INIT("stringattribute_test");
+    EXPECT_EQUAL(24u, sizeof(AttributeVector::SearchContext));
+    EXPECT_EQUAL(56u, sizeof(SingleValueStringAttribute::StringSingleImplSearchContext));
+    {
+        Config cfg(BasicType::STRING, CollectionType::SINGLE);
+        SingleValueStringAttribute svsa("svsa", cfg);
+        const IAttributeVector * ia = &svsa;
+        EXPECT_TRUE(dynamic_cast<const SingleValueEnumAttributeBase *>(ia) != nullptr);
+        testSingleValue(svsa, cfg);
 
-    testMultiValue();
-    testMultiValueMultipleClearDocBetweenCommit();
-    testMultiValueRemove();
-    testSingleValue();
+        SingleValueStringAttribute svsb("svsa", cfg);
+        testDefaultValueOnAddDoc(svsb);
+    }
+    {
+        Config cfg(BasicType::STRING, CollectionType::SINGLE);
+        cfg.setFastSearch(true);
+        SingleValueStringPostingAttribute svsa("svspb", cfg);
+        testSingleValue(svsa, cfg);
 
-    TEST_DONE();
+        SingleValueStringPostingAttribute svsb("svspb", cfg);
+        testDefaultValueOnAddDoc(svsb);
+    }
 }
 
-}
-
-TEST_APPHOOK(search::StringAttributeTest);
+TEST_MAIN() { TEST_RUN_ALL(); }

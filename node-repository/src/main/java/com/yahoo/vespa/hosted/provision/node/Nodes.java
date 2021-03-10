@@ -287,7 +287,11 @@ public class Nodes {
      * @throws NoSuchNodeException if the node is not found
      */
     public Node fail(String hostname, Agent agent, String reason) {
-        return move(hostname, true, Node.State.failed, agent, Optional.of(reason));
+        return fail(hostname, true, agent, reason);
+    }
+
+    public Node fail(String hostname, boolean keepAllocation, Agent agent, String reason) {
+        return move(hostname, keepAllocation, Node.State.failed, agent, Optional.of(reason));
     }
 
     /**

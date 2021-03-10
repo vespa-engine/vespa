@@ -12,10 +12,11 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
+import com.yahoo.net.HostName;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
@@ -51,7 +52,6 @@ import static com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner.Beh
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author freva
@@ -425,6 +425,7 @@ public class DynamicProvisioningMaintainerTest {
         DynamicProvisioningTester dynamicProvisioningTester = new DynamicProvisioningTester(cloud, new MockNameResolver().mockAnyLookup());
         ProvisioningTester tester = dynamicProvisioningTester.provisioningTester;
         dynamicProvisioningTester.hostProvisioner.overrideHostFlavor("default");
+        dynamicProvisioningTester.flagSource.withBooleanFlag(Flags.DYNAMIC_CONFIG_SERVER_PROVISIONING.id(), true);
 
         // Initial config server hosts are provisioned manually
         ApplicationId hostApp = ApplicationId.from("hosted-vespa", "configserver-host", "default");
@@ -451,12 +452,8 @@ public class DynamicProvisioningMaintainerTest {
         Supplier<Node> hostToRemove = () -> tester.nodeRepository().nodes().node(hostnameToRemove).get();
         Supplier<Node> nodeToRemove = () -> tester.nodeRepository().nodes().node(configNodes.childrenOf(hostnameToRemove).first().get().hostname()).get();
 
-        // Retire and deprovision host
+        // Set want to retire and deprovision on host and children
         tester.nodeRepository().nodes().deprovision(hostToRemove.get(), Agent.system, tester.clock().instant());
-        tester.nodeRepository().nodes().deallocate(hostToRemove.get(), Agent.system, getClass().getSimpleName());
-        assertSame("Host moves to parked", Node.State.parked, hostToRemove.get().state());
-        assertSame("Node remains active", Node.State.active, nodeToRemove.get().state());
-        assertTrue("Node wants to retire", nodeToRemove.get().status().wantToRetire());
 
         // Redeployment of config server application retires node
         tester.prepareAndActivateInfraApplication(configSrvApp, NodeType.config);
@@ -474,15 +471,24 @@ public class DynamicProvisioningMaintainerTest {
         tester.nodeRepository().nodes().removeRecursively(inactiveConfigServer, true);
         assertEquals(2, tester.nodeRepository().nodes().list().nodeType(NodeType.config).size());
 
+        // ExpiredRetirer moves host to inactive after child has moved to parked
+        tester.nodeRepository().nodes().deallocate(hostToRemove.get(), Agent.system, getClass().getSimpleName());
+        assertSame("Host moves to parked", Node.State.parked, hostToRemove.get().state());
+
         // Host is removed
         dynamicProvisioningTester.maintainer.maintain();
         assertEquals(2, tester.nodeRepository().nodes().list().nodeType(NodeType.confighost).size());
 
-        // Next deployment starts provisioning a new host and child
-        try {
-            tester.prepareAndActivateInfraApplication(configSrvApp, NodeType.config);
-            fail("Expected provisioning to fail");
-        } catch (ParentHostUnavailableException ignored) {}
+        // Deployment by the removed host has no effect
+        HostName.setHostNameForTestingOnly("cfg2.example.com");
+        tester.prepareAndActivateInfraApplication(configSrvApp, NodeType.config);
+        assertEquals(List.of(), dynamicProvisioningTester.hostProvisioner.provisionedHosts());
+
+        // Deployment on another config server starts provisioning a new host and child
+        HostName.setHostNameForTestingOnly("cfg3.example.com");
+        assertEquals(0, tester.nodeRepository().nodes().list(Node.State.reserved).nodeType(NodeType.config).size());
+        assertEquals(2, tester.prepareAndActivateInfraApplication(configSrvApp, NodeType.config).size());
+        assertEquals(1, tester.nodeRepository().nodes().list(Node.State.reserved).nodeType(NodeType.config).size());
         Node newNode = tester.nodeRepository().nodes().list(Node.State.reserved).nodeType(NodeType.config).first().get();
 
         // Resume provisioning and activate host
@@ -546,6 +552,7 @@ public class DynamicProvisioningMaintainerTest {
                                                                                      RegionName.defaultName()))
                                                                       .flavors(flavors.getFlavors())
                                                                       .nameResolver(nameResolver)
+                                                                      .flagSource(flagSource)
                                                                       .hostProvisioner(hostProvisioner)
                                                                       .build();
             this.nodeRepository = provisioningTester.nodeRepository();

@@ -22,6 +22,11 @@ StringDirectAttribute(const vespalib::string & baseFileName, const Config & c)
 
 StringDirectAttribute::~StringDirectAttribute() = default;
 
+AttributeVector::SearchContext::UP
+StringDirectAttribute::getSearch(QueryTermSimpleUP, const attribute::SearchContextParams &) const {
+    LOG_ABORT("StringDirectAttribute::getSearch is not implemented and should never be called.");
+}
+
 bool StringDirectAttribute::findEnum(const char * key, EnumHandle & e) const
 {
     if (_offsets.size() < 1) {
