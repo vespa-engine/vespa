@@ -163,6 +163,7 @@ public class RealNodeRepositoryTest {
     @Test
     public void testAddNodes() {
         AddNode host = AddNode.forHost("host123.domain.tld",
+                                       Optional.of("id1"),
                                        "default",
                                        Optional.of(FlavorOverrides.ofDisk(123)),
                                        NodeType.confighost,
@@ -175,6 +176,7 @@ public class RealNodeRepositoryTest {
         nodeRepositoryApi.addNodes(List.of(host, node));
 
         NodeSpec hostSpec = nodeRepositoryApi.getOptionalNode("host123.domain.tld").orElseThrow();
+        assertEquals("id1", hostSpec.id().orElseThrow());
         assertEquals("default", hostSpec.flavor());
         assertEquals(123, hostSpec.diskGb(), 0);
         assertEquals(NodeType.confighost, hostSpec.type());
