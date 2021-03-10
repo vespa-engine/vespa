@@ -11,6 +11,7 @@ import javax.net.ssl.SSLParameters;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Set;
 import java.util.logging.Level;
@@ -61,7 +62,7 @@ public class DefaultTlsContext implements TlsContext {
                     String.format("None of the accepted ciphers are supported (supported=%s, accepted=%s)",
                                   supportedCiphers, acceptedCiphers));
         }
-        log.log(Level.FINE, () -> String.format("Allowed cipher suites that are supported: %s", com.yahoo.vespa.jdk8compat.List.of(allowedCiphers)));
+        log.log(Level.FINE, () -> String.format("Allowed cipher suites that are supported: %s", Arrays.asList(allowedCiphers)));
         return allowedCiphers;
     }
 
@@ -139,7 +140,7 @@ public class DefaultTlsContext implements TlsContext {
             builder.withTrustManagerFactory(truststore -> new PeerAuthorizerTrustManager(authorizedPeers, mode, hostnameVerification, truststore));
         } else {
             builder.withTrustManagerFactory(truststore -> new PeerAuthorizerTrustManager(
-                    new AuthorizedPeers(com.yahoo.vespa.jdk8compat.Set.of()), AuthorizationMode.DISABLE, hostnameVerification, truststore));
+                    new AuthorizedPeers(Collections.emptySet()), AuthorizationMode.DISABLE, hostnameVerification, truststore));
         }
         return builder.build();
     }

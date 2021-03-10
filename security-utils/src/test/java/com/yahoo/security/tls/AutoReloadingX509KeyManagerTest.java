@@ -15,6 +15,7 @@ import org.mockito.Mockito;
 import javax.security.auth.x500.X500Principal;
 import java.io.IOException;
 import java.math.BigInteger;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.Principal;
@@ -41,12 +42,12 @@ public class AutoReloadingX509KeyManagerTest {
     public void crypto_material_is_reloaded_when_scheduler_task_is_executed() throws IOException {
         KeyPair keyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC);
         Path privateKeyFile = tempDirectory.newFile().toPath();
-        com.yahoo.vespa.jdk8compat.Files.writeString(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()));
+        Files.write(privateKeyFile, KeyUtils.toPem(keyPair.getPrivate()).getBytes());
 
         Path certificateFile = tempDirectory.newFile().toPath();
         BigInteger serialNumberInitialCertificate = BigInteger.ONE;
         X509Certificate initialCertificate = generateCertificate(keyPair, serialNumberInitialCertificate);
-        com.yahoo.vespa.jdk8compat.Files.writeString(certificateFile, X509CertificateUtils.toPem(initialCertificate));
+        Files.write(certificateFile, X509CertificateUtils.toPem(initialCertificate).getBytes());
 
         ScheduledExecutorService scheduler = Mockito.mock(ScheduledExecutorService.class);
         ArgumentCaptor<Runnable> updaterTaskCaptor = ArgumentCaptor.forClass(Runnable.class);
@@ -61,7 +62,7 @@ public class AutoReloadingX509KeyManagerTest {
 
         BigInteger serialNumberUpdatedCertificate = BigInteger.TEN;
         X509Certificate updatedCertificate = generateCertificate(keyPair, serialNumberUpdatedCertificate);
-        com.yahoo.vespa.jdk8compat.Files.writeString(certificateFile, X509CertificateUtils.toPem(updatedCertificate));
+        Files.write(certificateFile, X509CertificateUtils.toPem(updatedCertificate).getBytes());
 
         updaterTaskCaptor.getValue().run(); // run update task in ReloadingX509KeyManager
 

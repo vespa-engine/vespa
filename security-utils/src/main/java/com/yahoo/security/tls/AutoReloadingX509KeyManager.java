@@ -12,6 +12,8 @@ import javax.net.ssl.X509ExtendedKeyManager;
 import java.io.IOException;
 import java.io.UncheckedIOException;
 import java.net.Socket;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.security.Principal;
@@ -72,8 +74,8 @@ public class AutoReloadingX509KeyManager extends X509ExtendedKeyManager implemen
             return KeyStoreBuilder.withType(KeyStoreType.PKCS12)
                     .withKeyEntry(
                             CERTIFICATE_ALIAS,
-                            KeyUtils.fromPemEncodedPrivateKey(com.yahoo.vespa.jdk8compat.Files.readString(privateKey)),
-                            X509CertificateUtils.certificateListFromPem(com.yahoo.vespa.jdk8compat.Files.readString(certificateChain)))
+                            KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKey), StandardCharsets.UTF_8)),
+                            X509CertificateUtils.certificateListFromPem(new String(Files.readAllBytes(certificateChain), StandardCharsets.UTF_8)))
                     .build();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
