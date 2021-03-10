@@ -190,8 +190,8 @@ void my_full_reduce_op(State &state, uint64_t) {
 
 struct SelectGenericReduceOp {
     template <typename ICM, typename OCM, typename AGGR> static auto invoke(const ReduceParam &param) {
-        using ICT = decltype(get_cell_value<ICM::value.cell_type>());
-        using OCT = decltype(get_cell_value<OCM::value.cell_type>());
+        using ICT = CellValueType<ICM::value.cell_type>;
+        using OCT = CellValueType<OCM::value.cell_type>;
         using AggrType = typename AGGR::template templ<OCT>;
         if constexpr (OCM::value.is_scalar) {
             return my_full_reduce_op<ICT, AggrType>;

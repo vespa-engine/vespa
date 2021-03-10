@@ -33,6 +33,7 @@ template <CellType cell_type> constexpr auto get_cell_value() {
         static_assert((cell_type == CellType::DOUBLE), "unknown cell type");
     }
 }
+template <CellType cell_type> using CellValueType = decltype(get_cell_value<cell_type>());
 
 // meta-information about the cell type and 'scalar-ness' of values
 // that are operation results. Used to reduce the number of

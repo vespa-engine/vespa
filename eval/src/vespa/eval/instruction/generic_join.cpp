@@ -125,9 +125,9 @@ void my_double_join_op(State &state, uint64_t param_in) {
 struct SelectGenericJoinOp {
     template <typename LCM, typename RCM, typename Fun> static auto invoke(const JoinParam &param) {
         constexpr CellMeta ocm = CellMeta::join(LCM::value, RCM::value);
-        using LCT = decltype(get_cell_value<LCM::value.cell_type>());
-        using RCT = decltype(get_cell_value<RCM::value.cell_type>());
-        using OCT = decltype(get_cell_value<ocm.cell_type>());
+        using LCT = CellValueType<LCM::value.cell_type>;
+        using RCT = CellValueType<RCM::value.cell_type>;
+        using OCT = CellValueType<ocm.cell_type>;
         if constexpr (ocm.is_scalar) {
             return my_double_join_op<Fun>;
         } else {
