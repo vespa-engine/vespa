@@ -35,28 +35,35 @@ template <CellType cell_type> constexpr auto get_cell_value() {
 }
 template <CellType cell_type> using CellValueType = decltype(get_cell_value<cell_type>());
 
-// meta-information about the cell type and 'scalar-ness' of values
-// that are operation results. Used to reduce the number of
-// possibilities when typifying.
+// simple CellMeta value wrapper to reduce template expansion
+// -> for values that are results of operations that are not scalars
+struct LimitedCellMetaNotScalar {
+    const CellType cell_type;
+};
+
+// simple CellMeta value wrapper to reduce template expansion
+// -> for values that are results of operations
 struct LimitedCellMeta {
-    CellType cell_type;
-    bool is_scalar;
-    constexpr LimitedCellMeta(CellType cell_type_in, bool is_scalar_in)
-        : cell_type(cell_type_in), is_scalar(is_scalar_in)
-    {
-        // is_scalar -> double cell type
-        assert(!is_scalar || (cell_type == CellType::DOUBLE));
-        // cell type must be 'at least' float
-        assert((cell_type == CellType::DOUBLE) || (cell_type == CellType::FLOAT));
+    const CellType cell_type;
+    const bool is_scalar;
+    constexpr LimitedCellMetaNotScalar not_scalar() const {
+        assert(!is_scalar);
+        return {cell_type};
     }
+};
+
+// simple CellMeta value wrapper to reduce template expansion
+// -> for values that we known are not scalar
+struct CellMetaNotScalar {
+    const CellType cell_type;
 };
 
 // meta-information about the cell type and 'scalar-ness' of a value
 struct CellMeta {
-    CellType cell_type;
-    bool is_scalar;
+    const CellType cell_type;
+    const bool is_scalar;
     constexpr CellMeta(CellType cell_type_in, bool is_scalar_in)
-        noexcept : cell_type(cell_type_in), is_scalar(is_scalar_in)
+        : cell_type(cell_type_in), is_scalar(is_scalar_in)
     {
         // is_scalar -> double cell type
         assert(!is_scalar || (cell_type == CellType::DOUBLE));
@@ -67,6 +74,10 @@ struct CellMeta {
     constexpr LimitedCellMeta limit() const {
         assert(is_limited());
         return {cell_type, is_scalar};
+    }
+    constexpr CellMetaNotScalar not_scalar() const {
+        assert(!is_scalar);
+        return {cell_type};
     }
 
     constexpr CellMeta self() const { return *this; }
@@ -179,6 +190,13 @@ struct TypifyCellMeta {
             abort();
         }
     }
+    template <typename F> static decltype(auto) resolve(CellMetaNotScalar value, F &&f) {
+        switch (value.cell_type) {
+        case CellType::DOUBLE: return f(Result<CellMeta(CellType::DOUBLE, false)>());
+        case CellType::FLOAT:  return f(Result<CellMeta(CellType::FLOAT, false)>());
+        }
+        abort();
+    }
     template <typename F> static decltype(auto) resolve(LimitedCellMeta value, F &&f) {
         if (value.is_scalar) {
             if (value.cell_type == CellType::DOUBLE) {
@@ -193,6 +211,14 @@ struct TypifyCellMeta {
             }
             abort();
         }
+    }
+    template <typename F> static decltype(auto) resolve(LimitedCellMetaNotScalar value, F &&f) {
+        switch (value.cell_type) {
+        case CellType::DOUBLE: return f(Result<CellMeta(CellType::DOUBLE, false)>());
+        case CellType::FLOAT:  return f(Result<CellMeta(CellType::FLOAT, false)>());
+        default: break;
+        }
+        abort();
     }
 };
 
