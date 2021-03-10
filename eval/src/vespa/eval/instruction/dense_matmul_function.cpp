@@ -28,7 +28,7 @@ double my_dot_product(const LCT *lhs, const RCT *rhs, size_t lhs_size, size_t co
 template <typename LCT, typename RCT, bool lhs_common_inner, bool rhs_common_inner>
 void my_matmul_op(InterpretedFunction::State &state, uint64_t param) {
     const DenseMatMulFunction::Self &self = unwrap_param<DenseMatMulFunction::Self>(param);
-    using OCT = typename UnifyCellTypes<LCT,RCT>::type;
+    using OCT = decltype(unify_cell_types<LCT,RCT>());
     auto lhs_cells = state.peek(1).cells().typify<LCT>();
     auto rhs_cells = state.peek(0).cells().typify<RCT>();
     auto dst_cells = state.stash.create_uninitialized_array<OCT>(self.lhs_size * self.rhs_size);

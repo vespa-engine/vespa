@@ -29,7 +29,7 @@ double my_dot_product(const LCT *lhs, const RCT *rhs, size_t vector_size, size_t
 template <typename LCT, typename RCT, bool common_inner>
 void my_xw_product_op(InterpretedFunction::State &state, uint64_t param) {
     const DenseXWProductFunction::Self &self = unwrap_param<DenseXWProductFunction::Self>(param);
-    using OCT = typename UnifyCellTypes<LCT,RCT>::type;
+    using OCT = decltype(unify_cell_types<LCT,RCT>());
     auto vector_cells = state.peek(1).cells().typify<LCT>();
     auto matrix_cells = state.peek(0).cells().typify<RCT>();
     auto dst_cells = state.stash.create_uninitialized_array<OCT>(self.result_size);

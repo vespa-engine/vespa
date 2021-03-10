@@ -123,23 +123,25 @@ void my_double_join_op(State &state, uint64_t param_in) {
 //-----------------------------------------------------------------------------
 
 struct SelectGenericJoinOp {
-    template <typename LCT, typename RCT, typename OCT, typename Fun> static auto invoke(const JoinParam &param) {
-        if (param.res_type.is_double()) {
-            assert((std::is_same_v<LCT,double>));
-            assert((std::is_same_v<RCT,double>));
-            assert((std::is_same_v<OCT,double>));
+    template <typename LCM, typename RCM, typename Fun> static auto invoke(const JoinParam &param) {
+        constexpr CellMeta ocm = CellMeta::join(LCM::value, RCM::value);
+        using LCT = CellValueType<LCM::value.cell_type>;
+        using RCT = CellValueType<RCM::value.cell_type>;
+        using OCT = CellValueType<ocm.cell_type>;
+        if constexpr (ocm.is_scalar) {
             return my_double_join_op<Fun>;
+        } else {
+            if (param.sparse_plan.sources.empty()) {
+                return my_dense_join_op<LCT,RCT,OCT,Fun>;
+            }
+            if (param.sparse_plan.should_forward_lhs_index()) {
+                return my_mixed_dense_join_op<LCT,RCT,OCT,Fun,true>;
+            }
+            if (param.sparse_plan.should_forward_rhs_index()) {
+                return my_mixed_dense_join_op<LCT,RCT,OCT,Fun,false>;
+            }
+            return my_mixed_join_op<LCT,RCT,OCT,Fun>;
         }
-        if (param.sparse_plan.sources.empty()) {
-            return my_dense_join_op<LCT,RCT,OCT,Fun>;
-        }
-        if (param.sparse_plan.should_forward_lhs_index()) {
-            return my_mixed_dense_join_op<LCT,RCT,OCT,Fun,true>;
-        }
-        if (param.sparse_plan.should_forward_rhs_index()) {
-            return my_mixed_dense_join_op<LCT,RCT,OCT,Fun,false>;
-        }
-        return my_mixed_join_op<LCT,RCT,OCT,Fun>;
     }
 };
 
@@ -287,7 +289,7 @@ JoinParam::~JoinParam() = default;
 
 //-----------------------------------------------------------------------------
 
-using JoinTypify = TypifyValue<TypifyCellType,operation::TypifyOp2>;
+using JoinTypify = TypifyValue<TypifyCellMeta,operation::TypifyOp2>;
 
 Instruction
 GenericJoin::make_instruction(const ValueType &result_type,
@@ -296,7 +298,8 @@ GenericJoin::make_instruction(const ValueType &result_type,
 {
     auto &param = stash.create<JoinParam>(result_type, lhs_type, rhs_type, function, factory);
     assert(result_type == ValueType::join(lhs_type, rhs_type));
-    auto fun = typify_invoke<4,JoinTypify,SelectGenericJoinOp>(lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(), function, param);
+    assert(param.res_type.cell_meta().eq(CellMeta::join(lhs_type.cell_meta(), rhs_type.cell_meta())));
+    auto fun = typify_invoke<3,JoinTypify,SelectGenericJoinOp>(lhs_type.cell_meta(), rhs_type.cell_meta(), function, param);
     return Instruction(fun, wrap_param<JoinParam>(param));
 }
 

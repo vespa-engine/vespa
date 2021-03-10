@@ -2,7 +2,6 @@
 
 #include "value_type.h"
 #include "value_type_spec.h"
-#include <vespa/vespalib/util/typify.h>
 #include <algorithm>
 #include <cassert>
 
@@ -12,14 +11,6 @@ namespace {
 
 using Dimension = ValueType::Dimension;
 using DimensionList = std::vector<Dimension>;
-
-struct Unify {
-    template <typename A, typename B>
-    static CellType invoke() {
-        using type = typename UnifyCellTypes<A,B>::type;
-        return get_cell_type<type>();
-    }
-};
 
 size_t my_dimension_index(const std::vector<Dimension> &list, const vespalib::string &name) {
     for (size_t idx = 0; idx < list.size(); ++idx) {
@@ -152,22 +143,6 @@ struct Renamer {
 constexpr ValueType::Dimension::size_type ValueType::Dimension::npos;
 
 ValueType
-ValueType::normalize_type(CellType cell_type, std::vector<Dimension> dimensions, bool decay)
-{
-    if (decay) {
-        if ((cell_type != CellType::FLOAT) && (cell_type != CellType::DOUBLE)) {
-            // The result of any calculation should be 'at least' float
-            cell_type = CellType::FLOAT;
-        }
-    }
-    if (dimensions.empty()) {
-        // all scalar results should be double
-        cell_type = CellType::DOUBLE;
-    }
-    return make_type(cell_type, std::move(dimensions));
-}
-
-ValueType
 ValueType::error_if(bool has_error, ValueType else_type)
 {
     if (has_error) {
@@ -175,16 +150,6 @@ ValueType::error_if(bool has_error, ValueType else_type)
     } else {
         return else_type;
     }
-}
-
-CellType
-ValueType::unify_cell_types(const ValueType &a, const ValueType &b) {
-    if (a.is_double()) {
-        return b.cell_type();
-    } else if (b.is_double()) {
-        return a.cell_type();
-    }
-    return typify_invoke<2,TypifyCellType,Unify>(a.cell_type(), b.cell_type());
 }
 
 ValueType::~ValueType() = default;
@@ -302,23 +267,26 @@ ValueType::dimension_names() const
 ValueType
 ValueType::map() const
 {
-    return error_if(_error, normalize_type(_cell_type, _dimensions, true));
+    auto meta = cell_meta().map();
+    return error_if(_error, make_type(meta.cell_type, _dimensions));
 }
 
 ValueType
 ValueType::reduce(const std::vector<vespalib::string> &dimensions_in) const
 {
     MyReduce result(_dimensions, dimensions_in);
+    auto meta = CellMeta::reduce(_cell_type, result.dimensions.empty());
     return error_if(_error || result.has_error,
-                    normalize_type(_cell_type, std::move(result.dimensions), true));
+                    make_type(meta.cell_type, std::move(result.dimensions)));
 }
 
 ValueType
 ValueType::peek(const std::vector<vespalib::string> &dimensions_in) const
 {
     MyReduce result(_dimensions, dimensions_in);
+    auto meta = CellMeta::peek(_cell_type, result.dimensions.empty());
     return error_if(_error || result.has_error || dimensions_in.empty(),
-                    normalize_type(_cell_type, std::move(result.dimensions), false));
+                    make_type(meta.cell_type, std::move(result.dimensions)));
 }
 
 ValueType
@@ -333,8 +301,9 @@ ValueType::rename(const std::vector<vespalib::string> &from,
     for (const auto &dim: _dimensions) {
         dim_list.emplace_back(renamer.rename(dim.name), dim.size);
     }
+    auto meta = cell_meta().rename();
     return error_if(!renamer.matched_all(),
-                    make_type(_cell_type, std::move(dim_list)));
+                    make_type(meta.cell_type, std::move(dim_list)));
 }
 
 ValueType
@@ -378,30 +347,30 @@ ValueType::to_spec() const
 ValueType
 ValueType::join(const ValueType &lhs, const ValueType &rhs)
 {
-    auto cell_type = unify_cell_types(lhs, rhs);
     MyJoin result(lhs._dimensions, rhs._dimensions);
+    auto meta = CellMeta::join(lhs.cell_meta(), rhs.cell_meta());
     return error_if(lhs._error || rhs._error || result.mismatch,
-                    normalize_type(cell_type, std::move(result.dimensions), true));
+                    make_type(meta.cell_type, std::move(result.dimensions)));
 }
 
 ValueType
 ValueType::merge(const ValueType &lhs, const ValueType &rhs)
 {
-    auto cell_type = unify_cell_types(lhs, rhs);
+    auto meta = CellMeta::merge(lhs.cell_meta(), rhs.cell_meta());
     return error_if(lhs._error || rhs._error || (lhs._dimensions != rhs._dimensions),
-                    normalize_type(cell_type, lhs._dimensions, true));
+                    make_type(meta.cell_type, lhs._dimensions));
 }
 
 ValueType
 ValueType::concat(const ValueType &lhs, const ValueType &rhs, const vespalib::string &dimension)
 {
-    auto cell_type = unify_cell_types(lhs, rhs);
     MyJoin result(lhs._dimensions, rhs._dimensions, dimension);
     if (!find_dimension(result.dimensions, dimension)) {
         result.dimensions.emplace_back(dimension, 2);
     }
+    auto meta = CellMeta::concat(lhs.cell_meta(), rhs.cell_meta());
     return error_if(lhs._error || rhs._error || result.mismatch,
-                    make_type(cell_type, std::move(result.dimensions)));
+                    make_type(meta.cell_type, std::move(result.dimensions)));
 }
 
 ValueType

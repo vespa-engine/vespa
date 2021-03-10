@@ -45,9 +45,7 @@ private:
     ValueType(CellType cell_type_in, std::vector<Dimension> &&dimensions_in)
         : _error(false), _cell_type(cell_type_in), _dimensions(std::move(dimensions_in)) {}
 
-    static ValueType normalize_type(CellType cell_type, std::vector<Dimension> dimensions, bool decay);
     static ValueType error_if(bool has_error, ValueType else_type);
-    static CellType unify_cell_types(const ValueType &a, const ValueType &b);
 
 public:
     ValueType(ValueType &&) noexcept = default;
@@ -56,6 +54,7 @@ public:
     ValueType &operator=(const ValueType &) = default;
     ~ValueType();
     CellType cell_type() const { return _cell_type; }
+    CellMeta cell_meta() const { return {_cell_type, is_double()}; }
     bool is_error() const { return _error; }
     bool is_double() const;
     bool has_dimensions() const { return !_dimensions.empty(); }
