@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
 import com.yahoo.component.Version;
@@ -247,14 +247,14 @@ public class DynamicDockerProvisionTest {
         tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 2, 20, 40),
                                                       resources(4, 1, 2, 20, 40)));
         tester.assertNodes("Allocation specifies memory in the advertised amount",
-                           3, 1, 2, 20, 40,
+                           2, 1, 2, 20, 40,
                            app1, cluster1);
 
         // Redeploy the same
         tester.activate(app1, cluster1, Capacity.from(resources(2, 1, 2, 20, 40),
                                                       resources(4, 1, 2, 20, 40)));
         tester.assertNodes("Allocation specifies memory in the advertised amount",
-                           3, 1, 2, 20, 40,
+                           2, 1, 2, 20, 40,
                            app1, cluster1);
     }
 
