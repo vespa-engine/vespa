@@ -17,7 +17,21 @@ namespace vespalib::datastore {
 class EntryComparator;
 
 /*
- * Fixed sized hash map over keys in data store.
+ * Fixed sized hash map over keys in data store, meant to support a faster
+ * dictionary for unique store with relation to lookups.
+ *
+ * Currently hardcoded key and data types, where key references an entry
+ * in a UniqueStore and value references a posting list
+ * (cf. search::attribute::PostingStore).
+ *
+ * This structure supports one writer and many readers.
+ *
+ * A reader must own an appropriate GenerationHandler::Guard to ensure
+ * that memory is held while it can be accessed by reader.
+ *
+ * The writer must update generation and call transfer_hold_lists and
+ * trim_hold_lists as needed to free up memory no longer needed by any
+ * readers.
  */
 class FixedSizeHashMap {
 public:
