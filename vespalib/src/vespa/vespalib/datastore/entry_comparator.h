@@ -21,6 +21,7 @@ public:
      */
     virtual bool less(const EntryRef lhs, const EntryRef rhs) const = 0;
     virtual bool equal(const EntryRef lhs, const EntryRef rhs) const = 0;
+    virtual size_t hash(const EntryRef rhs) const = 0;
 };
 
 }

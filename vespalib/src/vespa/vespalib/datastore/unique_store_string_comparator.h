@@ -54,6 +54,11 @@ public:
         const char *rhs_value = get(rhs);
         return (strcmp(lhs_value, rhs_value) == 0);
     }
+    size_t hash(const EntryRef rhs) const override {
+        const char *rhs_value = get(rhs);
+        vespalib::hash<const char *> hasher;
+        return hasher(rhs_value);
+    }
 };
 
 }

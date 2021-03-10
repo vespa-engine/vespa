@@ -31,6 +31,9 @@ public:
     bool equal(const EntryRef lhs, const EntryRef rhs) const override {
         return resolve(lhs).ref() == resolve(rhs).ref();
     }
+    size_t hash(const EntryRef rhs) const override {
+        return rhs.ref();
+    }
 };
 
 struct DictionaryReadTest : public ::testing::Test {
