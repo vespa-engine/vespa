@@ -3,10 +3,10 @@ package com.yahoo.vespa.zookeeper;
 
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityUtils;
-import com.yahoo.vespa.jdk8compat.List;
 
 import javax.net.ssl.SSLContext;
 import java.util.Collection;
+import java.util.List;
 import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
