@@ -64,21 +64,20 @@ public class Autoscaler {
 
         Duration scalingWindow = cluster.scalingDuration(clusterNodes.clusterSpec());
         if (scaledIn(scalingWindow, cluster))
-            return Advice.dontScale("Won't autoscale now: Less than " + scalingWindow + " since last rescaling");
+            return Advice.dontScale("Won't autoscale now: Less than " + scalingWindow + " since last resource change");
 
         var clusterNodesTimeseries = new ClusterNodesTimeseries(scalingWindow, cluster, clusterNodes, metricsDb);
         var currentAllocation = new AllocatableClusterResources(clusterNodes.asList(), nodeRepository, cluster.exclusive());
 
         int measurementsPerNode = clusterNodesTimeseries.measurementsPerNode();
         if  (measurementsPerNode < minimumMeasurementsPerNode(scalingWindow))
-            return Advice.none("Collecting more data before making new scaling decisions: " +
-                               "Have " + measurementsPerNode + " measurements per node but require " +
-                               minimumMeasurementsPerNode(scalingWindow));
+            return Advice.none("Collecting more data before making new scaling decisions: Need to measure for " +
+                               scalingWindow + " since the last resource change completed");
 
         int nodesMeasured = clusterNodesTimeseries.nodesMeasured();
         if (nodesMeasured != clusterNodes.size())
             return Advice.none("Collecting more data before making new scaling decisions: " +
-                               "Have measurements from " + nodesMeasured + " but require from " + clusterNodes.size());
+                               "Have measurements from " + nodesMeasured + " nodes, but require from " + clusterNodes.size());
 
 
         var clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
@@ -87,15 +86,16 @@ public class Autoscaler {
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(target, currentAllocation, limits);
         if (bestAllocation.isEmpty())
-            return Advice.dontScale("No allocation changes are possible within configured limits");
+            return Advice.dontScale("No allocation improvements are possible within configured limits");
 
         if (similar(bestAllocation.get().realResources(), currentAllocation.realResources()))
             return Advice.dontScale("Cluster is ideally scaled within configured limits");
 
         if (isDownscaling(bestAllocation.get(), currentAllocation) && scaledIn(scalingWindow.multipliedBy(3), cluster))
-            return Advice.dontScale("Waiting " + scalingWindow.multipliedBy(3) + " since last rescaling before reducing resources");
+            return Advice.dontScale("Waiting " + scalingWindow.multipliedBy(3) +
+                                    " since the last change before reducing resources");
 
-        return Advice.scaleTo(bestAllocation.get().advertisedResources(), "Limits " + limits + " target " + target);
+        return Advice.scaleTo(bestAllocation.get().advertisedResources());
     }
 
     /** Returns true if both total real resources and total cost are similar */
@@ -180,8 +180,8 @@ public class Autoscaler {
 
         private static Advice none(String reason) { return new Advice(Optional.empty(), false, reason); }
         private static Advice dontScale(String reason) { return new Advice(Optional.empty(), true, reason); }
-        private static Advice scaleTo(ClusterResources target, String message) {
-            return new Advice(Optional.of(target), true, "Scaling to " + target + " due to load changes: " + message);
+        private static Advice scaleTo(ClusterResources target) {
+            return new Advice(Optional.of(target), true, "Scheduled scaling to " + target + " due to load changes");
         }
 
         @Override
