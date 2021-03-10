@@ -78,11 +78,14 @@ void my_sparse_no_overlap_join_op(InterpretedFunction::State &state, uint64_t pa
 }
 
 struct SelectSparseNoOverlapJoinOp {
-    template <typename CT, typename Fun>
-    static auto invoke() { return my_sparse_no_overlap_join_op<CT,Fun>; }
+    template <typename R1, typename Fun>
+    static auto invoke() {
+        using CT = CellValueType<R1::value.cell_type>;
+        return my_sparse_no_overlap_join_op<CT,Fun>;
+    }
 };
 
-using MyTypify = TypifyValue<TypifyCellType,operation::TypifyOp2>;
+using MyTypify = TypifyValue<TypifyCellMeta,operation::TypifyOp2>;
 
 bool is_sparse_like(const ValueType &type) {
     return ((type.count_mapped_dimensions() > 0) && (type.dense_subspace_size() == 1));
@@ -105,7 +108,7 @@ SparseNoOverlapJoinFunction::compile_self(const ValueBuilderFactory &factory, St
     const auto &param = stash.create<JoinParam>(result_type(),
                                                 lhs().result_type(), rhs().result_type(),
                                                 function(), factory);
-    auto op = typify_invoke<2,MyTypify,SelectSparseNoOverlapJoinOp>(result_type().cell_type(), function());
+    auto op = typify_invoke<2,MyTypify,SelectSparseNoOverlapJoinOp>(result_type().cell_meta().limit(), function());
     return InterpretedFunction::Instruction(op, wrap_param<JoinParam>(param));
 }
 
