@@ -50,7 +50,7 @@ public class ImplicitIndexingClusterTest {
         ModelContext.Properties properties = new TestProperties().setMultitenant(true).setHostedVespa(true);
         DeployState.Builder deployStateBuilder = new DeployState.Builder()
                 .properties(properties)
-                .modelHostProvisioner(new InMemoryProvisioner(true, false, "host1.yahoo.com", "host2.yahoo.com", "host3.yahoo.com"));
+                .modelHostProvisioner(new InMemoryProvisioner(6, false));
 
         return new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
                 .withServices("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" + servicesXml)

@@ -260,7 +260,6 @@ public class ModelContextImpl implements ModelContext {
         private final Quota quota;
         private final List<TenantSecretStore> tenantSecretStores;
         private final SecretStore secretStore;
-        private final boolean dedicatedClusterControllerCluster;
 
         private final String jvmGcOptions;
 
@@ -276,8 +275,7 @@ public class ModelContextImpl implements ModelContext {
                           Optional<ApplicationRoles> applicationRoles,
                           Optional<Quota> maybeQuota,
                           List<TenantSecretStore> tenantSecretStores,
-                          SecretStore secretStore,
-                          boolean dedicatedClusterControllerCluster) {
+                          SecretStore secretStore) {
             this.featureFlags = new FeatureFlags(flagSource, applicationId);
             this.applicationId = applicationId;
             this.multitenant = configserverConfig.multitenant() || configserverConfig.hostedVespa() || Boolean.getBoolean("multitenant");
@@ -294,7 +292,6 @@ public class ModelContextImpl implements ModelContext {
             this.athenzDomain = athenzDomain;
             this.applicationRoles = applicationRoles;
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
-            this.dedicatedClusterControllerCluster = dedicatedClusterControllerCluster;
             this.tenantSecretStores = tenantSecretStores;
             this.secretStore = secretStore;
 
@@ -359,8 +356,6 @@ public class ModelContextImpl implements ModelContext {
         }
 
         @Override public String jvmGCOptions() { return jvmGcOptions; }
-
-        @Override public boolean dedicatedClusterControllerCluster() { return hostedVespa && dedicatedClusterControllerCluster; }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
