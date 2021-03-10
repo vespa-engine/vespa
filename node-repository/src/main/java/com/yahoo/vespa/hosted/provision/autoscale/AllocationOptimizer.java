@@ -16,8 +16,7 @@ import java.util.Optional;
 public class AllocationOptimizer {
 
     // The min and max nodes to consider when not using application supplied limits
-    private static final int minimumStatelessNodes = 2; // Since this number includes redundancy it cannot be lower than 2
-    private static final int minimumStatefulNodes = 3; // Leader election requires 3 nodes to have redundancy
+    private static final int minimumNodes = 2; // Since this number includes redundancy it cannot be lower than 2
     private static final int maximumNodes = 150;
 
     // When a query is issued on a node the cost is the sum of a fixed cost component and a cost component
@@ -41,7 +40,7 @@ public class AllocationOptimizer {
     public Optional<AllocatableClusterResources> findBestAllocation(ResourceTarget target,
                                                                     AllocatableClusterResources current,
                                                                     Limits limits) {
-        int minimumNodes = current.clusterSpec().isStateful() ? minimumStatefulNodes : minimumStatelessNodes;
+        int minimumNodes = AllocationOptimizer.minimumNodes;
         if (limits.isEmpty())
             limits = Limits.of(new ClusterResources(minimumNodes,    1, NodeResources.unspecified()),
                                new ClusterResources(maximumNodes, maximumNodes, NodeResources.unspecified()));
