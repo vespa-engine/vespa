@@ -7,11 +7,14 @@ import com.yahoo.security.KeyStoreBuilder;
 import com.yahoo.security.KeyStoreType;
 import com.yahoo.security.KeyStoreUtils;
 import com.yahoo.security.KeyUtils;
+import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateUtils;
+import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityOptions;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.defaults.Defaults;
 
+import javax.net.ssl.SSLContext;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -21,6 +24,8 @@ import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
+import java.util.TreeSet;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -90,8 +95,9 @@ public class Configurator {
         sb.append("metricsProvider.className=org.apache.zookeeper.metrics.impl.NullMetricsProvider\n");
         ensureThisServerIsRepresented(config.myid(), config.server());
         config.server().forEach(server -> addServerToCfg(sb, server, config.clientPort()));
-        sb.append(new TlsQuorumConfig(jksKeyStoreFilePath).createConfig(config, transportSecurityOptions));
-        sb.append(new TlsClientServerConfig(jksKeyStoreFilePath).createConfig(config, transportSecurityOptions));
+        SSLContext sslContext = new SslContextBuilder().build();
+        sb.append(new TlsQuorumConfig(sslContext, jksKeyStoreFilePath).createConfig(config, transportSecurityOptions));
+        sb.append(new TlsClientServerConfig(sslContext, jksKeyStoreFilePath).createConfig(config, transportSecurityOptions));
         return sb.toString();
     }
 
@@ -172,6 +178,10 @@ public class Configurator {
     }
 
     private interface TlsConfig {
+        default Set<String> allowedCiphers(SSLContext sslContext) { return new TreeSet<>(TlsContext.getAllowedCipherSuites(sslContext)); }
+
+        default Set<String> allowedProtocols(SSLContext sslContext) { return new TreeSet<>(TlsContext.getAllowedProtocols(sslContext)); }
+
         default Optional<String> getEnvironmentVariable(String variableName) {
             return Optional.ofNullable(System.getenv().get(variableName))
                     .filter(var -> !var.isEmpty());
@@ -185,6 +195,8 @@ public class Configurator {
         String configFieldPrefix();
 
         Path jksKeyStoreFilePath();
+
+        SSLContext sslContext();
 
         default String createCommonKeyStoreTrustStoreOptions(Optional<TransportSecurityOptions> transportSecurityOptions) {
             StringBuilder sb = new StringBuilder();
@@ -203,9 +215,10 @@ public class Configurator {
             StringBuilder sb = new StringBuilder();
             sb.append(configFieldPrefix()).append(".hostnameVerification=false\n");
             sb.append(configFieldPrefix()).append(".clientAuth=NEED\n");
-            sb.append(configFieldPrefix()).append(".ciphersuites=").append(VespaSslContextProvider.enabledTlsCiphersConfigValue()).append("\n");
-            sb.append(configFieldPrefix()).append(".enabledProtocols=").append(VespaSslContextProvider.enabledTlsProtocolConfigValue()).append("\n");
-            sb.append(configFieldPrefix()).append(".protocol=").append(VespaSslContextProvider.sslContextVersion()).append("\n");
+            sb.append(configFieldPrefix()).append(".ciphersuites=").append(String.join(",", allowedCiphers(sslContext()))).append("\n");
+            sb.append(configFieldPrefix()).append(".enabledProtocols=").append(String.join(",", allowedProtocols(sslContext()))).append("\n");
+            sb.append(configFieldPrefix()).append(".protocol=").append(sslContext().getProtocol()).append("\n");
+
             return sb.toString();
         }
 
@@ -213,9 +226,11 @@ public class Configurator {
 
     static class TlsClientServerConfig implements TlsConfig {
 
+        private final SSLContext sslContext;
         private final Path jksKeyStoreFilePath;
 
-        TlsClientServerConfig(Path jksKeyStoreFilePath) {
+        TlsClientServerConfig(SSLContext sslContext, Path jksKeyStoreFilePath) {
+            this.sslContext = sslContext;
             this.jksKeyStoreFilePath = jksKeyStoreFilePath;
         }
 
@@ -254,13 +269,19 @@ public class Configurator {
             return jksKeyStoreFilePath;
         }
 
+        @Override
+        public SSLContext sslContext() {
+            return sslContext;
+        }
     }
 
     static class TlsQuorumConfig implements TlsConfig {
 
+        private final SSLContext sslContext;
         private final Path jksKeyStoreFilePath;
 
-        TlsQuorumConfig(Path jksKeyStoreFilePath) {
+        TlsQuorumConfig(SSLContext sslContext, Path jksKeyStoreFilePath) {
+            this.sslContext = sslContext;
             this.jksKeyStoreFilePath = jksKeyStoreFilePath;
         }
 
@@ -306,6 +327,11 @@ public class Configurator {
         @Override
         public Path jksKeyStoreFilePath() {
             return jksKeyStoreFilePath;
+        }
+
+        @Override
+        public SSLContext sslContext() {
+            return sslContext;
         }
 
     }
