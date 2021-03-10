@@ -8,47 +8,32 @@
 
 namespace vespalib::eval {
 
-using vespalib::ArrayRef;
+using operation::TypifyOp1;
+using tensor_function::map_fun_t;
 
-using namespace operation;
-using namespace tensor_function;
-
-using op_function = InterpretedFunction::op_function;
 using Instruction = InterpretedFunction::Instruction;
 using State = InterpretedFunction::State;
 
 namespace {
 
-template <typename CT, bool inplace>
-ArrayRef<CT> make_dst_cells(ConstArrayRef<CT> src_cells, Stash &stash) {
-    if (inplace) {
-        return unconstify(src_cells);
-    } else {
-        return stash.create_uninitialized_array<CT>(src_cells.size());
-    }
-}
-
-template <typename CT, typename Fun, bool inplace>
-void my_simple_map_op(State &state, uint64_t param) {
+template <typename CT, typename Fun>
+void my_inplace_map_op(State &state, uint64_t param) {
     Fun my_fun((map_fun_t)param);
     auto const &child = state.peek(0);
     auto src_cells = child.cells().typify<CT>();
-    auto dst_cells = make_dst_cells<CT, inplace>(src_cells, state.stash);
+    auto dst_cells = unconstify(src_cells);
     apply_op1_vec(dst_cells.begin(), src_cells.begin(), dst_cells.size(), my_fun);
-    if (!inplace) {
-        state.pop_push(state.stash.create<ValueView>(child.type(), child.index(), TypedCells(dst_cells)));
-    }
 }
 
 //-----------------------------------------------------------------------------
 
 struct MyGetFun {
-    template <typename R1, typename R2, typename R3> static auto invoke() {
-        return my_simple_map_op<R1, R2, R3::value>;
+    template <typename CT, typename Fun> static auto invoke() {
+        return my_inplace_map_op<CT, Fun>;
     }
 };
 
-using MyTypify = TypifyValue<TypifyCellType,TypifyOp1,TypifyBool>;
+using MyTypify = TypifyValue<TypifyCellType,TypifyOp1>;
 
 } // namespace vespalib::eval::<unnamed>
 
@@ -66,7 +51,7 @@ MixedMapFunction::~MixedMapFunction() = default;
 Instruction
 MixedMapFunction::compile_self(const ValueBuilderFactory &, Stash &) const
 {
-    auto op = typify_invoke<3,MyTypify,MyGetFun>(result_type().cell_type(), function(), inplace());
+    auto op = typify_invoke<2,MyTypify,MyGetFun>(result_type().cell_type(), function());
     static_assert(sizeof(uint64_t) == sizeof(function()));
     return Instruction(op, (uint64_t)(function()));
 }
@@ -75,7 +60,10 @@ const TensorFunction &
 MixedMapFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
     if (auto map = as<Map>(expr)) {
-        if (! map->child().result_type().is_double()) {
+        if ((map->result_type() == map->child().result_type())
+            && (! map->child().result_type().is_double())
+            && map->child().result_is_mutable())
+        {
             return stash.create<MixedMapFunction>(map->result_type(), map->child(), map->function());
         }
     }
