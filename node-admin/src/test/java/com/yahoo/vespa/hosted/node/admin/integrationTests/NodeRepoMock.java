@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.node.admin.integrationTests;
 
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.AddNode;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -22,6 +23,9 @@ public class NodeRepoMock implements NodeRepository {
     private static final Object monitor = new Object();
 
     private final Map<String, NodeSpec> nodeRepositoryNodesByHostname = new HashMap<>();
+
+    @Override
+    public void addNodes(List<AddNode> nodes) { }
 
     @Override
     public List<NodeSpec> getNodes(String baseHostName) {

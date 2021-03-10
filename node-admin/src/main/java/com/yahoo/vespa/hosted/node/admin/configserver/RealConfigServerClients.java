@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.configserver;
 
 import com.yahoo.vespa.flags.FlagRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.flags.RealFlagRepository;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.RealNodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.Orchestrator;
 import com.yahoo.vespa.hosted.node.admin.configserver.orchestrator.OrchestratorImpl;
@@ -17,7 +18,7 @@ import com.yahoo.vespa.hosted.node.admin.configserver.state.StateImpl;
  */
 public class RealConfigServerClients implements ConfigServerClients {
     private final ConfigServerApi configServerApi;
-    private final RealNodeRepository nodeRepository;
+    private final NodeRepository nodeRepository;
     private final Orchestrator orchestrator;
     private final State state;
     private final RealFlagRepository flagRepository;
@@ -34,7 +35,7 @@ public class RealConfigServerClients implements ConfigServerClients {
     }
 
     @Override
-    public RealNodeRepository nodeRepository() {
+    public NodeRepository nodeRepository() {
         return nodeRepository;
     }
 

@@ -42,6 +42,7 @@ public class RealNodeRepository implements NodeRepository {
         this.configServerApi = configServerApi;
     }
 
+    @Override
     public void addNodes(List<AddNode> nodes) {
         List<NodeRepositoryNode> nodesToPost = nodes.stream()
                 .map(RealNodeRepository::nodeRepositoryNodeFromAddNode)
