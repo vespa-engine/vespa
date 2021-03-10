@@ -21,18 +21,17 @@ public class NodeState implements Cloneable {
     public static final String ORCHESTRATOR_RESERVED_DESCRIPTION = "Orchestrator";
 
     private final NodeType type;
-    private State state = State.UP;
+    private State state;
     private String description = "";
-    private double capacity = 1.0;
-    private int reliability =  1;
-    private double initProgress = 1.0;
+    private float capacity = 1.0f;
+    private float initProgress = 1.0f;
     private int minUsedBits = 16;
     private List<DiskState> diskStates = new ArrayList<>();
     /** When generating ideal states, we want to cheaply check if any disks are down in the nodestate. */
     private boolean anyDiskDown = false;
     private long startTimestamp = 0;
 
-    public static double getListingBucketsInitProgressLimit() { return 0.01; }
+    public static float getListingBucketsInitProgressLimit() { return 0.01f; }
 
     public NodeState(NodeType type, State state) {
         this.type = type;
@@ -199,9 +198,9 @@ public class NodeState implements Cloneable {
     }
 
     /** Capacity is set by deserializing a node state. This seems odd, as it is config */
-    public NodeState setCapacity(double c) { this.capacity = c; return this; }
+    public NodeState setCapacity(float c) { this.capacity = c; return this; }
 
-    public NodeState setInitProgress(double p) { this.initProgress = p; return this; }
+    public NodeState setInitProgress(float p) { this.initProgress = p; return this; }
     public NodeState setDescription(String desc) { this.description = desc; return this; }
     public NodeState setMinUsedBits(int u) { this.minUsedBits = u; return this; }
     public NodeState setState(State state) { this.state = state; return this; }
@@ -397,7 +396,7 @@ public class NodeState implements Cloneable {
                 if (key.length() > 1) break;
                 if (type != null && !type.equals(NodeType.STORAGE)) break;
                 try{
-                    newState.setCapacity(Double.valueOf(value));
+                    newState.setCapacity(Float.valueOf(value));
                 } catch (Exception e) {
                     throw new ParseException("Illegal capacity '" + value + "'. Capacity must be a positive floating point number", 0);
                 }
@@ -405,7 +404,7 @@ public class NodeState implements Cloneable {
             case 'i':
                 if (key.length() > 1) break;
                 try{
-                    newState.setInitProgress(Double.valueOf(value));
+                    newState.setInitProgress(Float.valueOf(value));
                 } catch (Exception e) {
                     throw new ParseException("Illegal init progress '" + value + "'. Init progress must be a floating point number from 0.0 to 1.0", 0);
                 }

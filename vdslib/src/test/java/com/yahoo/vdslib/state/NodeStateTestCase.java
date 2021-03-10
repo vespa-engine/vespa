@@ -128,7 +128,7 @@ public class NodeStateTestCase {
         assertEquals("m:Foo\\x20bar", ns.serialize(false));
         assertEquals("m:Foo\\x20bar", ns.serialize(true));
 
-        ns = new NodeState(NodeType.STORAGE, State.MAINTENANCE).setDescription("Foo bar").setCapacity(1.2).setDiskCount(4)
+        ns = new NodeState(NodeType.STORAGE, State.MAINTENANCE).setDescription("Foo bar").setCapacity(1.2f).setDiskCount(4)
                 .setMinUsedBits(12).setStartTimestamp(5).setDiskState(1, new DiskState(State.DOWN, "bad disk", 1))
                 .setDiskState(3, new DiskState(State.UP, "", 2));
         assertEquals(".2.s:m .2.c:1.2 .2.t:5 .2.d:4 .2.d.1.s:d .2.d.3.c:2.0", ns.serialize(2, false));
@@ -204,7 +204,7 @@ public class NodeStateTestCase {
         String expected = "Maintenance => Up";
         assertEquals(expected, ns.getTextualDifference(new NodeState(NodeType.STORAGE, State.UP)).substring(0, expected.length()));
 
-        NodeState ns1 = new NodeState(NodeType.STORAGE, State.MAINTENANCE).setDescription("Foo bar").setCapacity(1.2).setDiskCount(4)
+        NodeState ns1 = new NodeState(NodeType.STORAGE, State.MAINTENANCE).setDescription("Foo bar").setCapacity(1.2f).setDiskCount(4)
                 .setMinUsedBits(12).setStartTimestamp(5).setDiskState(1, new DiskState(State.DOWN, "bad disk", 1))
                 .setDiskState(3, new DiskState(State.UP, "", 2));
         ns1.toString();
