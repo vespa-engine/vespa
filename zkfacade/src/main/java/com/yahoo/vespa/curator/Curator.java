@@ -10,6 +10,7 @@ import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.api.VespaCurator;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.zookeeper.VespaSslContextProvider;
 import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -124,9 +125,15 @@ public class Curator implements VespaCurator, AutoCloseable {
     private static ZKClientConfig createClientConfig(Optional<File> clientConfigFile) {
         if (clientConfigFile.isPresent()) {
             boolean useSecureClient = Boolean.parseBoolean(getEnvironmentVariable("VESPA_USE_TLS_FOR_ZOOKEEPER_CLIENT").orElse("false"));
-            String config = "zookeeper.client.secure=" + useSecureClient + "\n";
+            StringBuilder configBuilder = new StringBuilder("zookeeper.client.secure=").append(useSecureClient).append("\n");
+            if (useSecureClient) {
+                configBuilder.append("zookeeper.ssl.context.supplier.class=").append(VespaSslContextProvider.class.getName()).append("\n")
+                        .append("zookeeper.ssl.enabledProtocols=").append(VespaSslContextProvider.enabledTlsProtocolConfigValue()).append("\n")
+                        .append("zookeeper.ssl.ciphersuites=").append(VespaSslContextProvider.enabledTlsCiphersConfigValue()).append("\n")
+                        .append("zookeeper.ssl.clientAuth=NEED\n");
+            }
             clientConfigFile.get().getParentFile().mkdirs();
-            IOUtils.writeFile(clientConfigFile.get(), Utf8.toBytes(config));
+            IOUtils.writeFile(clientConfigFile.get(), Utf8.toBytes(configBuilder.toString()));
             try {
                 return new ZKClientConfig(clientConfigFile.get());
             } catch (QuorumPeerConfig.ConfigException e) {
