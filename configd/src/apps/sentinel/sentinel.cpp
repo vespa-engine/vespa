@@ -80,8 +80,7 @@ main(int argc, char **argv)
         return EXIT_FAILURE;
     }
 
-    struct timeval lastTv;
-    gettimeofday(&lastTv, nullptr);
+    vespalib::steady_time lastTime = vespalib::steady_clock::now();
     while (!stop()) {
         try {
             vespalib::SignalHandler::CHLD.clear();
@@ -106,18 +105,16 @@ main(int argc, char **argv)
         handler.updateActiveFdset(&fds, &maxNum);
 
         struct timeval tv;
-        tv.tv_sec = 1;
-        tv.tv_usec = 0;
+        tv.tv_sec = 0;
+        tv.tv_usec = 100000;  //0.1s
 
         select(maxNum, &fds, nullptr, nullptr, &tv);
 
-        gettimeofday(&tv, nullptr);
-        double delta = tv.tv_sec - lastTv.tv_sec
-                       + 1e-6 * (tv.tv_usec - lastTv.tv_usec);
-        if (delta < 0.01) {
-            usleep(12500); // Avoid busy looping;
+        vespalib::steady_time now = vespalib::steady_clock::now();
+        if ((now - lastTime) < 10ms) {
+            std::this_thread::sleep_for(12ms); // Avoid busy looping;
         }
-        lastTv = tv;
+        lastTime = now;
     }
 
     EV_STOPPING("config-sentinel", "normal exit");
