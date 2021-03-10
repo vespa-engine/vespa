@@ -94,7 +94,10 @@ template <> struct InlineOp2<Mul> {
 };
 template <> struct InlineOp2<Pow> {
     InlineOp2(op2_t) {}
-    template <typename A, typename B> constexpr auto operator()(A a, B b) const { return std::pow(a,b); }
+    constexpr float operator()(float a, float b) const { return std::pow(a,b); }
+    constexpr double operator()(float a, double b) const { return std::pow(a,b); }
+    constexpr double operator()(double a, float b) const { return std::pow(a,b); }
+    constexpr double operator()(double a, double b) const { return std::pow(a,b); }
 };
 template <> struct InlineOp2<Sub> {
     InlineOp2(op2_t) {}
