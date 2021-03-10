@@ -540,7 +540,7 @@ public class AutoscalingTest {
 
         tester.addCpuMeasurements(0.5f, 1f, 10, application1);
         tester.addQueryRateMeasurements(application1, cluster1.id(),
-                                        500, t -> 0.5);
+                                        500, t -> 0.0);
 
         tester.assertResources("Advice to scale up since observed growth is much faster than scaling time",
                                3, 1, 1,  4, 50,

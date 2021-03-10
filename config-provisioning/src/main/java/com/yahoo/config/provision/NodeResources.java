@@ -104,10 +104,10 @@ public class NodeResources {
     }
 
     public NodeResources(double vcpu, double memoryGb, double diskGb, double bandwidthGbps, DiskSpeed diskSpeed, StorageType storageType) {
-        this.vcpu = vcpu;
-        this.memoryGb = memoryGb;
-        this.diskGb = diskGb;
-        this.bandwidthGbps = bandwidthGbps;
+        this.vcpu = validate(vcpu, "vcpu");
+        this.memoryGb = validate(memoryGb, "memory");
+        this.diskGb = validate(diskGb, "disk");
+        this.bandwidthGbps = validate(bandwidthGbps, "bandwith");
         this.diskSpeed = diskSpeed;
         this.storageType = storageType;
     }
@@ -308,6 +308,12 @@ public class NodeResources {
         if (cpu == 2 && mem == 8 ) cpu = 1.5;
         if (cpu == 2 && mem == 12 ) cpu = 2.3;
         return new NodeResources(cpu, mem, dsk, 0.3, DiskSpeed.getDefault(), StorageType.getDefault());
+    }
+
+    private double validate(double value, String  valueName) {
+        if (Double.isNaN(value)) throw new IllegalArgumentException(valueName + " cannot be NaN");
+        if (Double.isInfinite(value)) throw new IllegalArgumentException(valueName + " cannot be infinite");
+        return value;
     }
 
 }
