@@ -79,9 +79,7 @@ public class ResourceTarget {
         Duration scalingDuration = clusterNodesTimeseries.cluster().scalingDuration(clusterNodesTimeseries.clusterNodes().clusterSpec());
         double growthRateHeadroom = 1 + maxGrowthRate * scalingDuration.toMinutes();
         // Cap headroom at 10% above the historical observed peak
-        double fractionOfMax = clusterTimeseries.currentQueryFractionOfMax();
-        if (fractionOfMax != 0)
-            growthRateHeadroom = Math.min(growthRateHeadroom, 1 / fractionOfMax + 0.1);
+        growthRateHeadroom = Math.min(growthRateHeadroom, 1 / clusterTimeseries.currentQueryFractionOfMax() + 0.1);
 
         // How much headroom is needed to handle sudden arrival of additional traffic due to another zone going down?
         double trafficShiftHeadroom;
