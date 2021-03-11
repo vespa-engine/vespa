@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2021 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.changemanagement;
 
 import com.yahoo.application.container.handler.Request;
@@ -12,9 +12,6 @@ import org.junit.Test;
 
 import java.io.File;
 
-/**
- * @author mpolden
- */
 public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
 
     private static final String responses = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/changemanagement/responses/";
@@ -30,7 +27,7 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
 
     @Test
     public void test_api() {
-        assertResponse(new Request("http://localhost:8080/os/v1/"), "{\"versions\":[]}", 200);
+        assertFile(new Request("http://localhost:8080/changemanagement/v1/assessment", "{}", Request.Method.POST), "initial.json");
     }
 
     private void assertResponse(Request request, @Language("JSON") String body, int statusCode) {
