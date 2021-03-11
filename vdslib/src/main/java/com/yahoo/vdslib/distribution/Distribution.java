@@ -4,11 +4,9 @@ package com.yahoo.vdslib.distribution;
 import com.yahoo.collections.BobHash;
 import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.vdslib.state.ClusterState;
-import com.yahoo.vdslib.state.DiskState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
-import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.config.content.DistributionConfig;
 import com.yahoo.vespa.config.content.StorDistributionConfig;
 import com.yahoo.document.BucketId;
@@ -351,39 +349,6 @@ public class Distribution {
         ordered[7] = (byte)(currentid >> (7*8));
         int initval = (1664525 * nodeIndex + 0xdeadbeef);
         return BobHash.hash(ordered, initval);
-    }
-    /**
-     * This function should only depend on disk distribution and node index. It is
-     * assumed that any other change, for instance in hierarchical grouping, does
-     * not change disk index on disk.
-     */
-    int getIdealDisk(NodeState nodeState, int nodeIndex, BucketId bucket) {
-        // Catch special cases in a single if statement
-        if (nodeState.getDiskCount() < 2) {
-            if (nodeState.getDiskCount() == 1) {
-                return 0;
-            }
-            throw new IllegalArgumentException(
-                    "Cannot pick ideal disk without knowing disk count.");
-        }
-
-        RandomGen randomizer = new RandomGen(getDiskSeed(bucket, nodeIndex));
-
-        double maxScore = 0.0;
-        int idealDisk = 0xffff;
-        for (int i=0, n=nodeState.getDiskCount(); i<n; ++i) {
-            double score = randomizer.nextDouble();
-            DiskState diskState = (nodeState.getDiskState(i));
-            if (diskState.getCapacity() != 1.0) {
-                score = Math.pow(score,
-                        1.0 / diskState.getCapacity());
-            }
-            if (score > maxScore) {
-                maxScore = score;
-                idealDisk = i;
-            }
-        }
-        return idealDisk;
     }
 
     List<Integer> getIdealStorageNodes(ClusterState clusterState, BucketId bucket, String upStates) throws TooFewBucketBitsInUseException {

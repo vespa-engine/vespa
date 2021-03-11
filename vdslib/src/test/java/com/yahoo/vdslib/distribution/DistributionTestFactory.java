@@ -37,13 +37,11 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
     static public class Test {
         private BucketId bucket;
         private List<Integer> nodes;
-        private List<Integer> disks;
         private Failure failure;
 
         public Test(BucketId bucket) {
             this.bucket = bucket;
             nodes = new ArrayList<>();
-            disks = new ArrayList<>();
             failure = Failure.NONE;
         }
 
@@ -58,7 +56,7 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
 
         @Override
         public int hashCode() {
-            return java.util.Objects.hash(bucket, nodes, disks);
+            return java.util.Objects.hash(bucket, nodes);
         }
 
         public String toString() {
@@ -78,16 +76,6 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
 
         public List<Integer> getNodes() {
             return nodes;
-        }
-        public List<Integer> getDisks() {
-            return disks;
-        }
-        public Integer getDiskForNode(int node) {
-            for (int i=0; i<nodes.size(); ++i) {
-                if (nodes.get(i) == node) return disks.get(i);
-            }
-            fail("Node " + node + " is not in use: " + toString());
-            throw new IllegalStateException("Control should not reach here");
         }
 
         public Test assertFailure(Failure f) {
@@ -176,12 +164,6 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
             } else {
                 for (int i : d.getIdealStorageNodes(state, bucket, upStates)) {
                     t.nodes.add(i);
-                    NodeState ns = state.getNodeState(new Node(nodeType, i));
-                    if (ns.getDiskCount() != 0) {
-                        t.disks.add(d.getIdealDisk(ns, i, bucket));
-                    } else {
-                        t.disks.add(-1);
-                    }
                 }
             }
         } catch (Distribution.TooFewBucketBitsInUseException e) {
@@ -212,17 +194,11 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
             for (int i : t.nodes) {
                 nodes.put(i);
             }
-            JSONArray disks = new JSONArray();
-            for (int i : t.disks) {
-                nodes.put(i);
-            }
+
             JSONObject testResult = new JSONObject()
                     .put("bucket", Long.toHexString(t.bucket.getId()))
                     .put("nodes", nodes)
                     .put("failure", t.failure.toString());
-            if (nodeType == NodeType.STORAGE) {
-                testResult.put("disks", disks);
-            }
             results.put(testResult);
         }
         test.put("result", results);
@@ -245,12 +221,6 @@ public class DistributionTestFactory extends CrossPlatformTestFactory {
                 JSONArray nodes = result.getJSONArray("nodes");
                 for (int j=0; j<nodes.length(); ++j) {
                     t.nodes.add(nodes.getInt(j));
-                }
-            }
-            if (nodeType == NodeType.STORAGE) {
-                JSONArray disks = result.getJSONArray("disks");
-                for (int j=0; j<disks.length(); ++j) {
-                    t.disks.add(disks.getInt(j));
                 }
             }
             t.failure = Failure.valueOf(result.getString("failure"));

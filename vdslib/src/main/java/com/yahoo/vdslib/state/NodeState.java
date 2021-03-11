@@ -200,9 +200,6 @@ public class NodeState implements Cloneable {
     public int getMinUsedBits() { return minUsedBits; }
     public long getStartTimestamp() { return startTimestamp; }
 
-    public int getDiskCount() { return diskStates.size(); }
-    public List<DiskState> getDiskStates() { return Collections.unmodifiableList(diskStates); }
-
     public String toString() { return toString(false); }
 
     public String toString(boolean compact) {
