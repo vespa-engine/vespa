@@ -4,9 +4,6 @@ package com.yahoo.vdslib.state;
 import com.yahoo.text.StringUtilities;
 
 import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 import java.util.Locale;
 import java.util.StringTokenizer;
 
@@ -26,7 +23,6 @@ public class NodeState implements Cloneable {
     private float capacity = 1.0f;
     private float initProgress = 1.0f;
     private int minUsedBits = 16;
-    private List<DiskState> diskStates = new ArrayList<>();
     private long startTimestamp = 0;
 
     public static float getListingBucketsInitProgressLimit() { return 0.01f; }
@@ -38,12 +34,7 @@ public class NodeState implements Cloneable {
 
     public NodeState clone() {
         try{
-            NodeState ns = (NodeState) super.clone();
-            ns.diskStates = new ArrayList<>();
-            for (DiskState s : diskStates) {
-                ns.diskStates.add(s.clone());
-            }
-            return ns;
+            return (NodeState) super.clone();
         } catch (CloneNotSupportedException e) {
             throw new RuntimeException("Does not happen");
         }
@@ -68,28 +59,10 @@ public class NodeState implements Cloneable {
         {
             return false;
         }
-        if (diskStates.size() == 0 && ns.diskStates.size() == 0) {
-            // Everything is fine
-        } else if (diskStates.size() == 0 || ns.diskStates.size() == 0) {
-            NodeState nonEmptyState = (diskStates.size() == 0 ? ns : this);
-            for (int i=0; i<nonEmptyState.diskStates.size(); ++i) {
-                if (!nonEmptyState.diskStates.get(i).equals(new DiskState(State.UP))) {
-                    return false;
-                }
-            }
-        } else if (diskStates.size() != ns.diskStates.size()) {
-            return false;
-        } else {
-            for (int i=0; i<diskStates.size(); ++i) {
-                if (!diskStates.get(i).equals(ns.diskStates.get(i))) {
-                    return false;
-                }
-            }
-        }
         return true;
     }
     public int hashCode() {
-        return state.hashCode() ^ diskStates.hashCode() ^ Double.valueOf(capacity).hashCode();
+        return state.hashCode() ^ Double.valueOf(capacity).hashCode();
     }
 
     /**
@@ -121,25 +94,6 @@ public class NodeState implements Cloneable {
         {
             return false;
         }
-
-        if (diskStates.size() == 0 && other.diskStates.size() == 0) {
-            // Everything is fine
-        } else if (diskStates.size() == 0 || other.diskStates.size() == 0) {
-            NodeState nonEmptyState = (diskStates.size() == 0 ? other : this);
-            for (int i=0; i<nonEmptyState.diskStates.size(); ++i) {
-                if (!nonEmptyState.diskStates.get(i).equals(new DiskState(State.UP))) {
-                    return false;
-                }
-            }
-        } else if (diskStates.size() != other.diskStates.size()) {
-            return false;
-        } else {
-            for (int i=0; i<diskStates.size(); ++i) {
-                if (!diskStates.get(i).equals(other.diskStates.get(i))) {
-                    return false;
-                }
-            }
-        }
         return true;
     }
 
@@ -159,19 +113,6 @@ public class NodeState implements Cloneable {
         }
         if (startTimestamp != other.startTimestamp) {
             diff.add(new Diff.Entry("startTimestamp", startTimestamp, other.startTimestamp));
-        }
-        if (diskStates.size() != other.diskStates.size()) {
-            diff.add(new Diff.Entry("disks", diskStates.size(), other.diskStates.size()));
-        } else {
-            Diff diskDiff = new Diff();
-            for (int i=0; i<diskStates.size(); ++i) {
-                if (!diskStates.get(i).equals(other.diskStates.get(i))) {
-                    diskDiff.add(new Diff.Entry(i, diskStates.get(i), other.diskStates.get(i)));
-                }
-            }
-            if (diskDiff.differs()) {
-                diff.add(new Diff.Entry("disks", diskDiff));
-            }
         }
         if (!description.equals(other.description)) {
             diff.add(new Diff.Entry("description", description, other.description));
@@ -228,29 +169,6 @@ public class NodeState implements Cloneable {
         if (minUsedBits != 16) {
             sb.append(compact ? ", b " : ", minimum used bits ").append(minUsedBits);
         }
-
-        if (diskStates.size() > 0) {
-            if (compact) {
-                boolean anyNonDefault = false;
-                for (DiskState diskState : diskStates) {
-                    anyNonDefault |= (!diskState.equals(new DiskState(State.UP)));
-                }
-                if (anyNonDefault) {
-                    sb.append(",");
-                    DiskState defaultDiskState = new DiskState(State.UP);
-                    for (int i=0; i<diskStates.size(); ++i) {
-                        if (!diskStates.get(i).equals(defaultDiskState)) {
-                            sb.append(" d").append(i).append("(").append(diskStates.get(i).serialize("", false)).append(")");
-                        }
-                    }
-                }
-            } else {
-                sb.append(", disk states:");
-                for (int i=0; i<diskStates.size(); ++i) {
-                    sb.append(" disk ").append(i).append(": ").append(diskStates.get(i).toString());
-                }
-            }
-        }
         if (description.length() > 0) {
             sb.append(": ").append(description);
         }
@@ -284,25 +202,6 @@ public class NodeState implements Cloneable {
             sb.append(prefix).append("b:").append(minUsedBits);
         }
 
-        if (diskStates.size() > 0) {
-            StringBuilder diskInfo = new StringBuilder();
-            for(int i = 0; i < diskStates.size(); ++i) {
-                String diskPrefix = prefix + "d." + i + ".";
-                String disk = diskStates.get(i).serialize(diskPrefix, verbose);
-                if (disk.length() > 0) {
-                    diskInfo.append(' ').append(disk);
-                }
-            }
-            String diskInfoStr = diskInfo.toString();
-            if (verbose || diskInfoStr.length() > 0) {
-                if (empty) { empty = false; } else { sb.append(' '); }
-                sb.append(prefix).append("d:").append(diskStates.size());
-                sb.append(diskInfoStr);
-            } else if (nodeIdx == -1) {
-                if (empty) { empty = false; } else { sb.append(' '); }
-                sb.append(prefix).append("d:").append(diskStates.size());
-            }
-        }
         if ((verbose || nodeIdx == -1) && description.length() > 0) {
             if (!empty) { sb.append(' '); }
             sb.append(prefix).append("m:").append(StringUtilities.escape(description, ' '));
@@ -310,29 +209,10 @@ public class NodeState implements Cloneable {
         return sb.toString();
     }
 
-    private static class DiskData {
-
-        boolean empty = true;
-        int diskIndex = 0;
-        StringBuilder sb = new StringBuilder();
-
-        public void addDisk(NodeState ns) throws ParseException {
-            if (!empty) {
-                while (diskIndex >= ns.diskStates.size()) {
-                    ns.diskStates.add(new DiskState());
-                }
-                ns.diskStates.set(diskIndex, new DiskState(sb.toString()));
-                empty = true;
-                sb = new StringBuilder();
-            }
-        }
-    }
-
     /** Creates an instance from the serialized form produced by serialize */
     public static NodeState deserialize(NodeType type, String serialized) throws ParseException {
         NodeState newState = new NodeState(type, State.UP);
         StringTokenizer st = new StringTokenizer(serialized, " \t\r\f\n", false);
-        DiskData diskData = new DiskData();
         while (st.hasMoreTokens()) {
             String token = st.nextToken();
             int index = token.indexOf(':');
@@ -382,15 +262,12 @@ public class NodeState implements Cloneable {
                 continue;
             case 'd':
                 if (type != null && !type.equals(NodeType.STORAGE)) break;
+                int size = 0;
                 if (key.length() == 1) {
-                    int size;
                     try{
                         size = Integer.valueOf(value);
                     } catch (Exception e) {
                         throw new ParseException("Invalid disk count '" + value + "'. Need a positive integer value", 0);
-                    }
-                    while (newState.diskStates.size() < size) {
-                        newState.diskStates.add(new DiskState());
                     }
                     continue;
                 }
@@ -403,26 +280,15 @@ public class NodeState implements Cloneable {
                 } catch (Exception e) {
                     throw new ParseException("Invalid disk index '" + indexStr + "'. need a positive integer value", 0);
                 }
-                if (diskIndex >= newState.diskStates.size()) {
-                    throw new ParseException("Cannot index disk " + diskIndex + " of " + newState.diskStates.size(), 0);
+                if (diskIndex >= size) {
+                    throw new ParseException("Cannot index disk " + diskIndex + " of " + size, 0);
                 }
-                if (diskData.diskIndex != diskIndex) {
-                    diskData.addDisk(newState);
-                }
-                if (endp < 0) {
-                    diskData.sb.append(" s:").append(value);
-                } else {
-                    diskData.sb.append(" ").append(key.substring(endp + 1)).append(':').append(value);
-                }
-                diskData.diskIndex = diskIndex;
-                diskData.empty = false;
                 continue;
             default:
                 break;
             }
             // Ignore unknown tokens
         }
-        diskData.addDisk(newState);
         return newState;
     }
 
@@ -432,9 +298,6 @@ public class NodeState implements Cloneable {
         }
         if (type.equals(NodeType.DISTRIBUTOR) && Math.abs(capacity - 1.0) > 0.000000001) {
             throw new IllegalArgumentException("Capacity should not be set for a distributor node");
-        }
-        if (type.equals(NodeType.DISTRIBUTOR) && !diskStates.isEmpty()) {
-            throw new IllegalArgumentException("Disk states should not be set for a distributor node");
         }
     }
 
