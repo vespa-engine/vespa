@@ -90,7 +90,11 @@ void my_mixed_merge_op(State &state, uint64_t param_in) {
 };
 
 struct SelectGenericMergeOp {
-    template <typename LCT, typename RCT, typename OCT, typename Fun> static auto invoke() {
+    template <typename LCM, typename RCM, typename Fun> static auto invoke() {
+        using LCT = CellValueType<LCM::value.cell_type>;
+        using RCT = CellValueType<RCM::value.cell_type>;
+        constexpr CellMeta ocm = CellMeta::merge(LCM::value, RCM::value);
+        using OCT = CellValueType<ocm.cell_type>;
         return my_mixed_merge_op<LCT,RCT,OCT,Fun>;
     }
 };
@@ -99,7 +103,7 @@ struct SelectGenericMergeOp {
 
 } // namespace <unnamed>
 
-using MergeTypify = TypifyValue<TypifyCellType,operation::TypifyOp2>;
+using MergeTypify = TypifyValue<TypifyCellMeta,operation::TypifyOp2>;
 
 Instruction
 GenericMerge::make_instruction(const ValueType &result_type,
@@ -108,7 +112,7 @@ GenericMerge::make_instruction(const ValueType &result_type,
 {
     const auto &param = stash.create<MergeParam>(result_type, lhs_type, rhs_type, function, factory);
     assert(result_type == ValueType::merge(lhs_type, rhs_type));
-    auto fun = typify_invoke<4,MergeTypify,SelectGenericMergeOp>(lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(), function);
+    auto fun = typify_invoke<3,MergeTypify,SelectGenericMergeOp>(lhs_type.cell_meta(), rhs_type.cell_meta(), function);
     return Instruction(fun, wrap_param<MergeParam>(param));
 }
 
