@@ -92,13 +92,12 @@ public class NodeStateTestCase {
         assertEquals("m:Foo\\x20bar", ns.serialize(false));
         assertEquals("m:Foo\\x20bar", ns.serialize(true));
 
-        ns = new NodeState(NodeType.STORAGE, State.MAINTENANCE).setDescription("Foo bar").setCapacity(1.2f).setDiskCount(4)
-                .setMinUsedBits(12).setStartTimestamp(5).setDiskState(1, new DiskState(State.DOWN, "bad disk", 1))
-                .setDiskState(3, new DiskState(State.UP, "", 2));
-        assertEquals(".2.s:m .2.c:1.2 .2.t:5 .2.d:4 .2.d.1.s:d .2.d.3.c:2.0", ns.serialize(2, false));
-        assertEquals("s:m c:1.2 t:5 b:12 d:4 d.1.s:d d.3.c:2.0 m:Foo\\x20bar", ns.serialize(false));
-        assertEquals("s:m c:1.2 t:5 b:12 d:4 d.1.s:d d.1.m:bad\\x20disk d.3.c:2.0 m:Foo\\x20bar", ns.serialize(true));
-        NodeState ns2 = NodeState.deserialize(NodeType.STORAGE, "s:m c:1.2 t:5 b:12 d:4 d.1.s:d d.1.m:bad\\x20disk d.3.c:2.0 m:Foo\\x20bar");
+        ns = new NodeState(NodeType.STORAGE, State.MAINTENANCE).setDescription("Foo bar").setCapacity(1.2f)
+                .setMinUsedBits(12).setStartTimestamp(5);
+        assertEquals(".2.s:m .2.c:1.2 .2.t:5", ns.serialize(2, false));
+        assertEquals("s:m c:1.2 t:5 b:12 m:Foo\\x20bar", ns.serialize(false));
+        assertEquals("s:m c:1.2 t:5 b:12 m:Foo\\x20bar", ns.serialize(true));
+        NodeState ns2 = NodeState.deserialize(NodeType.STORAGE, "s:m c:1.2 t:5 b:12 m:Foo\\x20bar");
         assertEquals(ns, ns2);
 
         NodeState copy1 = NodeState.deserialize(NodeType.STORAGE, ns.serialize(false));
@@ -142,22 +141,6 @@ public class NodeStateTestCase {
             assertTrue(ns1.similarToIgnoringInitProgress(ns2));
             assertFalse(ns1.equals(ns2));
         }
-        {
-            NodeState ns = new NodeState(NodeType.STORAGE, State.MAINTENANCE);
-            NodeState ns2Disks = new NodeState(NodeType.STORAGE, State.MAINTENANCE).setDiskCount(2);
-            assertEquals(ns, ns2Disks);
-            assertEquals(ns2Disks, ns);
-            assertTrue(ns.similarTo(ns2Disks));
-            assertTrue(ns.similarToIgnoringInitProgress(ns2Disks));
-            assertTrue(ns2Disks.similarTo(ns));
-
-            ns2Disks.getDiskState(0).setState(State.DOWN);
-            assertFalse(ns.equals(ns2Disks));
-            assertFalse(ns2Disks.equals(ns));
-            assertFalse(ns.similarTo(ns2Disks));
-            assertFalse(ns.similarToIgnoringInitProgress(ns2Disks));
-            assertFalse(ns2Disks.similarTo(ns));
-        }
     }
 
     @Test
@@ -168,12 +151,11 @@ public class NodeStateTestCase {
         String expected = "Maintenance => Up";
         assertEquals(expected, ns.getTextualDifference(new NodeState(NodeType.STORAGE, State.UP)).substring(0, expected.length()));
 
-        NodeState ns1 = new NodeState(NodeType.STORAGE, State.MAINTENANCE).setDescription("Foo bar").setCapacity(1.2f).setDiskCount(4)
-                .setMinUsedBits(12).setStartTimestamp(5).setDiskState(1, new DiskState(State.DOWN, "bad disk", 1))
-                .setDiskState(3, new DiskState(State.UP, "", 2));
+        NodeState ns1 = new NodeState(NodeType.STORAGE, State.MAINTENANCE).setDescription("Foo bar").setCapacity(1.2f)
+                .setMinUsedBits(12).setStartTimestamp(5);
         ns1.toString();
         ns1.toString(true);
-        expected = "Maintenance => Up, capacity: 1.2 => 1.0, minUsedBits: 12 => 16, startTimestamp: 5 => 0, disks: 4 => 0, description: Foo bar => ";
+        expected = "Maintenance => Up, capacity: 1.2 => 1.0, minUsedBits: 12 => 16, startTimestamp: 5 => 0, description: Foo bar => ";
         assertEquals(expected, ns1.getTextualDifference(new NodeState(NodeType.STORAGE, State.UP)).substring(0, expected.length()));
     }
 
@@ -185,10 +167,6 @@ public class NodeStateTestCase {
         } catch (Exception e) {}
         try{
             new NodeState(NodeType.DISTRIBUTOR, State.UP).setCapacity(3).verifyValidInSystemState(NodeType.DISTRIBUTOR);
-            assertTrue("Should not be valid", false);
-        } catch (Exception e) {}
-        try{
-            new NodeState(NodeType.DISTRIBUTOR, State.UP).setDiskCount(2).verifyValidInSystemState(NodeType.DISTRIBUTOR);
             assertTrue("Should not be valid", false);
         } catch (Exception e) {}
     }

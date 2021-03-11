@@ -279,25 +279,6 @@ public class GroupAutoTakedownTest {
     }
 
     @Test
-    public void disk_states_are_preserved_across_group_down_up_edge() {
-        ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
-                DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.51);
-
-        final NodeState newState = new NodeState(NodeType.STORAGE, State.UP);
-        newState.setDiskCount(7);
-        newState.setDiskState(5, new DiskState(State.DOWN));
-
-        fixture.reportStorageNodeState(4, newState);
-
-        assertEquals("distributor:6 storage:6 .4.d:7 .4.d.5.s:d", fixture.generatedClusterState());
-
-        assertEquals("distributor:6 storage:4",
-                stateAfterStorageTransition(fixture, 5, State.DOWN));
-        assertEquals("distributor:6 storage:6 .4.d:7 .4.d.5.s:d",
-                stateAfterStorageTransition(fixture, 5, State.UP));
-    }
-
-    @Test
     public void down_wanted_state_is_preserved_across_group_down_up_edge() {
         ClusterFixture fixture = createFixtureForAllUpHierarchicCluster(
                 DistributionBuilder.withGroups(3).eachWithNodeCount(3), 0.60);

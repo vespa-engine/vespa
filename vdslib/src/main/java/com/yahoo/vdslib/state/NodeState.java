@@ -257,29 +257,6 @@ public class NodeState implements Cloneable {
         return sb.toString();
     }
 
-    public NodeState setDiskCount(int count) {
-        if (count < 0) {
-            throw new IllegalArgumentException("Count must be positive. Was "+count+".");
-        }
-        diskStates.clear();
-        for(int i=0;i<count;i++) {
-            diskStates.add(new DiskState(State.UP, "", 1.0));
-        }
-        return this;
-    }
-
-    public NodeState setDiskState(int disk, DiskState state) throws IndexOutOfBoundsException {
-        diskStates.set(disk, state);
-        return this;
-    }
-
-    public DiskState getDiskState(int disk) throws IndexOutOfBoundsException {
-        if (diskStates.isEmpty()) { // Zero disks, means unknown amount of disks, but all are up,
-            return new DiskState();        // in which case we don't need to know amount of disks.
-        }
-        return diskStates.get(disk);
-    }
-
     public String serialize() { return serialize(-1, false); }
     public String serialize(boolean verbose) { return serialize(-1, verbose); }
     public String serialize(int nodeIdx, boolean verbose) {
