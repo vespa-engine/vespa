@@ -28,12 +28,13 @@ void my_inplace_map_op(State &state, uint64_t param) {
 //-----------------------------------------------------------------------------
 
 struct MyGetFun {
-    template <typename CT, typename Fun> static auto invoke() {
+    template <typename CM, typename Fun> static auto invoke() {
+        using CT = CellValueType<CM::value.cell_type>;        
         return my_inplace_map_op<CT, Fun>;
     }
 };
 
-using MyTypify = TypifyValue<TypifyCellType,TypifyOp1>;
+using MyTypify = TypifyValue<TypifyCellMeta,TypifyOp1>;
 
 } // namespace vespalib::eval::<unnamed>
 
@@ -51,7 +52,8 @@ MixedMapFunction::~MixedMapFunction() = default;
 Instruction
 MixedMapFunction::compile_self(const ValueBuilderFactory &, Stash &) const
 {
-    auto op = typify_invoke<2,MyTypify,MyGetFun>(result_type().cell_type(), function());
+    auto op = typify_invoke<2,MyTypify,MyGetFun>(result_type().cell_meta().limit().not_scalar(),
+                                                 function());
     static_assert(sizeof(uint64_t) == sizeof(function()));
     return Instruction(op, (uint64_t)(function()));
 }
