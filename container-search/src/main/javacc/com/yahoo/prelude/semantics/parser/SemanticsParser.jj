@@ -310,6 +310,7 @@ TermType termType() :
     <DOLLAR> { return TermType.RANK; } |
     <PLUS> { return TermType.AND; }  |
     <DASH> { return TermType.NOT; } |
+    <EQUALS> { return TermType.EQUIV; } |
     { return TermType.DEFAULT; }
 }
 

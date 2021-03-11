@@ -419,19 +419,6 @@ public class SessionRepository {
         log.log(Level.INFO, session.logPre() + "Session activated: " + sessionId);
     }
 
-    public void delete(Session remoteSession) {
-        long sessionId = remoteSession.getSessionId();
-        log.log(Level.FINE, () -> remoteSession.logPre() + "Deactivating and deleting remote session " + sessionId);
-        createSetStatusTransaction(remoteSession, Session.Status.DELETE).commit();
-        deleteRemoteSessionFromZooKeeper(remoteSession);
-        remoteSessionCache.remove(sessionId);
-        LocalSession localSession = getLocalSession(sessionId);
-        if (localSession != null) {
-            log.log(Level.FINE, () -> localSession.logPre() + "Deleting local session " + sessionId);
-            deleteLocalSession(localSession);
-        }
-    }
-
     private Optional<RemoteSession> loadSessionIfActive(RemoteSession session) {
         for (ApplicationId applicationId : applicationRepo.activeApplications()) {
             if (applicationRepo.requireActiveSessionOf(applicationId) == session.getSessionId()) {
