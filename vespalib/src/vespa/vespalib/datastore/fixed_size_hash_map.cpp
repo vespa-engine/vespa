@@ -41,7 +41,7 @@ FixedSizeHashMap::FixedSizeHashMap(uint32_t modulo, uint32_t capacity, uint32_t 
         for (uint32_t node_idx = chain_head.load_relaxed(); node_idx != no_node_idx;) {
             auto& node = orig._nodes[node_idx];
             force_add(comp, node.get_kv());
-            node_idx = node.get_next().load(std::memory_order_relaxed);
+            node_idx = node.get_next_node_idx().load(std::memory_order_relaxed);
         }
     }
 }
@@ -73,15 +73,15 @@ FixedSizeHashMap::add(const EntryComparator& comp, std::function<EntryRef(void)>
         if (comp.equal(EntryRef(), node.get_kv().first.load_relaxed())) {
             return node.get_kv();
         }
-        node_idx = node.get_next().load(std::memory_order_relaxed);
+        node_idx = node.get_next_node_idx().load(std::memory_order_relaxed);
     }
     if (_free_head != no_node_idx) {
         node_idx = _free_head;
         auto& node = _nodes[node_idx];
-        _free_head = node.get_next().load(std::memory_order_relaxed);
+        _free_head = node.get_next_node_idx().load(std::memory_order_relaxed);
         --_free_count;
         node.get_kv().first.store_release(insert_entry());
-        node.get_next().store(chain_head.load_relaxed());
+        node.get_next_node_idx().store(chain_head.load_relaxed());
         chain_head.set(node_idx);
         ++_count;
         return node.get_kv();
@@ -107,16 +107,16 @@ FixedSizeHashMap::transfer_hold_lists_slow(generation_t generation)
 
 
 void
-FixedSizeHashMap::trim_hold_lists_slow(generation_t usedGen)
+FixedSizeHashMap::trim_hold_lists_slow(generation_t first_used)
 {
     while (!_hold_2_list.empty()) {
         auto& first = _hold_2_list.front();
-        if (static_cast<sgeneration_t>(first.first - usedGen) >= 0) {
+        if (static_cast<sgeneration_t>(first.first - first_used) >= 0) {
             break;
         }
         uint32_t node_idx = first.second;
         auto& node = _nodes[node_idx];
-        node.get_next().store(_free_head, std::memory_order_relaxed);
+        node.get_next_node_idx().store(_free_head, std::memory_order_relaxed);
         _free_head = node_idx;
         ++_free_count;
         --_hold_count;
@@ -135,19 +135,20 @@ FixedSizeHashMap::remove(const EntryComparator& comp, EntryRef key_ref)
     uint32_t prev_node_idx = no_node_idx;
     while (node_idx != no_node_idx) {
         auto &node = _nodes[node_idx];
-        uint32_t next = node.get_next().load(std::memory_order_relaxed);
+        uint32_t next_node_idx = node.get_next_node_idx().load(std::memory_order_relaxed);
         if (comp.equal(key_ref, node.get_kv().first.load_relaxed())) {
             if (prev_node_idx != no_node_idx) {
-                _nodes[prev_node_idx].get_next().store(next, std::memory_order_release);
+                _nodes[prev_node_idx].get_next_node_idx().store(next_node_idx, std::memory_order_release);
             } else {
-                chain_head.set(next);
+                chain_head.set(next_node_idx);
             }
             --_count;
             ++_hold_count;
             _hold_1_list.push_back(node_idx);
             return &_nodes[node_idx].get_kv();
         }
-        node_idx = next;
+        prev_node_idx = node_idx;
+        node_idx = next_node_idx;
     }
     return nullptr;
 }
@@ -165,8 +166,7 @@ FixedSizeHashMap::find(const EntryComparator& comp, EntryRef key_ref) const
         if (node_key_ref.valid() && comp.equal(key_ref, node_key_ref)) {
             return &_nodes[node_idx].get_kv();
         }
-        uint32_t next = node.get_next().load(std::memory_order_acquire);
-        node_idx = next;
+        node_idx = node.get_next_node_idx().load(std::memory_order_acquire);
     }
     return nullptr;
 }
