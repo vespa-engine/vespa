@@ -8,6 +8,7 @@
 #include "predicate_params.h"
 #include <vespa/searchcommon/common/compaction_strategy.h>
 #include <vespa/searchcommon/common/growstrategy.h>
+#include <vespa/searchcommon/common/dictionary_config.h>
 #include <vespa/eval/eval/value_type.h>
 #include <cassert>
 #include <optional>
@@ -21,9 +22,13 @@ namespace search::attribute {
  */
 class Config {
 public:
-    Config();
-    Config(BasicType bt, CollectionType ct = CollectionType::SINGLE,
-           bool fastSearch_ = false, bool huge_ = false);
+    Config() noexcept;
+    Config(BasicType bt) noexcept : Config(bt, CollectionType::SINGLE) { }
+    Config(BasicType bt, CollectionType ct) noexcept : Config(bt, ct, false) { }
+    Config(BasicType bt, CollectionType ct, bool fastSearch_) noexcept
+        : Config(bt, ct, fastSearch_, false)
+    {}
+    Config(BasicType bt, CollectionType ct, bool fastSearch_, bool huge_) noexcept;
     Config(const Config &);
     Config & operator = (const Config &);
     Config(Config &&) noexcept;
@@ -62,6 +67,7 @@ public:
 
     const GrowStrategy & getGrowStrategy() const { return _growStrategy; }
     const CompactionStrategy &getCompactionStrategy() const { return _compactionStrategy; }
+    const DictionaryConfig & get_dictionary_config() const { return _dictionary; }
     Config & setHuge(bool v)                         { _huge = v; return *this;}
     Config & setFastSearch(bool v)                   { _fastSearch = v; return *this; }
     Config & setPredicateParams(const PredicateParams &v) { _predicateParams = v; return *this; }
@@ -107,11 +113,14 @@ public:
      * Hide weight information when searching in attributes.
      */
     Config & setIsFilter(bool isFilter) { _isFilter = isFilter; return *this; }
-
     Config & setMutable(bool isMutable) { _mutable = isMutable; return *this; }
     Config & setFastAccess(bool v) { _fastAccess = v; return *this; }
     Config & setGrowStrategy(const GrowStrategy &gs) { _growStrategy = gs; return *this; }
-    Config &setCompactionStrategy(const CompactionStrategy &compactionStrategy) { _compactionStrategy = compactionStrategy; return *this; }
+    Config & setCompactionStrategy(const CompactionStrategy &compactionStrategy) {
+        _compactionStrategy = compactionStrategy;
+        return *this;
+    }
+    Config & set_dictionary_config(const DictionaryConfig & cfg) { _dictionary = cfg; return *this; }
     bool operator!=(const Config &b) const { return !(operator==(b)); }
     bool operator==(const Config &b) const;
 
@@ -125,11 +134,12 @@ private:
     bool           _isFilter;
     bool           _fastAccess;
     bool           _mutable;
-    GrowStrategy   _growStrategy;
-    CompactionStrategy _compactionStrategy;
-    PredicateParams    _predicateParams;
-    vespalib::eval::ValueType _tensorType;
-    DistanceMetric _distance_metric;
+    DictionaryConfig               _dictionary;
+    GrowStrategy                   _growStrategy;
+    CompactionStrategy             _compactionStrategy;
+    PredicateParams                _predicateParams;
+    vespalib::eval::ValueType      _tensorType;
+    DistanceMetric                 _distance_metric;
     std::optional<HnswIndexParams> _hnsw_index_params;
 };
 

@@ -2,7 +2,6 @@
 
 #pragma once
 
-#include <stdint.h>
 #include <iosfwd>
 
 namespace search {
@@ -16,12 +15,12 @@ private:
     double _maxDeadBytesRatio; // Max ratio of dead bytes before compaction
     double _maxDeadAddressSpaceRatio; // Max ratio of dead address space before compaction
 public:
-    CompactionStrategy()
+    CompactionStrategy() noexcept
         : _maxDeadBytesRatio(0.2),
           _maxDeadAddressSpaceRatio(0.2)
     {
     }
-    CompactionStrategy(double maxDeadBytesRatio, double maxDeadAddressSpaceRatio)
+    CompactionStrategy(double maxDeadBytesRatio, double maxDeadAddressSpaceRatio) noexcept
         : _maxDeadBytesRatio(maxDeadBytesRatio),
           _maxDeadAddressSpaceRatio(maxDeadAddressSpaceRatio)
     {

@@ -8,6 +8,7 @@ using search::attribute::BasicType;
 using search::attribute::CollectionType;
 using vespalib::eval::ValueType;
 using search::GrowStrategy;
+using search::DictionaryConfig;
 
 
 struct Fixture
@@ -15,16 +16,14 @@ struct Fixture
     Config _config;
     Fixture()
         : _config()
-    {
-    }
+    { }
 
     Fixture(BasicType bt,
             CollectionType ct = CollectionType::SINGLE,
             bool fastSearch_ = false,
             bool huge_ = false)
         : _config(bt, ct, fastSearch_, huge_)
-    {
-    }
+    { }
 };
 
 TEST_F("test default attribute config", Fixture)
@@ -108,6 +107,25 @@ TEST("Test GrowStrategy consistency") {
     EXPECT_EQUAL(0.5, g.getDocsGrowFactor());
     EXPECT_EQUAL(17u, g.getDocsGrowDelta());
     EXPECT_EQUAL(0.4f, g.getMultiValueAllocGrowFactor());
+}
+
+TEST("DictionaryConfig") {
+    using Ordering = DictionaryConfig::Ordering;
+    EXPECT_EQUAL(Ordering::ORDERED, DictionaryConfig().getOrdering());
+    EXPECT_EQUAL(Ordering::ORDERED, DictionaryConfig(Ordering::ORDERED).getOrdering());
+    EXPECT_EQUAL(Ordering::UNORDERED, DictionaryConfig(Ordering::UNORDERED).getOrdering());
+    EXPECT_EQUAL(DictionaryConfig(Ordering::ORDERED), DictionaryConfig(Ordering::ORDERED));
+    EXPECT_EQUAL(DictionaryConfig(Ordering::UNORDERED), DictionaryConfig(Ordering::UNORDERED));
+    EXPECT_NOT_EQUAL(DictionaryConfig(Ordering::UNORDERED), DictionaryConfig(Ordering::ORDERED));
+    EXPECT_NOT_EQUAL(DictionaryConfig(Ordering::ORDERED), DictionaryConfig(Ordering::UNORDERED));
+    EXPECT_TRUE(Config().set_dictionary_config(DictionaryConfig(Ordering::UNORDERED)) ==
+                 Config().set_dictionary_config(DictionaryConfig(Ordering::UNORDERED)));
+    EXPECT_FALSE(Config().set_dictionary_config(DictionaryConfig(Ordering::UNORDERED)) ==
+                     Config().set_dictionary_config(DictionaryConfig(Ordering::ORDERED)));
+    EXPECT_FALSE(Config().set_dictionary_config(DictionaryConfig(Ordering::UNORDERED)) !=
+                Config().set_dictionary_config(DictionaryConfig(Ordering::UNORDERED)));
+    EXPECT_TRUE(Config().set_dictionary_config(DictionaryConfig(Ordering::UNORDERED)) !=
+                 Config().set_dictionary_config(DictionaryConfig(Ordering::ORDERED)));
 }
 
 

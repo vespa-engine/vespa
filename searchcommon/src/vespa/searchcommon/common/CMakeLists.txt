@@ -3,6 +3,7 @@ vespa_add_library(searchcommon_searchcommon_common OBJECT
     SOURCES
     compaction_strategy.cpp
     datatype.cpp
+    dictionary_config.cpp
     growstrategy.cpp
     schema.cpp
     schemaconfigurer.cpp
