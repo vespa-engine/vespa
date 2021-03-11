@@ -367,7 +367,7 @@ GenericPeek::make_instruction(const ValueType &result_type,
 {
     using PeekTypify = TypifyValue<TypifyCellMeta,TypifyBool>;
     const auto &param = stash.create<PeekParam>(result_type, input_type, spec, factory);
-    auto fun = typify_invoke<2,PeekTypify,SelectGenericPeekOp>(input_type.cell_meta(), result_type.is_double());
+    auto fun = typify_invoke<2,PeekTypify,SelectGenericPeekOp>(input_type.cell_meta().not_scalar(), result_type.is_double());
     return Instruction(fun, wrap_param<PeekParam>(param));
 }
 
