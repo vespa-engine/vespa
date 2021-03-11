@@ -54,12 +54,6 @@ public class NotMasterTest extends StateRestApiTest {
             assertTrue(e.getMessage(), e.getMessage().contains("No known master cluster controller"));
         }
         try{
-            restAPI.getState(new StateRequest("music/storage/1/0", 0));
-            fail();
-        } catch (UnknownMasterException e) {
-            assertTrue(e.getMessage(), e.getMessage().contains("No known master cluster controller"));
-        }
-        try{
             restAPI.setUnitState(new SetNodeStateTest.SetUnitStateRequestImpl("music/storage/1")
                                     .setNewState("user", "down", "test"));
             fail();
@@ -111,14 +105,6 @@ public class NotMasterTest extends StateRestApiTest {
         }
         try{
             restAPI.getState(new StateRequest("music/storage/1", 0));
-            fail();
-        } catch (OtherMasterException e) {
-            assertTrue(e.getMessage(), e.getMessage().contains("Cluster controller not master. Use master at otherhost:" + getDefaults().vespaWebServicePort() + "."));
-            assertEquals("otherhost", e.getHost());
-            assertEquals(e.getPort(), getDefaults().vespaWebServicePort());
-        }
-        try{
-            restAPI.getState(new StateRequest("music/storage/1/0", 0));
             fail();
         } catch (OtherMasterException e) {
             assertTrue(e.getMessage(), e.getMessage().contains("Cluster controller not master. Use master at otherhost:" + getDefaults().vespaWebServicePort() + "."));
