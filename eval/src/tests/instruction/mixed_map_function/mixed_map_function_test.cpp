@@ -48,12 +48,9 @@ void verify_not_optimized(const vespalib::string &expr) {
     EXPECT_TRUE(!(fixture.get_param(0) == fixture.result()));
 }
 
-TEST(MapTest, dense_map_not_inplace) {
+TEST(MapTest, dense_map_can_be_optimized) {
     verify_not_optimized("map(x5y3,f(x)(x+10))");
     verify_not_optimized("map(x5y3_f,f(x)(x+10))");
-}
-
-TEST(MapTest, simple_dense_map_can_be_inplace) {
     verify_optimized("map(@x5y3,f(x)(x+10))");
     verify_optimized("map(@x5y3_f,f(x)(x+10))");
 }
@@ -63,19 +60,13 @@ TEST(MapTest, scalar_map_is_not_optimized) {
     verify_not_optimized("map(@a,f(x)(x+10))");
 }
 
-TEST(MapTest, sparse_map_not_inplace) {
+TEST(MapTest, sparse_map_can_be_optimized) {
     verify_not_optimized("map(sparse,f(x)(x+10))");
-}
-
-TEST(MapTest, sparse_map_can_be_inplace) {
     verify_optimized("map(@sparse,f(x)(x+10))");
 }
 
-TEST(MapTest, mixed_map_not_inplace) {
+TEST(MapTest, mixed_map_can_be_optimized) {
     verify_not_optimized("map(mixed,f(x)(x+10))");
-}
-
-TEST(MapTest, mixed_map_can_be_inplace) {
     verify_optimized("map(@mixed,f(x)(x+10))");
 }
 
