@@ -346,7 +346,10 @@ void my_generic_peek_op(State &state, uint64_t param_in) {
 }
 
 struct SelectGenericPeekOp {
-    template <typename ICT, typename OCT> static auto invoke() {
+    template <typename ICM, typename OutIsScalar> static auto invoke() {
+        using ICT = CellValueType<ICM::value.cell_type>;
+        constexpr CellMeta ocm = CellMeta::peek(ICM::value.cell_type, OutIsScalar::value);
+        using OCT = CellValueType<ocm.cell_type>;
         return my_generic_peek_op<ICT,OCT>;
     }
 };
@@ -362,8 +365,9 @@ GenericPeek::make_instruction(const ValueType &result_type,
                               const ValueBuilderFactory &factory,
                               Stash &stash)
 {
+    using PeekTypify = TypifyValue<TypifyCellMeta,TypifyBool>;
     const auto &param = stash.create<PeekParam>(result_type, input_type, spec, factory);
-    auto fun = typify_invoke<2,TypifyCellType,SelectGenericPeekOp>(input_type.cell_type(), result_type.cell_type());
+    auto fun = typify_invoke<2,PeekTypify,SelectGenericPeekOp>(input_type.cell_meta().not_scalar(), result_type.is_double());
     return Instruction(fun, wrap_param<PeekParam>(param));
 }
 

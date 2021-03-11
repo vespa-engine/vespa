@@ -119,12 +119,13 @@ void my_single_reduce_op(InterpretedFunction::State &state, uint64_t param) {
 
 struct MyGetFun {
     template <typename R1, typename R2, typename R3, typename R4> static auto invoke() {
-        using AggrType = typename R2::template templ<R1>;
-        return my_single_reduce_op<R1, AggrType, R3::value, R4::value>;
+        using OCT = CellValueType<R1::value.decay().cell_type>;
+        using AggrType = typename R2::template templ<OCT>;
+        return my_single_reduce_op<OCT, AggrType, R3::value, R4::value>;
     }
 };
 
-using MyTypify = TypifyValue<TypifyCellType,TypifyAggr,TypifyBool>;
+using MyTypify = TypifyValue<TypifyCellMeta,TypifyAggr,TypifyBool>;
 
 std::pair<std::vector<vespalib::string>,ValueType> sort_and_drop_trivial(const std::vector<vespalib::string> &list_in, const ValueType &type_in) {
     std::vector<vespalib::string> dropped;
@@ -220,6 +221,7 @@ DenseSingleReduceFunction::DenseSingleReduceFunction(const DenseSingleReduceSpec
       _inner_size(spec.inner_size),
       _aggr(spec.aggr)
 {
+    assert(result_type().cell_meta().is_scalar == false);
 }
 
 DenseSingleReduceFunction::~DenseSingleReduceFunction() = default;
@@ -227,7 +229,8 @@ DenseSingleReduceFunction::~DenseSingleReduceFunction() = default;
 InterpretedFunction::Instruction
 DenseSingleReduceFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
-    auto op = typify_invoke<4,MyTypify,MyGetFun>(result_type().cell_type(), _aggr,
+    auto op = typify_invoke<4,MyTypify,MyGetFun>(child().result_type().cell_meta().limit().not_scalar(),
+                                                 _aggr,
                                                  (_reduce_size >= 8), (_inner_size == 1));
     auto &params = stash.create<Params>(result_type(), _outer_size, _reduce_size, _inner_size);
     return InterpretedFunction::Instruction(op, wrap_param<Params>(params));
@@ -238,13 +241,15 @@ DenseSingleReduceFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
     if (auto reduce = as<Reduce>(expr)) {
         const auto &child = reduce->child();
-        auto spec_list = make_dense_single_reduce_list(child.result_type(), reduce->aggr(), reduce->dimensions()); 
-        if (!spec_list.empty()) {
-            const auto *prev = &child;
-            for (const auto &spec: spec_list) {
-                prev = &stash.create<DenseSingleReduceFunction>(spec, *prev);
+        if (reduce->result_type().cell_meta().eq(child.result_type().cell_meta())) {
+            auto spec_list = make_dense_single_reduce_list(child.result_type(), reduce->aggr(), reduce->dimensions()); 
+            if (!spec_list.empty()) {
+                const auto *prev = &child;
+                for (const auto &spec: spec_list) {
+                    prev = &stash.create<DenseSingleReduceFunction>(spec, *prev);
+                }
+                return *prev;
             }
-            return *prev;
         }
     }
     return expr;

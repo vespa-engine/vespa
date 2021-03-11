@@ -142,7 +142,11 @@ void my_dense_simple_concat_op(State &state, uint64_t param_in) {
 }
 
 struct SelectGenericConcatOp {
-    template <typename LCT, typename RCT, typename OCT> static auto invoke(const ConcatParam &param) {
+    template <typename LCM, typename RCM> static auto invoke(const ConcatParam &param) {
+        using LCT = CellValueType<LCM::value.cell_type>;
+        using RCT = CellValueType<RCM::value.cell_type>;
+        constexpr CellMeta ocm = CellMeta::concat(LCM::value, RCM::value);
+        using OCT = CellValueType<ocm.cell_type>;
         if (param.sparse_plan.sources.empty() && param.res_type.is_dense()) {
             auto & dp = param.dense_plan;
             if ((dp.output_size == (dp.left.input_size + dp.right.input_size))
@@ -246,8 +250,8 @@ GenericConcat::make_instruction(const ValueType &result_type,
 {
     auto &param = stash.create<ConcatParam>(result_type, lhs_type, rhs_type, dimension, factory);
     assert(result_type == ValueType::concat(lhs_type, rhs_type, dimension));
-    auto fun = typify_invoke<3,TypifyCellType,SelectGenericConcatOp>(
-            lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(),
+    auto fun = typify_invoke<2,TypifyCellMeta,SelectGenericConcatOp>(
+            lhs_type.cell_meta(), rhs_type.cell_meta(),
             param);
     return Instruction(fun, wrap_param<ConcatParam>(param));
 }
