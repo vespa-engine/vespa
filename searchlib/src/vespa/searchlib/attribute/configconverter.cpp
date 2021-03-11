@@ -50,6 +50,22 @@ getCollectionTypeMap()
 static DataTypeMap _dataTypeMap = getDataTypeMap();
 static CollectionTypeMap _collectionTypeMap = getCollectionTypeMap();
 
+DictionaryConfig::Ordering
+convert(AttributesConfig::Attribute::Dictionary::Ordering ordering_cfg) {
+    switch (ordering_cfg) {
+        case AttributesConfig::Attribute::Dictionary::Ordering::ORDERED:
+            return DictionaryConfig::Ordering::ORDERED;
+        case AttributesConfig::Attribute::Dictionary::Ordering::UNORDERED:
+            return DictionaryConfig::Ordering::UNORDERED;
+    }
+    assert(false);
+}
+
+DictionaryConfig
+convert_dictionary(const AttributesConfig::Attribute::Dictionary & dictionary) {
+    return DictionaryConfig(convert(dictionary.ordering));
+}
+
 }
 
 namespace search::attribute {
@@ -74,6 +90,7 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     predicateParams.setBounds(cfg.lowerbound, cfg.upperbound);
     predicateParams.setDensePostingListThreshold(cfg.densepostinglistthreshold);
     retval.setPredicateParams(predicateParams);
+    retval.set_dictionary_config(convert_dictionary(cfg.dictionary));
     using CfgDm = AttributesConfig::Attribute::Distancemetric;
     DistanceMetric dm(DistanceMetric::Euclidean);
     switch (cfg.distancemetric) {

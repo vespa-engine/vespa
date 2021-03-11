@@ -4,7 +4,7 @@
 
 namespace search::attribute {
 
-Config::Config() :
+Config::Config() noexcept :
     _basicType(BasicType::NONE),
     _type(CollectionType::SINGLE),
     _fastSearch(false),
@@ -14,6 +14,7 @@ Config::Config() :
     _isFilter(false),
     _fastAccess(false),
     _mutable(false),
+    _dictionary(),
     _growStrategy(),
     _compactionStrategy(),
     _predicateParams(),
@@ -23,7 +24,7 @@ Config::Config() :
 {
 }
 
-Config::Config(BasicType bt, CollectionType ct, bool fastSearch_, bool huge_)
+Config::Config(BasicType bt, CollectionType ct, bool fastSearch_, bool huge_) noexcept
     : _basicType(bt),
       _type(ct),
       _fastSearch(fastSearch_),
@@ -33,6 +34,7 @@ Config::Config(BasicType bt, CollectionType ct, bool fastSearch_, bool huge_)
       _isFilter(false),
       _fastAccess(false),
       _mutable(false),
+      _dictionary(),
       _growStrategy(),
       _compactionStrategy(),
       _predicateParams(),
@@ -60,6 +62,7 @@ Config::operator==(const Config &b) const
            _isFilter == b._isFilter &&
            _fastAccess == b._fastAccess &&
            _mutable == b._mutable &&
+           _dictionary == b._dictionary &&
            _growStrategy == b._growStrategy &&
            _compactionStrategy == b._compactionStrategy &&
            _predicateParams == b._predicateParams &&
