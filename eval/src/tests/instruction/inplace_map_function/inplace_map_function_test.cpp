@@ -1,7 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/eval/eval/tensor_function.h>
-#include <vespa/eval/instruction/mixed_map_function.h>
+#include <vespa/eval/instruction/inplace_map_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -29,7 +29,7 @@ void verify_optimized(const vespalib::string &expr) {
     EvalFixture fixture(prod_factory, expr, param_repo, true, true);
     EXPECT_EQ(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQ(fixture.result(), slow_fixture.result());
-    auto info = fixture.find_all<MixedMapFunction>();
+    auto info = fixture.find_all<InplaceMapFunction>();
     ASSERT_EQ(info.size(), 1u);
     EXPECT_TRUE(info[0]->result_is_mutable());
     EXPECT_EQ(info[0]->inplace(), true);
@@ -43,7 +43,7 @@ void verify_not_optimized(const vespalib::string &expr) {
     EvalFixture fixture(prod_factory, expr, param_repo, true);
     EXPECT_EQ(fixture.result(), EvalFixture::ref(expr, param_repo));
     EXPECT_EQ(fixture.result(), slow_fixture.result());
-    auto info = fixture.find_all<MixedMapFunction>();
+    auto info = fixture.find_all<InplaceMapFunction>();
     EXPECT_TRUE(info.empty());
     EXPECT_TRUE(!(fixture.get_param(0) == fixture.result()));
 }
