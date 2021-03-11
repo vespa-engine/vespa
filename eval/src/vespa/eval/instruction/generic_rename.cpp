@@ -123,7 +123,8 @@ void my_mixed_rename_dense_only_op(State &state, uint64_t param_in) {
 }
 
 struct SelectGenericRenameOp {
-    template <typename CT> static auto invoke(const RenameParam &param) {
+    template <typename CM> static auto invoke(const RenameParam &param) {
+        using CT = CellValueType<CM::value.cell_type>;
         if (param.sparse_plan.can_forward_index) {
             return my_mixed_rename_dense_only_op<CT>;
         }
@@ -211,9 +212,9 @@ GenericRename::make_instruction(const ValueType &result_type,
                                             rename_dimension_from, rename_dimension_to,
                                             factory);
     assert(result_type == param.res_type);
-    auto fun = typify_invoke<1,TypifyCellType,SelectGenericRenameOp>(param.res_type.cell_type(), param);
+    assert(result_type.cell_meta().eq(input_type.cell_meta()));
+    auto fun = typify_invoke<1,TypifyCellMeta,SelectGenericRenameOp>(param.res_type.cell_meta().not_scalar(), param);
     return Instruction(fun, wrap_param<RenameParam>(param));
 }
 
 } // namespace
-
