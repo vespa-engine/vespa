@@ -811,6 +811,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Cursor clustersObject = slime.setObject().setObject("clusters");
         for (Cluster cluster : application.clusters().values()) {
             Cursor clusterObject = clustersObject.setObject(cluster.id().value());
+            clusterObject.setString("type", cluster.type().name());
             toSlime(cluster.min(), clusterObject.setObject("min"));
             toSlime(cluster.max(), clusterObject.setObject("max"));
             toSlime(cluster.current(), clusterObject.setObject("current"));
@@ -821,6 +822,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             utilizationToSlime(cluster.utilization(), clusterObject.setObject("utilization"));
             scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
             clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());
+            clusterObject.setLong("scalingDuration", cluster.scalingDuration().toMillis());
+            clusterObject.setDouble("maxQueryGrowthRate", cluster.maxQueryGrowthRate());
+            clusterObject.setDouble("currentQueryFractionOfMax", cluster.currentQueryFractionOfMax());
         }
         return new SlimeJsonResponse(slime);
     }
@@ -2069,8 +2073,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private void utilizationToSlime(Cluster.Utilization utilization, Cursor utilizationObject) {
         utilizationObject.setDouble("cpu", utilization.cpu());
+        utilizationObject.setDouble("idealCpu", utilization.idealCpu());
         utilizationObject.setDouble("memory", utilization.memory());
+        utilizationObject.setDouble("idealMemory", utilization.idealMemory());
         utilizationObject.setDouble("disk", utilization.disk());
+        utilizationObject.setDouble("idealDisk", utilization.idealDisk());
     }
 
     private void scalingEventsToSlime(List<Cluster.ScalingEvent> scalingEvents, Cursor scalingEventsArray) {

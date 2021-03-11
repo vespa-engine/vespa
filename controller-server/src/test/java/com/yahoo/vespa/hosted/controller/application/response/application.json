@@ -3,6 +3,7 @@
   "id": "vespa.album-recommendation.default",
   "clusters": {
     "default": {
+      "type": "container",
       "min": {
         "nodes": 2,
         "groups": 1,
@@ -50,9 +51,13 @@
           "diskSpeed": "fast",
           "storageType": "local"
         }
-      }
+      },
+      "scalingDuration": 400000,
+      "maxQueryGrowthRate": 0.7,
+      "currentQueryFractionOfMax": 0.3
     },
     "logserver": {
+      "type": "admin",
       "min": {
         "nodes": 1,
         "groups": 1,
@@ -100,9 +105,13 @@
           "diskSpeed": "fast",
           "storageType": "local"
         }
-      }
+      },
+      "scalingDuration": 90000,
+      "maxQueryGrowthRate": 0.7,
+      "currentQueryFractionOfMax": 0.3
     },
     "music": {
+      "type": "content",
       "min": {
         "nodes": 2,
         "groups": 1,
@@ -150,7 +159,10 @@
           "diskSpeed": "fast",
           "storageType": "local"
         }
-      }
+      },
+      "scalingDuration": 1000000,
+      "maxQueryGrowthRate": 0.7,
+      "currentQueryFractionOfMax": 0.3
     }
   }
 }

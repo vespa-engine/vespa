@@ -19,15 +19,21 @@ public class ClusterUtilizationData {
 
     @JsonProperty("cpu")
     public Double cpu;
+    @JsonProperty("idealCpu")
+    public Double idealCpu;
 
     @JsonProperty("memory")
     public Double memory;
+    @JsonProperty("idealMemory")
+    public Double idealMemory;
 
     @JsonProperty("disk")
     public Double disk;
+    @JsonProperty("idealDisk")
+    public Double idealDisk;
 
     public Cluster.Utilization toClusterUtilization() {
-        return new Cluster.Utilization(cpu, memory, disk);
+        return new Cluster.Utilization(cpu, idealCpu, memory, idealMemory, disk, idealDisk);
     }
 
 }

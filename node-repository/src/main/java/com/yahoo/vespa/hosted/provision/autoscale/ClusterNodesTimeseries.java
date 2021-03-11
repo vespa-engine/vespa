@@ -16,14 +16,12 @@ import java.util.stream.Collectors;
  */
 public class ClusterNodesTimeseries {
 
-    private final Cluster cluster;
     private final NodeList clusterNodes;
 
     /** The measurements for all nodes in this snapshot */
     private final List<NodeTimeseries> timeseries;
 
     public ClusterNodesTimeseries(Duration period, Cluster cluster, NodeList clusterNodes, MetricsDb db) {
-        this.cluster = cluster;
         this.clusterNodes = clusterNodes;
         var timeseries = db.getNodeTimeseries(period, clusterNodes);
 
@@ -34,12 +32,6 @@ public class ClusterNodesTimeseries {
 
         this.timeseries = timeseries;
     }
-
-    /** The cluster this is a timeseries for */
-    public Cluster cluster() { return cluster; }
-
-    /** The nodes of the cluster this is a timeseries for */
-    public NodeList clusterNodes() { return clusterNodes; }
 
     /** Returns the average number of measurements per node */
     public int measurementsPerNode() {

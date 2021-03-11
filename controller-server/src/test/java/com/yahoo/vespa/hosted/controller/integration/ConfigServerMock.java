@@ -50,6 +50,7 @@ import java.io.ByteArrayInputStream;
 import java.io.InputStream;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -112,16 +113,20 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     public void provision(ZoneId zone, ApplicationId application, ClusterSpec.Id clusterId) {
         var current = new ClusterResources(2, 1, new NodeResources(2,  8, 50, 1, slow, remote));
         Cluster cluster = new Cluster(clusterId,
+                                      ClusterSpec.Type.container,
                                       new ClusterResources(2, 1, new NodeResources(1,  4, 20, 1, slow, remote)),
                                       new ClusterResources(2, 1, new NodeResources(4, 16, 90, 1, slow, remote)),
                                       current,
                                       Optional.of(new ClusterResources(2, 1, new NodeResources(3, 8, 50, 1, slow, remote))),
                                       Optional.empty(),
-                                      new Cluster.Utilization(0.1, 0.2, 0.3),
+                                      new Cluster.Utilization(0.1, 0.2, 0.3, 0.4, 0.5, 0.6),
                                       List.of(new Cluster.ScalingEvent(new ClusterResources(0, 0, NodeResources.unspecified()),
                                                                        current,
                                                                        Instant.ofEpochMilli(1234))),
-                                      "the autoscaling status");
+                                      "the autoscaling status",
+                                      Duration.ofMinutes(6),
+                                      0.7,
+                                      0.3);
         nodeRepository.putApplication(zone,
                                       new com.yahoo.vespa.hosted.controller.api.integration.configserver.Application(application,
                                                                                                                      List.of(cluster)));

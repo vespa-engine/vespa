@@ -3,6 +3,7 @@
   "id": "tenant2.application2.instance2",
   "clusters": {
     "id2": {
+      "type": "content",
       "min": {
         "nodes": 2,
         "groups": 1,
@@ -41,8 +42,11 @@
       },
       "utilization" : {
         "cpu" : 0.0,
+        "idealCpu": 0.19047619047619047,
         "memory" : 0.0,
-        "disk" : 0.0
+        "idealMemory": 0.7,
+        "disk" : 0.0,
+        "idealDisk": 0.6
       },
       "scalingEvents" : [
         {
@@ -73,7 +77,10 @@
           "at" : 123
         }
       ],
-      "autoscalingStatus" : ""
+      "autoscalingStatus" : "",
+      "scalingDuration": 43200000,
+      "maxQueryGrowthRate": 0.1,
+      "currentQueryFractionOfMax": 0.5
     }
   }
 }

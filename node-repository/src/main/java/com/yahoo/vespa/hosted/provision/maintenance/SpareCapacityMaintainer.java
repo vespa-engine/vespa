@@ -163,7 +163,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
 
         ApplicationId application = nodeToRetire.get().allocation().get().owner();
         try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
-            if ( ! deployment.isValid()) return; // this will be done at another config server
+            if ( ! deployment.isValid()) return;
 
             Optional<Node> nodeWithWantToRetire = nodeRepository().nodes().node(nodeToRetire.get().hostname())
                     .map(node -> node.withWantToRetire(true, Agent.SpareCapacityMaintainer, nodeRepository().clock().instant()));
@@ -171,7 +171,7 @@ public class SpareCapacityMaintainer extends NodeRepositoryMaintainer {
 
             nodeRepository().nodes().write(nodeWithWantToRetire.get(), deployment.applicationLock().get());
             log.log(Level.INFO, String.format("Redeploying %s to move %s from overcommitted host",
-                    application, nodeToRetire.get().hostname()));
+                                              application, nodeToRetire.get().hostname()));
             deployment.activate();
         }
     }
