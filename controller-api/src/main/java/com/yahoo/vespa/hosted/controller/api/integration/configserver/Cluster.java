@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
@@ -14,6 +15,7 @@ import java.util.Optional;
 public class Cluster {
 
     private final ClusterSpec.Id id;
+    private final ClusterSpec.Type type;
     private final ClusterResources min;
     private final ClusterResources max;
     private final ClusterResources current;
@@ -22,8 +24,13 @@ public class Cluster {
     private final Utilization utilization;
     private final List<ScalingEvent> scalingEvents;
     private final String autoscalingStatus;
+    private final Duration scalingDuration;
+    private final double maxQueryGrowthRate;
+    private final double currentQueryFractionOfMax;
+
 
     public Cluster(ClusterSpec.Id id,
+                   ClusterSpec.Type type,
                    ClusterResources min,
                    ClusterResources max,
                    ClusterResources current,
@@ -31,8 +38,12 @@ public class Cluster {
                    Optional<ClusterResources> suggested,
                    Utilization utilization,
                    List<ScalingEvent> scalingEvents,
-                   String autoscalingStatus) {
+                   String autoscalingStatus,
+                   Duration scalingDuration,
+                   double maxQueryGrowthRate,
+                   double currentQueryFractionOfMax) {
         this.id = id;
+        this.type = type;
         this.min = min;
         this.max = max;
         this.current = current;
@@ -41,9 +52,13 @@ public class Cluster {
         this.utilization = utilization;
         this.scalingEvents = scalingEvents;
         this.autoscalingStatus = autoscalingStatus;
+        this.scalingDuration = scalingDuration;
+        this.maxQueryGrowthRate = maxQueryGrowthRate;
+        this.currentQueryFractionOfMax = currentQueryFractionOfMax;
     }
 
     public ClusterSpec.Id id() { return id; }
+    public ClusterSpec.Type type() { return type; }
     public ClusterResources min() { return min; }
     public ClusterResources max() { return max; }
     public ClusterResources current() { return current; }
@@ -52,6 +67,9 @@ public class Cluster {
     public Utilization utilization() { return utilization; }
     public List<ScalingEvent> scalingEvents() { return scalingEvents; }
     public String autoscalingStatus() { return autoscalingStatus; }
+    public Duration scalingDuration() { return scalingDuration; }
+    public double maxQueryGrowthRate() { return maxQueryGrowthRate; }
+    public double currentQueryFractionOfMax() { return currentQueryFractionOfMax; }
 
     @Override
     public String toString() {
@@ -60,19 +78,29 @@ public class Cluster {
 
     public static class Utilization {
 
-        private final double cpu, memory, disk;
+        private final double cpu, idealCpu, memory, idealMemory, disk, idealDisk;
 
-        public Utilization(double cpu, double memory, double disk) {
+        public Utilization(double cpu, double idealCpu,
+                           double memory, double idealMemory,
+                           double disk, double idealDisk) {
             this.cpu = cpu;
+            this.idealCpu = idealCpu;
             this.memory = memory;
+            this.idealMemory = idealMemory;
             this.disk = disk;
+            this.idealDisk = idealDisk;
         }
 
         public double cpu() { return cpu; }
-        public double memory() { return memory; }
-        public double disk() { return disk; }
+        public double idealCpu() { return idealCpu; }
 
-        public static Utilization empty() { return new Utilization(0, 0, 0); }
+        public double memory() { return memory; }
+        public double idealMemory() { return idealMemory; }
+
+        public double disk() { return disk; }
+        public double idealDisk() { return idealDisk; }
+
+        public static Utilization empty() { return new Utilization(0, 0, 0, 0, 0, 0); }
 
     }
 

@@ -1,6 +1,7 @@
 {
   "clusters": {
     "default": {
+      "type":"container",
       "min": {
         "nodes": 2,
         "groups": 1,
@@ -55,8 +56,11 @@
       },
       "utilization": {
         "cpu": 0.1,
-        "memory": 0.2,
-        "disk": 0.3
+        "idealCpu": 0.2,
+        "memory": 0.3,
+        "idealMemory": 0.4,
+        "disk": 0.5,
+        "idealDisk": 0.6
       },
       "scalingEvents": [
         {
@@ -89,7 +93,10 @@
           "at": 1234
         }
       ],
-      "autoscalingStatus": "the autoscaling status"
+      "autoscalingStatus": "the autoscaling status",
+      "scalingDuration": 360000,
+      "maxQueryGrowthRate": 0.7,
+      "currentQueryFractionOfMax":0.3
     }
   }
 }
