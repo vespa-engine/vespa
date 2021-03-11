@@ -4,9 +4,7 @@ package com.yahoo.vespa.curator;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.CuratorConfig;
-import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
-import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.api.VespaCurator;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.defaults.Defaults;
@@ -30,6 +28,8 @@ import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -124,13 +124,12 @@ public class Curator implements VespaCurator, AutoCloseable {
 
     private static ZKClientConfig createClientConfig(Optional<File> clientConfigFile) {
         if (clientConfigFile.isPresent()) {
-            String config = new ZkClientConfigBuilder().toConfigString();
-            clientConfigFile.get().getParentFile().mkdirs();
-            IOUtils.writeFile(clientConfigFile.get(), Utf8.toBytes(config));
             try {
-                return new ZKClientConfig(clientConfigFile.get());
+                return new ZkClientConfigBuilder().toConfig(clientConfigFile.get().toPath());
             } catch (QuorumPeerConfig.ConfigException e) {
                 throw new RuntimeException("Unable to create ZooKeeper client config file " + clientConfigFile.get());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
         } else {
             return new ZKClientConfig();

@@ -4,7 +4,13 @@ package com.yahoo.vespa.zookeeper.client;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TlsContext;
 import com.yahoo.security.tls.TransportSecurityUtils;
+import org.apache.zookeeper.client.ZKClientConfig;
+import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.StandardCopyOption;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -27,6 +33,22 @@ public class ZkClientConfigBuilder {
     private static final TlsContext tlsContext = getTlsContext().orElse(null);
 
     public ZkClientConfigBuilder() {}
+
+    public ZKClientConfig toConfig(Path configFile) throws IOException, QuorumPeerConfig.ConfigException {
+        String configString = toConfigString();
+        Files.createDirectories(configFile.getParent());
+        Path tempFile = configFile.resolveSibling("." + configFile.getFileName() + ".tmp");
+        Files.writeString(tempFile, configString);
+        Files.move(tempFile, configFile, StandardCopyOption.ATOMIC_MOVE);
+        return new ZKClientConfig(configFile.toString());
+    }
+
+    public ZKClientConfig toConfig() {
+        ZKClientConfig config = new ZKClientConfig();
+        Map<String, String> configProperties = toConfigProperties();
+        configProperties.forEach(config::setProperty);
+        return config;
+    }
 
     public String toConfigString() {
         StringBuilder builder = new StringBuilder();
