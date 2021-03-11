@@ -27,8 +27,6 @@ public class NodeState implements Cloneable {
     private float initProgress = 1.0f;
     private int minUsedBits = 16;
     private List<DiskState> diskStates = new ArrayList<>();
-    /** When generating ideal states, we want to cheaply check if any disks are down in the nodestate. */
-    private boolean anyDiskDown = false;
     private long startTimestamp = 0;
 
     public static float getListingBucketsInitProgressLimit() { return 0.01f; }
@@ -36,18 +34,6 @@ public class NodeState implements Cloneable {
     public NodeState(NodeType type, State state) {
         this.type = type;
         this.state = state;
-        updateAnyDiskDownFlag();
-    }
-
-    private void updateAnyDiskDownFlag() {
-        boolean anyDown = false;
-        for (DiskState ds : diskStates) {
-            if (!ds.getState().equals(State.UP)) {
-                anyDown = true;
-                break;
-            }
-        }
-        anyDiskDown = anyDown;
     }
 
     public NodeState clone() {
@@ -214,7 +200,6 @@ public class NodeState implements Cloneable {
     public int getMinUsedBits() { return minUsedBits; }
     public long getStartTimestamp() { return startTimestamp; }
 
-    public boolean isAnyDiskDown() { return anyDiskDown; }
     public int getDiskCount() { return diskStates.size(); }
     public List<DiskState> getDiskStates() { return Collections.unmodifiableList(diskStates); }
 
@@ -288,7 +273,6 @@ public class NodeState implements Cloneable {
 
     public NodeState setDiskState(int disk, DiskState state) throws IndexOutOfBoundsException {
         diskStates.set(disk, state);
-        updateAnyDiskDownFlag();
         return this;
     }
 
@@ -465,7 +449,6 @@ public class NodeState implements Cloneable {
             // Ignore unknown tokens
         }
         diskData.addDisk(newState);
-        newState.updateAnyDiskDownFlag();
         return newState;
     }
 
