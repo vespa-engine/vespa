@@ -80,8 +80,13 @@ public class Autoscaler {
                                "Have measurements from " + nodesMeasured + " nodes, but require from " + clusterNodes.size());
 
 
+        var scalingDuration = cluster.scalingDuration(clusterNodes.clusterSpec());
         var clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
-        var target = ResourceTarget.idealLoad(clusterTimeseries, clusterNodesTimeseries, currentAllocation, application);
+        var target = ResourceTarget.idealLoad(scalingDuration,
+                                              clusterTimeseries,
+                                              clusterNodesTimeseries,
+                                              currentAllocation,
+                                              application);
 
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(target, currentAllocation, limits);

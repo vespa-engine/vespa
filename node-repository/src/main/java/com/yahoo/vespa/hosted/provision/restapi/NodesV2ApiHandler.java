@@ -445,7 +445,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         if (application.isEmpty())
             return ErrorResponse.notFoundError("No application '" + id + "'");
         Slime slime = ApplicationSerializer.toSlime(application.get(),
-                                                    nodeRepository.nodes().list(Node.State.active).owner(id).asList(),
+                                                    nodeRepository.nodes().list(Node.State.active).owner(id),
                                                     metricsDb,
                                                     withPath("/nodes/v2/applications/" + id, uri));
         return new SlimeJsonResponse(slime);

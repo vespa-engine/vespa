@@ -23,6 +23,8 @@ public class ClusterTimeseries {
     private final ClusterSpec.Id cluster;
     private final List<ClusterMetricSnapshot> snapshots;
 
+    private Double cachedMaxQueryGrowthRate = null;
+
     ClusterTimeseries(ClusterSpec.Id cluster, List<ClusterMetricSnapshot> snapshots) {
         this.cluster = cluster;
         List<ClusterMetricSnapshot> sortedSnapshots = new ArrayList<>(snapshots);
@@ -48,6 +50,12 @@ public class ClusterTimeseries {
 
     /** The max query growth rate we can predict from this time-series as a fraction of the current traffic per minute */
     public double maxQueryGrowthRate() {
+        if (cachedMaxQueryGrowthRate != null)
+            return cachedMaxQueryGrowthRate;
+        return cachedMaxQueryGrowthRate = computeMaxQueryGrowthRate();
+    }
+
+    private double computeMaxQueryGrowthRate() {
         if (snapshots.isEmpty()) return 0.1;
 
         // Find the period having the highest growth rate, where total growth exceeds 30% increase
