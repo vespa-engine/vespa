@@ -426,13 +426,6 @@ public class Distribution {
                     continue;
                 }
 
-                if (nodeState.isAnyDiskDown()) {
-                    int idealDiskIndex = getIdealDisk(nodeState, configuredNode.index(), bucket);
-                    if (nodeState.getDiskState(idealDiskIndex).getState() != State.UP) {
-                        continue;
-                    }
-                }
-
                 // Get the score from the random number generator. Make sure we
                 // pick correct random number. Optimize for the case where we
                 // pick in rising order.
