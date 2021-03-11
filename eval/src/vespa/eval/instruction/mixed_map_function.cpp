@@ -28,9 +28,11 @@ void my_inplace_map_op(State &state, uint64_t param) {
 //-----------------------------------------------------------------------------
 
 struct MyGetFun {
-    template <typename CM, typename Fun> static auto invoke() {
-        using CT = CellValueType<CM::value.cell_type>;        
-        return my_inplace_map_op<CT, Fun>;
+    template <typename ICM, typename Fun> static auto invoke() {
+        using ICT = CellValueType<ICM::value.cell_type>;
+        using OCT = CellValueType<ICM::value.map().cell_type>;
+        assert((std::is_same_v<ICT,OCT>));
+        return my_inplace_map_op<OCT, Fun>;
     }
 };
 
@@ -52,8 +54,8 @@ MixedMapFunction::~MixedMapFunction() = default;
 Instruction
 MixedMapFunction::compile_self(const ValueBuilderFactory &, Stash &) const
 {
-    auto op = typify_invoke<2,MyTypify,MyGetFun>(result_type().cell_meta().limit().not_scalar(),
-                                                 function());
+    auto input_cell_meta = child().result_type().cell_meta().limit().not_scalar();
+    auto op = typify_invoke<2,MyTypify,MyGetFun>(input_cell_meta, function());
     static_assert(sizeof(uint64_t) == sizeof(function()));
     return Instruction(op, (uint64_t)(function()));
 }
