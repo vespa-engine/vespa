@@ -266,7 +266,7 @@ public class GroupAutoTakedownTest {
                 DistributionBuilder.withGroups(3).eachWithNodeCount(2), 0.51);
 
         final NodeState newState = new NodeState(NodeType.STORAGE, State.INITIALIZING);
-        newState.setInitProgress(0.5);
+        newState.setInitProgress(0.5f);
 
         fixture.reportStorageNodeState(4, newState);
 

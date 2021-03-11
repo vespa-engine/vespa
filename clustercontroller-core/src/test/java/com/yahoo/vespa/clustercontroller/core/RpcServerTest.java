@@ -186,7 +186,7 @@ public class RpcServerTest extends FleetControllerTest {
         waitForState("version:\\d+ distributor:10 .0.s:d .2.s:d storage:10 .1.s:d .2.s:d .7.s:m");
         timer.advanceTime(1000000);
         waitForCompleteCycle(); // Make fleet controller notice that time has changed before any disconnects
-        nodes.get(3).setNodeState(new NodeState(nodes.get(3).getType(), State.INITIALIZING).setInitProgress(0.2));
+        nodes.get(3).setNodeState(new NodeState(nodes.get(3).getType(), State.INITIALIZING).setInitProgress(0.2f));
         nodes.get(3).connect();
         waitForState("version:\\d+ distributor:10 .0.s:d .2.s:d storage:10 .1.s:i .1.i:0.2 .2.s:d .7.s:m");
 
@@ -305,7 +305,7 @@ public class RpcServerTest extends FleetControllerTest {
         waitForState("version:\\d+ distributor:10 .0.s:d .2.s:d storage:10 .1.s:d .2.s:d .7.s:m .9.s:r");
         timer.advanceTime(1000000);
         waitForCompleteCycle(); // Make fleet controller notice that time has changed before any disconnects
-        nodes.get(3).setNodeState(new NodeState(nodes.get(3).getType(), State.INITIALIZING).setInitProgress(0.2));
+        nodes.get(3).setNodeState(new NodeState(nodes.get(3).getType(), State.INITIALIZING).setInitProgress(0.2f));
         nodes.get(3).connect();
         waitForState("version:\\d+ distributor:10 .0.s:d .2.s:d storage:10 .1.s:i .1.i:0.2 .2.s:d .7.s:m .9.s:r");
     }

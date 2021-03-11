@@ -111,14 +111,14 @@ public class StateChangeTest extends FleetControllerTest {
 
 
         for (int j = 0; j < 10; ++j) {
-            communicator.setNodeState(new Node(NodeType.DISTRIBUTOR, j), new NodeState(NodeType.DISTRIBUTOR, State.INITIALIZING).setInitProgress(0.0), "");
+            communicator.setNodeState(new Node(NodeType.DISTRIBUTOR, j), new NodeState(NodeType.DISTRIBUTOR, State.INITIALIZING).setInitProgress(0.0f), "");
         }
 
         for (int i=0; i<100; i += 10) {
             timer.advanceTime(options.maxInitProgressTime / 20);
             ctrl.tick();
             for (int j = 0; j < 10; ++j) {
-                communicator.setNodeState(new Node(NodeType.STORAGE, j), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(i / 100.0), "");
+                communicator.setNodeState(new Node(NodeType.STORAGE, j), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(i / 100.0f), "");
             }
         }
 
@@ -391,14 +391,14 @@ public class StateChangeTest extends FleetControllerTest {
 
         tick(1000);
 
-        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.0), "");
+        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.0f), "");
 
         ctrl.tick();
 
         // Still maintenance since .i progress 0.0 is really down.
         assertEquals("version:4 distributor:10 storage:10 .6.s:m", ctrl.getSystemState().toString());
 
-        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.6), "");
+        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.6f), "");
 
         ctrl.tick();
 
@@ -451,14 +451,14 @@ public class StateChangeTest extends FleetControllerTest {
 
         tick(1000);
 
-        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.0), "");
+        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.0f), "");
 
         ctrl.tick();
 
         // Still maintenance since .i progress 0.0 is really down.
         assertEquals("version:4 distributor:10 storage:10 .6.s:m", ctrl.getSystemState().toString());
 
-        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.6), "");
+        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.6f), "");
 
         ctrl.tick();
 
@@ -541,13 +541,13 @@ public class StateChangeTest extends FleetControllerTest {
 
         assertEquals("version:5 distributor:10 storage:10 .6.s:d", ctrl.getSystemState().toString());
 
-        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.001), "");
+        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.001f), "");
 
         ctrl.tick();
 
         assertEquals("version:5 distributor:10 storage:10 .6.s:d", ctrl.getSystemState().toString());
 
-        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.1), "");
+        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.1f), "");
 
         ctrl.tick();
 
@@ -604,7 +604,7 @@ public class StateChangeTest extends FleetControllerTest {
 
         assertEquals("version:5 distributor:10 storage:10 .6.s:d", ctrl.getSystemState().toString());
 
-        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.1), "");
+        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.1f), "");
 
         ctrl.tick();
 
@@ -625,11 +625,11 @@ public class StateChangeTest extends FleetControllerTest {
 
         tick(options.nodeStateRequestTimeoutMS + 1);
 
-        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.0), "");
+        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.0f), "");
 
         tick(1000);
 
-        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.1), "");
+        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.1f), "");
 
         tick(1000);
 
@@ -691,7 +691,7 @@ public class StateChangeTest extends FleetControllerTest {
 
         assertEquals("version:5 distributor:10 storage:10 .6.s:d", ctrl.getSystemState().toString());
 
-        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.3), "");
+        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.3f), "");
 
         ctrl.tick();
 
@@ -699,7 +699,7 @@ public class StateChangeTest extends FleetControllerTest {
 
         ctrl.tick();
 
-        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.2), "");
+        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.2f), "");
 
         ctrl.tick();
 
@@ -735,7 +735,7 @@ public class StateChangeTest extends FleetControllerTest {
 
         ctrl.tick();
 
-        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.3), "");
+        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.3f), "");
 
         ctrl.tick();
 
@@ -751,7 +751,7 @@ public class StateChangeTest extends FleetControllerTest {
 
         tick(1000);
 
-        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.3), "");
+        communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.3f), "");
 
         ctrl.tick();
 
@@ -804,13 +804,13 @@ public class StateChangeTest extends FleetControllerTest {
 
             tick(options.nodeStateRequestTimeoutMS + 1);
 
-            communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.0), "");
+            communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.0f), "");
 
             ctrl.tick();
 
             tick(options.nodeStateRequestTimeoutMS + 1);
 
-            communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.1), "");
+            communicator.setNodeState(new Node(NodeType.STORAGE, 6), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.1f), "");
 
             tick(1000);
         }
@@ -1228,7 +1228,7 @@ public class StateChangeTest extends FleetControllerTest {
         communicator.setNodeState(
                 new Node(NodeType.STORAGE, 2),
                 new NodeState(NodeType.STORAGE, State.INITIALIZING)
-                        .setInitProgress(0.1).setMinUsedBits(16), "");
+                        .setInitProgress(0.1f).setMinUsedBits(16), "");
 
         ctrl.tick();
 
@@ -1245,7 +1245,7 @@ public class StateChangeTest extends FleetControllerTest {
             communicator.setNodeState(
                     new Node(NodeType.STORAGE, 2),
                     new NodeState(NodeType.STORAGE, State.INITIALIZING)
-                            .setInitProgress((i * 0.1) + 0.1).setMinUsedBits(17), "");
+                            .setInitProgress((i * 0.1f) + 0.1f).setMinUsedBits(17), "");
             timer.advanceTime(1000);
             ctrl.tick();
         }

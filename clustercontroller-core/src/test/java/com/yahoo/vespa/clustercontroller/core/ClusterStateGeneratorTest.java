@@ -169,7 +169,7 @@ public class ClusterStateGeneratorTest {
     @Test
     public void storage_node_in_init_mode_while_listing_buckets_is_marked_down() {
         final NodeState initWhileListingBuckets = new NodeState(NodeType.STORAGE, State.INITIALIZING);
-        initWhileListingBuckets.setInitProgress(0.0);
+        initWhileListingBuckets.setInitProgress(0.0f);
 
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
@@ -186,7 +186,7 @@ public class ClusterStateGeneratorTest {
     @Test
     public void implicit_down_while_listing_buckets_does_not_override_wanted_state() {
         final NodeState initWhileListingBuckets = new NodeState(NodeType.STORAGE, State.INITIALIZING);
-        initWhileListingBuckets.setInitProgress(0.0);
+        initWhileListingBuckets.setInitProgress(0.0f);
 
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
@@ -200,7 +200,7 @@ public class ClusterStateGeneratorTest {
     @Test
     public void distributor_nodes_in_init_mode_are_not_mapped_to_down() {
         final NodeState initWhileListingBuckets = new NodeState(NodeType.DISTRIBUTOR, State.INITIALIZING);
-        initWhileListingBuckets.setInitProgress(0.0);
+        initWhileListingBuckets.setInitProgress(0.0f);
 
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
@@ -821,7 +821,7 @@ public class ClusterStateGeneratorTest {
     private String do_test_storage_node_with_no_init_progress(State wantedState) {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
-                .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.5))
+                .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.5f))
                 .proposeStorageNodeWantedState(0, wantedState);
 
         final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 0));
@@ -863,7 +863,7 @@ public class ClusterStateGeneratorTest {
                 .bringEntireClusterUp()
                 .reportStorageNodeState(0, State.INITIALIZING)
                 .reportStorageNodeState(0, State.DOWN) // Init -> Down triggers unstable init flag
-                .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.5));
+                .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.5f));
 
         final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
         assertThat(state.toString(), equalTo("distributor:5 storage:5 .0.s:d"));
@@ -873,7 +873,7 @@ public class ClusterStateGeneratorTest {
     public void storage_node_with_crashes_but_not_unstable_init_does_not_have_init_state_substituted_by_down() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(5)
                 .bringEntireClusterUp()
-                .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.5));
+                .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.5f));
         final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 0));
         nodeInfo.setPrematureCrashCount(5);
 
@@ -926,7 +926,7 @@ public class ClusterStateGeneratorTest {
     public void configured_zero_init_progress_time_disables_auto_init_to_down_feature() {
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(3)
                 .bringEntireClusterUp()
-                .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.5));
+                .reportStorageNodeState(0, new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.5f));
 
         final NodeInfo nodeInfo = fixture.cluster.getNodeInfo(new Node(NodeType.STORAGE, 0));
         nodeInfo.setInitProgressTime(10_000);
