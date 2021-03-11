@@ -139,30 +139,6 @@ template <typename A, typename B> constexpr auto unify_cell_types() {
     return get_cell_value<CellMeta::unify(a, b).cell_type>();
 }
 
-struct CellTypeUtils {
-    static void bad_argument [[ noreturn ]] (uint32_t id);
-
-    static constexpr uint32_t alignment(CellType cell_type) {
-        switch (cell_type) {
-        case CellType::DOUBLE: return alignof(double);
-        case CellType::FLOAT: return alignof(float);
-        default: bad_argument((uint32_t)cell_type);
-        }
-    }
-
-    static constexpr size_t mem_size(CellType cell_type, size_t sz) {
-        switch (cell_type) {
-        case CellType::DOUBLE: return sz * sizeof(double);
-        case CellType::FLOAT:  return sz * sizeof(float);
-        default: bad_argument((uint32_t)cell_type);
-        }
-    }
-
-    static std::vector<CellType> list_types() {
-        return {CellType::FLOAT, CellType::DOUBLE};
-    }
-};
-
 struct TypifyCellType {
     template <typename T> using Result = TypifyResultType<T>;
     template <typename F> static decltype(auto) resolve(CellType value, F &&f) {
@@ -170,7 +146,7 @@ struct TypifyCellType {
         case CellType::DOUBLE: return f(Result<double>());
         case CellType::FLOAT:  return f(Result<float>());
         }
-        CellTypeUtils::bad_argument((uint32_t)value);
+        abort();
     }
 };
 
@@ -220,6 +196,12 @@ struct TypifyCellMeta {
         }
         abort();
     }
+};
+
+struct CellTypeUtils {
+    static uint32_t alignment(CellType cell_type);
+    static size_t mem_size(CellType cell_type, size_t sz);
+    static std::vector<CellType> list_types();
 };
 
 } // namespace

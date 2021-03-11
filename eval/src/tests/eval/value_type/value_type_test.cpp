@@ -561,4 +561,23 @@ TEST("require that peek type inference works as expected") {
     EXPECT_EQUAL(input2.peek({"a", "b", "c", "d", "e"}), type("double"));
 }
 
+TEST("require that cell alignment can be obtained") {
+    EXPECT_EQUAL(CellTypeUtils::alignment(CellType::DOUBLE), alignof(double));
+    EXPECT_EQUAL(CellTypeUtils::alignment(CellType::FLOAT), alignof(float));
+}
+
+TEST("require that cell array size can be calculated") {
+    EXPECT_EQUAL(CellTypeUtils::mem_size(CellType::DOUBLE, 37), 37 * sizeof(double));
+    EXPECT_EQUAL(CellTypeUtils::mem_size(CellType::FLOAT, 37), 37 * sizeof(float));
+}
+
+TEST("require that all cell types can be listed") {
+    std::vector<CellType> expect = {CellType::FLOAT, CellType::DOUBLE};
+    auto list = CellTypeUtils::list_types();
+    ASSERT_EQUAL(list.size(), expect.size());
+    for (size_t i = 0; i < list.size(); ++i) {
+        EXPECT_TRUE(list[i] == expect[i]);
+    }
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
