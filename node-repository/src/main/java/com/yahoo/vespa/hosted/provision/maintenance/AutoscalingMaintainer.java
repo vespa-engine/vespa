@@ -62,33 +62,41 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
     }
 
     private void autoscale(ApplicationId application, List<Node> applicationNodes) {
-        try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
-            if ( ! deployment.isValid()) return;
-            nodesByCluster(applicationNodes).forEach((clusterId, clusterNodes) -> autoscale(application, clusterId, NodeList.copyOf(clusterNodes), deployment));
-        }
+        nodesByCluster(applicationNodes).forEach((clusterId, clusterNodes) -> autoscale(application, clusterId, NodeList.copyOf(clusterNodes)));
     }
 
-    private void autoscale(ApplicationId applicationId,
-                           ClusterSpec.Id clusterId,
-                           NodeList clusterNodes,
-                           MaintenanceDeployment deployment) {
-        Application application = nodeRepository().applications().get(applicationId).orElse(Application.empty(applicationId));
-        if (application.cluster(clusterId).isEmpty()) return;
-        Cluster cluster = application.cluster(clusterId).get();
-        cluster = updateCompletion(cluster, clusterNodes);
-        var advice = autoscaler.autoscale(application, cluster, clusterNodes);
-        cluster = cluster.withAutoscalingStatus(advice.reason());
+    private void autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId, NodeList clusterNodes) {
+        Optional<Application> application = nodeRepository().applications().get(applicationId);
+        if (application.isEmpty()) return;
+        Optional<Cluster> cluster = application.get().cluster(clusterId);
+        if (cluster.isEmpty()) return;
 
-        if (advice.isPresent() && !cluster.targetResources().equals(advice.target())) { // autoscale
-            cluster = cluster.withTarget(advice.target());
-            applications().put(application.with(cluster), deployment.applicationLock().get());
-            if (advice.target().isPresent()) {
-                logAutoscaling(advice.target().get(), applicationId, cluster, clusterNodes);
-                deployment.activate();
+        Cluster updatedCluster = updateCompletion(cluster.get(), clusterNodes);
+        var advice = autoscaler.autoscale(application.get(), updatedCluster, clusterNodes);
+
+        // Lock and write if there are state updates and/or we should autoscale now
+        if (advice.isPresent() && !cluster.get().targetResources().equals(advice.target()) ||
+            (updatedCluster != cluster.get() || !advice.reason().equals(cluster.get().autoscalingStatus()))) {
+            try (var lock = nodeRepository().nodes().lock(applicationId)) {
+                application = nodeRepository().applications().get(applicationId);
+                if (application.isEmpty()) return;
+                cluster = application.get().cluster(clusterId);
+                if (cluster.isEmpty()) return;
+
+                // 1. Update cluster info
+                updatedCluster = updateCompletion(cluster.get(), clusterNodes)
+                                         .withAutoscalingStatus(advice.reason())
+                                         .withTarget(advice.target());
+                applications().put(application.get().with(updatedCluster), lock);
+                if (advice.isPresent() && advice.target().isPresent() && !cluster.get().targetResources().equals(advice.target())) {
+                    // 2. Also autoscale
+                    logAutoscaling(advice.target().get(), applicationId, updatedCluster, clusterNodes);
+                    try (MaintenanceDeployment deployment = new MaintenanceDeployment(applicationId, deployer, metric, nodeRepository())) {
+                        if (deployment.isValid())
+                            deployment.activate();
+                    }
+                }
             }
-        }
-        else { // store cluster update
-            applications().put(application.with(cluster), deployment.applicationLock().get());
         }
     }
 

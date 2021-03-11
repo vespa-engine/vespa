@@ -125,6 +125,7 @@ public class Cluster {
     }
 
     public Cluster withAutoscalingStatus(String autoscalingStatus) {
+        if (autoscalingStatus.equals(this.autoscalingStatus)) return this;
         return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
     }
 
