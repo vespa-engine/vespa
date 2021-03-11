@@ -38,11 +38,11 @@ public class AclProvisioningTest {
 
         // Populate repo
         tester.makeReadyNodes(10, new NodeResources(1, 4, 10, 1));
-        List<Node> dockerHost = tester.makeReadyNodes(1, new NodeResources(1, 4, 10, 1), NodeType.host);
+        List<Node> host = tester.makeReadyNodes(1, new NodeResources(1, 4, 10, 1), NodeType.host);
         ApplicationId zoneApplication = ProvisioningTester.applicationId();
         tester.deploy(zoneApplication, Capacity.fromRequiredNodeType(NodeType.host));
         tester.makeReadyChildren(1, new NodeResources(1, 4, 10, 1),
-                                 dockerHost.get(0).hostname());
+                                 host.get(0).hostname());
         List<Node> proxyNodes = tester.makeReadyNodes(3, new NodeResources(1, 4, 10, 1), NodeType.proxy);
 
         // Allocate 2 nodes
@@ -52,11 +52,11 @@ public class AclProvisioningTest {
 
         // Get trusted nodes for the first active node
         Node node = activeNodes.get(0);
-        List<Node> host = node.parentHostname().flatMap(tester.nodeRepository().nodes()::node).map(List::of).orElseGet(List::of);
+        List<Node> hostOfNode = node.parentHostname().flatMap(tester.nodeRepository().nodes()::node).map(List::of).orElseGet(List::of);
         Supplier<NodeAcl> nodeAcls = () -> node.acl(tester.nodeRepository().nodes().list(), tester.nodeRepository().loadBalancers());
 
         // Trusted nodes are active nodes in same application, proxy nodes and config servers
-        assertAcls(List.of(activeNodes, proxyNodes, configServers.asList(), host),
+        assertAcls(List.of(activeNodes, proxyNodes, configServers.asList(), hostOfNode),
                    Set.of("10.2.3.0/24", "10.4.5.0/24"),
                    List.of(nodeAcls.get()));
     }
@@ -124,27 +124,27 @@ public class AclProvisioningTest {
     }
 
     @Test
-    public void trusted_nodes_for_children_of_docker_host() {
+    public void trusted_nodes_for_children() {
         NodeList configServers = tester.makeConfigServers(3, "default", Version.fromString("6.123.456"));
 
         // Populate repo
-        List<Node> dockerHostNodes = tester.makeReadyNodes(2, "default", NodeType.host);
-        Node dockerHostNodeUnderTest = dockerHostNodes.get(0);
-        List<Node> dockerNodes = tester.makeReadyChildren(5, new NodeResources(1, 4, 10, 1),
-                                                          dockerHostNodeUnderTest.hostname());
+        List<Node> hosts = tester.makeReadyNodes(2, "default", NodeType.host);
+        Node host = hosts.get(0);
+        List<Node> nodes = tester.makeReadyChildren(5, new NodeResources(1, 4, 10, 1),
+                                                          host.hostname());
 
-        List<NodeAcl> acls = tester.nodeRepository().getChildAcls(dockerHostNodeUnderTest);
+        List<NodeAcl> acls = tester.nodeRepository().getChildAcls(host);
 
-        // ACLs for each container on the Docker host
-        assertFalse(dockerNodes.isEmpty());
-        assertEquals(dockerNodes.size(), acls.size());
-        for (Node dockerNode : dockerNodes) {
+        // ACLs for each container on the host
+        assertFalse(nodes.isEmpty());
+        assertEquals(nodes.size(), acls.size());
+        for (Node node : nodes) {
             NodeAcl nodeAcl = acls.stream()
-                    .filter(acl -> acl.node().equals(dockerNode))
+                    .filter(acl -> acl.node().equals(node))
                     .findFirst()
-                    .orElseThrow(() -> new RuntimeException("Expected to find ACL for node " + dockerNode.hostname()));
-            assertEquals(dockerHostNodeUnderTest.hostname(), dockerNode.parentHostname().get());
-            assertAcls(List.of(configServers.asList(), dockerNodes, List.of(dockerHostNodeUnderTest)), nodeAcl);
+                    .orElseThrow(() -> new RuntimeException("Expected to find ACL for node " + node.hostname()));
+            assertEquals(host.hostname(), node.parentHostname().get());
+            assertAcls(List.of(configServers.asList(), nodes, List.of(host)), nodeAcl);
         }
     }
 
