@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.Real;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.Collection;
@@ -229,7 +228,6 @@ public class LoadBalancerProvisionerTest {
         assertEquals(cluster, lbs.get().get(0).id().cluster());
     }
 
-    @Ignore // TODO: Re-enable when controller support is implemented
     @Test
     public void provision_load_balancer_controller_cluster() {
         ApplicationId controllerApp = ApplicationId.from("hosted-vespa", "controller", "default");
