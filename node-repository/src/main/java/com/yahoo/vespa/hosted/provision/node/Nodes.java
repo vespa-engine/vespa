@@ -199,9 +199,9 @@ public class Nodes {
      */
     public void setRemovable(ApplicationId application, List<Node> nodes) {
         try (Mutex lock = lock(application)) {
-            List<Node> removableNodes =
-                    nodes.stream().map(node -> node.with(node.allocation().get().removable(true)))
-                         .collect(Collectors.toList());
+            List<Node> removableNodes = nodes.stream()
+                                             .map(node -> node.with(node.allocation().get().removable(true)))
+                                             .collect(Collectors.toList());
             write(removableNodes, lock);
         }
     }

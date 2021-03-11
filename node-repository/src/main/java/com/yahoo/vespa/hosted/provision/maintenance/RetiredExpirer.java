@@ -57,15 +57,13 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
         for (Map.Entry<ApplicationId, List<Node>> entry : retiredNodesByApplication.entrySet()) {
             ApplicationId application = entry.getKey();
             List<Node> retiredNodes = entry.getValue();
+            List<Node> nodesToRemove = retiredNodes.stream().filter(this::canRemove).collect(Collectors.toList());
+            if (nodesToRemove.isEmpty()) continue;
 
             try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
                 if ( ! deployment.isValid()) continue;
 
-                List<Node> nodesToRemove = retiredNodes.stream().filter(this::canRemove).collect(Collectors.toList());
-                if (nodesToRemove.isEmpty()) continue;
-
                 nodeRepository().nodes().setRemovable(application, nodesToRemove);
-
                 boolean success = deployment.activate().isPresent();
                 if ( ! success) return success;
                 String nodeList = nodesToRemove.stream().map(Node::hostname).collect(Collectors.joining(", "));
