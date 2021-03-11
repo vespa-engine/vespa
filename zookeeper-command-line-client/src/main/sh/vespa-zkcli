@@ -95,4 +95,4 @@ done
 $sudo java \
 	-cp $VESPA_HOME/lib/jars/zookeeper-command-line-client-jar-with-dependencies.jar \
 	-Dlog4j.configuration="log4j-vespa.properties" -Xms32m -Xmx512m \
-	org.apache.zookeeper.ZooKeeperMain "$@"
+	com.yahoo.vespa.zookeeper.cli.Main "$@"
