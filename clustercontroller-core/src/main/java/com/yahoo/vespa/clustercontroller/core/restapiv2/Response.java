@@ -6,7 +6,14 @@ import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InternalFailure;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiException;
-import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.*;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.CurrentUnitState;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.DistributionState;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.DistributionStates;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.SubUnitList;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitAttributes;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitMetrics;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitResponse;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitState;
 
 import java.util.LinkedHashMap;
 import java.util.Map;

@@ -32,7 +32,7 @@ public class PartitionStateRequest extends Request<Response.PartitionResponse> {
             fillInMetrics(context.cluster.getNodeInfo(id.getNode()).getHostInfo().getMetrics(), result);
         }
         NodeState nodeState = context.currentConsolidatedState.getNodeState(id.getNode());
-        DiskState diskState = nodeState.getDiskState(id.getPartitionIndex());
+        DiskState diskState = new DiskState();
         result.addState("generated", new Response.UnitStateImpl(diskState));
 
         return result;

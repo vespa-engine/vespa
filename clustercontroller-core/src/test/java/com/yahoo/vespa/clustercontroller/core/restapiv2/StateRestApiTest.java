@@ -120,9 +120,6 @@ public abstract class StateRestApiTest {
         for (ConfiguredNode configuredNode : nodes) {
             for (NodeType type : NodeType.getTypes()) {
                 NodeState reported = new NodeState(type, State.UP);
-                if (type.equals(NodeType.STORAGE)) {
-                    reported.setDiskCount(2);
-                }
 
                 NodeInfo nodeInfo = cluster.clusterInfo().setRpcAddress(new Node(type, configuredNode.index()), "rpc:" + type + "/" + configuredNode);
                 nodeInfo.setReportedState(reported, 10);

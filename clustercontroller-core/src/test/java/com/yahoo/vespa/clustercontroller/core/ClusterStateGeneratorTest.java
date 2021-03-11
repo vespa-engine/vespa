@@ -73,20 +73,6 @@ public class ClusterStateGeneratorTest {
     }
 
     @Test
-    public void storage_reported_disk_state_included_in_generated_state() {
-        final NodeState stateWithDisks = new NodeState(NodeType.STORAGE, State.UP);
-        stateWithDisks.setDiskCount(7);
-        stateWithDisks.setDiskState(5, new DiskState(State.DOWN));
-
-        final ClusterFixture fixture = ClusterFixture.forFlatCluster(9)
-                .bringEntireClusterUp()
-                .reportStorageNodeState(2, stateWithDisks);
-        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
-
-        assertThat(state.toString(), equalTo("distributor:9 storage:9 .2.d:7 .2.d.5.s:d"));
-    }
-
-    @Test
     public void worse_distributor_wanted_state_overrides_reported_state() {
         // Maintenance mode is illegal for distributors and therefore not tested
         final ClusterFixture fixture = ClusterFixture.forFlatCluster(7)
@@ -242,33 +228,6 @@ public class ClusterStateGeneratorTest {
         // as these are omitted by default.
         assertThat(state.toString(true), equalTo("distributor:7 storage:7 .1.s:m .1.m:foo " +
                 ".2.s:d .2.m:bar .3.s:r .3.m:baz"));
-    }
-
-    @Test
-    public void reported_disk_state_not_hidden_by_wanted_state() {
-        final NodeState stateWithDisks = new NodeState(NodeType.STORAGE, State.UP);
-        stateWithDisks.setDiskCount(5);
-        stateWithDisks.setDiskState(3, new DiskState(State.DOWN));
-
-        final ClusterFixture fixture = ClusterFixture.forFlatCluster(9)
-                .bringEntireClusterUp()
-                .reportStorageNodeState(2, stateWithDisks)
-                .proposeStorageNodeWantedState(2, State.RETIRED)
-                .reportStorageNodeState(3, stateWithDisks)
-                .proposeStorageNodeWantedState(3, State.MAINTENANCE);
-        final AnnotatedClusterState state = generateFromFixtureWithDefaultParams(fixture);
-
-        // We do not publish disk states for nodes in Down state. This differs from how the
-        // legacy controller did things, but such states cannot be counted on for ideal state
-        // calculations either way. In particular, reported disk states are not persisted and
-        // only exist transiently in the cluster controller's memory. A controller restart is
-        // sufficient to clear all disk states that have been incidentally remembered for now
-        // downed nodes.
-        // The keen reader may choose to convince themselves of this independently by reading the
-        // code in com.yahoo.vdslib.distribution.Distribution#getIdealStorageNodes and observing
-        // how disk states for nodes that are in a down-state are never considered.
-        assertThat(state.toString(), equalTo("distributor:9 storage:9 .2.s:r .2.d:5 .2.d.3.s:d " +
-                ".3.s:m .3.d:5 .3.d.3.s:d"));
     }
 
     @Test

@@ -24,10 +24,10 @@ public class ClusterStateTestCase{
         assertEquals("distributor:2 .0.s:d", state.toString());
         state.setNodeState(new Node(NodeType.DISTRIBUTOR, 4), new NodeState(NodeType.DISTRIBUTOR, State.UP));
         assertEquals("distributor:5 .0.s:d .2.s:d .3.s:d", state.toString());
-        state.setNodeState(new Node(NodeType.STORAGE, 0), new NodeState(NodeType.STORAGE, State.UP).setDiskCount(4));
+        state.setNodeState(new Node(NodeType.STORAGE, 0), new NodeState(NodeType.STORAGE, State.UP));
         assertEquals("distributor:5 .0.s:d .2.s:d .3.s:d storage:1", state.toString());
-        state.setNodeState(new Node(NodeType.STORAGE, 0), new NodeState(NodeType.STORAGE, State.UP).setDiskCount(4).setDiskState(1, new DiskState(State.DOWN)));
-        assertEquals("distributor:5 .0.s:d .2.s:d .3.s:d storage:1 .0.d:4 .0.d.1.s:d", state.toString());
+        state.setNodeState(new Node(NodeType.STORAGE, 0), new NodeState(NodeType.STORAGE, State.DOWN));
+        assertEquals("distributor:5 .0.s:d .2.s:d .3.s:d", state.toString());
     }
 
     @Test
@@ -35,7 +35,7 @@ public class ClusterStateTestCase{
         ClusterState state = new ClusterState("");
         state.setNodeState(new Node(NodeType.DISTRIBUTOR, 1), new NodeState(NodeType.DISTRIBUTOR, State.UP).setDescription("available"));
         state.setNodeState(new Node(NodeType.STORAGE, 0), new NodeState(NodeType.STORAGE, State.UP).setCapacity(1.2f));
-        state.setNodeState(new Node(NodeType.STORAGE, 2), new NodeState(NodeType.STORAGE, State.UP).setDiskCount(2).setDiskState(1, new DiskState(State.DOWN)));
+        state.setNodeState(new Node(NodeType.STORAGE, 2), new NodeState(NodeType.STORAGE, State.UP));
         ClusterState other = state.clone();
         assertEquals(state.toString(true), other.toString(true));
         assertEquals(state.toString(false), other.toString(false));
@@ -187,10 +187,10 @@ public class ClusterStateTestCase{
 
         state2.setDistributionBits(21);
         state1.setVersion(123);
-        state1.setNodeState(new Node(NodeType.STORAGE, 2), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.2f).setDiskCount(2).setDescription("Booting"));
+        state1.setNodeState(new Node(NodeType.STORAGE, 2), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.2f).setDescription("Booting"));
         state2.setOfficial(true);
 
-        assertEquals("version: 123 => 0, bits: 16 => 21, official: false => true, storage: [2: [Initializing => Up, disks: 2 => 0, description: Booting => ], 4: Down => Up, 5: Down => Up], distributor: [7: Up => Down, 8: Up => Down]", state1.getTextualDifference(state2));
+        assertEquals("version: 123 => 0, bits: 16 => 21, official: false => true, storage: [2: [Initializing => Up, description: Booting => ], 4: Down => Up, 5: Down => Up], distributor: [7: Up => Down, 8: Up => Down]", state1.getTextualDifference(state2));
     }
 
     @Test
@@ -219,12 +219,12 @@ public class ClusterStateTestCase{
                 "]", state2.getHtmlDifference(state3));
 
         state1.setVersion(123);
-        state1.setNodeState(new Node(NodeType.STORAGE, 2), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.2f).setDiskCount(2).setDescription("Booting"));
+        state1.setNodeState(new Node(NodeType.STORAGE, 2), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.2f).setDescription("Booting"));
         state2.setDistributionBits(21);
         state2.setOfficial(true);
-        assertEquals("version: 123 => 0, bits: 16 => 21, official: false => true, storage: [2: [Initializing => Up, disks: 2 => 0, description: Booting => ], 4: Down => Up, 5: Down => Up], distributor: [7: Up => Down, 8: Up => Down]", state1.getTextualDifference(state2));
+        assertEquals("version: 123 => 0, bits: 16 => 21, official: false => true, storage: [2: [Initializing => Up, description: Booting => ], 4: Down => Up, 5: Down => Up], distributor: [7: Up => Down, 8: Up => Down]", state1.getTextualDifference(state2));
         assertEquals("version: 123 =&gt; 0, bits: 16 =&gt; 21, official: false =&gt; true, storage: [<br>\n" +
-                "&nbsp;2: [<b>Initializing</b> =&gt; <b>Up</b>, disks: 2 =&gt; 0, description: Booting =&gt; ], <br>\n" +
+                "&nbsp;2: [<b>Initializing</b> =&gt; <b>Up</b>, description: Booting =&gt; ], <br>\n" +
                 "&nbsp;4: <b>Down</b> =&gt; <b>Up</b>, <br>\n" +
                 "&nbsp;5: <b>Down</b> =&gt; <b>Up</b><br>\n" +
                 "], distributor: [<br>\n" +
