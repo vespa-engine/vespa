@@ -50,7 +50,7 @@ public:
     KvType* remove(const EntryComparator& comp, EntryRef key_ref);
     const KvType* find(const EntryComparator& comp, EntryRef key_ref) const;
     void transfer_hold_lists(generation_t generation);
-    void trim_hold_lists(generation_t used_gen);
+    void trim_hold_lists(generation_t first_used);
     size_t size() const noexcept;
 };
 

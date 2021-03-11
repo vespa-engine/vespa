@@ -58,21 +58,21 @@ private:
     };
     class Node {
         KvType _kv;
-        std::atomic<uint32_t> _next;
+        std::atomic<uint32_t> _next_node_idx;
     public:
         Node()
             : Node(std::make_pair(AtomicEntryRef(), AtomicEntryRef()), no_node_idx)
         {
         }
-        Node(KvType kv, uint32_t next)
+        Node(KvType kv, uint32_t next_node_idx)
             : _kv(kv),
-              _next(next)
+              _next_node_idx(next_node_idx)
         {
         }
         Node(Node &&rhs); // Must be defined, but must never be used.
         void on_free();
-        std::atomic<uint32_t>& get_next() noexcept { return _next; }
-        const std::atomic<uint32_t>& get_next() const noexcept { return _next; }
+        std::atomic<uint32_t>& get_next_node_idx() noexcept { return _next_node_idx; }
+        const std::atomic<uint32_t>& get_next_node_idx() const noexcept { return _next_node_idx; }
         KvType& get_kv() noexcept { return _kv; }
         const KvType& get_kv() const noexcept { return _kv; }
     };
@@ -89,7 +89,7 @@ private:
     uint32_t          _num_stripes;
 
     void transfer_hold_lists_slow(generation_t generation);
-    void trim_hold_lists_slow(generation_t usedGen);
+    void trim_hold_lists_slow(generation_t first_used);
     void force_add(const EntryComparator& comp, const KvType& kv);
 public:
     FixedSizeHashMap(uint32_t module, uint32_t capacity, uint32_t num_stripes);
@@ -106,9 +106,9 @@ public:
         }
     }
 
-    void trim_hold_lists(generation_t usedGen) {
-        if (!_hold_2_list.empty() && static_cast<sgeneration_t>(_hold_2_list.front().first - usedGen) < 0) {
-            trim_hold_lists_slow(usedGen);
+    void trim_hold_lists(generation_t first_used) {
+        if (!_hold_2_list.empty() && static_cast<sgeneration_t>(_hold_2_list.front().first - first_used) < 0) {
+            trim_hold_lists_slow(first_used);
         }
     }
 

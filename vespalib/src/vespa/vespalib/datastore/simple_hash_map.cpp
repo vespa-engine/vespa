@@ -112,15 +112,15 @@ SimpleHashMap::transfer_hold_lists(generation_t generation)
 }
 
 void
-SimpleHashMap::trim_hold_lists(generation_t used_gen)
+SimpleHashMap::trim_hold_lists(generation_t first_used)
 {
     for (size_t i = 0; i < num_stripes; ++i) {
         auto map = _maps[i].load(std::memory_order_relaxed);
         if (map != nullptr) {
-            map->trim_hold_lists(used_gen);
+            map->trim_hold_lists(first_used);
         }
     }
-    _gen_holder.trimHoldLists(used_gen);
+    _gen_holder.trimHoldLists(first_used);
 }
 
 size_t

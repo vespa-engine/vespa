@@ -174,35 +174,6 @@ DataStoreSimpleHashTest::write_work(uint32_t cnt)
 }
 
 
-TEST_F(DataStoreSimpleHashTest, smoke_test)
-{
-    EXPECT_EQ(0, _hash_map.size());
-    insert(1);
-    EXPECT_EQ(1, _hash_map.size());
-    remove(2);
-    EXPECT_EQ(1, _hash_map.size());
-    insert(1);
-    EXPECT_EQ(1, _hash_map.size());
-    insert(5);
-    EXPECT_EQ(2, _hash_map.size());
-    insert(4);
-    EXPECT_EQ(3, _hash_map.size());
-    remove(3);
-    EXPECT_EQ(3, _hash_map.size());
-    remove(5);
-    EXPECT_EQ(2, _hash_map.size());
-    commit();
-    MyCompare comp3(_store, 3);
-    auto result3 = _hash_map.find(comp3, EntryRef());
-    EXPECT_TRUE(result3 == nullptr);
-    MyCompare comp4(_store, 4);
-    auto result4 = _hash_map.find(comp4, EntryRef());
-    EXPECT_TRUE(result4 != nullptr);
-    auto ref4 = result4->first.load_relaxed();
-    auto& wrapped_entry4 = _allocator.get_wrapped(ref4);
-    EXPECT_EQ(4, wrapped_entry4.value());
-}
-
 TEST_F(DataStoreSimpleHashTest, single_threaded_reader_without_updates)
 {
     _report_work = true;
