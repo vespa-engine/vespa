@@ -6,6 +6,9 @@
 
 namespace search {
 
+/**
+ * Contains the config required for setting up a suitable dictionary.
+ */
 class DictionaryConfig {
 public:
     enum class Ordering { ORDERED, UNORDERED };
