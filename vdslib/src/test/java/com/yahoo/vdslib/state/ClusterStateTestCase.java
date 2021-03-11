@@ -188,9 +188,8 @@ public class ClusterStateTestCase{
         state2.setDistributionBits(21);
         state1.setVersion(123);
         state1.setNodeState(new Node(NodeType.STORAGE, 2), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.2f).setDescription("Booting"));
-        state2.setOfficial(true);
 
-        assertEquals("version: 123 => 0, bits: 16 => 21, official: false => true, storage: [2: [Initializing => Up, description: Booting => ], 4: Down => Up, 5: Down => Up], distributor: [7: Up => Down, 8: Up => Down]", state1.getTextualDifference(state2));
+        assertEquals("version: 123 => 0, bits: 16 => 21, storage: [2: [Initializing => Up, description: Booting => ], 4: Down => Up, 5: Down => Up], distributor: [7: Up => Down, 8: Up => Down]", state1.getTextualDifference(state2));
     }
 
     @Test
@@ -221,9 +220,8 @@ public class ClusterStateTestCase{
         state1.setVersion(123);
         state1.setNodeState(new Node(NodeType.STORAGE, 2), new NodeState(NodeType.STORAGE, State.INITIALIZING).setInitProgress(0.2f).setDescription("Booting"));
         state2.setDistributionBits(21);
-        state2.setOfficial(true);
-        assertEquals("version: 123 => 0, bits: 16 => 21, official: false => true, storage: [2: [Initializing => Up, description: Booting => ], 4: Down => Up, 5: Down => Up], distributor: [7: Up => Down, 8: Up => Down]", state1.getTextualDifference(state2));
-        assertEquals("version: 123 =&gt; 0, bits: 16 =&gt; 21, official: false =&gt; true, storage: [<br>\n" +
+        assertEquals("version: 123 => 0, bits: 16 => 21, storage: [2: [Initializing => Up, description: Booting => ], 4: Down => Up, 5: Down => Up], distributor: [7: Up => Down, 8: Up => Down]", state1.getTextualDifference(state2));
+        assertEquals("version: 123 =&gt; 0, bits: 16 =&gt; 21, storage: [<br>\n" +
                 "&nbsp;2: [<b>Initializing</b> =&gt; <b>Up</b>, description: Booting =&gt; ], <br>\n" +
                 "&nbsp;4: <b>Down</b> =&gt; <b>Up</b>, <br>\n" +
                 "&nbsp;5: <b>Down</b> =&gt; <b>Up</b><br>\n" +

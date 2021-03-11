@@ -4,8 +4,6 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -34,8 +32,7 @@ public class StateVersionTracker {
     private ClusterStateView clusterStateView;
     private final ClusterStatsChangeTracker clusterStatsChangeTracker;
 
-    private final LinkedList<ClusterStateHistoryEntry> clusterStateHistory = new LinkedList<>();
-    private int maxHistoryEntryCount = 50;
+    private final ClusterStateHistory clusterStateHistory = new ClusterStateHistory();
     private double minMergeCompletionRatio;
 
     StateVersionTracker(double minMergeCompletionRatio) {
@@ -72,8 +69,8 @@ public class StateVersionTracker {
      *
      * Takes effect upon the next invocation of promoteCandidateToVersionedState().
      */
-    void setMaxHistoryEntryCount(final int maxHistoryEntryCount) {
-        this.maxHistoryEntryCount = maxHistoryEntryCount;
+    void setMaxHistoryEntryCount(int maxHistoryEntryCount) {
+        this.clusterStateHistory.setMaxHistoryEntryCount(maxHistoryEntryCount);
     }
 
     void setMinMergeCompletionRatio(double minMergeCompletionRatio) {
@@ -129,7 +126,7 @@ public class StateVersionTracker {
     }
 
     public List<ClusterStateHistoryEntry> getClusterStateHistory() {
-        return Collections.unmodifiableList(clusterStateHistory);
+        return clusterStateHistory.getHistory();
     }
 
     boolean candidateChangedEnoughFromCurrentToWarrantPublish() {
@@ -159,10 +156,7 @@ public class StateVersionTracker {
     }
 
     private void recordCurrentStateInHistoryAtTime(final long currentTimeMs) {
-        clusterStateHistory.addFirst(new ClusterStateHistoryEntry(currentClusterState, currentTimeMs));
-        while (clusterStateHistory.size() > maxHistoryEntryCount) {
-            clusterStateHistory.removeLast();
-        }
+        clusterStateHistory.add(currentClusterState, currentTimeMs);
     }
 
     void handleUpdatedHostInfo(final NodeInfo node, final HostInfo hostInfo) {

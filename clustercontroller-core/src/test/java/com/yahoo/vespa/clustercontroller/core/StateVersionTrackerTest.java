@@ -180,8 +180,13 @@ public class StateVersionTrackerTest {
         assertTrue(versionTracker.getClusterStateHistory().isEmpty());
     }
 
-    private static ClusterStateHistoryEntry historyEntry(final String state, final long time) {
-        return new ClusterStateHistoryEntry(stateBundleWithoutAnnotations(state), time);
+    private static ClusterStateHistoryEntry historyEntry(String state, long time) {
+        return ClusterStateHistoryEntry.makeFirstEntry(stateBundleWithoutAnnotations(state), time);
+    }
+
+    private static ClusterStateHistoryEntry historyEntry(String state, String prevState, long time) {
+        return ClusterStateHistoryEntry.makeSuccessor(stateBundleWithoutAnnotations(state),
+                                                      stateBundleWithoutAnnotations(prevState), time);
     }
 
     @Test
@@ -191,12 +196,16 @@ public class StateVersionTrackerTest {
         updateAndPromote(versionTracker, stateWithoutAnnotations("distributor:3 storage:3"), 200);
         updateAndPromote(versionTracker, stateWithoutAnnotations("distributor:4 storage:4"), 300);
 
+        String s4 = "version:4 distributor:4 storage:4";
+        String s3 = "version:3 distributor:3 storage:3";
+        String s2 = "version:2 distributor:2 storage:2";
+
         // Note: newest entry first
         assertThat(versionTracker.getClusterStateHistory(),
                 equalTo(Arrays.asList(
-                         historyEntry("version:4 distributor:4 storage:4", 300),
-                         historyEntry("version:3 distributor:3 storage:3", 200),
-                         historyEntry("version:2 distributor:2 storage:2", 100))));
+                         historyEntry(s4, s3, 300),
+                         historyEntry(s3, s2, 200),
+                         historyEntry(s2, 100))));
     }
 
     @Test
@@ -208,17 +217,22 @@ public class StateVersionTrackerTest {
         updateAndPromote(versionTracker, stateWithoutAnnotations("distributor:3 storage:3"), 200);
         updateAndPromote(versionTracker, stateWithoutAnnotations("distributor:4 storage:4"), 300);
 
+        String s5 = "version:5 distributor:5 storage:5";
+        String s4 = "version:4 distributor:4 storage:4";
+        String s3 = "version:3 distributor:3 storage:3";
+        String s2 = "version:2 distributor:2 storage:2";
+
         assertThat(versionTracker.getClusterStateHistory(),
                 equalTo(Arrays.asList(
-                        historyEntry("version:4 distributor:4 storage:4", 300),
-                        historyEntry("version:3 distributor:3 storage:3", 200))));
+                        historyEntry(s4, s3, 300),
+                        historyEntry(s3, s2, 200))));
 
         updateAndPromote(versionTracker, stateWithoutAnnotations("distributor:5 storage:5"), 400);
 
         assertThat(versionTracker.getClusterStateHistory(),
                 equalTo(Arrays.asList(
-                        historyEntry("version:5 distributor:5 storage:5", 400),
-                        historyEntry("version:4 distributor:4 storage:4", 300))));
+                        historyEntry(s5, s4, 400),
+                        historyEntry(s4, s3, 300))));
     }
 
     @Test
