@@ -31,26 +31,15 @@ void my_generic_map_op(State &state, uint64_t param_in) {
     auto input_cells = a.cells().typify<ICT>();
     auto output_cells = state.stash.create_uninitialized_array<OCT>(input_cells.size());
     auto pos = output_cells.begin();
-    for (ICT value : input_cells) {
-        *pos++ = (OCT) function(value);
+    if constexpr (std::is_same<ICT,OCT>::value) {
+        apply_op1_vec(pos, input_cells.begin(), output_cells.size(), function);
+    } else {
+        for (ICT value : input_cells) {
+            *pos++ = (OCT) function(value);
+        }
+        assert(pos == output_cells.end());
     }
-    assert(pos == output_cells.end());
-    ValueType &result_type = state.stash.create<ValueType>(param.res_type);
-    // XXX: could we refer to param.res_type from ValueView instead?
-    Value &result_ref = state.stash.create<ValueView>(result_type, a.index(), TypedCells(output_cells));
-    state.pop_push(result_ref);
-}
-
-template <typename CT, typename Func>
-void my_simple_map_op(State &state, uint64_t param_in) {
-    const auto &param = unwrap_param<MapParam>(param_in);
-    Func function(param.function);
-    const Value &a = state.peek(0);
-    auto input_cells = a.cells().typify<CT>();
-    auto output_cells = state.stash.create_uninitialized_array<CT>(input_cells.size());
-    auto pos = output_cells.begin();
-    apply_op1_vec(pos, input_cells.begin(), output_cells.size(), function);
-    Value &result_ref = state.stash.create<ValueView>(a.type(), a.index(), TypedCells(output_cells));
+    Value &result_ref = state.stash.create<ValueView>(param.res_type, a.index(), TypedCells(output_cells));
     state.pop_push(result_ref);
 }
 
@@ -65,12 +54,9 @@ struct SelectGenericMapOp {
     template <typename ICM, typename Func> static auto invoke() {
         if constexpr (ICM::value.is_scalar) {
             return my_double_map_op<Func>;
-        }
-        using ICT = CellValueType<ICM::value.cell_type>;
-        using OCT = CellValueType<ICM::value.map().cell_type>;
-        if constexpr (std::is_same<ICT,OCT>::value) {
-            return my_simple_map_op<ICT, Func>;
         } else {
+            using ICT = CellValueType<ICM::value.cell_type>;
+            using OCT = CellValueType<ICM::value.map().cell_type>;
             return my_generic_map_op<ICT, OCT, Func>;
         }
     }
