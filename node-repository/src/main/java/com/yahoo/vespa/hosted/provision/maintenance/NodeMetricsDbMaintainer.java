@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsFetcher;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsResponse;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.util.Set;
@@ -69,7 +70,8 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
                                 ApplicationId application) {
         if (exception != null) {
             if (warnings.get() < maxWarningsPerInvocation)
-                log.log(Level.WARNING, "Could not update metrics for " + application, exception);
+                log.log(Level.WARNING, "Could not update metrics for " + application + ": " +
+                                       Exceptions.toMessageString(exception));
             warnings.add(1);
         }
         else if (response != null) {
