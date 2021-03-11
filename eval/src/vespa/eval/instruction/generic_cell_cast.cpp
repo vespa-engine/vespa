@@ -33,8 +33,13 @@ void my_generic_cell_cast_op(State &state, uint64_t param_in) {
 
 struct SelectGenericCellCastOp {
     template <typename ICT, typename OCT>
-    static auto invoke() {
-        return my_generic_cell_cast_op<ICT, OCT>;
+    static InterpretedFunction::op_function invoke() {
+        if constexpr (std::is_same_v<ICT,OCT>) {
+            // handeled by nop case below
+            abort();
+        } else {
+            return my_generic_cell_cast_op<ICT, OCT>;
+        }
     }
 };
 
@@ -46,12 +51,17 @@ GenericCellCast::make_instruction(const ValueType &result_type,
                                   CellType to_cell_type,
                                   Stash &stash)
 {
-    CellType from = input_type.cell_type();
     assert(result_type == input_type.cell_cast(to_cell_type));
-    auto &param = stash.create<ValueType>(result_type);
-    CellType to = result_type.cell_type();
-    auto op = typify_invoke<2,TypifyCellType,SelectGenericCellCastOp>(from, to);
-    return Instruction(op, wrap_param<ValueType>(param));
+    auto from = input_type.cell_type();
+    auto to = result_type.cell_type();
+    if (to == from) {
+        return Instruction::nop();
+    } else {
+        assert(!input_type.is_double());
+        auto &param = stash.create<ValueType>(result_type);
+        auto op = typify_invoke<2,TypifyCellType,SelectGenericCellCastOp>(from, to);
+        return Instruction(op, wrap_param<ValueType>(param));
+    }
 }
 
 } // namespace
