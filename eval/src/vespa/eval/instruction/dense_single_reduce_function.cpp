@@ -119,12 +119,13 @@ void my_single_reduce_op(InterpretedFunction::State &state, uint64_t param) {
 
 struct MyGetFun {
     template <typename R1, typename R2, typename R3, typename R4> static auto invoke() {
-        using AggrType = typename R2::template templ<R1>;
-        return my_single_reduce_op<R1, AggrType, R3::value, R4::value>;
+        using CT = CellValueType<R1::value.cell_type>;
+        using AggrType = typename R2::template templ<CT>;
+        return my_single_reduce_op<CT, AggrType, R3::value, R4::value>;
     }
 };
 
-using MyTypify = TypifyValue<TypifyCellType,TypifyAggr,TypifyBool>;
+using MyTypify = TypifyValue<TypifyCellMeta,TypifyAggr,TypifyBool>;
 
 std::pair<std::vector<vespalib::string>,ValueType> sort_and_drop_trivial(const std::vector<vespalib::string> &list_in, const ValueType &type_in) {
     std::vector<vespalib::string> dropped;
@@ -220,6 +221,7 @@ DenseSingleReduceFunction::DenseSingleReduceFunction(const DenseSingleReduceSpec
       _inner_size(spec.inner_size),
       _aggr(spec.aggr)
 {
+    assert(result_type().cell_meta().is_scalar == false);
 }
 
 DenseSingleReduceFunction::~DenseSingleReduceFunction() = default;
@@ -227,7 +229,8 @@ DenseSingleReduceFunction::~DenseSingleReduceFunction() = default;
 InterpretedFunction::Instruction
 DenseSingleReduceFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
-    auto op = typify_invoke<4,MyTypify,MyGetFun>(result_type().cell_type(), _aggr,
+    auto op = typify_invoke<4,MyTypify,MyGetFun>(result_type().cell_meta().limit().not_scalar(),
+                                                 _aggr,
                                                  (_reduce_size >= 8), (_inner_size == 1));
     auto &params = stash.create<Params>(result_type(), _outer_size, _reduce_size, _inner_size);
     return InterpretedFunction::Instruction(op, wrap_param<Params>(params));
