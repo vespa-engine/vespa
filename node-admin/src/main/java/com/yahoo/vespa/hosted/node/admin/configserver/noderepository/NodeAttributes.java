@@ -22,6 +22,7 @@ import java.util.stream.Stream;
  */
 public class NodeAttributes {
 
+    private Optional<String> hostId = Optional.empty();
     private Optional<Long> restartGeneration = Optional.empty();
     private Optional<Long> rebootGeneration = Optional.empty();
     private Optional<DockerImage> dockerImage = Optional.empty();
@@ -32,6 +33,11 @@ public class NodeAttributes {
     private Map<String, JsonNode> reports = new TreeMap<>();
 
     public NodeAttributes() { }
+
+    public NodeAttributes withHostId(String hostId) {
+        this.hostId = Optional.of(hostId);
+        return this;
+    }
 
     public NodeAttributes withRestartGeneration(Optional<Long> restartGeneration) {
         this.restartGeneration = restartGeneration;
@@ -82,6 +88,10 @@ public class NodeAttributes {
         return this;
     }
 
+    public Optional<String> getHostId() {
+        return hostId;
+    }
+
     public Optional<Long> getRestartGeneration() {
         return restartGeneration;
     }
@@ -112,7 +122,7 @@ public class NodeAttributes {
 
     @Override
     public int hashCode() {
-        return Objects.hash(restartGeneration, rebootGeneration, dockerImage, vespaVersion, currentOsVersion,
+        return Objects.hash(hostId, restartGeneration, rebootGeneration, dockerImage, vespaVersion, currentOsVersion,
                             currentFirmwareCheck, reports);
     }
 
@@ -127,7 +137,8 @@ public class NodeAttributes {
         }
         final NodeAttributes other = (NodeAttributes) o;
 
-        return Objects.equals(restartGeneration, other.restartGeneration)
+        return Objects.equals(hostId, other.hostId)
+                && Objects.equals(restartGeneration, other.restartGeneration)
                 && Objects.equals(rebootGeneration, other.rebootGeneration)
                 && Objects.equals(dockerImage, other.dockerImage)
                 && Objects.equals(vespaVersion, other.vespaVersion)
@@ -138,14 +149,14 @@ public class NodeAttributes {
 
     @Override
     public String toString() {
-        return Stream.of(
-                        restartGeneration.map(gen -> "restartGeneration=" + gen),
-                        rebootGeneration.map(gen -> "rebootGeneration=" + gen),
-                        dockerImage.map(img -> "dockerImage=" + img.asString()),
-                        vespaVersion.map(ver -> "vespaVersion=" + ver.toFullString()),
-                        currentOsVersion.map(ver -> "currentOsVersion=" + ver.toFullString()),
-                        currentFirmwareCheck.map(at -> "currentFirmwareCheck=" + at),
-                        Optional.ofNullable(reports.isEmpty() ? null : "reports=" + reports))
+        return Stream.of(hostId.map(id -> "hostId=" + id),
+                         restartGeneration.map(gen -> "restartGeneration=" + gen),
+                         rebootGeneration.map(gen -> "rebootGeneration=" + gen),
+                         dockerImage.map(img -> "dockerImage=" + img.asString()),
+                         vespaVersion.map(ver -> "vespaVersion=" + ver.toFullString()),
+                         currentOsVersion.map(ver -> "currentOsVersion=" + ver.toFullString()),
+                         currentFirmwareCheck.map(at -> "currentFirmwareCheck=" + at),
+                         Optional.ofNullable(reports.isEmpty() ? null : "reports=" + reports))
                 .filter(Optional::isPresent)
                 .map(Optional::get)
                 .collect(Collectors.joining(", ", "{", "}"));

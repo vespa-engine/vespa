@@ -253,6 +253,7 @@ public class RealNodeRepository implements NodeRepository {
 
     public static NodeRepositoryNode nodeRepositoryNodeFromNodeAttributes(NodeAttributes nodeAttributes) {
         NodeRepositoryNode node = new NodeRepositoryNode();
+        node.openStackId = nodeAttributes.getHostId().orElse(null);
         node.currentDockerImage = nodeAttributes.getDockerImage().map(DockerImage::asString).orElse(null);
         node.currentRestartGeneration = nodeAttributes.getRestartGeneration().orElse(null);
         node.currentRebootGeneration = nodeAttributes.getRebootGeneration().orElse(null);

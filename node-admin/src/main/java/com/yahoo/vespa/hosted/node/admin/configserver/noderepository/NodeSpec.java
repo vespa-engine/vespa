@@ -599,6 +599,7 @@ public class NodeSpec {
         }
 
         public Builder updateFromNodeAttributes(NodeAttributes attributes) {
+            attributes.getHostId().ifPresent(this::id);
             attributes.getDockerImage().ifPresent(this::currentDockerImage);
             attributes.getCurrentOsVersion().ifPresent(this::currentOsVersion);
             attributes.getRebootGeneration().ifPresent(this::currentRebootGeneration);
