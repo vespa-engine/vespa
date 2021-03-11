@@ -3,7 +3,10 @@ package com.yahoo.config.provision;
 
 import org.junit.Test;
 
+import java.util.function.Supplier;
+
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 /**
  * @author bratseth
@@ -17,18 +20,17 @@ public class NodeResourcesTest {
         assertEquals("[vcpu: 0.3, memory: 3.3 Gb, disk 33.3 Gb, bandwidth: 0.3 Gbps]",
                      new NodeResources(1/3., 10/3., 100/3., 0.3).toString());
         assertEquals("[vcpu: 0.7, memory: 9.0 Gb, disk 66.7 Gb, bandwidth: 0.7 Gbps]",
-                new NodeResources(2/3., 8.97, 200/3., 0.67).toString());
+                     new NodeResources(2/3., 8.97, 200/3., 0.67).toString());
     }
 
-    private long runTest(NodeResources [] resouces, int num) {
-        long sum = 0;
-        for (int i = 0; i < num; i++) {
-            for (NodeResources ns :resouces) {
-                sum += ns.toString().length();
-            }
-        }
-        return sum;
+    @Test
+    public void testInvalid() {
+        assertInvalid("vcpu",     () -> new NodeResources(Double.NaN, 1.0, 1.0, 1.0));
+        assertInvalid("memory",   () -> new NodeResources(1.0, Double.NaN, 1.0, 1.0));
+        assertInvalid("disk",     () -> new NodeResources(1.0, 1.0, Double.NaN, 1.0));
+        assertInvalid("bandwith", () -> new NodeResources(1.0, 1.0, 1.0, Double.NaN));
     }
+
     @Test
     public void benchmark() {
         NodeResources [] resouces = new NodeResources[100];
@@ -42,6 +44,26 @@ public class NodeResourcesTest {
         long duration = System.nanoTime() - start;
         System.out.println("NodeResources.toString() took " + duration/1000000 + " ms");
         assertEquals(warmup, benchmark);
+    }
+
+    private void assertInvalid(String valueName, Supplier<NodeResources> nodeResources) {
+        try {
+            nodeResources.get();
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals(valueName + " cannot be NaN", e.getMessage());
+        }
+    }
+
+    private long runTest(NodeResources [] resouces, int num) {
+        long sum = 0;
+        for (int i = 0; i < num; i++) {
+            for (NodeResources ns :resouces) {
+                sum += ns.toString().length();
+            }
+        }
+        return sum;
     }
 
 }

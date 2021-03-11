@@ -316,7 +316,7 @@ Lambda::create_spec_impl(const ValueType &type, const LazyParams &params, const 
 InterpretedFunction::Instruction
 Lambda::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    return instruction::GenericLambda::make_instruction(result_type(), *this, factory, stash);
+    return instruction::GenericLambda::make_instruction(*this, factory, stash);
 }
 
 void
@@ -447,7 +447,7 @@ const TensorFunction &reduce(const TensorFunction &child, Aggr aggr, const std::
 }
 
 const TensorFunction &map(const TensorFunction &child, map_fun_t function, Stash &stash) {
-    ValueType result_type = child.result_type();
+    ValueType result_type = child.result_type().map();
     return stash.create<Map>(result_type, child, function);
 }
 
@@ -485,7 +485,7 @@ const TensorFunction &peek(const TensorFunction &param, const std::map<vespalib:
         dimensions.push_back(dim_spec.first);
     }
     assert(!dimensions.empty());
-    ValueType result_type = param.result_type().reduce(dimensions);
+    ValueType result_type = param.result_type().peek(dimensions);
     return stash.create<Peek>(result_type, param, spec);
 }
 

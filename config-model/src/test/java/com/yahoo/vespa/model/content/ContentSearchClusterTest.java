@@ -117,13 +117,13 @@ public class ContentSearchClusterTest {
 
     @Test
     public void requireThatOnlyDiskLimitCanBeSet() throws Exception {
-        assertProtonResourceLimits(0.88, 0.8,
+        assertProtonResourceLimits(0.88, 0.9,
                 new ContentClusterBuilder().protonDiskLimit(0.88).getXml());
     }
 
     @Test
     public void requireThatOnlyMemoryLimitCanBeSet() throws Exception {
-        assertProtonResourceLimits(0.8, 0.77,
+        assertProtonResourceLimits(0.9, 0.77,
                 new ContentClusterBuilder().protonMemoryLimit(0.77).getXml());
     }
 

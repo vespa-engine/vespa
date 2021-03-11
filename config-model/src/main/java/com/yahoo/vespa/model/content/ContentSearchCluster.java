@@ -325,10 +325,6 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
             indexedCluster.setSearchableCopies(redundancy.readyCopies());
         }
         this.redundancy = redundancy;
-        for (SearchNode node : getSearchNodes()) {
-            node.setRedundancy(redundancy.finalRedundancy());
-            node.setSearchableCopies(redundancy.readyCopies());
-        }
     }
 
     private Optional<StreamingSearchCluster> findStreamingCluster(String docType) {

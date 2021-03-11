@@ -12,7 +12,6 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagId;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.UnboundBooleanFlag;
-import com.yahoo.vespa.jdk8compat.List;
 import com.yahoo.yolean.Exceptions;
 import org.junit.Test;
 
@@ -20,6 +19,7 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 

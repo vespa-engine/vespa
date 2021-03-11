@@ -401,17 +401,17 @@ public class ApplicationHandlerTest {
     @Test
     public void testValidateSecretStore() throws IOException {
         applicationRepository.deploy(new File("src/test/apps/app-logserver-with-container"), prepareParams(applicationId));
-        var url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/validate-secret-store/some-secret-name";
+        var url = toUrlPath(applicationId, Zone.defaultZone(), true) + "/validate-secret-store";
         var mockHandler = createApplicationHandler();
 
-        var requestData = new ByteArrayInputStream("{\"name\": \"store\", \"awsId\":\"aws-id\", \"role\":\"role\"}".getBytes(StandardCharsets.UTF_8));
+        var requestString = "{\"name\":\"store\",\"awsId\":\"aws-id\",\"role\":\"role\",\"region\":\"us-west-1\",\"parameterName\":\"some-parameter\"}";
+        var requestData = new ByteArrayInputStream(requestString.getBytes(StandardCharsets.UTF_8));
         var response = mockHandler.handle(createTestRequest(url, POST, requestData));
         assertEquals(200, response.getStatus());
 
 
-        // MockSecretStoreValidator returns response on format tenantSecretStore.toString() - tenantSecretName
-        var expectedResponse = "TenantSecretStore{name='store', awsId='aws-id', role='role'} - some-secret-name";
-        assertEquals(expectedResponse, getRenderedString(response));
+        // MockSecretStoreValidator simply returns the request body
+        assertEquals(requestString, getRenderedString(response));
     }
 
     @Test

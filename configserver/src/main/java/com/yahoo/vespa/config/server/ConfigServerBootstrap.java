@@ -17,10 +17,11 @@ import com.yahoo.yolean.Exceptions;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -203,7 +204,8 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     private boolean redeployAllApplications() throws InterruptedException {
         Instant end = Instant.now().plus(maxDurationOfRedeployment);
-        Set<ApplicationId> applicationsNotRedeployed = applicationRepository.listApplications();
+        List<ApplicationId> applicationsNotRedeployed = applicationRepository.listApplications();
+        Collections.shuffle(applicationsNotRedeployed);
         long failCount = 0;
         do {
             applicationsNotRedeployed = redeployApplications(applicationsNotRedeployed);
@@ -225,7 +227,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     }
 
     // Returns the set of applications that failed to redeploy
-    private Set<ApplicationId> redeployApplications(Set<ApplicationId> applicationIds) throws InterruptedException {
+    private List<ApplicationId> redeployApplications(List<ApplicationId> applicationIds) throws InterruptedException {
         ExecutorService executor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
                                                                 new DaemonThreadFactory("redeploy apps"));
         // Keep track of deployment per application
@@ -235,12 +237,12 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
                                                     executor.submit(() -> applicationRepository.deployFromLocalActive(appId, true /* bootstrap */)
                                 .ifPresent(Deployment::activate))));
 
-        Set<ApplicationId> failedDeployments =
+        List<ApplicationId> failedDeployments =
                 deployments.entrySet().stream()
                         .map(entry -> checkDeployment(entry.getKey(), entry.getValue()))
                         .filter(Optional::isPresent)
                         .map(Optional::get)
-                        .collect(Collectors.toSet());
+                        .collect(Collectors.toList());
 
         executor.shutdown();
         executor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen

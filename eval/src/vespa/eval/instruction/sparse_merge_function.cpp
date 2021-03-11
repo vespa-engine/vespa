@@ -87,11 +87,14 @@ void my_sparse_merge_op(InterpretedFunction::State &state, uint64_t param_in) {
 }
 
 struct SelectSparseMergeOp {
-    template <typename CT, typename SINGLE_DIM, typename Fun>
-    static auto invoke() { return my_sparse_merge_op<CT,SINGLE_DIM::value,Fun>; }
+    template <typename R1, typename SINGLE_DIM, typename Fun>
+    static auto invoke() {
+        using CT = CellValueType<R1::value.cell_type>;        
+        return my_sparse_merge_op<CT,SINGLE_DIM::value,Fun>;
+    }
 };
 
-using MyTypify = TypifyValue<TypifyCellType,TypifyBool,operation::TypifyOp2>;
+using MyTypify = TypifyValue<TypifyCellMeta,TypifyBool,operation::TypifyOp2>;
 
 } // namespace <unnamed>
 
@@ -107,10 +110,11 @@ SparseMergeFunction::SparseMergeFunction(const tensor_function::Merge &original)
 InterpretedFunction::Instruction
 SparseMergeFunction::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    const auto &param = stash.create<MergeParam>(lhs().result_type(), rhs().result_type(),
+    const auto &param = stash.create<MergeParam>(result_type(),
+                                                 lhs().result_type(), rhs().result_type(),
                                                  function(), factory);
     size_t num_dims = result_type().count_mapped_dimensions();
-    auto op = typify_invoke<3,MyTypify,SelectSparseMergeOp>(result_type().cell_type(),
+    auto op = typify_invoke<3,MyTypify,SelectSparseMergeOp>(result_type().cell_meta().limit(),
                                                             num_dims == 1,
                                                             function());
     return InterpretedFunction::Instruction(op, wrap_param<MergeParam>(param));
@@ -120,6 +124,7 @@ bool
 SparseMergeFunction::compatible_types(const ValueType &res, const ValueType &lhs, const ValueType &rhs)
 {
     if ((lhs.cell_type() == rhs.cell_type())
+        && (lhs.cell_type() == res.cell_type())
         && (lhs.count_mapped_dimensions() > 0)
         && (lhs.dense_subspace_size() == 1))
     {

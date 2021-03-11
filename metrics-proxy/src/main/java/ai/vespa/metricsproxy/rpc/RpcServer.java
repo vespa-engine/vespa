@@ -37,7 +37,7 @@ public class RpcServer {
 
     private static final Logger log = Logger.getLogger(RpcServer.class.getName());
 
-    private static int LOG_SPENT_TIME_LIMIT = 10 * 1000; // ms. same as default client RPC timeout used in rpc_invoke
+    private static final int LOG_SPENT_TIME_LIMIT = 10 * 1000; // ms. same as default client RPC timeout used in rpc_invoke
 
     private final VespaServices vespaServices;
     private final MetricsManager metricsManager;

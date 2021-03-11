@@ -62,6 +62,7 @@ template <typename T> using CREF = std::reference_wrapper<const T>;
 
 //-----------------------------------------------------------------------------
 
+TensorSpec NUM(double value) { return test::GenSpec(value).gen(); }
 test::GenSpec GS(double bias) { return test::GenSpec(bias).cells_float(); }
 
 //-----------------------------------------------------------------------------
@@ -222,7 +223,7 @@ vespalib::string                                                  short_header("
 vespalib::string                   ghost_name("       loaded from ghost.json");
 vespalib::string                                              ghost_short_name("   ghost");
 
-constexpr double budget = 5.0;
+double budget = 5.0;
 constexpr double best_limit = 0.95; // everything within 95% of best performance gets a star
 constexpr double bad_limit = 0.90;  // BAD: optimized has performance lower than 90% of un-optimized
 constexpr double good_limit = 1.10; // GOOD: optimized has performance higher than 110% of un-optimized
@@ -365,6 +366,9 @@ struct EvalOp {
     }
     TensorSpec result() { return impl.create_spec(single.eval(stack)); }
     size_t suggest_loop_cnt() {
+        if (budget < 0.1) {
+            return 1;
+        }
         size_t loop_cnt = 1;
         auto my_loop = [&](){
             for (size_t i = 0; i < loop_cnt; ++i) {
@@ -389,19 +393,27 @@ struct EvalOp {
     }
     double estimate_cost_us(size_t self_loop_cnt, size_t ref_loop_cnt) {
         size_t loop_cnt = ((self_loop_cnt * 128) < ref_loop_cnt) ? self_loop_cnt : ref_loop_cnt;
-        assert((loop_cnt % 8) == 0);
-        auto my_loop = [&](){
-            for (size_t i = 0; (i + 7) < loop_cnt; i += 8) {
-                for (size_t j = 0; j < 8; ++j) {
-                    single.eval(stack);
-                }
-            }
-        };
         BenchmarkTimer timer(budget);
-        while (timer.has_budget()) {
-            timer.before();
-            my_loop();
-            timer.after();
+        if (loop_cnt == 1) {
+            while (timer.has_budget()) {
+                timer.before();
+                single.eval(stack);
+                timer.after();
+            }
+        } else {
+            assert((loop_cnt % 8) == 0);
+            auto my_loop = [&](){
+                for (size_t i = 0; (i + 7) < loop_cnt; i += 8) {
+                    for (size_t j = 0; j < 8; ++j) {
+                        single.eval(stack);
+                    }
+                }
+            };
+            while (timer.has_budget()) {
+                timer.before();
+                my_loop();
+                timer.after();
+            }
         }
         return timer.min_time() * 1000.0 * 1000.0 / double(loop_cnt);
     }
@@ -425,8 +437,9 @@ void benchmark(const vespalib::string &desc, const std::vector<EvalOp::UP> &list
     for (const auto &eval: list) {
         loop_cnt[eval->impl.order] = eval->suggest_loop_cnt();
     }
+    size_t ref_idx = (list.size() > 1 ? 1u : 0u);
     for (const auto &eval: list) {
-        double time = eval->estimate_cost_us(loop_cnt[eval->impl.order], loop_cnt[1]);
+        double time = eval->estimate_cost_us(loop_cnt[eval->impl.order], loop_cnt[ref_idx]);
         fprintf(stderr, "    %s(%s): %10.3f us\n", eval->impl.name.c_str(), eval->impl.short_name.c_str(), time);
         result.sample(eval->impl.order, time);
     }
@@ -567,7 +580,7 @@ void benchmark_tensor_create(const vespalib::string &desc, const TensorSpec &pro
     ASSERT_FALSE(proto_type.is_error());
     std::vector<CREF<TensorSpec>> stack_spec;
     for (const auto &cell: proto.cells()) {
-        stack_spec.emplace_back(stash.create<TensorSpec>(GS(cell.second)));
+        stack_spec.emplace_back(stash.create<TensorSpec>(NUM(cell.second)));
     }
     std::vector<EvalOp::UP> list;
     for (const Impl &impl: impl_list) {
@@ -603,7 +616,7 @@ void benchmark_tensor_peek(const vespalib::string &desc, const TensorSpec &lhs, 
     stack_spec.emplace_back(lhs);
     if (peek_spec.is_dynamic) {
         for (const auto &entry: peek_spec.spec) {
-            stack_spec.emplace_back(stash.create<TensorSpec>(GS(double(entry.second))));
+            stack_spec.emplace_back(stash.create<TensorSpec>(NUM(double(entry.second))));
         }
     }
     std::vector<EvalOp::UP> list;
@@ -618,12 +631,12 @@ void benchmark_tensor_peek(const vespalib::string &desc, const TensorSpec &lhs, 
 //-----------------------------------------------------------------------------
 
 TEST(MakeInputTest, print_some_test_input) {
-    auto number = GS(5.0);
+    auto number = NUM(5.0);
     auto sparse = GS(1.0).map("x", 5, 3);
     auto dense = GS(10.0).idx("x", 5);
     auto mixed = GS(100.0).map("x", 3, 7).idx("y", 2).idx("z", 2);
     fprintf(stderr, "--------------------------------------------------------\n");
-    fprintf(stderr, "simple number: %s\n", number.gen().to_string().c_str());
+    fprintf(stderr, "simple number: %s\n", number.to_string().c_str());
     fprintf(stderr, "sparse vector: %s\n", sparse.gen().to_string().c_str());
     fprintf(stderr, "dense vector: %s\n", dense.gen().to_string().c_str());
     fprintf(stderr, "mixed cube: %s\n", mixed.gen().to_string().c_str());
@@ -747,8 +760,8 @@ TEST(MixedConcat, large_mixed_b) {
 //-----------------------------------------------------------------------------
 
 TEST(NumberJoin, plain_op2) {
-    auto lhs = GS(2.0);
-    auto rhs = GS(3.0);
+    auto lhs = NUM(2.0);
+    auto rhs = NUM(3.0);
     benchmark_join("simple numbers multiply", lhs, rhs, operation::Mul::f);
 }
 
@@ -793,7 +806,7 @@ TEST(DenseJoin, simple_expand) {
 }
 
 TEST(DenseJoin, multiply_by_number) {
-    auto lhs = GS(3.0);
+    auto lhs = NUM(3.0);
     auto rhs = GS(2.0).idx("a", 16).idx("b", 16).idx("c", 16);
     benchmark_join("dense cube multiply by number", lhs, rhs, operation::Mul::f);
 }
@@ -837,7 +850,7 @@ TEST(SparseJoin, no_overlap) {
 }
 
 TEST(SparseJoin, multiply_by_number) {
-    auto lhs = GS(3.0);
+    auto lhs = NUM(3.0);
     auto rhs = GS(2.0).map("a", 16, 2).map("b", 16, 2).map("c", 16, 2);
     benchmark_join("sparse multiply by number", lhs, rhs, operation::Mul::f);
 }
@@ -863,7 +876,7 @@ TEST(MixedJoin, no_overlap) {
 }
 
 TEST(MixedJoin, multiply_by_number) {
-    auto lhs = GS(3.0);
+    auto lhs = NUM(3.0);
     auto rhs = GS(2.0).map("a", 16, 2).map("b", 16, 2).idx("c", 16);
     benchmark_join("mixed multiply by number", lhs, rhs, operation::Mul::f);
 }
@@ -871,7 +884,7 @@ TEST(MixedJoin, multiply_by_number) {
 //-----------------------------------------------------------------------------
 
 TEST(ReduceBench, number_reduce) {
-    auto lhs = GS(1.0);
+    auto lhs = NUM(1.0);
     benchmark_reduce("number reduce", lhs, Aggr::SUM, {});
 }
 
@@ -954,7 +967,7 @@ TEST(MergeBench, mixed_merge) {
 //-----------------------------------------------------------------------------
 
 TEST(MapBench, number_map) {
-    auto lhs = GS(1.75);
+    auto lhs = NUM(1.75);
     benchmark_map("number map", lhs, operation::Floor::f);
 }
 
@@ -999,7 +1012,7 @@ TEST(TensorCreateBench, create_mixed) {
 
 TEST(TensorLambdaBench, simple_lambda) {
     auto type = ValueType::from_spec("tensor<float>(a[64],b[64])");
-    auto p0 = GS(3.5);
+    auto p0 = NUM(3.5);
     auto function = Function::parse({"a", "b", "p0"}, "(a*64+b)*p0");
     ASSERT_FALSE(function->has_error());
     benchmark_tensor_lambda("simple tensor lambda", type, p0, *function);
@@ -1089,13 +1102,21 @@ int main(int argc, char **argv) {
     load_ghost("ghost.json");
     const std::string run_only_prod_option = "--limit-implementations";
     const std::string ghost_mode_option = "--ghost-mode";
-    if ((argc > 1) && (argv[1] == run_only_prod_option )) {
+    const std::string smoke_test_option = "--smoke-test";
+    if ((argc > 1) && (argv[1] == run_only_prod_option)) {
         impl_list.clear();
         impl_list.push_back(optimized_fast_value_impl);
         impl_list.push_back(fast_value_impl);
         ++argv;
         --argc;
-    } else if ((argc > 1) && (argv[1] == ghost_mode_option )) {
+    } else if ((argc > 1) && (argv[1] == ghost_mode_option)) {
+        impl_list.clear();
+        impl_list.push_back(optimized_fast_value_impl);
+        has_ghost = true;
+        ++argv;
+        --argc;
+    } else if ((argc > 1) && (argv[1] == smoke_test_option)) {
+        budget = 0.001;
         impl_list.clear();
         impl_list.push_back(optimized_fast_value_impl);
         has_ghost = true;

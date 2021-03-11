@@ -2,10 +2,8 @@
 #pragma once
 
 #include "query_term_simple.h"
-#include <vespa/vespalib/util/memory.h>
-#include <vespa/vespalib/objects/objectvisitor.h>
 #include <vespa/fastlib/text/unicodeutil.h>
-#include <vector>
+#include <atomic>
 
 namespace search {
 
@@ -14,29 +12,27 @@ namespace search {
  */
 class QueryTermUCS4 : public QueryTermSimple {
 public:
-    typedef std::vector<ucs4_t> UCS4StringT;
     typedef std::unique_ptr<QueryTermUCS4> UP;
-    QueryTermUCS4(const QueryTermUCS4 &) = default;
-    QueryTermUCS4 & operator = (const QueryTermUCS4 &) = default;
-    QueryTermUCS4(QueryTermUCS4 &&) = default;
-    QueryTermUCS4 & operator = (QueryTermUCS4 &&) = default;
-    QueryTermUCS4();
-    QueryTermUCS4(const string & term_, SearchTerm type);
-    ~QueryTermUCS4();
-    size_t getTermLen() const { return _cachedTermLen; }
-    size_t term(const char * & t)     const { t = getTerm(); return _cachedTermLen; }
-    UCS4StringT getUCS4Term() const;
+    QueryTermUCS4(const QueryTermUCS4 &) = delete;
+    QueryTermUCS4 & operator = (const QueryTermUCS4 &) = delete;
+    QueryTermUCS4(QueryTermUCS4 &&) = delete;
+    QueryTermUCS4 & operator = (QueryTermUCS4 &&) = delete;
+    QueryTermUCS4(const string & term_, Type type);
+    ~QueryTermUCS4() override;
+    uint32_t getTermLen() const { return _cachedTermLen; }
+    uint32_t term(const char * & t)     const { t = getTerm(); return _cachedTermLen; }
     void visitMembers(vespalib::ObjectVisitor &visitor) const override;
-    size_t term(const ucs4_t * & t) {
-        if (_termUCS4.empty()) {
-            _termUCS4 = getUCS4Term();
+    uint32_t term(const ucs4_t * & t) {
+        t = _termUCS4.load(std::memory_order_relaxed);
+        if (t == nullptr) {
+            t = fillUCS4();
         }
-        t = &_termUCS4[0];
         return _cachedTermLen;
     }
 private:
-    size_t                       _cachedTermLen;
-    UCS4StringT                  _termUCS4;
+    const ucs4_t * fillUCS4();
+    std::atomic<ucs4_t *>  _termUCS4;
+    uint32_t               _cachedTermLen;
 };
 
 }

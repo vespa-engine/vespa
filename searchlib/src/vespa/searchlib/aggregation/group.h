@@ -170,8 +170,8 @@ public:
     Group();
     Group(const Group & rhs);
     Group & operator =(const Group & rhs);
-    Group(Group &&) = default;
-    Group & operator = (Group &&) = default;
+    Group(Group &&) noexcept = default;
+    Group & operator = (Group &&) noexcept = default;
     ~Group();
 
     int cmpId(const Group &rhs) const { return _id->cmpFast(*rhs._id); }

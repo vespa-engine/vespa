@@ -37,6 +37,9 @@ public:
     EntryRef load_acquire() const noexcept {
         return EntryRef(_ref.load(std::memory_order_acquire));
     }
+    EntryRef load_relaxed() const noexcept {
+        return EntryRef(_ref.load(std::memory_order_relaxed));
+    }
 };
 
 }

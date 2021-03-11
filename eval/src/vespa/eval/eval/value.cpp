@@ -58,11 +58,7 @@ Value::as_double() const
     return typify_invoke<1,TypifyCellType,MySum>(type().cell_type(), cells());
 }
 
-template <typename T>
-ValueType ScalarValue<T>::_type = ValueType::make_type(get_cell_type<T>(), {});
-
-template class ScalarValue<double>;
-template class ScalarValue<float>;
+ValueType DoubleValue::_type = ValueType::double_type();
 
 namespace {
 

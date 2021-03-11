@@ -29,14 +29,21 @@ public:
           _revMapIdx()
     {
     }
-    bool operator<(const Reference &rhs) const {
+    bool operator < (const Reference &rhs) const {
         return _gid < rhs._gid;
+    }
+    bool operator == (const Reference &rhs) const {
+        return _gid == rhs._gid;
     }
     const GlobalId &gid() const { return _gid; }
     uint32_t lid() const { return _lid; }
     EntryRef revMapIdx() const { return _revMapIdx; }
     void setLid(uint32_t targetLid) const { _lid = targetLid; }
     void setRevMapIdx(EntryRef newRevMapIdx) const { _revMapIdx = newRevMapIdx; }
+    size_t hash() const noexcept {
+        GlobalId::hash hasher;
+        return hasher(_gid);
+    }
 };
 
 }

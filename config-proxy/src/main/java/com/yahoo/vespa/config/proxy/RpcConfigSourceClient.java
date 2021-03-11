@@ -179,9 +179,13 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
 
     @Override
     public void cancel() {
+        log.log(Level.FINE, "shutdownSourceConnections");
         shutdownSourceConnections();
+        log.log(Level.FINE, "delayedResponsesFuture.cancel");
         delayedResponsesFuture.cancel(true);
+        log.log(Level.FINE, "delayedResponsesFuture.shutdownNow");
         delayedResponsesScheduler.shutdownNow();
+        log.log(Level.FINE, "supervisor.transport().shutdown().join()");
         supervisor.transport().shutdown().join();
     }
 
@@ -190,10 +194,14 @@ class RpcConfigSourceClient implements ConfigSourceClient, Runnable {
      */
     @Override
     public void shutdownSourceConnections() {
+        log.log(Level.FINE, "Subscriber::cancel");
         activeSubscribers.values().forEach(Subscriber::cancel);
         activeSubscribers.clear();
+        log.log(Level.FINE, "nextConfigFuture.cancel");
         nextConfigFuture.cancel(true);
+        log.log(Level.FINE, "nextConfigScheduler.shutdownNow");
         nextConfigScheduler.shutdownNow();
+        log.log(Level.FINE, "requester.close");
         requester.close();
     }
 

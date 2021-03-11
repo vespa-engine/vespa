@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.vespa.hosted.provision.applications.Application;
 
+import java.time.Duration;
+
 /**
  * A resource target to hit for the allocation optimizer.
  * The target is measured in cpu, memory and disk per node in the allocation given by current.
@@ -47,11 +49,16 @@ public class ResourceTarget {
     }
 
     /** Create a target of achieving ideal load given a current load */
-    public static ResourceTarget idealLoad(double currentCpuLoad, double currentMemoryLoad, double currentDiskLoad,
-                                           AllocatableClusterResources current, Application application) {
-        return new ResourceTarget(nodeUsage(Resource.cpu, currentCpuLoad, current) / idealCpuLoad(application),
-                                  nodeUsage(Resource.memory, currentMemoryLoad, current) / Resource.memory.idealAverageLoad(),
-                                  nodeUsage(Resource.disk, currentDiskLoad, current) / Resource.disk.idealAverageLoad(),
+    public static ResourceTarget  idealLoad(ClusterTimeseries clusterTimeseries,
+                                           ClusterNodesTimeseries clusterNodesTimeseries,
+                                           AllocatableClusterResources current,
+                                           Application application) {
+        return new ResourceTarget(nodeUsage(Resource.cpu, clusterNodesTimeseries.averageLoad(Resource.cpu), current)
+                                  / idealCpuLoad(clusterTimeseries, clusterNodesTimeseries, application),
+                                  nodeUsage(Resource.memory, clusterNodesTimeseries.averageLoad(Resource.memory), current)
+                                  / Resource.memory.idealAverageLoad(),
+                                  nodeUsage(Resource.disk, clusterNodesTimeseries.averageLoad(Resource.disk), current)
+                                  / Resource.disk.idealAverageLoad(),
                                   true);
     }
 
@@ -64,16 +71,29 @@ public class ResourceTarget {
     }
 
     /** Ideal cpu load must take the application traffic fraction into account */
-    private static double idealCpuLoad(Application application) {
-        double trafficFactor;
-        if (application.status().maxReadShare() == 0) // No traffic fraction data
-            trafficFactor = 0.5; // assume we currently get half of the global share of traffic
-        else
-            trafficFactor = application.status().currentReadShare() / application.status().maxReadShare();
+    private static double idealCpuLoad(ClusterTimeseries clusterTimeseries,
+                                       ClusterNodesTimeseries clusterNodesTimeseries,
+                                       Application application) {
+        // What's needed to have headroom for growth during scale-up as a fraction of current resources?
+        double maxGrowthRate = clusterTimeseries.maxQueryGrowthRate(); // in fraction per minute of the current traffic
+        Duration scalingDuration = clusterNodesTimeseries.cluster().scalingDuration(clusterNodesTimeseries.clusterNodes().clusterSpec());
+        double growthRateHeadroom = 1 + maxGrowthRate * scalingDuration.toMinutes();
+        // Cap headroom at 10% above the historical observed peak
+        double fractionOfMax = clusterTimeseries.currentQueryFractionOfMax();
+        if (fractionOfMax != 0)
+            growthRateHeadroom = Math.min(growthRateHeadroom, 1 / fractionOfMax + 0.1);
 
-        if (trafficFactor < 0.5)  // The expectation that we have almost no load with almost no queries is incorrect due
-            trafficFactor = 0.5;  // to write traffic; once that is separated we can lower this threshold (but not to 0)
-        return trafficFactor * Resource.cpu.idealAverageLoad();
+        // How much headroom is needed to handle sudden arrival of additional traffic due to another zone going down?
+        double trafficShiftHeadroom;
+        if (application.status().maxReadShare() == 0) // No traffic fraction data
+            trafficShiftHeadroom = 2.0; // assume we currently get half of the global share of traffic
+        else
+            trafficShiftHeadroom = application.status().maxReadShare() / application.status().currentReadShare();
+
+        if (trafficShiftHeadroom > 2.0)  // The expectation that we have almost no load with almost no queries is incorrect due
+            trafficShiftHeadroom = 2.0;  // to write traffic; once that is separated we can increase this threshold
+
+        return 1 / growthRateHeadroom * 1 / trafficShiftHeadroom * Resource.cpu.idealAverageLoad();
     }
 
 }

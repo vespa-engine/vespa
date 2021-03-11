@@ -113,30 +113,35 @@ void my_dense_join_op(State &state, uint64_t param_in) {
 
 //-----------------------------------------------------------------------------
 
-template <typename LCT, typename RCT, typename OCT, typename Fun>
-void my_scalar_join_op(State &state, uint64_t param_in) {
+template <typename Fun>
+void my_double_join_op(State &state, uint64_t param_in) {
     Fun fun(unwrap_param<JoinParam>(param_in).function);
-    state.pop_pop_push(state.stash.create<ScalarValue<OCT>>(fun(state.peek(1).cells().typify<LCT>()[0],
-                                                                state.peek(0).cells().typify<RCT>()[0])));
+    state.pop_pop_push(state.stash.create<DoubleValue>(fun(state.peek(1).as_double(),
+                                                           state.peek(0).as_double())));
 };
 
 //-----------------------------------------------------------------------------
 
 struct SelectGenericJoinOp {
-    template <typename LCT, typename RCT, typename OCT, typename Fun> static auto invoke(const JoinParam &param) {
-        if (param.res_type.is_scalar()) {
-            return my_scalar_join_op<LCT,RCT,OCT,Fun>;
+    template <typename LCM, typename RCM, typename Fun> static auto invoke(const JoinParam &param) {
+        constexpr CellMeta ocm = CellMeta::join(LCM::value, RCM::value);
+        using LCT = CellValueType<LCM::value.cell_type>;
+        using RCT = CellValueType<RCM::value.cell_type>;
+        using OCT = CellValueType<ocm.cell_type>;
+        if constexpr (ocm.is_scalar) {
+            return my_double_join_op<Fun>;
+        } else {
+            if (param.sparse_plan.sources.empty()) {
+                return my_dense_join_op<LCT,RCT,OCT,Fun>;
+            }
+            if (param.sparse_plan.should_forward_lhs_index()) {
+                return my_mixed_dense_join_op<LCT,RCT,OCT,Fun,true>;
+            }
+            if (param.sparse_plan.should_forward_rhs_index()) {
+                return my_mixed_dense_join_op<LCT,RCT,OCT,Fun,false>;
+            }
+            return my_mixed_join_op<LCT,RCT,OCT,Fun>;
         }
-        if (param.sparse_plan.sources.empty()) {
-            return my_dense_join_op<LCT,RCT,OCT,Fun>;
-        }
-        if (param.sparse_plan.should_forward_lhs_index()) {
-            return my_mixed_dense_join_op<LCT,RCT,OCT,Fun,true>;
-        }
-        if (param.sparse_plan.should_forward_rhs_index()) {
-            return my_mixed_dense_join_op<LCT,RCT,OCT,Fun,false>;
-        }
-        return my_mixed_join_op<LCT,RCT,OCT,Fun>;
     }
 };
 
@@ -284,16 +289,17 @@ JoinParam::~JoinParam() = default;
 
 //-----------------------------------------------------------------------------
 
-using JoinTypify = TypifyValue<TypifyCellType,operation::TypifyOp2>;
+using JoinTypify = TypifyValue<TypifyCellMeta,operation::TypifyOp2>;
 
 Instruction
 GenericJoin::make_instruction(const ValueType &result_type,
                               const ValueType &lhs_type, const ValueType &rhs_type, join_fun_t function,
                               const ValueBuilderFactory &factory, Stash &stash)
 {
-    auto &param = stash.create<JoinParam>(lhs_type, rhs_type, function, factory);
-    assert(result_type == param.res_type);
-    auto fun = typify_invoke<4,JoinTypify,SelectGenericJoinOp>(lhs_type.cell_type(), rhs_type.cell_type(), param.res_type.cell_type(), function, param);
+    auto &param = stash.create<JoinParam>(result_type, lhs_type, rhs_type, function, factory);
+    assert(result_type == ValueType::join(lhs_type, rhs_type));
+    assert(param.res_type.cell_meta().eq(CellMeta::join(lhs_type.cell_meta(), rhs_type.cell_meta())));
+    auto fun = typify_invoke<3,JoinTypify,SelectGenericJoinOp>(lhs_type.cell_meta(), rhs_type.cell_meta(), function, param);
     return Instruction(fun, wrap_param<JoinParam>(param));
 }
 

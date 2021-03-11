@@ -219,7 +219,8 @@ public class Deployment implements com.yahoo.config.provision.Deployment {
                     .ignoreValidationErrors(ignoreValidationErrors)
                     .isBootstrap(isBootstrap)
                     .force(force)
-                    .waitForResourcesInPrepare(waitForResourcesInPrepare);
+                    .waitForResourcesInPrepare(waitForResourcesInPrepare)
+                    .tenantSecretStores(session.getTenantSecretStores());
             session.getDockerImageRepository().ifPresent(params::dockerImageRepository);
             session.getAthenzDomain().ifPresent(params::athenzDomain);
 

@@ -62,13 +62,11 @@ void
 DenseTensorAttributeSaver::save_tensor_store(BufferWriter& writer) const
 {
     const uint32_t docIdLimit(_refs.size());
-    const uint32_t cellSize = _tensorStore.getCellSize();
     for (uint32_t lid = 0; lid < docIdLimit; ++lid) {
         if (_refs[lid].valid()) {
             auto raw = _tensorStore.getRawBuffer(_refs[lid]);
             writer.write(&tensorIsPresent, sizeof(tensorIsPresent));
-            size_t numCells = _tensorStore.getNumCells();
-            size_t rawLen = numCells * cellSize;
+            size_t rawLen = _tensorStore.getBufSize();
             writer.write(static_cast<const char *>(raw), rawLen);
         } else {
             writer.write(&tensorIsNotPresent, sizeof(tensorIsNotPresent));

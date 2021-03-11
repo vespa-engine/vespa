@@ -146,7 +146,8 @@ public class Application implements ModelResult {
                 } catch (ConfigurationRuntimeException e) {
                     // This can happen in cases where services ask for config that no longer exist before they have been able
                     // to reconfigure themselves
-                    log.log(Level.INFO, "Error resolving instance for builder '" + builder.getClass().getName() +
+                    log.log(Level.INFO, TenantRepository.logPre(getId()) +
+                                        ": Error resolving instance for builder '" + builder.getClass().getName() +
                                         "', returning empty config: " + Exceptions.toMessageString(e));
                     payload = ConfigPayload.fromBuilder(new ConfigPayloadBuilder());
                 }
@@ -178,7 +179,7 @@ public class Application implements ModelResult {
     }
 
     private void debug(String message) {
-        log.log(Level.FINE, TenantRepository.logPre(getId())+message);
+        log.log(Level.FINE, TenantRepository.logPre(getId()) + message);
     }
 
     private ConfigDefinition getTargetDef(GetConfigRequest req) {

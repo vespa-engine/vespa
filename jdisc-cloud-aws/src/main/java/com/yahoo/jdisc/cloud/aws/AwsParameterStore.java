@@ -3,6 +3,7 @@
 package com.yahoo.jdisc.cloud.aws;
 
 import com.amazonaws.auth.STSAssumeRoleSessionCredentialsProvider;
+import com.amazonaws.regions.Regions;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenService;
 import com.amazonaws.services.securitytoken.AWSSecurityTokenServiceClientBuilder;
 import com.amazonaws.services.simplesystemsmanagement.AWSSimpleSystemsManagement;
@@ -14,6 +15,11 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.container.jdisc.secretstore.SecretNotFoundException;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.container.jdisc.secretstore.SecretStoreConfig;
+import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Slime;
+
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * @author mortent
@@ -21,32 +27,36 @@ import com.yahoo.container.jdisc.secretstore.SecretStoreConfig;
 public class AwsParameterStore extends AbstractComponent implements SecretStore {
 
     private final VespaAwsCredentialsProvider credentialsProvider;
-    private final SecretStoreConfig secretStoreConfig;
+    private final List<AwsSettings> configuredStores;
 
     @Inject
     public AwsParameterStore(SecretStoreConfig secretStoreConfig) {
-        this.secretStoreConfig = secretStoreConfig;
+        this(translateConfig(secretStoreConfig));
+    }
+
+    public AwsParameterStore(List<AwsSettings> configuredStores) {
+        this.configuredStores = configuredStores;
         this.credentialsProvider = new VespaAwsCredentialsProvider();
     }
 
     @Override
     public String getSecret(String key) {
-        for (var group : secretStoreConfig.groups()) {
+        for (var store : configuredStores) {
             AWSSecurityTokenService tokenService = AWSSecurityTokenServiceClientBuilder
                     .standard()
-                    .withRegion(group.region())
+                    .withRegion(Regions.DEFAULT_REGION)
                     .withCredentials(credentialsProvider)
                     .build();
 
             STSAssumeRoleSessionCredentialsProvider assumeExtAccountRole = new STSAssumeRoleSessionCredentialsProvider
-                    .Builder(toRoleArn(group.awsId(), group.role()), "vespa")
-                    .withExternalId(group.externalId())
+                    .Builder(toRoleArn(store.getAwsId(), store.getRole()), "vespa")
+                    .withExternalId(store.getExternalId())
                     .withStsClient(tokenService)
                     .build();
 
             AWSSimpleSystemsManagement client = AWSSimpleSystemsManagementClient.builder()
                     .withCredentials(assumeExtAccountRole)
-                    .withRegion(group.region())
+                    .withRegion(store.getRegion())
                     .build();
 
             GetParametersRequest parametersRequest = new GetParametersRequest().withNames(key).withWithDecryption(true);
@@ -69,5 +79,74 @@ public class AwsParameterStore extends AbstractComponent implements SecretStore 
 
     private String toRoleArn(String awsId, String role) {
         return "arn:aws:iam::" + awsId + ":role/" + role;
+    }
+
+    private static List<AwsSettings> translateConfig(SecretStoreConfig secretStoreConfig) {
+        return secretStoreConfig.groups()
+                .stream()
+                .map(config -> new AwsSettings(config.name(), config.role(), config.awsId(), config.externalId(), config.region()))
+                .collect(Collectors.toList());
+    }
+
+    public static class AwsSettings {
+        String name;
+        String role;
+        String awsId;
+        String externalId;
+        String region;
+
+        AwsSettings(String name, String role, String awsId, String externalId, String region) {
+            this.name = validate(name, "name");
+            this.role = validate(role, "role");
+            this.awsId = validate(awsId, "awsId");
+            this.externalId = validate(externalId, "externalId");
+            this.region = validate(region, "region");
+        }
+
+
+        public String getName() {
+            return name;
+        }
+
+        public String getRole() {
+            return role;
+        }
+
+        public String getAwsId() {
+            return awsId;
+        }
+
+        public String getExternalId() {
+            return externalId;
+        }
+
+        public String getRegion() {
+            return region;
+        }
+
+        static AwsSettings fromSlime(Slime slime) {
+            var json = slime.get();
+            return new AwsSettings(
+                    json.field("name").asString(),
+                    json.field("role").asString(),
+                    json.field("awsId").asString(),
+                    json.field("externalId").asString(),
+                    json.field("region").asString()
+            );
+        }
+
+        void toSlime(Cursor slime) {
+            slime.setString("name", name);
+            slime.setString("role", role);
+            slime.setString("awsId", awsId);
+            slime.setString("externalId", "*****");
+            slime.setString("region", region);
+        }
+
+        static String validate(String value, String name) {
+            if (value == null || value.isBlank())
+                throw new IllegalArgumentException("Config parameter '" + name + "' was blank or empty");
+            return value;
+        }
     }
 }

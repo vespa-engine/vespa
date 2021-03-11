@@ -6,9 +6,10 @@
 #include <vespa/vespalib/util/memory_allocator.h>
 
 using vespalib::datastore::Handle;
+using vespalib::eval::CellType;
+using vespalib::eval::CellTypeUtils;
 using vespalib::eval::Value;
 using vespalib::eval::ValueType;
-using CellType = vespalib::eval::CellType;
 
 namespace search::tensor {
 
@@ -16,14 +17,6 @@ namespace {
 
 constexpr size_t MIN_BUFFER_ARRAYS = 1024;
 constexpr size_t DENSE_TENSOR_ALIGNMENT = 32;
-
-size_t size_of(CellType type) {
-    switch (type) {
-    case CellType::DOUBLE: return sizeof(double);
-    case CellType::FLOAT: return sizeof(float);
-    }
-    abort();
-}
 
 size_t my_align(size_t size, size_t alignment) {
     size += alignment - 1;
@@ -34,7 +27,7 @@ size_t my_align(size_t size, size_t alignment) {
 
 DenseTensorStore::TensorSizeCalc::TensorSizeCalc(const ValueType &type)
     : _numCells(1u),
-      _cellSize(size_of(type.cell_type()))
+      _cell_type(type.cell_type())
 {
     for (const auto &dim: type.dimensions()) {
         _numCells *= dim.size;

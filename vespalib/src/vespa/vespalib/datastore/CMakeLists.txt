@@ -8,6 +8,8 @@ vespa_add_library(vespalib_vespalib_datastore OBJECT
     datastore.cpp
     datastorebase.cpp
     entryref.cpp
+    fixed_size_hash_map.cpp
+    simple_hash_map.cpp
     unique_store.cpp
     unique_store_string_allocator.cpp
     DEPENDS

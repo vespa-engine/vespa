@@ -1,7 +1,6 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.util.http.retry;
 
-import com.yahoo.vespa.jdk8compat.List;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.junit.Test;
 
@@ -9,6 +8,7 @@ import javax.net.ssl.SSLException;
 import java.io.IOException;
 import java.net.ConnectException;
 import java.time.Duration;
+import java.util.Arrays;
 
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
@@ -105,7 +105,7 @@ public class DelayedConnectionLevelRetryHandlerTest {
 
         DelayedConnectionLevelRetryHandler handler = DelayedConnectionLevelRetryHandler.Builder
                 .withFixedDelay(Duration.ofSeconds(2), maxRetries)
-                .retryForExceptions(List.of(SSLException.class, ConnectException.class))
+                .retryForExceptions(Arrays.asList(SSLException.class, ConnectException.class))
                 .withSleeper(mock(Sleeper.class))
                 .build();
 
@@ -122,7 +122,7 @@ public class DelayedConnectionLevelRetryHandlerTest {
     public void does_not_retry_for_non_listed_exception() {
         DelayedConnectionLevelRetryHandler handler = DelayedConnectionLevelRetryHandler.Builder
                 .withFixedDelay(Duration.ofSeconds(2), 2)
-                .retryForExceptions(List.of(SSLException.class, ConnectException.class))
+                .retryForExceptions(Arrays.asList(SSLException.class, ConnectException.class))
                 .withSleeper(mock(Sleeper.class))
                 .build();
 

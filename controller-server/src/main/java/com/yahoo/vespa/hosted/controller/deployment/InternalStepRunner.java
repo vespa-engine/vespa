@@ -299,7 +299,7 @@ public class InternalStepRunner implements StepRunner {
         }
         List<Node> nodes = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(controller.system()),
                                                                                              id.application(),
-                                                                                             ImmutableSet.of(active, reserved));
+                                                                                             Set.of(active));
         List<Node> parents = controller.serviceRegistry().configServer().nodeRepository().list(id.type().zone(controller.system()),
                                                                                                nodes.stream().map(node -> node.parentHostname().get()).collect(toList()));
         NodeList nodeList = NodeList.of(nodes, parents, services.get());

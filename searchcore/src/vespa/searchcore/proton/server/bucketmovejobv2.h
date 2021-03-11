@@ -9,7 +9,6 @@
 #include "iclusterstatechangedhandler.h"
 #include <vespa/searchcore/proton/bucketdb/bucketscaniterator.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
-#include <vespa/vespalib/stllike/hash_set.h>
 
 namespace storage::spi { struct BucketExecutor; }
 namespace searchcorespi::index { struct IThreadService; }
@@ -55,8 +54,7 @@ private:
     using Bucket2Mover = std::map<BucketId, BucketMoverSP>;
     using Movers = std::vector<BucketMoverSP>;
     using MoveKey = BucketMover::MoveKey;
-    using GuardedMoveOp = BucketMover::GuardedMoveOp;
-    using BucketSet = vespalib::hash_set<BucketId, BucketId::hash>;
+    using GuardedMoveOps = BucketMover::GuardedMoveOps;
     std::shared_ptr<IBucketStateCalculator>   _calc;
     IDocumentMoveHandler                     &_moveHandler;
     IBucketModifiedHandler                   &_modifiedHandler;
@@ -69,7 +67,6 @@ private:
     Movers                                    _movers;
     Bucket2Mover                              _bucketsInFlight;
     BucketMoveSet                             _buckets2Move;
-    BucketSet                                 _postponedUntilSafe;
 
     std::atomic<bool>                         _stopped;
     std::atomic<size_t>                       _startedCount;
@@ -83,19 +80,21 @@ private:
 
     void startMove(BucketMoverSP mover, size_t maxDocsToMove);
     void prepareMove(BucketMoverSP mover, std::vector<MoveKey> keysToMove, IDestructorCallbackSP context);
-    void completeMove(BucketMoverSP mover, std::vector<GuardedMoveOp> keys, IDestructorCallbackSP context);
-    void handleMoveResult(BucketMoverSP mover);
+    void completeMove(BucketMoverSP mover, GuardedMoveOps moveOps, IDestructorCallbackSP context);
+    bool checkIfMoverComplete(const BucketMover & mover);
+    void checkForReschedule(const bucketdb::Guard & guard, BucketId bucket);
     void considerBucket(const bucketdb::Guard & guard, BucketId bucket);
     void reconsiderBucket(const bucketdb::Guard & guard, BucketId bucket);
     void updatePending();
     void cancelBucket(BucketId bucket); // True if something to cancel
     NeedResult needMove(const ScanIterator &itr) const;
-    BucketMoveSet computeBuckets2Move();
+    BucketMoveSet computeBuckets2Move(const bucketdb::Guard & guard);
     BucketMoverSP createMover(BucketId bucket, bool wantReady);
     BucketMoverSP greedyCreateMover();
     void backFillMovers();
     void moveDocs(size_t maxDocsToMove);
     void failOperation(BucketId bucket);
+    void recompute(const bucketdb::Guard & guard);
     friend class StartMove;
 public:
     BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &calc,
@@ -117,7 +116,7 @@ public:
 
     bool scanAndMove(size_t maxBuckets2Move, size_t maxDocsToMovePerBucket);
     bool done() const;
-    void recompute();
+    void recompute(); // Only for testing
     bool inSync() const;
 
     bool run() override;

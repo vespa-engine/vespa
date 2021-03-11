@@ -72,11 +72,14 @@ void my_sparse_full_overlap_join_op(InterpretedFunction::State &state, uint64_t 
 }
 
 struct SelectSparseFullOverlapJoinOp {
-    template <typename CT, typename Fun, typename SINGLE_DIM>
-    static auto invoke() { return my_sparse_full_overlap_join_op<CT,Fun,SINGLE_DIM::value>; }
+    template <typename R1, typename Fun, typename SINGLE_DIM>
+    static auto invoke() {
+        using CT = CellValueType<R1::value.cell_type>;
+        return my_sparse_full_overlap_join_op<CT,Fun,SINGLE_DIM::value>;
+    }
 };
 
-using MyTypify = TypifyValue<TypifyCellType,operation::TypifyOp2,TypifyBool>;
+using MyTypify = TypifyValue<TypifyCellMeta,operation::TypifyOp2,TypifyBool>;
 
 bool is_sparse_like(const ValueType &type) {
     return ((type.count_mapped_dimensions() > 0) && (type.dense_subspace_size() == 1));
@@ -96,10 +99,10 @@ SparseFullOverlapJoinFunction::SparseFullOverlapJoinFunction(const tensor_functi
 InterpretedFunction::Instruction
 SparseFullOverlapJoinFunction::compile_self(const ValueBuilderFactory &factory, Stash &stash) const
 {
-    const auto &param = stash.create<JoinParam>(lhs().result_type(), rhs().result_type(), function(), factory);
-    assert(param.res_type == result_type());
+    const auto &param = stash.create<JoinParam>(result_type(), lhs().result_type(), rhs().result_type(), function(), factory);
+    assert(result_type() == ValueType::join(lhs().result_type(), rhs().result_type()));
     bool single_dim = (result_type().count_mapped_dimensions() == 1);
-    auto op = typify_invoke<3,MyTypify,SelectSparseFullOverlapJoinOp>(result_type().cell_type(), function(), single_dim);
+    auto op = typify_invoke<3,MyTypify,SelectSparseFullOverlapJoinOp>(result_type().cell_meta().limit(), function(), single_dim);
     return InterpretedFunction::Instruction(op, wrap_param<JoinParam>(param));
 }
 
@@ -107,12 +110,12 @@ bool
 SparseFullOverlapJoinFunction::compatible_types(const ValueType &res, const ValueType &lhs, const ValueType &rhs)
 {
     if ((lhs.cell_type() == rhs.cell_type()) &&
+        (res.cell_type() == lhs.cell_type()) &&
         is_sparse_like(lhs) && is_sparse_like(rhs) &&
         (res.count_mapped_dimensions() == lhs.count_mapped_dimensions()) &&
         (res.count_mapped_dimensions() == rhs.count_mapped_dimensions()))
     {
         assert(is_sparse_like(res));
-        assert(res.cell_type() == lhs.cell_type());
         return true;
     }
     return false;

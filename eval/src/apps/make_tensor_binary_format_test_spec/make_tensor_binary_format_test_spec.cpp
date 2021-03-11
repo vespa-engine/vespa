@@ -21,9 +21,9 @@ template <typename T> std::vector<bool> with_cell_type_opts();
 template <> std::vector<bool> with_cell_type_opts<double>() { return {false, true}; }
 template <> std::vector<bool> with_cell_type_opts<float>() { return {true}; }
 
-template <typename T> uint8_t cell_type();
-template <> uint8_t cell_type<double>() { return 0; }
-template <> uint8_t cell_type<float>() { return 1; }
+template <typename T> uint8_t cell_type_id();
+template <> uint8_t cell_type_id<double>() { return 0; }
+template <> uint8_t cell_type_id<float>() { return 1; }
 
 template <typename T> const char *cell_type_str();
 template <> const char *cell_type_str<double>() { return ""; }
@@ -33,7 +33,7 @@ template <typename T> nbostream make_sparse(bool with_cell_type) {
     nbostream data;
     if (with_cell_type) {
         data << uint8_t(0x5);
-        data << cell_type<T>();
+        data << cell_type_id<T>();
     } else {
         data << uint8_t(0x1);
     }
@@ -44,7 +44,7 @@ template <typename T> nbostream make_dense(bool with_cell_type) {
     nbostream data;
     if (with_cell_type) {
         data << uint8_t(0x6);
-        data << cell_type<T>();
+        data << cell_type_id<T>();
     } else {
         data << uint8_t(0x2);
     }
@@ -55,7 +55,7 @@ template <typename T> nbostream make_mixed(bool with_cell_type) {
     nbostream data;
     if (with_cell_type) {
         data << uint8_t(0x7);
-        data << cell_type<T>();
+        data << cell_type_id<T>();
     } else {
         data << uint8_t(0x3);
     }

@@ -64,6 +64,12 @@ public:
         MoveGuard          _guard;
     };
 
+    using GuardedMoveOp = std::pair<MoveOperationUP, MoveGuard>;
+    struct GuardedMoveOps {
+        std::vector<GuardedMoveOp> success;
+        std::vector<MoveGuard> failed;
+    };
+
     BucketMover(const document::BucketId &bucket, const MaintenanceDocumentSubDB *source,
                 uint32_t targetSubDbId, IDocumentMoveHandler &handler) noexcept;
     BucketMover(BucketMover &&) noexcept = delete;
@@ -72,20 +78,20 @@ public:
     BucketMover & operator=(const BucketMover &) = delete;
     ~BucketMover();
 
-    using GuardedMoveOp = std::pair<MoveOperationUP, MoveGuard>;
     /// Must be called in master thread
     std::pair<std::vector<MoveKey>, bool> getKeysToMove(size_t maxDocsToMove);
     /// Call from any thread
-    std::vector<GuardedMoveOp> createMoveOperations(std::vector<MoveKey> toMove);
+    GuardedMoveOps createMoveOperations(std::vector<MoveKey> toMove);
     /// Must be called in master thread
     void moveDocuments(std::vector<GuardedMoveOp> moveOps, IDestructorCallbackSP onDone);
     void moveDocument(MoveOperationUP moveOp, IDestructorCallbackSP onDone);
 
     const document::BucketId &getBucket() const { return _bucket; }
-    void cancel() { setBucketDone(); }
-    void setBucketDone() { _bucketDone = true; }
+    void cancel();
+    void setAllScheduled() { _allScheduled = true; }
     /// Signals all documents have been scheduled for move
-    bool bucketDone() const { return _bucketDone; }
+    bool allScheduled() const { return _allScheduled; }
+    bool needReschedule() const { return _needReschedule.load(std::memory_order_relaxed); }
     const MaintenanceDocumentSubDB * getSource() const { return _source; }
     /// Must be called in master thread
     void updateLastValidGid(const document::GlobalId &gid) {
@@ -103,10 +109,11 @@ private:
 
     std::atomic<uint32_t>           _started;
     std::atomic<uint32_t>           _completed;
-    bool                            _bucketDone; // All moves started, or operation has been cancelled
+    std::atomic<bool>               _needReschedule;
+    bool                            _allScheduled; // All moves started, or operation has been cancelled
     bool                            _lastGidValid;
     document::GlobalId              _lastGid;
-    GuardedMoveOp createMoveOperation(MoveKey & key);
+    MoveOperationUP createMoveOperation(const MoveKey & key);
     size_t pending() const {
         return _started.load(std::memory_order_relaxed) - _completed.load(std::memory_order_relaxed);
     }
@@ -139,8 +146,9 @@ public:
     const document::BucketId &getBucket() const { return _impl->getBucket(); }
     bool moveDocuments(size_t maxDocsToMove);
     void cancel() { _impl->cancel(); }
+    bool needReschedule() { return _impl && _impl->needReschedule(); }
     bool bucketDone() const {
-        return !_impl || _impl->bucketDone();
+        return !_impl || _impl->allScheduled();
     }
     const MaintenanceDocumentSubDB * getSource() const { return _impl->getSource(); }
 };

@@ -14,9 +14,12 @@ import javax.net.ssl.SSLEngine;
 import javax.net.ssl.SSLParameters;
 import java.io.IOException;
 import java.io.UncheckedIOException;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.security.KeyStore;
 import java.time.Duration;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -82,7 +85,7 @@ public class ConfigFileBasedTlsContext implements TlsContext {
     private static KeyStore loadTruststore(Path caCertificateFile) {
         try {
             return KeyStoreBuilder.withType(KeyStoreType.PKCS12)
-                    .withCertificateEntries("cert", X509CertificateUtils.certificateListFromPem(com.yahoo.vespa.jdk8compat.Files.readString(caCertificateFile)))
+                    .withCertificateEntries("cert", X509CertificateUtils.certificateListFromPem(new String(Files.readAllBytes(caCertificateFile), StandardCharsets.UTF_8)))
                     .build();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -94,8 +97,8 @@ public class ConfigFileBasedTlsContext implements TlsContext {
             return KeyStoreBuilder.withType(KeyStoreType.PKCS12)
                     .withKeyEntry(
                             "default",
-                            KeyUtils.fromPemEncodedPrivateKey(com.yahoo.vespa.jdk8compat.Files.readString(privateKeyFile)),
-                            X509CertificateUtils.certificateListFromPem(com.yahoo.vespa.jdk8compat.Files.readString(certificatesFile)))
+                            KeyUtils.fromPemEncodedPrivateKey(new String(Files.readAllBytes(privateKeyFile), StandardCharsets.UTF_8)),
+                            X509CertificateUtils.certificateListFromPem(new String(Files.readAllBytes(certificatesFile), StandardCharsets.UTF_8)))
                     .build();
         } catch (IOException e) {
             throw new UncheckedIOException(e);
@@ -111,7 +114,7 @@ public class ConfigFileBasedTlsContext implements TlsContext {
         HostnameVerification hostnameVerification = options.isHostnameValidationDisabled() ? HostnameVerification.DISABLED : HostnameVerification.ENABLED;
         PeerAuthorizerTrustManager authorizerTrustManager = options.getAuthorizedPeers()
                 .map(authorizedPeers -> new PeerAuthorizerTrustManager(authorizedPeers, mode, hostnameVerification, mutableTrustManager))
-                .orElseGet(() -> new PeerAuthorizerTrustManager(new AuthorizedPeers(com.yahoo.vespa.jdk8compat.Set.of()), AuthorizationMode.DISABLE, hostnameVerification, mutableTrustManager));
+                .orElseGet(() -> new PeerAuthorizerTrustManager(new AuthorizedPeers(Collections.emptySet()), AuthorizationMode.DISABLE, hostnameVerification, mutableTrustManager));
         SSLContext sslContext = new SslContextBuilder()
                 .withKeyManager(mutableKeyManager)
                 .withTrustManager(authorizerTrustManager)

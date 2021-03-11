@@ -105,6 +105,7 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
         return metricsProxyCluster;
     }
 
+    /** Used by model amenders */
     public void setAdditionalDefaultMetrics(MetricSet additionalDefaultMetrics) {
         if (additionalDefaultMetrics == null) return;
         this.additionalDefaultMetrics = additionalDefaultMetrics;

@@ -137,7 +137,7 @@ createTensorExecutor(const IQueryEnvironment &env,
 FeatureExecutor &
 QueryBlueprint::createExecutor(const IQueryEnvironment &env, vespalib::Stash &stash) const
 {
-    if (_valueType.is_tensor()) {
+    if (_valueType.has_dimensions()) {
         return createTensorExecutor(env, _key, _valueType, stash);
     } else {
         std::vector<feature_t> values;

@@ -9,6 +9,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.ModelCreateResult;
 import com.yahoo.config.model.api.ModelFactory;
 import com.yahoo.config.model.api.ServiceInfo;
+import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.api.ValidationParameters;
 import com.yahoo.config.model.provision.Host;
 import com.yahoo.config.model.provision.Hosts;
@@ -108,6 +109,21 @@ public class HostedDeployTest {
         assertEquals("4.5.6", ((Deployment) deployment.get()).session().getVespaVersion().toString());
         assertEquals(DockerImage.fromString(dockerImageRepository), ((Deployment) deployment.get()).session().getDockerImageRepository().get());
         assertEquals("myDomain", ((Deployment) deployment.get()).session().getAthenzDomain().get().value());
+    }
+
+    @Test
+    public void testRedeployWithTenantSecretStores() throws IOException {
+        List<TenantSecretStore> tenantSecretStores = List.of(new TenantSecretStore("foo", "123", "role"));
+        DeployTester tester = new DeployTester.Builder()
+                .modelFactory(createHostedModelFactory(Version.fromString("4.5.6"), Clock.systemUTC()))
+                .configserverConfig(createConfigserverConfig()).build();
+        tester.deployApp("src/test/apps/hosted/", Instant.now(), new PrepareParams.Builder()
+                .tenantSecretStores(tenantSecretStores));
+
+        Optional<com.yahoo.config.provision.Deployment> deployment = tester.redeployFromLocalActive(tester.applicationId());
+        assertTrue(deployment.isPresent());
+        deployment.get().activate();
+        assertEquals(tenantSecretStores, ((Deployment) deployment.get()).session().getTenantSecretStores());
     }
 
     @Test

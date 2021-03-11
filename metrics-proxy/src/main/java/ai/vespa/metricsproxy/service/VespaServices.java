@@ -24,6 +24,7 @@ import static java.util.logging.Level.FINE;
  * @author gjoranv
  */
 public class VespaServices {
+
     private static final Logger log = Logger.getLogger(VespaServices.class.getName());
 
     public static final String ALL_SERVICES = "all";

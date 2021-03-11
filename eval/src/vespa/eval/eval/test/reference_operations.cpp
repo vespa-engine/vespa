@@ -213,7 +213,7 @@ TensorSpec ReferenceOperations::peek(const PeekSpec &peek_spec, const std::vecto
     }
     TensorSpec param = children[0].normalize();
     ValueType param_type = ValueType::from_spec(param.type());
-    ValueType result_type = param_type.reduce(peek_dims);
+    ValueType result_type = param_type.peek(peek_dims);
     TensorSpec result(result_type.to_spec());
     if (result_type.is_error()) {
         return result;

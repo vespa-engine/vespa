@@ -3,6 +3,7 @@
 #include "value_type.h"
 #include "value_type_spec.h"
 #include <algorithm>
+#include <cassert>
 
 namespace vespalib::eval {
 
@@ -10,29 +11,6 @@ namespace {
 
 using Dimension = ValueType::Dimension;
 using DimensionList = std::vector<Dimension>;
-
-template <typename A, typename B>
-CellType unify() {
-    using type = typename UnifyCellTypes<A,B>::type;
-    return get_cell_type<type>();
-}
-
-template <typename A>
-CellType unify(CellType b) {
-    switch (b) {
-    case CellType::DOUBLE: return unify<A,double>();
-    case CellType::FLOAT: return unify<A,float>();
-    }
-    abort();
-}
-
-CellType unify(CellType a, CellType b) {
-    switch (a) {
-    case CellType::DOUBLE: return unify<double>(b);
-    case CellType::FLOAT: return unify<float>(b);
-    }
-    abort();
-}
 
 size_t my_dimension_index(const std::vector<Dimension> &list, const vespalib::string &name) {
     for (size_t idx = 0; idx < list.size(); ++idx) {
@@ -64,6 +42,28 @@ bool verify_dimensions(const DimensionList &dimensions) {
     }
     return true;
 }
+
+struct MyReduce {
+    bool has_error;
+    std::vector<Dimension> dimensions;
+    MyReduce(const std::vector<Dimension> &dim_list, const std::vector<vespalib::string> &rem_list)
+        : has_error(false), dimensions()
+    {
+        if (!rem_list.empty()) {
+            size_t removed = 0;
+            for (const Dimension &dim: dim_list) {
+                if (std::find(rem_list.begin(), rem_list.end(), dim.name) == rem_list.end()) {
+                    dimensions.push_back(dim);
+                } else {
+                    ++removed;
+                }
+            }
+            if (removed != rem_list.size()) {
+                has_error = true;
+            }
+        }
+    }
+};
 
 struct MyJoin {
     bool mismatch;
@@ -142,7 +142,26 @@ struct Renamer {
 
 constexpr ValueType::Dimension::size_type ValueType::Dimension::npos;
 
+ValueType
+ValueType::error_if(bool has_error, ValueType else_type)
+{
+    if (has_error) {
+        return error_type();
+    } else {
+        return else_type;
+    }
+}
+
 ValueType::~ValueType() = default;
+
+bool
+ValueType::is_double() const {
+    if (!_error && _dimensions.empty()) {
+        assert(_cell_type == CellType::DOUBLE);
+        return true;
+    }
+    return false;
+}
 
 bool
 ValueType::is_sparse() const
@@ -246,26 +265,28 @@ ValueType::dimension_names() const
 }
 
 ValueType
+ValueType::map() const
+{
+    auto meta = cell_meta().map();
+    return error_if(_error, make_type(meta.cell_type, _dimensions));
+}
+
+ValueType
 ValueType::reduce(const std::vector<vespalib::string> &dimensions_in) const
 {
-    if (is_error()) {
-        return error_type();
-    } else if (dimensions_in.empty()) {
-        return double_type();
-    }
-    size_t removed = 0;
-    std::vector<Dimension> result;
-    for (const Dimension &d: _dimensions) {
-        if (std::find(dimensions_in.begin(), dimensions_in.end(), d.name) == dimensions_in.end()) {
-            result.push_back(d);
-        } else {
-            ++removed;
-        }
-    }
-    if (removed != dimensions_in.size()) {
-        return error_type();
-    }
-    return tensor_type(std::move(result), _cell_type);
+    MyReduce result(_dimensions, dimensions_in);
+    auto meta = CellMeta::reduce(_cell_type, result.dimensions.empty());
+    return error_if(_error || result.has_error,
+                    make_type(meta.cell_type, std::move(result.dimensions)));
+}
+
+ValueType
+ValueType::peek(const std::vector<vespalib::string> &dimensions_in) const
+{
+    MyReduce result(_dimensions, dimensions_in);
+    auto meta = CellMeta::peek(_cell_type, result.dimensions.empty());
+    return error_if(_error || result.has_error || dimensions_in.empty(),
+                    make_type(meta.cell_type, std::move(result.dimensions)));
 }
 
 ValueType
@@ -280,39 +301,29 @@ ValueType::rename(const std::vector<vespalib::string> &from,
     for (const auto &dim: _dimensions) {
         dim_list.emplace_back(renamer.rename(dim.name), dim.size);
     }
-    if (!renamer.matched_all()) {
-        return error_type();
-    }
-    return tensor_type(dim_list, _cell_type);
+    auto meta = cell_meta().rename();
+    return error_if(!renamer.matched_all(),
+                    make_type(meta.cell_type, std::move(dim_list)));
 }
 
 ValueType
 ValueType::cell_cast(CellType to_cell_type) const
 {
-    if (is_error()) {
-        return error_type();
-    }
-    // TODO: return make_type(to_cell_type, _dimensions);
-    return tensor_type(_dimensions, to_cell_type);
+    return error_if(_error, make_type(to_cell_type, _dimensions));
 }
 
 ValueType
 ValueType::make_type(CellType cell_type, std::vector<Dimension> dimensions_in)
 {
+    if (dimensions_in.empty() && (cell_type != CellType::DOUBLE)) {
+        // Note: all scalar values must have cell_type double
+        return error_type();
+    }
     sort_dimensions(dimensions_in);
     if (!verify_dimensions(dimensions_in)) {
         return error_type();
     }
     return ValueType(cell_type, std::move(dimensions_in));
-}
-
-ValueType
-ValueType::tensor_type(std::vector<Dimension> dimensions_in, CellType cell_type)
-{
-    if (dimensions_in.empty()) {
-        return double_type();
-    }
-    return make_type(cell_type, std::move(dimensions_in));
 }
 
 ValueType
@@ -336,66 +347,35 @@ ValueType::to_spec() const
 ValueType
 ValueType::join(const ValueType &lhs, const ValueType &rhs)
 {
-    if (lhs.is_error() || rhs.is_error()) {
-        return error_type();
-    } else if (lhs.is_double()) {
-        return rhs;
-    } else if (rhs.is_double()) {
-        return lhs;
-    }
     MyJoin result(lhs._dimensions, rhs._dimensions);
-    if (result.mismatch) {
-        return error_type();
-    }
-    return tensor_type(std::move(result.dimensions), unify(lhs._cell_type, rhs._cell_type));
+    auto meta = CellMeta::join(lhs.cell_meta(), rhs.cell_meta());
+    return error_if(lhs._error || rhs._error || result.mismatch,
+                    make_type(meta.cell_type, std::move(result.dimensions)));
 }
 
 ValueType
 ValueType::merge(const ValueType &lhs, const ValueType &rhs)
 {
-    if ((lhs.is_error() != rhs.is_error()) ||
-        (lhs.dimensions() != rhs.dimensions()))
-    {
-        return error_type();
-    }
-    if (lhs.dimensions().empty()) {
-        return lhs;
-    }
-    return tensor_type(lhs.dimensions(), unify(lhs._cell_type, rhs._cell_type));
-}
-
-CellType
-ValueType::unify_cell_types(const ValueType &a, const ValueType &b) {
-    if (a.is_double()) {
-        return b.cell_type();
-    } else if (b.is_double()) {
-        return a.cell_type();
-    }
-    return unify(a.cell_type(), b.cell_type());
+    auto meta = CellMeta::merge(lhs.cell_meta(), rhs.cell_meta());
+    return error_if(lhs._error || rhs._error || (lhs._dimensions != rhs._dimensions),
+                    make_type(meta.cell_type, lhs._dimensions));
 }
 
 ValueType
 ValueType::concat(const ValueType &lhs, const ValueType &rhs, const vespalib::string &dimension)
 {
-    if (lhs.is_error() || rhs.is_error()) {
-        return error_type();
-    }
     MyJoin result(lhs._dimensions, rhs._dimensions, dimension);
-    if (result.mismatch) {
-        return error_type();
-    }
     if (!find_dimension(result.dimensions, dimension)) {
         result.dimensions.emplace_back(dimension, 2);
     }
-    return tensor_type(std::move(result.dimensions), unify_cell_types(lhs, rhs));
+    auto meta = CellMeta::concat(lhs.cell_meta(), rhs.cell_meta());
+    return error_if(lhs._error || rhs._error || result.mismatch,
+                    make_type(meta.cell_type, std::move(result.dimensions)));
 }
 
 ValueType
 ValueType::either(const ValueType &one, const ValueType &other) {
-    if (one != other) {
-        return error_type();
-    }
-    return one;
+    return error_if(one != other, one);
 }
 
 std::ostream &

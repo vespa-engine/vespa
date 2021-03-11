@@ -36,8 +36,7 @@ const std::vector<GenSpec> map_layouts = {
 TensorSpec perform_generic_map(const TensorSpec &a, map_fun_t func, const ValueBuilderFactory &factory)
 {
     auto lhs = value_from_spec(a, factory);
-    // XXX for now:
-    auto res_type = lhs->type();
+    auto res_type = lhs->type().map();
     auto my_op = GenericMap::make_instruction(res_type, lhs->type(), func);
     InterpretedFunction::EvalSingle single(factory, my_op);
     return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs})));
@@ -46,9 +45,10 @@ TensorSpec perform_generic_map(const TensorSpec &a, map_fun_t func, const ValueB
 void test_generic_map_with(const ValueBuilderFactory &factory) {
     for (const auto &layout : map_layouts) {
         for (CellType ct : CellTypeUtils::list_types()) {
-            TensorSpec lhs = layout.cpy().cells(ct);
+            auto lhs = layout.cpy().cells(ct);
+            if (lhs.bad_scalar()) continue;
             for (auto func : {operation::Floor::f, operation::Fabs::f, operation::Square::f, operation::Inv::f}) {
-                SCOPED_TRACE(fmt("\n===\nLHS: %s\n===\n", lhs.to_string().c_str()));
+                SCOPED_TRACE(fmt("\n===\nLHS: %s\n===\n", lhs.gen().to_string().c_str()));
                 auto expect = ReferenceOperations::map(lhs, func);
                 auto actual = perform_generic_map(lhs, func, factory);
                 EXPECT_EQ(actual, expect);

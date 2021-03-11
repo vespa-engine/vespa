@@ -5,6 +5,7 @@
 #include "entry_comparator.h"
 #include "unique_store_entry.h"
 #include "datastore.h"
+#include <vespa/vespalib/stllike/hash_fun.h>
 #include <cmath>
 
 namespace vespalib::datastore {
@@ -17,6 +18,13 @@ class UniqueStoreComparatorHelper {
 public:
     static bool less(const EntryT& lhs, const EntryT& rhs) {
         return lhs < rhs;
+    }
+    static bool equal(const EntryT& lhs, const EntryT& rhs) {
+        return lhs == rhs;
+    }
+    static size_t hash(const EntryT& rhs) {
+        vespalib::hash<EntryT> hasher;
+        return hasher(rhs);
     }
 };
 
@@ -35,6 +43,25 @@ public:
             return false;
         } else {
             return (lhs < rhs);
+        }
+    }
+    static bool equal(EntryT lhs, const EntryT rhs) {
+        if (std::isnan(lhs)) {
+            return std::isnan(rhs);
+        } else if (std::isnan(rhs)) {
+            return false;
+        } else {
+            return (lhs == rhs);
+        }
+    }
+    static size_t hash(EntryT rhs) {
+        if (std::isnan(rhs)) {
+            return 0;
+        } else {
+            union U { EntryT f; std::conditional_t<std::is_same_v<double, EntryT>, uint64_t, uint32_t> i; };
+            U t;
+            t.f = rhs;
+            return t.i;
         }
     }
 };
@@ -93,10 +120,19 @@ public:
     {
     }
 
-    bool operator()(const EntryRef lhs, const EntryRef rhs) const override {
+    bool less(const EntryRef lhs, const EntryRef rhs) const override {
         const EntryType &lhsValue = get(lhs);
         const EntryType &rhsValue = get(rhs);
         return UniqueStoreComparatorHelper<EntryT>::less(lhsValue, rhsValue);
+    }
+    bool equal(const EntryRef lhs, const EntryRef rhs) const override {
+        const EntryType &lhsValue = get(lhs);
+        const EntryType &rhsValue = get(rhs);
+        return UniqueStoreComparatorHelper<EntryT>::equal(lhsValue, rhsValue);
+    }
+    size_t hash(const EntryRef rhs) const override {
+        const EntryType &rhsValue = get(rhs);
+        return UniqueStoreComparatorHelper<EntryT>::hash(rhsValue);
     }
 };
 

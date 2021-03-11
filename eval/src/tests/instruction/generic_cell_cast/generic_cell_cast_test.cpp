@@ -47,8 +47,10 @@ void test_generic_cell_cast_with(const ValueBuilderFactory &factory) {
     for (const auto &layout : layouts) {
         for (CellType in_type: CellTypeUtils::list_types()) {
             for (CellType out_type: CellTypeUtils::list_types()) {
-                TensorSpec lhs = layout.cpy().cells(in_type);
-                SCOPED_TRACE(fmt("\n===\nLHS: %s\n===\n", lhs.to_string().c_str()));
+                auto lhs = layout.cpy().cells(in_type);
+                auto res_check = layout.cpy().cells(out_type);
+                if (lhs.bad_scalar() || res_check.bad_scalar()) continue;
+                SCOPED_TRACE(fmt("\n===\nLHS: %s\n===\n", lhs.gen().to_string().c_str()));
                 auto expect = ReferenceOperations::cell_cast(lhs, out_type);
                 auto actual = perform_generic_cell_cast(lhs, out_type, factory);
                 EXPECT_EQ(actual, expect);

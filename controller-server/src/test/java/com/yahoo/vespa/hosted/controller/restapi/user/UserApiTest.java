@@ -178,7 +178,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
                         .principal("admin@tenant")
                         .roles(Set.of(Role.administrator(id.tenant())))
                         .data("{\"awsId\":\"123\",\"role\":\"secret-role\",\"externalId\":\"abc\"}"),
-                "{\"message\":\"Configured secret store: TenantSecretStore{name='secret-foo', awsId='123', role='secret-role'}\"}",
+                "{\"secretStores\":[{\"name\":\"secret-foo\",\"awsId\":\"123\",\"role\":\"secret-role\"}]}",
                 200);
 
         // GET a tenant with secret stores configured

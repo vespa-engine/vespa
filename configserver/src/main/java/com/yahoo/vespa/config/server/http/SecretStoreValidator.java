@@ -3,12 +3,16 @@ package com.yahoo.vespa.config.server.http;
 
 import ai.vespa.util.http.VespaHttpClientBuilder;
 import com.yahoo.config.model.api.HostInfo;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.TenantName;
+import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.config.model.api.TenantSecretStore;
+import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import com.yahoo.yolean.Exceptions;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
@@ -22,6 +26,7 @@ import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
  * @author olaa
+ * Takes the payload received from the controller, adds external ID and acts as a proxy for the AwsParameterStoreValidationHandler result
  */
 public class SecretStoreValidator {
 
@@ -35,20 +40,10 @@ public class SecretStoreValidator {
         this.secretStore = secretStore;
     }
 
-    public HttpResponse validateSecretStore(Application application, TenantSecretStore tenantSecretStore, String tenantSecretName) {
-        var slime = toSlime(tenantSecretStore, tenantSecretName);
+    public HttpResponse validateSecretStore(Application application, SystemName system, Slime slime) {
+        addExternalId(application.getId().tenant(), system, slime);
         var uri = getUri(application);
         return postRequest(uri, slime);
-    }
-
-    private Slime toSlime(TenantSecretStore tenantSecretStore, String tenantSecretName) {
-        var slime = new Slime();
-        var cursor = slime.setObject();
-        cursor.setString("externalId", secretStore.getSecret(tenantSecretName));
-        cursor.setString("awsId", tenantSecretStore.getAwsId());
-        cursor.setString("name", tenantSecretStore.getName());
-        cursor.setString("role", tenantSecretStore.getRole());
-        return slime;
     }
 
     private URI getUri(Application application) {
@@ -76,6 +71,13 @@ public class SecretStoreValidator {
                     String.format("Failed to post request to %s: %s", uri, Exceptions.toMessageString(e))
             );
         }
+    }
+
+    private void addExternalId(TenantName tenantName, SystemName system, Slime slime) {
+        var data = slime.get();
+        var name = data.field("name").asString();
+        var secretName = SecretStoreExternalIdRetriever.secretName(tenantName, system, name);
+        data.setString("externalId", secretStore.getSecret(secretName));
     }
 
 }

@@ -7,18 +7,17 @@ import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
-import com.yahoo.vespa.jdk8compat.Set;
 import org.junit.Test;
 
 import java.util.Optional;
+import java.util.Set;
 
-import static com.yahoo.vespa.clustercontroller.core.matchers.HasStateReasonForNode.hasStateReasonForNode;
-import static com.yahoo.vespa.clustercontroller.core.ClusterFixture.storageNode;
 import static com.yahoo.vespa.clustercontroller.core.ClusterFixture.distributorNode;
-
+import static com.yahoo.vespa.clustercontroller.core.ClusterFixture.storageNode;
+import static com.yahoo.vespa.clustercontroller.core.matchers.HasStateReasonForNode.hasStateReasonForNode;
 import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.core.IsEqual.equalTo;
 import static org.hamcrest.core.Is.is;
+import static org.hamcrest.core.IsEqual.equalTo;
 import static org.junit.Assert.assertThat;
 
 public class ClusterStateGeneratorTest {

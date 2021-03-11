@@ -205,9 +205,14 @@ public final class PrepareParams {
         }
 
         public Builder tenantSecretStores(String serialized) {
-            this.tenantSecretStores = (serialized == null)
+            List<TenantSecretStore> secretStores = (serialized == null)
                     ? List.of()
                     : TenantSecretStoreSerializer.listFromSlime(SlimeUtils.jsonToSlime(serialized).get());
+            return tenantSecretStores(secretStores);
+        }
+
+        public Builder tenantSecretStores(List<TenantSecretStore> tenantSecretStores) {
+            this.tenantSecretStores = tenantSecretStores;
             return this;
         }
 

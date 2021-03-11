@@ -32,7 +32,8 @@ import static java.util.stream.Collectors.toList;
  * @author gjoranv
  */
 public class MetricsManager {
-    private static Logger log = Logger.getLogger(MetricsManager.class.getName());
+
+    private static final Logger log = Logger.getLogger(MetricsManager.class.getName());
 
     static final DimensionId VESPA_VERSION = toDimensionId("vespaVersion");
 
@@ -75,8 +76,8 @@ public class MetricsManager {
     /**
      * Returns the metrics for the given services. The empty list is returned if no services are given.
      *
-     * @param services The services to retrieve metrics for.
-     * @return Metrics for all matching services.
+     * @param services the services to retrieve metrics for
+     * @return metrics for all matching services
      */
     public List<MetricsPacket> getMetrics(List<VespaService> services, Instant startTime) {
         return getMetricsAsBuilders(services, startTime).stream()

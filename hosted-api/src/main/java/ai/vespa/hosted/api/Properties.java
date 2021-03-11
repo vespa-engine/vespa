@@ -24,7 +24,7 @@ public class Properties {
     public static ApplicationId application() {
         return ApplicationId.from(requireNonBlankProperty("tenant"),
                                   requireNonBlankProperty("application"),
-                                  getNonBlankProperty("instance").orElse(user()));
+                                  requireNonBlankProperty("instance"));
     }
 
     /** Returns the relevant environment, if this is set with the 'environment' property */

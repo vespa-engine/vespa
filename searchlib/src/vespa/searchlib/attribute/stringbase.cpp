@@ -225,13 +225,15 @@ StringAttribute::StringSearchContext::StringSearchContext(QueryTermSimple::UP qT
                                                           const StringAttribute & toBeSearched) :
     SearchContext(toBeSearched),
     _queryTerm(static_cast<QueryTermUCS4 *>(qTerm.release())),
-    _termUCS4(queryTerm()->getUCS4Term()),
+    _termUCS4(nullptr),
     _regex(),
     _isPrefix(_queryTerm->isPrefix()),
     _isRegex(_queryTerm->isRegex())
 {
     if (isRegex()) {
         _regex = vespalib::Regex::from_pattern(_queryTerm->getTerm(), vespalib::Regex::Options::IgnoreCase);
+    } else {
+        _queryTerm->term(_termUCS4);
     }
 }
 
@@ -259,16 +261,6 @@ StringAttribute::clearDoc(DocId doc)
     AttributeVector::clearDoc(_changes, doc);
 
     return removed;
-}
-
-namespace {
-
-class DirectAccessor {
-public:
-    DirectAccessor() { }
-    const char * get(const char * v) const { return v; }
-};
-
 }
 
 bool

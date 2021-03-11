@@ -476,7 +476,7 @@ struct ReferenceAttributeSearchTest : public ReferenceAttributeTest {
     }
 
     void expect_search_result(const std::string& term, const FakeResult& expected) {
-        auto ctx = _attr->getSearch(std::make_unique<QueryTermSimple>(term, QueryTermSimple::WORD),
+        auto ctx = _attr->getSearch(std::make_unique<QueryTermSimple>(term, QueryTermSimple::Type::WORD),
                                     SearchContextParams());
         TermFieldMatchData tfmd;
         auto itr = ctx->createIterator(&tfmd, false);

@@ -25,6 +25,7 @@ import static com.yahoo.config.provision.NodeResources.DiskSpeed.slow;
 public class NodeSpec {
 
     private final String hostname;
+    private final Optional<String> id;
     private final NodeState state;
     private final NodeType type;
     private final String flavor;
@@ -66,6 +67,7 @@ public class NodeSpec {
 
     public NodeSpec(
             String hostname,
+            Optional<String> id,
             Optional<DockerImage> wantedDockerImage,
             Optional<DockerImage> currentDockerImage,
             NodeState state,
@@ -102,6 +104,7 @@ public class NodeSpec {
         }
 
         this.hostname = Objects.requireNonNull(hostname);
+        this.id = Objects.requireNonNull(id);
         this.wantedDockerImage = Objects.requireNonNull(wantedDockerImage);
         this.currentDockerImage = Objects.requireNonNull(currentDockerImage);
         this.state = Objects.requireNonNull(state);
@@ -132,6 +135,11 @@ public class NodeSpec {
 
     public String hostname() {
         return hostname;
+    }
+
+    /** Returns the cloud-specific ID of the host. */
+    public Optional<String> id() {
+        return id;
     }
 
     public NodeState state() {
@@ -268,11 +276,13 @@ public class NodeSpec {
         NodeSpec that = (NodeSpec) o;
 
         return Objects.equals(hostname, that.hostname) &&
+                Objects.equals(id, that.id) &&
                 Objects.equals(wantedDockerImage, that.wantedDockerImage) &&
                 Objects.equals(currentDockerImage, that.currentDockerImage) &&
                 Objects.equals(state, that.state) &&
                 Objects.equals(type, that.type) &&
                 Objects.equals(flavor, that.flavor) &&
+                Objects.equals(modelName, that.modelName) &&
                 Objects.equals(wantedVespaVersion, that.wantedVespaVersion) &&
                 Objects.equals(currentVespaVersion, that.currentVespaVersion) &&
                 Objects.equals(wantedOsVersion, that.wantedOsVersion) &&
@@ -299,11 +309,13 @@ public class NodeSpec {
     public int hashCode() {
         return Objects.hash(
                 hostname,
+                id,
                 wantedDockerImage,
                 currentDockerImage,
                 state,
                 type,
                 flavor,
+                modelName,
                 wantedVespaVersion,
                 currentVespaVersion,
                 wantedOsVersion,
@@ -330,11 +342,13 @@ public class NodeSpec {
     public String toString() {
         return getClass().getSimpleName() + " {"
                 + " hostname=" + hostname
+                + " id=" + id
                 + " wantedDockerImage=" + wantedDockerImage
                 + " currentDockerImage=" + currentDockerImage
                 + " state=" + state
                 + " type=" + type
                 + " flavor=" + flavor
+                + " modelName=" + modelName
                 + " wantedVespaVersion=" + wantedVespaVersion
                 + " currentVespaVersion=" + currentVespaVersion
                 + " wantedOsVersion=" + wantedOsVersion
@@ -360,6 +374,7 @@ public class NodeSpec {
 
     public static class Builder {
         private String hostname;
+        private Optional<String> id = Optional.empty();
         private NodeState state;
         private NodeType type;
         private String flavor;
@@ -420,6 +435,11 @@ public class NodeSpec {
 
         public Builder hostname(String hostname) {
             this.hostname = hostname;
+            return this;
+        }
+
+        public Builder id(String id) {
+            this.id = Optional.of(id);
             return this;
         }
 
@@ -681,7 +701,7 @@ public class NodeSpec {
         }
 
         public NodeSpec build() {
-            return new NodeSpec(hostname, wantedDockerImage, currentDockerImage, state, type, flavor,
+            return new NodeSpec(hostname, id, wantedDockerImage, currentDockerImage, state, type, flavor,
                     wantedVespaVersion, currentVespaVersion, wantedOsVersion, currentOsVersion, orchestratorStatus,
                     owner, membership,
                     wantedRestartGeneration, currentRestartGeneration,

@@ -15,6 +15,7 @@ vespa_add_library(eval_eval OBJECT
     fast_value.cpp
     function.cpp
     gbdt.cpp
+    int8float.cpp
     interpreted_function.cpp
     key_gen.cpp
     lazy_params.cpp

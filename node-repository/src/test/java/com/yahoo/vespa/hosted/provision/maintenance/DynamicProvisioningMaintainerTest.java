@@ -12,7 +12,6 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.ParentHostUnavailableException;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
@@ -53,7 +52,6 @@ import static com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner.Beh
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author freva
@@ -454,12 +452,8 @@ public class DynamicProvisioningMaintainerTest {
         Supplier<Node> hostToRemove = () -> tester.nodeRepository().nodes().node(hostnameToRemove).get();
         Supplier<Node> nodeToRemove = () -> tester.nodeRepository().nodes().node(configNodes.childrenOf(hostnameToRemove).first().get().hostname()).get();
 
-        // Retire and deprovision host
+        // Set want to retire and deprovision on host and children
         tester.nodeRepository().nodes().deprovision(hostToRemove.get(), Agent.system, tester.clock().instant());
-        tester.nodeRepository().nodes().deallocate(hostToRemove.get(), Agent.system, getClass().getSimpleName());
-        assertSame("Host moves to parked", Node.State.parked, hostToRemove.get().state());
-        assertSame("Node remains active", Node.State.active, nodeToRemove.get().state());
-        assertTrue("Node wants to retire", nodeToRemove.get().status().wantToRetire());
 
         // Redeployment of config server application retires node
         tester.prepareAndActivateInfraApplication(configSrvApp, NodeType.config);
@@ -477,6 +471,10 @@ public class DynamicProvisioningMaintainerTest {
         tester.nodeRepository().nodes().removeRecursively(inactiveConfigServer, true);
         assertEquals(2, tester.nodeRepository().nodes().list().nodeType(NodeType.config).size());
 
+        // ExpiredRetirer moves host to inactive after child has moved to parked
+        tester.nodeRepository().nodes().deallocate(hostToRemove.get(), Agent.system, getClass().getSimpleName());
+        assertSame("Host moves to parked", Node.State.parked, hostToRemove.get().state());
+
         // Host is removed
         dynamicProvisioningTester.maintainer.maintain();
         assertEquals(2, tester.nodeRepository().nodes().list().nodeType(NodeType.confighost).size());
@@ -488,10 +486,9 @@ public class DynamicProvisioningMaintainerTest {
 
         // Deployment on another config server starts provisioning a new host and child
         HostName.setHostNameForTestingOnly("cfg3.example.com");
-        try {
-            tester.prepareAndActivateInfraApplication(configSrvApp, NodeType.config);
-            fail("Expected provisioning to fail");
-        } catch (ParentHostUnavailableException ignored) {}
+        assertEquals(0, tester.nodeRepository().nodes().list(Node.State.reserved).nodeType(NodeType.config).size());
+        assertEquals(2, tester.prepareAndActivateInfraApplication(configSrvApp, NodeType.config).size());
+        assertEquals(1, tester.nodeRepository().nodes().list(Node.State.reserved).nodeType(NodeType.config).size());
         Node newNode = tester.nodeRepository().nodes().list(Node.State.reserved).nodeType(NodeType.config).first().get();
 
         // Resume provisioning and activate host

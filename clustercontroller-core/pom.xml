@@ -73,6 +73,12 @@
             <scope>provided</scope>
         </dependency>
         <dependency>
+            <groupId>com.yahoo.vespa</groupId>
+            <artifactId>zookeeper-server-common</artifactId>
+            <version>${project.version}</version>
+            <scope>provided</scope>
+        </dependency>
+        <dependency>
             <!-- Not used by this module, but compilation fails without it because zookeeper uses these annotations.
                  Provided scoped here to avoid dependents getting it transitively. -->
             <groupId>com.github.spotbugs</groupId>

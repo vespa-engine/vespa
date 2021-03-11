@@ -77,6 +77,8 @@ public class ApplicationCuratorDatabase {
         if ( ! id.tenant().equals(tenant))
             throw new IllegalArgumentException("Cannot write application id '" + id + "' for tenant '" + tenant + "'");
         try (Lock lock = lock(id)) {
+            if (curator.exists(applicationPath(id))) return;
+
             curator.create(applicationPath(id));
             modifyReindexing(id, ApplicationReindexing.empty(), UnaryOperator.identity());
         }

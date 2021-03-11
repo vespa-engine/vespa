@@ -45,6 +45,8 @@ private:
     ValueType(CellType cell_type_in, std::vector<Dimension> &&dimensions_in)
         : _error(false), _cell_type(cell_type_in), _dimensions(std::move(dimensions_in)) {}
 
+    static ValueType error_if(bool has_error, ValueType else_type);
+
 public:
     ValueType(ValueType &&) noexcept = default;
     ValueType(const ValueType &) = default;
@@ -52,22 +54,12 @@ public:
     ValueType &operator=(const ValueType &) = default;
     ~ValueType();
     CellType cell_type() const { return _cell_type; }
+    CellMeta cell_meta() const { return {_cell_type, is_double()}; }
     bool is_error() const { return _error; }
-    bool is_scalar() const { return _dimensions.empty(); }
+    bool is_double() const;
+    bool has_dimensions() const { return !_dimensions.empty(); }
     bool is_sparse() const;
     bool is_dense() const;
-
-    // TODO: remove is_double and is_tensor
-    // is_tensor should no longer be useful
-    // is_double should be replaced with is_scalar where you also
-    //           handle cell type correctly (free float values will
-    //           not be introduced by type-resolving just yet, so
-    //           is_double and is_scalar will be interchangeable in
-    //           most cases for a while)
-
-    bool is_double() const { return (!_error && is_scalar() && (_cell_type == CellType::DOUBLE)); }
-    bool is_tensor() const { return (!_dimensions.empty()); }
-
     size_t count_indexed_dimensions() const;
     size_t count_mapped_dimensions() const;
     size_t dense_subspace_size() const;
@@ -83,27 +75,21 @@ public:
     }
     bool operator!=(const ValueType &rhs) const { return !(*this == rhs); }
 
+    ValueType map() const;
     ValueType reduce(const std::vector<vespalib::string> &dimensions_in) const;
+    ValueType peek(const std::vector<vespalib::string> &dimensions_in) const;
     ValueType rename(const std::vector<vespalib::string> &from,
                      const std::vector<vespalib::string> &to) const;
     ValueType cell_cast(CellType to_cell_type) const;
 
     static ValueType error_type() { return ValueType(); }
     static ValueType make_type(CellType cell_type, std::vector<Dimension> dimensions_in);
-
-    // TODO: remove double_type and tensor_type and use make_type
-    // directly. Currently the tensor_type function contains
-    // protection against ending up with scalar float values.
-
     static ValueType double_type() { return make_type(CellType::DOUBLE, {}); }
-    static ValueType tensor_type(std::vector<Dimension> dimensions_in, CellType cell_type = CellType::DOUBLE);
-
     static ValueType from_spec(const vespalib::string &spec);
     static ValueType from_spec(const vespalib::string &spec, std::vector<ValueType::Dimension> &unsorted);
     vespalib::string to_spec() const;
     static ValueType join(const ValueType &lhs, const ValueType &rhs);
     static ValueType merge(const ValueType &lhs, const ValueType &rhs);
-    static CellType unify_cell_types(const ValueType &a, const ValueType &b);
     static ValueType concat(const ValueType &lhs, const ValueType &rhs, const vespalib::string &dimension);
     static ValueType either(const ValueType &one, const ValueType &other);
 };

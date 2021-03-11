@@ -64,6 +64,9 @@ public interface NodeSpec {
     /** Returns true if there exist some circumstance where we may accept to have this node allocated */
     boolean acceptable(NodeCandidate node);
 
+    /** Returns true if nodes with non-active parent hosts should be rejected */
+    boolean rejectNonActiveParent();
+
     /**
      * Returns true if a node with given current resources and current spare host resources can be resized
      * in-place to resources in this spec.
@@ -164,6 +167,11 @@ public interface NodeSpec {
         public boolean acceptable(NodeCandidate node) { return true; }
 
         @Override
+        public boolean rejectNonActiveParent() {
+            return false;
+        }
+
+        @Override
         public String toString() { return "request for " + count + " nodes with " + requestedNodeResources; }
 
     }
@@ -226,6 +234,11 @@ public interface NodeSpec {
         public boolean acceptable(NodeCandidate node) {
             // Since we consume all offered nodes we should not accept previously deactivated nodes
             return node.state() != Node.State.inactive;
+        }
+
+        @Override
+        public boolean rejectNonActiveParent() {
+            return true;
         }
 
         @Override

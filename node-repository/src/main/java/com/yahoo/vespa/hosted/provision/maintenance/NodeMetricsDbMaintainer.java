@@ -70,11 +70,13 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
                                 ApplicationId application) {
         if (exception != null) {
             if (warnings.get() < maxWarningsPerInvocation)
-                log.log(Level.WARNING, "Could not update metrics for " + application, exception);
+                log.log(Level.WARNING, "Could not update metrics for " + application + ": " +
+                                       Exceptions.toMessageString(exception));
             warnings.add(1);
         }
         else if (response != null) {
-            metricsDb.add(response.metrics());
+            metricsDb.addNodeMetrics(response.nodeMetrics());
+            metricsDb.addClusterMetrics(application, response.clusterMetrics());
         }
     }
 

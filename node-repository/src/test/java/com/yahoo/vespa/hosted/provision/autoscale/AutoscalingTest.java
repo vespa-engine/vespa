@@ -56,7 +56,7 @@ public class AutoscalingTest {
         tester.clock().advance(Duration.ofDays(1));
         tester.addCpuMeasurements(0.25f, 1f, 120, application1);
         ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
-                                                                  15, 1, 1.3,  28.6, 28.6,
+                                                                  14, 1, 1.4,  30.8, 30.8,
                                                                   tester.autoscale(application1, cluster1.id(), min, max).target());
 
         tester.deploy(application1, cluster1, scaledResources);
@@ -74,7 +74,7 @@ public class AutoscalingTest {
 
         tester.addCpuMeasurements(0.1f, 1f, 120, application1);
         tester.assertResources("Scaling down to minimum since usage has gone down significantly",
-                               14, 1, 1.0, 30.8, 30.8,
+                               15, 1, 1.0, 28.6, 28.6,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
 
         var events = tester.nodeRepository().applications().get(application1).get().cluster(cluster1.id()).get().scalingEvents();
@@ -129,7 +129,7 @@ public class AutoscalingTest {
         ClusterResources max = new ClusterResources(20, 1,
                                                     new NodeResources(100, 1000, 1000, 1, NodeResources.DiskSpeed.any));
         ClusterResources scaledResources = tester.assertResources("Scaling up since resource usage is too high",
-                                                                  15, 1, 1.3,  28.6, 28.6,
+                                                                  14, 1, 1.4,  30.8, 30.8,
                                                                   tester.autoscale(application1, cluster1.id(), min, max).target());
         assertEquals("Disk speed from min/max is used",
                      NodeResources.DiskSpeed.any, scaledResources.nodeResources().diskSpeed());
@@ -343,7 +343,7 @@ public class AutoscalingTest {
         tester.clock().advance(Duration.ofDays(1));
         tester.addMemMeasurements(1.0f, 1f, 1000, application1);
         tester.assertResources("Increase group size to reduce memory load",
-                               8, 2, 12.9,  89.3, 62.5,
+                               8, 2, 13.6,  89.3, 62.5,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
     }
 
@@ -362,7 +362,7 @@ public class AutoscalingTest {
         tester.clock().advance(Duration.ofDays(2));
         tester.addMemMeasurements(0.02f, 0.95f, 120, application1);
         tester.assertResources("Scaling down",
-                               6, 1, 2.8, 4.0, 95.0,
+                               6, 1, 2.9, 4.0, 95.0,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
     }
 
@@ -386,7 +386,7 @@ public class AutoscalingTest {
         tester.clock().advance(Duration.ofDays(2));
         tester.addMemMeasurements(0.02f, 0.95f, 120, application1);
         tester.assertResources("Scaling down",
-                               6, 1, 2.8, 4.0, 95.0,
+                               6, 1, 2.9, 4.0, 95.0,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
     }
 
@@ -405,7 +405,7 @@ public class AutoscalingTest {
             tester.deploy(application1, cluster1, min);
             tester.addMeasurements(1.0f, 1.0f, 0.7f, 0, 1000, application1);
             tester.assertResources("Scaling up",
-                                   4, 1, 7.0, 20, 200,
+                                   4, 1, 7.4, 20, 200,
                                    tester.autoscale(application1, cluster1.id(), min, max).target());
         }
 
@@ -418,7 +418,7 @@ public class AutoscalingTest {
             tester.deploy(application1, cluster1, min);
             tester.addMeasurements(1.0f, 1.0f, 0.7f, 0, 1000, application1);
             tester.assertResources("Scaling up",
-                                   4, 1, 7.0, 34, 200,
+                                   4, 1, 7.4, 34, 200,
                                    tester.autoscale(application1, cluster1.id(), min, max).target());
         }
     }
@@ -457,7 +457,7 @@ public class AutoscalingTest {
         tester.clock().advance(Duration.ofDays(2));
         tester.addMemMeasurements(0.3f, 0.6f, 1000, application1);
         tester.assertResources("Scaling down since resource usage has gone down",
-                               5, 1, 3, 83, 36,
+                               6, 1, 3, 83, 28.8,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
     }
 
@@ -489,6 +489,62 @@ public class AutoscalingTest {
                                4, 1, 3,  100, 100,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
 
+    }
+
+    @Test
+    public void test_autoscaling_considers_growth_rate() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        ClusterResources min = new ClusterResources( 1, 1, resources);
+        ClusterResources max = new ClusterResources(10, 1, resources);
+        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        tester.deploy(application1, cluster1, 5, 1, resources);
+        tester.addCpuMeasurements(0.25f, 1f, 120, application1);
+
+        // (no query rate data)
+        tester.assertResources("Advice to scale up since we assume we need 2x cpu for growth when no data",
+                               7, 1, 3,  100, 100,
+                               tester.autoscale(application1, cluster1.id(), min, max).target());
+
+        tester.setScalingDuration(application1, cluster1.id(), Duration.ofMinutes(5));
+        tester.addQueryRateMeasurements(application1, cluster1.id(),
+                                        100,
+                                        t -> 10.0 + (t < 50 ? t : 100 - t));
+        tester.assertResources("Advice to scale down since observed growth is much slower than scaling time",
+                               4, 1, 3,  100, 100,
+                               tester.autoscale(application1, cluster1.id(), min, max).target());
+
+        tester.clearQueryRateMeasurements(application1, cluster1.id());
+
+        tester.setScalingDuration(application1, cluster1.id(), Duration.ofMinutes(60));
+        tester.addQueryRateMeasurements(application1, cluster1.id(),
+                                        100,
+                                        t -> 10.0 + (t < 50 ? t * t * t : 125000 - (t - 49) * (t - 49) * (t - 49)));
+        tester.assertResources("Advice to scale up since observed growth is much faster than scaling time",
+                               10, 1, 3,  100, 100,
+                               tester.autoscale(application1, cluster1.id(), min, max).target());
+    }
+
+    @Test
+    public void test_cd_autoscaling_test() {
+        NodeResources resources = new NodeResources(1, 4, 50, 1);
+        ClusterResources min = new ClusterResources( 2, 1, resources);
+        ClusterResources max = new ClusterResources(3, 1, resources);
+        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+        tester.deploy(application1, cluster1, 2, 1, resources);
+
+        tester.addCpuMeasurements(0.5f, 1f, 10, application1);
+        tester.addQueryRateMeasurements(application1, cluster1.id(),
+                                        500, t -> 0.0);
+
+        tester.assertResources("Advice to scale up since observed growth is much faster than scaling time",
+                               3, 1, 1,  4, 50,
+                               tester.autoscale(application1, cluster1.id(), min, max).target());
     }
 
     /**

@@ -70,6 +70,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private final AtomicBoolean running = new AtomicBoolean(true);
     private FleetControllerOptions options;
     private FleetControllerOptions nextOptions;
+    private final int configuredIndex;
     private final List<SystemStateListener> systemStateListeners = new CopyOnWriteArrayList<>();
     private boolean processingCycle = false;
     private boolean wantedStateChanged = false;
@@ -125,6 +126,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                            MetricUpdater metricUpdater,
                            FleetControllerOptions options) {
         log.info("Starting up cluster controller " + options.fleetControllerIndex + " for cluster " + cluster.getName());
+        this.configuredIndex = options.fleetControllerIndex;
         this.timer = timer;
         this.monitor = timer;
         this.eventLog = eventLog;
@@ -284,7 +286,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         }
         log.log(Level.INFO,  "Fleetcontroller done shutting down event thread.");
         controllerThreadId = Thread.currentThread().getId();
-        database.shutdown(this);
+        database.shutdown(databaseContext);
 
         if (statusPageServer != null) {
             statusPageServer.shutdown();
@@ -436,7 +438,13 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
      */
     public void lostDatabaseConnection() {
         verifyInControllerThread();
+        boolean wasMaster = masterElectionHandler.isMaster();
         masterElectionHandler.lostDatabaseConnection();
+        if (wasMaster) {
+            // Enforce that we re-fetch all state information from ZooKeeper upon the next tick if we're still master.
+            dropLeadershipState();
+            metricUpdater.updateMasterState(false);
+        }
     }
 
     private void failAllVersionDependentTasks() {
@@ -481,6 +489,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     /** This is called when the options field has been set to a new set of options */
     private void propagateOptions() {
         verifyInControllerThread();
+        selfTerminateIfConfiguredNodeIndexHasChanged();
 
         if (changesConfiguredNodeSet(options.nodes)) {
             // Force slobrok node re-fetch in case of changes to the set of configured nodes
@@ -501,8 +510,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         cluster.setPollingFrequency(options.statePollingFrequency);
         cluster.setDistribution(options.storageDistribution);
         cluster.setNodes(options.nodes);
-        database.setZooKeeperAddress(options.zooKeeperServerAddress);
-        database.setZooKeeperSessionTimeout(options.zooKeeperSessionTimeout);
+        database.setZooKeeperAddress(options.zooKeeperServerAddress, databaseContext);
+        database.setZooKeeperSessionTimeout(options.zooKeeperSessionTimeout, databaseContext);
         stateGatherer.setMaxSlobrokDisconnectGracePeriod(options.maxSlobrokDisconnectGracePeriod);
         stateGatherer.setNodeStateRequestTimeout(options.nodeStateRequestTimeoutMS);
 
@@ -536,6 +545,16 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         nextStateSendTime = Math.min(currentTime + options.minTimeBetweenNewSystemStates, nextStateSendTime);
         configGeneration = nextConfigGeneration;
         nextConfigGeneration = -1;
+    }
+
+    private void selfTerminateIfConfiguredNodeIndexHasChanged() {
+        if (options.fleetControllerIndex != configuredIndex) {
+            log.warning(String.format("Got new configuration where CC index has changed from %d to %d. We do not support "+
+                                      "doing this live; immediately exiting now to force new configuration",
+                                      configuredIndex, options.fleetControllerIndex));
+            prepareShutdownEdge();
+            System.exit(1);
+        }
     }
 
     public StatusPageResponse fetchStatusPage(StatusPageServer.HttpRequest httpRequest) {
@@ -1066,16 +1085,20 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 wantedStateChanged = false;
             }
         } else {
-            if (isMaster) {
-                eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION, "This node is no longer fleetcontroller master.", timer.getCurrentTimeInMillis()));
-                firstAllowedStateBroadcast = Long.MAX_VALUE;
-                failAllVersionDependentTasks();
-            }
-            wantedStateChanged = false;
-            isMaster = false;
+            dropLeadershipState();
         }
         metricUpdater.updateMasterState(isMaster);
         return didWork;
+    }
+
+    private void dropLeadershipState() {
+        if (isMaster) {
+            eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION, "This node is no longer fleetcontroller master.", timer.getCurrentTimeInMillis()));
+            firstAllowedStateBroadcast = Long.MAX_VALUE;
+            failAllVersionDependentTasks();
+        }
+        wantedStateChanged = false;
+        isMaster = false;
     }
 
     public void run() {
@@ -1093,10 +1116,14 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             synchronized (monitor) { running.set(false); }
             System.exit(1);
         } finally {
-            running.set(false);
-            failAllVersionDependentTasks();
-            synchronized (monitor) { monitor.notifyAll(); }
+            prepareShutdownEdge();
         }
+    }
+
+    private void prepareShutdownEdge() {
+        running.set(false);
+        failAllVersionDependentTasks();
+        synchronized (monitor) { monitor.notifyAll(); }
     }
 
     public DatabaseHandler.Context databaseContext = new DatabaseHandler.Context() {

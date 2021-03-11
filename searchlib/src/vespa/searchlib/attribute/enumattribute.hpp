@@ -33,7 +33,7 @@ void EnumAttribute<B>::load_enum_store(LoadedVector& loaded)
             EnumIndex index = loader.insert(value.getValue(), value._pidx.ref());
             for (size_t i(0), m(loaded.size()); i < m; ++i, loaded.next()) {
                 value = loaded.read();
-                if (!EnumStore::ComparatorType::equal(prev, value.getValue())) {
+                if (!EnumStore::ComparatorType::equal_helper(prev, value.getValue())) {
                     loader.set_ref_count_for_last_value(prevRefCount);
                     index = loader.insert(value.getValue(), value._pidx.ref());
                     prev = value.getValue();

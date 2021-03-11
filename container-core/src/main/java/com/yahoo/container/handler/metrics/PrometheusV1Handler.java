@@ -5,17 +5,18 @@ import com.google.inject.Inject;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.StringResponse;
-import com.yahoo.vespa.jdk8compat.List;
 import com.yahoo.yolean.Exceptions;
-import java.io.IOException;
-import java.net.URI;
-import java.util.Optional;
-import java.util.concurrent.Executor;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.BasicResponseHandler;
 import org.apache.http.impl.client.CloseableHttpClient;
+
+import java.io.IOException;
+import java.net.URI;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.Executor;
 
 import static com.yahoo.container.handler.metrics.MetricsV2Handler.consumerQuery;
 import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
