@@ -164,7 +164,7 @@ TensorSpec ReferenceOperations::join(const TensorSpec &in_a, const TensorSpec &i
 
 TensorSpec ReferenceOperations::map(const TensorSpec &in_a, map_fun_t func) {
     auto a = in_a.normalize();
-    ValueType res_type = ValueType::from_spec(a.type());
+    ValueType res_type = ValueType::from_spec(a.type()).map();
     TensorSpec result(res_type.to_spec());
     if (res_type.is_error()) {
         return result;

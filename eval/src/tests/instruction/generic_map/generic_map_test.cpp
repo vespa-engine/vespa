@@ -35,11 +35,13 @@ const std::vector<GenSpec> map_layouts = {
 
 TensorSpec perform_generic_map(const TensorSpec &a, map_fun_t func, const ValueBuilderFactory &factory)
 {
+    Stash stash;
     auto lhs = value_from_spec(a, factory);
     auto res_type = lhs->type().map();
-    auto my_op = GenericMap::make_instruction(res_type, lhs->type(), func);
+    auto my_op = GenericMap::make_instruction(res_type, lhs->type(), func, stash);
     InterpretedFunction::EvalSingle single(factory, my_op);
-    return spec_from_value(single.eval(std::vector<Value::CREF>({*lhs})));
+    const auto & v = single.eval(std::vector<Value::CREF>({*lhs}));
+    return spec_from_value(v);
 }
 
 void test_generic_map_with(const ValueBuilderFactory &factory) {

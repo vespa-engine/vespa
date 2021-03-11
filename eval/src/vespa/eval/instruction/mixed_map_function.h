@@ -7,7 +7,7 @@
 namespace vespalib::eval {
 
 /**
- * Tensor function optimizing map operations on tensors.
+ * Tensor function optimizing in-place map operations on tensors.
  **/
 class MixedMapFunction : public tensor_function::Map
 {

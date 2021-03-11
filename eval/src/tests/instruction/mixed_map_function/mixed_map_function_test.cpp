@@ -16,6 +16,7 @@ const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 EvalFixture::ParamRepo make_params() {
     return EvalFixture::ParamRepo()
         .add("a", GenSpec(1.5))
+        .add_mutable("@a", GenSpec(1.5))
         .add("b", GenSpec(2.5))
         .add_variants("sparse", GenSpec().map("x", {"a"}))
         .add_variants("mixed", GenSpec().map("x", {"a"}).idx("y", 5))
@@ -23,7 +24,7 @@ EvalFixture::ParamRepo make_params() {
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
-void verify_optimized(const vespalib::string &expr, bool inplace) {
+void verify_optimized(const vespalib::string &expr) {
     EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
     EvalFixture fixture(prod_factory, expr, param_repo, true, true);
     EXPECT_EQ(fixture.result(), EvalFixture::ref(expr, param_repo));
@@ -31,13 +32,10 @@ void verify_optimized(const vespalib::string &expr, bool inplace) {
     auto info = fixture.find_all<MixedMapFunction>();
     ASSERT_EQ(info.size(), 1u);
     EXPECT_TRUE(info[0]->result_is_mutable());
-    EXPECT_EQ(info[0]->inplace(), inplace);
+    EXPECT_EQ(info[0]->inplace(), true);
     ASSERT_EQ(fixture.num_params(), 1);
-    if (inplace) {
-        EXPECT_EQ(fixture.get_param(0), fixture.result());
-    } else {
-        EXPECT_TRUE(!(fixture.get_param(0) == fixture.result()));
-    }
+    // inplace check:
+    EXPECT_EQ(fixture.get_param(0), fixture.result());
 }
 
 void verify_not_optimized(const vespalib::string &expr) {
@@ -47,36 +45,29 @@ void verify_not_optimized(const vespalib::string &expr) {
     EXPECT_EQ(fixture.result(), slow_fixture.result());
     auto info = fixture.find_all<MixedMapFunction>();
     EXPECT_TRUE(info.empty());
+    EXPECT_TRUE(!(fixture.get_param(0) == fixture.result()));
 }
 
-TEST(MapTest, dense_map_is_optimized) {
-    verify_optimized("map(x5y3,f(x)(x+10))", false);
-    verify_optimized("map(x5y3_f,f(x)(x+10))", false);
-}
-
-TEST(MapTest, simple_dense_map_can_be_inplace) {
-    verify_optimized("map(@x5y3,f(x)(x+10))", true);
-    verify_optimized("map(@x5y3_f,f(x)(x+10))", true);
+TEST(MapTest, dense_map_can_be_optimized) {
+    verify_not_optimized("map(x5y3,f(x)(x+10))");
+    verify_not_optimized("map(x5y3_f,f(x)(x+10))");
+    verify_optimized("map(@x5y3,f(x)(x+10))");
+    verify_optimized("map(@x5y3_f,f(x)(x+10))");
 }
 
 TEST(MapTest, scalar_map_is_not_optimized) {
     verify_not_optimized("map(a,f(x)(x+10))");
+    verify_not_optimized("map(@a,f(x)(x+10))");
 }
 
-TEST(MapTest, sparse_map_is_optimized) {
-    verify_optimized("map(sparse,f(x)(x+10))", false);
+TEST(MapTest, sparse_map_can_be_optimized) {
+    verify_not_optimized("map(sparse,f(x)(x+10))");
+    verify_optimized("map(@sparse,f(x)(x+10))");
 }
 
-TEST(MapTest, sparse_map_can_be_inplace) {
-    verify_optimized("map(@sparse,f(x)(x+10))", true);
-}
-
-TEST(MapTest, mixed_map_is_optimized) {
-    verify_optimized("map(mixed,f(x)(x+10))", false);
-}
-
-TEST(MapTest, mixed_map_can_be_inplace) {
-    verify_optimized("map(@mixed,f(x)(x+10))", true);
+TEST(MapTest, mixed_map_can_be_optimized) {
+    verify_not_optimized("map(mixed,f(x)(x+10))");
+    verify_optimized("map(@mixed,f(x)(x+10))");
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

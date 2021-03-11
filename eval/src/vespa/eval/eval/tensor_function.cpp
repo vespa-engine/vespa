@@ -158,9 +158,9 @@ Reduce::visit_self(vespalib::ObjectVisitor &visitor) const
 //-----------------------------------------------------------------------------
 
 Instruction
-Map::compile_self(const ValueBuilderFactory &, Stash &) const
+Map::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
-    return instruction::GenericMap::make_instruction(result_type(), child().result_type(), _function);
+    return instruction::GenericMap::make_instruction(result_type(), child().result_type(), _function, stash);
 }
 
 void
