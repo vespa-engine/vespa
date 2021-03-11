@@ -42,42 +42,6 @@ public class NodeStateTestCase {
     }
 
     @Test
-    public void testDiskState() throws ParseException {
-        NodeState ns = NodeState.deserialize(NodeType.STORAGE, "s:m");
-        assertEquals(new DiskState(State.UP, "", 1), ns.getDiskState(0));
-        assertEquals(new DiskState(State.UP, "", 1), ns.getDiskState(1));
-        assertEquals(new DiskState(State.UP, "", 1), ns.getDiskState(100));
-
-        ns.setDiskCount(2).setDiskState(1, new DiskState(State.DOWN, "bad disk", 1));
-        assertEquals(new DiskState(State.UP, "", 1), ns.getDiskState(0));
-        assertEquals(new DiskState(State.DOWN, "bad disk", 1), ns.getDiskState(1));
-
-        List<DiskState> diskStates = ns.getDiskStates();
-        assertEquals(2, diskStates.size());
-        for (int i=0; i<diskStates.size(); i++) {
-            DiskState diskState = diskStates.get(i);
-            if (i==1) {
-                assertEquals(new DiskState(State.DOWN, "bad disk", 1), diskState);
-            } else {
-                assertEquals(new DiskState(State.UP, "", 1), diskState);
-            }
-        }
-
-        try {
-            NodeState.deserialize(NodeType.STORAGE, "s:m").setDiskCount(-1);
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
-        try {
-            NodeState.deserialize(NodeType.STORAGE, "s:m").setDiskState(1, new DiskState(State.DOWN, "bad disk", 1));
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
-        try {
-            NodeState.deserialize(NodeType.STORAGE, "s:m").setDiskCount(2).setDiskState(1, new DiskState(State.DOWN, "bad disk", 1)).getDiskState(100);
-            assertTrue("Should fail", false);
-        } catch (Exception e) {}
-    }
-
-    @Test
     public void testSerialization() throws ParseException {
         NodeState ns = new NodeState(NodeType.STORAGE, State.MAINTENANCE);
         assertEquals("s:m", ns.serialize(false));

@@ -9,18 +9,12 @@ import com.yahoo.vespa.clustercontroller.core.restapiv2.Response;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.MissingResourceException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiException;
 
-import java.util.Set;
-
 public class NodeStateRequest extends Request<Response.NodeResponse> {
     private final Id.Node id;
-    private final int recursive;
-    private final Set<VerboseReport> verboseReports;
 
-    public NodeStateRequest(Id.Node id, int recursive, Set<VerboseReport> verboseReports) {
+    public NodeStateRequest(Id.Node id) {
         super(MasterState.MUST_BE_MASTER);
         this.id = id;
-        this.recursive = recursive;
-        this.verboseReports = verboseReports;
     }
 
     @Override
@@ -39,15 +33,6 @@ public class NodeStateRequest extends Request<Response.NodeResponse> {
         result.addState("unit", new Response.UnitStateImpl(info.getReportedState()));
         result.addState("user", new Response.UnitStateImpl(info.getWantedState()));
 
-        for (int i=0; i<info.getReportedState().getDiskCount(); ++i) {
-            Id.Partition partitionId = new Id.Partition(id, i);
-            if (recursive > 0) {
-                PartitionStateRequest psr = new PartitionStateRequest(partitionId, verboseReports);
-                result.addEntry("partition", String.valueOf(i), psr.calculateResult(context));
-            } else {
-                result.addLink("partition", String.valueOf(i), partitionId.toString());
-            }
-        }
         return result;
     }
 }
