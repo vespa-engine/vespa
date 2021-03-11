@@ -29,6 +29,8 @@ const Function *get_lambda(const nodes::Node &node) {
     return nullptr;
 }
 
+void my_nop(InterpretedFunction::State &, uint64_t) {}
+
 } // namespace vespalib::<unnamed>
 
 
@@ -56,6 +58,12 @@ InterpretedFunction::State::init(const LazyParams &params_in) {
 InterpretedFunction::Context::Context(const InterpretedFunction &ifun)
     : _state(ifun._factory)
 {
+}
+
+InterpretedFunction::Instruction
+InterpretedFunction::Instruction::nop()
+{
+    return Instruction(my_nop);
 }
 
 InterpretedFunction::InterpretedFunction(const ValueBuilderFactory &factory, const TensorFunction &function)

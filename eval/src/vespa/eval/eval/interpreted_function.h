@@ -82,6 +82,7 @@ public:
         static Instruction fetch_param(size_t param_idx) {
             return Instruction(nullptr, param_idx);
         }
+        static Instruction nop();
     };
 
 private:
