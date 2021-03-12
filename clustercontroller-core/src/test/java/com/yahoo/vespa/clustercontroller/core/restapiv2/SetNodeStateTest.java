@@ -366,16 +366,6 @@ public class SetNodeStateTest extends StateRestApiTest {
         } catch (OperationNotSupportedForUnitException e) {
             assertTrue(e.getMessage(), e.getMessage().contains(wrongUnitMessage));
         }
-
-        // ... setting at node-level is allowed
-
-        try{
-            restAPI.setUnitState(new SetUnitStateRequestImpl(
-                    "music/storage/1/0").setNewState("user", "down", "testing"));
-            fail();
-        } catch (OperationNotSupportedForUnitException e) {
-            assertTrue(e.getMessage(), e.getMessage().contains(wrongUnitMessage));
-        }
     }
 
     @Test
