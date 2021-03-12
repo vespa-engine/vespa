@@ -159,7 +159,7 @@ struct TypifyCellMeta {
             }
             abort();
         } else {
-            return resolve(value.not_scalar(), f);
+            return resolve(value.not_scalar(), std::forward<F>(f));
         }
     }
     template <typename F> static decltype(auto) resolve(CellMetaNotScalar value, F &&f) {
@@ -176,7 +176,7 @@ struct TypifyCellMeta {
             }
             abort();
         } else {
-            return resolve(value.not_scalar(), f);
+            return resolve(value.not_scalar(), std::forward<F>(f));
         }
     }
     template <typename F> static decltype(auto) resolve(LimitedCellMetaNotScalar value, F &&f) {
