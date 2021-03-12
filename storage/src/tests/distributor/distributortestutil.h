@@ -22,10 +22,12 @@ class Distributor;
 class DistributorBucketSpace;
 class DistributorBucketSpaceRepo;
 class DistributorComponent;
+class DistributorStripe;
 class IdealStateManager;
 class ExternalOperationHandler;
 class Operation;
 
+// TODO STRIPE rename to DistributorStripeTestUtil?
 class DistributorTestUtil : private DoneInitializeHandler
 {
 public:

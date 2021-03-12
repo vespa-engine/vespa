@@ -26,7 +26,7 @@ class XmlAttribute;
 
 namespace storage::distributor {
 
-class Distributor;
+class DistributorInterface;
 class BucketSpaceDistributionContext;
 
 class BucketDBUpdater : public framework::StatusReporter,
@@ -34,7 +34,7 @@ class BucketDBUpdater : public framework::StatusReporter,
 {
 public:
     using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
-    BucketDBUpdater(Distributor& owner,
+    BucketDBUpdater(DistributorInterface& owner,
                     DistributorBucketSpaceRepo& bucketSpaceRepo,
                     DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                     DistributorMessageSender& sender,

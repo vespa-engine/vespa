@@ -10,6 +10,7 @@
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/operations/external/updateoperation.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/config/helper/configgetter.hpp>
 #include <vespa/vespalib/gtest/gtest.h>
 

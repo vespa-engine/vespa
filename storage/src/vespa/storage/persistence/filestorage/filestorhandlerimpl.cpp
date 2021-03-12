@@ -167,18 +167,17 @@ FileStorHandlerImpl::flush(bool killPendingMerges)
 
     if (killPendingMerges) {
         api::ReturnCode code(api::ReturnCode::ABORTED, "Storage node is shutting down");
-        for (auto & entry : _mergeStates)
-        {
+        for (auto & entry : _mergeStates) {
             MergeStatus& s(*entry.second);
-            if (s.pendingGetDiff.get() != 0) {
+            if (s.pendingGetDiff) {
                 s.pendingGetDiff->setResult(code);
                 _messageSender.sendReply(s.pendingGetDiff);
             }
-            if (s.pendingApplyDiff.get() != 0) {
+            if (s.pendingApplyDiff) {
                 s.pendingApplyDiff->setResult(code);
                 _messageSender.sendReply(s.pendingApplyDiff);
             }
-            if (s.reply.get() != 0) {
+            if (s.reply) {
                 s.reply->setResult(code);
                 _messageSender.sendReply(s.reply);
             }

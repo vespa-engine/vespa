@@ -10,6 +10,7 @@
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/document/fieldset/fieldsets.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <gmock/gmock.h>
