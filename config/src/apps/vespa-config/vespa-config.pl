@@ -1,5 +1,5 @@
 #!/usr/bin/env perl
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+# Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #
 # Various small functions used when bootstrapping the config system
 
@@ -189,26 +189,6 @@ sub getConfigServers {
     return @ret;
 }
 
-sub getZKPort {
-    my $zk_client_port = getCCSVar('zookeeper_clientPort', 2181);
-    return $zk_client_port;
-}
-sub getZKString {
-    my $zk_client_port = getZKPort();
-    my $out;
-    my $addr;
-    foreach $addr (getConfigServers()) {
-        $addr =~ s{:\d+}{:$zk_client_port,};
-        $out .= $addr;
-    }
-    chop($out);                 # last comma
-    return $out;
-}
-
-sub printZKString {
-    my $out = getZKString();
-    print $out . "\n";
-}
 
 sub printAllConfigSourcesWithPort {
     my $cfport = getConfigServerPort();
@@ -275,7 +255,7 @@ sub getLastLine {
 
 sub usage {
     print "usage: ";
-    print "vespa-config [-configsources | -confighttpsources | -zkstring | -configserverport | -zkclientport]\n";
+    print "vespa-config [-configsources | -confighttpsources | -configserverport]\n";
 }
 
 if ( @ARGV == 0 ) {
@@ -296,18 +276,9 @@ if ( $ARGV[0] eq "-confighttpsources" ) {
     printConfigHttpSources();
     exit 0;
 }
-if ( $ARGV[0] eq "-zkstring" ) {
-    printZKString();
-    exit 0;
-}
 if ( $ARGV[0] eq "-configserverport" ) {
     $lookupInConfig = 1;
     printConfigServerPort();
-    exit 0;
-}
-if ( $ARGV[0] eq "-zkclientport" ) {
-    my $zk_client_port = getZKPort();
-    print "$zk_client_port\n";
     exit 0;
 }
 
