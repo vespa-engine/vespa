@@ -23,23 +23,19 @@ template<typename LCT, typename RCT>
 void
 convert_cells(std::unique_ptr<Value> &original, const vespalib::eval::ValueType &want_type)
 {
-    auto old_cells = original->cells().typify<LCT>();
-    std::vector<RCT> new_cells;
-    new_cells.reserve(old_cells.size());
-    for (LCT value : old_cells) {
-        RCT conv = value;
-        new_cells.push_back(conv);
+    if constexpr (std::is_same<LCT,RCT>::value) {
+        return;
+    } else {
+        auto old_cells = original->cells().typify<LCT>();
+        std::vector<RCT> new_cells;
+        new_cells.reserve(old_cells.size());
+        for (LCT value : old_cells) {
+            RCT conv(value);
+            new_cells.push_back(conv);
+        }
+        original = std::make_unique<DenseCellsValue<RCT>>(want_type, std::move(new_cells));
     }
-    original = std::make_unique<DenseCellsValue<RCT>>(want_type, std::move(new_cells));
 }
-
-template<>
-void
-convert_cells<float,float>(std::unique_ptr<Value> &, const vespalib::eval::ValueType &) {}
-
-template<>
-void
-convert_cells<double,double>(std::unique_ptr<Value> &, const vespalib::eval::ValueType &) {}
 
 struct ConvertCellsSelector
 {
