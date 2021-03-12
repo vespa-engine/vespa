@@ -30,7 +30,6 @@ public class ClusterState implements Cloneable {
 
     private String description = "";
     private int distributionBits = 16;
-    private boolean official = false;
 
     public ClusterState(String serialized) throws ParseException {
         nodeCount.add(0);
@@ -169,16 +168,6 @@ public class ClusterState implements Cloneable {
                 : DEFAULT_DISTRIBUTOR_UP_NODE_STATE;
     }
 
-    /**
-     * Fleet controller marks states that are actually sent out to nodes as official states. Only fleetcontroller
-     * should set this to official, and only just before sending it out. This state is currently not serialized with
-     * the system state, but only used internally in the fleetcontroller. Might be useful client side though, where
-     * clients modify states to mark nodes down that they cannot speak with.
-     */
-    public void setOfficial(boolean official) { this.official = official; }
-    /** Whether this system state is an unmodified version of an official system state. */
-    public boolean isOfficial() { return official; }
-
     /** Used during deserialization */
     private class NodeData {
 
@@ -202,7 +191,6 @@ public class ClusterState implements Cloneable {
     }
 
     private void deserialize(String serialized) throws ParseException {
-        official = false;
         StringTokenizer st = new StringTokenizer(serialized, " \t\n\f\r", false);
         NodeData nodeData = new NodeData();
         String lastAbsolutePath = "";
@@ -323,9 +311,6 @@ public class ClusterState implements Cloneable {
         if (distributionBits != other.distributionBits) {
             diff.add(new Diff.Entry("bits", distributionBits, other.distributionBits));
         }
-        if (official != other.official) {
-            diff.add(new Diff.Entry("official", official, other.official));
-        }
         for (NodeType type : NodeType.getTypes()) {
             Diff typeDiff = new Diff();
             int maxCount = Math.max(getNodeCount(type), other.getNodeCount(type));
@@ -348,7 +333,6 @@ public class ClusterState implements Cloneable {
     }
 
     public void setVersion(int version) {
-        official = false;
         this.version = version;
     }
 
