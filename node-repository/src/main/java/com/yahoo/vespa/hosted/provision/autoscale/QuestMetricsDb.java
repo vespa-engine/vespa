@@ -151,6 +151,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
             row.putStr(1, snapshot.getKey().value());
             // (2 is timestamp)
             row.putFloat(3, (float)snapshot.getValue().queryRate());
+            row.putFloat(4, (float)snapshot.getValue().writeRate());
             row.append();
         }
         writer.commit();
@@ -273,7 +274,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     private void createClusterTable(SqlExecutionContext context) {
         try (SqlCompiler compiler = new SqlCompiler(engine)) {
             compiler.compile("create table " + clusterTable +
-                             " (application string, cluster string, at timestamp, queries_rate float)" +
+                             " (application string, cluster string, at timestamp, queries_rate float, write_rate float)" +
                              " timestamp(at)" +
                              "PARTITION BY DAY;",
                              context);
@@ -296,7 +297,13 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     }
 
     private void ensureClusterTableIsUpdated(SqlExecutionContext context) {
-        // Nothing to do for now
+        try (SqlCompiler compiler = new SqlCompiler(engine)) {
+            if (0 == engine.getStatus(context.getCairoSecurityContext(), new Path(), nodeTable)) {
+                ensureColumnExists("write_rate", "float", nodeTable, compiler, context); // TODO: Remove after March 2021
+            }
+        } catch (SqlException e) {
+            repair(e);
+        }
     }
 
     private void ensureColumnExists(String column, String columnType,
@@ -379,7 +386,8 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
                     String clusterId = record.getStr(1).toString();
                     if (cluster.value().equals(clusterId)) {
                         snapshots.add(new ClusterMetricSnapshot(Instant.ofEpochMilli(record.getTimestamp(2) / 1000),
-                                                                record.getFloat(3)));
+                                                                record.getFloat(3),
+                                                                record.getFloat(4)));
                     }
                 }
             }

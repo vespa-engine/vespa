@@ -29,14 +29,14 @@ public class ClusterTimeseriesTest {
     @Test
     public void test_constant_rate_short() {
         var clock = new ManualClock();
-        var timeseries = new ClusterTimeseries(cluster, rate(10, clock, t -> 50.0));
+        var timeseries = new ClusterTimeseries(cluster, queryRate(10, clock, t -> 50.0));
         assertEquals(0.1, timeseries.maxQueryGrowthRate(), delta);
     }
 
     @Test
     public void test_constant_rate_long() {
         var clock = new ManualClock();
-        var timeseries = new ClusterTimeseries(cluster, rate(10000, clock, t -> 50.0));
+        var timeseries = new ClusterTimeseries(cluster, queryRate(10000, clock, t -> 50.0));
         assertEquals(0.0, timeseries.maxQueryGrowthRate(), delta);
     }
 
@@ -44,9 +44,9 @@ public class ClusterTimeseriesTest {
     public void test_single_spike() {
         var clock = new ManualClock();
         var snapshots = new ArrayList<ClusterMetricSnapshot>();
-        snapshots.addAll(rate(1000, clock, t ->  50.0));
-        snapshots.addAll(rate(  10, clock, t -> 400.0));
-        snapshots.addAll(rate(1000, clock, t ->  50.0));
+        snapshots.addAll(queryRate(1000, clock, t ->  50.0));
+        snapshots.addAll(queryRate(10, clock, t -> 400.0));
+        snapshots.addAll(queryRate(1000, clock, t ->  50.0));
         assertEquals((400-50)/5.0/50.0, new ClusterTimeseries(cluster, snapshots).maxQueryGrowthRate(), delta);
     }
 
@@ -54,13 +54,13 @@ public class ClusterTimeseriesTest {
     public void test_three_spikes() {
         var clock = new ManualClock();
         var snapshots = new ArrayList<ClusterMetricSnapshot>();
-        snapshots.addAll(rate(1000, clock, t ->  50.0));
-        snapshots.addAll(rate(  10, clock, t -> 400.0));
-        snapshots.addAll(rate(1000, clock, t ->  50.0));
-        snapshots.addAll(rate(  10, clock, t -> 600.0));
-        snapshots.addAll(rate(1000, clock, t ->  50.0));
-        snapshots.addAll(rate(  10, clock, t -> 800.0));
-        snapshots.addAll(rate(1000, clock, t ->  50.0));
+        snapshots.addAll(queryRate(1000, clock, t ->  50.0));
+        snapshots.addAll(queryRate(10, clock, t -> 400.0));
+        snapshots.addAll(queryRate(1000, clock, t ->  50.0));
+        snapshots.addAll(queryRate(10, clock, t -> 600.0));
+        snapshots.addAll(queryRate(1000, clock, t ->  50.0));
+        snapshots.addAll(queryRate(10, clock, t -> 800.0));
+        snapshots.addAll(queryRate(1000, clock, t ->  50.0));
         assertEquals((800-50)/5.0/50.0, new ClusterTimeseries(cluster, snapshots).maxQueryGrowthRate(), delta);
     }
 
@@ -68,15 +68,15 @@ public class ClusterTimeseriesTest {
     public void test_single_hill() {
         var clock = new ManualClock();
         var snapshots = new ArrayList<ClusterMetricSnapshot>();
-        snapshots.addAll(rate(100, clock, t ->  (double)t));
-        snapshots.addAll(rate(100, clock, t -> 100.0 - t));
+        snapshots.addAll(queryRate(100, clock, t ->  (double)t));
+        snapshots.addAll(queryRate(100, clock, t -> 100.0 - t));
         assertEquals(1/5.0, new ClusterTimeseries(cluster, snapshots).maxQueryGrowthRate(), delta);
     }
 
     @Test
     public void test_smooth_curve() {
         var clock = new ManualClock();
-        var timeseries = new ClusterTimeseries(cluster, rate(10000, clock,
+        var timeseries = new ClusterTimeseries(cluster, queryRate(10000, clock,
                                                              t -> 10.0 + 100.0 * Math.sin(t)));
         assertEquals(0.26, timeseries.maxQueryGrowthRate(), delta);
     }
@@ -84,7 +84,7 @@ public class ClusterTimeseriesTest {
     @Test
     public void test_smooth_curve_small_variation() {
         var clock = new ManualClock();
-        var timeseries = new ClusterTimeseries(cluster, rate(10000, clock,
+        var timeseries = new ClusterTimeseries(cluster, queryRate(10000, clock,
                                                                            t -> 1000.0 + 10.0 * Math.sin(t)));
         assertEquals(0.0, timeseries.maxQueryGrowthRate(), delta);
     }
@@ -92,15 +92,15 @@ public class ClusterTimeseriesTest {
     @Test
     public void test_two_periods() {
         var clock = new ManualClock();
-        var timeseries = new ClusterTimeseries(cluster, rate(10000, clock,
+        var timeseries = new ClusterTimeseries(cluster, queryRate(10000, clock,
                                                              t -> 10.0 + 100.0 * Math.sin(t) + 80.0 * Math.sin(10 * t)) );
         assertEquals(1.765, timeseries.maxQueryGrowthRate(), delta);
     }
 
-    private List<ClusterMetricSnapshot> rate(int count, ManualClock clock, IntFunction<Double> rate) {
+    private List<ClusterMetricSnapshot> queryRate(int count, ManualClock clock, IntFunction<Double> rate) {
         List<ClusterMetricSnapshot> snapshots = new ArrayList<>();
         for (int i = 0; i < count; i++) {
-            snapshots.add(new ClusterMetricSnapshot(clock.instant(), rate.apply(i)));
+            snapshots.add(new ClusterMetricSnapshot(clock.instant(), rate.apply(i), 0.0));
             clock.advance(Duration.ofMinutes(5));
         }
         return snapshots;

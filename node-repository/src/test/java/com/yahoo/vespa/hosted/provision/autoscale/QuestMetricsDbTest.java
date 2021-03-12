@@ -91,12 +91,12 @@ public class QuestMetricsDbTest {
         var application2 = ApplicationId.from("t1", "a2", "i1");
         var cluster1 = new ClusterSpec.Id("cluster1");
         var cluster2 = new ClusterSpec.Id("cluster2");
-        db.addClusterMetrics(application1, Map.of(cluster1, new ClusterMetricSnapshot(clock.instant(), 30.0)));
-        db.addClusterMetrics(application1, Map.of(cluster2, new ClusterMetricSnapshot(clock.instant(), 60.0)));
+        db.addClusterMetrics(application1, Map.of(cluster1, new ClusterMetricSnapshot(clock.instant(), 30.0, 15.0)));
+        db.addClusterMetrics(application1, Map.of(cluster2, new ClusterMetricSnapshot(clock.instant(), 60.0, 30.0)));
         clock.advance(Duration.ofMinutes(1));
-        db.addClusterMetrics(application1, Map.of(cluster1, new ClusterMetricSnapshot(clock.instant(), 45.0)));
+        db.addClusterMetrics(application1, Map.of(cluster1, new ClusterMetricSnapshot(clock.instant(), 45.0, 22.5)));
         clock.advance(Duration.ofMinutes(1));
-        db.addClusterMetrics(application2, Map.of(cluster1, new ClusterMetricSnapshot(clock.instant(), 90.0)));
+        db.addClusterMetrics(application2, Map.of(cluster1, new ClusterMetricSnapshot(clock.instant(), 90.0, 45.0)));
 
         ClusterTimeseries clusterTimeseries11 = db.getClusterTimeseries(application1, cluster1);
         assertEquals(cluster1, clusterTimeseries11.cluster());
@@ -105,9 +105,11 @@ public class QuestMetricsDbTest {
         ClusterMetricSnapshot snapshot111 = clusterTimeseries11.get(0);
         assertEquals(startTime, snapshot111.at());
         assertEquals(30, snapshot111.queryRate(), delta);
+        assertEquals(15, snapshot111.writeRate(), delta);
         ClusterMetricSnapshot snapshot112 = clusterTimeseries11.get(1);
         assertEquals(startTime.plus(Duration.ofMinutes(1)), snapshot112.at());
         assertEquals(45, snapshot112.queryRate(), delta);
+        assertEquals(22.5, snapshot112.writeRate(), delta);
 
 
         ClusterTimeseries clusterTimeseries12 = db.getClusterTimeseries(application1, cluster2);
@@ -117,6 +119,7 @@ public class QuestMetricsDbTest {
         ClusterMetricSnapshot snapshot121 = clusterTimeseries12.get(0);
         assertEquals(startTime, snapshot121.at());
         assertEquals(60, snapshot121.queryRate(), delta);
+        assertEquals(30, snapshot121.writeRate(), delta);
 
 
         ClusterTimeseries clusterTimeseries21 = db.getClusterTimeseries(application2, cluster1);
@@ -247,7 +250,7 @@ public class QuestMetricsDbTest {
                                                           ClusterSpec.Id cluster) {
         List<ClusterMetricSnapshot> timeseries = new ArrayList<>();
         for (int i = 1; i <= count; i++) {
-            timeseries.add(new ClusterMetricSnapshot(clock.instant(), 30.0));
+            timeseries.add(new ClusterMetricSnapshot(clock.instant(), 30.0, 0.0));
             clock.advance(sampleRate);
         }
         return timeseries;
