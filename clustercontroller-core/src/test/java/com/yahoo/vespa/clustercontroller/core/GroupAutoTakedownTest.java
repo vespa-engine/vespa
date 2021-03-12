@@ -2,7 +2,6 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.vdslib.distribution.ConfiguredNode;
-import com.yahoo.vdslib.state.DiskState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.NodeType;
