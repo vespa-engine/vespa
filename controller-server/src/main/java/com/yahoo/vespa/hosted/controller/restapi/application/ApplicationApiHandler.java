@@ -224,7 +224,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return tenantInfo(path.get("tenant"), request);
-        if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/region/{region}/parameter-name/{parameter-name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"), path.get("region"), path.get("parameter-name"));
+        if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/compile-version")) return compileVersion(path.get("tenant"), path.get("application"));
@@ -584,29 +584,32 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new SlimeJsonResponse(root);
     }
 
+    private HttpResponse validateSecretStore(String tenantName, String secretStoreName, HttpRequest request) {
 
-    private HttpResponse validateSecretStore(String tenantName, String name, String region, String parameterName) {
-        var tenant = TenantName.from(tenantName);
-        if (controller.tenants().require(tenant).type() != Tenant.Type.cloud)
-            return ErrorResponse.badRequest("Tenant '" + tenant + "' is not a cloud tenant");
+        var awsRegion = request.getProperty("aws-region");
+        var parameterName = request.getProperty("parameter-name");
+        var applicationId = ApplicationId.fromFullString(request.getProperty("application-id"));
+        var zoneId = ZoneId.from(request.getProperty("zone"));
+        var deploymentId = new DeploymentId(applicationId, zoneId);
 
-        var cloudTenant = (CloudTenant)controller.tenants().require(tenant);
-        var tenantSecretStore = cloudTenant.tenantSecretStores()
+        var tenant = (CloudTenant)controller.tenants().require(applicationId.tenant());
+        if (tenant.type() != Tenant.Type.cloud) {
+            return ErrorResponse.badRequest("Tenant '" + applicationId.tenant() + "' is not a cloud tenant");
+        }
+
+        var tenantSecretStore = tenant.tenantSecretStores()
                 .stream()
-                .filter(secretStore -> secretStore.getName().equals(name))
+                .filter(secretStore -> secretStore.getName().equals(secretStoreName))
                 .findFirst();
-        var deployment = getActiveDeployment(tenant);
 
-        if (deployment.isEmpty())
-            return ErrorResponse.badRequest("Tenant '" + tenantName + "' has no active deployments");
         if (tenantSecretStore.isEmpty())
-            return ErrorResponse.notFoundError("No secret store '" + name + "' configured for tenant '" + tenantName + "'");
+            return ErrorResponse.notFoundError("No secret store '" + secretStoreName + "' configured for tenant '" + tenantName + "'");
 
-        var response = controller.serviceRegistry().configServer().validateSecretStore(deployment.get(), tenantSecretStore.get(), region, parameterName);
+        var response = controller.serviceRegistry().configServer().validateSecretStore(deploymentId, tenantSecretStore.get(), awsRegion, parameterName);
         try {
             var responseRoot = new Slime();
             var responseCursor = responseRoot.setObject();
-            responseCursor.setString("target", deployment.get().toString());
+            responseCursor.setString("target", deploymentId.toString());
             var responseResultCursor = responseCursor.setObject("result");
             var responseSlime = SlimeUtils.jsonToSlime(response);
             SlimeUtils.copyObject(responseSlime.get(), responseResultCursor);
@@ -614,23 +617,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         } catch (JsonParseException e) {
             return ErrorResponse.internalServerError(response);
         }
-    }
-
-    private Optional<DeploymentId> getActiveDeployment(TenantName tenant) {
-        for (var application : controller.applications().asList(tenant)) {
-            var optionalInstance = application.instances().values()
-                    .stream()
-                    .filter(instance -> instance.deployments().keySet().size() > 0)
-                    .findFirst();
-
-            if (optionalInstance.isPresent()) {
-                var instance = optionalInstance.get();
-                var applicationId = instance.id();
-                var zoneId = instance.deployments().keySet().stream().findFirst().orElseThrow();
-                return Optional.of(new DeploymentId(applicationId, zoneId));
-            }
-        }
-        return Optional.empty();
     }
 
     private HttpResponse removeDeveloperKey(String tenantName, HttpRequest request) {

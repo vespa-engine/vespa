@@ -128,7 +128,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                                 "\"role\": \"role-id\"," +
                                 "\"externalId\": \"321\"" +
                                 "}")
-                        .roles(Set.of(Role.administrator(tenantName)));
+                        .roles(Set.of(Role.developer(tenantName)));
         tester.assertResponse(secretStoreRequest, "{\"secretStores\":[{\"name\":\"some-name\",\"awsId\":\"123\",\"role\":\"role-id\"}]}", 200);
         tester.assertResponse(secretStoreRequest, "{" +
                 "\"error-code\":\"BAD_REQUEST\"," +
@@ -142,7 +142,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                                 "\"role\": \"role-id\"," +
                                 "\"externalId\": \"321\"" +
                                 "}")
-                        .roles(Set.of(Role.administrator(tenantName)));
+                        .roles(Set.of(Role.developer(tenantName)));
         tester.assertResponse(secretStoreRequest, "{" +
                 "\"error-code\":\"BAD_REQUEST\"," +
                 "\"message\":\"Secret store TenantSecretStore{name='should-fail', awsId=' ', role='role-id'} is invalid\"" +
@@ -151,18 +151,10 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
     @Test
     public void validate_secret_store() {
-        var secretStoreRequest =
-                request("/application/v4/tenant/scoober/secret-store/secret-foo/region/us-west-1/parameter-name/foo/validate", GET)
-                        .roles(Set.of(Role.administrator(tenantName)));
-        tester.assertResponse(secretStoreRequest, "{" +
-                "\"error-code\":\"BAD_REQUEST\"," +
-                "\"message\":\"Tenant 'scoober' has no active deployments\"" +
-                "}", 400);
-
         deployApplication();
-        secretStoreRequest =
-                request("/application/v4/tenant/scoober/secret-store/secret-foo/region/us-west-1/parameter-name/foo/validate", GET)
-                        .roles(Set.of(Role.administrator(tenantName)));
+        var secretStoreRequest =
+                request("/application/v4/tenant/scoober/secret-store/secret-foo/validate?aws-region=us-west-1&parameter-name=foo&application-id=scoober.albums.default&zone=prod.us-central-1", GET)
+                        .roles(Set.of(Role.developer(tenantName)));
         tester.assertResponse(secretStoreRequest, "{" +
                 "\"error-code\":\"NOT_FOUND\"," +
                 "\"message\":\"No secret store 'secret-foo' configured for tenant 'scoober'\"" +
@@ -175,8 +167,8 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
         // ConfigServerMock returns message on format deployment.toString() + " - " + tenantSecretStore.toString()
         secretStoreRequest =
-                request("/application/v4/tenant/scoober/secret-store/secret-foo/region/us-west-1/parameter-name/foo/validate", GET)
-                        .roles(Set.of(Role.administrator(tenantName)));
+                request("/application/v4/tenant/scoober/secret-store/secret-foo/validate?aws-region=us-west-1&parameter-name=foo&application-id=scoober.albums.default&zone=prod.us-central-1", GET)
+                        .roles(Set.of(Role.developer(tenantName)));
         tester.assertResponse(secretStoreRequest, "{\"target\":\"scoober.albums in prod.us-central-1\",\"result\":{\"settings\":{\"name\":\"foo\",\"role\":\"vespa-secretstore-access\",\"awsId\":\"892075328880\",\"externalId\":\"*****\",\"region\":\"us-east-1\"},\"status\":\"ok\"}}", 200);
     }
 
@@ -184,7 +176,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     public void delete_secret_store() {
         var deleteRequest =
                 request("/application/v4/tenant/scoober/secret-store/secret-foo", DELETE)
-                        .roles(Set.of(Role.administrator(tenantName)));
+                        .roles(Set.of(Role.developer(tenantName)));
         tester.assertResponse(deleteRequest, "{" +
                 "\"error-code\":\"NOT_FOUND\"," +
                 "\"message\":\"Could not delete secret store 'secret-foo': Secret store not found\"" +
