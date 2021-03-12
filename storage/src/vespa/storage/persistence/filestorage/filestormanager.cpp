@@ -835,18 +835,12 @@ void FileStorManager::onFlush(bool downwards)
             LOG(debug, "flushed thread[%s]", thread->getThread().getId().c_str());
         }
     }
-    uint32_t queueSize = _filestorHandler->getQueueSize();
-    std::ostringstream ost;
-    if (queueSize > 0) {
-        ost << "Queue size " << queueSize;
-    }
-    std::string result = ost.str();
-    if (result.size() > 0) {
+    uint32_t queue_size = _filestorHandler->getQueueSize();
+    if (queue_size > 0) {
         LOG(error, "Operations in persistence layer after flush. This is ok "
                    "during load, but should not happen when flush is called "
                    "during shutdown as load then is supposed to have been "
-                   "stopped: %s",
-            result.c_str());
+                   "stopped: Queue size is %u", queue_size);
     }
     StorageLinkQueued::onFlush(downwards);
     LOG(debug, "Done Flushing");

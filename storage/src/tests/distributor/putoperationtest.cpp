@@ -3,6 +3,7 @@
 #include <vespa/document/repo/documenttyperepo.h>
 #include <vespa/storage/distributor/operations/external/putoperation.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storageapi/message/bucket.h>
 #include <vespa/storageapi/message/persistence.h>

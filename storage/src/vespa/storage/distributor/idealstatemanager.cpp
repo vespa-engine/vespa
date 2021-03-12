@@ -25,7 +25,7 @@ namespace storage {
 namespace distributor {
 
 IdealStateManager::IdealStateManager(
-        Distributor& owner,
+        DistributorInterface& owner,
         DistributorBucketSpaceRepo& bucketSpaceRepo,
         DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
         DistributorComponentRegister& compReg,

@@ -112,6 +112,7 @@ void SharedRpcResources::shutdown() {
         _slobrok_register->unregisterName(_handle);
     }
     _transport->ShutDown(true);
+    // FIXME need to reset to break weak_ptrs? But ShutDown should already sync pending resolves...!
     _shutdown = true;
 }
 

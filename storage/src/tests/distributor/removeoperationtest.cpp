@@ -3,6 +3,7 @@
 #include <iomanip>
 #include <tests/common/dummystoragelink.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <tests/distributor/distributortestutil.h>
 #include <vespa/document/test/make_document_bucket.h>

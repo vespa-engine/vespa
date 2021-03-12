@@ -139,9 +139,9 @@ class UpdateBucketDatabaseProcessor : public BucketDatabase::EntryUpdateProcesso
     bool _reset_trusted;
 public:
     UpdateBucketDatabaseProcessor(const framework::Clock& clock, const std::vector<BucketCopy>& changed_nodes, std::vector<uint16_t> ideal_nodes, bool reset_trusted);
-    virtual ~UpdateBucketDatabaseProcessor();
-    virtual BucketDatabase::Entry create_entry(const document::BucketId& bucket) const override;
-    virtual bool process_entry(BucketDatabase::Entry &entry) const override;
+    ~UpdateBucketDatabaseProcessor() override;
+    BucketDatabase::Entry create_entry(const document::BucketId& bucket) const override;
+    bool process_entry(BucketDatabase::Entry &entry) const override;
 };
 
 UpdateBucketDatabaseProcessor::UpdateBucketDatabaseProcessor(const framework::Clock& clock, const std::vector<BucketCopy>& changed_nodes, std::vector<uint16_t> ideal_nodes, bool reset_trusted)
@@ -288,11 +288,6 @@ DistributorComponent::createAppropriateBucket(const document::Bucket &bucket)
     return bucketSpace.getBucketDatabase().createAppropriateBucket(
             _distributor.getConfig().getMinimalBucketSplit(),
             bucket.getBucketId());
-}
-
-bool
-DistributorComponent::initializing() const {
-    return _distributor.initializing();
 }
 
 bool

@@ -3,6 +3,7 @@
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storage/distributor/bucketdbupdater.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/operations/idealstate/mergeoperation.h>
 #include <vespa/storage/distributor/operation_sequencer.h>
 #include <vespa/storageapi/message/stat.h>
