@@ -1,0 +1,35 @@
+{
+  "assessment": {
+    "updated": "2021-03-12:12:12:12Z",
+    "clusters": [
+      {
+        "app": "mytenant:myapp:myinstance",
+        "zone": "prod.us-east-3",
+        "cluster": "mycontent",
+        "clusterSize": 19,
+        "clusterImpact": 3,
+        "upgradePolicy": "10%",
+        "utilizationInWindow": 0.5,
+        "suggestedAction": "nothing|bcp",
+        "impact": "low|degraded|outage",
+        "groups": [
+          {
+            "groupId": "23",
+            "groupSize": 4,
+            "groupImpact": 2
+          }
+        ]
+      }
+    ],
+    "hosts": [
+      {
+        "hostname": "myhostname",
+        "resources": "vcpu:memory:disk",
+        "state": "active",
+        "containers": 10,
+        "suggestedAction": "nothing|retire",
+        "impact": "low|degraded|outage"
+      }
+    ]
+  }
+}
