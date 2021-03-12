@@ -56,7 +56,8 @@ public enum RoleDefinition {
               Policy.submission,
               Policy.paymentInstrumentRead,
               Policy.paymentInstrumentDelete,
-              Policy.billingInformationRead),
+              Policy.billingInformationRead,
+              Policy.secretStoreOperations),
 
     /** Admin — the administrative function for user management etc. */
     administrator(Policy.tenantUpdate,
@@ -69,8 +70,7 @@ public enum RoleDefinition {
                   Policy.paymentInstrumentDelete,
                   Policy.paymentInstrumentCreate,
                   Policy.planUpdate,
-                  Policy.billingInformationRead,
-                  Policy.secretStoreOperations),
+                  Policy.billingInformationRead),
 
     /** Headless — the application specific role identified by deployment keys for production */
     headless(Policy.submission),
