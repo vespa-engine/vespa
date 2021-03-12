@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.restapiv2;
 
+import com.yahoo.vdslib.state.DiskState;
 import com.yahoo.vdslib.state.NodeState;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.InternalFailure;
@@ -30,6 +31,10 @@ public class Response {
         public UnitStateImpl(NodeState ns) throws StateRestApiException {
             this.id = parseId(ns.getState());
             this.reason = ns.getDescription();
+        }
+        public UnitStateImpl(DiskState ds) throws StateRestApiException {
+            this.id = parseId(ds.getState());
+            this.reason = ds.getDescription();
         }
 
         public String parseId(State id) throws StateRestApiException {
