@@ -57,8 +57,6 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         content.append("<table><tr><td>UTC time when creating this page:</td><td align=\"right\">").append(RealTimer.printDateNoMilliSeconds(currentTime, tz)).append("</td></tr>");
         //content.append("<tr><td>Fleetcontroller version:</td><td align=\"right\">" + Vtag.V_TAG_PKG + "</td></tr/>");
         content.append("<tr><td>Cluster controller uptime:</td><td align=\"right\">" + RealTimer.printDuration(currentTime - startedTime) + "</td></tr></table>");
-        // State of master election
-        masterElectionHandler.writeHtmlState(content, data.getOptions().stateGatherCount);
         if (masterElectionHandler.isAmongNthFirst(data.getOptions().stateGatherCount)) {
             // Table overview of all the nodes
             cluster.writeHtmlState(
@@ -79,6 +77,8 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
             // Overview of current config
             data.getOptions().writeHtmlState(content);
         }
+        // State of master election
+        masterElectionHandler.writeHtmlState(content, data.getOptions().stateGatherCount);
         // Event log
         eventLog.writeHtmlState(content, null);
         response.writeHtmlFooter(content, "");
