@@ -257,8 +257,6 @@ public class SessionRepository {
         session.setDockerImageRepository(existingSession.getDockerImageRepository());
         session.setAthenzDomain(existingSession.getAthenzDomain());
         session.setTenantSecretStores(existingSession.getTenantSecretStores());
-        if (existingSession.getDedicatedClusterControllerCluster())
-            session.setDedicatedClusterControllerCluster();
         return session;
     }
 

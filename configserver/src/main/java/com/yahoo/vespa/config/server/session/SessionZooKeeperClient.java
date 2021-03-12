@@ -57,9 +57,6 @@ public class SessionZooKeeperClient {
     private static final String QUOTA_PATH = "quota";
     private static final String TENANT_SECRET_STORES_PATH = "tenantSecretStores";
 
-    // Whether the deployment of this particular session should use a dedicated CCC.
-    // The one in ApplicationCuratorDatabase signals what all future preparations should use, i.e., here.
-    private static final String DEDICATED_CLUSTER_CONTROLLER_CLUSTER_PATH = "dedicatedClusterControllerCluster";
     private final Curator curator;
     private final ConfigCurator configCurator;
     private final TenantName tenantName;
@@ -201,10 +198,6 @@ public class SessionZooKeeperClient {
         return sessionPath.append(TENANT_SECRET_STORES_PATH).getAbsolute();
     }
 
-    private String dedicatedClusterControllerClusterPath() {
-        return sessionPath.append(DEDICATED_CLUSTER_CONTROLLER_CLUSTER_PATH).getAbsolute();
-    }
-
     public void writeVespaVersion(Version version) {
         configCurator.putData(versionPath(), version.toString());
     }
@@ -294,14 +287,6 @@ public class SessionZooKeeperClient {
                 .map(SlimeUtils::jsonToSlime)
                 .map(slime -> TenantSecretStoreSerializer.listFromSlime(slime.get()))
                 .orElse(List.of());
-    }
-
-    public void writeDedicatedClusterControllerCluster() {
-        configCurator.createNode(dedicatedClusterControllerClusterPath());
-    }
-
-    public boolean readDedicatedClusterControllerCluster() {
-        return configCurator.exists(dedicatedClusterControllerClusterPath());
     }
 
     /**
