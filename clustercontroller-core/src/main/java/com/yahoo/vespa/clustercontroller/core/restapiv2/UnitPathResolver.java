@@ -6,6 +6,7 @@ import com.yahoo.vespa.clustercontroller.core.RemoteClusterControllerTaskSchedul
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.MissingUnitException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.OperationNotSupportedForUnitException;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiException;
+import com.yahoo.vespa.clustercontroller.utils.staterestapi.response.UnitResponse;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -18,6 +19,7 @@ public class UnitPathResolver<T> {
         Request<? extends T> visitCluster(Id.Cluster id) throws StateRestApiException;
         Request<? extends T> visitService(Id.Service id) throws StateRestApiException;
         Request<? extends T> visitNode(Id.Node id) throws StateRestApiException;
+        Request<? extends T> visitPartition(Id.Partition id) throws StateRestApiException;
 
     }
 
@@ -38,6 +40,7 @@ public class UnitPathResolver<T> {
         public Request<? extends T> visitCluster(Id.Cluster id) throws StateRestApiException { return fail(); }
         public Request<? extends T> visitService(Id.Service id) throws StateRestApiException { return fail(); }
         public Request<? extends T> visitNode(Id.Node id) throws StateRestApiException { return fail(); }
+        public Request<? extends T> visitPartition(Id.Partition id) throws StateRestApiException { return fail(); }
 
     }
 
@@ -84,7 +87,16 @@ public class UnitPathResolver<T> {
         if (path.length == 3) {
             return visitor.visitNode(node);
         }
-        throw new MissingUnitException(path, 3);
+        Id.Partition partition;
+        try{
+            partition = new Id.Partition(node, Integer.valueOf(path[3]));
+        } catch (NumberFormatException e) {
+            throw new MissingUnitException(path, 3);
+        }
+        if (path.length == 4) {
+            return visitor.visitPartition(partition);
+        }
+        throw new MissingUnitException(path, 4);
     }
 
 }

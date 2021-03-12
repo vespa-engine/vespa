@@ -52,4 +52,16 @@ public class Id {
         public String toString() { return super.toString() + "/" + id; }
     }
 
+    public static class Partition extends Node {
+        private final int id;
+
+        public Partition(Node n, int partition) {
+            super(n, n.id);
+            this.id = partition;
+        }
+
+        public final int getPartitionIndex() { return id; }
+        public String toString() { return super.toString() + "/" + id; }
+    }
+
 }
