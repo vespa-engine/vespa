@@ -237,10 +237,10 @@ TEST(GenSpecTest, gen_spec_can_be_implicitly_converted_to_tensor_spec) {
 //-----------------------------------------------------------------------------
 
 TEST(GenSpecFromDescTest, dim_spec_and_gen_spec_can_be_created_from_desc) {
-    // 'a2b3#7c5#'
-    auto expect = GenSpec().idx("a", 2).map("b", 3, 7).map("c", 5).gen();
-    auto dim_desc = GenSpec().desc("a2").desc("b3#7").desc("c5#").gen();
-    auto gen_desc = GenSpec::from_desc("a2b3#7c5#").gen();
+    // 'a2b3_7'
+    auto expect = GenSpec().idx("a", 2).map("b", 3, 7).gen();
+    auto dim_desc = GenSpec().desc("a2").desc("b3_7").gen();
+    auto gen_desc = GenSpec::from_desc("a2b3_7").gen();
     EXPECT_EQ(dim_desc, expect);
     EXPECT_EQ(gen_desc, expect);
 }
