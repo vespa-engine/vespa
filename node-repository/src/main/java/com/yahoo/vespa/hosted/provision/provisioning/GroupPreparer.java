@@ -104,9 +104,9 @@ public class GroupPreparer {
                 HostSharing sharing = hostSharing(requestedNodes, hostType);
                 List<ProvisionedHost> provisionedHosts = allocation.hostDeficit()
                         .map(deficit -> {
-                            return hostProvisioner.get().provisionHosts(allocation.provisionIndices(deficit.getCount()),
+                            return hostProvisioner.get().provisionHosts(allocation.provisionIndices(deficit.count()),
                                                                         hostType,
-                                                                        deficit.getFlavor(),
+                                                                        deficit.resources(),
                                                                         application,
                                                                         osVersion,
                                                                         sharing);

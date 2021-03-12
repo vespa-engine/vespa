@@ -29,6 +29,7 @@ enum PathGroup {
     operator(PathPrefix.none,
              "/controller/v1/{*}",
              "/flags/v1/{*}",
+             "/loadbalancers/v1/{*}",
              "/nodes/v2/{*}",
              "/orchestrator/v1/{*}",
              "/os/v1/{*}",
