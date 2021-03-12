@@ -32,11 +32,13 @@ TEST(DimSpecTest, mapped_dimension) {
 TEST(DimSpecTest, simple_dictionary_creation) {
     auto dict = DimSpec::make_dict(5, 1, "");
     std::vector<vespalib::string> expect = {"0", "1", "2", "3", "4"};
+    EXPECT_EQ(dict, expect);
 }
 
 TEST(DimSpecTest, advanced_dictionary_creation) {
     auto dict = DimSpec::make_dict(5, 3, "str_");
     std::vector<vespalib::string> expect = {"str_0", "str_3", "str_6", "str_9", "str_12"};
+    EXPECT_EQ(dict, expect);
 }
 
 //-----------------------------------------------------------------------------
@@ -230,6 +232,26 @@ TEST(GenSpecTest, generating_inverted_mixed) {
 TEST(GenSpecTest, gen_spec_can_be_implicitly_converted_to_tensor_spec) {
     EXPECT_EQ(GenSpec().map("a", 3).idx("b", 1).map("c", 1).idx("d", 3), basic_mixed);
     EXPECT_EQ(GenSpec().idx("d", 3).map("c", 1).idx("b", 1).map("a", 3), inverted_mixed);
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(GenSpecFromDescTest, dim_spec_and_gen_spec_can_be_created_from_desc) {
+    // 'a2b3#7c5#'
+    auto expect = GenSpec().idx("a", 2).map("b", 3, 7).map("c", 5).gen();
+    auto dim_desc = GenSpec().desc("a2").desc("b3#7").desc("c5#").gen();
+    auto gen_desc = GenSpec::from_desc("a2b3#7c5#").gen();
+    EXPECT_EQ(dim_desc, expect);
+    EXPECT_EQ(gen_desc, expect);
+}
+
+TEST(GenSpecFromDescTest, multi_character_sizes_work) {
+    // 'a13b1'
+    auto expect = GenSpec().idx("a", 13).idx("b", 1).gen();
+    auto dim_desc = GenSpec().desc("a13").desc("b1").gen();
+    auto gen_desc = GenSpec::from_desc("a13b1").gen();
+    EXPECT_EQ(dim_desc, expect);
+    EXPECT_EQ(gen_desc, expect);
 }
 
 //-----------------------------------------------------------------------------
