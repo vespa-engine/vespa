@@ -155,10 +155,6 @@ public class SessionRepositoryTest {
         assertRemoteSessionStatus(sessionId, Session.Status.NEW);
         assertStatusChange(sessionId, Session.Status.PREPARE);
         assertStatusChange(sessionId, Session.Status.ACTIVATE);
-
-        sessionRepository.delete(sessionRepository.getRemoteSession(sessionId));
-        assertSessionRemoved(sessionId);
-        assertNull(sessionRepository.getRemoteSession(sessionId));
     }
 
     // If reading a session throws an exception it should be handled and not prevent other applications

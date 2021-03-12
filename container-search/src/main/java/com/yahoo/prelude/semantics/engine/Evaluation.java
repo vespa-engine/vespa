@@ -21,7 +21,7 @@ public class Evaluation {
     // TODO: Retrofit query into the namespace construct
     private ParameterNameSpace parameterNameSpace = null;
 
-    private Query query;
+    private final Query query;
 
     /** The current index into the flattened item list */
     private int currentIndex = 0;
@@ -30,7 +30,7 @@ public class Evaluation {
     private List<FlattenedItem> flattenedItems;
 
     /** The rule evaluation context, can be reset once the rule is evaluated */
-    private RuleEvaluation ruleEvaluation;
+    private final RuleEvaluation ruleEvaluation;
 
     /**
      * The amount of context information to collect about this evaluation.
@@ -41,7 +41,7 @@ public class Evaluation {
     private String traceIndentation = "";
 
     /** See RuleEngine */
-    private Set<Integer> matchDigests = new HashSet<>();
+    private final Set<Integer> matchDigests = new HashSet<>();
 
     /** The previous size of this query (see RuleEngine), set on matches only */
     private int previousQuerySize = 0;
@@ -373,25 +373,15 @@ public class Evaluation {
     }
 
     private CompositeItem createType(TermType termType) {
-        if (termType==TermType.DEFAULT) {
-            if (query.getModel().getType().equals(Query.Type.ANY))
+        if (termType == TermType.DEFAULT) {
+            if (query.getModel().getType() == Query.Type.ANY)
                 return new OrItem();
             else
                 return new AndItem();
         }
-        else if (termType==TermType.AND) {
-            return new AndItem();
+        else {
+            return (CompositeItem)termType.createItemClass();
         }
-        else if (termType==TermType.OR) {
-            return new OrItem();
-        }
-        else if (termType==TermType.RANK) {
-            return new RankItem();
-        }
-        else if (termType==TermType.NOT) {
-            return new NotItem();
-        }
-        throw new IllegalArgumentException("Programing error, this method should be updated with add in RankType");
     }
 
     private void flatten(Item item,int position,List<FlattenedItem> toList) {

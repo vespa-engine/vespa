@@ -20,6 +20,8 @@ public class TermType {
 
     public static TermType PHRASE = new TermType("phrase", PhraseItem.class, null, "\"");
 
+    public static TermType EQUIV = new TermType("equiv", EquivItem.class, null, "");
+
     public static TermType DEFAULT = new TermType("", CompositeItem.class, AndItem.class, "");
 
     public final String name;
@@ -57,8 +59,7 @@ public class TermType {
      * Returns an instance of the class corresponding to the given type, AndItem
      * if this is the DEFAULT type
      *
-     * @throws RuntimeException
-     *             if an instance could not be created
+     * @throws RuntimeException if an instance could not be created
      */
     public Item createItemClass() {
         try {
