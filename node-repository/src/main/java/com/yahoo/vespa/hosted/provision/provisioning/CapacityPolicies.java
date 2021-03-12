@@ -49,9 +49,9 @@ public class CapacityPolicies {
 
         if (capacity.isRequired()) return target;
 
-        // Dev does not cap the cpu of containers since usage is spotty: Allocate just a small amount exclusively
+        // Dev does not cap the cpu or network of containers since usage is spotty: Allocate just a small amount exclusively
         if (zone.environment() == Environment.dev && !zone.getCloud().dynamicProvisioning())
-            target = target.withVcpu(0.1);
+            target = target.withVcpu(0.1).withBandwidthGbps(0.1);
 
         // Allow slow storage in zones which are not performance sensitive
         if (zone.system().isCd() || zone.environment() == Environment.dev || zone.environment() == Environment.test)
