@@ -60,7 +60,6 @@ public class Id {
             this.id = partition;
         }
 
-        public final int getPartitionIndex() { return id; }
         public String toString() { return super.toString() + "/" + id; }
     }
 
