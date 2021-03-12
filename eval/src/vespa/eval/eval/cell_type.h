@@ -159,11 +159,7 @@ struct TypifyCellMeta {
             }
             abort();
         } else {
-            switch (value.cell_type) {
-            case CellType::DOUBLE: return f(Result<CellMeta(CellType::DOUBLE, false)>());
-            case CellType::FLOAT:  return f(Result<CellMeta(CellType::FLOAT, false)>());
-            }
-            abort();
+            return resolve(value.not_scalar(), f);
         }
     }
     template <typename F> static decltype(auto) resolve(CellMetaNotScalar value, F &&f) {
@@ -180,12 +176,7 @@ struct TypifyCellMeta {
             }
             abort();
         } else {
-            switch (value.cell_type) {
-            case CellType::DOUBLE: return f(Result<CellMeta(CellType::DOUBLE, false)>());
-            case CellType::FLOAT:  return f(Result<CellMeta(CellType::FLOAT, false)>());
-            default: break;
-            }
-            abort();
+            return resolve(value.not_scalar(), f);
         }
     }
     template <typename F> static decltype(auto) resolve(LimitedCellMetaNotScalar value, F &&f) {
