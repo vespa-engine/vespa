@@ -128,31 +128,4 @@ public class NodeTest extends StateRestApiTest {
                 "}";
         assertEquals(expected, jsonWriter.createJson(response).toString(2));
     }
-
-    @Test
-    public void testRecursiveStorageClusterDoesNotIncludePerNodeStatsOrMetrics() throws Exception {
-        setUp(true);
-        UnitResponse response = restAPI.getState(new StateRequest("music/storage", 1));
-        String expected =
-                "{\n" +
-                "  \"attributes\": {\"hierarchical-group\": \"east.g2\"},\n" +
-                "  \"state\": {\n" +
-                "    \"generated\": {\n" +
-                "      \"state\": \"up\",\n" +
-                "      \"reason\": \"\"\n" +
-                "    },\n" +
-                "    \"unit\": {\n" +
-                "      \"state\": \"up\",\n" +
-                "      \"reason\": \"\"\n" +
-                "    },\n" +
-                "    \"user\": {\n" +
-                "      \"state\": \"up\",\n" +
-                "      \"reason\": \"\"\n" +
-                "    }\n" +
-                "  }\n" +
-                "}";
-        JSONObject json = jsonWriter.createJson(response);
-        assertEquals(expected, json.getJSONObject("node").getJSONObject("1").toString(2));
-    }
-
 }
