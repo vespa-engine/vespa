@@ -13,6 +13,8 @@
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/storage/config/config-stor-distributormanager.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_stripe.h>
+#include <vespa/storage/distributor/distributor_status.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
@@ -65,8 +67,7 @@ struct DistributorTest : Test, DistributorTestUtil {
     }
 
     auto currentReplicaCountingMode() const noexcept {
-        return _distributor->_bucketDBMetricUpdater
-                .getMinimumReplicaCountingMode();
+        return _distributor->bucket_db_metric_updater().getMinimumReplicaCountingMode();
     }
 
     std::string testOp(std::shared_ptr<api::StorageMessage> msg)
@@ -141,23 +142,25 @@ struct DistributorTest : Test, DistributorTestUtil {
     }
 
     StatusReporterDelegate& distributor_status_delegate() {
-        return _distributor->_distributorStatusDelegate;
+        // FIXME
+        return _distributor->_stripe->_distributorStatusDelegate;
     }
 
     framework::TickingThreadPool& distributor_thread_pool() {
         return _distributor->_threadPool;
     }
 
-    const std::vector<std::shared_ptr<Distributor::Status>>& distributor_status_todos() {
-        return _distributor->_statusToDo;
+    const std::vector<std::shared_ptr<DistributorStatus>>& distributor_status_todos() {
+        // FIXME
+        return _distributor->_stripe->_statusToDo;
     }
 
     Distributor::MetricUpdateHook distributor_metric_update_hook() {
         return _distributor->_metricUpdateHook;
     }
 
-    SimpleMaintenanceScanner::PendingMaintenanceStats& distributor_maintenance_stats() {
-        return _distributor->_maintenanceStats;
+    SimpleMaintenanceScanner::PendingMaintenanceStats distributor_maintenance_stats() {
+        return _distributor->pending_maintenance_stats();
     }
 
     BucketSpacesStatsProvider::PerNodeBucketSpacesStats distributor_bucket_spaces_stats() {

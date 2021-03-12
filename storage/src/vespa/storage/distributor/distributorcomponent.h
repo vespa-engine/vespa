@@ -139,11 +139,6 @@ public:
      */
     BucketDatabase::Entry createAppropriateBucket(const document::Bucket &bucket);
 
-    /**
-     * Returns true if the node is currently initializing.
-     */
-    bool initializing() const;
-
     // Implements DistributorNodeContext
     const framework::Clock& clock() const noexcept override { return getClock(); }
     const vespalib::string * cluster_name_ptr() const noexcept override { return cluster_context().cluster_name_ptr(); }

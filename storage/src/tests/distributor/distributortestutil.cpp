@@ -4,6 +4,7 @@
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributorcomponent.h>
 #include <vespa/vdslib/distribution/distribution.h>
@@ -257,6 +258,7 @@ DistributorTestUtil::removeFromBucketDB(const document::BucketId& id)
 void
 DistributorTestUtil::addIdealNodes(const document::BucketId& id)
 {
+    // FIXME roundabout way of getting state bundle..!
     addIdealNodes(*distributor_component().getClusterStateBundle().getBaselineClusterState(), id);
 }
 
@@ -338,20 +340,21 @@ DistributorTestUtil::disableBucketActivationInConfig(bool disable)
 
 BucketDBUpdater&
 DistributorTestUtil::getBucketDBUpdater() {
-    return _distributor->_bucketDBUpdater;
+    return _distributor->bucket_db_updater();
 }
 IdealStateManager&
 DistributorTestUtil::getIdealStateManager() {
-    return _distributor->_idealStateManager;
+    return _distributor->ideal_state_manager();
 }
 ExternalOperationHandler&
 DistributorTestUtil::getExternalOperationHandler() {
-    return _distributor->_externalOperationHandler;
+    return _distributor->external_operation_handler();
 }
 
 storage::distributor::DistributorComponent&
 DistributorTestUtil::distributor_component() {
-    return _distributor->_component;
+    // FIXME tests use this to indirectly access bucket space repos/DBs!
+    return _distributor->distributor_component();
 }
 
 bool
@@ -369,6 +372,7 @@ DistributorTestUtil::tick() {
 
 DistributorConfiguration&
 DistributorTestUtil::getConfig() {
+    // FIXME this is very naughty indeed
     return const_cast<DistributorConfiguration&>(_distributor->getConfig());
 }
 
