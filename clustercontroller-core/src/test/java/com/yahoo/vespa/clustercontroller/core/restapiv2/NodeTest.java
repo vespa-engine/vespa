@@ -59,6 +59,11 @@ public class NodeTest extends StateRestApiTest {
                 "      \"state\": \"up\",\n" +
                 "      \"reason\": \"\"\n" +
                 "    }\n" +
+                "  },\n" +
+                "  \"metrics\": {\n" +
+                "    \"bucket-count\": 1,\n" +
+                "    \"unique-document-count\": 2,\n" +
+                "    \"unique-document-total-size\": 3\n" +
                 "  }\n" +
                 "}";
         assertEquals(expected, jsonWriter.createJson(response).toString(2));
@@ -84,6 +89,11 @@ public class NodeTest extends StateRestApiTest {
                 "      \"state\": \"up\",\n" +
                 "      \"reason\": \"\"\n" +
                 "    }\n" +
+                "  },\n" +
+                "  \"metrics\": {\n" +
+                "    \"bucket-count\": 1,\n" +
+                "    \"unique-document-count\": 2,\n" +
+                "    \"unique-document-total-size\": 3\n" +
                 "  }\n" +
                 "}";
         assertEquals(expected, jsonWriter.createJson(response).toString(2));
