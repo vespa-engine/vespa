@@ -69,8 +69,6 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
                     data.getOptions(),
                     eventLog
             );
-            // Overview of current config
-            data.getOptions().writeHtmlState(content);
             // Current cluster state and cluster state history
             writeHtmlState(stateVersionTracker, content, request);
         } else {
@@ -79,6 +77,8 @@ public class LegacyIndexPageRequestHandler implements StatusPageServer.RequestHa
         }
         // State of master election
         masterElectionHandler.writeHtmlState(content, data.getOptions().stateGatherCount);
+        // Overview of current config
+        data.getOptions().writeHtmlState(content);
         // Event log
         eventLog.writeHtmlState(content, null);
         response.writeHtmlFooter(content, "");
