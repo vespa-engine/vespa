@@ -272,10 +272,6 @@ public class VespaMetricSet {
         metrics.add(new Metric("search_connections.sum"));
         metrics.add(new Metric("search_connections.count"));
         metrics.add(new Metric("search_connections.average")); // TODO: Remove in Vespa 8
-        metrics.add(new Metric("active_queries.max"));
-        metrics.add(new Metric("active_queries.sum"));
-        metrics.add(new Metric("active_queries.count"));
-        metrics.add(new Metric("active_queries.average")); // TODO: Remove in Vespa 8
         metrics.add(new Metric("feed.latency.max"));
         metrics.add(new Metric("feed.latency.sum"));
         metrics.add(new Metric("feed.latency.count"));

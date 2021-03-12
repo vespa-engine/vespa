@@ -57,7 +57,6 @@ public class StatisticsSearcher extends Searcher {
     private static final String QUERY_LATENCY_METRIC = "query_latency";
     private static final String QUERY_HIT_OFFSET_METRIC = "query_hit_offset";
     private static final String QUERIES_METRIC = "queries";
-    private static final String ACTIVE_QUERIES_METRIC = "active_queries";
     private static final String PEAK_QPS_METRIC = "peak_qps";
     private static final String DOCS_COVERED_METRIC = "documents_covered";
     private static final String DOCS_TOTAL_METRIC = "documents_total";
@@ -84,12 +83,12 @@ public class StatisticsSearcher extends Searcher {
     // Naming of enums are reflected directly in metric dimensions and should not be changed as they are public API
     private enum DegradedReason { match_phase, adaptive_timeout, timeout, non_ideal_state }
 
-    private Metric metric;
-    private Map<String, Metric.Context> chainContexts = new CopyOnWriteHashMap<>();
-    private Map<String, Metric.Context> statePageOnlyContexts = new CopyOnWriteHashMap<>();
-    private Map<String, Map<DegradedReason, Metric.Context>> degradedReasonContexts = new CopyOnWriteHashMap<>();
-    private Map<String, Map<String, Metric.Context>> relevanceContexts = new CopyOnWriteHashMap<>();
-    private java.util.Timer scheduler = new java.util.Timer(true);
+    private final Metric metric;
+    private final Map<String, Metric.Context> chainContexts = new CopyOnWriteHashMap<>();
+    private final Map<String, Metric.Context> statePageOnlyContexts = new CopyOnWriteHashMap<>();
+    private final Map<String, Map<DegradedReason, Metric.Context>> degradedReasonContexts = new CopyOnWriteHashMap<>();
+    private final Map<String, Map<String, Metric.Context>> relevanceContexts = new CopyOnWriteHashMap<>();
+    private final java.util.Timer scheduler = new java.util.Timer(true);
 
     private class PeakQpsReporter extends java.util.TimerTask {
         private long prevMaxQPSTime = System.currentTimeMillis();

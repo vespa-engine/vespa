@@ -123,6 +123,12 @@ public class YqlParserTestCase {
     }
 
     @Test
+    public void testHitLimit() {
+        assertParse("select artist_name, track_name, track_uri from sources * where (myField contains ([{\"prefix\":true}]\"m\") and ([{\"hitLimit\": 5000, \"descending\": true}]range(static_score,0,Infinity))) limit 30 offset 0;",
+                    "AND myField:m* static_score:[0;;-5000]");
+    }
+
+    @Test
     public void test() {
         assertParse("select foo from bar where title contains \"madonna\";",
                     "title:madonna");
