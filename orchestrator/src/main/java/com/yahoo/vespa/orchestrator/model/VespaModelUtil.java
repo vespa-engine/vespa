@@ -80,16 +80,11 @@ public class VespaModelUtil {
 
         Collection<ServiceCluster> controllerClustersForContentCluster = filter(controllerClusters, contentClusterId);
 
-        // TODO jonmv: the exception will be the new norm here.
         Set<ServiceInstance> clusterControllerInstances;
         if (controllerClustersForContentCluster.size() == 1) {
             clusterControllerInstances = first(controllerClustersForContentCluster).serviceInstances();
         } else if (controllerClusters.size() == 1) {
-            ServiceCluster cluster = first(controllerClusters);
-            log.info("No cluster controller cluster for content cluster " + contentClusterId
-                     + ", using the only cluster controller cluster available: " + cluster.clusterId());
-
-            clusterControllerInstances = cluster.serviceInstances();
+            clusterControllerInstances = first(controllerClusters).serviceInstances();
         } else {
             throw new RuntimeException("Failed getting cluster controller for content cluster " + contentClusterId +
                     ". Available clusters = " + controllerClusters +
