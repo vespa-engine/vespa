@@ -9,6 +9,7 @@ import com.yahoo.vespa.curator.api.VespaCurator;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.defaults.Defaults;
 import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
+import com.yahoo.vespa.zookeeper.client.ConfigException;
 import com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
@@ -25,7 +26,6 @@ import org.apache.curator.retry.ExponentialBackoffRetry;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.client.ZKClientConfig;
 import org.apache.zookeeper.data.Stat;
-import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 
 import java.io.File;
 import java.io.IOException;
@@ -126,7 +126,7 @@ public class Curator implements VespaCurator, AutoCloseable {
         if (clientConfigFile.isPresent()) {
             try {
                 return new ZkClientConfigBuilder().toConfig(clientConfigFile.get().toPath());
-            } catch (QuorumPeerConfig.ConfigException e) {
+            } catch (ConfigException e) {
                 throw new RuntimeException("Unable to create ZooKeeper client config file " + clientConfigFile.get());
             } catch (IOException e) {
                 throw new UncheckedIOException(e);

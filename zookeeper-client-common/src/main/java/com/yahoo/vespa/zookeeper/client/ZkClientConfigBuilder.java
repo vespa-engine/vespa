@@ -34,13 +34,17 @@ public class ZkClientConfigBuilder {
 
     public ZkClientConfigBuilder() {}
 
-    public ZKClientConfig toConfig(Path configFile) throws IOException, QuorumPeerConfig.ConfigException {
+    public ZKClientConfig toConfig(Path configFile) throws IOException {
         String configString = toConfigString();
         Files.createDirectories(configFile.getParent());
         Path tempFile = configFile.resolveSibling("." + configFile.getFileName() + ".tmp");
         Files.writeString(tempFile, configString);
         Files.move(tempFile, configFile, StandardCopyOption.ATOMIC_MOVE);
-        return new ZKClientConfig(configFile.toString());
+        try {
+            return new ZKClientConfig(configFile.toString());
+        } catch (QuorumPeerConfig.ConfigException e) {
+            throw new ConfigException(e);
+        }
     }
 
     public ZKClientConfig toConfig() {
