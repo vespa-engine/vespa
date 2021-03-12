@@ -389,6 +389,7 @@ public class DynamicDockerAllocationTest {
         assertEquals(1, hosts.size());
         tester.activate(application, hosts);
         assertEquals(0.1, hosts.get(0).advertisedResources().vcpu(), 0.000001);
+        assertEquals(0.1, hosts.get(0).advertisedResources().bandwidthGbps(), 0.000001);
         assertEquals("Slow nodes are allowed in dev and preferred because they are cheaper",
                      NodeResources.DiskSpeed.slow, hosts.get(0).advertisedResources().diskSpeed());
     }
