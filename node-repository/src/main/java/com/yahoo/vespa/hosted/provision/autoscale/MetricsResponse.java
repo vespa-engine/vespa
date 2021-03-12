@@ -79,8 +79,9 @@ public class MetricsResponse {
                                                                     Metric.queryRate.from(values))));
 
         var cluster = node.get().allocation().get().membership().cluster().id();
-        var metrics = clusterMetrics.getOrDefault(cluster, new ClusterMetricSnapshot(at, 0.0));
+        var metrics = clusterMetrics.getOrDefault(cluster, ClusterMetricSnapshot.empty(at));
         metrics = metrics.withQueryRate(metrics.queryRate() + Metric.queryRate.from(values));
+        metrics = metrics.withWriteRate(metrics.queryRate() + Metric.writeRate.from(values));
         clusterMetrics.put(cluster, metrics);
     }
 
@@ -135,6 +136,11 @@ public class MetricsResponse {
         queryRate { // queries per second
             public String metricResponseName() { return "queries.rate"; }
             double convertValue(double metricValue) { return (float)metricValue; }
+            double defaultValue() { return 0.0; }
+        },
+        writeRate { // writes per second
+            public String metricResponseName() { return "feed.http-requests.rate"; }
+            double convertValue(double metricValue) { return (float) metricValue; }
             double defaultValue() { return 0.0; }
         };
 

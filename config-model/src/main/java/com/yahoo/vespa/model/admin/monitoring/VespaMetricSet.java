@@ -140,10 +140,10 @@ public class VespaMetricSet {
         metrics.add(new Metric("serverNumConnections.last"));
 
         {
-            List<String> suffices = List.of("sum", "count", "last", "min", "max");
-            addMetric(metrics, "jdisc.thread_pool.unhandled_exceptions", suffices);
-            addMetric(metrics, "jdisc.thread_pool.work_queue.capacity", suffices);
-            addMetric(metrics, "jdisc.thread_pool.work_queue.size", suffices);
+            List<String> suffixes = List.of("sum", "count", "last", "min", "max");
+            addMetric(metrics, "jdisc.thread_pool.unhandled_exceptions", suffixes);
+            addMetric(metrics, "jdisc.thread_pool.work_queue.capacity", suffixes);
+            addMetric(metrics, "jdisc.thread_pool.work_queue.size", suffixes);
         }
 
         metrics.add(new Metric("httpapi_latency.max"));

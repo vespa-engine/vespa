@@ -242,7 +242,7 @@ class AutoscalingTester {
                                          IntFunction<Double> queryRate) {
         Instant time = clock().instant();
         for (int i = 0; i < measurements; i++) {
-            db.addClusterMetrics(application, Map.of(cluster, new ClusterMetricSnapshot(time, queryRate.apply(i))));
+            db.addClusterMetrics(application, Map.of(cluster, new ClusterMetricSnapshot(time, queryRate.apply(i), 0.0)));
             time = time.plus(Duration.ofMinutes(5));
         }
     }
