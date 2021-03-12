@@ -7,8 +7,6 @@ import com.yahoo.vespa.clustercontroller.core.restapiv2.Request;
 import com.yahoo.vespa.clustercontroller.core.restapiv2.Response;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.errors.StateRestApiException;
 
-import java.util.EnumSet;
-
 public class ServiceStateRequest extends Request<Response.ServiceResponse> {
     private final Id.Service id;
     private final int recursive;
