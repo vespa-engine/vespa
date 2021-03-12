@@ -189,11 +189,11 @@ void my_full_reduce_op(State &state, uint64_t) {
 };
 
 struct SelectGenericReduceOp {
-    template <typename ICM, typename OCM, typename AGGR> static auto invoke(const ReduceParam &param) {
+    template <typename ICM, typename OIS, typename AGGR> static auto invoke(const ReduceParam &param) {
         using ICT = CellValueType<ICM::value.cell_type>;
-        using OCT = CellValueType<OCM::value.cell_type>;
+        using OCT = CellValueType<CellMeta::reduce(ICM::value.cell_type, OIS::value).cell_type>;
         using AggrType = typename AGGR::template templ<OCT>;
-        if constexpr (OCM::value.is_scalar) {
+        if constexpr (OIS::value) {
             return my_full_reduce_op<ICT, AggrType>;
         } else {
             if (param.sparse_plan.should_forward_index()) {
@@ -290,7 +290,7 @@ SparseReducePlan::~SparseReducePlan() = default;
 
 //-----------------------------------------------------------------------------
 
-using ReduceTypify = TypifyValue<TypifyCellMeta,TypifyAggr>;
+using ReduceTypify = TypifyValue<TypifyCellMeta,TypifyBool,TypifyAggr>;
 
 Instruction
 GenericReduce::make_instruction(const ValueType &result_type,
@@ -300,7 +300,7 @@ GenericReduce::make_instruction(const ValueType &result_type,
     auto &param = stash.create<ReduceParam>(input_type, dimensions, factory);
     assert(result_type == param.res_type);
     assert(result_type.cell_meta().eq(CellMeta::reduce(input_type.cell_type(), result_type.is_double())));
-    auto fun = typify_invoke<3,ReduceTypify,SelectGenericReduceOp>(input_type.cell_meta(), result_type.cell_meta().limit(), aggr, param);
+    auto fun = typify_invoke<3,ReduceTypify,SelectGenericReduceOp>(input_type.cell_meta(), result_type.cell_meta().is_scalar, aggr, param);
     return Instruction(fun, wrap_param<ReduceParam>(param));
 }
 
