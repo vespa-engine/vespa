@@ -53,6 +53,68 @@ DimSpec::make_dict(size_t size, size_t stride, const vespalib::string &prefix)
     return dict;
 }
 
+// 'a2' -> DimSpec("a", 2);
+// 'b2#' -> DimSpec("b", make_dict(2, 1, ""));
+// 'c2#3' -> DimSpec("c", make_dict(2, 3, ""));
+DimSpec
+DimSpec::from_desc(const vespalib::string &desc)
+{
+    size_t idx = 0;
+    vespalib::string name;
+    auto is_num = [](char c) { return ((c >= '0') && (c <= '9')); };
+    auto as_num = [](char c) { return size_t(c - '0'); };
+    auto is_map_tag = [](char c) { return (c == '#'); };
+    auto is_dim_name = [](char c) { return ((c >= 'a') && (c <= 'z')); };
+    auto extract_number = [&]() {
+        assert(idx < desc.size());
+        assert(is_num(desc[idx]));
+        size_t num = as_num(desc[idx++]);
+        assert(num != 0); // catch leading zeroes/zero size
+        while ((idx < desc.size()) && is_num(desc[idx])) {
+            num = (num * 10) + as_num(desc[idx++]);
+        }
+        return num;
+    };
+    assert(!desc.empty());
+    assert(is_dim_name(desc[idx]));
+    name.push_back(desc[idx++]);
+    size_t size = extract_number();
+    if (idx < desc.size()) {
+        // mapped
+        assert(is_map_tag(desc[idx++]));
+        size_t stride = 1;
+        if (idx < desc.size()) {
+            stride = extract_number();
+            assert(idx == desc.size());
+        }
+        return {name, make_dict(size, stride, "")};
+    } else {
+        // indexed
+        return {name, size};
+    }
+}
+
+// 'a2b12c5' -> GenSpec().idx("a", 2).idx("b", 12).idx("c", 5);
+// 'a2#b3#2c5#' -> GenSpec().map("a", 2).map("b", 3, 2).map("c", 5);
+GenSpec
+GenSpec::from_desc(const vespalib::string &desc)
+{
+    size_t idx = 0;
+    vespalib::string dim_desc;
+    std::vector<DimSpec> dim_list;
+    auto is_dim_name = [](char c) { return ((c >= 'a') && (c <= 'z')); };
+    while (idx < desc.size()) {
+        dim_desc.clear();
+        assert(is_dim_name(desc[idx]));
+        dim_desc.push_back(desc[idx++]);
+        while ((idx < desc.size()) && !is_dim_name(desc[idx])) {
+            dim_desc.push_back(desc[idx++]);
+        }
+        dim_list.push_back(DimSpec::from_desc(dim_desc));
+    }
+    return {std::move(dim_list)};
+}
+
 GenSpec::GenSpec(GenSpec &&other) = default;
 GenSpec::GenSpec(const GenSpec &other) = default;
 GenSpec &GenSpec::operator=(GenSpec &&other) = default;

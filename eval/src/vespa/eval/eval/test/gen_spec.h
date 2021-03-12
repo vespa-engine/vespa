@@ -76,6 +76,14 @@ public:
         assert(idx < size());
         return _size ? TensorSpec::Label{idx} : TensorSpec::Label{_dict[idx]};
     }
+
+    // Make a DimSpec object from a textual description
+    // (first character is used as dimension name)
+    //
+    // 'a2' -> DimSpec("a", 2);
+    // 'b2#' -> DimSpec("b", make_dict(2, 1, ""));
+    // 'c2#3' -> DimSpec("c", make_dict(2, 3, ""));
+    static DimSpec from_desc(const vespalib::string &desc);
 };
 
 /**
@@ -95,7 +103,14 @@ private:
 public:
     GenSpec() : _dims(), _cells(CellType::DOUBLE), _seq(N()) {}
     GenSpec(double bias) : _dims(), _cells(CellType::DOUBLE), _seq(N(bias)) {}
-    GenSpec(const std::vector<DimSpec> &dims_in) : _dims(dims_in), _cells(CellType::DOUBLE), _seq(N()) {}
+    GenSpec(std::vector<DimSpec> dims_in) : _dims(std::move(dims_in)), _cells(CellType::DOUBLE), _seq(N()) {}
+
+    // Make a GenSpec object from a textual description
+    // (dimension names must be single characters a-z)
+    //
+    // 'a2b12c5' -> GenSpec().idx("a", 2).idx("b", 12).idx("c", 5);
+    // 'a2#b3#2c5#' -> GenSpec().map("a", 2).map("b", 3, 2).map("c", 5);
+    static GenSpec from_desc(const vespalib::string &desc);
 
     GenSpec(GenSpec &&other);
     GenSpec(const GenSpec &other);
@@ -116,6 +131,10 @@ public:
     }
     GenSpec &map(const vespalib::string &name, std::vector<vespalib::string> dict) {
         _dims.emplace_back(name, std::move(dict));
+        return *this;
+    }
+    GenSpec &desc(const vespalib::string &dim_desc) {
+        _dims.push_back(DimSpec::from_desc(dim_desc));
         return *this;
     }
     GenSpec &cells(CellType cell_type) {
