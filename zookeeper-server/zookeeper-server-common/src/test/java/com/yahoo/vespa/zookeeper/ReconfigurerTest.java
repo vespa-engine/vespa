@@ -14,15 +14,11 @@ import java.io.IOException;
 import java.nio.file.Path;
 import java.time.Duration;
 import java.util.Arrays;
-import java.util.concurrent.CountDownLatch;
-import java.util.concurrent.TimeUnit;
-import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.Phaser;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
-import static org.junit.Assert.assertTrue;
 
 /**
  * Tests dynamic reconfiguration of zookeeper cluster.
@@ -138,16 +134,15 @@ public class ReconfigurerTest {
     }
 
     private static class MockQuorumPeer implements QuorumPeer {
-        final AtomicBoolean on = new AtomicBoolean();
-        @Override public void start(Path path) { assertFalse(on.getAndSet(true)); }
-        @Override public void shutdown(Duration timeout) { assertTrue(on.getAndSet(false)); }
+        final Phaser phaser = new Phaser(2); // Runner and test thread.
+        @Override public void start(Path path) { assertEquals(1, phaser.arriveAndAwaitAdvance()); }
+        @Override public void shutdown(Duration timeout) { assertEquals(1, phaser.arriveAndAwaitAdvance()); }
     }
 
     private static class TestableReconfigurer extends Reconfigurer implements VespaZooKeeperServer {
 
         private final TestableVespaZooKeeperAdmin zooKeeperAdmin;
         private QuorumPeer serverPeer;
-        private final CountDownLatch latch = new CountDownLatch(1);
 
         TestableReconfigurer(TestableVespaZooKeeperAdmin zooKeeperAdmin) {
             super(zooKeeperAdmin, new Sleeper() {
@@ -182,16 +177,10 @@ public class ReconfigurerTest {
 
         @Override
         public void shutdown() {
-            try {
-                latch.await(1, TimeUnit.SECONDS);
-            }
-            catch (InterruptedException e) {
-                e.printStackTrace();
-            }
             serverPeer.shutdown(Duration.ofSeconds(1)); }
 
         @Override
-        public void start(Path configFilePath) { serverPeer.start(configFilePath); latch.countDown(); }
+        public void start(Path configFilePath) { serverPeer.start(configFilePath); }
 
         @Override
         public boolean reconfigurable() {
