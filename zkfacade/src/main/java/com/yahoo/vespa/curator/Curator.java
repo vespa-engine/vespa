@@ -4,14 +4,12 @@ package com.yahoo.vespa.curator;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.cloud.config.CuratorConfig;
-import com.yahoo.io.IOUtils;
 import com.yahoo.path.Path;
-import com.yahoo.text.Utf8;
 import com.yahoo.vespa.curator.api.VespaCurator;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.defaults.Defaults;
-import com.yahoo.vespa.zookeeper.VespaSslContextProvider;
 import com.yahoo.vespa.zookeeper.VespaZooKeeperServer;
+import com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder;
 import org.apache.curator.RetryPolicy;
 import org.apache.curator.framework.CuratorFramework;
 import org.apache.curator.framework.CuratorFrameworkFactory;
@@ -30,6 +28,8 @@ import org.apache.zookeeper.data.Stat;
 import org.apache.zookeeper.server.quorum.QuorumPeerConfig;
 
 import java.io.File;
+import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
@@ -124,20 +124,12 @@ public class Curator implements VespaCurator, AutoCloseable {
 
     private static ZKClientConfig createClientConfig(Optional<File> clientConfigFile) {
         if (clientConfigFile.isPresent()) {
-            boolean useSecureClient = Boolean.parseBoolean(getEnvironmentVariable("VESPA_USE_TLS_FOR_ZOOKEEPER_CLIENT").orElse("false"));
-            StringBuilder configBuilder = new StringBuilder("zookeeper.client.secure=").append(useSecureClient).append("\n");
-            if (useSecureClient) {
-                configBuilder.append("zookeeper.ssl.context.supplier.class=").append(VespaSslContextProvider.class.getName()).append("\n")
-                        .append("zookeeper.ssl.enabledProtocols=").append(VespaSslContextProvider.enabledTlsProtocolConfigValue()).append("\n")
-                        .append("zookeeper.ssl.ciphersuites=").append(VespaSslContextProvider.enabledTlsCiphersConfigValue()).append("\n")
-                        .append("zookeeper.ssl.clientAuth=NEED\n");
-            }
-            clientConfigFile.get().getParentFile().mkdirs();
-            IOUtils.writeFile(clientConfigFile.get(), Utf8.toBytes(configBuilder.toString()));
             try {
-                return new ZKClientConfig(clientConfigFile.get());
+                return new ZkClientConfigBuilder().toConfig(clientConfigFile.get().toPath());
             } catch (QuorumPeerConfig.ConfigException e) {
                 throw new RuntimeException("Unable to create ZooKeeper client config file " + clientConfigFile.get());
+            } catch (IOException e) {
+                throw new UncheckedIOException(e);
             }
         } else {
             return new ZKClientConfig();
@@ -405,10 +397,5 @@ public class Curator implements VespaCurator, AutoCloseable {
      * TODO: Move method out of this class.
      */
     public int zooKeeperEnsembleCount() { return connectionSpec.ensembleSize(); }
-
-    private static Optional<String> getEnvironmentVariable(String variableName) {
-        return Optional.ofNullable(System.getenv().get(variableName))
-                .filter(var -> !var.isEmpty());
-    }
 
 }

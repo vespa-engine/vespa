@@ -149,6 +149,7 @@
         <module>vsm</module>
         <module>yolean</module>
         <module>zkfacade</module>
+        <module>zookeeper-client-common</module>
         <module>zookeeper-command-line-client</module>
         <module>zookeeper-server</module>
     </modules>
