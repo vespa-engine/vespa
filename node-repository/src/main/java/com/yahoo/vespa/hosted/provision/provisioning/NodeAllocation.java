@@ -296,12 +296,17 @@ class NodeAllocation {
      * flavor and host count required to cover the deficit.
      */
     Optional<FlavorCount> hostDeficit() {
-        if (nodeType() != NodeType.config && nodeType() != NodeType.tenant) {
-            return Optional.empty(); // Requests for these node types never have a deficit
+        switch (nodeType()) {
+            case config:
+            case controller:
+            case tenant:
+                return Optional.of(new FlavorCount(requestedNodes.resources().orElseGet(NodeResources::unspecified),
+                                                   requestedNodes.fulfilledDeficitCount(accepted())))
+                               .filter(flavorCount -> flavorCount.getCount() > 0);
+            default:
+                // Requests for these node types never have a deficit
+                return Optional.empty();
         }
-        return Optional.of(new FlavorCount(requestedNodes.resources().orElseGet(NodeResources::unspecified),
-                                           requestedNodes.fulfilledDeficitCount(accepted())))
-                       .filter(flavorCount -> flavorCount.getCount() > 0);
     }
 
     /** Returns the indices to use when provisioning hosts for this */
