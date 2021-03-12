@@ -39,7 +39,7 @@ public class ZooKeeperRunner implements Runnable {
     public ZooKeeperRunner(ZookeeperServerConfig zookeeperServerConfig, VespaZooKeeperServer server) {
         this.zookeeperServerConfig = zookeeperServerConfig;
         this.server = server;
-        new Configurator(zookeeperServerConfig).writeConfigToDisk(TransportSecurityUtils.getOptions());
+        new Configurator(zookeeperServerConfig).writeConfigToDisk(TransportSecurityUtils.getSystemTlsContext());
         executorService = Executors.newSingleThreadExecutor(new DaemonThreadFactory("zookeeper server"));
         executorService.submit(this);
     }
