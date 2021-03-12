@@ -60,10 +60,8 @@ struct DataStoreFixedSizeHashTest : public ::testing::Test
     void remove(uint32_t key);
     bool has_key(uint32_t key);
     void use_single_hash_chain();
-
-    void read_work(uint32_t cnt);
-    void read_work();
-    void write_work(uint32_t cnt);
+    void setup_single_hash_chain_three_elems();
+    std::vector<bool> check_three_elems();
 };
 
 
@@ -149,6 +147,25 @@ DataStoreFixedSizeHashTest::use_single_hash_chain()
     _hash_map = std::make_unique<FixedSizeHashMap>(1, 40, 1);
 }
 
+void
+DataStoreFixedSizeHashTest::setup_single_hash_chain_three_elems()
+{
+    use_single_hash_chain();
+    for (uint32_t key = 1; key < 4; ++key) {
+        insert(key);
+    }
+}
+
+std::vector<bool>
+DataStoreFixedSizeHashTest::check_three_elems()
+{
+    std::vector<bool> result;
+    for (uint32_t key = 1; key < 4; ++key) {
+        result.push_back(has_key(key));
+    }
+    return result;
+}
+
 TEST_F(DataStoreFixedSizeHashTest, smoke_test)
 {
     EXPECT_EQ(0, size());
@@ -169,6 +186,71 @@ TEST_F(DataStoreFixedSizeHashTest, smoke_test)
     commit();
     EXPECT_FALSE(has_key(3));
     EXPECT_TRUE(has_key(4));
+}
+
+TEST_F(DataStoreFixedSizeHashTest, free_list_works)
+{
+    _hash_map = std::make_unique<FixedSizeHashMap>(1, 3, 1);
+    insert(1);
+    insert(2);
+    insert(3);
+    EXPECT_TRUE(_hash_map->full());
+    auto guard = _generation_handler.takeGuard();
+    remove(1);
+    remove(2);
+    EXPECT_TRUE(_hash_map->full());
+    guard = GenerationHandler::Guard();
+    commit();
+    EXPECT_FALSE(_hash_map->full());
+    insert(4);
+    EXPECT_FALSE(_hash_map->full());
+    insert(5);
+    EXPECT_TRUE(_hash_map->full());
+}
+
+TEST_F(DataStoreFixedSizeHashTest, remove_last_inserted_works)
+{
+    setup_single_hash_chain_three_elems();
+    remove(3);
+    EXPECT_EQ((std::vector<bool>{true, true, false}), check_three_elems());
+}
+
+TEST_F(DataStoreFixedSizeHashTest, remove_middle_inserted_works)
+{
+    setup_single_hash_chain_three_elems();
+    remove(2);
+    EXPECT_EQ((std::vector<bool>{true, false, true}), check_three_elems());
+}
+
+TEST_F(DataStoreFixedSizeHashTest, remove_first_inserted_works)
+{
+    setup_single_hash_chain_three_elems();
+    remove(1);
+    EXPECT_EQ((std::vector<bool>{false, true, true}), check_three_elems());
+}
+
+TEST_F(DataStoreFixedSizeHashTest, add_existing_works)
+{
+    use_single_hash_chain();
+    EXPECT_FALSE(has_key(1));
+    EXPECT_EQ(0, size());
+    insert(1);
+    EXPECT_TRUE(has_key(1));
+    EXPECT_EQ(1, size());
+    insert(1);
+    EXPECT_TRUE(has_key(1));
+    EXPECT_EQ(1, size());
+    remove(1);
+    EXPECT_FALSE(has_key(1));
+    EXPECT_EQ(0, size());
+}
+
+TEST_F(DataStoreFixedSizeHashTest, remove_nonexisting_works)
+{
+    use_single_hash_chain();
+    EXPECT_FALSE(has_key(1));
+    remove(1);
+    EXPECT_FALSE(has_key(1));
 }
 
 TEST_F(DataStoreFixedSizeHashTest, lookups_works_after_insert_and_remove)
