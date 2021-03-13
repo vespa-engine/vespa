@@ -1036,7 +1036,9 @@ public class MessageBusVisitorSession implements VisitorSession {
         params.getControlHandler().onProgress(progress.getToken());
         statistics.add(reply.getVisitorStatistics());
         params.getControlHandler().onVisitorStatistics(statistics);
-        trace.getRoot().addChild(reply.getTrace().getRoot());
+        if ( ! reply.getTrace().getRoot().isEmpty() ) {
+            trace.getRoot().addChild(reply.getTrace().getRoot());
+        }
 
         if (params.getDynamicallyIncreaseMaxBucketsPerVisitor()
                 && (reply.getVisitorStatistics().getDocumentsReturned()
