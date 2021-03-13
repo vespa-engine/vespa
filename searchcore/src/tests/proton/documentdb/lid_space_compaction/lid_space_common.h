@@ -47,7 +47,7 @@ using LidPair = std::pair<uint32_t, uint32_t>;
 using LidPairVector = std::vector<LidPair>;
 struct MyHandler;
 
-namespace proton::test { class DummyDocumentSubDb; }
+namespace proton::test { struct DummyDocumentSubDb; }
 struct MyScanIterator : public IDocumentScanIterator {
     const MyHandler & _handler;
     LidVector _lids;
