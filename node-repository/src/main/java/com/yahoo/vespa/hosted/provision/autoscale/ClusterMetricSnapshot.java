@@ -12,12 +12,13 @@ import java.time.Instant;
 public class ClusterMetricSnapshot implements Comparable<ClusterMetricSnapshot> {
 
     private final Instant at;
-
     private final double queryRate;
+    private final double writeRate;
 
-    public ClusterMetricSnapshot(Instant at, double queryRate) {
+    public ClusterMetricSnapshot(Instant at, double queryRate, double writeRate) {
         this.at = at;
         this.queryRate = queryRate;
+        this.writeRate = writeRate;
     }
 
     public Instant at() { return at; }
@@ -25,8 +26,15 @@ public class ClusterMetricSnapshot implements Comparable<ClusterMetricSnapshot> 
     /** Queries per second */
     public double queryRate() { return queryRate; }
 
+    /** Write operations per second */
+    public double writeRate() { return writeRate; }
+
     public ClusterMetricSnapshot withQueryRate(double queryRate) {
-        return new ClusterMetricSnapshot(at, queryRate);
+        return new ClusterMetricSnapshot(at, queryRate, writeRate);
+    }
+
+    public ClusterMetricSnapshot withWriteRate(double writeRate) {
+        return new ClusterMetricSnapshot(at, queryRate, writeRate);
     }
 
     @Override
@@ -36,7 +44,12 @@ public class ClusterMetricSnapshot implements Comparable<ClusterMetricSnapshot> 
 
     @Override
     public String toString() { return "metrics at " + at + ":" +
-                                      " queryRate: " + queryRate;
+                                      " queryRate: " + queryRate +
+                                      " writeRate: " + writeRate;
+    }
+
+    public static ClusterMetricSnapshot empty(Instant instant) {
+        return new ClusterMetricSnapshot(instant, 0.0, 0.0);
     }
 
 }
