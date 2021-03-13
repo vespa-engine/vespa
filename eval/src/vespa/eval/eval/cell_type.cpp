@@ -15,7 +15,7 @@ CellTypeUtils::alignment(CellType cell_type)
 {
     return TypifyCellType::resolve(cell_type, [](auto t)->uint32_t
                                    {
-                                       using T = decltype(t)::type;
+                                       using T = typename decltype(t)::type;
                                        return alignof(T);
                                    });
 }
@@ -25,7 +25,7 @@ CellTypeUtils::mem_size(CellType cell_type, size_t sz)
 {
     return TypifyCellType::resolve(cell_type, [sz](auto t)->size_t
                                    {
-                                       using T = decltype(t)::type;
+                                       using T = typename decltype(t)::type;
                                        return (sz * sizeof(T));
                                    });
 }
