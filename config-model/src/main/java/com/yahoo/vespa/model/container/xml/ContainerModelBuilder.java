@@ -617,7 +617,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         String options = (jvmGCOPtions != null)
                 ? jvmGCOPtions
                 : deployState.getProperties().jvmGCOptions();
-        return (options == null ||options.isEmpty())
+        return (options == null || options.isEmpty())
                 ? (deployState.isHosted() ? ContainerCluster.CMS : ContainerCluster.G1GC)
                 : options;
     }

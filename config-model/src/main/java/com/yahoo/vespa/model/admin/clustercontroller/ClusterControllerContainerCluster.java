@@ -25,6 +25,7 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
         addDefaultHandlersWithVip();
         this.featureFlags = deployState.featureFlags();
         this.reindexingContext = createReindexingContext(deployState);
+        setJvmGCOptions(deployState.getProperties().jvmGCOptions());
     }
 
     @Override

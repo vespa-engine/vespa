@@ -18,6 +18,7 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
 
         addDefaultHandlersWithVip();
         addLogHandler();
+        setJvmGCOptions(deployState.getProperties().jvmGCOptions());
     }
 
     @Override
