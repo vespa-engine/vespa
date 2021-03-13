@@ -757,7 +757,6 @@ assertBucketInfo(const BucketId &ebid,
     EXPECT_TRUE(metaStore.getGid(lid, gid));
     search::DocumentMetaData meta = metaStore.getMetaData(gid);
     EXPECT_TRUE(meta.valid());
-    BucketId abid;
     EXPECT_EQUAL(ebid, meta.bucketId);
     Timestamp ats;
     EXPECT_EQUAL(ets, meta.timestamp);

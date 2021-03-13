@@ -73,7 +73,6 @@ namespace {
 
 const string field = "field";
 const string other = "other";
-const int32_t weight = 1;
 const uint32_t num_docs = 1000;
 
 class MyAttributeManager : public IAttributeManager {
