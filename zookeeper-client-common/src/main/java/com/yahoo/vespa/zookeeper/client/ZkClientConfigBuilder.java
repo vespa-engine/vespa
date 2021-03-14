@@ -30,9 +30,17 @@ public class ZkClientConfigBuilder {
     public static final String SSL_ENABLED_CIPHERSUITES_PROPERTY = "zookeeper.ssl.ciphersuites";
     public static final String SSL_CLIENTAUTH_PROPERTY = "zookeeper.ssl.clientAuth";
 
-    private static final TlsContext tlsContext = getTlsContext().orElse(null);
+    private static final TlsContext defaultTlsContext = getTlsContext().orElse(null);
 
-    public ZkClientConfigBuilder() {}
+    private final TlsContext tlsContext;
+
+    public ZkClientConfigBuilder() {
+         this(defaultTlsContext);
+    }
+
+    public ZkClientConfigBuilder(TlsContext tlsContext) {
+        this.tlsContext = tlsContext;
+    }
 
     public ZKClientConfig toConfig(Path configFile) throws IOException, QuorumPeerConfig.ConfigException {
         String configString = toConfigString();
