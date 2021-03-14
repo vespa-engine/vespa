@@ -1036,7 +1036,11 @@ public class MessageBusVisitorSession implements VisitorSession {
         params.getControlHandler().onProgress(progress.getToken());
         statistics.add(reply.getVisitorStatistics());
         params.getControlHandler().onVisitorStatistics(statistics);
-        trace.getRoot().addChild(reply.getTrace().getRoot());
+        // A visitor session might be long lived so we need a safeguard against blowing the memory if tracing
+        // has been enabled.
+        if ( ! reply.getTrace().getRoot().isEmpty() && (trace.getRoot().getNumChildren() < 1000)) {
+            trace.getRoot().addChild(reply.getTrace().getRoot());
+        }
 
         if (params.getDynamicallyIncreaseMaxBucketsPerVisitor()
                 && (reply.getVisitorStatistics().getDocumentsReturned()
