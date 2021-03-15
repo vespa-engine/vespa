@@ -855,10 +855,14 @@ public class RankProfile implements Cloneable {
     private Optional<TensorType> resolveOnnxInputType(String onnxInputName, OnnxModel model, MapEvaluationTypeContext context) {
         String source = model.getInputMap().get(onnxInputName);
         if (source != null) {
-            // Source is either a simple reference (query/attribute/constant)...
+            // Source is either a simple reference (query/attribute/constant/rankingExpression)...
             Optional<Reference> reference = Reference.simple(source);
             if (reference.isPresent()) {
-                return Optional.of(context.getType(reference.get()));
+                if (reference.get().name().equals("rankingExpression") && reference.get().simpleArgument().isPresent()) {
+                    source = reference.get().simpleArgument().get();  // look up function below
+                } else {
+                    return Optional.of(context.getType(reference.get()));
+                }
             }
             // ... or a function
             ExpressionFunction func = context.getFunction(source);

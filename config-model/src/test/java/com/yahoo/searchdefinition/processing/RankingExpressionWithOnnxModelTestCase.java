@@ -113,7 +113,7 @@ public class RankingExpressionWithOnnxModelTestCase {
         RankProfilesConfig.Builder builder = new RankProfilesConfig.Builder();
         ((RankProfilesConfig.Producer) db).getConfig(builder);
         RankProfilesConfig config = new RankProfilesConfig(builder);
-        assertEquals(9, config.rankprofile().size());
+        assertEquals(10, config.rankprofile().size());
 
         assertEquals("test_model_config", config.rankprofile(2).name());
         assertEquals("rankingExpression(my_function).rankingScript", config.rankprofile(2).fef().property(0).name());
