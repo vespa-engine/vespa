@@ -47,6 +47,7 @@ public:
     virtual std::vector<attribute::IAttributeVector::EnumHandle>
     find_matching_enums(const vespalib::datastore::EntryComparator& cmp) const = 0;
 
+    virtual void clear_all_posting_lists(std::function<void(EntryRef)> clearer) = 0;
     virtual void update_posting_list(Index idx, const vespalib::datastore::EntryComparator& cmp, std::function<EntryRef(EntryRef)> updater) = 0;
     virtual EnumPostingTree& get_posting_dictionary() = 0;
     virtual const EnumPostingTree& get_posting_dictionary() const = 0;
