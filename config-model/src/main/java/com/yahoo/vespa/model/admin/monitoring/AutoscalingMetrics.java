@@ -24,7 +24,10 @@ public class AutoscalingMetrics {
         metrics.add("disk.util");
         metrics.add("application_generation");
         metrics.add("in_service");
-        metrics.add("queries.rate");
+
+        metrics.add("queries.rate"); // container
+        metrics.add("content.proton.documentdb.matching.queries.rate"); // content
+
         metrics.add("feed.http-requests.rate");
         return new MetricSet("autoscaling", toMetrics(metrics));
     }
