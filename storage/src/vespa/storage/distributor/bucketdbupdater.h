@@ -81,7 +81,7 @@ private:
     DistributorComponent _distributorComponent;
     class MergeReplyGuard {
     public:
-        MergeReplyGuard(BucketDBUpdater& updater, const std::shared_ptr<api::MergeBucketReply>& reply)
+        MergeReplyGuard(BucketDBUpdater& updater, const std::shared_ptr<api::MergeBucketReply>& reply) noexcept
             : _updater(updater), _reply(reply) {}
 
         ~MergeReplyGuard();

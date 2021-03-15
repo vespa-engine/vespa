@@ -124,8 +124,7 @@ BucketDBUpdater::sendRequestBucketInfo(
     std::vector<document::BucketId> buckets;
     buckets.push_back(bucket.getBucketId());
 
-    std::shared_ptr<api::RequestBucketInfoCommand> msg(
-            new api::RequestBucketInfoCommand(bucket.getBucketSpace(), buckets));
+    auto msg = std::make_shared<api::RequestBucketInfoCommand>(bucket.getBucketSpace(), buckets);
 
     LOG(debug,
         "Sending request bucket info command %" PRIu64 " for "
@@ -295,10 +294,10 @@ BucketDBUpdater::storageDistributionChanged()
 
     removeSuperfluousBuckets(_distributorComponent.getClusterStateBundle(), true);
 
-    ClusterInformation::CSP clusterInfo(new SimpleClusterInformation(
+    auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
             _distributorComponent.getIndex(),
             _distributorComponent.getClusterStateBundle(),
-            _distributorComponent.getDistributor().getStorageNodeUpStates()));
+            _distributorComponent.getDistributor().getStorageNodeUpStates());
     _pendingClusterState = PendingClusterState::createForDistributionChange(
             _distributorComponent.getClock(),
             std::move(clusterInfo),
@@ -406,12 +405,11 @@ BucketDBUpdater::onSetSystemState(
     update_read_snapshot_after_db_pruning(bundle);
     replyToPreviousPendingClusterStateIfAny();
 
-    ClusterInformation::CSP clusterInfo(
-            new SimpleClusterInformation(
+    auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
                 _distributorComponent.getIndex(),
                 _distributorComponent.getClusterStateBundle(),
                 _distributorComponent.getDistributor()
-                .getStorageNodeUpStates()));
+                .getStorageNodeUpStates());
     _pendingClusterState = PendingClusterState::createForClusterStateChange(
             _distributorComponent.getClock(),
             std::move(clusterInfo),
@@ -476,8 +474,7 @@ bool
 BucketDBUpdater::onMergeBucketReply(
         const std::shared_ptr<api::MergeBucketReply>& reply)
 {
-   std::shared_ptr<MergeReplyGuard> replyGuard(
-           new MergeReplyGuard(*this, reply));
+   auto replyGuard = std::make_shared<MergeReplyGuard>(*this, reply);
 
    // In case the merge was unsuccessful somehow, or some nodes weren't
    // actually merged (source-only nodes?) we request the bucket info of the
@@ -523,8 +520,7 @@ BucketDBUpdater::onNotifyBucketChange(
         const std::shared_ptr<api::NotifyBucketChangeCommand>& cmd)
 {
     // Immediately schedule reply to ensure it is sent.
-    _sender.sendReply(std::shared_ptr<api::StorageReply>(
-            new api::NotifyBucketChangeReply(*cmd)));
+    _sender.sendReply(std::make_shared<api::NotifyBucketChangeReply>(*cmd));
 
     if (!cmd->getBucketInfo().valid()) {
         LOG(error,
@@ -606,7 +602,9 @@ BucketDBUpdater::resendDelayedMessages()
     if (_pendingClusterState) {
         _pendingClusterState->resendDelayedMessages();
     }
-    if (_delayedRequests.empty()) return; // Don't fetch time if not needed
+    if (_delayedRequests.empty()) {
+        return; // Don't fetch time if not needed
+    }
     framework::MilliSecTime currentTime(_distributorComponent.getClock());
     while (!_delayedRequests.empty()
            && currentTime >= _delayedRequests.front().first)

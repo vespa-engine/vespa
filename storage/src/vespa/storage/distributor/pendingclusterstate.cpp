@@ -222,12 +222,11 @@ PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
         _newClusterStateBundle.getDerivedClusterState(bucketSpaceAndNode.bucketSpace)->toString().c_str(),
         distributionHash.c_str());
 
-    std::shared_ptr<api::RequestBucketInfoCommand> cmd(
-            new api::RequestBucketInfoCommand(
+    auto cmd = std::make_shared<api::RequestBucketInfoCommand>(
                     bucketSpaceAndNode.bucketSpace,
                     _sender.getDistributorIndex(),
                     *_newClusterStateBundle.getDerivedClusterState(bucketSpaceAndNode.bucketSpace),
-                    distributionHash));
+                    distributionHash);
 
     cmd->setPriority(api::StorageMessage::HIGH);
     cmd->setTimeout(vespalib::duration::max());
