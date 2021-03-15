@@ -115,9 +115,6 @@ readProtocolVersion()
 {
     int protocolVersion = DEFAULT_PROTOCOL_VERSION;
     char *versionStringPtr = getenv("VESPA_CONFIG_PROTOCOL_VERSION");
-    if (versionStringPtr == NULL) {
-        versionStringPtr = getenv("services__config_protocol_version_override");
-    }
     if (versionStringPtr != NULL) {
         std::stringstream versionString(versionStringPtr);
         versionString >> protocolVersion;
@@ -130,9 +127,6 @@ readTraceLevel()
 {
     int traceLevel = DEFAULT_TRACE_LEVEL;
     char *traceLevelStringPtr = getenv("VESPA_CONFIG_PROTOCOL_TRACELEVEL");
-    if (traceLevelStringPtr == NULL) {
-        traceLevelStringPtr = getenv("services__config_protocol_tracelevel");
-    }
     if (traceLevelStringPtr != NULL) {
         std::stringstream traceLevelString(traceLevelStringPtr);
         traceLevelString >> traceLevel;
@@ -145,9 +139,6 @@ readProtocolCompressionType()
 {
     CompressionType type = CompressionType::LZ4;
     char *compressionTypeStringPtr = getenv("VESPA_CONFIG_PROTOCOL_COMPRESSION");
-    if (compressionTypeStringPtr == NULL) {
-        compressionTypeStringPtr = getenv("services__config_protocol_compression");
-    }
     if (compressionTypeStringPtr != NULL) {
         type = stringToCompressionType(vespalib::string(compressionTypeStringPtr));
     }

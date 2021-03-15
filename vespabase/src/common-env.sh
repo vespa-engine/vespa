@@ -64,10 +64,8 @@ get_var() {
    ret_val=$2
 
    env_var_name=`echo $arg | tr '[:lower:]' '[:upper:]'`
-   prefixed_var_name1=services__${arg}
 
    if   varhasvalue $env_var_name       ; then eval "ret_val=\${$env_var_name}"
-   elif varhasvalue $prefixed_var_name1 ; then eval "ret_val=\${$prefixed_var_name1}"
    fi
    echo "$ret_val"
 }

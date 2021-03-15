@@ -118,9 +118,6 @@ int findConfigProxyPort(int defPort) {
 const char *findConfigServers(const char *defServers) {
     const char *env = getenv("VESPA_CONFIGSERVERS");
     if (env == NULL || *env == '\0') {
-        env = getenv("services__addr_configserver");
-    }
-    if (env == NULL || *env == '\0') {
         env = getenv("addr_configserver");
     }
     if (env != NULL && *env != '\0') {
