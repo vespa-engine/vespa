@@ -1102,10 +1102,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
                                 response.respond(Response.Status.INTERNAL_SERVER_ERROR);
                         }
-                        visitDispatcher.execute(() -> {
-                            phaser.arriveAndAwaitAdvance(); // We may get here while dispatching thread is still putting us in the map.
-                            visits.remove(this).destroy();
-                        });
+                    });
+                    visitDispatcher.execute(() -> {
+                        phaser.arriveAndAwaitAdvance(); // We may get here while dispatching thread is still putting us in the map.
+                        visits.remove(this).destroy();
                     });
                 }
             };
