@@ -54,7 +54,7 @@ public class TrafficShareUpdater extends ControllerMaintainer {
                 }
             }
         }
-        if ( ! success) // log on complete failure
+        if ( ! success && lastException != null) // log on complete failure
             log.log(Level.WARNING, "Could not update traffic share on any applications", lastException);
         return success;
     }
