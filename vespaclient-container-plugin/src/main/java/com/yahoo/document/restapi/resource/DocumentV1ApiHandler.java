@@ -259,6 +259,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         // This blocks until all visitors are done. These, in turn, may require the asyncSession to be alive
         // to be able to run, as well as dispatch of operations against it, which is done by visitDispatcher.
+        visits.values().forEach(VisitorSession::abort);
         visits.values().forEach(VisitorSession::destroy);
 
         // Shut down both dispatchers, so only we empty the queues of outstanding operations, and can be sure they're empty.
@@ -1102,10 +1103,10 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
                                 response.respond(Response.Status.INTERNAL_SERVER_ERROR);
                         }
-                        visitDispatcher.execute(() -> {
-                            phaser.arriveAndAwaitAdvance(); // We may get here while dispatching thread is still putting us in the map.
-                            visits.remove(this).destroy();
-                        });
+                    });
+                    visitDispatcher.execute(() -> {
+                        phaser.arriveAndAwaitAdvance(); // We may get here while dispatching thread is still putting us in the map.
+                        visits.remove(this).destroy();
                     });
                 }
             };
