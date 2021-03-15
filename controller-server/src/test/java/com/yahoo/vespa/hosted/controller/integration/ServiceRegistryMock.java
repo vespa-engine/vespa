@@ -35,6 +35,8 @@ import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMailer;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockRunDataStore;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockTesterCloud;
+import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestClient;
+import com.yahoo.vespa.hosted.controller.api.integration.vcmr.NoopChangeRequestClient;
 
 /**
  * A mock implementation of a {@link ServiceRegistry} for testing purposes.
@@ -70,6 +72,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final ContainerRegistryMock containerRegistry = new ContainerRegistryMock();
     private final NoopTenantSecretService tenantSecretService = new NoopTenantSecretService();
     private final ArchiveService archiveService = new MockArchiveService();
+    private final ChangeRequestClient changeRequestClient = new NoopChangeRequestClient();
 
     public ServiceRegistryMock(SystemName system) {
         this.zoneRegistryMock = new ZoneRegistryMock(system);
@@ -219,6 +222,11 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     @Override
     public ArchiveService archiveService() {
         return archiveService;
+    }
+
+    @Override
+    public ChangeRequestClient changeRequestClient() {
+        return changeRequestClient;
     }
 
     public ConfigServerMock configServerMock() {

@@ -67,6 +67,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new TrafficShareUpdater(controller, intervals.trafficFractionUpdater));
         maintainers.add(new ArchiveUriUpdater(controller, intervals.archiveUriUpdater));
         maintainers.add(new TenantRoleMaintainer(controller, intervals.tenantRoleMaintainer));
+        maintainers.add(new ChangeRequestMaintainer(controller, intervals.changeRequestMaintainer));
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -119,6 +120,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration trafficFractionUpdater;
         private final Duration archiveUriUpdater;
         private final Duration tenantRoleMaintainer;
+        private final Duration changeRequestMaintainer;
 
         public Intervals(SystemName system) {
             this.system = Objects.requireNonNull(system);
@@ -148,6 +150,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.trafficFractionUpdater = duration(5, MINUTES);
             this.archiveUriUpdater = duration(5, MINUTES);
             this.tenantRoleMaintainer = duration(5, MINUTES);
+            this.changeRequestMaintainer = duration(12, HOURS);
         }
 
         private Duration duration(long amount, TemporalUnit unit) {
