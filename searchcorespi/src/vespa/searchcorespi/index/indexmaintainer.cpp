@@ -1239,7 +1239,7 @@ IndexMaintainer::compactLidSpace(uint32_t lidLimit, SerialNum serialNum)
 }
 
 IFlushTarget::List
-IndexMaintainer::getFlushTargets(void)
+IndexMaintainer::getFlushTargets()
 {
     // Called by flush engine scheduler thread
     IFlushTarget::List ret;

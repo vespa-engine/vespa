@@ -16,7 +16,7 @@ JobTrackedFlushTarget::JobTrackedFlushTarget(const IJobTracker::SP &tracker,
 {
 }
 
-JobTrackedFlushTarget::~JobTrackedFlushTarget() {}
+JobTrackedFlushTarget::~JobTrackedFlushTarget() = default;
 
 FlushTask::UP
 JobTrackedFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search::IFlushToken> flush_token)
@@ -24,7 +24,7 @@ JobTrackedFlushTarget::initFlush(SerialNum currentSerial, std::shared_ptr<search
     _tracker->start();
     FlushTask::UP targetTask = _target->initFlush(currentSerial, std::move(flush_token));
     _tracker->end();
-    if (targetTask.get() != nullptr) {
+    if (targetTask) {
         return std::make_unique<JobTrackedFlushTask>(_tracker, std::move(targetTask));
     }
     return FlushTask::UP();
