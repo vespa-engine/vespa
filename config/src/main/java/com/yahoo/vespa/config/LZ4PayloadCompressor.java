@@ -18,7 +18,6 @@ public class LZ4PayloadCompressor {
     private static int getCompressionLevel() {
         return Integer.parseInt(ConfigUtils.getEnvValue("0",
                 System.getenv(VESPA_CONFIG_PROTOCOL_COMPRESSION_LEVEL),
-                System.getenv("services__config_protocol_compression_level"),
                 System.getProperty(VESPA_CONFIG_PROTOCOL_COMPRESSION_LEVEL)));
     }
 

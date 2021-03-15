@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
 import com.yahoo.config.ConfigInstance;
@@ -30,12 +30,11 @@ public class JRTConfigRequestFactory {
 
     public static CompressionType getCompressionType() {
         return getCompressionType(System.getenv(VESPA_CONFIG_PROTOCOL_COMPRESSION),
-                System.getenv("services__config_protocol_compression"),
-                System.getProperty(VESPA_CONFIG_PROTOCOL_COMPRESSION));
+                                  System.getProperty(VESPA_CONFIG_PROTOCOL_COMPRESSION));
     }
 
-    static CompressionType getCompressionType(String env, String alternateEnv, String property) {
-        return CompressionType.valueOf(ConfigUtils.getEnvValue("LZ4", env, alternateEnv, property));
+    static CompressionType getCompressionType(String env, String property) {
+        return CompressionType.valueOf(ConfigUtils.getEnvValue("LZ4", env, property));
     }
 
     static Optional<VespaVersion> getVespaVersion() {
