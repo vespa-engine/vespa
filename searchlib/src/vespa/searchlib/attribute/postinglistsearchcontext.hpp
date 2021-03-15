@@ -20,7 +20,7 @@ namespace search::attribute {
 
 template <typename DataT>
 PostingListSearchContextT<DataT>::
-PostingListSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
+PostingListSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
                           const PostingList &postingList, uint32_t minBvDocFreq,
                           bool useBitVector, const ISearchContext &searchContext)
     : PostingListSearchContext(dictionary, docIdLimit, numValues, hasWeight, minBvDocFreq, useBitVector, searchContext),
@@ -282,7 +282,7 @@ PostingListSearchContextT<DataT>::applyRangeLimit(int rangeLimit)
 
 template <typename DataT>
 PostingListFoldedSearchContextT<DataT>::
-PostingListFoldedSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues,
+PostingListFoldedSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
                                 bool hasWeight, const PostingList &postingList, uint32_t minBvDocFreq,
                                 bool useBitVector, const ISearchContext &searchContext)
     : Parent(dictionary, docIdLimit, numValues, hasWeight, postingList, minBvDocFreq, useBitVector, searchContext)

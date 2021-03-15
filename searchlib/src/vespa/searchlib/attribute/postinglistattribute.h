@@ -49,7 +49,7 @@ protected:
 
     PostingList _postingList;
     AttributeVector &_attr;
-    EnumPostingTree &_dict;
+    IEnumStoreDictionary& _dictionary;
 
     PostingListAttributeBase(AttributeVector &attr, IEnumStore &enumStore);
     virtual ~PostingListAttributeBase();
@@ -95,7 +95,7 @@ public:
     using Parent::clearPostings;
     using Parent::_postingList;
     using Parent::_attr;
-    using Parent::_dict;
+    using Parent::_dictionary;
 
 private:
     EnumStore &_es;

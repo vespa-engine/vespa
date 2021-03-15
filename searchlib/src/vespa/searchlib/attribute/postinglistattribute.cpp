@@ -14,10 +14,10 @@ PostingListAttributeBase<P>::
 PostingListAttributeBase(AttributeVector &attr,
                          IEnumStore &enumStore)
     : attribute::IPostingListAttributeBase(),
-      _postingList(enumStore.get_dictionary().get_posting_dictionary(), attr.getStatus(),
+      _postingList(enumStore.get_dictionary(), attr.getStatus(),
                    attr.getConfig()),
       _attr(attr),
-      _dict(enumStore.get_dictionary().get_posting_dictionary())
+      _dictionary(enumStore.get_dictionary())
 { }
 
 template <typename P>
@@ -29,7 +29,8 @@ PostingListAttributeBase<P>::clearAllPostings()
 {
     _postingList.clearBuilder();
     _attr.incGeneration(); // Force freeze
-    auto itr = _dict.begin();
+    auto& dict = _dictionary.get_posting_dictionary();
+    auto itr = dict.begin();
     EntryRef prev;
     while (itr.valid()) {
         EntryRef ref(itr.getData());
@@ -61,7 +62,8 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
     uint32_t preve = 0;
     uint32_t refCount = 0;
 
-    auto itr = _dict.begin();
+    auto& dict = _dictionary.get_posting_dictionary();
+    auto itr = dict.begin();
     auto posting_itr = itr;
     assert(itr.valid());
     for (const auto& elem : loaded_enums) {
@@ -119,7 +121,8 @@ PostingListAttributeBase<P>::updatePostings(PostingMap &changePost,
     for (auto& elem : changePost) {
         auto& change = elem.second;
         EnumIndex idx = elem.first.getEnumIdx();
-        auto dictItr = _dict.lowerBound(idx, cmp);
+        auto& dict = _dictionary.get_posting_dictionary();
+        auto dictItr = dict.lowerBound(idx, cmp);
         assert(dictItr.valid() && dictItr.getKey() == idx);
         EntryRef newPosting(dictItr.getData());
         
@@ -130,7 +133,7 @@ PostingListAttributeBase<P>::updatePostings(PostingMap &changePost,
                            &change._removals[0],
                            &change._removals[0] + change._removals.size());
         
-        _dict.thaw(dictItr);
+        dict.thaw(dictItr);
         dictItr.writeData(newPosting.ref());
     }
 }
@@ -168,7 +171,8 @@ clearPostings(attribute::IAttributeVector::EnumHandle eidx,
     }
 
     EntryRef er(eidx);
-    auto itr = _dict.lowerBound(er, cmp);
+    auto& dict = _dictionary.get_posting_dictionary();
+    auto itr = dict.lowerBound(er, cmp);
     assert(itr.valid());
     
     EntryRef newPosting(itr.getData());
@@ -181,7 +185,7 @@ clearPostings(attribute::IAttributeVector::EnumHandle eidx,
                        &postings._removals[0],
                        &postings._removals[0] +
                        postings._removals.size());
-    _dict.thaw(itr);
+    dict.thaw(itr);
     itr.writeData(newPosting.ref());
 }
 

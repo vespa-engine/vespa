@@ -11,16 +11,17 @@ namespace search::attribute {
 using vespalib::btree::BTreeNode;
 
 PostingListSearchContext::
-PostingListSearchContext(const Dictionary &dictionary,
+PostingListSearchContext(const IEnumStoreDictionary& dictionary,
                          uint32_t docIdLimit,
                          uint64_t numValues,
                          bool hasWeight,
                          uint32_t minBvDocFreq,
                          bool useBitVector,
                          const ISearchContext &baseSearchCtx)
-    : _frozenDictionary(dictionary.getFrozenView()),
-      _lowerDictItr(BTreeNode::Ref(), dictionary.getAllocator()),
-      _upperDictItr(BTreeNode::Ref(), dictionary.getAllocator()),
+    : _dictionary(dictionary),
+      _frozenDictionary(_dictionary.get_posting_dictionary().getFrozenView()),
+      _lowerDictItr(BTreeNode::Ref(), _frozenDictionary.getAllocator()),
+      _upperDictItr(BTreeNode::Ref(), _frozenDictionary.getAllocator()),
       _uniqueValues(0u),
       _docIdLimit(docIdLimit),
       _dictSize(_frozenDictionary.size()),
