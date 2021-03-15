@@ -56,13 +56,13 @@ if [[ $SHOULD_BUILD == systemtest ]]; then
     devtoolset-9-libatomic-devel \
     devtoolset-9-binutils \
     libxml2-devel \
-    rh-ruby25-rubygems-devel \
-    rh-ruby25-ruby-devel \
-    rh-ruby25 \
-    rh-ruby25-rubygem-net-telnet
+    rh-ruby27-rubygems-devel \
+    rh-ruby27-ruby-devel \
+    rh-ruby27 \
+    rh-ruby27-rubygem-net-telnet
 
-  source /opt/rh/rh-ruby25/enable
-  gem install libxml-ruby gnuplot distribution test-unit builder concurrent-ruby
+  source /opt/rh/rh-ruby27/enable
+  gem install libxml-ruby gnuplot distribution test-unit builder concurrent-ruby ffi
 
   cd $HOME
   git clone https://github.com/vespa-engine/system-test
