@@ -63,7 +63,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
     private final AtomicBoolean destroyed = new AtomicBoolean(false);
     private final ProtocolRepository protocolRepository = new ProtocolRepository();
     private final AtomicReference<Map<String, RoutingTable>> tablesRef = new AtomicReference<>(null);
-    private final CopyOnWriteHashMap<String, MessageHandler> sessions = new CopyOnWriteHashMap<>();
+    private final Map<String, MessageHandler> sessions = new ConcurrentHashMap<>();
     private final Network net;
     private final Messenger msn;
     private final Resender resender;
@@ -72,7 +72,7 @@ public class MessageBus implements ConfigHandler, NetworkOwner, MessageHandler, 
     private int pendingCount = 0;
     private int pendingSize = 0;
     private final Thread careTaker = new Thread(this::sendBlockedMessages);
-    private final ConcurrentHashMap<SendBlockedMessages, Long> blockedSenders = new ConcurrentHashMap<>();
+    private final Map<SendBlockedMessages, Long> blockedSenders = new ConcurrentHashMap<>();
 
     public interface SendBlockedMessages {
         /**
