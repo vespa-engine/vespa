@@ -117,4 +117,10 @@ search test {
         }
     }
 
+    rank-profile test_transformed_dynamic_model inherits test_dynamic_model {
+        first-phase {
+            expression: max(onnx(dynamic_model){d1:0},d0)
+        }
+    }
+
 }
