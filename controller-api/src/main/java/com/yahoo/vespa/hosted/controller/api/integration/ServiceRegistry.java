@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.resource.CostReportCons
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.routing.GlobalRoutingService;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretService;
+import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestClient;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.time.Clock;
@@ -90,4 +91,6 @@ public interface ServiceRegistry {
     TenantSecretService tenantSecretService();
 
     ArchiveService archiveService();
+
+    ChangeRequestClient changeRequestClient();
 }
