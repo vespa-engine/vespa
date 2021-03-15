@@ -182,10 +182,12 @@ public class ConfiguratorTest {
     private void validateConfigFileSingleHost(File cfgFile) {
         String expected =
                 commonConfig() +
-                "server.0=foo:321:123;2181\n" +
+                "server.0=foo:321:123\n" +
                 "sslQuorum=false\n" +
                 "portUnification=false\n" +
-                "client.portUnification=false\n";
+                "client.portUnification=false\n" +
+                "clientPort=2181\n" +
+                "secureClientPort=0\n";
         validateConfigFile(cfgFile, expected);
     }
 
@@ -198,8 +200,7 @@ public class ConfiguratorTest {
     }
 
     private String tlsClientServerConfig() {
-        return "secureClientPort=2184\n" +
-                "ssl.context.supplier.class=com.yahoo.vespa.zookeeper.VespaSslContextProvider\n" +
+        return "ssl.context.supplier.class=com.yahoo.vespa.zookeeper.VespaSslContextProvider\n" +
                 "ssl.ciphersuites=TLS_AES_128_GCM_SHA256,TLS_AES_256_GCM_SHA384,TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256," +
                 "TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384,TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256,TLS_ECDHE_RSA_WITH_AES_256_GCM_SHA384\n" +
                 "ssl.enabledProtocols=TLSv1.2\n" +
@@ -209,23 +210,27 @@ public class ConfiguratorTest {
     private void validateConfigFileMultipleHosts(File cfgFile) {
         String expected =
                 commonConfig() +
-                "server.0=foo:321:123;2181\n" +
-                "server.1=bar:432:234;2181\n" +
-                "server.2=baz:543:345:observer;2181\n" +
+                "server.0=foo:321:123\n" +
+                "server.1=bar:432:234\n" +
+                "server.2=baz:543:345:observer\n" +
                 "sslQuorum=false\n" +
                 "portUnification=false\n" +
-                "client.portUnification=false\n";
+                "client.portUnification=false\n" +
+                "clientPort=2181\n" +
+                "secureClientPort=0\n";
         validateConfigFile(cfgFile, expected);
     }
 
     private void validateConfigFilePortUnification(File cfgFile) {
         String expected =
                 commonConfig() +
-                "server.0=foo:321:123;2181\n" +
+                "server.0=foo:321:123\n" +
                 "sslQuorum=false\n" +
                 "portUnification=true\n" +
                 tlsQuorumConfig() +
                 "client.portUnification=true\n" +
+                "clientPort=2181\n" +
+                "secureClientPort=0\n" +
                 tlsClientServerConfig();
         validateConfigFile(cfgFile, expected);
     }
@@ -233,11 +238,13 @@ public class ConfiguratorTest {
     private void validateConfigFileTlsWithPortUnification(File cfgFile) {
         String expected =
                 commonConfig() +
-                "server.0=foo:321:123;2181\n" +
+                "server.0=foo:321:123\n" +
                 "sslQuorum=true\n" +
                 "portUnification=true\n" +
                 tlsQuorumConfig() +
                 "client.portUnification=true\n" +
+                "clientPort=2181\n" +
+                "secureClientPort=0\n" +
                 tlsClientServerConfig();
         validateConfigFile(cfgFile, expected);
     }
@@ -245,11 +252,13 @@ public class ConfiguratorTest {
     private void validateConfigFileTlsOnly(File cfgFile) {
         String expected =
                 commonConfig() +
-                "server.0=foo:321:123;2181\n" +
+                "server.0=foo:321:123\n" +
                 "sslQuorum=true\n" +
                 "portUnification=false\n" +
                 tlsQuorumConfig() +
                 "client.portUnification=false\n" +
+                "clientPort=0\n" +
+                "secureClientPort=2181\n" +
                 tlsClientServerConfig();
         validateConfigFile(cfgFile, expected);
     }
