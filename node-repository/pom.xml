@@ -88,7 +88,7 @@
         <dependency>
             <groupId>org.questdb</groupId>
             <artifactId>questdb</artifactId>
-            <version>5.0.3</version>
+            <version>5.0.6</version>
             <scope>compile</scope>
         </dependency>
         <dependency>
