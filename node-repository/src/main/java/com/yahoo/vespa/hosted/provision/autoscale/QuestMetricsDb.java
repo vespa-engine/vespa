@@ -208,10 +208,11 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
             }
             // Remove unless all partitions are old: Removing all partitions "will be supported in the future"
-            if ( removeList.size() < partitions && ! removeList.isEmpty())
-                compiler.compile("alter table " + table + " drop partition " +
+            if ( removeList.size() < partitions && ! removeList.isEmpty()) {
+                compiler.compile("alter table " + table + " drop partition list " +
                                  removeList.stream().map(dir -> "'" + dir + "'").collect(Collectors.joining(",")),
                                  context);
+            }
         }
         catch (SqlException e) {
             log.log(Level.WARNING, "Failed to gc old metrics data in " + dataDir + " table " + table, e);
