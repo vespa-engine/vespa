@@ -28,7 +28,10 @@ public class AutoscalingMetrics {
         metrics.add("queries.rate"); // container
         metrics.add("content.proton.documentdb.matching.queries.rate"); // content
 
-        metrics.add("feed.http-requests.rate");
+        metrics.add("feed.http-requests.rate"); // container
+        metrics.add("vds.filestor.alldisks.allthreads.put.sum.count.rate"); // content
+        metrics.add("vds.filestor.alldisks.allthreads.remove.sum.count.rate"); // content
+        metrics.add("vds.filestor.alldisks.allthreads.update.sum.count.rate"); // content
         return new MetricSet("autoscaling", toMetrics(metrics));
     }
 
