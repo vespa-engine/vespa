@@ -124,8 +124,7 @@ struct CellMeta {
     static constexpr CellMeta reduce(CellType input_cell_type, bool output_is_scalar) {
         return normalize(input_cell_type, output_is_scalar).decay();
     }
-    constexpr CellMeta reduce(bool output_is_scalar) {
-        assert(!is_scalar);
+    constexpr CellMeta reduce(bool output_is_scalar) const {
         return CellMeta::reduce(cell_type, output_is_scalar);
     }
     static constexpr CellMeta join(CellMeta a, CellMeta b) { return unify(a, b).decay(); }
