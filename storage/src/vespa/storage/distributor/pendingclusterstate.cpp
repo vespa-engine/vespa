@@ -32,7 +32,9 @@ PendingClusterState::PendingClusterState(
         const OutdatedNodesMap &outdatedNodesMap,
         api::Timestamp creationTimestamp)
     : _cmd(newStateCmd),
+      _sentMessages(),
       _requestedNodes(newStateCmd->getSystemState().getNodeCount(lib::NodeType::STORAGE)),
+      _delayedRequests(),
       _prevClusterStateBundle(clusterInfo->getClusterStateBundle()),
       _newClusterStateBundle(newStateCmd->getClusterStateBundle()),
       _clock(clock),

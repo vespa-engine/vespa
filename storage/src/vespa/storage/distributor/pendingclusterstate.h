@@ -160,7 +160,7 @@ private:
 
     /**
      * Creates a pending cluster state that represents
-     * a set system state command from the fleet controller.
+     * a set system state command from the cluster controller.
      */
     PendingClusterState(
             const framework::Clock&,

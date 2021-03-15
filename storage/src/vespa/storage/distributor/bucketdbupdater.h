@@ -78,7 +78,6 @@ public:
 
     OperationRoutingSnapshot read_snapshot_for_bucket(const document::Bucket&) const;
 private:
-    DistributorComponent _distributorComponent;
     class MergeReplyGuard {
     public:
         MergeReplyGuard(BucketDBUpdater& updater, const std::shared_ptr<api::MergeBucketReply>& reply) noexcept
@@ -239,6 +238,7 @@ private:
         mutable bool _cachedOwned;
     };
 
+    DistributorComponent _distributorComponent;
     std::deque<std::pair<framework::MilliSecTime, BucketRequest> > _delayedRequests;
     std::map<uint64_t, BucketRequest> _sentMessages;
     std::unique_ptr<PendingClusterState> _pendingClusterState;
