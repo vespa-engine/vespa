@@ -29,20 +29,11 @@ PostingListAttributeBase<P>::clearAllPostings()
 {
     _postingList.clearBuilder();
     _attr.incGeneration(); // Force freeze
-    auto& dict = _dictionary.get_posting_dictionary();
-    auto itr = dict.begin();
-    EntryRef prev;
-    while (itr.valid()) {
-        EntryRef ref(itr.getData());
-        if (ref.ref() != prev.ref()) {
-            if (ref.valid()) {
-                _postingList.clear(ref);
-            }
-            prev = ref;
-        }
-        itr.writeData(EntryRef().ref());
-        ++itr;
-    }
+    auto clearer = [this](EntryRef posting_idx)
+                   {
+                       _postingList.clear(posting_idx);
+                   };
+    _dictionary.clear_all_posting_lists(clearer);
     _attr.incGeneration(); // Force freeze
 }
 
