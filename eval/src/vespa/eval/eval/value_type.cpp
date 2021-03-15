@@ -275,7 +275,7 @@ ValueType
 ValueType::reduce(const std::vector<vespalib::string> &dimensions_in) const
 {
     MyReduce result(_dimensions, dimensions_in);
-    auto meta = CellMeta::reduce(_cell_type, result.dimensions.empty());
+    auto meta = cell_meta().reduce(result.dimensions.empty());
     return error_if(_error || result.has_error,
                     make_type(meta.cell_type, std::move(result.dimensions)));
 }
@@ -284,7 +284,7 @@ ValueType
 ValueType::peek(const std::vector<vespalib::string> &dimensions_in) const
 {
     MyReduce result(_dimensions, dimensions_in);
-    auto meta = CellMeta::peek(_cell_type, result.dimensions.empty());
+    auto meta = cell_meta().peek(result.dimensions.empty());
     return error_if(_error || result.has_error || dimensions_in.empty(),
                     make_type(meta.cell_type, std::move(result.dimensions)));
 }

@@ -121,17 +121,14 @@ struct CellMeta {
 
     // convenience functions to be used for specific operations
     constexpr CellMeta map() const { return decay(); }
-    static constexpr CellMeta reduce(CellType input_cell_type, bool output_is_scalar) {
-        return normalize(input_cell_type, output_is_scalar).decay();
-    }
     constexpr CellMeta reduce(bool output_is_scalar) const {
-        return CellMeta::reduce(cell_type, output_is_scalar);
+        return normalize(cell_type, output_is_scalar).decay();
     }
     static constexpr CellMeta join(CellMeta a, CellMeta b) { return unify(a, b).decay(); }
     static constexpr CellMeta merge(CellMeta a, CellMeta b) { return unify(a, b).decay(); }
     static constexpr CellMeta concat(CellMeta a, CellMeta b) { return unify(a, b); }
-    static constexpr CellMeta peek(CellType input_cell_type, bool output_is_scalar) {
-        return normalize(input_cell_type, output_is_scalar);
+    constexpr CellMeta peek(bool output_is_scalar) const {
+        return normalize(cell_type, output_is_scalar);
     }
     constexpr CellMeta rename() const { return self(); }
 };

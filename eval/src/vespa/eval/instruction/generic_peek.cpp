@@ -348,7 +348,7 @@ void my_generic_peek_op(State &state, uint64_t param_in) {
 struct SelectGenericPeekOp {
     template <typename ICM, typename OutIsScalar> static auto invoke() {
         using ICT = CellValueType<ICM::value.cell_type>;
-        constexpr CellMeta ocm = CellMeta::peek(ICM::value.cell_type, OutIsScalar::value);
+        constexpr CellMeta ocm = ICM::value.peek(OutIsScalar::value);
         using OCT = CellValueType<ocm.cell_type>;
         return my_generic_peek_op<ICT,OCT>;
     }
