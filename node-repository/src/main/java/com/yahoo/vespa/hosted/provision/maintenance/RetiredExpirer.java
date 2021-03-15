@@ -27,6 +27,7 @@ import java.util.stream.Collectors;
  */
 public class RetiredExpirer extends NodeRepositoryMaintainer {
 
+    public static final int NUM_CONFIG_SERVERS = 3;
     private final Deployer deployer;
     private final Metric metric;
     private final Orchestrator orchestrator;
@@ -57,7 +58,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
         for (Map.Entry<ApplicationId, List<Node>> entry : retiredNodesByApplication.entrySet()) {
             ApplicationId application = entry.getKey();
             List<Node> retiredNodes = entry.getValue();
-            List<Node> nodesToRemove = retiredNodes.stream().filter(this::canRemove).collect(Collectors.toList());
+            List<Node> nodesToRemove = retiredNodes.stream().filter(n -> canRemove(n, activeNodes)).collect(Collectors.toList());
             if (nodesToRemove.isEmpty()) continue;
 
             try (MaintenanceDeployment deployment = new MaintenanceDeployment(application, deployer, metric, nodeRepository())) {
@@ -81,11 +82,34 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
      * - The node has been in state {@link History.Event.Type#retired} for longer than {@link #retiredExpiry}
      * - Orchestrator allows it
      */
-    private boolean canRemove(Node node) {
+    private boolean canRemove(Node node, NodeList activeNodes) {
         if (node.type().isHost()) {
             if (nodeRepository().nodes().list().childrenOf(node).asList().stream()
                                 .allMatch(child -> child.state() == Node.State.parked ||
                                                    child.state() == Node.State.failed)) {
+
+                if (node.type().isConfigServerLike() && activeNodes.nodeType(node.type()).asSet().size() < NUM_CONFIG_SERVERS) {
+                    // Scenario:  All 3 controllers want to retire.
+                    //
+                    // Say RetiredExpirer runs on cfg1 and gives cfg2 permission to be removed (PERMANENTLY_DOWN in ZK).
+                    // The consequent redeployment moves cfg2 to inactive, removing cfg2 from the application,
+                    // and PERMANENTLY_DOWN for cfg2 is cleaned up.
+                    //
+                    // If the RetiredExpirer on cfg3 now runs before its InfrastructureProvisioner, then
+                    //  a. But the duper model still contains cfg2
+                    //  b. The service model still monitors cfg2 for health and it is UP
+                    //  c. The Orchestrator has no host status (like PERMANENTLY_DOWN) for cfg2,
+                    //     which is equivalent to NO_REMARKS
+                    // Therefore, from the point of view of the Orchestrator invoked below, any cfg will
+                    // be allowed to be removed, say cfg1.  In the subsequent redeployment, both cfg2
+                    // and cfg1 are now inactive.
+                    //
+                    // A proper solution would be to ensure the duper model is changed atomically
+                    // with node states across all config servers.  As this would require some work,
+                    // we will instead verify here that there are 3 active config servers before
+                    // allowing the removal of any config server.
+                    return false;
+                }
                 log.info("Host " + node + " has no non-parked/failed children");
                 return true;
             }
