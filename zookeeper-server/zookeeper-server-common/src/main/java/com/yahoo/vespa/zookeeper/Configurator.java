@@ -76,7 +76,7 @@ public class Configurator {
         sb.append("skipACL=yes").append("\n");
         sb.append("metricsProvider.className=org.apache.zookeeper.metrics.impl.NullMetricsProvider\n");
         ensureThisServerIsRepresented(config.myid(), config.server());
-        config.server().forEach(server -> addServerToCfg(sb, server));
+        config.server().forEach(server -> addServerToCfg(sb, server, config.clientPort()));
         sb.append(new TlsQuorumConfig().createConfig(config, tlsContext));
         sb.append(new TlsClientServerConfig().createConfig(config, tlsContext));
         return sb.toString();
@@ -101,7 +101,7 @@ public class Configurator {
         }
     }
 
-    private void addServerToCfg(StringBuilder sb, ZookeeperServerConfig.Server server) {
+    private void addServerToCfg(StringBuilder sb, ZookeeperServerConfig.Server server, int clientPort) {
         sb.append("server.")
           .append(server.id())
           .append("=")
@@ -119,7 +119,9 @@ public class Configurator {
             sb.append(":")
               .append("observer");
         }
-        sb.append("\n");
+        sb.append(";")
+          .append(clientPort)
+          .append("\n");
     }
 
     static List<String> zookeeperServerHostnames(ZookeeperServerConfig zookeeperServerConfig) {
@@ -152,7 +154,7 @@ public class Configurator {
 
         String configFieldPrefix();
 
-        default void appendTlsConfig(StringBuilder builder, Optional<TlsContext> tlsContext) {
+        default void appendTlsConfig(StringBuilder builder, ZookeeperServerConfig config, Optional<TlsContext> tlsContext) {
             tlsContext.ifPresent(ctx -> {
                 builder.append(configFieldPrefix()).append(".context.supplier.class=").append(VespaSslContextProvider.class.getName()).append("\n");
                 String enabledCiphers = Arrays.stream(ctx.parameters().getCipherSuites()).sorted().collect(Collectors.joining(","));
@@ -174,29 +176,22 @@ public class Configurator {
 
             StringBuilder sb = new StringBuilder();
             boolean portUnification;
-            boolean secureClientPort;
             switch (tlsSetting) {
                 case "OFF":
-                    secureClientPort = false; portUnification = false;
-                    break;
                 case "TLS_ONLY":
-                    secureClientPort = true; portUnification = false;
+                    portUnification = false;
                     break;
                 case "PORT_UNIFICATION":
                 case "TLS_WITH_PORT_UNIFICATION":
-                    secureClientPort = false; portUnification = true;
+                    portUnification = true;
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown value of config setting tlsForClientServerCommunication: " + tlsSetting);
             }
-            // ZooKeeper Dynamic Reconfiguration does not support SSL/secure client port
-            // The secure client port must be configured in the static configuration section instead
-            // https://issues.apache.org/jira/browse/ZOOKEEPER-3577
-            sb.append("client.portUnification=").append(portUnification).append("\n")
-                    .append("clientPort=").append(secureClientPort ? 0 : config.clientPort()).append("\n")
-                    .append("secureClientPort=").append(secureClientPort ? config.clientPort() : 0).append("\n");
-
-            appendTlsConfig(sb, tlsContext);
+            sb.append("client.portUnification=").append(portUnification).append("\n");
+            // TODO This should override "clientPort" if TLS enabled without port unification);
+            tlsContext.ifPresent(ctx -> sb.append("secureClientPort=").append(config.secureClientPort()).append("\n"));
+            appendTlsConfig(sb, config, tlsContext);
 
             return sb.toString();
         }
@@ -239,7 +234,7 @@ public class Configurator {
             }
             sb.append("sslQuorum=").append(sslQuorum).append("\n");
             sb.append("portUnification=").append(portUnification).append("\n");
-            appendTlsConfig(sb, tlsContext);
+            appendTlsConfig(sb, config, tlsContext);
 
             return sb.toString();
         }
