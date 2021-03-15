@@ -119,22 +119,19 @@ PostingListAttributeBase<P>::updatePostings(PostingMap &changePost,
                                             vespalib::datastore::EntryComparator &cmp)
 {
     for (auto& elem : changePost) {
-        auto& change = elem.second;
         EnumIndex idx = elem.first.getEnumIdx();
-        auto& dict = _dictionary.get_posting_dictionary();
-        auto dictItr = dict.lowerBound(idx, cmp);
-        assert(dictItr.valid() && dictItr.getKey() == idx);
-        EntryRef newPosting(dictItr.getData());
-        
+        auto& change = elem.second;
         change.removeDups();
-        _postingList.apply(newPosting,
-                           &change._additions[0],
-                           &change._additions[0] + change._additions.size(),
-                           &change._removals[0],
-                           &change._removals[0] + change._removals.size());
-        
-        dict.thaw(dictItr);
-        dictItr.writeData(newPosting.ref());
+        auto updater= [this, &change](EntryRef posting_idx) -> EntryRef
+                      {
+                          _postingList.apply(posting_idx,
+                                             &change._additions[0],
+                                             &change._additions[0] + change._additions.size(),
+                                             &change._removals[0],
+                                             &change._removals[0] + change._removals.size());
+                          return posting_idx;
+                      };
+        _dictionary.update_posting_list(idx, cmp, updater);
     }
 }
 

@@ -14,6 +14,8 @@ class IEnumStore;
  */
 template <typename DictionaryT>
 class EnumStoreDictionary : public vespalib::datastore::UniqueStoreDictionary<DictionaryT, IEnumStoreDictionary> {
+protected:
+    using EntryRef = IEnumStoreDictionary::EntryRef;
 private:
     using EnumVector = IEnumStoreDictionary::EnumVector;
     using Index = IEnumStoreDictionary::Index;
@@ -47,6 +49,7 @@ public:
     std::vector<attribute::IAttributeVector::EnumHandle>
     find_matching_enums(const vespalib::datastore::EntryComparator& cmp) const override;
 
+    void update_posting_list(Index idx, const vespalib::datastore::EntryComparator& cmp, std::function<EntryRef(EntryRef)> updater) override;
     EnumPostingTree& get_posting_dictionary() override;
     const EnumPostingTree& get_posting_dictionary() const override;
 };
