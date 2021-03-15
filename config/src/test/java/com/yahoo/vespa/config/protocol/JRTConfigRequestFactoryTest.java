@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
 import com.yahoo.foo.FunctionTestConfig;
@@ -17,41 +17,22 @@ import static org.hamcrest.MatcherAssert.assertThat;
  * @author hmusum
  */
 public class JRTConfigRequestFactoryTest {
-    private static VespaVersion defaultVespaVersion = JRTConfigRequestFactory.getCompiledVespaVersion();
+    private static final VespaVersion defaultVespaVersion = JRTConfigRequestFactory.getCompiledVespaVersion();
 
     @Test
     public void testCompressionType() {
-        assertThat(JRTConfigRequestFactory.getCompressionType("", "", ""), is(CompressionType.LZ4));
+        assertThat(JRTConfigRequestFactory.getCompressionType("", ""), is(CompressionType.LZ4));
+        assertThat(JRTConfigRequestFactory.getCompressionType("UNCOMPRESSED", ""), is(CompressionType.UNCOMPRESSED));
+        assertThat(JRTConfigRequestFactory.getCompressionType("", "UNCOMPRESSED"), is(CompressionType.UNCOMPRESSED));
+        assertThat(JRTConfigRequestFactory.getCompressionType("UNCOMPRESSED", "UNCOMPRESSED"), is(CompressionType.UNCOMPRESSED));
 
-        assertThat(JRTConfigRequestFactory.getCompressionType("UNCOMPRESSED", "", ""), is(CompressionType.UNCOMPRESSED));
-        assertThat(JRTConfigRequestFactory.getCompressionType("", "UNCOMPRESSED", ""), is(CompressionType.UNCOMPRESSED));
-        assertThat(JRTConfigRequestFactory.getCompressionType("", "", "UNCOMPRESSED"), is(CompressionType.UNCOMPRESSED));
-        assertThat(JRTConfigRequestFactory.getCompressionType("UNCOMPRESSED", "UNCOMPRESSED", ""), is(CompressionType.UNCOMPRESSED));
-        assertThat(JRTConfigRequestFactory.getCompressionType("UNCOMPRESSED", "", "UNCOMPRESSED"), is(CompressionType.UNCOMPRESSED));
-        assertThat(JRTConfigRequestFactory.getCompressionType("", "UNCOMPRESSED", "UNCOMPRESSED"), is(CompressionType.UNCOMPRESSED));
-        assertThat(JRTConfigRequestFactory.getCompressionType("UNCOMPRESSED", "UNCOMPRESSED", "UNCOMPRESSED"), is(CompressionType.UNCOMPRESSED));
+        assertThat(JRTConfigRequestFactory.getCompressionType("", ""), is(CompressionType.LZ4));
+        assertThat(JRTConfigRequestFactory.getCompressionType("LZ4", ""), is(CompressionType.LZ4));
+        assertThat(JRTConfigRequestFactory.getCompressionType("", "LZ4"), is(CompressionType.LZ4));
+        assertThat(JRTConfigRequestFactory.getCompressionType("LZ4", "LZ4"), is(CompressionType.LZ4));
 
-        assertThat(JRTConfigRequestFactory.getCompressionType("LZ4", "", ""), is(CompressionType.LZ4));
-        assertThat(JRTConfigRequestFactory.getCompressionType("", "LZ4", ""), is(CompressionType.LZ4));
-        assertThat(JRTConfigRequestFactory.getCompressionType("", "", "LZ4"), is(CompressionType.LZ4));
-        assertThat(JRTConfigRequestFactory.getCompressionType("LZ4", "LZ4", ""), is(CompressionType.LZ4));
-        assertThat(JRTConfigRequestFactory.getCompressionType("LZ4", "", "LZ4"), is(CompressionType.LZ4));
-        assertThat(JRTConfigRequestFactory.getCompressionType("", "LZ4", "LZ4"), is(CompressionType.LZ4));
-        assertThat(JRTConfigRequestFactory.getCompressionType("LZ4", "LZ4", "LZ4"), is(CompressionType.LZ4));
-
-        assertThat(JRTConfigRequestFactory.getCompressionType("UNCOMPRESSED", "LZ4", ""), is(CompressionType.UNCOMPRESSED));
-        assertThat(JRTConfigRequestFactory.getCompressionType("UNCOMPRESSED", "", "LZ4"), is(CompressionType.UNCOMPRESSED));
-        assertThat(JRTConfigRequestFactory.getCompressionType("", "UNCOMPRESSED", "LZ4"), is(CompressionType.UNCOMPRESSED));
-        assertThat(JRTConfigRequestFactory.getCompressionType("LZ4", "UNCOMPRESSED", ""), is(CompressionType.LZ4));
-        assertThat(JRTConfigRequestFactory.getCompressionType("LZ4", "", "UNCOMPRESSED"), is(CompressionType.LZ4));
-        assertThat(JRTConfigRequestFactory.getCompressionType("", "LZ4", "UNCOMPRESSED"), is(CompressionType.LZ4));
-
-        assertThat(JRTConfigRequestFactory.getCompressionType("UNCOMPRESSED", "LZ4", "LZ4"), is(CompressionType.UNCOMPRESSED));
-        assertThat(JRTConfigRequestFactory.getCompressionType("UNCOMPRESSED", "UNCOMPRESSED", "LZ4"), is(CompressionType.UNCOMPRESSED));
-        assertThat(JRTConfigRequestFactory.getCompressionType("UNCOMPRESSED", "LZ4", "UNCOMPRESSED"), is(CompressionType.UNCOMPRESSED));
-        assertThat(JRTConfigRequestFactory.getCompressionType("LZ4", "UNCOMPRESSED", "UNCOMPRESSED"), is(CompressionType.LZ4));
-        assertThat(JRTConfigRequestFactory.getCompressionType("LZ4", "UNCOMPRESSED", "LZ4"), is(CompressionType.LZ4));
-        assertThat(JRTConfigRequestFactory.getCompressionType("LZ4", "LZ4", "UNCOMPRESSED"), is(CompressionType.LZ4));
+        assertThat(JRTConfigRequestFactory.getCompressionType("UNCOMPRESSED", "LZ4"), is(CompressionType.UNCOMPRESSED));
+        assertThat(JRTConfigRequestFactory.getCompressionType("LZ4", "UNCOMPRESSED"), is(CompressionType.LZ4));
     }
 
     @Test
