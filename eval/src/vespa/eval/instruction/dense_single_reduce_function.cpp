@@ -120,7 +120,7 @@ void my_single_reduce_op(InterpretedFunction::State &state, uint64_t param) {
 struct MyGetFun {
     template <typename ICM, typename AGGR, typename GE8, typename I1> static auto invoke() {
         using ICT = CellValueType<ICM::value.cell_type>;
-        using OCT = CellValueType<CellMeta::reduce(ICM::value.cell_type, false).cell_type>;
+        using OCT = CellValueType<ICM::value.reduce(false).cell_type>;
         using AggrType = typename AGGR::template templ<OCT>;
         return my_single_reduce_op<ICT, OCT, AggrType, GE8::value, I1::value>;
     }
