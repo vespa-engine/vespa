@@ -29,6 +29,7 @@ protected:
     using FrozenDictionary = Dictionary::FrozenView;
     using EnumIndex = IEnumStore::Index;
 
+    const IEnumStoreDictionary& _dictionary;
     const FrozenDictionary _frozenDictionary;
     DictionaryConstIterator _lowerDictItr;
     DictionaryConstIterator _upperDictItr;
@@ -47,7 +48,7 @@ protected:
     const ISearchContext    &_baseSearchCtx;
 
 
-    PostingListSearchContext(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
+    PostingListSearchContext(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues, bool hasWeight,
                              uint32_t minBvDocFreq, bool useBitVector, const ISearchContext &baseSearchCtx);
 
     ~PostingListSearchContext();
@@ -110,7 +111,7 @@ protected:
     static const long MIN_UNIQUE_VALUES_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 20;
     static const long MIN_APPROXHITS_TO_NUMDOCS_RATIO_BEFORE_APPROXIMATION = 10;
 
-    PostingListSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues,
+    PostingListSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
                               bool hasWeight, const PostingList &postingList, uint32_t minBvDocFreq,
                               bool useBitVector, const ISearchContext &baseSearchCtx);
     ~PostingListSearchContextT() override;
@@ -148,7 +149,7 @@ protected:
     using Parent::countHits;
     using Parent::singleHits;
 
-    PostingListFoldedSearchContextT(const Dictionary &dictionary, uint32_t docIdLimit, uint64_t numValues,
+    PostingListFoldedSearchContextT(const IEnumStoreDictionary& dictionary, uint32_t docIdLimit, uint64_t numValues,
                                     bool hasWeight, const PostingList &postingList, uint32_t minBvDocFreq,
                                     bool useBitVector, const ISearchContext &baseSearchCtx);
 
@@ -247,7 +248,7 @@ template <typename BaseSC, typename BaseSC2, typename AttrT>
 PostingSearchContext<BaseSC, BaseSC2, AttrT>::
 PostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched)
     : BaseSC(std::move(qTerm), toBeSearched),
-      BaseSC2(toBeSearched.getEnumStore().get_posting_dictionary(),
+      BaseSC2(toBeSearched.getEnumStore().get_dictionary(),
               toBeSearched.getCommittedDocIdLimit(),
               toBeSearched.getStatus().getNumValues(),
               toBeSearched.hasWeightedSetType(),

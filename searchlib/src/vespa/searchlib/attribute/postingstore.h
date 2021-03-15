@@ -44,14 +44,14 @@ public:
     uint32_t _maxBvDocFreq; // Greater than or equal to this ==> create bv
 protected:
     std::set<uint32_t> _bvs; // Current bitvectors
-    EnumPostingTree   &_dict;
+    IEnumStoreDictionary& _dictionary;
     Status            &_status;
     uint64_t           _bvExtraBytes;
 
     static constexpr uint32_t BUFFERTYPE_BITVECTOR = 9u;
 
 public:
-    PostingStoreBase2(EnumPostingTree &dict, Status &status, const Config &config);
+    PostingStoreBase2(IEnumStoreDictionary& dictionary, Status &status, const Config &config);
     virtual ~PostingStoreBase2();
     bool resizeBitVectors(uint32_t newSize, uint32_t newCapacity);
     virtual bool removeSparseBitVectors() = 0;
@@ -97,7 +97,7 @@ public:
     typedef vespalib::datastore::Handle<BitVectorEntry> BitVectorRefPair;
     
 
-    PostingStore(EnumPostingTree &dict, Status &status, const Config &config);
+    PostingStore(IEnumStoreDictionary& dictionary, Status &status, const Config &config);
     ~PostingStore();
 
     bool removeSparseBitVectors() override;
