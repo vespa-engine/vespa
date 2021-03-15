@@ -10,7 +10,6 @@ import com.yahoo.config.model.api.SuperModelProvider;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.SystemName;
-import java.util.logging.Level;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.service.monitor.CriticalRegion;
 import com.yahoo.vespa.service.monitor.DuperModelInfraApi;
@@ -26,8 +25,9 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.locks.ReentrantLock;
 import java.util.function.Function;
-import java.util.logging.Logger;
 import java.util.function.Supplier;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -68,7 +68,7 @@ public class DuperModelManager implements DuperModelProvider, DuperModelInfraApi
     }
 
     /** Non-private for testing */
-    DuperModelManager(boolean multitenant, boolean isController, SuperModelProvider superModelProvider, DuperModel duperModel, FlagSource flagSource, SystemName system) {
+    public DuperModelManager(boolean multitenant, boolean isController, SuperModelProvider superModelProvider, DuperModel duperModel, FlagSource flagSource, SystemName system) {
         this.duperModel = duperModel;
 
         if (system == SystemName.dev) {

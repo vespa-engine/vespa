@@ -81,7 +81,7 @@ public class OrchestratorImplTest {
     private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3, clock);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final MockCurator curator = new MockCurator();
-    private ZkStatusService statusService = new ZkStatusService(
+    private final ZkStatusService statusService = new ZkStatusService(
             curator,
             mock(Metric.class),
             new TestTimer(),
