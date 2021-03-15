@@ -81,8 +81,7 @@ public:
     // (first character is used as dimension name)
     //
     // 'a2' -> DimSpec("a", 2);
-    // 'b2#' -> DimSpec("b", make_dict(2, 1, ""));
-    // 'c2#3' -> DimSpec("c", make_dict(2, 3, ""));
+    // 'b2_3' -> DimSpec("b", make_dict(2, 3, ""));
     static DimSpec from_desc(const vespalib::string &desc);
 };
 
@@ -109,7 +108,7 @@ public:
     // (dimension names must be single characters a-z)
     //
     // 'a2b12c5' -> GenSpec().idx("a", 2).idx("b", 12).idx("c", 5);
-    // 'a2#b3#2c5#' -> GenSpec().map("a", 2).map("b", 3, 2).map("c", 5);
+    // 'a2_1b3_2c5_1' -> GenSpec().map("a", 2).map("b", 3, 2).map("c", 5);
     static GenSpec from_desc(const vespalib::string &desc);
 
     GenSpec(GenSpec &&other);

@@ -21,8 +21,8 @@ struct Params {
         : result_type(result_type_in), outer_size(outer_size_in), reduce_size(reduce_size_in), inner_size(inner_size_in) {}
 };
 
-template <typename CT, typename AGGR>
-CT reduce_cells(const CT *src, size_t reduce_size, size_t stride) {
+template <typename ICT, typename AGGR>
+auto reduce_cells(const ICT *src, size_t reduce_size, size_t stride) {
     AGGR aggr(*src);
     for (size_t i = 1; i < reduce_size; ++i) {
         src += stride;
@@ -54,38 +54,38 @@ auto reduce_cells_atleast_8(size_t n, GET &&get) {
     return aggrs[0].result();
 }
 
-template <typename CT, typename AGGR>
-auto reduce_cells_atleast_8(const CT *src, size_t n) {
+template <typename ICT, typename AGGR>
+auto reduce_cells_atleast_8(const ICT *src, size_t n) {
     return reduce_cells_atleast_8<AGGR>(n, [&](size_t idx) { return src[idx]; });
 }
 
-template <typename CT, typename AGGR>
-auto reduce_cells_atleast_8(const CT *src, size_t n, size_t stride) {
+template <typename ICT, typename AGGR>
+auto reduce_cells_atleast_8(const ICT *src, size_t n, size_t stride) {
     return reduce_cells_atleast_8<AGGR>(n, [&](size_t idx) { return src[idx * stride]; });
 }
 
-template <typename CT, typename AGGR, bool atleast_8, bool is_inner>
-void trace_reduce_impl(const Params &params, const CT *src, CT *dst) {
+template <typename ICT, typename OCT, typename AGGR, bool atleast_8, bool is_inner>
+void trace_reduce_impl(const Params &params, const ICT *src, OCT *dst) {
     constexpr bool aggr_is_complex = is_complex(AGGR::enum_value());
     const size_t block_size = (params.reduce_size * params.inner_size);
     for (size_t outer = 0; outer < params.outer_size; ++outer) {
         for (size_t inner = 0; inner < params.inner_size; ++inner) {
             if (atleast_8 && !aggr_is_complex) {
                 if (is_inner) {
-                    *dst++ = reduce_cells_atleast_8<CT, AGGR>(src + inner, params.reduce_size);
+                    *dst++ = reduce_cells_atleast_8<ICT, AGGR>(src + inner, params.reduce_size);
                 } else {
-                    *dst++ = reduce_cells_atleast_8<CT, AGGR>(src + inner, params.reduce_size, params.inner_size);
+                    *dst++ = reduce_cells_atleast_8<ICT, AGGR>(src + inner, params.reduce_size, params.inner_size);
                 }
             } else {
-                *dst++ = reduce_cells<CT, AGGR>(src + inner, params.reduce_size, params.inner_size);
+                *dst++ = reduce_cells<ICT, AGGR>(src + inner, params.reduce_size, params.inner_size);
             }
         }
         src += block_size;
     }
 }
 
-template <typename CT, typename AGGR>
-void fold_reduce_impl(const Params &params, const CT *src, CT *dst) {
+template <typename ICT, typename OCT, typename AGGR>
+void fold_reduce_impl(const Params &params, const ICT *src, OCT *dst) {
     for (size_t outer = 0; outer < params.outer_size; ++outer) {
         auto saved_dst = dst;
         for (size_t inner = 0; inner < params.inner_size; ++inner) {
@@ -101,27 +101,28 @@ void fold_reduce_impl(const Params &params, const CT *src, CT *dst) {
     }
 }
 
-template <typename CT, typename AGGR, bool atleast_8, bool is_inner>
+template <typename ICT, typename OCT, typename AGGR, bool atleast_8, bool is_inner>
 void my_single_reduce_op(InterpretedFunction::State &state, uint64_t param) {
-    static_assert(std::is_same_v<CT,typename AGGR::value_type>);
+    static_assert(std::is_same_v<OCT,typename AGGR::value_type>);
     constexpr bool aggr_is_simple = is_simple(AGGR::enum_value());
     const auto &params = unwrap_param<Params>(param);
-    const CT *src = state.peek(0).cells().typify<CT>().cbegin();
-    auto dst_cells = state.stash.create_uninitialized_array<CT>(params.outer_size * params.inner_size);
-    CT *dst = dst_cells.begin();
+    const ICT *src = state.peek(0).cells().typify<ICT>().cbegin();
+    auto dst_cells = state.stash.create_uninitialized_array<OCT>(params.outer_size * params.inner_size);
+    OCT *dst = dst_cells.begin();
     if constexpr (aggr_is_simple && !is_inner) {
-        fold_reduce_impl<CT, AGGR>(params, src, dst);
+        fold_reduce_impl<ICT, OCT, AGGR>(params, src, dst);
     } else {
-        trace_reduce_impl<CT,AGGR,atleast_8,is_inner>(params, src, dst);
+        trace_reduce_impl<ICT, OCT, AGGR, atleast_8, is_inner>(params, src, dst);
     }
     state.pop_push(state.stash.create<DenseValueView>(params.result_type, TypedCells(dst_cells)));
 }
 
 struct MyGetFun {
-    template <typename R1, typename R2, typename R3, typename R4> static auto invoke() {
-        using OCT = CellValueType<R1::value.decay().cell_type>;
-        using AggrType = typename R2::template templ<OCT>;
-        return my_single_reduce_op<OCT, AggrType, R3::value, R4::value>;
+    template <typename ICM, typename AGGR, typename GE8, typename I1> static auto invoke() {
+        using ICT = CellValueType<ICM::value.cell_type>;
+        using OCT = CellValueType<CellMeta::reduce(ICM::value.cell_type, false).cell_type>;
+        using AggrType = typename AGGR::template templ<OCT>;
+        return my_single_reduce_op<ICT, OCT, AggrType, GE8::value, I1::value>;
     }
 };
 
@@ -229,7 +230,7 @@ DenseSingleReduceFunction::~DenseSingleReduceFunction() = default;
 InterpretedFunction::Instruction
 DenseSingleReduceFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
-    auto op = typify_invoke<4,MyTypify,MyGetFun>(child().result_type().cell_meta().limit().not_scalar(),
+    auto op = typify_invoke<4,MyTypify,MyGetFun>(child().result_type().cell_meta().not_scalar(),
                                                  _aggr,
                                                  (_reduce_size >= 8), (_inner_size == 1));
     auto &params = stash.create<Params>(result_type(), _outer_size, _reduce_size, _inner_size);
@@ -241,15 +242,13 @@ DenseSingleReduceFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
     if (auto reduce = as<Reduce>(expr)) {
         const auto &child = reduce->child();
-        if (reduce->result_type().cell_meta().eq(child.result_type().cell_meta())) {
-            auto spec_list = make_dense_single_reduce_list(child.result_type(), reduce->aggr(), reduce->dimensions()); 
-            if (!spec_list.empty()) {
-                const auto *prev = &child;
-                for (const auto &spec: spec_list) {
-                    prev = &stash.create<DenseSingleReduceFunction>(spec, *prev);
-                }
-                return *prev;
+        auto spec_list = make_dense_single_reduce_list(child.result_type(), reduce->aggr(), reduce->dimensions()); 
+        if (!spec_list.empty()) {
+            const auto *prev = &child;
+            for (const auto &spec: spec_list) {
+                prev = &stash.create<DenseSingleReduceFunction>(spec, *prev);
             }
+            return *prev;
         }
     }
     return expr;

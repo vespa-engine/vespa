@@ -54,8 +54,7 @@ DimSpec::make_dict(size_t size, size_t stride, const vespalib::string &prefix)
 }
 
 // 'a2' -> DimSpec("a", 2);
-// 'b2#' -> DimSpec("b", make_dict(2, 1, ""));
-// 'c2#3' -> DimSpec("c", make_dict(2, 3, ""));
+// 'b2_3' -> DimSpec("b", make_dict(2, 3, ""));
 DimSpec
 DimSpec::from_desc(const vespalib::string &desc)
 {
@@ -63,7 +62,7 @@ DimSpec::from_desc(const vespalib::string &desc)
     vespalib::string name;
     auto is_num = [](char c) { return ((c >= '0') && (c <= '9')); };
     auto as_num = [](char c) { return size_t(c - '0'); };
-    auto is_map_tag = [](char c) { return (c == '#'); };
+    auto is_map_tag = [](char c) { return (c == '_'); };
     auto is_dim_name = [](char c) { return ((c >= 'a') && (c <= 'z')); };
     auto extract_number = [&]() {
         assert(idx < desc.size());
@@ -82,11 +81,8 @@ DimSpec::from_desc(const vespalib::string &desc)
     if (idx < desc.size()) {
         // mapped
         assert(is_map_tag(desc[idx++]));
-        size_t stride = 1;
-        if (idx < desc.size()) {
-            stride = extract_number();
-            assert(idx == desc.size());
-        }
+        size_t stride = extract_number();
+        assert(idx == desc.size());
         return {name, make_dict(size, stride, "")};
     } else {
         // indexed
@@ -95,7 +91,7 @@ DimSpec::from_desc(const vespalib::string &desc)
 }
 
 // 'a2b12c5' -> GenSpec().idx("a", 2).idx("b", 12).idx("c", 5);
-// 'a2#b3#2c5#' -> GenSpec().map("a", 2).map("b", 3, 2).map("c", 5);
+// 'a2_1b3_2c5_1' -> GenSpec().map("a", 2).map("b", 3, 2).map("c", 5);
 GenSpec
 GenSpec::from_desc(const vespalib::string &desc)
 {
