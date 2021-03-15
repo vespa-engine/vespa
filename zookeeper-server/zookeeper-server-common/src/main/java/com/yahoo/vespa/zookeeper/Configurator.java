@@ -76,7 +76,7 @@ public class Configurator {
         sb.append("skipACL=yes").append("\n");
         sb.append("metricsProvider.className=org.apache.zookeeper.metrics.impl.NullMetricsProvider\n");
         ensureThisServerIsRepresented(config.myid(), config.server());
-        config.server().forEach(server -> addServerToCfg(sb, server, config.clientPort()));
+        config.server().forEach(server -> addServerToCfg(sb, server));
         sb.append(new TlsQuorumConfig().createConfig(config, tlsContext));
         sb.append(new TlsClientServerConfig().createConfig(config, tlsContext));
         return sb.toString();
@@ -101,7 +101,7 @@ public class Configurator {
         }
     }
 
-    private void addServerToCfg(StringBuilder sb, ZookeeperServerConfig.Server server, int clientPort) {
+    private void addServerToCfg(StringBuilder sb, ZookeeperServerConfig.Server server) {
         sb.append("server.")
           .append(server.id())
           .append("=")
@@ -119,9 +119,7 @@ public class Configurator {
             sb.append(":")
               .append("observer");
         }
-        sb.append(";")
-          .append(clientPort)
-          .append("\n");
+        sb.append("\n");
     }
 
     static List<String> zookeeperServerHostnames(ZookeeperServerConfig zookeeperServerConfig) {
@@ -176,21 +174,28 @@ public class Configurator {
 
             StringBuilder sb = new StringBuilder();
             boolean portUnification;
+            boolean secureClientPort;
             switch (tlsSetting) {
                 case "OFF":
+                    secureClientPort = false; portUnification = false;
+                    break;
                 case "TLS_ONLY":
-                    portUnification = false;
+                    secureClientPort = true; portUnification = false;
                     break;
                 case "PORT_UNIFICATION":
                 case "TLS_WITH_PORT_UNIFICATION":
-                    portUnification = true;
+                    secureClientPort = false; portUnification = true;
                     break;
                 default:
                     throw new IllegalArgumentException("Unknown value of config setting tlsForClientServerCommunication: " + tlsSetting);
             }
-            sb.append("client.portUnification=").append(portUnification).append("\n");
-            // TODO This should override "clientPort" if TLS enabled without port unification);
-            tlsContext.ifPresent(ctx -> sb.append("secureClientPort=").append(config.secureClientPort()).append("\n"));
+            // ZooKeeper Dynamic Reconfiguration does not support SSL/secure client port
+            // The secure client port must be configured in the static configuration section instead
+            // https://issues.apache.org/jira/browse/ZOOKEEPER-3577
+            sb.append("client.portUnification=").append(portUnification).append("\n")
+                    .append("clientPort=").append(secureClientPort ? 0 : config.clientPort()).append("\n")
+                    .append("secureClientPort=").append(secureClientPort ? config.clientPort() : 0).append("\n");
+
             appendTlsConfig(sb, config, tlsContext);
 
             return sb.toString();
