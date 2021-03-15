@@ -124,6 +124,10 @@ struct CellMeta {
     static constexpr CellMeta reduce(CellType input_cell_type, bool output_is_scalar) {
         return normalize(input_cell_type, output_is_scalar).decay();
     }
+    constexpr CellMeta reduce(bool output_is_scalar) {
+        assert(!is_scalar);
+        return CellMeta::reduce(cell_type, output_is_scalar);
+    }
     static constexpr CellMeta join(CellMeta a, CellMeta b) { return unify(a, b).decay(); }
     static constexpr CellMeta merge(CellMeta a, CellMeta b) { return unify(a, b).decay(); }
     static constexpr CellMeta concat(CellMeta a, CellMeta b) { return unify(a, b); }
@@ -132,12 +136,6 @@ struct CellMeta {
     }
     constexpr CellMeta rename() const { return self(); }
 };
-
-template <typename A, typename B> constexpr auto unify_cell_types() {
-    constexpr CellMeta a(get_cell_type<A>(), false);
-    constexpr CellMeta b(get_cell_type<B>(), false);
-    return get_cell_value<CellMeta::unify(a, b).cell_type>();
-}
 
 struct TypifyCellType {
     template <typename T> using Result = TypifyResultType<T>;

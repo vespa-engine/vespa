@@ -55,11 +55,10 @@ ArrayRef<OCT> make_dst_cells(ConstArrayRef<PCT> pri_cells, Stash &stash) {
     }
 }
 
-template <typename LCT, typename RCT, typename Fun, bool swap, Overlap overlap, bool pri_mut>
+template <typename LCT, typename RCT, typename OCT, typename Fun, bool swap, Overlap overlap, bool pri_mut>
 void my_simple_join_op(State &state, uint64_t param) {
     using PCT = typename std::conditional<swap,RCT,LCT>::type;
     using SCT = typename std::conditional<swap,LCT,RCT>::type;
-    using OCT = decltype(unify_cell_types<LCT,RCT>());
     using OP = typename std::conditional<swap,SwapArgs2<Fun>,Fun>::type;
     const JoinParams &params = unwrap_param<JoinParams>(param);
     OP my_op(params.function);
@@ -94,13 +93,18 @@ void my_simple_join_op(State &state, uint64_t param) {
 
 //-----------------------------------------------------------------------------
 
-struct MyGetFun {
-    template <typename R1, typename R2, typename R3, typename R4, typename R5, typename R6> static auto invoke() {
-        return my_simple_join_op<R1, R2, R3, R4::value, R5::value, R6::value>;
+struct SelectMixedSimpleJoin {
+    template<typename LCM, typename RCM, typename R3, typename R4, typename R5, typename R6>
+    static auto invoke() {
+        constexpr CellMeta ocm = CellMeta::join(LCM::value, RCM::value);
+        using LCT = CellValueType<LCM::value.cell_type>;
+        using RCT = CellValueType<RCM::value.cell_type>;
+        using OCT = CellValueType<ocm.cell_type>;
+        return my_simple_join_op<LCT, RCT, OCT, R3, R4::value, R5::value, R6::value>;
     }
 };
 
-using MyTypify = TypifyValue<TypifyCellType,TypifyOp2,TypifyBool,TypifyOverlap>;
+using MyTypify = TypifyValue<TypifyCellMeta,TypifyOp2,TypifyBool,TypifyOverlap>;
 
 //-----------------------------------------------------------------------------
 
@@ -197,10 +201,10 @@ Instruction
 MixedSimpleJoinFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
     const JoinParams &params = stash.create<JoinParams>(result_type(), factor(), function());
-    auto op = typify_invoke<6,MyTypify,MyGetFun>(lhs().result_type().cell_type(),
-                                                 rhs().result_type().cell_type(),
-                                                 function(), (_primary == Primary::RHS),
-                                                 _overlap, primary_is_mutable());
+    auto op = typify_invoke<6,MyTypify,SelectMixedSimpleJoin>(lhs().result_type().cell_meta().not_scalar(),
+                                                              rhs().result_type().cell_meta().not_scalar(),
+                                                              function(), (_primary == Primary::RHS),
+                                                              _overlap, primary_is_mutable());
     return Instruction(op, wrap_param<JoinParams>(params));
 }
 

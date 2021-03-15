@@ -32,11 +32,10 @@ struct ExpandParams {
         : result_type(result_type_in), result_size(result_size_in), function(function_in) {}
 };
 
-template <typename LCT, typename RCT, typename Fun, bool rhs_inner>
+template <typename LCT, typename RCT, typename DCT, typename Fun, bool rhs_inner>
 void my_simple_expand_op(State &state, uint64_t param) {
     using ICT = typename std::conditional<rhs_inner,RCT,LCT>::type;
     using OCT = typename std::conditional<rhs_inner,LCT,RCT>::type;
-    using DCT = decltype(unify_cell_types<LCT,RCT>());
     using OP = typename std::conditional<rhs_inner,SwapArgs2<Fun>,Fun>::type;
     const ExpandParams &params = unwrap_param<ExpandParams>(param);
     OP my_op(params.function);
@@ -53,13 +52,18 @@ void my_simple_expand_op(State &state, uint64_t param) {
 
 //-----------------------------------------------------------------------------
 
-struct MyGetFun {
-    template <typename R1, typename R2, typename R3, typename R4> static auto invoke() {
-        return my_simple_expand_op<R1, R2, R3, R4::value>;
+struct SelectDenseSimpleExpand {
+    template<typename LCM, typename RCM, typename Fun, typename RhsInner>
+    static auto invoke() {
+        constexpr CellMeta ocm = CellMeta::join(LCM::value, RCM::value);
+        using LCT = CellValueType<LCM::value.cell_type>;
+        using RCT = CellValueType<RCM::value.cell_type>;
+        using OCT = CellValueType<ocm.cell_type>;
+        return my_simple_expand_op<LCT, RCT, OCT, Fun, RhsInner::value>;
     }
 };
 
-using MyTypify = TypifyValue<TypifyCellType,TypifyOp2,TypifyBool>;
+using MyTypify = TypifyValue<TypifyCellMeta,TypifyOp2,TypifyBool>;
 
 //-----------------------------------------------------------------------------
 
@@ -98,9 +102,9 @@ DenseSimpleExpandFunction::compile_self(const ValueBuilderFactory &, Stash &stas
 {
     size_t result_size = result_type().dense_subspace_size();
     const ExpandParams &params = stash.create<ExpandParams>(result_type(), result_size, function());
-    auto op = typify_invoke<4,MyTypify,MyGetFun>(lhs().result_type().cell_type(),
-                                                 rhs().result_type().cell_type(),
-                                                 function(), (_inner == Inner::RHS));
+    auto op = typify_invoke<4,MyTypify,SelectDenseSimpleExpand>(lhs().result_type().cell_meta().not_scalar(),
+                                                                rhs().result_type().cell_meta().not_scalar(),
+                                                                function(), (_inner == Inner::RHS));
     return Instruction(op, wrap_param<ExpandParams>(params));
 }
 
