@@ -15,9 +15,9 @@ using namespace operation;
 
 namespace {
 
-template <typename LCT, typename RCT, bool common_inner>
-double my_dot_product(const LCT *lhs, const RCT *rhs, size_t vector_size, size_t result_size) {
-    double result = 0.0;
+template <typename LCT, typename RCT, typename OCT, bool common_inner>
+OCT my_dot_product(const LCT *lhs, const RCT *rhs, size_t vector_size, size_t result_size) {
+    OCT result = 0.0;
     for (size_t i = 0; i < vector_size; ++i) {
         result += ((*lhs) * (*rhs));
         ++lhs;
@@ -26,17 +26,16 @@ double my_dot_product(const LCT *lhs, const RCT *rhs, size_t vector_size, size_t
     return result;
 }
 
-template <typename LCT, typename RCT, bool common_inner>
+template <typename LCT, typename RCT, typename OCT, bool common_inner>
 void my_xw_product_op(InterpretedFunction::State &state, uint64_t param) {
     const DenseXWProductFunction::Self &self = unwrap_param<DenseXWProductFunction::Self>(param);
-    using OCT = decltype(unify_cell_types<LCT,RCT>());
     auto vector_cells = state.peek(1).cells().typify<LCT>();
     auto matrix_cells = state.peek(0).cells().typify<RCT>();
     auto dst_cells = state.stash.create_uninitialized_array<OCT>(self.result_size);
     OCT *dst = dst_cells.begin();
     const RCT *matrix = matrix_cells.cbegin();
     for (size_t i = 0; i < self.result_size; ++i) {
-        *dst++ = my_dot_product<LCT,RCT,common_inner>(vector_cells.cbegin(), matrix, self.vector_size, self.result_size);
+        *dst++ = my_dot_product<LCT,RCT,OCT,common_inner>(vector_cells.cbegin(), matrix, self.vector_size, self.result_size);
         matrix += (common_inner ? self.vector_size : 1);
     }
     state.pop_pop_push(state.stash.create<DenseValueView>(self.result_type, TypedCells(dst_cells)));
@@ -100,13 +99,19 @@ const TensorFunction &createDenseXWProduct(const ValueType &res, const TensorFun
 }
 
 struct MyXWProductOp {
-    template<typename R1, typename R2, typename R3> static auto invoke() {
-        if (std::is_same_v<R1,double> && std::is_same_v<R2,double>) {
-            return my_cblas_double_xw_product_op<R3::value>;
-        } else if (std::is_same_v<R1,float> && std::is_same_v<R2,float>) {
-            return my_cblas_float_xw_product_op<R3::value>;
+    template<typename LCM, typename RCM, typename CommonInner> static auto invoke() {
+        constexpr CellMeta ocm = CellMeta::join(LCM::value, RCM::value).reduce(false);
+        using LCT = CellValueType<LCM::value.cell_type>;
+        using RCT = CellValueType<RCM::value.cell_type>;
+        using OCT = CellValueType<ocm.cell_type>;
+        if (std::is_same_v<LCT,double> && std::is_same_v<RCT,double>) {
+            assert((std::is_same_v<OCT,double>));
+            return my_cblas_double_xw_product_op<CommonInner::value>;
+        } else if (std::is_same_v<LCT,float> && std::is_same_v<RCT,float>) {
+            assert((std::is_same_v<OCT,float>));
+            return my_cblas_float_xw_product_op<CommonInner::value>;
         } else {
-            return my_xw_product_op<R1, R2, R3::value>;
+            return my_xw_product_op<LCT, RCT, OCT, CommonInner::value>;
         }
     }
 };
@@ -139,9 +144,10 @@ InterpretedFunction::Instruction
 DenseXWProductFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
     Self &self = stash.create<Self>(result_type(), _vector_size, _result_size);
-    using MyTypify = TypifyValue<TypifyCellType,vespalib::TypifyBool>;
-    auto op = typify_invoke<3,MyTypify,MyXWProductOp>(lhs().result_type().cell_type(),
-                                                      rhs().result_type().cell_type(),
+    assert(self.result_type.cell_meta().is_scalar == false);
+    using MyTypify = TypifyValue<TypifyCellMeta,vespalib::TypifyBool>;
+    auto op = typify_invoke<3,MyTypify,MyXWProductOp>(lhs().result_type().cell_meta().not_scalar(),
+                                                      rhs().result_type().cell_meta().not_scalar(),
                                                       _common_inner);
     return InterpretedFunction::Instruction(op, wrap_param<DenseXWProductFunction::Self>(self));
 }

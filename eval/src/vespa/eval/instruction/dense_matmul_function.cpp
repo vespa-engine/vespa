@@ -14,9 +14,9 @@ using namespace operation;
 
 namespace {
 
-template <typename LCT, typename RCT, bool lhs_common_inner, bool rhs_common_inner>
-double my_dot_product(const LCT *lhs, const RCT *rhs, size_t lhs_size, size_t common_size, size_t rhs_size) {
-    double result = 0.0;
+template <typename LCT, typename RCT, typename OCT, bool lhs_common_inner, bool rhs_common_inner>
+OCT my_dot_product(const LCT *lhs, const RCT *rhs, size_t lhs_size, size_t common_size, size_t rhs_size) {
+    OCT result = 0.0;
     for (size_t i = 0; i < common_size; ++i) {
         result += ((*lhs) * (*rhs));
         lhs += (lhs_common_inner ? 1 : lhs_size);
@@ -25,10 +25,9 @@ double my_dot_product(const LCT *lhs, const RCT *rhs, size_t lhs_size, size_t co
     return result;
 }
 
-template <typename LCT, typename RCT, bool lhs_common_inner, bool rhs_common_inner>
+template <typename LCT, typename RCT, typename OCT, bool lhs_common_inner, bool rhs_common_inner>
 void my_matmul_op(InterpretedFunction::State &state, uint64_t param) {
     const DenseMatMulFunction::Self &self = unwrap_param<DenseMatMulFunction::Self>(param);
-    using OCT = decltype(unify_cell_types<LCT,RCT>());
     auto lhs_cells = state.peek(1).cells().typify<LCT>();
     auto rhs_cells = state.peek(0).cells().typify<RCT>();
     auto dst_cells = state.stash.create_uninitialized_array<OCT>(self.lhs_size * self.rhs_size);
@@ -37,7 +36,8 @@ void my_matmul_op(InterpretedFunction::State &state, uint64_t param) {
     for (size_t i = 0; i < self.lhs_size; ++i) {
         const RCT *rhs = rhs_cells.cbegin();
         for (size_t j = 0; j < self.rhs_size; ++j) {
-            *dst++ = my_dot_product<LCT,RCT,lhs_common_inner,rhs_common_inner>(lhs, rhs, self.lhs_size, self.common_size, self.rhs_size);
+            *dst++ = my_dot_product<LCT,RCT,OCT,lhs_common_inner,rhs_common_inner>(lhs, rhs,
+                                                                                   self.lhs_size, self.common_size, self.rhs_size);
             rhs += (rhs_common_inner ? self.common_size : 1);
         }
         lhs += (lhs_common_inner ? self.common_size : 1);
@@ -112,14 +112,18 @@ const TensorFunction &create_matmul(const TensorFunction &a, const TensorFunctio
     }
 }
 
-struct MyGetFun {
-    template<typename R1, typename R2, typename R3, typename R4> static auto invoke() {
-        if (std::is_same_v<R1,double> && std::is_same_v<R2,double>) {
-            return my_cblas_double_matmul_op<R3::value, R4::value>;
-        } else if (std::is_same_v<R1,float> && std::is_same_v<R2,float>) {
-            return my_cblas_float_matmul_op<R3::value, R4::value>;
+struct SelectDenseMatmul {
+    template<typename LCM, typename RCM, typename LhsCommonInner, typename RhsCommonInner> static auto invoke() {
+        constexpr CellMeta ocm = CellMeta::join(LCM::value, RCM::value).reduce(false);
+        using LCT = CellValueType<LCM::value.cell_type>;
+        using RCT = CellValueType<RCM::value.cell_type>;
+        using OCT = CellValueType<ocm.cell_type>;
+        if (std::is_same_v<LCT,double> && std::is_same_v<RCT,double>) {
+            return my_cblas_double_matmul_op<LhsCommonInner::value, RhsCommonInner::value>;
+        } else if (std::is_same_v<LCT,float> && std::is_same_v<RCT,float>) {
+            return my_cblas_float_matmul_op<LhsCommonInner::value, RhsCommonInner::value>;
         } else {
-            return my_matmul_op<R1, R2, R3::value, R4::value>;
+            return my_matmul_op<LCT, RCT, OCT, LhsCommonInner::value, RhsCommonInner::value>;
         }
     }
 };
@@ -161,11 +165,12 @@ DenseMatMulFunction::~DenseMatMulFunction() = default;
 InterpretedFunction::Instruction
 DenseMatMulFunction::compile_self(const ValueBuilderFactory &, Stash &stash) const
 {
-    using MyTypify = TypifyValue<TypifyCellType,TypifyBool>;
+    using MyTypify = TypifyValue<TypifyCellMeta,TypifyBool>;
     Self &self = stash.create<Self>(result_type(), _lhs_size, _common_size, _rhs_size);
-    auto op = typify_invoke<4,MyTypify,MyGetFun>(
-            lhs().result_type().cell_type(), rhs().result_type().cell_type(),
-            _lhs_common_inner, _rhs_common_inner);
+    auto op = typify_invoke<4,MyTypify,SelectDenseMatmul>(
+        lhs().result_type().cell_meta().not_scalar(),
+        rhs().result_type().cell_meta().not_scalar(),
+        _lhs_common_inner, _rhs_common_inner);
     return InterpretedFunction::Instruction(op, wrap_param<DenseMatMulFunction::Self>(self));
 }
 
