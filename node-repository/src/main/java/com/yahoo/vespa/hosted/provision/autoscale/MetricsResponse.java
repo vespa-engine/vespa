@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.collections.ListMap;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.slime.ArrayTraverser;
@@ -56,54 +57,53 @@ public class MetricsResponse {
 
     public Map<ClusterSpec.Id, ClusterMetricSnapshot> clusterMetrics() { return clusterMetrics; }
 
-    private void consumeNode(Inspector node, NodeList applicationNodes, NodeRepository nodeRepository) {
-        String hostname = node.field("hostname").asString();
-        consumeNodeMetrics(hostname, node.field("node"), applicationNodes, nodeRepository);
-        // consumeServiceMetrics(hostname, node.field("services"));
-    }
-
-    private void consumeNodeMetrics(String hostname, Inspector nodeData, NodeList applicationNodes, NodeRepository nodeRepository) {
+    private void consumeNode(Inspector nodeObject, NodeList applicationNodes, NodeRepository nodeRepository) {
+        String hostname = nodeObject.field("hostname").asString();
         Optional<Node> node = applicationNodes.stream().filter(n -> n.hostname().equals(hostname)).findAny();
         if (node.isEmpty()) return; // Node is not part of this cluster any more
-        long timestampSecond = nodeData.field("timestamp").asLong();
-        Map<String, Double> values = consumeMetrics(nodeData.field("metrics"));
-        Instant at = Instant.ofEpochMilli(timestampSecond * 1000);
+
+        ListMap<String, Double> nodeValues = new ListMap<>();
+        Instant at = consumeNodeMetrics(nodeObject.field("node"), nodeValues);
+        consumeServiceMetrics(nodeObject.field("services"), nodeValues);
 
         nodeMetrics.add(new Pair<>(hostname, new NodeMetricSnapshot(at,
-                                                                    Metric.cpu.from(values),
-                                                                    Metric.memory.from(values),
-                                                                    Metric.disk.from(values),
-                                                                    (long)Metric.generation.from(values),
-                                                                    Metric.inService.from(values) > 0,
+                                                                    Metric.cpu.from(nodeValues),
+                                                                    Metric.memory.from(nodeValues),
+                                                                    Metric.disk.from(nodeValues),
+                                                                    (long)Metric.generation.from(nodeValues),
+                                                                    Metric.inService.from(nodeValues) > 0,
                                                                     clusterIsStable(node.get(), applicationNodes, nodeRepository),
-                                                                    Metric.queryRate.from(values))));
+                                                                    Metric.queryRate.from(nodeValues))));
 
         var cluster = node.get().allocation().get().membership().cluster().id();
         var metrics = clusterMetrics.getOrDefault(cluster, ClusterMetricSnapshot.empty(at));
-        metrics = metrics.withQueryRate(metrics.queryRate() + Metric.queryRate.from(values));
-        metrics = metrics.withWriteRate(metrics.queryRate() + Metric.writeRate.from(values));
+        metrics = metrics.withQueryRate(metrics.queryRate() + Metric.queryRate.from(nodeValues));
+        metrics = metrics.withWriteRate(metrics.queryRate() + Metric.writeRate.from(nodeValues));
         clusterMetrics.put(cluster, metrics);
+    }
+
+    private Instant consumeNodeMetrics(Inspector nodeObject, ListMap<String, Double> nodeValues) {
+        long timestampSecond = nodeObject.field("timestamp").asLong();
+        Instant at = Instant.ofEpochMilli(timestampSecond * 1000);
+        nodeObject.field("metrics").traverse((ArrayTraverser) (__, item) -> consumeMetricsItem(item, nodeValues));
+        return at;
+    }
+
+    private void consumeServiceMetrics(Inspector servicesObject, ListMap<String, Double> nodeValues) {
+        servicesObject.traverse((ArrayTraverser) (__, item) -> consumeServiceItem(item, nodeValues));
+    }
+
+    private void consumeServiceItem(Inspector serviceObject, ListMap<String, Double> nodeValues) {
+        serviceObject.field("metrics").traverse((ArrayTraverser) (__, item) -> consumeMetricsItem(item, nodeValues));
+    }
+
+    private void consumeMetricsItem(Inspector item, ListMap<String, Double> values) {
+        item.field("values").traverse((ObjectTraverser)(name, value) -> values.put(name, value.asDouble()));
     }
 
     private boolean clusterIsStable(Node node, NodeList applicationNodes, NodeRepository nodeRepository) {
         ClusterSpec cluster = node.allocation().get().membership().cluster();
         return Autoscaler.stable(applicationNodes.cluster(cluster.id()), nodeRepository);
-    }
-
-    private void consumeServiceMetrics(String hostname, Inspector node) {
-        String name = node.field("name").asString();
-        long timestamp = node.field("timestamp").asLong();
-        Map<String, Double> values = consumeMetrics(node.field("metrics"));
-    }
-
-    private Map<String, Double> consumeMetrics(Inspector metrics) {
-        Map<String, Double> values = new HashMap<>();
-        metrics.traverse((ArrayTraverser) (__, item) -> consumeMetricsItem(item, values));
-        return values;
-    }
-
-    private void consumeMetricsItem(Inspector item, Map<String, Double> values) {
-        item.field("values").traverse((ObjectTraverser)(name, value) -> values.put(name, value.asDouble()));
     }
 
     public static MetricsResponse empty() { return new MetricsResponse(List.of()); }
@@ -112,48 +112,65 @@ public class MetricsResponse {
     private enum Metric {
 
         cpu { // a node resource
-            public String metricResponseName() { return "cpu.util"; }
-            double convertValue(double metricValue) { return (float)metricValue / 100; } // % to ratio
+            public List<String> metricResponseNames() { return List.of("cpu.util"); }
+            double computeFinal(List<Double> values) {
+                return values.stream().mapToDouble(v -> v).average().orElse(0) / 100; // % to ratio
+            }
         },
         memory { // a node resource
-            public String metricResponseName() { return "mem.util"; }
-            double convertValue(double metricValue) { return (float)metricValue / 100; } // % to ratio
+            public List<String> metricResponseNames() { return List.of("mem.util"); }
+            double computeFinal(List<Double> values) {
+                return values.stream().mapToDouble(v -> v).average().orElse(0) / 100; // % to ratio
+            }
         },
         disk { // a node resource
-            public String metricResponseName() { return "disk.util"; }
-            double convertValue(double metricValue) { return (float)metricValue / 100; } // % to ratio
+            public List<String> metricResponseNames() { return List.of("disk.util"); }
+            double computeFinal(List<Double> values) {
+                return values.stream().mapToDouble(v -> v).average().orElse(0) / 100; // % to ratio
+            }
         },
         generation { // application config generation active on the node
-            public String metricResponseName() { return "application_generation"; }
-            double convertValue(double metricValue) { return (float)metricValue; } // Really a long
-            double defaultValue() { return -1.0; }
+            public List<String> metricResponseNames() { return List.of("application_generation"); }
+            double computeFinal(List<Double> values) {
+                return values.stream().mapToDouble(v -> v).min().orElse(-1);
+            }
         },
         inService {
-            public String metricResponseName() { return "in_service"; }
-            double convertValue(double metricValue) { return (float)metricValue; } // Really a boolean
-            double defaultValue() { return 1.0; }
+            public List<String> metricResponseNames() { return List.of("in_service"); }
+            double computeFinal(List<Double> values) {
+                // Really a boolean. Default true. If any is oos -> oos.
+                return values.stream().anyMatch(v -> v == 0) ? 0 : 1;
+            }
         },
         queryRate { // queries per second
-            public String metricResponseName() { return "queries.rate"; }
-            double convertValue(double metricValue) { return (float)metricValue; }
-            double defaultValue() { return 0.0; }
+            public List<String> metricResponseNames() {
+                return List.of("queries.rate",
+                               "content.proton.documentdb.matching.queries.rate");
+            }
         },
         writeRate { // writes per second
-            public String metricResponseName() { return "feed.http-requests.rate"; }
-            double convertValue(double metricValue) { return (float) metricValue; }
-            double defaultValue() { return 0.0; }
+            public List<String> metricResponseNames() {
+                return List.of("feed.http-requests.rate",
+                               "vds.filestor.alldisks.allthreads.put.sum.count.rate",
+                               "vds.filestor.alldisks.allthreads.remove.sum.count.rate",
+                               "vds.filestor.alldisks.allthreads.update.sum.count.rate"); }
         };
 
         /** The name of this metric as emitted from its source */
-        public abstract String metricResponseName();
+        public abstract List<String> metricResponseNames();
 
-        /** Convert from the emitted value of this metric to the value we want to use here */
-        abstract double convertValue(double metricValue);
+        double computeFinal(List<Double> values) { return values.stream().mapToDouble(v -> v).sum(); }
 
-        double defaultValue() { return 0.0; }
-
-        public double from(Map<String, Double> values) {
-            return convertValue(values.getOrDefault(metricResponseName(), defaultValue()));
+        public double from(ListMap<String, Double> metricValues) {
+            // Multiple metric names may contribute to the same logical metric.
+            // Usually one per service, but we aggregate here to not require that.
+            List<Double> values = new ArrayList<>(1);
+            for (String metricName : metricResponseNames()) {
+                List<Double> valuesForName = metricValues.get(metricName);
+                if (valuesForName == null) continue;
+                values.addAll(valuesForName);
+            }
+            return computeFinal(values);
         }
 
     }

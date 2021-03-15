@@ -59,6 +59,7 @@ public class MetricsV2MetricsFetcherTest {
             assertEquals(0.2, values.get(1).getSecond().cpu(), delta);
             assertEquals(0.0, values.get(1).getSecond().memory(), delta);
             assertEquals(0.4, values.get(1).getSecond().disk(), delta);
+            assertEquals(45.0, values.get(1).getSecond().queryRate(), delta);
         }
 
         {
@@ -141,7 +142,41 @@ public class MetricsV2MetricsFetcherTest {
             "            }\n" +
             "          }\n" +
             "        ]\n" +
-            "      }\n" +
+            "      },\n" +
+            "      \"services\": [\n" +
+            "        {\n" +
+            "          \"name\": \"searchnode\",\n" +
+            "          \"timestamp\": 1234,\n" +
+            "          \"status\": {\n" +
+            "            \"code\": \"up\"\n" +
+            "          },\n" +
+            "          \"metrics\": [\n" +
+            "            {\n" +
+            "              \"values\": {\n" +
+            "                \"content.proton.documentdb.matching.queries.rate\": 20.5\n" +
+            "              },\n" +
+            "              \"dimensions\": {\n" +
+            "                \"documentType\": \"music\"\n" +
+            "              }\n" +
+            "            },\n" +
+            "            {\n" +
+            "              \"values\": {\n" +
+            "                \"content.proton.documentdb.matching.queries.rate\": 13.5\n" +
+            "              },\n" +
+            "              \"dimensions\": {\n" +
+            "                \"documentType\": \"books\"\n" +
+            "              }\n" +
+            "            },\n" +
+            "            {\n" +
+            "              \"values\": {\n" +
+            "                \"queries.rate\": 11.0\n" +
+            "              },\n" +
+            "              \"dimensions\": {\n" +
+            "              }\n" +
+            "            }\n" +
+            "          ]\n" +
+            "        }\n" +
+            "      ]\n" +
             "    }\n" +
             "  ]\n" +
             "}\n";
