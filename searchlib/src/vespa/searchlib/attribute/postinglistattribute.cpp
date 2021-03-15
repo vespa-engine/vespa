@@ -168,22 +168,16 @@ clearPostings(attribute::IAttributeVector::EnumHandle eidx,
     }
 
     EntryRef er(eidx);
-    auto& dict = _dictionary.get_posting_dictionary();
-    auto itr = dict.lowerBound(er, cmp);
-    assert(itr.valid());
-    
-    EntryRef newPosting(itr.getData());
-    assert(newPosting.valid());
-    
-    _postingList.apply(newPosting,
-                       &postings._additions[0],
-                       &postings._additions[0] +
-                       postings._additions.size(),
-                       &postings._removals[0],
-                       &postings._removals[0] +
-                       postings._removals.size());
-    dict.thaw(itr);
-    itr.writeData(newPosting.ref());
+    auto updater = [this, &postings](EntryRef posting_idx) -> EntryRef
+                   {
+                       _postingList.apply(posting_idx,
+                                          &postings._additions[0],
+                                          &postings._additions[0] + postings._additions.size(),
+                                          &postings._removals[0],
+                                          &postings._removals[0] + postings._removals.size());
+                       return posting_idx;
+                   };
+    _dictionary.update_posting_list(er, cmp, updater);
 }
 
 template <typename P>
