@@ -244,7 +244,10 @@ public class OsVersionsTest {
     }
 
     private NodeList retiringChildrenOf(Node parent) {
-        return tester.nodeRepository().nodes().list().childrenOf(parent).matching(child -> child.status().wantToRetire());
+        return tester.nodeRepository().nodes().list()
+                     .childrenOf(parent)
+                     .matching(child -> child.status().wantToRetire() &&
+                                        child.status().wantToDeprovision());
     }
 
     private List<Node> provisionInfraApplication(int nodeCount) {
