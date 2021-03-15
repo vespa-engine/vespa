@@ -130,6 +130,26 @@ EnumStoreDictionary<DictionaryT>::find_matching_enums(const vespalib::datastore:
 }
 
 template <>
+void
+EnumStoreDictionary<EnumTree>::update_posting_list(Index, const vespalib::datastore::EntryComparator&, std::function<EntryRef(EntryRef)>)
+{
+    LOG_ABORT("should not be reached");
+}
+
+template <>
+void
+EnumStoreDictionary<EnumPostingTree>::update_posting_list(Index idx, const vespalib::datastore::EntryComparator& cmp, std::function<EntryRef(EntryRef)> updater)
+{
+    auto& dict = this->_dict;
+    auto itr = dict.lowerBound(idx, cmp);
+    assert(itr.valid() && itr.getKey() == idx);
+    EntryRef old_posting_idx(itr.getData());
+    EntryRef new_posting_idx = updater(old_posting_idx);
+    dict.thaw(itr);
+    itr.writeData(new_posting_idx.ref());
+}
+
+template <>
 EnumPostingTree &
 EnumStoreDictionary<EnumTree>::get_posting_dictionary()
 {
