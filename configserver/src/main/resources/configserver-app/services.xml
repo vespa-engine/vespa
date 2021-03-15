@@ -56,7 +56,6 @@
     <component id="com.yahoo.vespa.configserver.flags.db.FlagsDbImpl" bundle="configserver-flags"/>
 
     <preprocess:include file='metrics-packets.xml' required='false' />
-    <preprocess:include file='container.xml' required='false' />
     <component id="com.yahoo.vespa.service.slobrok.SlobrokMonitorManagerImpl" bundle="service-monitor" />
     <component id="com.yahoo.vespa.service.health.HealthMonitorManager" bundle="service-monitor" />
     <component id="com.yahoo.vespa.service.manager.UnionMonitorManager" bundle="service-monitor" />
@@ -138,7 +137,6 @@
     <http>
       <server port="19071" id="configserver" />
       <preprocess:include file='http-server.xml' required='false' />
-      <preprocess:include file='http.xml' required='false' />
     </http>
 
     <preprocess:include file='athenz-identity-provider.xml' required='false' />
