@@ -78,7 +78,7 @@ void
 SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
 {
     EnumStore & enumStore = this->getEnumStore();
-    Dictionary & dict = enumStore.get_posting_dictionary();
+    IEnumStoreDictionary& dictionary = enumStore.get_dictionary();
     auto cmp = enumStore.make_comparator();
     PostingMap changePost;
 
@@ -101,9 +101,8 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
             if (oldIdx.valid()) {
                 T oldValue = enumStore.get_value(oldIdx);
                 T newValue = this->applyArithmetic(oldValue, change);
-
-                auto addItr = dict.find(EnumIndex(), enumStore.make_comparator(newValue));
-                EnumIndex newIdx = addItr.getKey();
+                EnumIndex newIdx;
+                (void) dictionary.find_index(enumStore.make_comparator(newValue), newIdx);
                 currEnumIndices[change._doc] = newIdx;
             }
         } else if(change._type == ChangeBase::CLEARDOC) {
