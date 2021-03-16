@@ -19,10 +19,10 @@ import java.time.Duration;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 
 /**
@@ -183,7 +183,6 @@ public class NodeTypeProvisioningTest {
 
         List<Node> nodesToRetire = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.proxy).asList()
                 .subList(3, 3 + numNodesToRetire);
-        String currentyRetiringHostname;
         {
             nodesToRetire.forEach(nodeToRetire ->
                     tester.nodeRepository().nodes().write(nodeToRetire.withWantToRetire(true, Agent.system, tester.clock().instant()), () -> {}));
@@ -198,14 +197,13 @@ public class NodeTypeProvisioningTest {
             List<Node> nodesCurrentlyRetiring = nodes.stream()
                     .filter(node -> node.allocation().get().membership().retired())
                     .collect(Collectors.toList());
-            assertEquals(1, nodesCurrentlyRetiring.size());
+            assertEquals(5, nodesCurrentlyRetiring.size());
 
-            // The retiring node should be one of the nodes we marked for retirement
-            currentyRetiringHostname = nodesCurrentlyRetiring.get(0).hostname();
-            assertEquals(1, nodesToRetire.stream().map(Node::hostname).filter(hostname -> hostname.equals(currentyRetiringHostname)).count());
+            // The retiring nodes should be the nodes we marked for retirement
+            assertTrue(Set.copyOf(nodesToRetire).containsAll(nodesCurrentlyRetiring));
         }
 
-        { // Redeploying while the node is still retiring has no effect
+        { // Redeploying while the nodes are still retiring has no effect
             List<HostSpec> hosts = deployProxies(application, tester);
             assertEquals(11, hosts.size());
             tester.activate(application, new HashSet<>(hosts));
@@ -216,57 +214,29 @@ public class NodeTypeProvisioningTest {
             List<Node> nodesCurrentlyRetiring = nodes.stream()
                     .filter(node -> node.allocation().get().membership().retired())
                     .collect(Collectors.toList());
-            assertEquals(1, nodesCurrentlyRetiring.size());
-
-            // The node that started retiring is still the only one retiring
-            assertEquals(currentyRetiringHostname, nodesCurrentlyRetiring.get(0).hostname());
+            assertEquals(5, nodesCurrentlyRetiring.size());
         }
 
         {
+            // Let all retired nodes expire
             tester.advanceTime(Duration.ofMinutes(11));
             retiredExpirer.run();
 
             List<HostSpec> hosts = deployProxies(application, tester);
-            assertEquals(10, hosts.size());
+            assertEquals(6, hosts.size());
             tester.activate(application, new HashSet<>(hosts));
-            NodeList nodes = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.proxy);
-            assertEquals(10, nodes.size());
 
-            // Verify the node we previously set to retire has finished retiring
-            assertEquals(Node.State.dirty, tester.nodeRepository().nodes().node(currentyRetiringHostname)
-                    .orElseThrow(RuntimeException::new).state());
+            // All currently active proxy nodes are not marked with wantToRetire or as retired
+            long numRetiredActiveProxyNodes = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.proxy).stream()
+                    .filter(node -> !node.status().wantToRetire())
+                    .filter(node -> !node.allocation().get().membership().retired())
+                    .count();
+            assertEquals(6, numRetiredActiveProxyNodes);
 
-            // Verify that a node is currently retiring
-            List<Node> nodesCurrentlyRetiring = nodes.stream()
-                    .filter(node -> node.allocation().get().membership().retired())
-                    .collect(Collectors.toList());
-            assertEquals(1, nodesCurrentlyRetiring.size());
-
-            // This node is different from the one that was retiring previously
-            String newRetiringHostname = nodesCurrentlyRetiring.get(0).hostname();
-            assertNotEquals(currentyRetiringHostname, newRetiringHostname);
-            // ... but is one of the nodes that were put to wantToRetire earlier
-            assertTrue(nodesToRetire.stream().map(Node::hostname).filter(hostname -> hostname.equals(newRetiringHostname)).count() == 1);
+            // All the nodes that were marked with wantToRetire earlier are now dirty
+            assertEquals(nodesToRetire.stream().map(Node::hostname).collect(Collectors.toSet()),
+                    tester.nodeRepository().nodes().list(Node.State.dirty).stream().map(Node::hostname).collect(Collectors.toSet()));
         }
-
-
-        for (int i = 0; i < 10; i++){
-            tester.advanceTime(Duration.ofMinutes(11));
-            retiredExpirer.run();
-            List<HostSpec> hosts = deployProxies(application, tester);
-            tester.activate(application, new HashSet<>(hosts));
-        }
-
-        // After a long time, all currently active proxy nodes are not marked with wantToRetire or as retired
-        long numRetiredActiveProxyNodes = tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.proxy).stream()
-                .filter(node -> !node.status().wantToRetire())
-                .filter(node -> !node.allocation().get().membership().retired())
-                .count();
-        assertEquals(11 - numNodesToRetire, numRetiredActiveProxyNodes);
-
-        // All the nodes that were marked with wantToRetire earlier are now dirty
-        assertEquals(nodesToRetire.stream().map(Node::hostname).collect(Collectors.toSet()),
-                tester.nodeRepository().nodes().list(Node.State.dirty).stream().map(Node::hostname).collect(Collectors.toSet()));
     }
 
     private List<HostSpec> deployProxies(ApplicationId application, ProvisioningTester tester) {
