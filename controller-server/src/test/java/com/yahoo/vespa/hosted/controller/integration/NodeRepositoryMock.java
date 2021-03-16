@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
-import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
@@ -16,11 +15,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Applicatio
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.TargetVersions;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeEnvironment;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeHistory;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeMembership;
-import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 

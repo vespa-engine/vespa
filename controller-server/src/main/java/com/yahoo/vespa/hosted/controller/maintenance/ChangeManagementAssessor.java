@@ -37,6 +37,7 @@ public class ChangeManagementAssessor {
     }
 
     static List<Assessment> assessmentInner(List<String> impactedHostnames, List<NodeRepositoryNode> allNodes, ZoneId zone) {
+        // Get all active nodes running on the impacted hosts
         List<NodeRepositoryNode> containerNodes = allNodes.stream()
                 .filter(nodeRepositoryNode -> nodeRepositoryNode.getState() == NodeState.active) //TODO look at more states?
                 .filter(node -> impactedHostnames.contains(node.getParentHostname() == null ? "" : node.getParentHostname())).collect(Collectors.toList());
@@ -88,5 +89,4 @@ public class ChangeManagementAssessor {
         long groups = clusterNodes.stream().map(nodeRepositoryNode -> nodeRepositoryNode.getMembership() != null ? nodeRepositoryNode.getMembership().group : "").distinct().count();
         return new long[] { clusterNodes.size(), groups};
     }
-
 }
