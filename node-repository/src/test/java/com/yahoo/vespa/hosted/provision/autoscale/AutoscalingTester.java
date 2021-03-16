@@ -236,6 +236,19 @@ class AutoscalingTester {
     }
 
     /** Creates the given number of measurements, spaced 5 minutes between, using the given function */
+    public void addLoadMeasurements(ApplicationId application,
+                                    ClusterSpec.Id cluster,
+                                    int measurements,
+                                    IntFunction<Double> queryRate,
+                                    IntFunction<Double> writeRate) {
+        Instant time = clock().instant();
+        for (int i = 0; i < measurements; i++) {
+            db.addClusterMetrics(application, Map.of(cluster, new ClusterMetricSnapshot(time, queryRate.apply(i), writeRate.apply(i))));
+            time = time.plus(Duration.ofMinutes(5));
+        }
+    }
+
+    /** Creates the given number of measurements, spaced 5 minutes between, using the given function */
     public void addQueryRateMeasurements(ApplicationId application,
                                          ClusterSpec.Id cluster,
                                          int measurements,
