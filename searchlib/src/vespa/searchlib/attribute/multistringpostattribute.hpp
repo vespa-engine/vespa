@@ -29,11 +29,11 @@ MultiValueStringPostingAttributeT<B, T>::~MultiValueStringPostingAttributeT()
 class StringEnumIndexMapper : public EnumIndexMapper
 {
 public:
-    StringEnumIndexMapper(const EnumPostingTree & dictionary) : _dictionary(dictionary) { }
-    IEnumStore::Index map(IEnumStore::Index original, const vespalib::datastore::EntryComparator& compare) const override;
+    StringEnumIndexMapper(IEnumStoreDictionary & dictionary) : _dictionary(dictionary) { }
+    IEnumStore::Index map(IEnumStore::Index original) const override;
     virtual bool hasFold() const override { return true; }
 private:
-    const EnumPostingTree & _dictionary;
+    IEnumStoreDictionary& _dictionary;
 };
 
 template <typename B, typename T>
@@ -43,10 +43,10 @@ applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater &updater)
 {
     using PostingChangeComputer = PostingChangeComputerT<WeightedIndex, PostingMap>;
     EnumStore &enumStore(this->getEnumStore());
-    Dictionary &dict(enumStore.get_posting_dictionary());
+    IEnumStoreDictionary& dictionary(enumStore.get_dictionary());
     auto compare = enumStore.make_folded_comparator();
 
-    StringEnumIndexMapper mapper(dict);
+    StringEnumIndexMapper mapper(dictionary);
     PostingMap changePost(PostingChangeComputer::compute(this->getMultiValueMapping(), docIndices, compare, mapper));
     this->updatePostings(changePost);
     MultiValueStringAttributeT<B, T>::applyValueChanges(docIndices, updater);
