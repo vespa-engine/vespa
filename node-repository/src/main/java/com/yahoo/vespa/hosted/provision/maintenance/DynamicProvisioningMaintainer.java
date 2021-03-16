@@ -90,13 +90,14 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
 
     /** Resume provisioning of already provisioned hosts and their children */
     private void resumeProvisioning(NodeList nodes, Mutex lock) {
-        Map<String, Set<Node>> nodesByProvisionedParentHostname = nodes.nodeType(NodeType.tenant, NodeType.config).asList().stream()
-                                                                       .filter(node -> node.parentHostname().isPresent())
-                                                                       .collect(Collectors.groupingBy(
-                                                                               node -> node.parentHostname().get(),
-                                                                               Collectors.toSet()));
+        Map<String, Set<Node>> nodesByProvisionedParentHostname =
+                nodes.nodeType(NodeType.tenant, NodeType.config, NodeType.controller)
+                     .asList()
+                     .stream()
+                     .filter(node -> node.parentHostname().isPresent())
+                     .collect(Collectors.groupingBy(node -> node.parentHostname().get(), Collectors.toSet()));
 
-        nodes.state(Node.State.provisioned).nodeType(NodeType.host, NodeType.confighost).forEach(host -> {
+        nodes.state(Node.State.provisioned).nodeType(NodeType.host, NodeType.confighost, NodeType.controllerhost).forEach(host -> {
             Set<Node> children = nodesByProvisionedParentHostname.getOrDefault(host.hostname(), Set.of());
             try {
                 List<Node> updatedNodes = hostProvisioner.provision(host, children);
@@ -189,6 +190,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                             // TODO: Mark empty tenant hosts as wanttoretire & wanttodeprovision elsewhere, then handle as confighost here
                             return node.state() != Node.State.parked || node.status().wantToDeprovision();
                         case confighost:
+                        case controllerhost:
                             return node.state() == Node.State.parked && node.status().wantToDeprovision();
                         default:
                             return false;

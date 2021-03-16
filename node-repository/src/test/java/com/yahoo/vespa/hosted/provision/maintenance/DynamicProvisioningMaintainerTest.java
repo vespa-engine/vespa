@@ -36,6 +36,8 @@ import com.yahoo.vespa.hosted.provision.testutils.MockHostProvisioner;
 import com.yahoo.vespa.hosted.provision.testutils.MockNameResolver;
 import com.yahoo.vespa.service.duper.ConfigServerApplication;
 import com.yahoo.vespa.service.duper.ConfigServerHostApplication;
+import com.yahoo.vespa.service.duper.ControllerApplication;
+import com.yahoo.vespa.service.duper.ControllerHostApplication;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -421,6 +423,30 @@ public class DynamicProvisioningMaintainerTest {
 
     @Test
     public void replace_config_server() {
+        replace_config_server_like(NodeType.confighost);
+    }
+
+    @Test
+    public void replace_controller() {
+        replace_config_server_like(NodeType.controllerhost);
+    }
+
+    public void replace_config_server_like(NodeType hostType) {
+        final ApplicationId hostApp;
+        final ApplicationId configSrvApp;
+        switch (hostType) {
+            case confighost:
+                hostApp = new ConfigServerHostApplication().getApplicationId();
+                configSrvApp = new ConfigServerApplication().getApplicationId();
+                break;
+            case controllerhost:
+                hostApp = new ControllerHostApplication().getApplicationId();
+                configSrvApp = new ControllerApplication().getApplicationId();
+                break;
+            default:
+                throw new IllegalArgumentException("Unexpected config server host like node type: " + hostType);
+        }
+
         Cloud cloud = Cloud.builder().dynamicProvisioning(true).build();
         DynamicProvisioningTester dynamicProvisioningTester = new DynamicProvisioningTester(cloud, new MockNameResolver().mockAnyLookup());
         ProvisioningTester tester = dynamicProvisioningTester.provisioningTester;
@@ -428,24 +454,22 @@ public class DynamicProvisioningMaintainerTest {
         dynamicProvisioningTester.flagSource.withBooleanFlag(Flags.DYNAMIC_CONFIG_SERVER_PROVISIONING.id(), true);
 
         // Initial config server hosts are provisioned manually
-        ApplicationId hostApp = ApplicationId.from("hosted-vespa", "configserver-host", "default");
-        List<Node> provisionedHosts = tester.makeReadyNodes(3, "default", NodeType.confighost).stream()
+        List<Node> provisionedHosts = tester.makeReadyNodes(3, "default", hostType).stream()
                                             .sorted(Comparator.comparing(Node::hostname))
                                             .collect(Collectors.toList());
-        tester.prepareAndActivateInfraApplication(hostApp, NodeType.confighost);
+        tester.prepareAndActivateInfraApplication(hostApp, hostType);
 
         // Provision config servers
-        ApplicationId configSrvApp = ApplicationId.from("hosted-vespa", "zone-config-servers", "default");
         for (int i = 0; i < provisionedHosts.size(); i++) {
-            tester.makeReadyChildren(1, i + 1, NodeResources.unspecified(), NodeType.config,
-                                     provisionedHosts.get(i).hostname(), (nodeIndex) -> "cfg" + nodeIndex);
+            tester.makeReadyChildren(1, i + 1, NodeResources.unspecified(), hostType.childNodeType(),
+                    provisionedHosts.get(i).hostname(), (nodeIndex) -> "cfg" + nodeIndex);
         }
-        tester.prepareAndActivateInfraApplication(configSrvApp, NodeType.config);
+        tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
 
         // Expected number of hosts and children are provisioned
         NodeList allNodes = tester.nodeRepository().nodes().list();
-        NodeList configHosts = allNodes.nodeType(NodeType.confighost);
-        NodeList configNodes = allNodes.nodeType(NodeType.config);
+        NodeList configHosts = allNodes.nodeType(hostType);
+        NodeList configNodes = allNodes.nodeType(hostType.childNodeType());
         assertEquals(3, configHosts.size());
         assertEquals(3, configNodes.size());
         String hostnameToRemove = provisionedHosts.get(1).hostname();
@@ -456,20 +480,20 @@ public class DynamicProvisioningMaintainerTest {
         tester.nodeRepository().nodes().deprovision(hostToRemove.get(), Agent.system, tester.clock().instant());
 
         // Redeployment of config server application retires node
-        tester.prepareAndActivateInfraApplication(configSrvApp, NodeType.config);
+        tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
         assertTrue("Redeployment retires node", nodeToRemove.get().allocation().get().membership().retired());
 
         // Config server becomes removable (done by RetiredExpirer in a real system) and redeployment moves it
         // to inactive
         tester.nodeRepository().nodes().setRemovable(configSrvApp, List.of(nodeToRemove.get()));
-        tester.prepareAndActivateInfraApplication(configSrvApp, NodeType.config);
+        tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
         assertEquals("Node moves to inactive", Node.State.inactive, nodeToRemove.get().state());
 
         // Node is completely removed (done by InactiveExpirer and host-admin in a real system)
         Node inactiveConfigServer = nodeToRemove.get();
         int removedIndex = inactiveConfigServer.allocation().get().membership().index();
         tester.nodeRepository().nodes().removeRecursively(inactiveConfigServer, true);
-        assertEquals(2, tester.nodeRepository().nodes().list().nodeType(NodeType.config).size());
+        assertEquals(2, tester.nodeRepository().nodes().list().nodeType(hostType.childNodeType()).size());
 
         // ExpiredRetirer moves host to inactive after child has moved to parked
         tester.nodeRepository().nodes().deallocate(hostToRemove.get(), Agent.system, getClass().getSimpleName());
@@ -477,38 +501,38 @@ public class DynamicProvisioningMaintainerTest {
 
         // Host is removed
         dynamicProvisioningTester.maintainer.maintain();
-        assertEquals(2, tester.nodeRepository().nodes().list().nodeType(NodeType.confighost).size());
+        assertEquals(2, tester.nodeRepository().nodes().list().nodeType(hostType).size());
 
         // Deployment by the removed host has no effect
         HostName.setHostNameForTestingOnly("cfg2.example.com");
-        tester.prepareAndActivateInfraApplication(configSrvApp, NodeType.config);
+        tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
         assertEquals(List.of(), dynamicProvisioningTester.hostProvisioner.provisionedHosts());
 
         // Deployment on another config server starts provisioning a new host and child
         HostName.setHostNameForTestingOnly("cfg3.example.com");
-        assertEquals(0, tester.nodeRepository().nodes().list(Node.State.reserved).nodeType(NodeType.config).size());
-        assertEquals(2, tester.prepareAndActivateInfraApplication(configSrvApp, NodeType.config).size());
-        assertEquals(1, tester.nodeRepository().nodes().list(Node.State.reserved).nodeType(NodeType.config).size());
-        Node newNode = tester.nodeRepository().nodes().list(Node.State.reserved).nodeType(NodeType.config).first().get();
+        assertEquals(0, tester.nodeRepository().nodes().list(Node.State.reserved).nodeType(hostType.childNodeType()).size());
+        assertEquals(2, tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType()).size());
+        assertEquals(1, tester.nodeRepository().nodes().list(Node.State.reserved).nodeType(hostType.childNodeType()).size());
+        Node newNode = tester.nodeRepository().nodes().list(Node.State.reserved).nodeType(hostType.childNodeType()).first().get();
 
         // Resume provisioning and activate host
         dynamicProvisioningTester.maintainer.maintain();
         List<ProvisionedHost> newHosts = dynamicProvisioningTester.hostProvisioner.provisionedHosts();
         assertEquals(1, newHosts.size());
         tester.nodeRepository().nodes().setReady(newHosts.get(0).hostHostname(), Agent.operator, getClass().getSimpleName());
-        tester.prepareAndActivateInfraApplication(hostApp, NodeType.confighost);
-        assertEquals(3, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.confighost).size());
+        tester.prepareAndActivateInfraApplication(hostApp, hostType);
+        assertEquals(3, tester.nodeRepository().nodes().list(Node.State.active).nodeType(hostType).size());
 
         // Redeployment of config server app actives new node
-        tester.prepareAndActivateInfraApplication(configSrvApp, NodeType.config);
+        tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
         newNode = tester.nodeRepository().nodes().node(newNode.hostname()).get();
         assertSame(Node.State.active, newNode.state());
         assertEquals("Removed index is reused", removedIndex, newNode.allocation().get().membership().index());
 
         // Next redeployment does nothing
-        NodeList nodesBefore = tester.nodeRepository().nodes().list().nodeType(NodeType.config);
-        tester.prepareAndActivateInfraApplication(configSrvApp, NodeType.config);
-        NodeList nodesAfter = tester.nodeRepository().nodes().list().nodeType(NodeType.config);
+        NodeList nodesBefore = tester.nodeRepository().nodes().list().nodeType(hostType.childNodeType());
+        tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());
+        NodeList nodesAfter = tester.nodeRepository().nodes().list().nodeType(hostType.childNodeType());
         assertEquals(nodesBefore, nodesAfter);
     }
 
