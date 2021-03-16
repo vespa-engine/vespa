@@ -737,38 +737,28 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         var data = toSlime(request.getData()).get();
         var role = mandatory("role", data).asString();
 
-        var tenant = (CloudTenant) controller.tenants().require(TenantName.from(tenantName));
-
         if (role.isBlank()) {
             return ErrorResponse.badRequest("Archive access role can't be whitespace only");
         }
 
-        controller.tenants().lockOrThrow(tenant.name(), LockedTenant.Cloud.class, lockedTenant -> {
+        controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, lockedTenant -> {
             lockedTenant = lockedTenant.withArchiveAccessRole(Optional.of(role));
             controller.tenants().store(lockedTenant);
         });
 
-        tenant = (CloudTenant) controller.tenants().require(TenantName.from(tenantName));
-        var slime = new Slime();
-        toSlime(slime.setObject(), tenant.tenantSecretStores());
-        return new SlimeJsonResponse(slime);
+        return new MessageResponse("Archive access role set to '" + role + "' for tenant " + tenantName +  ".");
     }
 
     private HttpResponse removeArchiveAccess(String tenantName) {
         if (controller.tenants().require(TenantName.from(tenantName)).type() != Tenant.Type.cloud)
             throw new IllegalArgumentException("Tenant '" + tenantName + "' is not a cloud tenant");
 
-        var tenant = (CloudTenant) controller.tenants().require(TenantName.from(tenantName));
-
-        controller.tenants().lockOrThrow(tenant.name(), LockedTenant.Cloud.class, lockedTenant -> {
+        controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, lockedTenant -> {
             lockedTenant = lockedTenant.withArchiveAccessRole(Optional.empty());
             controller.tenants().store(lockedTenant);
         });
 
-        tenant = (CloudTenant) controller.tenants().require(TenantName.from(tenantName));
-        var slime = new Slime();
-        toSlime(slime.setObject(), tenant.tenantSecretStores());
-        return new SlimeJsonResponse(slime);
+        return new MessageResponse("Archive access role removed for tenant " + tenantName + ".");
     }
 
     private HttpResponse patchApplication(String tenantName, String applicationName, HttpRequest request) {
