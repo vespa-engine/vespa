@@ -60,6 +60,43 @@
     ],
     "fields": []
   },
+  "com.yahoo.container.jdisc.secretstore.SecretStoreConfig$AwsParameterStores$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.config.ConfigBuilder"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.container.jdisc.secretstore.SecretStoreConfig$AwsParameterStores)",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$AwsParameterStores$Builder name(java.lang.String)",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$AwsParameterStores$Builder region(java.lang.String)",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$AwsParameterStores$Builder awsId(java.lang.String)",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$AwsParameterStores$Builder role(java.lang.String)",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$AwsParameterStores$Builder externalId(java.lang.String)",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$AwsParameterStores build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.container.jdisc.secretstore.SecretStoreConfig$AwsParameterStores": {
+    "superClass": "com.yahoo.config.InnerNode",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.container.jdisc.secretstore.SecretStoreConfig$AwsParameterStores$Builder)",
+      "public java.lang.String name()",
+      "public java.lang.String region()",
+      "public java.lang.String awsId()",
+      "public java.lang.String role()",
+      "public java.lang.String externalId()"
+    ],
+    "fields": []
+  },
   "com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Builder": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -73,6 +110,8 @@
       "public void <init>(com.yahoo.container.jdisc.secretstore.SecretStoreConfig)",
       "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Builder groups(com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Groups$Builder)",
       "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Builder groups(java.util.List)",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Builder awsParameterStores(com.yahoo.container.jdisc.secretstore.SecretStoreConfig$AwsParameterStores$Builder)",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Builder awsParameterStores(java.util.List)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -82,7 +121,8 @@
       "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig build()"
     ],
     "fields": [
-      "public java.util.List groups"
+      "public java.util.List groups",
+      "public java.util.List awsParameterStores"
     ]
   },
   "com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Groups$Builder": {
@@ -151,7 +191,9 @@
       "public static java.lang.String getDefVersion()",
       "public void <init>(com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Builder)",
       "public java.util.List groups()",
-      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Groups groups(int)"
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$Groups groups(int)",
+      "public java.util.List awsParameterStores()",
+      "public com.yahoo.container.jdisc.secretstore.SecretStoreConfig$AwsParameterStores awsParameterStores(int)"
     ],
     "fields": [
       "public static final java.lang.String CONFIG_DEF_MD5",

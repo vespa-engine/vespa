@@ -82,7 +82,7 @@ public class AwsParameterStore extends AbstractComponent implements SecretStore 
     }
 
     private static List<AwsSettings> translateConfig(SecretStoreConfig secretStoreConfig) {
-        return secretStoreConfig.groups()
+        return secretStoreConfig.awsParameterStores()
                 .stream()
                 .map(config -> new AwsSettings(config.name(), config.role(), config.awsId(), config.externalId(), config.region()))
                 .collect(Collectors.toList());

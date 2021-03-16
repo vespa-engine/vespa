@@ -8,6 +8,7 @@ import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.Quota;
+import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.ClusterSpec;
@@ -58,6 +59,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int clusterControllerMaxHeapSizeInMb = 256;
     private int metricsProxyMaxHeapSizeInMb = 256;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
+    private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -97,6 +99,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int clusterControllerMaxHeapSizeInMb() { return clusterControllerMaxHeapSizeInMb; }
     @Override public int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return metricsProxyMaxHeapSizeInMb; }
     @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
+    @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
 
     public TestProperties setFeedConcurrency(double feedConcurrency) {
         this.feedConcurrency = feedConcurrency;
@@ -230,6 +233,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties maxActivationInhibitedOutOfSyncGroups(int nGroups) {
         maxActivationInhibitedOutOfSyncGroups = nGroups;
+        return this;
+    }
+
+    public TestProperties setTenantSecretStores(List<TenantSecretStore> secretStores) {
+        this.tenantSecretStores = List.copyOf(secretStores);
         return this;
     }
 

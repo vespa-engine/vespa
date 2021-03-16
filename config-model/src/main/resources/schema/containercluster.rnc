@@ -89,9 +89,12 @@ SecretStore = element secret-store {
     attribute type { string "oath-ckms" | string "cloud" } &
     element group {
       attribute name { string } &
-      (attribute environment { string "alpha" | string "corp" | string "prod" | string "aws" | string "aws_stage" } |
-      attribute region { string } )
-    } +
+      attribute environment { string "alpha" | string "corp" | string "prod" | string "aws" | string "aws_stage" }
+    } * &
+    element aws-parameter-store {
+      attribute name { string } &
+      attribute region { string }
+    } *
 }
 
 ZooKeeper = element zookeeper {
