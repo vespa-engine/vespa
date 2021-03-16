@@ -169,7 +169,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
 
         return candidatesForRemoval(nodes).stream()
                 .sorted(Comparator.comparing(node -> node.history().events().stream()
-                        .map(History.Event::at).min(Comparator.naturalOrder()).orElseGet(() -> Instant.MIN)))
+                                                         .map(History.Event::at).min(Comparator.naturalOrder()).orElse(Instant.MIN)))
                 .filter(node -> {
                     if (!sharedHosts.containsKey(node.hostname()) || sharedHosts.size() > minCount) {
                         sharedHosts.remove(node.hostname());

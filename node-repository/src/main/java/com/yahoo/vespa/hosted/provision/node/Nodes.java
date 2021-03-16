@@ -574,7 +574,9 @@ public class Nodes {
             // This takes allocationLock to prevent any further allocation of nodes on this host
             host = lock.node();
             NodeList children = list(allocationLock).childrenOf(host);
-            result = retire(NodeListFilter.from(children.asList()), agent, instant);
+            result = performOn(NodeListFilter.from(children.asList()),
+                               (node, nodeLock) -> write(node.withWantToRetire(true, true, agent, instant),
+                                                         nodeLock));
             result.add(write(host.withWantToRetire(true, true, agent, instant), lock));
         }
         return result;

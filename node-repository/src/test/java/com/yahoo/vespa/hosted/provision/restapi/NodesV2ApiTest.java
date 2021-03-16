@@ -207,12 +207,6 @@ public class NodesV2ApiTest {
                         Utf8.toBytes("{\"wantToRetire\": true}"), Request.Method.PATCH),
                 "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
 
-        // wantToDeprovision on non-hosts is not allowed
-        tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com",
-                        Utf8.toBytes("{\"wantToDeprovision\": true, \"wantToRetire\": true}"), Request.Method.PATCH),
-                400,
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Could not set field 'wantToDeprovision': wantToDeprovision can only be set for hosts\"}");
-
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                    Utf8.toBytes("{\"wantToDeprovision\": true}"), Request.Method.PATCH),
                        "{\"message\":\"Updated dockerhost1.yahoo.com\"}");

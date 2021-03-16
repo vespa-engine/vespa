@@ -194,8 +194,6 @@ public final class Node implements Nodelike {
      * If both given wantToRetire and wantToDeprovision are equal to the current values, the method is no-op.
      */
     public Node withWantToRetire(boolean wantToRetire, boolean wantToDeprovision, Agent agent, Instant at) {
-        if (!type.isHost() && wantToDeprovision)
-            throw new IllegalArgumentException("wantToDeprovision can only be set for hosts");
         if (wantToRetire == status.wantToRetire() &&
             wantToDeprovision == status.wantToDeprovision()) return this;
         Node node = this.with(status.withWantToRetire(wantToRetire, wantToDeprovision));
