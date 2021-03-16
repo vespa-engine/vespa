@@ -121,22 +121,26 @@ public abstract class LockedTenant {
         private final BiMap<PublicKey, Principal> developerKeys;
         private final TenantInfo info;
         private final List<TenantSecretStore> tenantSecretStores;
+        private final Optional<String> archiveAccessRole;
 
-        private Cloud(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<Principal> creator, BiMap<PublicKey, Principal> developerKeys, TenantInfo info, List<TenantSecretStore> tenantSecretStores) {
+        private Cloud(TenantName name, Instant createdAt, LastLoginInfo lastLoginInfo, Optional<Principal> creator,
+                      BiMap<PublicKey, Principal> developerKeys, TenantInfo info,
+                      List<TenantSecretStore> tenantSecretStores, Optional<String> archiveAccessRole) {
             super(name, createdAt, lastLoginInfo);
             this.developerKeys = ImmutableBiMap.copyOf(developerKeys);
             this.creator = creator;
             this.info = info;
             this.tenantSecretStores = tenantSecretStores;
+            this.archiveAccessRole = archiveAccessRole;
         }
 
         private Cloud(CloudTenant tenant) {
-            this(tenant.name(), tenant.createdAt(), tenant.lastLoginInfo(), Optional.empty(), tenant.developerKeys(), tenant.info(), tenant.tenantSecretStores());
+            this(tenant.name(), tenant.createdAt(), tenant.lastLoginInfo(), Optional.empty(), tenant.developerKeys(), tenant.info(), tenant.tenantSecretStores(), tenant.archiveAccessRole());
         }
 
         @Override
         public CloudTenant get() {
-            return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores);
+            return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccessRole);
         }
 
         public Cloud withDeveloperKey(PublicKey key, Principal principal) {
@@ -144,34 +148,38 @@ public abstract class LockedTenant {
             if (keys.containsKey(key))
                 throw new IllegalArgumentException("Key " + KeyUtils.toPem(key) + " is already owned by " + keys.get(key));
             keys.put(key, principal);
-            return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info, tenantSecretStores);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info, tenantSecretStores, archiveAccessRole);
         }
 
         public Cloud withoutDeveloperKey(PublicKey key) {
             BiMap<PublicKey, Principal> keys = HashBiMap.create(developerKeys);
             keys.remove(key);
-            return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info, tenantSecretStores);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, keys, info, tenantSecretStores, archiveAccessRole);
         }
 
         public Cloud withInfo(TenantInfo newInfo) {
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, newInfo, tenantSecretStores);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, newInfo, tenantSecretStores, archiveAccessRole);
         }
 
         @Override
         public LockedTenant with(LastLoginInfo lastLoginInfo) {
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccessRole);
         }
 
         public Cloud withSecretStore(TenantSecretStore tenantSecretStore) {
             ArrayList<TenantSecretStore> secretStores = new ArrayList<>(tenantSecretStores);
             secretStores.add(tenantSecretStore);
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, secretStores);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, secretStores, archiveAccessRole);
         }
 
         public Cloud withoutSecretStore(TenantSecretStore tenantSecretStore) {
             ArrayList<TenantSecretStore> secretStores = new ArrayList<>(tenantSecretStores);
             secretStores.remove(tenantSecretStore);
-            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, secretStores);
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, secretStores, archiveAccessRole);
+        }
+
+        public Cloud withArchiveAccessRole(Optional<String> role) {
+            return new Cloud(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, role);
         }
     }
 

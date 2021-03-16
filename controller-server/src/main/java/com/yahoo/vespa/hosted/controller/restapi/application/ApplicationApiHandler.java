@@ -271,6 +271,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse handlePUT(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return updateTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return updateTenantInfo(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/archive-access")) return allowArchiveAccess(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}")) return addSecretStore(path.get("tenant"), path.get("name"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/instance/{instance}/environment/{environment}/region/{region}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/environment/{environment}/region/{region}/instance/{instance}/global-rotation/override")) return setGlobalRotationOverride(path.get("tenant"), path.get("application"), path.get("instance"), path.get("environment"), path.get("region"), false, request);
@@ -315,6 +316,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse handleDELETE(Path path, HttpRequest request) {
         if (path.matches("/application/v4/tenant/{tenant}")) return deleteTenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/key")) return removeDeveloperKey(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/archive-access")) return removeArchiveAccess(path.get("tenant"));
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}")) return deleteSecretStore(path.get("tenant"), path.get("name"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return deleteApplication(path.get("tenant"), path.get("application"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}/deployment")) return removeAllProdDeployments(path.get("tenant"), path.get("application"));
@@ -731,6 +733,37 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         var slime = new Slime();
         toSlime(slime.setObject(), tenant.tenantSecretStores());
         return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse allowArchiveAccess(String tenantName, HttpRequest request) {
+        if (controller.tenants().require(TenantName.from(tenantName)).type() != Tenant.Type.cloud)
+            throw new IllegalArgumentException("Tenant '" + tenantName + "' is not a cloud tenant");
+
+        var data = toSlime(request.getData()).get();
+        var role = mandatory("role", data).asString();
+
+        if (role.isBlank()) {
+            return ErrorResponse.badRequest("Archive access role can't be whitespace only");
+        }
+
+        controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, lockedTenant -> {
+            lockedTenant = lockedTenant.withArchiveAccessRole(Optional.of(role));
+            controller.tenants().store(lockedTenant);
+        });
+
+        return new MessageResponse("Archive access role set to '" + role + "' for tenant " + tenantName +  ".");
+    }
+
+    private HttpResponse removeArchiveAccess(String tenantName) {
+        if (controller.tenants().require(TenantName.from(tenantName)).type() != Tenant.Type.cloud)
+            throw new IllegalArgumentException("Tenant '" + tenantName + "' is not a cloud tenant");
+
+        controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, lockedTenant -> {
+            lockedTenant = lockedTenant.withArchiveAccessRole(Optional.empty());
+            controller.tenants().store(lockedTenant);
+        });
+
+        return new MessageResponse("Archive access role removed for tenant " + tenantName + ".");
     }
 
     private HttpResponse patchApplication(String tenantName, String applicationName, HttpRequest request) {

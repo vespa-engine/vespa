@@ -97,7 +97,8 @@ public class TenantSerializerTest {
                                              ImmutableBiMap.of(publicKey, new SimplePrincipal("joe"),
                                                                otherPublicKey, new SimplePrincipal("jane")),
                                              TenantInfo.EMPTY,
-                                             List.of()
+                                             List.of(),
+                                             Optional.empty()
         );
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.name(), serialized.name());
@@ -118,7 +119,8 @@ public class TenantSerializerTest {
                 List.of(
                         new TenantSecretStore("ss1", "123", "role1"),
                         new TenantSecretStore("ss2", "124", "role2")
-                )
+                ),
+                Optional.of("role3")
         );
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.info(), serialized.info());

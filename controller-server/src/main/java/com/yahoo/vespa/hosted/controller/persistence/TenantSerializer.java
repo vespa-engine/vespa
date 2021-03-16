@@ -71,6 +71,7 @@ public class TenantSerializer {
     private static final String tenantInfoField = "info";
     private static final String lastLoginInfoField = "lastLoginInfo";
     private static final String secretStoresField = "secretStores";
+    private static final String archiveAccessRoleField = "archiveAccessRole";
     private static final String awsIdField = "awsId";
     private static final String roleField = "role";
 
@@ -110,6 +111,7 @@ public class TenantSerializer {
         toSlime(legacyBillingInfo, root.setObject(billingInfoField));
         toSlime(tenant.info(), root);
         toSlime(tenant.tenantSecretStores(), root);
+        tenant.archiveAccessRole().ifPresent(role -> root.setString(archiveAccessRoleField, role));
     }
 
     private void developerKeysToSlime(BiMap<PublicKey, Principal> keys, Cursor array) {
@@ -162,7 +164,8 @@ public class TenantSerializer {
         BiMap<PublicKey, Principal> developerKeys = developerKeysFromSlime(tenantObject.field(pemDeveloperKeysField));
         TenantInfo info = tenantInfoFromSlime(tenantObject.field(tenantInfoField));
         List<TenantSecretStore> tenantSecretStores = secretStoresFromSlime(tenantObject.field(secretStoresField));
-        return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores);
+        Optional<String> archiveAccessRole = SlimeUtils.optionalString(tenantObject.field(archiveAccessRoleField));
+        return new CloudTenant(name, createdAt, lastLoginInfo, creator, developerKeys, info, tenantSecretStores, archiveAccessRole);
     }
 
     private BiMap<PublicKey, Principal> developerKeysFromSlime(Inspector array) {
