@@ -21,6 +21,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeStat
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,6 +30,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -45,6 +47,10 @@ public class NodeRepositoryMock implements NodeRepository {
     private final Map<Integer, Duration> osUpgradeBudgets = new HashMap<>();
     private final Map<DeploymentId, Pair<Double, Double>> trafficFractions = new HashMap<>();
     private final Map<ZoneId, Map<TenantName, URI>> archiveUris = new HashMap<>();
+
+    // A separate/alternative list of NodeRepositoryNode nodes.
+    // Methods operating with Node and NodeRepositoryNode lives separate lives.
+    private final Map<ZoneId, List<NodeRepositoryNode>> nodeRepoNodes = new HashMap<>();
 
     private boolean allowPatching = false;
 
@@ -77,6 +83,7 @@ public class NodeRepositoryMock implements NodeRepository {
     /** Remove all nodes in all zones */
     public void clear() {
         nodeRepository.clear();
+        nodeRepoNodes.clear();
     }
 
     /** Replace nodes in zone with given nodes */
@@ -131,7 +138,7 @@ public class NodeRepositoryMock implements NodeRepository {
 
     @Override
     public void addNodes(ZoneId zone, Collection<NodeRepositoryNode> nodes) {
-        throw new UnsupportedOperationException();
+        nodeRepoNodes.put(zone, new ArrayList<>(nodes));
     }
 
     @Override
@@ -151,7 +158,7 @@ public class NodeRepositoryMock implements NodeRepository {
 
     @Override
     public NodeList listNodes(ZoneId zone) {
-        throw new UnsupportedOperationException();
+        return new NodeList(nodeRepoNodes.get(zone));
     }
 
     @Override
