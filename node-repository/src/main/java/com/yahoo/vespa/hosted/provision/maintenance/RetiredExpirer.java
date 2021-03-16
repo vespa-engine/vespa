@@ -106,7 +106,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
                 // and PERMANENTLY_DOWN for cfg2 is cleaned up.
                 //
                 // If the RetiredExpirer on cfg3 now runs before its InfrastructureProvisioner, then
-                //  a. But the duper model still contains cfg2
+                //  a. The duper model still contains cfg2
                 //  b. The service model still monitors cfg2 for health and it is UP
                 //  c. The Orchestrator has no host status (like PERMANENTLY_DOWN) for cfg2,
                 //     which is equivalent to NO_REMARKS
