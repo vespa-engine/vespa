@@ -13,15 +13,15 @@ public class ChangeRequest {
     private final ChangeRequestSource changeRequestSource;
     private final List<String> impactedSwitches;
     private final List<String> impactedHosts;
-    private final boolean isApproved;
+    private final Approval approval;
     private final Impact impact;
 
-    private ChangeRequest(String id, ChangeRequestSource changeRequestSource, List<String> impactedSwitches, List<String> impactedHosts, boolean isApproved, Impact impact) {
+    private ChangeRequest(String id, ChangeRequestSource changeRequestSource, List<String> impactedSwitches, List<String> impactedHosts, Approval approval, Impact impact) {
         this.id = Objects.requireNonNull(id);
         this.changeRequestSource = Objects.requireNonNull(changeRequestSource);
         this.impactedSwitches = Objects.requireNonNull(impactedSwitches);
         this.impactedHosts = Objects.requireNonNull(impactedHosts);
-        this.isApproved = Objects.requireNonNull(isApproved);
+        this.approval = Objects.requireNonNull(approval);
         this.impact = Objects.requireNonNull(impact);
     }
 
@@ -41,8 +41,8 @@ public class ChangeRequest {
         return impactedHosts;
     }
 
-    public boolean isApproved() {
-        return isApproved;
+    public Approval getApproval() {
+        return approval;
     }
 
     public Impact getImpact() {
@@ -56,7 +56,7 @@ public class ChangeRequest {
                 ", changeRequestSource=" + changeRequestSource +
                 ", impactedSwitches=" + impactedSwitches +
                 ", impactedHosts=" + impactedHosts +
-                ", isApproved=" + isApproved +
+                ", approval=" + approval +
                 ", impact=" + impact +
                 '}';
     }
@@ -66,7 +66,7 @@ public class ChangeRequest {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ChangeRequest that = (ChangeRequest) o;
-        return isApproved == that.isApproved &&
+        return approval == that.approval &&
                 Objects.equals(id, that.id) &&
                 Objects.equals(changeRequestSource, that.changeRequestSource) &&
                 Objects.equals(impactedSwitches, that.impactedSwitches) &&
@@ -76,7 +76,7 @@ public class ChangeRequest {
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, changeRequestSource, impactedSwitches, impactedHosts, isApproved, impact);
+        return Objects.hash(id, changeRequestSource, impactedSwitches, impactedHosts, approval, impact);
     }
 
     public static class Builder {
@@ -84,7 +84,7 @@ public class ChangeRequest {
         private ChangeRequestSource changeRequestSource;
         private List<String> impactedSwitches;
         private List<String> impactedHosts;
-        private boolean isApproved;
+        private Approval approval;
         private Impact impact;
 
 
@@ -108,8 +108,8 @@ public class ChangeRequest {
             return this;
         }
 
-        public Builder isApproved(boolean isApproved) {
-            this.isApproved = isApproved;
+        public Builder approval(Approval approval) {
+            this.approval = approval;
             return this;
         }
 
@@ -119,7 +119,7 @@ public class ChangeRequest {
         }
 
         public ChangeRequest build() {
-            return new ChangeRequest(id, changeRequestSource, impactedSwitches, impactedHosts, isApproved, impact);
+            return new ChangeRequest(id, changeRequestSource, impactedSwitches, impactedHosts, approval, impact);
         }
 
         public String getId() {
@@ -134,6 +134,13 @@ public class ChangeRequest {
         HIGH,
         VERY_HIGH,
         UNKNOWN
+    }
+
+    public enum Approval {
+        REQUESTED,
+        APPROVED,
+        REJECTED,
+        OTHER
     }
 
 }
