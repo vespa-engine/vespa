@@ -572,7 +572,7 @@ TEST("require that cell array size can be calculated") {
 }
 
 TEST("require that all cell types can be listed") {
-    std::vector<CellType> expect = {CellType::FLOAT, CellType::DOUBLE};
+    std::vector<CellType> expect = { CellType::INT8, CellType::BFLOAT16, CellType::FLOAT, CellType::DOUBLE };
     auto list = CellTypeUtils::list_types();
     ASSERT_EQUAL(list.size(), expect.size());
     for (size_t i = 0; i < list.size(); ++i) {

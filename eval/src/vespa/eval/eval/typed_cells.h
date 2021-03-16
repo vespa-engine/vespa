@@ -17,6 +17,8 @@ struct TypedCells {
 
     explicit TypedCells(ConstArrayRef<double> cells) : data(cells.begin()), type(CellType::DOUBLE), size(cells.size()) {}
     explicit TypedCells(ConstArrayRef<float> cells) : data(cells.begin()), type(CellType::FLOAT), size(cells.size()) {}
+    explicit TypedCells(ConstArrayRef<BFloat16> cells) : data(cells.begin()), type(CellType::BFLOAT16), size(cells.size()) {}
+    explicit TypedCells(ConstArrayRef<Int8Float> cells) : data(cells.begin()), type(CellType::INT8), size(cells.size()) {}
 
     TypedCells() : data(nullptr), type(CellType::DOUBLE), size(0) {}
     TypedCells(const void *dp, CellType ct, size_t sz) : data(dp), type(ct), size(sz) {}
