@@ -92,7 +92,7 @@ public class GroupPreparer {
                                                           allocateOsRequirement);
             NodeType hostType = allocation.nodeType().hostType();
             boolean hostTypeSupportsDynamicProvisioning = hostType == NodeType.host ||
-                                                      (hostType == NodeType.confighost &&
+                                                      (hostType.isConfigServerHostLike() &&
                                                        provisionConfigServerDynamically.value());
             if (nodeRepository.zone().getCloud().dynamicProvisioning() && hostTypeSupportsDynamicProvisioning) {
                 final Version osVersion;

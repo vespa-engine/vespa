@@ -296,8 +296,8 @@ class NodeAllocation {
      * flavor and host count required to cover the deficit.
      */
     Optional<HostDeficit> hostDeficit() {
-        if (nodeType() != NodeType.config && nodeType() != NodeType.tenant) {
-            return Optional.empty(); // Requests for these node types never have a deficit
+        if (nodeType().isHost()) {
+            return Optional.empty(); // Hosts are provisioned as required by the child application
         }
         return Optional.of(new HostDeficit(requestedNodes.resources().orElseGet(NodeResources::unspecified),
                                            requestedNodes.fulfilledDeficitCount(accepted())))
