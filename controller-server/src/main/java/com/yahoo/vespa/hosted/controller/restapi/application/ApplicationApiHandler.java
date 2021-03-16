@@ -2028,14 +2028,17 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         }
         // TODO jonmv: This should list applications, not instances.
         Cursor applicationArray = object.setArray("applications");
-        for (com.yahoo.vespa.hosted.controller.Application application : applications) {
-            DeploymentStatus status = controller.jobController().deploymentStatus(application);
+        for (Application application : applications) {
+            DeploymentStatus status = null;
             for (Instance instance : showOnlyProductionInstances(request) ? application.productionInstances().values()
                                                                           : application.instances().values())
-                if (recurseOverApplications(request))
+                if (recurseOverApplications(request)) {
+                    if (status == null) status = controller.jobController().deploymentStatus(application);
                     toSlime(applicationArray.addObject(), instance, status, request);
-                else
+                }
+                else {
                     toSlime(instance.id(), applicationArray.addObject(), request);
+                }
         }
         tenantMetaDataToSlime(tenant, applications, object.setObject("metaData"));
     }
