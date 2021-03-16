@@ -102,9 +102,8 @@ removeDupRemovals(std::vector<uint32_t> &removals)
 }
 
 IEnumStore::Index
-EnumIndexMapper::map(IEnumStore::Index original, const vespalib::datastore::EntryComparator& compare) const
+EnumIndexMapper::map(IEnumStore::Index original) const
 {
-    (void) compare;
     return original;
 }
 
@@ -159,7 +158,7 @@ private:
     EnumIndex mapEnumIndex(EnumIndex unmapped) {
         auto itr = _cachedMapping.insert(std::make_pair(unmapped.ref(), 0));
         if (itr.second) {
-            itr.first->second = _mapper.map(unmapped, _compare).ref();
+            itr.first->second = _mapper.map(unmapped).ref();
         }
         return EnumIndex(vespalib::datastore::EntryRef(itr.first->second));
     }

@@ -49,7 +49,7 @@ class EnumIndexMapper
 {
 public:
     virtual ~EnumIndexMapper() { }
-    virtual IEnumStore::Index map(IEnumStore::Index original, const vespalib::datastore::EntryComparator& compare) const;
+    virtual IEnumStore::Index map(IEnumStore::Index original) const;
     virtual bool hasFold() const { return false; }
 };
 

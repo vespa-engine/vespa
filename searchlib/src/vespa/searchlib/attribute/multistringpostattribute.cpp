@@ -9,9 +9,9 @@ LOG_SETUP(".searchlib.attribute.multi_string_post_attribute");
 namespace search {
 
 IEnumStore::Index
-StringEnumIndexMapper::map(IEnumStore::Index original, const vespalib::datastore::EntryComparator& compare) const
+StringEnumIndexMapper::map(IEnumStore::Index original) const
 {
-    return _dictionary.find(original, compare).getKey();
+    return _dictionary.remap_index(original);
 }
 
 } // namespace search
