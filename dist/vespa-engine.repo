@@ -1,6 +1,8 @@
 [vespa-engine-stable]
 name=vespa-engine-stable
-baseurl=https://yahoo.bintray.com/vespa-engine/centos/$releasever/stable/$basearch
-gpgcheck=0
+baseurl=https://download.copr.fedorainfracloud.org/results/@vespa/vespa/epel-7-$basearch/
+type=rpm-md
+gpgcheck=1
+gpgkey=https://download.copr.fedorainfracloud.org/results/@vespa/vespa/pubkey.gpg
 repo_gpgcheck=0
 enabled=1
