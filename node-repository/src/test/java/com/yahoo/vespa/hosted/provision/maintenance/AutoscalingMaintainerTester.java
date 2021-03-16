@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.autoscale.ClusterMetricSnapshot;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
@@ -27,6 +28,7 @@ import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
+import java.util.function.IntFunction;
 import java.util.stream.Collectors;
 
 /**
@@ -82,6 +84,18 @@ public class AutoscalingMaintainerTester {
                                                                                                     true,
                                                                                                     true,
                                                                                                     0.0))));
+        }
+    }
+
+    /** Creates the given number of measurements, spaced 5 minutes between, using the given function */
+    public void addQueryRateMeasurements(ApplicationId application,
+                                         ClusterSpec.Id cluster,
+                                         int measurements,
+                                         IntFunction<Double> queryRate) {
+        Instant time = clock().instant();
+        for (int i = 0; i < measurements; i++) {
+            metricsDb.addClusterMetrics(application, Map.of(cluster, new ClusterMetricSnapshot(time, queryRate.apply(i), 0.0)));
+            time = time.plus(Duration.ofMinutes(5));
         }
     }
 

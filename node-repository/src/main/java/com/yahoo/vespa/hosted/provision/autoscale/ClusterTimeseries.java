@@ -2,16 +2,11 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.vespa.hosted.provision.NodeList;
-import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * A list of metric snapshots from a cluster, sorted by increasing time (newest last).
@@ -85,8 +80,8 @@ public class ClusterTimeseries {
             else
                 return 0.0; //       ... because load is stable
         }
-        if (queryRateNow() == 0) return 0.1; // Growth not expressible as a fraction of the current rate
-        return maxGrowthRate / queryRateNow();
+        if (currentQueryRate() == 0) return 0.1; // Growth not expressible as a fraction of the current rate
+        return maxGrowthRate / currentQueryRate();
     }
 
     /** The current query rate as a fraction of the peak rate in this timeseries */
@@ -97,12 +92,22 @@ public class ClusterTimeseries {
         return snapshots.get(snapshots.size() - 1).queryRate() / max;
     }
 
+    public double currentQueryRate() {
+        return queryRateAt(snapshots.size() - 1);
+    }
+
+    public double currentWriteRate() {
+        return writeRateAt(snapshots.size() - 1);
+    }
+
     private double queryRateAt(int index) {
+        if (snapshots.isEmpty()) return 0.0;
         return snapshots.get(index).queryRate();
     }
 
-    private double queryRateNow() {
-        return queryRateAt(snapshots.size() - 1);
+    private double writeRateAt(int index) {
+        if (snapshots.isEmpty()) return 0.0;
+        return snapshots.get(index).writeRate();
     }
 
     private Duration durationBetween(int startIndex, int endIndex) {

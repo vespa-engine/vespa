@@ -54,6 +54,7 @@ public class ResourceTarget {
                                            ClusterNodesTimeseries clusterNodesTimeseries,
                                            AllocatableClusterResources current,
                                            Application application) {
+        System.out.println(idealCpuLoad(scalingDuration, clusterTimeseries, application));
         return new ResourceTarget(nodeUsage(Resource.cpu, clusterNodesTimeseries.averageLoad(Resource.cpu), current)
                                   / idealCpuLoad(scalingDuration, clusterTimeseries, application),
                                   nodeUsage(Resource.memory, clusterNodesTimeseries.averageLoad(Resource.memory), current)
@@ -75,6 +76,8 @@ public class ResourceTarget {
     public static double idealCpuLoad(Duration scalingDuration,
                                       ClusterTimeseries clusterTimeseries,
                                       Application application) {
+        double queryCpuFraction = queryCpuFraction(clusterTimeseries);
+
         // What's needed to have headroom for growth during scale-up as a fraction of current resources?
         double maxGrowthRate = clusterTimeseries.maxQueryGrowthRate(); // in fraction per minute of the current traffic
         double growthRateHeadroom = 1 + maxGrowthRate * scalingDuration.toMinutes();
@@ -90,11 +93,32 @@ public class ResourceTarget {
         else
             trafficShiftHeadroom = application.status().maxReadShare() / application.status().currentReadShare();
 
-        if (trafficShiftHeadroom > 2.0)  // The expectation that we have almost no load with almost no queries is incorrect due
-            trafficShiftHeadroom = 2.0;  // to write traffic; once that is separated we can increase this threshold
+        if (trafficShiftHeadroom > 2.0)  // TODO: The expectation that we have almost no load with almost no queries is incorrect due
+            trafficShiftHeadroom = 2.0;  //       to write traffic; now that is separated we can increase this threshold
 
-        return 1 / growthRateHeadroom * 1 / trafficShiftHeadroom * Resource.cpu.idealAverageLoad();
+        // Assumptions: 1) Write load is not organic so we should not grow to handle more.
+        //                 (TODO: But allow applications to set their target write rate and size for that)
+        //              2) Write load does not change in BCP scenarios.
+        return queryCpuFraction * 1 / growthRateHeadroom * 1 / trafficShiftHeadroom * idealQueryCpuLoad() +
+               (1 - queryCpuFraction) * idealWriteCpuLoad();
     }
+    
+    private static double queryCpuFraction(ClusterTimeseries clusterTimeseries) {
+        double queryRate = clusterTimeseries.currentQueryRate();
+        double writeRate = clusterTimeseries.currentWriteRate();
+        if (queryRate == 0 && writeRate == 0) return queryCpuFraction(0.5);
+        return queryCpuFraction(queryRate / (queryRate + writeRate));
+    }
+
+    private static double queryCpuFraction(double queryFraction) {
+        double relativeQueryCost = 9; // How much more expensive are queries than writes? TODO: Measure?
+        double writeFraction = 1 - queryFraction;
+        return queryFraction * relativeQueryCost / (queryFraction * relativeQueryCost + writeFraction);
+    }
+
+    public static double idealQueryCpuLoad() { return Resource.cpu.idealAverageLoad(); }
+
+    public static double idealWriteCpuLoad() { return 0.95; }
 
     public static double idealMemoryLoad() { return Resource.memory.idealAverageLoad(); }
 

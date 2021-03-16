@@ -42,7 +42,7 @@
       },
       "utilization" : {
         "cpu" : 0.0,
-        "idealCpu": 0.19047619047619047,
+        "idealCpu": 0.2664285714285714,
         "memory" : 0.0,
         "idealMemory": 0.7,
         "disk" : 0.0,

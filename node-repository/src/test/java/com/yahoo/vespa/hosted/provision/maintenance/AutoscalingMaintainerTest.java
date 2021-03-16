@@ -152,6 +152,7 @@ public class AutoscalingMaintainerTest {
 
         // deploy
         tester.deploy(app1, cluster1, app1Capacity);
+        tester.addQueryRateMeasurements(app1, cluster1.id(), 12, t -> t == 0 ? 20.0 : 10.0);
 
         for (int i = 0; i < 20; i++) {
             // Record completion to keep scaling window at minimum
