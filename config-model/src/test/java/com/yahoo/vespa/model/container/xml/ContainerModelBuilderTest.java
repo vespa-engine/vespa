@@ -7,6 +7,7 @@ import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.api.ContainerEndpoint;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
+import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.model.builder.xml.test.DomBuilderTest;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
@@ -15,6 +16,7 @@ import com.yahoo.config.model.provision.InMemoryProvisioner;
 import com.yahoo.config.model.provision.SingleNodeProvisioner;
 import com.yahoo.config.model.test.MockApplicationPackage;
 import com.yahoo.config.model.test.MockRoot;
+import com.yahoo.config.provision.Cloud;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.RegionName;
@@ -29,6 +31,7 @@ import com.yahoo.container.handler.VipStatusHandler;
 import com.yahoo.container.handler.metrics.MetricsV2Handler;
 import com.yahoo.container.handler.observability.ApplicationStatusHandler;
 import com.yahoo.container.jdisc.JdiscBindingsConfig;
+import com.yahoo.container.jdisc.secretstore.SecretStoreConfig;
 import com.yahoo.container.servlet.ServletConfigConfig;
 import com.yahoo.container.usability.BindingsOverviewHandler;
 import com.yahoo.jdisc.http.ConnectorConfig;
@@ -712,6 +715,54 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         SecretStore secretStore = getContainerCluster("container").getSecretStore().get();
         assertEquals("group1", secretStore.getGroups().get(0).name);
         assertEquals("env1", secretStore.getGroups().get(0).environment);
+    }
+
+    @Test
+    public void cloud_secret_store_requires_configured_secret_store() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container version='1.0'>",
+                "  <secret-store type='cloud'>",
+                "    <aws-parameter-store name='store1' region='eu-north-1'/>",
+                "  </secret-store>",
+                "</container>");
+        try {
+            createModel(root, clusterElem);
+            fail("secret store not defined");
+        } catch (RuntimeException e) {
+            assertEquals("No configured secret store named store1", e.getMessage());
+        }
+    }
+
+
+    @Test
+    public void cloud_secret_store_can_be_set_up() {
+        Element clusterElem = DomBuilderTest.parse(
+                "<container version='1.0'>",
+                "  <secret-store type='cloud'>",
+                "    <aws-parameter-store name='store1' region='eu-north-1'/>",
+                "  </secret-store>",
+                "</container>");
+
+        DeployState state = new DeployState.Builder()
+                .properties(
+                        new TestProperties()
+                                .setHostedVespa(true)
+                                .setTenantSecretStores(List.of(new TenantSecretStore("store1", "1234", "role", Optional.of("externalid")))))
+                .zone(new Zone(SystemName.Public, Environment.prod, RegionName.defaultName()))
+                .build();
+        createModel(root, state, null, clusterElem);
+
+        ApplicationContainerCluster container = getContainerCluster("container");
+        assertComponentConfigured(container, "com.yahoo.jdisc.cloud.aws.AwsParameterStore");
+        CloudSecretStore secretStore = (CloudSecretStore) container.getComponentsMap().get(ComponentId.fromString("com.yahoo.jdisc.cloud.aws.AwsParameterStore"));
+
+
+        SecretStoreConfig.Builder configBuilder = new SecretStoreConfig.Builder();
+        secretStore.getConfig(configBuilder);
+        SecretStoreConfig secretStoreConfig = configBuilder.build();
+
+        assertEquals(1, secretStoreConfig.awsParameterStores().size());
+        assertEquals("store1", secretStoreConfig.awsParameterStores().get(0).name());
     }
 
     @Test

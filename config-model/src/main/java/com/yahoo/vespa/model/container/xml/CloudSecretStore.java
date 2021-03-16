@@ -33,9 +33,9 @@ public class CloudSecretStore extends SimpleComponent implements SecretStoreConf
 
     @Override
     public void getConfig(SecretStoreConfig.Builder builder) {
-        builder.groups(
+        builder.awsParameterStores(
                 configList.stream()
-                .map(config -> new SecretStoreConfig.Groups.Builder()
+                .map(config -> new SecretStoreConfig.AwsParameterStores.Builder()
                         .name(config.name)
                         .region(config.region)
                         .awsId(config.awsId)

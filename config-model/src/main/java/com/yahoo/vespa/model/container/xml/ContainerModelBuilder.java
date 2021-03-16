@@ -281,7 +281,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                         store -> store
                 ));
 
-        for (Element group : XML.getChildren(secretStoreElement, "group")) {
+        for (Element group : XML.getChildren(secretStoreElement, "aws-parameter-store")) {
             String name = group.getAttribute("name");
             String region = group.getAttribute("region");
             TenantSecretStore secretStore = secretStoresByName.get(name);
