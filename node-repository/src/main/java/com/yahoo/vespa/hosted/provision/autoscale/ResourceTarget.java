@@ -86,14 +86,15 @@ public class ResourceTarget {
             growthRateHeadroom = Math.min(growthRateHeadroom, 1 / fractionOfMax + 0.1);
 
         // How much headroom is needed to handle sudden arrival of additional traffic due to another zone going down?
+        double maxTrafficShiftHeadroom = 10.0; // Cap to avoid extreme sizes from a current very small load
         double trafficShiftHeadroom;
         if (application.status().maxReadShare() == 0) // No traffic fraction data
             trafficShiftHeadroom = 2.0; // assume we currently get half of the global share of traffic
+        else if (application.status().currentReadShare() == 0)
+            trafficShiftHeadroom = maxTrafficShiftHeadroom;
         else
             trafficShiftHeadroom = application.status().maxReadShare() / application.status().currentReadShare();
-
-        if (trafficShiftHeadroom > 2.0)  // TODO: The expectation that we have almost no load with almost no queries is incorrect due
-            trafficShiftHeadroom = 2.0;  //       to write traffic; now that is separated we can increase this threshold
+        trafficShiftHeadroom = Math.min(trafficShiftHeadroom, maxTrafficShiftHeadroom);
 
         // Assumptions: 1) Write load is not organic so we should not grow to handle more.
         //                 (TODO: But allow applications to set their target write rate and size for that)
@@ -110,7 +111,7 @@ public class ResourceTarget {
     }
 
     private static double queryCpuFraction(double queryFraction) {
-        double relativeQueryCost = 9; // How much more expensive are queries than writes? TODO: Measure?
+        double relativeQueryCost = 9; // How much more expensive are queries than writes? TODO: Measure
         double writeFraction = 1 - queryFraction;
         return queryFraction * relativeQueryCost / (queryFraction * relativeQueryCost + writeFraction);
     }
