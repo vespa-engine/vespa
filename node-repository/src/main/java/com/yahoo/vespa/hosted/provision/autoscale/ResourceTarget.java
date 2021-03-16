@@ -86,7 +86,7 @@ public class ResourceTarget {
             growthRateHeadroom = Math.min(growthRateHeadroom, 1 / fractionOfMax + 0.1);
 
         // How much headroom is needed to handle sudden arrival of additional traffic due to another zone going down?
-        double maxTrafficShiftHeadroom = 10.0; // Cap to avoid extreme sizes from a current very small load
+        double maxTrafficShiftHeadroom = 10.0; // Cap to avoid extreme sizes from a current very small share
         double trafficShiftHeadroom;
         if (application.status().maxReadShare() == 0) // No traffic fraction data
             trafficShiftHeadroom = 2.0; // assume we currently get half of the global share of traffic
