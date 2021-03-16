@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.application;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
@@ -36,6 +37,7 @@ public class DeploymentQuotaCalculator {
         // correctly we retrieve the maximum of .current() and .max() - otherwise we would keep adding 0s for those
         // that are not using autoscaling.
         var quotaUsageRate = application.clusters().values().stream()
+                .filter(cluster -> ! cluster.type().equals(ClusterSpec.Type.admin))
                 .map(cluster -> largestQuotaUsage(cluster.current(), cluster.max()))
                 .mapToDouble(resources -> resources.nodes() * resources.nodeResources().cost())
                 .sum();

@@ -72,7 +72,7 @@ public class DeploymentQuotaCalculatorTest {
         var mapper = new ObjectMapper();
         var application = mapper.readValue(content, ApplicationData.class).toApplication();
         var usage = DeploymentQuotaCalculator.calculateQuotaUsage(application);
-        assertEquals(1.164, usage.rate(), 0.001);
+        assertEquals(1.068, usage.rate(), 0.001);
     }
 
     @Test
