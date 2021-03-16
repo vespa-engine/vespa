@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.integration;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.yahoo.collections.Pair;
 import com.yahoo.component.Version;
@@ -15,12 +16,17 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Applicatio
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.TargetVersions;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeEnvironment;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeHistory;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeMembership;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -29,6 +35,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -45,6 +52,10 @@ public class NodeRepositoryMock implements NodeRepository {
     private final Map<Integer, Duration> osUpgradeBudgets = new HashMap<>();
     private final Map<DeploymentId, Pair<Double, Double>> trafficFractions = new HashMap<>();
     private final Map<ZoneId, Map<TenantName, URI>> archiveUris = new HashMap<>();
+
+    // A separate/alternative list of NodeRepositoryNode nodes.
+    // Methods operating with Node and NodeRepositoryNode lives separate lives.
+    private final Map<ZoneId, List<NodeRepositoryNode>> nodeRepoNodes = new HashMap<>();
 
     private boolean allowPatching = false;
 
@@ -77,6 +88,7 @@ public class NodeRepositoryMock implements NodeRepository {
     /** Remove all nodes in all zones */
     public void clear() {
         nodeRepository.clear();
+        nodeRepoNodes.clear();
     }
 
     /** Replace nodes in zone with given nodes */
@@ -131,7 +143,7 @@ public class NodeRepositoryMock implements NodeRepository {
 
     @Override
     public void addNodes(ZoneId zone, Collection<NodeRepositoryNode> nodes) {
-        throw new UnsupportedOperationException();
+        nodeRepoNodes.put(zone, new ArrayList<>(nodes));
     }
 
     @Override
@@ -151,7 +163,7 @@ public class NodeRepositoryMock implements NodeRepository {
 
     @Override
     public NodeList listNodes(ZoneId zone) {
-        throw new UnsupportedOperationException();
+        return new NodeList(nodeRepoNodes.get(zone));
     }
 
     @Override
