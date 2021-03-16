@@ -346,8 +346,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse recursiveRoot(HttpRequest request) {
         Slime slime = new Slime();
         Cursor tenantArray = slime.setArray();
+        List<Application> applications = controller.applications().asList();
         for (Tenant tenant : controller.tenants().asList())
-            toSlime(tenantArray.addObject(), tenant, request);
+            toSlime(tenantArray.addObject(),
+                    tenant,
+                    applications.stream().filter(app -> app.id().tenant().equals(tenant.name())).collect(toList()),
+                    request);
         return new SlimeJsonResponse(slime);
     }
 
@@ -373,7 +377,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private HttpResponse tenant(Tenant tenant, HttpRequest request) {
         Slime slime = new Slime();
-        toSlime(slime.setObject(), tenant, request);
+        toSlime(slime.setObject(), tenant, controller.applications().asList(tenant.name()), request);
         return new SlimeJsonResponse(slime);
     }
 
@@ -1978,10 +1982,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                          .orElseThrow(() -> new NotExistsException(new TenantId(tenantName)));
     }
 
-    private void toSlime(Cursor object, Tenant tenant, HttpRequest request) {
+    private void toSlime(Cursor object, Tenant tenant, List<Application> applications, HttpRequest request) {
         object.setString("tenant", tenant.name().value());
         object.setString("type", tenantType(tenant));
-        List<com.yahoo.vespa.hosted.controller.Application> applications = controller.applications().asList(tenant.name());
         switch (tenant.type()) {
             case athenz:
                 AthenzTenant athenzTenant = (AthenzTenant) tenant;
@@ -2034,7 +2037,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 else
                     toSlime(instance.id(), applicationArray.addObject(), request);
         }
-        tenantMetaDataToSlime(tenant, object.setObject("metaData"));
+        tenantMetaDataToSlime(tenant, applications, object.setObject("metaData"));
     }
 
     private void toSlime(Quota quota, QuotaUsage usage, Cursor object) {
