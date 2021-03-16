@@ -16,55 +16,25 @@ using namespace vespalib::eval;
 using namespace vespalib::eval::test;
 using namespace vespalib::eval::tensor_function;
 
-const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
-
-GenSpec::seq_t lhs_seq = [] (size_t i) noexcept { return (3.0 + i) * 7.0; };
-GenSpec::seq_t rhs_seq = [] (size_t i) noexcept { return (5.0 + i) * 43.0; };
-
 struct FunInfo {
     using LookFor = DenseXWProductFunction;
     size_t vec_size;
     size_t res_size;
     bool happy;
-    bool check(const LookFor &fun) const {
-        return ((fun.result_is_mutable()) &&
-                (fun.vector_size() == vec_size) &&
-                (fun.result_size() == res_size) &&
-                (fun.common_inner() == happy));
+    void verify(const LookFor &fun) const {
+        EXPECT_TRUE(fun.result_is_mutable());
+        EXPECT_EQUAL(fun.vector_size(), vec_size);
+        EXPECT_EQUAL(fun.result_size(), res_size);
+        EXPECT_EQUAL(fun.common_inner(), happy);
     }
 };
 
-void verify(const vespalib::string &expr, const std::vector<FunInfo> &fun_info, const std::vector<CellType> &with_cell_types) {
-    auto fun = Function::parse(expr);
-    ASSERT_EQUAL(fun->num_params(), 2u);
-    vespalib::string lhs_name = fun->param_name(0);
-    vespalib::string rhs_name = fun->param_name(1);
-    const auto lhs_spec = GenSpec::from_desc(lhs_name);
-    const auto rhs_spec = GenSpec::from_desc(rhs_name);
-    for (CellType lhs_ct: with_cell_types) {
-        for (CellType rhs_ct: with_cell_types) {
-            EvalFixture::ParamRepo param_repo;
-            param_repo.add(lhs_name, lhs_spec.cpy().cells(lhs_ct).seq(lhs_seq));
-            param_repo.add(rhs_name, rhs_spec.cpy().cells(rhs_ct).seq(rhs_seq));
-            EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
-            EvalFixture fixture(prod_factory, expr, param_repo, true);
-            EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
-            EXPECT_EQUAL(fixture.result(), slow_fixture.result());
-            auto info = fixture.find_all<FunInfo::LookFor>();
-            ASSERT_EQUAL(info.size(), fun_info.size());
-            for (size_t i = 0; i < fun_info.size(); ++i) {
-                EXPECT_TRUE(fun_info[i].check(*info[i]));
-            }
-        }
-    }
-}
-
 void verify_not_optimized(const vespalib::string &expr) {
-    return verify(expr, {}, {CellType::FLOAT});
+    EvalFixture::verify<FunInfo>(expr, {}, CellTypeSpace({CellType::FLOAT}, 2));
 }
 
 void verify_optimized(const vespalib::string &expr, size_t vec_size, size_t res_size, bool happy) {
-    return verify(expr, {{vec_size, res_size, happy}}, CellTypeUtils::list_types());
+    EvalFixture::verify<FunInfo>(expr, {{vec_size, res_size, happy}}, CellTypeSpace(CellTypeUtils::list_types(), 2));
 }
 
 vespalib::string make_expr(const vespalib::string &a, const vespalib::string &b, const vespalib::string &common) {
@@ -122,7 +92,7 @@ TEST("require that xw product can be debug dumped") {
     EvalFixture::ParamRepo param_repo;
     param_repo.add("y5", GenSpec::from_desc("y5"));
     param_repo.add("x8y5", GenSpec::from_desc("x8y5"));
-    EvalFixture fixture(prod_factory, "reduce(y5*x8y5,sum,y)", param_repo, true);
+    EvalFixture fixture(EvalFixture::prod_factory(), "reduce(y5*x8y5,sum,y)", param_repo, true);
     auto info = fixture.find_all<DenseXWProductFunction>();
     ASSERT_EQUAL(info.size(), 1u);
     EXPECT_TRUE(info[0]->result_is_mutable());
