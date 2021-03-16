@@ -80,19 +80,15 @@ usage() {
     echo ""
 
     echo "-h|-help)              print this help text"
-    echo "-nosudo                do not use sudo when running command"
 }
 
-sudo="/usr/bin/sudo -u ${VESPA_USER}"
 while [ $# -gt 0 ]; do
     case $1 in
         -h|-help)        usage; exit 0;;
-        -nosudo)         shift; sudo="" ;;
         *)               echo "Unrecognized option '$1'" >&2; exit 1;;
     esac
 done
 
-$sudo java \
-	-cp $VESPA_HOME/lib/jars/zookeeper-command-line-client-jar-with-dependencies.jar \
-	-Dlog4j.configuration="log4j-vespa.properties" -Xms32m -Xmx512m \
-	com.yahoo.vespa.zookeeper.cli.Main "$@"
+java -cp $VESPA_HOME/lib/jars/zookeeper-command-line-client-jar-with-dependencies.jar \
+     -Dlog4j.configuration="log4j-vespa.properties" -Xms32m -Xmx512m \
+     com.yahoo.vespa.zookeeper.cli.Main "$@"
