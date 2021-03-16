@@ -98,7 +98,7 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
         if (node.type().isConfigServerLike()) {
             // Avoid eventual expiry of configserver-like nodes
 
-            if (activeNodes.nodeType(node.type()).asSet().size() < NUM_CONFIG_SERVERS) {
+            if (activeNodes.nodeType(node.type()).size() < NUM_CONFIG_SERVERS) {
                 // Scenario:  All 3 config servers want to retire.
                 //
                 // Say RetiredExpirer runs on cfg1 and gives cfg2 permission to be removed (PERMANENTLY_DOWN in ZK).
