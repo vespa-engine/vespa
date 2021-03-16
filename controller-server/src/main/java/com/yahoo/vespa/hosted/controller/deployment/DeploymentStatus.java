@@ -26,6 +26,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -39,7 +40,6 @@ import static java.util.Comparator.naturalOrder;
 import static java.util.Objects.requireNonNull;
 import static java.util.function.BinaryOperator.maxBy;
 import static java.util.stream.Collectors.collectingAndThen;
-import static java.util.stream.Collectors.groupingBy;
 import static java.util.stream.Collectors.toMap;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
@@ -117,14 +117,12 @@ public class DeploymentStatus {
         return allJobs.asList().stream()
                       .filter(job -> job.id().application().equals(application.id().instance(instance)))
                       .collect(Collectors.toUnmodifiableMap(job -> job.id().type(),
-                                                         job -> job));
+                                                            Function.identity()));
     }
 
     /** Filterable job status lists for each instance of this application. */
     public Map<ApplicationId, JobList> instanceJobs() {
-        return allJobs.asList().stream()
-                      .collect(groupingBy(job -> job.id().application(),
-                                          collectingAndThen(toUnmodifiableList(), JobList::from)));
+        return allJobs.groupingBy(job -> job.id().application());
     }
 
     /**

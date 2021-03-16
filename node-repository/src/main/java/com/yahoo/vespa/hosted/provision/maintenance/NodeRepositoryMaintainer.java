@@ -7,13 +7,12 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Clock;
 import java.time.Duration;
-import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 /**
  * A maintainer is some job which runs at a fixed rate to perform some maintenance task on the node repo.
@@ -41,13 +40,12 @@ public abstract class NodeRepositoryMaintainer extends Maintainer {
     protected Clock clock() { return nodeRepository.clock(); }
 
     /** A utility to group active tenant nodes by application */
-    protected Map<ApplicationId, List<Node>> activeNodesByApplication() {
-        return nodeRepository().nodes().list(Node.State.active)
+    protected Map<ApplicationId, NodeList> activeNodesByApplication() {
+        return nodeRepository().nodes()
+                               .list(Node.State.active)
                                .nodeType(NodeType.tenant)
-                               .asList()
-                               .stream()
-                               .filter(node -> ! node.allocation().get().owner().instance().isTester())
-                               .collect(Collectors.groupingBy(node -> node.allocation().get().owner()));
+                               .matching(node -> ! node.allocation().get().owner().instance().isTester())
+                               .groupingBy(node -> node.allocation().get().owner());
     }
 
     private static JobMetrics jobMetrics(Metric metric) {

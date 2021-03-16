@@ -82,7 +82,7 @@ public class LoadBalancerProvisioner {
         if (application.instance().isTester()) return; // Do not provision for tester instances
         try (var lock = db.lock(application)) {
             ClusterSpec.Id clusterId = effectiveId(cluster);
-            List<Node> nodes = nodesOf(clusterId, application);
+            NodeList nodes = nodesOf(clusterId, application);
             LoadBalancerId loadBalancerId = requireNonClashing(new LoadBalancerId(application, clusterId));
             ApplicationTransaction transaction = new ApplicationTransaction(new ProvisionLock(application, lock), new NestedTransaction());
             provision(transaction, loadBalancerId, nodes, false);
@@ -167,7 +167,7 @@ public class LoadBalancerProvisioner {
     }
 
     /** Idempotently provision a load balancer for given application and cluster */
-    private void provision(ApplicationTransaction transaction, LoadBalancerId id, List<Node> nodes, boolean activate) {
+    private void provision(ApplicationTransaction transaction, LoadBalancerId id, NodeList nodes, boolean activate) {
         Instant now = nodeRepository.clock().instant();
         Optional<LoadBalancer> loadBalancer = db.readLoadBalancer(id);
         if (loadBalancer.isEmpty() && activate) return; // Nothing to activate as this load balancer was never prepared
@@ -185,7 +185,7 @@ public class LoadBalancerProvisioner {
         db.writeLoadBalancers(List.of(newLoadBalancer), transaction.nested());
     }
 
-    private void provision(ApplicationTransaction transaction, ClusterSpec.Id clusterId, List<Node> nodes) {
+    private void provision(ApplicationTransaction transaction, ClusterSpec.Id clusterId, NodeList nodes) {
         provision(transaction, new LoadBalancerId(transaction.application(), clusterId), nodes, true);
     }
 
@@ -204,12 +204,12 @@ public class LoadBalancerProvisioner {
     }
 
     /** Returns the nodes allocated to the given load balanced cluster */
-    private List<Node> nodesOf(ClusterSpec.Id loadBalancedCluster, ApplicationId application) {
-        return loadBalancedClustersOf(application).getOrDefault(loadBalancedCluster, List.of());
+    private NodeList nodesOf(ClusterSpec.Id loadBalancedCluster, ApplicationId application) {
+        return loadBalancedClustersOf(application).getOrDefault(loadBalancedCluster, NodeList.copyOf(List.of()));
     }
 
     /** Returns the load balanced clusters of given application and their nodes */
-    private Map<ClusterSpec.Id, List<Node>> loadBalancedClustersOf(ApplicationId application) {
+    private Map<ClusterSpec.Id, NodeList> loadBalancedClustersOf(ApplicationId application) {
         NodeList nodes = nodeRepository.nodes().list(Node.State.reserved, Node.State.active).owner(application);
         if (nodes.stream().anyMatch(node -> node.type() == NodeType.config)) {
             nodes = nodes.nodeType(NodeType.config).type(ClusterSpec.Type.admin);
@@ -218,11 +218,11 @@ public class LoadBalancerProvisioner {
         } else {
             nodes = nodes.nodeType(NodeType.tenant).container();
         }
-        return nodes.stream().collect(Collectors.groupingBy(node -> effectiveId(node.allocation().get().membership().cluster())));
+        return nodes.groupingBy(node -> effectiveId(node.allocation().get().membership().cluster()));
     }
 
     /** Returns real servers for given nodes */
-    private Set<Real> realsOf(List<Node> nodes) {
+    private Set<Real> realsOf(NodeList nodes) {
         var reals = new LinkedHashSet<Real>();
         for (var node : nodes) {
             for (var ip : reachableIpAddresses(node)) {

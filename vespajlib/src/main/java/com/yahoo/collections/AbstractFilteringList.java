@@ -5,15 +5,18 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Predicate;
+import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 import static java.util.stream.Collectors.toUnmodifiableList;
@@ -84,6 +87,14 @@ public abstract class AbstractFilteringList<Type, ListType extends AbstractFilte
     /** Returns the items sorted by the given comparator. */
     public final ListType sortedBy(Comparator<? super Type> comparator) {
         return constructor.apply(items.stream().sorted(comparator).collect(toUnmodifiableList()), false);
+    }
+
+    /** Returns the items grouped by the given classifier. */
+    public final <OtherType> Map<OtherType, ListType> groupingBy(Function<Type, OtherType> classifier) {
+        return items.stream().collect(Collectors.groupingBy(classifier,
+                                                            HashMap::new,
+                                                            Collectors.collectingAndThen(toUnmodifiableList(),
+                                                                                         (list) -> constructor.apply(list, false))));
     }
 
     public final boolean isEmpty() { return items.isEmpty(); }

@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
@@ -14,17 +13,15 @@ import com.yahoo.vespa.hosted.provision.applications.Applications;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.Autoscaler;
-import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
+import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeTimeseries;
 import com.yahoo.vespa.hosted.provision.node.History;
 
 import java.time.Duration;
 import java.time.Instant;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
  * Maintainer making automatic scaling decisions
@@ -57,12 +54,12 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         boolean success = true;
         if ( ! nodeRepository().zone().environment().isProduction()) return success;
 
-        activeNodesByApplication().forEach((applicationId, nodes) -> autoscale(applicationId, nodes));
+        activeNodesByApplication().forEach(this::autoscale);
         return success;
     }
 
-    private void autoscale(ApplicationId application, List<Node> applicationNodes) {
-        nodesByCluster(applicationNodes).forEach((clusterId, clusterNodes) -> autoscale(application, clusterId, NodeList.copyOf(clusterNodes)));
+    private void autoscale(ApplicationId application, NodeList applicationNodes) {
+        nodesByCluster(applicationNodes).forEach((clusterId, clusterNodes) -> autoscale(application, clusterId, clusterNodes));
     }
 
     private void autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId, NodeList clusterNodes) {
@@ -143,8 +140,8 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         return r + " (total: " + r.totalResources() + ")";
     }
 
-    private Map<ClusterSpec.Id, List<Node>> nodesByCluster(List<Node> applicationNodes) {
-        return applicationNodes.stream().collect(Collectors.groupingBy(n -> n.allocation().get().membership().cluster().id()));
+    private Map<ClusterSpec.Id, NodeList> nodesByCluster(NodeList applicationNodes) {
+        return applicationNodes.groupingBy(n -> n.allocation().get().membership().cluster().id());
     }
 
 }
