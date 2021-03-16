@@ -490,7 +490,7 @@ public class ProvisioningTester {
         return nodeRepository.nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
     }
 
-    private Flavor asFlavor(String flavorString, NodeType type) {
+    public Flavor asFlavor(String flavorString, NodeType type) {
         Optional<Flavor> flavor = nodeFlavors.getFlavor(flavorString);
         if (flavor.isEmpty()) {
             // TODO: Remove the need for this by always adding hosts with a given capacity

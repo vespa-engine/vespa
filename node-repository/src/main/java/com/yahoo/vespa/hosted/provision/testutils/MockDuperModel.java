@@ -26,6 +26,11 @@ public class MockDuperModel implements DuperModelInfraApi {
     public MockDuperModel() {
     }
 
+    public MockDuperModel support(InfraApplicationApi infraApplication) {
+        supportedInfraApps.put(infraApplication.getApplicationId(), infraApplication);
+        return this;
+    }
+
     @Override
     public List<InfraApplicationApi> getSupportedInfraApplications() {
         return new ArrayList<>(supportedInfraApps.values());
@@ -39,6 +44,10 @@ public class MockDuperModel implements DuperModelInfraApi {
     @Override
     public boolean infraApplicationIsActive(ApplicationId applicationId) {
         return activeApps.containsKey(applicationId);
+    }
+
+    public List<HostName> hostnamesOf(ApplicationId applicationId) {
+        return activeApps.getOrDefault(applicationId, List.of());
     }
 
     @Override
