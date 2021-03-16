@@ -4,7 +4,6 @@ package com.yahoo.tensor;
 import com.yahoo.tensor.evaluation.TypeContext;
 import com.yahoo.tensor.functions.Argmax;
 import com.yahoo.tensor.functions.Argmin;
-import com.yahoo.tensor.functions.CellCast;
 import com.yahoo.tensor.functions.Concat;
 import com.yahoo.tensor.functions.ConstantTensor;
 import com.yahoo.tensor.functions.Diag;
@@ -178,10 +177,6 @@ public interface Tensor {
 
     static Tensor generate(TensorType type, Function<List<Long>, Double> valueSupplier) {
         return new Generate<>(type, valueSupplier).evaluate();
-    }
-
-    default Tensor cellCast(TensorType.Value valueType) {
-        return new CellCast<>(new ConstantTensor<>(this), valueType).evaluate();
     }
 
     // ----------------- Composite tensor functions which have a defined primitive mapping

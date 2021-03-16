@@ -394,23 +394,6 @@ public class EvaluationTestCase {
     }
 
     @Test
-    public void testCellTypeCasting() {
-        EvaluationTester tester = new EvaluationTester();
-
-        tester.assertEvaluates("tensor<float>(x[3]):[1.0, 2.0, 3.0]",
-                               "cell_cast(tensor0, float)",
-                               "tensor<double>(x[3]):[1, 2, 3]");
-        tester.assertEvaluates("tensor<float>():{1}",
-                               "cell_cast(tensor0{x:1}, float)",
-                               "tensor<double>(x{}):{1:1, 2:2, 3:3}");
-        tester.assertEvaluates("tensor<float>(x[2]):[3,8]",
-                               "cell_cast(tensor0 * tensor1, float)",
-                               "tensor<float>(x[2]):[1,2]",
-                               "tensor<double>(x[2]):[3,4]");
-    }
-
-
-    @Test
     public void testMixedTensorType() throws ParseException {
         String expected = "tensor(x[1],y{},z[2]):{{x:0,y:a,z:0}:4.0,{x:0,y:a,z:1}:5.0,{x:0,y:b,z:0}:7.0,{x:0,y:b,z:1}:8.0}";
         String a = "tensor(x[1],y{}):{ {x:0,y:a}:1, {x:0,y:b}:2 }";
