@@ -1167,7 +1167,6 @@
       "public com.yahoo.tensor.Tensor concat(com.yahoo.tensor.Tensor, java.lang.String)",
       "public com.yahoo.tensor.Tensor rename(java.util.List, java.util.List)",
       "public static com.yahoo.tensor.Tensor generate(com.yahoo.tensor.TensorType, java.util.function.Function)",
-      "public com.yahoo.tensor.Tensor cellCast(com.yahoo.tensor.TensorType$Value)",
       "public com.yahoo.tensor.Tensor l1Normalize(java.lang.String)",
       "public com.yahoo.tensor.Tensor l2Normalize(java.lang.String)",
       "public com.yahoo.tensor.Tensor matmul(com.yahoo.tensor.Tensor, java.lang.String)",
@@ -1566,23 +1565,6 @@
       "public java.util.List arguments()",
       "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
       "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
-      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)"
-    ],
-    "fields": []
-  },
-  "com.yahoo.tensor.functions.CellCast": {
-    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.tensor.functions.TensorFunction, com.yahoo.tensor.TensorType$Value)",
-      "public java.util.List arguments()",
-      "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
-      "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
-      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
-      "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)",
       "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)"
     ],
     "fields": []
