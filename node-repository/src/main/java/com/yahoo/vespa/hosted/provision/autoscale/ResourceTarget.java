@@ -54,7 +54,6 @@ public class ResourceTarget {
                                            ClusterNodesTimeseries clusterNodesTimeseries,
                                            AllocatableClusterResources current,
                                            Application application) {
-        System.out.println(idealCpuLoad(scalingDuration, clusterTimeseries, application));
         return new ResourceTarget(nodeUsage(Resource.cpu, clusterNodesTimeseries.averageLoad(Resource.cpu), current)
                                   / idealCpuLoad(scalingDuration, clusterTimeseries, application),
                                   nodeUsage(Resource.memory, clusterNodesTimeseries.averageLoad(Resource.memory), current)
