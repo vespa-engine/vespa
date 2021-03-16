@@ -141,6 +141,7 @@ TOKEN :
     <XW_PLUS_B: "xw_plus_b"> |
     <ARGMAX: "argmax"> |
     <ARGMIN: "argmin"> |
+    <CELL_CAST: "cell_cast"> |
 
     <AVG: "avg" > |
     <COUNT: "count"> |
@@ -380,7 +381,8 @@ TensorFunctionNode tensorFunction() :
         tensorExpression = tensorSoftmax() |
         tensorExpression = tensorXwPlusB() |
         tensorExpression = tensorArgmax() |
-        tensorExpression = tensorArgmin()
+        tensorExpression = tensorArgmin() |
+        tensorExpression = tensorCellCast()
     )
     { return tensorExpression; }
 }
@@ -597,6 +599,16 @@ TensorFunctionNode tensorArgmin() :
     { return new TensorFunctionNode(new Argmin(TensorFunctionNode.wrap(tensor), dimensions)); }
 }
 
+TensorFunctionNode tensorCellCast() :
+{
+    ExpressionNode tensor;
+    String valueType;
+}
+{
+    <CELL_CAST> <LBRACE> tensor = expression() <COMMA> valueType = identifier() <RBRACE>
+    { return new TensorFunctionNode(new CellCast(TensorFunctionNode.wrap(tensor), TensorType.Value.fromId(valueType)));}
+}
+
 LambdaFunctionNode lambdaFunction() :
 {
     List<String> variables;
@@ -667,7 +679,7 @@ String tensorFunctionName() :
     ( <MAP>          { return token.image; } ) |
     ( <REDUCE>       { return token.image; } ) |
     ( <JOIN>         { return token.image; } ) |
-    ( <MERGE>         { return token.image; } ) |
+    ( <MERGE>        { return token.image; } ) |
     ( <RENAME>       { return token.image; } ) |
     ( <CONCAT>       { return token.image; } ) |
     ( <TENSOR>       { return token.image; } ) |
@@ -681,6 +693,7 @@ String tensorFunctionName() :
     ( <XW_PLUS_B>    { return token.image; } ) |
     ( <ARGMAX>       { return token.image; } ) |
     ( <ARGMIN>       { return token.image; } ) |
+    ( <CELL_CAST>    { return token.image; } )
     ( aggregator = tensorReduceAggregator() { return aggregator.toString(); } )
 }
 
