@@ -42,7 +42,6 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
@@ -191,25 +190,24 @@ public class RetiredExpirerTest {
 
         // Redeploy to retire all 3 config servers
         infraDeployer.activateAllSupportedInfraApplications(true);
+        List<Node> retiredNodes = tester.nodeRepository()
+                                        .nodes().list(() -> {})
+                                        .stream()
+                                        .filter(node -> node.allocation().map(allocation -> allocation.membership().retired()).orElse(false))
+                                        .collect(Collectors.toList());
+        assertEquals(3, retiredNodes.size());
 
-        // Only 1 config server is allowed to retire at any given point in time
-        List<Node> retiredNodes = tester.nodeRepository().nodes().list(() -> {}).stream()
-                .filter(node -> node.allocation().map(allocation -> allocation.membership().retired()).orElse(false))
-                .collect(Collectors.toList());
-        assertEquals(1, retiredNodes.size());
-        Node retiredNode = retiredNodes.get(0);
-        String retiredNodeHostname = retiredNode.hostname();
-
-        // Allow retiredNodeHostname to be removed
+        // The Orchestrator will allow only 1 to be removed, say cfg1
+        Node retiredNode = tester.nodeRepository().nodes().node(cfg1.s()).orElseThrow();
         doThrow(new OrchestrationException("denied")).when(orchestrator).acquirePermissionToRemove(any());
-        doNothing().when(orchestrator).acquirePermissionToRemove(eq(new HostName(retiredNodeHostname)));
+        doNothing().when(orchestrator).acquirePermissionToRemove(eq(new HostName(retiredNode.hostname())));
 
         // RetiredExpirer should remove cfg1 from application
         RetiredExpirer retiredExpirer = createRetiredExpirer(deployer);
         retiredExpirer.run();
         var activeConfigServerHostnames = new HashSet<>(Set.of("cfg1", "cfg2", "cfg3"));
-        assertTrue(activeConfigServerHostnames.contains(retiredNodeHostname));
-        activeConfigServerHostnames.remove(retiredNodeHostname);
+        assertTrue(activeConfigServerHostnames.contains(retiredNode.hostname()));
+        activeConfigServerHostnames.remove(retiredNode.hostname());
         assertEquals(activeConfigServerHostnames, configServerHostnames(duperModel));
         assertEquals(1, tester.nodeRepository().nodes().list(Node.State.inactive).nodeType(NodeType.config).size());
         assertEquals(2, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.config).size());
@@ -234,8 +232,8 @@ public class RetiredExpirerTest {
         // Provision and ready new config server
         MockNameResolver nameResolver = (MockNameResolver)tester.nodeRepository().nameResolver();
         String ipv4 = "127.0.1.4";
-        nameResolver.addRecord(retiredNodeHostname, ipv4);
-        Node node = Node.create(retiredNodeHostname, new IP.Config(Set.of(ipv4), Set.of()), retiredNodeHostname,
+        nameResolver.addRecord(retiredNode.hostname(), ipv4);
+        Node node = Node.create(retiredNode.hostname(), new IP.Config(Set.of(ipv4), Set.of()), retiredNode.hostname(),
                     tester.asFlavor("default", NodeType.config), NodeType.config).build();
         var nodes = List.of(node);
         nodes = nodeRepository.nodes().addNodes(nodes, Agent.system);
@@ -252,14 +250,16 @@ public class RetiredExpirerTest {
         infraDeployer.activateAllSupportedInfraApplications(true);
         assertEquals(3, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.config).size());
 
-        // Another config server should now have retired
+        // There are now 2 retired config servers left
         retiredExpirer.run();
         assertEquals(3, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.config).size());
-        var retiredNodes2 = tester.nodeRepository().nodes().list(() -> {}).stream()
-                .filter(n -> n.allocation().map(allocation -> allocation.membership().retired()).orElse(false))
-                .collect(Collectors.toList());
-        assertEquals(1, retiredNodes2.size());
-        assertNotEquals(retiredNodeHostname, retiredNodes2.get(0));
+        var retiredHostnames = tester.nodeRepository()
+                                     .nodes().list(() -> {})
+                                     .stream()
+                                     .filter(n -> n.allocation().map(allocation -> allocation.membership().retired()).orElse(false))
+                                     .map(Node::hostname)
+                                     .collect(Collectors.toSet());
+        assertEquals(Set.of("cfg2", "cfg3"), retiredHostnames);
     }
 
     private Set<String> configServerHostnames(MockDuperModel duperModel) {

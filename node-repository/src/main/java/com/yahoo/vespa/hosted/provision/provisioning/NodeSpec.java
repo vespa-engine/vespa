@@ -207,10 +207,8 @@ public interface NodeSpec {
 
         @Override
         public int idealRetiredCount(int acceptedCount, int currentRetiredCount) {
-             // All nodes marked with wantToRetire get marked as retired just before this function is called,
-             // the job of this function is to throttle the retired count. If no nodes are marked as retired
-             // then continue this way, otherwise allow only 1 node to be retired
-            return Math.min(1, currentRetiredCount);
+            // All nodes marked with wantToRetire get marked as retired just before this function is called
+            return currentRetiredCount;
         }
 
         @Override
