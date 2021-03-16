@@ -67,7 +67,7 @@ private:
 
     void
     makePostingChange(const vespalib::datastore::EntryComparator *cmp,
-                      Dictionary &dict,
+                      IEnumStoreDictionary& dictionary,
                       const std::map<DocId, EnumIndex> &currEnumIndices,
                       PostingMap &changePost);
 

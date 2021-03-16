@@ -16,9 +16,9 @@ template <typename DictionaryT>
 class EnumStoreDictionary : public vespalib::datastore::UniqueStoreDictionary<DictionaryT, IEnumStoreDictionary> {
 protected:
     using EntryRef = IEnumStoreDictionary::EntryRef;
+    using Index = IEnumStoreDictionary::Index;
 private:
     using EnumVector = IEnumStoreDictionary::EnumVector;
-    using Index = IEnumStoreDictionary::Index;
     using IndexSet = IEnumStoreDictionary::IndexSet;
     using IndexVector = IEnumStoreDictionary::IndexVector;
     using ParentUniqueStoreDictionary = vespalib::datastore::UniqueStoreDictionary<DictionaryT, IEnumStoreDictionary>;
@@ -49,6 +49,7 @@ public:
     std::vector<attribute::IAttributeVector::EnumHandle>
     find_matching_enums(const vespalib::datastore::EntryComparator& cmp) const override;
 
+    Index remap_index(Index idx) override;
     void clear_all_posting_lists(std::function<void(EntryRef)> clearer) override;
     void update_posting_list(Index idx, const vespalib::datastore::EntryComparator& cmp, std::function<EntryRef(EntryRef)> updater) override;
     EnumPostingTree& get_posting_dictionary() override;
@@ -74,6 +75,7 @@ public:
     ~EnumStoreFoldedDictionary() override;
     vespalib::datastore::UniqueStoreAddResult add(const vespalib::datastore::EntryComparator& comp, std::function<vespalib::datastore::EntryRef(void)> insertEntry) override;
     void remove(const vespalib::datastore::EntryComparator& comp, vespalib::datastore::EntryRef ref) override;
+    Index remap_index(Index idx) override;
 };
 
 }

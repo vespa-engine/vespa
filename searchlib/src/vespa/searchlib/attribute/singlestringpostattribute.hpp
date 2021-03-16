@@ -53,7 +53,7 @@ template <typename B>
 void
 SingleValueStringPostingAttributeT<B>::
 makePostingChange(const vespalib::datastore::EntryComparator *cmpa,
-                  Dictionary &dict,
+                  IEnumStoreDictionary& dictionary,
                   const std::map<DocId, EnumIndex> &currEnumIndices,
                   PostingMap &changePost)
 {
@@ -63,13 +63,13 @@ makePostingChange(const vespalib::datastore::EntryComparator *cmpa,
         EnumIndex newIdx = elem.second;
 
         // add new posting
-        auto addItr = dict.find(newIdx, *cmpa);
-        changePost[EnumPostingPair(addItr.getKey(), cmpa)].add(docId, 1);
+        auto remapped_new_idx = dictionary.remap_index(newIdx);
+        changePost[EnumPostingPair(remapped_new_idx, cmpa)].add(docId, 1);
 
         // remove old posting
         if ( oldIdx.valid()) {
-            auto rmItr = dict.find(oldIdx, *cmpa);
-            changePost[EnumPostingPair(rmItr.getKey(), cmpa)].remove(docId);
+            auto remapped_old_idx = dictionary.remap_index(oldIdx);
+            changePost[EnumPostingPair(remapped_old_idx, cmpa)].remove(docId);
         }
     }
 }
@@ -79,7 +79,7 @@ void
 SingleValueStringPostingAttributeT<B>::applyValueChanges(EnumStoreBatchUpdater& updater)
 {
     EnumStore & enumStore = this->getEnumStore();
-    Dictionary & dict = enumStore.get_posting_dictionary();
+    IEnumStoreDictionary& dictionary = enumStore.get_dictionary();
     auto cmp = enumStore.make_folded_comparator();
     PostingMap changePost;
 
@@ -104,7 +104,7 @@ SingleValueStringPostingAttributeT<B>::applyValueChanges(EnumStoreBatchUpdater& 
         }
     }
 
-    makePostingChange(&cmp, dict, currEnumIndices, changePost);
+    makePostingChange(&cmp, dictionary, currEnumIndices, changePost);
 
     this->updatePostings(changePost);
 

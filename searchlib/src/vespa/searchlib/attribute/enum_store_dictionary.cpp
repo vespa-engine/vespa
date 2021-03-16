@@ -129,6 +129,13 @@ EnumStoreDictionary<DictionaryT>::find_matching_enums(const vespalib::datastore:
     return result;
 }
 
+template <typename DictionaryT>
+IEnumStore::Index
+EnumStoreDictionary<DictionaryT>::remap_index(Index idx)
+{
+    return idx;
+}
+
 template <>
 void
 EnumStoreDictionary<EnumTree>::clear_all_posting_lists(std::function<void(EntryRef)>)
@@ -252,6 +259,14 @@ EnumStoreFoldedDictionary::remove(const EntryComparator& comp, EntryRef ref)
             LOG_ABORT("Posting list not cleared for removed unique value");
         }
     }
+}
+
+IEnumStore::Index
+EnumStoreFoldedDictionary::remap_index(Index idx)
+{
+    auto itr = _dict.find(idx, *_folded_compare);
+    assert(itr.valid());
+    return itr.getKey();
 }
 
 template class EnumStoreDictionary<EnumTree>;
