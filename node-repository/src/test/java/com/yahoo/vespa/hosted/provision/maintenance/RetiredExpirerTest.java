@@ -190,11 +190,7 @@ public class RetiredExpirerTest {
 
         // Redeploy to retire all 3 config servers
         infraDeployer.activateAllSupportedInfraApplications(true);
-        List<Node> retiredNodes = tester.nodeRepository()
-                                        .nodes().list(() -> {})
-                                        .stream()
-                                        .filter(node -> node.allocation().map(allocation -> allocation.membership().retired()).orElse(false))
-                                        .collect(Collectors.toList());
+        List<Node> retiredNodes = tester.nodeRepository().nodes().list().retired().asList();
         assertEquals(3, retiredNodes.size());
 
         // The Orchestrator will allow only 1 to be removed, say cfg1
