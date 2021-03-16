@@ -409,7 +409,6 @@ public class EvaluationTestCase {
                                "tensor<double>(x[2]):[3,4]");
     }
 
-
     @Test
     public void testMixedTensorType() throws ParseException {
         String expected = "tensor(x[1],y{},z[2]):{{x:0,y:a,z:0}:4.0,{x:0,y:a,z:1}:5.0,{x:0,y:b,z:0}:7.0,{x:0,y:b,z:1}:8.0}";

@@ -693,7 +693,7 @@ String tensorFunctionName() :
     ( <XW_PLUS_B>    { return token.image; } ) |
     ( <ARGMAX>       { return token.image; } ) |
     ( <ARGMIN>       { return token.image; } ) |
-    ( <CELL_CAST>    { return token.image; } )
+    ( <CELL_CAST>    { return token.image; } ) |
     ( aggregator = tensorReduceAggregator() { return aggregator.toString(); } )
 }
 
