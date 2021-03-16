@@ -10,8 +10,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.groupingBy;
-
 /**
  * @author jonmv
  */
@@ -26,7 +24,7 @@ public class NodeList extends AbstractFilteringList<NodeWithServices, NodeList> 
 
     public static NodeList of(List<Node> nodes, List<Node> parents, ServiceConvergence services) {
         var servicesByHostName = services.services().stream()
-                                         .collect(groupingBy(service -> service.host()));
+                                         .collect(Collectors.groupingBy(service -> service.host()));
         var parentsByHostName = parents.stream()
                                        .collect(Collectors.toMap(node -> node.hostname(), node -> node));
         return new NodeList(nodes.stream()

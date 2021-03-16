@@ -50,15 +50,10 @@ public class RetiredExpirer extends NodeRepositoryMaintainer {
     @Override
     protected boolean maintain() {
         NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
-
-        Map<ApplicationId, List<Node>> retiredNodesByApplication = activeNodes.stream()
-                .filter(node -> node.allocation().isPresent())
-                .filter(node -> node.allocation().get().membership().retired())
-                .collect(Collectors.groupingBy(node -> node.allocation().get().owner()));
-
-        for (Map.Entry<ApplicationId, List<Node>> entry : retiredNodesByApplication.entrySet()) {
+        Map<ApplicationId, NodeList> retiredNodesByApplication = activeNodes.retired().groupingBy(node -> node.allocation().get().owner());
+        for (Map.Entry<ApplicationId, NodeList> entry : retiredNodesByApplication.entrySet()) {
             ApplicationId application = entry.getKey();
-            List<Node> retiredNodes = entry.getValue();
+            NodeList retiredNodes = entry.getValue();
             List<Node> nodesToRemove = retiredNodes.stream().filter(n -> canRemove(n, activeNodes)).collect(Collectors.toList());
             if (nodesToRemove.isEmpty()) continue;
 

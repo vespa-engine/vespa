@@ -5,7 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Deployer;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.jdisc.Metric;
-import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.provision.node.History;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.LinkedHashSet;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -38,15 +37,14 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
 
     @Override
     protected Set<ApplicationId> applicationsNeedingMaintenance() {
-        Map<ApplicationId, List<Node>> nodesByApplication = nodeRepository().nodes().list()
-                .nodeType(NodeType.tenant, NodeType.proxy).asList().stream()
-                .filter(node -> node.allocation().isPresent())
-                .collect(Collectors.groupingBy(node -> node.allocation().get().owner(), Collectors.toList()));
-
+        Map<ApplicationId, NodeList> nodesByApplication = nodeRepository().nodes().list()
+                                                                          .nodeType(NodeType.tenant, NodeType.proxy)
+                                                                          .matching(node -> node.allocation().isPresent())
+                                                                          .groupingBy(node -> node.allocation().get().owner());
         return nodesByApplication.entrySet().stream()
-                .filter(entry -> hasNodesWithChanges(entry.getKey(), entry.getValue()))
-                .map(Map.Entry::getKey)
-                .collect(Collectors.toCollection(LinkedHashSet::new));
+                                 .filter(entry -> hasNodesWithChanges(entry.getKey(), entry.getValue()))
+                                 .map(Map.Entry::getKey)
+                                 .collect(Collectors.toCollection(LinkedHashSet::new));
     }
 
     /**
@@ -61,15 +59,15 @@ public class OperatorChangeApplicationMaintainer extends ApplicationMaintainer {
                      " as a manual change was made to its nodes");
     }
 
-    private boolean hasNodesWithChanges(ApplicationId applicationId, List<Node> nodes) {
+    private boolean hasNodesWithChanges(ApplicationId applicationId, NodeList nodes) {
         Optional<Instant> lastDeployTime = deployer().lastDeployTime(applicationId);
         if (lastDeployTime.isEmpty()) return false;
 
         return nodes.stream()
-                .flatMap(node -> node.history().events().stream())
-                .filter(event -> event.agent() == Agent.operator)
-                .map(History.Event::at)
-                .anyMatch(e -> lastDeployTime.get().isBefore(e));
+                    .flatMap(node -> node.history().events().stream())
+                    .filter(event -> event.agent() == Agent.operator)
+                    .map(History.Event::at)
+                    .anyMatch(e -> lastDeployTime.get().isBefore(e));
     }
 
 }

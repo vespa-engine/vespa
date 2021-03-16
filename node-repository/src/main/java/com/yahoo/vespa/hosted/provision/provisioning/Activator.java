@@ -21,6 +21,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
@@ -100,13 +101,12 @@ class Activator {
         Optional<Application> application = nodeRepository.applications().get(transaction.application());
         if (application.isEmpty()) return; // infrastructure app, hopefully :-|
 
-        var currentNodesByCluster = newNodes.stream()
-                                            .collect(Collectors.groupingBy(node -> node.allocation().get().membership().cluster().id()));
+        Map<ClusterSpec.Id, NodeList> currentNodesByCluster = newNodes.groupingBy(node -> node.allocation().get().membership().cluster().id());
         Application modified = application.get();
         for (var clusterEntry : currentNodesByCluster.entrySet()) {
             var cluster = modified.cluster(clusterEntry.getKey()).get();
             var previousResources = oldNodes.cluster(clusterEntry.getKey()).toResources();
-            var currentResources = NodeList.copyOf(clusterEntry.getValue()).toResources();
+            var currentResources = clusterEntry.getValue().toResources();
             if ( ! previousResources.justNumbers().equals(currentResources.justNumbers())) {
                 cluster = cluster.with(ScalingEvent.create(previousResources, currentResources, generation, at));
             }
