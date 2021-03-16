@@ -1669,25 +1669,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.tensor.functions.Expand": {
-    "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
-    "interfaces": [],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.lang.String)",
-      "public void <init>(com.yahoo.tensor.functions.TensorFunction, java.util.List)",
-      "public java.util.List dimensions()",
-      "public java.util.List arguments()",
-      "public com.yahoo.tensor.functions.TensorFunction withArguments(java.util.List)",
-      "public com.yahoo.tensor.functions.PrimitiveTensorFunction toPrimitive()",
-      "public com.yahoo.tensor.TensorType type(com.yahoo.tensor.evaluation.TypeContext)",
-      "public com.yahoo.tensor.Tensor evaluate(com.yahoo.tensor.evaluation.EvaluationContext)",
-      "public java.lang.String toString(com.yahoo.tensor.functions.ToStringContext)"
-    ],
-    "fields": []
-  },
   "com.yahoo.tensor.functions.Generate": {
     "superClass": "com.yahoo.tensor.functions.PrimitiveTensorFunction",
     "interfaces": [],
