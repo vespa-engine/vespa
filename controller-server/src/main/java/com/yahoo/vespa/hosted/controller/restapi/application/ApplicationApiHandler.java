@@ -36,6 +36,7 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.JsonParseException;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
@@ -51,7 +52,6 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
@@ -140,6 +140,7 @@ import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
 import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static java.util.Map.Entry.comparingByKey;
 import static java.util.stream.Collectors.joining;
+import static java.util.stream.Collectors.toList;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
@@ -482,7 +483,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Slime slime = new Slime();
         Cursor applicationArray = slime.setArray();
-        for (com.yahoo.vespa.hosted.controller.Application application : controller.applications().asList(tenant)) {
+        for (Application application : controller.applications().asList(tenant)) {
             if (applicationName.map(application.id().application().value()::equals).orElse(true)) {
                 Cursor applicationObject = applicationArray.addObject();
                 applicationObject.setString("tenant", application.id().tenant().value());
@@ -753,7 +754,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new MessageResponse(messageBuilder.toString());
     }
 
-    private com.yahoo.vespa.hosted.controller.Application getApplication(String tenantName, String applicationName) {
+    private Application getApplication(String tenantName, String applicationName) {
         TenantAndApplicationId applicationId = TenantAndApplicationId.from(tenantName, applicationName);
         return controller.applications().getApplication(applicationId)
                          .orElseThrow(() -> new NotExistsException(applicationId + " not found"));
@@ -791,7 +792,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private HttpResponse clusters(String tenantName, String applicationName, String instanceName, String environment, String region) {
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         ZoneId zone = requireZone(environment, region);
-        Application application = controller.serviceRegistry().configServer().nodeRepository().getApplication(zone, id);
+        com.yahoo.vespa.hosted.controller.api.integration.configserver.Application application = controller.serviceRegistry().configServer().nodeRepository().getApplication(zone, id);
 
         Slime slime = new Slime();
         Cursor clustersObject = slime.setObject().setObject("clusters");
@@ -932,7 +933,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         return new MessageResponse(type.jobName() + " for " + id + " resumed");
     }
 
-    private void toSlime(Cursor object, com.yahoo.vespa.hosted.controller.Application application, HttpRequest request) {
+    private void toSlime(Cursor object, Application application, HttpRequest request) {
         object.setString("tenant", application.id().tenant().value());
         object.setString("application", application.id().application().value());
         object.setString("deployments", withPath("/application/v4" +
@@ -1070,7 +1071,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private void toSlime(Cursor object, Instance instance, DeploymentStatus status, HttpRequest request) {
-        com.yahoo.vespa.hosted.controller.Application application = status.application();
+        Application application = status.application();
         object.setString("tenant", instance.id().tenant().value());
         object.setString("application", instance.id().application().value());
         object.setString("instance", instance.id().instance().value());
@@ -1572,7 +1573,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Inspector requestObject = toSlime(request.getData()).get();
         TenantAndApplicationId id = TenantAndApplicationId.from(tenantName, applicationName);
         Credentials credentials = accessControlRequests.credentials(id.tenant(), requestObject, request.getJDiscRequest());
-        com.yahoo.vespa.hosted.controller.Application application = controller.applications().createApplication(id, credentials);
+        Application application = controller.applications().createApplication(id, credentials);
         Slime slime = new Slime();
         toSlime(id, slime.setObject(), request);
         return new SlimeJsonResponse(slime);
@@ -1837,7 +1838,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Optional<ApplicationPackage> applicationPackage = Optional.ofNullable(dataParts.get("applicationZip"))
                                                                   .map(ApplicationPackage::new);
-        Optional<com.yahoo.vespa.hosted.controller.Application> application = controller.applications().getApplication(TenantAndApplicationId.from(applicationId));
+        Optional<Application> application = controller.applications().getApplication(TenantAndApplicationId.from(applicationId));
 
         Inspector sourceRevision = deployOptions.field("sourceRevision");
         Inspector buildNumber = deployOptions.field("buildNumber");
@@ -2013,7 +2014,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
                 var tenantQuota = controller.serviceRegistry().billingController().getQuota(tenant.name());
                 var usedQuota = applications.stream()
-                        .map(com.yahoo.vespa.hosted.controller.Application::quotaUsage)
+                        .map(Application::quotaUsage)
                         .reduce(QuotaUsage.none, QuotaUsage::add);
 
                 toSlime(tenantQuota, usedQuota, object.setObject("quota"));
@@ -2101,8 +2102,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         object.setString("url", withPath("/application/v4/tenant/" + tenant.name().value(), requestURI).toString());
     }
 
-    private void tenantMetaDataToSlime(Tenant tenant, Cursor object) {
-        List<com.yahoo.vespa.hosted.controller.Application> applications = controller.applications().asList(tenant.name());
+    private void tenantMetaDataToSlime(Tenant tenant, List<Application> applications, Cursor object) {
         Optional<Instant> lastDev = applications.stream()
                 .flatMap(application -> application.instances().values().stream())
                 .flatMap(instance -> controller.jobController().jobs(instance.id()).stream()
