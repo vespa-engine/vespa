@@ -11,6 +11,7 @@ import javax.net.ssl.SSLParameters;
 
 import java.util.List;
 
+import static com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder.CLIENT_CONNECTION_SOCKET;
 import static com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder.CLIENT_SECURE_PROPERTY;
 import static com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder.SSL_CLIENTAUTH_PROPERTY;
 import static com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder.SSL_CONTEXT_SUPPLIER_CLASS_PROPERTY;
@@ -29,6 +30,7 @@ public class ZkClientConfigBuilderTest {
         ZkClientConfigBuilder builder = new ZkClientConfigBuilder(null);
         ZKClientConfig config = builder.toConfig();
         assertEquals("false", config.getProperty(CLIENT_SECURE_PROPERTY));
+        assertEquals("org.apache.zookeeper.ClientCnxnSocketNetty", config.getProperty(CLIENT_CONNECTION_SOCKET));
         assertNull(config.getProperty(SSL_CONTEXT_SUPPLIER_CLASS_PROPERTY));
         assertNull(config.getProperty(SSL_CLIENTAUTH_PROPERTY));
     }
@@ -38,6 +40,7 @@ public class ZkClientConfigBuilderTest {
         ZkClientConfigBuilder builder = new ZkClientConfigBuilder(new MockTlsContext());
         ZKClientConfig config = builder.toConfig();
         assertEquals("true", config.getProperty(CLIENT_SECURE_PROPERTY));
+        assertEquals("org.apache.zookeeper.ClientCnxnSocketNetty", config.getProperty(CLIENT_CONNECTION_SOCKET));
         assertEquals(com.yahoo.vespa.zookeeper.client.VespaSslContextProvider.class.getName(), config.getProperty(SSL_CONTEXT_SUPPLIER_CLASS_PROPERTY));
         assertEquals("TLSv1.3", config.getProperty(SSL_ENABLED_PROTOCOLS_PROPERTY));
         assertEquals("TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384", config.getProperty(SSL_ENABLED_CIPHERSUITES_PROPERTY));

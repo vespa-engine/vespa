@@ -29,6 +29,7 @@ public class ZkClientConfigBuilder {
     public static final String SSL_ENABLED_PROTOCOLS_PROPERTY = "zookeeper.ssl.enabledProtocols";
     public static final String SSL_ENABLED_CIPHERSUITES_PROPERTY = "zookeeper.ssl.ciphersuites";
     public static final String SSL_CLIENTAUTH_PROPERTY = "zookeeper.ssl.clientAuth";
+    public static final String CLIENT_CONNECTION_SOCKET = "zookeeper.clientCnxnSocket";
 
     private static final TlsContext defaultTlsContext = getTlsContext().orElse(null);
 
@@ -68,6 +69,7 @@ public class ZkClientConfigBuilder {
     public Map<String, String> toConfigProperties() {
         Map<String, String> builder = new HashMap<>();
         builder.put(CLIENT_SECURE_PROPERTY, Boolean.toString(tlsContext != null));
+        builder.put(CLIENT_CONNECTION_SOCKET, "org.apache.zookeeper.ClientCnxnSocketNetty");
         if (tlsContext != null) {
             builder.put(SSL_CONTEXT_SUPPLIER_CLASS_PROPERTY, VespaSslContextProvider.class.getName());
             String protocolsConfigValue = Arrays.stream(tlsContext.parameters().getProtocols()).sorted().collect(Collectors.joining(","));
