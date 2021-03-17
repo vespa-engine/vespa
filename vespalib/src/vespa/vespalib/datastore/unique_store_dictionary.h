@@ -9,11 +9,36 @@ namespace vespalib::datastore {
 
 class EntryComparatorWrapper;
 
+class NoUnorderedDictionary;
+
+template <typename UnorderedDictionaryT>
+class UniqueStoreUnorderedDictionaryBase
+{
+protected:
+    UnorderedDictionaryT _unordered_dict;
+public:
+    static constexpr bool has_unordered_dictionary = true;
+    UniqueStoreUnorderedDictionaryBase(std::unique_ptr<EntryComparator> compare)
+        : _unordered_dict(std::move(compare))
+    {
+    }
+};
+
+template <>
+class UniqueStoreUnorderedDictionaryBase<NoUnorderedDictionary>
+{
+public:
+    static constexpr bool has_unordered_dictionary = false;
+    UniqueStoreUnorderedDictionaryBase(std::unique_ptr<EntryComparator>)
+    {
+    }
+};
+
 /**
  * A dictionary for unique store. Mostly accessed via base class.
  */
-template <typename DictionaryT, typename ParentT = IUniqueStoreDictionary>
-class UniqueStoreDictionary : public ParentT {
+template <typename DictionaryT, typename ParentT = IUniqueStoreDictionary, typename UnorderedDictionaryT = NoUnorderedDictionary>
+class UniqueStoreDictionary : public ParentT, public UniqueStoreUnorderedDictionaryBase<UnorderedDictionaryT> {
 protected:
     using DictionaryType = DictionaryT;
     using DataType = typename DictionaryType::DataType;
@@ -35,7 +60,9 @@ protected:
     DictionaryType _dict;
 
 public:
-    UniqueStoreDictionary();
+    using UniqueStoreUnorderedDictionaryBase<UnorderedDictionaryT>::has_unordered_dictionary;
+    static constexpr bool has_ordered_dictionary = true;
+    UniqueStoreDictionary(std::unique_ptr<EntryComparator> compare);
     ~UniqueStoreDictionary() override;
     void freeze() override;
     void transfer_hold_lists(generation_t generation) override;

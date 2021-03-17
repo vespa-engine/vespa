@@ -41,7 +41,7 @@ struct DictionaryReadTest : public ::testing::Test {
     IUniqueStoreDictionary::ReadSnapshot::UP snapshot;
 
     DictionaryReadTest()
-        : dict(),
+        : dict(std::unique_ptr<EntryComparator>()),
           snapshot()
     {
     }

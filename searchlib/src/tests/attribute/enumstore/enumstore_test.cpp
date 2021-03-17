@@ -61,7 +61,7 @@ class FloatEnumStoreTest : public ::testing::Test {
 public:
     EnumStoreT es;
     FloatEnumStoreTest()
-        : es(false)
+        : es(false, DictionaryConfig::Ordering::ORDERED)
     {}
 };
 
@@ -105,7 +105,7 @@ TYPED_TEST(FloatEnumStoreTest, numbers_can_be_inserted_and_retrieved)
 
 TEST(EnumStoreTest, test_find_folded_on_string_enum_store)
 {
-    StringEnumStore ses(false);
+    StringEnumStore ses(false, DictionaryConfig::Ordering::ORDERED);
     std::vector<EnumIndex> indices;
     std::vector<std::string> unique({"", "one", "two", "TWO", "Two", "three"});
     for (std::string &str : unique) {
@@ -156,7 +156,7 @@ public:
 void
 StringEnumStoreTest::testInsert(bool hasPostings)
 {
-    StringEnumStore ses(hasPostings);
+    StringEnumStore ses(hasPostings, DictionaryConfig::Ordering::ORDERED);
 
     std::vector<EnumIndex> indices;
     std::vector<std::string> unique;
@@ -206,7 +206,7 @@ TEST_F(StringEnumStoreTest, test_insert_on_store_with_posting_lists)
 
 TEST(EnumStoreTest, test_hold_lists_and_generation)
 {
-    StringEnumStore ses(false);
+    StringEnumStore ses(false, DictionaryConfig::Ordering::ORDERED);
     StringVector uniques;
     generation_t sesGen = 0u;
     uniques.reserve(100);
@@ -283,7 +283,7 @@ dec_ref_count(NumericEnumStore& store, NumericEnumStore::Index idx)
 TEST(EnumStoreTest, address_space_usage_is_reported)
 {
     const size_t ADDRESS_LIMIT = 4290772994; // Max allocated elements in un-allocated buffers + allocated elements in allocated buffers.
-    NumericEnumStore store(false);
+    NumericEnumStore store(false, DictionaryConfig::Ordering::ORDERED);
 
     using vespalib::AddressSpace;
     EXPECT_EQ(AddressSpace(1, 1, ADDRESS_LIMIT), store.get_address_space_usage());
@@ -305,7 +305,7 @@ public:
     EnumIndex i5;
 
     BatchUpdaterTest()
-        : store(false),
+        : store(false, DictionaryConfig::Ordering::ORDERED),
           i3(),
           i5()
     {
@@ -383,7 +383,7 @@ public:
     static std::vector<EntryType> values;
 
     LoaderTest()
-        : store(true)
+        : store(true, DictionaryConfig::Ordering::ORDERED)
     {}
 
     void load_values(enumstore::EnumeratedLoaderBase& loader) const {
