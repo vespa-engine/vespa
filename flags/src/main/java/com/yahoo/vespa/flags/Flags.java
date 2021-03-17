@@ -274,12 +274,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag DYNAMIC_CONFIG_SERVER_PROVISIONING = defineFeatureFlag(
-            "dynamic-config-server-provisioning", false,
-            List.of("mpolden", "hakon"), "2021-03-03", "2021-05-01",
-            "Enable dynamic provisioning of config servers",
-            "Takes effect immediately, for subsequent provisioning");
-
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

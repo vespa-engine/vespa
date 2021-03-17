@@ -16,7 +16,6 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.net.HostName;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.custom.ClusterCapacity;
@@ -431,7 +430,7 @@ public class DynamicProvisioningMaintainerTest {
         replace_config_server_like(NodeType.controllerhost);
     }
 
-    public void replace_config_server_like(NodeType hostType) {
+    private void replace_config_server_like(NodeType hostType) {
         final ApplicationId hostApp;
         final ApplicationId configSrvApp;
         switch (hostType) {
@@ -451,7 +450,6 @@ public class DynamicProvisioningMaintainerTest {
         DynamicProvisioningTester dynamicProvisioningTester = new DynamicProvisioningTester(cloud, new MockNameResolver().mockAnyLookup());
         ProvisioningTester tester = dynamicProvisioningTester.provisioningTester;
         dynamicProvisioningTester.hostProvisioner.overrideHostFlavor("default");
-        dynamicProvisioningTester.flagSource.withBooleanFlag(Flags.DYNAMIC_CONFIG_SERVER_PROVISIONING.id(), true);
 
         // Initial config server hosts are provisioned manually
         List<Node> provisionedHosts = tester.makeReadyNodes(3, "default", hostType).stream()
