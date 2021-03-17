@@ -58,7 +58,6 @@ public class ClusterTimeseries {
 
     private double computeMaxQueryGrowthRate(Duration window, Clock clock) {
         if (snapshots.isEmpty()) return 0.1;
-
         // Find the period having the highest growth rate, where total growth exceeds 30% increase
         double maxGrowthRate = 0; // In query rate per minute
         for (int start = 0; start < snapshots.size(); start++) {

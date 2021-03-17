@@ -518,7 +518,7 @@ public class AutoscalingTest {
         ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
 
         tester.deploy(application1, cluster1, 5, 1, midResources);
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0);
+        tester.addQueryRateMeasurements(application1, cluster1.id(), 100, t -> t == 0 ? 20.0 : 10.0);
         tester.addCpuMeasurements(0.25f, 1f, 120, application1);
 
         // (no query rate data)
@@ -530,6 +530,7 @@ public class AutoscalingTest {
         tester.addQueryRateMeasurements(application1, cluster1.id(),
                                         100,
                                         t -> 10.0 + (t < 50 ? t : 100 - t));
+        tester.addCpuMeasurements(0.25f, 1f, 120, application1);
         tester.assertResources("Scale down since observed growth is slower than scaling time",
                                5, 1, 3.4,  100, 100,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
@@ -540,8 +541,9 @@ public class AutoscalingTest {
         tester.addQueryRateMeasurements(application1, cluster1.id(),
                                         100,
                                         t -> 10.0 + (t < 50 ? t * t * t : 125000 - (t - 49) * (t - 49) * (t - 49)));
+        tester.addCpuMeasurements(0.25f, 1f, 120, application1);
         tester.assertResources("Scale up since observed growth is faster than scaling time",
-                               5, 1, 6.7,  100, 100,
+                               5, 1, 6.6,  100, 100,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
     }
 
@@ -599,9 +601,9 @@ public class AutoscalingTest {
         ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
         tester.deploy(application1, cluster1, 2, 1, resources);
 
-        tester.addCpuMeasurements(0.5f, 1f, 10, application1);
         tester.addQueryRateMeasurements(application1, cluster1.id(),
                                         500, t -> 0.0);
+        tester.addCpuMeasurements(0.5f, 1f, 10, application1);
 
         tester.assertResources("Advice to scale up since observed growth is much faster than scaling time",
                                3, 1, 1,  4, 50,
