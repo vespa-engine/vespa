@@ -2143,15 +2143,21 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private void tenantMetaDataToSlime(Tenant tenant, List<Application> applications, Cursor object) {
         Optional<Instant> lastDev = applications.stream()
-                .flatMap(application -> application.instances().values().stream())
-                .flatMap(instance -> JobType.allIn(controller.system()).stream()
-                        .filter(job -> job.environment() == Environment.dev)
-                        .flatMap(jobType -> controller.jobController().last(instance.id(), jobType).stream()))
-                .map(Run::start)
-                .max(Comparator.naturalOrder());
+                                                .flatMap(application -> application.instances().values().stream())
+                                                .flatMap(instance -> instance.deployments().values().stream())
+                                                .filter(deployment -> deployment.zone().environment() == Environment.dev)
+                                                .map(Deployment::at)
+                                                .max(Comparator.naturalOrder())
+                                                .or(() -> applications.stream()
+                                                                      .flatMap(application -> application.instances().values().stream())
+                                                                      .flatMap(instance -> JobType.allIn(controller.system()).stream()
+                                                                                                  .filter(job -> job.environment() == Environment.dev)
+                                                                                                  .flatMap(jobType -> controller.jobController().last(instance.id(), jobType).stream()))
+                                                                      .map(Run::start)
+                                                                      .max(Comparator.naturalOrder()));
         Optional<Instant> lastSubmission = applications.stream()
-                .flatMap(app -> app.latestVersion().flatMap(ApplicationVersion::buildTime).stream())
-                .max(Comparator.naturalOrder());
+                                                       .flatMap(app -> app.latestVersion().flatMap(ApplicationVersion::buildTime).stream())
+                                                       .max(Comparator.naturalOrder());
         object.setLong("createdAtMillis", tenant.createdAt().toEpochMilli());
         lastDev.ifPresent(instant -> object.setLong("lastDeploymentToDevMillis", instant.toEpochMilli()));
         lastSubmission.ifPresent(instant -> object.setLong("lastSubmissionToProdMillis", instant.toEpochMilli()));
