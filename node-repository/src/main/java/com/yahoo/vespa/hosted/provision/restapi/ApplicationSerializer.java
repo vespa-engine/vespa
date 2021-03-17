@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.provision.autoscale.Resource;
 import com.yahoo.vespa.hosted.provision.autoscale.ResourceTarget;
 
 import java.net.URI;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
@@ -71,12 +72,12 @@ public class ApplicationSerializer {
         if (cluster.shouldSuggestResources(currentResources))
             cluster.suggestedResources().ifPresent(suggested -> toSlime(suggested.resources(), clusterObject.setObject("suggested")));
         cluster.targetResources().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
-        clusterUtilizationToSlime(application, scalingDuration, clusterTimeseries, clusterNodesTimeseries, clusterObject.setObject("utilization"));
+        clusterUtilizationToSlime(application, scalingDuration, clusterTimeseries, clusterNodesTimeseries, metricsDb.clock(), clusterObject.setObject("utilization"));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
         clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());
         clusterObject.setLong("scalingDuration", scalingDuration.toMillis());
-        clusterObject.setDouble("maxQueryGrowthRate", clusterTimeseries.maxQueryGrowthRate());
-        clusterObject.setDouble("currentQueryFractionOfMax", clusterTimeseries.currentQueryFractionOfMax());
+        clusterObject.setDouble("maxQueryGrowthRate", clusterTimeseries.maxQueryGrowthRate(scalingDuration, metricsDb.clock()));
+        clusterObject.setDouble("currentQueryFractionOfMax", clusterTimeseries.queryFractionOfMax(scalingDuration, metricsDb.clock()));
     }
 
     private static void toSlime(ClusterResources resources, Cursor clusterResourcesObject) {
@@ -89,9 +90,10 @@ public class ApplicationSerializer {
                                                   Duration scalingDuration,
                                                   ClusterTimeseries clusterTimeseries,
                                                   ClusterNodesTimeseries clusterNodesTimeseries,
+                                                  Clock clock,
                                                   Cursor utilizationObject) {
         utilizationObject.setDouble("cpu", clusterNodesTimeseries.averageLoad(Resource.cpu));
-        utilizationObject.setDouble("idealCpu", ResourceTarget.idealCpuLoad(scalingDuration, clusterTimeseries, application));
+        utilizationObject.setDouble("idealCpu", ResourceTarget.idealCpuLoad(scalingDuration, clusterTimeseries, application, clock));
         utilizationObject.setDouble("memory", clusterNodesTimeseries.averageLoad(Resource.memory));
         utilizationObject.setDouble("idealMemory", ResourceTarget.idealMemoryLoad());
         utilizationObject.setDouble("disk", clusterNodesTimeseries.averageLoad(Resource.disk));

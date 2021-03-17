@@ -86,7 +86,8 @@ public class Autoscaler {
                                               clusterTimeseries,
                                               clusterNodesTimeseries,
                                               currentAllocation,
-                                              application);
+                                              application,
+                                              nodeRepository.clock());
 
         Optional<AllocatableClusterResources> bestAllocation =
                 allocationOptimizer.findBestAllocation(target, currentAllocation, limits);

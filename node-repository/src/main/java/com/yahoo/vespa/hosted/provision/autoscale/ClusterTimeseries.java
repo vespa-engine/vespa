@@ -3,10 +3,14 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterSpec;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
+import java.util.OptionalDouble;
 
 /**
  * A list of metric snapshots from a cluster, sorted by increasing time (newest last).
@@ -43,16 +47,17 @@ public class ClusterTimeseries {
         return new ClusterTimeseries(cluster, list);
     }
 
-    /** The max query growth rate we can predict from this time-series as a fraction of the current traffic per minute */
-    public double maxQueryGrowthRate() {
+    /**
+     * The max query growth rate we can predict from this time-series as a fraction of the average traffic in the window
+     */
+    public double maxQueryGrowthRate(Duration window, Clock clock) {
         if (cachedMaxQueryGrowthRate != null)
             return cachedMaxQueryGrowthRate;
-        return cachedMaxQueryGrowthRate = computeMaxQueryGrowthRate();
+        return cachedMaxQueryGrowthRate = computeMaxQueryGrowthRate(window, clock);
     }
 
-    private double computeMaxQueryGrowthRate() {
+    private double computeMaxQueryGrowthRate(Duration window, Clock clock) {
         if (snapshots.isEmpty()) return 0.1;
-
         // Find the period having the highest growth rate, where total growth exceeds 30% increase
         double maxGrowthRate = 0; // In query rate per minute
         for (int start = 0; start < snapshots.size(); start++) {
@@ -80,24 +85,40 @@ public class ClusterTimeseries {
             else
                 return 0.0; //       ... because load is stable
         }
-        if (currentQueryRate() == 0) return 0.1; // Growth not expressible as a fraction of the current rate
-        return maxGrowthRate / currentQueryRate();
+        OptionalDouble queryRate = queryRate(window, clock);
+        if (queryRate.orElse(0) == 0) return 0.1; // Growth not expressible as a fraction of the current rate
+        return maxGrowthRate / queryRate.getAsDouble();
     }
 
-    /** The current query rate as a fraction of the peak rate in this timeseries */
-    public double currentQueryFractionOfMax() {
+    /**
+     * The current query rate, averaged over the same window we average utilization over,
+     * as a fraction of the peak rate in this timeseries
+     */
+    public double queryFractionOfMax(Duration window, Clock clock) {
         if (snapshots.isEmpty()) return 0.5;
         var max = snapshots.stream().mapToDouble(ClusterMetricSnapshot::queryRate).max().getAsDouble();
         if (max == 0) return 1.0;
-        return snapshots.get(snapshots.size() - 1).queryRate() / max;
+        var average = queryRate(window, clock);
+        if (average.isEmpty()) return 0.5; // No measurements in the relevant time period
+        return average.getAsDouble() / max;
     }
 
-    public double currentQueryRate() {
-        return queryRateAt(snapshots.size() - 1);
+    /** Returns the average query rate in the given window, or empty if there are no measurements in it */
+    public OptionalDouble queryRate(Duration window, Clock clock) {
+        Instant oldest = clock.instant().minus(window);
+        return snapshots.stream()
+                        .filter(snapshot -> ! snapshot.at().isBefore(oldest))
+                        .mapToDouble(snapshot -> snapshot.queryRate())
+                        .average();
     }
 
-    public double currentWriteRate() {
-        return writeRateAt(snapshots.size() - 1);
+    /** Returns the average query rate in the given window, or empty if there are no measurements in it */
+    public OptionalDouble writeRate(Duration window, Clock clock) {
+        Instant oldest = clock.instant().minus(window);
+        return snapshots.stream()
+                        .filter(snapshot -> ! snapshot.at().isBefore(oldest))
+                        .mapToDouble(snapshot -> snapshot.writeRate())
+                        .average();
     }
 
     private double queryRateAt(int index) {
