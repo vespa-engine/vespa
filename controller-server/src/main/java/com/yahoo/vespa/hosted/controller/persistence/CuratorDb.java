@@ -107,6 +107,7 @@ public class CuratorDb {
     private final Duration tryLockTimeout;
 
     // For each application id (path), store the ZK node version and its deserialised data - update when version changes.
+    // This will grow to keep all applications in memory, but this should be OK
     private final Map<Path, Pair<Integer, Application>> cachedApplications = new ConcurrentHashMap<>();
 
     // For each job id (path), store the ZK node version and its deserialised data - update when version changes.
