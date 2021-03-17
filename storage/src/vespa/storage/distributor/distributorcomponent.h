@@ -204,6 +204,9 @@ public:
     const lib::ClusterStateBundle& cluster_state_bundle() const override {
         return getClusterStateBundle();
     }
+    bool storage_node_is_up(document::BucketSpace bucket_space, uint32_t node_index) const override {
+        return storageNodeIsUp(bucket_space, node_index);
+    }
     const char* storage_node_up_states() const override {
         return getDistributor().getStorageNodeUpStates();
     }

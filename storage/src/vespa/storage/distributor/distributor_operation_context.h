@@ -50,6 +50,7 @@ public:
                                      uint32_t message_type) const = 0;
     virtual const lib::ClusterState* pending_cluster_state_or_null(const document::BucketSpace& bucket_space) const = 0;
     virtual const lib::ClusterStateBundle& cluster_state_bundle() const = 0;
+    virtual bool storage_node_is_up(document::BucketSpace bucket_space, uint32_t node_index) const = 0;
 
     // TODO: Move to being a free function instead.
     virtual const char* storage_node_up_states() const = 0;
