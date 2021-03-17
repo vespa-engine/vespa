@@ -1,6 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/test_kit.h>
 #include "eval_fixture.h"
 #include "reference_evaluation.h"
 #include <vespa/eval/eval/make_tensor_function.h>
@@ -138,6 +137,28 @@ EvalFixture::ParamRepo::add_variants(const vespalib::string &name_base,
     add_mutable(name_m, dbl_gs);
     add_mutable(name_m_f, flt_gs);
     return *this;
+}
+
+EvalFixture::ParamRepo &
+EvalFixture::ParamRepo::add(const vespalib::string &name, const vespalib::string &desc,
+                            CellType cell_type, GenSpec::seq_t seq)
+{
+    bool is_mutable = ((!desc.empty()) && (desc[0] == '@'));
+    if (is_mutable) {
+        return add_mutable(name, GenSpec::from_desc(desc.substr(1)).cells(cell_type).seq(seq));
+    } else {
+        return add(name, GenSpec::from_desc(desc).cells(cell_type).seq(seq));
+    }
+}
+
+EvalFixture::ParamRepo &
+EvalFixture::ParamRepo::add(const vespalib::string &name_desc, CellType cell_type, GenSpec::seq_t seq)
+{
+    auto pos = name_desc.find('$');
+    vespalib::string desc = (pos < name_desc.size())
+                            ? name_desc.substr(0, pos)
+                            : name_desc;
+    return add(name_desc, desc, cell_type, seq);
 }
 
 void

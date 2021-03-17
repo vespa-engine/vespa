@@ -263,6 +263,13 @@ TEST(GenSpecFromDescTest, capital_letter_allowed) {
     EXPECT_EQ(gen_desc, expect);
 }
 
+TEST(GenSpecFromDescTest, scalar_can_be_created) {
+    // ''
+    auto expect = GenSpec().gen();
+    auto gen_desc = GenSpec::from_desc("").gen();
+    EXPECT_EQ(gen_desc, expect);
+}
+
 //-----------------------------------------------------------------------------
 
 GTEST_MAIN_RUN_ALL_TESTS()

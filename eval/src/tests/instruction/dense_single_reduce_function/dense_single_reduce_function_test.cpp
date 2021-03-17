@@ -16,58 +16,37 @@ using namespace vespalib::eval::test;
 using namespace vespalib::eval::tensor_function;
 using vespalib::make_string_short::fmt;
 
-const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
-
 struct ReduceSpec {
+    using LookFor = DenseSingleReduceFunction;
     size_t outer_size;
     size_t reduce_size;
     size_t inner_size;
     Aggr aggr;
-};
-
-void verify_impl(const vespalib::string &expr,
-                 const std::vector<ReduceSpec> &spec_list,
-                 const std::vector<CellType> &with_cell_types)
-{
-    auto fun = Function::parse(expr);
-    ASSERT_EQUAL(fun->num_params(), 1u);
-    vespalib::string param_name = fun->param_name(0);
-    const auto param_spec = GenSpec::from_desc(param_name);
-    for (CellType ct: with_cell_types) {
-        EvalFixture::ParamRepo param_repo;
-        param_repo.add(param_name, param_spec.cpy().cells(ct));
-        EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
-        EvalFixture fixture(prod_factory, expr, param_repo, true);
-        EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
-        EXPECT_EQUAL(fixture.result(), slow_fixture.result());
-        auto info = fixture.find_all<DenseSingleReduceFunction>();
-        ASSERT_EQUAL(info.size(), spec_list.size());
-        for (size_t i = 0; i < spec_list.size(); ++i) {
-            EXPECT_TRUE(info[i]->result_is_mutable());
-            EXPECT_EQUAL(info[i]->outer_size(), spec_list[i].outer_size);
-            EXPECT_EQUAL(info[i]->reduce_size(), spec_list[i].reduce_size);
-            EXPECT_EQUAL(info[i]->inner_size(), spec_list[i].inner_size);
-            EXPECT_EQUAL(int(info[i]->aggr()), int(spec_list[i].aggr));
-        }
+    void verify(const LookFor &fun) const {
+        EXPECT_TRUE(fun.result_is_mutable());
+        EXPECT_EQUAL(fun.outer_size(), outer_size);
+        EXPECT_EQUAL(fun.reduce_size(), reduce_size);
+        EXPECT_EQUAL(fun.inner_size(), inner_size);
+        EXPECT_EQUAL(int(fun.aggr()), int(aggr));
     }
-}
+};
 
 void verify_not_optimized(const vespalib::string &expr,
                           std::vector<CellType> with_cell_types = {CellType::DOUBLE})
 {
-    verify_impl(expr, {}, with_cell_types);
+    EvalFixture::verify<ReduceSpec>(expr, {}, CellTypeSpace(with_cell_types, 1));
 }
 
 void verify_optimized(const vespalib::string &expr, const ReduceSpec &spec,
                       std::vector<CellType> with_cell_types = CellTypeUtils::list_types())
 {
-    verify_impl(expr, {spec}, with_cell_types);
+    EvalFixture::verify<ReduceSpec>(expr, {spec}, CellTypeSpace(with_cell_types, 1));
 }
 
 void verify_optimized(const vespalib::string &expr, const ReduceSpec &spec1, const ReduceSpec &spec2,
                       std::vector<CellType> with_cell_types = CellTypeUtils::list_types())
 {
-    verify_impl(expr, {spec1, spec2}, with_cell_types);
+    EvalFixture::verify<ReduceSpec>(expr, {spec1, spec2}, CellTypeSpace(with_cell_types, 1));
 }
 
 TEST("require that reduce to scalar is not optimized") {
