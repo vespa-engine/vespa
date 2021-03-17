@@ -93,6 +93,7 @@ vespa_define_module(
     src/tests/referencecounter
     src/tests/regex
     src/tests/rendezvous
+    src/tests/require
     src/tests/runnable_pair
     src/tests/sha1
     src/tests/shared_string_repo

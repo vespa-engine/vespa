@@ -6,7 +6,7 @@
 
 namespace vespalib {
 
-inline void handle_require_success() {}
+constexpr void handle_require_success() {}
 void handle_require_failure [[noreturn]] (const char *description, const char *file, uint32_t line);
 template<typename A, typename B>
 void handle_require_eq_failure [[noreturn]] (const A& a, const B& b,
