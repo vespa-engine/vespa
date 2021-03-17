@@ -31,15 +31,17 @@ struct InplaceInfo {
 
 void verify_optimized(const vespalib::string &expr, op1_t op1, bool inplace = false) {
     SCOPED_TRACE(expr.c_str());
+    auto stable_types = CellTypeSpace({CellType::FLOAT, CellType::DOUBLE}, 1);
     if (inplace) {
         InplaceInfo details{op1};
-        auto all_types = CellTypeSpace(CellTypeUtils::list_types(), 1);
-        EvalFixture::verify<InplaceInfo>(expr, {details}, all_types);
+        EvalFixture::verify<InplaceInfo>(expr, {details}, stable_types);
     } else {
         MapInfo details{op1};
-        auto all_types = CellTypeSpace(CellTypeUtils::list_types(), 1);
-        EvalFixture::verify<MapInfo>(expr, {details}, all_types);
+        EvalFixture::verify<MapInfo>(expr, {details}, stable_types);
     }
+    MapInfo details{op1};
+    auto unstable_types = CellTypeSpace({CellType::BFLOAT16, CellType::INT8}, 1);
+    EvalFixture::verify<MapInfo>(expr, {details}, unstable_types);
 }
 
 void verify_not_optimized(const vespalib::string &expr) {

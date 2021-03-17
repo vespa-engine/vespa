@@ -27,8 +27,10 @@ struct FunInfo {
 
 void verify_optimized(const vespalib::string &expr) {
     SCOPED_TRACE(expr.c_str());
-    CellTypeSpace all_types(CellTypeUtils::list_types(), 1);
-    EvalFixture::verify<FunInfo>(expr, {FunInfo{false}}, all_types);
+    auto stable_types = CellTypeSpace({CellType::FLOAT, CellType::DOUBLE}, 1);
+    auto unstable_types = CellTypeSpace({CellType::BFLOAT16, CellType::INT8}, 1);
+    EvalFixture::verify<FunInfo>(expr, {FunInfo{false}}, stable_types);
+    EvalFixture::verify<FunInfo>(expr, {}, unstable_types);
 }
 
 void verify_not_optimized(const vespalib::string &expr) {
