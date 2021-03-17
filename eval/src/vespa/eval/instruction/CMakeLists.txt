@@ -28,7 +28,7 @@ vespa_add_library(eval_instruction OBJECT
     index_lookup_table.cpp
     join_with_number_function.cpp
     mixed_inner_product_function.cpp
-    mixed_map_function.cpp
+    inplace_map_function.cpp
     mixed_simple_join_function.cpp
     pow_as_map_optimizer.cpp
     remove_trivial_dimension_optimizer.cpp

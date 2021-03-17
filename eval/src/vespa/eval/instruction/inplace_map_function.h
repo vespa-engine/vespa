@@ -9,14 +9,14 @@ namespace vespalib::eval {
 /**
  * Tensor function optimizing in-place map operations on tensors.
  **/
-class MixedMapFunction : public tensor_function::Map
+class InplaceMapFunction : public tensor_function::Map
 {
 public:
     using map_fun_t = operation::op1_t;
-    MixedMapFunction(const ValueType &result_type,
+    InplaceMapFunction(const ValueType &result_type,
                      const TensorFunction &child,
                      map_fun_t function_in);
-    ~MixedMapFunction() override;
+    ~InplaceMapFunction() override;
     bool inplace() const { return child().result_is_mutable(); }
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
