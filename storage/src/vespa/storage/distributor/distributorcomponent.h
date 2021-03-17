@@ -149,6 +149,7 @@ public:
     const vespalib::string * cluster_name_ptr() const noexcept override { return cluster_context().cluster_name_ptr(); }
     const document::BucketIdFactory& bucket_id_factory() const noexcept override { return getBucketIdFactory(); }
     uint16_t node_index() const noexcept override { return getIndex(); }
+    api::StorageMessageAddress node_address(uint16_t node_index) const noexcept override { return nodeAddress(node_index); }
 
     // Implements DistributorOperationContext
     api::Timestamp generate_unique_timestamp() override { return getUniqueTimestamp(); }
@@ -202,6 +203,9 @@ public:
     }
     const lib::ClusterStateBundle& cluster_state_bundle() const override {
         return getClusterStateBundle();
+    }
+    bool storage_node_is_up(document::BucketSpace bucket_space, uint32_t node_index) const override {
+        return storageNodeIsUp(bucket_space, node_index);
     }
     const char* storage_node_up_states() const override {
         return getDistributor().getStorageNodeUpStates();

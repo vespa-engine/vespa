@@ -57,7 +57,8 @@ public:
     vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const;
-    DistributorComponent& getDistributorComponent() { return _distributorComponent; }
+    const DistributorNodeContext& node_context() const { return _node_ctx; }
+    DistributorOperationContext& operation_context() { return _op_ctx; }
 
     /**
      * Returns whether the current PendingClusterState indicates that there has
@@ -78,11 +79,10 @@ public:
 
     OperationRoutingSnapshot read_snapshot_for_bucket(const document::Bucket&) const;
 private:
-    DistributorComponent _distributorComponent;
     class MergeReplyGuard {
     public:
-        MergeReplyGuard(BucketDBUpdater& updater, const std::shared_ptr<api::MergeBucketReply>& reply)
-            : _updater(updater), _reply(reply) {}
+        MergeReplyGuard(DistributorInterface& distributor_interface, const std::shared_ptr<api::MergeBucketReply>& reply) noexcept
+            : _distributor_interface(distributor_interface), _reply(reply) {}
 
         ~MergeReplyGuard();
 
@@ -90,7 +90,7 @@ private:
         // than send it down
         void resetReply() { _reply.reset(); }
     private:
-        BucketDBUpdater& _updater;
+        DistributorInterface& _distributor_interface;
         std::shared_ptr<api::MergeBucketReply> _reply;
     };
 
@@ -239,6 +239,10 @@ private:
         mutable bool _cachedOwned;
     };
 
+    DistributorComponent _distributorComponent;
+    const DistributorNodeContext& _node_ctx;
+    DistributorOperationContext& _op_ctx;
+    DistributorInterface& _distributor_interface;
     std::deque<std::pair<framework::MilliSecTime, BucketRequest> > _delayedRequests;
     std::map<uint64_t, BucketRequest> _sentMessages;
     std::unique_ptr<PendingClusterState> _pendingClusterState;

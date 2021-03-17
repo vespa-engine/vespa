@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/storage/common/cluster_context.h>
+#include <vespa/storageapi/messageapi/storagemessage.h>
 #include <cstdint>
 
 namespace document { class BucketIdFactory; }
@@ -20,6 +21,7 @@ public:
     virtual const framework::Clock& clock() const noexcept = 0;
     virtual const document::BucketIdFactory& bucket_id_factory() const noexcept = 0;
     virtual uint16_t node_index() const noexcept = 0;
+    virtual api::StorageMessageAddress node_address(uint16_t node_index) const noexcept = 0;
 };
 
 }

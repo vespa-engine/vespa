@@ -32,7 +32,9 @@ PendingClusterState::PendingClusterState(
         const OutdatedNodesMap &outdatedNodesMap,
         api::Timestamp creationTimestamp)
     : _cmd(newStateCmd),
+      _sentMessages(),
       _requestedNodes(newStateCmd->getSystemState().getNodeCount(lib::NodeType::STORAGE)),
+      _delayedRequests(),
       _prevClusterStateBundle(clusterInfo->getClusterStateBundle()),
       _newClusterStateBundle(newStateCmd->getClusterStateBundle()),
       _clock(clock),
@@ -222,12 +224,11 @@ PendingClusterState::requestNode(BucketSpaceAndNode bucketSpaceAndNode)
         _newClusterStateBundle.getDerivedClusterState(bucketSpaceAndNode.bucketSpace)->toString().c_str(),
         distributionHash.c_str());
 
-    std::shared_ptr<api::RequestBucketInfoCommand> cmd(
-            new api::RequestBucketInfoCommand(
+    auto cmd = std::make_shared<api::RequestBucketInfoCommand>(
                     bucketSpaceAndNode.bucketSpace,
                     _sender.getDistributorIndex(),
                     *_newClusterStateBundle.getDerivedClusterState(bucketSpaceAndNode.bucketSpace),
-                    distributionHash));
+                    distributionHash);
 
     cmd->setPriority(api::StorageMessage::HIGH);
     cmd->setTimeout(vespalib::duration::max());
