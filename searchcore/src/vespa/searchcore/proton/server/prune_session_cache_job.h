@@ -16,8 +16,8 @@ private:
 
 public:
     PruneSessionCacheJob(matching::ISessionCachePruner &pruner, vespalib::duration jobInterval);
-
     bool run() override;
+    void onStop() override { }
 };
 
 } // namespace proton

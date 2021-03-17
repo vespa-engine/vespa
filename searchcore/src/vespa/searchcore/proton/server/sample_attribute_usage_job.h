@@ -36,6 +36,7 @@ public:
     ~SampleAttributeUsageJob() override;
 
     bool run() override;
+    void onStop() override { }
 };
 
 } // namespace proton
