@@ -53,6 +53,12 @@ DimSpec::make_dict(size_t size, size_t stride, const vespalib::string &prefix)
     return dict;
 }
 
+namespace {
+auto is_dim_name = [](char c) { 
+    return ((c >= 'a') && (c <= 'z'))
+        || ((c >= 'A') && (c <= 'Z')); };
+}
+
 // 'a2' -> DimSpec("a", 2);
 // 'b2_3' -> DimSpec("b", make_dict(2, 3, ""));
 DimSpec
@@ -63,7 +69,6 @@ DimSpec::from_desc(const vespalib::string &desc)
     auto is_num = [](char c) { return ((c >= '0') && (c <= '9')); };
     auto as_num = [](char c) { return size_t(c - '0'); };
     auto is_map_tag = [](char c) { return (c == '_'); };
-    auto is_dim_name = [](char c) { return ((c >= 'a') && (c <= 'z')); };
     auto extract_number = [&]() {
         assert(idx < desc.size());
         assert(is_num(desc[idx]));
@@ -98,7 +103,6 @@ GenSpec::from_desc(const vespalib::string &desc)
     size_t idx = 0;
     vespalib::string dim_desc;
     std::vector<DimSpec> dim_list;
-    auto is_dim_name = [](char c) { return ((c >= 'a') && (c <= 'z')); };
     while (idx < desc.size()) {
         dim_desc.clear();
         assert(is_dim_name(desc[idx]));
@@ -155,7 +159,7 @@ GenSpec::gen() const
         }
     };
     add_cells(0);
-    return result;
+    return result.normalize();
 }
 
 } // namespace

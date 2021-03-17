@@ -254,6 +254,15 @@ TEST(GenSpecFromDescTest, multi_character_sizes_work) {
     EXPECT_EQ(gen_desc, expect);
 }
 
+TEST(GenSpecFromDescTest, capital_letter_allowed) {
+    // 'A2_1b3C4'
+    auto expect = GenSpec().map("A", 2).idx("b", 3).idx("C", 4).gen();
+    auto dim_desc = GenSpec().desc("A2_1").desc("b3").desc("C4").gen();
+    auto gen_desc = GenSpec::from_desc("A2_1b3C4").gen();
+    EXPECT_EQ(dim_desc, expect);
+    EXPECT_EQ(gen_desc, expect);
+}
+
 //-----------------------------------------------------------------------------
 
 GTEST_MAIN_RUN_ALL_TESTS()
