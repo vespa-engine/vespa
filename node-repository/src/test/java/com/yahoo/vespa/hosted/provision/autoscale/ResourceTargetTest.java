@@ -28,6 +28,7 @@ public class ResourceTargetTest {
 
     @Test
     public void test_traffic_headroom() {
+        ManualClock clock = new ManualClock();
         Application application = Application.empty(ApplicationId.from("t1", "a1", "i1"));
         Cluster cluster = cluster(new NodeResources(1, 10, 100, 1));
         application = application.with(cluster);
@@ -36,21 +37,25 @@ public class ResourceTargetTest {
         application = application.with(new Status(0.0, 1.0));
         assertEquals(0.131,
                      ResourceTarget.idealCpuLoad(Duration.ofMinutes(10),
-                                                 timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0, t -> 0.0),
-                                                 application),
+                                                 timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0, t -> 0.0, clock),
+                                                 application,
+                                                 clock),
                      delta);
 
         // Almost no current traffic share: Ideal load is low but capped
         application = application.with(new Status(0.0001, 1.0));
         assertEquals(0.131,
                      ResourceTarget.idealCpuLoad(Duration.ofMinutes(10),
-                                                 timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0, t -> 0.0),
-                                                 application),
+                                                 timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0, t -> 0.0, clock),
+                                                 application,
+                                                 clock),
                      delta);
     }
 
     @Test
     public void test_growth_headroom() {
+        ManualClock clock = new ManualClock();
+
         Application application = Application.empty(ApplicationId.from("t1", "a1", "i1"));
         Cluster cluster = cluster(new NodeResources(1, 10, 100, 1));
         application = application.with(cluster);
@@ -58,16 +63,18 @@ public class ResourceTargetTest {
         // No current traffic: Ideal load is low but capped
         assertEquals(0.275,
                      ResourceTarget.idealCpuLoad(Duration.ofMinutes(10),
-                                                 timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0, t -> 0.0),
-                                                 application),
+                                                 timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0, t -> 0.0, clock),
+                                                 application,
+                                                 clock),
                      delta);
 
         // Almost current traffic: Ideal load is low but capped
         application = application.with(new Status(0.0001, 1.0));
         assertEquals(0.04,
                      ResourceTarget.idealCpuLoad(Duration.ofMinutes(10),
-                                                 timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0001, t -> 0.0),
-                                                 application),
+                                                 timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0001, t -> 0.0, clock),
+                                                 application,
+                                                 clock),
                      delta);
     }
 
@@ -86,9 +93,9 @@ public class ResourceTargetTest {
     private ClusterTimeseries timeseries(Cluster cluster,
                                          int measurements,
                                          IntFunction<Double> queryRate,
-                                         IntFunction<Double> writeRate) {
+                                         IntFunction<Double> writeRate,
+                                         ManualClock clock) {
         List<ClusterMetricSnapshot> snapshots = new ArrayList<>(measurements);
-        ManualClock clock = new ManualClock();
         for (int i = 0; i < measurements; i++) {
             snapshots.add(new ClusterMetricSnapshot(clock.instant(), queryRate.apply(i), writeRate.apply(i)));
             clock.advance(Duration.ofMinutes(5));

@@ -3,7 +3,9 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterSpec;
 
+import java.time.Clock;
 import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -84,12 +86,21 @@ public class ClusterTimeseries {
         return maxGrowthRate / currentQueryRate();
     }
 
-    /** The current query rate as a fraction of the peak rate in this timeseries */
-    public double currentQueryFractionOfMax() {
+    /**
+     * The current query rate, averaged over the same window we average utilization over,
+     * as a fraction of the peak rate in this timeseries
+     */
+    public double queryFractionOfMax(Duration window, Clock clock) {
         if (snapshots.isEmpty()) return 0.5;
         var max = snapshots.stream().mapToDouble(ClusterMetricSnapshot::queryRate).max().getAsDouble();
         if (max == 0) return 1.0;
-        return snapshots.get(snapshots.size() - 1).queryRate() / max;
+        Instant oldest = clock.instant().minus(window);
+        var average = snapshots.stream()
+                               .filter(snapshot -> snapshot.at().isAfter(oldest))
+                               .mapToDouble(snapshot -> snapshot.queryRate())
+                               .average();
+        if (average.isEmpty()) return 0.5; // No measurements in the relevant time period
+        return average.getAsDouble() / max;
     }
 
     public double currentQueryRate() {

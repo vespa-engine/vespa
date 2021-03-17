@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.vespa.hosted.provision.applications.Application;
 
+import java.time.Clock;
 import java.time.Duration;
 
 /**
@@ -53,9 +54,10 @@ public class ResourceTarget {
                                            ClusterTimeseries clusterTimeseries,
                                            ClusterNodesTimeseries clusterNodesTimeseries,
                                            AllocatableClusterResources current,
-                                           Application application) {
+                                           Application application,
+                                           Clock clock) {
         return new ResourceTarget(nodeUsage(Resource.cpu, clusterNodesTimeseries.averageLoad(Resource.cpu), current)
-                                  / idealCpuLoad(scalingDuration, clusterTimeseries, application),
+                                  / idealCpuLoad(scalingDuration, clusterTimeseries, application, clock),
                                   nodeUsage(Resource.memory, clusterNodesTimeseries.averageLoad(Resource.memory), current)
                                   / Resource.memory.idealAverageLoad(),
                                   nodeUsage(Resource.disk, clusterNodesTimeseries.averageLoad(Resource.disk), current)
@@ -74,14 +76,15 @@ public class ResourceTarget {
     /** Ideal cpu load must take the application traffic fraction into account */
     public static double idealCpuLoad(Duration scalingDuration,
                                       ClusterTimeseries clusterTimeseries,
-                                      Application application) {
+                                      Application application,
+                                      Clock clock) {
         double queryCpuFraction = queryCpuFraction(clusterTimeseries);
 
         // What's needed to have headroom for growth during scale-up as a fraction of current resources?
         double maxGrowthRate = clusterTimeseries.maxQueryGrowthRate(); // in fraction per minute of the current traffic
         double growthRateHeadroom = 1 + maxGrowthRate * scalingDuration.toMinutes();
         // Cap headroom at 10% above the historical observed peak
-        double fractionOfMax = clusterTimeseries.currentQueryFractionOfMax();
+        double fractionOfMax = clusterTimeseries.queryFractionOfMax(scalingDuration, clock);
         if (fractionOfMax != 0)
             growthRateHeadroom = Math.min(growthRateHeadroom, 1 / fractionOfMax + 0.1);
 
