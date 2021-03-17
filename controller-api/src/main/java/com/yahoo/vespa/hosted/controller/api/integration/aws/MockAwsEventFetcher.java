@@ -10,9 +10,12 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.util.Optional;
 
+/**
+ * @author freva
+ */
 public class MockAwsEventFetcher implements AwsEventFetcher {
 
-    private Map<String, List<CloudEvent>> mockedEvents = new HashMap<>();
+    private final Map<String, List<CloudEvent>> mockedEvents = new HashMap<>();
 
     @Override
     public List<CloudEvent> getEvents(String awsRegionName) {
@@ -27,4 +30,5 @@ public class MockAwsEventFetcher implements AwsEventFetcher {
     public void addEvent(String awsRegionName, CloudEvent cloudEvent) {
         mockedEvents.computeIfAbsent(awsRegionName, i -> new ArrayList<>()).add(cloudEvent);
     }
+
 }
