@@ -152,7 +152,7 @@ public class Configurator {
 
         String configFieldPrefix();
 
-        default void appendTlsConfig(StringBuilder builder, Optional<TlsContext> tlsContext) {
+        default void appendSharedTlsConfig(StringBuilder builder, Optional<TlsContext> tlsContext) {
             tlsContext.ifPresent(ctx -> {
                 builder.append(configFieldPrefix()).append(".context.supplier.class=").append(VespaSslContextProvider.class.getName()).append("\n");
                 String enabledCiphers = Arrays.stream(ctx.parameters().getCipherSuites()).sorted().collect(Collectors.joining(","));
@@ -195,8 +195,10 @@ public class Configurator {
             sb.append("client.portUnification=").append(portUnification).append("\n")
                     .append("clientPort=").append(secureClientPort ? 0 : config.clientPort()).append("\n")
                     .append("secureClientPort=").append(secureClientPort ? config.clientPort() : 0).append("\n");
-
-            appendTlsConfig(sb, tlsContext);
+            tlsContext.ifPresent(ignored ->
+                    sb.append("ssl.authProvider.vespaMtls=com.yahoo.vespa.zookeeper.VespaMtlsAuthenticationProvider\n")
+                            .append("ssl.authProvider=vespaMtls\n"));
+            appendSharedTlsConfig(sb, tlsContext);
 
             return sb.toString();
         }
@@ -239,7 +241,7 @@ public class Configurator {
             }
             sb.append("sslQuorum=").append(sslQuorum).append("\n");
             sb.append("portUnification=").append(portUnification).append("\n");
-            appendTlsConfig(sb, tlsContext);
+            appendSharedTlsConfig(sb, tlsContext);
 
             return sb.toString();
         }
