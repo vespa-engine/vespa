@@ -224,9 +224,9 @@ public class JobController {
 
     /** Returns all job types which have been run for the given application. */
     public List<JobType> jobs(ApplicationId id) {
-        return copyOf(Stream.of(JobType.values())
-                            .filter(type -> last(id, type).isPresent())
-                            .iterator());
+        return JobType.allIn(controller.system()).stream()
+                      .filter(type -> last(id, type).isPresent())
+                      .collect(toUnmodifiableList());
     }
 
     /** Returns an immutable map of all known runs for the given application and job type. */

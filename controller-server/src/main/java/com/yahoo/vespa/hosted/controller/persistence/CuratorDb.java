@@ -106,6 +106,9 @@ public class CuratorDb {
     private final Curator curator;
     private final Duration tryLockTimeout;
 
+    // For each application id (path), store the ZK node version and its deserialised data - update when version changes.
+    private final Map<Path, Pair<Integer, Application>> cachedApplications = new ConcurrentHashMap<>();
+
     // For each job id (path), store the ZK node version and its deserialised data - update when version changes.
     private final Map<Path, Pair<Integer, NavigableMap<RunId, Run>>> cachedHistoricRuns = new ConcurrentHashMap<>();
 
@@ -325,7 +328,12 @@ public class CuratorDb {
     }
 
     public Optional<Application> readApplication(TenantAndApplicationId application) {
-        return read(applicationPath(application), applicationSerializer::fromSlime);
+        Path path = applicationPath(application);
+        return curator.getStat(path)
+                      .map(stat -> cachedApplications.compute(path, (__, old) ->
+                              old != null && old.getFirst() == stat.getVersion()
+                              ? old
+                              : new Pair<>(stat.getVersion(), read(path, applicationSerializer::fromSlime).get())).getSecond());
     }
 
     public List<Application> readApplications(boolean canFail) {
