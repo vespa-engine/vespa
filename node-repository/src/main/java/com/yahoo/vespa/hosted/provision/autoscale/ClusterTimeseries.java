@@ -86,7 +86,8 @@ public class ClusterTimeseries {
             else
                 return 0.0; //       ... because load is stable
         }
-        OptionalDouble queryRate = queryRate(window, clock);
+        // OptionalDouble queryRate = queryRate(window, clock); TODO
+        OptionalDouble queryRate = snapshots.isEmpty() ? OptionalDouble.empty() : OptionalDouble.of(queryRateAt(snapshots.size() - 1));
         if (queryRate.orElse(0) == 0) return 0.1; // Growth not expressible as a fraction of the current rate
         return maxGrowthRate / queryRate.getAsDouble();
     }
@@ -105,10 +106,10 @@ public class ClusterTimeseries {
     }
 
     /** Returns the average query rate in the given window, or empty if there are no measurements in it */
-    public OptionalDouble queryRateTemp(Duration window, Clock clock) {
+    public OptionalDouble queryRateTemp(Duration window, Clock clock) { // TODO
         Instant oldest = clock.instant().minus(window);
         return snapshots.stream()
-                        .filter(snapshot -> snapshot.at().isAfter(oldest))
+                        .filter(snapshot -> ! snapshot.at().isBefore(oldest))
                         .mapToDouble(snapshot -> snapshot.queryRate())
                         .average();
     }
@@ -118,7 +119,7 @@ public class ClusterTimeseries {
         if (1==1) return snapshots.isEmpty() ? OptionalDouble.empty() : OptionalDouble.of(queryRateAt(snapshots.size() - 1)); // TODO
         Instant oldest = clock.instant().minus(window);
         return snapshots.stream()
-                        .filter(snapshot -> snapshot.at().isAfter(oldest))
+                        .filter(snapshot -> ! snapshot.at().isBefore(oldest))
                         .mapToDouble(snapshot -> snapshot.queryRate())
                         .average();
     }
@@ -128,8 +129,8 @@ public class ClusterTimeseries {
         if (1==1) return snapshots.isEmpty() ? OptionalDouble.empty() : OptionalDouble.of(writeRateAt(snapshots.size() - 1)); // TODO
         Instant oldest = clock.instant().minus(window);
         return snapshots.stream()
-                        .filter(snapshot -> snapshot.at().isAfter(oldest))
-                        .mapToDouble(snapshot -> snapshot.queryRate())
+                        .filter(snapshot -> ! snapshot.at().isBefore(oldest))
+                        .mapToDouble(snapshot -> snapshot.writeRate())
                         .average();
     }
 
