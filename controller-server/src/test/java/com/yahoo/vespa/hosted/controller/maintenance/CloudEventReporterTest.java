@@ -7,9 +7,6 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.CloudEvent;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockAwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
-import com.yahoo.vespa.hosted.controller.api.integration.organization.MockIssueHandler;
-import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import org.junit.Test;
 
@@ -17,11 +14,10 @@ import java.time.Duration;
 import java.util.Arrays;
 import java.util.Date;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.stream.Collectors;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
 
 /**
  * @author olaa
@@ -29,45 +25,35 @@ import static org.junit.Assert.*;
 public class CloudEventReporterTest {
 
     private final ControllerTester tester = new ControllerTester();
-    private final MetricsMock metrics = new MetricsMock();
-    private final ZoneApiMock nonAwsZone = createZone("prod.zone3", "region-1", "other");
-    private final ZoneApiMock awsZone1 = createZone("prod.zone1", "region-1", "aws");
-    private final ZoneApiMock awsZone2 = createZone("prod.zone2", "region-2", "aws");
+    private final ZoneApiMock unsupportedZone = createZone("prod.zone3", "region-1", "other");
+    private final ZoneApiMock zone1 = createZone("prod.zone1", "region-1", "aws");
+    private final ZoneApiMock zone2 = createZone("prod.zone2", "region-2", "aws");
 
 
     /**
-     * Test scenario:
-     * Consider three zones, two of which are based in AWS
+     * Test scenario: Consider three zones, two of which are supported
+     *
      * We want to test the following:
-     * 1. Non-AWS zone is completely ignored
-     * 2. Tenant hosts affected by cloud event are deprovisioned
-     * 3. Infrastructure hosts affected by cloud event are reported by IssueHandler
+     * 1. Unsupported zone is completely ignored
+     * 2. Hosts affected by cloud event are deprovisioned
      */
     @Test
     public void maintain() {
         setUpZones();
-        CloudEventReporter cloudEventReporter = new CloudEventReporter(tester.controller(), Duration.ofMinutes(15), metrics);
-
-        assertEquals(Set.of("host1.com", "host2.com", "host3.com"), getHostnames(nonAwsZone.getId()));
-        assertEquals(Set.of("host1.com", "host2.com", "host3.com"), getHostnames(awsZone1.getId()));
-        assertEquals(Set.of("host4.com", "host5.com", "confighost.com"), getHostnames(awsZone2.getId()));
+        CloudEventReporter cloudEventReporter = new CloudEventReporter(tester.controller(), Duration.ofMinutes(15));
+        assertEquals(Set.of("host1.com", "host2.com", "host3.com"), getHostnames(unsupportedZone.getId()));
+        assertEquals(Set.of("host1.com", "host2.com", "host3.com"), getHostnames(zone1.getId()));
+        assertEquals(Set.of("host4.com", "host5.com", "confighost.com"), getHostnames(zone2.getId()));
 
         mockEvents();
         cloudEventReporter.maintain();
-
-        assertEquals(Set.of("host1.com", "host2.com", "host3.com"), getHostnames(nonAwsZone.getId()));
-        assertEquals(Set.of("host3.com"), getHostnames(awsZone1.getId()));
-        assertEquals(Set.of("host4.com", "confighost.com"), getHostnames(awsZone2.getId()));
-
-        Map<IssueId, MockIssueHandler.MockIssue> createdIssues = tester.serviceRegistry().issueHandler().issues();
-        assertEquals(1, createdIssues.size());
-        String description = createdIssues.get(IssueId.from("1")).issue().description();
-        assertTrue(description.contains("confighost"));
-        assertEquals(1, metrics.getMetric("infrastructure_instance_events"));
+        assertEquals(Set.of("host1.com", "host2.com", "host3.com"), getHostnames(unsupportedZone.getId()));
+        assertEquals(Set.of("host3.com"), getHostnames(zone1.getId()));
+        assertEquals(Set.of("host4.com"), getHostnames(zone2.getId()));
     }
 
     private void mockEvents() {
-        MockAwsEventFetcher mockAwsEventFetcher = (MockAwsEventFetcher)tester.controller().serviceRegistry().eventFetcherService();
+        MockAwsEventFetcher eventFetcher = (MockAwsEventFetcher) tester.controller().serviceRegistry().eventFetcherService();
 
         Date date = new Date();
         CloudEvent event1 = new CloudEvent("event 1",
@@ -88,19 +74,18 @@ public class CloudEventReporterTest {
                 "region-2",
                 Set.of("host5", "confighost"));
 
-        mockAwsEventFetcher.addEvent("region-1", event1);
-        mockAwsEventFetcher.addEvent("region-2", event2);
+        eventFetcher.addEvent("region-1", event1);
+        eventFetcher.addEvent("region-2", event2);
     }
 
     private void setUpZones() {
-
         tester.zoneRegistry().setZones(
-                nonAwsZone,
-                awsZone1,
-                awsZone2);
+                unsupportedZone,
+                zone1,
+                zone2);
 
         tester.configServer().nodeRepository().putNodes(
-                nonAwsZone.getId(),
+                unsupportedZone.getId(),
                 createNodesWithHostnames(
                         "host1.com",
                         "host2.com",
@@ -108,7 +93,7 @@ public class CloudEventReporterTest {
                 )
         );
         tester.configServer().nodeRepository().putNodes(
-                awsZone1.getId(),
+                zone1.getId(),
                 createNodesWithHostnames(
                         "host1.com",
                         "host2.com",
@@ -116,14 +101,14 @@ public class CloudEventReporterTest {
                 )
         );
         tester.configServer().nodeRepository().putNodes(
-                awsZone2.getId(),
+                zone2.getId(),
                 createNodesWithHostnames(
                         "host4.com",
                         "host5.com"
                 )
         );
         tester.configServer().nodeRepository().putNodes(
-                awsZone2.getId(),
+                zone2.getId(),
                 List.of(createNode("confighost.com", NodeType.confighost))
         );
     }
