@@ -231,8 +231,6 @@ public class ConfiguratorTest {
                 "client.portUnification=true\n" +
                 "clientPort=2181\n" +
                 "secureClientPort=0\n" +
-                "ssl.authProvider.vespaMtls=com.yahoo.vespa.zookeeper.VespaMtlsAuthenticationProvider\n" +
-                "ssl.authProvider=vespaMtls\n" +
                 tlsClientServerConfig();
         validateConfigFile(cfgFile, expected);
     }
@@ -247,8 +245,6 @@ public class ConfiguratorTest {
                 "client.portUnification=true\n" +
                 "clientPort=2181\n" +
                 "secureClientPort=0\n" +
-                "ssl.authProvider.vespaMtls=com.yahoo.vespa.zookeeper.VespaMtlsAuthenticationProvider\n" +
-                "ssl.authProvider=vespaMtls\n" +
                 tlsClientServerConfig();
         validateConfigFile(cfgFile, expected);
     }
@@ -263,8 +259,6 @@ public class ConfiguratorTest {
                 "client.portUnification=false\n" +
                 "clientPort=0\n" +
                 "secureClientPort=2181\n" +
-                "ssl.authProvider.vespaMtls=com.yahoo.vespa.zookeeper.VespaMtlsAuthenticationProvider\n" +
-                "ssl.authProvider=vespaMtls\n" +
                 tlsClientServerConfig();
         validateConfigFile(cfgFile, expected);
     }

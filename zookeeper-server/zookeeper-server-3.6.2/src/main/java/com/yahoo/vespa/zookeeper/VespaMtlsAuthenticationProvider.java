@@ -36,6 +36,6 @@ public class VespaMtlsAuthenticationProvider extends X509AuthenticationProvider 
         return KeeperException.Code.OK;
     }
 
-    @Override public String getScheme() { return "vespaMtls"; }
+    @Override public String getScheme() { return "x509"; }
 
 }

@@ -34,6 +34,8 @@ public class Configurator {
         System.setProperty(ZOOKEEPER_JMX_LOG4J_DISABLE, "true");
         System.setProperty("zookeeper.snapshot.trust.empty", Boolean.valueOf(zookeeperServerConfig.trustEmptySnapshot()).toString());
         System.setProperty(ZOOKEEPER_JUTE_MAX_BUFFER, Integer.valueOf(zookeeperServerConfig.juteMaxBuffer()).toString());
+        // Need to set this as a system property instead of config, config does not work
+        System.setProperty("zookeeper.authProvider.x509", "com.yahoo.vespa.zookeeper.VespaMtlsAuthenticationProvider");
     }
 
     void writeConfigToDisk(Optional<TlsContext> tlsContext) {
@@ -195,9 +197,6 @@ public class Configurator {
             sb.append("client.portUnification=").append(portUnification).append("\n")
                     .append("clientPort=").append(secureClientPort ? 0 : config.clientPort()).append("\n")
                     .append("secureClientPort=").append(secureClientPort ? config.clientPort() : 0).append("\n");
-            tlsContext.ifPresent(ignored ->
-                    sb.append("ssl.authProvider.vespaMtls=com.yahoo.vespa.zookeeper.VespaMtlsAuthenticationProvider\n")
-                            .append("ssl.authProvider=vespaMtls\n"));
             appendSharedTlsConfig(sb, tlsContext);
 
             return sb.toString();
