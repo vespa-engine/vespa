@@ -11,7 +11,6 @@ import com.yahoo.config.provision.ProvisionLock;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
 import com.yahoo.transaction.NestedTransaction;
-import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -54,7 +53,7 @@ public class LoadBalancerProvisioner {
     private final CuratorDatabaseClient db;
     private final LoadBalancerService service;
 
-    public LoadBalancerProvisioner(NodeRepository nodeRepository, LoadBalancerService service, FlagSource flagSource) {
+    public LoadBalancerProvisioner(NodeRepository nodeRepository, LoadBalancerService service) {
         this.nodeRepository = nodeRepository;
         this.db = nodeRepository.database();
         this.service = service;

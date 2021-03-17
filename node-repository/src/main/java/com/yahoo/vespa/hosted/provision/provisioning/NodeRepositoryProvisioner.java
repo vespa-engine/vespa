@@ -19,7 +19,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
@@ -65,7 +64,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
         this.capacityPolicies = new CapacityPolicies(nodeRepository);
         this.zone = zone;
         this.loadBalancerProvisioner = provisionServiceProvider.getLoadBalancerService(nodeRepository)
-                                                               .map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService, flagSource));
+                                                               .map(lbService -> new LoadBalancerProvisioner(nodeRepository, lbService));
         this.nodeResourceLimits = new NodeResourceLimits(nodeRepository);
         this.preparer = new Preparer(nodeRepository,
                                      flagSource,
