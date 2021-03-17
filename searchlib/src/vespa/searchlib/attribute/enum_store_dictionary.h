@@ -17,6 +17,7 @@ class EnumStoreDictionary : public vespalib::datastore::UniqueStoreDictionary<Di
 protected:
     using EntryRef = IEnumStoreDictionary::EntryRef;
     using Index = IEnumStoreDictionary::Index;
+    using DictionaryType = DictionaryT;
 private:
     using EnumVector = IEnumStoreDictionary::EnumVector;
     using IndexSet = IEnumStoreDictionary::IndexSet;
@@ -49,6 +50,9 @@ public:
     std::vector<attribute::IAttributeVector::EnumHandle>
     find_matching_enums(const vespalib::datastore::EntryComparator& cmp) const override;
 
+    EntryRef get_frozen_root() const override;
+    std::pair<Index, EntryRef> find_posting_list(const vespalib::datastore::EntryComparator& cmp, EntryRef root) const override;
+    void collect_folded(Index idx, EntryRef root, const std::function<void(vespalib::datastore::EntryRef)>& callback) const override;
     Index remap_index(Index idx) override;
     void clear_all_posting_lists(std::function<void(EntryRef)> clearer) override;
     void update_posting_list(Index idx, const vespalib::datastore::EntryComparator& cmp, std::function<EntryRef(EntryRef)> updater) override;
@@ -75,6 +79,7 @@ public:
     ~EnumStoreFoldedDictionary() override;
     vespalib::datastore::UniqueStoreAddResult add(const vespalib::datastore::EntryComparator& comp, std::function<vespalib::datastore::EntryRef(void)> insertEntry) override;
     void remove(const vespalib::datastore::EntryComparator& comp, vespalib::datastore::EntryRef ref) override;
+    void collect_folded(Index idx, EntryRef root, const std::function<void(vespalib::datastore::EntryRef)>& callback) const override;
     Index remap_index(Index idx) override;
 };
 

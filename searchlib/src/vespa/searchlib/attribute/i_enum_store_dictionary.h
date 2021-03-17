@@ -47,6 +47,9 @@ public:
     virtual std::vector<attribute::IAttributeVector::EnumHandle>
     find_matching_enums(const vespalib::datastore::EntryComparator& cmp) const = 0;
 
+    virtual EntryRef get_frozen_root() const = 0;
+    virtual std::pair<Index, EntryRef> find_posting_list(const vespalib::datastore::EntryComparator& cmp, EntryRef root) const = 0;
+    virtual void collect_folded(Index idx, EntryRef root, const std::function<void(vespalib::datastore::EntryRef)>& callback) const = 0;
     virtual Index remap_index(Index idx) = 0;
     virtual void clear_all_posting_lists(std::function<void(EntryRef)> clearer) = 0;
     virtual void update_posting_list(Index idx, const vespalib::datastore::EntryComparator& cmp, std::function<EntryRef(EntryRef)> updater) = 0;
