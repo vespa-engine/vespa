@@ -31,6 +31,7 @@ BucketDBUpdater::BucketDBUpdater(Distributor& owner,
                                  DistributorComponentRegister& compReg)
     : framework::StatusReporter("bucketdb", "Bucket DB Updater"),
       _distributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Bucket DB Updater"),
+      _node_ctx(_distributorComponent),
       _delayedRequests(),
       _sentMessages(),
       _pendingClusterState(),
@@ -38,7 +39,7 @@ BucketDBUpdater::BucketDBUpdater(Distributor& owner,
       _sender(sender),
       _enqueuedRechecks(),
       _outdatedNodesMap(),
-      _transitionTimer(_distributorComponent.getClock()),
+      _transitionTimer(_node_ctx.clock()),
       _stale_reads_enabled(false),
       _active_distribution_contexts(),
       _explicit_transition_read_guard(),
@@ -47,7 +48,7 @@ BucketDBUpdater::BucketDBUpdater(Distributor& owner,
     for (auto& elem : _distributorComponent.getBucketSpaceRepo()) {
         _active_distribution_contexts.emplace(
                 elem.first,
-                BucketSpaceDistributionContext::make_not_yet_initialized(_distributorComponent.getIndex()));
+                BucketSpaceDistributionContext::make_not_yet_initialized(_node_ctx.node_index()));
         _explicit_transition_read_guard.emplace(elem.first, std::shared_ptr<BucketDatabase::ReadGuard>());
     }
 }
@@ -140,7 +141,7 @@ BucketDBUpdater::sendRequestBucketInfo(
         node);
 
     msg->setPriority(50);
-    msg->setAddress(_distributorComponent.nodeAddress(node));
+    msg->setAddress(_node_ctx.node_address(node));
 
     _sentMessages[msg->getMsgId()] =
         BucketRequest(node, _distributorComponent.getUniqueTimestamp(),
@@ -233,7 +234,7 @@ BucketDBUpdater::removeSuperfluousBuckets(
         MergingNodeRemover proc(
                 oldClusterState,
                 *new_cluster_state,
-                _distributorComponent.getIndex(),
+                _node_ctx.node_index(),
                 newDistribution,
                 up_states,
                 move_to_read_only_db);
@@ -274,7 +275,7 @@ BucketDBUpdater::ensureTransitionTimerStarted()
     // that will make transition times appear artificially low.
     if (!hasPendingClusterState()) {
         _transitionTimer = framework::MilliSecTimer(
-                _distributorComponent.getClock());
+                _node_ctx.clock());
     }
 }
 
@@ -301,11 +302,11 @@ BucketDBUpdater::storageDistributionChanged()
     removeSuperfluousBuckets(_distributorComponent.getClusterStateBundle(), true);
 
     auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
-            _distributorComponent.getIndex(),
+            _node_ctx.node_index(),
             _distributorComponent.getClusterStateBundle(),
             _distributorComponent.getDistributor().getStorageNodeUpStates());
     _pendingClusterState = PendingClusterState::createForDistributionChange(
-            _distributorComponent.getClock(),
+            _node_ctx.clock(),
             std::move(clusterInfo),
             _sender,
             _distributorComponent.getBucketSpaceRepo(),
@@ -365,7 +366,7 @@ void BucketDBUpdater::update_read_snapshot_after_db_pruning(const lib::ClusterSt
                         old_default_state,
                         std::move(new_cluster_state),
                         std::move(new_distribution),
-                        _distributorComponent.getIndex()));
+                        _node_ctx.node_index()));
         // We can now remove the explicit mutable DB snapshot, as the buckets that have been
         // pruned away are visible in the read-only DB.
         _explicit_transition_read_guard[elem.first] = std::shared_ptr<BucketDatabase::ReadGuard>();
@@ -384,7 +385,7 @@ void BucketDBUpdater::update_read_snapshot_after_activation(const lib::ClusterSt
                         std::move(new_cluster_state),
                         default_cluster_state,
                         std::move(new_distribution),
-                        _distributorComponent.getIndex()));
+                        _node_ctx.node_index()));
     }
 }
 
@@ -404,7 +405,7 @@ BucketDBUpdater::onSetSystemState(
     }
     ensureTransitionTimerStarted();
     // Separate timer since _transitionTimer might span multiple pending states.
-    framework::MilliSecTimer process_timer(_distributorComponent.getClock());
+    framework::MilliSecTimer process_timer(_node_ctx.clock());
     update_read_snapshot_before_db_pruning();
     const auto& bundle = cmd->getClusterStateBundle();
     removeSuperfluousBuckets(bundle, false);
@@ -412,12 +413,12 @@ BucketDBUpdater::onSetSystemState(
     replyToPreviousPendingClusterStateIfAny();
 
     auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
-                _distributorComponent.getIndex(),
+                _node_ctx.node_index(),
                 _distributorComponent.getClusterStateBundle(),
                 _distributorComponent.getDistributor()
                 .getStorageNodeUpStates());
     _pendingClusterState = PendingClusterState::createForClusterStateChange(
-            _distributorComponent.getClock(),
+            _node_ctx.clock(),
             std::move(clusterInfo),
             _sender,
             _distributorComponent.getBucketSpaceRepo(),
@@ -596,7 +597,7 @@ BucketDBUpdater::handleSingleBucketInfoFailure(
         req.targetNode, repl->getResult().toString().c_str());
 
     if (req.bucket.getBucketId() != document::BucketId(0)) {
-        framework::MilliSecTime sendTime(_distributorComponent.getClock());
+        framework::MilliSecTime sendTime(_node_ctx.clock());
         sendTime += framework::MilliSecTime(100);
         _delayedRequests.emplace_back(sendTime, req);
     }
@@ -611,7 +612,7 @@ BucketDBUpdater::resendDelayedMessages()
     if (_delayedRequests.empty()) {
         return; // Don't fetch time if not needed
     }
-    framework::MilliSecTime currentTime(_distributorComponent.getClock());
+    framework::MilliSecTime currentTime(_node_ctx.clock());
     while (!_delayedRequests.empty()
            && currentTime >= _delayedRequests.front().first)
     {
@@ -754,7 +755,7 @@ BucketDBUpdater::processCompletedPendingClusterState()
 void
 BucketDBUpdater::activatePendingClusterState()
 {
-    framework::MilliSecTimer process_timer(_distributorComponent.getClock());
+    framework::MilliSecTimer process_timer(_node_ctx.clock());
 
     _pendingClusterState->mergeIntoBucketDatabases();
     maybe_inject_simulated_db_merging_delay();

@@ -239,6 +239,7 @@ private:
     };
 
     DistributorComponent _distributorComponent;
+    const DistributorNodeContext& _node_ctx;
     std::deque<std::pair<framework::MilliSecTime, BucketRequest> > _delayedRequests;
     std::map<uint64_t, BucketRequest> _sentMessages;
     std::unique_ptr<PendingClusterState> _pendingClusterState;
