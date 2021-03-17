@@ -147,13 +147,6 @@ public class ApplicationSerializer {
     // Quota usage fields
     private static final String quotaUsageRateField = "quotaUsageRate";
 
-    // A cache of deserialized applications.
-    //
-    // Deserializing an application from slime is expensive, particularly XML fields, such as DeploymentSpec and
-    // ValidationOverrides. Applications that have already been deserialized are returned from this cache instead of
-    // being deserialized again.
-    private final Cache<Long, Application> cache = CacheBuilder.newBuilder().maximumSize(1000).build();
-
     // ------------------ Serialization
 
     public Slime toSlime(Application application) {
@@ -297,12 +290,7 @@ public class ApplicationSerializer {
     // ------------------ Deserialization
 
     public Application fromSlime(byte[] data) {
-        var key = Hashing.sipHash24().hashBytes(data).asLong();
-        try {
-            return cache.get(key, () -> fromSlime(SlimeUtils.jsonToSlime(data)));
-        } catch (ExecutionException e) {
-            throw new UncheckedExecutionException(e);
-        }
+        return fromSlime(SlimeUtils.jsonToSlime(data));
     }
 
     private Application fromSlime(Slime slime) {

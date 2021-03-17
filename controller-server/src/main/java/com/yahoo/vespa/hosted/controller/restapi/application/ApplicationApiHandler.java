@@ -2144,8 +2144,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void tenantMetaDataToSlime(Tenant tenant, List<Application> applications, Cursor object) {
         Optional<Instant> lastDev = applications.stream()
                 .flatMap(application -> application.instances().values().stream())
-                .flatMap(instance -> controller.jobController().jobs(instance.id()).stream()
-                        .filter(jobType -> jobType.environment() == Environment.dev)
+                .flatMap(instance -> JobType.allIn(controller.system()).stream()
+                        .filter(job -> job.environment() == Environment.dev)
                         .flatMap(jobType -> controller.jobController().last(instance.id(), jobType).stream()))
                 .map(Run::start)
                 .max(Comparator.naturalOrder());
