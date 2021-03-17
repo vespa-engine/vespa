@@ -95,6 +95,7 @@ public enum NodeType {
     public NodeType hostType() {
         if (isHost()) return this;
         for (NodeType nodeType : values()) {
+            // Ignore host types that support multiple node types
             if (nodeType.childNodeTypes.size() == 1 && nodeType.canRun(this)) {
                 return nodeType;
             }

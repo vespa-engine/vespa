@@ -179,9 +179,8 @@ public interface NodeSpec {
     /** A node spec specifying a node type. This will accept all nodes of this type. */
     class TypeNodeSpec implements NodeSpec {
 
-        private static final Map<NodeType, Integer> WANTED_NODE_COUNT = Map.of(
-                NodeType.config, 3,
-                NodeType.controller, 3);
+        private static final Map<NodeType, Integer> WANTED_NODE_COUNT = Map.of(NodeType.config, 3,
+                                                                               NodeType.controller, 3);
 
         private final NodeType type;
 

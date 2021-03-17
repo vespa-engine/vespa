@@ -7,7 +7,6 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.OutOfCapacityException;
 import com.yahoo.transaction.Mutex;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -35,7 +34,6 @@ public class GroupPreparer {
     private final NodeRepository nodeRepository;
     private final Optional<HostProvisioner> hostProvisioner;
     private final StringFlag allocateOsRequirementFlag;
-    private final BooleanFlag provisionConfigServerDynamically;
 
     public GroupPreparer(NodeRepository nodeRepository,
                          Optional<HostProvisioner> hostProvisioner,
@@ -43,7 +41,6 @@ public class GroupPreparer {
         this.nodeRepository = nodeRepository;
         this.hostProvisioner = hostProvisioner;
         this.allocateOsRequirementFlag = Flags.ALLOCATE_OS_REQUIREMENT.bindTo(flagSource);
-        this.provisionConfigServerDynamically = Flags.DYNAMIC_CONFIG_SERVER_PROVISIONING.bindTo(flagSource);
     }
 
     /**
@@ -91,10 +88,7 @@ public class GroupPreparer {
                                                           indices::next, wantedGroups, allocationLock,
                                                           allocateOsRequirement);
             NodeType hostType = allocation.nodeType().hostType();
-            boolean hostTypeSupportsDynamicProvisioning = hostType == NodeType.host ||
-                                                      (hostType.isConfigServerHostLike() &&
-                                                       provisionConfigServerDynamically.value());
-            if (nodeRepository.zone().getCloud().dynamicProvisioning() && hostTypeSupportsDynamicProvisioning) {
+            if (canProvisionDynamically(hostType)) {
                 final Version osVersion;
                 if (allocateOsRequirement.equals("rhel8")) {
                     osVersion = new Version(8, Integer.MAX_VALUE /* always use latest 8 version */, 0);
@@ -153,6 +147,11 @@ public class GroupPreparer {
                 nodeRepository.resourcesCalculator(), nodeRepository.spareCount(), allocateOsRequirement);
         allocation.offer(prioritizer.collect(surplusActiveNodes));
         return allocation;
+    }
+
+    private boolean canProvisionDynamically(NodeType hostType) {
+        return nodeRepository.zone().getCloud().dynamicProvisioning() &&
+               (hostType == NodeType.host || hostType.isConfigServerHostLike());
     }
 
     private static HostSharing hostSharing(NodeSpec spec, NodeType hostType) {
