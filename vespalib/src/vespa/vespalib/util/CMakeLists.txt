@@ -41,6 +41,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     random.cpp
     rcuvector.cpp
     regexp.cpp
+    require.cpp
     reusable_set.cpp
     reusable_set_handle.cpp
     reusable_set_pool.cpp
