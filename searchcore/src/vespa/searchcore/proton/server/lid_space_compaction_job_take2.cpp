@@ -80,18 +80,14 @@ CompactionJob::moveDocument(const search::DocumentMetaData & metaThen, std::shar
     if (_stopped.load(std::memory_order_relaxed)) return;
     // The real lid must be sampled in the master thread.
     //TODO remove target lid from createMoveOperation interface
-    // Reread meta data as document might have been altered after move was initiated
-    // If so it will fail the timestamp sanity check later on.
-    search::DocumentMetaData metaNow = _handler->getMetaData(metaThen.lid);
-    if ( ! isSameDocument(metaThen, metaNow)) return;
-    auto op = _handler->createMoveOperation(metaNow, 0);
+    auto op = _handler->createMoveOperation(metaThen, 0);
     if (!op || !op->getDocument()) return;
     // Early detection and force md5 calculation outside of master thread
     if (metaThen.gid != op->getDocument()->getId().getGlobalId()) return;
 
-    _master.execute(makeLambdaTask([this, metaNow, moveOp=std::move(op), onDone=std::move(context)]() mutable {
+    _master.execute(makeLambdaTask([this, meta=metaThen, moveOp=std::move(op), onDone=std::move(context)]() mutable {
         if (_stopped.load(std::memory_order_relaxed)) return;
-        completeMove(metaNow, std::move(moveOp), std::move(onDone));
+        completeMove(meta, std::move(moveOp), std::move(onDone));
     }));
 }
 
@@ -99,6 +95,8 @@ void
 CompactionJob::completeMove(const search::DocumentMetaData & metaThen, std::unique_ptr<MoveOperation> moveOp,
                             std::shared_ptr<IDestructorCallback> onDone)
 {
+    // Reread meta data as document might have been altered after move was initiated
+    // If so it will fail the timestamp sanity check later on.
     search::DocumentMetaData metaNow = _handler->getMetaData(metaThen.lid);
     // This should be impossible and should probably be an assert
     if ( ! isSameDocument(metaThen, metaNow)) return;
