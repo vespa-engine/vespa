@@ -39,7 +39,7 @@ public class ZkClientConfigBuilder {
          this(defaultTlsContext);
     }
 
-    public ZkClientConfigBuilder(TlsContext tlsContext) {
+    ZkClientConfigBuilder(TlsContext tlsContext) {
         this.tlsContext = tlsContext;
     }
 
@@ -82,10 +82,6 @@ public class ZkClientConfigBuilder {
     }
 
     private static Optional<TlsContext> getTlsContext() {
-        // TODO(bjorncs) Remove handling of temporary feature flag
-        boolean temporaryFeatureFlag = Optional.ofNullable(System.getenv("VESPA_USE_TLS_FOR_ZOOKEEPER_CLIENT")).map(Boolean::parseBoolean).orElse(false);
-        if (!temporaryFeatureFlag) return Optional.empty();
-
         if (TransportSecurityUtils.getInsecureMixedMode() == MixedMode.PLAINTEXT_CLIENT_MIXED_SERVER) return Optional.empty();
         return TransportSecurityUtils.getSystemTlsContext();
     }
