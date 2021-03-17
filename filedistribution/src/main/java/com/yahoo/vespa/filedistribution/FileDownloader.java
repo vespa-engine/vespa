@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution;
 
 import com.yahoo.config.FileReference;
@@ -39,7 +39,8 @@ public class FileDownloader implements AutoCloseable {
     }
 
     public FileDownloader(ConnectionPool connectionPool, File downloadDirectory) {
-        this(connectionPool, downloadDirectory , downloadDirectory , Duration.ofMinutes(15), Duration.ofSeconds(10));
+        // TODO: Reduce timeout even more, timeout is so long that we might get starvation
+        this(connectionPool, downloadDirectory, downloadDirectory, Duration.ofMinutes(5), Duration.ofSeconds(10));
     }
 
     public FileDownloader(ConnectionPool connectionPool, File downloadDirectory, File tmpDirectory, Duration timeout, Duration sleepBetweenRetries) {

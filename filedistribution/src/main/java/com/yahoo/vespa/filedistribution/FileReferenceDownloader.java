@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.filedistribution;
 
 import com.yahoo.concurrent.DaemonThreadFactory;
@@ -69,7 +69,9 @@ public class FileReferenceDownloader {
                     downloadStarted = true;
                 } else {
                     retryCount++;
-                    Thread.sleep(sleepBetweenRetries.toMillis());
+                    long sleepTime = Math.min(sleepBetweenRetries.toMillis() * retryCount,
+                                              Math.max(0, Duration.between(Instant.now(), end).toMillis()));
+                    Thread.sleep(sleepTime);
                 }
             }
             catch (InterruptedException e) { /* ignored */}
