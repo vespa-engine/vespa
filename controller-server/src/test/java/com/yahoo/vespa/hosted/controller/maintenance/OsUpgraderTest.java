@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.CloudName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -48,7 +47,7 @@ public class OsUpgraderTest {
                                                    .upgradeInParallel(zone2, zone3)
                                                    .upgrade(zone5) // Belongs to a different cloud and is ignored by this upgrader
                                                    .upgrade(zone4);
-        OsUpgrader osUpgrader = osUpgrader(upgradePolicy, SystemName.cd, cloud1, false);
+        OsUpgrader osUpgrader = osUpgrader(upgradePolicy, cloud1, false);
 
         // Bootstrap system
         tester.configServer().bootstrap(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId(), zone5.getId()),
@@ -118,13 +117,12 @@ public class OsUpgraderTest {
                                                    .upgrade(zone1)
                                                    .upgradeInParallel(zone2, zone3)
                                                    .upgrade(zone4);
-        OsUpgrader osUpgrader = osUpgrader(upgradePolicy, SystemName.cd, cloud, true);
+        OsUpgrader osUpgrader = osUpgrader(upgradePolicy, cloud, true);
 
         // Bootstrap system
+        List<SystemApplication> nodeTypes = List.of(SystemApplication.configServerHost, SystemApplication.tenantHost);
         tester.configServer().bootstrap(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId()),
-                                        List.of(SystemApplication.tenantHost));
-        tester.configServer().addNodes(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId()),
-                                       List.of(SystemApplication.configServerHost)); // Not supported yet
+                                        nodeTypes);
 
         // Upgrade without budget fails
         Version version = Version.fromString("7.1");
@@ -140,25 +138,28 @@ public class OsUpgraderTest {
         osUpgrader.maintain();
 
         // First zone upgrades
-        assertEquals("Dev zone gets a zero budget", Duration.ZERO, upgradeBudget(zone1.getId(), SystemApplication.tenantHost, version));
-        completeUpgrade(version, SystemApplication.tenantHost, zone1.getId());
-        completeUpgrade(version, SystemApplication.configServerHost, zone1.getId());
+        for (var nodeType : nodeTypes) {
+            assertEquals("Dev zone gets a zero budget", Duration.ZERO, upgradeBudget(zone1.getId(), nodeType, version));
+            completeUpgrade(version, nodeType, zone1.getId());
+        }
 
         // Next set of zones upgrade
         osUpgrader.maintain();
         for (var zone : List.of(zone2.getId(), zone3.getId())) {
-            assertEquals("Parallel prod zones share the budget of a single zone", Duration.ofHours(6),
-                         upgradeBudget(zone, SystemApplication.tenantHost, version));
-            completeUpgrade(version, SystemApplication.tenantHost, zone);
-            completeUpgrade(version, SystemApplication.configServerHost, zone);
+            for (var nodeType : nodeTypes) {
+                assertEquals("Parallel prod zones share the budget of a single zone", Duration.ofHours(6),
+                             upgradeBudget(zone, nodeType, version));
+                completeUpgrade(version, nodeType, zone);
+            }
         }
 
         // Last zone upgrades
         osUpgrader.maintain();
-        assertEquals("Tenant hosts in last prod zone gets the budget of a single zone", Duration.ofHours(6),
-                     upgradeBudget(zone4.getId(), SystemApplication.tenantHost, version));
-        completeUpgrade(version, SystemApplication.tenantHost, zone4.getId());
-        completeUpgrade(version, SystemApplication.configServerHost, zone4.getId());
+        for (var nodeType : nodeTypes) {
+            assertEquals(nodeType + " in last prod zone gets the budget of a single zone", Duration.ofHours(6),
+                         upgradeBudget(zone4.getId(), nodeType, version));
+            completeUpgrade(version, nodeType, zone4.getId());
+        }
 
         // All host applications upgraded
         statusUpdater.maintain();
@@ -174,7 +175,7 @@ public class OsUpgraderTest {
         UpgradePolicy upgradePolicy = UpgradePolicy.create()
                                                    .upgrade(zone1)
                                                    .upgrade(zone2);
-        OsUpgrader osUpgrader = osUpgrader(upgradePolicy, SystemName.cd, cloud, false);
+        OsUpgrader osUpgrader = osUpgrader(upgradePolicy, cloud, false);
 
         // Bootstrap system
         tester.configServer().bootstrap(List.of(zone1.getId(), zone2.getId()),
@@ -277,11 +278,10 @@ public class OsUpgraderTest {
         return tester.configServer().nodeRepository();
     }
 
-    private OsUpgrader osUpgrader(UpgradePolicy upgradePolicy, SystemName system, CloudName cloud, boolean reprovisionToUpgradeOs) {
+    private OsUpgrader osUpgrader(UpgradePolicy upgradePolicy, CloudName cloud, boolean reprovisionToUpgradeOs) {
         var zones = upgradePolicy.asList().stream().flatMap(Collection::stream).collect(Collectors.toList());
         tester.zoneRegistry()
               .setZones(zones)
-              .setSystemName(system)
               .setOsUpgradePolicy(cloud, upgradePolicy);
         if (reprovisionToUpgradeOs) {
             tester.zoneRegistry().reprovisionToUpgradeOsIn(zones);
