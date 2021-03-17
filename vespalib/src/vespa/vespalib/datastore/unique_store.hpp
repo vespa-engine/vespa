@@ -28,7 +28,7 @@ using DefaultUniqueStoreDictionary = UniqueStoreDictionary<DefaultDictionary>;
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 UniqueStore<EntryT, RefT, Compare, Allocator>::UniqueStore()
-    : UniqueStore<EntryT, RefT, Compare, Allocator>(std::make_unique<uniquestore::DefaultUniqueStoreDictionary>())
+    : UniqueStore<EntryT, RefT, Compare, Allocator>(std::make_unique<uniquestore::DefaultUniqueStoreDictionary>(std::unique_ptr<EntryComparator>()))
 {
 }
 

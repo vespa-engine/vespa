@@ -13,7 +13,7 @@ EnumAttribute<B>::
 EnumAttribute(const vespalib::string &baseFileName,
               const AttributeVector::Config &cfg)
     : B(baseFileName, cfg),
-      _enumStore(cfg.fastSearch())
+      _enumStore(cfg.fastSearch(), cfg.get_dictionary_config().getOrdering())
 {
     this->setEnum(true);
 }

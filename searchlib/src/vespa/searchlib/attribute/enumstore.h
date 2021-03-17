@@ -7,6 +7,7 @@
 #include "enumcomparator.h"
 #include "i_enum_store.h"
 #include "loadedenumvalue.h"
+#include <vespa/searchcommon/common/dictionary_config.h>
 #include <vespa/searchlib/util/foldedstringcompare.h>
 #include <vespa/vespalib/btree/btreenode.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
@@ -73,7 +74,7 @@ private:
     ssize_t load_unique_value(const void* src, size_t available, Index& idx);
 
 public:
-    EnumStoreT(bool has_postings);
+    EnumStoreT(bool has_postings, search::DictionaryConfig::Ordering ordering);
     virtual ~EnumStoreT();
 
     uint32_t get_ref_count(Index idx) const { return get_entry_base(idx).get_ref_count(); }
@@ -213,7 +214,7 @@ public:
 };
 
 std::unique_ptr<vespalib::datastore::IUniqueStoreDictionary>
-make_enum_store_dictionary(IEnumStore &store, bool has_postings, std::unique_ptr<vespalib::datastore::EntryComparator> folded_compare);
+make_enum_store_dictionary(IEnumStore &store, bool has_postings, search::DictionaryConfig::Ordering ordering, std::unique_ptr<vespalib::datastore::EntryComparator> compare, std::unique_ptr<vespalib::datastore::EntryComparator> folded_compare);
 
 
 template <>

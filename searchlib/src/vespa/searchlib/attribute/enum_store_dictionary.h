@@ -12,8 +12,8 @@ class IEnumStore;
 /**
  * Concrete dictionary for an enum store that extends the functionality of a unique store dictionary.
  */
-template <typename DictionaryT>
-class EnumStoreDictionary : public vespalib::datastore::UniqueStoreDictionary<DictionaryT, IEnumStoreDictionary> {
+template <typename DictionaryT, typename UnorderedDictionaryT = vespalib::datastore::NoUnorderedDictionary>
+class EnumStoreDictionary : public vespalib::datastore::UniqueStoreDictionary<DictionaryT, IEnumStoreDictionary, UnorderedDictionaryT> {
 protected:
     using EntryRef = IEnumStoreDictionary::EntryRef;
     using Index = IEnumStoreDictionary::Index;
@@ -22,7 +22,7 @@ private:
     using EnumVector = IEnumStoreDictionary::EnumVector;
     using IndexSet = IEnumStoreDictionary::IndexSet;
     using IndexVector = IEnumStoreDictionary::IndexVector;
-    using ParentUniqueStoreDictionary = vespalib::datastore::UniqueStoreDictionary<DictionaryT, IEnumStoreDictionary>;
+    using ParentUniqueStoreDictionary = vespalib::datastore::UniqueStoreDictionary<DictionaryT, IEnumStoreDictionary, UnorderedDictionaryT>;
     using generation_t = IEnumStoreDictionary::generation_t;
 
     IEnumStore& _enumStore;
@@ -31,7 +31,7 @@ private:
                               const vespalib::datastore::EntryComparator& cmp);
 
 public:
-    EnumStoreDictionary(IEnumStore& enumStore);
+    EnumStoreDictionary(IEnumStore& enumStore, std::unique_ptr<vespalib::datastore::EntryComparator> compare);
 
     ~EnumStoreDictionary() override;
 
@@ -75,7 +75,7 @@ private:
     std::unique_ptr<vespalib::datastore::EntryComparator> _folded_compare;
 
 public:
-    EnumStoreFoldedDictionary(IEnumStore& enumStore, std::unique_ptr<vespalib::datastore::EntryComparator> folded_compare);
+    EnumStoreFoldedDictionary(IEnumStore& enumStore, std::unique_ptr<vespalib::datastore::EntryComparator> compare, std::unique_ptr<vespalib::datastore::EntryComparator> folded_compare);
     ~EnumStoreFoldedDictionary() override;
     vespalib::datastore::UniqueStoreAddResult add(const vespalib::datastore::EntryComparator& comp, std::function<vespalib::datastore::EntryRef(void)> insertEntry) override;
     void remove(const vespalib::datastore::EntryComparator& comp, vespalib::datastore::EntryRef ref) override;
