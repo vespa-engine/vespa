@@ -71,7 +71,7 @@ public class ClusterTimeseriesTest {
         var snapshots = new ArrayList<ClusterMetricSnapshot>();
         snapshots.addAll(queryRate(100, clock, t ->  (double)t));
         snapshots.addAll(queryRate(100, clock, t -> 100.0 - t));
-        assertEquals(1/5.0, new ClusterTimeseries(cluster, snapshots).maxQueryGrowthRate(Duration.ofMinutes(1), clock), delta);
+        assertEquals(1/5.0, new ClusterTimeseries(cluster, snapshots).maxQueryGrowthRate(Duration.ofMinutes(5), clock), delta);
     }
 
     @Test

@@ -138,7 +138,7 @@ class AutoscalingTester {
         NodeList nodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId);
         float oneExtraNodeFactor = (float)(nodes.size() - 1.0) / (nodes.size());
         for (int i = 0; i < count; i++) {
-            clock().advance(Duration.ofMinutes(1));
+            clock().advance(Duration.ofMinutes(5));
             for (Node node : nodes) {
                 float cpu = value * oneExtraNodeFactor;
                 float memory  = (float) Resource.memory.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
@@ -241,10 +241,9 @@ class AutoscalingTester {
                                     int measurements,
                                     IntFunction<Double> queryRate,
                                     IntFunction<Double> writeRate) {
-        Instant time = clock().instant();
         for (int i = 0; i < measurements; i++) {
-            db.addClusterMetrics(application, Map.of(cluster, new ClusterMetricSnapshot(time, queryRate.apply(i), writeRate.apply(i))));
-            time = time.plus(Duration.ofMinutes(5));
+            db.addClusterMetrics(application, Map.of(cluster, new ClusterMetricSnapshot(clock().instant(), queryRate.apply(i), writeRate.apply(i))));
+            clock().advance(Duration.ofMinutes(5));
         }
     }
 

@@ -85,8 +85,7 @@ public class ClusterTimeseries {
             else
                 return 0.0; //       ... because load is stable
         }
-        // OptionalDouble queryRate = queryRate(window, clock); TODO
-        OptionalDouble queryRate = snapshots.isEmpty() ? OptionalDouble.empty() : OptionalDouble.of(queryRateAt(snapshots.size() - 1));
+        OptionalDouble queryRate = queryRate(window, clock);
         if (queryRate.orElse(0) == 0) return 0.1; // Growth not expressible as a fraction of the current rate
         return maxGrowthRate / queryRate.getAsDouble();
     }
@@ -99,23 +98,13 @@ public class ClusterTimeseries {
         if (snapshots.isEmpty()) return 0.5;
         var max = snapshots.stream().mapToDouble(ClusterMetricSnapshot::queryRate).max().getAsDouble();
         if (max == 0) return 1.0;
-        var average = queryRateTemp(window, clock);
+        var average = queryRate(window, clock);
         if (average.isEmpty()) return 0.5; // No measurements in the relevant time period
         return average.getAsDouble() / max;
     }
 
     /** Returns the average query rate in the given window, or empty if there are no measurements in it */
-    public OptionalDouble queryRateTemp(Duration window, Clock clock) { // TODO
-        Instant oldest = clock.instant().minus(window);
-        return snapshots.stream()
-                        .filter(snapshot -> ! snapshot.at().isBefore(oldest))
-                        .mapToDouble(snapshot -> snapshot.queryRate())
-                        .average();
-    }
-
-    /** Returns the average query rate in the given window, or empty if there are no measurements in it */
     public OptionalDouble queryRate(Duration window, Clock clock) {
-        if (1==1) return snapshots.isEmpty() ? OptionalDouble.empty() : OptionalDouble.of(queryRateAt(snapshots.size() - 1)); // TODO
         Instant oldest = clock.instant().minus(window);
         return snapshots.stream()
                         .filter(snapshot -> ! snapshot.at().isBefore(oldest))
@@ -125,7 +114,6 @@ public class ClusterTimeseries {
 
     /** Returns the average query rate in the given window, or empty if there are no measurements in it */
     public OptionalDouble writeRate(Duration window, Clock clock) {
-        if (1==1) return snapshots.isEmpty() ? OptionalDouble.empty() : OptionalDouble.of(writeRateAt(snapshots.size() - 1)); // TODO
         Instant oldest = clock.instant().minus(window);
         return snapshots.stream()
                         .filter(snapshot -> ! snapshot.at().isBefore(oldest))

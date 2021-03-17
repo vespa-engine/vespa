@@ -161,10 +161,19 @@ public class AutoscalingMaintainerTest {
 
             tester.clock().advance(Duration.ofDays(1));
 
-            if (i % 2 == 0) // high load
-                tester.addMeasurements(0.9f, 0.9f, 0.9f, i, 200, app1);
-            else // low load
-                tester.addMeasurements(0.1f, 0.1f, 0.1f, i, 200, app1);
+            if (i % 2 == 0) { // high load
+                for (int j = 0; j < 200; j++ ) {
+                    tester.addMeasurements(0.99f, 0.99f, 0.99f, i, 1, app1);
+                    tester.clock().advance(Duration.ofMinutes(1));
+                }
+            }
+            else { // low load
+                for (int j = 0; j < 200; j++ ) {
+                    tester.addMeasurements(0.2f, 0.2f, 0.2f, i, 1, app1);
+                    tester.clock().advance(Duration.ofMinutes(1));
+                }
+            }
+            tester.addQueryRateMeasurements(app1, cluster1.id(), 2, t -> (t == 0 ? 20.0 : 10.0 ));
             tester.maintainer().maintain();
         }
 
