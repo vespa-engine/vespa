@@ -130,6 +130,39 @@ EnumStoreDictionary<DictionaryT>::find_matching_enums(const vespalib::datastore:
 }
 
 template <typename DictionaryT>
+EntryRef
+EnumStoreDictionary<DictionaryT>::get_frozen_root() const
+{
+    return this->_dict.getFrozenView().getRoot();
+}
+
+template <>
+std::pair<IEnumStore::Index, EntryRef>
+EnumStoreDictionary<EnumTree>::find_posting_list(const vespalib::datastore::EntryComparator&, EntryRef) const
+{
+    LOG_ABORT("should not be reached");
+}
+
+template <>
+std::pair<IEnumStore::Index, EntryRef>
+EnumStoreDictionary<EnumPostingTree>::find_posting_list(const vespalib::datastore::EntryComparator& cmp, EntryRef root) const
+{
+    typename DictionaryType::ConstIterator itr(vespalib::btree::BTreeNode::Ref(), this->_dict.getAllocator());
+    itr.lower_bound(root, Index(), cmp);
+    if (itr.valid() && !cmp.less(Index(), itr.getKey())) {
+        return std::make_pair(itr.getKey(), EntryRef(itr.getData()));
+    }
+    return std::make_pair(Index(), EntryRef());
+}
+
+template <typename DictionaryT>
+void
+EnumStoreDictionary<DictionaryT>::collect_folded(Index idx, EntryRef, const std::function<void(vespalib::datastore::EntryRef)>& callback) const
+{
+    callback(idx);
+}
+
+template <typename DictionaryT>
 IEnumStore::Index
 EnumStoreDictionary<DictionaryT>::remap_index(Index idx)
 {
@@ -258,6 +291,17 @@ EnumStoreFoldedDictionary::remove(const EntryComparator& comp, EntryRef ref)
         } else {
             LOG_ABORT("Posting list not cleared for removed unique value");
         }
+    }
+}
+
+void
+EnumStoreFoldedDictionary::collect_folded(Index idx, EntryRef root, const std::function<void(vespalib::datastore::EntryRef)>& callback) const
+{
+    DictionaryType::ConstIterator itr(vespalib::btree::BTreeNode::Ref(), _dict.getAllocator());
+    itr.lower_bound(root, idx, *_folded_compare);
+    while (itr.valid() && !_folded_compare->less(idx, itr.getKey())) {
+        callback(itr.getKey());
+        ++itr;
     }
 }
 

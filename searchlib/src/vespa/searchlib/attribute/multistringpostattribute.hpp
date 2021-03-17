@@ -102,25 +102,23 @@ template <typename B, typename T>
 vespalib::datastore::EntryRef
 MultiValueStringPostingAttributeT<B, T>::DocumentWeightAttributeAdapter::get_dictionary_snapshot() const
 {
-    const Dictionary &dictionary = self._enumStore.get_posting_dictionary();
-    return dictionary.getFrozenView().getRoot();
+    const IEnumStoreDictionary& dictionary = self._enumStore.get_dictionary();
+    return dictionary.get_frozen_root();
 }
 
 template <typename B, typename T>
 IDocumentWeightAttribute::LookupResult
 MultiValueStringPostingAttributeT<B, T>::DocumentWeightAttributeAdapter::lookup(const vespalib::string &term, vespalib::datastore::EntryRef dictionary_snapshot) const
 {
-    const Dictionary &dictionary = self._enumStore.get_posting_dictionary();
-    Dictionary::ConstIterator dictItr(vespalib::btree::BTreeNode::Ref(), dictionary.getAllocator());
+    const IEnumStoreDictionary& dictionary = self._enumStore.get_dictionary();
     auto comp = self._enumStore.make_folded_comparator(term.c_str());
-
-    dictItr.lower_bound(dictionary_snapshot, enumstore::Index(), comp);
-    if (dictItr.valid() && !comp.less(enumstore::Index(), dictItr.getKey())) {
-        vespalib::datastore::EntryRef pidx(dictItr.getData());
+    auto find_result = dictionary.find_posting_list(comp, dictionary_snapshot);
+    if (find_result.first.valid()) {
+        auto pidx = find_result.second;
         if (pidx.valid()) {
             const PostingList &plist = self.getPostingList();
             auto minmax = plist.getAggregated(pidx);
-            return LookupResult(pidx, plist.frozenSize(pidx), minmax.getMin(), minmax.getMax(), dictItr.getKey());
+            return LookupResult(pidx, plist.frozenSize(pidx), minmax.getMin(), minmax.getMax(), find_result.first);
         }
     }
     return LookupResult();
@@ -130,14 +128,8 @@ template <typename B, typename T>
 void
 MultiValueStringPostingAttributeT<B, T>::DocumentWeightAttributeAdapter::collect_folded(vespalib::datastore::EntryRef enum_idx, vespalib::datastore::EntryRef dictionary_snapshot, const std::function<void(vespalib::datastore::EntryRef)>& callback) const
 {
-    const Dictionary &dictionary = self._enumStore.get_posting_dictionary();
-    Dictionary::ConstIterator dictItr(vespalib::btree::BTreeNode::Ref(), dictionary.getAllocator());
-    auto comp = self._enumStore.make_folded_comparator();
-    dictItr.lower_bound(dictionary_snapshot, enum_idx, comp);
-    while (dictItr.valid() && !comp.less(enum_idx, dictItr.getKey())) {
-        callback(dictItr.getKey());
-        ++dictItr;
-    }
+    const IEnumStoreDictionary &dictionary = self._enumStore.get_dictionary();
+    dictionary.collect_folded(enum_idx, dictionary_snapshot, callback);
 }
 
 template <typename B, typename T>
