@@ -1,19 +1,22 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-#include <vespa/log/log.h>
-LOG_SETUP("move_operation_limiter_test");
 
 #include <vespa/searchcore/proton/server/i_blockable_maintenance_job.h>
 #include <vespa/searchcore/proton/server/move_operation_limiter.h>
 #include <vespa/vespalib/testkit/testapp.h>
 #include <queue>
 
+#include <vespa/log/log.h>
+LOG_SETUP("move_operation_limiter_test");
+
 using namespace proton;
 
 struct MyBlockableMaintenanceJob : public IBlockableMaintenanceJob {
     bool blocked;
+    bool stopped;
     MyBlockableMaintenanceJob()
         : IBlockableMaintenanceJob("my_job", 1s, 1s),
-          blocked(false)
+          blocked(false),
+          stopped(false)
     {}
     void setBlocked(BlockedReason reason) override {
         ASSERT_TRUE(reason == BlockedReason::OUTSTANDING_OPS);
@@ -26,6 +29,7 @@ struct MyBlockableMaintenanceJob : public IBlockableMaintenanceJob {
         blocked = false;
     }
     bool run() override { return true; }
+    void onStop() override { stopped = true; }
 };
 
 struct Fixture {

@@ -34,11 +34,13 @@ struct MyMaintenanceJob : public IBlockableMaintenanceJob
     GateVector _runGates;
     size_t     _runIdx;
     bool       _blocked;
+    bool       _stopped;
     MyMaintenanceJob(size_t numRuns)
         : IBlockableMaintenanceJob("myjob", 10s, 20s),
           _runGates(getGateVector(numRuns)),
           _runIdx(0),
-          _blocked(false)
+          _blocked(false),
+          _stopped(false)
     {}
     void block() { setBlocked(BlockedReason::RESOURCE_LIMITS); }
     void unBlock() { unBlock(BlockedReason::RESOURCE_LIMITS); }
@@ -49,6 +51,7 @@ struct MyMaintenanceJob : public IBlockableMaintenanceJob
         _runGates[_runIdx++]->await(5s);
         return _runIdx == _runGates.size();
     }
+    void onStop() override { _stopped = true; }
 };
 
 struct Fixture
@@ -137,6 +140,13 @@ TEST_F("require that block calls are sent to underlying jobs", Fixture)
     f._myJob->unBlock();
     EXPECT_FALSE(f._myJob->isBlocked());
     EXPECT_FALSE(f._trackedJob->isBlocked());
+}
+
+TEST_F("require that stop calls are sent to underlying jobs", Fixture)
+{
+    EXPECT_FALSE(f._myJob->_stopped);
+    f._trackedJob->onStop();
+    EXPECT_TRUE(f._myJob->_stopped);
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -26,6 +26,7 @@ public:
         _job->registerRunner(runner);
     }
     bool run() override;
+    void onStop() override { _job->onStop(); }
 };
 
 } // namespace proton
