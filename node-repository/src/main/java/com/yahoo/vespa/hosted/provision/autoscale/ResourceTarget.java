@@ -5,6 +5,7 @@ import com.yahoo.vespa.hosted.provision.applications.Application;
 
 import java.time.Clock;
 import java.time.Duration;
+import java.util.OptionalDouble;
 
 /**
  * A resource target to hit for the allocation optimizer.
@@ -78,10 +79,10 @@ public class ResourceTarget {
                                       ClusterTimeseries clusterTimeseries,
                                       Application application,
                                       Clock clock) {
-        double queryCpuFraction = queryCpuFraction(clusterTimeseries);
+        double queryCpuFraction = queryCpuFraction(clusterTimeseries, scalingDuration, clock);
 
         // What's needed to have headroom for growth during scale-up as a fraction of current resources?
-        double maxGrowthRate = clusterTimeseries.maxQueryGrowthRate(); // in fraction per minute of the current traffic
+        double maxGrowthRate = clusterTimeseries.maxQueryGrowthRate(scalingDuration, clock); // in fraction per minute of the current traffic
         double growthRateHeadroom = 1 + maxGrowthRate * scalingDuration.toMinutes();
         // Cap headroom at 10% above the historical observed peak
         double fractionOfMax = clusterTimeseries.queryFractionOfMax(scalingDuration, clock);
@@ -106,11 +107,11 @@ public class ResourceTarget {
                (1 - queryCpuFraction) * idealWriteCpuLoad();
     }
     
-    private static double queryCpuFraction(ClusterTimeseries clusterTimeseries) {
-        double queryRate = clusterTimeseries.currentQueryRate();
-        double writeRate = clusterTimeseries.currentWriteRate();
-        if (queryRate == 0 && writeRate == 0) return queryCpuFraction(0.5);
-        return queryCpuFraction(queryRate / (queryRate + writeRate));
+    private static double queryCpuFraction(ClusterTimeseries clusterTimeseries, Duration scalingDuration, Clock clock) {
+        OptionalDouble queryRate = clusterTimeseries.queryRate(scalingDuration, clock);
+        OptionalDouble writeRate = clusterTimeseries.writeRate(scalingDuration, clock);
+        if (queryRate.orElse(0) == 0 && writeRate.orElse(0) == 0) return queryCpuFraction(0.5);
+        return queryCpuFraction(queryRate.orElse(0) / (queryRate.orElse(0) + writeRate.orElse(0)));
     }
 
     private static double queryCpuFraction(double queryFraction) {
