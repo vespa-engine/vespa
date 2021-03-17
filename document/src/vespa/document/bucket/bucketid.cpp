@@ -45,7 +45,7 @@ void fillUsedMasks(BucketId::Type * masks, uint8_t maxBits)
     typedef BucketId::Type Type;
     for (uint32_t usedBits = 0; usedBits <= maxBits; ++usedBits) {
         uint8_t notused = 8 * sizeof(Type) - usedBits;
-        masks[usedBits] = (std::numeric_limits<Type>::max() << notused) >> notused;
+        masks[usedBits] = (usedBits > 0) ? ((std::numeric_limits<Type>::max() << notused) >> notused) : std::numeric_limits<Type>::max();
     }
 }
 
@@ -54,7 +54,7 @@ void fillStripMasks(BucketId::Type * masks, uint8_t maxBits)
     typedef BucketId::Type Type;
     for (uint32_t usedBits = 0; usedBits <= maxBits; ++usedBits) {
         uint8_t notused = 8 * sizeof(Type) - usedBits;
-        Type usedMask = (std::numeric_limits<Type>::max() << notused) >> notused;
+        Type usedMask = (usedBits > 0) ? ((std::numeric_limits<Type>::max() << notused) >> notused) : std::numeric_limits<Type>::max();
         Type countMask = (std::numeric_limits<Type>::max() >> maxBits) << maxBits;
         masks[usedBits] = usedMask | countMask;
     }
