@@ -474,7 +474,7 @@ BucketDBUpdater::onActivateClusterStateVersion(const std::shared_ptr<api::Activa
 BucketDBUpdater::MergeReplyGuard::~MergeReplyGuard()
 {
     if (_reply) {
-        _updater.getDistributorComponent().getDistributor().handleCompletedMerge(_reply);
+        _distributor_interface.handleCompletedMerge(_reply);
     }
 }
 
@@ -482,7 +482,7 @@ bool
 BucketDBUpdater::onMergeBucketReply(
         const std::shared_ptr<api::MergeBucketReply>& reply)
 {
-   auto replyGuard = std::make_shared<MergeReplyGuard>(*this, reply);
+   auto replyGuard = std::make_shared<MergeReplyGuard>(_distributor_interface, reply);
 
    // In case the merge was unsuccessful somehow, or some nodes weren't
    // actually merged (source-only nodes?) we request the bucket info of the

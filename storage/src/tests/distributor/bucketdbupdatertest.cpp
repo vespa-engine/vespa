@@ -72,7 +72,7 @@ public:
         lib::ClusterStateBundle clusterStateBundle(baselineClusterState);
         ClusterInformation::CSP clusterInfo(
                 new SimpleClusterInformation(
-                        getBucketDBUpdater().getDistributorComponent().getIndex(),
+                        getBucketDBUpdater().node_context().node_index(),
                         clusterStateBundle,
                         "ui"));
         for (auto* repo : {&mutable_repo(), &read_only_repo()}) {
@@ -1966,7 +1966,7 @@ TEST_F(BucketDBUpdaterTest, newer_mutations_not_overwritten_by_earlier_bucket_fe
     document::BucketId bucket(16, 1);
     constexpr uint64_t insertionTimestamp = 1001ULL * 1000000;
     api::BucketInfo wantedInfo(5, 6, 7);
-    getBucketDBUpdater().getDistributorComponent().updateBucketDatabase(
+    getBucketDBUpdater().operation_context().update_bucket_database(
             makeDocumentBucket(bucket),
             BucketCopy(insertionTimestamp, 0, wantedInfo),
             DatabaseUpdate::CREATE_IF_NONEXISTING);
