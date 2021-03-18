@@ -57,8 +57,8 @@ public:
     int64_t getLongValue(stringref id) const override;
     double getDoubleValue(stringref id) const override;
 
-    const Metric* getMetric(const String& name) const;
-    Metric* getMetric(const String& name) {
+    const Metric* getMetric(stringref name) const;
+    Metric* getMetric(stringref name) {
         return const_cast<Metric*>(
                 const_cast<const MetricSet*>(this)->getMetric(name));
     }
@@ -81,7 +81,7 @@ private:
     MetricSet& operator=(const MetricSet&);
 
     void tagRegistrationAltered();
-    const Metric* getMetricInternal(const String& name) const;
+    const Metric* getMetricInternal(stringref name) const;
 
     virtual void addTo(Metric&, std::vector<Metric::UP> *ownerList) const;
 };

@@ -13,7 +13,6 @@ struct AbstractValueMetric;
 class Metric;
 class MetricSet;
 class MetricSnapshot;
-class XmlWriterMetricVisitor;
 class MemoryConsumption;
 
 /** Implement class to visit metrics. */
@@ -104,7 +103,7 @@ private:
 class Metric : public vespalib::Printable
 {
 public:
-    using String = std::string;
+    using String = vespalib::string;
     using stringref = vespalib::stringref;
     using UP = std::unique_ptr<Metric>;
     using SP = std::shared_ptr<Metric>;
