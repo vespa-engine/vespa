@@ -681,6 +681,12 @@ public class YqlParserTestCase {
     }
 
     @Test
+    public void testSourcesWithDash() {
+        assertSources("select foo from source-a where price <= 500;",
+                      Arrays.asList("source-a"));
+    }
+
+    @Test
     public void testWildCardSources() {
         assertSources("select foo from sources * where price <= 500;",
                       Collections.<String>emptyList());
