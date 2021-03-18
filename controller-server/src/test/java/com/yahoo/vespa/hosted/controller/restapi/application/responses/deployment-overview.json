@@ -418,6 +418,7 @@
             "targetPlatform": "6.1.0",
             "targetApplication": {
               "build": 1,
+              "compileVersion": "6.1.0",
               "sourceUrl": "repository1/tree/commit1",
               "commit": "commit1"
             }

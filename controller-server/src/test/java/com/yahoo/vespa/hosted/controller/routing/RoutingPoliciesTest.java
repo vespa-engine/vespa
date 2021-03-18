@@ -19,7 +19,6 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.RoutingController;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -354,7 +353,7 @@ public class RoutingPoliciesTest {
               .exclusiveRoutingIn(zoneApi);
 
         // Deploy to dev
-        tester.controllerTester().controller().applications().deploy(context.instanceId(), zone, Optional.of(emptyApplicationPackage), DeployOptions.none());
+        context.runJob(zone, emptyApplicationPackage);
         assertEquals("DeploymentSpec is not persisted", DeploymentSpec.empty, context.application().deploymentSpec());
         context.flushDnsUpdates();
 
@@ -378,13 +377,14 @@ public class RoutingPoliciesTest {
         assertEquals(prodRecords, tester.recordNames());
 
         // Deploy to dev under different instance
-        var devInstance = context.application().id().instance("user");
-        tester.controllerTester().controller().applications().deploy(devInstance, zone, Optional.of(applicationPackage), DeployOptions.none());
+        var devContext = tester.newDeploymentContext(context.application().id().instance("user"));
+        devContext.runJob(zone, applicationPackage);
+
         assertEquals("DeploymentSpec is persisted", applicationPackage.deploymentSpec(), context.application().deploymentSpec());
         context.flushDnsUpdates();
 
         // Routing policy is created and DNS is updated
-        assertEquals(1, tester.policiesOf(devInstance).size());
+        assertEquals(1, tester.policiesOf(devContext.instanceId()).size());
         assertEquals(Sets.union(prodRecords, Set.of("user.app1.tenant1.us-east-1.dev.vespa.oath.cloud")), tester.recordNames());
     }
 
@@ -730,6 +730,10 @@ public class RoutingPoliciesTest {
 
         public DeploymentContext newDeploymentContext(String tenant, String application, String instance) {
             return tester.newDeploymentContext(tenant, application, instance);
+        }
+
+        public DeploymentContext newDeploymentContext(ApplicationId instance) {
+            return tester.newDeploymentContext(instance);
         }
 
         public ControllerTester controllerTester() {

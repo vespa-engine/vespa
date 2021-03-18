@@ -328,9 +328,14 @@ public class DeploymentContext {
         return runJob(type);
     }
 
-    /** Runs a deployment of the given package to the given dev/perf job. */
+    /** Runs a deployment of the given package to the given manually deployable job. */
     public DeploymentContext runJob(JobType type, ApplicationPackage applicationPackage) {
         return runJob(type, applicationPackage, null);
+    }
+
+    /** Runs a deployment of the given package to the given manually deployable zone. */
+    public DeploymentContext runJob(ZoneId zone, ApplicationPackage applicationPackage) {
+        return runJob(JobType.from(tester.controller().system(), zone).get(), applicationPackage, null);
     }
 
     /** Pulls the ready job trigger, and then runs the whole of the given job, successfully. */

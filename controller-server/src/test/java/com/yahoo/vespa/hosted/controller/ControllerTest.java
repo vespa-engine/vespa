@@ -13,12 +13,10 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.path.Path;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
@@ -32,7 +30,6 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
-import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
@@ -580,41 +577,6 @@ public class ControllerTest {
     }
 
     @Test
-    public void testIntegrationTestDeployment() {
-        Version six = Version.fromString("6.1");
-        tester.controllerTester().zoneRegistry().setSystemName(SystemName.cd);
-        tester.controllerTester().zoneRegistry().setZones(ZoneApiMock.fromId("prod.cd-us-central-1"));
-        tester.configServer().bootstrap(List.of(ZoneId.from("prod.cd-us-central-1")), SystemApplication.all());
-        tester.controllerTester().upgradeSystem(six);
-        ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
-                .majorVersion(6)
-                .region("cd-us-central-1")
-                .build();
-
-        // Create application
-        var context = tester.newDeploymentContext();
-
-        // Direct deploy is allowed when deployDirectly is true
-        ZoneId zone = ZoneId.from("prod", "cd-us-central-1");
-        // Same options as used in our integration tests
-        DeployOptions options = new DeployOptions(true, Optional.empty(), false,
-                                                  false);
-        tester.controller().applications().deploy(context.instanceId(), zone, Optional.of(applicationPackage), options);
-
-        assertTrue("Application deployed and activated",
-                   tester.configServer().application(context.instanceId(), zone).get().activated());
-
-        assertTrue("No job status added",
-                   context.instanceJobs().isEmpty());
-
-        Version seven = Version.fromString("7.2");
-        tester.controllerTester().upgradeSystem(seven);
-        tester.upgrader().maintain();
-        tester.controller().applications().deploy(context.instanceId(), zone, Optional.of(applicationPackage), options);
-        assertEquals(six, context.instance().deployments().get(zone).version());
-    }
-
-    @Test
     public void testDevDeployment() {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder().build();
 
@@ -625,7 +587,7 @@ public class ControllerTest {
                 .setRoutingMethod(ZoneApiMock.from(zone), RoutingMethod.shared, RoutingMethod.sharedLayer4);
 
         // Deploy
-        tester.controller().applications().deploy(context.instanceId(), zone, Optional.of(applicationPackage), DeployOptions.none());
+        context.runJob(zone, applicationPackage);
         assertTrue("Application deployed and activated",
                    tester.configServer().application(context.instanceId(), zone).get().activated());
         assertTrue("No job status added",
@@ -682,10 +644,10 @@ public class ControllerTest {
                 .region("us-west-1")
                 .build();
 
-        ZoneId zone = ZoneId.from("prod", "us-west-1");
-        tester.controller().applications().deploy(context.instanceId(), zone, Optional.of(applicationPackage), DeployOptions.none());
-        tester.controller().applications().deactivate(context.instanceId(), ZoneId.from(Environment.prod, RegionName.from("us-west-1")));
-        tester.controller().applications().deactivate(context.instanceId(), ZoneId.from(Environment.prod, RegionName.from("us-west-1")));
+        ZoneId zone = ZoneId.from(Environment.prod, RegionName.from("us-west-1"));
+        context.runJob(zone, applicationPackage);
+        tester.controller().applications().deactivate(context.instanceId(), zone);
+        tester.controller().applications().deactivate(context.instanceId(), zone);
     }
 
     @Test
@@ -748,7 +710,7 @@ public class ControllerTest {
         var devZone = ZoneId.from("dev", "us-east-1");
 
         // Deploy app2 in a zone with shared routing
-        tester.controller().applications().deploy(context2.instanceId(), devZone, Optional.of(applicationPackage), DeployOptions.none());
+        context2.runJob(devZone, applicationPackage);
         assertTrue("Application deployed and activated",
                    tester.configServer().application(context2.instanceId(), devZone).get().activated());
         assertTrue("Provisions certificate also in zone with routing layer", certificate.apply(context2.instance()).isPresent());
