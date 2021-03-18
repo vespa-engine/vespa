@@ -70,7 +70,7 @@ public class SlobrokClient implements NodeLookup {
 
     @Override
     public boolean isReady() {
-        return mirror.ready();
+        return mirror != null && mirror.ready();
     }
 
     @Override
