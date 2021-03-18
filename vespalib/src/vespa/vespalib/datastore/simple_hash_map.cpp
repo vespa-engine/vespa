@@ -31,6 +31,7 @@ SimpleHashMap::SimpleHashMap(std::unique_ptr<const EntryComparator> comp)
 
 SimpleHashMap::~SimpleHashMap()
 {
+    _gen_holder.clearHoldLists();
     for (size_t i = 0; i < num_stripes; ++i) {
         auto map = _maps[i].load(std::memory_order_relaxed);
         delete map;
@@ -66,15 +67,15 @@ SimpleHashMap::hold_stripe(std::unique_ptr<const FixedSizeHashMap> map)
 }
 
 SimpleHashMap::KvType&
-SimpleHashMap::add(const EntryComparator& comp, std::function<EntryRef(void)>& insert_entry)
+SimpleHashMap::add(const EntryComparator& comp, EntryRef key_ref, std::function<EntryRef(void)>& insert_entry)
 {
-    size_t stripe = get_stripe(comp, EntryRef());
+    size_t stripe = get_stripe(comp, key_ref);
     auto map = _maps[stripe].load(std::memory_order_relaxed);
     if (map == nullptr || map->full()) {
         alloc_stripe(stripe);
         map = _maps[stripe].load(std::memory_order_relaxed);
     }
-    return map->add(comp, insert_entry);
+    return map->add(comp, key_ref, insert_entry);
 }
 
 SimpleHashMap::KvType*
@@ -86,6 +87,17 @@ SimpleHashMap::remove(const EntryComparator& comp, EntryRef key_ref)
         return nullptr;
     }
     return map->remove(comp, key_ref);
+}
+
+SimpleHashMap::KvType*
+SimpleHashMap::find(const EntryComparator& comp, EntryRef key_ref)
+{
+    size_t stripe = get_stripe(comp, key_ref);
+    auto map = _maps[stripe].load(std::memory_order_relaxed);
+    if (map == nullptr) {
+        return nullptr;
+    }
+    return map->find(comp, key_ref);
 }
 
 const SimpleHashMap::KvType*

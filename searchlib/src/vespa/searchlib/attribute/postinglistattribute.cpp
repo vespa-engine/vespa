@@ -102,6 +102,7 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
                        &postings._removals[0] + postings._removals.size());
     posting_itr.writeData(newIndex.ref());
     loader.free_unused_values();
+    _dictionary.sync_unordered_after_load();
 }
 
 template <typename P>

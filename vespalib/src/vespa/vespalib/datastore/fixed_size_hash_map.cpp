@@ -62,15 +62,15 @@ FixedSizeHashMap::force_add(const EntryComparator& comp, const KvType& kv)
 }
 
 FixedSizeHashMap::KvType&
-FixedSizeHashMap::add(const EntryComparator& comp, std::function<EntryRef(void)>& insert_entry)
+FixedSizeHashMap::add(const EntryComparator& comp, EntryRef key_ref, std::function<EntryRef(void)>& insert_entry)
 {
-    size_t hash_idx = comp.hash(EntryRef()) / _num_stripes;
+    size_t hash_idx = comp.hash(key_ref) / _num_stripes;
     hash_idx %= _modulo;
     auto& chain_head = _chain_heads[hash_idx];
     uint32_t node_idx = chain_head.load_relaxed();
     while (node_idx != no_node_idx) {
         auto& node = _nodes[node_idx];
-        if (comp.equal(EntryRef(), node.get_kv().first.load_relaxed())) {
+        if (comp.equal(key_ref, node.get_kv().first.load_relaxed())) {
             return node.get_kv();
         }
         node_idx = node.get_next_node_idx().load(std::memory_order_relaxed);
@@ -153,8 +153,8 @@ FixedSizeHashMap::remove(const EntryComparator& comp, EntryRef key_ref)
     return nullptr;
 }
 
-const FixedSizeHashMap::KvType*
-FixedSizeHashMap::find(const EntryComparator& comp, EntryRef key_ref) const
+FixedSizeHashMap::KvType*
+FixedSizeHashMap::find(const EntryComparator& comp, EntryRef key_ref)
 {
     size_t hash_idx = comp.hash(key_ref) / _num_stripes;
     hash_idx %= _modulo;

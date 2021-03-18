@@ -46,12 +46,14 @@ private:
 public:
     SimpleHashMap(std::unique_ptr<const EntryComparator> comp);
     ~SimpleHashMap();
-    KvType& add(const EntryComparator& comp, std::function<EntryRef(void)> &insert_entry);
+    KvType& add(const EntryComparator& comp, EntryRef key_ref, std::function<EntryRef(void)> &insert_entry);
     KvType* remove(const EntryComparator& comp, EntryRef key_ref);
+    KvType* find(const EntryComparator& comp, EntryRef key_ref);
     const KvType* find(const EntryComparator& comp, EntryRef key_ref) const;
     void transfer_hold_lists(generation_t generation);
     void trim_hold_lists(generation_t first_used);
     size_t size() const noexcept;
+    const EntryComparator &get_default_comparator() const noexcept { return *_comp; }
 };
 
 }
