@@ -206,6 +206,16 @@ UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::build(vespali
         }
     }
     _dict.assign(builder);
+    if constexpr (has_unordered_dictionary) {
+        for (size_t i = 1; i < refs.size(); ++i) {
+            if (ref_counts[i] != 0u) {
+                EntryRef ref = refs[i];
+                std::function<EntryRef(void)> insert_unordered_entry([ref]() -> EntryRef { return ref; });
+                auto& add_result = this->_unordered_dict.add(this->_unordered_dict.get_default_comparator(), ref, insert_unordered_entry);
+                assert(add_result.first.load_relaxed() == ref);
+            }
+        }
+    }
 }
 
 template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
