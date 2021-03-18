@@ -6,8 +6,7 @@
 #include <vector>
 #include <vespa/vespalib/stllike/string.h>
 
-namespace vespalib {
-namespace metrics {
+namespace vespalib::metrics {
 
 // internal
 class NameCollection {
@@ -22,10 +21,11 @@ public:
     size_t size() const;
 
     NameCollection();
-    ~NameCollection() {}
+    NameCollection(const NameCollection &) = delete;
+    NameCollection & operator = (const NameCollection &) = delete;
+    ~NameCollection();
 
     static constexpr size_t empty_id = 0;
 };
 
-} // namespace vespalib::metrics
-} // namespace vespalib
+}
