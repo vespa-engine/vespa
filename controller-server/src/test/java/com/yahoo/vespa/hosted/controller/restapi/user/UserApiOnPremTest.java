@@ -62,7 +62,7 @@ public class UserApiOnPremTest extends ControllerContainerTest {
     }
 
     private Request createUserRequest(User user, AthenzIdentity identity) {
-        Request request = new Request("http://localhost:8080/api/user/v1/user");
+        Request request = new Request("http://localhost:8080/user/v1/user");
         Map<String, String> userAttributes = new HashMap<>();
         userAttributes.put("email", user.email());
         if (user.name() != null)

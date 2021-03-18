@@ -33,7 +33,6 @@ public class ConfigServerApiHandler extends AuditLoggingRequestHandler {
 
     private static final ZoneId CONTROLLER_ZONE = ZoneId.from("prod", "controller");
     private static final URI CONTROLLER_URI = URI.create("https://localhost:4443/");
-    private static final String OPTIONAL_PREFIX = "/api";
     private static final List<String> WHITELISTED_APIS = List.of("/flags/v1/", "/nodes/v2/", "/orchestrator/v1/");
 
     private final ZoneRegistry zoneRegistry;
@@ -70,7 +69,7 @@ public class ConfigServerApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse get(HttpRequest request) {
-        Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
+        Path path = new Path(request.getUri());
         if (path.matches("/configserver/v1")) {
             return root(request);
         }
@@ -78,7 +77,7 @@ public class ConfigServerApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse proxy(HttpRequest request) {
-        Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
+        Path path = new Path(request.getUri());
         if ( ! path.matches("/configserver/v1/{environment}/{region}/{*}")) {
             return ErrorResponse.notFoundError("Nothing at " + path);
         }

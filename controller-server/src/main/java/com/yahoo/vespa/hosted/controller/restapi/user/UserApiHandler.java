@@ -64,7 +64,6 @@ import java.util.stream.Collectors;
 public class UserApiHandler extends LoggingRequestHandler {
 
     private final static Logger log = Logger.getLogger(UserApiHandler.class.getName());
-    private static final String optionalPrefix = "/api";
 
     private final UserManagement users;
     private final Controller controller;
@@ -83,7 +82,7 @@ public class UserApiHandler extends LoggingRequestHandler {
     @Override
     public HttpResponse handle(HttpRequest request) {
         try {
-            Path path = new Path(request.getUri(), optionalPrefix);
+            Path path = new Path(request.getUri());
             switch (request.getMethod()) {
                 case GET: return handleGET(path, request);
                 case POST: return handlePOST(path, request);

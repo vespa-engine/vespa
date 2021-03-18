@@ -75,7 +75,6 @@ public class ControllerContainerTest {
                "  <component id='com.yahoo.vespa.hosted.controller.api.integration.stubs.MockUserManagement'/>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.DeploymentApiHandler'>\n" +
                "    <binding>http://*/deployment/v1/*</binding>\n" +
-               "    <binding>http://*/api/deployment/v1/*</binding>\n" +
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.deployment.BadgeApiHandler'>\n" +
                "    <binding>http://*/badge/v1/*</binding>\n" +
@@ -93,8 +92,6 @@ public class ControllerContainerTest {
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.configserver.ConfigServerApiHandler'>\n" +
                "    <binding>http://*/configserver/v1</binding>\n" +
                "    <binding>http://*/configserver/v1/*</binding>\n" +
-               "    <binding>http://*/api/configserver/v1</binding>\n" +
-               "    <binding>http://*/api/configserver/v1/*</binding>\n" +
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.flags.AuditedFlagsHandler'>\n" +
                "    <binding>http://*/flags/v1</binding>\n" +
@@ -102,11 +99,9 @@ public class ControllerContainerTest {
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.user.UserApiHandler'>\n" +
                "    <binding>http://*/user/v1/*</binding>\n" +
-               "    <binding>http://*/api/user/v1/*</binding>\n" +
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.routing.RoutingApiHandler'>\n" +
                "    <binding>http://*/routing/v1/*</binding>\n" +
-               "    <binding>http://*/api/routing/v1/*</binding>\n" +
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.changemanagement.ChangeManagementApiHandler'>\n" +
                "    <binding>http://*/changemanagement/v1/*</binding>\n" +
@@ -128,7 +123,6 @@ public class ControllerContainerTest {
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.athenz.AthenzApiHandler'>\n" +
                "    <binding>http://*/athenz/v1/*</binding>\n" +
-               "    <binding>http://*/api/athenz/v1/*</binding>\n" +
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.controller.restapi.zone.v1.ZoneApiHandler'>\n" +
                "    <binding>http://*/zone/v1</binding>\n" +

@@ -46,6 +46,7 @@ public class Path {
         this(uri, "");
     }
 
+    // TODO (freva): Remove, used by factory
     public Path(URI uri, String optionalPrefix) {
         this.optionalPrefix = optionalPrefix;
         this.pathString = uri.getRawPath();

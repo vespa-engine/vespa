@@ -154,8 +154,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
-    private static final String OPTIONAL_PREFIX = "/api";
-
     private final Controller controller;
     private final AccessControlRequests accessControlRequests;
     private final TestConfigSerializer testConfigSerializer;
@@ -178,7 +176,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     @Override
     public HttpResponse handle(HttpRequest request) {
         try {
-            Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
+            Path path = new Path(request.getUri());
             switch (request.getMethod()) {
                 case GET: return handleGET(path, request);
                 case PUT: return handlePUT(path, request);

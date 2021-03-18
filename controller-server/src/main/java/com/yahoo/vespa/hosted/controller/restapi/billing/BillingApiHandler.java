@@ -5,7 +5,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.JacksonJsonResponse;
 import com.yahoo.restapi.MessageResponse;
@@ -55,7 +54,6 @@ import java.util.stream.Collectors;
  */
 public class BillingApiHandler extends LoggingRequestHandler {
 
-    private static final String OPTIONAL_PREFIX = "/api";
     private static final DateTimeFormatter DATE_TIME_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM-dd");
 
     private final BillingController billingController;
@@ -73,7 +71,7 @@ public class BillingApiHandler extends LoggingRequestHandler {
     @Override
     public HttpResponse handle(HttpRequest request) {
         try {
-            Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
+            Path path = new Path(request.getUri());
             String userId = userIdOrThrow(request);
             switch (request.getMethod()) {
                 case GET:

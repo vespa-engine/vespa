@@ -66,7 +66,7 @@ public class ConfigServerApiHandlerTest extends ControllerContainerTest {
         assertLastRequest("https://cfg.prod.us-north-1.test.vip:4443/", "PUT");
 
         // DELETE /configserver/v1/prod/us-north-1/nodes/v2/node/node1
-        tester.assertResponse(operatorRequest("http://localhost:8080/api/configserver/v1/prod/controller/nodes/v2/node/node1",
+        tester.assertResponse(operatorRequest("http://localhost:8080/configserver/v1/prod/controller/nodes/v2/node/node1",
                 "", Request.Method.DELETE), "ok");
         assertLastRequest("https://localhost:4443/", "DELETE");
 

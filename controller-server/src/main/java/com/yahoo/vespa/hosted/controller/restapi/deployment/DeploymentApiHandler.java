@@ -49,8 +49,6 @@ import static java.util.stream.Collectors.toUnmodifiableMap;
 @SuppressWarnings("unused") // Injected
 public class DeploymentApiHandler extends LoggingRequestHandler {
 
-    private static final String OPTIONAL_PREFIX = "/api";
-
     private final Controller controller;
 
     public DeploymentApiHandler(LoggingRequestHandler.Context parentCtx, Controller controller) {
@@ -77,7 +75,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse handleGET(HttpRequest request) {
-        Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
+        Path path = new Path(request.getUri());
         if (path.matches("/deployment/v1/")) return root(request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
