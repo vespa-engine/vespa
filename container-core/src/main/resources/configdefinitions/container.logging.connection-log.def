@@ -1,0 +1,10 @@
+namespace=container.logging
+
+# Name of the cluster
+cluster             string
+
+# Log directory name
+logDirectoryName string default="qrs"
+
+# Max queue length of file handler
+queueSize int default=10000

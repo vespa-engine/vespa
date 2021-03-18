@@ -1,0 +1,36 @@
+# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=jdisc.http.client
+
+userAgent                     string   default = "JDisc/1.0"
+chunkedEncodingEnabled        bool     default = false
+compressionEnabled            bool     default = false
+connectionPoolEnabled         bool     default = true
+followRedirects               bool     default = false
+removeQueryParamsOnRedirect   bool     default = true
+sslConnectionPoolEnabled      bool     default = true
+proxyServer                   string   default = ""
+useProxyProperties            bool     default = false
+useRawUri                     bool     default = false
+compressionLevel              int      default = -1
+maxNumConnections             int      default = -1
+maxNumConnectionsPerHost      int      default = -1
+maxNumRedirects               int      default = 5
+maxNumRetries                 int      default = 0
+connectionTimeout             double   default = 60
+idleConnectionInPoolTimeout   double   default = 60
+idleConnectionTimeout         double   default = 60
+idleWebSocketTimeout          double   default = 15
+requestTimeout                double   default = 60
+
+ssl.enabled                   bool     default = false
+ssl.keyStoreType              string   default = "JKS"
+
+# Vespa home is prepended is path is relative
+ssl.keyStorePath              string   default = "jdisc_container/keyStore.jks"
+
+# Vespa home is prepended is path is relative
+ssl.trustStorePath            string   default = "conf/jdisc_container/trustStore.jks"
+
+ssl.keyDBKey                  string   default = "jdisc_container"
+ssl.algorithm                 string   default = "SunX509"
+ssl.protocol                  string   default = "TLS"

@@ -1,0 +1,127 @@
+# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+namespace=jdisc.http
+
+# The TCP port to listen to for this connector.
+listenPort                          int      default=0
+
+# The connector name
+name                                string   default="default"
+
+# The header field cache size.
+headerCacheSize                     int      default=512
+
+# The size of the buffer into which response content is aggregated before being sent to the client.
+outputBufferSize                    int      default=65536
+
+# The maximum size of a request header.
+requestHeaderSize                   int      default=65536
+
+# The maximum size of a response header.
+responseHeaderSize                  int      default=65536
+
+# The accept queue size (also known as accept backlog).
+acceptQueueSize                     int      default=0
+
+# Whether the server socket reuses addresses.
+reuseAddress                        bool     default=true
+
+# The maximum idle time for a connection, which roughly translates to the Socket.setSoTimeout(int).
+idleTimeout                         double   default=180.0
+
+# DEPRECATED - Ignored, no longer in use
+stopTimeout                           double default = 30.0
+# TODO Vespa 8 Remove stop timeout
+
+# Whether or not to have socket keep alive turned on.
+tcpKeepAliveEnabled                 bool     default=false
+
+# Enable/disable TCP_NODELAY (disable/enable Nagle's algorithm).
+tcpNoDelay                          bool     default=true
+
+# Whether to enable connection throttling. New connections will be dropped when a threshold is exceeded.
+throttling.enabled                  bool     default=false
+
+# Max number of connections.
+throttling.maxConnections           int      default=-1
+
+# Max memory utilization as a value between 0 and 1.
+throttling.maxHeapUtilization       double   default=-1.0
+
+# Max connection accept rate per second.
+throttling.maxAcceptRate            int      default=-1
+
+# Idle timeout in seconds applied to endpoints when a threshold is exceeded.
+throttling.idleTimeout              double   default=-1.0
+
+# Whether to enable TLS on connector when Vespa is configured with TLS.
+# The connector will implicitly enable TLS if set to 'true' and Vespa TLS is enabled.
+implicitTlsEnabled                  bool     default=true
+
+# Whether to enable SSL for this connector.
+ssl.enabled                         bool     default=false
+
+# File with private key in PEM format. Specify either this or privateKey, but not both
+ssl.privateKeyFile                  string   default=""
+
+# Private key in PEM format. Specify either this or privateKeyFile, but not both
+ssl.privateKey                      string   default=""
+
+# File with certificate in PEM format. Specify either this or certificate, but not both
+ssl.certificateFile                 string   default=""
+
+# Certificate in PEM format. Specify either this or certificateFile, but not both
+ssl.certificate                     string   default=""
+
+# with trusted CA certificates in PEM format. Used to verify clients
+#  - this is the name of a file on the local container file system
+#  - only one of caCertificateFile and caCertificate
+ssl.caCertificateFile               string default=""
+
+# with trusted CA certificates in PEM format. Used to verify clients
+#  - this is the actual certificates instead of a pointer to the file
+#  - only one of caCertificateFile and caCertificate
+ssl.caCertificate                   string default=""
+
+# Client authentication mode. See SSLEngine.getNeedClientAuth()/getWantClientAuth() for details.
+ssl.clientAuth                      enum { DISABLED, WANT_AUTH, NEED_AUTH }  default=DISABLED
+
+# List of enabled cipher suites. JDisc will use Vespa default if empty.
+ssl.enabledCipherSuites[]           string
+
+# List of enabled TLS protocol versions. JDisc will use Vespa default if empty.
+ssl.enabledProtocols[]              string
+
+# Enforce TLS client authentication for https requests at the http layer.
+# Intended to be used with connectors with optional client authentication enabled.
+# 401 status code is returned for requests from non-authenticated clients.
+tlsClientAuthEnforcer.enable          bool   default=false
+
+# Paths where client authentication should not be enforced. To be used in combination with WANT_AUTH. Typically used for health checks.
+tlsClientAuthEnforcer.pathWhitelist[]  string
+
+# Use connector only for proxying '/status.html' health checks. Any ssl configuration will be ignored if this option is enabled.
+healthCheckProxy.enable        bool    default=false
+
+# Which port to proxy
+healthCheckProxy.port          int     default=8080
+
+# Low-level timeout for proxy client (socket connect, socket read, connection pool). Aggregate timeout will be longer.
+healthCheckProxy.clientTimeout double  default=1.0
+
+# Enable PROXY protocol V1/V2 support (only for https connectors).
+proxyProtocol.enabled          bool    default=false
+
+# Allow https in parallel with proxy protocol
+proxyProtocol.mixedMode        bool    default=false
+
+# Redirect all requests to https port
+secureRedirect.enabled         bool    default=false
+
+# Target port for redirect
+secureRedirect.port            int     default=443
+
+# Maximum number of request per connection before server marks connections as non-persistent. Set to '0' to disable.
+maxRequestsPerConnection       int     default=0
+
+# Maximum number of seconds a connection can live before it's marked as non-persistent. Set to '0' to disable.
+maxConnectionLife              double  default=0.0
