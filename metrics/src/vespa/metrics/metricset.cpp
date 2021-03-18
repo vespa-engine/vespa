@@ -51,7 +51,7 @@ MetricSet::clone(std::vector<Metric::UP> &ownerList, CopyType type,
 
 
 const Metric*
-MetricSet::getMetricInternal(const String& name) const
+MetricSet::getMetricInternal(stringref name) const
 {
     for (const Metric* metric : _metricOrder) {
         if (metric->getMangledName() == name) {
@@ -71,14 +71,14 @@ double MetricSet::getDoubleValue(stringref) const {
 }
 
 const Metric*
-MetricSet::getMetric(const String& name) const
+MetricSet::getMetric(stringref name) const
 {
-    std::string::size_type pos = name.find('.');
-    if (pos == std::string::npos) {
+    vespalib::string::size_type pos = name.find('.');
+    if (pos == vespalib::string::npos) {
         return getMetricInternal(name);
     } else {
-        std::string child(name.substr(0, pos));
-        std::string rest(name.substr(pos+1));
+        stringref child(name.substr(0, pos));
+        stringref rest(name.substr(pos+1));
         const Metric* m(getMetricInternal(child));
         if (m == 0) return 0;
         if (!m->isMetricSet()) {
