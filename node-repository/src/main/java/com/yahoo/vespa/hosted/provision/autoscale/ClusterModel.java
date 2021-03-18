@@ -26,6 +26,8 @@ public class ClusterModel {
     private final Duration scalingDuration;
 
     // Lazily initialized members
+    private Double queryFractionOfMax = null;
+    private Double maxQueryGrowthRate = null;
     private ClusterNodesTimeseries nodeTimeseries = null;
     private ClusterTimeseries clusterTimeseries = null;
 
@@ -71,6 +73,21 @@ public class ClusterModel {
         return clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
     }
 
+    /**
+     * Returns the predicted max query growth rate per minute as a fraction of the average traffic
+     * in the scaling window
+     */
+    public double maxQueryGrowthRate() {
+        if (maxQueryGrowthRate != null) return maxQueryGrowthRate;
+        return maxQueryGrowthRate = clusterTimeseries().maxQueryGrowthRate(scalingDuration(), clock);
+    }
+
+    /** Returns the average query rate in the scaling window as a fraction of the max observed query rate */
+    public double queryFractionOfMax() {
+        if (queryFractionOfMax != null) return queryFractionOfMax;
+        return queryFractionOfMax = clusterTimeseries().queryFractionOfMax(scalingDuration(), clock);
+    }
+
     public double averageLoad(Resource resource) { return nodeTimeseries().averageLoad(resource); }
 
     public double idealLoad(Resource resource) {
@@ -85,12 +102,10 @@ public class ClusterModel {
         double queryCpuFraction = queryCpuFraction();
 
         // What's needed to have headroom for growth during scale-up as a fraction of current resources?
-        double maxGrowthRate = clusterTimeseries().maxQueryGrowthRate(scalingDuration(), clock); // in fraction per minute of the current traffic
-        double growthRateHeadroom = 1 + maxGrowthRate * scalingDuration().toMinutes();
+        double growthRateHeadroom = 1 + maxQueryGrowthRate() * scalingDuration().toMinutes();
         // Cap headroom at 10% above the historical observed peak
-        double fractionOfMax = clusterTimeseries().queryFractionOfMax(scalingDuration(), clock);
-        if (fractionOfMax != 0)
-            growthRateHeadroom = Math.min(growthRateHeadroom, 1 / fractionOfMax + 0.1);
+        if (queryFractionOfMax() != 0)
+            growthRateHeadroom = Math.min(growthRateHeadroom, 1 / queryFractionOfMax() + 0.1);
 
         // How much headroom is needed to handle sudden arrival of additional traffic due to another zone going down?
         double maxTrafficShiftHeadroom = 10.0; // Cap to avoid extreme sizes from a current very small share

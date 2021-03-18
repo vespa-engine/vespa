@@ -83,8 +83,8 @@ public class ApplicationSerializer {
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
         clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());
         clusterObject.setLong("scalingDuration", clusterModel.scalingDuration().toMillis());
-        clusterObject.setDouble("maxQueryGrowthRate", clusterModel.clusterTimeseries().maxQueryGrowthRate(clusterModel.scalingDuration(), metricsDb.clock()));
-        clusterObject.setDouble("currentQueryFractionOfMax", clusterModel.clusterTimeseries().queryFractionOfMax(clusterModel.scalingDuration(), metricsDb.clock()));
+        clusterObject.setDouble("maxQueryGrowthRate", clusterModel.maxQueryGrowthRate());
+        clusterObject.setDouble("currentQueryFractionOfMax", clusterModel.queryFractionOfMax());
     }
 
     private static void toSlime(ClusterResources resources, Cursor clusterResourcesObject) {
