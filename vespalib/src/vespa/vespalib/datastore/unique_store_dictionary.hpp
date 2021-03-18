@@ -80,6 +80,9 @@ void
 UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::transfer_hold_lists(generation_t generation)
 {
     _dict.getAllocator().transferHoldLists(generation);
+    if constexpr (has_unordered_dictionary) {
+        this->_unordered_dict.transfer_hold_lists(generation);
+    }
 }
 
 template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
@@ -87,6 +90,9 @@ void
 UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::trim_hold_lists(generation_t firstUsed)
 {
     _dict.getAllocator().trimHoldLists(firstUsed);
+    if constexpr (has_unordered_dictionary) {
+        this->_unordered_dict.trim_hold_lists(firstUsed);
+    }
 }
 
 template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
@@ -96,11 +102,20 @@ UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::add(const Ent
 {
     auto itr = _dict.lowerBound(EntryRef(), comp);
     if (itr.valid() && !comp.less(EntryRef(), itr.getKey())) {
+        if constexpr (has_unordered_dictionary) {
+            auto* result = this->_unordered_dict.find(comp, EntryRef());
+            assert(result != nullptr && result->first.load_relaxed() == itr.getKey());
+        }
         return UniqueStoreAddResult(itr.getKey(), false);
 
     } else {
         EntryRef newRef = insertEntry();
         _dict.insert(itr, newRef, DataType());
+        if constexpr (has_unordered_dictionary) {
+            std::function<EntryRef(void)> insert_unordered_entry([newRef]() -> EntryRef { return newRef; });
+            auto& add_result = this->_unordered_dict.add(comp, newRef, insert_unordered_entry);
+            assert(add_result.first.load_relaxed() == newRef);
+        }
         return UniqueStoreAddResult(newRef, true);
     }
 }
@@ -111,8 +126,16 @@ UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::find(const En
 {
     auto itr = _dict.lowerBound(EntryRef(), comp);
     if (itr.valid() && !comp.less(EntryRef(), itr.getKey())) {
+        if constexpr (has_unordered_dictionary) {
+            auto* result = this->_unordered_dict.find(comp, EntryRef());
+            assert(result != nullptr && result->first.load_relaxed() == itr.getKey());
+        }
         return itr.getKey();
     } else {
+        if constexpr (has_unordered_dictionary) {
+            auto* result = this->_unordered_dict.find(comp, EntryRef());
+            assert(result == nullptr);
+        }
         return EntryRef();
     }
 }
@@ -125,6 +148,10 @@ UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::remove(const 
     auto itr = _dict.lowerBound(ref, comp);
     assert(itr.valid() && itr.getKey() == ref);
     _dict.remove(itr);
+    if constexpr (has_unordered_dictionary) {
+        auto *result = this->_unordered_dict.remove(comp, ref);
+        assert(result != nullptr && result->first.load_relaxed() == ref);
+    }
 }
 
 template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
@@ -138,6 +165,11 @@ UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::move_entries(
         if (newRef != oldRef) {
             _dict.thaw(itr);
             itr.writeKey(newRef);
+            if constexpr (has_unordered_dictionary) {
+                auto result = this->_unordered_dict.find(this->_unordered_dict.get_default_comparator(), oldRef);
+                assert(result != nullptr && result->first.load_relaxed() == oldRef);
+                result->first.store_release(newRef);
+            }
         }
         ++itr;
     }
@@ -185,6 +217,13 @@ UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::build(vespali
         builder.insert(ref, DataType());
     }
     _dict.assign(builder);
+    if constexpr (has_unordered_dictionary) {
+        for (const auto& ref : refs) {
+            std::function<EntryRef(void)> insert_unordered_entry([ref]() -> EntryRef { return ref; });
+            auto& add_result = this->_unordered_dict.add(this->_unordered_dict.get_default_comparator(), ref, insert_unordered_entry);
+            assert(add_result.first.load_relaxed() == ref);
+        }
+    }
 }
 
 template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
@@ -202,6 +241,17 @@ UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::build_with_pa
         }
     }
     _dict.assign(builder);
+    if constexpr (has_unordered_dictionary) {
+        for (size_t i = 0; i < refs.size(); ++i) {
+            EntryRef ref = refs[i];
+            std::function<EntryRef(void)> insert_unordered_entry([ref]() -> EntryRef { return ref; });
+            auto& add_result = this->_unordered_dict.add(this->_unordered_dict.get_default_comparator(), ref, insert_unordered_entry);
+            assert(add_result.first.load_relaxed() == refs[i]);
+            if constexpr (std::is_same_v<DataType, uint32_t>) {
+                add_result.second.store_relaxed(EntryRef(payloads[i]));
+            }
+        }
+    }
 }
 
 template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>

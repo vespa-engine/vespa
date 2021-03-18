@@ -24,7 +24,9 @@ private:
     using IndexVector = IEnumStoreDictionary::IndexVector;
     using ParentUniqueStoreDictionary = vespalib::datastore::UniqueStoreDictionary<DictionaryT, IEnumStoreDictionary, UnorderedDictionaryT>;
     using generation_t = IEnumStoreDictionary::generation_t;
-
+protected:
+    using ParentUniqueStoreDictionary::has_unordered_dictionary;
+private:
     IEnumStore& _enumStore;
 
     void remove_unused_values(const IndexSet& unused,
@@ -56,6 +58,7 @@ public:
     Index remap_index(Index idx) override;
     void clear_all_posting_lists(std::function<void(EntryRef)> clearer) override;
     void update_posting_list(Index idx, const vespalib::datastore::EntryComparator& cmp, std::function<EntryRef(EntryRef)> updater) override;
+    void sync_unordered_after_load() override;
     EnumPostingTree& get_posting_dictionary() override;
     const EnumPostingTree& get_posting_dictionary() const override;
 };

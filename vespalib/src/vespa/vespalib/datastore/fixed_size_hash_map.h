@@ -96,9 +96,9 @@ public:
     FixedSizeHashMap(uint32_t module, uint32_t capacity, uint32_t num_stripes, const FixedSizeHashMap &orig, const EntryComparator& comp);
     ~FixedSizeHashMap();
 
-    KvType& add(const EntryComparator& comp, std::function<EntryRef(void)>& insert_entry);
+    KvType& add(const EntryComparator& comp, EntryRef key_ref, std::function<EntryRef(void)>& insert_entry);
     KvType* remove(const EntryComparator& comp, EntryRef key_ref);
-    const KvType* find(const EntryComparator& comp, EntryRef key_ref) const;
+    KvType* find(const EntryComparator& comp, EntryRef key_ref);
 
     void transfer_hold_lists(generation_t generation) {
         if (!_hold_1_list.empty()) {

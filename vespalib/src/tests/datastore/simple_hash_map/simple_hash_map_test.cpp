@@ -102,8 +102,8 @@ void
 DataStoreSimpleHashTest::insert(uint32_t key)
 {
     MyCompare comp(_store, key);
-std::function<EntryRef(void)> insert_entry([this, key]() -> EntryRef { return _allocator.allocate(key); });
-    auto& result = _hash_map.add(comp, insert_entry);
+    std::function<EntryRef(void)> insert_entry([this, key]() -> EntryRef { return _allocator.allocate(key); });
+    auto& result = _hash_map.add(comp, EntryRef(), insert_entry);
     auto ref = result.first.load_relaxed();
     auto &wrapped_entry = _allocator.get_wrapped(ref);
     EXPECT_EQ(key, wrapped_entry.value());

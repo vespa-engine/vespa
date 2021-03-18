@@ -34,6 +34,9 @@ public:
     void store_release(EntryRef ref) noexcept {
         _ref.store(ref.ref(), std::memory_order_release);
     }
+    void store_relaxed(EntryRef ref) noexcept {
+        _ref.store(ref.ref(), std::memory_order_relaxed);
+    }
     EntryRef load_acquire() const noexcept {
         return EntryRef(_ref.load(std::memory_order_acquire));
     }

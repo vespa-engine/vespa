@@ -89,6 +89,10 @@ EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::remove(const EntryCompar
         assert(EntryRef(itr.getData()) == EntryRef());
     }
     this->_dict.remove(itr);
+    if constexpr (has_unordered_dictionary) {
+        auto *result = this->_unordered_dict.remove(comp, ref);
+        assert(result != nullptr && result->first.load_relaxed() == ref);
+    }
 }
 
 template <typename DictionaryT, typename UnorderedDictionaryT>
@@ -217,6 +221,21 @@ EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::update_posting_list(Inde
     itr.writeData(new_posting_idx.ref());
 }
 
+template <typename DictionaryT, typename UnorderedDictionaryT>
+void
+EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::sync_unordered_after_load()
+{
+    if constexpr (has_unordered_dictionary) {
+        for (auto itr = this->_dict.begin(); itr.valid(); ++itr) {
+            EntryRef ref(itr.getKey());
+            std::function<EntryRef(void)> insert_unordered_entry([ref]() -> EntryRef { return ref; });
+            auto& add_result = this->_unordered_dict.add(this->_unordered_dict.get_default_comparator(), ref, insert_unordered_entry);
+            assert(add_result.first.load_relaxed() == ref);
+            add_result.second.store_relaxed(EntryRef(itr.getData()));
+        }
+    }    
+}
+
 template <>
 EnumPostingTree &
 EnumStoreDictionary<EnumTree>::get_posting_dictionary()
@@ -256,6 +275,7 @@ EnumStoreFoldedDictionary::~EnumStoreFoldedDictionary() = default;
 UniqueStoreAddResult
 EnumStoreFoldedDictionary::add(const EntryComparator& comp, std::function<EntryRef(void)> insertEntry)
 {
+    static_assert(!has_unordered_dictionary, "Folded Dictionary does not support unordered");
     auto it = _dict.lowerBound(EntryRef(), comp);
     if (it.valid() && !comp.less(EntryRef(), it.getKey())) {
         // Entry already exists
@@ -279,6 +299,7 @@ EnumStoreFoldedDictionary::add(const EntryComparator& comp, std::function<EntryR
 void
 EnumStoreFoldedDictionary::remove(const EntryComparator& comp, EntryRef ref)
 {
+    static_assert(!has_unordered_dictionary, "Folded Dictionary does not support unordered");
     assert(ref.valid());
     auto it = _dict.lowerBound(ref, comp);
     assert(it.valid() && it.getKey() == ref);
