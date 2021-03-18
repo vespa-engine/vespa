@@ -63,6 +63,7 @@ public enum RoleDefinition {
     administrator(Policy.tenantUpdate,
                   Policy.tenantManager,
                   Policy.tenantDelete,
+                  Policy.tenantArchiveAccessManagement,
                   Policy.applicationManager,
                   Policy.keyRevokal,
                   Policy.paymentInstrumentRead,

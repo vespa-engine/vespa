@@ -88,6 +88,7 @@ public class ControllerContainerCloudTest extends ControllerContainerTest {
         public RequestBuilder principal(String principal) { this.principal = new SimplePrincipal(principal); return this; }
         public RequestBuilder user(User user) { this.user = user; return this; }
         public RequestBuilder roles(Set<Role> roles) { this.roles = roles; return this; }
+        public RequestBuilder roles(Role... roles) { return roles(Set.of(roles)); }
 
         @Override
         public Request get() {

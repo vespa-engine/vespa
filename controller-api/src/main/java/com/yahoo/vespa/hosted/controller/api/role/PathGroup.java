@@ -67,6 +67,9 @@ enum PathGroup {
                PathPrefix.api,
                "/application/v4/tenant/{tenant}/key/"),
 
+    tenantArchiveAccess(Matcher.tenant,
+                       PathPrefix.api,
+                       "/application/v4/tenant/{tenant}/archive-access"),
 
     billingToken(Matcher.tenant,
                  PathPrefix.api,
