@@ -51,18 +51,14 @@ public class ResourceTarget {
     }
 
     /** Create a target of achieving ideal load given a current load */
-    public static ResourceTarget idealLoad(Duration scalingDuration,
-                                           ClusterTimeseries clusterTimeseries,
-                                           ClusterNodesTimeseries clusterNodesTimeseries,
-                                           AllocatableClusterResources current,
-                                           Application application,
-                                           Clock clock) {
-        return new ResourceTarget(nodeUsage(Resource.cpu, clusterNodesTimeseries.averageLoad(Resource.cpu), current)
-                                  / idealCpuLoad(scalingDuration, clusterTimeseries, application, clock),
-                                  nodeUsage(Resource.memory, clusterNodesTimeseries.averageLoad(Resource.memory), current)
-                                  / Resource.memory.idealAverageLoad(),
-                                  nodeUsage(Resource.disk, clusterNodesTimeseries.averageLoad(Resource.disk), current)
-                                  / Resource.disk.idealAverageLoad(),
+    public static ResourceTarget idealLoad(ClusterModel clusterModel,
+                                           AllocatableClusterResources current) {
+        return new ResourceTarget(nodeUsage(Resource.cpu, clusterModel.averageLoad(Resource.cpu), current)
+                                  / clusterModel.idealLoad(Resource.cpu),
+                                  nodeUsage(Resource.memory, clusterModel.averageLoad(Resource.memory), current)
+                                  / clusterModel.idealLoad(Resource.memory),
+                                  nodeUsage(Resource.disk, clusterModel.averageLoad(Resource.disk), current)
+                                  / clusterModel.idealLoad(Resource.disk),
                                   true);
     }
 
@@ -73,59 +69,5 @@ public class ResourceTarget {
                                   current.realResources().nodeResources().diskGb(),
                                   false);
     }
-
-    /** Ideal cpu load must take the application traffic fraction into account */
-    public static double idealCpuLoad(Duration scalingDuration,
-                                      ClusterTimeseries clusterTimeseries,
-                                      Application application,
-                                      Clock clock) {
-        double queryCpuFraction = queryCpuFraction(clusterTimeseries, scalingDuration, clock);
-
-        // What's needed to have headroom for growth during scale-up as a fraction of current resources?
-        double maxGrowthRate = clusterTimeseries.maxQueryGrowthRate(scalingDuration, clock); // in fraction per minute of the current traffic
-        double growthRateHeadroom = 1 + maxGrowthRate * scalingDuration.toMinutes();
-        // Cap headroom at 10% above the historical observed peak
-        double fractionOfMax = clusterTimeseries.queryFractionOfMax(scalingDuration, clock);
-        if (fractionOfMax != 0)
-            growthRateHeadroom = Math.min(growthRateHeadroom, 1 / fractionOfMax + 0.1);
-
-        // How much headroom is needed to handle sudden arrival of additional traffic due to another zone going down?
-        double maxTrafficShiftHeadroom = 10.0; // Cap to avoid extreme sizes from a current very small share
-        double trafficShiftHeadroom;
-        if (application.status().maxReadShare() == 0) // No traffic fraction data
-            trafficShiftHeadroom = 2.0; // assume we currently get half of the global share of traffic
-        else if (application.status().currentReadShare() == 0)
-            trafficShiftHeadroom = maxTrafficShiftHeadroom;
-        else
-            trafficShiftHeadroom = application.status().maxReadShare() / application.status().currentReadShare();
-        trafficShiftHeadroom = Math.min(trafficShiftHeadroom, maxTrafficShiftHeadroom);
-
-        // Assumptions: 1) Write load is not organic so we should not grow to handle more.
-        //                 (TODO: But allow applications to set their target write rate and size for that)
-        //              2) Write load does not change in BCP scenarios.
-        return queryCpuFraction * 1 / growthRateHeadroom * 1 / trafficShiftHeadroom * idealQueryCpuLoad() +
-               (1 - queryCpuFraction) * idealWriteCpuLoad();
-    }
-    
-    private static double queryCpuFraction(ClusterTimeseries clusterTimeseries, Duration scalingDuration, Clock clock) {
-        OptionalDouble queryRate = clusterTimeseries.queryRate(scalingDuration, clock);
-        OptionalDouble writeRate = clusterTimeseries.writeRate(scalingDuration, clock);
-        if (queryRate.orElse(0) == 0 && writeRate.orElse(0) == 0) return queryCpuFraction(0.5);
-        return queryCpuFraction(queryRate.orElse(0) / (queryRate.orElse(0) + writeRate.orElse(0)));
-    }
-
-    private static double queryCpuFraction(double queryFraction) {
-        double relativeQueryCost = 9; // How much more expensive are queries than writes? TODO: Measure
-        double writeFraction = 1 - queryFraction;
-        return queryFraction * relativeQueryCost / (queryFraction * relativeQueryCost + writeFraction);
-    }
-
-    public static double idealQueryCpuLoad() { return Resource.cpu.idealAverageLoad(); }
-
-    public static double idealWriteCpuLoad() { return 0.95; }
-
-    public static double idealMemoryLoad() { return Resource.memory.idealAverageLoad(); }
-
-    public static double idealDiskLoad() { return Resource.disk.idealAverageLoad(); }
 
 }

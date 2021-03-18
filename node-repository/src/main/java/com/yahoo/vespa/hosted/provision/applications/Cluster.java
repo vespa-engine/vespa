@@ -129,32 +129,6 @@ public class Cluster {
         return new Cluster(id, exclusive, min, max, suggested, target, scalingEvents, autoscalingStatus);
     }
 
-    /** The predicted duration of a rescaling of this cluster */
-    public Duration scalingDuration(ClusterSpec clusterSpec) {
-        int completedEventCount = 0;
-        Duration totalDuration = Duration.ZERO;
-        for (ScalingEvent event : scalingEvents()) {
-            if (event.duration().isEmpty()) continue;
-            completedEventCount++;
-            totalDuration = totalDuration.plus(event.duration().get());
-        }
-
-        if (completedEventCount == 0) { // Use defaults
-            if (clusterSpec.isStateful()) return Duration.ofHours(12);
-            return Duration.ofMinutes(10);
-        }
-        else {
-            Duration predictedDuration = totalDuration.dividedBy(completedEventCount);
-
-            // TODO: Remove when we have reliable completion for content clusters
-            if (clusterSpec.isStateful() && predictedDuration.minus(Duration.ofHours(12)).isNegative())
-                return Duration.ofHours(12);
-
-            if (predictedDuration.minus(Duration.ofMinutes(5)).isNegative()) return Duration.ofMinutes(5); // minimum
-            return predictedDuration;
-        }
-    }
-
     @Override
     public int hashCode() { return id.hashCode(); }
 

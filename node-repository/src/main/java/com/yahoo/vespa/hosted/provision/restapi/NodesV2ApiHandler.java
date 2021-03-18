@@ -447,6 +447,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         Slime slime = ApplicationSerializer.toSlime(application.get(),
                                                     nodeRepository.nodes().list(Node.State.active).owner(id),
                                                     metricsDb,
+                                                    nodeRepository,
                                                     withPath("/nodes/v2/applications/" + id, uri));
         return new SlimeJsonResponse(slime);
     }

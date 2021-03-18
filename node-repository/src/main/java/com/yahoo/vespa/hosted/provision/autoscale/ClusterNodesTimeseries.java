@@ -40,9 +40,7 @@ public class ClusterNodesTimeseries {
     }
 
     /** Returns the number of nodes measured in this */
-    public int nodesMeasured() {
-        return timeseries.size();
-    }
+    public int nodesMeasured() { return timeseries.size(); }
 
     /** Returns the average load of this resource in this */
     public double averageLoad(Resource resource) {

@@ -141,8 +141,8 @@ class AutoscalingTester {
             clock().advance(Duration.ofMinutes(5));
             for (Node node : nodes) {
                 float cpu = value * oneExtraNodeFactor;
-                float memory  = (float) Resource.memory.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
-                float disk = (float) Resource.disk.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
+                float memory  = (float) ClusterModel.idealMemoryLoad * otherResourcesLoad * oneExtraNodeFactor;
+                float disk = (float) ClusterModel.idealDiskLoad * otherResourcesLoad * oneExtraNodeFactor;
                 db.addNodeMetrics(List.of(new Pair<>(node.hostname(), new NodeMetricSnapshot(clock().instant(),
                                                                                              cpu,
                                                                                              memory,
@@ -174,7 +174,7 @@ class AutoscalingTester {
             for (Node node : nodes) {
                 float cpu  = (float) 0.2 * otherResourcesLoad * oneExtraNodeFactor;
                 float memory = value * oneExtraNodeFactor;
-                float disk = (float) Resource.disk.idealAverageLoad() * otherResourcesLoad * oneExtraNodeFactor;
+                float disk = (float) ClusterModel.idealDiskLoad * otherResourcesLoad * oneExtraNodeFactor;
                 db.addNodeMetrics(List.of(new Pair<>(node.hostname(), new NodeMetricSnapshot(clock().instant(),
                                                                                              cpu,
                                                                                              memory,

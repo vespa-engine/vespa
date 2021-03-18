@@ -103,7 +103,7 @@ public class MetricsResponse {
 
     private boolean clusterIsStable(Node node, NodeList applicationNodes, NodeRepository nodeRepository) {
         ClusterSpec cluster = node.allocation().get().membership().cluster();
-        return Autoscaler.stable(applicationNodes.cluster(cluster.id()), nodeRepository);
+        return Autoscaler.clusterIsStable(applicationNodes.cluster(cluster.id()), nodeRepository);
     }
 
     public static MetricsResponse empty() { return new MetricsResponse(List.of()); }
