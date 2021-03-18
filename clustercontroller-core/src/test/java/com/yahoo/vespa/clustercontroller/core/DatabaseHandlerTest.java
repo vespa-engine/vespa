@@ -10,6 +10,7 @@ import org.junit.Test;
 
 import static org.hamcrest.Matchers.equalTo;
 import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyInt;
 import static org.mockito.ArgumentMatchers.eq;
@@ -65,8 +66,19 @@ public class DatabaseHandlerTest {
         }
 
         DatabaseHandler createHandler() throws Exception {
-            return new DatabaseHandler(mockDbFactory, mockTimer, databaseAddress, 0, monitor);
+            var handler = new DatabaseHandler(mockDbFactory, mockTimer, databaseAddress, 0, monitor);
+            handler.setConnectionEstablishmentIsAllowed(true);
+            return handler;
         }
+    }
+
+    @Test
+    public void can_not_connect_to_database_if_connectivity_is_not_allowed() throws Exception {
+        Fixture f = new Fixture();
+        DatabaseHandler handler = f.createHandler();
+        handler.setConnectionEstablishmentIsAllowed(false);
+        handler.doNextZooKeeperTask(f.createMockContext());
+        assertTrue(handler.isClosed()); // No connectivity allowed yet
     }
 
     @Test
