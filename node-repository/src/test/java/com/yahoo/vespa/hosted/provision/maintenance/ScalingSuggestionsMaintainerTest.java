@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.autoscale.ClusterModel;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.autoscale.Resource;
@@ -99,9 +100,7 @@ public class ScalingSuggestionsMaintainerTest {
         var suggested = tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().suggestedResources().get().resources();
         tester.deploy(app1, cluster1, Capacity.from(suggested, suggested, false, true));
         tester.clock().advance(Duration.ofDays(2));
-        addMeasurements(0.2f,
-                        (float)Resource.memory.idealAverageLoad(),
-                        (float)Resource.disk.idealAverageLoad(),
+        addMeasurements(0.2f, 0.7f, 0.6f,
                         0, 500, app1, tester.nodeRepository(), metricsDb);
         maintainer.maintain();
         assertEquals("Suggestion is to keep the current allocation",

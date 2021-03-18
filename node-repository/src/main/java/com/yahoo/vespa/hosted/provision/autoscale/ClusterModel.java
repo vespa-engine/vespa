@@ -18,6 +18,11 @@ import java.util.OptionalDouble;
  */
 public class ClusterModel {
 
+    static final double idealQueryCpuLoad = 0.8;
+    static final double idealWriteCpuLoad = 0.95;
+    static final double idealMemoryLoad = 0.7;
+    static final double idealDiskLoad = 0.6;
+
     private final Application application;
     private final Cluster cluster;
     private final NodeList nodes;
@@ -93,7 +98,9 @@ public class ClusterModel {
     public double idealLoad(Resource resource) {
         switch (resource) {
             case cpu : return idealCpuLoad();
-            default : return resource.idealAverageLoad(); // TODO: Move here
+            case memory : return idealMemoryLoad;
+            case disk : return idealDiskLoad;
+            default : throw new IllegalStateException("No ideal load defined for " + resource);
         }
     }
 
@@ -121,8 +128,8 @@ public class ClusterModel {
         // Assumptions: 1) Write load is not organic so we should not grow to handle more.
         //                 (TODO: But allow applications to set their target write rate and size for that)
         //              2) Write load does not change in BCP scenarios.
-        return queryCpuFraction * 1 / growthRateHeadroom * 1 / trafficShiftHeadroom * idealQueryCpuLoad() +
-               (1 - queryCpuFraction) * idealWriteCpuLoad();
+        return queryCpuFraction * 1 / growthRateHeadroom * 1 / trafficShiftHeadroom * idealQueryCpuLoad +
+               (1 - queryCpuFraction) * idealWriteCpuLoad;
     }
 
     private double queryCpuFraction() {
@@ -137,10 +144,6 @@ public class ClusterModel {
         double writeFraction = 1 - queryFraction;
         return queryFraction * relativeQueryCost / (queryFraction * relativeQueryCost + writeFraction);
     }
-
-    public static double idealQueryCpuLoad() { return Resource.cpu.idealAverageLoad(); }
-
-    public static double idealWriteCpuLoad() { return 0.95; }
 
     private static Duration computeScalingDuration(Cluster cluster, NodeList nodes) {
         int completedEventCount = 0;
