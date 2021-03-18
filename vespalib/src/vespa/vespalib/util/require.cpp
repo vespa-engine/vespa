@@ -3,18 +3,20 @@
 #include "require.h"
 #include <vespa/vespalib/stllike/asciistream.h>
 #include <iostream>
-#include <stdexcept>
 
 namespace vespalib {
 
+VESPA_IMPLEMENT_EXCEPTION(RequireFailure, Exception);
+
 void handle_require_failure(const char *description, const char *file, uint32_t line)
 {
-	asciistream msg;
-        msg << "in " << file;
-        msg << " line " << line;
-        msg << " requirement (" << description << ") fails";
-	std::cerr << msg.c_str() << "\n";
-	throw std::invalid_argument(msg.c_str());
+    asciistream msg;
+    msg << file << ":" << line << ": ";
+    msg << "error: (" << description << ") fails";
+    std::cerr << msg.c_str() << "\n";
+    asciistream loc;
+    loc << "file " << file << " line " << line;
+    throw RequireFailure(msg.c_str(), loc.c_str(), 2);
 }
 
 } // namespace

@@ -2,7 +2,6 @@
 
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/gtest/gtest.h>
-#include <stdexcept>
 
 //-----------------------------------------------------------------------------
 
@@ -39,27 +38,31 @@ void fail_require_eq() {
 }
 
 TEST(RequireTest, require_can_fail) {
-    using E = std::invalid_argument;
+    using E = vespalib::RequireFailure;
     EXPECT_THROW(
-            {
-                try { fail_require(); }
-                catch(const E &e) {
-                    fprintf(stderr, "e.what() is >>>%s<<<\n", e.what());
-                    throw;
-                }
-            }, E);
+        {
+            try { fail_require(); }
+            catch(const E &e) {
+                fprintf(stderr, "e.getMessage() is >>>%s<<<\n", e.getMessage().c_str());
+                fprintf(stderr, "e.getLocation() is >>>%s<<<\n", e.getLocation().c_str());
+                fprintf(stderr, "e.what() is >>>%s<<<\n", e.what());
+                throw;
+            }
+        }, E);
 }
 
 TEST(RequireTest, require_eq_can_fail) {
-    using E = std::invalid_argument;
+    using E = vespalib::RequireFailure;
     EXPECT_THROW(
-            {
-                try { fail_require_eq(); }
-                catch(const E &e) {
-                    fprintf(stderr, "e.what() is >>>%s<<<\n", e.what());
-                    throw;
-                }
-            }, E);
+        {
+            try { fail_require_eq(); }
+            catch(const E &e) {
+                fprintf(stderr, "e.getMessage() is >>>%s<<<\n", e.getMessage().c_str());
+                fprintf(stderr, "e.getLocation() is >>>%s<<<\n", e.getLocation().c_str());
+                fprintf(stderr, "e.what() is >>>%s<<<\n", e.what());
+                throw;
+            }
+        }, E);
 }
 
 //-----------------------------------------------------------------------------
