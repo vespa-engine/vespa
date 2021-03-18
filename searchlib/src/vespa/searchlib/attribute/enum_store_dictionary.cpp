@@ -228,7 +228,7 @@ EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::sync_unordered_after_loa
     if constexpr (has_unordered_dictionary) {
         for (auto itr = this->_dict.begin(); itr.valid(); ++itr) {
             EntryRef ref(itr.getKey());
-            std::function<EntryRef(void)> insert_unordered_entry([ref]() -> EntryRef { return ref; });
+            std::function<EntryRef(void)> insert_unordered_entry([ref]() noexcept -> EntryRef { return ref; });
             auto& add_result = this->_unordered_dict.add(this->_unordered_dict.get_default_comparator(), ref, insert_unordered_entry);
             assert(add_result.first.load_relaxed() == ref);
             add_result.second.store_relaxed(EntryRef(itr.getData()));

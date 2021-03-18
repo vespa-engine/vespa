@@ -112,7 +112,7 @@ UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::add(const Ent
         EntryRef newRef = insertEntry();
         _dict.insert(itr, newRef, DataType());
         if constexpr (has_unordered_dictionary) {
-            std::function<EntryRef(void)> insert_unordered_entry([newRef]() -> EntryRef { return newRef; });
+            std::function<EntryRef(void)> insert_unordered_entry([newRef]() noexcept -> EntryRef { return newRef; });
             auto& add_result = this->_unordered_dict.add(comp, newRef, insert_unordered_entry);
             assert(add_result.first.load_relaxed() == newRef);
         }
@@ -210,7 +210,7 @@ UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::build(vespali
         for (size_t i = 1; i < refs.size(); ++i) {
             if (ref_counts[i] != 0u) {
                 EntryRef ref = refs[i];
-                std::function<EntryRef(void)> insert_unordered_entry([ref]() -> EntryRef { return ref; });
+                std::function<EntryRef(void)> insert_unordered_entry([ref]() noexcept -> EntryRef { return ref; });
                 auto& add_result = this->_unordered_dict.add(this->_unordered_dict.get_default_comparator(), ref, insert_unordered_entry);
                 assert(add_result.first.load_relaxed() == ref);
             }
@@ -229,7 +229,7 @@ UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::build(vespali
     _dict.assign(builder);
     if constexpr (has_unordered_dictionary) {
         for (const auto& ref : refs) {
-            std::function<EntryRef(void)> insert_unordered_entry([ref]() -> EntryRef { return ref; });
+            std::function<EntryRef(void)> insert_unordered_entry([ref]() noexcept -> EntryRef { return ref; });
             auto& add_result = this->_unordered_dict.add(this->_unordered_dict.get_default_comparator(), ref, insert_unordered_entry);
             assert(add_result.first.load_relaxed() == ref);
         }
@@ -254,7 +254,7 @@ UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::build_with_pa
     if constexpr (has_unordered_dictionary) {
         for (size_t i = 0; i < refs.size(); ++i) {
             EntryRef ref = refs[i];
-            std::function<EntryRef(void)> insert_unordered_entry([ref]() -> EntryRef { return ref; });
+            std::function<EntryRef(void)> insert_unordered_entry([ref]() noexcept -> EntryRef { return ref; });
             auto& add_result = this->_unordered_dict.add(this->_unordered_dict.get_default_comparator(), ref, insert_unordered_entry);
             assert(add_result.first.load_relaxed() == refs[i]);
             if constexpr (std::is_same_v<DataType, uint32_t>) {
