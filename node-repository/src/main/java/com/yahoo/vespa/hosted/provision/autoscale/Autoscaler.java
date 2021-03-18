@@ -60,30 +60,28 @@ public class Autoscaler {
 
     private Advice autoscale(Application application, Cluster cluster, NodeList clusterNodes, Limits limits) {
         ClusterModel clusterModel = new ClusterModel(application, cluster, clusterNodes, metricsDb, nodeRepository);
+
         if ( ! clusterModel.isStable())
             return Advice.none("Cluster change in progress");
 
-        Duration scalingWindow = cluster.scalingDuration(clusterNodes.clusterSpec());
-        if (scaledIn(scalingWindow, cluster))
-            return Advice.dontScale("Won't autoscale now: Less than " + scalingWindow + " since last resource change");
+        if (scaledIn(clusterModel.scalingDuration(), cluster))
+            return Advice.dontScale("Won't autoscale now: Less than " + clusterModel.scalingDuration() + " since last resource change");
 
-        var clusterNodesTimeseries = new ClusterNodesTimeseries(scalingWindow, cluster, clusterNodes, metricsDb);
+        var clusterNodesTimeseries = new ClusterNodesTimeseries(clusterModel.scalingDuration(), cluster, clusterNodes, metricsDb);
         var currentAllocation = new AllocatableClusterResources(clusterNodes.asList(), nodeRepository, cluster.exclusive());
 
         int measurementsPerNode = clusterNodesTimeseries.measurementsPerNode();
-        if  (measurementsPerNode < minimumMeasurementsPerNode(scalingWindow))
+        if  (measurementsPerNode < minimumMeasurementsPerNode(clusterModel.scalingDuration()))
             return Advice.none("Collecting more data before making new scaling decisions: Need to measure for " +
-                               scalingWindow + " since the last resource change completed");
+                               clusterModel.scalingDuration() + " since the last resource change completed");
 
         int nodesMeasured = clusterNodesTimeseries.nodesMeasured();
         if (nodesMeasured != clusterNodes.size())
             return Advice.none("Collecting more data before making new scaling decisions: " +
                                "Have measurements from " + nodesMeasured + " nodes, but require from " + clusterNodes.size());
 
-
-        var scalingDuration = cluster.scalingDuration(clusterNodes.clusterSpec());
         var clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
-        var target = ResourceTarget.idealLoad(scalingDuration,
+        var target = ResourceTarget.idealLoad(clusterModel.scalingDuration(),
                                               clusterTimeseries,
                                               clusterNodesTimeseries,
                                               currentAllocation,
@@ -98,8 +96,8 @@ public class Autoscaler {
         if (similar(bestAllocation.get().realResources(), currentAllocation.realResources()))
             return Advice.dontScale("Cluster is ideally scaled within configured limits");
 
-        if (isDownscaling(bestAllocation.get(), currentAllocation) && scaledIn(scalingWindow.multipliedBy(3), cluster))
-            return Advice.dontScale("Waiting " + scalingWindow.multipliedBy(3) +
+        if (isDownscaling(bestAllocation.get(), currentAllocation) && scaledIn(clusterModel.scalingDuration().multipliedBy(3), cluster))
+            return Advice.dontScale("Waiting " + clusterModel.scalingDuration().multipliedBy(3) +
                                     " since the last change before reducing resources");
 
         return Advice.scaleTo(bestAllocation.get().advertisedResources());

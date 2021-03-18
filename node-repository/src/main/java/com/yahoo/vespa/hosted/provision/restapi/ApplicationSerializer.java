@@ -7,9 +7,11 @@ import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
+import com.yahoo.vespa.hosted.provision.autoscale.ClusterModel;
 import com.yahoo.vespa.hosted.provision.autoscale.ClusterNodesTimeseries;
 import com.yahoo.vespa.hosted.provision.autoscale.ClusterTimeseries;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
@@ -29,38 +31,45 @@ import java.util.List;
  */
 public class ApplicationSerializer {
 
-    public static Slime toSlime(Application application, NodeList applicationNodes, MetricsDb metricsDb, URI applicationUri) {
+    public static Slime toSlime(Application application,
+                                NodeList applicationNodes,
+                                MetricsDb metricsDb,
+                                NodeRepository nodeRepository,
+                                URI applicationUri) {
         Slime slime = new Slime();
-        toSlime(application, applicationNodes, metricsDb, slime.setObject(), applicationUri);
+        toSlime(application, applicationNodes, metricsDb, nodeRepository, slime.setObject(), applicationUri);
         return slime;
     }
 
     private static void toSlime(Application application,
                                 NodeList applicationNodes,
                                 MetricsDb metricsDb,
+                                NodeRepository nodeRepository,
                                 Cursor object,
                                 URI applicationUri) {
         object.setString("url", applicationUri.toString());
         object.setString("id", application.id().toFullString());
-        clustersToSlime(application, applicationNodes, metricsDb, object.setObject("clusters"));
+        clustersToSlime(application, applicationNodes, metricsDb, nodeRepository, object.setObject("clusters"));
     }
 
     private static void clustersToSlime(Application application,
                                         NodeList applicationNodes,
                                         MetricsDb metricsDb,
+                                        NodeRepository nodeRepository,
                                         Cursor clustersObject) {
-        application.clusters().values().forEach(cluster -> toSlime(application, cluster, applicationNodes, metricsDb, clustersObject));
+        application.clusters().values().forEach(cluster -> toSlime(application, cluster, applicationNodes, metricsDb, nodeRepository, clustersObject));
     }
 
     private static void toSlime(Application application,
                                 Cluster cluster,
                                 NodeList applicationNodes,
                                 MetricsDb metricsDb,
+                                NodeRepository nodeRepository,
                                 Cursor clustersObject) {
         NodeList nodes = applicationNodes.not().retired().cluster(cluster.id());
         if (nodes.isEmpty()) return;
         ClusterResources currentResources = nodes.toResources();
-        Duration scalingDuration = cluster.scalingDuration(nodes.clusterSpec());
+        ClusterModel clusterModel = new ClusterModel(application, cluster, nodes, metricsDb, nodeRepository);
         var clusterNodesTimeseries = new ClusterNodesTimeseries(Duration.ofHours(1), cluster, nodes, metricsDb);
         var clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
 
@@ -72,12 +81,12 @@ public class ApplicationSerializer {
         if (cluster.shouldSuggestResources(currentResources))
             cluster.suggestedResources().ifPresent(suggested -> toSlime(suggested.resources(), clusterObject.setObject("suggested")));
         cluster.targetResources().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
-        clusterUtilizationToSlime(application, scalingDuration, clusterTimeseries, clusterNodesTimeseries, metricsDb.clock(), clusterObject.setObject("utilization"));
+        clusterUtilizationToSlime(application, clusterModel.scalingDuration(), clusterTimeseries, clusterNodesTimeseries, metricsDb.clock(), clusterObject.setObject("utilization"));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
         clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());
-        clusterObject.setLong("scalingDuration", scalingDuration.toMillis());
-        clusterObject.setDouble("maxQueryGrowthRate", clusterTimeseries.maxQueryGrowthRate(scalingDuration, metricsDb.clock()));
-        clusterObject.setDouble("currentQueryFractionOfMax", clusterTimeseries.queryFractionOfMax(scalingDuration, metricsDb.clock()));
+        clusterObject.setLong("scalingDuration", clusterModel.scalingDuration().toMillis());
+        clusterObject.setDouble("maxQueryGrowthRate", clusterTimeseries.maxQueryGrowthRate(clusterModel.scalingDuration(), metricsDb.clock()));
+        clusterObject.setDouble("currentQueryFractionOfMax", clusterTimeseries.queryFractionOfMax(clusterModel.scalingDuration(), metricsDb.clock()));
     }
 
     private static void toSlime(ClusterResources resources, Cursor clusterResourcesObject) {
