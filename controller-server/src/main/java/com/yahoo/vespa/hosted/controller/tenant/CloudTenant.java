@@ -12,6 +12,7 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 /**
  * A paying tenant in a Vespa cloud service.
@@ -19,6 +20,8 @@ import java.util.Optional;
  * @author jonmv
  */
 public class CloudTenant extends Tenant {
+
+    private static final Pattern VALID_ARCHIVE_ACCESS_ROLE_PATTERN = Pattern.compile("arn:aws:iam::\\d{12}:.+");
 
     private final Optional<Principal> creator;
     private final BiMap<PublicKey, Principal> developerKeys;
@@ -36,6 +39,8 @@ public class CloudTenant extends Tenant {
         this.info = Objects.requireNonNull(info);
         this.tenantSecretStores = tenantSecretStores;
         this.archiveAccessRole = archiveAccessRole;
+        if (!archiveAccessRole.map(role -> VALID_ARCHIVE_ACCESS_ROLE_PATTERN.matcher(role).matches()).orElse(true))
+            throw new IllegalArgumentException("Invalid archive access role name: " + archiveAccessRole.get());
     }
 
     /** Creates a tenant with the given name, provided it passes validation. */
