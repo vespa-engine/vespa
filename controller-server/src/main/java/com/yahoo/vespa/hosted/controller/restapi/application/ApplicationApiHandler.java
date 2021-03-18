@@ -2055,6 +2055,8 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
                 toSlime(tenantQuota, usedQuota, object.setObject("quota"));
 
+                cloudTenant.archiveAccessRole().ifPresent(role -> object.setString("archiveAccessRole", role));
+
                 break;
             }
             default: throw new IllegalArgumentException("Unexpected tenant type '" + tenant.type() + "'.");

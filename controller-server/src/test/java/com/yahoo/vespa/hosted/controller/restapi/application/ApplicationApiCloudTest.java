@@ -33,6 +33,7 @@ import static com.yahoo.application.container.handler.Request.Method.*;
 import static com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiTest.createApplicationSubmissionData;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
@@ -196,6 +197,9 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
     @Test
     public void archive_uri_test() {
+        tester.assertResponse(request("/application/v4/tenant/scoober", GET).roles(Role.reader(tenantName)),
+                (response) -> assertFalse(response.getBodyAsString().contains("archiveAccessRole")),
+                200);
         tester.assertResponse(request("/application/v4/tenant/scoober/archive-access", PUT)
                 .data("{\"role\":\"dummy\"}").roles(Role.administrator(tenantName)),
                 "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid archive access role name: dummy\"}", 400);
@@ -203,9 +207,15 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         tester.assertResponse(request("/application/v4/tenant/scoober/archive-access", PUT)
                         .data("{\"role\":\"arn:aws:iam::123456789012:role/my-role\"}").roles(Role.administrator(tenantName)),
                 "{\"message\":\"Archive access role set to 'arn:aws:iam::123456789012:role/my-role' for tenant scoober.\"}", 200);
+        tester.assertResponse(request("/application/v4/tenant/scoober", GET).roles(Role.reader(tenantName)),
+                (response) -> assertTrue(response.getBodyAsString().contains("\"archiveAccessRole\":\"arn:aws:iam::123456789012:role/my-role\"")),
+                200);
 
         tester.assertResponse(request("/application/v4/tenant/scoober/archive-access", DELETE).roles(Role.administrator(tenantName)),
                 "{\"message\":\"Archive access role removed for tenant scoober.\"}", 200);
+        tester.assertResponse(request("/application/v4/tenant/scoober", GET).roles(Role.reader(tenantName)),
+                (response) -> assertFalse(response.getBodyAsString().contains("archiveAccessRole")),
+                200);
     }
 
     private ApplicationPackageBuilder prodBuilder() {
