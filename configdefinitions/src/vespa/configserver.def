@@ -51,7 +51,7 @@ ztsUrl string default=""
 
 # Maintainers
 maintainerIntervalMinutes int default=30
-keepUnusedFileReferencesMinutes int default=240
+keepUnusedFileReferencesMinutes int default=300
 
 # Bootstrapping
 # How long bootstrapping can take before giving up (in seconds)
