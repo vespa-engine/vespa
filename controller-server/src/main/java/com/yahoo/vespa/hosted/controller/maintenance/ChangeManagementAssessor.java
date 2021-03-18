@@ -1,5 +1,6 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
@@ -28,15 +29,15 @@ public class ChangeManagementAssessor {
         public String impact;
     }
 
-    public ChangeManagementAssessor(Controller controller) {
-        this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
+    public ChangeManagementAssessor(NodeRepository nodeRepository) {
+        this.nodeRepository = nodeRepository;
     }
 
     public List<Assessment> assessment(List<String> impactedHostnames, ZoneId zone) {
         return assessmentInner(impactedHostnames, nodeRepository.listNodes(zone).nodes(), zone);
     }
 
-    static List<Assessment> assessmentInner(List<String> impactedHostnames, List<NodeRepositoryNode> allNodes, ZoneId zone) {
+    List<Assessment> assessmentInner(List<String> impactedHostnames, List<NodeRepositoryNode> allNodes, ZoneId zone) {
         // Get all active nodes running on the impacted hosts
         List<NodeRepositoryNode> containerNodes = allNodes.stream()
                 .filter(nodeRepositoryNode -> nodeRepositoryNode.getState() == NodeState.active) //TODO look at more states?
@@ -44,6 +45,13 @@ public class ChangeManagementAssessor {
 
         // Group nodes pr cluster
         Map<String, List<NodeRepositoryNode>> prCluster = containerNodes.stream().collect(Collectors.groupingBy(ChangeManagementAssessor::clusterKey));
+
+        boolean allHostsReplacable = nodeRepository.isReplaceable(
+                zone,
+                impactedHostnames.stream()
+                        .map(HostName::from)
+                        .collect(Collectors.toList())
+        );
 
         // Report assessment pr cluster
         return prCluster.entrySet().stream().map((entry) -> {
@@ -64,10 +72,11 @@ public class ChangeManagementAssessor {
             assessment.groupsTotal = totalStats[1];
             assessment.groupsImpact = impactedStats[1];
 
+
             // TODO check upgrade policy
             assessment.upgradePolicy = "na";
             // TODO do some heuristic on suggestion action
-            assessment.suggestedAction = "nothing";
+            assessment.suggestedAction = allHostsReplacable ? "Retire all hosts" : "nothing";
             // TODO do some heuristic on impact
             assessment.impact = "na";
 

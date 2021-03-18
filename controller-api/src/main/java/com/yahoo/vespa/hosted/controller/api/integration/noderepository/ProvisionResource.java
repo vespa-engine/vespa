@@ -121,5 +121,10 @@ public interface ProvisionResource {
     @DELETE
     @Path("/archive/{tenant}")
     String removeArchiveUri(@PathParam("tenant") TenantName tenant);
+
+    @GET
+    @Path("/capacity")
+    Capacity capacity(@QueryParam("json") boolean json,
+                      @QueryParam("hosts") String hostList);
 }
 
