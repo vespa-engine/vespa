@@ -430,6 +430,10 @@ struct LoaderTestValues {
     }
 };
 
+template <> std::vector<int32_t> LoaderTestValues<NumericEnumStore>::values{3, 5, 7, 9};
+template <> std::vector<float> LoaderTestValues<FloatEnumStore>::values{3.1, 5.2, 7.3, 9.4};
+template <> std::vector<const char *> LoaderTestValues<StringEnumStore>::values{"aa", "bbb", "ccc", "dd"};
+
 template <>
 void
 LoaderTestValues<StringEnumStore>::load_values(enumstore::EnumeratedLoaderBase& loader)
@@ -443,10 +447,6 @@ LoaderTestValues<StringEnumStore>::load_values(enumstore::EnumeratedLoaderBase& 
     }
     loader.load_unique_values(raw_values.data(), raw_values.size());
 }
-
-template <> std::vector<int32_t> LoaderTestValues<NumericEnumStore>::values{3, 5, 7, 9};
-template <> std::vector<float> LoaderTestValues<FloatEnumStore>::values{3.1, 5.2, 7.3, 9.4};
-template <> std::vector<const char *> LoaderTestValues<StringEnumStore>::values{"aa", "bbb", "ccc", "dd"};
 
 template <typename EnumStoreTypeAndOrdering>
 class LoaderTest : public ::testing::Test {
