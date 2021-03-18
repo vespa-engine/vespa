@@ -27,7 +27,7 @@ class IdealStateManager;
 class ExternalOperationHandler;
 class Operation;
 
-// TODO rename to DistributorStripeTestUtil?
+// TODO STRIPE rename to DistributorStripeTestUtil?
 class DistributorTestUtil : private DoneInitializeHandler
 {
 public:

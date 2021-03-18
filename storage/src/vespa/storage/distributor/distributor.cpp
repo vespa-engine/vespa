@@ -28,7 +28,7 @@ using namespace std::chrono_literals;
 
 namespace storage::distributor {
 
-/* TODOs
+/* TODO STRIPE
  *  - need a DistributorComponent per stripe
  *    - or better, remove entirely!
  *    - probably also DistributorInterface since it's used to send
@@ -52,10 +52,10 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _messageSender(messageSender),
       _stripe(std::make_unique<DistributorStripe>(compReg, *_metrics, node_identity, threadPool, doneInitHandler,
                                                   manageActiveBucketCopies, this)),
-      // TODO remove once DistributorComponent no longer references bucket space repos
+      // TODO STRIPE remove once DistributorComponent no longer references bucket space repos
       _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
       _readOnlyBucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
-      // TODO slim down
+      // TODO STRIPE slim down
       _component(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, compReg, "distributor"),
       _distributorStatusDelegate(compReg, *this, *this),
       _threadPool(threadPool),
@@ -119,8 +119,8 @@ Distributor::getReadyOnlyBucketSpaceRepo() const noexcept {
 
 storage::distributor::DistributorComponent&
 Distributor::distributor_component() noexcept {
-    // FIXME We need to grab the stripe's component since tests like to access
-    //       these things uncomfortably directly.
+    // TODO STRIPE We need to grab the stripe's component since tests like to access
+    //             these things uncomfortably directly.
     return _stripe->_component;
 }
 
@@ -179,21 +179,15 @@ Distributor::pendingClusterStateOrNull(const document::BucketSpace& space) const
 }
 
 void
-Distributor::sendCommand(const std::shared_ptr<api::StorageCommand>& cmd)
+Distributor::sendCommand(const std::shared_ptr<api::StorageCommand>&)
 {
-    assert(false); // TODO
-    if (cmd->getType() == api::MessageType::MERGEBUCKET) {
-        api::MergeBucketCommand& merge(static_cast<api::MergeBucketCommand&>(*cmd));
-        ideal_state_manager().getMetrics().nodesPerMerge.addValue(merge.getNodes().size());
-    }
-    sendUp(cmd);
+    assert(false); // TODO STRIPE
 }
 
 void
-Distributor::sendReply(const std::shared_ptr<api::StorageReply>& reply)
+Distributor::sendReply(const std::shared_ptr<api::StorageReply>&)
 {
-    assert(false); // TODO
-    sendUp(reply);
+    assert(false); // TODO STRIPE
 }
 
 void
@@ -237,11 +231,6 @@ void Distributor::onClose() {
 
 void Distributor::send_up_without_tracking(const std::shared_ptr<api::StorageMessage>&) {
     assert(false);
-    /*if (_messageSender) {
-        _messageSender->sendUp(msg);
-    } else {
-        StorageLink::sendUp(msg);
-    }*/
 }
 
 void
@@ -298,14 +287,14 @@ Distributor::handleMessage(const std::shared_ptr<api::StorageMessage>& msg)
 const lib::ClusterStateBundle&
 Distributor::getClusterStateBundle() const
 {
-    // FIXME must offer a single unifying state across stripes
+    // TODO STRIPE must offer a single unifying state across stripes
     return _stripe->getClusterStateBundle();
 }
 
 void
 Distributor::enableClusterStateBundle(const lib::ClusterStateBundle& state)
 {
-    // TODO make test injection/force-function
+    // TODO STRIPE make test injection/force-function
     _stripe->enableClusterStateBundle(state);
 }
 
@@ -389,7 +378,7 @@ Distributor::enableNextDistribution()
     _stripe->enableNextDistribution();
 }
 
-// FIXME only used by tests to directly inject new distribution config
+// TODO STRIPE only used by tests to directly inject new distribution config
 void
 Distributor::propagateDefaultDistribution(
         std::shared_ptr<const lib::Distribution> distribution)
@@ -418,20 +407,20 @@ Distributor::workWasDone() const noexcept
 std::unordered_map<uint16_t, uint32_t>
 Distributor::getMinReplica() const
 {
-    // TODO merged snapshot from all stripes
+    // TODO STRIPE merged snapshot from all stripes
     return _stripe->getMinReplica();
 }
 
 BucketSpacesStatsProvider::PerNodeBucketSpacesStats
 Distributor::getBucketSpacesStats() const
 {
-    // TODO merged snapshot from all stripes
+    // TODO STRIPE merged snapshot from all stripes
     return _stripe->getBucketSpacesStats();
 }
 
 SimpleMaintenanceScanner::PendingMaintenanceStats
 Distributor::pending_maintenance_stats() const {
-    // TODO merged snapshot from all stripes
+    // TODO STRIPE merged snapshot from all stripes
     return _stripe->pending_maintenance_stats();
 }
 
@@ -466,7 +455,7 @@ Distributor::doCriticalTick(framework::ThreadIndex idx)
 framework::ThreadWaitInfo
 Distributor::doNonCriticalTick(framework::ThreadIndex idx)
 {
-    // TODO stripes need their own thread loops!
+    // TODO STRIPE stripes need their own thread loops!
     _stripe->doNonCriticalTick(idx);
     _tickResult = _stripe->_tickResult;
     return _tickResult;
@@ -476,7 +465,7 @@ void
 Distributor::enableNextConfig()
 {
     _hostInfoReporter.enableReporting(getConfig().getEnableHostInfoReporting());
-    _stripe->enableNextConfig(); // TODO avoid redundant call
+    _stripe->enableNextConfig(); // TODO STRIPE avoid redundant call
 }
 
 void
@@ -507,7 +496,7 @@ Distributor::reportStatus(std::ostream&,
 bool
 Distributor::handleStatusRequest(const DelegatedStatusRequest& request) const
 {
-    // TODO need to aggregate status responses _across_ stripes..!
+    // TODO STRIPE need to aggregate status responses _across_ stripes..!
     return _stripe->handleStatusRequest(request);
 }
 
