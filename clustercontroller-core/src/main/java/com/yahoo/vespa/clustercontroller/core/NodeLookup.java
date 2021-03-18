@@ -12,4 +12,11 @@ public interface NodeLookup {
 
     boolean updateCluster(ContentCluster cluster, NodeAddedOrRemovedListener listener);
 
+    /**
+     * Returns whether the lookup instance has been able to bootstrap itself with information about nodes.
+     *
+     * Calling updateCluster() _before_ isReady has returned true may not provide any useful data.
+     */
+    boolean isReady();
+
 }

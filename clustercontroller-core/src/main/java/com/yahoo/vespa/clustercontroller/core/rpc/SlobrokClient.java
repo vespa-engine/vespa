@@ -59,6 +59,7 @@ public class SlobrokClient implements NodeLookup {
         freshMirror = true;
     }
 
+    @Override
     public void shutdown() {
         if (supervisor != null) {
             supervisor.transport().shutdown().join();
@@ -67,6 +68,12 @@ public class SlobrokClient implements NodeLookup {
 
     public Mirror getMirror() { return mirror; }
 
+    @Override
+    public boolean isReady() {
+        return mirror.ready();
+    }
+
+    @Override
     public boolean updateCluster(ContentCluster cluster, NodeAddedOrRemovedListener listener) {
         if (mirror == null) return false;
         int mirrorVersion = mirror.updates();

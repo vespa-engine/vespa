@@ -154,4 +154,8 @@ public class DummyCommunicator implements Communicator, NodeLookup {
         return false;
     }
 
+    @Override
+    public boolean isReady() {
+        return true;
+    }
 }
