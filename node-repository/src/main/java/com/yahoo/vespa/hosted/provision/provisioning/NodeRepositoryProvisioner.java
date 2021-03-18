@@ -19,11 +19,15 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
+import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocatableClusterResources;
 import com.yahoo.vespa.hosted.provision.autoscale.AllocationOptimizer;
+import com.yahoo.vespa.hosted.provision.autoscale.ClusterModel;
 import com.yahoo.vespa.hosted.provision.autoscale.Limits;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.autoscale.ResourceTarget;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
@@ -48,6 +52,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private static final Logger log = Logger.getLogger(NodeRepositoryProvisioner.class.getName());
 
     private final NodeRepository nodeRepository;
+    private final MetricsDb metricsDb;
     private final AllocationOptimizer allocationOptimizer;
     private final CapacityPolicies capacityPolicies;
     private final Zone zone;
@@ -57,9 +62,12 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private final NodeResourceLimits nodeResourceLimits;
 
     @Inject
-    public NodeRepositoryProvisioner(NodeRepository nodeRepository, Zone zone,
+    public NodeRepositoryProvisioner(NodeRepository nodeRepository,
+                                     MetricsDb metricsDb,
+                                     Zone zone,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
+        this.metricsDb = metricsDb;
         this.allocationOptimizer = new AllocationOptimizer(nodeRepository);
         this.capacityPolicies = new CapacityPolicies(nodeRepository);
         this.zone = zone;
@@ -137,35 +145,37 @@ public class NodeRepositoryProvisioner implements Provisioner {
      */
     private ClusterResources decideTargetResources(ApplicationId applicationId, ClusterSpec clusterSpec, Capacity requested) {
         try (Mutex lock = nodeRepository.nodes().lock(applicationId)) {
-            Application application = nodeRepository.applications().get(applicationId).orElse(Application.empty(applicationId));
-            application = application.withCluster(clusterSpec.id(), clusterSpec.isExclusive(), requested.minResources(), requested.maxResources());
+            var application = nodeRepository.applications().get(applicationId).orElse(Application.empty(applicationId))
+                              .withCluster(clusterSpec.id(), clusterSpec.isExclusive(), requested.minResources(), requested.maxResources());
             nodeRepository.applications().put(application, lock);
-            return application.clusters().get(clusterSpec.id()).targetResources()
-                    .orElseGet(() -> currentResources(applicationId, clusterSpec, requested));
+            var cluster = application.cluster(clusterSpec.id()).get();
+            return cluster.targetResources().orElseGet(() -> currentResources(application, clusterSpec, cluster, requested));
         }
     }
 
     /** Returns the current resources of this cluster, or requested min if none */
-    private ClusterResources currentResources(ApplicationId applicationId,
+    private ClusterResources currentResources(Application application,
                                               ClusterSpec clusterSpec,
+                                              Cluster cluster,
                                               Capacity requested) {
-        List<Node> nodes = nodeRepository.nodes().list(Node.State.active).owner(applicationId)
-                                   .cluster(clusterSpec.id())
-                                   .not().retired()
-                                   .not().removable()
-                                   .asList();
+        NodeList nodes = nodeRepository.nodes().list(Node.State.active).owner(application.id())
+                                       .cluster(clusterSpec.id())
+                                       .not().retired()
+                                       .not().removable();
         boolean firstDeployment = nodes.isEmpty();
         AllocatableClusterResources currentResources =
                 firstDeployment // start at min, preserve current resources otherwise
                 ? new AllocatableClusterResources(requested.minResources(), clusterSpec, nodeRepository)
-                : new AllocatableClusterResources(nodes, nodeRepository, clusterSpec.isExclusive());
-        return within(Limits.of(requested), currentResources, firstDeployment);
+                : new AllocatableClusterResources(nodes.asList(), nodeRepository, clusterSpec.isExclusive());
+        var clusterModel = new ClusterModel(application, cluster, clusterSpec, nodes, metricsDb, nodeRepository.clock());
+        return within(Limits.of(requested), currentResources, firstDeployment, clusterModel);
     }
 
     /** Make the minimal adjustments needed to the current resources to stay within the limits */
     private ClusterResources within(Limits limits,
                                     AllocatableClusterResources current,
-                                    boolean firstDeployment) {
+                                    boolean firstDeployment,
+                                    ClusterModel clusterModel) {
         if (limits.min().equals(limits.max())) return limits.min();
 
         // Don't change current deployments that are still legal
@@ -173,7 +183,10 @@ public class NodeRepositoryProvisioner implements Provisioner {
         if (! firstDeployment && currentAsAdvertised.isWithin(limits.min(), limits.max())) return currentAsAdvertised;
 
         // Otherwise, find an allocation that preserves the current resources as well as possible
-        return allocationOptimizer.findBestAllocation(ResourceTarget.preserve(current), current, limits)
+        return allocationOptimizer.findBestAllocation(ResourceTarget.preserve(current),
+                                                      current,
+                                                      clusterModel,
+                                                      limits)
                                   .orElseThrow(() -> new IllegalArgumentException("No allocation possible within " + limits))
                                   .advertisedResources();
     }

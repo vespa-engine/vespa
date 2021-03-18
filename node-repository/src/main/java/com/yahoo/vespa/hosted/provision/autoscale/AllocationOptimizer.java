@@ -2,9 +2,11 @@
 package com.yahoo.vespa.hosted.provision.autoscale;
 
 import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.applications.Cluster;
 
 import java.util.Optional;
 
@@ -39,6 +41,7 @@ public class AllocationOptimizer {
      */
     public Optional<AllocatableClusterResources> findBestAllocation(ResourceTarget target,
                                                                     AllocatableClusterResources current,
+                                                                    ClusterModel clusterModel,
                                                                     Limits limits) {
         int minimumNodes = AllocationOptimizer.minimumNodes;
         if (limits.isEmpty())
@@ -63,7 +66,7 @@ public class AllocationOptimizer {
                                                              groups,
                                                              nodeResourcesWith(nodesAdjustedForRedundancy,
                                                                                groupsAdjustedForRedundancy,
-                                                                               limits, current, target));
+                                                                               limits, target, current, clusterModel));
 
                 var allocatableResources = AllocatableClusterResources.from(next, current.clusterSpec(), limits, hosts, nodeRepository);
                 if (allocatableResources.isEmpty()) continue;
@@ -82,20 +85,22 @@ public class AllocationOptimizer {
     private NodeResources nodeResourcesWith(int nodes,
                                             int groups,
                                             Limits limits,
+                                            ResourceTarget target,
                                             AllocatableClusterResources current,
-                                            ResourceTarget target) {
-        // Cpu: Scales with cluster size (TODO: Only reads, writes scales with group size)
-        // Memory and disk: Scales with group size
+                                            ClusterModel clusterModel) {
         double cpu, memory, disk;
-
         int groupSize = nodes / groups;
 
-        if (current.clusterSpec().isStateful()) { // load scales with node share of content
+        if (current.clusterSpec().type() == ClusterSpec.Type.content) { // load scales with node share of content
+            // Cpu: Query cpu scales with cluster size, write cpu scales with group size
+            // Memory and disk: Scales with group size
+
             // The fixed cost portion of cpu does not scale with changes to the node count
-            // TODO: Only for the portion of cpu consumed by queries
-            double cpuPerGroup = fixedCpuCostFraction * target.nodeCpu() +
-                                 (1 - fixedCpuCostFraction) * target.nodeCpu() * current.groupSize() / groupSize;
-            cpu = cpuPerGroup * current.groups() / groups;
+            double queryCpuPerGroup = fixedCpuCostFraction * target.nodeCpu() +
+                                      (1 - fixedCpuCostFraction) * target.nodeCpu() * current.groupSize() / groupSize;
+            double queryCpu = queryCpuPerGroup * current.groups() / groups;
+            double writeCpu = target.nodeCpu() * current.groupSize() / groupSize;
+            cpu = clusterModel.queryCpuFraction() * queryCpu + (1 - clusterModel.queryCpuFraction()) * writeCpu;
             memory = target.nodeMemory() * current.groupSize() / groupSize;
             disk = target.nodeDisk() * current.groupSize() / groupSize;
         }

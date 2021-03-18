@@ -330,7 +330,7 @@ public class AutoscalingTest {
     }
 
     @Test
-    public void test_autoscaling_groupsize_by_cpu() {
+    public void test_autoscaling_groupsize_by_cpu_read_dominated() {
         NodeResources resources = new NodeResources(3, 100, 100, 1);
         ClusterResources min = new ClusterResources( 3, 1, new NodeResources(1, 1, 1, 1));
         ClusterResources max = new ClusterResources(21, 7, new NodeResources(100, 1000, 1000, 1));
@@ -343,9 +343,34 @@ public class AutoscalingTest {
         tester.deploy(application1, cluster1, 6, 2, resources);
         tester.addCpuMeasurements(0.25f, 1f, 120, application1);
         tester.clock().advance(Duration.ofMinutes(-10 * 5));
-        tester.addQueryRateMeasurements(application1, cluster1.id(), 10, t -> t == 0 ? 20.0 : 10.0); // Query traffic only
+        tester.addLoadMeasurements(application1, cluster1.id(), 10,
+                                   t -> t == 0 ? 20.0 : 10.0,
+                                   t -> 1.0);
         tester.assertResources("Scaling up since resource usage is too high, changing to 1 group is cheaper",
-                               8, 1, 2.7,  83.3, 83.3,
+                               8, 1, 2.6,  83.3, 83.3,
+                               tester.autoscale(application1, cluster1.id(), min, max).target());
+    }
+
+    /** Same as above but mostly write traffic, which favors smaller groups */
+    @Test
+    public void test_autoscaling_groupsize_by_cpu_write_dominated() {
+        NodeResources resources = new NodeResources(3, 100, 100, 1);
+        ClusterResources min = new ClusterResources( 3, 1, new NodeResources(1, 1, 1, 1));
+        ClusterResources max = new ClusterResources(21, 7, new NodeResources(100, 1000, 1000, 1));
+        AutoscalingTester tester = new AutoscalingTester(resources.withVcpu(resources.vcpu() * 2));
+
+        ApplicationId application1 = tester.applicationId("application1");
+        ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "cluster1");
+
+        // deploy
+        tester.deploy(application1, cluster1, 6, 2, resources);
+        tester.addCpuMeasurements(0.25f, 1f, 120, application1);
+        tester.clock().advance(Duration.ofMinutes(-10 * 5));
+        tester.addLoadMeasurements(application1, cluster1.id(), 10,
+                                   t -> t == 0 ? 20.0 : 10.0,
+                                   t -> 100.0);
+        tester.assertResources("Scaling down since resource usage is too high, changing to 1 group is cheaper",
+                               4, 1, 2.1,  83.3, 83.3,
                                tester.autoscale(application1, cluster1.id(), min, max).target());
     }
 
