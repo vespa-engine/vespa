@@ -59,7 +59,12 @@ public class Autoscaler {
     }
 
     private Advice autoscale(Application application, Cluster cluster, NodeList clusterNodes, Limits limits) {
-        ClusterModel clusterModel = new ClusterModel(application, cluster, clusterNodes, metricsDb, nodeRepository.clock());
+        ClusterModel clusterModel = new ClusterModel(application,
+                                                     cluster,
+                                                     clusterNodes.clusterSpec(),
+                                                     clusterNodes,
+                                                     metricsDb,
+                                                     nodeRepository.clock());
 
         if ( ! clusterIsStable(clusterNodes, nodeRepository))
             return Advice.none("Cluster change in progress");
@@ -80,7 +85,7 @@ public class Autoscaler {
         var target = ResourceTarget.idealLoad(clusterModel, currentAllocation);
 
         Optional<AllocatableClusterResources> bestAllocation =
-                allocationOptimizer.findBestAllocation(target, currentAllocation, limits);
+                allocationOptimizer.findBestAllocation(target, currentAllocation, clusterModel, limits);
         if (bestAllocation.isEmpty())
             return Advice.dontScale("No allocation improvements are possible within configured limits");
 

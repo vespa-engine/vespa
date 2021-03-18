@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
@@ -25,6 +26,7 @@ public class ClusterModel {
 
     private final Application application;
     private final Cluster cluster;
+    /** The current nodes of this cluster, or empty if this models a new cluster not yet deployed */
     private final NodeList nodes;
     private final MetricsDb metricsDb;
     private final Clock clock;
@@ -38,6 +40,7 @@ public class ClusterModel {
 
     public ClusterModel(Application application,
                         Cluster cluster,
+                        ClusterSpec clusterSpec,
                         NodeList clusterNodes,
                         MetricsDb metricsDb,
                         Clock clock) {
@@ -46,7 +49,7 @@ public class ClusterModel {
         this.nodes = clusterNodes;
         this.metricsDb = metricsDb;
         this.clock = clock;
-        this.scalingDuration = computeScalingDuration(cluster, clusterNodes);
+        this.scalingDuration = computeScalingDuration(cluster, clusterSpec);
     }
 
     /** For testing */
@@ -132,20 +135,21 @@ public class ClusterModel {
                (1 - queryCpuFraction) * idealWriteCpuLoad;
     }
 
-    private double queryCpuFraction() {
+    /** The estimated fraction of cpu usage which goes to processing queries vs. writes */
+    public double queryCpuFraction() {
         OptionalDouble queryRate = clusterTimeseries().queryRate(scalingDuration(), clock);
         OptionalDouble writeRate = clusterTimeseries().writeRate(scalingDuration(), clock);
         if (queryRate.orElse(0) == 0 && writeRate.orElse(0) == 0) return queryCpuFraction(0.5);
         return queryCpuFraction(queryRate.orElse(0) / (queryRate.orElse(0) + writeRate.orElse(0)));
     }
 
-    private double queryCpuFraction(double queryFraction) {
+    private double queryCpuFraction(double queryRateFraction) {
         double relativeQueryCost = 9; // How much more expensive are queries than writes? TODO: Measure
-        double writeFraction = 1 - queryFraction;
-        return queryFraction * relativeQueryCost / (queryFraction * relativeQueryCost + writeFraction);
+        double writeFraction = 1 - queryRateFraction;
+        return queryRateFraction * relativeQueryCost / (queryRateFraction * relativeQueryCost + writeFraction);
     }
 
-    private static Duration computeScalingDuration(Cluster cluster, NodeList nodes) {
+    private static Duration computeScalingDuration(Cluster cluster, ClusterSpec clusterSpec) {
         int completedEventCount = 0;
         Duration totalDuration = Duration.ZERO;
         for (ScalingEvent event : cluster.scalingEvents()) {
@@ -155,14 +159,14 @@ public class ClusterModel {
         }
 
         if (completedEventCount == 0) { // Use defaults
-            if (nodes.clusterSpec().isStateful()) return Duration.ofHours(12);
+            if (clusterSpec.isStateful()) return Duration.ofHours(12);
             return Duration.ofMinutes(10);
         }
         else {
             Duration predictedDuration = totalDuration.dividedBy(completedEventCount);
 
             // TODO: Remove when we have reliable completion for content clusters
-            if (nodes.clusterSpec().isStateful() && predictedDuration.minus(Duration.ofHours(12)).isNegative())
+            if (clusterSpec.isStateful() && predictedDuration.minus(Duration.ofHours(12)).isNegative())
                 return Duration.ofHours(12);
 
             if (predictedDuration.minus(Duration.ofMinutes(5)).isNegative()) return Duration.ofMinutes(5); // minimum

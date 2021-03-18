@@ -35,6 +35,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.Nodelike;
+import com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerServiceMock;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
@@ -115,7 +116,11 @@ public class ProvisioningTester {
                                                  spareCount,
                                                  1000);
         this.orchestrator = orchestrator;
-        this.provisioner = new NodeRepositoryProvisioner(nodeRepository, zone, provisionServiceProvider, flagSource);
+        this.provisioner = new NodeRepositoryProvisioner(nodeRepository,
+                                                         new MemoryMetricsDb(nodeRepository),
+                                                         zone,
+                                                         provisionServiceProvider,
+                                                         flagSource);
         this.capacityPolicies = new CapacityPolicies(nodeRepository);
         this.provisionLogger = new NullProvisionLogger();
         this.loadBalancerService = loadBalancerService;

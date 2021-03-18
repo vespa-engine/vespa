@@ -26,6 +26,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
+import com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.Status;
@@ -77,6 +78,7 @@ public class MockNodeRepository extends NodeRepository {
 
     private void populate() {
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(this,
+                                                                              new MemoryMetricsDb(this),
                                                                               Zone.defaultZone(),
                                                                               new MockProvisionServiceProvider(),
                                                                               new InMemoryFlagSource());

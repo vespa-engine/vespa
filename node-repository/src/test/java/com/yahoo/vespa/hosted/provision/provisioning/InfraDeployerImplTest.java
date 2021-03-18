@@ -14,6 +14,7 @@ import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.NodeRepositoryTester;
+import com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
@@ -60,8 +61,11 @@ public class InfraDeployerImplTest {
 
     private final NodeRepositoryTester tester = new NodeRepositoryTester();
     private final NodeRepository nodeRepository = tester.nodeRepository();
-    private final Provisioner provisioner = spy(new NodeRepositoryProvisioner(
-            nodeRepository, Zone.defaultZone(), new EmptyProvisionServiceProvider(), new InMemoryFlagSource()));
+    private final Provisioner provisioner = spy(new NodeRepositoryProvisioner(nodeRepository,
+                                                                              new MemoryMetricsDb(nodeRepository),
+                                                                              Zone.defaultZone(),
+                                                                              new EmptyProvisionServiceProvider(),
+                                                                              new InMemoryFlagSource()));
     private final InfrastructureVersions infrastructureVersions = nodeRepository.infrastructureVersions();
     private final DuperModelInfraApi duperModelInfraApi = mock(DuperModelInfraApi.class);
     private final InfraDeployerImpl infraDeployer;
