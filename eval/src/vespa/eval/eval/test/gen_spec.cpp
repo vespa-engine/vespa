@@ -73,7 +73,6 @@ DimSpec::from_desc(const vespalib::string &desc)
         assert(idx < desc.size());
         assert(is_num(desc[idx]));
         size_t num = as_num(desc[idx++]);
-        assert(num != 0); // catch leading zeroes/zero size
         while ((idx < desc.size()) && is_num(desc[idx])) {
             num = (num * 10) + as_num(desc[idx++]);
         }

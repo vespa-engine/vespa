@@ -121,6 +121,7 @@ public:
     const seq_t &seq() const { return _seq; }
     GenSpec cpy() const { return *this; }
     GenSpec &idx(const vespalib::string &name, size_t size) {
+        assert(size != 0);
         _dims.emplace_back(name, size);
         return *this;
     }
