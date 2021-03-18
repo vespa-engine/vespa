@@ -59,7 +59,8 @@ public class Autoscaler {
     }
 
     private Advice autoscale(Application application, Cluster cluster, NodeList clusterNodes, Limits limits) {
-        if ( ! stable(clusterNodes, nodeRepository))
+        ClusterModel clusterModel = new ClusterModel(application, cluster, clusterNodes, metricsDb, nodeRepository);
+        if ( ! clusterModel.isStable())
             return Advice.none("Cluster change in progress");
 
         Duration scalingWindow = cluster.scalingDuration(clusterNodes.clusterSpec());
@@ -141,20 +142,6 @@ public class Autoscaler {
         minimumMeasurements = Math.round(0.8 * minimumMeasurements); // Allow 20% metrics collection blackout
         if (minimumMeasurements < 1) minimumMeasurements = 1;
         return (int)minimumMeasurements;
-    }
-
-    public static boolean stable(NodeList nodes, NodeRepository nodeRepository) {
-        // The cluster is processing recent changes
-        if (nodes.stream().anyMatch(node -> node.status().wantToRetire() ||
-                                            node.allocation().get().membership().retired() ||
-                                            node.allocation().get().isRemovable()))
-            return false;
-
-        // A deployment is ongoing
-        if (nodeRepository.nodes().list(Node.State.reserved).owner(nodes.first().get().allocation().get().owner()).size() > 0)
-            return false;
-
-        return true;
     }
 
     public static class Advice {
