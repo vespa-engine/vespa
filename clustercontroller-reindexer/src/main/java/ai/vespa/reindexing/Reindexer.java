@@ -42,6 +42,8 @@ public class Reindexer {
 
     private static final Logger log = Logger.getLogger(Reindexer.class.getName());
 
+    static final Duration failureGrace = Duration.ofMinutes(10);
+
     private final Cluster cluster;
     private final Map<DocumentType, Instant> ready;
     private final ReindexingCurator database;
@@ -133,14 +135,15 @@ public class Reindexer {
     private void progress(DocumentType type, AtomicReference<Reindexing> reindexing, AtomicReference<Status> status) {
         switch (status.get().state()) {
             default:
-                log.log(WARNING, "Unknown reindexing state '" + status.get().state() + "'");
-            case FAILED:
-                log.log(FINE, () -> "Not continuing reindexing of " + type + " due to previous failure");
+                log.log(WARNING, "Unknown reindexing state '" + status.get().state() + "'—not continuing reindexing of " + type);
             case SUCCESSFUL: // Intentional fallthrough — all three are done states.
                 return;
             case RUNNING:
                 log.log(WARNING, "Unexpected state 'RUNNING' of reindexing of " + type);
                 break;
+            case FAILED:
+                if (clock.instant().isBefore(status.get().endedAt().get().plus(failureGrace)))
+                    return;
             case READY:
                 status.updateAndGet(Status::running);
         }

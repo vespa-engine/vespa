@@ -172,9 +172,21 @@ class ReindexerTest {
         assertEquals(reindexing, database.readReindexing("cluster"));
         assertTrue(shutDown.get(), "Session was shut down");
 
-        // Document type is ignored in next run, as it has failed fatally.
+        // Document type is ignored in next run, as it has failed, and grace period is not yet over.
+        clock.advance(Reindexer.failureGrace.minusMillis(1));
         new Reindexer(cluster, Map.of(music, Instant.ofEpochMilli(30)), database, ReindexerTest::failIfCalled, metric, clock).reindex();
         assertEquals(reindexing, database.readReindexing("cluster"));
+
+        // When failure grace period is over, reindexing resumes as usual.
+        clock.advance(Duration.ofMillis(1));
+        shutDown.set(false);
+        new Reindexer(cluster, Map.of(music, Instant.ofEpochMilli(30)), database, parameters -> {
+            executor.execute(() -> parameters.getControlHandler().onDone(VisitorControlHandler.CompletionCode.SUCCESS, "OK"));
+            return () -> shutDown.set(true);
+        }, metric, clock).reindex();
+        reindexing = reindexing.with(music, reindexing.status().get(music).running().successful(clock.instant()));
+        assertEquals(reindexing, database.readReindexing("cluster"));
+        assertTrue(shutDown.get(), "Session was shut down");
     }
 
 }

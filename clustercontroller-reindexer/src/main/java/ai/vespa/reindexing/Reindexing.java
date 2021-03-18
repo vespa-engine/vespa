@@ -91,8 +91,8 @@ public class Reindexing {
 
         /** Returns a copy of this, in state RUNNING. */
         public Status running() {
-            if (state != State.READY)
-                throw new IllegalStateException("Current state must be READY when changing to RUNNING");
+            if (state != State.READY && state != State.FAILED)
+                throw new IllegalStateException("Current state must be READY or FAILED when changing to RUNNING");
             return new Status(startedAt, null, progress, State.RUNNING, null);
         }
 
