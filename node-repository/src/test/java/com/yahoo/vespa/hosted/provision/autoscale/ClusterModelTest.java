@@ -22,7 +22,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * @author bratseth
  */
-public class ResourceTargetTest {
+public class ClusterModelTest {
 
     private static final double delta = 0.001;
 
@@ -34,22 +34,16 @@ public class ResourceTargetTest {
         application = application.with(cluster);
 
         // No current traffic share: Ideal load is low but capped
-        application = application.with(new Status(0.0, 1.0));
-        assertEquals(0.131,
-                     ResourceTarget.idealCpuLoad(Duration.ofMinutes(10),
-                                                 timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0, t -> 0.0, clock),
-                                                 application,
-                                                 clock),
-                     delta);
+        var model1 = new ClusterModel(application.with(new Status(0.0, 1.0)),
+                                      cluster, clock, Duration.ofMinutes(10),
+                                      timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0, t -> 0.0, clock));
+        assertEquals(0.131, model1.idealLoad(Resource.cpu), delta);
 
         // Almost no current traffic share: Ideal load is low but capped
-        application = application.with(new Status(0.0001, 1.0));
-        assertEquals(0.131,
-                     ResourceTarget.idealCpuLoad(Duration.ofMinutes(10),
-                                                 timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0, t -> 0.0, clock),
-                                                 application,
-                                                 clock),
-                     delta);
+        var model2 = new ClusterModel(application.with(new Status(0.0001, 1.0)),
+                                      cluster, clock, Duration.ofMinutes(10),
+                                      timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0, t -> 0.0, clock));
+        assertEquals(0.131, model2.idealLoad(Resource.cpu), delta);
     }
 
     @Test
@@ -61,21 +55,16 @@ public class ResourceTargetTest {
         application = application.with(cluster);
 
         // No current traffic: Ideal load is low but capped
-        assertEquals(0.275,
-                     ResourceTarget.idealCpuLoad(Duration.ofMinutes(10),
-                                                 timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0, t -> 0.0, clock),
-                                                 application,
-                                                 clock),
-                     delta);
+        var model1 = new ClusterModel(application,
+                                      cluster, clock, Duration.ofMinutes(10),
+                                      timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0, t -> 0.0, clock));
+        assertEquals(0.275, model1.idealLoad(Resource.cpu), delta);
 
         // Almost current traffic: Ideal load is low but capped
-        application = application.with(new Status(0.0001, 1.0));
-        assertEquals(0.04,
-                     ResourceTarget.idealCpuLoad(Duration.ofMinutes(10),
-                                                 timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0001, t -> 0.0, clock),
-                                                 application,
-                                                 clock),
-                     delta);
+        var model2 = new ClusterModel(application.with(new Status(0.0001, 1.0)),
+                                      cluster, clock, Duration.ofMinutes(10),
+                                      timeseries(cluster,100, t -> t == 0 ? 10000.0 : 0.0001, t -> 0.0, clock));
+        assertEquals(0.275, model1.idealLoad(Resource.cpu), delta);
     }
 
     private Cluster cluster(NodeResources resources) {

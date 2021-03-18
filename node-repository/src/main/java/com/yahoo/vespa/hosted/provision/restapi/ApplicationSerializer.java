@@ -69,9 +69,7 @@ public class ApplicationSerializer {
         NodeList nodes = applicationNodes.not().retired().cluster(cluster.id());
         if (nodes.isEmpty()) return;
         ClusterResources currentResources = nodes.toResources();
-        ClusterModel clusterModel = new ClusterModel(application, cluster, nodes, metricsDb, nodeRepository);
-        var clusterNodesTimeseries = new ClusterNodesTimeseries(Duration.ofHours(1), cluster, nodes, metricsDb);
-        var clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
+        ClusterModel clusterModel = new ClusterModel(application, cluster, nodes, metricsDb, nodeRepository.clock());
 
         Cursor clusterObject = clustersObject.setObject(cluster.id().value());
         clusterObject.setString("type", nodes.clusterSpec().type().name());
@@ -81,12 +79,12 @@ public class ApplicationSerializer {
         if (cluster.shouldSuggestResources(currentResources))
             cluster.suggestedResources().ifPresent(suggested -> toSlime(suggested.resources(), clusterObject.setObject("suggested")));
         cluster.targetResources().ifPresent(target -> toSlime(target, clusterObject.setObject("target")));
-        clusterUtilizationToSlime(application, clusterModel.scalingDuration(), clusterTimeseries, clusterNodesTimeseries, metricsDb.clock(), clusterObject.setObject("utilization"));
+        clusterUtilizationToSlime(clusterModel, clusterObject.setObject("utilization"));
         scalingEventsToSlime(cluster.scalingEvents(), clusterObject.setArray("scalingEvents"));
         clusterObject.setString("autoscalingStatus", cluster.autoscalingStatus());
         clusterObject.setLong("scalingDuration", clusterModel.scalingDuration().toMillis());
-        clusterObject.setDouble("maxQueryGrowthRate", clusterTimeseries.maxQueryGrowthRate(clusterModel.scalingDuration(), metricsDb.clock()));
-        clusterObject.setDouble("currentQueryFractionOfMax", clusterTimeseries.queryFractionOfMax(clusterModel.scalingDuration(), metricsDb.clock()));
+        clusterObject.setDouble("maxQueryGrowthRate", clusterModel.clusterTimeseries().maxQueryGrowthRate(clusterModel.scalingDuration(), metricsDb.clock()));
+        clusterObject.setDouble("currentQueryFractionOfMax", clusterModel.clusterTimeseries().queryFractionOfMax(clusterModel.scalingDuration(), metricsDb.clock()));
     }
 
     private static void toSlime(ClusterResources resources, Cursor clusterResourcesObject) {
@@ -95,18 +93,13 @@ public class ApplicationSerializer {
         NodeResourcesSerializer.toSlime(resources.nodeResources(), clusterResourcesObject.setObject("resources"));
     }
 
-    private static void clusterUtilizationToSlime(Application application,
-                                                  Duration scalingDuration,
-                                                  ClusterTimeseries clusterTimeseries,
-                                                  ClusterNodesTimeseries clusterNodesTimeseries,
-                                                  Clock clock,
-                                                  Cursor utilizationObject) {
-        utilizationObject.setDouble("cpu", clusterNodesTimeseries.averageLoad(Resource.cpu));
-        utilizationObject.setDouble("idealCpu", ResourceTarget.idealCpuLoad(scalingDuration, clusterTimeseries, application, clock));
-        utilizationObject.setDouble("memory", clusterNodesTimeseries.averageLoad(Resource.memory));
-        utilizationObject.setDouble("idealMemory", ResourceTarget.idealMemoryLoad());
-        utilizationObject.setDouble("disk", clusterNodesTimeseries.averageLoad(Resource.disk));
-        utilizationObject.setDouble("idealDisk", ResourceTarget.idealDiskLoad());
+    private static void clusterUtilizationToSlime(ClusterModel clusterModel, Cursor utilizationObject) {
+        utilizationObject.setDouble("cpu", clusterModel.averageLoad(Resource.cpu));
+        utilizationObject.setDouble("idealCpu", clusterModel.idealLoad(Resource.cpu));
+        utilizationObject.setDouble("memory", clusterModel.averageLoad(Resource.memory));
+        utilizationObject.setDouble("idealMemory", clusterModel.idealLoad(Resource.memory));
+        utilizationObject.setDouble("disk", clusterModel.averageLoad(Resource.disk));
+        utilizationObject.setDouble("idealDisk", clusterModel.idealLoad(Resource.disk));
     }
 
     private static void scalingEventsToSlime(List<ScalingEvent> scalingEvents, Cursor scalingEventsArray) {
