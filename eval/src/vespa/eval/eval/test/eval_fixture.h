@@ -78,7 +78,7 @@ private:
     TensorSpec                      _result;
 
     template <typename T>
-    void find_all(const TensorFunction &node, std::vector<const T *> &list) {
+    static void find_all(const TensorFunction &node, std::vector<const T *> &list) {
         if (auto self = as<T>(node)) {
             list.push_back(self);
         }
@@ -96,7 +96,7 @@ public:
                 bool optimized = true, bool allow_mutable = false);
     ~EvalFixture() {}
     template <typename T>
-    std::vector<const T *> find_all() {
+    std::vector<const T *> find_all() const {
         std::vector<const T *> list;
         find_all(_tensor_function, list);
         return list;
