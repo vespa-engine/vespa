@@ -77,9 +77,8 @@ public class Autoscaler {
                                " nodes, but require from " + clusterNodes.size());
 
         var currentAllocation = new AllocatableClusterResources(clusterNodes.asList(), nodeRepository, cluster.exclusive());
-        var clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
         var target = ResourceTarget.idealLoad(clusterModel.scalingDuration(),
-                                              clusterTimeseries,
+                                              clusterModel.clusterTimeseries(),
                                               clusterModel.nodeTimeseries(),
                                               currentAllocation,
                                               application,

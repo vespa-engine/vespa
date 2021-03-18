@@ -26,6 +26,7 @@ public class ClusterModel {
 
     // Lazily initialized members
     private ClusterNodesTimeseries nodeTimeseries = null;
+    private ClusterTimeseries clusterTimeseries = null;
 
     public ClusterModel(Application application,
                         Cluster cluster,
@@ -42,6 +43,11 @@ public class ClusterModel {
     public ClusterNodesTimeseries nodeTimeseries() {
         if (nodeTimeseries != null) return nodeTimeseries;
         return nodeTimeseries = new ClusterNodesTimeseries(scalingDuration(), cluster, nodes, metricsDb);
+    }
+
+    public ClusterTimeseries clusterTimeseries() {
+        if (clusterTimeseries != null) return clusterTimeseries;
+        return clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
     }
 
     public boolean isStable() {
