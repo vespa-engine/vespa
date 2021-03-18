@@ -184,7 +184,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     private Optional<RunStatus> deployReal(RunId id, boolean setTheStage, DualLogger logger) {
-        return deploy(() -> controller.applications().deploy2(id.job(), setTheStage),
+        return deploy(() -> controller.applications().deploy(id.job(), setTheStage),
                       controller.jobController().run(id).get()
                                 .stepInfo(setTheStage ? deployInitialReal : deployReal).get()
                                 .startTime().get(),

@@ -6,7 +6,6 @@ import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -628,13 +627,8 @@ public class DeploymentTriggerTest {
         assertEquals("First deployment gets system version", version1, app1.application().oldestDeployedPlatform().get());
         assertEquals(version1, tester.configServer().lastPrepareVersion().get());
 
-        // Unexpected deployment is ignored
-        Version version2 = new Version(version1.getMajor(), version1.getMinor() + 1);
-        tester.applications().deploy(app1.instanceId(), ZoneId.from("prod", "us-west-1"),
-                                     Optional.empty(), new DeployOptions(false, Optional.of(version2), false, false));
-        assertEquals(version1, app1.deployment(ZoneId.from("prod", "us-west-1")).version());
-
         // Application change after a new system version, and a region added
+        Version version2 = new Version(version1.getMajor(), version1.getMinor() + 1);
         tester.controllerTester().upgradeSystem(version2);
 
         applicationPackage = new ApplicationPackageBuilder()

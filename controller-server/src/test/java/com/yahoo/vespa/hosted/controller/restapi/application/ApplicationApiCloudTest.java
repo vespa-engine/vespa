@@ -4,13 +4,12 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -29,7 +28,10 @@ import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
 
-import static com.yahoo.application.container.handler.Request.Method.*;
+import static com.yahoo.application.container.handler.Request.Method.DELETE;
+import static com.yahoo.application.container.handler.Request.Method.GET;
+import static com.yahoo.application.container.handler.Request.Method.POST;
+import static com.yahoo.application.container.handler.Request.Method.PUT;
 import static com.yahoo.vespa.hosted.controller.restapi.application.ApplicationApiTest.createApplicationSubmissionData;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.fail;
@@ -153,7 +155,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     public void validate_secret_store() {
         deployApplication();
         var secretStoreRequest =
-                request("/application/v4/tenant/scoober/secret-store/secret-foo/validate?aws-region=us-west-1&parameter-name=foo&application-id=scoober.albums.default&zone=prod.us-central-1", GET)
+                request("/application/v4/tenant/scoober/secret-store/secret-foo/validate?aws-region=us-west-1&parameter-name=foo&application-id=scoober.albums.default&zone=prod.aws-us-east-1c", GET)
                         .roles(Set.of(Role.developer(tenantName)));
         tester.assertResponse(secretStoreRequest, "{" +
                 "\"error-code\":\"NOT_FOUND\"," +
@@ -167,9 +169,9 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
         // ConfigServerMock returns message on format deployment.toString() + " - " + tenantSecretStore.toString()
         secretStoreRequest =
-                request("/application/v4/tenant/scoober/secret-store/secret-foo/validate?aws-region=us-west-1&parameter-name=foo&application-id=scoober.albums.default&zone=prod.us-central-1", GET)
+                request("/application/v4/tenant/scoober/secret-store/secret-foo/validate?aws-region=us-west-1&parameter-name=foo&application-id=scoober.albums.default&zone=prod.aws-us-east-1c", GET)
                         .roles(Set.of(Role.developer(tenantName)));
-        tester.assertResponse(secretStoreRequest, "{\"target\":\"scoober.albums in prod.us-central-1\",\"result\":{\"settings\":{\"name\":\"foo\",\"role\":\"vespa-secretstore-access\",\"awsId\":\"892075328880\",\"externalId\":\"*****\",\"region\":\"us-east-1\"},\"status\":\"ok\"}}", 200);
+        tester.assertResponse(secretStoreRequest, "{\"target\":\"scoober.albums in prod.aws-us-east-1c\",\"result\":{\"settings\":{\"name\":\"foo\",\"role\":\"vespa-secretstore-access\",\"awsId\":\"892075328880\",\"externalId\":\"*****\",\"region\":\"us-east-1\"},\"status\":\"ok\"}}", 200);
     }
 
     @Test
@@ -219,12 +221,14 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
         var applicationPackage = new ApplicationPackageBuilder()
                 .instances("default")
                 .globalServiceId("foo")
-                .region("us-central-1")
+                .region("aws-us-east-1c")
                 .build();
+        tester.controller().jobController().deploy(ApplicationId.from("scoober", "albums", "default"),
+                                                   JobType.productionAwsUsEast1c,
+                                                   Optional.empty(),
+                                                   applicationPackage);
 
-        tester.controller().applications().deploy(ApplicationId.from("scoober", "albums", "default"),
-                ZoneId.from("prod", "us-central-1"),
-                Optional.of(applicationPackage),
-                new DeployOptions(true, Optional.empty(), false, false));
+
     }
+
 }

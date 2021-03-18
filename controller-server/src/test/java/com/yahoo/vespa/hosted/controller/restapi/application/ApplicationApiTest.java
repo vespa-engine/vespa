@@ -28,7 +28,6 @@ import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.RoutingController;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ProtonMetrics;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
@@ -54,7 +53,6 @@ import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.HostedAthenzIdentities;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
-import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
@@ -302,32 +300,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Application package version: 1.0.1-commit1, source revision of repository 'repository1', branch 'master' with commit 'commit1', by a@b, built against 6.1 at 1970-01-01T00:00:01Z\"}");
 
         app1.runJob(JobType.systemTest).runJob(JobType.stagingTest).runJob(JobType.productionUsCentral1);
-
-        // POST an application deployment to a production zone - operator emergency deployment - fails since package is unknown
-        entity = createApplicationDeployData(Optional.empty(),
-                                             Optional.of(ApplicationVersion.from(DeploymentContext.defaultSourceRevision, 666)),
-                                             true);
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/", POST)
-                                      .data(entity)
-                                      .userIdentity(HOSTED_VESPA_OPERATOR),
-                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"No application package found for tenant1.application1 with version 1.0.666-commit1\"}",
-                              400);
-
-        // POST an application deployment to a production zone - operator emergency deployment - works with known package
-        entity = createApplicationDeployData(Optional.empty(),
-                                             Optional.of(ApplicationVersion.from(DeploymentContext.defaultSourceRevision, 1)),
-                                             true);
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/", POST)
-                                      .data(entity)
-                                      .userIdentity(HOSTED_VESPA_OPERATOR),
-                              new File("deploy-result.json"));
-
-        // POST an application deployment to a production zone - operator emergency deployment - chooses latest package without arguments
-        entity = createApplicationDeployData(Optional.empty(), true);
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/", POST)
-                                      .data(entity)
-                                      .userIdentity(HOSTED_VESPA_OPERATOR),
-                              new File("deploy-result.json"));
 
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .instances("instance1")
@@ -702,14 +674,14 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"message\":\"Deactivated tenant1.application1.instance1 in prod.us-central-1\"}");
 
         // Setup for test config tests
-        tester.controller().applications().deploy(ApplicationId.from("tenant1", "application1", "default"),
-                                                  ZoneId.from("prod", "us-central-1"),
-                                                  Optional.of(applicationPackageDefault),
-                                                  new DeployOptions(true, Optional.empty(), false, false));
-        tester.controller().applications().deploy(ApplicationId.from("tenant1", "application1", "my-user"),
-                                                  ZoneId.from("dev", "us-east-1"),
-                                                  Optional.of(applicationPackageDefault),
-                                                  new DeployOptions(false, Optional.empty(), false, false));
+        tester.controller().jobController().deploy(ApplicationId.from("tenant1", "application1", "default"),
+                                                   JobType.productionUsCentral1,
+                                                   Optional.empty(),
+                                                   applicationPackageDefault);
+        tester.controller().jobController().deploy(ApplicationId.from("tenant1", "application1", "my-user"),
+                                                   JobType.devUsEast1,
+                                                   Optional.empty(),
+                                                   applicationPackageDefault);
 
         // GET test-config for local tests against a dev deployment
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/instance/my-user/job/dev-us-east-1/test-config", GET)
@@ -989,13 +961,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
         // Add build service to operator role
         addUserToHostedOperatorRole(HostedAthenzIdentities.from(SCREWDRIVER_ID));
 
-        // POST (deploy) an application to a prod zone - allowed when project ID is not specified
-        MultiPartStreamer entity = createApplicationDeployData(applicationPackageInstance1, true);
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-central-1/instance/instance1/deploy", POST)
-                                      .data(entity)
-                                      .screwdriverIdentity(SCREWDRIVER_ID),
-                              new File("deploy-result.json"));
-
         // POST (deploy) a system application with an application package
         MultiPartStreamer noAppEntity = createApplicationDeployData(Optional.empty(), true);
         tester.assertResponse(request("/application/v4/tenant/hosted-vespa/application/routing/environment/prod/region/us-central-1/instance/default/deploy", POST)
@@ -1008,12 +973,6 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .data(noAppEntity)
                         .userIdentity(HOSTED_VESPA_OPERATOR),
                 new File("deploy-result.json"));
-
-        // POST (deploy) a system application without an application package
-        tester.assertResponse(request("/application/v4/tenant/hosted-vespa/application/proxy-host/environment/prod/region/us-central-1/instance/instance1/deploy", POST)
-                        .data(noAppEntity)
-                        .userIdentity(HOSTED_VESPA_OPERATOR),
-                new File("deploy-no-deployment.json"), 400);
     }
 
     @Test
@@ -1178,33 +1137,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid build number: For input string: \\\"foobar\\\"\"}",
                               400);
         
-        // POST (deploy) an application with an invalid application package
+        // POST (deploy) an application to legacy deploy path
         MultiPartStreamer entity = createApplicationDeployData(applicationPackageInstance1, true);
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-east-1/instance/instance1/deploy", POST)
                                       .data(entity)
                                       .userIdentity(USER_ID),
-                              new File("deploy-failure.json"), 400);
-
-        // POST (deploy) an application without available capacity
-        configServer.throwOnNextPrepare(new ConfigServerException(new URI("server-url"), "Failed to prepare application", "Out of capacity", ConfigServerException.ErrorCode.OUT_OF_CAPACITY, null));
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-east-1/instance/instance1/deploy", POST)
-                                      .data(entity)
-                                      .userIdentity(USER_ID),
-                              new File("deploy-out-of-capacity.json"), 400);
-
-        // POST (deploy) an application where activation fails
-        configServer.throwOnNextPrepare(new ConfigServerException(new URI("server-url"), "Failed to activate application", "Activation conflict", ConfigServerException.ErrorCode.ACTIVATION_CONFLICT, null));
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-east-1/instance/instance1/deploy", POST)
-                                      .data(entity)
-                                      .userIdentity(USER_ID),
-                              new File("deploy-activation-conflict.json"), 409);
-
-        // POST (deploy) an application where we get an internal server error
-        configServer.throwOnNextPrepare(new ConfigServerException(new URI("server-url"), "Failed to deploy application", "Internal server error", ConfigServerException.ErrorCode.INTERNAL_SERVER_ERROR, null));
-        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/dev/region/us-east-1/instance/instance1/deploy", POST)
-                                      .data(entity)
-                                      .userIdentity(USER_ID),
-                              new File("deploy-internal-server-error.json"), 500);
+                              "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Deployment of tenant1.application1.instance1 is not supported through this API\"}", 400);
 
         // DELETE tenant which has an application
         tester.assertResponse(request("/application/v4/tenant/tenant1", DELETE)
@@ -1248,7 +1186,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
                               "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Tenant 'my-tenant' already exists\"}",
                               400);
     }
-    
+
     @Test
     public void testAuthorization() {
         UserId authorizedUser = USER_ID;

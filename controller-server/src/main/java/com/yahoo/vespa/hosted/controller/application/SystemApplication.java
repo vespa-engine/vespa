@@ -65,8 +65,8 @@ public enum SystemApplication {
                          .orElse(false);
     }
 
-    /** Returns whether this should receive OS upgrades in given zone */
-    public boolean shouldUpgradeOsIn() {
+    /** Returns whether this should receive OS upgrades */
+    public boolean shouldUpgradeOs() {
         return nodeType.isHost();
     }
 

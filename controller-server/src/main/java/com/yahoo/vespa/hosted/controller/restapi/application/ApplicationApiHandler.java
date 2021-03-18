@@ -43,7 +43,6 @@ import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
 import com.yahoo.vespa.hosted.controller.api.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
-import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeployOptions;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ProtonMetrics;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.RefeedAction;
@@ -1841,99 +1840,30 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             return ErrorResponse.badRequest("Missing required form part 'deployOptions'");
         Inspector deployOptions = SlimeUtils.jsonToSlime(dataParts.get("deployOptions")).get();
 
-        /*
-         * Special handling of the proxy application (the only system application with an application package)
-         * Setting any other deployOptions here is not supported for now (e.g. specifying version), but
-         * this might be handy later to handle emergency downgrades.
-         */
-        boolean isZoneApplication = SystemApplication.proxy.id().equals(applicationId);
-        if (isZoneApplication) { // TODO jvenstad: Separate out.
-            // Make it explicit that version is not yet supported here
-            String versionStr = deployOptions.field("vespaVersion").asString();
-            boolean versionPresent = !versionStr.isEmpty() && !versionStr.equals("null");
-            if (versionPresent) {
-                throw new RuntimeException("Version not supported for system applications");
-            }
-            // To avoid second guessing the orchestrated upgrades of system applications
-            // we don't allow to deploy these during an system upgrade (i.e when new vespa is being rolled out)
-            VersionStatus versionStatus = controller.readVersionStatus();
-            if (versionStatus.isUpgrading()) {
-                throw new IllegalArgumentException("Deployment of system applications during a system upgrade is not allowed");
-            }
-            Optional<VespaVersion> systemVersion = versionStatus.systemVersion();
-            if (systemVersion.isEmpty()) {
-                throw new IllegalArgumentException("Deployment of system applications is not permitted until system version is determined");
-            }
-            ActivateResult result = controller.applications()
-                    .deploySystemApplicationPackage(SystemApplication.proxy, zone, systemVersion.get().versionNumber());
-            return new SlimeJsonResponse(toSlime(result));
+        // Resolve system application
+        Optional<SystemApplication> systemApplication = SystemApplication.matching(applicationId);
+        if (systemApplication.isEmpty() || !systemApplication.get().hasApplicationPackage()) {
+            return ErrorResponse.badRequest("Deployment of " + applicationId + " is not supported through this API");
         }
 
-        /*
-         * Normal applications from here
-         */
-
-        Optional<ApplicationPackage> applicationPackage = Optional.ofNullable(dataParts.get("applicationZip"))
-                                                                  .map(ApplicationPackage::new);
-        Optional<Application> application = controller.applications().getApplication(TenantAndApplicationId.from(applicationId));
-
-        Inspector sourceRevision = deployOptions.field("sourceRevision");
-        Inspector buildNumber = deployOptions.field("buildNumber");
-        if (sourceRevision.valid() != buildNumber.valid())
-            throw new IllegalArgumentException("Source revision and build number must both be provided, or not");
-
-        Optional<ApplicationVersion> applicationVersion = Optional.empty();
-        if (sourceRevision.valid()) {
-            if (applicationPackage.isPresent())
-                throw new IllegalArgumentException("Application version and application package can't both be provided.");
-
-            applicationVersion = Optional.of(ApplicationVersion.from(toSourceRevision(sourceRevision),
-                                                                     buildNumber.asLong()));
-            applicationPackage = Optional.of(controller.applications().getApplicationPackage(applicationId,
-                                                                                             applicationVersion.get()));
+        // Make it explicit that version is not yet supported here
+        String vespaVersion = deployOptions.field("vespaVersion").asString();
+        if (!vespaVersion.isEmpty() && !vespaVersion.equals("null")) {
+            return ErrorResponse.badRequest("Specifying version for " + applicationId + " is not permitted");
         }
 
-        boolean deployDirectly = deployOptions.field("deployDirectly").asBool();
-        Optional<Version> vespaVersion = optional("vespaVersion", deployOptions).map(Version::new);
-
-        if (deployDirectly && applicationPackage.isEmpty() && applicationVersion.isEmpty() && vespaVersion.isEmpty()) {
-
-            // Redeploy the existing deployment with the same versions.
-            Optional<Deployment> deployment = controller.applications().getInstance(applicationId)
-                    .map(Instance::deployments)
-                    .flatMap(deployments -> Optional.ofNullable(deployments.get(zone)));
-
-            if(deployment.isEmpty())
-                throw new IllegalArgumentException("Can't redeploy application, no deployment currently exist");
-
-            ApplicationVersion version = deployment.get().applicationVersion();
-            if(version.isUnknown())
-                throw new IllegalArgumentException("Can't redeploy application, application version is unknown");
-
-            applicationVersion = Optional.of(version);
-            vespaVersion = Optional.of(deployment.get().version());
-            applicationPackage = Optional.of(controller.applications().getApplicationPackage(applicationId,
-                                                                                             applicationVersion.get()));
+        // To avoid second guessing the orchestrated upgrades of system applications
+        // we don't allow to deploy these during an system upgrade (i.e when new vespa is being rolled out)
+        VersionStatus versionStatus = controller.readVersionStatus();
+        if (versionStatus.isUpgrading()) {
+            throw new IllegalArgumentException("Deployment of system applications during a system upgrade is not allowed");
         }
-
-        // TODO: get rid of the json object
-        DeployOptions deployOptionsJsonClass = new DeployOptions(deployDirectly,
-                                                                 vespaVersion,
-                                                                 deployOptions.field("ignoreValidationErrors").asBool(),
-                                                                 deployOptions.field("deployCurrentVersion").asBool());
-
-        applicationPackage.ifPresent(aPackage -> controller.applications().verifyApplicationIdentityConfiguration(applicationId.tenant(),
-                                                                                                                  Optional.of(applicationId.instance()),
-                                                                                                                  Optional.of(zone),
-                                                                                                                  aPackage,
-                                                                                                                  Optional.of(requireUserPrincipal(request))));
-
-        ActivateResult result = controller.applications().deploy(applicationId,
-                                                                 zone,
-                                                                 applicationPackage,
-                                                                 applicationVersion,
-                                                                 deployOptionsJsonClass);
-
+        Optional<VespaVersion> systemVersion = versionStatus.systemVersion();
+        if (systemVersion.isEmpty()) {
+            throw new IllegalArgumentException("Deployment of system applications is not permitted until system version is determined");
+        }
+        ActivateResult result = controller.applications()
+                                          .deploySystemApplicationPackage(systemApplication.get(), zone, systemVersion.get().versionNumber());
         return new SlimeJsonResponse(toSlime(result));
     }
 
