@@ -1,5 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-//
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "blockingoperationstarter.h"
 #include "distributor_stripe.h"
 #include "distributor_status.h"
@@ -21,13 +21,13 @@
 #include <algorithm>
 
 #include <vespa/log/log.h>
-LOG_SETUP(".distributor-main");
+LOG_SETUP(".distributor_stripe");
 
 using namespace std::chrono_literals;
 
 namespace storage::distributor {
 
-/* TODOs
+/* TODO STRIPE
  *  - need a DistributorComponent per stripe
  *    - or better, remove entirely!
  *    - probably also DistributorInterface since it's used to send
@@ -129,7 +129,7 @@ DistributorStripe::onOpen()
 {
     LOG(debug, "DistributorStripe::onOpen invoked");
     if (_component.getDistributorConfig().startDistributorThread) {
-        // TODO! own thread per stripe!
+        // TODO STRIPE own thread per stripe!
     } else {
         LOG(warning, "Not starting distributor stripe thread as it's not configured to "
                      "run. Unless you are just running a test tool, this is a "
@@ -898,7 +898,7 @@ DistributorStripe::handleStatusRequest(const DelegatedStatusRequest& request) co
         guard.broadcast();
     }
     wrappedRequest->waitForCompletion();
-    return true;    
+    return true;
 }
 
 }

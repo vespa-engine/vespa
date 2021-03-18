@@ -142,7 +142,7 @@ struct DistributorTest : Test, DistributorTestUtil {
     }
 
     StatusReporterDelegate& distributor_status_delegate() {
-        // FIXME
+        // TODO STRIPE
         return _distributor->_stripe->_distributorStatusDelegate;
     }
 
@@ -151,7 +151,7 @@ struct DistributorTest : Test, DistributorTestUtil {
     }
 
     const std::vector<std::shared_ptr<DistributorStatus>>& distributor_status_todos() {
-        // FIXME
+        // TODO STRIPE
         return _distributor->_stripe->_statusToDo;
     }
 

@@ -73,13 +73,13 @@ public:
     void send_up_without_tracking(const std::shared_ptr<api::StorageMessage>&) override;
 
     ChainedMessageSender& getMessageSender() override {
-        abort(); // TODO
+        abort(); // TODO STRIPE
     }
 
     DistributorMetricSet& getMetrics() override { return *_metrics; }
 
     const OperationSequencer& operation_sequencer() const noexcept override {
-        abort(); // TODO
+        abort(); // TODO STRIPE
     }
 
     const lib::ClusterState* pendingClusterStateOrNull(const document::BucketSpace&) const override;
@@ -162,7 +162,7 @@ public:
 
     const BucketGcTimeCalculator::BucketIdHasher&
     getBucketIdHasher() const override {
-        abort(); // TODO
+        abort(); // TODO STRIPE
     }
 
     OperationRoutingSnapshot read_snapshot_for_bucket(const document::Bucket&) const override;
@@ -235,7 +235,7 @@ private:
 
     std::shared_ptr<DistributorMetricSet> _metrics;
     ChainedMessageSender* _messageSender;
-    // TODO multiple stripes...! This is for proof of concept of wiring.
+    // TODO STRIPE multiple stripes...! This is for proof of concept of wiring.
     std::unique_ptr<DistributorStripe> _stripe;
 
     std::unique_ptr<DistributorBucketSpaceRepo> _bucketSpaceRepo;
