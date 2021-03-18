@@ -35,6 +35,7 @@ public:
     using DataStoreType = DataStoreT<RefT>;
     using EntryType = EntryT;
     using RefType = RefT;
+    using CompareType = Compare;
     using Enumerator = UniqueStoreEnumerator<RefT>;
     using Builder = UniqueStoreBuilder<Allocator>;
     using Remapper = UniqueStoreRemapper<RefT>;

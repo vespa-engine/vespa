@@ -38,6 +38,12 @@ protected:
     }
 
 public:
+    UniqueStoreStringComparator(const DataStoreType &store)
+        : _store(store),
+          _fallback_value(nullptr)
+    {
+    }
+
     UniqueStoreStringComparator(const DataStoreType &store, const char *fallback_value)
         : _store(store),
           _fallback_value(fallback_value)

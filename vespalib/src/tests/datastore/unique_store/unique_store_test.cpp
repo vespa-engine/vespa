@@ -3,6 +3,7 @@
 #include <vespa/vespalib/datastore/unique_store_remapper.h>
 #include <vespa/vespalib/datastore/unique_store_string_allocator.hpp>
 #include <vespa/vespalib/datastore/unique_store_string_comparator.h>
+#include <vespa/vespalib/datastore/simple_hash_map.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/datastore/buffer_stats.h>
 #include <vespa/vespalib/test/insertion_operators.h>
@@ -12,17 +13,27 @@
 #include <vespa/log/log.h>
 LOG_SETUP("unique_store_test");
 
+enum class Ordering { ORDERED, UNORDERED };
+
 using namespace vespalib::datastore;
 using vespalib::ArrayRef;
 using generation_t = vespalib::GenerationHandler::generation_t;
 using vespalib::datastore::test::BufferStats;
 
 template <typename UniqueStoreT>
-struct TestBase : public ::testing::Test {
-    using EntryRefType = typename UniqueStoreT::RefType;
+struct TestBaseValues {
     using UniqueStoreType = UniqueStoreT;
-    using ValueType = typename UniqueStoreT::EntryType;
-    using ValueConstRefType = typename UniqueStoreT::EntryConstRefType;
+    using ValueType = typename UniqueStoreType::EntryType;
+    static std::vector<ValueType> values;
+};
+
+template <typename UniqueStoreTypeAndOrder>
+struct TestBase : public ::testing::Test {
+    using UniqueStoreType = typename UniqueStoreTypeAndOrder::UniqueStoreType;
+    using EntryRefType = typename UniqueStoreType::RefType;
+    using ValueType = typename UniqueStoreType::EntryType;
+    using ValueConstRefType = typename UniqueStoreType::EntryConstRefType;
+    using CompareType = typename UniqueStoreType::CompareType;
     using ReferenceStoreValueType = std::conditional_t<std::is_same_v<ValueType, const char *>, std::string, ValueType>;
     using ReferenceStore = std::map<EntryRef, std::pair<ReferenceStoreValueType,uint32_t>>;
 
@@ -30,10 +41,9 @@ struct TestBase : public ::testing::Test {
     ReferenceStore refStore;
     generation_t generation;
 
-    static std::vector<ValueType> values;
-
     TestBase();
     ~TestBase() override;
+    const std::vector<ValueType>& values() const noexcept { return TestBaseValues<UniqueStoreType>::values; }
     void assertAdd(ValueConstRefType input) {
         EntryRef ref = add(input);
         assertGet(ref, input);
@@ -132,16 +142,22 @@ struct TestBase : public ::testing::Test {
     }
 };
 
-template <typename UniqueStoreT>
-TestBase<UniqueStoreT>::TestBase()
+template <typename UniqueStoreTypeAndOrder>
+TestBase<UniqueStoreTypeAndOrder>::TestBase()
     : store(),
       refStore(),
       generation(1)
 {
+    switch (UniqueStoreTypeAndOrder::ordering) {
+    case Ordering::ORDERED:
+        break;
+    default:
+        store.set_dictionary(std::make_unique<UniqueStoreDictionary<uniquestore::DefaultDictionary, IUniqueStoreDictionary, SimpleHashMap>>(std::make_unique<CompareType>(store.get_data_store())));
+    }
 }
 
-template <typename UniqueStoreT>
-TestBase<UniqueStoreT>::~TestBase() = default;
+template <typename UniqueStoreTypeAndOrder>
+TestBase<UniqueStoreTypeAndOrder>::~TestBase() = default;
 
 using NumberUniqueStore  = UniqueStore<uint32_t>;
 using StringUniqueStore  = UniqueStore<std::string>;
@@ -150,15 +166,75 @@ using DoubleUniqueStore  = UniqueStore<double>;
 using SmallOffsetNumberUniqueStore = UniqueStore<uint32_t, EntryRefT<10,10>>;
 
 template <>
-std::vector<uint32_t> TestBase<NumberUniqueStore>::values{10, 20, 30, 10 };
+std::vector<uint32_t> TestBaseValues<NumberUniqueStore>::values{10, 20, 30, 10 };
 template <>
-std::vector<std::string> TestBase<StringUniqueStore>::values{ "aa", "bbb", "ccc", "aa" };
+std::vector<std::string> TestBaseValues<StringUniqueStore>::values{ "aa", "bbb", "ccc", "aa" };
 template <>
-std::vector<const char *> TestBase<CStringUniqueStore>::values{ "aa", "bbb", "ccc", "aa" };
+std::vector<const char *> TestBaseValues<CStringUniqueStore>::values{ "aa", "bbb", "ccc", "aa" };
 template <>
-std::vector<double> TestBase<DoubleUniqueStore>::values{ 10.0, 20.0, 30.0, 10.0 };
+std::vector<double> TestBaseValues<DoubleUniqueStore>::values{ 10.0, 20.0, 30.0, 10.0 };
 
-using UniqueStoreTestTypes = ::testing::Types<NumberUniqueStore, StringUniqueStore, CStringUniqueStore, DoubleUniqueStore>;
+struct OrderedNumberUniqueStore
+{
+    using UniqueStoreType = NumberUniqueStore;
+    static constexpr Ordering ordering = Ordering::ORDERED;
+};
+
+struct OrderedStringUniqueStore
+{
+    using UniqueStoreType = StringUniqueStore;
+    static constexpr Ordering ordering = Ordering::ORDERED;
+};
+
+struct OrderedCStringUniqueStore
+{
+    using UniqueStoreType = CStringUniqueStore;
+    static constexpr Ordering ordering = Ordering::ORDERED;
+};
+
+struct OrderedDoubleUniqueStore
+{
+    using UniqueStoreType = DoubleUniqueStore;
+    static constexpr Ordering ordering = Ordering::ORDERED;
+};
+
+struct OrderedSmallOffsetNumberUniqueStore
+{
+    using UniqueStoreType = SmallOffsetNumberUniqueStore;
+    static constexpr Ordering ordering = Ordering::ORDERED;
+};
+
+struct UnorderedNumberUniqueStore
+{
+    using UniqueStoreType = NumberUniqueStore;
+    static constexpr Ordering ordering = Ordering::UNORDERED;
+};
+
+struct UnorderedStringUniqueStore
+{
+    using UniqueStoreType = StringUniqueStore;
+    static constexpr Ordering ordering = Ordering::UNORDERED;
+};
+
+struct UnorderedCStringUniqueStore
+{
+    using UniqueStoreType = CStringUniqueStore;
+    static constexpr Ordering ordering = Ordering::UNORDERED;
+};
+
+struct UnorderedDoubleUniqueStore
+{
+    using UniqueStoreType = DoubleUniqueStore;
+    static constexpr Ordering ordering = Ordering::UNORDERED;
+};
+
+struct UnorderedSmallOffsetNumberUniqueStore
+{
+    using UniqueStoreType = SmallOffsetNumberUniqueStore;
+    static constexpr Ordering ordering = Ordering::UNORDERED;
+};
+
+using UniqueStoreTestTypes = ::testing::Types<OrderedNumberUniqueStore, OrderedStringUniqueStore, OrderedCStringUniqueStore, OrderedDoubleUniqueStore, UnorderedNumberUniqueStore, UnorderedStringUniqueStore, UnorderedCStringUniqueStore, UnorderedDoubleUniqueStore>;
 VESPA_GTEST_TYPED_TEST_SUITE(TestBase, UniqueStoreTestTypes);
 
 // Disable warnings emitted by gtest generated files when using typed tests
@@ -167,11 +243,11 @@ VESPA_GTEST_TYPED_TEST_SUITE(TestBase, UniqueStoreTestTypes);
 #pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 
-using NumberTest = TestBase<NumberUniqueStore>;
-using StringTest = TestBase<StringUniqueStore>;
-using CStringTest = TestBase<CStringUniqueStore>;
-using DoubleTest = TestBase<DoubleUniqueStore>;
-using SmallOffsetNumberTest = TestBase<SmallOffsetNumberUniqueStore>;
+using NumberTest = TestBase<OrderedNumberUniqueStore>;
+using StringTest = TestBase<OrderedStringUniqueStore>;
+using CStringTest = TestBase<OrderedCStringUniqueStore>;
+using DoubleTest = TestBase<OrderedDoubleUniqueStore>;
+using SmallOffsetNumberTest = TestBase<OrderedSmallOffsetNumberUniqueStore>;
 
 TEST(UniqueStoreTest, trivial_and_non_trivial_types_are_tested)
 {
@@ -181,14 +257,14 @@ TEST(UniqueStoreTest, trivial_and_non_trivial_types_are_tested)
 
 TYPED_TEST(TestBase, can_add_and_get_values)
 {
-    for (auto &val : this->values) {
+    for (auto &val : this->values()) {
         this->assertAdd(val);
     }
 }
 
 TYPED_TEST(TestBase, elements_are_put_on_hold_when_value_is_removed)
 {
-    EntryRef ref = this->add(this->values[0]);
+    EntryRef ref = this->add(this->values()[0]);
     size_t reserved = this->get_reserved(ref);
     size_t array_size = this->get_array_size(ref);
     this->assertBufferState(ref, BufferStats().used(array_size + reserved).hold(0).dead(reserved));
@@ -198,8 +274,8 @@ TYPED_TEST(TestBase, elements_are_put_on_hold_when_value_is_removed)
 
 TYPED_TEST(TestBase, elements_are_reference_counted)
 {
-    EntryRef ref = this->add(this->values[0]);
-    EntryRef ref2 = this->add(this->values[0]);
+    EntryRef ref = this->add(this->values()[0]);
+    EntryRef ref2 = this->add(this->values()[0]);
     EXPECT_EQ(ref.ref(), ref2.ref());
     // Note: The first buffer have the first element reserved -> we expect 2 elements used here.
     size_t reserved = this->get_reserved(ref);
@@ -232,9 +308,9 @@ TEST_F(SmallOffsetNumberTest, new_underlying_buffer_is_allocated_when_current_is
 
 TYPED_TEST(TestBase, store_can_be_compacted)
 {
-    EntryRef val0Ref = this->add(this->values[0]);
-    EntryRef val1Ref = this->add(this->values[1]);
-    this->remove(this->add(this->values[2]));
+    EntryRef val0Ref = this->add(this->values()[0]);
+    EntryRef val1Ref = this->add(this->values()[1]);
+    this->remove(this->add(this->values()[2]));
     this->trimHoldLists();
     size_t reserved = this->get_reserved(val0Ref);
     size_t array_size = this->get_array_size(val0Ref);
@@ -247,10 +323,10 @@ TYPED_TEST(TestBase, store_can_be_compacted)
     this->assertStoreContent();
 
     // Buffer has been compacted
-    EXPECT_NE(val1BufferId, this->getBufferId(this->getEntryRef(this->values[0])));
+    EXPECT_NE(val1BufferId, this->getBufferId(this->getEntryRef(this->values()[0])));
     // Old ref should still point to data.
-    this->assertGet(val0Ref, this->values[0]);
-    this->assertGet(val1Ref, this->values[1]);
+    this->assertGet(val0Ref, this->values()[0]);
+    this->assertGet(val1Ref, this->values()[1]);
     EXPECT_TRUE(this->store.bufferState(val0Ref).isOnHold());
     this->trimHoldLists();
     EXPECT_TRUE(this->store.bufferState(val0Ref).isFree());
@@ -260,8 +336,8 @@ TYPED_TEST(TestBase, store_can_be_compacted)
 TYPED_TEST(TestBase, store_can_be_instantiated_with_builder)
 {
     auto builder = this->getBuilder(2);
-    builder.add(this->values[0]);
-    builder.add(this->values[1]);
+    builder.add(this->values()[0]);
+    builder.add(this->values()[1]);
     builder.setupRefCounts();
     EntryRef val0Ref = builder.mapEnumValueToEntryRef(1);
     EntryRef val1Ref = builder.mapEnumValueToEntryRef(2);
@@ -271,21 +347,21 @@ TYPED_TEST(TestBase, store_can_be_instantiated_with_builder)
     EXPECT_TRUE(val0Ref.valid());
     EXPECT_TRUE(val1Ref.valid());
     EXPECT_NE(val0Ref.ref(), val1Ref.ref());
-    this->assertGet(val0Ref, this->values[0]);
-    this->assertGet(val1Ref, this->values[1]);
+    this->assertGet(val0Ref, this->values()[0]);
+    this->assertGet(val1Ref, this->values()[1]);
     builder.makeDictionary();
     // Align refstore with the two entries added by builder.
-    this->alignRefStore(val0Ref, this->values[0], 1);
-    this->alignRefStore(val1Ref, this->values[1], 1);
-    EXPECT_EQ(val0Ref.ref(), this->add(this->values[0]).ref());
-    EXPECT_EQ(val1Ref.ref(), this->add(this->values[1]).ref());
+    this->alignRefStore(val0Ref, this->values()[0], 1);
+    this->alignRefStore(val1Ref, this->values()[1], 1);
+    EXPECT_EQ(val0Ref.ref(), this->add(this->values()[0]).ref());
+    EXPECT_EQ(val1Ref.ref(), this->add(this->values()[1]).ref());
 }
 
 TYPED_TEST(TestBase, store_can_be_enumerated)
 {
-    EntryRef val0Ref = this->add(this->values[0]);
-    EntryRef val1Ref = this->add(this->values[1]);
-    this->remove(this->add(this->values[2]));
+    EntryRef val0Ref = this->add(this->values()[0]);
+    EntryRef val1Ref = this->add(this->values()[1]);
+    this->remove(this->add(this->values()[2]));
     this->trimHoldLists();
 
     auto enumerator = this->getEnumerator();
