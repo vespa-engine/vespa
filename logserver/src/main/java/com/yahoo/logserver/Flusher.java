@@ -13,11 +13,10 @@ import java.util.logging.Logger;
 /**
  * @author Bjorn Borud
  */
-public class Flusher extends Thread {
+class Flusher extends Thread {
     private static final Logger log = Logger.getLogger(Flusher.class.getName());
     private static final Flusher instance;
-    private static final List<WeakReference<LogHandler>> logHandlers =
-            new ArrayList<WeakReference<LogHandler>>();
+    private final List<WeakReference<LogHandler>> logHandlers = new ArrayList<>();
 
     static {
         instance = new Flusher();
@@ -28,25 +27,33 @@ public class Flusher extends Thread {
         super("flusher");
     }
 
-    public static synchronized void register(LogHandler logHandler) {
-        logHandlers.add(new WeakReference<>(logHandler));
+    static void register(LogHandler logHandler) {
+        instance.addHandler(logHandler);
+    }
+
+    private void addHandler(LogHandler logHandler) {
+        synchronized (logHandlers) {
+            logHandlers.add(new WeakReference<>(logHandler));
+        }
     }
 
     @Override
     public synchronized void run() {
         try {
             while(!isInterrupted()) {
-                Iterator<WeakReference<LogHandler>> it = logHandlers.iterator();
-                while (it.hasNext()) {
-                    WeakReference<LogHandler> r = it.next();
-                    LogHandler h = r.get();
-                    if (h == null) {
-                        it.remove();
-                    } else {
-                        h.flush();
-                    }
-                    if (log.isLoggable(Level.FINE)) {
-                        log.log(Level.FINE, "Flushing " + h);
+                synchronized (logHandlers) {
+                    Iterator<WeakReference<LogHandler>> it = logHandlers.iterator();
+                    while (it.hasNext()) {
+                        WeakReference<LogHandler> r = it.next();
+                        LogHandler h = r.get();
+                        if (h == null) {
+                            it.remove();
+                        } else {
+                            h.flush();
+                        }
+                        if (log.isLoggable(Level.FINE)) {
+                            log.log(Level.FINE, "Flushing " + h);
+                        }
                     }
                 }
                 Thread.sleep(2000);
