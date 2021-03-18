@@ -109,7 +109,7 @@ public class ZKMetricUpdater implements Runnable {
 
     private static Socket createSocket() throws IOException {
         TlsContext tlsContext = TransportSecurityUtils.getSystemTlsContext().orElse(null);
-        if (tlsContext == null || TransportSecurityUtils.getInsecureMixedMode() != MixedMode.DISABLED) {
+        if (tlsContext == null || TransportSecurityUtils.getInsecureMixedMode() == MixedMode.PLAINTEXT_CLIENT_MIXED_SERVER) {
             return new Socket();
         }
         return tlsContext.context().getSocketFactory().createSocket();
