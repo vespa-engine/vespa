@@ -31,8 +31,8 @@ typedef vespalib::StringTokenizer::TokenList TokenList;
  * strip leading and trailing sequences
  * of characters contained in the strip set.
  **/
-Token stripString(vespalib::stringref source,
-                        const AsciiSet & strip)
+Token
+stripString(vespalib::stringref source, const AsciiSet & strip)
 {
     Token::size_type start = 0;
     while (start < source.size() && strip.contains(source[start])) {
@@ -45,13 +45,22 @@ Token stripString(vespalib::stringref source,
     return source.substr(start, stop - start);
 }
 
-void parse(TokenList& output,
-           vespalib::stringref source,
-           const AsciiSet & separators,
-           const AsciiSet & strip)
+size_t
+countSeparators(vespalib::stringref source, const AsciiSet & sep) {
+    size_t count(0);
+    for (Token::size_type i = 0; i < source.size(); ++i) {
+        if (sep.contains(source[i])) {
+            count++;
+        }
+    }
+    return count;
+}
+
+void
+parse(TokenList& output, vespalib::stringref source, const AsciiSet & separators, const AsciiSet & strip)
 {
     Token::size_type start = 0;
-    for(Token::size_type i = 0; i < source.size(); ++i) {
+    for (Token::size_type i = 0; i < source.size(); ++i) {
         if (separators.contains(source[i])) {
             output.push_back(stripString(source.substr(start, i-start), strip));
             start = i+1;
@@ -73,22 +82,24 @@ StringTokenizer::StringTokenizer(vespalib::stringref source,
 {
     AsciiSet sep(separators);
     AsciiSet str(strip);
+    _tokens.reserve(countSeparators(source, sep) + 1);
     parse(_tokens, source, sep, str);
 }
 
-void StringTokenizer::removeEmptyTokens()
+void
+StringTokenizer::removeEmptyTokens()
 {
     size_t emptyCount(0);
-    for (TokenList::const_iterator it = _tokens.begin(); it != _tokens.end(); ++it) {
-        if (it->empty()) emptyCount++;
+    for (const auto & token : _tokens) {
+        if (token.empty()) emptyCount++;
     }
     if (emptyCount == 0) {
         return;
     }
     TokenList tokenlist;
     tokenlist.reserve(_tokens.size() - emptyCount);
-    for (TokenList::const_iterator it = _tokens.begin(); it != _tokens.end(); ++it) {
-        if (!it->empty()) tokenlist.push_back(*it);
+    for (const auto & token : _tokens) {
+        if (!token.empty()) tokenlist.push_back(token);
     }
     _tokens.swap(tokenlist);
 }
