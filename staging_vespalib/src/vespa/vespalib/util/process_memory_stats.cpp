@@ -23,7 +23,8 @@ namespace {
  * 00400000-00420000 r-xp 00000000 fd:04 16545041                           /usr/bin/less
  */
 
-bool isRange(const std::string &line) {
+bool
+isRange(vespalib::stringref line) {
     for (char c : line) {
         if (c == ' ') {
             return true;
@@ -49,7 +50,8 @@ bool isRange(const std::string &line) {
  * The range starting at 00625000 is anonymous.
  */
 
-bool isAnonymous(const std::string &line) {
+bool
+isAnonymous(vespalib::stringref line) {
     int delims = 0;
     for (char c : line) {
         if (delims >= 4) {
@@ -76,16 +78,10 @@ bool isAnonymous(const std::string &line) {
  * mapped pages.
  */
 
-std::string getLineHeader(const std::string &line)
+vespalib::stringref
+getLineHeader(vespalib::stringref line)
 {
-    size_t len = 0;
-    for (char c : line) {
-        if (c == ':') {
-            return line.substr(0, len);
-        }
-        ++len;
-    }
-    LOG_ABORT("should not be reached");
+    return line.substr(0, line.find(':'));
 }
 #endif
 
@@ -97,26 +93,28 @@ ProcessMemoryStats::createStatsFromSmaps()
     ProcessMemoryStats ret;
 #ifdef __linux__
     std::ifstream smaps("/proc/self/smaps");
-    std::string line;
-    std::string lineHeader;
+    std::string backedLine;
     bool anonymous = true;
     uint64_t lineVal = 0;
     while (smaps.good()) {
-        std::getline(smaps, line);
+        std::getline(smaps, backedLine);
+        vespalib::stringref line(backedLine);
         if (isRange(line)) {
             ret._mappings_count += 1;
             anonymous = isAnonymous(line);
         } else if (!line.empty()) {
-            lineHeader = getLineHeader(line);
-            std::istringstream is(line.substr(lineHeader.size() + 1));
-            is >> lineVal;
+            stringref lineHeader = getLineHeader(line);
             if (lineHeader == "Size") {
+                asciistream is(line.substr(lineHeader.size() + 1));
+                is >> lineVal;
                 if (anonymous) {
                     ret._anonymous_virt += lineVal * 1024;
                 } else {
                     ret._mapped_virt += lineVal * 1024;
                 }
             } else if (lineHeader == "Rss") {
+                asciistream is(line.substr(lineHeader.size() + 1));
+                is >> lineVal;
                 if (anonymous) {
                     ret._anonymous_rss += lineVal * 1024;
                 } else {
