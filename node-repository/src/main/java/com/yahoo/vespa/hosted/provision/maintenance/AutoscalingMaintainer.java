@@ -5,6 +5,7 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Deployer;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -22,6 +23,7 @@ import java.time.Duration;
 import java.time.Instant;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 /**
  * Maintainer making automatic scaling decisions
@@ -52,7 +54,7 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         if ( ! nodeRepository().nodes().isWorking()) return false;
 
         boolean success = true;
-        if ( ! nodeRepository().zone().environment().isProduction()) return success;
+        if ( ! nodeRepository().zone().environment().isAnyOf(Environment.dev, Environment.prod)) return success;
 
         activeNodesByApplication().forEach(this::autoscale);
         return success;
