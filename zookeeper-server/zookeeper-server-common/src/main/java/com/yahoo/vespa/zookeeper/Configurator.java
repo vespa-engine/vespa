@@ -20,6 +20,8 @@ import static com.yahoo.vespa.defaults.Defaults.getDefaults;
 
 public class Configurator {
 
+    public static volatile boolean VespaNettyServerCnxnFactory_isSecure = false;
+
     private static final java.util.logging.Logger log = java.util.logging.Logger.getLogger(Configurator.class.getName());
     private static final String ZOOKEEPER_JMX_LOG4J_DISABLE = "zookeeper.jmx.log4j.disable";
     static final String ZOOKEEPER_JUTE_MAX_BUFFER = "jute.maxbuffer";
@@ -70,14 +72,14 @@ public class Configurator {
         // Includes all available commands in 3.5, except 'wchc' and 'wchp'
         sb.append("4lw.commands.whitelist=conf,cons,crst,dirs,dump,envi,mntr,ruok,srst,srvr,stat,wchs").append("\n");
         sb.append("admin.enableServer=false").append("\n");
-        // Need NettyServerCnxnFactory to be able to use TLS for communication
-        sb.append("serverCnxnFactory=org.apache.zookeeper.server.NettyServerCnxnFactory").append("\n");
+        // Use custom connection factory for TLS on client port - see class' Javadoc for rationale
+        sb.append("serverCnxnFactory=org.apache.zookeeper.server.VespaNettyServerCnxnFactory").append("\n");
         sb.append("quorumListenOnAllIPs=true").append("\n");
         sb.append("standaloneEnabled=false").append("\n");
         sb.append("reconfigEnabled=true").append("\n");
         sb.append("skipACL=yes").append("\n");
         ensureThisServerIsRepresented(config.myid(), config.server());
-        config.server().forEach(server -> addServerToCfg(sb, server));
+        config.server().forEach(server -> addServerToCfg(sb, server, config.clientPort()));
         sb.append(new TlsQuorumConfig().createConfig(config, tlsContext));
         sb.append(new TlsClientServerConfig().createConfig(config, tlsContext));
         return sb.toString();
@@ -102,7 +104,7 @@ public class Configurator {
         }
     }
 
-    private void addServerToCfg(StringBuilder sb, ZookeeperServerConfig.Server server) {
+    private void addServerToCfg(StringBuilder sb, ZookeeperServerConfig.Server server, int clientPort) {
         sb.append("server.")
           .append(server.id())
           .append("=")
@@ -120,7 +122,9 @@ public class Configurator {
             sb.append(":")
               .append("observer");
         }
-        sb.append("\n");
+        sb.append(";")
+          .append(clientPort)
+          .append("\n");
     }
 
     static List<String> zookeeperServerHostnames(ZookeeperServerConfig zookeeperServerConfig) {
@@ -190,12 +194,11 @@ public class Configurator {
                 default:
                     throw new IllegalArgumentException("Unknown value of config setting tlsForClientServerCommunication: " + tlsSetting);
             }
-            // ZooKeeper Dynamic Reconfiguration does not support SSL/secure client port
-            // The secure client port must be configured in the static configuration section instead
+            sb.append("client.portUnification=").append(portUnification).append("\n");
+            // ZooKeeper Dynamic Reconfiguration requires the "non-secure" client port to exist
+            // This is a hack to override the secure parameter through our connection factory wrapper
             // https://issues.apache.org/jira/browse/ZOOKEEPER-3577
-            sb.append("client.portUnification=").append(portUnification).append("\n")
-                    .append("clientPort=").append(secureClientPort ? 0 : config.clientPort()).append("\n")
-                    .append("secureClientPort=").append(secureClientPort ? config.clientPort() : 0).append("\n");
+            VespaNettyServerCnxnFactory_isSecure = secureClientPort;
             appendSharedTlsConfig(sb, tlsContext);
 
             return sb.toString();
