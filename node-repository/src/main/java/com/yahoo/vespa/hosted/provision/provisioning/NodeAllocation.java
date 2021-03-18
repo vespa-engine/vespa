@@ -123,7 +123,7 @@ class NodeAllocation {
                 }
             }
             else if (! saturated() && hasCompatibleFlavor(candidate)) {
-                if (requestedNodes.type() == NodeType.tenant && ! nodeResourceLimits.isWithinRealLimits(candidate, cluster)) {
+                if (! nodeResourceLimits.isWithinRealLimits(candidate, cluster)) {
                     ++rejectedDueToInsufficientRealResources;
                     continue;
                 }
