@@ -29,6 +29,41 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
+      <artifactId>container-documentapi</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>document</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>log4j</groupId>
+          <artifactId>log4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>config</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>fileacquirer</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>log4j</groupId>
+          <artifactId>log4j</artifactId>
+        </exclusion>
+        <exclusion>
+          <groupId>com.yahoo.vespa</groupId>
+          <artifactId>config</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
       <artifactId>http-utils</artifactId>
       <version>${project.version}</version>
     </dependency>
@@ -70,61 +105,6 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>document</artifactId>
-      <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.yahoo.vespa</groupId>
-          <artifactId>config</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-documentapi</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>vdslib</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>org.apache.httpcomponents</groupId>
-      <artifactId>httpclient</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>vespajlib</artifactId>
-      <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>fileacquirer</artifactId>
-      <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>log4j</groupId>
-          <artifactId>log4j</artifactId>
-        </exclusion>
-        <exclusion>
-          <groupId>com.yahoo.vespa</groupId>
-          <artifactId>config</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>statistics</artifactId>
       <version>${project.version}</version>
       <exclusions>
@@ -139,9 +119,24 @@
       </exclusions>
     </dependency>
     <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <scope>test</scope>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>vdslib</artifactId>
+      <version>${project.version}</version>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>vespajlib</artifactId>
+      <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <groupId>log4j</groupId>
+          <artifactId>log4j</artifactId>
+        </exclusion>
+      </exclusions>
+    </dependency>
+    <dependency>
+      <groupId>org.apache.httpcomponents</groupId>
+      <artifactId>httpclient</artifactId>
     </dependency>
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -193,6 +188,18 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
+      <artifactId>config</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
+      <artifactId>config-bundle</artifactId>
+      <version>${project.version}</version>
+      <scope>provided</scope>
+    </dependency>
+    <dependency>
+      <groupId>com.yahoo.vespa</groupId>
       <artifactId>defaults</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
@@ -224,23 +231,11 @@
       <artifactId>jetty-servlet</artifactId>
       <scope>provided</scope>
     </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>config-bundle</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>config</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
 
     <!-- TEST scope -->
     <dependency>
-      <groupId>org.mockito</groupId>
-      <artifactId>mockito-core</artifactId>
+      <groupId>com.github.tomakehurst</groupId>
+      <artifactId>wiremock-standalone</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
@@ -250,13 +245,18 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.github.tomakehurst</groupId>
-      <artifactId>wiremock-standalone</artifactId>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
       <scope>test</scope>
     </dependency>
     <dependency>
       <groupId>org.assertj</groupId>
       <artifactId>assertj-core</artifactId>
+      <scope>test</scope>
+    </dependency>
+    <dependency>
+      <groupId>org.mockito</groupId>
+      <artifactId>mockito-core</artifactId>
       <scope>test</scope>
     </dependency>
   </dependencies>
