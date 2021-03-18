@@ -311,22 +311,6 @@ Distributor::notifyDistributionChangeEnabled()
 void
 Distributor::storageDistributionChanged()
 {
-    if (!_distribution.get()
-        || *_component.getDistribution() != *_distribution)
-    {
-        LOG(debug,
-            "Distribution changed to %s, must refetch bucket information",
-            _component.getDistribution()->toString().c_str());
-
-        // FIXME this is not thread safe
-        _nextDistribution = _component.getDistribution();
-    } else {
-        LOG(debug,
-            "Got distribution change, but the distribution %s was the same as "
-            "before: %s",
-            _component.getDistribution()->toString().c_str(),
-            _distribution->toString().c_str());
-    }
     // May happen from any thread.
     _stripe->storageDistributionChanged();
 }
@@ -371,10 +355,6 @@ Distributor::checkBucketForSplit(document::BucketSpace,
 void
 Distributor::enableNextDistribution()
 {
-    if (_nextDistribution.get()) {
-        _distribution = _nextDistribution;
-        _nextDistribution = std::shared_ptr<lib::Distribution>();
-    }
     _stripe->enableNextDistribution();
 }
 
@@ -445,7 +425,6 @@ Distributor::doCriticalTick(framework::ThreadIndex idx)
 {
     _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     // Propagates any new configs down to stripe(s)
-    enableNextDistribution();  // TODO remove?
     enableNextConfig();
     _stripe->doCriticalTick(idx);
     _tickResult.merge(_stripe->_tickResult);

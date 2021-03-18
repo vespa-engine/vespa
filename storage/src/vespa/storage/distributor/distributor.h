@@ -247,8 +247,6 @@ private:
 
     StatusReporterDelegate _distributorStatusDelegate;
 
-    std::shared_ptr<lib::Distribution> _distribution;
-    std::shared_ptr<lib::Distribution> _nextDistribution;
     framework::TickingThreadPool& _threadPool;
 
     mutable std::vector<std::shared_ptr<DistributorStatus>> _statusToDo;
