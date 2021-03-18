@@ -521,6 +521,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
         masterElectionHandler.setFleetControllerCount(options.fleetControllerCount);
         masterElectionHandler.setMasterZooKeeperCooldownPeriod(options.masterZooKeeperCooldownPeriod);
+        masterElectionHandler.setUsingZooKeeper(options.zooKeeperServerAddress != null && !options.zooKeeperServerAddress.isEmpty());
 
         if (rpcServer != null) {
             rpcServer.setMasterElectionHandler(masterElectionHandler);

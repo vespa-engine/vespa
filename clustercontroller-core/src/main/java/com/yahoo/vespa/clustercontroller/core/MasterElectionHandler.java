@@ -25,6 +25,7 @@ public class MasterElectionHandler implements MasterInterface {
     private Map<Integer, Integer> nextMasterData;
     private long masterGoneFromZooKeeperTime; // Set to time master fleet controller disappears from zookeeper
     private long masterZooKeeperCooldownPeriod; // The period in ms that we won't take over unless master come back.
+    private boolean usingZooKeeper = false; // Unit tests may not use ZooKeeper at all.
 
     public MasterElectionHandler(int index, int totalCount, Object monitor, Timer timer) {
         this.monitor = monitor;
@@ -42,7 +43,7 @@ public class MasterElectionHandler implements MasterInterface {
 
     public void setFleetControllerCount(int count) {
         totalCount = count;
-        if (count == 1) {
+        if (count == 1 && !usingZooKeeper) {
             masterCandidate = 0;
             followers = 1;
             nextInLineCount = 0;
@@ -51,6 +52,10 @@ public class MasterElectionHandler implements MasterInterface {
 
     public void setMasterZooKeeperCooldownPeriod(int period) {
         masterZooKeeperCooldownPeriod = period;
+    }
+
+    public void setUsingZooKeeper(boolean usingZK) {
+        usingZooKeeper = usingZK;
     }
 
     @Override
@@ -106,7 +111,9 @@ public class MasterElectionHandler implements MasterInterface {
 
     public boolean watchMasterElection(DatabaseHandler database,
                                        DatabaseHandler.Context dbContext) throws InterruptedException {
-        if (totalCount == 1) return false; // No point in doing master election with only one node configured to be cluster controller
+        if (totalCount == 1 && !usingZooKeeper) {
+            return false; // Allow single configured node to become master implicitly if no ZK configured
+        }
         if (nextMasterData == null) {
             if (masterCandidate == null) {
                 log.log(Level.FINEST, "Cluster controller " + index + ": No current master candidate. Waiting for data to do master election.");
