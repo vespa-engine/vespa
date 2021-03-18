@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
-import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -25,6 +24,9 @@ public class ClusterModel {
     private final MetricsDb metricsDb;
     private final NodeRepository nodeRepository;
 
+    // Lazily initialized members
+    private ClusterNodesTimeseries nodeTimeseries = null;
+
     public ClusterModel(Application application,
                         Cluster cluster,
                         NodeList clusterNodes,
@@ -35,6 +37,11 @@ public class ClusterModel {
         this.nodes = clusterNodes;
         this.metricsDb = metricsDb;
         this.nodeRepository = nodeRepository;
+    }
+
+    public ClusterNodesTimeseries nodeTimeseries() {
+        if (nodeTimeseries != null) return nodeTimeseries;
+        return nodeTimeseries = new ClusterNodesTimeseries(scalingDuration(), cluster, nodes, metricsDb);
     }
 
     public boolean isStable() {

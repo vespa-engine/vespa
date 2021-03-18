@@ -67,23 +67,20 @@ public class Autoscaler {
         if (scaledIn(clusterModel.scalingDuration(), cluster))
             return Advice.dontScale("Won't autoscale now: Less than " + clusterModel.scalingDuration() + " since last resource change");
 
-        var clusterNodesTimeseries = new ClusterNodesTimeseries(clusterModel.scalingDuration(), cluster, clusterNodes, metricsDb);
-        var currentAllocation = new AllocatableClusterResources(clusterNodes.asList(), nodeRepository, cluster.exclusive());
-
-        int measurementsPerNode = clusterNodesTimeseries.measurementsPerNode();
-        if  (measurementsPerNode < minimumMeasurementsPerNode(clusterModel.scalingDuration()))
+        if  (clusterModel.nodeTimeseries().measurementsPerNode() < minimumMeasurementsPerNode(clusterModel.scalingDuration()))
             return Advice.none("Collecting more data before making new scaling decisions: Need to measure for " +
                                clusterModel.scalingDuration() + " since the last resource change completed");
 
-        int nodesMeasured = clusterNodesTimeseries.nodesMeasured();
-        if (nodesMeasured != clusterNodes.size())
+        if (clusterModel.nodeTimeseries().nodesMeasured() != clusterNodes.size())
             return Advice.none("Collecting more data before making new scaling decisions: " +
-                               "Have measurements from " + nodesMeasured + " nodes, but require from " + clusterNodes.size());
+                               "Have measurements from " + clusterModel.nodeTimeseries().nodesMeasured() +
+                               " nodes, but require from " + clusterNodes.size());
 
+        var currentAllocation = new AllocatableClusterResources(clusterNodes.asList(), nodeRepository, cluster.exclusive());
         var clusterTimeseries = metricsDb.getClusterTimeseries(application.id(), cluster.id());
         var target = ResourceTarget.idealLoad(clusterModel.scalingDuration(),
                                               clusterTimeseries,
-                                              clusterNodesTimeseries,
+                                              clusterModel.nodeTimeseries(),
                                               currentAllocation,
                                               application,
                                               nodeRepository.clock());
