@@ -175,8 +175,7 @@ public class ConfiguratorTest {
                "quorumListenOnAllIPs=true\n" +
                "standaloneEnabled=false\n" +
                "reconfigEnabled=true\n" +
-               "skipACL=yes\n" +
-               "metricsProvider.className=org.apache.zookeeper.metrics.impl.NullMetricsProvider\n";
+               "skipACL=yes\n";
     }
 
     private void validateConfigFileSingleHost(File cfgFile) {
