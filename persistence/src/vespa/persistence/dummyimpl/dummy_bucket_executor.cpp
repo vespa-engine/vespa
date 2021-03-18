@@ -27,16 +27,14 @@ DummyBucketExecutor::execute(const Bucket & bucket, std::unique_ptr<BucketTask> 
     auto failed = _executor->execute(makeLambdaTask([this, bucket, bucketTask=std::move(task)]() {
         {
             std::unique_lock guard(_lock);
-            // Use contains when dropping support for gcc 8.
-            while (_inFlight.count(bucket.getBucket()) != 0) {
+            while (_inFlight.contains(bucket.getBucket())) {
                 _cond.wait(guard);
             }
             _inFlight.insert(bucket.getBucket());
         }
         bucketTask->run(bucket, makeLambdaCallback([this, bucket]() {
             std::unique_lock guard(_lock);
-            // Use contains when dropping support for gcc 8.
-            assert(_inFlight.count(bucket.getBucket()) != 0);
+            assert(_inFlight.contains(bucket.getBucket()));
             _inFlight.erase(bucket.getBucket());
             _cond.notify_all();
         }));
