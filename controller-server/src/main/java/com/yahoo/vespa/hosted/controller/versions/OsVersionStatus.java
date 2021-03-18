@@ -63,7 +63,7 @@ public class OsVersionStatus {
 
         for (var application : SystemApplication.all()) {
             for (var zone : zonesToUpgrade(controller)) {
-                if (!application.shouldUpgradeOsIn(zone.getId(), controller)) continue;
+                if (!application.shouldUpgradeOsIn()) continue;
                 var targetOsVersion = controller.serviceRegistry().configServer().nodeRepository()
                                                 .targetVersionsOf(zone.getId())
                                                 .osVersion(application.nodeType())

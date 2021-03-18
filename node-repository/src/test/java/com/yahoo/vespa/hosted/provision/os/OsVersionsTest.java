@@ -38,7 +38,7 @@ public class OsVersionsTest {
 
     @Test
     public void upgrade() {
-        var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), Integer.MAX_VALUE));
+        var versions = new OsVersions(tester.nodeRepository(), new DelegatingOsUpgrader(tester.nodeRepository(), Integer.MAX_VALUE));
         provisionInfraApplication(10);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
 
@@ -92,7 +92,7 @@ public class OsVersionsTest {
     public void max_active_upgrades() {
         int totalNodes = 20;
         int maxActiveUpgrades = 5;
-        var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), maxActiveUpgrades));
+        var versions = new OsVersions(tester.nodeRepository(), new DelegatingOsUpgrader(tester.nodeRepository(), maxActiveUpgrades));
         provisionInfraApplication(totalNodes);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().state(Node.State.active).hosts();
 
@@ -138,7 +138,7 @@ public class OsVersionsTest {
 
     @Test
     public void newer_upgrade_aborts_upgrade_to_stale_version() {
-        var versions = new OsVersions(tester.nodeRepository(), new DelegatingUpgrader(tester.nodeRepository(), Integer.MAX_VALUE));
+        var versions = new OsVersions(tester.nodeRepository(), new DelegatingOsUpgrader(tester.nodeRepository(), Integer.MAX_VALUE));
         provisionInfraApplication(10);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().hosts();
 
@@ -157,7 +157,7 @@ public class OsVersionsTest {
 
     @Test
     public void upgrade_by_retiring() {
-        var versions = new OsVersions(tester.nodeRepository(), new RetiringUpgrader(tester.nodeRepository()));
+        var versions = new OsVersions(tester.nodeRepository(), new RetiringOsUpgrader(tester.nodeRepository()));
         var clock = (ManualClock) tester.nodeRepository().clock();
         int hostCount = 10;
         // Provision hosts and children
@@ -222,7 +222,7 @@ public class OsVersionsTest {
 
     @Test
     public void upgrade_by_retiring_everything_at_once() {
-        var versions = new OsVersions(tester.nodeRepository(), new RetiringUpgrader(tester.nodeRepository()));
+        var versions = new OsVersions(tester.nodeRepository(), new RetiringOsUpgrader(tester.nodeRepository()));
         int hostCount = 3;
         provisionInfraApplication(hostCount, NodeType.confighost);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list()

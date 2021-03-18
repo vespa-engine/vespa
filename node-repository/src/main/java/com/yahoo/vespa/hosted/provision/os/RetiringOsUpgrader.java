@@ -22,13 +22,13 @@ import java.util.logging.Logger;
  *
  * @author mpolden
  */
-public class RetiringUpgrader implements Upgrader {
+public class RetiringOsUpgrader implements OsUpgrader {
 
-    private static final Logger LOG = Logger.getLogger(RetiringUpgrader.class.getName());
+    private static final Logger LOG = Logger.getLogger(RetiringOsUpgrader.class.getName());
 
     private final NodeRepository nodeRepository;
 
-    public RetiringUpgrader(NodeRepository nodeRepository) {
+    public RetiringOsUpgrader(NodeRepository nodeRepository) {
         this.nodeRepository = nodeRepository;
     }
 
@@ -65,8 +65,7 @@ public class RetiringUpgrader implements Upgrader {
                  ", want " + target);
         nodeRepository.nodes().deprovision(host, Agent.RetiringUpgrader, now);
         nodeRepository.nodes().upgradeOs(NodeListFilter.from(host), Optional.of(target));
-        NodeType nodeType = host.type();
-        nodeRepository.osVersions().writeChange((change) -> change.withRetirementAt(now, nodeType));
+        nodeRepository.osVersions().writeChange((change) -> change.withRetirementAt(now, host.type()));
     }
 
 }

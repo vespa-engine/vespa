@@ -66,10 +66,7 @@ public enum SystemApplication {
     }
 
     /** Returns whether this should receive OS upgrades in given zone */
-    public boolean shouldUpgradeOsIn(ZoneId zone, Controller controller) {
-        if (controller.zoneRegistry().zones().reprovisionToUpgradeOs().ids().contains(zone)) {
-            return nodeType == NodeType.host; // TODO(mpolden): Remove once all node types are supported
-        }
+    public boolean shouldUpgradeOsIn() {
         return nodeType.isHost();
     }
 

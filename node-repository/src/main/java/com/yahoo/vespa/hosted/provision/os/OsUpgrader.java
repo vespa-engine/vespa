@@ -8,7 +8,7 @@ import com.yahoo.config.provision.NodeType;
  *
  * @author mpolden
  */
-public interface Upgrader {
+public interface OsUpgrader {
 
     /** Trigger upgrade to given target */
     void upgradeTo(OsVersionTarget target);
