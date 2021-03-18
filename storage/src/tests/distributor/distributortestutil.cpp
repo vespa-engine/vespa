@@ -258,7 +258,7 @@ DistributorTestUtil::removeFromBucketDB(const document::BucketId& id)
 void
 DistributorTestUtil::addIdealNodes(const document::BucketId& id)
 {
-    // FIXME roundabout way of getting state bundle..!
+    // TODO STRIPE roundabout way of getting state bundle..!
     addIdealNodes(*distributor_component().getClusterStateBundle().getBaselineClusterState(), id);
 }
 
@@ -353,7 +353,7 @@ DistributorTestUtil::getExternalOperationHandler() {
 
 storage::distributor::DistributorComponent&
 DistributorTestUtil::distributor_component() {
-    // FIXME tests use this to indirectly access bucket space repos/DBs!
+    // TODO STRIPE tests use this to indirectly access bucket space repos/DBs!
     return _distributor->distributor_component();
 }
 
@@ -372,7 +372,7 @@ DistributorTestUtil::tick() {
 
 DistributorConfiguration&
 DistributorTestUtil::getConfig() {
-    // FIXME this is very naughty indeed
+    // TODO STRIPE avoid const cast
     return const_cast<DistributorConfiguration&>(_distributor->getConfig());
 }
 

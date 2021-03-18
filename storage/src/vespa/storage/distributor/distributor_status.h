@@ -1,3 +1,5 @@
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #pragma once
 
 #include <condition_variable>
@@ -13,7 +15,7 @@ namespace storage::distributor {
 
 class DelegatedStatusRequest;
 
-// TODO description
+// TODO STRIPE description
 class DistributorStatus {
     const DelegatedStatusRequest& _request;
     std::mutex              _lock;
