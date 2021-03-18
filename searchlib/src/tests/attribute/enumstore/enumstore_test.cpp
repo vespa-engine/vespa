@@ -6,6 +6,8 @@
 #include <vespa/log/log.h>
 LOG_SETUP("enumstore_test");
 
+using Ordering = search::DictionaryConfig::Ordering;
+
 namespace search {
 
 using DoubleEnumStore = EnumStoreT<double>;
@@ -13,6 +15,47 @@ using EnumIndex = IEnumStore::Index;
 using FloatEnumStore = EnumStoreT<float>;
 using NumericEnumStore = EnumStoreT<int32_t>;
 using StringEnumStore = EnumStoreT<const char*>;
+
+struct OrderedDoubleEnumStore {
+    using EnumStoreType = DoubleEnumStore;
+    static constexpr Ordering ordering = Ordering::ORDERED;
+};
+
+struct UnorderedDoubleEnumStore {
+    using EnumStoreType = DoubleEnumStore;
+    static constexpr Ordering ordering = Ordering::UNORDERED;
+};
+
+struct OrderedFloatEnumStore {
+    using EnumStoreType = FloatEnumStore;
+    static constexpr Ordering ordering = Ordering::ORDERED;
+};
+
+struct UnorderedFloatEnumStore {
+    using EnumStoreType = FloatEnumStore;
+    static constexpr Ordering ordering = Ordering::UNORDERED;
+};
+
+struct OrderedNumericEnumStore {
+    using EnumStoreType = NumericEnumStore;
+    static constexpr Ordering ordering = Ordering::ORDERED;
+};
+
+struct UnorderedNumericEnumStore {
+    using EnumStoreType = NumericEnumStore;
+    static constexpr Ordering ordering = Ordering::UNORDERED;
+};
+
+struct OrderedStringEnumStore {
+    using EnumStoreType = StringEnumStore;
+    static constexpr Ordering ordering = Ordering::ORDERED;
+};
+
+struct UnorderedStringEnumStore {
+    using EnumStoreType = StringEnumStore;
+    static constexpr Ordering ordering = Ordering::UNORDERED;
+};
+
 using StringVector = std::vector<std::string>;
 using generation_t = vespalib::GenerationHandler::generation_t;
 
@@ -56,12 +99,13 @@ checkReaders(const StringEnumStore& ses,
     }
 }
 
-template <typename EnumStoreT>
+template <typename EnumStoreTypeAndOrdering>
 class FloatEnumStoreTest : public ::testing::Test {
 public:
-    EnumStoreT es;
+    using EnumStoreType = typename EnumStoreTypeAndOrdering::EnumStoreType;
+    EnumStoreType es;
     FloatEnumStoreTest()
-        : es(false, DictionaryConfig::Ordering::ORDERED)
+        : es(false, EnumStoreTypeAndOrdering::ordering)
     {}
 };
 
@@ -71,12 +115,12 @@ public:
 #pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 
-using FloatEnumStoreTestTypes = ::testing::Types<FloatEnumStore, DoubleEnumStore>;
+using FloatEnumStoreTestTypes = ::testing::Types<OrderedFloatEnumStore, OrderedDoubleEnumStore, UnorderedFloatEnumStore, UnorderedDoubleEnumStore>;
 VESPA_GTEST_TYPED_TEST_SUITE(FloatEnumStoreTest, FloatEnumStoreTestTypes);
 
 TYPED_TEST(FloatEnumStoreTest, numbers_can_be_inserted_and_retrieved)
 {
-    using EntryType = typename TypeParam::EntryType;
+    using EntryType = typename TypeParam::EnumStoreType::EntryType;
     EnumIndex idx;
 
     EntryType a[5] = {-20.5f, -10.5f, -0.5f, 9.5f, 19.5f};
@@ -376,23 +420,53 @@ TEST_F(BatchUpdaterTest, unused_new_value_is_removed)
 }
 
 template <typename EnumStoreT>
-class LoaderTest : public ::testing::Test {
-public:
-    using EntryType = typename EnumStoreT::EntryType;
-    EnumStoreT store;
+struct LoaderTestValues {
+    using EnumStoreType = EnumStoreT;
+    using EntryType = typename EnumStoreType::EntryType;
     static std::vector<EntryType> values;
 
+    static void load_values(enumstore::EnumeratedLoaderBase& loader) {
+        loader.load_unique_values(values.data(), values.size() * sizeof(EntryType));
+    }
+};
+
+template <>
+void
+LoaderTestValues<StringEnumStore>::load_values(enumstore::EnumeratedLoaderBase& loader)
+{
+    std::vector<char> raw_values;
+    for (auto value : values) {
+        for (auto c : std::string(value)) {
+            raw_values.push_back(c);
+        }
+        raw_values.push_back('\0');
+    }
+    loader.load_unique_values(raw_values.data(), raw_values.size());
+}
+
+template <> std::vector<int32_t> LoaderTestValues<NumericEnumStore>::values{3, 5, 7, 9};
+template <> std::vector<float> LoaderTestValues<FloatEnumStore>::values{3.1, 5.2, 7.3, 9.4};
+template <> std::vector<const char *> LoaderTestValues<StringEnumStore>::values{"aa", "bbb", "ccc", "dd"};
+
+template <typename EnumStoreTypeAndOrdering>
+class LoaderTest : public ::testing::Test {
+public:
+    using EnumStoreType = typename EnumStoreTypeAndOrdering::EnumStoreType;
+    using EntryType = typename EnumStoreType::EntryType;
+    EnumStoreType store;
+    using Values = LoaderTestValues<EnumStoreType>;
+
     LoaderTest()
-        : store(true, DictionaryConfig::Ordering::ORDERED)
+        : store(true, EnumStoreTypeAndOrdering::ordering)
     {}
 
     void load_values(enumstore::EnumeratedLoaderBase& loader) const {
-        loader.load_unique_values(values.data(), values.size() * sizeof(EntryType));
+        Values::load_values(loader);
     }
 
     EnumIndex find_index(size_t values_idx) const {
         EnumIndex result;
-        EXPECT_TRUE(store.find_index(values[values_idx], result));
+        EXPECT_TRUE(store.find_index(Values::values[values_idx], result));
         return result;
     }
 
@@ -408,7 +482,7 @@ public:
 
     void expect_value_not_in_store(size_t values_idx) const {
         EnumIndex idx;
-        EXPECT_FALSE(store.find_index(values[values_idx], idx));
+        EXPECT_FALSE(store.find_index(Values::values[values_idx], idx));
     }
 
     void expect_values_in_store() {
@@ -427,31 +501,13 @@ public:
 
 };
 
-template <> std::vector<int32_t> LoaderTest<NumericEnumStore>::values{3, 5, 7, 9};
-template <> std::vector<float> LoaderTest<FloatEnumStore>::values{3.1, 5.2, 7.3, 9.4};
-template <> std::vector<const char *> LoaderTest<StringEnumStore>::values{"aa", "bbb", "ccc", "dd"};
-
-template <>
-void
-LoaderTest<StringEnumStore>::load_values(enumstore::EnumeratedLoaderBase& loader) const
-{
-    std::vector<char> raw_values;
-    for (auto value : values) {
-        for (auto c : std::string(value)) {
-            raw_values.push_back(c);
-        }
-        raw_values.push_back('\0');
-    }
-    loader.load_unique_values(raw_values.data(), raw_values.size());
-}
-
 // Disable warnings emitted by gtest generated files when using typed tests
 #pragma GCC diagnostic push
 #ifndef __clang__
 #pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 
-using LoaderTestTypes = ::testing::Types<NumericEnumStore, FloatEnumStore, StringEnumStore>;
+using LoaderTestTypes = ::testing::Types<OrderedNumericEnumStore, OrderedFloatEnumStore, OrderedStringEnumStore, UnorderedNumericEnumStore, UnorderedFloatEnumStore, UnorderedStringEnumStore>;
 VESPA_GTEST_TYPED_TEST_SUITE(LoaderTest, LoaderTestTypes);
 
 TYPED_TEST(LoaderTest, store_is_instantiated_with_enumerated_loader)
@@ -482,11 +538,12 @@ TYPED_TEST(LoaderTest, store_is_instantiated_with_enumerated_postings_loader)
 TYPED_TEST(LoaderTest, store_is_instantiated_with_non_enumerated_loader)
 {
     auto loader = this->store.make_non_enumerated_loader();
-    loader.insert(this->values[0], 100);
+    using MyValues = LoaderTestValues<typename TypeParam::EnumStoreType>;
+    loader.insert(MyValues::values[0], 100);
     loader.set_ref_count_for_last_value(1);
-    loader.insert(this->values[1], 101);
+    loader.insert(MyValues::values[1], 101);
     loader.set_ref_count_for_last_value(2);
-    loader.insert(this->values[3], 103);
+    loader.insert(MyValues::values[3], 103);
     loader.set_ref_count_for_last_value(4);
     loader.build_dictionary();
 
