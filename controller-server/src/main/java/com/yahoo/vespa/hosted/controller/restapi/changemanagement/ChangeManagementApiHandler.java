@@ -1,5 +1,7 @@
 package com.yahoo.vespa.hosted.controller.restapi.changemanagement;
 
+import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
@@ -13,6 +15,8 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.maintenance.ChangeManagementAssessor;
 import com.yahoo.yolean.Exceptions;
@@ -21,21 +25,27 @@ import javax.ws.rs.BadRequestException;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 import java.util.logging.Level;
+import java.util.stream.Collectors;
 
 public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
 
     private final ChangeManagementAssessor assessor;
+    private final Controller controller;
 
     public ChangeManagementApiHandler(LoggingRequestHandler.Context ctx, Controller controller) {
         super(ctx, controller.auditLogger());
-         assessor = new ChangeManagementAssessor(controller);
+        this.assessor = new ChangeManagementAssessor(controller);
+        this.controller = controller;
     }
 
     @Override
     public HttpResponse auditAndHandle(HttpRequest request) {
         try {
             switch (request.getMethod()) {
+                case GET:
+                    return get(request);
                 case POST:
                     return post(request);
                 default:
@@ -47,6 +57,12 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
             log.log(Level.WARNING, "Unexpected error handling '" + request.getUri() + "'", e);
             return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
         }
+    }
+
+    private HttpResponse get(HttpRequest request) {
+        Path path = new Path(request.getUri());
+        if (path.matches("/changemanagement/v1/assessment/{changeRequestId}")) return changeRequestAssessment(path.get("changeRequestId"));
+        return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
     private HttpResponse post(HttpRequest request) {
@@ -67,6 +83,26 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
         if (!inspector.field(field).valid())
             throw new BadRequestException("Field " + field + " cannot be null");
         return inspector.field(field);
+    }
+
+    private HttpResponse changeRequestAssessment(String changeRequestId) {
+        var optionalChangeRequest = controller.serviceRegistry().changeRequestClient()
+                .getUpcomingChangeRequests()
+                .stream()
+                .filter(request -> changeRequestId.equals(request.getChangeRequestSource().getId()))
+                .findFirst();
+
+        if (optionalChangeRequest.isEmpty())
+            return ErrorResponse.notFoundError("Could not find any upcoming change requests with id " + changeRequestId);
+
+        var changeRequest = optionalChangeRequest.get();
+        var zone = affectedZone(changeRequest);
+
+        if (zone.isEmpty())
+            return ErrorResponse.notFoundError("Could not find prod zone affected by change request " + changeRequestId);
+
+        var assessment = doAssessment(changeRequest.getImpactedHosts(), zone.get());
+        return new SlimeJsonResponse(assessment);
     }
 
     // The structure here should be
@@ -93,7 +129,11 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
             hostArray.traverse((ArrayTraverser) (i, host) -> hostNames.add(host.asString()));
         }
 
-        List<ChangeManagementAssessor.Assessment> assessments = assessor.assessment(hostNames, ZoneId.from(zoneStr));
+        return doAssessment(hostNames, ZoneId.from(zoneStr));
+    }
+
+    private Slime doAssessment(List<String> hostNames, ZoneId zoneId) {
+        List<ChangeManagementAssessor.Assessment> assessments = assessor.assessment(hostNames, zoneId);
 
         Slime slime = new Slime();
         Cursor root = slime.setObject();
@@ -126,4 +166,26 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
 
         return slime;
     }
+
+    private Optional<ZoneId> affectedZone(ChangeRequest changeRequest) {
+        var affectedHosts = changeRequest.getImpactedHosts()
+                .stream()
+                .map(HostName::from)
+                .collect(Collectors.toList());
+
+        var potentialZones = controller.zoneRegistry()
+                .zones()
+                .reachable()
+                .in(Environment.prod)
+                .ids();
+
+        for (var zone : potentialZones) {
+            var affectedHostsInZone = controller.serviceRegistry().configServer().nodeRepository().list(zone, affectedHosts);
+            if (!affectedHostsInZone.isEmpty())
+                return Optional.of(zone);
+        }
+
+        return Optional.empty();
+    }
+
 }
