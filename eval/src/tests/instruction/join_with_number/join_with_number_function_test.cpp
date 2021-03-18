@@ -51,6 +51,8 @@ void verify_optimized(const vespalib::string &expr, Primary primary, bool inplac
     const auto stable_types = CellTypeSpace({CellType::FLOAT, CellType::DOUBLE}, 2);
     FunInfo stable_details{primary, inplace};
     TEST_DO(EvalFixture::verify<FunInfo>(expr, {stable_details}, stable_types));
+    const auto unstable_types = CellTypeSpace({CellType::BFLOAT16, CellType::INT8}, 2);
+    TEST_DO(EvalFixture::verify<FunInfo>(expr, {}, unstable_types));
 }
 
 void verify_not_optimized(const vespalib::string &expr) {
