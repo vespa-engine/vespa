@@ -26,6 +26,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -35,6 +36,8 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 class NodeAllocation {
+
+    private static final Logger LOG = Logger.getLogger(NodeAllocation.class.getName());
 
     /** List of all nodes in node-repository */
     private final NodeList allNodes;
@@ -140,24 +143,26 @@ class NodeAllocation {
                                                requestedNodes.resources().orElse(candidate.resources()),
                                                nodeRepository.clock().instant());
                 if (candidate.isValid())
-                    accepted.add(acceptNode(candidate, false, false));
+                    accepted.add(acceptNode(candidate, Retirement.none, false));
             }
         }
 
         return accepted;
     }
 
-    private boolean shouldRetire(NodeCandidate candidate, List<NodeCandidate> candidates) {
-        if ( ! requestedNodes.considerRetiring())
-            return candidate.allocation().map(a -> a.membership().retired()).orElse(false); // don't second-guess if already retired
-
-        if ( ! nodeResourceLimits.isWithinRealLimits(candidate, cluster)) return true;
-        if (violatesParentHostPolicy(candidate)) return true;
-        if ( ! hasCompatibleFlavor(candidate)) return true;
-        if (candidate.wantToRetire()) return true;
-        if (candidate.preferToRetire() && candidate.replacableBy(candidates)) return true;
-        if (violatesExclusivity(candidate)) return true;
-        return false;
+    /** Returns the cause of retirement for given candidate */
+    private Retirement shouldRetire(NodeCandidate candidate, List<NodeCandidate> candidates) {
+        if ( ! requestedNodes.considerRetiring()) {
+            boolean alreadyRetired = candidate.allocation().map(a -> a.membership().retired()).orElse(false);
+            return alreadyRetired ? Retirement.alreadyRetired : Retirement.none;
+        }
+        if ( ! nodeResourceLimits.isWithinRealLimits(candidate, cluster)) return Retirement.outsideRealLimits;
+        if (violatesParentHostPolicy(candidate)) return Retirement.violatesParentHostPolicy;
+        if ( ! hasCompatibleFlavor(candidate)) return Retirement.incompatibleFlavor;
+        if (candidate.wantToRetire()) return Retirement.hardRequest;
+        if (candidate.preferToRetire() && candidate.replacableBy(candidates)) return Retirement.softRequest;
+        if (violatesExclusivity(candidate)) return Retirement.violatesExclusivity;
+        return Retirement.none;
     }
 
     private boolean violatesParentHostPolicy(NodeCandidate candidate) {
@@ -228,13 +233,13 @@ class NodeAllocation {
         return requestedNodes.isCompatible(candidate.flavor(), nodeRepository.flavors()) || candidate.isResizable;
     }
 
-    private Node acceptNode(NodeCandidate candidate, boolean shouldRetire, boolean resizeable) {
+    private Node acceptNode(NodeCandidate candidate, Retirement retirement, boolean resizeable) {
         Node node = candidate.toNode();
 
         if (node.allocation().isPresent()) // Record the currently requested resources
             node = node.with(node.allocation().get().withRequestedResources(requestedNodes.resources().orElse(node.resources())));
 
-        if (! shouldRetire) {
+        if (retirement == Retirement.none) {
             accepted++;
 
             // We want to allocate new nodes rather than unretiring with resize, so count without those
@@ -249,6 +254,7 @@ class NodeAllocation {
             if (node.state() != Node.State.active) // reactivated node - wipe state that deactivated it
                 node = node.unretire().removable(false);
         } else {
+            LOG.info("Retiring " + node + " because " + retirement.description());
             ++wasRetiredJustNow;
             node = node.retire(nodeRepository.clock().instant());
         }
@@ -450,6 +456,31 @@ class NodeAllocation {
         } catch (NumberFormatException e) {
             throw new IllegalArgumentException("Could not parse index from hostname '" + hostname + "'", e);
         }
+    }
+
+    /** Possible causes of node retirement */
+    private enum Retirement {
+
+        alreadyRetired("node is already retired"),
+        outsideRealLimits("node real resources is outside limits"),
+        violatesParentHostPolicy("node violates parent host policy"),
+        incompatibleFlavor("node flavor is incompatible"),
+        hardRequest("node is requested to retire"),
+        softRequest("node is requested to retire (soft)"),
+        violatesExclusivity("node violates host exclusivity"),
+        none("");
+
+        private final String description;
+
+        Retirement(String description) {
+            this.description = description;
+        }
+
+        /** Human readable description of this cause */
+        public String description() {
+            return description;
+        }
+
     }
 
     /** A host deficit, the number of missing hosts, for a deployment */
