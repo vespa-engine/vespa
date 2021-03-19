@@ -63,6 +63,7 @@ vespa_add_library(vespalib_vespalib_util OBJECT
     threadstackexecutor.cpp
     threadstackexecutorbase.cpp
     time.cpp
+    unwind_message.cpp
     valgrind.cpp
     zstdcompressor.cpp
     DEPENDS
