@@ -31,7 +31,6 @@ EvalFixture::ParamRepo make_params() {
             "@x3_1$1", "@x3_1$2"
         })
     {
-        fprintf(stderr, "add %s\n", param.c_str());
         repo.add(param, CellType::DOUBLE, glb);
         repo.add(param + "_f", CellType::FLOAT, glb);
     }
