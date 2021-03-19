@@ -208,7 +208,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     public boolean isMaster() {
         synchronized (monitor) {
-            return masterElectionHandler.isMaster();
+            return isMaster;
         }
     }
 
@@ -386,7 +386,9 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         // Iff master, always store new version in ZooKeeper _before_ publishing to any
         // nodes so that a cluster controller crash after publishing but before a successful
         // ZK store will not risk reusing the same version number.
-        if (masterElectionHandler.isMaster()) {
+        // Use isMaster instead of election handler state, as isMaster is set _after_ we have
+        // completed a leadership event edge, so we know we have read from ZooKeeper.
+        if (isMaster) {
             storeClusterStateMetaDataToZooKeeper(stateBundle);
         }
     }
@@ -438,7 +440,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
      */
     public void lostDatabaseConnection() {
         verifyInControllerThread();
-        boolean wasMaster = masterElectionHandler.isMaster();
+        boolean wasMaster = isMaster;
         masterElectionHandler.lostDatabaseConnection();
         if (wasMaster) {
             // Enforce that we re-fetch all state information from ZooKeeper upon the next tick if we're still master.
@@ -622,7 +624,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             if ( ! isRunning()) { return; }
             didWork |= systemStateBroadcaster.processResponses();
             if ( ! isRunning()) { return; }
-            if (masterElectionHandler.isMaster()) {
+            if (isMaster) {
                 didWork |= broadcastClusterStateToEligibleNodes();
                 systemStateBroadcaster.checkIfClusterStateIsAckedByAllDistributors(database, databaseContext, this);
             }
@@ -774,7 +776,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     private boolean taskMayBeCompletedImmediately(RemoteClusterControllerTask task) {
         // We cannot introduce a version barrier for tasks when we're not the master (and therefore will not publish new versions).
-        return (!task.hasVersionAckDependency() || task.isFailed() || !masterElectionHandler.isMaster());
+        return (!task.hasVersionAckDependency() || task.isFailed() || !isMaster);
     }
 
     private RemoteClusterControllerTask.Context createRemoteTaskProcessingContext() {
