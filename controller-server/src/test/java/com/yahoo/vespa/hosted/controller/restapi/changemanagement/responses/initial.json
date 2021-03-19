@@ -15,6 +15,12 @@
         "impact": "na"
       }
     ],
-    "hosts": []
+    "hosts": [
+      {
+        "hostname": "host1",
+        "numberOfChildren": 3,
+        "numberOfProblematicChildren": 3
+      }
+    ]
   }
 }
