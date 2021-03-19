@@ -8,6 +8,7 @@ import com.yahoo.vespa.clustercontroller.core.hostinfo.ResourceUsage;
 
 import java.util.Arrays;
 import java.util.LinkedHashSet;
+import java.util.Locale;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
@@ -78,11 +79,11 @@ public class FeedBlockUtil {
     static String createResourceUsageJson(Set<UsageDetails> usages) {
         // We deal only in the finest of manual JSON string building technologies(tm).
         String usageInnerJson = usages.stream()
-                .map(u -> String.format("\"%s\":{\"usage\": %.3g%s}",
+                .map(u -> String.format(Locale.US, "\"%s\":{\"usage\": %.3g%s}",
                         u.type, u.usage,
-                        (u.name != null ? String.format(",\"name\":\"%s\"", u.name) : "")))
+                        (u.name != null ? String.format(Locale.US, ",\"name\":\"%s\"", u.name) : "")))
                 .collect(Collectors.joining(","));
-        return String.format("{\"content-node\":{\"resource-usage\":{%s}}}", usageInnerJson);
+        return String.format(Locale.US, "{\"content-node\":{\"resource-usage\":{%s}}}", usageInnerJson);
     }
 
     static NodeResourceExhaustion exhaustion(int index, String type) {

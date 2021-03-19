@@ -5,6 +5,7 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.ResourceUsage;
 
+import java.util.Locale;
 import java.util.Objects;
 
 /**
@@ -46,22 +47,22 @@ public class NodeResourceExhaustion {
     }
 
     public String toExhaustionAddedDescription() {
-        return String.format("%s (%.3g > %.3g)", makeDescriptionPrefix(), resourceUsage.getUsage(), limit);
+        return String.format(Locale.US, "%s (%.3g > %.3g)", makeDescriptionPrefix(), resourceUsage.getUsage(), limit);
     }
 
     public String toExhaustionRemovedDescription() {
-        return String.format("%s (<= %.3g)", makeDescriptionPrefix(), limit);
+        return String.format(Locale.US, "%s (<= %.3g)", makeDescriptionPrefix(), limit);
     }
 
     public String toShorthandDescription() {
-        return String.format("%s%s %.3g > %.3g",
+        return String.format(Locale.US, "%s%s %.3g > %.3g",
                 resourceType,
                 (resourceUsage.getName() != null ? ":" + resourceUsage.getName() : ""),
                 resourceUsage.getUsage(), limit);
     }
 
     private String makeDescriptionPrefix() {
-        return String.format("%s%s on node %d [%s]",
+        return String.format(Locale.US, "%s%s on node %d [%s]",
                 resourceType,
                 (resourceUsage.getName() != null ? ":" + resourceUsage.getName() : ""),
                 node.getIndex(),
