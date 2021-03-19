@@ -2,8 +2,6 @@
 
 #include "process_memory_stats.h"
 #include <vespa/vespalib/stllike/asciistream.h>
-#include <fstream>
-#include <sstream>
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -92,13 +90,12 @@ ProcessMemoryStats::createStatsFromSmaps()
 {
     ProcessMemoryStats ret;
 #ifdef __linux__
-    std::ifstream smaps("/proc/self/smaps");
-    std::string backedLine;
+    asciistream smaps = asciistream::createFromDevice("/proc/self/smaps");
     bool anonymous = true;
     uint64_t lineVal = 0;
-    while (smaps.good()) {
-        std::getline(smaps, backedLine);
-        vespalib::stringref line(backedLine);
+    while (!smaps.eof()) {
+        string backedLine = smaps.getline();
+        stringref line(backedLine);
         if (isRange(line)) {
             ret._mappings_count += 1;
             anonymous = isAnonymous(line);
