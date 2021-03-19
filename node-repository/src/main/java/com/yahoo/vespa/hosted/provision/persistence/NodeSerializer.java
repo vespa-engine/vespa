@@ -151,7 +151,7 @@ public class NodeSerializer {
     private void toSlime(Node node, Cursor object) {
         object.setString(hostnameKey, node.hostname());
         toSlime(node.ipConfig().primary(), object.setArray(ipAddressesKey));
-        toSlime(node.ipConfig().pool().getIpSet(), object.setArray(ipAddressPoolKey));
+        toSlime(node.ipConfig().pool().ipSet(), object.setArray(ipAddressPoolKey));
         toSlime(node.ipConfig().pool().getAddressList(), object);
         object.setString(idKey, node.id());
         node.parentHostname().ifPresent(hostname -> object.setString(parentHostnameKey, hostname));

@@ -96,8 +96,13 @@ public final class Node implements Nodelike {
         if (state == State.active)
             requireNonEmpty(ipConfig.primary(), "Active node " + hostname + " must have at least one valid IP address");
 
+        if (state == State.ready && type.isHost()) {
+            requireNonEmpty(ipConfig.primary(), "A " + type + " must have at least one primary IP address in state " + state);
+            requireNonEmpty(ipConfig.pool().ipSet(), "A " + type + " must have a non-empty IP address pool in state " + state);
+        }
+
         if (parentHostname.isPresent()) {
-            if (!ipConfig.pool().getIpSet().isEmpty()) throw new IllegalArgumentException("A child node cannot have an IP address pool");
+            if (!ipConfig.pool().ipSet().isEmpty()) throw new IllegalArgumentException("A child node cannot have an IP address pool");
             if (modelName.isPresent()) throw new IllegalArgumentException("A child node cannot have model name set");
             if (switchHostname.isPresent()) throw new IllegalArgumentException("A child node cannot have switch hostname set");
         }

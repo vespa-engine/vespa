@@ -255,7 +255,7 @@ public class OsVersionsTest {
     }
 
     private List<Node> provisionInfraApplication(int nodeCount, NodeType nodeType) {
-        var nodes = tester.makeReadyNodes(nodeCount, "default", nodeType);
+        var nodes = tester.makeReadyNodes(nodeCount, "default", nodeType, 1);
         tester.prepareAndActivateInfraApplication(infraApplication, nodeType);
         return nodes.stream()
                     .map(Node::hostname)

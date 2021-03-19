@@ -389,12 +389,12 @@ public class DynamicProvisioningMaintainerTest {
         tester.maintainer.maintain();
 
         assertTrue("No IP addresses written as DNS updates are failing",
-                   provisioning.get().stream().allMatch(host -> host.ipConfig().pool().getIpSet().isEmpty()));
+                   provisioning.get().stream().allMatch(host -> host.ipConfig().pool().ipSet().isEmpty()));
 
         tester.hostProvisioner.without(Behaviour.failDnsUpdate);
         tester.maintainer.maintain();
         assertTrue("IP addresses written as DNS updates are succeeding",
-                   provisioning.get().stream().noneMatch(host -> host.ipConfig().pool().getIpSet().isEmpty()));
+                   provisioning.get().stream().noneMatch(host -> host.ipConfig().pool().ipSet().isEmpty()));
     }
 
     @Test
@@ -452,7 +452,7 @@ public class DynamicProvisioningMaintainerTest {
         dynamicProvisioningTester.hostProvisioner.overrideHostFlavor("default");
 
         // Initial config server hosts are provisioned manually
-        List<Node> provisionedHosts = tester.makeReadyNodes(3, "default", hostType).stream()
+        List<Node> provisionedHosts = tester.makeReadyNodes(3, "default", hostType, 1).stream()
                                             .sorted(Comparator.comparing(Node::hostname))
                                             .collect(Collectors.toList());
         tester.prepareAndActivateInfraApplication(hostApp, hostType);

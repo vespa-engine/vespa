@@ -42,7 +42,7 @@ public class ContainerImagesTest {
         }
 
         // Proxy host uses image used by child nodes (proxy nodes), which is overridden in this case (for preload purposes)
-        var proxyHosts = tester.makeReadyNodes(2, "default", NodeType.proxyhost);
+        var proxyHosts = tester.makeReadyNodes(2, "default", NodeType.proxyhost, 1);
         for (var host : proxyHosts) {
             assertEquals(proxyImage, tester.nodeRepository().containerImages().imageFor(host.type()));
         }

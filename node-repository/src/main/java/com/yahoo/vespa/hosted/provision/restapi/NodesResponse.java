@@ -171,7 +171,7 @@ class NodesResponse extends SlimeJsonResponse {
         object.setBool("wantToDeprovision", node.status().wantToDeprovision());
         toSlime(node.history(), object.setArray("history"));
         ipAddressesToSlime(node.ipConfig().primary(), object.setArray("ipAddresses"));
-        ipAddressesToSlime(node.ipConfig().pool().getIpSet(), object.setArray("additionalIpAddresses"));
+        ipAddressesToSlime(node.ipConfig().pool().ipSet(), object.setArray("additionalIpAddresses"));
         addressesToSlime(node.ipConfig().pool().getAddressList(), object);
         node.reports().toSlime(object, "reports");
         node.modelName().ifPresent(modelName -> object.setString("modelName", modelName));
