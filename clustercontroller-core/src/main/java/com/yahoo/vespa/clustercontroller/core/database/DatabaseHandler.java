@@ -87,7 +87,7 @@ public class DatabaseHandler {
     private final DatabaseListener dbListener = new DatabaseListener();
     private final Data currentlyStored = new Data();
     private final Data pendingStore = new Data();
-    private int lastKnownStateBundleVersionWrittenBySelf = 0;
+    private int lastKnownStateBundleVersionWrittenBySelf = -1;
     private long lastZooKeeperConnectionAttempt = 0;
     private static final int minimumWaitBetweenFailedConnectionAttempts = 10000;
     private boolean lostZooKeeperConnectionEvent = false;

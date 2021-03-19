@@ -26,7 +26,7 @@ public class SystemStateBroadcaster {
     private final static long minTimeBetweenNodeErrorLogging = 10 * 60 * 1000;
     private final Map<Node, Long> lastErrorReported = new TreeMap<>();
 
-    private int lastOfficialStateVersion = 0;
+    private int lastOfficialStateVersion = -1;
     private int lastStateVersionBundleAcked = 0;
     private int lastClusterStateVersionConverged = 0;
     private ClusterStateBundle lastClusterStateBundleConverged;
@@ -266,7 +266,7 @@ public class SystemStateBroadcaster {
 
     public boolean broadcastNewStateBundleIfRequired(DatabaseHandler.Context dbContext, Communicator communicator,
                                                      int lastClusterStateVersionWrittenToZooKeeper) {
-        if (clusterStateBundle == null) {
+        if (clusterStateBundle == null || clusterStateBundle.getVersion() == 0) {
             return false;
         }
         if (clusterStateBundle.getVersion() != lastClusterStateVersionWrittenToZooKeeper) {
@@ -300,7 +300,7 @@ public class SystemStateBroadcaster {
     }
 
     public boolean broadcastStateActivationsIfRequired(DatabaseHandler.Context dbContext, Communicator communicator) {
-        if (clusterStateBundle == null || !currentBundleVersionIsTaggedOfficial()) {
+        if (clusterStateBundle == null || clusterStateBundle.getVersion() == 0 || !currentBundleVersionIsTaggedOfficial()) {
             return false;
         }
 
