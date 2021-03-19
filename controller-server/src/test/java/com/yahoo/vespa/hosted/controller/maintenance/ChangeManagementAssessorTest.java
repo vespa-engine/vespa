@@ -8,7 +8,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwne
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -17,6 +16,7 @@ import java.util.Collections;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ChangeManagementAssessorTest {
 
@@ -45,6 +45,10 @@ public class ChangeManagementAssessorTest {
 
         // Add an not impacted hosts
         allNodesInZone.add(createNode("node4", "host2", "myapp", "default", 0 ));
+
+        // Add tenant hosts
+        allNodesInZone.add(createHost("host1", "switch1"));
+        allNodesInZone.add(createHost("host2", "switch1"));
 
         // Make Assessment
         List<ChangeManagementAssessor.ClusterAssessment> assessments
@@ -84,6 +88,10 @@ public class ChangeManagementAssessorTest {
         allNodesInZone.add(createNode("node5", "host4", "myapp", "myman", 5 ));
         allNodesInZone.add(createNode("node6", "host4", "myapp", "myman", 6 ));
 
+        // Add tenant hosts
+        allNodesInZone.add(createHost("host1", "switch1"));
+        allNodesInZone.add(createHost("host2", "switch1"));
+
         // Make Assessment
         ChangeManagementAssessor.Assessment assessment
                 = changeManagementAssessor.assessmentInner(hostNames, allNodesInZone, zone);
@@ -101,9 +109,12 @@ public class ChangeManagementAssessorTest {
 
         List<ChangeManagementAssessor.HostAssessment> hostAssessments = assessment.getHostAssessments();
         assertEquals(2, hostAssessments.size());
-        assertEquals("host1", hostAssessments.get(0).hostName);
-        assertEquals(2, hostAssessments.get(0).numberOfChildren);
-        assertEquals(2, hostAssessments.get(0).numberOfProblematicChildren);
+        assertTrue(hostAssessments.stream().anyMatch(hostAssessment ->
+                hostAssessment.hostName.equals("host1") &&
+                hostAssessment.switchName.equals("switch1") &&
+                hostAssessment.numberOfChildren == 2 &&
+                hostAssessment.numberOfProblematicChildren == 2
+        ));
     }
 
     private NodeOwner createOwner(String tenant, String application, String instance) {
@@ -132,6 +143,13 @@ public class ChangeManagementAssessorTest {
         node.setOwner(createOwner("mytenant", appName, "default"));
         node.setMembership(createMembership(clusterId, group));
 
+        return node;
+    }
+
+    private NodeRepositoryNode createHost(String hostname, String switchName) {
+        NodeRepositoryNode node = new NodeRepositoryNode();
+        node.setHostname(hostname);
+        node.setSwitchHostname(switchName);
         return node;
     }
 }

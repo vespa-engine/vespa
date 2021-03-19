@@ -29,10 +29,14 @@ public class ChangeManagementAssessor {
     Assessment assessmentInner(List<String> impactedHostnames, List<NodeRepositoryNode> allNodes, ZoneId zone) {
 
         // Group impacted application nodes by parent host
-        Map<String, List<NodeRepositoryNode>> prParentHost = allNodes.stream()
+        Map<NodeRepositoryNode, List<NodeRepositoryNode>> prParentHost = allNodes.stream()
                 .filter(nodeRepositoryNode -> nodeRepositoryNode.getState() == NodeState.active) //TODO look at more states?
                 .filter(node -> impactedHostnames.contains(node.getParentHostname() == null ? "" : node.getParentHostname()))
-                .collect(Collectors.groupingBy(NodeRepositoryNode::getParentHostname));
+                .collect(Collectors.groupingBy(node ->
+                    allNodes.stream()
+                            .filter(parent -> parent.getHostname().equals(node.getParentHostname()))
+                            .findFirst().orElseThrow()
+                ));
 
         // Group nodes pr cluster
         Map<String, List<NodeRepositoryNode>> prCluster = prParentHost.values()
@@ -79,7 +83,8 @@ public class ChangeManagementAssessor {
 
         var hostAssessments = prParentHost.entrySet().stream().map((entry) -> {
             HostAssessment hostAssessment = new HostAssessment();
-            hostAssessment.hostName = entry.getKey();
+            hostAssessment.hostName = entry.getKey().getHostname();
+            hostAssessment.switchName = entry.getKey().getSwitchHostname();
             hostAssessment.numberOfChildren = entry.getValue().size();
 
             //TODO: Some better heuristic for what's considered problematic
@@ -142,6 +147,7 @@ public class ChangeManagementAssessor {
 
     public static class HostAssessment {
         public String hostName;
+        public String switchName;
         public int numberOfChildren;
         public int numberOfProblematicChildren;
     }

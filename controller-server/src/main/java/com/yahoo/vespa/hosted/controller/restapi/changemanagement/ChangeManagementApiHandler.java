@@ -166,6 +166,7 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
         assessments.getHostAssessments().forEach(assessment -> {
             Cursor hostObject = hostsCursor.addObject();
             hostObject.setString("hostname", assessment.hostName);
+            hostObject.setString("switchName", assessment.switchName);
             hostObject.setLong("numberOfChildren", assessment.numberOfChildren);
             hostObject.setLong("numberOfProblematicChildren", assessment.numberOfProblematicChildren);
         });
