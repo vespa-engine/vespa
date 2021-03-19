@@ -173,17 +173,6 @@ struct LhsRhs {
     }
 };
 
-vespalib::string adjust_param(const vespalib::string &str, bool mut_cells, bool is_rhs) {
-    vespalib::string result = str;
-    if (mut_cells) {
-        result = "@" + result;
-    }
-    if (is_rhs) {
-        result += "$2";
-    }
-    return result;
-}
-
 CellType join_ct(CellType lct, CellType rct) {
     if (lct == CellType::DOUBLE || rct == CellType::DOUBLE) {
         return CellType::DOUBLE;
