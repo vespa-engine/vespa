@@ -98,12 +98,12 @@ public class IP {
 
         /** Returns a copy of this with pool set to given value */
         public Config withPool(Pool pool) {
-            return new Config(primary, pool.getIpSet(), pool.getAddressList());
+            return new Config(primary, pool.ipSet(), pool.getAddressList());
         }
 
         /** Returns a copy of this with pool set to given value */
         public Config withPrimary(Set<String> primary) {
-            return new Config(primary, pool.getIpSet(), pool.getAddressList());
+            return new Config(primary, pool.ipSet(), pool.getAddressList());
         }
 
         @Override
@@ -122,7 +122,7 @@ public class IP {
 
         @Override
         public String toString() {
-            return String.format("ip config primary=%s pool=%s", primary, pool.getIpSet());
+            return String.format("ip config primary=%s pool=%s", primary, pool.ipSet());
         }
 
         /**
@@ -139,8 +139,8 @@ public class IP {
                     var addresses = new HashSet<>(node.ipConfig().primary());
                     var otherAddresses = new HashSet<>(other.ipConfig().primary());
                     if (node.type().isHost()) { // Addresses of a host can never overlap with any other nodes
-                        addresses.addAll(node.ipConfig().pool().getIpSet());
-                        otherAddresses.addAll(other.ipConfig().pool().getIpSet());
+                        addresses.addAll(node.ipConfig().pool().ipSet());
+                        otherAddresses.addAll(other.ipConfig().pool().ipSet());
                     }
                     otherAddresses.retainAll(addresses);
                     if (!otherAddresses.isEmpty())
@@ -289,8 +289,8 @@ public class IP {
          * @param nodes a list of all nodes in the repository
          */
         public Set<String> findUnusedIpAddresses(NodeList nodes) {
-            var unusedAddresses = new LinkedHashSet<>(getIpSet());
-            nodes.matching(node -> node.ipConfig().primary().stream().anyMatch(ip -> getIpSet().contains(ip)))
+            var unusedAddresses = new LinkedHashSet<>(ipSet());
+            nodes.matching(node -> node.ipConfig().primary().stream().anyMatch(ip -> ipSet().contains(ip)))
                  .forEach(node -> unusedAddresses.removeAll(node.ipConfig().primary()));
             return Collections.unmodifiableSet(unusedAddresses);
         }
@@ -325,7 +325,8 @@ public class IP {
             return ipAddresses.protocol;
         }
 
-        public Set<String> getIpSet() {
+        /** Returns the IP addresses in this pool as a set */
+        public Set<String> ipSet() {
             return ipAddresses.asSet();
         }
 

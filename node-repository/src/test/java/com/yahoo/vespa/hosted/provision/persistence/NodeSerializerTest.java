@@ -255,13 +255,13 @@ public class NodeSerializerTest {
                 Set.of("::1", "::2", "::3"),
                 List.of(new Address("a"), new Address("b"), new Address("c")))));
         Node copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
-        assertEquals(node.ipConfig().pool().getIpSet(), copy.ipConfig().pool().getIpSet());
+        assertEquals(node.ipConfig().pool().ipSet(), copy.ipConfig().pool().ipSet());
         assertEquals(Set.copyOf(node.ipConfig().pool().getAddressList()), Set.copyOf(copy.ipConfig().pool().getAddressList()));
 
         // Test round-trip without address pool (handle empty pool)
         node = createNode();
         copy = nodeSerializer.fromJson(node.state(), nodeSerializer.toJson(node));
-        assertEquals(node.ipConfig().pool().getIpSet(), copy.ipConfig().pool().getIpSet());
+        assertEquals(node.ipConfig().pool().ipSet(), copy.ipConfig().pool().ipSet());
         assertEquals(Set.copyOf(node.ipConfig().pool().getAddressList()), Set.copyOf(copy.ipConfig().pool().getAddressList()));
     }
 

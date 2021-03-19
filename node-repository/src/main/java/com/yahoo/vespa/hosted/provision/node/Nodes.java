@@ -163,7 +163,7 @@ public class Nodes {
                                                    .map(node -> {
                                                        if (node.state() != Node.State.provisioned && node.state() != Node.State.dirty)
                                                            illegal("Can not set " + node + " ready. It is not provisioned or dirty.");
-                                                       if (node.type() == NodeType.host && node.ipConfig().pool().getIpSet().isEmpty())
+                                                       if (node.type() == NodeType.host && node.ipConfig().pool().asSet().isEmpty())
                                                            illegal("Can not set host " + node + " ready. Its IP address pool is empty.");
                                                        return node.withWantToRetire(false, false, Agent.system, clock.instant());
                                                    })
