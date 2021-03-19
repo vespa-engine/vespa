@@ -56,8 +56,9 @@ keepUnusedFileReferencesMinutes int default=300
 # Bootstrapping
 # How long bootstrapping can take before giving up (in seconds)
 maxDurationOfBootstrap long default=7200
-# How long to sleep before redeploying again if it fails (in seconds)
-sleepTimeWhenRedeployingFails long default=30
+# Initial time for how long to sleep before redeploying again if it fails (in seconds)
+# Code uses backoff, so wait time will increase for every iteration
+sleepTimeWhenRedeployingFails long default=15
 
 # Features (to be overridden in configserver-config.xml if needed)
 buildMinimalSetOfConfigModels bool default=true
