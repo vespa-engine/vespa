@@ -40,7 +40,8 @@ public class CloudTenant extends Tenant {
         this.tenantSecretStores = tenantSecretStores;
         this.archiveAccessRole = archiveAccessRole;
         if (!archiveAccessRole.map(role -> VALID_ARCHIVE_ACCESS_ROLE_PATTERN.matcher(role).matches()).orElse(true))
-            throw new IllegalArgumentException("Invalid archive access role name: " + archiveAccessRole.get());
+            throw new IllegalArgumentException(String.format("Invalid archive access role '%s': Must match expected pattern: '%s'",
+                    archiveAccessRole.get(), VALID_ARCHIVE_ACCESS_ROLE_PATTERN.pattern()));
     }
 
     /** Creates a tenant with the given name, provided it passes validation. */

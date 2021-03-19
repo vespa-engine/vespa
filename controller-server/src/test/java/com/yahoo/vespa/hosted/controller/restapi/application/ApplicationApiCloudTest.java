@@ -202,7 +202,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 200);
         tester.assertResponse(request("/application/v4/tenant/scoober/archive-access", PUT)
                 .data("{\"role\":\"dummy\"}").roles(Role.administrator(tenantName)),
-                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid archive access role name: dummy\"}", 400);
+                "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid archive access role 'dummy': Must match expected pattern: 'arn:aws:iam::\\\\d{12}:.+'\"}", 400);
 
         tester.assertResponse(request("/application/v4/tenant/scoober/archive-access", PUT)
                         .data("{\"role\":\"arn:aws:iam::123456789012:role/my-role\"}").roles(Role.administrator(tenantName)),
