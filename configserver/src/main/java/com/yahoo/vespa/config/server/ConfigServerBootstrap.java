@@ -204,23 +204,23 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     private boolean redeployAllApplications() throws InterruptedException {
         Instant end = Instant.now().plus(maxDurationOfRedeployment);
-        List<ApplicationId> applicationsNotRedeployed = applicationRepository.listApplications();
-        Collections.shuffle(applicationsNotRedeployed);
+        List<ApplicationId> applicationsToRedeploy = applicationRepository.listApplications();
+        Collections.shuffle(applicationsToRedeploy);
         long failCount = 0;
         do {
-            applicationsNotRedeployed = redeployApplications(applicationsNotRedeployed);
-            if ( ! applicationsNotRedeployed.isEmpty() && ! sleepTimeWhenRedeployingFails.isZero()) {
+            applicationsToRedeploy = redeployApplications(applicationsToRedeploy);
+            if ( ! applicationsToRedeploy.isEmpty() && ! sleepTimeWhenRedeployingFails.isZero()) {
                 Duration sleepTime = sleepTimeWhenRedeployingFails.multipliedBy(++failCount);
                 if (sleepTime.compareTo(Duration.ofMinutes(10)) > 0)
                     sleepTime = Duration.ofMinutes(10);
-                log.log(Level.INFO, "Redeployment of " + applicationsNotRedeployed + " not finished, will retry in " + sleepTime);
+                log.log(Level.INFO, "Redeployment of " + applicationsToRedeploy + " not finished, will retry in " + sleepTime);
                 Thread.sleep(sleepTime.toMillis());
             }
-        } while ( ! applicationsNotRedeployed.isEmpty() && Instant.now().isBefore(end));
+        } while ( ! applicationsToRedeploy.isEmpty() && Instant.now().isBefore(end));
 
-        if ( ! applicationsNotRedeployed.isEmpty()) {
+        if ( ! applicationsToRedeploy.isEmpty()) {
             log.log(Level.SEVERE, "Redeploying applications not finished after " + maxDurationOfRedeployment +
-                    ", exiting, applications that failed redeployment: " + applicationsNotRedeployed);
+                    ", exiting, applications that failed redeployment: " + applicationsToRedeploy);
             return false;
         }
         return true;
