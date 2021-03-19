@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.dockerapi.RegistryCredentials;
 import com.yahoo.vespa.hosted.dockerapi.exception.ContainerNotFoundException;
 import com.yahoo.vespa.hosted.dockerapi.exception.DockerException;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeAttributes;
+import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeMembership;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeState;
@@ -217,7 +218,7 @@ public class NodeAgentImpl implements NodeAgent {
 
     private Container startContainer(NodeAgentContext context) {
         ContainerData containerData = createContainerData(context);
-        ContainerResources wantedResources = context.nodeType() != NodeType.tenant || warmUpDuration(context.zone()).isNegative() ?
+        ContainerResources wantedResources = warmUpDuration(context).isNegative() ?
                 getContainerResources(context) : getContainerResources(context).withUnlimitedCpus();
         containerOperations.createContainer(context, containerData, wantedResources);
         containerOperations.startContainer(context);
@@ -363,7 +364,7 @@ public class NodeAgentImpl implements NodeAgent {
         ContainerResources wantedContainerResources = getContainerResources(context);
 
         if (healthChecker.isPresent() && firstSuccessfulHealthCheckInstant
-                .map(clock.instant().minus(warmUpDuration(context.zone()))::isBefore)
+                .map(clock.instant().minus(warmUpDuration(context))::isBefore)
                 .orElse(true))
             return existingContainer;
 
@@ -478,7 +479,7 @@ public class NodeAgentImpl implements NodeAgent {
                     if (firstSuccessfulHealthCheckInstant.isEmpty())
                         firstSuccessfulHealthCheckInstant = Optional.of(clock.instant());
 
-                    Duration timeLeft = Duration.between(clock.instant(), firstSuccessfulHealthCheckInstant.get().plus(warmUpDuration(context.zone())));
+                    Duration timeLeft = Duration.between(clock.instant(), firstSuccessfulHealthCheckInstant.get().plus(warmUpDuration(context)));
                     if (!container.get().resources.equalsCpu(getContainerResources(context)))
                         throw new ConvergenceException("Refusing to resume until warm up period ends (" +
                                 (timeLeft.isNegative() ? "next tick" : "in " + timeLeft) + ")");
@@ -611,9 +612,17 @@ public class NodeAgentImpl implements NodeAgent {
         return credentialsMaintainers;
     }
 
-    private Duration warmUpDuration(ZoneApi zone) {
-        return zone.getSystemName().isCd() || zone.getEnvironment().isTest()
+    private Duration warmUpDuration(NodeAgentContext context) {
+        ZoneApi zone = context.zone();
+        Optional<NodeMembership> membership = context.node().membership();
+        return zone.getSystemName().isCd()
+               || zone.getEnvironment().isTest()
+               || (context.nodeType() != NodeType.tenant)
+               || membership.map(mem -> ! (mem.type().isContainer() ||
+                                           mem.type().isCombined()))
+                                  .orElse(false)
                 ? Duration.ofSeconds(-1)
                 : warmUpDuration;
     }
+
 }
