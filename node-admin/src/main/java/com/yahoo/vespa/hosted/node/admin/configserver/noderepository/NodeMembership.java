@@ -1,4 +1,4 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.configserver.noderepository;
 
 import java.util.Objects;
@@ -33,9 +33,7 @@ public class NodeMembership {
         return group;
     }
 
-    public int index() {
-        return index;
-    }
+    public int index() { return index; }
 
     public boolean isRetired() {
         return retired;
@@ -85,8 +83,9 @@ public class NodeMembership {
         }
 
         public boolean isAdmin() { return "admin".equals(type); }
-        public boolean isContent() { return "content".equals(type) || "combined".equals(type); }
-        public boolean isContainer() { return "container".equals(type) || "combined".equals(type); }
+        public boolean isContent() { return "content".equals(type) || isCombined(); }
+        public boolean isCombined() { return "combined".equals(type); }
+        public boolean isContainer() { return "container".equals(type) || isCombined(); }
 
         public String value() {
             return type;
