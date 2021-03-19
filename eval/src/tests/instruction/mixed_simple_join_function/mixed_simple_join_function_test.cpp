@@ -127,6 +127,7 @@ TEST("require that unit join is optimized") {
 
 TEST("require that trivial dimensions do not affect overlap calculation") {
     TEST_DO(verify_optimized("c5d1+b1c5", Primary::RHS, Overlap::FULL, 1));
+    TEST_DO(verify_simple("@c5d1+@b1c5", Primary::RHS, Overlap::FULL, 1, true, true, true));
 }
 
 TEST("require that outer nesting is preferred to inner nesting") {
