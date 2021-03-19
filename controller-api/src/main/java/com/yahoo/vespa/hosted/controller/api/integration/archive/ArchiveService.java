@@ -5,6 +5,8 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.net.URI;
+import java.util.Collection;
+import java.util.Map;
 import java.util.Optional;
 
 /**
@@ -16,8 +18,7 @@ public interface ArchiveService {
 
     Optional<URI> archiveUriFor(ZoneId zoneId, TenantName tenant);
 
-    // TODO: Method to configure archive permissions/access for a tenant
-
-    // TODO: Method to revoke permission/access for a tenant
-
+    // TODO archive: combine into one method?
+    void updateBucketPolicy(ZoneId zoneId, String bucketName, Map<TenantName, String> authorizeIamRoleByTenantName);
+    void updateKeyPolicy(ZoneId zone, Collection<String> iamRolesToAuthorizeDecrypt);
 }
