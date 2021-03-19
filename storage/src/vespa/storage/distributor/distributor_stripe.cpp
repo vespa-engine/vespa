@@ -39,7 +39,7 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
                                      framework::TickingThreadPool& threadPool,
                                      DoneInitializeHandler& doneInitHandler,
                                      bool manageActiveBucketCopies,
-                                     ChainedMessageSender* messageSender)
+                                     ChainedMessageSender& messageSender)
     : StorageLink("distributor"),
       DistributorInterface(),
       framework::StatusReporter("distributor", "Distributor"),
@@ -165,8 +165,7 @@ void DistributorStripe::onClose() {
 }
 
 void DistributorStripe::send_up_without_tracking(const std::shared_ptr<api::StorageMessage>& msg) {
-    assert(_messageSender);
-    _messageSender->sendUp(msg);
+    _messageSender.sendUp(msg);
 }
 
 void
@@ -551,7 +550,7 @@ bool is_client_request(const api::StorageMessage& msg) noexcept {
 void DistributorStripe::handle_or_propagate_message(const std::shared_ptr<api::StorageMessage>& msg) {
     if (!handleMessage(msg)) {
         MBUS_TRACE(msg->getTrace(), 9, "Distributor: Not handling it. Sending further down.");
-        sendDown(msg);
+        _messageSender.sendDown(msg);
     }
 }
 

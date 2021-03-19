@@ -57,7 +57,7 @@ public:
                       framework::TickingThreadPool&,
                       DoneInitializeHandler&,
                       bool manageActiveBucketCopies,
-                      ChainedMessageSender* = nullptr);
+                      ChainedMessageSender& messageSender);
 
     ~DistributorStripe() override;
 
@@ -72,7 +72,7 @@ public:
     void send_up_without_tracking(const std::shared_ptr<api::StorageMessage>&) override;
 
     ChainedMessageSender& getMessageSender() override {
-        return (_messageSender == 0 ? *this : *_messageSender);
+        return _messageSender;
     }
 
     DistributorMetricSet& getMetrics() override { return _metrics; }
@@ -293,7 +293,7 @@ private:
     StatusReporterDelegate _distributorStatusDelegate;
     StatusReporterDelegate _bucketDBStatusDelegate;
     IdealStateManager _idealStateManager;
-    ChainedMessageSender* _messageSender;
+    ChainedMessageSender& _messageSender;
     ExternalOperationHandler _externalOperationHandler;
 
     std::shared_ptr<lib::Distribution> _distribution;

@@ -51,7 +51,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _metrics(std::make_shared<DistributorMetricSet>()),
       _messageSender(messageSender),
       _stripe(std::make_unique<DistributorStripe>(compReg, *_metrics, node_identity, threadPool, doneInitHandler,
-                                                  manageActiveBucketCopies, this)),
+                                                  manageActiveBucketCopies, *this)),
       // TODO STRIPE remove once DistributorComponent no longer references bucket space repos
       _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
       _readOnlyBucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
