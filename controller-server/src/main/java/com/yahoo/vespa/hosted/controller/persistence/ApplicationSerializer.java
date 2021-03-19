@@ -1,10 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
-import com.google.common.hash.Hashing;
-import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
@@ -53,7 +49,6 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 
 /**
  * Serializes {@link Application}s to/from slime.
@@ -297,7 +292,7 @@ public class ApplicationSerializer {
         Inspector root = slime.get();
 
         TenantAndApplicationId id = TenantAndApplicationId.fromSerialized(root.field(idField).asString());
-        Instant createdAt = Instant.ofEpochMilli(root.field(createdAtField).asLong());
+        Instant createdAt = Serializers.instant(root.field(createdAtField));
         DeploymentSpec deploymentSpec = DeploymentSpec.fromXml(root.field(deploymentSpecField).asString(), false);
         ValidationOverrides validationOverrides = ValidationOverrides.fromXml(root.field(validationOverridesField).asString());
         Optional<IssueId> deploymentIssueId = Serializers.optionalString(root.field(deploymentIssueField)).map(IssueId::from);
@@ -356,7 +351,7 @@ public class ApplicationSerializer {
         return new Deployment(zoneIdFromSlime(deploymentObject.field(zoneField)),
                               applicationVersionFromSlime(deploymentObject.field(applicationPackageRevisionField)),
                               Version.fromString(deploymentObject.field(versionField).asString()),
-                              Instant.ofEpochMilli(deploymentObject.field(deployTimeField).asLong()),
+                              Serializers.instant(deploymentObject.field(deployTimeField)),
                               deploymentMetricsFromSlime(deploymentObject.field(deploymentMetricsField)),
                               DeploymentActivity.create(Serializers.optionalInstant(deploymentObject.field(lastQueriedField)),
                                                         Serializers.optionalInstant(deploymentObject.field(lastWrittenField)),
@@ -366,9 +361,7 @@ public class ApplicationSerializer {
     }
 
     private DeploymentMetrics deploymentMetricsFromSlime(Inspector object) {
-        Optional<Instant> instant = object.field(deploymentMetricsUpdateTime).valid() ?
-                Optional.of(Instant.ofEpochMilli(object.field(deploymentMetricsUpdateTime).asLong())) :
-                Optional.empty();
+        Optional<Instant> instant = Serializers.optionalInstant(object.field(deploymentMetricsUpdateTime));
         return new DeploymentMetrics(object.field(deploymentMetricsQPSField).asDouble(),
                                      object.field(deploymentMetricsWPSField).asDouble(),
                                      object.field(deploymentMetricsDocsField).asDouble(),
@@ -391,7 +384,7 @@ public class ApplicationSerializer {
         object.traverse((ArrayTraverser) (idx, statusObject) -> statusMap.put(new RotationId(statusObject.field(rotationIdField).asString()),
                                                                               new RotationStatus.Targets(
                                                                                       singleRotationStatusFromSlime(statusObject.field(statusField)),
-                                                                                      Instant.ofEpochMilli(statusObject.field(lastUpdatedField).asLong()))));
+                                                                                      Serializers.instant(statusObject.field(lastUpdatedField)))));
         return RotationStatus.from(statusMap);
     }
 
@@ -440,7 +433,7 @@ public class ApplicationSerializer {
         object.field(jobStatusField).traverse((ArrayTraverser) (__, jobPauseObject) ->
                 JobType.fromOptionalJobName(jobPauseObject.field(jobTypeField).asString())
                        .ifPresent(jobType -> jobPauses.put(jobType,
-                                                           Instant.ofEpochMilli(jobPauseObject.field(pausedUntilField).asLong()))));
+                                                           Serializers.instant(jobPauseObject.field(pausedUntilField)))));
         return jobPauses;
     }
 

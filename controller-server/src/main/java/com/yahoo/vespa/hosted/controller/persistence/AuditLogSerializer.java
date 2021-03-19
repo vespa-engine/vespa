@@ -7,7 +7,6 @@ import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLog;
 
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -52,7 +51,7 @@ public class AuditLogSerializer {
         Cursor root = slime.get();
         root.field(entriesField).traverse((ArrayTraverser) (i, entryObject) -> {
             entries.add(new AuditLog.Entry(
-                    Instant.ofEpochMilli(entryObject.field(atField).asLong()),
+                    Serializers.instant(entryObject.field(atField)),
                     entryObject.field(principalField).asString(),
                     methodFrom(entryObject.field(methodField)),
                     entryObject.field(resourceField).asString(),

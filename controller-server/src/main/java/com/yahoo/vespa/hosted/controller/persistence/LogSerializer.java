@@ -13,7 +13,6 @@ import com.yahoo.vespa.hosted.controller.deployment.Step;
 
 import java.io.IOException;
 import java.io.UncheckedIOException;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
@@ -93,7 +92,7 @@ class LogSerializer {
 
     private LogEntry fromSlime(Inspector entryObject) {
         return new LogEntry(entryObject.field(idField).asLong(),
-                            Instant.ofEpochMilli(entryObject.field(timestampField).asLong()),
+                            Serializers.instant(entryObject.field(timestampField)),
                             typeOf(entryObject.field(typeField).asString()),
                             entryObject.field(messageField).asString());
     }

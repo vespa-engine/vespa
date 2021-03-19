@@ -20,6 +20,10 @@ public class Serializers {
 
     private Serializers() {}
 
+    public static Instant instant(Inspector field) {
+        return Instant.ofEpochMilli(field.asLong());
+    }
+
     public static OptionalLong optionalLong(Inspector field) {
         return field.valid() ? OptionalLong.of(field.asLong()) : OptionalLong.empty();
     }
@@ -37,13 +41,11 @@ public class Serializers {
     }
 
     public static Optional<Instant> optionalInstant(Inspector field) {
-        var value = optionalLong(field);
-        return value.isPresent() ? Optional.of(Instant.ofEpochMilli(value.getAsLong())) : Optional.empty();
+        return optionalLong(field).stream().mapToObj(Instant::ofEpochMilli).findFirst();
     }
 
     public static Optional<Duration> optionalDuration(Inspector field) {
-        var value = optionalLong(field);
-        return value.isPresent() ? Optional.of(Duration.ofMillis(value.getAsLong())) : Optional.empty();
+        return optionalLong(field).stream().mapToObj(Duration::ofMillis).findFirst();
     }
 
 }
