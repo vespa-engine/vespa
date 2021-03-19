@@ -8,6 +8,7 @@
 #include <vespa/document/update/documentupdate.h>
 #include <vespa/storage/common/reindexing_constants.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/externaloperationhandler.h>

@@ -14,6 +14,8 @@ vespa_add_library(storage_distributor
     distributor_bucket_space_repo.cpp
     distributor.cpp
     distributor_host_info_reporter.cpp
+    distributor_status.cpp
+    distributor_stripe.cpp
     distributorcomponent.cpp
     distributormessagesender.cpp
     distributormetricsset.cpp

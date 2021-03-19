@@ -8,6 +8,7 @@
 #include <vespa/storage/distributor/operations/external/read_for_write_visitor_operation.h>
 #include <vespa/storage/distributor/operations/external/visitoroperation.h>
 #include <vespa/storage/distributor/distributor.h>
+#include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributormetricsset.h>
 #include <vespa/storage/distributor/pendingmessagetracker.h>
 #include <vespa/storage/distributor/uuid_generator.h>
