@@ -162,14 +162,6 @@ struct LhsRhs {
     }
 };
 
-CellType join_ct(CellType lct, CellType rct) {
-    if (lct == CellType::DOUBLE || rct == CellType::DOUBLE) {
-        return CellType::DOUBLE;
-    } else {
-        return CellType::FLOAT;
-    }
-}
-
 TEST("require that various parameter combinations work") {
     for (CellType lct : CellTypeUtils::list_types()) {
         for (CellType rct : CellTypeUtils::list_types()) {
@@ -197,7 +189,7 @@ TEST("require that various parameter combinations work") {
                                 param_repo.add("b", b_spec);
                             }
                             TEST_STATE(expr);
-                            CellType result_ct = join_ct(lct, rct);
+                            CellType result_ct = CellMeta::join(CellMeta{lct, false}, CellMeta{rct, false}).cell_type;
                             Primary primary = Primary::RHS;
                             if (params.overlap == Overlap::FULL) {
                                 bool w_lhs = (lct == result_ct) && left_mut;
