@@ -1,6 +1,8 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/eval/eval/fast_value.h>
+#include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/tensor_function.h>
 #include <vespa/eval/instruction/mixed_simple_join_function.h>
 #include <vespa/eval/eval/test/eval_fixture.h>
@@ -14,6 +16,9 @@ using namespace vespalib::eval::test;
 using namespace vespalib::eval::tensor_function;
 
 using vespalib::make_string_short::fmt;
+
+const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
+const ValueBuilderFactory &test_factory  = SimpleValueBuilderFactory::get();
 
 using Primary = MixedSimpleJoinFunction::Primary;
 using Overlap = MixedSimpleJoinFunction::Overlap;
@@ -179,23 +184,68 @@ vespalib::string adjust_param(const vespalib::string &str, bool mut_cells, bool 
     return result;
 }
 
+CellType join_ct(CellType lct, CellType rct) {
+    if (lct == CellType::DOUBLE || rct == CellType::DOUBLE) {
+        return CellType::DOUBLE;
+    } else {
+        return CellType::FLOAT;
+    }
+}
+
 TEST("require that various parameter combinations work") {
-    for (bool left_mut: {false, true}) {
-        for (bool right_mut: {false, true}) {
-            for (const char *op_pattern: {"%s+%s", "%s-%s", "%s*%s"}) {
-                for (const LhsRhs &params:
-                         {       LhsRhs("y5",   "y5", 5,  5, Overlap::FULL),
-                                 LhsRhs("y5", "x3y5", 5, 15, Overlap::INNER),
-                                 LhsRhs("y5", "y5z3", 5, 15, Overlap::OUTER),
-                                 LhsRhs("x3y5", "y5", 15, 5, Overlap::INNER),
-                                 LhsRhs("y5z3", "y5", 15, 5, Overlap::OUTER)})
-                {
-                    vespalib::string left = adjust_param(params.lhs, left_mut, false);
-                    vespalib::string right = adjust_param(params.rhs, right_mut, true);
-                    vespalib::string expr = fmt(op_pattern, left.c_str(), right.c_str());
-                    TEST_STATE(expr.c_str());
-                    verify_optimized(expr, params.overlap, params.factor,
-                                     left_mut, right_mut);
+    for (CellType lct : CellTypeUtils::list_types()) {
+        for (CellType rct : CellTypeUtils::list_types()) {
+            for (bool left_mut: {false, true}) {
+                for (bool right_mut: {false, true}) {
+                    for (const char * expr: {"a+b", "a-b", "a*b"}) {
+                        for (const LhsRhs &params:
+                                 {       LhsRhs("y5",   "y5", 5,  5, Overlap::FULL),
+                                         LhsRhs("y5", "x3y5", 5, 15, Overlap::INNER),
+                                         LhsRhs("y5", "y5z3", 5, 15, Overlap::OUTER),
+                                         LhsRhs("x3y5", "y5", 15, 5, Overlap::INNER),
+                                         LhsRhs("y5z3", "y5", 15, 5, Overlap::OUTER)})
+                        {
+                            EvalFixture::ParamRepo param_repo;
+                            auto a_spec = GenSpec::from_desc(params.lhs).cells(lct).seq(AX_B(0.25, 1.125));
+                            auto b_spec = GenSpec::from_desc(params.rhs).cells(rct).seq(AX_B(-0.25, 25.0));
+                            if (left_mut) {
+                                param_repo.add_mutable("a", a_spec);
+                            } else {
+                                param_repo.add("a", a_spec);
+                            }
+                            if (right_mut) {
+                                param_repo.add_mutable("b", b_spec);
+                            } else {
+                                param_repo.add("b", b_spec);
+                            }
+                            TEST_STATE(expr);
+                            CellType result_ct = join_ct(lct, rct);
+                            Primary primary = Primary::RHS;
+                            if (params.overlap == Overlap::FULL) {
+                                bool w_lhs = (lct == result_ct) && left_mut;
+                                bool w_rhs = (rct == result_ct) && right_mut;
+                                if (w_lhs && !w_rhs) {
+                                    primary = Primary::LHS;
+                                }
+                            } else if (params.lhs_size > params.rhs_size) {
+                                primary = Primary::LHS;
+                            }
+                            bool pri_mut = (primary == Primary::LHS) ? left_mut : right_mut;
+                            bool pri_same_ct = (primary == Primary::LHS) ? (lct == result_ct) : (rct == result_ct);
+                            bool inplace = (pri_mut && pri_same_ct);
+                            auto expect = EvalFixture::ref(expr, param_repo);
+                            EvalFixture slow_fixture(prod_factory, expr, param_repo, false);
+                            EvalFixture test_fixture(test_factory, expr, param_repo, true, true);
+                            EvalFixture fixture(prod_factory, expr, param_repo, true, true);
+                            EXPECT_EQUAL(fixture.result(), expect);
+                            EXPECT_EQUAL(slow_fixture.result(), expect);
+                            EXPECT_EQUAL(test_fixture.result(), expect);
+                            auto info = fixture.find_all<FunInfo::LookFor>();
+                            ASSERT_EQUAL(info.size(), 1u);
+                            FunInfo details{params.overlap, params.factor, primary, left_mut, right_mut, inplace};
+                            details.verify(fixture, *info[0]);
+                        }
+                    }
                 }
             }
         }
