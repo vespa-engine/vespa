@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.zookeeper;
 
+import com.yahoo.vespa.zookeeper.client.ZkClientConfigBuilder;
 import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.admin.ZooKeeperAdmin;
 
@@ -45,7 +46,7 @@ public class VespaZooKeeperAdminImpl implements VespaZooKeeperAdmin {
 
     private ZooKeeperAdmin createAdmin(String connectionSpec) throws IOException {
         return new ZooKeeperAdmin(connectionSpec, (int) sessionTimeout().toMillis(),
-                                  (event) -> log.log(Level.INFO, event.toString()));
+                                  (event) -> log.log(Level.INFO, event.toString()), new ZkClientConfigBuilder().toConfig());
     }
 
     private static boolean retryOn(KeeperException e) {
