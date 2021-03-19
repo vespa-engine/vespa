@@ -21,6 +21,13 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>zookeeper-client-common</artifactId>
       <version>${project.version}</version>
+      <exclusions>
+        <exclusion>
+          <!-- Don't use ZK version from zookeeper-client-common -->
+          <groupId>org.apache.zookeeper</groupId>
+          <artifactId>zookeeper</artifactId>
+        </exclusion>
+      </exclusions>
     </dependency>
     <dependency>
       <groupId>org.apache.zookeeper</groupId>
