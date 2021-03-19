@@ -39,11 +39,11 @@ public class OsUpgradeActivatorTest {
 
         // Create infrastructure nodes
         var configHostApplication = ApplicationId.from("hosted-vespa", "configserver-host", "default");
-        var configHostNodes = tester.makeReadyNodes(3, "default", NodeType.confighost);
+        var configHostNodes = tester.makeReadyNodes(3, "default", NodeType.confighost, 1);
         tester.prepareAndActivateInfraApplication(configHostApplication, NodeType.confighost, version0);
 
         var tenantHostApplication = ApplicationId.from("hosted-vespa", "tenant-host", "default");
-        var tenantHostNodes = tester.makeReadyNodes(3, "default", NodeType.host);
+        var tenantHostNodes = tester.makeReadyNodes(3, "default", NodeType.host, 1);
         tester.prepareAndActivateInfraApplication(tenantHostApplication, NodeType.host, version0);
 
         var allNodes = new ArrayList<>(configHostNodes);

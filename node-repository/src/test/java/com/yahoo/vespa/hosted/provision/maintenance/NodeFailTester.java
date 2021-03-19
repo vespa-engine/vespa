@@ -251,9 +251,12 @@ public class NodeFailTester {
 
     private List<Node> createReadyNodes(int count, int startIndex, Optional<String> parentHostname, Flavor flavor, NodeType nodeType) {
         List<Node> nodes = new ArrayList<>(count);
+        int lastOctetOfPoolAddress = 0;
         for (int i = startIndex; i < startIndex + count; i++) {
             String hostname = "host" + i;
-            IP.Config ipConfig = new IP.Config(nodeRepository.nameResolver().resolveAll(hostname), Set.of());
+            Set<String> ipPool = nodeType.isHost() ? Set.of("127.0." + i + "." + (++lastOctetOfPoolAddress)) : Set.of();
+            IP.Config ipConfig = new IP.Config(nodeRepository.nameResolver().resolveAll(hostname),
+                                               ipPool);
             Node.Builder builder = Node.create("node" + i, ipConfig, hostname, flavor, nodeType);
             parentHostname.ifPresent(builder::parentHostname);
             nodes.add(builder.build());

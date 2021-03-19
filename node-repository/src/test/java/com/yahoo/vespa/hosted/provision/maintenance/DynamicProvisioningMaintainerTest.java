@@ -452,7 +452,7 @@ public class DynamicProvisioningMaintainerTest {
         dynamicProvisioningTester.hostProvisioner.overrideHostFlavor("default");
 
         // Initial config server hosts are provisioned manually
-        List<Node> provisionedHosts = tester.makeReadyNodes(3, "default", hostType).stream()
+        List<Node> provisionedHosts = tester.makeReadyNodes(3, "default", hostType, 1).stream()
                                             .sorted(Comparator.comparing(Node::hostname))
                                             .collect(Collectors.toList());
         tester.prepareAndActivateInfraApplication(hostApp, hostType);
