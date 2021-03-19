@@ -173,7 +173,10 @@ Metric::getPath() const
     if (_owner == 0 || _owner->_owner == 0) {
         return getName();
     } else {
-        return _owner->getPath() + "." + getName();
+        vespalib::string path(_owner->getPath());
+        path.append('.');
+        path.append(getName());
+        return path;
     }
 }
 
