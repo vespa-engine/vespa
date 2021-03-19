@@ -75,6 +75,7 @@ private:
     InterpretedFunction::Context    _ictx;
     std::vector<Value::UP>          _param_values;
     SimpleObjectParams              _params;
+    const Value                    &_result_value;
     TensorSpec                      _result;
 
     template <typename T>
@@ -91,6 +92,21 @@ private:
 
     void detect_param_tampering(const ParamRepo &param_repo, bool allow_mutable) const;
 
+    template <typename FunInfo>
+    auto verify_callback(const FunInfo &verificator,
+                         const typename FunInfo::LookFor &what) const
+        -> decltype(verificator.verify(what))
+    {
+        return verificator.verify(what);
+    }
+    template <typename FunInfo>
+    auto verify_callback(const FunInfo &verificator,
+                         const typename FunInfo::LookFor &what) const
+        -> decltype(verificator.verify(*this, what))
+    {
+        return verificator.verify(*this, what);
+    }
+
 public:
     EvalFixture(const ValueBuilderFactory &factory, const vespalib::string &expr, const ParamRepo &param_repo,
                 bool optimized = true, bool allow_mutable = false);
@@ -101,6 +117,8 @@ public:
         find_all(_tensor_function, list);
         return list;
     }
+    const Value &result_value() const { return _result_value; }
+    const Value &param_value(size_t idx) const { return *(_param_values[idx]); }
     const TensorSpec &result() const { return _result; }
     const TensorSpec get_param(size_t idx) const;
     size_t num_params() const;
@@ -120,7 +138,7 @@ public:
     // trailer starting with '$' ('a5b3$2') to allow multiple
     // parameters with the same description as well as scalars
     // ('$this_is_a_scalar').
-
+                         
     template <typename FunInfo>
     static void verify(const vespalib::string &expr, const std::vector<FunInfo> &fun_info, CellTypeSpace cell_type_space) {
         auto fun = Function::parse(expr);
@@ -140,7 +158,7 @@ public:
             auto info = fixture.find_all<typename FunInfo::LookFor>();
             ASSERT_EQUAL(info.size(), fun_info.size());
             for (size_t i = 0; i < fun_info.size(); ++i) {
-                fun_info[i].verify(*info[i]);
+                fixture.verify_callback<FunInfo>(fun_info[i], *info[i]);
             }
         }
     }

@@ -191,7 +191,8 @@ EvalFixture::EvalFixture(const ValueBuilderFactory &factory,
       _ictx(_ifun),
       _param_values(make_params(_factory, *_function, param_repo)),
       _params(get_refs(_param_values)),
-      _result(spec_from_value(_ifun.eval(_ictx, _params)))
+      _result_value(_ifun.eval(_ictx, _params)),
+      _result(spec_from_value(_result_value))
 {
     auto result_type = ValueType::from_spec(_result.type());
     ASSERT_TRUE(!result_type.is_error());
