@@ -36,7 +36,7 @@ public:
     using sgeneration_t = GenerationHandler::sgeneration_t;
 private:
     GenerationHolder _gen_holder;
-    static constexpr size_t num_stripes = 1;
+    static constexpr size_t num_stripes = 3;
     std::atomic<FixedSizeHashMap *> _maps[num_stripes];
     std::unique_ptr<const EntryComparator> _comp;
 
