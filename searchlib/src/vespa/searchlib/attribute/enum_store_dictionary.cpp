@@ -113,6 +113,14 @@ bool
 EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::find_frozen_index(const vespalib::datastore::EntryComparator& cmp,
                                                     Index& idx) const
 {
+    if constexpr (has_unordered_dictionary) {
+        auto find_result = this->_unordered_dict.find(cmp, EntryRef());
+        if (find_result != nullptr) {
+            idx = find_result->first.load_acquire();
+            return true;
+        }
+        return false;
+    }
     auto itr = this->_dict.getFrozenView().find(Index(), cmp);
     if (!itr.valid()) {
         return false;
@@ -152,6 +160,13 @@ template <typename DictionaryT, typename UnorderedDictionaryT>
 std::pair<IEnumStore::Index, EntryRef>
 EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::find_posting_list(const vespalib::datastore::EntryComparator& cmp, EntryRef root) const
 {
+    if constexpr (has_unordered_dictionary) {
+        auto find_result = this->_unordered_dict.find(cmp, EntryRef());
+        if (find_result != nullptr) {
+            return std::make_pair(find_result->first.load_acquire(), find_result->second.load_acquire());
+        }
+        return std::make_pair(Index(), EntryRef());
+    }
     typename DictionaryType::ConstIterator itr(vespalib::btree::BTreeNode::Ref(), this->_dict.getAllocator());
     itr.lower_bound(root, Index(), cmp);
     if (itr.valid() && !cmp.less(Index(), itr.getKey())) {
