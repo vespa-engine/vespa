@@ -72,6 +72,11 @@ enum Policy {
                         .on(PathGroup.tenant, PathGroup.tenantInfo, PathGroup.tenantUsers, PathGroup.applicationUsers)
                         .in(SystemName.all())),
 
+    /** Access to set and unset archive access role under a tenant. */
+    tenantArchiveAccessManagement(Privilege.grant(Action.update, Action.delete)
+                                           .on(PathGroup.tenantArchiveAccess)
+                                           .in(SystemName.all())),
+
     /** Access to create application under a certain tenant. */
     applicationCreate(Privilege.grant(Action.create)
                                .on(PathGroup.application)

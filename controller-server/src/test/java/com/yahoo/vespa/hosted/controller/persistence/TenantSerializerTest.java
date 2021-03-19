@@ -120,7 +120,7 @@ public class TenantSerializerTest {
                         new TenantSecretStore("ss1", "123", "role1"),
                         new TenantSecretStore("ss2", "124", "role2")
                 ),
-                Optional.of("role3")
+                Optional.of("arn:aws:iam::123456789012:role/my-role")
         );
         CloudTenant serialized = (CloudTenant) serializer.tenantFrom(serializer.toSlime(tenant));
         assertEquals(tenant.info(), serialized.info());

@@ -142,12 +142,16 @@ public class ContainerTester {
                        expectedStatusCode);
     }
 
-    public void assertResponse(Supplier<Request> requestSupplier, Consumer<Response> responseAssertion, int expectedStatusCode) {
+    public void assertResponse(Supplier<Request> requestSupplier, ConsumerThrowingException<Response> responseAssertion, int expectedStatusCode) {
         var request = requestSupplier.get();
         FilterResult filterResult = invokeSecurityFilters(request);
         request = filterResult.request;
         Response response = filterResult.response != null ? filterResult.response : container.handleRequest(request);
-        responseAssertion.accept(response);
+        try {
+            responseAssertion.accept(response);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
         assertEquals("Status code", expectedStatusCode, response.getStatus());
     }
 
@@ -203,5 +207,9 @@ public class ContainerTester {
         }
     }
 
+    @FunctionalInterface
+    public interface ConsumerThrowingException<T> {
+        void accept(T t) throws Exception;
+    }
 }
     
