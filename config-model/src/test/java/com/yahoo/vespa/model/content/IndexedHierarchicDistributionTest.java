@@ -254,10 +254,4 @@ public class IndexedHierarchicDistributionTest {
         getTwoGroupsCluster(4, 2, "2|*");
     }
 
-    @Test
-    public void allowNoReadyCopies() throws Exception {
-        // The active one should be indexed anyhow. Setting up no ready copies
-        getTwoGroupsCluster(4, 0, "2|*");
-    }
-
 }
