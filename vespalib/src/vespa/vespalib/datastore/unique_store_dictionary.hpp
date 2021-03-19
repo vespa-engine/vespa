@@ -271,4 +271,11 @@ UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::get_read_snap
     return std::make_unique<ReadSnapshotImpl>(_dict.getFrozenView());
 }
 
+template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
+bool
+UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::get_has_unordered_dictionary() const
+{
+    return has_unordered_dictionary;
+}
+
 }
