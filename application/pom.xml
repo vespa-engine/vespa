@@ -60,7 +60,7 @@
       <version>${project.version}</version>
       <scope>compile</scope>
     </dependency>
-    <!-- Because these are provided in jdisc_http_service and just preinstalled: -->
+    <!-- Because these are provided in container-core and just preinstalled: -->
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>jdisc_jetty</artifactId>

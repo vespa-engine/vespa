@@ -42,13 +42,6 @@
 
         <dependency>
             <groupId>com.yahoo.vespa</groupId>
-            <artifactId>jdisc_http_service</artifactId>
-            <version>${project.version}</version>
-            <scope>provided</scope>
-        </dependency>
-
-        <dependency>
-            <groupId>com.yahoo.vespa</groupId>
             <artifactId>zkfacade</artifactId>
             <version>${project.version}</version>
             <scope>provided</scope>
