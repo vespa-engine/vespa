@@ -40,16 +40,13 @@ The stateless container is implemented in Java.
 jDisc core modules:
 
 - [jdisc_core](https://github.com/vespa-engine/vespa/tree/master/jdisc_core) - the core jDisc functionality
-- [jdisc_http_service](https://github.com/vespa-engine/vespa/tree/master/jdisc_http_service) - HTTP connector for jDisc, implemented using Jetty.
 
 jDisc container modules, layered on jDisc core:
 
 - [container-disc](https://github.com/vespa-engine/vespa/tree/master/container-disc) - integration between the jDisc container and jDisc core layers.
-- [container-core](https://github.com/vespa-engine/vespa/tree/master/container-core) - core jDisc container functionality: Metrics, OSGi integration for component bundles, etc.
+- [container-core](https://github.com/vespa-engine/vespa/tree/master/container-core) - core jDisc container functionality: Metrics, OSGi integration for component bundles, HTTP connector, etc.
 - [component](https://github.com/vespa-engine/vespa/tree/master/component) - the component model. Components (in Java) will implement or subclass a type for this module.
-- [chain](https://github.com/vespa-engine/vespa/tree/master/chain) - generic support for chaining components in a Chain of Responsibility structure, which is a pattern used repeatedly in higher level modules.
 - [container-di](https://github.com/vespa-engine/vespa/tree/master/container-di) - component dependency injection framework for the container, compatible with Guice annotations but an separate implementation which handles injection of config and injection of component collections.
-- [processing](https://github.com/vespa-engine/vespa/tree/master/processing) - generic, chainable request-response processing framework (Processors).
 
 Search container, layered on jDisc container:
 
