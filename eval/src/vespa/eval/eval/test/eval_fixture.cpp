@@ -199,13 +199,6 @@ EvalFixture::EvalFixture(const ValueBuilderFactory &factory,
     TEST_DO(detect_param_tampering(param_repo, allow_mutable));
 }
 
-const TensorSpec
-EvalFixture::get_param(size_t idx) const
-{
-    ASSERT_LESS(idx, _param_values.size());
-    return spec_from_value(*(_param_values[idx]));
-}
-
 size_t
 EvalFixture::num_params() const
 {

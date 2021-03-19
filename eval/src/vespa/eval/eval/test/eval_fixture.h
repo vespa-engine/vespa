@@ -120,7 +120,6 @@ public:
     const Value &result_value() const { return _result_value; }
     const Value &param_value(size_t idx) const { return *(_param_values[idx]); }
     const TensorSpec &result() const { return _result; }
-    const TensorSpec get_param(size_t idx) const;
     size_t num_params() const;
     static TensorSpec ref(const vespalib::string &expr, const ParamRepo &param_repo);
     static TensorSpec prod(const vespalib::string &expr, const ParamRepo &param_repo) {
