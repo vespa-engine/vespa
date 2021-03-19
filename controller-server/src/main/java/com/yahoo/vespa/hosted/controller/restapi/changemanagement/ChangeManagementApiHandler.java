@@ -37,7 +37,7 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
 
     public ChangeManagementApiHandler(LoggingRequestHandler.Context ctx, Controller controller) {
         super(ctx, controller.auditLogger());
-        this.assessor = new ChangeManagementAssessor(controller);
+        this.assessor = new ChangeManagementAssessor(controller.serviceRegistry().configServer().nodeRepository());
         this.controller = controller;
     }
 

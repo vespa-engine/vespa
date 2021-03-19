@@ -106,6 +106,9 @@ public interface NodeRepository {
 
     void reboot(ZoneId zoneId, String hostName);
 
+    /** Checks whether the zone has the spare capacity to remove the given hosts */
+    boolean isReplaceable(ZoneId zoneId, List<HostName> hostNames);
+
     private static Node toNode(NodeRepositoryNode node) {
         var application = Optional.ofNullable(node.getOwner())
                                   .map(owner -> ApplicationId.from(owner.getTenant(), owner.getApplication(),

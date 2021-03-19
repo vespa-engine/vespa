@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeMemb
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
+import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import org.junit.Assert;
 import org.junit.Test;
 
@@ -17,6 +18,8 @@ import java.util.List;
 
 public class ChangeManagementAssessorTest {
 
+    private ChangeManagementAssessor changeManagementAssessor = new ChangeManagementAssessor(new NodeRepositoryMock());
+
     @Test
     public void empty_input_variations() {
         ZoneId zone = ZoneId.from("prod", "eu-trd");
@@ -25,7 +28,7 @@ public class ChangeManagementAssessorTest {
 
         // Both zone and hostnames are empty
         List<ChangeManagementAssessor.Assessment> assessments
-                = ChangeManagementAssessor.assessmentInner(hostNames, allNodesInZone, zone);
+                = changeManagementAssessor.assessmentInner(hostNames, allNodesInZone, zone);
         Assert.assertEquals(0, assessments.size());
     }
 
@@ -43,7 +46,7 @@ public class ChangeManagementAssessorTest {
 
         // Make Assessment
         List<ChangeManagementAssessor.Assessment> assessments
-                = ChangeManagementAssessor.assessmentInner(hostNames, allNodesInZone, zone);
+                = changeManagementAssessor.assessmentInner(hostNames, allNodesInZone, zone);
 
         // Assess the assessment :-o
         Assert.assertEquals(1, assessments.size());
@@ -81,7 +84,7 @@ public class ChangeManagementAssessorTest {
 
         // Make Assessment
         List<ChangeManagementAssessor.Assessment> assessments
-                = ChangeManagementAssessor.assessmentInner(hostNames, allNodesInZone, zone);
+                = changeManagementAssessor.assessmentInner(hostNames, allNodesInZone, zone);
 
         // Assess the assessment :-o
         Assert.assertEquals(1, assessments.size()); //One cluster is impacted

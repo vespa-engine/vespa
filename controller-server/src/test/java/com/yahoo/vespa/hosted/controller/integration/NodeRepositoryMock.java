@@ -284,6 +284,11 @@ public class NodeRepositoryMock implements NodeRepository {
         throw new UnsupportedOperationException();
     }
 
+    @Override
+    public boolean isReplaceable(ZoneId zoneId, List<HostName> hostNames) {
+        return false;
+    }
+
     public Optional<Duration> osUpgradeBudget(ZoneId zone, NodeType type, Version version) {
         return Optional.ofNullable(osUpgradeBudgets.get(Objects.hash(zone, type, version)));
     }
