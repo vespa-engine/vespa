@@ -454,9 +454,9 @@ Distributor::handleStatusRequests()
 }
 
 vespalib::string
-Distributor::getReportContentType(const framework::HttpUrlPath&) const
+Distributor::getReportContentType(const framework::HttpUrlPath& path) const
 {
-    abort();
+    return _stripe->getReportContentType(path);
 }
 
 std::string
@@ -466,10 +466,10 @@ Distributor::getActiveIdealStateOperations() const
 }
 
 bool
-Distributor::reportStatus(std::ostream&,
-                          const framework::HttpUrlPath&) const
+Distributor::reportStatus(std::ostream& out,
+                          const framework::HttpUrlPath& path) const
 {
-    abort();
+    return _stripe->reportStatus(out, path);
 }
 
 bool
