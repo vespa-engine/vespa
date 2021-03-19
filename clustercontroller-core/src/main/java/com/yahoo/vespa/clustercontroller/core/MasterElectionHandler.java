@@ -55,6 +55,10 @@ public class MasterElectionHandler implements MasterInterface {
     }
 
     public void setUsingZooKeeper(boolean usingZK) {
+        if (!usingZooKeeper && usingZK) {
+            // Reset any shortcuts taken by non-ZK election logic.
+            resetElectionProgress();
+        }
         usingZooKeeper = usingZK;
     }
 
@@ -224,13 +228,17 @@ public class MasterElectionHandler implements MasterInterface {
     }
 
     public void lostDatabaseConnection() {
-        if (totalCount > 1) {
+        if (totalCount > 1 || usingZooKeeper) {
             log.log(Level.INFO, "Cluster controller " + index + ": Clearing master data as we lost connection on node " + index);
-            masterData = null;
-            masterCandidate = null;
-            followers = 0;
-            nextMasterData = null;
+            resetElectionProgress();
         }
+    }
+
+    private void resetElectionProgress() {
+        masterData = null;
+        masterCandidate = null;
+        followers = 0;
+        nextMasterData = null;
     }
 
     public void writeHtmlState(StringBuilder sb, int stateGatherCount) {
