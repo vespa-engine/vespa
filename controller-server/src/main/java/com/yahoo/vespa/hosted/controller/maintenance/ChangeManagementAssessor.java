@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepo
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -17,35 +18,31 @@ public class ChangeManagementAssessor {
 
     private final NodeRepository nodeRepository;
 
-    public static class Assessment {
-        public String app;
-        public String zone;
-        public String cluster;
-        public long clusterImpact;
-        public long clusterSize;
-        public long groupsImpact;
-        public long groupsTotal;
-        public String upgradePolicy;
-        public String suggestedAction;
-        public String impact;
-    }
-
     public ChangeManagementAssessor(NodeRepository nodeRepository) {
         this.nodeRepository = nodeRepository;
     }
 
-    public List<Assessment> assessment(List<String> impactedHostnames, ZoneId zone) {
+    public Assessment assessment(List<String> impactedHostnames, ZoneId zone) {
         return assessmentInner(impactedHostnames, nodeRepository.listNodes(zone).nodes(), zone);
     }
 
-    List<Assessment> assessmentInner(List<String> impactedHostnames, List<NodeRepositoryNode> allNodes, ZoneId zone) {
-        // Get all active nodes running on the impacted hosts
-        List<NodeRepositoryNode> containerNodes = allNodes.stream()
+    Assessment assessmentInner(List<String> impactedHostnames, List<NodeRepositoryNode> allNodes, ZoneId zone) {
+
+        // Group impacted application nodes by parent host
+        Map<NodeRepositoryNode, List<NodeRepositoryNode>> prParentHost = allNodes.stream()
                 .filter(nodeRepositoryNode -> nodeRepositoryNode.getState() == NodeState.active) //TODO look at more states?
-                .filter(node -> impactedHostnames.contains(node.getParentHostname() == null ? "" : node.getParentHostname())).collect(Collectors.toList());
+                .filter(node -> impactedHostnames.contains(node.getParentHostname() == null ? "" : node.getParentHostname()))
+                .collect(Collectors.groupingBy(node ->
+                    allNodes.stream()
+                            .filter(parent -> parent.getHostname().equals(node.getParentHostname()))
+                            .findFirst().orElseThrow()
+                ));
 
         // Group nodes pr cluster
-        Map<String, List<NodeRepositoryNode>> prCluster = containerNodes.stream().collect(Collectors.groupingBy(ChangeManagementAssessor::clusterKey));
+        Map<String, List<NodeRepositoryNode>> prCluster = prParentHost.values()
+                .stream()
+                .flatMap(Collection::stream)
+                .collect(Collectors.groupingBy(ChangeManagementAssessor::clusterKey));
 
         boolean allHostsReplacable = nodeRepository.isReplaceable(
                 zone,
@@ -55,7 +52,7 @@ public class ChangeManagementAssessor {
         );
 
         // Report assessment pr cluster
-        return prCluster.entrySet().stream().map((entry) -> {
+        var clusterAssessments = prCluster.entrySet().stream().map((entry) -> {
             String key = entry.getKey();
             List<NodeRepositoryNode> nodes = entry.getValue();
             String app = Arrays.stream(key.split(":")).limit(3).collect(Collectors.joining(":"));
@@ -64,7 +61,7 @@ public class ChangeManagementAssessor {
             long[] totalStats = clusterStats(key, allNodes);
             long[] impactedStats = clusterStats(key, nodes);
 
-            Assessment assessment = new Assessment();
+            ClusterAssessment assessment = new ClusterAssessment();
             assessment.app = app;
             assessment.zone = zone.value();
             assessment.cluster = cluster;
@@ -83,6 +80,23 @@ public class ChangeManagementAssessor {
 
             return assessment;
         }).collect(Collectors.toList());
+
+        var hostAssessments = prParentHost.entrySet().stream().map((entry) -> {
+            HostAssessment hostAssessment = new HostAssessment();
+            hostAssessment.hostName = entry.getKey().getHostname();
+            hostAssessment.switchName = entry.getKey().getSwitchHostname();
+            hostAssessment.numberOfChildren = entry.getValue().size();
+
+            //TODO: Some better heuristic for what's considered problematic
+            hostAssessment.numberOfProblematicChildren = (int) entry.getValue().stream()
+                    .mapToInt(node -> prCluster.get(clusterKey(node)).size())
+                    .filter(i -> i > 1)
+                    .count();
+
+            return hostAssessment;
+        }).collect(Collectors.toList());
+
+        return new Assessment(clusterAssessments, hostAssessments);
     }
 
     private static String clusterKey(NodeRepositoryNode node) {
@@ -99,4 +113,43 @@ public class ChangeManagementAssessor {
         long groups = clusterNodes.stream().map(nodeRepositoryNode -> nodeRepositoryNode.getMembership() != null ? nodeRepositoryNode.getMembership().group : "").distinct().count();
         return new long[] { clusterNodes.size(), groups};
     }
+
+    public static class Assessment {
+        List<ClusterAssessment> clusterAssessments;
+        List<HostAssessment> hostAssessments;
+
+        Assessment(List<ClusterAssessment> clusterAssessments, List<HostAssessment> hostAssessments) {
+            this.clusterAssessments = clusterAssessments;
+            this.hostAssessments = hostAssessments;
+        }
+
+        public List<ClusterAssessment> getClusterAssessments() {
+            return clusterAssessments;
+        }
+
+        public List<HostAssessment> getHostAssessments() {
+            return hostAssessments;
+        }
+    }
+
+    public static class ClusterAssessment {
+        public String app;
+        public String zone;
+        public String cluster;
+        public long clusterImpact;
+        public long clusterSize;
+        public long groupsImpact;
+        public long groupsTotal;
+        public String upgradePolicy;
+        public String suggestedAction;
+        public String impact;
+    }
+
+    public static class HostAssessment {
+        public String hostName;
+        public String switchName;
+        public int numberOfChildren;
+        public int numberOfProblematicChildren;
+    }
+
 }

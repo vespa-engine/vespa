@@ -134,7 +134,7 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
     }
 
     private Slime doAssessment(List<String> hostNames, ZoneId zoneId) {
-        List<ChangeManagementAssessor.Assessment> assessments = assessor.assessment(hostNames, zoneId);
+        ChangeManagementAssessor.Assessment assessments = assessor.assessment(hostNames, zoneId);
 
         Slime slime = new Slime();
         Cursor root = slime.setObject();
@@ -148,7 +148,7 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
         // Assessment on the cluster level
         Cursor clustersCursor = assessmentCursor.setArray("clusters");
 
-        assessments.forEach(assessment -> {
+        assessments.getClusterAssessments().forEach(assessment -> {
             Cursor oneCluster = clustersCursor.addObject();
             oneCluster.setString("app", assessment.app);
             oneCluster.setString("zone", assessment.zone);
@@ -162,8 +162,14 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
             oneCluster.setString("impact", assessment.impact);
         });
 
-        // Assessment on the host level - TODO
-        assessmentCursor.setArray("hosts");
+        Cursor hostsCursor = assessmentCursor.setArray("hosts");
+        assessments.getHostAssessments().forEach(assessment -> {
+            Cursor hostObject = hostsCursor.addObject();
+            hostObject.setString("hostname", assessment.hostName);
+            hostObject.setString("switchName", assessment.switchName);
+            hostObject.setLong("numberOfChildren", assessment.numberOfChildren);
+            hostObject.setLong("numberOfProblematicChildren", assessment.numberOfProblematicChildren);
+        });
 
         return slime;
     }

@@ -8,13 +8,15 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwne
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
-import org.junit.Assert;
 import org.junit.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 public class ChangeManagementAssessorTest {
 
@@ -27,9 +29,9 @@ public class ChangeManagementAssessorTest {
         List<NodeRepositoryNode> allNodesInZone = new ArrayList<>();
 
         // Both zone and hostnames are empty
-        List<ChangeManagementAssessor.Assessment> assessments
+        ChangeManagementAssessor.Assessment assessment
                 = changeManagementAssessor.assessmentInner(hostNames, allNodesInZone, zone);
-        Assert.assertEquals(0, assessments.size());
+        assertEquals(0, assessment.getClusterAssessments().size());
     }
 
     @Test
@@ -44,19 +46,23 @@ public class ChangeManagementAssessorTest {
         // Add an not impacted hosts
         allNodesInZone.add(createNode("node4", "host2", "myapp", "default", 0 ));
 
+        // Add tenant hosts
+        allNodesInZone.add(createHost("host1", "switch1"));
+        allNodesInZone.add(createHost("host2", "switch1"));
+
         // Make Assessment
-        List<ChangeManagementAssessor.Assessment> assessments
-                = changeManagementAssessor.assessmentInner(hostNames, allNodesInZone, zone);
+        List<ChangeManagementAssessor.ClusterAssessment> assessments
+                = changeManagementAssessor.assessmentInner(hostNames, allNodesInZone, zone).getClusterAssessments();
 
         // Assess the assessment :-o
-        Assert.assertEquals(1, assessments.size());
-        Assert.assertEquals(3, assessments.get(0).clusterImpact);
-        Assert.assertEquals(4, assessments.get(0).clusterSize);
-        Assert.assertEquals(1, assessments.get(0).groupsImpact);
-        Assert.assertEquals(1, assessments.get(0).groupsTotal);
-        Assert.assertEquals("content:default", assessments.get(0).cluster);
-        Assert.assertEquals("mytenant:myapp:default", assessments.get(0).app);
-        Assert.assertEquals("prod.eu-trd", assessments.get(0).zone);
+        assertEquals(1, assessments.size());
+        assertEquals(3, assessments.get(0).clusterImpact);
+        assertEquals(4, assessments.get(0).clusterSize);
+        assertEquals(1, assessments.get(0).groupsImpact);
+        assertEquals(1, assessments.get(0).groupsTotal);
+        assertEquals("content:default", assessments.get(0).cluster);
+        assertEquals("mytenant:myapp:default", assessments.get(0).app);
+        assertEquals("prod.eu-trd", assessments.get(0).zone);
     }
 
     @Test
@@ -82,19 +88,33 @@ public class ChangeManagementAssessorTest {
         allNodesInZone.add(createNode("node5", "host4", "myapp", "myman", 5 ));
         allNodesInZone.add(createNode("node6", "host4", "myapp", "myman", 6 ));
 
+        // Add tenant hosts
+        allNodesInZone.add(createHost("host1", "switch1"));
+        allNodesInZone.add(createHost("host2", "switch1"));
+
         // Make Assessment
-        List<ChangeManagementAssessor.Assessment> assessments
+        ChangeManagementAssessor.Assessment assessment
                 = changeManagementAssessor.assessmentInner(hostNames, allNodesInZone, zone);
 
         // Assess the assessment :-o
-        Assert.assertEquals(1, assessments.size()); //One cluster is impacted
-        Assert.assertEquals(3, assessments.get(0).clusterImpact);
-        Assert.assertEquals(6, assessments.get(0).clusterSize);
-        Assert.assertEquals(1, assessments.get(0).groupsImpact);
-        Assert.assertEquals(2, assessments.get(0).groupsTotal);
-        Assert.assertEquals("content:default", assessments.get(0).cluster);
-        Assert.assertEquals("mytenant:myapp:default", assessments.get(0).app);
-        Assert.assertEquals("prod.eu-trd", assessments.get(0).zone);
+        List<ChangeManagementAssessor.ClusterAssessment> clusterAssessments = assessment.getClusterAssessments();
+        assertEquals(1, clusterAssessments.size()); //One cluster is impacted
+        assertEquals(3, clusterAssessments.get(0).clusterImpact);
+        assertEquals(6, clusterAssessments.get(0).clusterSize);
+        assertEquals(1, clusterAssessments.get(0).groupsImpact);
+        assertEquals(2, clusterAssessments.get(0).groupsTotal);
+        assertEquals("content:default", clusterAssessments.get(0).cluster);
+        assertEquals("mytenant:myapp:default", clusterAssessments.get(0).app);
+        assertEquals("prod.eu-trd", clusterAssessments.get(0).zone);
+
+        List<ChangeManagementAssessor.HostAssessment> hostAssessments = assessment.getHostAssessments();
+        assertEquals(2, hostAssessments.size());
+        assertTrue(hostAssessments.stream().anyMatch(hostAssessment ->
+                hostAssessment.hostName.equals("host1") &&
+                hostAssessment.switchName.equals("switch1") &&
+                hostAssessment.numberOfChildren == 2 &&
+                hostAssessment.numberOfProblematicChildren == 2
+        ));
     }
 
     private NodeOwner createOwner(String tenant, String application, String instance) {
@@ -123,6 +143,13 @@ public class ChangeManagementAssessorTest {
         node.setOwner(createOwner("mytenant", appName, "default"));
         node.setMembership(createMembership(clusterId, group));
 
+        return node;
+    }
+
+    private NodeRepositoryNode createHost(String hostname, String switchName) {
+        NodeRepositoryNode node = new NodeRepositoryNode();
+        node.setHostname(hostname);
+        node.setSwitchHostname(switchName);
         return node;
     }
 }

@@ -54,6 +54,8 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
         nodes.add(createNode("node2", "host1", "myapp", "default", 0 ));
         nodes.add(createNode("node3", "host1", "myapp", "default", 0 ));
         nodes.add(createNode("node4", "host2", "myapp", "default", 0 ));
+        nodes.add(createHost("host1", "switch1"));
+        nodes.add(createHost("host2", "switch2"));
         return nodes;
     }
 
@@ -85,4 +87,12 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
 
         return node;
     }
+
+    private NodeRepositoryNode createHost(String hostname, String switchName) {
+        NodeRepositoryNode node = new NodeRepositoryNode();
+        node.setHostname(hostname);
+        node.setSwitchHostname(switchName);
+        return node;
+    }
+
 }
