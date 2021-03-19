@@ -28,6 +28,7 @@ public:
 private:
     Primary _primary;
     Overlap _overlap;
+    const TensorFunction &primary_child() const;
 public:
     MixedSimpleJoinFunction(const ValueType &result_type,
                             const TensorFunction &lhs,
@@ -39,6 +40,7 @@ public:
     Primary primary() const { return _primary; }
     Overlap overlap() const { return _overlap; }
     bool primary_is_mutable() const;
+    bool inplace() const;
     size_t factor() const;
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
     static const TensorFunction &optimize(const TensorFunction &expr, Stash &stash);
