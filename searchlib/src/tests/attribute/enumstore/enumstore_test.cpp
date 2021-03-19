@@ -7,6 +7,7 @@
 LOG_SETUP("enumstore_test");
 
 using Ordering = search::DictionaryConfig::Ordering;
+using vespalib::datastore::EntryRef;
 
 namespace search {
 
@@ -552,6 +553,105 @@ TYPED_TEST(LoaderTest, store_is_instantiated_with_non_enumerated_loader)
     this->expect_posting_idx(0, 100);
     this->expect_posting_idx(1, 101);
     this->expect_posting_idx(3, 103);
+}
+
+#pragma GCC diagnostic pop
+
+template <typename EnumStoreTypeAndOrdering>
+class EnumStoreDictionaryTest : public ::testing::Test {
+public:
+    using EnumStoreType = typename EnumStoreTypeAndOrdering::EnumStoreType;
+    using EntryType = typename EnumStoreType::EntryType;
+    EnumStoreType store;
+
+    EnumStoreDictionaryTest()
+        : store(true, EnumStoreTypeAndOrdering::ordering)
+    {}
+
+    // Reuse test values from LoaderTest
+    const std::vector<EntryType>& values() const noexcept { return LoaderTestValues<EnumStoreType>::values; }
+
+    typename EnumStoreType::ComparatorType make_bound_comparator(int value_idx) { return store.make_comparator(values()[value_idx]); }
+
+    void update_posting_idx(EnumIndex enum_idx, EntryRef old_posting_idx, EntryRef new_posting_idx);
+    EnumIndex insert_value(size_t value_idx);
+    static EntryRef fake_pidx() { return EntryRef(42); }
+};
+
+template <typename EnumStoreTypeAndOrdering>
+void
+EnumStoreDictionaryTest<EnumStoreTypeAndOrdering>::update_posting_idx(EnumIndex enum_idx, EntryRef old_posting_idx, EntryRef new_posting_idx)
+{
+    auto& dict = store.get_dictionary();
+    EntryRef old_posting_idx_check;
+    dict.update_posting_list(enum_idx, store.make_comparator(), [&old_posting_idx_check, new_posting_idx](EntryRef posting_idx) noexcept -> EntryRef { old_posting_idx_check = posting_idx; return new_posting_idx; });
+    EXPECT_EQ(old_posting_idx, old_posting_idx_check);
+}
+
+template <typename EnumStoreTypeAndOrdering>
+EnumIndex
+EnumStoreDictionaryTest<EnumStoreTypeAndOrdering>::insert_value(size_t value_idx)
+{
+    assert(value_idx < values().size());
+    auto enum_idx = store.insert(values()[value_idx]);
+    EXPECT_TRUE(enum_idx.valid());
+    return enum_idx;
+}
+
+// Disable warnings emitted by gtest generated files when using typed tests
+#pragma GCC diagnostic push
+#ifndef __clang__
+#pragma GCC diagnostic ignored "-Wsuggest-override"
+#endif
+
+using EnumStoreDictionaryTestTypes = ::testing::Types<OrderedNumericEnumStore, UnorderedNumericEnumStore>;
+VESPA_GTEST_TYPED_TEST_SUITE(EnumStoreDictionaryTest, EnumStoreDictionaryTestTypes);
+
+TYPED_TEST(EnumStoreDictionaryTest, find_frozen_index_works)
+{
+    auto value_0_idx = this->insert_value(0);
+    this->update_posting_idx(value_0_idx, EntryRef(), this->fake_pidx());
+    auto& dict = this->store.get_dictionary();
+    EnumIndex idx;
+    if (TypeParam::ordering == Ordering::ORDERED) {
+        EXPECT_FALSE(dict.find_frozen_index(this->make_bound_comparator(0), idx));
+    } else {
+        EXPECT_TRUE(dict.find_frozen_index(this->make_bound_comparator(0), idx));
+        EXPECT_EQ(value_0_idx, idx);
+    }
+    EXPECT_FALSE(dict.find_frozen_index(this->make_bound_comparator(1), idx));
+    this->store.freeze_dictionary();
+    idx = EnumIndex();
+    EXPECT_TRUE(dict.find_frozen_index(this->make_bound_comparator(0), idx));
+    EXPECT_EQ(value_0_idx, idx);
+    EXPECT_FALSE(dict.find_frozen_index(this->make_bound_comparator(1), idx));
+    this->update_posting_idx(value_0_idx, this->fake_pidx(), EntryRef());
+}
+
+TYPED_TEST(EnumStoreDictionaryTest, find_posting_list_works)
+{
+    auto value_0_idx = this->insert_value(0);
+    this->update_posting_idx(value_0_idx, EntryRef(), this->fake_pidx());
+    auto& dict = this->store.get_dictionary();
+    auto root = dict.get_frozen_root();
+    auto find_result = dict.find_posting_list(this->make_bound_comparator(0), root);
+    if (TypeParam::ordering == Ordering::ORDERED) {
+        EXPECT_FALSE(find_result.first.valid());
+        EXPECT_FALSE(find_result.second.valid());
+    } else {
+        EXPECT_EQ(value_0_idx, find_result.first);
+        EXPECT_EQ(this->fake_pidx(), find_result.second);
+    }
+    find_result = dict.find_posting_list(this->make_bound_comparator(1), root);
+    EXPECT_FALSE(find_result.first.valid());
+    this->store.freeze_dictionary();
+    root = dict.get_frozen_root();
+    find_result = dict.find_posting_list(this->make_bound_comparator(0), root);
+    EXPECT_EQ(value_0_idx, find_result.first);
+    EXPECT_EQ(this->fake_pidx(), find_result.second);
+    find_result = dict.find_posting_list(this->make_bound_comparator(1), root);
+    EXPECT_FALSE(find_result.first.valid());
+    this->update_posting_idx(value_0_idx, this->fake_pidx(), EntryRef());
 }
 
 #pragma GCC diagnostic pop

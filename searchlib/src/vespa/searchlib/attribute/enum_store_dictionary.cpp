@@ -234,6 +234,12 @@ EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::update_posting_list(Inde
     EntryRef new_posting_idx = updater(old_posting_idx);
     dict.thaw(itr);
     itr.writeData(new_posting_idx.ref());
+    if constexpr (has_unordered_dictionary) {
+        auto find_result = this->_unordered_dict.find(this->_unordered_dict.get_default_comparator(), idx);
+        assert(find_result != nullptr && find_result->first.load_relaxed() == idx);
+        assert(find_result->second.load_relaxed() == old_posting_idx);
+        find_result->second.store_release(new_posting_idx);
+    }
 }
 
 template <typename DictionaryT, typename UnorderedDictionaryT>
