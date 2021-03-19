@@ -72,6 +72,25 @@ public class Deployment {
     }
 
     @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Deployment that = (Deployment) o;
+        return zone.equals(that.zone) &&
+               applicationVersion.equals(that.applicationVersion) &&
+               version.equals(that.version) &&
+               deployTime.equals(that.deployTime) &&
+               metrics.equals(that.metrics) &&
+               activity.equals(that.activity) &&
+               quota.equals(that.quota);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(zone, applicationVersion, version, deployTime, metrics, activity, quota);
+    }
+
+    @Override
     public String toString() {
         return "deployment to " + zone + " of " + applicationVersion + " on version " + version + " at " + deployTime;
     }

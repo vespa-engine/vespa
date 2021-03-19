@@ -111,6 +111,25 @@ public class DeploymentMetrics {
                                      writeLatencyMills, instant, warnings);
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DeploymentMetrics that = (DeploymentMetrics) o;
+        return Double.compare(that.queriesPerSecond, queriesPerSecond) == 0 &&
+               Double.compare(that.writesPerSecond, writesPerSecond) == 0 &&
+               Double.compare(that.documentCount, documentCount) == 0 &&
+               Double.compare(that.queryLatencyMillis, queryLatencyMillis) == 0 &&
+               Double.compare(that.writeLatencyMills, writeLatencyMills) == 0 &&
+               instant.equals(that.instant) &&
+               warnings.equals(that.warnings);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(queriesPerSecond, writesPerSecond, documentCount, queryLatencyMillis, writeLatencyMills, instant, warnings);
+    }
+
     /** Types of deployment warnings. We currently have only one */
     public enum Warning {
         all

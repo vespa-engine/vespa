@@ -161,14 +161,8 @@ public class ApplicationSerializerTest {
         assertEquals(RotationStatus.EMPTY, serialized.require(id3.instance()).rotationStatus());
 
         assertEquals(2, serialized.require(id1.instance()).deployments().size());
-        assertEquals(original.require(id1.instance()).deployments().get(zone1).applicationVersion(), serialized.require(id1.instance()).deployments().get(zone1).applicationVersion());
-        assertEquals(original.require(id1.instance()).deployments().get(zone2).applicationVersion(), serialized.require(id1.instance()).deployments().get(zone2).applicationVersion());
-        assertEquals(original.require(id1.instance()).deployments().get(zone1).version(), serialized.require(id1.instance()).deployments().get(zone1).version());
-        assertEquals(original.require(id1.instance()).deployments().get(zone2).version(), serialized.require(id1.instance()).deployments().get(zone2).version());
-        assertEquals(original.require(id1.instance()).deployments().get(zone1).at(), serialized.require(id1.instance()).deployments().get(zone1).at());
-        assertEquals(original.require(id1.instance()).deployments().get(zone2).at(), serialized.require(id1.instance()).deployments().get(zone2).at());
-        assertEquals(original.require(id1.instance()).deployments().get(zone2).activity().lastQueried().get(), serialized.require(id1.instance()).deployments().get(zone2).activity().lastQueried().get());
-        assertEquals(original.require(id1.instance()).deployments().get(zone2).activity().lastWritten().get(), serialized.require(id1.instance()).deployments().get(zone2).activity().lastWritten().get());
+        assertEquals(original.require(id1.instance()).deployments().get(zone1), serialized.require(id1.instance()).deployments().get(zone1));
+        assertEquals(original.require(id1.instance()).deployments().get(zone2), serialized.require(id1.instance()).deployments().get(zone2));
 
         assertEquals(original.require(id1.instance()).jobPause(JobType.systemTest),
                      serialized.require(id1.instance()).jobPause(JobType.systemTest));
