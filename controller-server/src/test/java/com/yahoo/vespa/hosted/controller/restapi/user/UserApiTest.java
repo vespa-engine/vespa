@@ -57,11 +57,6 @@ public class UserApiTest extends ControllerContainerCloudTest {
                                       .roles(operator),
                               "[]");
 
-        // GET at application/v4/tenant is available also under the /api prefix.
-        tester.assertResponse(request("/api/application/v4/tenant")
-                                      .roles(operator),
-                              "[]");
-
         // POST a tenant is not available to everyone.
         tester.assertResponse(request("/application/v4/tenant/my-tenant", POST)
                                       .data("{\"token\":\"hello\"}"),
@@ -126,11 +121,6 @@ public class UserApiTest extends ControllerContainerCloudTest {
 
         // GET application role information is available to tenant administrators.
         tester.assertResponse(request("/user/v1/tenant/my-tenant/application/my-app")
-                                      .roles(Set.of(Role.administrator(id.tenant()))),
-                              new File("application-roles.json"));
-
-        // GET application role information is available also under the /api prefix.
-        tester.assertResponse(request("/api/user/v1/tenant/my-tenant/application/my-app")
                                       .roles(Set.of(Role.administrator(id.tenant()))),
                               new File("application-roles.json"));
 
@@ -223,7 +213,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
         Set<Role> operator = Set.of(Role.hostedOperator(), Role.hostedSupporter(), Role.hostedAccountant());
         User user = new User("dev@domail", "Joe Developer", "dev", null);
 
-        tester.assertResponse(request("/api/user/v1/user")
+        tester.assertResponse(request("/user/v1/user")
                         .roles(operator)
                         .user(user),
                 new File("user-without-applications.json"));
@@ -246,13 +236,13 @@ public class UserApiTest extends ControllerContainerCloudTest {
         controller.createApplication("sandbox", "app2", "dev");
 
         // Should still be empty because none of the roles explicitly refer to any of the applications
-        tester.assertResponse(request("/api/user/v1/user")
+        tester.assertResponse(request("/user/v1/user")
                         .roles(operator)
                         .user(user),
                 new File("user-without-applications.json"));
 
         // Empty applications because tenant dummy does not exist
-        tester.assertResponse(request("/api/user/v1/user")
+        tester.assertResponse(request("/user/v1/user")
                         .roles(Set.of(Role.administrator(TenantName.from("tenant1")),
                                 Role.developer(TenantName.from("tenant2")),
                                 Role.developer(TenantName.from("sandbox")),
@@ -274,7 +264,7 @@ public class UserApiTest extends ControllerContainerCloudTest {
         controller.createTenant("tenant1", Tenant.Type.cloud);
 
         tester.assertResponse(
-                request("/api/user/v1/user").user(user),
+                request("/user/v1/user").user(user),
                 new File("user-without-trial-capacity-cloud.json"));
     }
 }

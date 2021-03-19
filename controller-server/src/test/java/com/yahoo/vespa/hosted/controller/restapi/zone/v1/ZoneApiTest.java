@@ -52,7 +52,7 @@ public class ZoneApiTest extends ControllerContainerCloudTest {
                                                 new File("prod.json"));
 
         // GET /zone/v1/environment/dev/default
-        tester.assertResponse(request("/api/zone/v1/environment/dev/default")
+        tester.assertResponse(request("/zone/v1/environment/dev/default")
                                                         .roles(everyone),
                                                 new File("default-for-region.json"));
     }

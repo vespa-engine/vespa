@@ -74,7 +74,6 @@ public class DeploymentApiTest extends ControllerContainerTest {
 
         tester.controller().updateVersionStatus(censorConfigServers(VersionStatus.compute(tester.controller())));
         tester.assertResponse(operatorRequest("http://localhost:8080/deployment/v1/"), new File("root.json"));
-        tester.assertResponse(operatorRequest("http://localhost:8080/api/deployment/v1/"), new File("root.json"));
     }
 
     private VersionStatus censorConfigServers(VersionStatus versionStatus) {

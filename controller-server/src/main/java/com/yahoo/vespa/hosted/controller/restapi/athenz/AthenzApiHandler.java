@@ -37,7 +37,6 @@ import java.util.logging.Logger;
 public class AthenzApiHandler extends LoggingRequestHandler {
 
     private final static Logger log = Logger.getLogger(AthenzApiHandler.class.getName());
-    private static final String OPTIONAL_PREFIX = "/api";
 
     private final AthenzFacade athenz;
     private final AthenzDomain sandboxDomain;
@@ -70,7 +69,7 @@ public class AthenzApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse get(HttpRequest request) {
-        Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
+        Path path = new Path(request.getUri());
         if (path.matches("/athenz/v1")) return root(request);
         if (path.matches("/athenz/v1/domains")) return domainList(request);
         if (path.matches("/athenz/v1/properties")) return properties();
@@ -80,7 +79,7 @@ public class AthenzApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse post(HttpRequest request) {
-        Path path = new Path(request.getUri(), OPTIONAL_PREFIX);
+        Path path = new Path(request.getUri());
         if (path.matches("/athenz/v1/user")) return signup(request);
         return ErrorResponse.notFoundError(String.format("No '%s' handler at '%s'", request.getMethod(),
                                                          request.getUri().getPath()));
