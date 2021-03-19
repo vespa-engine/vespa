@@ -42,7 +42,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class ParseTestCase {
 
-    private ParsingTester tester = new ParsingTester();
+    private final ParsingTester tester = new ParsingTester();
     
     @Test
     public void testSimpleTermQuery() {

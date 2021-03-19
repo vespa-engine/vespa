@@ -63,7 +63,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 /**
- * @author Arne Bergene Fossaa
+ * @author bratseth
  */
 public class QueryTestCase {
 
@@ -421,7 +421,6 @@ public class QueryTestCase {
     @Test
     public void testUtf8Decoding() {
         Query q = new Query("/?query=beyonc%C3%A9");
-        q.getModel().getQueryTree().toString();
         assertEquals("beyonc\u00e9", q.getModel().getQueryTree().toString());
     }
 
