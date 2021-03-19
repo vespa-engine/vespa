@@ -24,10 +24,6 @@ public class Deployment {
     private final DeploymentActivity activity;
     private final QuotaUsage quota;
 
-    public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime) {
-        this(zone, applicationVersion, version, deployTime, DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none);
-    }
-
     public Deployment(ZoneId zone, ApplicationVersion applicationVersion, Version version, Instant deployTime,
                       DeploymentMetrics metrics,  DeploymentActivity activity, QuotaUsage quota) {
         this.zone = Objects.requireNonNull(zone, "zone cannot be null");

@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.DeploymentActivity;
 import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
@@ -66,7 +67,10 @@ public class Instance {
                                       Instant instant, Map<DeploymentMetrics.Warning, Integer> warnings, QuotaUsage quotaUsage) {
         // Use info from previous deployment if available, otherwise create a new one.
         Deployment previousDeployment = deployments.getOrDefault(zone, new Deployment(zone, applicationVersion,
-                                                                                      version, instant));
+                                                                                      version, instant,
+                                                                                      DeploymentMetrics.none,
+                                                                                      DeploymentActivity.none,
+                                                                                      QuotaUsage.none));
         Deployment newDeployment = new Deployment(zone, applicationVersion, version, instant,
                                                   previousDeployment.metrics().with(warnings),
                                                   previousDeployment.activity(),
