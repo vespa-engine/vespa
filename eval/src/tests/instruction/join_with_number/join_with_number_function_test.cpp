@@ -34,10 +34,15 @@ struct FunInfo {
     using LookFor = JoinWithNumberFunction;
     Primary primary;
     bool inplace;
-    void verify(const LookFor &fun) const {
+    void verify(const EvalFixture &fixture, const LookFor &fun) const {
         EXPECT_TRUE(fun.result_is_mutable());
         EXPECT_EQUAL(fun.primary(), primary);
         EXPECT_EQUAL(fun.inplace(), inplace);
+        if (inplace) {
+            size_t idx = (fun.primary() == Primary::LHS) ? 0 : 1;
+            EXPECT_EQUAL(fixture.result_value().cells().data,
+                         fixture.param_value(idx).cells().data);
+        }
     }
 };
 

@@ -22,22 +22,21 @@ GenSpec::seq_t glb = [] (size_t) noexcept {
 };
 
 EvalFixture::ParamRepo make_params() {
-    return EvalFixture::ParamRepo()
-        .add("con_x5_A", GenSpec().idx("x", 5).seq(glb))
-        .add("con_x5_B", GenSpec().idx("x", 5).seq(glb))
-        .add("con_x5_C", GenSpec().idx("x", 5).seq(glb))
-        .add("con_x5y3_A", GenSpec().idx("x", 5).idx("y", 3).seq(glb))
-        .add("con_x5y3_B", GenSpec().idx("x", 5).idx("y", 3).seq(glb))
-        .add_mutable("mut_dbl_A", GenSpec(1.5))
-        .add_mutable("mut_dbl_B", GenSpec(2.5))
-        .add_mutable("mut_x5_A", GenSpec().idx("x", 5).seq(glb))
-        .add_mutable("mut_x5_B", GenSpec().idx("x", 5).seq(glb))
-        .add_mutable("mut_x5_C", GenSpec().idx("x", 5).seq(glb))
-        .add_mutable("mut_x5f_D", GenSpec().cells_float().idx("x", 5).seq(glb))
-        .add_mutable("mut_x5f_E", GenSpec().cells_float().idx("x", 5).seq(glb))
-        .add_mutable("mut_x5y3_A", GenSpec().idx("x", 5).idx("y", 3).seq(glb))
-        .add_mutable("mut_x5y3_B", GenSpec().idx("x", 5).idx("y", 3).seq(glb))
-        .add_mutable("mut_x_sparse", GenSpec().map("x", {"a", "b", "c"}).seq(glb));
+    EvalFixture::ParamRepo repo;
+    for (vespalib::string param : {
+            "x5$1", "x5$2", "x5$3",
+            "x5y3$1", "x5y3$2",
+            "@x5$1", "@x5$2", "@x5$3",
+            "@x5y3$1", "@x5y3$2",
+            "@x3_1$1", "@x3_1$2"
+        })
+    {
+        repo.add(param, CellType::DOUBLE, glb);
+        repo.add(param + "_f", CellType::FLOAT, glb);
+    }
+    repo.add_mutable("mut_dbl_A", GenSpec(1.5));
+    repo.add_mutable("mut_dbl_B", GenSpec(2.5));
+    return repo;
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
@@ -47,9 +46,11 @@ void verify_optimized(const vespalib::string &expr, size_t param_idx) {
     for (size_t i = 0; i < fixture.num_params(); ++i) {
         TEST_STATE(vespalib::make_string("param %zu", i).c_str());
         if (i == param_idx) {
-            EXPECT_EQUAL(fixture.get_param(i), fixture.result());
+            EXPECT_EQUAL(fixture.param_value(i).cells().data,
+                         fixture.result_value().cells().data);
         } else {
-            EXPECT_NOT_EQUAL(fixture.get_param(i), fixture.result());
+            EXPECT_NOT_EQUAL(fixture.param_value(i).cells().data,
+                             fixture.result_value().cells().data);
         }
     }
 }
@@ -70,41 +71,42 @@ void verify_not_optimized(const vespalib::string &expr) {
     EvalFixture fixture(prod_factory, expr, param_repo, true, true);
     EXPECT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
     for (size_t i = 0; i < fixture.num_params(); ++i) {
-        EXPECT_NOT_EQUAL(fixture.get_param(i), fixture.result());
+        EXPECT_NOT_EQUAL(fixture.param_value(i).cells().data,
+                         fixture.result_value().cells().data);
     }
 }
 
 TEST("require that mutable dense concrete tensors are optimized") {
-    TEST_DO(verify_p1_optimized("mut_x5_A-mut_x5_B"));
-    TEST_DO(verify_p0_optimized("mut_x5_A-con_x5_B"));
-    TEST_DO(verify_p1_optimized("con_x5_A-mut_x5_B"));
-    TEST_DO(verify_p1_optimized("mut_x5y3_A-mut_x5y3_B"));
-    TEST_DO(verify_p0_optimized("mut_x5y3_A-con_x5y3_B"));
-    TEST_DO(verify_p1_optimized("con_x5y3_A-mut_x5y3_B"));
+    TEST_DO(verify_p1_optimized("@x5$1-@x5$2"));
+    TEST_DO(verify_p0_optimized("@x5$1-x5$2"));
+    TEST_DO(verify_p1_optimized("x5$1-@x5$2"));
+    TEST_DO(verify_p1_optimized("@x5y3$1-@x5y3$2"));
+    TEST_DO(verify_p0_optimized("@x5y3$1-x5y3$2"));
+    TEST_DO(verify_p1_optimized("x5y3$1-@x5y3$2"));
 }
 
 TEST("require that self-join operations can be optimized") {
-    TEST_DO(verify_p0_optimized("mut_x5_A+mut_x5_A"));
+    TEST_DO(verify_p0_optimized("@x5$1+@x5$1"));
 }
 
 TEST("require that join(tensor,scalar) operations are optimized") {
-    TEST_DO(verify_p0_optimized("mut_x5_A-mut_dbl_B"));
-    TEST_DO(verify_p1_optimized("mut_dbl_A-mut_x5_B"));
+    TEST_DO(verify_p0_optimized("@x5$1-mut_dbl_B"));
+    TEST_DO(verify_p1_optimized("mut_dbl_A-@x5$2"));
 }
 
 TEST("require that join with different tensor shapes are optimized") {
-    TEST_DO(verify_p1_optimized("mut_x5_A*mut_x5y3_B"));
+    TEST_DO(verify_p1_optimized("@x5$1*@x5y3$2"));
 }
 
 TEST("require that inplace join operations can be chained") {
-    TEST_DO(verify_p2_optimized("mut_x5_A+(mut_x5_B+mut_x5_C)"));
-    TEST_DO(verify_p0_optimized("(mut_x5_A+con_x5_B)+con_x5_C"));
-    TEST_DO(verify_p1_optimized("con_x5_A+(mut_x5_B+con_x5_C)"));
-    TEST_DO(verify_p2_optimized("con_x5_A+(con_x5_B+mut_x5_C)"));
+    TEST_DO(verify_p2_optimized("@x5$1+(@x5$2+@x5$3)"));
+    TEST_DO(verify_p0_optimized("(@x5$1+x5$2)+x5$3"));
+    TEST_DO(verify_p1_optimized("x5$1+(@x5$2+x5$3)"));
+    TEST_DO(verify_p2_optimized("x5$1+(x5$2+@x5$3)"));
 }
 
 TEST("require that non-mutable tensors are not optimized") {
-    TEST_DO(verify_not_optimized("con_x5_A+con_x5_B"));
+    TEST_DO(verify_not_optimized("x5$1+x5$2"));
 }
 
 TEST("require that scalar values are not optimized") {
@@ -114,18 +116,18 @@ TEST("require that scalar values are not optimized") {
 }
 
 TEST("require that mapped tensors are not optimized") {
-    TEST_DO(verify_not_optimized("mut_x_sparse+mut_x_sparse"));
+    TEST_DO(verify_not_optimized("@x3_1$1+@x3_1$2"));
 }
 
 TEST("require that optimization works with float cells") {
-    TEST_DO(verify_p1_optimized("mut_x5f_D-mut_x5f_E"));
+    TEST_DO(verify_p1_optimized("@x5$1_f-@x5$2_f"));
 }
 
 TEST("require that overwritten value must have same cell type as result") {
-    TEST_DO(verify_p0_optimized("mut_x5_A-mut_x5f_D"));
-    TEST_DO(verify_p1_optimized("mut_x5f_D-mut_x5_A"));
-    TEST_DO(verify_not_optimized("con_x5_A-mut_x5f_D"));
-    TEST_DO(verify_not_optimized("mut_x5f_D-con_x5_A"));
+    TEST_DO(verify_p0_optimized("@x5$1-@x5$2_f"));
+    TEST_DO(verify_p1_optimized("@x5$2_f-@x5$1"));
+    TEST_DO(verify_not_optimized("x5$1-@x5$2_f"));
+    TEST_DO(verify_not_optimized("@x5$2_f-x5$1"));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -176,14 +176,24 @@ MixedSimpleJoinFunction::MixedSimpleJoinFunction(const ValueType &result_type,
 
 MixedSimpleJoinFunction::~MixedSimpleJoinFunction() = default;
 
+
+const TensorFunction &
+MixedSimpleJoinFunction::primary_child() const
+{
+    return (_primary == Primary::LHS)  ? lhs() : rhs();
+}
+
 bool
 MixedSimpleJoinFunction::primary_is_mutable() const
 {
-    if (_primary == Primary::LHS) {
-        return lhs().result_is_mutable();
-    } else {
-        return rhs().result_is_mutable();
-    }
+    return primary_child().result_is_mutable();
+}
+
+bool
+MixedSimpleJoinFunction::inplace() const
+{
+    return primary_is_mutable() &&
+        (result_type().cell_type() == primary_child().result_type().cell_type());
 }
 
 size_t

@@ -245,6 +245,16 @@ TEST(GenSpecFromDescTest, dim_spec_and_gen_spec_can_be_created_from_desc) {
     EXPECT_EQ(gen_desc, expect);
 }
 
+TEST(GenSpecFromDescTest, empty_mapped_dim_possible) {
+    // 'a0_1'
+    auto expect = GenSpec().map("a", 0).gen();
+    auto dim_desc = GenSpec().desc("a0_1").gen();
+    auto gen_desc = GenSpec::from_desc("a0_1").gen();
+    EXPECT_EQ(dim_desc, expect);
+    EXPECT_EQ(gen_desc, expect);
+}
+
+
 TEST(GenSpecFromDescTest, multi_character_sizes_work) {
     // 'a13b1'
     auto expect = GenSpec().idx("a", 13).idx("b", 1).gen();
