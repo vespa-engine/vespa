@@ -194,11 +194,6 @@ App::Main()
             const ProtonConfig &protonConfig = configSnapshot->getProtonConfig();
             vespalib::string basedir = protonConfig.basedir;
             vespalib::mkdir(basedir, true);
-            if ( ! params.serviceidentity.empty()) {
-                proton.getMetricManager().init(params.serviceidentity, proton.getThreadPool());
-            } else {
-                proton.getMetricManager().init(params.identity, proton.getThreadPool());
-            }
             {
                 ExitOnSignal exit_on_signal;
                 proton.init(configSnapshot);
@@ -210,6 +205,8 @@ App::Main()
                 spiProton->setupConfig(std::chrono::milliseconds(params.subscribeTimeout));
                 spiProton->createNode();
                 EV_STARTED("servicelayer");
+            } else {
+                proton.getMetricManager().init(params.identity, proton.getThreadPool());
             }
             EV_STARTED("proton");
             while (!(SIG::INT.check() || SIG::TERM.check() || (spiProton && spiProton->getNode().attemptedStopped()))) {
