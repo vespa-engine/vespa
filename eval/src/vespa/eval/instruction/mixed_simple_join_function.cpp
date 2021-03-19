@@ -193,7 +193,7 @@ bool
 MixedSimpleJoinFunction::inplace() const
 {
     return primary_is_mutable() &&
-        (result_type() == primary_child().result_type());
+        (result_type().cell_type() == primary_child().result_type().cell_type());
 }
 
 size_t

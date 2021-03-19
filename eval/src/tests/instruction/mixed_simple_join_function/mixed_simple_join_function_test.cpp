@@ -48,7 +48,7 @@ struct FunInfo {
     std::optional<Primary> primary;
     bool l_mut;
     bool r_mut;
-    bool require_inplace;
+    std::optional<bool> inplace;
     void verify(const EvalFixture &fixture, const LookFor &fun) const {
         EXPECT_TRUE(fun.result_is_mutable());
         EXPECT_EQUAL(fun.overlap(), overlap);
@@ -64,14 +64,21 @@ struct FunInfo {
                 EXPECT_TRUE(r_mut);
             }
         }
-        if (require_inplace) {
-            EXPECT_TRUE(fun.inplace());
+        if (inplace.has_value()) {
+            EXPECT_EQUAL(fun.inplace(), inplace.value());
         }
         if (fun.inplace()) {
             EXPECT_TRUE(fun.primary_is_mutable());
             size_t idx = (fun.primary() == Primary::LHS) ? 0 : 1;
             EXPECT_EQUAL(fixture.result_value().cells().data,
                          fixture.param_value(idx).cells().data);
+            EXPECT_NOT_EQUAL(fixture.result_value().cells().data,
+                             fixture.param_value(1-idx).cells().data);
+        } else {
+            EXPECT_NOT_EQUAL(fixture.result_value().cells().data,
+                             fixture.param_value(0).cells().data);
+            EXPECT_NOT_EQUAL(fixture.result_value().cells().data,
+                             fixture.param_value(1).cells().data);
         }
     }
 };
@@ -90,7 +97,7 @@ void verify_optimized(const vespalib::string &expr, Primary primary, Overlap ove
 {
     TEST_STATE(expr.c_str());
     CellTypeSpace all_types(CellTypeUtils::list_types(), 2);
-    FunInfo details{overlap, factor, primary, l_mut, r_mut, false};
+    FunInfo details{overlap, factor, primary, l_mut, r_mut, std::nullopt};
     EvalFixture::verify<FunInfo>(expr, {details}, all_types);
 }
 
@@ -99,7 +106,7 @@ void verify_optimized(const vespalib::string &expr, Overlap overlap, size_t fact
 {
     TEST_STATE(expr.c_str());
     CellTypeSpace all_types(CellTypeUtils::list_types(), 2);
-    FunInfo details{overlap, factor, std::nullopt, l_mut, r_mut, false};
+    FunInfo details{overlap, factor, std::nullopt, l_mut, r_mut, std::nullopt};
     EvalFixture::verify<FunInfo>(expr, {details}, all_types);
 }
 
