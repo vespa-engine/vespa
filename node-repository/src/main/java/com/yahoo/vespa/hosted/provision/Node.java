@@ -102,6 +102,11 @@ public final class Node implements Nodelike {
             if (switchHostname.isPresent()) throw new IllegalArgumentException("A child node cannot have switch hostname set");
         }
 
+        if (type.isHost() && state == State.ready) {
+            requireNonEmpty(ipConfig.primary(), "A " + type + " must have at least one primary IP address in state " + state);
+            if (type == NodeType.host) requireNonEmpty(ipConfig.pool().asSet(), "A " + type + " must have a non-empty IP address pool in state " + state);
+        }
+
         if (type != NodeType.host && reservedTo.isPresent())
             throw new IllegalArgumentException("Only tenant hosts can be reserved to a tenant");
 

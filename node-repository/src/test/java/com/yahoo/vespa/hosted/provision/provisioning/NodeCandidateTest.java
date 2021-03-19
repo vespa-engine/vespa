@@ -5,6 +5,7 @@ import com.yahoo.config.provision.Flavor;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.node.IP;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -145,7 +146,8 @@ public class NodeCandidateTest {
                 .parentHostname(hostname + "parent")
                 .ipConfigWithEmptyPool(Set.of("::1")).build();
         Node parent = Node.create(hostname + "parent", hostname, new Flavor(totalHostResources), Node.State.ready, NodeType.host)
-                .ipConfigWithEmptyPool(Set.of("::1")).build();
+                          .ipConfig(new IP.Config(Set.of("::1"), Set.of("::2")))
+                          .build();
         return new NodeCandidate.ConcreteNodeCandidate(node, totalHostResources.subtract(allocatedHostResources), Optional.of(parent),
                                                        false, exclusiveSwitch, false, true, false);
     }

@@ -29,7 +29,7 @@ public class CuratorDatabaseClientTest {
 
     @Test
     public void can_read_stored_host_information() throws Exception {
-        String zkline = "{\"hostname\":\"host1\",\"ipAddresses\":[\"127.0.0.1\"],\"openStackId\":\"7951bb9d-3989-4a60-a21c-13690637c8ea\",\"flavor\":\"default\",\"created\":1421054425159, \"type\":\"host\"}";
+        String zkline = "{\"hostname\":\"host1\",\"ipAddresses\":[\"127.0.0.1\"],\"additionalIpAddresses\":[\"127.0.0.2\"],\"openStackId\":\"7951bb9d-3989-4a60-a21c-13690637c8ea\",\"flavor\":\"default\",\"created\":1421054425159, \"type\":\"host\"}";
         curator.framework().create().creatingParentsIfNeeded().forPath("/provision/v1/ready/host1", zkline.getBytes());
 
         List<Node> allocatedNodes = zkClient.readNodes(Node.State.ready);
