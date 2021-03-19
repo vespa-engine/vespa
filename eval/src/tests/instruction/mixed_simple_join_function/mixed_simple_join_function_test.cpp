@@ -50,17 +50,15 @@ struct FunInfo {
     using LookFor = MixedSimpleJoinFunction;
     Overlap overlap;
     size_t factor;
-    std::optional<Primary> primary;
+    Primary primary;
     bool l_mut;
     bool r_mut;
-    std::optional<bool> inplace;
+    bool inplace;
     void verify(const EvalFixture &fixture, const LookFor &fun) const {
         EXPECT_TRUE(fun.result_is_mutable());
         EXPECT_EQUAL(fun.overlap(), overlap);
         EXPECT_EQUAL(fun.factor(), factor);
-        if (primary.has_value()) {
-            EXPECT_EQUAL(fun.primary(), primary.value());
-        }
+        EXPECT_EQUAL(fun.primary(), primary);
         if (fun.primary_is_mutable()) {
             if (fun.primary() == Primary::LHS) {
                 EXPECT_TRUE(l_mut);
@@ -69,9 +67,7 @@ struct FunInfo {
                 EXPECT_TRUE(r_mut);
             }
         }
-        if (inplace.has_value()) {
-            EXPECT_EQUAL(fun.inplace(), inplace.value());
-        }
+        EXPECT_EQUAL(fun.inplace(), inplace);
         if (fun.inplace()) {
             EXPECT_TRUE(fun.primary_is_mutable());
             size_t idx = (fun.primary() == Primary::LHS) ? 0 : 1;
@@ -95,23 +91,16 @@ void verify_simple(const vespalib::string &expr, Primary primary, Overlap overla
     CellTypeSpace just_double({CellType::DOUBLE}, 2);
     FunInfo details{overlap, factor, primary, l_mut, r_mut, inplace};
     EvalFixture::verify<FunInfo>(expr, {details}, just_double);
+    CellTypeSpace just_float({CellType::FLOAT}, 2);
+    EvalFixture::verify<FunInfo>(expr, {details}, just_float);
 }
 
 void verify_optimized(const vespalib::string &expr, Primary primary, Overlap overlap, size_t factor,
-                      bool l_mut = false, bool r_mut = false)
+                      bool l_mut = false, bool r_mut = false, bool inplace = false)
 {
     TEST_STATE(expr.c_str());
     CellTypeSpace all_types(CellTypeUtils::list_types(), 2);
-    FunInfo details{overlap, factor, primary, l_mut, r_mut, std::nullopt};
-    EvalFixture::verify<FunInfo>(expr, {details}, all_types);
-}
-
-void verify_optimized(const vespalib::string &expr, Overlap overlap, size_t factor,
-                      bool l_mut = false, bool r_mut = false)
-{
-    TEST_STATE(expr.c_str());
-    CellTypeSpace all_types(CellTypeUtils::list_types(), 2);
-    FunInfo details{overlap, factor, std::nullopt, l_mut, r_mut, std::nullopt};
+    FunInfo details{overlap, factor, primary, l_mut, r_mut, inplace};
     EvalFixture::verify<FunInfo>(expr, {details}, all_types);
 }
 
@@ -280,12 +269,18 @@ TEST("require that mixed tensors can be optimized") {
 }
 
 TEST("require that mixed tensors can be inplace") {
-    TEST_DO(verify_optimized("@x3_1y5z3+y5z3", Primary::LHS, Overlap::FULL,   1, true, false));
-    TEST_DO(verify_optimized("@x3_1y5z3+y5",   Primary::LHS, Overlap::OUTER,  3, true, false));
-    TEST_DO(verify_optimized("@x3_1y5z3+z3",   Primary::LHS, Overlap::INNER,  5, true, false));
-    TEST_DO(verify_optimized("y5z3+@x3_1y5z3", Primary::RHS, Overlap::FULL,   1, false, true));
-    TEST_DO(verify_optimized("y5+@x3_1y5z3",   Primary::RHS, Overlap::OUTER,  3, false, true));
-    TEST_DO(verify_optimized("z3+@x3_1y5z3",   Primary::RHS, Overlap::INNER,  5, false, true));
+    TEST_DO(verify_simple("@x3_1y5z3+y5z3",  Primary::LHS, Overlap::FULL,   1, true, false, true));
+    TEST_DO(verify_simple("@x3_1y5z3+y5",    Primary::LHS, Overlap::OUTER,  3, true, false, true));
+    TEST_DO(verify_simple("@x3_1y5z3+z3",    Primary::LHS, Overlap::INNER,  5, true, false, true));
+    TEST_DO(verify_simple("@x3_1y5z3+@y5z3", Primary::LHS, Overlap::FULL,   1, true,  true, true));
+    TEST_DO(verify_simple("@x3_1y5z3+@y5",   Primary::LHS, Overlap::OUTER,  3, true,  true, true));
+    TEST_DO(verify_simple("@x3_1y5z3+@z3",   Primary::LHS, Overlap::INNER,  5, true,  true, true));
+    TEST_DO(verify_simple("y5z3+@x3_1y5z3",  Primary::RHS, Overlap::FULL,   1, false, true, true));
+    TEST_DO(verify_simple("y5+@x3_1y5z3",    Primary::RHS, Overlap::OUTER,  3, false, true, true));
+    TEST_DO(verify_simple("z3+@x3_1y5z3",    Primary::RHS, Overlap::INNER,  5, false, true, true));
+    TEST_DO(verify_simple("@y5z3+@x3_1y5z3", Primary::RHS, Overlap::FULL,   1, true,  true, true));
+    TEST_DO(verify_simple("@y5+@x3_1y5z3",   Primary::RHS, Overlap::OUTER,  3, true,  true, true));
+    TEST_DO(verify_simple("@z3+@x3_1y5z3",   Primary::RHS, Overlap::INNER,  5, true,  true, true));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
