@@ -77,6 +77,7 @@ public:
     void build(vespalib::ConstArrayRef<EntryRef> refs) override;
     void build_with_payload(vespalib::ConstArrayRef<EntryRef>, vespalib::ConstArrayRef<uint32_t> payloads) override;
     std::unique_ptr<ReadSnapshot> get_read_snapshot() const override;
+    bool get_has_unordered_dictionary() const override;
 };
 
 }
