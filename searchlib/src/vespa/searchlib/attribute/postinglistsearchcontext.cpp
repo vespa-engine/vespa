@@ -45,19 +45,9 @@ PostingListSearchContext::~PostingListSearchContext() = default;
 void
 PostingListSearchContext::lookupTerm(const vespalib::datastore::EntryComparator &comp)
 {
-    if (_dictionary.get_has_unordered_dictionary()) {
-        // Note: Diversity requires _lowerDictItr and upperDictItr to be setup
-        auto lookup_result = _dictionary.find_posting_list(comp, _frozenDictionary.getRoot());
-        if (lookup_result.first.valid()) {
-            _pidx = lookup_result.second;
-            _uniqueValues = 1u;
-        }
-        return;
-    }
-    _lowerDictItr.lower_bound(_frozenDictionary.getRoot(), EnumIndex(), comp);
-    _upperDictItr = _lowerDictItr;
-    if (_upperDictItr.valid() && !comp.less(EnumIndex(), _upperDictItr.getKey())) {
-        ++_upperDictItr;
+    auto lookup_result = _dictionary.find_posting_list(comp, _frozenDictionary.getRoot());
+    if (lookup_result.first.valid()) {
+        _pidx = lookup_result.second;
         _uniqueValues = 1u;
     }
 }
