@@ -45,8 +45,8 @@ isSameDocument(const search::DocumentMetaData & a, const search::DocumentMetaDat
 
 void
 CompactionJob::failOperation() {
-    _executedCount.fetch_add(1, std::memory_order_relaxed);
-    _scanItr.reset();
+    IncOnDestruct countGuard(_executedCount);
+    _master.execute(makeLambdaTask([this] { _scanItr.reset(); }
 }
 
 bool
@@ -62,7 +62,7 @@ CompactionJob::scanDocuments(const LidUsageStats &stats)
                 assert(bucket.getBucketId() == meta.bucketId);
                 using DoneContext = vespalib::KeepAlive<std::pair<IDestructorCallback::SP, IDestructorCallback::SP>>;
                 moveDocument(meta, std::make_shared<DoneContext>(std::make_pair(std::move(opsTracker), std::move(onDone))));
-            }, [this](const Bucket &) { _master.execute(makeLambdaTask([this] { failOperation(); } )); });
+            }, [this](const Bucket &) { failOperation(); });
 
             _startedCount.fetch_add(1, std::memory_order_relaxed);
             _bucketExecutor.execute(metaBucket, std::move(bucketTask));
