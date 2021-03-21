@@ -138,8 +138,13 @@ PostingListSearchContextT<DataT>::diversify(bool forward, size_t wanted_hits, co
 {
     if (!_merger.merge_done()) {
         _merger.reserveArray(128, wanted_hits);
-        diversity::diversify(forward, _lowerDictItr, _upperDictItr, _postingList, wanted_hits, diversity_attr,
-                             max_per_group, cutoff_groups, cutoff_strict, _merger.getWritableArray(), _merger.getWritableStartPos());
+        if (_uniqueValues == 1u && !_lowerDictItr.valid() && _pidx.valid()) {
+            diversity::diversify_single(_pidx, _postingList, wanted_hits, diversity_attr,
+                                        max_per_group, cutoff_groups, cutoff_strict, _merger.getWritableArray(), _merger.getWritableStartPos());
+        } else {
+            diversity::diversify(forward, _lowerDictItr, _upperDictItr, _postingList, wanted_hits, diversity_attr,
+                                 max_per_group, cutoff_groups, cutoff_strict, _merger.getWritableArray(), _merger.getWritableStartPos());
+        }
         _merger.merge();
     }
 }
