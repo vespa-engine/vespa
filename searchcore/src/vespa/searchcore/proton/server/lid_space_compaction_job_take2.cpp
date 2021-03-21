@@ -46,7 +46,7 @@ isSameDocument(const search::DocumentMetaData & a, const search::DocumentMetaDat
 void
 CompactionJob::failOperation() {
     IncOnDestruct countGuard(_executedCount);
-    _master.execute(makeLambdaTask([this] { _scanItr.reset(); }
+    _master.execute(makeLambdaTask([this] { _scanItr.reset(); }));
 }
 
 bool
