@@ -38,7 +38,7 @@ void fail_require_eq() {
 }
 
 TEST(RequireTest, require_can_fail) {
-    using E = vespalib::RequireFailure;
+    using E = vespalib::RequireFailedException;
     EXPECT_THROW(
         {
             try { fail_require(); }
@@ -52,7 +52,7 @@ TEST(RequireTest, require_can_fail) {
 }
 
 TEST(RequireTest, require_eq_can_fail) {
-    using E = vespalib::RequireFailure;
+    using E = vespalib::RequireFailedException;
     EXPECT_THROW(
         {
             try { fail_require_eq(); }

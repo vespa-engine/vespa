@@ -7,7 +7,7 @@
 
 namespace vespalib {
 
-VESPA_DEFINE_EXCEPTION(RequireFailure, Exception);
+VESPA_DEFINE_EXCEPTION(RequireFailedException, Exception);
 
 constexpr void handle_require_success() {}
 

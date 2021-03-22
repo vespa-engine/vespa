@@ -6,7 +6,7 @@
 
 namespace vespalib {
 
-VESPA_IMPLEMENT_EXCEPTION(RequireFailure, Exception);
+VESPA_IMPLEMENT_EXCEPTION(RequireFailedException, Exception);
 
 void handle_require_failure(const char *description, const char *file, uint32_t line)
 {
@@ -16,7 +16,7 @@ void handle_require_failure(const char *description, const char *file, uint32_t 
     std::cerr << msg.c_str() << "\n";
     asciistream loc;
     loc << "file " << file << " line " << line;
-    throw RequireFailure(msg.c_str(), loc.c_str(), 2);
+    throw RequireFailedException(msg.c_str(), loc.c_str(), 2);
 }
 
 } // namespace
