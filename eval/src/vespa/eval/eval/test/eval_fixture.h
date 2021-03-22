@@ -13,7 +13,8 @@
 #include <functional>
 #include "gen_spec.h"
 #include "cell_type_space.h"
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/require.h>
+#include <vespa/vespalib/util/unwind_message.h>
 
 namespace vespalib::eval::test {
 
@@ -140,8 +141,10 @@ public:
                          
     template <typename FunInfo>
     static void verify(const vespalib::string &expr, const std::vector<FunInfo> &fun_info, CellTypeSpace cell_type_space) {
+
+        UNWIND_MSG("in verify(%s) with %zu FunInfo", expr.c_str(), fun_info.size());
         auto fun = Function::parse(expr);
-        ASSERT_EQUAL(fun->num_params(), cell_type_space.n());
+        REQUIRE_EQ(fun->num_params(), cell_type_space.n());
         for (; cell_type_space.valid(); cell_type_space.next()) {
             auto cell_types = cell_type_space.get();
             EvalFixture::ParamRepo param_repo;
@@ -151,11 +154,11 @@ public:
             EvalFixture fixture(prod_factory(), expr, param_repo, true, true);
             EvalFixture slow_fixture(prod_factory(), expr, param_repo, false, false);
             EvalFixture test_fixture(test_factory(), expr, param_repo, true, true);
-            ASSERT_EQUAL(fixture.result(), EvalFixture::ref(expr, param_repo));
-            ASSERT_EQUAL(fixture.result(), slow_fixture.result());
-            ASSERT_EQUAL(fixture.result(), test_fixture.result());
+            REQUIRE_EQ(fixture.result(), EvalFixture::ref(expr, param_repo));
+            REQUIRE_EQ(fixture.result(), slow_fixture.result());
+            REQUIRE_EQ(fixture.result(), test_fixture.result());
             auto info = fixture.find_all<typename FunInfo::LookFor>();
-            ASSERT_EQUAL(info.size(), fun_info.size());
+            REQUIRE_EQ(info.size(), fun_info.size());
             for (size_t i = 0; i < fun_info.size(); ++i) {
                 fixture.verify_callback<FunInfo>(fun_info[i], *info[i]);
             }

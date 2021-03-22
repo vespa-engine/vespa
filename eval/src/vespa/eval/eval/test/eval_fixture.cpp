@@ -19,7 +19,7 @@ std::shared_ptr<Function const> verify_function(std::shared_ptr<Function const> 
     if (fun->has_error()) {
         fprintf(stderr, "eval_fixture: function parse failed: %s\n", fun->get_error().c_str());
     }
-    ASSERT_TRUE(!fun->has_error());
+    REQUIRE(!fun->has_error());
     return fun;
 }
 
@@ -28,11 +28,11 @@ NodeTypes get_types(const Function &function, const ParamRepo &param_repo) {
     for (size_t i = 0; i < function.num_params(); ++i) {
         auto pos = param_repo.map.find(function.param_name(i));
         if (pos == param_repo.map.end()) {
-            TEST_STATE(fmt("param name: '%s'", function.param_name(i).data()).c_str());
-            ASSERT_TRUE(pos != param_repo.map.end());
+            UNWIND_MSG("param name: '%s'", function.param_name(i).data());
+            REQUIRE(pos != param_repo.map.end());
         }
         param_types.push_back(ValueType::from_spec(pos->second.value.type()));
-        ASSERT_TRUE(!param_types.back().is_error());
+        REQUIRE(!param_types.back().is_error());
     }
     NodeTypes node_types(function, param_types);
     if (!node_types.errors().empty()) {
@@ -40,7 +40,7 @@ NodeTypes get_types(const Function &function, const ParamRepo &param_repo) {
             fprintf(stderr, "eval_fixture: type error: %s\n", msg.c_str());
         }
     }
-    ASSERT_TRUE(node_types.errors().empty());
+    REQUIRE(node_types.errors().empty());
     return node_types;
 }
 
@@ -48,7 +48,7 @@ std::set<size_t> get_mutable(const Function &function, const ParamRepo &param_re
     std::set<size_t> mutable_set;
     for (size_t i = 0; i < function.num_params(); ++i) {
         auto pos = param_repo.map.find(function.param_name(i));
-        ASSERT_TRUE(pos != param_repo.map.end());
+        REQUIRE(pos != param_repo.map.end());
         if (pos->second.is_mutable) {
             mutable_set.insert(i);
         }
@@ -90,7 +90,7 @@ std::vector<Value::UP> make_params(const ValueBuilderFactory &factory, const Fun
     std::vector<Value::UP> result;
     for (size_t i = 0; i < function.num_params(); ++i) {
         auto pos = param_repo.map.find(function.param_name(i));
-        ASSERT_TRUE(pos != param_repo.map.end());
+        REQUIRE(pos != param_repo.map.end());
         result.push_back(value_from_spec(pos->second.value, factory));
     }
     return result;
@@ -109,7 +109,7 @@ std::vector<Value::CREF> get_refs(const std::vector<Value::UP> &values) {
 ParamRepo &
 EvalFixture::ParamRepo::add(const vespalib::string &name, TensorSpec value)
 {
-    ASSERT_TRUE(map.find(name) == map.end());
+    REQUIRE(map.find(name) == map.end());
     map.insert_or_assign(name, Param(std::move(value), false));
     return *this;
 }
@@ -117,7 +117,7 @@ EvalFixture::ParamRepo::add(const vespalib::string &name, TensorSpec value)
 ParamRepo &
 EvalFixture::ParamRepo::add_mutable(const vespalib::string &name, TensorSpec value)
 {
-    ASSERT_TRUE(map.find(name) == map.end());
+    REQUIRE(map.find(name) == map.end());
     map.insert_or_assign(name, Param(std::move(value), true));
     return *this;
 }
@@ -166,10 +166,10 @@ EvalFixture::detect_param_tampering(const ParamRepo &param_repo, bool allow_muta
 {
     for (size_t i = 0; i < _function->num_params(); ++i) {
         auto pos = param_repo.map.find(_function->param_name(i));
-        ASSERT_TRUE(pos != param_repo.map.end());
+        REQUIRE(pos != param_repo.map.end());
         bool allow_tampering = allow_mutable && pos->second.is_mutable;
         if (!allow_tampering) {
-            ASSERT_EQUAL(pos->second.value, spec_from_value(*_param_values[i]));
+            REQUIRE_EQ(pos->second.value, spec_from_value(*_param_values[i]));
         }
     }
 }
@@ -195,8 +195,8 @@ EvalFixture::EvalFixture(const ValueBuilderFactory &factory,
       _result(spec_from_value(_result_value))
 {
     auto result_type = ValueType::from_spec(_result.type());
-    ASSERT_TRUE(!result_type.is_error());
-    TEST_DO(detect_param_tampering(param_repo, allow_mutable));
+    REQUIRE(!result_type.is_error());
+    UNWIND_DO(detect_param_tampering(param_repo, allow_mutable));
 }
 
 size_t
@@ -212,7 +212,7 @@ EvalFixture::ref(const vespalib::string &expr, const ParamRepo &param_repo)
     std::vector<TensorSpec> params;
     for (size_t i = 0; i < fun->num_params(); ++i) {
         auto pos = param_repo.map.find(fun->param_name(i));
-        ASSERT_TRUE(pos != param_repo.map.end());
+        REQUIRE(pos != param_repo.map.end());
         params.push_back(pos->second.value);
     }
     return ReferenceEvaluation::eval(*fun, params);

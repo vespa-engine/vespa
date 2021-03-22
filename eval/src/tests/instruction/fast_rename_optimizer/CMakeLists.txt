@@ -4,5 +4,6 @@ vespa_add_executable(eval_fast_rename_optimizer_test_app TEST
     fast_rename_optimizer_test.cpp
     DEPENDS
     vespaeval
+    GTest::GTest
 )
 vespa_add_test(NAME eval_fast_rename_optimizer_test_app COMMAND eval_fast_rename_optimizer_test_app)
