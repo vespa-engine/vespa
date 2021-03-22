@@ -49,11 +49,6 @@ public:
     const lib::ClusterStateBundle& getClusterStateBundle() const;
 
     /**
-      * Returns the slobrok address of the given storage node.
-      */
-    api::StorageMessageAddress nodeAddress(uint16_t nodeIndex) const;
-
-    /**
      * Returns true if the given storage node is in an "up state".
      */
     bool storageNodeIsUp(document::BucketSpace bucketSpace, uint32_t nodeIndex) const;
@@ -145,7 +140,11 @@ public:
     const vespalib::string * cluster_name_ptr() const noexcept override { return cluster_context().cluster_name_ptr(); }
     const document::BucketIdFactory& bucket_id_factory() const noexcept override { return getBucketIdFactory(); }
     uint16_t node_index() const noexcept override { return getIndex(); }
-    api::StorageMessageAddress node_address(uint16_t node_index) const noexcept override { return nodeAddress(node_index); }
+
+    /**
+     * Returns the slobrok address of the given storage node.
+     */
+    api::StorageMessageAddress node_address(uint16_t node_index) const noexcept override;
 
     // Implements DistributorOperationContext
     api::Timestamp generate_unique_timestamp() override { return getUniqueTimestamp(); }

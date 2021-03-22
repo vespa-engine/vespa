@@ -45,12 +45,6 @@ const lib::ClusterStateBundle&
 DistributorStripeComponent::getClusterStateBundle() const
 {
     return _distributor.getClusterStateBundle();
-};
-
-api::StorageMessageAddress
-DistributorStripeComponent::nodeAddress(uint16_t nodeIndex) const
-{
-    return api::StorageMessageAddress::create(cluster_name_ptr(), lib::NodeType::STORAGE, nodeIndex);
 }
 
 bool
@@ -290,6 +284,15 @@ DistributorStripeComponent::createAppropriateBucket(const document::Bucket &buck
             bucket.getBucketId());
 }
 
+// Implements DistributorNodeContext
+api::StorageMessageAddress
+DistributorStripeComponent::node_address(uint16_t node_index) const noexcept
+{
+    return api::StorageMessageAddress::create(cluster_name_ptr(), lib::NodeType::STORAGE, node_index);
+}
+
+
+// Implements DistributorOperationContext
 bool
 DistributorStripeComponent::has_pending_message(uint16_t node_index,
                                                 const document::Bucket& bucket,
