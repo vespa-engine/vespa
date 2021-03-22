@@ -53,6 +53,7 @@ public class Node {
     private final String flavor;
     private final String clusterId;
     private final ClusterType clusterType;
+    private final boolean retired;
     private final boolean wantToRetire;
     private final boolean wantToDeprovision;
     private final Optional<TenantName> reservedTo;
@@ -67,7 +68,7 @@ public class Node {
                 Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion,
                 Optional<Instant> currentFirmwareCheck, Optional<Instant> wantedFirmwareCheck, ServiceState serviceState,
                 Optional<Instant> suspendedSince, long restartGeneration, long wantedRestartGeneration, long rebootGeneration, long wantedRebootGeneration,
-                int cost, String flavor, String clusterId, ClusterType clusterType, boolean wantToRetire, boolean wantToDeprovision,
+                int cost, String flavor, String clusterId, ClusterType clusterType, boolean retired, boolean wantToRetire, boolean wantToDeprovision,
                 Optional<TenantName> reservedTo, Optional<ApplicationId> exclusiveTo,
                 DockerImage wantedDockerImage, DockerImage currentDockerImage, Map<String, JsonNode> reports, List<NodeHistory> history,
                 Set<String> additionalIpAddresses, String openStackId, Optional<String> switchHostname) {
@@ -93,6 +94,7 @@ public class Node {
         this.flavor = flavor;
         this.clusterId = clusterId;
         this.clusterType = clusterType;
+        this.retired = retired;
         this.wantToRetire = wantToRetire;
         this.wantToDeprovision = wantToDeprovision;
         this.reservedTo = reservedTo;
@@ -200,6 +202,10 @@ public class Node {
         return clusterType;
     }
 
+    public boolean retired() {
+        return retired;
+    }
+
     public boolean wantToRetire() {
         return wantToRetire;
     }
@@ -302,6 +308,7 @@ public class Node {
         private String flavor;
         private String clusterId;
         private ClusterType clusterType;
+        private boolean retired;
         private boolean wantToRetire;
         private boolean wantToDeprovision;
         private Optional<TenantName> reservedTo = Optional.empty();
@@ -339,6 +346,7 @@ public class Node {
             this.flavor = node.flavor;
             this.clusterId = node.clusterId;
             this.clusterType = node.clusterType;
+            this.retired = node.retired;
             this.wantToRetire = node.wantToRetire;
             this.wantToDeprovision = node.wantToDeprovision;
             this.reservedTo = node.reservedTo;
@@ -470,6 +478,11 @@ public class Node {
             return this;
         }
 
+        public Builder retired(boolean retired) {
+            this.retired = retired;
+            return this;
+        }
+
         public Builder wantToRetire(boolean wantToRetire) {
             this.wantToRetire = wantToRetire;
             return this;
@@ -514,7 +527,7 @@ public class Node {
             return new Node(hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion,
                             currentOsVersion, wantedOsVersion, currentFirmwareCheck, wantedFirmwareCheck, serviceState,
                             suspendedSince, restartGeneration, wantedRestartGeneration, rebootGeneration, wantedRebootGeneration,
-                            cost, flavor, clusterId, clusterType, wantToRetire, wantToDeprovision, reservedTo, exclusiveTo,
+                            cost, flavor, clusterId, clusterType, retired, wantToRetire, wantToDeprovision, reservedTo, exclusiveTo,
                             wantedDockerImage, currentDockerImage, reports, history, additionalIpAddresses, openStackId, switchHostname);
         }
 

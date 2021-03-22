@@ -816,9 +816,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             nodeObject.setString("version", node.currentVersion().toString());
             nodeObject.setString("flavor", node.flavor());
             toSlime(node.resources(), nodeObject);
-            nodeObject.setBool("fastDisk", node.resources().diskSpeed() == NodeResources.DiskSpeed.fast); // TODO: Remove
             nodeObject.setString("clusterId", node.clusterId());
             nodeObject.setString("clusterType", valueOf(node.clusterType()));
+            nodeObject.setBool("down", node.history().stream().anyMatch(event -> "down".equals(event.getEvent())));
+            nodeObject.setBool("retired", node.retired() || node.wantToRetire());
+            nodeObject.setBool("restarting", node.wantedRestartGeneration() > node.restartGeneration());
+            nodeObject.setBool("rebooting", node.wantedRebootGeneration() > node.rebootGeneration());
         }
         return new SlimeJsonResponse(slime);
     }
