@@ -143,7 +143,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.resourceTagMaintainer = duration(30, MINUTES);
             this.systemRoutingPolicyMaintainer = duration(10, MINUTES);
             this.applicationMetaDataGarbageCollector = duration(12, HOURS);
-            this.containerImageExpirer = duration(2, HOURS);
+            this.containerImageExpirer = duration(12, HOURS);
             this.hostSwitchUpdater = duration(12, HOURS);
             this.reindexingTriggerer = duration(1, HOURS);
             this.endpointCertificateMaintainer = duration(12, HOURS);
