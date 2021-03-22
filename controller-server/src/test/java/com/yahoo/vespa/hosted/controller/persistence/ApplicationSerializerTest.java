@@ -95,7 +95,8 @@ public class ApplicationSerializerTest {
                 .from(new SourceRevision("repo1", "branch1", "commit1"), 32, "a@b",
                       Version.fromString("6.3.1"), Instant.ofEpochMilli(496));
         Instant activityAt = Instant.parse("2018-06-01T10:15:30.00Z");
-        deployments.add(new Deployment(zone1, applicationVersion1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3))); // One deployment without cluster info and utils
+        deployments.add(new Deployment(zone1, applicationVersion1, Version.fromString("1.2.3"), Instant.ofEpochMilli(3),
+                                       DeploymentMetrics.none, DeploymentActivity.none, QuotaUsage.none));
         deployments.add(new Deployment(zone2, applicationVersion2, Version.fromString("1.2.3"), Instant.ofEpochMilli(5),
                                        new DeploymentMetrics(2, 3, 4, 5, 6,
                                                              Optional.of(Instant.now().truncatedTo(ChronoUnit.MILLIS)),
@@ -160,14 +161,8 @@ public class ApplicationSerializerTest {
         assertEquals(RotationStatus.EMPTY, serialized.require(id3.instance()).rotationStatus());
 
         assertEquals(2, serialized.require(id1.instance()).deployments().size());
-        assertEquals(original.require(id1.instance()).deployments().get(zone1).applicationVersion(), serialized.require(id1.instance()).deployments().get(zone1).applicationVersion());
-        assertEquals(original.require(id1.instance()).deployments().get(zone2).applicationVersion(), serialized.require(id1.instance()).deployments().get(zone2).applicationVersion());
-        assertEquals(original.require(id1.instance()).deployments().get(zone1).version(), serialized.require(id1.instance()).deployments().get(zone1).version());
-        assertEquals(original.require(id1.instance()).deployments().get(zone2).version(), serialized.require(id1.instance()).deployments().get(zone2).version());
-        assertEquals(original.require(id1.instance()).deployments().get(zone1).at(), serialized.require(id1.instance()).deployments().get(zone1).at());
-        assertEquals(original.require(id1.instance()).deployments().get(zone2).at(), serialized.require(id1.instance()).deployments().get(zone2).at());
-        assertEquals(original.require(id1.instance()).deployments().get(zone2).activity().lastQueried().get(), serialized.require(id1.instance()).deployments().get(zone2).activity().lastQueried().get());
-        assertEquals(original.require(id1.instance()).deployments().get(zone2).activity().lastWritten().get(), serialized.require(id1.instance()).deployments().get(zone2).activity().lastWritten().get());
+        assertEquals(original.require(id1.instance()).deployments().get(zone1), serialized.require(id1.instance()).deployments().get(zone1));
+        assertEquals(original.require(id1.instance()).deployments().get(zone2), serialized.require(id1.instance()).deployments().get(zone2));
 
         assertEquals(original.require(id1.instance()).jobPause(JobType.systemTest),
                      serialized.require(id1.instance()).jobPause(JobType.systemTest));

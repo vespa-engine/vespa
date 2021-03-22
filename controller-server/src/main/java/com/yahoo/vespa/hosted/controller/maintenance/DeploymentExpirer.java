@@ -1,13 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
+import java.util.Optional;
 import java.util.logging.Level;
 
 /**
@@ -28,7 +33,7 @@ public class DeploymentExpirer extends ControllerMaintainer {
         for (Application application : controller().applications().readable()) {
             for (Instance instance : application.instances().values())
                 for (Deployment deployment : instance.deployments().values()) {
-                    if (!isExpired(deployment)) continue;
+                    if (!isExpired(deployment, instance.id())) continue;
 
                     try {
                         log.log(Level.INFO, "Expiring deployment of " + instance.id() + " in " + deployment.zone());
@@ -45,10 +50,19 @@ public class DeploymentExpirer extends ControllerMaintainer {
     }
 
     /** Returns whether given deployment has expired according to its TTL */
-    private boolean isExpired(Deployment deployment) {
+    private boolean isExpired(Deployment deployment, ApplicationId instance) {
         if (deployment.zone().environment().isProduction()) return false; // Never expire production deployments
-        return controller().zoneRegistry().getDeploymentTimeToLive(deployment.zone())
-                           .map(timeToLive -> deployment.at().plus(timeToLive).isBefore(controller().clock().instant()))
+
+        Optional<Duration> ttl = controller().zoneRegistry().getDeploymentTimeToLive(deployment.zone());
+        if (ttl.isEmpty()) return false;
+
+        Optional<JobId> jobId = JobType.from(controller().system(), deployment.zone())
+                                       .map(type -> new JobId(instance, type));
+        if (jobId.isEmpty()) return false;
+
+        return controller().jobController().last(jobId.get())
+                           .flatMap(Run::end)
+                           .map(end -> end.plus(ttl.get()).isBefore(controller().clock().instant()))
                            .orElse(false);
     }
 

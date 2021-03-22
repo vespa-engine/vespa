@@ -121,9 +121,7 @@ class RunSerializer {
             // For historical reasons are the step details stored in a separate JSON structure from the step statuses.
             Inspector stepDetailsField = detailsField.field(step);
             Inspector startTimeValue = stepDetailsField.field(startTimeField);
-            Optional<Instant> startTime = startTimeValue.valid() ?
-                    Optional.of(instantOf(startTimeValue.asLong())) :
-                    Optional.empty();
+            Optional<Instant> startTime = Serializers.optionalInstant(startTimeValue);
 
             steps.put(typedStep, new StepInfo(typedStep, stepStatusOf(status.asString()), startTime));
         });
@@ -132,7 +130,7 @@ class RunSerializer {
                                  runObject.field(numberField).asLong()),
                        steps,
                        versionsFromSlime(runObject.field(versionsField)),
-                       Instant.ofEpochMilli(runObject.field(startField).asLong()),
+                       Serializers.instant(runObject.field(startField)),
                        Serializers.optionalInstant(runObject.field(endField)),
                        runStatusOf(runObject.field(statusField).asString()),
                        runObject.field(lastTestRecordField).asLong(),
@@ -259,7 +257,7 @@ class RunSerializer {
         applicationVersion.commit().ifPresent(commit -> versionsObject.setString(commitField, commit));
     }
 
-    // Don't change this — introduce a separate array with new values if needed.
+    // Don't change this - introduce a separate array with new values if needed.
     private void toSlime(ConvergenceSummary summary, Cursor summaryArray) {
         summaryArray.addLong(summary.nodes());
         summaryArray.addLong(summary.down());
@@ -339,10 +337,6 @@ class RunSerializer {
 
     static Long valueOf(Instant instant) {
         return instant.toEpochMilli();
-    }
-
-    static Instant instantOf(Long epochMillis) {
-        return Instant.ofEpochMilli(epochMillis);
     }
 
     static String valueOf(RunStatus status) {

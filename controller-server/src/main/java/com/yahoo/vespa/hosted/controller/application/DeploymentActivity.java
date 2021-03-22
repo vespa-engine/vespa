@@ -61,6 +61,19 @@ public class DeploymentActivity {
                                       activeRate(metrics.writesPerSecond(), lastWritesPerSecond));
     }
 
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DeploymentActivity that = (DeploymentActivity) o;
+        return lastQueried.equals(that.lastQueried) && lastWritten.equals(that.lastWritten) && lastQueriesPerSecond.equals(that.lastQueriesPerSecond) && lastWritesPerSecond.equals(that.lastWritesPerSecond);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(lastQueried, lastWritten, lastQueriesPerSecond, lastWritesPerSecond);
+    }
+
     public static DeploymentActivity create(Optional<Instant> queriedAt, Optional<Instant> writtenAt,
                                             OptionalDouble lastQueriesPerSecond, OptionalDouble lastWritesPerSecond) {
         if (queriedAt.isEmpty() && writtenAt.isEmpty()) {

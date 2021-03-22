@@ -7,19 +7,14 @@ import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.hosted.controller.deployment.Run;
-import com.yahoo.vespa.hosted.controller.versions.DeploymentStatistics;
 import com.yahoo.vespa.hosted.controller.versions.NodeVersions;
 import com.yahoo.vespa.hosted.controller.versions.VersionStatus;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 
-import java.time.Instant;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
-import java.util.stream.Collectors;
 
 /**
  * Serializer for {@link VersionStatus}.
@@ -111,7 +106,7 @@ public class VersionStatusSerializer {
         var version = Version.fromString(object.field(deploymentStatisticsField).field(versionField).asString());
         return new VespaVersion(version,
                                 object.field(releaseCommitField).asString(),
-                                Instant.ofEpochMilli(object.field(committedAtField).asLong()),
+                                Serializers.instant(object.field(committedAtField)),
                                 object.field(isControllerVersionField).asBool(),
                                 object.field(isSystemVersionField).asBool(),
                                 object.field(isReleasedField).asBool(),
