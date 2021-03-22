@@ -143,6 +143,7 @@ public interface NodeRepository {
                         node.getFlavor(),
                         clusterIdOf(node.getMembership()),
                         clusterTypeOf(node.getMembership()),
+                        Optional.ofNullable(node.getMembership()).map(NodeMembership::getRetired).orElse(false),
                         node.getWantToRetire(),
                         node.getWantToDeprovision(),
                         Optional.ofNullable(node.getReservedTo()).map(TenantName::from),
