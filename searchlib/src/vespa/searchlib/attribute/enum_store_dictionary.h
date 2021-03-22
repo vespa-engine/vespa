@@ -39,8 +39,6 @@ public:
 
     const DictionaryT& get_raw_dictionary() const { return this->_dict; }
 
-    void set_ref_counts(const EnumVector& hist) override;
-
     void free_unused_values(const vespalib::datastore::EntryComparator& cmp) override;
 
     void free_unused_values(const IndexSet& to_remove,
@@ -58,7 +56,6 @@ public:
     Index remap_index(Index idx) override;
     void clear_all_posting_lists(std::function<void(EntryRef)> clearer) override;
     void update_posting_list(Index idx, const vespalib::datastore::EntryComparator& cmp, std::function<EntryRef(EntryRef)> updater) override;
-    void sync_unordered_after_load() override;
     EnumPostingTree& get_posting_dictionary() override;
     const EnumPostingTree& get_posting_dictionary() const override;
 };

@@ -116,9 +116,6 @@ ssize_t
 EnumStoreT<EntryT>::load_unique_values(const void* src, size_t available, IndexVector& idx)
 {
     ssize_t sz = load_unique_values_internal(src, available, idx);
-    if (sz >= 0) {
-        _dict->build(idx);
-    }
     return sz;
 }
 
