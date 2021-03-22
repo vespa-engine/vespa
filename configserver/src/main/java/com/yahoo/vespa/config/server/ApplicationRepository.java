@@ -592,13 +592,13 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     private void waitForApplicationRemoved(TenantApplications applications, ApplicationId applicationId) {
-        log.log(Level.INFO, "Waiting for " + applicationId + " to be deleted");
-        Duration duration = Duration.ofSeconds(5);
+        log.log(Level.FINE, "Waiting for " + applicationId + " to be deleted");
+        Duration duration = Duration.ofSeconds(30);
         Instant end = Instant.now().plus(duration);
         do {
             if ( ! (applications.hasApplication(applicationId)))
                 return;
-            log.log(Level.INFO, "Application " + applicationId + " not deleted yet, will retry");
+            log.log(Level.FINE, "Application " + applicationId + " not deleted yet, will retry");
             try {
                 Thread.sleep(100);
             } catch (InterruptedException interruptedException) {/* ignore */}
