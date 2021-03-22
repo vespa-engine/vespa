@@ -26,20 +26,21 @@ struct DatabaseUpdate {
 /**
  * Takes care of subscribing to document manager config and
  * making those values available to other subcomponents.
+ * TODO STRIPE update class comment.
  */
-class DistributorComponent : public storage::DistributorComponent,
-                             public DistributorNodeContext,
-                             public DistributorOperationContext,
-                             public DocumentSelectionParser
+class DistributorStripeComponent : public storage::DistributorComponent,
+                                   public DistributorNodeContext,
+                                   public DistributorOperationContext,
+                                   public DocumentSelectionParser
 {
 public:
-    DistributorComponent(DistributorStripeInterface& distributor,
-                         DistributorBucketSpaceRepo& bucketSpaceRepo,
-                         DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
-                         DistributorComponentRegister& compReg,
-                         const std::string& name);
+    DistributorStripeComponent(DistributorStripeInterface& distributor,
+                               DistributorBucketSpaceRepo& bucketSpaceRepo,
+                               DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
+                               DistributorComponentRegister& compReg,
+                               const std::string& name);
 
-    ~DistributorComponent() override;
+    ~DistributorStripeComponent() override;
 
     /**
      * Returns a reference to the current cluster state bundle. Valid until the

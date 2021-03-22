@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "statechecker.h"
-#include "distributorcomponent.h"
 #include "distributor_bucket_space.h"
+#include "distributor_stripe_component.h"
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 
@@ -61,7 +61,7 @@ StateChecker::Result::createStoredResult(
     return Result(std::unique_ptr<ResultImpl>(new StoredResultImpl(std::move(operation), MaintenancePriority(priority))));
 }
 
-StateChecker::Context::Context(const DistributorComponent& c,
+StateChecker::Context::Context(const DistributorStripeComponent& c,
                                const DistributorBucketSpace &distributorBucketSpace,
                                NodeMaintenanceStatsTracker& statsTracker,
                                const document::Bucket &bucket_)

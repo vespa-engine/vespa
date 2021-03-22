@@ -2,19 +2,19 @@
 #pragma once
 
 #include "bucketlistmerger.h"
-#include "messageguard.h"
-#include "distributorcomponent.h"
+#include "distributor_stripe_component.h"
 #include "distributormessagesender.h"
-#include "pendingclusterstate.h"
+#include "messageguard.h"
 #include "operation_routing_snapshot.h"
 #include "outdated_nodes_map.h"
+#include "pendingclusterstate.h"
 #include <vespa/document/bucket/bucket.h>
-#include <vespa/storageapi/message/bucket.h>
-#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/common/storagelink.h>
+#include <vespa/storageapi/message/bucket.h>
+#include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageframework/generic/status/statusreporter.h>
-#include <vespa/storageapi/messageapi/messagehandler.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <atomic>
 #include <list>
 #include <mutex>
@@ -239,7 +239,7 @@ private:
         mutable bool _cachedOwned;
     };
 
-    DistributorComponent _distributorComponent;
+    DistributorStripeComponent _distributorComponent;
     const DistributorNodeContext& _node_ctx;
     DistributorOperationContext& _op_ctx;
     DistributorStripeInterface& _distributor_interface;

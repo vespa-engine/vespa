@@ -21,7 +21,7 @@ class BucketDBUpdater;
 class Distributor;
 class DistributorBucketSpace;
 class DistributorBucketSpaceRepo;
-class DistributorComponent;
+class DistributorStripeComponent;
 class DistributorStripe;
 class IdealStateManager;
 class ExternalOperationHandler;
@@ -114,7 +114,7 @@ public:
     BucketDBUpdater& getBucketDBUpdater();
     IdealStateManager& getIdealStateManager();
     ExternalOperationHandler& getExternalOperationHandler();
-    storage::distributor::DistributorComponent& distributor_component();
+    storage::distributor::DistributorStripeComponent& distributor_component();
 
     Distributor& getDistributor() {
         return *_distributor;
