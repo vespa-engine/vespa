@@ -10,13 +10,15 @@ import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
+import com.yahoo.vespa.hosted.controller.deployment.Run;
+import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.List;
-import java.util.stream.Collectors;
+import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertSame;
 
 /**
  * @author bratseth
@@ -27,12 +29,9 @@ public class DeploymentExpirerTest {
 
     @Test
     public void testDeploymentExpiry() {
-        tester.controllerTester().zoneRegistry().setDeploymentTimeToLive(
-                ZoneId.from(Environment.dev, RegionName.from("us-east-1")),
-                Duration.ofDays(14)
-        );
-        DeploymentExpirer expirer = new DeploymentExpirer(tester.controller(), Duration.ofDays(10)
-        );
+        ZoneId devZone = ZoneId.from(Environment.dev, RegionName.from("us-east-1"));
+        tester.controllerTester().zoneRegistry().setDeploymentTimeToLive(devZone, Duration.ofDays(14));
+        DeploymentExpirer expirer = new DeploymentExpirer(tester.controller(), Duration.ofDays(1));
         var devApp = tester.newDeploymentContext("tenant1", "app1", "default");
         var prodApp = tester.newDeploymentContext("tenant2", "app2", "default");
 
@@ -45,27 +44,42 @@ public class DeploymentExpirerTest {
 
         // Deploy prod
         prodApp.submit(appPackage).deploy();
-
-        assertEquals(1, permanentDeployments(devApp.instance()).size());
-        assertEquals(1, permanentDeployments(prodApp.instance()).size());
+        assertEquals(1, permanentDeployments(devApp.instance()));
+        assertEquals(1, permanentDeployments(prodApp.instance()));
 
         // Not expired at first
         expirer.maintain();
-        assertEquals(1, permanentDeployments(devApp.instance()).size());
-        assertEquals(1, permanentDeployments(prodApp.instance()).size());
+        assertEquals(1, permanentDeployments(devApp.instance()));
+        assertEquals(1, permanentDeployments(prodApp.instance()));
 
-        // The dev application is removed
-        tester.clock().advance(Duration.ofDays(15));
+        // Deploy dev unsuccessfully a few days before expiry
+        tester.clock().advance(Duration.ofDays(12));
+        tester.configServer().throwOnNextPrepare(new RuntimeException(getClass().getSimpleName()));
+        tester.jobs().deploy(devApp.instanceId(), JobType.devUsEast1, Optional.empty(), appPackage);
+        Run lastRun = tester.jobs().last(devApp.instanceId(), JobType.devUsEast1).get();
+        assertSame(RunStatus.error, lastRun.status());
+        Deployment deployment = tester.applications().requireInstance(devApp.instanceId())
+                                      .deployments().get(devZone);
+        assertEquals("Time of last run is after time of deployment", Duration.ofDays(12),
+                     Duration.between(deployment.at(), lastRun.end().get()));
+
+        // Dev application does not expire based on time of successful deployment
+        tester.clock().advance(Duration.ofDays(2));
         expirer.maintain();
-        assertEquals(0, permanentDeployments(devApp.instance()).size());
-        assertEquals(1, permanentDeployments(prodApp.instance()).size());
+        assertEquals(1, permanentDeployments(devApp.instance()));
+        assertEquals(1, permanentDeployments(prodApp.instance()));
+
+        // Dev application expires when enough time has passed since most recent attempt
+        tester.clock().advance(Duration.ofDays(12));
+        expirer.maintain();
+        assertEquals(0, permanentDeployments(devApp.instance()));
+        assertEquals(1, permanentDeployments(prodApp.instance()));
     }
 
-    private List<Deployment> permanentDeployments(Instance instance) {
-        return tester.controller().applications().getInstance(instance.id()).get().deployments().values().stream()
-                     .filter(deployment -> deployment.zone().environment() != Environment.test &&
-                                      deployment.zone().environment() != Environment.staging)
-                     .collect(Collectors.toList());
+    private long permanentDeployments(Instance instance) {
+        return tester.controller().applications().requireInstance(instance.id()).deployments().values().stream()
+                     .filter(deployment -> !deployment.zone().environment().isTest())
+                     .count();
     }
 
 }
