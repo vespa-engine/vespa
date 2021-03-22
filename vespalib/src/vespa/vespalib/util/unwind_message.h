@@ -3,7 +3,7 @@
 #pragma once
 
 #include "macro.h"
-#include <vespa/vespalib/stllike/string.h>
+#include "stringfmt.h"
 
 namespace vespalib {
 
@@ -31,6 +31,10 @@ extern UnwindMessage unwind_msg(const char *fmt, ...)
 #endif
     ;
 
+// make an unwind message with a hopefully unique name on the stack
 #define UNWIND_MSG(...) auto VESPA_CAT(unwindMessageOnLine, __LINE__) = unwind_msg(__VA_ARGS__)
+
+// make an unwind message quoting a piece of code and then perform that code
+#define UNWIND_DO(...) do { UNWIND_MSG("%s:%d: %s", __FILE__, __LINE__, VESPA_STRINGIZE(__VA_ARGS__)); __VA_ARGS__; } while(false)
 
 } // namespace
