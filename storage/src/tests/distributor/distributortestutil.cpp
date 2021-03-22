@@ -259,7 +259,7 @@ void
 DistributorTestUtil::addIdealNodes(const document::BucketId& id)
 {
     // TODO STRIPE roundabout way of getting state bundle..!
-    addIdealNodes(*distributor_component().getClusterStateBundle().getBaselineClusterState(), id);
+    addIdealNodes(*operation_context().cluster_state_bundle().getBaselineClusterState(), id);
 }
 
 void
@@ -354,6 +354,11 @@ DistributorTestUtil::getExternalOperationHandler() {
 storage::distributor::DistributorStripeComponent&
 DistributorTestUtil::distributor_component() {
     // TODO STRIPE tests use this to indirectly access bucket space repos/DBs!
+    return _distributor->distributor_component();
+}
+
+storage::distributor::DistributorOperationContext&
+DistributorTestUtil::operation_context() {
     return _distributor->distributor_component();
 }
 

@@ -81,7 +81,7 @@ RemoveBucketOperation::onReceiveInternal(const std::shared_ptr<api::StorageReply
                 vespalib::string(rep->getResult().getMessage()).c_str(),
                 rep->getBucketInfo().toString().c_str());
 
-            _manager->getDistributorComponent().updateBucketDatabase(
+            _manager->operation_context().update_bucket_database(
                     getBucket(),
                     BucketCopy(_manager->getDistributorComponent().getUniqueTimestamp(),
                                node,

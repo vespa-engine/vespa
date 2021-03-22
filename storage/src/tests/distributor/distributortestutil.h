@@ -21,10 +21,11 @@ class BucketDBUpdater;
 class Distributor;
 class DistributorBucketSpace;
 class DistributorBucketSpaceRepo;
-class DistributorStripeComponent;
+class DistributorOperationContext;
 class DistributorStripe;
-class IdealStateManager;
+class DistributorStripeComponent;
 class ExternalOperationHandler;
+class IdealStateManager;
 class Operation;
 
 // TODO STRIPE rename to DistributorStripeTestUtil?
@@ -115,6 +116,7 @@ public:
     IdealStateManager& getIdealStateManager();
     ExternalOperationHandler& getExternalOperationHandler();
     storage::distributor::DistributorStripeComponent& distributor_component();
+    storage::distributor::DistributorOperationContext& operation_context();
 
     Distributor& getDistributor() {
         return *_distributor;

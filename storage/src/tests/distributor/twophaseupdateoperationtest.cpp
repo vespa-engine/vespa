@@ -309,7 +309,7 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
     }
     update->setCreateIfNonExistent(options._createIfNonExistent);
 
-    document::BucketId id = distributor_component().getBucketId(update->getId());
+    document::BucketId id = operation_context().make_split_bit_constrained_bucket_id(update->getId());
     document::BucketId id2 = document::BucketId(id.getUsedBits() + 1, id.getRawId());
 
     if (bucketState.length()) {

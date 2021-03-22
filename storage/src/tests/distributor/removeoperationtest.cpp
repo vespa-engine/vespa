@@ -24,7 +24,7 @@ struct RemoveOperationTest : Test, DistributorTestUtil {
         createLinks();
 
         docId = document::DocumentId("id:test:test::uri");
-        bucketId = distributor_component().getBucketId(docId);
+        bucketId = operation_context().make_split_bit_constrained_bucket_id(docId);
         enableDistributorClusterState("distributor:1 storage:4");
     };
 

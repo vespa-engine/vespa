@@ -69,7 +69,7 @@ GarbageCollectionOperation::onReceive(DistributorMessageSender&,
 
 void GarbageCollectionOperation::merge_received_bucket_info_into_db() {
     // TODO avoid two separate DB ops for this. Current API currently does not make this elegant.
-    _manager->getDistributorComponent().updateBucketDatabase(getBucket(), _replica_info);
+    _manager->operation_context().update_bucket_database(getBucket(), _replica_info);
     BucketDatabase::Entry dbentry = _bucketSpace->getBucketDatabase().get(getBucketId());
     if (dbentry.valid()) {
         dbentry->setLastGarbageCollectionTime(

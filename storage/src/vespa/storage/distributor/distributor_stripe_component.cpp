@@ -41,12 +41,6 @@ DistributorStripeComponent::sendUp(const api::StorageMessage::SP& msg)
     _distributor.getMessageSender().sendUp(msg);
 }
 
-const lib::ClusterStateBundle&
-DistributorStripeComponent::getClusterStateBundle() const
-{
-    return _distributor.getClusterStateBundle();
-}
-
 bool
 DistributorStripeComponent::checkDistribution(api::StorageCommand &cmd, const document::Bucket &bucket)
 {
@@ -178,10 +172,10 @@ UpdateBucketDatabaseProcessor::process_entry(BucketDatabase::Entry &entry) const
 }
 
 void
-DistributorStripeComponent::updateBucketDatabase(
-        const document::Bucket &bucket,
-        const std::vector<BucketCopy>& changedNodes,
-        uint32_t updateFlags)
+DistributorStripeComponent::update_bucket_database(
+        const document::Bucket& bucket,
+        const std::vector<BucketCopy>& changed_nodes,
+        uint32_t update_flags)
 {
     auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
     assert(!(bucket.getBucketId() == document::BucketId()));
@@ -200,7 +194,7 @@ DistributorStripeComponent::updateBucketDatabase(
     // bucket database (i.e. copies on nodes that are actually unavailable).
     const auto& available_nodes = bucketSpace.get_available_nodes();
     bool found_down_node = false;
-    for (const auto& copy : changedNodes) {
+    for (const auto& copy : changed_nodes) {
         if (copy.getNode() >= available_nodes.size() || !available_nodes[copy.getNode()]) {
             found_down_node = true;
             break;
@@ -210,42 +204,24 @@ DistributorStripeComponent::updateBucketDatabase(
     // bucket copy vector
     std::vector<BucketCopy> up_nodes;
     if (found_down_node) {
-        up_nodes.reserve(changedNodes.size());
-        for (uint32_t i = 0; i < changedNodes.size(); ++i) {
-            const BucketCopy& copy(changedNodes[i]);
+        up_nodes.reserve(changed_nodes.size());
+        for (uint32_t i = 0; i < changed_nodes.size(); ++i) {
+            const BucketCopy& copy(changed_nodes[i]);
             if (copy.getNode() < available_nodes.size() && available_nodes[copy.getNode()]) {
                 up_nodes.emplace_back(copy);
             }
         }
     }
 
-    UpdateBucketDatabaseProcessor processor(getClock(), found_down_node ? up_nodes : changedNodes, bucketSpace.get_ideal_service_layer_nodes_bundle(bucket.getBucketId()).get_available_nodes(), (updateFlags & DatabaseUpdate::RESET_TRUSTED) != 0);
+    UpdateBucketDatabaseProcessor processor(getClock(), found_down_node ? up_nodes : changed_nodes, bucketSpace.get_ideal_service_layer_nodes_bundle(bucket.getBucketId()).get_available_nodes(), (update_flags & DatabaseUpdate::RESET_TRUSTED) != 0);
 
-    bucketSpace.getBucketDatabase().process_update(bucket.getBucketId(), processor, (updateFlags & DatabaseUpdate::CREATE_IF_NONEXISTING) != 0);
+    bucketSpace.getBucketDatabase().process_update(bucket.getBucketId(), processor, (update_flags & DatabaseUpdate::CREATE_IF_NONEXISTING) != 0);
 }
 
 void
 DistributorStripeComponent::recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket)
 {
     _distributor.recheckBucketInfo(nodeIdx, bucket);
-}
-
-document::BucketId
-DistributorStripeComponent::getBucketId(const document::DocumentId& docId) const
-{
-    document::BucketId id(getBucketIdFactory().getBucketId(docId));
-
-    id.setUsedBits(_distributor.getConfig().getMinimalBucketSplit());
-    return id.stripUnused();
-}
-
-bool
-DistributorStripeComponent::storageNodeIsUp(document::BucketSpace bucketSpace, uint32_t nodeIndex) const
-{
-    const lib::NodeState& ns = getClusterStateBundle().getDerivedClusterState(bucketSpace)->getNodeState(
-            lib::Node(lib::NodeType::STORAGE, nodeIndex));
-
-    return ns.getState().oneOf(_distributor.getStorageNodeUpStates());
 }
 
 document::BucketId
@@ -293,6 +269,15 @@ DistributorStripeComponent::node_address(uint16_t node_index) const noexcept
 
 
 // Implements DistributorOperationContext
+document::BucketId
+DistributorStripeComponent::make_split_bit_constrained_bucket_id(const document::DocumentId& doc_id) const
+{
+    document::BucketId id(getBucketIdFactory().getBucketId(doc_id));
+
+    id.setUsedBits(_distributor.getConfig().getMinimalBucketSplit());
+    return id.stripUnused();
+}
+
 bool
 DistributorStripeComponent::has_pending_message(uint16_t node_index,
                                                 const document::Bucket& bucket,
@@ -300,6 +285,21 @@ DistributorStripeComponent::has_pending_message(uint16_t node_index,
 {
     const auto& sender = static_cast<const DistributorMessageSender&>(getDistributor());
     return sender.getPendingMessageTracker().hasPendingMessage(node_index, bucket, message_type);
+}
+
+const lib::ClusterStateBundle&
+DistributorStripeComponent::cluster_state_bundle() const
+{
+    return _distributor.getClusterStateBundle();
+}
+
+bool
+DistributorStripeComponent::storage_node_is_up(document::BucketSpace bucket_space, uint32_t node_index) const
+{
+    const lib::NodeState& ns = cluster_state_bundle().getDerivedClusterState(bucket_space)->getNodeState(
+            lib::Node(lib::NodeType::STORAGE, node_index));
+
+    return ns.getState().oneOf(_distributor.getStorageNodeUpStates());
 }
 
 std::unique_ptr<document::select::Node>

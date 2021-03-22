@@ -110,7 +110,7 @@ JoinOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP&
                 rep.getSourceBuckets());
         for (uint32_t i = 0; i < sourceBuckets.size(); i++) {
             document::Bucket sourceBucket(msg->getBucket().getBucketSpace(), sourceBuckets[i]);
-            _manager->getDistributorComponent().removeNodeFromDB(sourceBucket, node);
+            _manager->operation_context().remove_node_from_bucket_database(sourceBucket, node);
         }
 
         // Add new buckets.
@@ -118,7 +118,7 @@ JoinOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP&
             LOG(debug, "Invalid bucketinfo for bucket %s returned in join",
                 getBucketId().toString().c_str());
         } else {
-            _manager->getDistributorComponent().updateBucketDatabase(
+            _manager->operation_context().update_bucket_database(
                     getBucket(),
                     BucketCopy(_manager->getDistributorComponent().getUniqueTimestamp(),
                                node,

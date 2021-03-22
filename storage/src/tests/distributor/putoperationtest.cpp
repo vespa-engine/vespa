@@ -104,7 +104,7 @@ document::BucketId
 PutOperationTest::createAndSendSampleDocument(vespalib::duration timeout) {
     auto doc = std::make_shared<Document>(doc_type(), DocumentId("id:test:testdoctype1::"));
 
-    document::BucketId id = distributor_component().getBucketId(doc->getId());
+    document::BucketId id = operation_context().make_split_bit_constrained_bucket_id(doc->getId());
     addIdealNodes(id);
 
     auto msg = std::make_shared<api::PutCommand>(makeDocumentBucket(document::BucketId(0)), doc, 0);
@@ -150,7 +150,7 @@ TEST_F(PutOperationTest, bucket_database_gets_special_entry_when_CreateBucket_se
     // Database updated before CreateBucket is sent
     ASSERT_EQ("BucketId(0x4000000000008f09) : "
               "node(idx=0,crc=0x1,docs=0/0,bytes=0/0,trusted=true,active=true,ready=false)",
-              dumpBucket(distributor_component().getBucketId(doc->getId())));
+              dumpBucket(operation_context().make_split_bit_constrained_bucket_id(doc->getId())));
 
     ASSERT_EQ("Create bucket => 0,Put => 0", _sender.getCommands(true));
 }
@@ -197,7 +197,7 @@ TEST_F(PutOperationTest, return_success_if_op_acked_on_all_replicas_even_if_buck
               "id:test:testdoctype1::, timestamp 100, size 45) => 1",
               _sender.getCommands(true, true));
 
-    distributor_component().removeNodeFromDB(makeDocumentBucket(document::BucketId(16, 0x1dd4)), 0);
+    operation_context().remove_node_from_bucket_database(makeDocumentBucket(document::BucketId(16, 0x1dd4)), 0);
 
     // If we get an ACK from the backend nodes, the operation has been persisted OK.
     // Even if the bucket has been removed from the DB in the meantime (usually would
@@ -249,7 +249,7 @@ TEST_F(PutOperationTest, multiple_copies) {
               "node(idx=3,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false), "
               "node(idx=2,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false), "
               "node(idx=1,crc=0x1,docs=2/4,bytes=3/5,trusted=true,active=false,ready=false)",
-              dumpBucket(distributor_component().getBucketId(doc->getId())));
+              dumpBucket(operation_context().make_split_bit_constrained_bucket_id(doc->getId())));
 }
 
 TEST_F(PutOperationTest, multiple_copies_early_return_primary_required) {
@@ -477,7 +477,7 @@ parseBucketInfoString(const std::string& nodeList) {
 std::string
 PutOperationTest::getNodes(const std::string& infoString) {
     Document::SP doc(createDummyDocument("test", "uri"));
-    document::BucketId bid(distributor_component().getBucketId(doc->getId()));
+    document::BucketId bid(operation_context().make_split_bit_constrained_bucket_id(doc->getId()));
 
     BucketInfo entry = parseBucketInfoString(infoString);
 
@@ -519,7 +519,7 @@ TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_active_
     setupDistributor(Redundancy(3), NodeCount(3), "distributor:1 storage:3");
 
     Document::SP doc(createDummyDocument("test", "uri"));
-    document::BucketId bId = distributor_component().getBucketId(doc->getId());
+    document::BucketId bId = operation_context().make_split_bit_constrained_bucket_id(doc->getId());
 
     addNodesToBucketDB(bId, "0=1/2/3/t,1=1/2/3/t,2=1/2/3/t");
 
@@ -536,14 +536,14 @@ TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_active_
 
     ASSERT_EQ("BucketId(0x4000000000000593) : "
               "node(idx=0,crc=0x7,docs=8/8,bytes=9/9,trusted=true,active=false,ready=false)",
-              dumpBucket(distributor_component().getBucketId(doc->getId())));
+              dumpBucket(operation_context().make_split_bit_constrained_bucket_id(doc->getId())));
 }
 
 TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_pending_state) {
     setupDistributor(Redundancy(3), NodeCount(4), "version:1 distributor:1 storage:3");
 
     auto doc = createDummyDocument("test", "uri");
-    auto bucket = distributor_component().getBucketId(doc->getId());
+    auto bucket = operation_context().make_split_bit_constrained_bucket_id(doc->getId());
     addNodesToBucketDB(bucket, "0=1/2/3/t,1=1/2/3/t,2=1/2/3/t");
     sendPut(createPut(doc));
 
@@ -577,7 +577,7 @@ TEST_F(PutOperationTest, replica_not_resurrected_in_db_when_node_down_in_pending
 TEST_F(PutOperationTest, put_is_failed_with_busy_if_target_down_in_pending_state) {
     setupDistributor(Redundancy(3), NodeCount(4), "version:1 distributor:1 storage:3");
     auto doc = createDummyDocument("test", "test");
-    auto bucket = distributor_component().getBucketId(doc->getId());
+    auto bucket = operation_context().make_split_bit_constrained_bucket_id(doc->getId());
     addNodesToBucketDB(bucket, "0=1/2/3/t,1=1/2/3/t,2=1/2/3/t");
     getBucketDBUpdater().onSetSystemState(
             std::make_shared<api::SetSystemStateCommand>(
@@ -597,7 +597,7 @@ TEST_F(PutOperationTest, send_to_retired_nodes_if_no_up_nodes_available) {
                      "distributor:1 storage:2 .0.s:r .1.s:r");
     Document::SP doc(createDummyDocument("test", "uri"));
     document::BucketId bucket(
-            distributor_component().getBucketId(doc->getId()));
+            operation_context().make_split_bit_constrained_bucket_id(doc->getId()));
     addNodesToBucketDB(bucket, "0=1/2/3/t,1=1/2/3/t");
 
     sendPut(createPut(doc));

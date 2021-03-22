@@ -99,19 +99,19 @@ TEST_F(ExternalOperationHandlerTest, bucket_split_mask) {
         getDirConfig().getConfig("stor-distributormanager").set("minsplitcount", "16");
 
         EXPECT_EQ(document::BucketId(16, 0xffff),
-                distributor_component().getBucketId(document::DocumentId(
+                operation_context().make_split_bit_constrained_bucket_id(document::DocumentId(
                     vespalib::make_string("id:ns:test:n=%d::", 0xffff))
                 ).stripUnused());
         EXPECT_EQ(document::BucketId(16, 0),
-                distributor_component().getBucketId(document::DocumentId(
+                operation_context().make_split_bit_constrained_bucket_id(document::DocumentId(
                     vespalib::make_string("id:ns:test:n=%d::", 0x10000))
                 ).stripUnused());
         EXPECT_EQ(document::BucketId(16, 0xffff),
-                distributor_component().getBucketId(document::DocumentId(
+                operation_context().make_split_bit_constrained_bucket_id(document::DocumentId(
                     vespalib::make_string("id:ns:test:n=%d::", 0xffff))
                 ).stripUnused());
         EXPECT_EQ(document::BucketId(16, 0x100),
-                distributor_component().getBucketId(document::DocumentId(
+                operation_context().make_split_bit_constrained_bucket_id(document::DocumentId(
                     vespalib::make_string("id:ns:test:n=%d::", 0x100))
                 ).stripUnused());
         close();
@@ -120,11 +120,11 @@ TEST_F(ExternalOperationHandlerTest, bucket_split_mask) {
         getDirConfig().getConfig("stor-distributormanager").set("minsplitcount", "20");
         createLinks();
         EXPECT_EQ(document::BucketId(20, 0x11111),
-                distributor_component().getBucketId(document::DocumentId(
+                operation_context().make_split_bit_constrained_bucket_id(document::DocumentId(
                     vespalib::make_string("id:ns:test:n=%d::", 0x111111))
                 ).stripUnused());
         EXPECT_EQ(document::BucketId(20, 0x22222),
-                distributor_component().getBucketId(document::DocumentId(
+                operation_context().make_split_bit_constrained_bucket_id(document::DocumentId(
                     vespalib::make_string("id:ns:test:n=%d::", 0x222222))
                 ).stripUnused());
     }
