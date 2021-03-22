@@ -6,6 +6,7 @@
 
 using vespalib::unwind_msg;
 using vespalib::UnwindMessage;
+using E = std::invalid_argument;
 
 //-----------------------------------------------------------------------------
 
@@ -21,7 +22,6 @@ struct MyObj {
     UnwindMessage msg3 = UnwindMessage("this SHOULD be printed (2/4)");
     ~MyObj() {
         EXPECT_EQ(std::uncaught_exceptions(), 1);
-        using E = std::invalid_argument;
         auto not_printed_1 = std::move(msg2);
         try {
             MyCheck my_check;
@@ -32,7 +32,6 @@ struct MyObj {
 };
 
 TEST(UnwindMessageTest, unwind_messages_are_printed_when_appropriate) {
-    using E = std::invalid_argument;
     auto not_printed_5 = unwind_msg("this should NOT be printed (%d)", 5);
     UNWIND_MSG("this should NOT be printed (%d)", 4);
     EXPECT_THROW(
@@ -51,15 +50,39 @@ TEST(UnwindMessageTest, unwind_messages_are_printed_when_appropriate) {
 
 //-----------------------------------------------------------------------------
 
-// need make_string for VESPA_STRLOC macro
-#include <vespa/vespalib/util/stringfmt.h>
-
 TEST(UnwindMessageTest, unwind_message_with_location) {
-    using E = std::invalid_argument;
     EXPECT_THROW(
             {
                 UNWIND_MSG("%s message with location information", VESPA_STRLOC.c_str());
                 throw E("just testing");
+            }, E);
+}
+
+//-----------------------------------------------------------------------------
+
+void my_bad_call() {
+    throw E("just testing");
+}
+
+TEST(UnwindMessageTest, unwind_message_from_UNWIND_DO_macro_calling_a_function) {
+    EXPECT_THROW(
+            {
+                UNWIND_DO(my_bad_call());
+            }, E);
+}
+
+//-----------------------------------------------------------------------------
+
+TEST(UnwindMessageTest, unwind_message_from_UNWIND_DO_macro_with_inline_code) {
+    EXPECT_THROW(
+            {
+                UNWIND_DO(
+                        int a = 1;
+                        int b = 2;
+                        int c = a + b;
+                        (void) c;
+                        throw E("oops");
+                );
             }, E);
 }
 
