@@ -97,10 +97,10 @@ public class IndexedHierarchicDistributionValidator {
         }
         if (totalReadyCopies % groupCount != 0) {
             throw new IllegalArgumentException(getErrorMsgPrefix(clusterName) + "Expected equal amount of ready copies per group, but " +
-                                               totalReadyCopies + " ready copies is specified with " + groupCount + " groups");
+                                totalReadyCopies + " ready copies is specified with " + groupCount + " groups");
         }
         if (totalReadyCopies == 0) {
-            throw new IllegalArgumentException(getErrorMsgPrefix(clusterName) + "Warning. No ready copies configured. At least one is required.");
+            System.err.println(getErrorMsgPrefix(clusterName) + "Warning. No ready copies configured. At least one is recommended.");
         }
     }
 
