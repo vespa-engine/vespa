@@ -259,7 +259,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                 return;
             }
 
-            if (applicationMapper.hasApplication(applicationId, clock.instant())) {
+            if (hasApplication(applicationId)) {
                 applicationMapper.remove(applicationId);
                 hostRegistry.removeHostsForKey(applicationId);
                 reloadListenersOnRemove(applicationId);
@@ -268,6 +268,10 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                 log.log(Level.INFO, "Application removed: " + applicationId);
             }
         }
+    }
+
+    public boolean hasApplication(ApplicationId applicationId) {
+        return applicationMapper.hasApplication(applicationId, clock.instant());
     }
 
     public void removeApplicationsExcept(Set<ApplicationId> applications) {
