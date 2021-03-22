@@ -71,12 +71,6 @@ public:
         return _distributor;
     }
 
-    DistributorBucketSpaceRepo &getBucketSpaceRepo() { return _bucketSpaceRepo; }
-    const DistributorBucketSpaceRepo &getBucketSpaceRepo() const { return _bucketSpaceRepo; }
-
-    DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo() { return _readOnlyBucketSpaceRepo; }
-    const DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo() const { return _readOnlyBucketSpaceRepo; }
-
     /**
      * Finds a bucket that has the same direct parent as the given bucket
      * (i.e. split one bit less), but different bit in the most used bit.
