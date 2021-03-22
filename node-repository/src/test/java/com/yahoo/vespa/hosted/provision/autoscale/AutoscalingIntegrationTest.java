@@ -34,7 +34,7 @@ public class AutoscalingIntegrationTest {
         MetricsV2MetricsFetcher fetcher = new MetricsV2MetricsFetcher(tester.nodeRepository(),
                                                                       new OrchestratorMock(),
                                                                       new MockHttpClient(tester.clock()));
-        Autoscaler autoscaler = new Autoscaler(tester.nodeMetricsDb(), tester.nodeRepository());
+        Autoscaler autoscaler = new Autoscaler(tester.nodeRepository());
 
         ApplicationId application1 = tester.applicationId("test1");
         ClusterSpec cluster1 = tester.clusterSpec(ClusterSpec.Type.container, "test");

@@ -33,18 +33,15 @@ import java.util.Set;
 public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
 
     private final Autoscaler autoscaler;
-    private final MetricsDb metricsDb;
     private final Deployer deployer;
     private final Metric metric;
 
     public AutoscalingMaintainer(NodeRepository nodeRepository,
-                                 MetricsDb metricsDb,
                                  Deployer deployer,
                                  Metric metric,
                                  Duration interval) {
         super(nodeRepository, interval, metric);
-        this.autoscaler = new Autoscaler(metricsDb, nodeRepository);
-        this.metricsDb = metricsDb;
+        this.autoscaler = new Autoscaler(nodeRepository);
         this.deployer = deployer;
         this.metric = metric;
     }
@@ -115,8 +112,8 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
                         .anyMatch(node -> node.history().hasEventAt(History.Event.Type.retired, event.at())))
             return cluster;
         // - 2. all nodes have switched to the right config generation
-        for (NodeTimeseries nodeTimeseries : metricsDb.getNodeTimeseries(Duration.between(event.at(), clock().instant()),
-                                                                         clusterNodes)) {
+        for (var nodeTimeseries : nodeRepository().metricsDb().getNodeTimeseries(Duration.between(event.at(), clock().instant()),
+                                                                                 clusterNodes)) {
             Optional<NodeMetricSnapshot> firstOnNewGeneration =
                     nodeTimeseries.asList().stream()
                                            .filter(snapshot -> snapshot.generation() >= event.generation()).findFirst();

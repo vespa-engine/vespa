@@ -52,7 +52,6 @@ public class NodeRepositoryProvisioner implements Provisioner {
     private static final Logger log = Logger.getLogger(NodeRepositoryProvisioner.class.getName());
 
     private final NodeRepository nodeRepository;
-    private final MetricsDb metricsDb;
     private final AllocationOptimizer allocationOptimizer;
     private final CapacityPolicies capacityPolicies;
     private final Zone zone;
@@ -63,11 +62,9 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     @Inject
     public NodeRepositoryProvisioner(NodeRepository nodeRepository,
-                                     MetricsDb metricsDb,
                                      Zone zone,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource) {
         this.nodeRepository = nodeRepository;
-        this.metricsDb = metricsDb;
         this.allocationOptimizer = new AllocationOptimizer(nodeRepository);
         this.capacityPolicies = new CapacityPolicies(nodeRepository);
         this.zone = zone;
@@ -167,7 +164,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
                 firstDeployment // start at min, preserve current resources otherwise
                 ? new AllocatableClusterResources(requested.minResources(), clusterSpec, nodeRepository)
                 : new AllocatableClusterResources(nodes.asList(), nodeRepository, clusterSpec.isExclusive());
-        var clusterModel = new ClusterModel(application, cluster, clusterSpec, nodes, metricsDb, nodeRepository.clock());
+        var clusterModel = new ClusterModel(application, cluster, clusterSpec, nodes, nodeRepository.metricsDb(), nodeRepository.clock());
         return within(Limits.of(requested), currentResources, firstDeployment, clusterModel);
     }
 

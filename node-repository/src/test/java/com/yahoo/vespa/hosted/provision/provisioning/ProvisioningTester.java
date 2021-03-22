@@ -112,12 +112,12 @@ public class ProvisioningTester {
                                                  nameResolver,
                                                  containerImage,
                                                  flagSource,
+                                                 new MemoryMetricsDb(clock),
                                                  true,
                                                  spareCount,
                                                  1000);
         this.orchestrator = orchestrator;
         this.provisioner = new NodeRepositoryProvisioner(nodeRepository,
-                                                         new MemoryMetricsDb(nodeRepository),
                                                          zone,
                                                          provisionServiceProvider,
                                                          flagSource);

@@ -26,12 +26,10 @@ public class Autoscaler {
     /** What resource difference is worth a reallocation? */
     private static final double resourceDifferenceWorthReallocation = 0.1;
 
-    private final MetricsDb metricsDb;
     private final NodeRepository nodeRepository;
     private final AllocationOptimizer allocationOptimizer;
 
-    public Autoscaler(MetricsDb metricsDb, NodeRepository nodeRepository) {
-        this.metricsDb = metricsDb;
+    public Autoscaler(NodeRepository nodeRepository) {
         this.nodeRepository = nodeRepository;
         this.allocationOptimizer = new AllocationOptimizer(nodeRepository);
     }
@@ -63,7 +61,7 @@ public class Autoscaler {
                                                      cluster,
                                                      clusterNodes.clusterSpec(),
                                                      clusterNodes,
-                                                     metricsDb,
+                                                     nodeRepository.metricsDb(),
                                                      nodeRepository.clock());
 
         if ( ! clusterIsStable(clusterNodes, nodeRepository))

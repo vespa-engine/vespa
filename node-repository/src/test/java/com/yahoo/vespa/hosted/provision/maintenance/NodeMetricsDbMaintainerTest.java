@@ -39,15 +39,13 @@ public class NodeMetricsDbMaintainerTest {
         OrchestratorMock orchestrator = new OrchestratorMock();
         MockHttpClient httpClient = new MockHttpClient();
         MetricsV2MetricsFetcher fetcher = new MetricsV2MetricsFetcher(tester.nodeRepository(), orchestrator, httpClient);
-        MetricsDb db = MetricsDb.createTestInstance(tester.nodeRepository());
         NodeMetricsDbMaintainer maintainer = new NodeMetricsDbMaintainer(tester.nodeRepository(),
                                                                          fetcher,
-                                                                         db,
                                                                          Duration.ofHours(1),
                                                                          new TestMetric());
         assertTrue(maintainer.maintain());
-        List<NodeTimeseries> timeseriesList = db.getNodeTimeseries(Duration.ofDays(1),
-                                                                   Set.of("host-1.yahoo.com", "host-2.yahoo.com"));
+        List<NodeTimeseries> timeseriesList = tester.nodeRepository().metricsDb().getNodeTimeseries(Duration.ofDays(1),
+                                                                                                    Set.of("host-1.yahoo.com", "host-2.yahoo.com"));
         assertEquals(2, timeseriesList.size());
         List<NodeMetricSnapshot> allSnapshots = timeseriesList.stream()
                                                               .flatMap(timeseries -> timeseries.asList().stream())

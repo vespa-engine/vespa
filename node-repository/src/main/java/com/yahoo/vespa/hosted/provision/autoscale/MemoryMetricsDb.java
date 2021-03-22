@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
  */
 public class MemoryMetricsDb implements MetricsDb {
 
-    private final NodeRepository nodeRepository;
+    private final Clock clock;
 
     /** Metric time series by node (hostname). Each list of metric snapshots is sorted by increasing timestamp */
     private final Map<String, NodeTimeseries> nodeTimeseries = new HashMap<>();
@@ -37,12 +37,12 @@ public class MemoryMetricsDb implements MetricsDb {
     /** Lock all access for now since we modify lists inside a map */
     private final Object lock = new Object();
 
-    public MemoryMetricsDb(NodeRepository nodeRepository) {
-        this.nodeRepository = nodeRepository;
+    public MemoryMetricsDb(Clock clock) {
+        this.clock = clock;
     }
 
     @Override
-    public Clock clock() { return nodeRepository.clock(); }
+    public Clock clock() { return clock; }
 
     @Override
     public void addNodeMetrics(Collection<Pair<String, NodeMetricSnapshot>> nodeMetrics) {
@@ -70,7 +70,7 @@ public class MemoryMetricsDb implements MetricsDb {
 
     @Override
     public List<NodeTimeseries> getNodeTimeseries(Duration period, Set<String> hostnames) {
-        Instant startTime = nodeRepository.clock().instant().minus(period);
+        Instant startTime = clock().instant().minus(period);
         synchronized (lock) {
             return hostnames.stream()
                             .map(hostname -> nodeTimeseries.getOrDefault(hostname, new NodeTimeseries(hostname, List.of())).justAfter(startTime))
@@ -91,7 +91,7 @@ public class MemoryMetricsDb implements MetricsDb {
             // 12 hours with 1k nodes and 3 resources and 1 measurement/sec is about 5Gb
             for (String hostname : nodeTimeseries.keySet()) {
                 var timeseries = nodeTimeseries.get(hostname);
-                timeseries = timeseries.justAfter(nodeRepository.clock().instant().minus(Autoscaler.maxScalingWindow()));
+                timeseries = timeseries.justAfter(clock().instant().minus(Autoscaler.maxScalingWindow()));
                 if (timeseries.isEmpty())
                     nodeTimeseries.remove(hostname);
                 else
@@ -106,9 +106,6 @@ public class MemoryMetricsDb implements MetricsDb {
     private void add(String hostname, NodeMetricSnapshot snapshot) {
         NodeTimeseries timeseries = nodeTimeseries.get(hostname);
         if (timeseries == null) { // new node
-            Optional<Node> node = nodeRepository.nodes().node(hostname);
-            if (node.isEmpty()) return;
-            if (node.get().allocation().isEmpty()) return;
             timeseries = new NodeTimeseries(hostname, new ArrayList<>());
             nodeTimeseries.put(hostname, timeseries);
         }

@@ -68,6 +68,7 @@ public class MockNodeRepository extends NodeRepository {
               new MockNameResolver().mockAnyLookup(),
               DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
               new InMemoryFlagSource(),
+              new MemoryMetricsDb(Clock.fixed(Instant.ofEpochMilli(123), ZoneId.of("Z"))),
               true,
               0, 1000);
         this.flavors = flavors;
@@ -78,7 +79,6 @@ public class MockNodeRepository extends NodeRepository {
 
     private void populate() {
         NodeRepositoryProvisioner provisioner = new NodeRepositoryProvisioner(this,
-                                                                              new MemoryMetricsDb(this),
                                                                               Zone.defaultZone(),
                                                                               new MockProvisionServiceProvider(),
                                                                               new InMemoryFlagSource());

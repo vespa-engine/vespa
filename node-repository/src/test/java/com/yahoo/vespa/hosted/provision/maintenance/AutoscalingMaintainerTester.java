@@ -37,7 +37,6 @@ import java.util.stream.Collectors;
 public class AutoscalingMaintainerTester {
 
     private final ProvisioningTester provisioningTester;
-    private final MetricsDb metricsDb;
     private final AutoscalingMaintainer maintainer;
     private final MockDeployer deployer;
 
@@ -49,9 +48,7 @@ public class AutoscalingMaintainerTester {
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Arrays.stream(appContexts)
                                                                          .collect(Collectors.toMap(c -> c.id(), c -> c));
         deployer = new MockDeployer(provisioningTester.provisioner(), provisioningTester.clock(), apps);
-        metricsDb = MetricsDb.createTestInstance(provisioningTester.nodeRepository());
         maintainer = new AutoscalingMaintainer(provisioningTester.nodeRepository(),
-                                               metricsDb,
                                                deployer,
                                                new TestMetric(),
                                                Duration.ofMinutes(1));
@@ -63,7 +60,6 @@ public class AutoscalingMaintainerTester {
     public ManualClock clock() { return provisioningTester.clock(); }
     public MockDeployer deployer() { return deployer; }
     public AutoscalingMaintainer maintainer() { return maintainer; }
-    public MetricsDb nodeMetricsDb() { return metricsDb; }
 
     public static ApplicationId makeApplicationId(String name) { return ProvisioningTester.applicationId(name); }
     public static ClusterSpec containerClusterSpec() { return ProvisioningTester.containerClusterSpec(); }
@@ -76,14 +72,15 @@ public class AutoscalingMaintainerTester {
         NodeList nodes = nodeRepository().nodes().list(Node.State.active).owner(applicationId);
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)
-                metricsDb.addNodeMetrics(List.of(new Pair<>(node.hostname(), new NodeMetricSnapshot(clock().instant(),
-                                                                                                    cpu,
-                                                                                                    mem,
-                                                                                                    disk,
-                                                                                                    generation,
-                                                                                                    true,
-                                                                                                    true,
-                                                                                                    0.0))));
+                nodeRepository().metricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
+                                                                               new NodeMetricSnapshot(clock().instant(),
+                                                                                                      cpu,
+                                                                                                      mem,
+                                                                                                      disk,
+                                                                                                      generation,
+                                                                                                      true,
+                                                                                                      true,
+                                                                                                      0.0))));
         }
     }
 
@@ -94,7 +91,8 @@ public class AutoscalingMaintainerTester {
                                          IntFunction<Double> queryRate) {
         Instant time = clock().instant();
         for (int i = 0; i < measurements; i++) {
-            metricsDb.addClusterMetrics(application, Map.of(cluster, new ClusterMetricSnapshot(time, queryRate.apply(i), 0.0)));
+            nodeRepository().metricsDb().addClusterMetrics(application,
+                                                           Map.of(cluster, new ClusterMetricSnapshot(time, queryRate.apply(i), 0.0)));
             time = time.plus(Duration.ofMinutes(5));
         }
     }
