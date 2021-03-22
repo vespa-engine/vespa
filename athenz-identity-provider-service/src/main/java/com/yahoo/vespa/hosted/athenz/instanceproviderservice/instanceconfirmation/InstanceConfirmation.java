@@ -13,6 +13,7 @@ import com.fasterxml.jackson.databind.JsonSerializer;
 import com.fasterxml.jackson.databind.SerializerProvider;
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize;
 import com.fasterxml.jackson.databind.annotation.JsonSerialize;
+import com.yahoo.restapi.RestApi;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.impl.Utils;
 
@@ -26,7 +27,7 @@ import java.util.Objects;
  *
  * @author bjorncs
  */
-public class InstanceConfirmation {
+public class InstanceConfirmation implements RestApi.JacksonRequestEntity {
 
     @JsonProperty("provider") public final String provider;
     @JsonProperty("domain") public final String domain;

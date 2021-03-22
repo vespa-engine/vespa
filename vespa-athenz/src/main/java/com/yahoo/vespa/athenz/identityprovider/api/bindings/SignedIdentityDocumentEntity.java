@@ -4,6 +4,7 @@ package com.yahoo.vespa.athenz.identityprovider.api.bindings;
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.yahoo.restapi.RestApi;
 
 import java.time.Instant;
 import java.util.Objects;
@@ -13,7 +14,7 @@ import java.util.Set;
  * @author bjorncs
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class SignedIdentityDocumentEntity {
+public class SignedIdentityDocumentEntity implements RestApi.JacksonResponseEntity {
 
     @JsonProperty("signature") public final String signature;
     @JsonProperty("signing-key-version") public final int signingKeyVersion;
