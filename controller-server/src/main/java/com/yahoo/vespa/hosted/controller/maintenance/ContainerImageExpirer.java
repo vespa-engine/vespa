@@ -41,7 +41,7 @@ public class ContainerImageExpirer extends ControllerMaintainer {
                                                           .filter(image -> canExpire(image, now, versionStatus))
                                                           .collect(Collectors.toList());
         if (!imagesToExpire.isEmpty()) {
-            log.log(Level.INFO, "Expiring container images: " + imagesToExpire);
+            log.log(Level.INFO, "Expiring " + imagesToExpire.size() + " container images: " + imagesToExpire);
             controller().serviceRegistry().containerRegistry().deleteAll(imagesToExpire);
         }
         return true;
