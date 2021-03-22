@@ -5,7 +5,7 @@
 #include "bucket_spaces_stats_provider.h"
 #include "bucketdbupdater.h"
 #include "distributor_host_info_reporter.h"
-#include "distributorinterface.h"
+#include "distributor_stripe_interface.h"
 #include "externaloperationhandler.h"
 #include "idealstatemanager.h"
 #include "min_replica_provider.h"
@@ -15,7 +15,7 @@
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/storage/distributor/bucketdb/bucketdbmetricupdater.h>
-#include <vespa/storage/distributor/distributorcomponent.h>
+#include <vespa/storage/distributor/distributor_stripe_component.h>
 #include <vespa/storage/distributor/maintenance/maintenancescheduler.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
@@ -40,9 +40,12 @@ class OwnershipTransferSafeTimePointCalculator;
 class SimpleMaintenanceScanner;
 class ThrottlingOperationStarter;
 
+/**
+ * TODO STRIPE add class comment.
+ */
 class DistributorStripe final
     : public StorageLink, // TODO decouple
-      public DistributorInterface,
+      public DistributorStripeInterface,
       public StatusDelegator,
       public framework::StatusReporter,
       public framework::TickingThread,
@@ -281,7 +284,7 @@ private:
     // during cluster state transitions. Bucket set does not overlap that of _bucketSpaceRepo
     // and the DBs are empty during non-transition phases.
     std::unique_ptr<DistributorBucketSpaceRepo> _readOnlyBucketSpaceRepo;
-    storage::distributor::DistributorComponent _component;
+    storage::distributor::DistributorStripeComponent _component;
     DistributorMetricSet& _metrics;
 
     OperationOwner _operationOwner;

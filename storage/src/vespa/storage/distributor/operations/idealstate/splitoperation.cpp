@@ -101,7 +101,7 @@ SplitOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP
             // Must reset trusted since otherwise trustedness of inconsistent
             // copies would be arbitrarily determined by which copy managed
             // to finish its split first.
-            _manager->getDistributorComponent().updateBucketDatabase(
+            _manager->operation_context().update_bucket_database(
                     document::Bucket(msg->getBucket().getBucketSpace(), sinfo.first), copy,
                     (DatabaseUpdate::CREATE_IF_NONEXISTING
                      | DatabaseUpdate::RESET_TRUSTED));

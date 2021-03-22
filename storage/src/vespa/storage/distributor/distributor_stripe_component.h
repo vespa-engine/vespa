@@ -3,7 +3,7 @@
 
 #include "distributor_node_context.h"
 #include "distributor_operation_context.h"
-#include "distributorinterface.h"
+#include "distributor_stripe_interface.h"
 #include "document_selection_parser.h"
 #include "operationowner.h"
 #include "statechecker.h"
@@ -26,36 +26,21 @@ struct DatabaseUpdate {
 /**
  * Takes care of subscribing to document manager config and
  * making those values available to other subcomponents.
+ * TODO STRIPE update class comment.
  */
-class DistributorComponent : public storage::DistributorComponent,
-                             public DistributorNodeContext,
-                             public DistributorOperationContext,
-                             public DocumentSelectionParser
+class DistributorStripeComponent : public storage::DistributorComponent,
+                                   public DistributorNodeContext,
+                                   public DistributorOperationContext,
+                                   public DocumentSelectionParser
 {
 public:
-    DistributorComponent(DistributorInterface& distributor,
-                         DistributorBucketSpaceRepo& bucketSpaceRepo,
-                         DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
-                         DistributorComponentRegister& compReg,
-                         const std::string& name);
+    DistributorStripeComponent(DistributorStripeInterface& distributor,
+                               DistributorBucketSpaceRepo& bucketSpaceRepo,
+                               DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
+                               DistributorComponentRegister& compReg,
+                               const std::string& name);
 
-    ~DistributorComponent() override;
-
-    /**
-     * Returns a reference to the current cluster state bundle. Valid until the
-     * next time the distributor main thread processes its message queue.
-     */
-    const lib::ClusterStateBundle& getClusterStateBundle() const;
-
-    /**
-      * Returns the slobrok address of the given storage node.
-      */
-    api::StorageMessageAddress nodeAddress(uint16_t nodeIndex) const;
-
-    /**
-     * Returns true if the given storage node is in an "up state".
-     */
-    bool storageNodeIsUp(document::BucketSpace bucketSpace, uint32_t nodeIndex) const;
+    ~DistributorStripeComponent() override;
 
     /**
      * Verifies that the given command has been received at the
@@ -72,52 +57,17 @@ public:
                            const std::vector<uint16_t>& nodes);
 
     /**
-     * Removes a copy from the given bucket from the bucket database.
-     * If the resulting bucket is empty afterwards, removes the entire
-     * bucket entry from the bucket database.
-     */
-    void removeNodeFromDB(const document::Bucket &bucket, uint16_t node) {
-        removeNodesFromDB(bucket, toVector<uint16_t>(node));
-    }
-
-    /**
-     * Adds the given copies to the bucket database.
-     */
-    void updateBucketDatabase(
-            const document::Bucket &bucket,
-            const std::vector<BucketCopy>& changedNodes,
-            uint32_t updateFlags = 0);
-
-    /**
-     * Simple API for the common case of modifying a single node.
-     */
-    void updateBucketDatabase(
-            const document::Bucket &bucket,
-            const BucketCopy& changedNode,
-            uint32_t updateFlags = 0)
-    {
-        updateBucketDatabase(bucket,
-                             toVector<BucketCopy>(changedNode),
-                             updateFlags);
-    }
-
-    /**
      * Fetch bucket info about the given bucket from the given node.
      * Used when we get BUCKET_NOT_FOUND.
      */
     void recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket);
 
-    /**
-     * Returns the bucket id corresponding to the given document id.
-     */
-    document::BucketId getBucketId(const document::DocumentId& docId) const;
-
     void sendDown(const api::StorageMessage::SP&);
     void sendUp(const api::StorageMessage::SP&);
 
-    DistributorInterface& getDistributor() { return _distributor; }
+    DistributorStripeInterface& getDistributor() { return _distributor; }
 
-    const DistributorInterface& getDistributor() const {
+    const DistributorStripeInterface& getDistributor() const {
         return _distributor;
     }
 
@@ -144,38 +94,54 @@ public:
     const vespalib::string * cluster_name_ptr() const noexcept override { return cluster_context().cluster_name_ptr(); }
     const document::BucketIdFactory& bucket_id_factory() const noexcept override { return getBucketIdFactory(); }
     uint16_t node_index() const noexcept override { return getIndex(); }
-    api::StorageMessageAddress node_address(uint16_t node_index) const noexcept override { return nodeAddress(node_index); }
+
+    /**
+     * Returns the slobrok address of the given storage node.
+     */
+    api::StorageMessageAddress node_address(uint16_t node_index) const noexcept override;
 
     // Implements DistributorOperationContext
     api::Timestamp generate_unique_timestamp() override { return getUniqueTimestamp(); }
+
+    /**
+     * Simple API for the common case of modifying a single node.
+     */
     void update_bucket_database(const document::Bucket& bucket,
                                 const BucketCopy& changed_node,
                                 uint32_t update_flags = 0) override {
-        updateBucketDatabase(bucket, changed_node, update_flags);
+        update_bucket_database(bucket,
+                               toVector<BucketCopy>(changed_node),
+                               update_flags);
     }
+
+    /**
+     * Adds the given copies to the bucket database.
+     */
     virtual void update_bucket_database(const document::Bucket& bucket,
                                         const std::vector<BucketCopy>& changed_nodes,
-                                        uint32_t update_flags = 0) override {
-        updateBucketDatabase(bucket, changed_nodes, update_flags);
-    }
+                                        uint32_t update_flags = 0) override;
+
+    /**
+     * Removes a copy from the given bucket from the bucket database.
+     * If the resulting bucket is empty afterwards, removes the entire
+     * bucket entry from the bucket database.
+     */
     void remove_node_from_bucket_database(const document::Bucket& bucket, uint16_t node_index) override {
-        removeNodeFromDB(bucket, node_index);
+        removeNodesFromDB(bucket, toVector<uint16_t>(node_index));
     }
     const DistributorBucketSpaceRepo& bucket_space_repo() const noexcept override {
-        return getBucketSpaceRepo();
+        return _bucketSpaceRepo;
     }
     DistributorBucketSpaceRepo& bucket_space_repo() noexcept override {
-        return getBucketSpaceRepo();
+        return _bucketSpaceRepo;
     }
     const DistributorBucketSpaceRepo& read_only_bucket_space_repo() const noexcept override {
-        return getReadOnlyBucketSpaceRepo();
+        return _readOnlyBucketSpaceRepo;
     }
     DistributorBucketSpaceRepo& read_only_bucket_space_repo() noexcept override {
-        return getReadOnlyBucketSpaceRepo();
+        return _readOnlyBucketSpaceRepo;
     }
-    document::BucketId make_split_bit_constrained_bucket_id(const document::DocumentId& docId) const override {
-        return getBucketId(docId);
-    }
+    document::BucketId make_split_bit_constrained_bucket_id(const document::DocumentId& doc_id) const override;
     const DistributorConfiguration& distributor_config() const noexcept override {
         return getDistributor().getConfig();
     }
@@ -196,12 +162,18 @@ public:
     const lib::ClusterState* pending_cluster_state_or_null(const document::BucketSpace& bucket_space) const override {
         return getDistributor().pendingClusterStateOrNull(bucket_space);
     }
-    const lib::ClusterStateBundle& cluster_state_bundle() const override {
-        return getClusterStateBundle();
-    }
-    bool storage_node_is_up(document::BucketSpace bucket_space, uint32_t node_index) const override {
-        return storageNodeIsUp(bucket_space, node_index);
-    }
+
+    /**
+     * Returns a reference to the current cluster state bundle. Valid until the
+     * next time the distributor main thread processes its message queue.
+     */
+    const lib::ClusterStateBundle& cluster_state_bundle() const override;
+
+    /**
+     * Returns true if the given storage node is in an "up state".
+     */
+    bool storage_node_is_up(document::BucketSpace bucket_space, uint32_t node_index) const override;
+
     const char* storage_node_up_states() const override {
         return getDistributor().getStorageNodeUpStates();
     }
@@ -216,7 +188,7 @@ private:
             const lib::ClusterState& s,
             const document::Bucket& bucket,
             const std::vector<BucketCopy>& candidates) const;
-    DistributorInterface& _distributor;
+    DistributorStripeInterface& _distributor;
 
 protected:
 

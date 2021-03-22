@@ -127,9 +127,9 @@ struct DistributorTest : Test, DistributorTestUtil {
             uint32_t flags(DatabaseUpdate::CREATE_IF_NONEXISTING
                            | (resetTrusted ? DatabaseUpdate::RESET_TRUSTED : 0));
 
-            distributor_component().updateBucketDatabase(makeDocumentBucket(document::BucketId(16, 1)),
-                                                         changedNodes,
-                                                         flags);
+            operation_context().update_bucket_database(makeDocumentBucket(document::BucketId(16, 1)),
+                                                       changedNodes,
+                                                       flags);
         }
 
         std::string retVal = dumpBucket(document::BucketId(16, 1));
@@ -572,8 +572,8 @@ TEST_F(DistributorTest, no_db_resurrection_for_bucket_not_owned_in_pending_state
 
     std::vector<BucketCopy> copies;
     copies.emplace_back(1234, 0, api::BucketInfo(0x567, 1, 2));
-    distributor_component().updateBucketDatabase(makeDocumentBucket(nonOwnedBucket), copies,
-                                                 DatabaseUpdate::CREATE_IF_NONEXISTING);
+    operation_context().update_bucket_database(makeDocumentBucket(nonOwnedBucket), copies,
+                                               DatabaseUpdate::CREATE_IF_NONEXISTING);
 
     EXPECT_EQ("NONEXISTING", dumpBucket(nonOwnedBucket));
 }
@@ -585,8 +585,8 @@ TEST_F(DistributorTest, added_db_buckets_without_gc_timestamp_implicitly_get_cur
 
     std::vector<BucketCopy> copies;
     copies.emplace_back(1234, 0, api::BucketInfo(0x567, 1, 2));
-    distributor_component().updateBucketDatabase(makeDocumentBucket(bucket), copies,
-                                                 DatabaseUpdate::CREATE_IF_NONEXISTING);
+    operation_context().update_bucket_database(makeDocumentBucket(bucket), copies,
+                                               DatabaseUpdate::CREATE_IF_NONEXISTING);
     BucketDatabase::Entry e(getBucket(bucket));
     EXPECT_EQ(101234, e->getLastGarbageCollectionTime());
 }

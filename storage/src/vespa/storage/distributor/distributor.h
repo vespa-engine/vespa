@@ -5,7 +5,7 @@
 #include "bucket_spaces_stats_provider.h"
 #include "bucketdbupdater.h"
 #include "distributor_host_info_reporter.h"
-#include "distributorinterface.h"
+#include "distributor_stripe_interface.h"
 #include "externaloperationhandler.h"
 #include "idealstatemanager.h"
 #include "min_replica_provider.h"
@@ -15,7 +15,7 @@
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/storage/distributor/bucketdb/bucketdbmetricupdater.h>
-#include <vespa/storage/distributor/distributorcomponent.h>
+#include <vespa/storage/distributor/distributor_stripe_component.h>
 #include <vespa/storage/distributor/maintenance/maintenancescheduler.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
@@ -42,7 +42,7 @@ class SimpleMaintenanceScanner;
 class ThrottlingOperationStarter;
 
 class Distributor : public StorageLink,
-                    public DistributorInterface,
+                    public DistributorStripeInterface,
                     public StatusDelegator,
                     public framework::StatusReporter,
                     public framework::TickingThread,
@@ -155,7 +155,7 @@ public:
     DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo() noexcept;
     const DistributorBucketSpaceRepo& getReadyOnlyBucketSpaceRepo() const noexcept;
 
-    storage::distributor::DistributorComponent& distributor_component() noexcept;
+    storage::distributor::DistributorStripeComponent& distributor_component() noexcept;
 
     void sendCommand(const std::shared_ptr<api::StorageCommand>&) override;
     void sendReply(const std::shared_ptr<api::StorageReply>&) override;
@@ -243,7 +243,7 @@ private:
     // during cluster state transitions. Bucket set does not overlap that of _bucketSpaceRepo
     // and the DBs are empty during non-transition phases.
     std::unique_ptr<DistributorBucketSpaceRepo> _readOnlyBucketSpaceRepo;
-    storage::distributor::DistributorComponent _component;
+    storage::distributor::DistributorStripeComponent _component;
 
     StatusReporterDelegate _distributorStatusDelegate;
 

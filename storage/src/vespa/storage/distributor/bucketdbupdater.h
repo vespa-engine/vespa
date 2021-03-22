@@ -2,19 +2,19 @@
 #pragma once
 
 #include "bucketlistmerger.h"
-#include "messageguard.h"
-#include "distributorcomponent.h"
+#include "distributor_stripe_component.h"
 #include "distributormessagesender.h"
-#include "pendingclusterstate.h"
+#include "messageguard.h"
 #include "operation_routing_snapshot.h"
 #include "outdated_nodes_map.h"
+#include "pendingclusterstate.h"
 #include <vespa/document/bucket/bucket.h>
-#include <vespa/storageapi/message/bucket.h>
-#include <vespa/vdslib/state/clusterstate.h>
 #include <vespa/storage/common/storagelink.h>
+#include <vespa/storageapi/message/bucket.h>
+#include <vespa/storageapi/messageapi/messagehandler.h>
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageframework/generic/status/statusreporter.h>
-#include <vespa/storageapi/messageapi/messagehandler.h>
+#include <vespa/vdslib/state/clusterstate.h>
 #include <atomic>
 #include <list>
 #include <mutex>
@@ -26,7 +26,7 @@ class XmlAttribute;
 
 namespace storage::distributor {
 
-class DistributorInterface;
+class DistributorStripeInterface;
 class BucketSpaceDistributionContext;
 
 class BucketDBUpdater : public framework::StatusReporter,
@@ -34,7 +34,7 @@ class BucketDBUpdater : public framework::StatusReporter,
 {
 public:
     using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
-    BucketDBUpdater(DistributorInterface& owner,
+    BucketDBUpdater(DistributorStripeInterface& owner,
                     DistributorBucketSpaceRepo& bucketSpaceRepo,
                     DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                     DistributorMessageSender& sender,
@@ -81,7 +81,7 @@ public:
 private:
     class MergeReplyGuard {
     public:
-        MergeReplyGuard(DistributorInterface& distributor_interface, const std::shared_ptr<api::MergeBucketReply>& reply) noexcept
+        MergeReplyGuard(DistributorStripeInterface& distributor_interface, const std::shared_ptr<api::MergeBucketReply>& reply) noexcept
             : _distributor_interface(distributor_interface), _reply(reply) {}
 
         ~MergeReplyGuard();
@@ -90,7 +90,7 @@ private:
         // than send it down
         void resetReply() { _reply.reset(); }
     private:
-        DistributorInterface& _distributor_interface;
+        DistributorStripeInterface& _distributor_interface;
         std::shared_ptr<api::MergeBucketReply> _reply;
     };
 
@@ -239,10 +239,10 @@ private:
         mutable bool _cachedOwned;
     };
 
-    DistributorComponent _distributorComponent;
+    DistributorStripeComponent _distributorComponent;
     const DistributorNodeContext& _node_ctx;
     DistributorOperationContext& _op_ctx;
-    DistributorInterface& _distributor_interface;
+    DistributorStripeInterface& _distributor_interface;
     std::deque<std::pair<framework::MilliSecTime, BucketRequest> > _delayedRequests;
     std::map<uint64_t, BucketRequest> _sentMessages;
     std::unique_ptr<PendingClusterState> _pendingClusterState;

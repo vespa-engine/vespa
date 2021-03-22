@@ -4,9 +4,9 @@
 #include <vespa/document/test/make_bucket_space.h>
 #include <vespa/document/test/make_document_bucket.h>
 #include <vespa/storage/distributor/distributor.h>
-#include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributor_bucket_space.h>
-#include <vespa/storage/distributor/distributorcomponent.h>
+#include <vespa/storage/distributor/distributor_stripe.h>
+#include <vespa/storage/distributor/distributor_stripe_component.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 
@@ -259,7 +259,7 @@ void
 DistributorTestUtil::addIdealNodes(const document::BucketId& id)
 {
     // TODO STRIPE roundabout way of getting state bundle..!
-    addIdealNodes(*distributor_component().getClusterStateBundle().getBaselineClusterState(), id);
+    addIdealNodes(*operation_context().cluster_state_bundle().getBaselineClusterState(), id);
 }
 
 void
@@ -351,9 +351,14 @@ DistributorTestUtil::getExternalOperationHandler() {
     return _distributor->external_operation_handler();
 }
 
-storage::distributor::DistributorComponent&
+storage::distributor::DistributorStripeComponent&
 DistributorTestUtil::distributor_component() {
     // TODO STRIPE tests use this to indirectly access bucket space repos/DBs!
+    return _distributor->distributor_component();
+}
+
+storage::distributor::DistributorOperationContext&
+DistributorTestUtil::operation_context() {
     return _distributor->distributor_component();
 }
 

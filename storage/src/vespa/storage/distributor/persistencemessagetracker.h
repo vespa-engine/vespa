@@ -1,8 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
+#include "distributor_stripe_component.h"
 #include "distributormetricsset.h"
-#include "distributorcomponent.h"
 #include "messagetracker.h"
 #include <vespa/storageframework/generic/clock/timer.h>
 #include <vespa/storageapi/messageapi/bucketinfocommand.h>

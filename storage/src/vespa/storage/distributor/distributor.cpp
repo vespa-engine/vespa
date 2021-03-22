@@ -29,9 +29,9 @@ using namespace std::chrono_literals;
 namespace storage::distributor {
 
 /* TODO STRIPE
- *  - need a DistributorComponent per stripe
+ *  - need a DistributorStripeComponent per stripe
  *    - or better, remove entirely!
- *    - probably also DistributorInterface since it's used to send
+ *    - probably also DistributorStripeInterface since it's used to send
  *  - metrics aggregation
  *  - host info aggregation..!!
  *    - handled if Distributor getMinReplica etc delegates to stripes?
@@ -46,13 +46,13 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
                          HostInfo& hostInfoReporterRegistrar,
                          ChainedMessageSender* messageSender)
     : StorageLink("distributor"),
-      DistributorInterface(),
+      DistributorStripeInterface(),
       framework::StatusReporter("distributor", "Distributor"),
       _metrics(std::make_shared<DistributorMetricSet>()),
       _messageSender(messageSender),
       _stripe(std::make_unique<DistributorStripe>(compReg, *_metrics, node_identity, threadPool, doneInitHandler,
                                                   manageActiveBucketCopies, *this)),
-      // TODO STRIPE remove once DistributorComponent no longer references bucket space repos
+      // TODO STRIPE remove once DistributorStripeComponent no longer references bucket space repos
       _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
       _readOnlyBucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
       // TODO STRIPE slim down
@@ -117,7 +117,7 @@ Distributor::getReadyOnlyBucketSpaceRepo() const noexcept {
     return _stripe->getReadOnlyBucketSpaceRepo();;
 }
 
-storage::distributor::DistributorComponent&
+storage::distributor::DistributorStripeComponent&
 Distributor::distributor_component() noexcept {
     // TODO STRIPE We need to grab the stripe's component since tests like to access
     //             these things uncomfortably directly.

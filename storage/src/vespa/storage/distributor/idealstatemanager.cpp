@@ -25,7 +25,7 @@ namespace storage {
 namespace distributor {
 
 IdealStateManager::IdealStateManager(
-        DistributorInterface& owner,
+        DistributorStripeInterface& owner,
         DistributorBucketSpaceRepo& bucketSpaceRepo,
         DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
         DistributorComponentRegister& compReg,
@@ -69,7 +69,7 @@ IdealStateManager::iAmUp() const
 {
     Node node(NodeType::DISTRIBUTOR, _distributorComponent.getIndex());
     // Assume that derived cluster states agree on distributor node being up
-    const auto &state = *_distributorComponent.getClusterStateBundle().getBaselineClusterState();
+    const auto &state = *operation_context().cluster_state_bundle().getBaselineClusterState();
     const lib::State &nodeState = state.getNodeState(node).getState();
     const lib::State &clusterState = state.getClusterState();
 

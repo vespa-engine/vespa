@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include "distributorcomponent.h"
+#include "distributor_stripe_component.h"
 #include "statechecker.h"
 #include <vespa/storage/distributor/maintenance/maintenanceprioritygenerator.h>
 #include <vespa/storage/distributor/maintenance/maintenanceoperationgenerator.h>
@@ -11,7 +11,7 @@ namespace storage::distributor {
 
 class IdealStateMetricSet;
 class IdealStateOperation;
-class DistributorInterface;
+class DistributorStripeInterface;
 class SplitBucketStateChecker;
 
 /**
@@ -34,7 +34,7 @@ class IdealStateManager : public framework::HtmlStatusReporter,
 {
 public:
 
-    IdealStateManager(DistributorInterface& owner,
+    IdealStateManager(DistributorStripeInterface& owner,
                       DistributorBucketSpaceRepo& bucketSpaceRepo,
                       DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                       DistributorComponentRegister& compReg,
@@ -77,7 +77,10 @@ public:
         getBucketStatus(out);
     }
 
-    DistributorComponent& getDistributorComponent() { return _distributorComponent; }
+    // TODO STRIPE stop exposing this
+    DistributorStripeComponent& getDistributorComponent() { return _distributorComponent; }
+    DistributorOperationContext& operation_context() { return _distributorComponent; }
+    const DistributorOperationContext& operation_context() const { return _distributorComponent; }
     DistributorBucketSpaceRepo &getBucketSpaceRepo() { return _bucketSpaceRepo; }
     const DistributorBucketSpaceRepo &getBucketSpaceRepo() const { return _bucketSpaceRepo; }
 
@@ -100,8 +103,8 @@ private:
     std::vector<StateChecker::SP> _stateCheckers;
     SplitBucketStateChecker* _splitBucketStateChecker;
 
-    DistributorComponent            _distributorComponent;
-    DistributorBucketSpaceRepo     &_bucketSpaceRepo;
+    DistributorStripeComponent _distributorComponent;
+    DistributorBucketSpaceRepo& _bucketSpaceRepo;
     mutable bool _has_logged_phantom_replica_warning;
 
     bool iAmUp() const;

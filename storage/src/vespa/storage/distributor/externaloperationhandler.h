@@ -3,7 +3,7 @@
 
 #include <vespa/document/bucket/bucketid.h>
 #include <vespa/document/bucket/bucketidfactory.h>
-#include <vespa/storage/distributor/distributorcomponent.h>
+#include <vespa/storage/distributor/distributor_stripe_component.h>
 #include <vespa/storageapi/messageapi/messagehandler.h>
 #include <atomic>
 #include <chrono>

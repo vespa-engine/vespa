@@ -46,7 +46,7 @@ struct GetOperationTest : Test, DistributorTestUtil {
         createLinks();
 
         docId = document::DocumentId("id:ns:text/html::uri");
-        bucketId = distributor_component().getBucketId(docId);
+        bucketId = operation_context().make_split_bit_constrained_bucket_id(docId);
     };
 
     void TearDown() override {

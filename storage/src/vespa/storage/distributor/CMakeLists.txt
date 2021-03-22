@@ -3,26 +3,26 @@ vespa_add_library(storage_distributor
     SOURCES
     activecopy.cpp
     blockingoperationstarter.cpp
-    bucketdbupdater.cpp
     bucket_db_prune_elision.cpp
+    bucket_space_distribution_context.cpp
+    bucketdbupdater.cpp
     bucketgctimecalculator.cpp
     bucketlistmerger.cpp
-    bucket_space_distribution_context.cpp
     clusterinformation.cpp
     crypto_uuid_generator.cpp
+    distributor.cpp
     distributor_bucket_space.cpp
     distributor_bucket_space_repo.cpp
-    distributor.cpp
     distributor_host_info_reporter.cpp
     distributor_status.cpp
     distributor_stripe.cpp
-    distributorcomponent.cpp
+    distributor_stripe_component.cpp
     distributormessagesender.cpp
     distributormetricsset.cpp
     externaloperationhandler.cpp
+    ideal_service_layer_nodes_bundle.cpp
     idealstatemanager.cpp
     idealstatemetricsset.cpp
-    ideal_service_layer_nodes_bundle.cpp
     messagetracker.cpp
     nodeinfo.cpp
     operation_routing_snapshot.cpp
@@ -31,8 +31,8 @@ vespa_add_library(storage_distributor
     operationtargetresolver.cpp
     operationtargetresolverimpl.cpp
     ownership_transfer_safe_time_point_calculator.cpp
-    pendingclusterstate.cpp
     pending_bucket_space_db_transition.cpp
+    pendingclusterstate.cpp
     pendingmessagetracker.cpp
     persistence_operation_metric_set.cpp
     persistencemessagetracker.cpp

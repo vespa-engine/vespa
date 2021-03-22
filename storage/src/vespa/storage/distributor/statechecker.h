@@ -17,7 +17,7 @@ namespace storage { class DistributorConfiguration; }
 
 namespace storage::distributor {
 
-class DistributorComponent;
+class DistributorStripeComponent;
 class DistributorBucketSpace;
 class NodeMaintenanceStatsTracker;
 
@@ -44,7 +44,7 @@ public:
      */
     struct Context
     {
-        Context(const DistributorComponent&,
+        Context(const DistributorStripeComponent&,
                 const DistributorBucketSpace &distributorBucketSpace,
                 NodeMaintenanceStatsTracker&,
                 const document::Bucket &bucket_);
@@ -76,7 +76,7 @@ public:
         std::vector<uint16_t> idealState;
         std::unordered_set<uint16_t> unorderedIdealState;
 
-        const DistributorComponent& component;
+        const DistributorStripeComponent& component;
         const BucketDatabase& db;
         NodeMaintenanceStatsTracker& stats;
 
