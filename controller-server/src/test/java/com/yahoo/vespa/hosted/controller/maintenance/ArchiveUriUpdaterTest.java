@@ -5,7 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveService;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveBucketDb;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
@@ -65,8 +65,8 @@ public class ArchiveUriUpdaterTest {
     }
 
     private void setArchiveUriInService(Map<TenantName, String> archiveUris, ZoneId zone) {
-        MockArchiveService archiveService = (MockArchiveService) tester.controller().serviceRegistry().archiveService();
-        archiveUris.forEach((tenant, uri) -> archiveService.setArchiveUri(zone, tenant, URI.create(uri)));
+        MockArchiveBucketDb archiveBucketDb = (MockArchiveBucketDb) tester.controller().serviceRegistry().archiveBucketDb();
+        archiveUris.forEach((tenant, uri) -> archiveBucketDb.setArchiveUri(zone, tenant, URI.create(uri)));
     }
 
     private void setArchiveUriInNodeRepo(Map<TenantName, String> archiveUris, ZoneId zone) {

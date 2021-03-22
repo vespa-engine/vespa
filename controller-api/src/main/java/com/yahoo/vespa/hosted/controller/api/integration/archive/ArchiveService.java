@@ -16,7 +16,7 @@ import java.util.Optional;
  */
 public interface ArchiveService {
 
-    Optional<URI> archiveUriFor(ZoneId zoneId, TenantName tenant);
+    public String createArchiveBucketFor(ZoneId zoneId);
 
     void updateBucketAndKeyPolicy(ZoneId zoneId, String bucketName, Map<TenantName, String> authorizeIamRoleByTenantName);
 }

@@ -17,16 +17,12 @@ public class MockArchiveService implements ArchiveService {
     private final Map<ZoneId, Map<TenantName, URI>> archiveUris = new HashMap<>();
 
     @Override
-    public Optional<URI> archiveUriFor(ZoneId zoneId, TenantName tenant) {
-        return Optional.ofNullable(archiveUris.get(zoneId)).map(uris -> uris.get(tenant));
+    public String createArchiveBucketFor(ZoneId zoneId) {
+        return "bucket-name";
     }
 
     @Override
     public void updateBucketAndKeyPolicy(ZoneId zoneId, String bucketName, Map<TenantName, String> authorizeIamRoleByTenantName) {
         // noop
-    }
-
-    public void setArchiveUri(ZoneId zone, TenantName tenantName, URI archiveUri) {
-        archiveUris.computeIfAbsent(zone, z -> new HashMap<>()).put(tenantName, archiveUri);
     }
 }
