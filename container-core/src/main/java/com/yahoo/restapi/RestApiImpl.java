@@ -38,7 +38,7 @@ class RestApiImpl implements RestApi {
 
     private RestApiImpl(RestApi.Builder builder) {
         BuilderImpl builderImpl = (BuilderImpl) builder;
-        ObjectMapper jacksonJsonMapper = builderImpl.jacksonJsonMapper != null ? builderImpl.jacksonJsonMapper : JacksonJsonMapper.instance;
+        ObjectMapper jacksonJsonMapper = builderImpl.jacksonJsonMapper != null ? builderImpl.jacksonJsonMapper : JacksonJsonMapper.instance.copy();
         this.defaultRoute = builderImpl.defaultRoute != null ? builderImpl.defaultRoute : createDefaultRoute();
         this.routes = List.copyOf(builderImpl.routes);
         this.exceptionMappers = combineWithDefaultExceptionMappers(
