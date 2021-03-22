@@ -74,7 +74,6 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantMetaData;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.curator.stats.ThreadLockStats;
@@ -505,7 +504,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         NestedTransaction transaction = new NestedTransaction();
         Optional<ApplicationTransaction> applicationTransaction = hostProvisioner.map(provisioner -> provisioner.lock(applicationId))
                                                                                  .map(lock -> new ApplicationTransaction(lock, transaction));
-        try (var sessionLock = tenantApplications.lock(applicationId)) {
+        try (var applicationLock = tenantApplications.lock(applicationId)) {
             Optional<Long> activeSession = tenantApplications.activeSessionOf(applicationId);
             if (activeSession.isEmpty()) return false;
 
@@ -533,6 +532,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             } else {
                 transaction.commit();
             }
+            waitForApplicationRemoved(tenantApplications, applicationId);
             return true;
         } finally {
             applicationTransaction.ifPresent(ApplicationTransaction::close);
@@ -589,6 +589,21 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             });
         }
         return fileReferencesToDelete;
+    }
+
+    private void waitForApplicationRemoved(TenantApplications applications, ApplicationId applicationId) {
+        log.log(Level.INFO, "Waiting for " + applicationId + " to be deleted");
+        Duration duration = Duration.ofSeconds(5);
+        Instant end = Instant.now().plus(duration);
+        do {
+            if ( ! (applications.hasApplication(applicationId)))
+                return;
+            log.log(Level.INFO, "Application " + applicationId + " not deleted yet, will retry");
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException interruptedException) {/* ignore */}
+        } while (Instant.now().isBefore(end));
+        log.log(Level.INFO, "Application " + applicationId + " not deleted after " + duration + ", giving up");
     }
 
     private Set<String> getFileReferencesInUse() {
