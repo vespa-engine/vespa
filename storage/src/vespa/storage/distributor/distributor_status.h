@@ -8,12 +8,12 @@
 
 namespace storage::framework {
 class HttpUrlPath;
-class StatusReporter;
+struct StatusReporter;
 }
 
 namespace storage::distributor {
 
-class DelegatedStatusRequest;
+struct DelegatedStatusRequest;
 
 // TODO STRIPE description
 class DistributorStatus {
