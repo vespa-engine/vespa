@@ -4,10 +4,13 @@ package com.yahoo.vespa.model.container.http.ssl;
 import com.yahoo.config.model.api.EndpointCertificateSecrets;
 import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ConnectorConfig.Ssl.ClientAuth;
+import com.yahoo.security.tls.TlsContext;
 import com.yahoo.vespa.model.container.http.ConnectorFactory;
 
 import java.time.Duration;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 /**
  * Component specification for {@link com.yahoo.jdisc.http.server.jetty.ConnectorFactory} with hosted specific configuration.
@@ -75,6 +78,11 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
         }
         // Disables TLSv1.3 as it causes some browsers to prompt user for client certificate (when connector has 'want' auth)
         connectorBuilder.ssl.enabledProtocols(List.of("TLSv1.2"));
+
+        // Add TLS_RSA_WITH_AES_256_GCM_SHA384 cipher to list of defalt allowed ciphers
+        Set<String> ciphers = new HashSet<>(TlsContext.ALLOWED_CIPHER_SUITES);
+        ciphers.add("TLS_RSA_WITH_AES_256_GCM_SHA384");
+        connectorBuilder.ssl.enabledCipherSuites(Set.copyOf(ciphers));
 
         connectorBuilder
                 .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder().enabled(true).mixedMode(true))
