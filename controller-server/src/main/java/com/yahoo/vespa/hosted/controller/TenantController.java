@@ -98,6 +98,17 @@ public class TenantController {
         return get(name).orElseThrow(() -> new IllegalArgumentException("No such tenant '" + name + "'."));
     }
 
+    /** Returns the tenant with the given name, and ensures the type */
+    public <T extends Tenant> T require(TenantName name, Class<T> tenantType) {
+        return get(name)
+                .map(t -> {
+                    try { return tenantType.cast(t); } catch (ClassCastException e) {
+                        throw new IllegalArgumentException("Tenant '" + name + "' was of type '" + t.getClass().getSimpleName() + "' and not '" + tenantType.getSimpleName() + "'");
+                    }
+                })
+                .orElseThrow(() -> new IllegalArgumentException("No such tenant '" + name + "'."));
+    }
+
     /** Replace and store any previous version of given tenant */
     public void store(LockedTenant tenant) {
         curator.writeTenant(tenant.get());

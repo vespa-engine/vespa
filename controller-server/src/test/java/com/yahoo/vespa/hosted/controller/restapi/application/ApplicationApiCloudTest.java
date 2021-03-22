@@ -190,10 +190,10 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
             lockedTenant = lockedTenant.withSecretStore(new TenantSecretStore("secret-foo", "123", "some-role"));
             tester.controller().tenants().store(lockedTenant);
         });
-        var tenant = (CloudTenant) tester.controller().tenants().require(tenantName);
+        var tenant = tester.controller().tenants().require(tenantName, CloudTenant.class);
         assertEquals(1, tenant.tenantSecretStores().size());
         tester.assertResponse(deleteRequest, "{\"secretStores\":[]}", 200);
-        tenant = (CloudTenant) tester.controller().tenants().require(tenantName);
+        tenant = tester.controller().tenants().require(tenantName, CloudTenant.class);
         assertEquals(0, tenant.tenantSecretStores().size());
     }
 
