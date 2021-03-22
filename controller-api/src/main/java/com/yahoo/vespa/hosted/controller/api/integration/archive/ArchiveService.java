@@ -18,7 +18,5 @@ public interface ArchiveService {
 
     Optional<URI> archiveUriFor(ZoneId zoneId, TenantName tenant);
 
-    // TODO archive: combine into one method?
-    void updateBucketPolicy(ZoneId zoneId, String bucketName, Map<TenantName, String> authorizeIamRoleByTenantName);
-    void updateKeyPolicy(ZoneId zone, Collection<String> iamRolesToAuthorizeDecrypt);
+    void updateBucketAndKeyPolicy(ZoneId zoneId, String bucketName, Map<TenantName, String> authorizeIamRoleByTenantName);
 }

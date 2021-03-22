@@ -5,7 +5,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.net.URI;
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Optional;
 import java.util.Map;
@@ -23,12 +22,7 @@ public class MockArchiveService implements ArchiveService {
     }
 
     @Override
-    public void updateBucketPolicy(ZoneId zoneId, String bucketName, Map<TenantName, String> authorizeIamRoleByTenantName) {
-        // noop
-    }
-
-    @Override
-    public void updateKeyPolicy(ZoneId zone, Collection<String> iamRolesToAuthorizeDecrypt) {
+    public void updateBucketAndKeyPolicy(ZoneId zoneId, String bucketName, Map<TenantName, String> authorizeIamRoleByTenantName) {
         // noop
     }
 

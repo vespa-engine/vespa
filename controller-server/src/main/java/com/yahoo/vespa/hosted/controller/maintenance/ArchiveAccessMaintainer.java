@@ -32,12 +32,11 @@ public class ArchiveAccessMaintainer extends ControllerMaintainer {
                 .filter(t -> t instanceof CloudTenant)
                 .map(t -> (CloudTenant) t)
                 .filter(t -> t.archiveAccessRole().isPresent())
-                .collect(Collectors.toUnmodifiableMap(Tenant::name, cloudTenant -> cloudTenant.archiveAccessRole().get()));
+                .collect(Collectors.toUnmodifiableMap(
+                        Tenant::name, cloudTenant -> cloudTenant.archiveAccessRole().orElseThrow()));
 
-        archiveBucketDb.zoneBuckets().forEach(((zoneId, bucketName) -> {
-            archiveService.updateBucketPolicy(zoneId, bucketName, tenantArchiveAccessRoles);
-            archiveService.updateKeyPolicy(zoneId, tenantArchiveAccessRoles.values());
-        }));
+        archiveBucketDb.zoneBuckets().forEach(((zoneId, bucketName) ->
+                archiveService.updateBucketAndKeyPolicy(zoneId, bucketName, tenantArchiveAccessRoles)));
 
         return true;
     }
