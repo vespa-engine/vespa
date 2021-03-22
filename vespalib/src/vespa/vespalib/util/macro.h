@@ -2,8 +2,6 @@
 
 #pragma once
 
-// indirectly tested by exception test.
-
 /**
  * @def VESPA_STRINGIZE(str)
  * @brief convert code to string
@@ -23,3 +21,8 @@
  **/
 #define VESPA_STRLOC vespalib::make_string("%s in %s:%d",__func__,__FILE__,__LINE__)
 
+/**
+ * Create a new token by concatenating two tokens (token pasting)
+ **/
+#define VESPA_CAT_IMPL(a, b) a ## b
+#define VESPA_CAT(a, b) VESPA_CAT_IMPL(a, b)

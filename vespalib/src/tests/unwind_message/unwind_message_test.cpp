@@ -9,25 +9,56 @@ using vespalib::UnwindMessage;
 
 //-----------------------------------------------------------------------------
 
+struct MyCheck {
+    ~MyCheck() {
+        EXPECT_EQ(std::uncaught_exceptions(), 2);
+    }
+};
+
 struct MyObj {
-    UnwindMessage msg1 = UnwindMessage("this SHOULD be printed (1/2)");
+    UnwindMessage msg1 = UnwindMessage("this SHOULD be printed (1/4)");
     UnwindMessage msg2 = UnwindMessage("this should NOT be printed (1)");
+    UnwindMessage msg3 = UnwindMessage("this SHOULD be printed (2/4)");
     ~MyObj() {
         EXPECT_EQ(std::uncaught_exceptions(), 1);
+        using E = std::invalid_argument;
         auto not_printed_1 = std::move(msg2);
-        auto not_printed_2 = unwind_msg("this should NOT be printed (2)");
+        try {
+            MyCheck my_check;
+            auto printed_1 = std::move(msg1);
+            throw E("next level");
+        } catch (const E &) {}
     }
 };
 
 TEST(UnwindMessageTest, unwind_messages_are_printed_when_appropriate) {
     using E = std::invalid_argument;
-    auto not_printed_3 = unwind_msg("this should NOT be printed (3)");
+    auto not_printed_5 = unwind_msg("this should NOT be printed (%d)", 5);
+    UNWIND_MSG("this should NOT be printed (%d)", 4);
     EXPECT_THROW(
             {
                 EXPECT_EQ(std::uncaught_exceptions(), 0);
-                auto printed = unwind_msg("this SHOULD be printed (2/2)");
-                { auto not_printed_4 = unwind_msg("this should NOT be printed (4)"); }
+                auto printed_4 = unwind_msg("this SHOULD be printed (%d/%d)", 4, 4);
+                UNWIND_MSG("this SHOULD be printed (%d/%d)", 3, 4);
+                {
+                    auto not_printed_3 = unwind_msg("this should NOT be printed (%d)", 3);
+                    UNWIND_MSG("this should NOT be printed (%d)", 2);
+                }
                 MyObj my_obj;
+                throw E("just testing");
+            }, E);
+}
+
+//-----------------------------------------------------------------------------
+
+// need make_string for VESPA_STRLOC macro
+#include <vespa/vespalib/util/stringfmt.h>
+
+TEST(UnwindMessageTest, unwind_message_with_location) {
+    using E = std::invalid_argument;
+    EXPECT_THROW(
+            {
+                UNWIND_MSG("%s message with location information", VESPA_STRLOC.c_str());
                 throw E("just testing");
             }, E);
 }
