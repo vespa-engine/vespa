@@ -91,6 +91,7 @@ public class DatabaseHandler {
     private long lastZooKeeperConnectionAttempt = 0;
     private static final int minimumWaitBetweenFailedConnectionAttempts = 10000;
     private boolean lostZooKeeperConnectionEvent = false;
+    private boolean connectionEstablishmentIsAllowed = false;
     private Map<Integer, Integer> masterDataEvent = null;
 
     public DatabaseHandler(DatabaseFactory databaseFactory, Timer timer, String zooKeeperAddress, int ourIndex, Object monitor) throws InterruptedException
