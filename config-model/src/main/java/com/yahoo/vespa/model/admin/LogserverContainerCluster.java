@@ -3,10 +3,13 @@ package com.yahoo.vespa.model.admin;
 
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
+
+import java.util.Optional;
 
 /**
  * @author hmusum
@@ -18,7 +21,7 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
 
         addDefaultHandlersWithVip();
         addLogHandler();
-        setJvmGCOptions(deployState.getProperties().jvmGCOptions());
+        setJvmGCOptions(deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.admin)));
     }
 
     @Override

@@ -5,8 +5,11 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.Reindexing;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.container.ContainerCluster;
+
+import java.util.Optional;
 
 /**
  * Container cluster for cluster-controller containers.
@@ -25,7 +28,7 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
         addDefaultHandlersWithVip();
         this.featureFlags = deployState.featureFlags();
         this.reindexingContext = createReindexingContext(deployState);
-        setJvmGCOptions(deployState.getProperties().jvmGCOptions());
+        setJvmGCOptions(deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.admin)));
     }
 
     @Override

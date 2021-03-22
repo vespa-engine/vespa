@@ -46,6 +46,7 @@ public class MetricsProxyContainer extends Container implements
     private final Optional<ClusterMembership> clusterMembership;
     private final ModelContext.FeatureFlags featureFlags;
     private final MetricsProxyContainerCluster cluster;
+    private final String jvmGCOptions;
 
 
     public MetricsProxyContainer(MetricsProxyContainerCluster cluster, HostResource host, int index, DeployState deployState) {
@@ -54,6 +55,7 @@ public class MetricsProxyContainer extends Container implements
         this.clusterMembership = host.spec().membership();
         this.featureFlags = deployState.featureFlags();
         this.cluster = cluster;
+        this.jvmGCOptions = deployState.getProperties().jvmGCOptions(clusterMembership.map(membership -> membership.cluster().type()));
         setProp("clustertype", "admin");
         setProp("index", String.valueOf(index));
         addNodeSpecificComponents();
@@ -151,6 +153,7 @@ public class MetricsProxyContainer extends Container implements
             int maxHeapSize = featureFlags.metricsProxyMaxHeapSizeInMb(clusterMembership.get().cluster().type());
             builder.jvm
                     .verbosegc(true)
+                    .gcopts(jvmGCOptions)
                     .heapsize(maxHeapSize);
         }
     }

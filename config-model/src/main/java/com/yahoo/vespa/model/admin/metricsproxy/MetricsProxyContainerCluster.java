@@ -96,7 +96,6 @@ public class MetricsProxyContainerCluster extends ContainerCluster<MetricsProxyC
 
         addPlatformBundle(METRICS_PROXY_BUNDLE_FILE);
         addClusterComponents();
-        setJvmGCOptions(deployState.getProperties().jvmGCOptions());
     }
 
     private void addClusterComponents() {

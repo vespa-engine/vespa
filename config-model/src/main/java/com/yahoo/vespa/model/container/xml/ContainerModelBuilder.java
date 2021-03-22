@@ -621,6 +621,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                 ? (deployState.isHosted() ? ContainerCluster.CMS : ContainerCluster.G1GC)
                 : options;
     }
+
     private static String getJvmOptions(ApplicationContainerCluster cluster, Element nodesElement, DeployLogger deployLogger) {
         String jvmOptions;
         if (nodesElement.hasAttribute(VespaDomBuilder.JVM_OPTIONS)) {
