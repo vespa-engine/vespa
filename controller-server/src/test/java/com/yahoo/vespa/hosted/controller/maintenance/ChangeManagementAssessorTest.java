@@ -7,6 +7,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeMemb
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeType;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import org.junit.Test;
 
@@ -39,16 +40,16 @@ public class ChangeManagementAssessorTest {
         ZoneId zone = ZoneId.from("prod", "eu-trd");
         List<String> hostNames = Collections.singletonList("host1");
         List<NodeRepositoryNode> allNodesInZone = new ArrayList<>();
-        allNodesInZone.add(createNode("node1", "host1", "myapp", "default", 0 ));
-        allNodesInZone.add(createNode("node2", "host1", "myapp", "default", 0 ));
-        allNodesInZone.add(createNode("node3", "host1", "myapp", "default", 0 ));
+        allNodesInZone.add(createNode("node1", "host1", "default", 0 ));
+        allNodesInZone.add(createNode("node2", "host1", "default", 0 ));
+        allNodesInZone.add(createNode("node3", "host1", "default", 0 ));
 
         // Add an not impacted hosts
-        allNodesInZone.add(createNode("node4", "host2", "myapp", "default", 0 ));
+        allNodesInZone.add(createNode("node4", "host2", "default", 0 ));
 
         // Add tenant hosts
-        allNodesInZone.add(createHost("host1", "switch1"));
-        allNodesInZone.add(createHost("host2", "switch1"));
+        allNodesInZone.add(createHost("host1", NodeType.host));
+        allNodesInZone.add(createHost("host2", NodeType.host));
 
         // Make Assessment
         List<ChangeManagementAssessor.ClusterAssessment> assessments
@@ -72,25 +73,26 @@ public class ChangeManagementAssessorTest {
         List<NodeRepositoryNode> allNodesInZone = new ArrayList<>();
 
         // Two impacted nodes on host1
-        allNodesInZone.add(createNode("node1", "host1", "myapp", "default", 0 ));
-        allNodesInZone.add(createNode("node2", "host1", "myapp", "default", 0 ));
+        allNodesInZone.add(createNode("node1", "host1", "default", 0 ));
+        allNodesInZone.add(createNode("node2", "host1", "default", 0 ));
 
         // One impacted nodes on host2
-        allNodesInZone.add(createNode("node3", "host2", "myapp", "default", 0 ));
+        allNodesInZone.add(createNode("node3", "host2", "default", 0 ));
 
         // Another group on hosts not impacted
-        allNodesInZone.add(createNode("node4", "host3", "myapp", "default", 1 ));
-        allNodesInZone.add(createNode("node5", "host3", "myapp", "default", 1 ));
-        allNodesInZone.add(createNode("node6", "host3", "myapp", "default", 1 ));
+        allNodesInZone.add(createNode("node4", "host3", "default", 1 ));
+        allNodesInZone.add(createNode("node5", "host3", "default", 1 ));
+        allNodesInZone.add(createNode("node6", "host3", "default", 1 ));
 
         // Another cluster on hosts not impacted - this one also with three different groups (should all be ignored here)
-        allNodesInZone.add(createNode("node4", "host4", "myapp", "myman", 4 ));
-        allNodesInZone.add(createNode("node5", "host4", "myapp", "myman", 5 ));
-        allNodesInZone.add(createNode("node6", "host4", "myapp", "myman", 6 ));
+        allNodesInZone.add(createNode("node4", "host4", "myman", 4 ));
+        allNodesInZone.add(createNode("node5", "host4", "myman", 5 ));
+        allNodesInZone.add(createNode("node6", "host4", "myman", 6 ));
 
         // Add tenant hosts
-        allNodesInZone.add(createHost("host1", "switch1"));
-        allNodesInZone.add(createHost("host2", "switch1"));
+        allNodesInZone.add(createHost("host1", NodeType.host));
+        allNodesInZone.add(createHost("host2", NodeType.host));
+
 
         // Make Assessment
         ChangeManagementAssessor.Assessment assessment
@@ -106,6 +108,7 @@ public class ChangeManagementAssessorTest {
         assertEquals("content:default", clusterAssessments.get(0).cluster);
         assertEquals("mytenant:myapp:default", clusterAssessments.get(0).app);
         assertEquals("prod.eu-trd", clusterAssessments.get(0).zone);
+        assertEquals("Impact not larger than upgrade policy", clusterAssessments.get(0).impact);
 
         List<ChangeManagementAssessor.HostAssessment> hostAssessments = assessment.getHostAssessments();
         assertEquals(2, hostAssessments.size());
@@ -117,11 +120,45 @@ public class ChangeManagementAssessorTest {
         ));
     }
 
-    private NodeOwner createOwner(String tenant, String application, String instance) {
+    @Test
+    public void config_and_proxy_hosts() {
+        var zone = ZoneId.from("prod", "eu-trd");
+        var hostNames = Arrays.asList("config1", "config2", "routing1");
+        var allNodesInZone = new ArrayList<NodeRepositoryNode>();
+
+
+        // Add config nodes and parents
+        allNodesInZone.add(createNode("config1", "confighost1", "config", 0, NodeType.config));
+        allNodesInZone.add(createHost("confighost1", NodeType.confighost));
+        allNodesInZone.add(createNode("config2", "confighost2", "config", 0, NodeType.config));
+        allNodesInZone.add(createHost("confighost2", NodeType.confighost));
+
+        // Add routing nodes and parents
+        allNodesInZone.add(createNode("routing1", "parentrouting1", "routing", 0, NodeType.proxy));
+        allNodesInZone.add(createHost("parentrouting1", NodeType.proxyhost));
+        allNodesInZone.add(createNode("routing2", "parentrouting2", "routing", 0, NodeType.proxy));
+        allNodesInZone.add(createHost("parentrouting2", NodeType.proxyhost));
+        allNodesInZone.add(createNode("routing3", "parentrouting3", "routing", 0, NodeType.proxy));
+        allNodesInZone.add(createHost("parentrouting3", NodeType.proxyhost));
+
+        var assessment = changeManagementAssessor.assessmentInner(hostNames, allNodesInZone, zone);
+
+        var clusterAssessments = assessment.getClusterAssessments();
+        assertEquals(2, clusterAssessments.size());
+
+        var configAssessment = clusterAssessments.get(0);
+        assertEquals("Large impact. Consider reprovisioning one or more config servers", configAssessment.impact);
+        assertEquals(2, configAssessment.clusterImpact);
+
+        var routingAssessment = clusterAssessments.get(1);
+        assertEquals("33% of routing nodes impacted. Consider reprovisioning if too many", routingAssessment.impact);
+    }
+
+    private NodeOwner createOwner() {
         NodeOwner owner = new NodeOwner();
-        owner.tenant = tenant;
-        owner.application = application;
-        owner.instance = instance;
+        owner.tenant = "mytenant";
+        owner.application = "myapp";
+        owner.instance = "default";
         return owner;
     }
 
@@ -135,21 +172,29 @@ public class ChangeManagementAssessorTest {
         return membership;
     }
 
-    private NodeRepositoryNode createNode(String nodename, String hostname, String appName, String clusterId, int group) {
+    private NodeRepositoryNode createNode(String nodename, String hostname, String clusterId, int group) {
+        return createNode(nodename, hostname, clusterId, group, NodeType.tenant);
+    }
+
+    private NodeRepositoryNode createNode(String nodename, String hostname, String clusterId, int group, NodeType nodeType) {
         NodeRepositoryNode node = new NodeRepositoryNode();
         node.setHostname(nodename);
         node.setParentHostname(hostname);
         node.setState(NodeState.active);
-        node.setOwner(createOwner("mytenant", appName, "default"));
+        node.setOwner(createOwner());
         node.setMembership(createMembership(clusterId, group));
+        node.setType(nodeType);
 
         return node;
     }
 
-    private NodeRepositoryNode createHost(String hostname, String switchName) {
+    private NodeRepositoryNode createHost(String hostname, NodeType nodeType) {
         NodeRepositoryNode node = new NodeRepositoryNode();
         node.setHostname(hostname);
-        node.setSwitchHostname(switchName);
+        node.setSwitchHostname("switch1");
+        node.setType(nodeType);
+        node.setOwner(createOwner());
+        node.setMembership(createMembership(nodeType.name(), 0));
         return node;
     }
 }
