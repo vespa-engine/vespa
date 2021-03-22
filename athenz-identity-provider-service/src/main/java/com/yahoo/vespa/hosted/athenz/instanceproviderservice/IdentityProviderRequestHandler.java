@@ -13,9 +13,6 @@ import com.yahoo.restapi.RestApiRequestHandler;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.bindings.SignedIdentityDocumentEntity;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.identitydocument.IdentityDocumentGenerator;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation.InstanceConfirmation;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation.InstanceValidator;
 
 import java.util.logging.Level;
 
