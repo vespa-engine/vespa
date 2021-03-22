@@ -12,7 +12,7 @@
         "groupsImpact": 1,
         "upgradePolicy": "na",
         "suggestedAction": "nothing",
-        "impact": "na"
+        "impact": "Impact larger than upgrade policy"
       }
     ],
     "hosts": [

@@ -121,17 +121,28 @@ public class ChangeManagementAssessorTest {
     }
 
     @Test
-    public void config_and_proxy_hosts() {
+    public void two_config_nodes() {
         var zone = ZoneId.from("prod", "eu-trd");
-        var hostNames = Arrays.asList("config1", "config2", "routing1");
+        var hostNames = Arrays.asList("config1", "config2");
         var allNodesInZone = new ArrayList<NodeRepositoryNode>();
-
 
         // Add config nodes and parents
         allNodesInZone.add(createNode("config1", "confighost1", "config", 0, NodeType.config));
         allNodesInZone.add(createHost("confighost1", NodeType.confighost));
         allNodesInZone.add(createNode("config2", "confighost2", "config", 0, NodeType.config));
         allNodesInZone.add(createHost("confighost2", NodeType.confighost));
+
+        var assessment = changeManagementAssessor.assessmentInner(hostNames, allNodesInZone, zone).getClusterAssessments();
+        var configAssessment = assessment.get(0);
+        assertEquals("Large impact. Consider reprovisioning one or more config servers", configAssessment.impact);
+        assertEquals(2, configAssessment.clusterImpact);
+    }
+
+    @Test
+    public void one_of_three_proxy_nodes() {
+        var zone = ZoneId.from("prod", "eu-trd");
+        var hostNames = Arrays.asList("routing1");
+        var allNodesInZone = new ArrayList<NodeRepositoryNode>();
 
         // Add routing nodes and parents
         allNodesInZone.add(createNode("routing1", "parentrouting1", "routing", 0, NodeType.proxy));
@@ -141,17 +152,8 @@ public class ChangeManagementAssessorTest {
         allNodesInZone.add(createNode("routing3", "parentrouting3", "routing", 0, NodeType.proxy));
         allNodesInZone.add(createHost("parentrouting3", NodeType.proxyhost));
 
-        var assessment = changeManagementAssessor.assessmentInner(hostNames, allNodesInZone, zone);
-
-        var clusterAssessments = assessment.getClusterAssessments();
-        assertEquals(2, clusterAssessments.size());
-
-        var configAssessment = clusterAssessments.get(0);
-        assertEquals("Large impact. Consider reprovisioning one or more config servers", configAssessment.impact);
-        assertEquals(2, configAssessment.clusterImpact);
-
-        var routingAssessment = clusterAssessments.get(1);
-        assertEquals("33% of routing nodes impacted. Consider reprovisioning if too many", routingAssessment.impact);
+        var assessment = changeManagementAssessor.assessmentInner(hostNames, allNodesInZone, zone).getClusterAssessments();
+        assertEquals("33% of routing nodes impacted. Consider reprovisioning if too many", assessment.get(0).impact);
     }
 
     private NodeOwner createOwner() {
