@@ -100,7 +100,7 @@ public class IndexedHierarchicDistributionValidator {
                                                totalReadyCopies + " ready copies is specified with " + groupCount + " groups");
         }
         if (totalReadyCopies == 0) {
-            throw new IllegalArgumentException(getErrorMsgPrefix(clusterName) + "Warning. No ready copies configured. At least one is recommended.");
+            throw new IllegalArgumentException(getErrorMsgPrefix(clusterName) + "Warning. No ready copies configured. At least one is required.");
         }
     }
 
