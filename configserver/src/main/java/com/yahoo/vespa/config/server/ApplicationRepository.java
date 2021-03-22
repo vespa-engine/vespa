@@ -74,7 +74,6 @@ import com.yahoo.vespa.config.server.tenant.EndpointCertificateMetadataStore;
 import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantMetaData;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
-import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.curator.stats.ThreadLockStats;
@@ -505,7 +504,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         NestedTransaction transaction = new NestedTransaction();
         Optional<ApplicationTransaction> applicationTransaction = hostProvisioner.map(provisioner -> provisioner.lock(applicationId))
                                                                                  .map(lock -> new ApplicationTransaction(lock, transaction));
-        try (var sessionLock = tenantApplications.lock(applicationId)) {
+        try (var applicationLock = tenantApplications.lock(applicationId)) {
             Optional<Long> activeSession = tenantApplications.activeSessionOf(applicationId);
             if (activeSession.isEmpty()) return false;
 
@@ -533,9 +532,16 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             } else {
                 transaction.commit();
             }
-            return true;
         } finally {
             applicationTransaction.ifPresent(ApplicationTransaction::close);
+        }
+
+        // Get the lock to remove the application. Other config servers should have attempted to
+        // get the lock (and lock is fair), so this will essentially let us wait for the others to finish.
+        // If some of them are down they will not be taking the lock, if something else is wrong, getting the
+        // lock times out after 1 minute
+        try (var lock = tenantApplications.lock(applicationId)) {
+            return true;
         }
     }
 
