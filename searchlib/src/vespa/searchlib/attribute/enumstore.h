@@ -97,7 +97,6 @@ public:
 
     ssize_t load_unique_values(const void* src, size_t available, IndexVector& idx) override;
 
-    void set_ref_counts(const EnumVector& hist) override { _dict->set_ref_counts(hist); }
     void freeze_dictionary() { _store.freeze(); }
 
     IEnumStoreDictionary& get_dictionary() override { return *_dict; }

@@ -55,7 +55,6 @@ public:
     virtual void write_value(BufferWriter& writer, Index idx) const = 0;
     virtual ssize_t load_unique_values(const void* src, size_t available, IndexVector& idx) = 0;
     virtual void set_ref_count(Index idx, uint32_t ref_count) = 0;
-    virtual void set_ref_counts(const EnumVector& histogram) = 0;
     virtual void free_value_if_unused(Index idx, IndexSet& unused) = 0;
     virtual void free_unused_values() = 0;
     virtual bool is_folded_change(Index idx1, Index idx2) const = 0;
@@ -80,22 +79,6 @@ public:
     }
 
     virtual std::unique_ptr<Enumerator> make_enumerator() const = 0;
-
-    template <typename TreeT>
-    void set_ref_counts(const EnumVector& hist, TreeT& tree) {
-        if (hist.empty()) {
-            return;
-        }
-        typename TreeT::Iterator ti(tree.begin());
-        typedef EnumVector::const_iterator HistIT;
-
-        for (HistIT hi(hist.begin()), hie(hist.end()); hi != hie; ++hi, ++ti) {
-            assert(ti.valid());
-            set_ref_count(ti.getKey(), *hi);
-        }
-        assert(!ti.valid());
-        free_unused_values();
-    }
 };
 
 }

@@ -2,6 +2,7 @@
 
 #include "enum_store_loaders.h"
 #include "i_enum_store.h"
+#include "i_enum_store_dictionary.h"
 #include <vespa/vespalib/util/array.hpp>
 
 namespace search::enumstore {
@@ -19,6 +20,18 @@ EnumeratedLoaderBase::load_unique_values(const void* src, size_t available)
     assert(static_cast<size_t>(sz) == available);
 }
 
+void
+EnumeratedLoaderBase::release_enum_indexes()
+{
+    IndexVector().swap(_indexes);
+}
+
+void
+EnumeratedLoaderBase::free_unused_values()
+{
+    _store.free_unused_values();
+}
+
 EnumeratedLoader::EnumeratedLoader(IEnumStore& store)
     : EnumeratedLoaderBase(store),
       _enums_histogram()
@@ -28,14 +41,28 @@ EnumeratedLoader::EnumeratedLoader(IEnumStore& store)
 void
 EnumeratedLoader::set_ref_counts()
 {
-    _store.set_ref_counts(_enums_histogram);
+    assert(_enums_histogram.size() == _indexes.size());
+    for (uint32_t i = 0; i < _indexes.size(); ++i) {
+        _store.set_ref_count(_indexes[i], _enums_histogram[i]);
+    }
+    EnumVector().swap(_enums_histogram);
+}
+
+void
+EnumeratedLoader::build_dictionary()
+{
+    _store.get_dictionary().build(_indexes);
+    release_enum_indexes();
 }
 
 EnumeratedPostingsLoader::EnumeratedPostingsLoader(IEnumStore& store)
     : EnumeratedLoaderBase(store),
-      _loaded_enums()
+      _loaded_enums(),
+      _posting_indexes()
 {
 }
+
+EnumeratedPostingsLoader::~EnumeratedPostingsLoader() = default;
 
 bool
 EnumeratedPostingsLoader::is_folded_change(Index lhs, Index rhs) const
@@ -49,10 +76,20 @@ EnumeratedPostingsLoader::set_ref_count(Index idx, uint32_t ref_count)
     _store.set_ref_count(idx, ref_count);
 }
 
-void
-EnumeratedPostingsLoader::free_unused_values()
+vespalib::ArrayRef<uint32_t>
+EnumeratedPostingsLoader::initialize_empty_posting_indexes()
 {
-    _store.free_unused_values();
+    vespalib::Array<uint32_t>(_indexes.size(), 0).swap(_posting_indexes);
+    return _posting_indexes;
+}
+
+void
+EnumeratedPostingsLoader::build_dictionary()
+{
+    attribute::LoadedEnumAttributeVector().swap(_loaded_enums);
+    _store.get_dictionary().build_with_payload(_indexes, _posting_indexes);
+    release_enum_indexes();
+    vespalib::Array<uint32_t>().swap(_posting_indexes);
 }
 
 }

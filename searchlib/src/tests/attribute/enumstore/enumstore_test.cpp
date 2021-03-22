@@ -472,7 +472,8 @@ public:
     }
 
     void set_ref_count(size_t values_idx, uint32_t ref_count, enumstore::EnumeratedPostingsLoader& loader) const {
-        EnumIndex idx = find_index(values_idx);
+        assert(values_idx < loader.get_enum_indexes().size());
+        EnumIndex idx = loader.get_enum_indexes()[values_idx];
         loader.set_ref_count(idx, ref_count);
     }
 
@@ -520,6 +521,8 @@ TYPED_TEST(LoaderTest, store_is_instantiated_with_enumerated_loader)
     loader.get_enums_histogram()[1] = 2;
     loader.get_enums_histogram()[3] = 4;
     loader.set_ref_counts();
+    loader.build_dictionary();
+    loader.free_unused_values();
 
     this->expect_values_in_store();
 }
@@ -531,6 +534,8 @@ TYPED_TEST(LoaderTest, store_is_instantiated_with_enumerated_postings_loader)
     this->set_ref_count(0, 1, loader);
     this->set_ref_count(1, 2, loader);
     this->set_ref_count(3, 4, loader);
+    loader.initialize_empty_posting_indexes();
+    loader.build_dictionary();
     loader.free_unused_values();
 
     this->expect_values_in_store();

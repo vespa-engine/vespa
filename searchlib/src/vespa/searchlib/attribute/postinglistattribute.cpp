@@ -53,22 +53,18 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
     uint32_t preve = 0;
     uint32_t refCount = 0;
 
-    auto& dict = _dictionary.get_posting_dictionary();
-    auto itr = dict.begin();
-    auto posting_itr = itr;
-    assert(itr.valid());
+    vespalib::ConstArrayRef<EnumIndex> enum_indexes(loader.get_enum_indexes());
+    assert(!enum_indexes.empty());
+    auto posting_indexes = loader.initialize_empty_posting_indexes();
+    uint32_t posting_enum = preve;
     for (const auto& elem : loaded_enums) {
         if (preve != elem.getEnum()) {
             assert(preve < elem.getEnum());
-            loader.set_ref_count(itr.getKey(), refCount);
+            assert(elem.getEnum() < enum_indexes.size());
+            loader.set_ref_count(enum_indexes[preve], refCount);
             refCount = 0;
-            while (preve != elem.getEnum()) {
-                ++itr;
-                assert(itr.valid());
-                ++preve;
-            }
-            assert(itr.valid());
-            if (loader.is_folded_change(posting_itr.getKey(), itr.getKey())) {
+            preve = elem.getEnum();
+            if (loader.is_folded_change(enum_indexes[posting_enum], enum_indexes[preve])) {
                 postings.removeDups();
                 newIndex = EntryRef();
                 _postingList.apply(newIndex,
@@ -78,11 +74,9 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
                                    &postings._removals[0],
                                    &postings._removals[0] +
                                    postings._removals.size());
-                posting_itr.writeData(newIndex.ref());
-                while (posting_itr != itr) {
-                    ++posting_itr;
-                }
+                posting_indexes[posting_enum] = newIndex.ref();
                 postings.clear();
+                posting_enum = elem.getEnum();
             }
         }
         assert(refCount < std::numeric_limits<uint32_t>::max());
@@ -92,7 +86,7 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
         postings.add(elem.getDocId(), elem.getWeight());
     }
     assert(refCount != 0);
-    loader.set_ref_count(itr.getKey(), refCount);
+    loader.set_ref_count(enum_indexes[preve], refCount);
     postings.removeDups();
     newIndex = EntryRef();
     _postingList.apply(newIndex,
@@ -100,9 +94,9 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
                        &postings._additions[0] + postings._additions.size(),
                        &postings._removals[0],
                        &postings._removals[0] + postings._removals.size());
-    posting_itr.writeData(newIndex.ref());
+    posting_indexes[posting_enum] = newIndex.ref();
+    loader.build_dictionary();
     loader.free_unused_values();
-    _dictionary.sync_unordered_after_load();
 }
 
 template <typename P>

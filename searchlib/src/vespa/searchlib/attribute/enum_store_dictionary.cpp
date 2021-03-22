@@ -48,13 +48,6 @@ EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::~EnumStoreDictionary() =
 
 template <typename DictionaryT, typename UnorderedDictionaryT>
 void
-EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::set_ref_counts(const EnumVector& hist)
-{
-    _enumStore.set_ref_counts(hist, this->_dict);
-}
-
-template <typename DictionaryT, typename UnorderedDictionaryT>
-void
 EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::free_unused_values(const vespalib::datastore::EntryComparator& cmp)
 {
     IndexSet unused;
@@ -240,21 +233,6 @@ EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::update_posting_list(Inde
         assert(find_result->second.load_relaxed() == old_posting_idx);
         find_result->second.store_release(new_posting_idx);
     }
-}
-
-template <typename DictionaryT, typename UnorderedDictionaryT>
-void
-EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::sync_unordered_after_load()
-{
-    if constexpr (has_unordered_dictionary) {
-        for (auto itr = this->_dict.begin(); itr.valid(); ++itr) {
-            EntryRef ref(itr.getKey());
-            std::function<EntryRef(void)> insert_unordered_entry([ref]() noexcept -> EntryRef { return ref; });
-            auto& add_result = this->_unordered_dict.add(this->_unordered_dict.get_default_comparator(), ref, insert_unordered_entry);
-            assert(add_result.first.load_relaxed() == ref);
-            add_result.second.store_relaxed(EntryRef(itr.getData()));
-        }
-    }    
 }
 
 template <>

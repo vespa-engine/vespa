@@ -17,13 +17,12 @@ protected:
     IEnumStore& _store;
     IndexVector _indexes;
 
+    void release_enum_indexes();
 public:
     EnumeratedLoaderBase(IEnumStore& store);
     const IndexVector& get_enum_indexes() const { return _indexes; }
     void load_unique_values(const void* src, size_t available);
-    void release_enum_indexes() {
-        IndexVector().swap(_indexes);
-    }
+    void free_unused_values();
 };
 
 /**
@@ -40,6 +39,7 @@ public:
         EnumVector(_indexes.size(), 0).swap(_enums_histogram);
     }
     void set_ref_counts();
+    void build_dictionary();
 };
 
 /**
@@ -48,9 +48,11 @@ public:
 class EnumeratedPostingsLoader : public EnumeratedLoaderBase {
 private:
     attribute::LoadedEnumAttributeVector _loaded_enums;
+    vespalib::Array<uint32_t>            _posting_indexes;
 
 public:
     EnumeratedPostingsLoader(IEnumStore& store);
+    ~EnumeratedPostingsLoader();
     attribute::LoadedEnumAttributeVector& get_loaded_enums() { return _loaded_enums; }
     void reserve_loaded_enums(size_t num_values) {
         _loaded_enums.reserve(num_values);
@@ -60,7 +62,8 @@ public:
     }
     bool is_folded_change(Index lhs, Index rhs) const;
     void set_ref_count(Index idx, uint32_t ref_count);
-    void free_unused_values();
+    vespalib::ArrayRef<uint32_t> initialize_empty_posting_indexes();
+    void build_dictionary();
 };
 
 }
