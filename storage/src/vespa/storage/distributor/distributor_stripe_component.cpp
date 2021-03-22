@@ -41,26 +41,6 @@ DistributorStripeComponent::sendUp(const api::StorageMessage::SP& msg)
     _distributor.getMessageSender().sendUp(msg);
 }
 
-bool
-DistributorStripeComponent::checkDistribution(api::StorageCommand &cmd, const document::Bucket &bucket)
-{
-    auto &bucket_space(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    BucketOwnership bo(bucket_space.check_ownership_in_pending_and_current_state(bucket.getBucketId()));
-    if (!bo.isOwned()) {
-        std::string systemStateStr = bo.getNonOwnedState().toString();
-        LOG(debug,
-            "Got message with wrong distribution, bucket %s sending back state '%s'",
-            bucket.toString().c_str(), systemStateStr.c_str());
-
-        api::StorageReply::UP reply(cmd.makeReply());
-        api::ReturnCode ret(api::ReturnCode::WRONG_DISTRIBUTION, systemStateStr);
-        reply->setResult(ret);
-        sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
-        return false;
-    }
-    return true;
-}
-
 void
 DistributorStripeComponent::removeNodesFromDB(const document::Bucket &bucket, const std::vector<uint16_t>& nodes)
 {
@@ -250,15 +230,6 @@ DistributorStripeComponent::getSibling(const document::BucketId& bid) const {
 
     return (zeroBucket == bid) ? oneBucket : zeroBucket;
 };
-
-BucketDatabase::Entry
-DistributorStripeComponent::createAppropriateBucket(const document::Bucket &bucket)
-{
-    auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    return bucketSpace.getBucketDatabase().createAppropriateBucket(
-            _distributor.getConfig().getMinimalBucketSplit(),
-            bucket.getBucketId());
-}
 
 // Implements DistributorNodeContext
 api::StorageMessageAddress

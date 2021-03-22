@@ -43,12 +43,6 @@ public:
     ~DistributorStripeComponent() override;
 
     /**
-     * Verifies that the given command has been received at the
-     * correct distributor based on the current system state.
-     */
-    bool checkDistribution(api::StorageCommand& cmd, const document::Bucket &bucket);
-
-    /**
      * Removes the given bucket copies from the bucket database.
      * If the resulting bucket is empty afterwards, removes the entire
      * bucket entry from the bucket database.
@@ -76,12 +70,6 @@ public:
      * (i.e. split one bit less), but different bit in the most used bit.
      */
     document::BucketId getSibling(const document::BucketId& bid) const;
-
-    /**
-     * Create a bucket that is split correctly according to other buckets that
-     * are in the bucket database.
-     */
-    BucketDatabase::Entry createAppropriateBucket(const document::Bucket &bucket);
 
     // Implements DistributorNodeContext
     const framework::Clock& clock() const noexcept override { return getClock(); }
