@@ -51,8 +51,6 @@ public class ScalingSuggestionsMaintainerTest {
         ApplicationId app2 = ProvisioningTester.applicationId("app2");
         ClusterSpec cluster2 = ProvisioningTester.contentClusterSpec();
 
-        MetricsDb metricsDb = MetricsDb.createTestInstance(tester.nodeRepository());
-
         tester.makeReadyNodes(20, "flt", NodeType.host, 8);
         tester.activateTenantHosts();
 
@@ -64,11 +62,10 @@ public class ScalingSuggestionsMaintainerTest {
                                                     false, true));
 
         tester.clock().advance(Duration.ofHours(13));
-        addMeasurements(0.90f, 0.90f, 0.90f, 0, 500, app1, tester.nodeRepository(), metricsDb);
-        addMeasurements(0.99f, 0.99f, 0.99f, 0, 500, app2, tester.nodeRepository(), metricsDb);
+        addMeasurements(0.90f, 0.90f, 0.90f, 0, 500, app1, tester.nodeRepository());
+        addMeasurements(0.99f, 0.99f, 0.99f, 0, 500, app2, tester.nodeRepository());
 
         ScalingSuggestionsMaintainer maintainer = new ScalingSuggestionsMaintainer(tester.nodeRepository(),
-                                                                                   metricsDb,
                                                                                    Duration.ofMinutes(1),
                                                                                    new TestMetric());
         maintainer.maintain();
@@ -80,14 +77,14 @@ public class ScalingSuggestionsMaintainerTest {
 
         // Utilization goes way down
         tester.clock().advance(Duration.ofHours(13));
-        addMeasurements(0.10f, 0.10f, 0.10f, 0, 500, app1, tester.nodeRepository(), metricsDb);
+        addMeasurements(0.10f, 0.10f, 0.10f, 0, 500, app1, tester.nodeRepository());
         maintainer.maintain();
         assertEquals("Suggestion stays at the peak value observed",
                      "12 nodes with [vcpu: 6.0, memory: 5.1 Gb, disk 15.0 Gb, bandwidth: 0.1 Gbps]",
                      suggestionOf(app1, cluster1, tester).get().resources().toString());
         // Utilization is still way down and a week has passed
         tester.clock().advance(Duration.ofDays(7));
-        addMeasurements(0.10f, 0.10f, 0.10f, 0, 500, app1, tester.nodeRepository(), metricsDb);
+        addMeasurements(0.10f, 0.10f, 0.10f, 0, 500, app1, tester.nodeRepository());
         maintainer.maintain();
         assertEquals("Peak suggestion has been  outdated",
                      "5 nodes with [vcpu: 1.8, memory: 4.0 Gb, disk 10.0 Gb, bandwidth: 0.1 Gbps]",
@@ -95,13 +92,13 @@ public class ScalingSuggestionsMaintainerTest {
         assertTrue(shouldSuggest(app1, cluster1, tester));
 
         tester.clock().advance(Duration.ofDays(3));
-        addMeasurements(0.7f, 0.7f, 0.7f, 0, 500, app1, tester.nodeRepository(), metricsDb);
+        addMeasurements(0.7f, 0.7f, 0.7f, 0, 500, app1, tester.nodeRepository());
         maintainer.maintain();
         var suggested = tester.nodeRepository().applications().get(app1).get().cluster(cluster1.id()).get().suggestedResources().get().resources();
         tester.deploy(app1, cluster1, Capacity.from(suggested, suggested, false, true));
         tester.clock().advance(Duration.ofDays(2));
         addMeasurements(0.2f, 0.7f, 0.6f,
-                        0, 500, app1, tester.nodeRepository(), metricsDb);
+                        0, 500, app1, tester.nodeRepository());
         maintainer.maintain();
         assertEquals("Suggestion is to keep the current allocation",
                      suggested,
@@ -119,19 +116,21 @@ public class ScalingSuggestionsMaintainerTest {
                      .shouldSuggestResources(currentResources);
     }
 
-    public void addMeasurements(float cpu, float memory, float disk, int generation, int count, ApplicationId applicationId,
-                                NodeRepository nodeRepository, MetricsDb db) {
+    public void addMeasurements(float cpu, float memory, float disk, int generation, int count,
+                                ApplicationId applicationId,
+                                NodeRepository nodeRepository) {
         NodeList nodes = nodeRepository.nodes().list(Node.State.active).owner(applicationId);
         for (int i = 0; i < count; i++) {
             for (Node node : nodes)
-                db.addNodeMetrics(List.of(new Pair<>(node.hostname(), new NodeMetricSnapshot(nodeRepository.clock().instant(),
-                                                                                             cpu,
-                                                                                             memory,
-                                                                                             disk,
-                                                                                             generation,
-                                                                                             true,
-                                                                                             true,
-                                                                                             0.0))));
+                nodeRepository.metricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
+                                                                             new NodeMetricSnapshot(nodeRepository.clock().instant(),
+                                                                                                    cpu,
+                                                                                                    memory,
+                                                                                                    disk,
+                                                                                                    generation,
+                                                                                                    true,
+                                                                                                    true,
+                                                                                                    0.0))));
         }
     }
 

@@ -24,16 +24,13 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
     private static final int maxWarningsPerInvocation = 2;
 
     private final MetricsFetcher metricsFetcher;
-    private final MetricsDb metricsDb;
 
     public NodeMetricsDbMaintainer(NodeRepository nodeRepository,
                                    MetricsFetcher metricsFetcher,
-                                   MetricsDb metricsDb,
                                    Duration interval,
                                    Metric metric) {
         super(nodeRepository, interval, metric);
         this.metricsFetcher = metricsFetcher;
-        this.metricsDb = metricsDb;
     }
 
     @Override
@@ -54,7 +51,7 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
                 if (++done < applications.size())
                     Thread.sleep(pauseMs);
             }
-            metricsDb.gc();
+            nodeRepository().metricsDb().gc();
 
             // Suppress failures for manual zones for now to avoid noise
             return nodeRepository().zone().environment().isManuallyDeployed() || warnings.get() == 0;
@@ -75,8 +72,8 @@ public class NodeMetricsDbMaintainer extends NodeRepositoryMaintainer {
             warnings.add(1);
         }
         else if (response != null) {
-            metricsDb.addNodeMetrics(response.nodeMetrics());
-            metricsDb.addClusterMetrics(application, response.clusterMetrics());
+            nodeRepository().metricsDb().addNodeMetrics(response.nodeMetrics());
+            nodeRepository().metricsDb().addClusterMetrics(application, response.clusterMetrics());
         }
     }
 

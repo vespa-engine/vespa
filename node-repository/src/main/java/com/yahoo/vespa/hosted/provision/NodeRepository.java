@@ -13,6 +13,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.Node.State;
 import com.yahoo.vespa.hosted.provision.applications.Applications;
+import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancers;
 import com.yahoo.vespa.hosted.provision.maintenance.InfrastructureVersions;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -30,12 +31,8 @@ import com.yahoo.vespa.hosted.provision.provisioning.HostResourcesCalculator;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
 
 import java.time.Clock;
-import java.time.Duration;
-import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -44,8 +41,6 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 public class NodeRepository extends AbstractComponent {
-
-    private static final Logger log = Logger.getLogger(NodeRepository.class.getName());
 
     private final CuratorDatabaseClient db;
     private final Clock clock;
@@ -63,6 +58,7 @@ public class NodeRepository extends AbstractComponent {
     private final Applications applications;
     private final LoadBalancers loadBalancers;
     private final FlagSource flagSource;
+    private final MetricsDb metricsDb;
     private final int spareCount;
 
     /**
@@ -75,7 +71,8 @@ public class NodeRepository extends AbstractComponent {
                           ProvisionServiceProvider provisionServiceProvider,
                           Curator curator,
                           Zone zone,
-                          FlagSource flagSource) {
+                          FlagSource flagSource,
+                          MetricsDb metricsDb) {
         this(flavors,
              provisionServiceProvider,
              curator,
@@ -85,6 +82,7 @@ public class NodeRepository extends AbstractComponent {
              DockerImage.fromString(config.containerImage())
                         .withReplacedBy(DockerImage.fromString(config.containerImageReplacement())),
              flagSource,
+             metricsDb,
              config.useCuratorClientCache(),
              zone.environment().isProduction() && !zone.getCloud().dynamicProvisioning() ? 1 : 0,
              config.nodeCacheSize());
@@ -102,6 +100,7 @@ public class NodeRepository extends AbstractComponent {
                           NameResolver nameResolver,
                           DockerImage containerImage,
                           FlagSource flagSource,
+                          MetricsDb metricsDb,
                           boolean useCuratorClientCache,
                           int spareCount,
                           long nodeCacheSize) {
@@ -126,22 +125,9 @@ public class NodeRepository extends AbstractComponent {
         this.applications = new Applications(db);
         this.loadBalancers = new LoadBalancers(db);
         this.flagSource = flagSource;
+        this.metricsDb = metricsDb;
         this.spareCount = spareCount;
-        rewriteNodes();
-    }
-
-    /** Read and write all nodes to make sure they are stored in the latest version of the serialized format */
-    private void rewriteNodes() {
-        Instant start = clock.instant();
-        int nodesWritten = 0;
-        for (State state : State.values()) {
-            List<Node> nodes = db.readNodes(state);
-            // TODO(mpolden): This should take the lock before writing
-            db.writeTo(state, nodes, Agent.system, Optional.empty());
-            nodesWritten += nodes.size();
-        }
-        Instant end = clock.instant();
-        log.log(Level.INFO, String.format("Rewrote %d nodes in %s", nodesWritten, Duration.between(start, end)));
+        nodes.rewrite();
     }
 
     /** Returns the curator database client used by this */
@@ -182,6 +168,8 @@ public class NodeRepository extends AbstractComponent {
     public HostResourcesCalculator resourcesCalculator() { return resourcesCalculator; }
 
     public FlagSource flagSource() { return flagSource; }
+
+    public MetricsDb metricsDb() { return metricsDb; }
 
     /** Returns the time keeper of this system */
     public Clock clock() { return clock; }

@@ -39,7 +39,7 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                                      HostLivenessTracker hostLivenessTracker, ServiceMonitor serviceMonitor,
                                      Zone zone, Orchestrator orchestrator, Metric metric,
                                      ProvisionServiceProvider provisionServiceProvider, FlagSource flagSource,
-                                     MetricsFetcher metricsFetcher, MetricsDb metricsDb) {
+                                     MetricsFetcher metricsFetcher) {
         DefaultTimes defaults = new DefaultTimes(zone, deployer);
 
         PeriodicApplicationMaintainer periodicApplicationMaintainer = new PeriodicApplicationMaintainer(deployer, metric, nodeRepository, defaults.redeployMaintainerInterval,
@@ -64,9 +64,9 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
         maintainers.add(new SpareCapacityMaintainer(deployer, nodeRepository, metric, defaults.spareCapacityMaintenanceInterval));
         maintainers.add(new OsUpgradeActivator(nodeRepository, defaults.osUpgradeActivatorInterval, metric));
         maintainers.add(new Rebalancer(deployer, nodeRepository, metric, defaults.rebalancerInterval));
-        maintainers.add(new NodeMetricsDbMaintainer(nodeRepository, metricsFetcher, metricsDb, defaults.nodeMetricsCollectionInterval, metric));
-        maintainers.add(new AutoscalingMaintainer(nodeRepository, metricsDb, deployer, metric, defaults.autoscalingInterval));
-        maintainers.add(new ScalingSuggestionsMaintainer(nodeRepository, metricsDb, defaults.scalingSuggestionsInterval, metric));
+        maintainers.add(new NodeMetricsDbMaintainer(nodeRepository, metricsFetcher, defaults.nodeMetricsCollectionInterval, metric));
+        maintainers.add(new AutoscalingMaintainer(nodeRepository, deployer, metric, defaults.autoscalingInterval));
+        maintainers.add(new ScalingSuggestionsMaintainer(nodeRepository, defaults.scalingSuggestionsInterval, metric));
         maintainers.add(new SwitchRebalancer(nodeRepository, defaults.switchRebalancerInterval, metric, deployer));
 
         provisionServiceProvider.getLoadBalancerService(nodeRepository)

@@ -62,7 +62,6 @@ public class InfraDeployerImplTest {
     private final NodeRepositoryTester tester = new NodeRepositoryTester();
     private final NodeRepository nodeRepository = tester.nodeRepository();
     private final Provisioner provisioner = spy(new NodeRepositoryProvisioner(nodeRepository,
-                                                                              new MemoryMetricsDb(nodeRepository),
                                                                               Zone.defaultZone(),
                                                                               new EmptyProvisionServiceProvider(),
                                                                               new InMemoryFlagSource()));

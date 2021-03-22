@@ -18,6 +18,7 @@ import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.autoscale.MemoryMetricsDb;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.provisioning.EmptyProvisionServiceProvider;
@@ -254,14 +255,16 @@ public class SpareCapacityMaintainerTest {
 
         private SpareCapacityMaintainerTester(int maxIterations) {
             NodeFlavors flavors = new NodeFlavors(new FlavorConfigBuilder().build());
+            ManualClock clock = new ManualClock();
             nodeRepository = new NodeRepository(flavors,
                                                 new EmptyProvisionServiceProvider(),
                                                 new MockCurator(),
-                                                new ManualClock(),
+                                                clock,
                                                 new Zone(Environment.prod, RegionName.from("us-east-3")),
                                                 new MockNameResolver().mockAnyLookup(),
                                                 DockerImage.fromString("docker-registry.domain.tld:8080/dist/vespa"),
                                                 new InMemoryFlagSource(),
+                                                new MemoryMetricsDb(clock),
                                                 true,
                                                 1, 1000);
             deployer = new MockDeployer(nodeRepository);

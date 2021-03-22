@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
+import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
@@ -33,6 +34,8 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -51,6 +54,8 @@ import java.util.stream.Stream;
 // Nodes might have an application assigned in dirty.
 public class Nodes {
 
+    private static final Logger log = Logger.getLogger(Nodes.class.getName());
+
     private final Zone zone;
     private final Clock clock;
     private final CuratorDatabaseClient db;
@@ -59,6 +64,20 @@ public class Nodes {
         this.zone = zone;
         this.clock = clock;
         this.db = db;
+    }
+
+    /** Read and write all nodes to make sure they are stored in the latest version of the serialized format */
+    public void rewrite() {
+        Instant start = clock.instant();
+        int nodesWritten = 0;
+        for (Node.State state : Node.State.values()) {
+            List<Node> nodes = db.readNodes(state);
+            // TODO(mpolden): This should take the lock before writing
+            db.writeTo(state, nodes, Agent.system, Optional.empty());
+            nodesWritten += nodes.size();
+        }
+        Instant end = clock.instant();
+        log.log(Level.INFO, String.format("Rewrote %d nodes in %s", nodesWritten, Duration.between(start, end)));
     }
 
     // ---------------- Query API ----------------------------------------------------------------

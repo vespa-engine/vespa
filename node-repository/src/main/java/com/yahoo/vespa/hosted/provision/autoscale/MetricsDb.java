@@ -50,8 +50,8 @@ public interface MetricsDb {
 
     void close();
 
-    static MemoryMetricsDb createTestInstance(NodeRepository nodeRepository) {
-        return new MemoryMetricsDb(nodeRepository);
+    static MemoryMetricsDb createTestInstance(Clock clock) {
+        return new MemoryMetricsDb(clock);
     }
 
 }

@@ -46,7 +46,6 @@ class AutoscalingTester {
 
     private final ProvisioningTester provisioningTester;
     private final Autoscaler autoscaler;
-    private final MemoryMetricsDb db;
     private final MockHostResourcesCalculator hostResourcesCalculator;
 
     /** Creates an autoscaling tester with a single host type ready */
@@ -73,8 +72,7 @@ class AutoscalingTester {
                                                              .build();
 
         hostResourcesCalculator = new MockHostResourcesCalculator(zone);
-        db = MetricsDb.createTestInstance(provisioningTester.nodeRepository());
-        autoscaler = new Autoscaler(db, nodeRepository());
+        autoscaler = new Autoscaler(nodeRepository());
     }
 
     public ProvisioningTester provisioning() { return provisioningTester; }
@@ -143,14 +141,15 @@ class AutoscalingTester {
                 float cpu = value * oneExtraNodeFactor;
                 float memory  = (float) ClusterModel.idealMemoryLoad * otherResourcesLoad * oneExtraNodeFactor;
                 float disk = (float) ClusterModel.idealDiskLoad * otherResourcesLoad * oneExtraNodeFactor;
-                db.addNodeMetrics(List.of(new Pair<>(node.hostname(), new NodeMetricSnapshot(clock().instant(),
-                                                                                             cpu,
-                                                                                             memory,
-                                                                                             disk,
-                                                                                             0,
-                                                                                             true,
-                                                                                             true,
-                                                                                             0.0))));
+                nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
+                                                                  new NodeMetricSnapshot(clock().instant(),
+                                                                                         cpu,
+                                                                                         memory,
+                                                                                         disk,
+                                                                                         0,
+                                                                                         true,
+                                                                                         true,
+                                                                                         0.0))));
             }
         }
     }
@@ -175,14 +174,15 @@ class AutoscalingTester {
                 float cpu  = (float) 0.2 * otherResourcesLoad * oneExtraNodeFactor;
                 float memory = value * oneExtraNodeFactor;
                 float disk = (float) ClusterModel.idealDiskLoad * otherResourcesLoad * oneExtraNodeFactor;
-                db.addNodeMetrics(List.of(new Pair<>(node.hostname(), new NodeMetricSnapshot(clock().instant(),
-                                                                                             cpu,
-                                                                                             memory,
-                                                                                             disk,
-                                                                                             0,
-                                                                                             true,
-                                                                                             true,
-                                                                                             0.0))));
+                nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
+                                                                  new NodeMetricSnapshot(clock().instant(),
+                                                                                         cpu,
+                                                                                         memory,
+                                                                                         disk,
+                                                                                         0,
+                                                                                         true,
+                                                                                         true,
+                                                                                         0.0))));
             }
         }
     }
@@ -197,14 +197,15 @@ class AutoscalingTester {
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofMinutes(1));
             for (Node node : nodes) {
-                db.addNodeMetrics(List.of(new Pair<>(node.hostname(), new NodeMetricSnapshot(clock().instant(),
-                                                                                             cpu,
-                                                                                             memory,
-                                                                                             disk,
-                                                                                             generation,
-                                                                                             inService,
-                                                                                             stable,
-                                                                                             0.0))));
+                nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
+                                                                  new NodeMetricSnapshot(clock().instant(),
+                                                                                         cpu,
+                                                                                         memory,
+                                                                                         disk,
+                                                                                         generation,
+                                                                                         inService,
+                                                                                         stable,
+                                                                                         0.0))));
             }
         }
     }
@@ -242,7 +243,10 @@ class AutoscalingTester {
                                     IntFunction<Double> queryRate,
                                     IntFunction<Double> writeRate) {
         for (int i = 0; i < measurements; i++) {
-            db.addClusterMetrics(application, Map.of(cluster, new ClusterMetricSnapshot(clock().instant(), queryRate.apply(i), writeRate.apply(i))));
+            nodeMetricsDb().addClusterMetrics(application,
+                                              Map.of(cluster, new ClusterMetricSnapshot(clock().instant(),
+                                                                                        queryRate.apply(i),
+                                                                                        writeRate.apply(i))));
             clock().advance(Duration.ofMinutes(5));
         }
     }
@@ -253,13 +257,16 @@ class AutoscalingTester {
                                          int measurements,
                                          IntFunction<Double> queryRate) {
         for (int i = 0; i < measurements; i++) {
-            db.addClusterMetrics(application, Map.of(cluster, new ClusterMetricSnapshot(clock().instant(), queryRate.apply(i), 0.0)));
+            nodeMetricsDb().addClusterMetrics(application,
+                                              Map.of(cluster, new ClusterMetricSnapshot(clock().instant(),
+                                                                                        queryRate.apply(i),
+                                                                                        0.0)));
             clock().advance(Duration.ofMinutes(5));
         }
     }
 
     public void clearQueryRateMeasurements(ApplicationId application, ClusterSpec.Id cluster) {
-        db.clearClusterMetrics(application, cluster);
+        ((MemoryMetricsDb)nodeMetricsDb()).clearClusterMetrics(application, cluster);
     }
 
     public Autoscaler.Advice autoscale(ApplicationId applicationId, ClusterSpec.Id clusterId,
@@ -307,7 +314,7 @@ class AutoscalingTester {
         return provisioningTester.nodeRepository();
     }
 
-    public MetricsDb nodeMetricsDb() { return db; }
+    public MetricsDb nodeMetricsDb() { return nodeRepository().metricsDb(); }
 
     private static class MockHostResourcesCalculator implements HostResourcesCalculator {
 
