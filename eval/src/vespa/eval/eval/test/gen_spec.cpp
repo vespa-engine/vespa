@@ -2,6 +2,7 @@
 
 #include "gen_spec.h"
 #include <vespa/eval/eval/string_stuff.h>
+#include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/stringfmt.h>
 
 using vespalib::make_string_short::fmt;
@@ -35,7 +36,7 @@ Sequence SigmoidF(const Sequence &seq) {
 }
 
 Sequence Seq(const std::vector<double> &seq) {
-    assert(!seq.empty());
+    REQUIRE(!seq.empty());
     return [seq](size_t i) noexcept { return seq[i % seq.size()]; };
 }
 
@@ -70,23 +71,23 @@ DimSpec::from_desc(const vespalib::string &desc)
     auto as_num = [](char c) { return size_t(c - '0'); };
     auto is_map_tag = [](char c) { return (c == '_'); };
     auto extract_number = [&]() {
-        assert(idx < desc.size());
-        assert(is_num(desc[idx]));
+        REQUIRE(idx < desc.size());
+        REQUIRE(is_num(desc[idx]));
         size_t num = as_num(desc[idx++]);
         while ((idx < desc.size()) && is_num(desc[idx])) {
             num = (num * 10) + as_num(desc[idx++]);
         }
         return num;
     };
-    assert(!desc.empty());
-    assert(is_dim_name(desc[idx]));
+    REQUIRE(!desc.empty());
+    REQUIRE(is_dim_name(desc[idx]));
     name.push_back(desc[idx++]);
     size_t size = extract_number();
     if (idx < desc.size()) {
         // mapped
-        assert(is_map_tag(desc[idx++]));
+        REQUIRE(is_map_tag(desc[idx++]));
         size_t stride = extract_number();
-        assert(idx == desc.size());
+        REQUIRE(idx == desc.size());
         return {name, make_dict(size, stride, "")};
     } else {
         // indexed
@@ -104,7 +105,7 @@ GenSpec::from_desc(const vespalib::string &desc)
     std::vector<DimSpec> dim_list;
     while (idx < desc.size()) {
         dim_desc.clear();
-        assert(is_dim_name(desc[idx]));
+        REQUIRE(is_dim_name(desc[idx]));
         dim_desc.push_back(desc[idx++]);
         while ((idx < desc.size()) && !is_dim_name(desc[idx])) {
             dim_desc.push_back(desc[idx++]);
@@ -135,7 +136,7 @@ GenSpec::type() const
         dim_types.push_back(dim.type());
     }
     auto type = ValueType::make_type(_cells, dim_types);
-    assert(!type.is_error());
+    REQUIRE(!type.is_error());
     return type;
 }
 
@@ -144,7 +145,7 @@ GenSpec::gen() const
 {
     size_t idx = 0;
     TensorSpec::Address addr;   
-    assert(!bad_scalar());
+    REQUIRE(!bad_scalar());
     TensorSpec result(type().to_spec());
     std::function<void(size_t)> add_cells = [&](size_t dim_idx) {
         if (dim_idx == _dims.size()) {
