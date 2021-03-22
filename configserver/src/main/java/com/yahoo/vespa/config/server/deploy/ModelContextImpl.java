@@ -32,13 +32,17 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.flags.UnboundFlag;
 
 import java.io.File;
 import java.net.URI;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
 import static com.yahoo.vespa.config.server.ConfigServerSpec.fromConfig;
@@ -260,8 +264,7 @@ public class ModelContextImpl implements ModelContext {
         private final Quota quota;
         private final List<TenantSecretStore> tenantSecretStores;
         private final SecretStore secretStore;
-
-        private final String jvmGcOptions;
+        private final StringFlag jvmGCOptionsFlag;
 
         public Properties(ApplicationId applicationId,
                           ConfigserverConfig configserverConfig,
@@ -294,8 +297,8 @@ public class ModelContextImpl implements ModelContext {
             this.quota = maybeQuota.orElseGet(Quota::unlimited);
             this.tenantSecretStores = tenantSecretStores;
             this.secretStore = secretStore;
-
-            jvmGcOptions = flagValue(flagSource, applicationId, PermanentFlags.JVM_GC_OPTIONS);
+            this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
+                                                                 .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm());
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -355,13 +358,12 @@ public class ModelContextImpl implements ModelContext {
             return SecretStoreExternalIdRetriever.populateExternalId(secretStore, applicationId.tenant(), zone.system(), tenantSecretStores);
         }
 
-        @Override public String jvmGCOptions() { return jvmGcOptions; }
-
-        private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
-            return flag.bindTo(source)
-                    .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
-                    .boxedValue();
+        @Override public String jvmGCOptions(Optional<ClusterSpec.Type> clusterType) {
+            return clusterType.map(type -> jvmGCOptionsFlag.with(CLUSTER_TYPE, type.name()))
+                              .orElse(jvmGCOptionsFlag)
+                              .value();
         }
+
     }
 
     private static NodeResources parseDedicatedClusterControllerFlavor(String flagValue) {

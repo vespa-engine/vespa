@@ -71,7 +71,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean hostedVespa() { return hostedVespa; }
     @Override public Zone zone() { return zone; }
     @Override public Set<ContainerEndpoint> endpoints() { return endpoints; }
-    @Override public String jvmGCOptions() { return jvmGCOptions; }
+    @Override public String jvmGCOptions(Optional<ClusterSpec.Type> clusterType) { return jvmGCOptions; }
     @Override public String feedSequencerType() { return sequencerType; }
     @Override public boolean isBootstrap() { return false; }
     @Override public boolean isFirstTimeDeployment() { return false; }

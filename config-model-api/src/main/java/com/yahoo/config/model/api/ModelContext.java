@@ -116,8 +116,12 @@ public interface ModelContext {
 
         default List<TenantSecretStore> tenantSecretStores() { return List.of(); }
 
-        /// Default setting for the gc-options attribute if not specified explicit by application
-        String jvmGCOptions();
+        // TODO jonmv: remove after 7.380 is gone.
+        // Default setting for the gc-options attribute if not specified explicit by application
+        default String jvmGCOptions() { return jvmGCOptions(Optional.empty()); }
+
+        // Default setting for the gc-options attribute if not specified explicit by application
+        String jvmGCOptions(Optional<ClusterSpec.Type> clusterType);
 
         // Note: Used in unit tests (set to false in TestProperties) to avoid needing to deal with implicitly created node for logserver
         default boolean useDedicatedNodeForLogserver() { return true; }
