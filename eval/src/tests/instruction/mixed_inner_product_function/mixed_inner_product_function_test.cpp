@@ -30,21 +30,21 @@ struct FunInfo {
 };
 
 void assert_mixed_optimized(const vespalib::string &expr) {
-    TEST_STATE(expr.c_str());
+    SCOPED_TRACE(expr.c_str());
     CellTypeSpace all_types(CellTypeUtils::list_types(), 2);
     using MIP = FunInfo<MixedInnerProductFunction>;
     EvalFixture::verify<MIP>(expr, {MIP{}}, all_types);
 }
 
 void assert_not_mixed_optimized(const vespalib::string &expr) {
-    TEST_STATE(expr.c_str());
+    SCOPED_TRACE(expr.c_str());
     CellTypeSpace all_types(CellTypeUtils::list_types(), 2);
     using MIP = FunInfo<MixedInnerProductFunction>;
     EvalFixture::verify<MIP>(expr, {}, all_types);
 }
 
 void assert_dense_optimized(const vespalib::string &expr) {
-    TEST_STATE(expr.c_str());
+    SCOPED_TRACE(expr.c_str());
     CellTypeSpace all_types(CellTypeUtils::list_types(), 2);
     using MIP = FunInfo<MixedInnerProductFunction>;
     EvalFixture::verify<MIP>(expr, {}, all_types);
