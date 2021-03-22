@@ -243,7 +243,7 @@ public class DatabaseHandler {
                 didWork = true;
             }
         }
-        if (isDatabaseClosedSafe() && zooKeeperIsConfigured() && connectionEstablishmentIsAllowed) {
+        if (isDatabaseClosedSafe() && zooKeeperIsConfigured()) {
             long currentTime = timer.getCurrentTimeInMillis();
             if (currentTime - lastZooKeeperConnectionAttempt < minimumWaitBetweenFailedConnectionAttempts) {
                 return false; // Not time to attempt connection yet.
@@ -266,10 +266,6 @@ public class DatabaseHandler {
             relinquishDatabaseConnectivity(context);
         }
         return didWork;
-    }
-
-    public void setConnectionEstablishmentIsAllowed(boolean allowed) {
-        connectionEstablishmentIsAllowed = allowed;
     }
 
     private boolean zooKeeperIsConfigured() {

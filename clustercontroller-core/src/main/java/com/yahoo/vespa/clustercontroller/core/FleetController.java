@@ -600,10 +600,6 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     public void tick() throws Exception {
         synchronized (monitor) {
             boolean didWork;
-            // We defer ZooKeeper connections until our local Slobrok mirror is ready.
-            // Otherwise we risk winning an election without having any clue about the state of
-            // the nodes in the cluster, causing us to spuriously publish cluster down-states.
-            database.setConnectionEstablishmentIsAllowed(nodeLookup.isReady());
             didWork = database.doNextZooKeeperTask(databaseContext);
             didWork |= updateMasterElectionState();
             didWork |= handleLeadershipEdgeTransitions();

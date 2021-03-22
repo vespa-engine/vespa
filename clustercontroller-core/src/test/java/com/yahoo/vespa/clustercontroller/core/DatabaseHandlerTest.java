@@ -66,19 +66,8 @@ public class DatabaseHandlerTest {
         }
 
         DatabaseHandler createHandler() throws Exception {
-            var handler = new DatabaseHandler(mockDbFactory, mockTimer, databaseAddress, 0, monitor);
-            handler.setConnectionEstablishmentIsAllowed(true);
-            return handler;
+            return new DatabaseHandler(mockDbFactory, mockTimer, databaseAddress, 0, monitor);
         }
-    }
-
-    @Test
-    public void can_not_connect_to_database_if_connectivity_is_not_allowed() throws Exception {
-        Fixture f = new Fixture();
-        DatabaseHandler handler = f.createHandler();
-        handler.setConnectionEstablishmentIsAllowed(false);
-        handler.doNextZooKeeperTask(f.createMockContext());
-        assertTrue(handler.isClosed()); // No connectivity allowed yet
     }
 
     @Test
