@@ -3,7 +3,7 @@
 
 #include "distributor_node_context.h"
 #include "distributor_operation_context.h"
-#include "distributorinterface.h"
+#include "distributor_stripe_interface.h"
 #include "document_selection_parser.h"
 #include "operationowner.h"
 #include "statechecker.h"
@@ -33,7 +33,7 @@ class DistributorComponent : public storage::DistributorComponent,
                              public DocumentSelectionParser
 {
 public:
-    DistributorComponent(DistributorInterface& distributor,
+    DistributorComponent(DistributorStripeInterface& distributor,
                          DistributorBucketSpaceRepo& bucketSpaceRepo,
                          DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                          DistributorComponentRegister& compReg,
@@ -115,9 +115,9 @@ public:
     void sendDown(const api::StorageMessage::SP&);
     void sendUp(const api::StorageMessage::SP&);
 
-    DistributorInterface& getDistributor() { return _distributor; }
+    DistributorStripeInterface& getDistributor() { return _distributor; }
 
-    const DistributorInterface& getDistributor() const {
+    const DistributorStripeInterface& getDistributor() const {
         return _distributor;
     }
 
@@ -216,7 +216,7 @@ private:
             const lib::ClusterState& s,
             const document::Bucket& bucket,
             const std::vector<BucketCopy>& candidates) const;
-    DistributorInterface& _distributor;
+    DistributorStripeInterface& _distributor;
 
 protected:
 

@@ -24,7 +24,7 @@ using document::BucketSpace;
 
 namespace storage::distributor {
 
-BucketDBUpdater::BucketDBUpdater(DistributorInterface& owner,
+BucketDBUpdater::BucketDBUpdater(DistributorStripeInterface& owner,
                                  DistributorBucketSpaceRepo& bucketSpaceRepo,
                                  DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                                  DistributorMessageSender& sender,

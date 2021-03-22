@@ -5,7 +5,7 @@
 #include "bucket_spaces_stats_provider.h"
 #include "bucketdbupdater.h"
 #include "distributor_host_info_reporter.h"
-#include "distributorinterface.h"
+#include "distributor_stripe_interface.h"
 #include "externaloperationhandler.h"
 #include "idealstatemanager.h"
 #include "min_replica_provider.h"
@@ -42,7 +42,7 @@ class SimpleMaintenanceScanner;
 class ThrottlingOperationStarter;
 
 class Distributor : public StorageLink,
-                    public DistributorInterface,
+                    public DistributorStripeInterface,
                     public StatusDelegator,
                     public framework::StatusReporter,
                     public framework::TickingThread,

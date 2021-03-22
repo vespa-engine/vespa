@@ -18,7 +18,10 @@ namespace storage::distributor {
 class DistributorMetricSet;
 class PendingMessageTracker;
 
-class DistributorInterface : public DistributorMessageSender
+/**
+ * TODO STRIPE add class comment.
+ */
+class DistributorStripeInterface : public DistributorMessageSender
 {
 public:
     virtual PendingMessageTracker& getPendingMessageTracker() = 0;

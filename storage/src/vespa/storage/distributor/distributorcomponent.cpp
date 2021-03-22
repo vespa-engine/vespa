@@ -15,7 +15,7 @@ using document::BucketSpace;
 namespace storage::distributor {
 
 DistributorComponent::DistributorComponent(
-        DistributorInterface& distributor,
+        DistributorStripeInterface& distributor,
         DistributorBucketSpaceRepo& bucketSpaceRepo,
         DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
         DistributorComponentRegister& compReg,

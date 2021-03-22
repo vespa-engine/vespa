@@ -26,7 +26,7 @@ class XmlAttribute;
 
 namespace storage::distributor {
 
-class DistributorInterface;
+class DistributorStripeInterface;
 class BucketSpaceDistributionContext;
 
 class BucketDBUpdater : public framework::StatusReporter,
@@ -34,7 +34,7 @@ class BucketDBUpdater : public framework::StatusReporter,
 {
 public:
     using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
-    BucketDBUpdater(DistributorInterface& owner,
+    BucketDBUpdater(DistributorStripeInterface& owner,
                     DistributorBucketSpaceRepo& bucketSpaceRepo,
                     DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                     DistributorMessageSender& sender,
@@ -81,7 +81,7 @@ public:
 private:
     class MergeReplyGuard {
     public:
-        MergeReplyGuard(DistributorInterface& distributor_interface, const std::shared_ptr<api::MergeBucketReply>& reply) noexcept
+        MergeReplyGuard(DistributorStripeInterface& distributor_interface, const std::shared_ptr<api::MergeBucketReply>& reply) noexcept
             : _distributor_interface(distributor_interface), _reply(reply) {}
 
         ~MergeReplyGuard();
@@ -90,7 +90,7 @@ private:
         // than send it down
         void resetReply() { _reply.reset(); }
     private:
-        DistributorInterface& _distributor_interface;
+        DistributorStripeInterface& _distributor_interface;
         std::shared_ptr<api::MergeBucketReply> _reply;
     };
 
@@ -242,7 +242,7 @@ private:
     DistributorComponent _distributorComponent;
     const DistributorNodeContext& _node_ctx;
     DistributorOperationContext& _op_ctx;
-    DistributorInterface& _distributor_interface;
+    DistributorStripeInterface& _distributor_interface;
     std::deque<std::pair<framework::MilliSecTime, BucketRequest> > _delayedRequests;
     std::map<uint64_t, BucketRequest> _sentMessages;
     std::unique_ptr<PendingClusterState> _pendingClusterState;

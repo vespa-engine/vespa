@@ -11,7 +11,7 @@ namespace storage::distributor {
 
 class IdealStateMetricSet;
 class IdealStateOperation;
-class DistributorInterface;
+class DistributorStripeInterface;
 class SplitBucketStateChecker;
 
 /**
@@ -34,7 +34,7 @@ class IdealStateManager : public framework::HtmlStatusReporter,
 {
 public:
 
-    IdealStateManager(DistributorInterface& owner,
+    IdealStateManager(DistributorStripeInterface& owner,
                       DistributorBucketSpaceRepo& bucketSpaceRepo,
                       DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                       DistributorComponentRegister& compReg,

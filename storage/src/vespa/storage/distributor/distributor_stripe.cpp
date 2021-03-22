@@ -30,7 +30,7 @@ namespace storage::distributor {
 /* TODO STRIPE
  *  - need a DistributorComponent per stripe
  *    - or better, remove entirely!
- *    - probably also DistributorInterface since it's used to send
+ *    - probably also DistributorStripeInterface since it's used to send
  *  - metrics aggregation
  */
 DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
@@ -41,7 +41,7 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
                                      bool manageActiveBucketCopies,
                                      ChainedMessageSender& messageSender)
     : StorageLink("distributor"),
-      DistributorInterface(),
+      DistributorStripeInterface(),
       framework::StatusReporter("distributor", "Distributor"),
       _clusterStateBundle(lib::ClusterState()),
       _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),

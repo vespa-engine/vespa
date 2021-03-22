@@ -31,7 +31,7 @@ namespace storage::distributor {
 /* TODO STRIPE
  *  - need a DistributorComponent per stripe
  *    - or better, remove entirely!
- *    - probably also DistributorInterface since it's used to send
+ *    - probably also DistributorStripeInterface since it's used to send
  *  - metrics aggregation
  *  - host info aggregation..!!
  *    - handled if Distributor getMinReplica etc delegates to stripes?
@@ -46,7 +46,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
                          HostInfo& hostInfoReporterRegistrar,
                          ChainedMessageSender* messageSender)
     : StorageLink("distributor"),
-      DistributorInterface(),
+      DistributorStripeInterface(),
       framework::StatusReporter("distributor", "Distributor"),
       _metrics(std::make_shared<DistributorMetricSet>()),
       _messageSender(messageSender),
