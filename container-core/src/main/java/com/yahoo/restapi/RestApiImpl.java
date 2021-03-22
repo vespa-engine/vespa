@@ -219,7 +219,14 @@ class RestApiImpl implements RestApi {
         }
 
         private class PathParametersImpl implements RestApi.RequestContext.PathParameters {
-            @Override public Optional<String> getString(String name) { return Optional.ofNullable(pathMatcher.get(name)); }
+            @Override
+            public Optional<String> getString(String name) {
+                if (name.equals("*")) {
+                    String rest = pathMatcher.getRest();
+                    return rest.isEmpty() ? Optional.empty() : Optional.of(rest);
+                }
+                return Optional.ofNullable(pathMatcher.get(name));
+            }
             @Override public String getStringOrThrow(String name) {
                 return getString(name)
                         .orElseThrow(() -> new RestApiException.BadRequest("Path parameter '" + name + "' is missing"));
