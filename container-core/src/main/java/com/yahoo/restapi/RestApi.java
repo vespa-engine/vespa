@@ -6,11 +6,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Slime;
-import com.yahoo.slime.SlimeUtils;
 
-import java.io.IOException;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalLong;
@@ -72,6 +69,7 @@ public interface RestApi {
         Headers headers();
         Attributes attributes();
         Optional<RequestContent> requestContent();
+        RequestContent requestContentOrThrow();
 
         interface Parameters {
             Optional<String> getString(String name);
@@ -101,13 +99,11 @@ public interface RestApi {
             String contentType();
             InputStream inputStream();
             ObjectMapper jacksonJsonMapper();
-            default byte[] consumeByteArray() throws IOException { return inputStream().readAllBytes(); }
-            default String consumeString() throws IOException { return new String(consumeByteArray(), StandardCharsets.UTF_8); }
-            default JsonNode consumeJsonNode() throws IOException { return jacksonJsonMapper().readTree(inputStream()); }
-            default Slime consumeSlime() throws IOException { return SlimeUtils.jsonToSlime(consumeByteArray()); }
-            default <T extends JacksonRequestEntity> T consumeJacksonEntity(Class<T> type) throws IOException {
-                return jacksonJsonMapper().readValue(inputStream(), type);
-            }
+            byte[] consumeByteArray();
+            String consumeString();
+            JsonNode consumeJsonNode();
+            Slime consumeSlime();
+            <T extends JacksonRequestEntity> T consumeJacksonEntity(Class<T> type);
         }
     }
 

@@ -1,24 +1,33 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.restapi;
 
+import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.slime.Slime;
+import com.yahoo.slime.SlimeUtils;
+import com.yahoo.yolean.Exceptions;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author bjorncs
  */
 class RestApiImpl implements RestApi {
+
+    private static final Logger log = Logger.getLogger(RestApiImpl.class.getName());
 
     private final Route defaultRoute;
     private final List<Route> routes;
@@ -205,6 +214,9 @@ class RestApiImpl implements RestApi {
         @Override public Headers headers() { return headers; }
         @Override public Attributes attributes() { return attributes; }
         @Override public Optional<RequestContent> requestContent() { return Optional.ofNullable(requestContent); }
+        @Override public RequestContent requestContentOrThrow() {
+            return requestContent().orElseThrow(() -> new RestApiException.BadRequest("Request content missing"));
+        }
 
         private class PathParametersImpl implements RestApi.RequestContext.PathParameters {
             @Override public Optional<String> getString(String name) { return Optional.ofNullable(pathMatcher.get(name)); }
@@ -234,11 +246,70 @@ class RestApiImpl implements RestApi {
             @Override public String contentType() { return request.getHeader("Content-Type"); }
             @Override public InputStream inputStream() { return request.getData(); }
             @Override public ObjectMapper jacksonJsonMapper() { return jacksonJsonMapper; }
+            @Override public byte[] consumeByteArray() { return convertIoException(() -> inputStream().readAllBytes()); }
+            @Override public String consumeString() { return new String(consumeByteArray(), StandardCharsets.UTF_8); }
+
+            @Override
+            public JsonNode consumeJsonNode() {
+                return convertIoException(() -> {
+                    try {
+                        if (log.isLoggable(Level.FINE)) {
+                            String content = consumeString();
+                            log.fine(() -> "Request content: " + content);
+                            return jacksonJsonMapper.readTree(content);
+                        } else {
+                            return jacksonJsonMapper.readTree(request.getData());
+                        }
+                    } catch (com.fasterxml.jackson.core.JsonParseException e) {
+                        log.log(Level.FINE, e.getMessage(), e);
+                        throw new RestApiException.BadRequest("Invalid json request content: " + Exceptions.toMessageString(e), e);
+                    }
+                });
+            }
+
+            @Override
+            public Slime consumeSlime() {
+                try {
+                    String content = consumeString();
+                    log.fine(() -> "Request content: " + content);
+                    return SlimeUtils.jsonToSlimeOrThrow(content);
+                } catch (com.yahoo.slime.JsonParseException e) {
+                    log.log(Level.FINE, e.getMessage(), e);
+                    throw new RestApiException.BadRequest("Invalid json request content: " + Exceptions.toMessageString(e), e);
+                }
+            }
+
+            @Override
+            public <T extends JacksonRequestEntity> T consumeJacksonEntity(Class<T> type) {
+                return convertIoException(() -> {
+                    try {
+                        if (log.isLoggable(Level.FINE)) {
+                            String content = consumeString();
+                            log.fine(() -> "Request content: " + content);
+                            return jacksonJsonMapper.readValue(content, type);
+                        } else {
+                            return jacksonJsonMapper.readValue(request.getData(), type);
+                        }
+                    } catch (com.fasterxml.jackson.core.JsonParseException | JsonMappingException e) {
+                        log.log(Level.FINE, e.getMessage(), e);
+                        throw new RestApiException.BadRequest("Invalid json request content: " + Exceptions.toMessageString(e), e);
+                    }
+                });
+            }
         }
 
         private class AttributesImpl implements RestApi.RequestContext.Attributes {
             @Override public Optional<Object> get(String name) { return Optional.ofNullable(request.getJDiscRequest().context().get(name)); }
             @Override public void set(String name, Object value) { request.getJDiscRequest().context().put(name, value); }
+        }
+
+        @FunctionalInterface private interface SupplierThrowingIoException<T> { T get() throws IOException; }
+        private static <T> T convertIoException(SupplierThrowingIoException<T> supplier) {
+            try {
+                return supplier.get();
+            } catch (IOException e) {
+                throw new RestApiException.InternalServerError("Failed to read request content: " + Exceptions.toMessageString(e), e);
+            }
         }
     }
 

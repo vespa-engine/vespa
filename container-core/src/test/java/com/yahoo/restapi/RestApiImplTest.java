@@ -9,8 +9,6 @@ import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -96,13 +94,7 @@ class RestApiImplTest {
     void method_handler_can_consume_and_produce_json() {
         RestApi restApi = RestApi.builder()
                 .addRoute(route("/api").post(
-                        ctx -> {
-                            try {
-                                return ctx.requestContent().get().consumeJacksonEntity(TestEntity.class);
-                            } catch (IOException e) {
-                                throw new UncheckedIOException(e);
-                            }
-                        }))
+                        ctx -> ctx.requestContent().get().consumeJacksonEntity(TestEntity.class)))
                 .build();
         String rawJson = "{\"mystring\":\"my-string-value\", \"myinstant\":\"2000-01-01T00:00:00Z\"}";
         verifyJsonResponse(restApi, Method.POST, "/api", rawJson, 200, rawJson);
