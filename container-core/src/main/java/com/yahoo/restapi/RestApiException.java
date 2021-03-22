@@ -60,4 +60,9 @@ public class RestApiException extends RuntimeException {
         public InternalServerError(String message) { super(ErrorResponse::internalServerError, message, null); }
         public InternalServerError(String message, Throwable cause) { super(ErrorResponse::internalServerError, message, cause); }
     }
+
+    public static class Forbidden extends RestApiException {
+        public Forbidden(String message) { super(ErrorResponse::forbidden, message, null); }
+        public Forbidden(String message, Throwable cause) { super(ErrorResponse::forbidden, message, cause); }
+    }
 }
