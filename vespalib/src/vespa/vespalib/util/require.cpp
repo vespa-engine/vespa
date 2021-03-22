@@ -8,15 +8,21 @@ namespace vespalib {
 
 VESPA_IMPLEMENT_EXCEPTION(RequireFailedException, Exception);
 
-void handle_require_failure(const char *description, const char *file, uint32_t line)
+void throw_require_failed(const char *description, const char *file, uint32_t line)
 {
     asciistream msg;
-    msg << file << ":" << line << ": ";
-    msg << "error: (" << description << ") fails";
-    std::cerr << msg.c_str() << "\n";
+    msg << "error: (" << description << ") failed";
     asciistream loc;
     loc << "file " << file << " line " << line;
     throw RequireFailedException(msg.c_str(), loc.c_str(), 2);
+}
+
+void handle_require_failure(const char *description, const char *file, uint32_t line)
+{
+    asciistream msg;
+    std::cerr << file << ":" << line << ": ";
+    std::cerr << "error: (" << description << ") failed\n";
+    throw_require_failed(description, file, line);
 }
 
 } // namespace

@@ -11,14 +11,19 @@ VESPA_DEFINE_EXCEPTION(RequireFailedException, Exception);
 
 constexpr void handle_require_success() {}
 
+void throw_require_failed [[noreturn]] (const char *description, const char *file, uint32_t line);
+
 void handle_require_failure [[noreturn]] (const char *description, const char *file, uint32_t line);
 
 template<typename A, typename B>
-void handle_require_eq_failure [[noreturn]] (const A& a, const B& b,
+void handle_require_eq_failure [[noreturn]] (const A& a, const B& b, const char *a_desc, const char *b_desc,
                                              const char *description, const char *file, uint32_t line)
 {
-    std::cerr << "( " << a << " == " << b << " ) is false\n";
-    handle_require_failure(description, file, line);
+    std::cerr << file << ":" << line << ": error: ";
+    std::cerr << "expected (" << a_desc << " == " << b_desc << ")\n";
+    std::cerr << "  lhs (" << a_desc << ") is: " << a << "\n";
+    std::cerr << "  rhs (" << b_desc << ") is: " << b << "\n";
+    throw_require_failed(description, file, line);
 }
 
 #ifndef __STRING
@@ -32,7 +37,8 @@ void handle_require_eq_failure [[noreturn]] (const A& a, const B& b,
 
 #define REQUIRE_EQ(a, b)                                                \
     (a == b) ? vespalib::handle_require_success() :                     \
-    vespalib::handle_require_eq_failure(a, b, __STRING(a) " == " __STRING(b), \
+    vespalib::handle_require_eq_failure(a, b, __STRING(a), __STRING(b), \
+                                        __STRING(a) " == " __STRING(b), \
                                         __FILE__, __LINE__)
 
 } // namespace
