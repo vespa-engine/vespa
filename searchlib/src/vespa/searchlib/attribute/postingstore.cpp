@@ -124,45 +124,46 @@ PostingStore<DataT>::removeSparseBitVectors()
         }
     }
     if (needscan) {
-        typedef EnumPostingTree::Iterator EnumIterator;
-        auto& dict = _dictionary.get_posting_dictionary();
-        for (EnumIterator dictItr = dict.begin(); dictItr.valid(); ++dictItr) {
-            if (!isBitVector(getTypeId(EntryRef(dictItr.getData()))))
-                continue;
-            EntryRef ref(dictItr.getData());
-            RefType iRef(ref);
-            uint32_t typeId = getTypeId(iRef);
-            assert(isBitVector(typeId));
-            assert(_bvs.find(ref.ref() )!= _bvs.end());
-            BitVectorEntry *bve = getWBitVectorEntry(iRef);
-            BitVector &bv = *bve->_bv.get();
-            uint32_t docFreq = bv.countTrueBits();
-            if (bve->_tree.valid()) {
-                RefType iRef2(bve->_tree);
-                assert(isBTree(iRef2));
-                const BTreeType *tree = getTreeEntry(iRef2);
-                assert(tree->size(_allocator) == docFreq);
-                (void) tree;
-            }
-            if (docFreq < _minBvDocFreq) {
-                dropBitVector(ref);
-                if (ref.valid()) {
-                    iRef = ref;
-                    typeId = getTypeId(iRef);
-                    if (isBTree(typeId)) {
-                        BTreeType *tree = getWTreeEntry(iRef);
-                        normalizeTree(ref, tree, false);
-                    }
-                }
-                dict.thaw(dictItr);
-                dictItr.writeData(ref.ref());
-                res = true;
-            }
-        }
+        res = _dictionary.check_posting_lists([this](EntryRef posting_idx) -> EntryRef
+                                              { return consider_remove_sparse_bitvector(posting_idx); });
     }
     return res;
 }
 
+template <typename DataT>
+typename PostingStore<DataT>::EntryRef
+PostingStore<DataT>::consider_remove_sparse_bitvector(EntryRef ref)
+{
+    if (!ref.valid() || !isBitVector(getTypeId(EntryRef(ref)))) {
+        return ref;
+    }
+    RefType iRef(ref);
+    uint32_t typeId = getTypeId(iRef);
+    assert(isBitVector(typeId));
+    assert(_bvs.find(ref.ref() )!= _bvs.end());
+    BitVectorEntry *bve = getWBitVectorEntry(iRef);
+    BitVector &bv = *bve->_bv.get();
+    uint32_t docFreq = bv.countTrueBits();
+    if (bve->_tree.valid()) {
+        RefType iRef2(bve->_tree);
+        assert(isBTree(iRef2));
+        const BTreeType *tree = getTreeEntry(iRef2);
+        assert(tree->size(_allocator) == docFreq);
+        (void) tree;
+    }
+    if (docFreq < _minBvDocFreq) {
+        dropBitVector(ref);
+        if (ref.valid()) {
+            iRef = ref;
+            typeId = getTypeId(iRef);
+            if (isBTree(typeId)) {
+                BTreeType *tree = getWTreeEntry(iRef);
+                normalizeTree(ref, tree, false);
+            }
+        }
+    }
+    return ref;
+}
 
 template <typename DataT>
 void

@@ -236,6 +236,37 @@ EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::update_posting_list(Inde
 }
 
 template <>
+bool
+EnumStoreDictionary<EnumTree>::check_posting_lists(std::function<EntryRef(EntryRef)>)
+{
+    LOG_ABORT("should not be reached");
+}
+
+template <typename DictionaryT, typename UnorderedDictionaryT>
+bool
+EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::check_posting_lists(std::function<EntryRef(EntryRef)> updater)
+{
+    bool changed = false;
+    auto& dict = this->_dict;
+    for (auto itr = dict.begin(); itr.valid(); ++itr) {
+        EntryRef old_posting_idx(itr.getData());
+        EntryRef new_posting_idx = updater(old_posting_idx);
+        if (new_posting_idx != old_posting_idx) {
+            changed = true;
+            dict.thaw(itr);
+            itr.writeData(new_posting_idx.ref());
+            if constexpr (has_unordered_dictionary) {
+                auto find_result = this->_unordered_dict.find(this->_unordered_dict.get_default_comparator(), itr.getKey());
+                assert(find_result != nullptr && find_result->first.load_relaxed() == itr.getKey());
+                assert(find_result->second.load_relaxed() == old_posting_idx);
+                find_result->second.store_release(new_posting_idx);
+            }
+        }
+    }
+    return changed;
+}
+
+template <>
 EnumPostingTree &
 EnumStoreDictionary<EnumTree>::get_posting_dictionary()
 {

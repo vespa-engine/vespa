@@ -659,6 +659,30 @@ TYPED_TEST(EnumStoreDictionaryTest, find_posting_list_works)
     this->update_posting_idx(value_0_idx, this->fake_pidx(), EntryRef());
 }
 
+TYPED_TEST(EnumStoreDictionaryTest, check_posting_lists_works)
+{
+    auto value_0_idx = this->insert_value(0);
+    this->update_posting_idx(value_0_idx, EntryRef(), this->fake_pidx());
+    this->store.freeze_dictionary();
+    auto& dict = this->store.get_dictionary();
+    auto root = dict.get_frozen_root();
+    auto find_result = dict.find_posting_list(this->make_bound_comparator(0), root);
+    EXPECT_EQ(value_0_idx, find_result.first);
+    EXPECT_EQ(this->fake_pidx(), find_result.second);
+    auto dummy = [](EntryRef posting_idx) { return posting_idx; };
+    std::vector<EntryRef> saved_refs;
+    auto save_refs_and_clear = [&saved_refs](EntryRef posting_idx) { saved_refs.push_back(posting_idx); return EntryRef(); };
+    EXPECT_FALSE(dict.check_posting_lists(dummy));
+    EXPECT_TRUE(dict.check_posting_lists(save_refs_and_clear));
+    EXPECT_FALSE(dict.check_posting_lists(save_refs_and_clear));
+    EXPECT_EQ((std::vector<EntryRef>{ this->fake_pidx(), EntryRef() }), saved_refs);
+    this->store.freeze_dictionary();
+    root = dict.get_frozen_root();
+    find_result = dict.find_posting_list(this->make_bound_comparator(0), root);
+    EXPECT_EQ(value_0_idx, find_result.first);
+    EXPECT_EQ(EntryRef(), find_result.second);
+}
+
 #pragma GCC diagnostic pop
 
 }

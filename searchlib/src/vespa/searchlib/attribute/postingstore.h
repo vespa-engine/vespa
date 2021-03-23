@@ -101,6 +101,7 @@ public:
     ~PostingStore();
 
     bool removeSparseBitVectors() override;
+    EntryRef consider_remove_sparse_bitvector(EntryRef ref);
     static bool isBitVector(uint32_t typeId) { return typeId == BUFFERTYPE_BITVECTOR; }
     static bool isBTree(uint32_t typeId) { return typeId == BUFFERTYPE_BTREE; }
     bool isBTree(RefType ref) const { return isBTree(getTypeId(ref)); }
