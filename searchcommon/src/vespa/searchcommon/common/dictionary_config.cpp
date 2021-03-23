@@ -8,11 +8,13 @@ namespace search {
 
 std::ostream&
 operator<<(std::ostream& os, const DictionaryConfig & cfg) {
-    switch(cfg.getOrdering()) {
-        case DictionaryConfig::Ordering::ORDERED:
-        return os << "ORDERED";
-        case DictionaryConfig::Ordering::UNORDERED:
-        return os << "UNORDERED";
+    switch(cfg.getType()) {
+    case DictionaryConfig::Type::BTREE:
+        return os << "BTREE";
+    case DictionaryConfig::Type::HASH:
+        return os << "HASH";
+    case DictionaryConfig::Type::BTREE_AND_HASH:
+        return os << "BTREE_AND_HASH";
     }
     assert(false);
 }

@@ -6,7 +6,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("enumstore_test");
 
-using Ordering = search::DictionaryConfig::Ordering;
+using Type = search::DictionaryConfig::Type;
 using vespalib::datastore::EntryRef;
 
 namespace search {
@@ -19,42 +19,42 @@ using StringEnumStore = EnumStoreT<const char*>;
 
 struct OrderedDoubleEnumStore {
     using EnumStoreType = DoubleEnumStore;
-    static constexpr Ordering ordering = Ordering::ORDERED;
+    static constexpr Type type = Type::BTREE;
 };
 
 struct UnorderedDoubleEnumStore {
     using EnumStoreType = DoubleEnumStore;
-    static constexpr Ordering ordering = Ordering::UNORDERED;
+    static constexpr Type type = Type::BTREE_AND_HASH;
 };
 
 struct OrderedFloatEnumStore {
     using EnumStoreType = FloatEnumStore;
-    static constexpr Ordering ordering = Ordering::ORDERED;
+    static constexpr Type type = Type::BTREE;
 };
 
 struct UnorderedFloatEnumStore {
     using EnumStoreType = FloatEnumStore;
-    static constexpr Ordering ordering = Ordering::UNORDERED;
+    static constexpr Type type = Type::BTREE_AND_HASH;
 };
 
 struct OrderedNumericEnumStore {
     using EnumStoreType = NumericEnumStore;
-    static constexpr Ordering ordering = Ordering::ORDERED;
+    static constexpr Type type = Type::BTREE;
 };
 
 struct UnorderedNumericEnumStore {
     using EnumStoreType = NumericEnumStore;
-    static constexpr Ordering ordering = Ordering::UNORDERED;
+    static constexpr Type type = Type::BTREE_AND_HASH;
 };
 
 struct OrderedStringEnumStore {
     using EnumStoreType = StringEnumStore;
-    static constexpr Ordering ordering = Ordering::ORDERED;
+    static constexpr Type type = Type::BTREE;
 };
 
 struct UnorderedStringEnumStore {
     using EnumStoreType = StringEnumStore;
-    static constexpr Ordering ordering = Ordering::UNORDERED;
+    static constexpr Type type = Type::BTREE_AND_HASH;
 };
 
 using StringVector = std::vector<std::string>;
@@ -106,7 +106,7 @@ public:
     using EnumStoreType = typename EnumStoreTypeAndOrdering::EnumStoreType;
     EnumStoreType es;
     FloatEnumStoreTest()
-        : es(false, EnumStoreTypeAndOrdering::ordering)
+        : es(false, EnumStoreTypeAndOrdering::type)
     {}
 };
 
@@ -150,7 +150,7 @@ TYPED_TEST(FloatEnumStoreTest, numbers_can_be_inserted_and_retrieved)
 
 TEST(EnumStoreTest, test_find_folded_on_string_enum_store)
 {
-    StringEnumStore ses(false, DictionaryConfig::Ordering::ORDERED);
+    StringEnumStore ses(false, DictionaryConfig::Type::BTREE);
     std::vector<EnumIndex> indices;
     std::vector<std::string> unique({"", "one", "two", "TWO", "Two", "three"});
     for (std::string &str : unique) {
@@ -201,7 +201,7 @@ public:
 void
 StringEnumStoreTest::testInsert(bool hasPostings)
 {
-    StringEnumStore ses(hasPostings, DictionaryConfig::Ordering::ORDERED);
+    StringEnumStore ses(hasPostings, DictionaryConfig::Type::BTREE);
 
     std::vector<EnumIndex> indices;
     std::vector<std::string> unique;
@@ -251,7 +251,7 @@ TEST_F(StringEnumStoreTest, test_insert_on_store_with_posting_lists)
 
 TEST(EnumStoreTest, test_hold_lists_and_generation)
 {
-    StringEnumStore ses(false, DictionaryConfig::Ordering::ORDERED);
+    StringEnumStore ses(false, DictionaryConfig::Type::BTREE);
     StringVector uniques;
     generation_t sesGen = 0u;
     uniques.reserve(100);
@@ -328,7 +328,7 @@ dec_ref_count(NumericEnumStore& store, NumericEnumStore::Index idx)
 TEST(EnumStoreTest, address_space_usage_is_reported)
 {
     const size_t ADDRESS_LIMIT = 4290772994; // Max allocated elements in un-allocated buffers + allocated elements in allocated buffers.
-    NumericEnumStore store(false, DictionaryConfig::Ordering::ORDERED);
+    NumericEnumStore store(false, DictionaryConfig::Type::BTREE);
 
     using vespalib::AddressSpace;
     EXPECT_EQ(AddressSpace(1, 1, ADDRESS_LIMIT), store.get_address_space_usage());
@@ -350,7 +350,7 @@ public:
     EnumIndex i5;
 
     BatchUpdaterTest()
-        : store(false, DictionaryConfig::Ordering::ORDERED),
+        : store(false, DictionaryConfig::Type::BTREE),
           i3(),
           i5()
     {
@@ -458,7 +458,7 @@ public:
     using Values = LoaderTestValues<EnumStoreType>;
 
     LoaderTest()
-        : store(true, EnumStoreTypeAndOrdering::ordering)
+        : store(true, EnumStoreTypeAndOrdering::type)
     {}
 
     void load_values(enumstore::EnumeratedLoaderBase& loader) const {
@@ -570,7 +570,7 @@ public:
     EnumStoreType store;
 
     EnumStoreDictionaryTest()
-        : store(true, EnumStoreTypeAndOrdering::ordering)
+        : store(true, EnumStoreTypeAndOrdering::type)
     {}
 
     // Reuse test values from LoaderTest
@@ -618,7 +618,7 @@ TYPED_TEST(EnumStoreDictionaryTest, find_frozen_index_works)
     this->update_posting_idx(value_0_idx, EntryRef(), this->fake_pidx());
     auto& dict = this->store.get_dictionary();
     EnumIndex idx;
-    if (TypeParam::ordering == Ordering::ORDERED) {
+    if (TypeParam::type == Type::BTREE) {
         EXPECT_FALSE(dict.find_frozen_index(this->make_bound_comparator(0), idx));
     } else {
         EXPECT_TRUE(dict.find_frozen_index(this->make_bound_comparator(0), idx));
@@ -640,7 +640,7 @@ TYPED_TEST(EnumStoreDictionaryTest, find_posting_list_works)
     auto& dict = this->store.get_dictionary();
     auto root = dict.get_frozen_root();
     auto find_result = dict.find_posting_list(this->make_bound_comparator(0), root);
-    if (TypeParam::ordering == Ordering::ORDERED) {
+    if (TypeParam::type == Type::BTREE) {
         EXPECT_FALSE(find_result.first.valid());
         EXPECT_FALSE(find_result.second.valid());
     } else {

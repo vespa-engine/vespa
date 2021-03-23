@@ -11,13 +11,13 @@ namespace search {
  */
 class DictionaryConfig {
 public:
-    enum class Ordering { ORDERED, UNORDERED };
-    DictionaryConfig() noexcept : _ordering(Ordering::ORDERED) {}
-    DictionaryConfig(Ordering ordering) noexcept : _ordering(ordering) {}
-    Ordering getOrdering() const { return _ordering; }
-    bool operator == (const DictionaryConfig & b) const { return _ordering == b._ordering; }
+    enum class Type { BTREE, HASH, BTREE_AND_HASH };
+    DictionaryConfig() noexcept : _type(Type::BTREE) {}
+    DictionaryConfig(Type ordering) noexcept : _type(ordering) {}
+    Type getType() const { return _type; }
+    bool operator == (const DictionaryConfig & b) const { return _type == b._type; }
 private:
-    Ordering _ordering;
+    Type _type;
 };
 
 std::ostream& operator<<(std::ostream& os, const DictionaryConfig & cfg);

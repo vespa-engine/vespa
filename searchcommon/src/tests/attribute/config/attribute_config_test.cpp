@@ -110,22 +110,24 @@ TEST("Test GrowStrategy consistency") {
 }
 
 TEST("DictionaryConfig") {
-    using Ordering = DictionaryConfig::Ordering;
-    EXPECT_EQUAL(Ordering::ORDERED, DictionaryConfig().getOrdering());
-    EXPECT_EQUAL(Ordering::ORDERED, DictionaryConfig(Ordering::ORDERED).getOrdering());
-    EXPECT_EQUAL(Ordering::UNORDERED, DictionaryConfig(Ordering::UNORDERED).getOrdering());
-    EXPECT_EQUAL(DictionaryConfig(Ordering::ORDERED), DictionaryConfig(Ordering::ORDERED));
-    EXPECT_EQUAL(DictionaryConfig(Ordering::UNORDERED), DictionaryConfig(Ordering::UNORDERED));
-    EXPECT_NOT_EQUAL(DictionaryConfig(Ordering::UNORDERED), DictionaryConfig(Ordering::ORDERED));
-    EXPECT_NOT_EQUAL(DictionaryConfig(Ordering::ORDERED), DictionaryConfig(Ordering::UNORDERED));
-    EXPECT_TRUE(Config().set_dictionary_config(DictionaryConfig(Ordering::UNORDERED)) ==
-                 Config().set_dictionary_config(DictionaryConfig(Ordering::UNORDERED)));
-    EXPECT_FALSE(Config().set_dictionary_config(DictionaryConfig(Ordering::UNORDERED)) ==
-                     Config().set_dictionary_config(DictionaryConfig(Ordering::ORDERED)));
-    EXPECT_FALSE(Config().set_dictionary_config(DictionaryConfig(Ordering::UNORDERED)) !=
-                Config().set_dictionary_config(DictionaryConfig(Ordering::UNORDERED)));
-    EXPECT_TRUE(Config().set_dictionary_config(DictionaryConfig(Ordering::UNORDERED)) !=
-                 Config().set_dictionary_config(DictionaryConfig(Ordering::ORDERED)));
+    using Type = DictionaryConfig::Type;
+    EXPECT_EQUAL(Type::BTREE, DictionaryConfig().getType());
+    EXPECT_EQUAL(Type::BTREE, DictionaryConfig(Type::BTREE).getType());
+    EXPECT_EQUAL(Type::HASH, DictionaryConfig(Type::HASH).getType());
+    EXPECT_EQUAL(Type::BTREE_AND_HASH, DictionaryConfig(Type::BTREE_AND_HASH).getType());
+    EXPECT_EQUAL(DictionaryConfig(Type::BTREE), DictionaryConfig(Type::BTREE));
+    EXPECT_EQUAL(DictionaryConfig(Type::HASH), DictionaryConfig(Type::HASH));
+    EXPECT_EQUAL(DictionaryConfig(Type::BTREE_AND_HASH), DictionaryConfig(Type::BTREE_AND_HASH));
+    EXPECT_NOT_EQUAL(DictionaryConfig(Type::HASH), DictionaryConfig(Type::BTREE));
+    EXPECT_NOT_EQUAL(DictionaryConfig(Type::BTREE), DictionaryConfig(Type::HASH));
+    EXPECT_TRUE(Config().set_dictionary_config(DictionaryConfig(Type::HASH)) ==
+                Config().set_dictionary_config(DictionaryConfig(Type::HASH)));
+    EXPECT_FALSE(Config().set_dictionary_config(DictionaryConfig(Type::HASH)) ==
+                 Config().set_dictionary_config(DictionaryConfig(Type::BTREE)));
+    EXPECT_FALSE(Config().set_dictionary_config(DictionaryConfig(Type::HASH)) !=
+                 Config().set_dictionary_config(DictionaryConfig(Type::HASH)));
+    EXPECT_TRUE(Config().set_dictionary_config(DictionaryConfig(Type::HASH)) !=
+                Config().set_dictionary_config(DictionaryConfig(Type::BTREE)));
 }
 
 
