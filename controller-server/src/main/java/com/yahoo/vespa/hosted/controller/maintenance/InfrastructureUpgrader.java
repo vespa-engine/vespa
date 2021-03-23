@@ -101,7 +101,7 @@ public abstract class InfrastructureUpgrader<VERSION> extends ControllerMaintain
         try {
             return controller().serviceRegistry().configServer()
                                .nodeRepository()
-                               .list(zone.getId(), application.id())
+                               .list(zone.getVirtualId(), application.id())
                                .stream()
                                .filter(node -> expectUpgradeOf(node, application, zone))
                                .map(versionField)

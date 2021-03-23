@@ -10,6 +10,7 @@ import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.UpgradePolicy;
+import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneFilter;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
@@ -54,6 +55,9 @@ public interface ZoneRegistry {
 
     /** Returns the system of this registry */
     SystemName system();
+
+    /** Returns the system of this registry as a zone */
+    ZoneApi systemZone();
 
     /** Return the configserver's Athenz service identity */
     AthenzIdentity getConfigServerHttpsIdentity(ZoneId zoneId);

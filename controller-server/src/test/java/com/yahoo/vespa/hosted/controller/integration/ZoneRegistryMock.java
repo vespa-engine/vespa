@@ -141,6 +141,11 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
+    public ZoneApi systemZone() {
+        return ZoneApiMock.fromId("prod.controller");
+    }
+
+    @Override
     public ZoneFilter zones() {
         return ZoneFilterMock.from(zones, zoneRoutingMethods, reprovisionToUpgradeOs);
     }
