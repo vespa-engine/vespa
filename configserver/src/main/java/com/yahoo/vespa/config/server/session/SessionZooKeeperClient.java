@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.session;
 
 import com.yahoo.component.Version;
@@ -34,6 +34,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 
+import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
@@ -95,23 +96,15 @@ public class SessionZooKeeperClient {
         }
     }
 
-    Curator.CompletionWaiter createPrepareWaiter() {
-        return createCompletionWaiter(PREPARE_BARRIER);
-    }
+    public CompletionWaiter createActiveWaiter() { return createCompletionWaiter(ACTIVE_BARRIER); }
 
-    public Curator.CompletionWaiter createActiveWaiter() {
-        return createCompletionWaiter(ACTIVE_BARRIER);
-    }
+    CompletionWaiter createPrepareWaiter() { return createCompletionWaiter(PREPARE_BARRIER); }
 
-    Curator.CompletionWaiter getPrepareWaiter() {
-        return getCompletionWaiter(getWaiterPath(PREPARE_BARRIER));
-    }
+    CompletionWaiter getPrepareWaiter() { return getCompletionWaiter(getWaiterPath(PREPARE_BARRIER)); }
 
-    Curator.CompletionWaiter getActiveWaiter() {
-        return getCompletionWaiter(getWaiterPath(ACTIVE_BARRIER));
-    }
+    CompletionWaiter getActiveWaiter() { return getCompletionWaiter(getWaiterPath(ACTIVE_BARRIER)); }
 
-    Curator.CompletionWaiter getUploadWaiter() { return getCompletionWaiter(getWaiterPath(UPLOAD_BARRIER)); }
+    CompletionWaiter getUploadWaiter() { return getCompletionWaiter(getWaiterPath(UPLOAD_BARRIER)); }
 
     private static final String PREPARE_BARRIER = "prepareBarrier";
     private static final String ACTIVE_BARRIER = "activeBarrier";
@@ -126,11 +119,11 @@ public class SessionZooKeeperClient {
         return (curator.zooKeeperEnsembleCount() / 2) + 1; // majority
     }
 
-    private Curator.CompletionWaiter createCompletionWaiter(String waiterNode) {
+    private CompletionWaiter createCompletionWaiter(String waiterNode) {
         return curator.createCompletionWaiter(sessionPath, waiterNode, getNumberOfMembers(), serverId);
     }
 
-    private Curator.CompletionWaiter getCompletionWaiter(Path path) {
+    private CompletionWaiter getCompletionWaiter(Path path) {
         return curator.getCompletionWaiter(path, getNumberOfMembers(), serverId);
     }
 

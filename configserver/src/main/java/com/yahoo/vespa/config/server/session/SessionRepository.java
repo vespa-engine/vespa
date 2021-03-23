@@ -77,6 +77,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
+import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
+
 /**
  *
  * Session repository for a tenant. Stores session state in zookeeper and file system. There are two
@@ -225,7 +227,7 @@ public class SessionRepository {
         logger.log(Level.FINE, "Created application " + params.getApplicationId());
         long sessionId = session.getSessionId();
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(sessionId);
-        Curator.CompletionWaiter waiter = sessionZooKeeperClient.createPrepareWaiter();
+        CompletionWaiter waiter = sessionZooKeeperClient.createPrepareWaiter();
         Optional<ApplicationSet> activeApplicationSet = getActiveApplicationSet(params.getApplicationId());
         ConfigChangeActions actions = sessionPreparer.prepare(applicationRepo.getHostValidator(), logger, params,
                                                               activeApplicationSet, now, getSessionAppDir(sessionId),
@@ -409,11 +411,11 @@ public class SessionRepository {
 
     void activate(RemoteSession session) {
         long sessionId = session.getSessionId();
-        Curator.CompletionWaiter waiter = createSessionZooKeeperClient(sessionId).getActiveWaiter();
+        CompletionWaiter waiter = createSessionZooKeeperClient(sessionId).getActiveWaiter();
         log.log(Level.FINE, () -> session.logPre() + "Activating " + sessionId);
         applicationRepo.activateApplication(ensureApplicationLoaded(session), sessionId);
         log.log(Level.FINE, () -> session.logPre() + "Notifying " + waiter);
-        notifyCompletion(waiter, session);
+        notifyCompletion(waiter);
         log.log(Level.INFO, session.logPre() + "Session activated: " + sessionId);
     }
 
@@ -431,9 +433,9 @@ public class SessionRepository {
 
     void prepareRemoteSession(RemoteSession session) {
         SessionZooKeeperClient sessionZooKeeperClient = createSessionZooKeeperClient(session.getSessionId());
-        Curator.CompletionWaiter waiter = sessionZooKeeperClient.getPrepareWaiter();
+        CompletionWaiter waiter = sessionZooKeeperClient.getPrepareWaiter();
         ensureApplicationLoaded(session);
-        notifyCompletion(waiter, session);
+        notifyCompletion(waiter);
     }
 
     public ApplicationSet ensureApplicationLoaded(RemoteSession session) {
@@ -453,14 +455,14 @@ public class SessionRepository {
     }
 
     void confirmUpload(Session session) {
-        Curator.CompletionWaiter waiter = session.getSessionZooKeeperClient().getUploadWaiter();
+        CompletionWaiter waiter = session.getSessionZooKeeperClient().getUploadWaiter();
         long sessionId = session.getSessionId();
         log.log(Level.FINE, "Notifying upload waiter for session " + sessionId);
-        notifyCompletion(waiter, session);
+        notifyCompletion(waiter);
         log.log(Level.FINE, "Done notifying upload for session " + sessionId);
     }
 
-    void notifyCompletion(Curator.CompletionWaiter completionWaiter, Session session) {
+    void notifyCompletion(CompletionWaiter completionWaiter) {
         try {
             completionWaiter.notifyCompletion();
         } catch (RuntimeException e) {
@@ -474,8 +476,7 @@ public class SessionRepository {
                                                                               KeeperException.NodeExistsException.class);
             Class<? extends Throwable> exceptionClass = e.getCause().getClass();
             if (acceptedExceptions.contains(exceptionClass))
-                log.log(Level.FINE, "Not able to notify completion for session " + session.getSessionId() +
-                                    " (" + completionWaiter + ")," +
+                log.log(Level.FINE, "Not able to notify completion for session (" + completionWaiter + ")," +
                                     " node " + (exceptionClass.equals(KeeperException.NoNodeException.class)
                         ? "has been deleted"
                         : "already exists"));
@@ -618,7 +619,7 @@ public class SessionRepository {
             log.log(Level.FINE, () -> TenantRepository.logPre(tenantName) + "Creating session " + sessionId + " in ZooKeeper");
             SessionZooKeeperClient sessionZKClient = createSessionZooKeeperClient(sessionId);
             sessionZKClient.createNewSession(clock.instant());
-            Curator.CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
+            CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
             LocalSession session = new LocalSession(tenantName, sessionId, app, sessionZKClient);
             waiter.awaitCompletion(Duration.ofSeconds(Math.min(60, timeoutBudget.timeLeft().getSeconds())));
             addLocalSession(session);
