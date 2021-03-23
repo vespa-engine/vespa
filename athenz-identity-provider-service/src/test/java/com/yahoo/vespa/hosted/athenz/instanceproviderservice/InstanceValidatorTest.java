@@ -1,5 +1,5 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation;
+package com.yahoo.vespa.hosted.athenz.instanceproviderservice;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.component.Version;
@@ -19,7 +19,6 @@ import com.yahoo.vespa.athenz.identityprovider.api.IdentityType;
 import com.yahoo.vespa.athenz.identityprovider.api.SignedIdentityDocument;
 import com.yahoo.vespa.athenz.identityprovider.api.VespaUniqueInstanceId;
 import com.yahoo.vespa.athenz.identityprovider.client.IdentityDocumentSigner;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.KeyProvider;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -41,8 +40,8 @@ import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
 
-import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation.InstanceValidator.SERVICE_PROPERTIES_DOMAIN_KEY;
-import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation.InstanceValidator.SERVICE_PROPERTIES_SERVICE_KEY;
+import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.InstanceValidator.SERVICE_PROPERTIES_DOMAIN_KEY;
+import static com.yahoo.vespa.hosted.athenz.instanceproviderservice.InstanceValidator.SERVICE_PROPERTIES_SERVICE_KEY;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.mockito.ArgumentMatchers.any;

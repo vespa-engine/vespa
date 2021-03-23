@@ -19,8 +19,8 @@ import com.yahoo.vespa.athenz.api.AthenzService;
 import com.yahoo.vespa.athenz.identityprovider.api.EntityBindingsMapper;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.athenz.instanceproviderservice.config.AthenzProviderServiceConfig;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation.InstanceConfirmation;
-import com.yahoo.vespa.hosted.athenz.instanceproviderservice.instanceconfirmation.InstanceValidator;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.InstanceConfirmation;
+import com.yahoo.vespa.hosted.athenz.instanceproviderservice.InstanceValidator;
 import com.yahoo.vespa.hosted.ca.Certificates;
 import com.yahoo.vespa.hosted.ca.instance.InstanceIdentity;
 import com.yahoo.vespa.hosted.ca.instance.InstanceRefresh;
@@ -37,7 +37,6 @@ import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
-import java.util.logging.Level;
 import java.util.stream.Stream;
 
 /**
