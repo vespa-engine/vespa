@@ -308,7 +308,8 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         JettyHttpServer server = jettyServers.get(0);
         assertThat(server.model.bundleInstantiationSpec.classId.toString(),
                 is(com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName()));
-        assertThat(server.model.bundleInstantiationSpec.bundle.toString(), is("jdisc_http_service"));
+        assertThat(server.model.bundleInstantiationSpec.bundle.toString(),
+                   is(com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName()));
         assertThat(server.getConnectorFactories().size(), is(1));
 
         assertThat(

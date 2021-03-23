@@ -27,11 +27,9 @@ public class ConnectorFactory extends SimpleComponent implements ConnectorConfig
     private volatile ComponentId defaultResponseFilterChain;
 
     protected ConnectorFactory(Builder builder) {
-        super(new ComponentModel(
-                new BundleInstantiationSpecification(
-                        new ComponentId(builder.name),
-                        fromString("com.yahoo.jdisc.http.server.jetty.ConnectorFactory"),
-                        fromString("jdisc_http_service"))));
+        super(new ComponentModel(builder.name,
+                                 com.yahoo.jdisc.http.server.jetty.ConnectorFactory.class.getName(),
+                                 null));
         this.name = builder.name;
         this.listenPort = builder.listenPort;
         this.sslProviderComponent = builder.sslProvider != null ? builder.sslProvider : new DefaultSslProvider(name);

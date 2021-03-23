@@ -88,7 +88,7 @@ public abstract class Container extends AbstractService implements
         this.parent = parent;
         this.retired = retired;
         this.index = index;
-        this.defaultHttpServer = new JettyHttpServer(new ComponentId("DefaultHttpServer"), containerClusterOrNull(parent), isHostedVespa);
+        this.defaultHttpServer = new JettyHttpServer("DefaultHttpServer", containerClusterOrNull(parent), isHostedVespa);
         if (getHttp() == null) {
             addChild(defaultHttpServer);
         }

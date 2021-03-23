@@ -11,10 +11,9 @@ public class DefaultSslProvider extends SslProvider {
 
     public static final String COMPONENT_ID_PREFIX = "default-ssl-provider@";
     public static final String COMPONENT_CLASS = DefaultSslContextFactoryProvider.class.getName();
-    public static final String COMPONENT_BUNDLE = "jdisc_http_service";
 
     public DefaultSslProvider(String serverName) {
-        super(COMPONENT_ID_PREFIX, serverName, COMPONENT_CLASS, COMPONENT_BUNDLE);
+        super(COMPONENT_ID_PREFIX, serverName, COMPONENT_CLASS, null);
     }
 
     @Override public void amendConnectorConfig(ConnectorConfig.Builder builder) {}

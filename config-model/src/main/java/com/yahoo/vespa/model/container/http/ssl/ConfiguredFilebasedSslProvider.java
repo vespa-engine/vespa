@@ -16,7 +16,6 @@ import java.util.Optional;
 public class ConfiguredFilebasedSslProvider extends SslProvider {
     public static final String COMPONENT_ID_PREFIX = "configured-ssl-provider@";
     public static final String COMPONENT_CLASS = ConfiguredSslContextFactoryProvider.class.getName();
-    public static final String COMPONENT_BUNDLE = "jdisc_http_service";
 
     private final String privateKeyPath;
     private final String certificatePath;
@@ -32,7 +31,7 @@ public class ConfiguredFilebasedSslProvider extends SslProvider {
                                           String clientAuthentication,
                                           List<String> cipherSuites,
                                           List<String> protocolVersions) {
-        super(COMPONENT_ID_PREFIX, servername, COMPONENT_CLASS, COMPONENT_BUNDLE);
+        super(COMPONENT_ID_PREFIX, servername, COMPONENT_CLASS, null);
         this.privateKeyPath = privateKeyPath;
         this.certificatePath = certificatePath;
         this.caCertificatePath = caCertificatePath;
