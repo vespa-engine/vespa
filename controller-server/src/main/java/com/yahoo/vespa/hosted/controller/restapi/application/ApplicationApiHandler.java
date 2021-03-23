@@ -1561,7 +1561,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         ZoneId zone = requireZone(environment, region);
         ServiceApiResponse response = new ServiceApiResponse(zone,
                                                              new ApplicationId.Builder().tenant(tenantName).applicationName(applicationName).instanceName(instanceName).build(),
-                                                             controller.zoneRegistry().getConfigServerApiUris(zone),
+                                                             List.of(controller.zoneRegistry().getConfigServerVipUri(zone)),
                                                              request.getUri());
         response.setResponse(applicationView);
         return response;
@@ -1579,7 +1579,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         Map<?,?> result = controller.serviceRegistry().configServer().getServiceApiResponse(deploymentId, serviceName, restPath);
         ServiceApiResponse response = new ServiceApiResponse(deploymentId.zoneId(),
                                                              deploymentId.applicationId(),
-                                                             controller.zoneRegistry().getConfigServerApiUris(deploymentId.zoneId()),
+                                                             List.of(controller.zoneRegistry().getConfigServerVipUri(deploymentId.zoneId())),
                                                              request.getUri());
         response.setResponse(result, serviceName, restPath);
         return response;

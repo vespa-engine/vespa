@@ -38,14 +38,8 @@ public interface ZoneRegistry {
     /** Returns the default region for the given environment, if one is configured */
     Optional<RegionName> getDefaultRegion(Environment environment);
 
-    /** Returns the API endpoints of all known config servers in the given zone */
-    List<URI> getConfigServerUris(ZoneId zoneId);
-
     /** Returns the URI for the config server VIP in the given zone */
     URI getConfigServerVipUri(ZoneId zoneId);
-
-    /** Returns all possible API endpoints of all known config servers and config server VIPs in the given zone */
-    List<URI> getConfigServerApiUris(ZoneId zoneId);
 
     /** Returns the time to live for deployments in the given zone, or empty if this is infinite */
     Optional<Duration> getDeploymentTimeToLive(ZoneId zoneId);

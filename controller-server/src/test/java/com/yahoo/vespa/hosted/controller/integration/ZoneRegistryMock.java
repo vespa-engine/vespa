@@ -221,22 +221,8 @@ public class ZoneRegistryMock extends AbstractComponent implements ZoneRegistry 
     }
 
     @Override
-    public List<URI> getConfigServerUris(ZoneId zoneId) {
-        return List.of(
-                URI.create(String.format("https://cfg1.%s.test:4443/", zoneId.value())),
-                URI.create(String.format("https://cfg2.%s.test:4443/", zoneId.value())));
-    }
-
-    @Override
     public URI getConfigServerVipUri(ZoneId zoneId) {
         return URI.create(String.format("https://cfg.%s.test.vip:4443/", zoneId.value()));
-    }
-
-    @Override
-    public List<URI> getConfigServerApiUris(ZoneId zoneId) {
-        return List.of(
-                URI.create(String.format("https://cfg.%s.test:4443/", zoneId.value())),
-                URI.create(String.format("https://cfg.%s.test.vip:4443/", zoneId.value())));
     }
 
     @Override
