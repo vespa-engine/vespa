@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.proxy;
 
-import ai.vespa.util.http.retry.Sleeper;
+import ai.vespa.util.http.hc4.retry.Sleeper;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.jdisc.http.HttpRequest.Method;
