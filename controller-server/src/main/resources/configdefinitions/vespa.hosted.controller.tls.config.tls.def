@@ -5,5 +5,5 @@ namespace=vespa.hosted.controller.tls.config
 caTrustStore       string
 
 # Secret store key names for certificate and private key
-certificateSecret  string default=vespa_hosted.tls.cert
-privateKeySecret   string default=vespa_hosted.tls.key
+certificateSecret  string
+privateKeySecret   string
