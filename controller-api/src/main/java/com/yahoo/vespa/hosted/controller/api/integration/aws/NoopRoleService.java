@@ -3,7 +3,6 @@ package com.yahoo.vespa.hosted.controller.api.integration.aws;
 
 import com.yahoo.config.provision.TenantName;
 
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
@@ -15,6 +14,11 @@ public class NoopRoleService implements RoleService {
     @Override
     public Optional<TenantRoles> createTenantRole(TenantName tenant) {
         return Optional.empty();
+    }
+
+    @Override
+    public TenantRoles getTenantRole(TenantName tenant) {
+        return new TenantRoles(tenant.value() + "-host-role", tenant.value() + "-tenant-role");
     }
 
     @Override

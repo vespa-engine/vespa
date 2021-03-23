@@ -11,6 +11,10 @@
       "user": "developer@tenant"
     }],
   "secretStores": [],
+  "secretStore": {
+    "tenantRole": "my-tenant-tenant-role",
+    "stores": []
+  },
   "quota": {
     "budget": null,
     "budgetUsed": 0.0,

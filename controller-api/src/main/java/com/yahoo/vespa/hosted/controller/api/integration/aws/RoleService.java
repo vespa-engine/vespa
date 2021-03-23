@@ -13,6 +13,9 @@ public interface RoleService {
 
     Optional<TenantRoles> createTenantRole(TenantName tenant);
 
+    /** Retrieve the names of the tenant roles (host and container). Does not guarantee these roles exist */
+    TenantRoles getTenantRole(TenantName tenant);
+
     void deleteTenantRole(TenantName tenant);
 
     String createTenantPolicy(TenantName tenant, String policyName, String awsId, String role);
