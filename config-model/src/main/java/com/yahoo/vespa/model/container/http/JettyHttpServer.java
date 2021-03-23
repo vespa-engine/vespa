@@ -27,7 +27,7 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
     private final List<ConnectorFactory> connectorFactories = new ArrayList<>();
 
     public JettyHttpServer(String componentId, ContainerCluster<?> cluster, boolean isHostedVespa) {
-        super(new ComponentModel(componentId, com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName(),null));
+        super(new ComponentModel(componentId, com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName(), null));
         this.isHostedVespa = isHostedVespa;
         this.cluster = cluster;
         final FilterBindingsProviderComponent filterBindingsProviderComponent = new FilterBindingsProviderComponent(componentId);
