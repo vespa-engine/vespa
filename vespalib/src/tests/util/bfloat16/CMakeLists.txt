@@ -5,5 +5,7 @@ vespa_add_executable(vespalib_bfloat16_test_app TEST
     DEPENDS
     vespalib
     GTest::GTest
+    EXTERNAL_DEPENDS
+    onnxruntime
 )
 vespa_add_test(NAME vespalib_bfloat16_test_app COMMAND vespalib_bfloat16_test_app)
