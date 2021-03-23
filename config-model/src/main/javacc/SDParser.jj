@@ -2641,6 +2641,7 @@ String identifier() : { }
       | <ATTRIBUTE>
       | <BODY>
       | <BOLDING>
+      | <BTREE>
       | <COMPRESSION>
       | <COMPRESSIONLEVEL>
       | <COMPRESSIONTHRESHOLD>
@@ -2648,6 +2649,7 @@ String identifier() : { }
       | <CREATEIFNONEXISTENT>
       | <DENSEPOSTINGLISTTHRESHOLD>
       | <DESCENDING>
+      | <DICTIONARY>
       | <DIRECT>
       | <DOCUMENT>
       | <DOCUMENTSUMMARY>
@@ -2669,6 +2671,7 @@ String identifier() : { }
       | <FULL>
       | <FUNCTION>
       | <GRAM>
+      | <HASH>
       | <HEADER>
       | <HUGE>
       | <ID>
