@@ -65,14 +65,14 @@ public class OsVersionStatus {
             for (var zone : zonesToUpgrade(controller)) {
                 if (!application.shouldUpgradeOs()) continue;
                 var targetOsVersion = controller.serviceRegistry().configServer().nodeRepository()
-                                                .targetVersionsOf(zone.getId())
+                                                .targetVersionsOf(zone.getVirtualId())
                                                 .osVersion(application.nodeType())
                                                 .orElse(Version.emptyVersion);
 
-                for (var node : controller.serviceRegistry().configServer().nodeRepository().list(zone.getId(), application.id())) {
+                for (var node : controller.serviceRegistry().configServer().nodeRepository().list(zone.getVirtualId(), application.id())) {
                     if (!OsUpgrader.canUpgrade(node)) continue;
                     var suspendedAt = node.suspendedSince();
-                    var nodeVersion = new NodeVersion(node.hostname(), zone.getId(), node.currentOsVersion(),
+                    var nodeVersion = new NodeVersion(node.hostname(), zone.getVirtualId(), node.currentOsVersion(),
                                                       targetOsVersion, suspendedAt);
                     var osVersion = new OsVersion(nodeVersion.currentVersion(), zone.getCloudName());
                     osVersions.putIfAbsent(osVersion, new ArrayList<>());
