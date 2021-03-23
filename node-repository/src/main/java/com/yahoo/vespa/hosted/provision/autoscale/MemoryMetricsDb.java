@@ -72,9 +72,12 @@ public class MemoryMetricsDb implements MetricsDb {
     public List<NodeTimeseries> getNodeTimeseries(Duration period, Set<String> hostnames) {
         Instant startTime = clock().instant().minus(period);
         synchronized (lock) {
-            return hostnames.stream()
-                            .map(hostname -> nodeTimeseries.getOrDefault(hostname, new NodeTimeseries(hostname, List.of())).justAfter(startTime))
-                            .collect(Collectors.toList());
+            if (hostnames.isEmpty())
+                return nodeTimeseries.values().stream().map(ns -> ns.justAfter(startTime)).collect(Collectors.toList());
+            else
+                return hostnames.stream()
+                                .map(hostname -> nodeTimeseries.getOrDefault(hostname, new NodeTimeseries(hostname, List.of())).justAfter(startTime))
+                                .collect(Collectors.toList());
         }
     }
 

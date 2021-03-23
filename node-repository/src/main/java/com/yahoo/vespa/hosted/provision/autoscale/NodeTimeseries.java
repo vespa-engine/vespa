@@ -5,6 +5,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Optional;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
@@ -30,6 +31,12 @@ public class NodeTimeseries {
     public int size() { return snapshots.size(); }
 
     public NodeMetricSnapshot get(int index) { return snapshots.get(index); }
+
+    /** Returns the last (newest) snapshot in this, or empty if there are none. */
+    public Optional<NodeMetricSnapshot> last() {
+        if (snapshots.isEmpty()) return Optional.empty();
+        return Optional.of(snapshots.get(snapshots.size() - 1));
+    }
 
     public List<NodeMetricSnapshot> asList() { return snapshots; }
 
