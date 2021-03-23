@@ -50,6 +50,7 @@ import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbi
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.configserverbindings.ServiceInfo;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
+import com.yahoo.vespa.hosted.controller.api.integration.aws.TenantRoles;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
@@ -1977,7 +1978,12 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                     keyObject.setString("user", user.getName());
                 });
 
+                // TODO: remove this once console is updated
                 toSlime(object, cloudTenant.tenantSecretStores());
+
+                toSlime(object.setObject("integrations").setObject("aws"),
+                        controller.serviceRegistry().roleService().getTenantRole(tenant.name()),
+                        cloudTenant.tenantSecretStores());
 
                 var tenantQuota = controller.serviceRegistry().billingController().getQuota(tenant.name());
                 var usedQuota = applications.stream()
@@ -2252,11 +2258,22 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     private void toSlime(Cursor object, List<TenantSecretStore> tenantSecretStores) {
         Cursor secretStore = object.setArray("secretStores");
         tenantSecretStores.forEach(store -> {
-            Cursor storeObject = secretStore.addObject();
-            storeObject.setString("name", store.getName());
-            storeObject.setString("awsId", store.getAwsId());
-            storeObject.setString("role", store.getRole());
+            toSlime(secretStore.addObject(), store);
         });
+    }
+
+    private void toSlime(Cursor object, TenantRoles tenantRoles, List<TenantSecretStore> tenantSecretStores) {
+        object.setString("tenantRole", tenantRoles.containerRole());
+        var stores = object.setArray("accounts");
+        tenantSecretStores.forEach(secretStore -> {
+            toSlime(stores.addObject(), secretStore);
+        });
+    }
+
+    private void toSlime(Cursor object, TenantSecretStore secretStore) {
+        object.setString("name", secretStore.getName());
+        object.setString("awsId", secretStore.getAwsId());
+        object.setString("role", secretStore.getRole());
     }
 
     private String readToString(InputStream stream) {

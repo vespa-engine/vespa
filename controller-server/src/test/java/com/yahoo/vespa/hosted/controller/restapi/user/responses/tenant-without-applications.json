@@ -4,6 +4,12 @@
   "creator": "administrator@tenant",
   "pemDeveloperKeys": [],
   "secretStores": [],
+  "integrations": {
+    "aws": {
+      "tenantRole": "my-tenant-tenant-role",
+      "accounts": []
+    }
+  },
   "quota": {
     "budget": null,
     "budgetUsed": 0.0,
