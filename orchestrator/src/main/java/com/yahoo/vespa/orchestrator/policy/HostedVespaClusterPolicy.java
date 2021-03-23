@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.policy;
 
+import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
@@ -149,7 +150,11 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
                 return ConcurrentSuspensionLimitForCluster.ONE_NODE;
             }
 
-            if (clusterApi.serviceType().equals(ServiceType.HOST_ADMIN)) {
+            if (clusterApi.serviceType() == ServiceType.HOST_ADMIN) {
+                if (Set.of(ClusterId.CONFIG_SERVER_HOST, ClusterId.CONTROLLER_HOST).contains(clusterApi.clusterId())) {
+                    return ConcurrentSuspensionLimitForCluster.ONE_NODE;
+                }
+
                 return ConcurrentSuspensionLimitForCluster.TWENTY_PERCENT;
             }
 
