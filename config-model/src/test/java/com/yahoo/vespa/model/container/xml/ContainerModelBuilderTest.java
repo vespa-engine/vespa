@@ -732,7 +732,11 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
                 "  </secret-store>",
                 "</container>");
         try {
-            createModel(root, clusterElem);
+            DeployState state = new DeployState.Builder()
+                    .properties(new TestProperties().setHostedVespa(true))
+                    .zone(new Zone(SystemName.Public, Environment.prod, RegionName.defaultName()))
+                    .build();
+            createModel(root, state, null, clusterElem);
             fail("secret store not defined");
         } catch (RuntimeException e) {
             assertEquals("No configured secret store named store1", e.getMessage());
