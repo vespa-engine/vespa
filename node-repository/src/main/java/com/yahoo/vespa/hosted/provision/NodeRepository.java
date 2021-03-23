@@ -171,6 +171,8 @@ public class NodeRepository extends AbstractComponent {
 
     public MetricsDb metricsDb() { return metricsDb; }
 
+    public NodeRepoStats computeStats() { return NodeRepoStats.computeOver(this); }
+
     /** Returns the time keeper of this system */
     public Clock clock() { return clock; }
 

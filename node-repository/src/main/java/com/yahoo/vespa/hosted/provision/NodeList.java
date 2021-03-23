@@ -33,6 +33,11 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         super(nodes, negate, NodeList::new);
     }
 
+    /** Returns the node with the given hostname from this list, or empty if it is not present  */
+    public Optional<Node> node(String hostname) {
+        return matching(node -> node.hostname().equals(hostname)).first();
+    }
+
     /** Returns the subset of nodes which are retired */
     public NodeList retired() {
         return matching(node -> node.allocation().isPresent() && node.allocation().get().membership().retired());

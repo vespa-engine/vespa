@@ -355,7 +355,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
                 Record record = cursor.getRecord();
                 while (cursor.hasNext()) {
                     String hostname = record.getStr(0).toString();
-                    if (hostnames.contains(hostname)) {
+                    if (hostnames.isEmpty() || hostnames.contains(hostname)) {
                         snapshots.put(hostname,
                                       new NodeMetricSnapshot(Instant.ofEpochMilli(record.getTimestamp(1) / 1000),
                                                              record.getFloat(2),
