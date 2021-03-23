@@ -3,7 +3,7 @@ package ai.vespa.metricsproxy.http.application;
 
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
-import ai.vespa.util.http.VespaHttpClientBuilder;
+import ai.vespa.util.http.hc4.VespaHttpClientBuilder;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import java.util.logging.Level;
