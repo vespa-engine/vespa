@@ -188,22 +188,6 @@ public:
 
     OperationRoutingSnapshot read_snapshot_for_bucket(const document::Bucket&) const override;
 
-    class MetricUpdateHook : public framework::MetricUpdateHook
-    {
-    public:
-        MetricUpdateHook(DistributorStripe& self)
-            : _self(self)
-        {
-        }
-
-        void updateMetrics(const MetricLockGuard &) override {
-            _self.propagateInternalScanMetricsToExternal();
-        }
-
-    private:
-        DistributorStripe& _self;
-    };
-
     std::chrono::steady_clock::duration db_memory_sample_interval() const noexcept {
         return _db_memory_sample_interval;
     }
@@ -335,7 +319,6 @@ private:
     framework::ThreadWaitInfo _tickResult;
     BucketDBMetricUpdater _bucketDBMetricUpdater;
     std::unique_ptr<BucketGcTimeCalculator::BucketIdHasher> _bucketIdHasher;
-    MetricUpdateHook _metricUpdateHook;
     mutable std::mutex _metricLock;
     /**
      * Maintenance stats for last completed database scan iteration.
