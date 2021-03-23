@@ -1,7 +1,7 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.restapi.systemflags;
 
-import ai.vespa.util.http.retry.DelayedConnectionLevelRetryHandler;
+import ai.vespa.util.http.hc4.retry.DelayedConnectionLevelRetryHandler;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
