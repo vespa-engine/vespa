@@ -252,6 +252,7 @@ TOKEN :
 | < PROPERTIES: "properties" >
 | < ATTRIBUTE: "attribute" >
 | < SORTING: "sorting" >
+| < DICTIONARY: "dictionary" >
 | < ASCENDING: "ascending" >
 | < DESCENDING: "descending" >
 | < UCA: "uca" >
@@ -267,6 +268,8 @@ TOKEN :
 | < IDENTICAL: "identical" >
 | < STEMMING: "stemming" >
 | < NORMALIZING: "normalizing" >
+| < HASH: "hash" >
+| < BTREE: "btree" >
 | < BOLDING: "bolding" >
 | < BODY: "body" >
 | < HEADER: "header" >
@@ -987,6 +990,7 @@ String fieldBody(SDField field, Search search, SDDocumentType document) : { }
       attribute(field) |
       body(field) |
       bolding(field) |
+      dictionary(field) |
       fieldStemming(field) |
       header(field) |
       id(field, document) |
@@ -1516,6 +1520,34 @@ void bolding(FieldOperationContainer field) :
     <BOLDING> <COLON> bold = bool()
     {
         field.addOperation(new BoldingOperation(bold));
+    }
+}
+
+/**
+ * This rule consumes a dictionary statement of a field element.
+ *
+ * @param field The field to modify.
+ */
+void dictionary(FieldOperationContainer field) :
+{
+    Dictionary.Type type;
+}
+{
+    <DICTIONARY> <COLON> type = dictionaryType()
+    {
+        field.addOperation(new DictionaryOperation(type));
+    }
+}
+
+Dictionary.Type dictionaryType() :
+{
+    Dictionary.Type type;
+}
+{
+    (   <HASH>            { type = Dictionary.Type.HASH; }
+      | <BTREE>           { type = Dictionary.Type.BTREE; } )
+    {
+        return type;
     }
 }
 

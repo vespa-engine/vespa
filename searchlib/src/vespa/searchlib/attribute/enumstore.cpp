@@ -42,14 +42,15 @@ EnumStoreT<const char*>::load_unique_value(const void* src,
 }
 
 std::unique_ptr<vespalib::datastore::IUniqueStoreDictionary>
-make_enum_store_dictionary(IEnumStore &store, bool has_postings, search::DictionaryConfig::Ordering ordering, std::unique_ptr<vespalib::datastore::EntryComparator> compare, std::unique_ptr<vespalib::datastore::EntryComparator> folded_compare)
+make_enum_store_dictionary(IEnumStore &store, bool has_postings, search::DictionaryConfig::Type type, std::unique_ptr<vespalib::datastore::EntryComparator> compare, std::unique_ptr<vespalib::datastore::EntryComparator> folded_compare)
 {
     if (has_postings) {
         if (folded_compare) {
             return std::make_unique<EnumStoreFoldedDictionary>(store, std::move(compare), std::move(folded_compare));
         } else {
-            switch (ordering) {
-            case search::DictionaryConfig::Ordering::UNORDERED:
+            switch (type) {
+            case search::DictionaryConfig::Type::HASH:
+            case search::DictionaryConfig::Type::BTREE_AND_HASH:
                 return std::make_unique<EnumStoreDictionary<EnumPostingTree, vespalib::datastore::SimpleHashMap>>(store, std::move(compare));
             default:
                 return std::make_unique<EnumStoreDictionary<EnumPostingTree>>(store, std::move(compare));

@@ -27,7 +27,7 @@ using NodeAllocator = TreeType::NodeAllocatorType;
 
 TEST("requireThatNumericLessIsWorking")
 {
-    NumericEnumStore es(false, DictionaryConfig::Ordering::ORDERED);
+    NumericEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert(10);
     EnumIndex e2 = es.insert(30);
     auto cmp1 = es.make_comparator();
@@ -41,7 +41,7 @@ TEST("requireThatNumericLessIsWorking")
 
 TEST("requireThatNumericEqualIsWorking")
 {
-    NumericEnumStore es(false, DictionaryConfig::Ordering::ORDERED);
+    NumericEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert(10);
     EnumIndex e2 = es.insert(30);
     auto cmp1 = es.make_comparator();
@@ -56,7 +56,7 @@ TEST("requireThatNumericEqualIsWorking")
 
 TEST("requireThatFloatLessIsWorking")
 {
-    FloatEnumStore es(false, DictionaryConfig::Ordering::ORDERED);
+    FloatEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert(10.5);
     EnumIndex e2 = es.insert(30.5);
     EnumIndex e3 = es.insert(std::numeric_limits<float>::quiet_NaN());
@@ -74,7 +74,7 @@ TEST("requireThatFloatLessIsWorking")
 
 TEST("requireThatFloatEqualIsWorking")
 {
-    FloatEnumStore es(false, DictionaryConfig::Ordering::ORDERED);
+    FloatEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert(10.5);
     EnumIndex e2 = es.insert(30.5);
     EnumIndex e3 = es.insert(std::numeric_limits<float>::quiet_NaN());
@@ -93,7 +93,7 @@ TEST("requireThatFloatEqualIsWorking")
 
 TEST("requireThatStringLessIsWorking")
 {
-    StringEnumStore es(false, DictionaryConfig::Ordering::ORDERED);
+    StringEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert("Aa");
     EnumIndex e2 = es.insert("aa");
     EnumIndex e3 = es.insert("aB");
@@ -110,7 +110,7 @@ TEST("requireThatStringLessIsWorking")
 
 TEST("requireThatStringEqualIsWorking")
 {
-    StringEnumStore es(false, DictionaryConfig::Ordering::ORDERED);
+    StringEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert("Aa");
     EnumIndex e2 = es.insert("aa");
     EnumIndex e3 = es.insert("aB");
@@ -127,7 +127,7 @@ TEST("requireThatStringEqualIsWorking")
 
 TEST("requireThatComparatorWithTreeIsWorking")
 {
-    NumericEnumStore es(false, DictionaryConfig::Ordering::ORDERED);
+    NumericEnumStore es(false, DictionaryConfig::Type::BTREE);
     vespalib::GenerationHandler g;
     TreeType t;
     NodeAllocator m;
@@ -152,7 +152,7 @@ TEST("requireThatComparatorWithTreeIsWorking")
 
 TEST("requireThatFoldedLessIsWorking")
 {
-    StringEnumStore es(false, DictionaryConfig::Ordering::ORDERED);
+    StringEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert("Aa");
     EnumIndex e2 = es.insert("aa");
     EnumIndex e3 = es.insert("aB");
@@ -172,7 +172,7 @@ TEST("requireThatFoldedLessIsWorking")
 
 TEST("requireThatFoldedEqualIsWorking")
 {
-    StringEnumStore es(false, DictionaryConfig::Ordering::ORDERED);
+    StringEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert("Aa");
     EnumIndex e2 = es.insert("aa");
     EnumIndex e3 = es.insert("aB");

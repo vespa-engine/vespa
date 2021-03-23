@@ -90,10 +90,6 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
         this.enableOnlyBitVector = enableOnlyBitVector;
     }
 
-    public boolean isDoAlias() {
-        return doAlias;
-    }
-
     public void setDoAlias(boolean doAlias) {
         this.doAlias = doAlias;
     }
@@ -106,9 +102,6 @@ public class AttributeOperation implements FieldOperation, FieldOperationContain
         this.alias = alias;
     }
 
-    public String getAliasedName() {
-        return aliasedName;
-    }
 
     public void setAliasedName(String aliasedName) {
         this.aliasedName = aliasedName;

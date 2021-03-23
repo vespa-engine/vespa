@@ -74,8 +74,8 @@ private:
     ssize_t load_unique_value(const void* src, size_t available, Index& idx);
 
 public:
-    EnumStoreT(bool has_postings, search::DictionaryConfig::Ordering ordering);
-    virtual ~EnumStoreT();
+    EnumStoreT(bool has_postings, search::DictionaryConfig::Type type);
+    ~EnumStoreT() override;
 
     uint32_t get_ref_count(Index idx) const { return get_entry_base(idx).get_ref_count(); }
     void inc_ref_count(Index idx) { return get_entry_base(idx).inc_ref_count(); }
@@ -213,7 +213,9 @@ public:
 };
 
 std::unique_ptr<vespalib::datastore::IUniqueStoreDictionary>
-make_enum_store_dictionary(IEnumStore &store, bool has_postings, search::DictionaryConfig::Ordering ordering, std::unique_ptr<vespalib::datastore::EntryComparator> compare, std::unique_ptr<vespalib::datastore::EntryComparator> folded_compare);
+make_enum_store_dictionary(IEnumStore &store, bool has_postings, search::DictionaryConfig::Type type,
+                           std::unique_ptr<vespalib::datastore::EntryComparator> compare,
+                           std::unique_ptr<vespalib::datastore::EntryComparator> folded_compare);
 
 
 template <>

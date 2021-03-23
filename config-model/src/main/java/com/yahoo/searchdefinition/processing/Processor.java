@@ -25,7 +25,7 @@ import java.util.logging.Level;
 public abstract class Processor {
 
     protected final Search search;
-    protected DeployLogger deployLogger;
+    protected final DeployLogger deployLogger;
     protected final RankProfileRegistry rankProfileRegistry;
     protected final QueryProfiles queryProfiles;
 

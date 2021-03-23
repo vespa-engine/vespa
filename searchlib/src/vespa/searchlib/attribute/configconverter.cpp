@@ -50,20 +50,22 @@ getCollectionTypeMap()
 static DataTypeMap _dataTypeMap = getDataTypeMap();
 static CollectionTypeMap _collectionTypeMap = getCollectionTypeMap();
 
-DictionaryConfig::Ordering
-convert(AttributesConfig::Attribute::Dictionary::Ordering ordering_cfg) {
-    switch (ordering_cfg) {
-        case AttributesConfig::Attribute::Dictionary::Ordering::ORDERED:
-            return DictionaryConfig::Ordering::ORDERED;
-        case AttributesConfig::Attribute::Dictionary::Ordering::UNORDERED:
-            return DictionaryConfig::Ordering::UNORDERED;
+DictionaryConfig::Type
+convert(AttributesConfig::Attribute::Dictionary::Type type_cfg) {
+    switch (type_cfg) {
+    case AttributesConfig::Attribute::Dictionary::Type::BTREE:
+        return DictionaryConfig::Type::BTREE;
+    case AttributesConfig::Attribute::Dictionary::Type::HASH:
+        return DictionaryConfig::Type::HASH;
+    case AttributesConfig::Attribute::Dictionary::Type::BTREE_AND_HASH:
+        return DictionaryConfig::Type::BTREE_AND_HASH;
     }
     assert(false);
 }
 
 DictionaryConfig
 convert_dictionary(const AttributesConfig::Attribute::Dictionary & dictionary) {
-    return DictionaryConfig(convert(dictionary.ordering));
+    return DictionaryConfig(convert(dictionary.type));
 }
 
 }
