@@ -78,6 +78,8 @@ public final class Attribute implements Cloneable, Serializable {
     /** The aliases for this attribute */
     private final Set<String> aliases = new LinkedHashSet<>();
 
+    private Dictionary dictionary = new Dictionary();
+
     /**
      * True if this attribute should be returned during first pass of search.
      * Null means make the default decision for this kind of attribute
@@ -208,6 +210,7 @@ public final class Attribute implements Cloneable, Serializable {
     public Optional<HnswIndexParams> hnswIndexParams() { return hnswIndexParams; }
 
     public Sorting getSorting() { return sorting; }
+    public Dictionary getDictionary() { return dictionary; }
 
     public void setRemoveIfZero(boolean remove)                  { this.removeIfZero = remove; }
     public void setCreateIfNonExistent(boolean create)           { this.createIfNonExistent = create; }
@@ -231,6 +234,7 @@ public final class Attribute implements Cloneable, Serializable {
     public void setTensorType(TensorType tensorType)             { this.tensorType = Optional.of(tensorType); }
     public void setDistanceMetric(DistanceMetric metric)         { this.distanceMetric = Optional.of(metric); }
     public void setHnswIndexParams(HnswIndexParams params)       { this.hnswIndexParams = Optional.of(params); }
+    public void setDictionary(Dictionary dictionary)             { this.dictionary = dictionary; }
 
     public String         getName()                     { return name; }
     public Type           getType()                     { return type; }
@@ -348,7 +352,7 @@ public final class Attribute implements Cloneable, Serializable {
     @Override
     public int hashCode() {
         return Objects.hash(
-                name, type, collectionType, sorting, isPrefetch(), fastAccess, removeIfZero, createIfNonExistent,
+                name, type, collectionType, sorting, dictionary, isPrefetch(), fastAccess, removeIfZero, createIfNonExistent,
                 isPosition, huge, enableBitVectors, enableOnlyBitVector, tensorType, referenceDocumentType, distanceMetric, hnswIndexParams);
     }
 
@@ -370,10 +374,10 @@ public final class Attribute implements Cloneable, Serializable {
         if (this.createIfNonExistent != other.createIfNonExistent) return false;
         if (this.enableBitVectors != other.enableBitVectors) return false;
         if (this.enableOnlyBitVector != other.enableOnlyBitVector) return false;
-        // if (this.noSearch != other.noSearch) return false; No backend consequences so compatible for now
         if (this.fastSearch != other.fastSearch) return false;
         if (this.huge != other.huge) return false;
         if (! this.sorting.equals(other.sorting)) return false;
+        if (! Objects.equals(dictionary, other.dictionary)) return false;
         if (! Objects.equals(tensorType, other.tensorType)) return false;
         if (! Objects.equals(referenceDocumentType, other.referenceDocumentType)) return false;
         if (! Objects.equals(distanceMetric, other.distanceMetric)) return false;

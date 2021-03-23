@@ -6,6 +6,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.Dictionary;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Ranking;
 import com.yahoo.searchdefinition.document.Sorting;
@@ -251,7 +252,23 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
             ib.hnsw.multithreadedindexing(params.multiThreadedIndexing());
             aaB.index(ib);
         }
+        Dictionary dictionary = attribute.getDictionary();
+        if (dictionary != null) {
+            aaB.dictionary.type(convert(dictionary.getType()));
+        }
         return aaB;
+    }
+
+    private static AttributesConfig.Attribute.Dictionary.Type.Enum convert(Dictionary.Type type) {
+        switch (type) {
+            case BTREE:
+                return AttributesConfig.Attribute.Dictionary.Type.BTREE;
+            case HASH:
+                return AttributesConfig.Attribute.Dictionary.Type.HASH;
+            case BTREE_AND_HASH:
+                return AttributesConfig.Attribute.Dictionary.Type.BTREE_AND_HASH;
+        }
+        return AttributesConfig.Attribute.Dictionary.Type.BTREE;
     }
 
     public void getConfig(AttributesConfig.Builder builder, FieldSet fs) {

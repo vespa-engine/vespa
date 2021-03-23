@@ -80,6 +80,8 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      */
     private Matching matching = new Matching();
 
+    private Dictionary dictionary = null;
+
     /** Attribute settings, or null if there are none */
     private final Map<String, Attribute> attributes = new TreeMap<>();
 
@@ -531,6 +533,14 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * (Token matching is default, PREFIX, SUBSTRING, SUFFIX are alternatives)
      */
     public void setMatching(Matching matching) { this.matching=matching; }
+
+    /**
+     * Returns what kind of matching type should be applied.
+     */
+    public Dictionary getDictionary() { return dictionary; }
+
+
+    public void setDictionary(Dictionary dictionary) { this.dictionary=dictionary; }
 
     /**
      * Set the matching type for this field and all subfields.
