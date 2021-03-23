@@ -66,7 +66,7 @@ StateChecker::Context::Context(const DistributorStripeComponent& c,
                                NodeMaintenanceStatsTracker& statsTracker,
                                const document::Bucket &bucket_)
     : bucket(bucket_),
-      siblingBucket(c.getSibling(bucket.getBucketId())),
+      siblingBucket(c.get_sibling(bucket.getBucketId())),
       systemState(distributorBucketSpace.getClusterState()),
       pending_cluster_state(c.getDistributor().pendingClusterStateOrNull(bucket_.getBucketSpace())),
       distributorConfig(c.getDistributor().getConfig()),

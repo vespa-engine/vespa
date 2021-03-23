@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
 #include "distributor_node_context.h"
@@ -42,26 +42,6 @@ public:
 
     ~DistributorStripeComponent() override;
 
-    /**
-     * Verifies that the given command has been received at the
-     * correct distributor based on the current system state.
-     */
-    bool checkDistribution(api::StorageCommand& cmd, const document::Bucket &bucket);
-
-    /**
-     * Removes the given bucket copies from the bucket database.
-     * If the resulting bucket is empty afterwards, removes the entire
-     * bucket entry from the bucket database.
-     */
-    void removeNodesFromDB(const document::Bucket &bucket,
-                           const std::vector<uint16_t>& nodes);
-
-    /**
-     * Fetch bucket info about the given bucket from the given node.
-     * Used when we get BUCKET_NOT_FOUND.
-     */
-    void recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket);
-
     void sendDown(const api::StorageMessage::SP&);
     void sendUp(const api::StorageMessage::SP&);
 
@@ -70,24 +50,6 @@ public:
     const DistributorStripeInterface& getDistributor() const {
         return _distributor;
     }
-
-    DistributorBucketSpaceRepo &getBucketSpaceRepo() { return _bucketSpaceRepo; }
-    const DistributorBucketSpaceRepo &getBucketSpaceRepo() const { return _bucketSpaceRepo; }
-
-    DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo() { return _readOnlyBucketSpaceRepo; }
-    const DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo() const { return _readOnlyBucketSpaceRepo; }
-
-    /**
-     * Finds a bucket that has the same direct parent as the given bucket
-     * (i.e. split one bit less), but different bit in the most used bit.
-     */
-    document::BucketId getSibling(const document::BucketId& bid) const;
-
-    /**
-     * Create a bucket that is split correctly according to other buckets that
-     * are in the bucket database.
-     */
-    BucketDatabase::Entry createAppropriateBucket(const document::Bucket &bucket);
 
     // Implements DistributorNodeContext
     const framework::Clock& clock() const noexcept override { return getClock(); }
@@ -127,8 +89,17 @@ public:
      * bucket entry from the bucket database.
      */
     void remove_node_from_bucket_database(const document::Bucket& bucket, uint16_t node_index) override {
-        removeNodesFromDB(bucket, toVector<uint16_t>(node_index));
+        remove_nodes_from_bucket_database(bucket, toVector<uint16_t>(node_index));
     }
+
+    /**
+     * Removes the given bucket copies from the bucket database.
+     * If the resulting bucket is empty afterwards, removes the entire
+     * bucket entry from the bucket database.
+     */
+    void remove_nodes_from_bucket_database(const document::Bucket& bucket,
+                                           const std::vector<uint16_t>& nodes) override;
+
     const DistributorBucketSpaceRepo& bucket_space_repo() const noexcept override {
         return _bucketSpaceRepo;
     }
@@ -142,6 +113,19 @@ public:
         return _readOnlyBucketSpaceRepo;
     }
     document::BucketId make_split_bit_constrained_bucket_id(const document::DocumentId& doc_id) const override;
+
+    /**
+     * Fetch bucket info about the given bucket from the given node.
+     * Used when we get BUCKET_NOT_FOUND.
+     */
+    void recheck_bucket_info(uint16_t node_index, const document::Bucket& bucket) override;
+
+    /**
+     * Finds a bucket that has the same direct parent as the given bucket
+     * (i.e. split one bit less), but different bit in the most used bit.
+     */
+    document::BucketId get_sibling(const document::BucketId& bid) const override;
+
     const DistributorConfiguration& distributor_config() const noexcept override {
         return getDistributor().getConfig();
     }
@@ -180,7 +164,6 @@ public:
 
     // Implements DocumentSelectionParser
     std::unique_ptr<document::select::Node> parse_selection(const vespalib::string& selection) const override;
-
 
 private:
     void enumerateUnavailableNodes(

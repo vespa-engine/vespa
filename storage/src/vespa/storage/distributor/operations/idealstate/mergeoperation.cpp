@@ -144,7 +144,7 @@ MergeOperation::onStart(DistributorMessageSender& sender)
         auto msg = std::make_shared<api::MergeBucketCommand>(
                 getBucket(),
                 _mnodes,
-                _manager->getDistributorComponent().getUniqueTimestamp(),
+                _manager->operation_context().generate_unique_timestamp(),
                 clusterState.getVersion());
 
         // Due to merge forwarding/chaining semantics, we must always send
@@ -162,7 +162,7 @@ MergeOperation::onStart(DistributorMessageSender& sender)
 
         sender.sendToNode(lib::NodeType::STORAGE, _mnodes[0].index, msg);
 
-        _sentMessageTime = _manager->getDistributorComponent().getClock().getTimeInSeconds();
+        _sentMessageTime = _manager->node_context().clock().getTimeInSeconds();
     } else {
         LOGBP(debug,
               "Unable to merge bucket %s, since only one copy is available. System state %s",
@@ -230,7 +230,7 @@ MergeOperation::deleteSourceOnlyNodes(
 
     if (!sourceOnlyNodes.empty()) {
         _removeOperation = std::make_unique<RemoveBucketOperation>(
-                        _manager->getDistributorComponent().cluster_context(),
+                        _manager->node_context(),
                         BucketAndNodes(getBucket(), sourceOnlyNodes));
         // Must not send removes to source only copies if something has caused
         // pending load to the copy after the merge was sent!

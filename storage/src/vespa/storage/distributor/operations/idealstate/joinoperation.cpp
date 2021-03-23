@@ -120,7 +120,7 @@ JoinOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP&
         } else {
             _manager->operation_context().update_bucket_database(
                     getBucket(),
-                    BucketCopy(_manager->getDistributorComponent().getUniqueTimestamp(),
+                    BucketCopy(_manager->operation_context().generate_unique_timestamp(),
                                node,
                                rep.getBucketInfo()),
                     DatabaseUpdate::CREATE_IF_NONEXISTING);
@@ -130,7 +130,7 @@ JoinOperation::onReceive(DistributorMessageSender&, const api::StorageReply::SP&
     } else if (rep.getResult().getResult() == api::ReturnCode::BUCKET_NOT_FOUND
             && _bucketSpace->getBucketDatabase().get(getBucketId())->getNode(node) != 0)
     {
-        _manager->getDistributorComponent().recheckBucketInfo(node, getBucket());
+        _manager->operation_context().recheck_bucket_info(node, getBucket());
         LOGBP(warning, "Join failed to find %s: %s",
               getBucketId().toString().c_str(),
               rep.getResult().toString().c_str());

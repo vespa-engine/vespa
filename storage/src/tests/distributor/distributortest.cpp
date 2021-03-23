@@ -122,7 +122,7 @@ struct DistributorTest : Test, DistributorTestUtil {
                 }
             }
 
-            distributor_component().removeNodesFromDB(makeDocumentBucket(document::BucketId(16, 1)), removedNodes);
+            operation_context().remove_nodes_from_bucket_database(makeDocumentBucket(document::BucketId(16, 1)), removedNodes);
 
             uint32_t flags(DatabaseUpdate::CREATE_IF_NONEXISTING
                            | (resetTrusted ? DatabaseUpdate::RESET_TRUSTED : 0));

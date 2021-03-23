@@ -98,7 +98,7 @@ SetBucketStateOperation::onReceive(DistributorMessageSender& sender,
                 }
 
                 entry->updateNode(
-                        BucketCopy(_manager->getDistributorComponent().getUniqueTimestamp(),
+                        BucketCopy(_manager->operation_context().generate_unique_timestamp(),
                                    node,
                                    bInfo).setTrusted(copy->trusted()));
 
