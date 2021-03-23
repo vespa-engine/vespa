@@ -31,4 +31,6 @@ public abstract class RestApiRequestHandler<T extends RestApiRequestHandler<T>> 
     }
 
     @Override public final HttpResponse handle(HttpRequest request) { return restApi.handleRequest(request); }
+
+    protected RestApi restApi() { return restApi; }
 }
