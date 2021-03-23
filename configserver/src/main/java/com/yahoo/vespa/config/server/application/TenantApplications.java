@@ -43,6 +43,8 @@ import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static com.yahoo.vespa.config.server.tenant.TenantRepository.getBarriersPath;
+import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static java.util.stream.Collectors.toSet;
 
 /**
@@ -55,6 +57,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
 
     private static final Logger log = Logger.getLogger(TenantApplications.class.getName());
 
+    private final Curator curator;
     private final ApplicationCuratorDatabase database;
     private final Curator.DirectoryCache directoryCache;
     private final Executor zkWatcherExecutor;
@@ -67,11 +70,13 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     private final MetricUpdater tenantMetricUpdater;
     private final Clock clock;
     private final TenantFileSystemDirs tenantFileSystemDirs;
+    private final ConfigserverConfig configserverConfig;
 
     public TenantApplications(TenantName tenant, Curator curator, StripedExecutor<TenantName> zkWatcherExecutor,
                               ExecutorService zkCacheExecutor, Metrics metrics, ReloadListener reloadListener,
                               ConfigserverConfig configserverConfig, HostRegistry hostRegistry,
                               TenantFileSystemDirs tenantFileSystemDirs, Clock clock) {
+        this.curator = curator;
         this.database = new ApplicationCuratorDatabase(tenant, curator);
         this.tenant = tenant;
         this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenant, command);
@@ -85,6 +90,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         this.hostRegistry = hostRegistry;
         this.tenantFileSystemDirs = tenantFileSystemDirs;
         this.clock = clock;
+        this.configserverConfig = configserverConfig;
     }
 
     // For testing only
@@ -252,21 +258,23 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         }
     }
 
+    // Note: Assumes that caller already holds the application lock
+    // (when getting event from zookeeper to remove application,
+    // the lock should be held by the thread that causes the event to happen)
     public void removeApplication(ApplicationId applicationId) {
-        try (Lock lock = lock(applicationId)) {
-            if (exists(applicationId)) {
-                log.log(Level.INFO, "Tried removing application " + applicationId + ", but it seems to have been deployed again");
-                return;
-            }
+        if (exists(applicationId)) {
+            log.log(Level.INFO, "Tried removing application " + applicationId + ", but it seems to have been deployed again");
+            return;
+        }
 
-            if (hasApplication(applicationId)) {
-                applicationMapper.remove(applicationId);
-                hostRegistry.removeHostsForKey(applicationId);
-                reloadListenersOnRemove(applicationId);
-                tenantMetricUpdater.setApplications(applicationMapper.numApplications());
-                metrics.removeMetricUpdater(Metrics.createDimensions(applicationId));
-                log.log(Level.INFO, "Application removed: " + applicationId);
-            }
+        if (hasApplication(applicationId)) {
+            applicationMapper.remove(applicationId);
+            hostRegistry.removeHostsForKey(applicationId);
+            reloadListenersOnRemove(applicationId);
+            tenantMetricUpdater.setApplications(applicationMapper.numApplications());
+            metrics.removeMetricUpdater(Metrics.createDimensions(applicationId));
+            getRemoveApplicationWaiter(applicationId).notifyCompletion();
+            log.log(Level.INFO, "Application removed: " + applicationId);
         }
     }
 
@@ -277,7 +285,9 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     public void removeApplicationsExcept(Set<ApplicationId> applications) {
         for (ApplicationId activeApplication : applicationMapper.listApplicationIds()) {
             if ( ! applications.contains(activeApplication)) {
-                removeApplication(activeApplication);
+                try (var applicationLock = lock(activeApplication)){
+                    removeApplication(activeApplication);
+                }
             }
         }
     }
@@ -408,5 +418,28 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     }
 
     public TenantFileSystemDirs getTenantFileSystemDirs() { return tenantFileSystemDirs; }
+
+    public CompletionWaiter createRemoveApplicationWaiter(ApplicationId applicationId) {
+        Path barrierPath = getRemoveApplicationBarrierPath();
+        curator.create(barrierPath);
+        return curator.createCompletionWaiter(barrierPath,
+                                              removeApplicationWaiterNode(applicationId),
+                                              curator.zooKeeperEnsembleCount(),
+                                              configserverConfig.serverId());
+    }
+
+    public CompletionWaiter getRemoveApplicationWaiter(ApplicationId applicationId) {
+        return curator.getCompletionWaiter(getRemoveApplicationBarrierPath().append(removeApplicationWaiterNode(applicationId)),
+                                           curator.zooKeeperEnsembleCount(),
+                                           configserverConfig.serverId());
+    }
+
+    private Path getRemoveApplicationBarrierPath() {
+        return getBarriersPath().append(tenant.value());
+    }
+
+    private String removeApplicationWaiterNode(ApplicationId applicationId) {
+        return applicationId.serializedForm() + "-delete";
+    }
 
 }

@@ -89,6 +89,7 @@ public class TenantRepository {
 
     private static final Path tenantsPath = Path.fromString("/config/v2/tenants/");
     private static final Path locksPath = Path.fromString("/config/v2/locks/");
+    private static final Path barriersPath = Path.fromString("/config/v2/barriers/");
     private static final Path vespaPath = Path.fromString("/vespa");
     private static final Duration checkForRemovedApplicationsInterval = Duration.ofMinutes(1);
     private static final Logger log = Logger.getLogger(TenantRepository.class.getName());
@@ -199,6 +200,7 @@ public class TenantRepository {
 
         curator.create(tenantsPath);
         curator.create(locksPath);
+        curator.create(barriersPath);
         createSystemTenants(configserverConfig);
         curator.create(vespaPath);
 
@@ -594,6 +596,10 @@ public class TenantRepository {
      */
     public static Path getLocksPath(TenantName tenantName) {
         return locksPath.append(tenantName.value());
+    }
+
+    public static Path getBarriersPath() {
+        return barriersPath;
     }
 
     public Curator getCurator() { return curator; }
