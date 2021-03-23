@@ -29,6 +29,7 @@ import com.yahoo.vespa.clustercontroller.core.status.statuspage.StatusPageServer
 import com.yahoo.vespa.clustercontroller.utils.util.MetricReporter;
 
 import java.io.FileNotFoundException;
+import java.time.Instant;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -88,7 +89,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private final Queue<RemoteClusterControllerTask> remoteTasks = new LinkedList<>();
     private final MetricUpdater metricUpdater;
 
+    /** Whether this fleet controller has been elected as master. */
+    private boolean isElected = false;
+
+    /** Whether this fleet controller is functioning as a master: isElected and all prerequisites satisfied. */
     private boolean isMaster = false;
+
     private boolean isStateGatherer = false;
     private long firstAllowedStateBroadcast = Long.MAX_VALUE;
     private long tickStartTime = Long.MAX_VALUE;
@@ -395,7 +401,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
 
     private boolean maybePublishOldMetrics() {
         verifyInControllerThread();
-        if (isMaster() && cycleCount > 300 + lastMetricUpdateCycleCount) {
+        if (isMaster && cycleCount > 300 + lastMetricUpdateCycleCount) {
             ClusterStateBundle stateBundle = stateVersionTracker.getVersionedClusterStateBundle();
             ClusterState baselineState = stateBundle.getBaselineClusterState();
             metricUpdater.updateClusterStateMetrics(cluster, baselineState,
@@ -603,7 +609,6 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             didWork = database.doNextZooKeeperTask(databaseContext);
             didWork |= updateMasterElectionState();
             didWork |= handleLeadershipEdgeTransitions();
-            stateChangeHandler.setMaster(isMaster);
 
             if ( ! isRunning()) { return; }
             // Process zero or more getNodeState responses that we have received.
@@ -620,7 +625,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             if ( ! isRunning()) { return; }
             didWork |= systemStateBroadcaster.processResponses();
             if ( ! isRunning()) { return; }
-            if (isMaster) {
+            if (isElected) {
                 didWork |= broadcastClusterStateToEligibleNodes();
                 systemStateBroadcaster.checkIfClusterStateIsAckedByAllDistributors(database, databaseContext, this);
             }
@@ -712,11 +717,17 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         if ((currentTime >= firstAllowedStateBroadcast || cluster.allStatesReported())
             && currentTime >= nextStateSendTime)
         {
-            if (currentTime < firstAllowedStateBroadcast) {
-                log.log(Level.FINE, "Not set to broadcast states just yet, but as we have gotten info from all nodes we can do so safely.");
+            if (!isMaster) {
+                eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION,
+                        currentTime < firstAllowedStateBroadcast ?
+                                "Elected master fleet controller has been inaugurated: all nodes have reported in" :
+                                "Elected master fleet controller has been inaugurated: broadcast deadline expired",
+                        timer.getCurrentTimeInMillis()));
                 // Reset timer to only see warning once.
                 firstAllowedStateBroadcast = currentTime;
+                isMaster = true;
             }
+
             sentAny = systemStateBroadcaster.broadcastNewStateBundleIfRequired(
                     databaseContext, communicator, database.getLastKnownStateBundleVersionWrittenBySelf());
             if (sentAny) {
@@ -780,7 +791,16 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         context.cluster = cluster;
         context.currentConsolidatedState = consolidatedClusterState();
         context.publishedClusterStateBundle = stateVersionTracker.getVersionedClusterStateBundle();
-        context.masterInfo = masterElectionHandler;
+
+        // It is important to avoid mutating operations until this fleet controller is (an inaugurated) master,
+        // and not merely an elected master, since the fleet controller may have an incomplete picture of the cluster.
+        boolean isMasterCopy = isMaster;
+        Integer masterCopy = masterElectionHandler.getMaster();
+        context.masterInfo = new MasterInterface() {
+            @Override public boolean isMaster() { return isMasterCopy; }
+            @Override public Integer getMaster() { return masterCopy; }
+        };
+
         context.nodeStateOrHostInfoChangeHandler = this;
         context.nodeAddedOrRemovedListener = this;
         return context;
@@ -881,7 +901,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private boolean resyncLocallyCachedState() throws InterruptedException {
         boolean didWork = false;
         // Let non-master state gatherers update wanted states once in a while, so states generated and shown are close to valid.
-        if ( ! isMaster && cycleCount % 100 == 0) {
+        if ( ! isElected && cycleCount % 100 == 0) {
             didWork = database.loadWantedStates(databaseContext);
             didWork |= database.loadStartTimestamps(cluster);
         }
@@ -897,7 +917,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         didWork |= recomputeClusterStateIfRequired();
 
         if ( ! isStateGatherer) {
-            if ( ! isMaster) {
+            if ( ! isElected) {
                 eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION, "This node just became node state gatherer as we are fleetcontroller master candidate.", timer.getCurrentTimeInMillis()));
                 // Update versions to use so what is shown is closer to what is reality on the master
                 stateVersionTracker.setVersionRetrievedFromZooKeeper(database.getLatestSystemStateVersion());
@@ -1045,7 +1065,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private boolean atFirstClusterStateSendTimeEdge() {
         // We only care about triggering a state recomputation for the master, which is the only
         // one allowed to actually broadcast any states.
-        if (!isMaster || systemStateBroadcaster.hasBroadcastedClusterStateBundle()) {
+        if (!isElected || systemStateBroadcaster.hasBroadcastedClusterStateBundle()) {
             return false;
         }
         return hasPassedFirstStateBroadcastTimePoint(timer.getCurrentTimeInMillis());
@@ -1060,8 +1080,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private boolean handleLeadershipEdgeTransitions() throws InterruptedException {
         boolean didWork = false;
         if (masterElectionHandler.isMaster()) {
-            if ( ! isMaster) {
-                // If we just became master, restore state from ZooKeeper
+            if ( ! isElected) {
+                // If we just was elected, restore state from ZooKeeper
                 stateChangeHandler.setStateChangedFlag();
                 systemStateBroadcaster.resetBroadcastedClusterStateBundle();
 
@@ -1071,18 +1091,19 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 database.loadWantedStates(databaseContext);
                 // TODO determine if we need any specialized handling here if feed block is set in the loaded bundle
 
-                log.info(() -> String.format("Loaded previous cluster state bundle from ZooKeeper: %s", previousBundle));
+                log.info("Loaded previous cluster state bundle from ZooKeeper: " + previousBundle);
                 stateVersionTracker.setClusterStateBundleRetrievedFromZooKeeper(previousBundle);
 
-                eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION, "This node just became fleetcontroller master. Bumped version to "
-                        + stateVersionTracker.getCurrentVersion() + " to be in line.", timer.getCurrentTimeInMillis()));
                 long currentTime = timer.getCurrentTimeInMillis();
                 firstAllowedStateBroadcast = currentTime + options.minTimeBeforeFirstSystemStateBroadcast;
-                log.log(Level.FINE, "At time " + currentTime + " we set first system state broadcast time to be "
-                        + options.minTimeBeforeFirstSystemStateBroadcast + " ms after at time " + firstAllowedStateBroadcast + ".");
+                eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION,
+                        "This node has been elected fleet controller master. Bumped version to "
+                        + stateVersionTracker.getCurrentVersion() + " to be in line. "
+                        + "Broadcast deadline at " + Instant.ofEpochMilli(firstAllowedStateBroadcast) + ".",
+                        timer.getCurrentTimeInMillis()));
                 didWork = true;
             }
-            isMaster = true;
+            isElected = true;
             if (wantedStateChanged) {
                 database.saveWantedStates(databaseContext);
                 wantedStateChanged = false;
@@ -1090,17 +1111,19 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         } else {
             dropLeadershipState();
         }
+        stateChangeHandler.setMaster(isMaster);
         metricUpdater.updateMasterState(isMaster);
         return didWork;
     }
 
     private void dropLeadershipState() {
-        if (isMaster) {
-            eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION, "This node is no longer fleetcontroller master.", timer.getCurrentTimeInMillis()));
+        if (isElected) {
+            eventLog.add(new ClusterEvent(ClusterEvent.Type.MASTER_ELECTION, "This node is no longer elected fleetcontroller master.", timer.getCurrentTimeInMillis()));
             firstAllowedStateBroadcast = Long.MAX_VALUE;
             failAllVersionDependentTasks();
         }
         wantedStateChanged = false;
+        isElected = false;
         isMaster = false;
     }
 
