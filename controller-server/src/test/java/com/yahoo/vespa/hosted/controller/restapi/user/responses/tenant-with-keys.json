@@ -11,9 +11,11 @@
       "user": "developer@tenant"
     }],
   "secretStores": [],
-  "secretStore": {
-    "tenantRole": "my-tenant-tenant-role",
-    "stores": []
+  "integrations": {
+    "aws": {
+      "tenantRole": "my-tenant-tenant-role",
+      "accounts": []
+    }
   },
   "quota": {
     "budget": null,

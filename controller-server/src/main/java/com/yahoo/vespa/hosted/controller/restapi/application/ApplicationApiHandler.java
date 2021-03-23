@@ -1978,7 +1978,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 // TODO: remove this once console is updated
                 toSlime(object, cloudTenant.tenantSecretStores());
 
-                toSlime(object.setObject("secretStore"),
+                toSlime(object.setObject("integrations").setObject("aws"),
                         controller.serviceRegistry().roleService().getTenantRole(tenant.name()),
                         cloudTenant.tenantSecretStores());
 
@@ -2261,7 +2261,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private void toSlime(Cursor object, TenantRoles tenantRoles, List<TenantSecretStore> tenantSecretStores) {
         object.setString("tenantRole", tenantRoles.containerRole());
-        var stores = object.setArray("stores");
+        var stores = object.setArray("accounts");
         tenantSecretStores.forEach(secretStore -> {
             toSlime(stores.addObject(), secretStore);
         });
