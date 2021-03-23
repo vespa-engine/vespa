@@ -150,12 +150,14 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             inactiveConfigServerExpiry = Duration.ofMinutes(5);
             inactiveControllerExpiry = Duration.ofMinutes(5);
 
-            if (zone.environment()  == Environment.prod && ! zone.system().isCd()) {
+            if (zone.environment().isProduction() && ! zone.system().isCd()) {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
                 retiredInterval = Duration.ofMinutes(30);
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
             } else {
-                inactiveExpiry = Duration.ofSeconds(2); // support interactive wipe start over
+                // long enough that nodes aren't reused immediately and delete can happen on all config servers
+                // with time enough to clean up even with ZK connection issues on config servers
+                inactiveExpiry = Duration.ofMinutes(1);
                 retiredInterval = Duration.ofMinutes(1);
                 dirtyExpiry = Duration.ofMinutes(30);
             }
