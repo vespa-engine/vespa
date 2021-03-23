@@ -35,7 +35,7 @@ public class JSONLogTestCase {
                 .statusCode(200)
                 .timestamp(Instant.ofEpochMilli(920880005023L))
                 .duration(Duration.ofMillis(122))
-                .contentSize(9875)
+                .responseSize(9875)
                 .localPort(0)
                 .peerPort(0);
     }
@@ -50,6 +50,7 @@ public class JSONLogTestCase {
             "\"time\":920880005.023," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
+            "\"requestsize\":0," +
             "\"code\":200," +
             "\"method\":\"GET\"," +
             "\"uri\":\"?query=test\"," +
@@ -80,6 +81,7 @@ public class JSONLogTestCase {
                 "\"time\":920880005.023," +
                 "\"duration\":0.122," +
                 "\"responsesize\":9875," +
+                "\"requestsize\":0," +
                 "\"code\":200," +
                 "\"method\":\"GET\"," +
                 "\"uri\":\"?query=test\"," +
@@ -112,6 +114,7 @@ public class JSONLogTestCase {
             "\"time\":920880005.023," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
+            "\"requestsize\":0," +
             "\"code\":200," +
             "\"method\":\"GET\"," +
             "\"uri\":\"?query=test\"," +
@@ -146,6 +149,7 @@ public class JSONLogTestCase {
             "\"time\":920880005.023," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
+            "\"requestsize\":0," +
             "\"code\":200," +
             "\"method\":\"GET\"," +
             "\"uri\":\"?query=test\"," +
@@ -176,6 +180,7 @@ public class JSONLogTestCase {
             "\"time\":920880005.023," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
+            "\"requestsize\":0," +
             "\"code\":200," +
             "\"method\":\"GET\"," +
             "\"uri\":\"?query=test\"," +
@@ -220,7 +225,7 @@ public class JSONLogTestCase {
                 .statusCode(200)
                 .timestamp(Instant.ofEpochMilli(920880005023L))
                 .duration(Duration.ofMillis(122))
-                .contentSize(9875)
+                .responseSize(9875)
                 .localPort(0)
                 .peerPort(0)
                 .build();
@@ -231,6 +236,7 @@ public class JSONLogTestCase {
             "\"time\":920880005.023," +
             "\"duration\":0.122," +
             "\"responsesize\":9875," +
+            "\"requestsize\":0," +
             "\"code\":200," +
             "\"method\":\"GET\"," +
             "\"uri\":\"?query=test\"," +
@@ -256,6 +262,7 @@ public class JSONLogTestCase {
                 "\"time\":920880005.023," +
                 "\"duration\":0.122," +
                 "\"responsesize\":9875," +
+                "\"requestsize\":0," +
                 "\"code\":200," +
                 "\"method\":\"GET\"," +
                 "\"uri\":\"?query=test\"," +

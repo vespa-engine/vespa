@@ -64,7 +64,8 @@ class AccessLogRequestLog extends AbstractLifeCycle implements org.eclipse.jetty
                     .localPort(getLocalPort(request))
                     .timestamp(Instant.ofEpochMilli(startTime))
                     .duration(Duration.ofMillis(Math.max(0, endTime - startTime)))
-                    .contentSize(response.getHttpChannel().getBytesWritten())
+                    .responseSize(response.getHttpChannel().getBytesWritten())
+                    .requestSize(request.getHttpInput().getContentReceived())
                     .statusCode(response.getCommittedMetaData().getStatus());
 
             addNonNullValue(builder, request.getMethod(), RequestLogEntry.Builder::httpMethod);
