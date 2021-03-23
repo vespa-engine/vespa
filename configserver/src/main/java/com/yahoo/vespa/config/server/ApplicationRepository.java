@@ -532,7 +532,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             } else {
                 transaction.commit();
             }
-            waitForApplicationRemoved(tenantApplications, applicationId);
             return true;
         } finally {
             applicationTransaction.ifPresent(ApplicationTransaction::close);
@@ -589,21 +588,6 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             });
         }
         return fileReferencesToDelete;
-    }
-
-    private void waitForApplicationRemoved(TenantApplications applications, ApplicationId applicationId) {
-        log.log(Level.FINE, "Waiting for " + applicationId + " to be deleted");
-        Duration duration = Duration.ofSeconds(30);
-        Instant end = Instant.now().plus(duration);
-        do {
-            if ( ! (applications.hasApplication(applicationId)))
-                return;
-            log.log(Level.FINE, "Application " + applicationId + " not deleted yet, will retry");
-            try {
-                Thread.sleep(100);
-            } catch (InterruptedException interruptedException) {/* ignore */}
-        } while (Instant.now().isBefore(end));
-        log.log(Level.INFO, "Application " + applicationId + " not deleted after " + duration + ", giving up");
     }
 
     private Set<String> getFileReferencesInUse() {
