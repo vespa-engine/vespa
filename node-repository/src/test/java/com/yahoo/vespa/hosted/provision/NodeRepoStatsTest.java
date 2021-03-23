@@ -2,15 +2,24 @@
 package com.yahoo.vespa.hosted.provision;
 
 import com.yahoo.collections.Pair;
+import com.yahoo.component.Version;
+import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeResources;
+import com.yahoo.config.provision.RegionName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
+import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.util.List;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
 
 /**
  * @author bratseth
@@ -24,6 +33,7 @@ public class NodeRepoStatsTest {
         var tester = new NodeRepositoryTester();
         assertLoad(Load.zero(), tester.nodeRepository().computeStats().load());
         assertLoad(Load.zero(), tester.nodeRepository().computeStats().activeLoad());
+        assertTrue(tester.nodeRepository().computeStats().applicationStats().isEmpty());
     }
 
     @Test
@@ -34,33 +44,83 @@ public class NodeRepoStatsTest {
         tester.addHost("host3", "small");
         assertLoad(Load.zero(), tester.nodeRepository().computeStats().load());
         assertLoad(Load.zero(), tester.nodeRepository().computeStats().activeLoad());
+        assertTrue(tester.nodeRepository().computeStats().applicationStats().isEmpty());
     }
 
     @Test
-    public void testNodesAndMetrics() {
-        var tester = new NodeRepositoryTester();
-        tester.addHost("host1", "default");
-        tester.addHost("host2", "default");
-        tester.addHost("host3", "small");
-        tester.addNode("node1", "host1", new NodeResources(0.2, 0.5, 4, 1));
-        tester.addNode("node2", "host1", new NodeResources(0.3, 1.0, 8, 1));
-        tester.addNode("node3", "host3", new NodeResources(0.3, 1.5, 12, 1));
-        tester.setNodeState("node1", Node.State.active);
-        tester.setNodeState("node2", Node.State.active);
-        tester.setNodeState("node3", Node.State.active);
-        assertLoad(Load.zero(), tester.nodeRepository().computeStats().load());
-        assertLoad(Load.zero(), tester.nodeRepository().computeStats().activeLoad());
+    public void testStats() {
+        var hostResources = new NodeResources(10, 100, 1000, 10,
+                                              NodeResources.DiskSpeed.fast, NodeResources.StorageType.local);
 
-        var before = tester.clock().instant();
-        tester.clock().advance(Duration.ofMinutes(5));
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+        tester.makeReadyHosts(10, hostResources).activateTenantHosts();
+
+        var app1 = ProvisioningTester.applicationId("app1");
+        var app2 = ProvisioningTester.applicationId("app2");
+        var app3 = ProvisioningTester.applicationId("app3");
+        var cluster1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("cluster1")).vespaVersion(Version.fromString("7")).build();
+        var cluster2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("cluster2")).vespaVersion(Version.fromString("7")).build();
+        var small = new NodeResources(1, 10, 100, 1, NodeResources.DiskSpeed.any);
+        var large = new NodeResources(2, 20, 200, 1);
+
+        // Deploy apps
+        var hostsApp1 = tester.prepare(app1, cluster1, Capacity.from(new ClusterResources(6, 1, small)));
+        hostsApp1.addAll(tester.prepare(app1, cluster2, Capacity.from(new ClusterResources(4, 1, large))));
+        tester.activate(app1, hostsApp1);
+        tester.activate(app2, cluster1, Capacity.from(new ClusterResources(8, 1, small)));
+        tester.activate(app3, cluster1, Capacity.from(new ClusterResources(5, 1, large)));
+
+        // Add metrics
+        double loadApp1Cluster1 = 0.2;
+        double loadApp1Cluster2 = 0.3;
+        double loadApp2 = 0.4;
+        double loadApp3 = 0.5;
         var now = tester.clock().instant();
-        tester.nodeRepository().metricsDb().addNodeMetrics(
-                List.of(new Pair<>("node1", new NodeMetricSnapshot(before, 0, 0, 0, 1,  true, true, 1.0)),
-                        new Pair<>("node1", new NodeMetricSnapshot(now, 0.5, 0.1, 0.8, 1,  true, true, 1.0)),
-                        new Pair<>("node2", new NodeMetricSnapshot(now, 0.1, 0.8, 0.1, 1,  true, true, 1.0)),
-                        new Pair<>("node3", new NodeMetricSnapshot(now, 1.0, 0.1, 0.2, 1,  true, true, 1.0))));
-        assertLoad(new Load(0.0860, 0.1000, 0.0256), tester.nodeRepository().computeStats().load());
-        assertLoad(new Load(0.5375, 0.3333, 0.2667), tester.nodeRepository().computeStats().activeLoad());
+        for (Node node : tester.nodeRepository().nodes().list(Node.State.active)) {
+            double loadFactor;
+            var allocation = node.allocation().get();
+            if (allocation.owner().equals(app1)) {
+                if (allocation.membership().cluster().id().equals(cluster1.id()))
+                    loadFactor = loadApp1Cluster1;
+                else
+                    loadFactor = loadApp1Cluster2;
+            }
+            else if (allocation.owner().equals(app2)) {
+                loadFactor = loadApp2;
+            }
+            else {
+                loadFactor = loadApp3;
+            }
+            var snapshot = new NodeMetricSnapshot(now, 1.0 * loadFactor, 0.9 * loadFactor, 0.8 * loadFactor, 1, true, true, 1.0 );
+            tester.nodeRepository().metricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(), snapshot)));
+        }
+
+        var stats = tester.nodeRepository().computeStats();
+
+        assertLoad(new Load(0.6180,0.5562,0.4944), stats.load());
+        assertLoad(new Load(0.4682,0.4214,0.3745), stats.activeLoad());
+
+        var app1Stats = stats.applicationStats().get(0);
+        var app2Stats = stats.applicationStats().get(2);
+        var app3Stats = stats.applicationStats().get(1);
+
+        assertEquals(app1, app1Stats.id());
+        assertEquals(2.940, app1Stats.cost(), delta);
+        assertEquals(0.702, app1Stats.utilizedCost(), delta);
+        assertEquals(2.238, app1Stats.unutilizedCost(), delta);
+        assertLoad(new Load(0.2571, 0.2314, 0.2057), app1Stats.load());
+
+        assertEquals(app2, app2Stats.id());
+        assertEquals(1.680, app2Stats.cost(), delta);
+        assertEquals(0.624, app2Stats.utilizedCost(), delta);
+        assertEquals(1.056, app2Stats.unutilizedCost(), delta);
+        assertLoad(new Load(.40, 0.36, 0.32), app2Stats.load());
+
+        assertEquals(app3, app3Stats.id());
+        assertEquals(2.100, app3Stats.cost(), delta);
+        assertEquals(0.975, app3Stats.utilizedCost(), delta);
+        assertEquals(1.125, app3Stats.unutilizedCost(), delta);
+        assertLoad(new Load(0.5, 0.45, 0.40), app3Stats.load());
     }
 
     private static void assertLoad(Load expected, Load actual) {
