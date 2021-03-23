@@ -12,10 +12,10 @@
 #include "pendingmessagetracker.h"
 #include "statusreporterdelegate.h"
 #include <vespa/config/config.h>
+#include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/messagesender.h>
 #include <vespa/storage/distributor/bucketdb/bucketdbmetricupdater.h>
-#include <vespa/storage/distributor/distributor_stripe_component.h>
 #include <vespa/storage/distributor/maintenance/maintenancescheduler.h>
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
@@ -41,14 +41,13 @@ class OwnershipTransferSafeTimePointCalculator;
 class SimpleMaintenanceScanner;
 class ThrottlingOperationStarter;
 
-class Distributor : public StorageLink,
-                    public DistributorStripeInterface,
-                    public StatusDelegator,
-                    public framework::StatusReporter,
-                    public framework::TickingThread,
-                    public MinReplicaProvider,
-                    public BucketSpacesStatsProvider,
-                    public NonTrackingMessageSender
+class Distributor final
+    : public StorageLink,
+      public StatusDelegator,
+      public framework::StatusReporter,
+      public framework::TickingThread,
+      public MinReplicaProvider,
+      public BucketSpacesStatsProvider
 {
 public:
     Distributor(DistributorComponentRegister&,
@@ -61,7 +60,7 @@ public:
 
     ~Distributor() override;
 
-    const ClusterContext& cluster_context() const override {
+    const ClusterContext& cluster_context() const {
         return _component.cluster_context();
     }
     void onOpen() override;
@@ -69,40 +68,18 @@ public:
     bool onDown(const std::shared_ptr<api::StorageMessage>&) override;
     void sendUp(const std::shared_ptr<api::StorageMessage>&) override;
     void sendDown(const std::shared_ptr<api::StorageMessage>&) override;
-    // Bypasses message tracker component. Thread safe.
-    void send_up_without_tracking(const std::shared_ptr<api::StorageMessage>&) override;
 
-    ChainedMessageSender& getMessageSender() override {
-        abort(); // TODO STRIPE
-    }
-
-    DistributorMetricSet& getMetrics() override { return *_metrics; }
-
-    const OperationSequencer& operation_sequencer() const noexcept override {
-        abort(); // TODO STRIPE
-    }
-
-    const lib::ClusterState* pendingClusterStateOrNull(const document::BucketSpace&) const override;
+    DistributorMetricSet& getMetrics() { return *_metrics; }
 
     /**
      * Enables a new cluster state. Called after the bucket db updater has
      * retrieved all bucket info related to the change.
      */
-    void enableClusterStateBundle(const lib::ClusterStateBundle& clusterStateBundle) override;
-
-    /**
-     * Invoked when a pending cluster state for a distribution (config)
-     * change has been enabled. An invocation of storageDistributionChanged
-     * will eventually cause this method to be called, assuming the pending
-     * cluster state completed successfully.
-     */
-    void notifyDistributionChangeEnabled() override;
+    void enableClusterStateBundle(const lib::ClusterStateBundle& clusterStateBundle);
 
     void storageDistributionChanged() override;
 
-    void recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket) override;
-
-    bool handleReply(const std::shared_ptr<api::StorageReply>& reply) override;
+    bool handleReply(const std::shared_ptr<api::StorageReply>& reply);
 
     // StatusReporter implementation
     vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
@@ -115,40 +92,13 @@ public:
     virtual framework::ThreadWaitInfo doCriticalTick(framework::ThreadIndex) override;
     virtual framework::ThreadWaitInfo doNonCriticalTick(framework::ThreadIndex) override;
 
-    /**
-     * Checks whether a bucket needs to be split, and sends a split
-     * if so.
-     */
-    void checkBucketForSplit(document::BucketSpace bucketSpace,
-                             const BucketDatabase::Entry& e,
-                             uint8_t priority) override;
-
-    const lib::ClusterStateBundle& getClusterStateBundle() const override;
-
-    /**
-     * @return Returns the states in which the distributors consider
-     * storage nodes to be up.
-     */
-    const char* getStorageNodeUpStates() const override {
-        return "uri";
-    }
-
-    /**
-     * Called by bucket db updater after a merge has finished, and all the
-     * request bucket info operations have been performed as well. Passes the
-     * merge back to the operation that created it.
-     */
-    void handleCompletedMerge(const std::shared_ptr<api::MergeBucketReply>& reply) override;
-
-    bool initializing() const override;
-    
-    const DistributorConfiguration& getConfig() const override;
+    const lib::ClusterStateBundle& getClusterStateBundle() const;
+    const DistributorConfiguration& getConfig() const;
 
     bool isInRecoveryMode() const noexcept;
 
-    int getDistributorIndex() const override;
-    PendingMessageTracker& getPendingMessageTracker() override;
-    const PendingMessageTracker& getPendingMessageTracker() const override;
+    PendingMessageTracker& getPendingMessageTracker();
+    const PendingMessageTracker& getPendingMessageTracker() const;
 
     DistributorBucketSpaceRepo& getBucketSpaceRepo() noexcept;
     const DistributorBucketSpaceRepo& getBucketSpaceRepo() const noexcept;
@@ -156,16 +106,6 @@ public:
     const DistributorBucketSpaceRepo& getReadyOnlyBucketSpaceRepo() const noexcept;
 
     storage::distributor::DistributorStripeComponent& distributor_component() noexcept;
-
-    void sendCommand(const std::shared_ptr<api::StorageCommand>&) override;
-    void sendReply(const std::shared_ptr<api::StorageReply>&) override;
-
-    const BucketGcTimeCalculator::BucketIdHasher&
-    getBucketIdHasher() const override {
-        abort(); // TODO STRIPE
-    }
-
-    OperationRoutingSnapshot read_snapshot_for_bucket(const document::Bucket&) const override;
 
     class MetricUpdateHook : public framework::MetricUpdateHook
     {
@@ -193,12 +133,6 @@ private:
 
     void setNodeStateUp();
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);
-    bool isMaintenanceReply(const api::StorageReply& reply) const;
-
-    void handleStatusRequests();
-    void send_shutdown_abort_reply(const std::shared_ptr<api::StorageMessage>&);
-    void handle_or_propagate_message(const std::shared_ptr<api::StorageMessage>& msg);
-    void startExternalOperations();
 
     // Accessors used by tests
     BucketDBUpdater& bucket_db_updater();
@@ -223,39 +157,21 @@ private:
      * Takes metric lock.
      */
     void propagateInternalScanMetricsToExternal();
-    void maybe_update_bucket_db_memory_usage_stats();
     void scanAllBuckets();
     void enableNextConfig();
-    void signalWorkWasDone();
-    bool workWasDone() const noexcept;
-
     void enableNextDistribution();
     void propagateDefaultDistribution(std::shared_ptr<const lib::Distribution>);
-    void propagateClusterStates();
 
     std::shared_ptr<DistributorMetricSet> _metrics;
-    ChainedMessageSender* _messageSender;
+    ChainedMessageSender*                 _messageSender;
     // TODO STRIPE multiple stripes...! This is for proof of concept of wiring.
-    std::unique_ptr<DistributorStripe> _stripe;
-
-    std::unique_ptr<DistributorBucketSpaceRepo> _bucketSpaceRepo;
-    // Read-only bucket space repo with DBs that only contain buckets transiently
-    // during cluster state transitions. Bucket set does not overlap that of _bucketSpaceRepo
-    // and the DBs are empty during non-transition phases.
-    std::unique_ptr<DistributorBucketSpaceRepo> _readOnlyBucketSpaceRepo;
-    storage::distributor::DistributorStripeComponent _component;
-
-    StatusReporterDelegate _distributorStatusDelegate;
-
-    framework::TickingThreadPool& _threadPool;
-
-    mutable std::vector<std::shared_ptr<DistributorStatus>> _statusToDo;
-    mutable std::vector<std::shared_ptr<DistributorStatus>> _fetchedStatusRequests;
-
-    framework::ThreadWaitInfo _tickResult;
-    MetricUpdateHook _metricUpdateHook;
-    mutable std::mutex _metricLock;
-    DistributorHostInfoReporter _hostInfoReporter;
+    std::unique_ptr<DistributorStripe>   _stripe;
+    storage::DistributorComponent        _component;
+    StatusReporterDelegate               _distributorStatusDelegate;
+    framework::TickingThreadPool&        _threadPool;
+    framework::ThreadWaitInfo            _tickResult;
+    MetricUpdateHook                     _metricUpdateHook;
+    DistributorHostInfoReporter          _hostInfoReporter;
 };
 
 }

@@ -46,22 +46,16 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
                          HostInfo& hostInfoReporterRegistrar,
                          ChainedMessageSender* messageSender)
     : StorageLink("distributor"),
-      DistributorStripeInterface(),
       framework::StatusReporter("distributor", "Distributor"),
       _metrics(std::make_shared<DistributorMetricSet>()),
       _messageSender(messageSender),
       _stripe(std::make_unique<DistributorStripe>(compReg, *_metrics, node_identity, threadPool, doneInitHandler,
                                                   manageActiveBucketCopies, *this)),
-      // TODO STRIPE remove once DistributorStripeComponent no longer references bucket space repos
-      _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
-      _readOnlyBucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
-      // TODO STRIPE slim down
-      _component(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, compReg, "distributor"),
+      _component(compReg, "distributor"),
       _distributorStatusDelegate(compReg, *this, *this),
       _threadPool(threadPool),
       _tickResult(framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN),
       _metricUpdateHook(*this),
-      _metricLock(),
       _hostInfoReporter(*this, *this)
 {
     _component.registerMetric(*_metrics);
@@ -80,11 +74,6 @@ Distributor::~Distributor()
 bool
 Distributor::isInRecoveryMode() const noexcept {
     return _stripe->isInRecoveryMode();
-}
-
-int
-Distributor::getDistributorIndex() const {
-    return _component.getIndex();
 }
 
 const PendingMessageTracker&
@@ -169,27 +158,6 @@ Distributor::db_memory_sample_interval() const noexcept {
     return _stripe->db_memory_sample_interval();
 }
 
-bool Distributor::initializing() const {
-    return _stripe->initializing();
-}
-
-const lib::ClusterState*
-Distributor::pendingClusterStateOrNull(const document::BucketSpace& space) const {
-    return bucket_db_updater().pendingClusterStateOrNull(space);
-}
-
-void
-Distributor::sendCommand(const std::shared_ptr<api::StorageCommand>&)
-{
-    assert(false); // TODO STRIPE
-}
-
-void
-Distributor::sendReply(const std::shared_ptr<api::StorageReply>&)
-{
-    assert(false); // TODO STRIPE
-}
-
 void
 Distributor::setNodeStateUp()
 {
@@ -217,20 +185,9 @@ Distributor::onOpen()
     }
 }
 
-void Distributor::send_shutdown_abort_reply(const std::shared_ptr<api::StorageMessage>& msg) {
-    api::StorageReply::UP reply(
-            std::dynamic_pointer_cast<api::StorageCommand>(msg)->makeReply());
-    reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Distributor is shutting down"));
-    sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
-}
-
 void Distributor::onClose() {
     LOG(debug, "Distributor::onClose invoked");
     _stripe->close();
-}
-
-void Distributor::send_up_without_tracking(const std::shared_ptr<api::StorageMessage>&) {
-    assert(false);
 }
 
 void
@@ -259,19 +216,6 @@ Distributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     return _stripe->onDown(msg);
 }
 
-void
-Distributor::handleCompletedMerge(
-        const std::shared_ptr<api::MergeBucketReply>&)
-{
-    assert(false);
-}
-
-bool
-Distributor::isMaintenanceReply(const api::StorageReply&) const
-{
-    assert(false);
-}
-
 bool
 Distributor::handleReply(const std::shared_ptr<api::StorageReply>& reply)
 {
@@ -298,58 +242,11 @@ Distributor::enableClusterStateBundle(const lib::ClusterStateBundle& state)
     _stripe->enableClusterStateBundle(state);
 }
 
-OperationRoutingSnapshot Distributor::read_snapshot_for_bucket(const document::Bucket&) const {
-    abort();
-}
-
-void
-Distributor::notifyDistributionChangeEnabled()
-{
-    _stripe->notifyDistributionChangeEnabled();
-}
-
 void
 Distributor::storageDistributionChanged()
 {
     // May happen from any thread.
     _stripe->storageDistributionChanged();
-}
-
-void
-Distributor::recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket) {
-    bucket_db_updater().recheckBucketInfo(nodeIdx, bucket);
-}
-
-namespace {
-
-class SplitChecker : public PendingMessageTracker::Checker
-{
-public:
-    bool found;
-    uint8_t maxPri;
-
-    SplitChecker(uint8_t maxP) : found(false), maxPri(maxP) {};
-
-    bool check(uint32_t msgType, uint16_t node, uint8_t pri) override {
-        (void) node;
-        (void) pri;
-        if (msgType == api::MessageType::SPLITBUCKET_ID && pri <= maxPri) {
-            found = true;
-            return false;
-        }
-
-        return true;
-    }
-};
-
-}
-
-void
-Distributor::checkBucketForSplit(document::BucketSpace,
-                                 const BucketDatabase::Entry&,
-                                 uint8_t)
-{
-    assert(false);
 }
 
 void
@@ -364,24 +261,6 @@ Distributor::propagateDefaultDistribution(
         std::shared_ptr<const lib::Distribution> distribution)
 {
     _stripe->propagateDefaultDistribution(std::move(distribution));
-}
-
-void
-Distributor::propagateClusterStates()
-{
-    assert(false);
-}
-
-void
-Distributor::signalWorkWasDone()
-{
-    _tickResult = framework::ThreadWaitInfo::MORE_WORK_ENQUEUED;
-}
-
-bool
-Distributor::workWasDone() const noexcept
-{
-    return !_tickResult.waitWanted();
 }
 
 std::unordered_map<uint16_t, uint32_t>
@@ -408,10 +287,6 @@ void
 Distributor::propagateInternalScanMetricsToExternal()
 {
     _stripe->propagateInternalScanMetricsToExternal();
-}
-
-void Distributor::maybe_update_bucket_db_memory_usage_stats() {
-    assert(false);
 }
 
 void
@@ -445,12 +320,6 @@ Distributor::enableNextConfig()
 {
     _hostInfoReporter.enableReporting(getConfig().getEnableHostInfoReporting());
     _stripe->enableNextConfig(); // TODO STRIPE avoid redundant call
-}
-
-void
-Distributor::handleStatusRequests()
-{
-    assert(false);
 }
 
 vespalib::string
