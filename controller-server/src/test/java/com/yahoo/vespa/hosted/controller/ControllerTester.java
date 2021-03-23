@@ -214,7 +214,7 @@ public final class ControllerTester {
 
     /** Upgrade system applications in all zones to given version */
     public void upgradeSystemApplications(Version version) {
-        upgradeSystemApplications(version, SystemApplication.all());
+        upgradeSystemApplications(version, SystemApplication.notController());
     }
 
     /** Upgrade given system applications in all zones to version */

@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ServiceCon
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 
 import java.util.Arrays;
+import java.util.EnumSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -22,6 +23,7 @@ import java.util.Optional;
  */
 public enum SystemApplication {
 
+    controllerHost(ApplicationId.from("hosted-vespa", "controller-host", "default"), NodeType.controllerhost),
     configServerHost(ApplicationId.from("hosted-vespa", "configserver-host", "default"), NodeType.confighost),
     configServer(ApplicationId.from("hosted-vespa", "zone-config-servers", "default"), NodeType.config),
     proxyHost(ApplicationId.from("hosted-vespa", "proxy-host", "default"), NodeType.proxyhost),
@@ -81,7 +83,12 @@ public enum SystemApplication {
         return Optional.of(Endpoint.of(this, zone, zoneRegistry.getConfigServerVipUri(zone)));
     }
 
-    /** All known system applications */
+    /** All system applications that are not the controller */
+    public static List<SystemApplication> notController() {
+        return List.copyOf(EnumSet.complementOf(EnumSet.of(SystemApplication.controllerHost)));
+    }
+
+    /** All system applications */
     public static List<SystemApplication> all() {
         return List.of(values());
     }

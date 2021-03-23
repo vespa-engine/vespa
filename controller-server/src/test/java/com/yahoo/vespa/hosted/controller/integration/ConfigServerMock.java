@@ -12,7 +12,6 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
-import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.json.FlagData;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
@@ -101,7 +100,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
 
     @Inject
     public ConfigServerMock(ZoneRegistryMock zoneRegistry) {
-        bootstrap(zoneRegistry.zones().all().ids(), SystemApplication.all());
+        bootstrap(zoneRegistry.zones().all().ids(), SystemApplication.notController());
     }
 
     /** Sets the ConfigChangeActions that will be returned on next deployment. */

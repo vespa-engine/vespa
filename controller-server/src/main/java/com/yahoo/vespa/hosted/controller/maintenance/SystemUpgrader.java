@@ -26,7 +26,7 @@ public class SystemUpgrader extends InfrastructureUpgrader<Version> {
     private static final Set<Node.State> upgradableNodeStates = Set.of(Node.State.active, Node.State.reserved);
 
     public SystemUpgrader(Controller controller, Duration interval) {
-        super(controller, interval, controller.zoneRegistry().upgradePolicy(), null);
+        super(controller, interval, controller.zoneRegistry().upgradePolicy(), SystemApplication.notController(), null);
     }
 
     @Override

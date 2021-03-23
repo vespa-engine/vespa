@@ -14,6 +14,7 @@ import java.time.Duration;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Logger;
@@ -28,15 +29,18 @@ public abstract class InfrastructureUpgrader<VERSION> extends ControllerMaintain
     private static final Logger log = Logger.getLogger(InfrastructureUpgrader.class.getName());
 
     protected final UpgradePolicy upgradePolicy;
+    private final List<SystemApplication> managedApplications;
 
-    public InfrastructureUpgrader(Controller controller, Duration interval, UpgradePolicy upgradePolicy, String name) {
+    public InfrastructureUpgrader(Controller controller, Duration interval, UpgradePolicy upgradePolicy,
+                                  List<SystemApplication> managedApplications, String name) {
         super(controller, interval, name, EnumSet.allOf(SystemName.class));
         this.upgradePolicy = upgradePolicy;
+        this.managedApplications = List.copyOf(Objects.requireNonNull(managedApplications));
     }
 
     @Override
     protected boolean maintain() {
-        targetVersion().ifPresent(target -> upgradeAll(target, SystemApplication.all()));
+        targetVersion().ifPresent(target -> upgradeAll(target, managedApplications));
         return true;
     }
 
