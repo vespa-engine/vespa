@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "onnx_wrapper.h"
+#include <vespa/eval/eval/cell_type.h>
 #include <vespa/eval/eval/dense_cells_value.h>
 #include <vespa/eval/eval/value_type.h>
 #include <vespa/vespalib/util/arrayref.h>
@@ -20,6 +21,14 @@ using vespalib::ArrayRef;
 using vespalib::ConstArrayRef;
 
 using vespalib::make_string_short::fmt;
+
+// as documented in onnxruntime_cxx_api.h :
+namespace Ort {
+template <>
+struct TypeToTensorType<vespalib::BFloat16> { static constexpr ONNXTensorElementDataType type = ONNX_TENSOR_ELEMENT_DATA_TYPE_BFLOAT16; };
+template <>
+struct TypeToTensorType<vespalib::eval::Int8Float> { static constexpr ONNXTensorElementDataType type = ONNX_TENSOR_ELEMENT_DATA_TYPE_INT8; };
+}
 
 namespace vespalib::eval {
 
