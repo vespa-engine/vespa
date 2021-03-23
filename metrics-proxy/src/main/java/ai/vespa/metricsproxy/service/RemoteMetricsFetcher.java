@@ -22,14 +22,11 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
      * Connect to remote service over http and fetch metrics
      */
     public Metrics getMetrics(int fetchCount) {
-        String data = "{}";
         try {
-            data = getJson();
+            return createMetrics(getJson(), fetchCount);
         } catch (IOException e) {
-            logMessageNoResponse(errMsgNoResponse(e), fetchCount);
+            return new Metrics();
         }
-
-        return createMetrics(data, fetchCount);
     }
 
     Metrics createMetrics(String data, int fetchCount) {
