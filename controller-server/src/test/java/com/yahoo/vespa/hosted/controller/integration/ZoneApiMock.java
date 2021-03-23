@@ -14,18 +14,24 @@ import java.util.Objects;
  * @author hakonhall
  */
 public class ZoneApiMock implements ZoneApi {
+
     private final SystemName systemName;
     private final ZoneId id;
+    private final ZoneId virtualId;
     private final CloudName cloudName;
     private final String cloudNativeRegionName;
 
     public static Builder newBuilder() { return new Builder(); }
 
-    private ZoneApiMock(SystemName systemName, ZoneId id, CloudName cloudName, String cloudNativeRegionName) {
+    private ZoneApiMock(SystemName systemName, ZoneId id, ZoneId virtualId, CloudName cloudName, String cloudNativeRegionName) {
         this.systemName = systemName;
         this.id = id;
+        this.virtualId = virtualId;
         this.cloudName = cloudName;
         this.cloudNativeRegionName = cloudNativeRegionName;
+        if (virtualId != null && virtualId.equals(id)) {
+            throw new IllegalArgumentException("Virtual ID cannot be equal to zone ID: " + id);
+        }
     }
 
     public static ZoneApiMock fromId(String id) {
@@ -47,6 +53,11 @@ public class ZoneApiMock implements ZoneApi {
     public ZoneId getId() { return id; }
 
     @Override
+    public ZoneId getVirtualId() {
+        return virtualId == null ? getId() : virtualId;
+    }
+
+    @Override
     public CloudName getCloudName() { return cloudName; }
 
     @Override
@@ -66,8 +77,11 @@ public class ZoneApiMock implements ZoneApi {
     }
 
     public static class Builder {
+
         private final SystemName systemName = SystemName.defaultSystem();
+
         private ZoneId id = ZoneId.defaultId();
+        private ZoneId virtualId ;
         private CloudName cloudName = CloudName.defaultName();
         private String cloudNativeRegionName = id.region().value();
 
@@ -77,6 +91,15 @@ public class ZoneApiMock implements ZoneApi {
         }
 
         public Builder withId(String id) { return with(ZoneId.from(id)); }
+
+        public Builder withVirtualId(ZoneId virtualId) {
+            this.virtualId = virtualId;
+            return this;
+        }
+
+        public Builder withVirtualId(String virtualId) {
+            return withVirtualId(ZoneId.from(virtualId));
+        }
 
         public Builder with(CloudName cloudName) {
             this.cloudName = cloudName;
@@ -91,7 +114,8 @@ public class ZoneApiMock implements ZoneApi {
         }
 
         public ZoneApiMock build() {
-            return new ZoneApiMock(systemName, id, cloudName, cloudNativeRegionName);
+            return new ZoneApiMock(systemName, id, virtualId, cloudName, cloudNativeRegionName);
         }
     }
+
 }

@@ -37,7 +37,7 @@ public class OsUpgraderTest {
     public void upgrade_os() {
         CloudName cloud1 = CloudName.from("c1");
         CloudName cloud2 = CloudName.from("c2");
-        ZoneApi zone0 = zone("prod.controller", cloud1);
+        ZoneApi zone0 = zone("prod.us-north-42", "prod.controller", cloud1);
         ZoneApi zone1 = zone("prod.eu-west-1", cloud1);
         ZoneApi zone2 = zone("prod.us-west-1", cloud1);
         ZoneApi zone3 = zone("prod.us-central-1", cloud1);
@@ -54,7 +54,7 @@ public class OsUpgraderTest {
         // Bootstrap system
         tester.configServer().bootstrap(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId(), zone5.getId()),
                                         List.of(SystemApplication.tenantHost));
-        tester.configServer().addNodes(List.of(zone0.getId()), List.of(SystemApplication.controllerHost));
+        tester.configServer().addNodes(List.of(zone0.getVirtualId()), List.of(SystemApplication.controllerHost));
 
         // Add system application that exists in a real system, but isn't eligible for OS upgrades
         tester.configServer().addNodes(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId(), zone5.getId()),
@@ -73,8 +73,8 @@ public class OsUpgraderTest {
 
         // zone 0: controllers upgrade first
         osUpgrader.maintain();
-        assertWanted(version1, SystemApplication.controllerHost, zone0.getId());
-        completeUpgrade(version1, SystemApplication.controllerHost, zone0.getId());
+        assertWanted(version1, SystemApplication.controllerHost, zone0.getVirtualId());
+        completeUpgrade(version1, SystemApplication.controllerHost, zone0.getVirtualId());
         statusUpdater.maintain();
         assertEquals(3, nodesOn(version1).size());
 
@@ -302,6 +302,10 @@ public class OsUpgraderTest {
 
     private static ZoneApi zone(String id, CloudName cloud) {
         return ZoneApiMock.newBuilder().withId(id).with(cloud).build();
+    }
+
+    private static ZoneApi zone(String id, String virtualId, CloudName cloud) {
+        return ZoneApiMock.newBuilder().withId(id).withVirtualId(virtualId).with(cloud).build();
     }
 
 }
