@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeMemb
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
+import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeType;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.intellij.lang.annotations.Language;
@@ -50,20 +51,20 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
 
     private List<NodeRepositoryNode> createNodes() {
         List<NodeRepositoryNode> nodes = new ArrayList<>();
-        nodes.add(createNode("node1", "host1", "myapp", "default", 0 ));
-        nodes.add(createNode("node2", "host1", "myapp", "default", 0 ));
-        nodes.add(createNode("node3", "host1", "myapp", "default", 0 ));
-        nodes.add(createNode("node4", "host2", "myapp", "default", 0 ));
+        nodes.add(createNode("node1", "host1", "default", 0 ));
+        nodes.add(createNode("node2", "host1", "default", 0 ));
+        nodes.add(createNode("node3", "host1", "default", 0 ));
+        nodes.add(createNode("node4", "host2", "default", 0 ));
         nodes.add(createHost("host1", "switch1"));
         nodes.add(createHost("host2", "switch2"));
         return nodes;
     }
 
-    private NodeOwner createOwner(String tenant, String application, String instance) {
+    private NodeOwner createOwner() {
         NodeOwner owner = new NodeOwner();
-        owner.tenant = tenant;
-        owner.application = application;
-        owner.instance = instance;
+        owner.tenant = "mytenant";
+        owner.application = "myapp";
+        owner.instance = "default";
         return owner;
     }
 
@@ -77,13 +78,14 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
         return membership;
     }
 
-    private NodeRepositoryNode createNode(String nodename, String hostname, String appName, String clusterId, int group) {
+    private NodeRepositoryNode createNode(String nodename, String hostname, String clusterId, int group) {
         NodeRepositoryNode node = new NodeRepositoryNode();
         node.setHostname(nodename);
         node.setParentHostname(hostname);
         node.setState(NodeState.active);
-        node.setOwner(createOwner("mytenant", appName, "default"));
+        node.setOwner(createOwner());
         node.setMembership(createMembership(clusterId, group));
+        node.setType(NodeType.tenant);
 
         return node;
     }
@@ -92,6 +94,9 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
         NodeRepositoryNode node = new NodeRepositoryNode();
         node.setHostname(hostname);
         node.setSwitchHostname(switchName);
+        node.setOwner(createOwner());
+        node.setType(NodeType.host);
+        node.setMembership(createMembership("host", 0));
         return node;
     }
 
