@@ -584,7 +584,7 @@ public class RoutingPoliciesTest {
               .setZones(zones)
               .setRoutingMethod(zones, RoutingMethod.exclusive);
         tester.controllerTester().configServer().bootstrap(List.of(prodZone, stagingZone, testZone),
-                                                           SystemApplication.all());
+                                                           SystemApplication.notController());
 
         var context = tester.tester.newDeploymentContext();
         var endpointId = EndpointId.of("r0");
@@ -750,7 +750,7 @@ public class RoutingPoliciesTest {
                   tester.controllerTester().zoneRegistry().exclusiveRoutingIn(zones);
             }
             tester.controllerTester().configServer().bootstrap(tester.controllerTester().zoneRegistry().zones().all().ids(),
-                                                               SystemApplication.all());
+                                                               SystemApplication.notController());
         }
 
         private void provisionLoadBalancers(int clustersPerZone, ApplicationId application, boolean shared, ZoneId... zones) {

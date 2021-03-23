@@ -37,7 +37,7 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
     private final CloudName cloud;
 
     public OsUpgrader(Controller controller, Duration interval, CloudName cloud) {
-        super(controller, interval, controller.zoneRegistry().osUpgradePolicy(cloud), name(cloud));
+        super(controller, interval, controller.zoneRegistry().osUpgradePolicy(cloud), SystemApplication.all(), name(cloud));
         this.cloud = cloud;
     }
 

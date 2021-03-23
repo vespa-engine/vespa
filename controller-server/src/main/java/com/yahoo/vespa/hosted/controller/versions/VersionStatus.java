@@ -152,7 +152,7 @@ public class VersionStatus {
     private static NodeVersions findSystemApplicationVersions(Controller controller, VersionStatus versionStatus) {
         var nodeVersions = new LinkedHashMap<HostName, NodeVersion>();
         for (var zone : controller.zoneRegistry().zones().controllerUpgraded().zones()) {
-            for (var application : SystemApplication.all()) {
+            for (var application : SystemApplication.notController()) {
                 var nodes = controller.serviceRegistry().configServer().nodeRepository()
                                       .list(zone.getId(), application.id()).stream()
                                       .filter(SystemUpgrader::eligibleForUpgrade)

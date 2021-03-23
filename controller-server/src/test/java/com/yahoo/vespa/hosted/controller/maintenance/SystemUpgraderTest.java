@@ -179,10 +179,10 @@ public class SystemUpgraderTest {
         );
 
         Version version1 = Version.fromString("6.5");
-        tester.configServer().bootstrap(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId()), SystemApplication.all());
+        tester.configServer().bootstrap(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId()), SystemApplication.notController());
         tester.upgradeSystem(version1);
         systemUpgrader.maintain();
-        assertCurrentVersion(SystemApplication.all(), version1, zone1, zone2, zone3, zone4);
+        assertCurrentVersion(SystemApplication.notController(), version1, zone1, zone2, zone3, zone4);
 
         // Controller upgrades
         Version version2 = Version.fromString("6.6");
@@ -199,7 +199,7 @@ public class SystemUpgraderTest {
         systemUpgrader.maintain();
         completeUpgrade(SystemApplication.proxy, version2, zone1);
         convergeServices(SystemApplication.proxy, zone1);
-        assertWantedVersion(SystemApplication.all(), version1, zone2, zone3, zone4);
+        assertWantedVersion(SystemApplication.notController(), version1, zone2, zone3, zone4);
 
         // zone 2 and 3:
         systemUpgrader.maintain();
@@ -207,7 +207,7 @@ public class SystemUpgraderTest {
         systemUpgrader.maintain();
         completeUpgrade(SystemApplication.proxy, version2, zone2, zone3);
         convergeServices(SystemApplication.proxy, zone2, zone3);
-        assertWantedVersion(SystemApplication.all(), version1, zone4);
+        assertWantedVersion(SystemApplication.notController(), version1, zone4);
 
         // zone 4:
         systemUpgrader.maintain();
@@ -217,7 +217,7 @@ public class SystemUpgraderTest {
 
         // All done
         systemUpgrader.maintain();
-        assertWantedVersion(SystemApplication.all(), version2, zone1, zone2, zone3, zone4);
+        assertWantedVersion(SystemApplication.notController(), version2, zone1, zone2, zone3, zone4);
     }
 
     @Test
