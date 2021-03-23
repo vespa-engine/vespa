@@ -1,17 +1,15 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.model;
 
+import com.yahoo.config.provision.Zone;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
-import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
-import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceCluster;
 import com.yahoo.vespa.applicationmodel.ServiceInstance;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.applicationmodel.ServiceType;
-import com.yahoo.vespa.applicationmodel.TenantId;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
@@ -20,6 +18,9 @@ import com.yahoo.vespa.orchestrator.policy.HostedVespaClusterPolicy;
 import com.yahoo.vespa.orchestrator.policy.SuspensionReasons;
 import com.yahoo.vespa.orchestrator.status.HostInfos;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
+import com.yahoo.vespa.service.duper.ConfigServerApplication;
+import com.yahoo.vespa.service.duper.ConfigServerHostApplication;
+import com.yahoo.vespa.service.duper.InfraApplication;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -131,8 +132,53 @@ public class ClusterApiImplTest {
     }
 
     @Test
+    public void testCfghost1SuspensionFailsWithMissingCfghost3() {
+        ClusterApiImpl clusterApi = makeConfigClusterApi(
+                ModelTestUtils.NUMBER_OF_CONFIG_SERVERS,
+                new ConfigServerHostApplication(),
+                ServiceStatus.UP,
+                ServiceStatus.UP);
+
+        HostedVespaClusterPolicy policy = new HostedVespaClusterPolicy(flagSource);
+
+        try {
+            policy.verifyGroupGoingDownIsFine(clusterApi);
+            fail();
+        } catch (HostStateChangeDeniedException e) {
+            assertThat(e.getMessage(),
+                    containsString("Changing the state of cfg1 would violate enough-services-up: " +
+                            "Suspension of service with type 'hostadmin' not allowed: 33% are suspended already. " +
+                            "Services down on resumed hosts: [1 missing config server host]."));
+        }
+
+        flagSource.withBooleanFlag(Flags.GROUP_SUSPENSION.id(), true);
+
+        try {
+            policy.verifyGroupGoingDownIsFine(clusterApi);
+            fail();
+        } catch (HostStateChangeDeniedException e) {
+            assertThat(e.getMessage(),
+                    containsString("Suspension of service with type 'hostadmin' not allowed: 33% are suspended already. " +
+                            "Services down on resumed hosts: [1 missing config server host]."));
+        }
+    }
+
+    @Test
     public void testCfg1SuspendsIfDownWithMissingCfg3() throws HostStateChangeDeniedException {
         ClusterApiImpl clusterApi = makeCfg1ClusterApi(ServiceStatus.DOWN, ServiceStatus.UP);
+
+        HostedVespaClusterPolicy policy = new HostedVespaClusterPolicy(flagSource);
+
+        policy.verifyGroupGoingDownIsFine(clusterApi);
+    }
+
+    @Test
+    public void testCfghost1SuspendsIfDownWithMissingCfghost3() throws HostStateChangeDeniedException {
+        ClusterApiImpl clusterApi = makeConfigClusterApi(
+                ModelTestUtils.NUMBER_OF_CONFIG_SERVERS,
+                new ConfigServerHostApplication(),
+                ServiceStatus.DOWN,
+                ServiceStatus.UP);
 
         HostedVespaClusterPolicy policy = new HostedVespaClusterPolicy(flagSource);
 
@@ -265,6 +311,11 @@ public class ClusterApiImplTest {
     }
 
     private ClusterApiImpl makeConfigClusterApi(int clusterSize, ServiceStatus first, ServiceStatus... rest) {
+        return makeConfigClusterApi(clusterSize, new ConfigServerApplication(), first, rest);
+    }
+
+    private ClusterApiImpl makeConfigClusterApi(int clusterSize, InfraApplication infraApplication,
+                                                ServiceStatus first, ServiceStatus... rest) {
         var serviceStatusList = new ArrayList<ServiceStatus>();
         serviceStatusList.add(first);
         serviceStatusList.addAll(List.of(rest));
@@ -275,9 +326,10 @@ public class ClusterApiImplTest {
         for (int i = 0; i < hostnames.size(); i++) {
             instances.add(modelUtils.createServiceInstance("cs" + i + 1, hostnames.get(i), serviceStatusList.get(i)));
         }
+
         ServiceCluster serviceCluster = modelUtils.createServiceCluster(
-                ClusterId.CONFIG_SERVER.s(),
-                ServiceType.CONFIG_SERVER,
+                infraApplication.getClusterId().s(),
+                infraApplication.getServiceType(),
                 instances
         );
         for (var instance : instances) {
@@ -287,8 +339,8 @@ public class ClusterApiImplTest {
         Set<ServiceCluster> serviceClusterSet = Set.of(serviceCluster);
 
         ApplicationInstance application = new ApplicationInstance(
-                TenantId.HOSTED_VESPA,
-                ApplicationInstanceId.CONFIG_SERVER,
+                infraApplication.getTenantId(),
+                infraApplication.getApplicationInstanceId(Zone.defaultZone()),
                 serviceClusterSet);
 
         serviceCluster.setApplicationInstance(application);

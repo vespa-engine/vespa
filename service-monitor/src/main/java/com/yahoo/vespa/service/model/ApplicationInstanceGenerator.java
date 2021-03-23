@@ -164,7 +164,7 @@ public class ApplicationInstanceGenerator {
         return new ServiceInstance(configId, hostName, status);
     }
 
-    private static ApplicationInstanceId toApplicationInstanceId(ApplicationId applicationId, Zone zone) {
+    public static ApplicationInstanceId toApplicationInstanceId(ApplicationId applicationId, Zone zone) {
         if (applicationId.equals(configServerApplicationId)) {
             // Removing this historical discrepancy would break orchestration during rollout.
             // An alternative may be to use a feature flag and flip it between releases,

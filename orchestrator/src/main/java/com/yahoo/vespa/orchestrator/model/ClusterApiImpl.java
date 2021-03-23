@@ -81,9 +81,10 @@ class ClusterApiImpl implements ClusterApi {
         servicesDownAndNotInGroup = servicesNotInGroup.stream().filter(this::serviceEffectivelyDown).collect(Collectors.toSet());
 
         int serviceInstances = serviceCluster.serviceInstances().size();
-        if (serviceCluster.isConfigServerLike() && serviceInstances < numberOfConfigServers) {
+        if ((serviceCluster.isConfigServerLike() || serviceCluster.isConfigServerHostLike()) &&
+                serviceInstances < numberOfConfigServers) {
             missingServices = numberOfConfigServers - serviceInstances;
-            descriptionOfMissingServices = missingServices + " missing config server" + (missingServices > 1 ? "s" : "");
+            descriptionOfMissingServices = missingServices + " missing " + serviceCluster.nodeDescription(missingServices > 1);
         } else {
             missingServices = 0;
             descriptionOfMissingServices = "NA";

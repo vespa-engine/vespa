@@ -81,10 +81,24 @@ public class ServiceCluster {
                 Objects.equals(serviceType, ServiceType.HOST_ADMIN);
     }
 
+    public boolean isConfigServerHostLike() {
+        return isConfigServerHost() || isControllerHost();
+    }
+
     public boolean isTenantHost() {
         return isHostedVespaApplicationWithPredicate(ApplicationInstanceId::isTenantHost) &&
                 Objects.equals(clusterId, ClusterId.TENANT_HOST) &&
                 Objects.equals(serviceType, ServiceType.HOST_ADMIN);
+    }
+
+    public String nodeDescription(boolean plural) {
+        String pluralSuffix = plural ? "s" : "";
+        return isConfigServer() ? "config server" + pluralSuffix :
+               isConfigServerHost() ? "config server host" + pluralSuffix :
+               isController() ? "controller" + pluralSuffix :
+               isControllerHost() ? "controller host" + pluralSuffix :
+               isTenantHost() ? "tenant host" + pluralSuffix :
+               "node" + pluralSuffix + " of {" + serviceType + "," + clusterId + "}";
     }
 
     private boolean isHostedVespaApplicationWithId(ApplicationInstanceId id) {
