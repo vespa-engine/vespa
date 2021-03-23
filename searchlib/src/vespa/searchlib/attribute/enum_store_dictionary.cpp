@@ -267,20 +267,6 @@ EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::check_posting_lists(std:
 }
 
 template <>
-EnumPostingTree &
-EnumStoreDictionary<EnumTree>::get_posting_dictionary()
-{
-    LOG_ABORT("should not be reached");
-}
-
-template <typename DictionaryT, typename UnorderedDictionaryT>
-EnumPostingTree &
-EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::get_posting_dictionary()
-{
-    return this->_dict;
-}
-
-template <>
 const EnumPostingTree &
 EnumStoreDictionary<EnumTree>::get_posting_dictionary() const
 {

@@ -101,8 +101,6 @@ public:
 
     IEnumStoreDictionary& get_dictionary() override { return *_dict; }
     const IEnumStoreDictionary& get_dictionary() const override { return *_dict; }
-    EnumPostingTree& get_posting_dictionary() { return _dict->get_posting_dictionary(); }
-    const EnumPostingTree& get_posting_dictionary() const { return _dict->get_posting_dictionary(); }
 
     bool get_value(Index idx, EntryType& value) const;
     EntryType get_value(uint32_t idx) const { return get_value(Index(EntryRef(idx))); }

@@ -57,7 +57,6 @@ public:
     void clear_all_posting_lists(std::function<void(EntryRef)> clearer) override;
     void update_posting_list(Index idx, const vespalib::datastore::EntryComparator& cmp, std::function<EntryRef(EntryRef)> updater) override;
     bool check_posting_lists(std::function<EntryRef(EntryRef)> updater) override;
-    EnumPostingTree& get_posting_dictionary() override;
     const EnumPostingTree& get_posting_dictionary() const override;
 };
 
