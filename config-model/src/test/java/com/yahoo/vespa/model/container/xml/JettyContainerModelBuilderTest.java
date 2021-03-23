@@ -194,7 +194,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
         assertThat(withCiphersAndProtocols.ssl().enabledCipherSuites(), is(equalTo(List.of("TLS_AES_128_GCM_SHA256", "TLS_AES_256_GCM_SHA384"))));
         assertThat(withCiphersAndProtocols.ssl().enabledProtocols(), is(equalTo(List.of("TLSv1.3"))));
 
-        ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
+        ContainerCluster<?> cluster = (ContainerCluster<?>) root.getChildren().get("default");
         List<ConnectorFactory> connectorFactories = cluster.getChildrenByTypeRecursive(ConnectorFactory.class);
         connectorFactories.forEach(connectorFactory -> assertChildComponentExists(connectorFactory, ConfiguredFilebasedSslProvider.COMPONENT_CLASS));
     }
@@ -217,7 +217,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
 
         assertTrue(sslProvider.ssl().enabled());
 
-        ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
+        ContainerCluster<?> cluster = (ContainerCluster<?>) root.getChildren().get("default");
         List<ConnectorFactory> connectorFactories = cluster.getChildrenByTypeRecursive(ConnectorFactory.class);
         ConnectorFactory connectorFactory = connectorFactories.get(0);
         assertChildComponentExists(connectorFactory, "com.yahoo.CustomSslProvider");
@@ -300,7 +300,7 @@ public class JettyContainerModelBuilderTest extends ContainerModelBuilderTestBas
     }
 
     private void assertJettyServerInConfig() {
-        ContainerCluster cluster = (ContainerCluster) root.getChildren().get("default");
+        ContainerCluster<?> cluster = (ContainerCluster<?>) root.getChildren().get("default");
         List<JettyHttpServer> jettyServers = cluster.getChildrenByTypeRecursive(JettyHttpServer.class);
 
         assertThat(jettyServers.size(), is(1));
