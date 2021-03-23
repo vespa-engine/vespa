@@ -26,7 +26,7 @@ import java.util.Objects;
  *
  * @author bjorncs
  */
-public class InstanceConfirmation implements RestApi.JacksonRequestEntity {
+public class InstanceConfirmation implements RestApi.JacksonRequestEntity, RestApi.JacksonResponseEntity {
 
     @JsonProperty("provider") public final String provider;
     @JsonProperty("domain") public final String domain;
