@@ -495,10 +495,11 @@ public:
     }
 
     void expect_posting_idx(size_t values_idx, uint32_t exp_posting_idx) const {
-        auto cmp = store.make_comparator();
-        auto itr = store.get_posting_dictionary().find(find_index(values_idx), cmp);
-        ASSERT_TRUE(itr.valid());
-        EXPECT_EQ(exp_posting_idx, itr.getData());
+        auto cmp = store.make_comparator(Values::values[values_idx]);
+        auto &dict = store.get_dictionary();
+        auto find_result = dict.find_posting_list(cmp, dict.get_frozen_root());
+        ASSERT_TRUE(find_result.first.valid());
+        EXPECT_EQ(exp_posting_idx, find_result.second.ref());
     }
 
 };
@@ -554,6 +555,7 @@ TYPED_TEST(LoaderTest, store_is_instantiated_with_non_enumerated_loader)
     loader.build_dictionary();
 
     this->expect_values_in_store();
+    this->store.freeze_dictionary();
 
     this->expect_posting_idx(0, 100);
     this->expect_posting_idx(1, 101);
