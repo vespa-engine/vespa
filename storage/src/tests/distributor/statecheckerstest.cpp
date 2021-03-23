@@ -78,8 +78,8 @@ struct StateCheckersTest : Test, DistributorTestUtil {
     {
         std::ostringstream ost;
 
-        c.siblingBucket = getIdealStateManager().getDistributorComponent()
-                          .getSibling(c.getBucketId());
+        c.siblingBucket = getIdealStateManager().operation_context()
+                          .get_sibling(c.getBucketId());
 
         std::vector<BucketDatabase::Entry> entries;
         getBucketDatabase(c.getBucketSpace()).getAll(c.getBucketId(), entries);

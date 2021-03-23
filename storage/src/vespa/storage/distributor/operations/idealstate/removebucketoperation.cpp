@@ -39,7 +39,7 @@ RemoveBucketOperation::onStartInternal(DistributorMessageSender& sender)
 
     _ok = true;
     if (!getNodes().empty()) {
-        _manager->getDistributorComponent().removeNodesFromDB(getBucket(), getNodes());
+        _manager->operation_context().remove_nodes_from_bucket_database(getBucket(), getNodes());
         for (uint32_t i = 0; i < msgs.size(); ++i) {
             _tracker.queueCommand(msgs[i].second, msgs[i].first);
         }
@@ -83,7 +83,7 @@ RemoveBucketOperation::onReceiveInternal(const std::shared_ptr<api::StorageReply
 
             _manager->operation_context().update_bucket_database(
                     getBucket(),
-                    BucketCopy(_manager->getDistributorComponent().getUniqueTimestamp(),
+                    BucketCopy(_manager->operation_context().generate_unique_timestamp(),
                                node,
                                rep->getBucketInfo()),
                     DatabaseUpdate::CREATE_IF_NONEXISTING);

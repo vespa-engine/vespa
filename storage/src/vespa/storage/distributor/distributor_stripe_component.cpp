@@ -1,4 +1,5 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include "distributor_stripe_component.h"
 #include "distributor_bucket_space_repo.h"
 #include "distributor_bucket_space.h"
@@ -39,36 +40,6 @@ void
 DistributorStripeComponent::sendUp(const api::StorageMessage::SP& msg)
 {
     _distributor.getMessageSender().sendUp(msg);
-}
-
-void
-DistributorStripeComponent::removeNodesFromDB(const document::Bucket &bucket, const std::vector<uint16_t>& nodes)
-{
-    auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    BucketDatabase::Entry dbentry = bucketSpace.getBucketDatabase().get(bucket.getBucketId());
-
-    if (dbentry.valid()) {
-        for (uint32_t i = 0; i < nodes.size(); ++i) {
-            if (dbentry->removeNode(nodes[i])) {
-                LOG(debug,
-                "Removed node %d from bucket %s. %u copies remaining",
-                    nodes[i],
-                    bucket.toString().c_str(),
-                    dbentry->getNodeCount());
-            }
-        }
-
-        if (dbentry->getNodeCount() != 0) {
-            bucketSpace.getBucketDatabase().update(dbentry);
-        } else {
-            LOG(debug,
-                "After update, bucket %s now has no copies. "
-                "Removing from database.",
-                bucket.toString().c_str());
-
-            bucketSpace.getBucketDatabase().remove(bucket.getBucketId());
-        }
-    }
 }
 
 void
@@ -198,14 +169,64 @@ DistributorStripeComponent::update_bucket_database(
     bucketSpace.getBucketDatabase().process_update(bucket.getBucketId(), processor, (update_flags & DatabaseUpdate::CREATE_IF_NONEXISTING) != 0);
 }
 
-void
-DistributorStripeComponent::recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket)
+// Implements DistributorNodeContext
+api::StorageMessageAddress
+DistributorStripeComponent::node_address(uint16_t node_index) const noexcept
 {
-    _distributor.recheckBucketInfo(nodeIdx, bucket);
+    return api::StorageMessageAddress::create(cluster_name_ptr(), lib::NodeType::STORAGE, node_index);
+}
+
+
+// Implements DistributorOperationContext
+void
+DistributorStripeComponent::remove_nodes_from_bucket_database(const document::Bucket& bucket,
+                                                              const std::vector<uint16_t>& nodes)
+{
+    auto &bucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
+    BucketDatabase::Entry dbentry = bucketSpace.getBucketDatabase().get(bucket.getBucketId());
+
+    if (dbentry.valid()) {
+        for (uint32_t i = 0; i < nodes.size(); ++i) {
+            if (dbentry->removeNode(nodes[i])) {
+                LOG(debug,
+                    "Removed node %d from bucket %s. %u copies remaining",
+                    nodes[i],
+                    bucket.toString().c_str(),
+                    dbentry->getNodeCount());
+            }
+        }
+
+        if (dbentry->getNodeCount() != 0) {
+            bucketSpace.getBucketDatabase().update(dbentry);
+        } else {
+            LOG(debug,
+                "After update, bucket %s now has no copies. "
+                "Removing from database.",
+                bucket.toString().c_str());
+
+            bucketSpace.getBucketDatabase().remove(bucket.getBucketId());
+        }
+    }
 }
 
 document::BucketId
-DistributorStripeComponent::getSibling(const document::BucketId& bid) const {
+DistributorStripeComponent::make_split_bit_constrained_bucket_id(const document::DocumentId& doc_id) const
+{
+    document::BucketId id(getBucketIdFactory().getBucketId(doc_id));
+
+    id.setUsedBits(_distributor.getConfig().getMinimalBucketSplit());
+    return id.stripUnused();
+}
+
+void
+DistributorStripeComponent::recheck_bucket_info(uint16_t node_index, const document::Bucket& bucket)
+{
+    _distributor.recheckBucketInfo(node_index, bucket);
+}
+
+document::BucketId
+DistributorStripeComponent::get_sibling(const document::BucketId& bid) const
+{
     document::BucketId zeroBucket;
     document::BucketId oneBucket;
 
@@ -229,24 +250,6 @@ DistributorStripeComponent::getSibling(const document::BucketId& bid) const {
     }
 
     return (zeroBucket == bid) ? oneBucket : zeroBucket;
-};
-
-// Implements DistributorNodeContext
-api::StorageMessageAddress
-DistributorStripeComponent::node_address(uint16_t node_index) const noexcept
-{
-    return api::StorageMessageAddress::create(cluster_name_ptr(), lib::NodeType::STORAGE, node_index);
-}
-
-
-// Implements DistributorOperationContext
-document::BucketId
-DistributorStripeComponent::make_split_bit_constrained_bucket_id(const document::DocumentId& doc_id) const
-{
-    document::BucketId id(getBucketIdFactory().getBucketId(doc_id));
-
-    id.setUsedBits(_distributor.getConfig().getMinimalBucketSplit());
-    return id.stripUnused();
 }
 
 bool
