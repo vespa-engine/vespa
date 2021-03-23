@@ -535,7 +535,7 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     public void setMatching(Matching matching) { this.matching=matching; }
 
     /**
-     * Returns what kind of matching type should be applied.
+     * Returns Dictionary settings.
      */
     public Dictionary getDictionary() { return dictionary; }
 

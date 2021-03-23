@@ -11,7 +11,7 @@ import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
 /**
- * Propagates dictionary settings from field lecel to attribute level.
+ * Propagates dictionary settings from field level to attribute level.
  * Only applies to numeric fields with fast-search enabled.
  *
  * @author baldersheim
@@ -31,7 +31,7 @@ public class DictionaryProcessor extends Processor {
                 if (attribute.isFastSearch()) {
                     attribute.setDictionary(dictionary);
                 } else {
-                    fail(search, field, "You must specify attribute:fast-search to allow dictionary control");
+                    fail(search, field, "You must specify 'attribute:fast-search' to allow dictionary control");
                 }
             } else {
                 fail(search, field, "You can only specify 'dictionary:' for numeric fields");
