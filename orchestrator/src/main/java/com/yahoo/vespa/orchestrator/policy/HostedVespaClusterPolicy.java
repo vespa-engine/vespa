@@ -150,7 +150,7 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
                 return ConcurrentSuspensionLimitForCluster.ONE_NODE;
             }
 
-            if (clusterApi.serviceType() == ServiceType.HOST_ADMIN) {
+            if (clusterApi.serviceType().equals(ServiceType.HOST_ADMIN)) {
                 if (Set.of(ClusterId.CONFIG_SERVER_HOST, ClusterId.CONTROLLER_HOST).contains(clusterApi.clusterId())) {
                     return ConcurrentSuspensionLimitForCluster.ONE_NODE;
                 }
