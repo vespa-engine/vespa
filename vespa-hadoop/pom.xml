@@ -135,6 +135,10 @@
                                     <shadedPattern>shaded.vespa</shadedPattern>
                                 </relocation>
                                 <relocation>
+                                    <pattern>org.bouncycastle</pattern>
+                                    <shadedPattern>shaded.vespa.bouncycastle</shadedPattern>
+                                </relocation>
+                                <relocation>
                                     <pattern>commons-codec</pattern>
                                     <shadedPattern>shaded.vespa</shadedPattern>
                                 </relocation>
