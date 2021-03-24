@@ -89,6 +89,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     private final MetricUpdater metricUpdater;
 
     private boolean isMaster = false;
+    private boolean inMasterMoratorium = false;
     private boolean isStateGatherer = false;
     private long firstAllowedStateBroadcast = Long.MAX_VALUE;
     private long tickStartTime = Long.MAX_VALUE;
@@ -712,6 +713,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         if ((currentTime >= firstAllowedStateBroadcast || cluster.allStatesReported())
             && currentTime >= nextStateSendTime)
         {
+            if (inMasterMoratorium) {
+                log.fine(currentTime < firstAllowedStateBroadcast ?
+                         "Master moratorium complete: all nodes have reported in" :
+                         "Master moratorium complete: timed out waiting for all nodes to report in");
+                inMasterMoratorium = false;
+            }
             if (currentTime < firstAllowedStateBroadcast) {
                 log.log(Level.FINE, "Not set to broadcast states just yet, but as we have gotten info from all nodes we can do so safely.");
                 // Reset timer to only see warning once.
@@ -780,7 +787,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         context.cluster = cluster;
         context.currentConsolidatedState = consolidatedClusterState();
         context.publishedClusterStateBundle = stateVersionTracker.getVersionedClusterStateBundle();
-        context.masterInfo = masterElectionHandler;
+        context.masterInfo = new MasterInterface() {
+            @Override public boolean isMaster() { return isMaster; }
+            @Override public Integer getMaster() { return masterElectionHandler.getMaster(); }
+            @Override public boolean inMasterMoratorium() { return inMasterMoratorium; }
+        };
+
         context.nodeStateOrHostInfoChangeHandler = this;
         context.nodeAddedOrRemovedListener = this;
         return context;
@@ -1078,11 +1090,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                         + stateVersionTracker.getCurrentVersion() + " to be in line.", timer.getCurrentTimeInMillis()));
                 long currentTime = timer.getCurrentTimeInMillis();
                 firstAllowedStateBroadcast = currentTime + options.minTimeBeforeFirstSystemStateBroadcast;
+                isMaster = true;
+                inMasterMoratorium = true;
                 log.log(Level.FINE, "At time " + currentTime + " we set first system state broadcast time to be "
                         + options.minTimeBeforeFirstSystemStateBroadcast + " ms after at time " + firstAllowedStateBroadcast + ".");
                 didWork = true;
             }
-            isMaster = true;
             if (wantedStateChanged) {
                 database.saveWantedStates(databaseContext);
                 wantedStateChanged = false;
@@ -1102,6 +1115,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
         }
         wantedStateChanged = false;
         isMaster = false;
+        inMasterMoratorium = false;
     }
 
     public void run() {
