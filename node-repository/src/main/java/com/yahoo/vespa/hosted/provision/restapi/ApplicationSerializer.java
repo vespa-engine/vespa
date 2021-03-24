@@ -95,11 +95,11 @@ public class ApplicationSerializer {
 
     private static void clusterUtilizationToSlime(ClusterModel clusterModel, Cursor utilizationObject) {
         utilizationObject.setDouble("cpu", clusterModel.averageLoad().cpu());
-        utilizationObject.setDouble("idealCpu", clusterModel.idealLoad(Resource.cpu));
+        utilizationObject.setDouble("idealCpu", clusterModel.idealLoad().cpu());
         utilizationObject.setDouble("memory", clusterModel.averageLoad().memory());
-        utilizationObject.setDouble("idealMemory", clusterModel.idealLoad(Resource.memory));
+        utilizationObject.setDouble("idealMemory", clusterModel.idealLoad().memory());
         utilizationObject.setDouble("disk", clusterModel.averageLoad().disk());
-        utilizationObject.setDouble("idealDisk", clusterModel.idealLoad(Resource.disk));
+        utilizationObject.setDouble("idealDisk", clusterModel.idealLoad().disk());
     }
 
     private static void scalingEventsToSlime(List<ScalingEvent> scalingEvents, Cursor scalingEventsArray) {

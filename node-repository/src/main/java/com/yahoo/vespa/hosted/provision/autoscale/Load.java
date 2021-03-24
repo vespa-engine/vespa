@@ -34,6 +34,10 @@ public class Load {
         return new Load(divide(cpu, resources.vcpu()), divide(memory, resources.memoryGb()), divide(disk, resources.diskGb()));
     }
 
+    public Load divide(Load divisor) {
+        return new Load(divide(cpu, divisor.cpu()), divide(memory, divisor.memory()), divide(disk, divisor.disk()));
+    }
+
     public Load divide(double divisor) {
         return new Load(divide(cpu, divisor), divide(memory, divisor), divide(disk, divisor));
     }
