@@ -78,7 +78,9 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.stats.LockStats;
 import com.yahoo.vespa.curator.stats.ThreadLockStats;
 import com.yahoo.vespa.defaults.Defaults;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 
@@ -144,6 +146,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     private final Metric metric;
     private final SecretStoreValidator secretStoreValidator;
     private final ClusterReindexingStatusClient clusterReindexingStatusClient;
+    private final BooleanFlag waitForAllConfigServersWhenDeletingApplication;
 
     @Inject
     public ApplicationRepository(TenantRepository tenantRepository,
@@ -155,7 +158,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                  Orchestrator orchestrator,
                                  TesterClient testerClient,
                                  Metric metric,
-                                 SecretStore secretStore) {
+                                 SecretStore secretStore,
+                                 FlagSource flagSource) {
         this(tenantRepository,
              hostProvisionerProvider.getHostProvisioner(),
              infraDeployerProvider.getInfraDeployer(),
@@ -168,7 +172,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
              testerClient,
              metric,
              new SecretStoreValidator(secretStore),
-             new DefaultClusterReindexingStatusClient());
+             new DefaultClusterReindexingStatusClient(),
+             flagSource);
     }
 
     private ApplicationRepository(TenantRepository tenantRepository,
@@ -183,7 +188,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                   TesterClient testerClient,
                                   Metric metric,
                                   SecretStoreValidator secretStoreValidator,
-                                  ClusterReindexingStatusClient clusterReindexingStatusClient) {
+                                  ClusterReindexingStatusClient clusterReindexingStatusClient,
+                                  FlagSource flagSource) {
         this.tenantRepository = Objects.requireNonNull(tenantRepository);
         this.hostProvisioner = Objects.requireNonNull(hostProvisioner);
         this.infraDeployer = Objects.requireNonNull(infraDeployer);
@@ -197,6 +203,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         this.metric = Objects.requireNonNull(metric);
         this.secretStoreValidator = Objects.requireNonNull(secretStoreValidator);
         this.clusterReindexingStatusClient = clusterReindexingStatusClient;
+        this.waitForAllConfigServersWhenDeletingApplication = Flags.WAIT_FOR_ALL_CONFIG_SERVERS_WHEN_DELETING_APPLICATION.bindTo(flagSource);
     }
 
     public static class Builder {
@@ -287,7 +294,8 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
                                              testerClient,
                                              metric,
                                              secretStoreValidator,
-                                             ClusterReindexingStatusClient.DUMMY_INSTANCE);
+                                             ClusterReindexingStatusClient.DUMMY_INSTANCE,
+                                             flagSource);
         }
 
     }
@@ -516,7 +524,9 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             }
 
             Curator curator = tenantRepository.getCurator();
-            CompletionWaiter waiter = tenantApplications.createRemoveApplicationWaiter(applicationId);
+            Optional<CompletionWaiter> waiter = Optional.empty();
+            if (waitForAllConfigServersWhenDeletingApplication.value())
+                waiter = Optional.of(tenantApplications.createRemoveApplicationWaiter(applicationId));
             transaction.add(new ContainerEndpointsCache(tenant.getPath(), curator).delete(applicationId)); // TODO: Not unit tested
             // Delete any application roles
             transaction.add(new ApplicationRolesStore(curator, tenant.getPath()).delete(applicationId));
@@ -535,7 +545,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             }
 
             // Wait for app being removed on other servers
-            waiter.awaitCompletion(Duration.ofSeconds(30));
+            waiter.ifPresent(w -> w.awaitCompletion(Duration.ofSeconds(30)));
 
             return true;
         } finally {
