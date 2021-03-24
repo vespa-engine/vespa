@@ -90,7 +90,9 @@ public class ZoneApiMock implements ZoneApi {
             return this;
         }
 
-        public Builder withId(String id) { return with(ZoneId.from(id)); }
+        public Builder withId(String id) {
+            return with(ZoneId.from(id));
+        }
 
         public Builder withVirtualId(ZoneId virtualId) {
             this.virtualId = virtualId;
