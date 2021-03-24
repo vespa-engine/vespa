@@ -41,8 +41,6 @@
     <component id="com.yahoo.vespa.config.server.rpc.security.DummyNodeIdentifierProvider" bundle="configserver" />
     <component id="com.yahoo.vespa.config.server.rpc.security.DefaultRpcAuthorizerProvider" bundle="configserver" />
 
-    <component id="com.yahoo.vespa.serviceview.ConfigServerLocation" bundle="configserver" />
-
     <components>
       <include dir="config-models" />
     </components>
