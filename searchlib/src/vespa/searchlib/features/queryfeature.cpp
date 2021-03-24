@@ -121,13 +121,18 @@ createTensorExecutor(const IQueryEnvironment &env,
     if (prop.found() && !prop.get().empty()) {
         const vespalib::string &value = prop.get();
         vespalib::nbostream stream(value.data(), value.size());
-        auto tensor = vespalib::eval::decode_value(stream, vespalib::eval::FastValueBuilderFactory::get());
-        if (!TensorDataType::isAssignableType(valueType, tensor->type())) {
-            LOG(warning, "Query feature type is '%s' but other tensor type is '%s'",
-                valueType.to_spec().c_str(), tensor->type().to_spec().c_str());
+        try {
+            auto tensor = vespalib::eval::decode_value(stream, vespalib::eval::FastValueBuilderFactory::get());
+            if (!TensorDataType::isAssignableType(valueType, tensor->type())) {
+                LOG(warning, "Query feature type is '%s' but other tensor type is '%s'",
+                    valueType.to_spec().c_str(), tensor->type().to_spec().c_str());
+                return ConstantTensorExecutor::createEmpty(valueType, stash);
+            }
+            return ConstantTensorExecutor::create(std::move(tensor), stash);
+        } catch (const vespalib::eval::DecodeValueException &e) {
+            LOG(warning, "Query feature has invalid binary format: %s", e.what());
             return ConstantTensorExecutor::createEmpty(valueType, stash);
         }
-        return ConstantTensorExecutor::create(std::move(tensor), stash);
     }
     return ConstantTensorExecutor::createEmpty(valueType, stash);
 }

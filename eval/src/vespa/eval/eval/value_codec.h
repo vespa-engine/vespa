@@ -5,10 +5,13 @@
 #include "value.h"
 #include "tensor_spec.h"
 #include <vespa/vespalib/stllike/string.h>
+#include <vespa/vespalib/util/exception.h>
 
 namespace vespalib { class nbostream; }
 
 namespace vespalib::eval {
+
+VESPA_DEFINE_EXCEPTION(DecodeValueException, Exception);
 
 /**
  * encode a value (which must support the new APIs) to binary format
@@ -17,6 +20,8 @@ void encode_value(const Value &value, nbostream &output);
 
 /**
  * decode a value from binary format
+ *
+ * will throw DecodeValueException if input contains malformed data
  **/
 std::unique_ptr<Value> decode_value(nbostream &input, const ValueBuilderFactory &factory);
 
