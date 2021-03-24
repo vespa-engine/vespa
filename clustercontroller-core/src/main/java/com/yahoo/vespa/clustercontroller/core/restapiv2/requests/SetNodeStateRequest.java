@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core.restapiv2.requests;
 
+import java.util.logging.Level;
 import com.yahoo.time.TimeBudget;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
@@ -25,7 +26,6 @@ import java.time.Instant;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 public class SetNodeStateRequest extends Request<SetResponse> {
@@ -64,7 +64,6 @@ public class SetNodeStateRequest extends Request<SetResponse> {
                 id.getNode(),
                 context.nodeStateOrHostInfoChangeHandler,
                 context.currentConsolidatedState,
-                context.masterInfo.inMasterMoratorium(),
                 probe);
     }
 
@@ -105,7 +104,6 @@ public class SetNodeStateRequest extends Request<SetResponse> {
             Node node,
             NodeStateOrHostInfoChangeHandler stateListener,
             ClusterState currentClusterState,
-            boolean inMasterMoratorium,
             boolean probe) throws StateRestApiException {
         if ( ! cluster.hasConfiguredNode(node.getIndex())) {
             throw new MissingIdException(cluster.getName(), node);
@@ -117,7 +115,7 @@ public class SetNodeStateRequest extends Request<SetResponse> {
         NodeState wantedState = nodeInfo.getUserWantedState();
         NodeState newWantedState = getRequestedNodeState(newStates, node);
         NodeStateChangeChecker.Result result = cluster.calculateEffectOfNewState(
-                node, currentClusterState, condition, wantedState, newWantedState, inMasterMoratorium);
+                node, currentClusterState, condition, wantedState, newWantedState);
 
         log.log(Level.FINE, "node=" + node +
                 " current-cluster-state=" + currentClusterState + // Includes version in output format

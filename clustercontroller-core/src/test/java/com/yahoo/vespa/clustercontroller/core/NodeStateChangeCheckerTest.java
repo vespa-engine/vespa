@@ -57,7 +57,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     private NodeStateChangeChecker createChangeChecker(ContentCluster cluster) {
-        return new NodeStateChangeChecker(requiredRedundancy, visitor -> {}, cluster.clusterInfo(), false);
+        return new NodeStateChangeChecker(requiredRedundancy, visitor -> {}, cluster.clusterInfo());
     }
 
     private ContentCluster createCluster(Collection<ConfiguredNode> nodes) {
@@ -114,23 +114,10 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testDeniedInMoratorium() {
-        ContentCluster cluster = createCluster(createNodes(4));
-        NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
-                requiredRedundancy, visitor -> {}, cluster.clusterInfo(), true);
-        NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
-                new Node(NodeType.STORAGE, 10), defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
-                UP_NODE_STATE, MAINTENANCE_NODE_STATE);
-        assertFalse(result.settingWantedStateIsAllowed());
-        assertFalse(result.wantedStateAlreadySet());
-        assertThat(result.getReason(), is("Master cluster controller is bootstrapping and in moratorium"));
-    }
-
-    @Test
     public void testUnknownStorageNode() {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
-                requiredRedundancy, visitor -> {}, cluster.clusterInfo(), false);
+                requiredRedundancy, visitor -> {}, cluster.clusterInfo());
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 new Node(NodeType.STORAGE, 10), defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);
@@ -162,7 +149,7 @@ public class NodeStateChangeCheckerTest {
 
         // We should then be denied setting storage node 1 safely to maintenance.
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
-                requiredRedundancy, visitor -> {}, cluster.clusterInfo(), false);
+                requiredRedundancy, visitor -> {}, cluster.clusterInfo());
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 nodeStorage, clusterStateWith3Down, SetUnitStateRequest.Condition.SAFE,
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);

@@ -572,7 +572,7 @@ public class SetNodeStateTest extends StateRestApiTest {
                 new SetUnitStateRequestImpl("music/storage/1").setNewState("user", "maintenance", "whatever reason."),
                 wantedStateSetter);
         SetResponse response = new SetResponse("some reason", wasModified);
-        when(wantedStateSetter.set(any(), any(), any(), any(), any(), any(), anyBoolean(), anyBoolean())).thenReturn(response);
+        when(wantedStateSetter.set(any(), any(), any(), any(), any(), any(), anyBoolean())).thenReturn(response);
 
         RemoteClusterControllerTask.Context context = mock(RemoteClusterControllerTask.Context.class);
         MasterInterface masterInterface = mock(MasterInterface.class);
