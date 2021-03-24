@@ -274,6 +274,12 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag WAIT_FOR_ALL_CONFIG_SERVERS_WHEN_DELETING_APPLICATION = defineFeatureFlag(
+            "wait-for-all-config-servers-when-deleting-application", false,
+            List.of("hmusum"), "2021-03-24", "2021-06-24",
+            "Whether to wait for all participating servers to delete application on config servers (with timeout) on",
+            "Takes effect on next delete of an application");
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
