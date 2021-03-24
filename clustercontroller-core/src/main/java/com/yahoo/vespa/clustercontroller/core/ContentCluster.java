@@ -171,7 +171,8 @@ public class ContentCluster {
 
     /**
      * Checks if a node can be upgraded
-     *  @param node the node to be checked for upgrad
+     *
+     * @param node the node to be checked for upgrad
      * @param clusterState the current cluster state version
      * @param condition the upgrade condition
      * @param oldState the old/current wanted state
