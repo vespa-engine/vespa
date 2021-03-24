@@ -11,6 +11,19 @@ class EntryComparatorWrapper;
 
 class NoHashDictionary;
 
+template <typename BTreeDictionaryT>
+class UniqueStoreBTreeDictionaryBase
+{
+protected:
+    BTreeDictionaryT _btree_dict;
+public:
+    static constexpr bool has_btree_dictionary = true;
+    UniqueStoreBTreeDictionaryBase()
+        : _btree_dict()
+    {
+    }
+};
+
 template <typename HashDictionaryT>
 class UniqueStoreHashDictionaryBase
 {
@@ -38,7 +51,7 @@ public:
  * A dictionary for unique store. Mostly accessed via base class.
  */
 template <typename BTreeDictionaryT, typename ParentT = IUniqueStoreDictionary, typename HashDictionaryT = NoHashDictionary>
-class UniqueStoreDictionary : public ParentT, public UniqueStoreHashDictionaryBase<HashDictionaryT> {
+class UniqueStoreDictionary : public ParentT, public UniqueStoreBTreeDictionaryBase<BTreeDictionaryT>, public UniqueStoreHashDictionaryBase<HashDictionaryT> {
 protected:
     using BTreeDictionaryType = BTreeDictionaryT;
     using DataType = typename BTreeDictionaryType::DataType;
@@ -57,11 +70,9 @@ protected:
         void foreach_key(std::function<void(EntryRef)> callback) const override;
     };
 
-    BTreeDictionaryType _btree_dict;
-
 public:
+    using UniqueStoreBTreeDictionaryBase<BTreeDictionaryT>::has_btree_dictionary;
     using UniqueStoreHashDictionaryBase<HashDictionaryT>::has_hash_dictionary;
-    static constexpr bool has_btree_dictionary = true;
     UniqueStoreDictionary(std::unique_ptr<EntryComparator> compare);
     ~UniqueStoreDictionary() override;
     void freeze() override;
