@@ -16,16 +16,16 @@
 
 namespace vespalib::datastore {
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::
 ReadSnapshotImpl::ReadSnapshotImpl(FrozenView frozen_view)
     : _frozen_view(frozen_view)
 {
 }
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 size_t
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::
 ReadSnapshotImpl::count(const EntryComparator& comp) const
 {
     auto itr = _frozen_view.lowerBound(EntryRef(), comp);
@@ -35,9 +35,9 @@ ReadSnapshotImpl::count(const EntryComparator& comp) const
     return 0u;
 }
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 size_t
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::
 ReadSnapshotImpl::count_in_range(const EntryComparator& low,
                                  const EntryComparator& high) const
 {
@@ -49,124 +49,124 @@ ReadSnapshotImpl::count_in_range(const EntryComparator& low,
     return high_itr - low_itr;
 }
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::
 ReadSnapshotImpl::foreach_key(std::function<void(EntryRef)> callback) const
 {
     _frozen_view.foreach_key(callback);
 }
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::UniqueStoreDictionary(std::unique_ptr<EntryComparator> compare)
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::UniqueStoreDictionary(std::unique_ptr<EntryComparator> compare)
     : ParentT(),
-      UniqueStoreUnorderedDictionaryBase<UnorderedDictionaryT>(std::move(compare)),
-      _dict()
+      UniqueStoreHashDictionaryBase<HashDictionaryT>(std::move(compare)),
+      _btree_dict()
 {
 }
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::~UniqueStoreDictionary() = default;
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::~UniqueStoreDictionary() = default;
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::freeze()
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::freeze()
 {
-    _dict.getAllocator().freeze();
+    _btree_dict.getAllocator().freeze();
 }
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::transfer_hold_lists(generation_t generation)
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::transfer_hold_lists(generation_t generation)
 {
-    _dict.getAllocator().transferHoldLists(generation);
-    if constexpr (has_unordered_dictionary) {
-        this->_unordered_dict.transfer_hold_lists(generation);
+    _btree_dict.getAllocator().transferHoldLists(generation);
+    if constexpr (has_hash_dictionary) {
+        this->_hash_dict.transfer_hold_lists(generation);
     }
 }
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::trim_hold_lists(generation_t firstUsed)
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::trim_hold_lists(generation_t firstUsed)
 {
-    _dict.getAllocator().trimHoldLists(firstUsed);
-    if constexpr (has_unordered_dictionary) {
-        this->_unordered_dict.trim_hold_lists(firstUsed);
+    _btree_dict.getAllocator().trimHoldLists(firstUsed);
+    if constexpr (has_hash_dictionary) {
+        this->_hash_dict.trim_hold_lists(firstUsed);
     }
 }
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 UniqueStoreAddResult
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::add(const EntryComparator &comp,
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::add(const EntryComparator &comp,
                                                  std::function<EntryRef(void)> insertEntry)
 {
-    auto itr = _dict.lowerBound(EntryRef(), comp);
+    auto itr = _btree_dict.lowerBound(EntryRef(), comp);
     if (itr.valid() && !comp.less(EntryRef(), itr.getKey())) {
-        if constexpr (has_unordered_dictionary) {
-            auto* result = this->_unordered_dict.find(comp, EntryRef());
+        if constexpr (has_hash_dictionary) {
+            auto* result = this->_hash_dict.find(comp, EntryRef());
             assert(result != nullptr && result->first.load_relaxed() == itr.getKey());
         }
         return UniqueStoreAddResult(itr.getKey(), false);
 
     } else {
         EntryRef newRef = insertEntry();
-        _dict.insert(itr, newRef, DataType());
-        if constexpr (has_unordered_dictionary) {
-            std::function<EntryRef(void)> insert_unordered_entry([newRef]() noexcept -> EntryRef { return newRef; });
-            auto& add_result = this->_unordered_dict.add(comp, newRef, insert_unordered_entry);
+        _btree_dict.insert(itr, newRef, DataType());
+        if constexpr (has_hash_dictionary) {
+            std::function<EntryRef(void)> insert_hash_entry([newRef]() noexcept -> EntryRef { return newRef; });
+            auto& add_result = this->_hash_dict.add(comp, newRef, insert_hash_entry);
             assert(add_result.first.load_relaxed() == newRef);
         }
         return UniqueStoreAddResult(newRef, true);
     }
 }
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 EntryRef
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::find(const EntryComparator &comp)
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::find(const EntryComparator &comp)
 {
-    auto itr = _dict.lowerBound(EntryRef(), comp);
+    auto itr = _btree_dict.lowerBound(EntryRef(), comp);
     if (itr.valid() && !comp.less(EntryRef(), itr.getKey())) {
-        if constexpr (has_unordered_dictionary) {
-            auto* result = this->_unordered_dict.find(comp, EntryRef());
+        if constexpr (has_hash_dictionary) {
+            auto* result = this->_hash_dict.find(comp, EntryRef());
             assert(result != nullptr && result->first.load_relaxed() == itr.getKey());
         }
         return itr.getKey();
     } else {
-        if constexpr (has_unordered_dictionary) {
-            auto* result = this->_unordered_dict.find(comp, EntryRef());
+        if constexpr (has_hash_dictionary) {
+            auto* result = this->_hash_dict.find(comp, EntryRef());
             assert(result == nullptr);
         }
         return EntryRef();
     }
 }
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::remove(const EntryComparator &comp, EntryRef ref)
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::remove(const EntryComparator &comp, EntryRef ref)
 {
     assert(ref.valid());
-    auto itr = _dict.lowerBound(ref, comp);
+    auto itr = _btree_dict.lowerBound(ref, comp);
     assert(itr.valid() && itr.getKey() == ref);
-    _dict.remove(itr);
-    if constexpr (has_unordered_dictionary) {
-        auto *result = this->_unordered_dict.remove(comp, ref);
+    _btree_dict.remove(itr);
+    if constexpr (has_hash_dictionary) {
+        auto *result = this->_hash_dict.remove(comp, ref);
         assert(result != nullptr && result->first.load_relaxed() == ref);
     }
 }
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::move_entries(ICompactable &compactable)
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::move_entries(ICompactable &compactable)
 {
-    auto itr = _dict.begin();
+    auto itr = _btree_dict.begin();
     while (itr.valid()) {
         EntryRef oldRef(itr.getKey());
         EntryRef newRef(compactable.move(oldRef));
         if (newRef != oldRef) {
-            _dict.thaw(itr);
+            _btree_dict.thaw(itr);
             itr.writeKey(newRef);
-            if constexpr (has_unordered_dictionary) {
-                auto result = this->_unordered_dict.find(this->_unordered_dict.get_default_comparator(), oldRef);
+            if constexpr (has_hash_dictionary) {
+                auto result = this->_hash_dict.find(this->_hash_dict.get_default_comparator(), oldRef);
                 assert(result != nullptr && result->first.load_relaxed() == oldRef);
                 result->first.store_release(newRef);
             }
@@ -175,29 +175,29 @@ UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::move_entries(
     }
 }
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 uint32_t
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::get_num_uniques() const
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::get_num_uniques() const
 {
-    return _dict.size();
+    return _btree_dict.size();
 }
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 vespalib::MemoryUsage
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::get_memory_usage() const
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::get_memory_usage() const
 {
-    return _dict.getMemoryUsage();
+    return _btree_dict.getMemoryUsage();
 }
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::build(vespalib::ConstArrayRef<EntryRef> refs,
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build(vespalib::ConstArrayRef<EntryRef> refs,
                                                    vespalib::ConstArrayRef<uint32_t> ref_counts,
                                                    std::function<void(EntryRef)> hold)
 {
     assert(refs.size() == ref_counts.size());
     assert(!refs.empty());
-    typename DictionaryType::Builder builder(_dict.getAllocator());
+    typename BTreeDictionaryType::Builder builder(_btree_dict.getAllocator());
     for (size_t i = 1; i < refs.size(); ++i) {
         if (ref_counts[i] != 0u) {
             builder.insert(refs[i], DataType());
@@ -205,44 +205,44 @@ UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::build(vespali
             hold(refs[i]);
         }
     }
-    _dict.assign(builder);
-    if constexpr (has_unordered_dictionary) {
+    _btree_dict.assign(builder);
+    if constexpr (has_hash_dictionary) {
         for (size_t i = 1; i < refs.size(); ++i) {
             if (ref_counts[i] != 0u) {
                 EntryRef ref = refs[i];
-                std::function<EntryRef(void)> insert_unordered_entry([ref]() noexcept -> EntryRef { return ref; });
-                auto& add_result = this->_unordered_dict.add(this->_unordered_dict.get_default_comparator(), ref, insert_unordered_entry);
+                std::function<EntryRef(void)> insert_hash_entry([ref]() noexcept -> EntryRef { return ref; });
+                auto& add_result = this->_hash_dict.add(this->_hash_dict.get_default_comparator(), ref, insert_hash_entry);
                 assert(add_result.first.load_relaxed() == ref);
             }
         }
     }
 }
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::build(vespalib::ConstArrayRef<EntryRef> refs)
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build(vespalib::ConstArrayRef<EntryRef> refs)
 {
-    typename DictionaryType::Builder builder(_dict.getAllocator());
+    typename BTreeDictionaryType::Builder builder(_btree_dict.getAllocator());
     for (const auto& ref : refs) {
         builder.insert(ref, DataType());
     }
-    _dict.assign(builder);
-    if constexpr (has_unordered_dictionary) {
+    _btree_dict.assign(builder);
+    if constexpr (has_hash_dictionary) {
         for (const auto& ref : refs) {
-            std::function<EntryRef(void)> insert_unordered_entry([ref]() noexcept -> EntryRef { return ref; });
-            auto& add_result = this->_unordered_dict.add(this->_unordered_dict.get_default_comparator(), ref, insert_unordered_entry);
+            std::function<EntryRef(void)> insert_hash_entry([ref]() noexcept -> EntryRef { return ref; });
+            auto& add_result = this->_hash_dict.add(this->_hash_dict.get_default_comparator(), ref, insert_hash_entry);
             assert(add_result.first.load_relaxed() == ref);
         }
     }
 }
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::build_with_payload(vespalib::ConstArrayRef<EntryRef> refs,
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build_with_payload(vespalib::ConstArrayRef<EntryRef> refs,
                                                                 vespalib::ConstArrayRef<uint32_t> payloads)
 {
     assert(refs.size() == payloads.size());
-    typename DictionaryType::Builder builder(_dict.getAllocator());
+    typename BTreeDictionaryType::Builder builder(_btree_dict.getAllocator());
     for (size_t i = 0; i < refs.size(); ++i) {
         if constexpr (std::is_same_v<DataType, uint32_t>) {
             builder.insert(refs[i], payloads[i]);
@@ -250,12 +250,12 @@ UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::build_with_pa
             builder.insert(refs[i], DataType());
         }
     }
-    _dict.assign(builder);
-    if constexpr (has_unordered_dictionary) {
+    _btree_dict.assign(builder);
+    if constexpr (has_hash_dictionary) {
         for (size_t i = 0; i < refs.size(); ++i) {
             EntryRef ref = refs[i];
-            std::function<EntryRef(void)> insert_unordered_entry([ref]() noexcept -> EntryRef { return ref; });
-            auto& add_result = this->_unordered_dict.add(this->_unordered_dict.get_default_comparator(), ref, insert_unordered_entry);
+            std::function<EntryRef(void)> insert_hash_entry([ref]() noexcept -> EntryRef { return ref; });
+            auto& add_result = this->_hash_dict.add(this->_hash_dict.get_default_comparator(), ref, insert_hash_entry);
             assert(add_result.first.load_relaxed() == refs[i]);
             if constexpr (std::is_same_v<DataType, uint32_t>) {
                 add_result.second.store_relaxed(EntryRef(payloads[i]));
@@ -264,18 +264,18 @@ UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::build_with_pa
     }
 }
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 std::unique_ptr<typename ParentT::ReadSnapshot>
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::get_read_snapshot() const
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::get_read_snapshot() const
 {
-    return std::make_unique<ReadSnapshotImpl>(_dict.getFrozenView());
+    return std::make_unique<ReadSnapshotImpl>(_btree_dict.getFrozenView());
 }
 
-template <typename DictionaryT, typename ParentT, typename UnorderedDictionaryT>
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 bool
-UniqueStoreDictionary<DictionaryT, ParentT, UnorderedDictionaryT>::get_has_unordered_dictionary() const
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::get_has_hash_dictionary() const
 {
-    return has_unordered_dictionary;
+    return has_hash_dictionary;
 }
 
 }
