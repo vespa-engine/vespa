@@ -516,6 +516,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             }
 
             Curator curator = tenantRepository.getCurator();
+            CompletionWaiter waiter = tenantApplications.createRemoveApplicationWaiter(applicationId);
             transaction.add(new ContainerEndpointsCache(tenant.getPath(), curator).delete(applicationId)); // TODO: Not unit tested
             // Delete any application roles
             transaction.add(new ApplicationRolesStore(curator, tenant.getPath()).delete(applicationId));
@@ -532,6 +533,10 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
             } else {
                 transaction.commit();
             }
+
+            // Wait for app being removed on other servers
+            waiter.awaitCompletion(Duration.ofSeconds(30));
+
             return true;
         } finally {
             applicationTransaction.ifPresent(ApplicationTransaction::close);
