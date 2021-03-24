@@ -12,9 +12,7 @@ public class NodeMetricSnapshot implements Comparable<NodeMetricSnapshot> {
 
     private final Instant at;
 
-    private final double cpu;
-    private final double memory;
-    private final double disk;
+    private final Load load;
     private final long generation;
     private final boolean inService;
     private final boolean stable;
@@ -24,9 +22,7 @@ public class NodeMetricSnapshot implements Comparable<NodeMetricSnapshot> {
                               long generation, boolean inService, boolean stable,
                               double queryRate) {
         this.at = at;
-        this.cpu = cpu;
-        this.memory = memory;
-        this.disk = disk;
+        this.load = new Load(cpu, memory, disk);
         this.generation = generation;
         this.inService = inService;
         this.stable = stable;
@@ -34,9 +30,10 @@ public class NodeMetricSnapshot implements Comparable<NodeMetricSnapshot> {
     }
 
     public Instant at() { return at; }
-    public double cpu() { return cpu; }
-    public double memory() { return memory; }
-    public double disk() { return disk; }
+    public double cpu() { return load.cpu(); } // TODO: Remove
+    public double memory() { return load.memory(); } // TODO: Remove
+    public double disk() { return load.disk(); } // TODO: Remove
+    public Load load() { return load; }
 
     /** Queries per second */
     public double queryRate() { return queryRate; }
@@ -53,10 +50,8 @@ public class NodeMetricSnapshot implements Comparable<NodeMetricSnapshot> {
     }
 
     @Override
-    public String toString() { return "metrics at " + at + ":" +
-                                      " cpu: " + cpu +
-                                      " memory: " + memory +
-                                      " disk: " + disk +
+    public String toString() { return "metrics at " + at + ": " +
+                                      load +
                                       " generation: " + generation +
                                       " inService: " + inService +
                                       " stable: " + stable +

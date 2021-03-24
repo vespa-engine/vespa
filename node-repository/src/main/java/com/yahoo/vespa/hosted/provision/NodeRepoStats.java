@@ -58,7 +58,7 @@ public class NodeRepoStats {
 
     private static Pair<Load, Load> computeLoad(NodeList allNodes, List<NodeTimeseries> allNodeTimeseries) {
         NodeResources totalActiveResources = new NodeResources(0, 0, 0, 0);
-        double cpu = 0, memory = 0, disk = 0;
+        Load load = Load.zero();
         for (var nodeTimeseries : allNodeTimeseries) {
             Optional<Node> node = allNodes.node(nodeTimeseries.hostname());
             if (node.isEmpty() || node.get().state() != Node.State.active) continue;
@@ -66,24 +66,15 @@ public class NodeRepoStats {
             Optional<NodeMetricSnapshot> snapshot = nodeTimeseries.last();
             if (snapshot.isEmpty()) continue;
 
-            cpu += snapshot.get().cpu() * node.get().resources().vcpu();
-            memory += snapshot.get().memory() * node.get().resources().memoryGb();
-            disk += snapshot.get().disk() * node.get().resources().diskGb();
+            load = load.add(snapshot.get().load().multiply(node.get().resources()));
             totalActiveResources = totalActiveResources.add(node.get().resources().justNumbers());
         }
 
         NodeResources totalHostResources = new NodeResources(0, 0, 0, 0);
-        for (var host : allNodes.hosts()) {
+        for (var host : allNodes.hosts())
             totalHostResources = totalHostResources.add(host.resources().justNumbers());
-        }
 
-        Load load = new Load(divide(cpu, totalHostResources.vcpu()),
-                             divide(memory, totalHostResources.memoryGb()),
-                             divide(disk, totalHostResources.diskGb()));
-        Load activeLoad = new Load(divide(cpu, totalActiveResources.vcpu()),
-                                   divide(memory, totalActiveResources.memoryGb()),
-                                   divide(disk, totalActiveResources.diskGb()));
-        return new Pair<>(load, activeLoad);
+        return new Pair<>(load.divide(totalHostResources), load.divide(totalActiveResources));
     }
 
     private static List<ApplicationStats> computeApplicationStats(NodeList allNodes,

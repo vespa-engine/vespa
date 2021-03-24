@@ -1,6 +1,8 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.autoscale;
 
+import com.yahoo.config.provision.NodeResources;
+
 /**
  * The load of a node or system, measured as fractions of max (1.0) in three dimensions.
  *
@@ -20,11 +22,23 @@ public class Load {
     public double memory() { return memory; }
     public double disk() { return disk; }
 
+    public Load add(Load other) {
+        return new Load(cpu + other.cpu(), memory + other.memory(), disk + other.disk());
+    }
+
+    public Load multiply(NodeResources resources) {
+        return new Load(cpu * resources.vcpu(), memory * resources.memoryGb(), disk * resources.diskGb());
+    }
+
+    public Load divide(NodeResources resources) {
+        return new Load(divide(cpu, resources.vcpu()), divide(memory, resources.memoryGb()), divide(disk, resources.diskGb()));
+    }
+
     private double requireNormalized(double value, String name) {
         if (Double.isNaN(value))
-            throw new IllegalArgumentException(name + " must be a number between 0 and 1, but is NaN");
-        if (value < 0 || value > 1)
-            throw new IllegalArgumentException(name + " must be between 0 and 1, but is " + value);
+            throw new IllegalArgumentException(name + " must be a number but is NaN");
+        if (value < 0)
+            throw new IllegalArgumentException(name + " must be zero or lager, but is " + value);
         return value;
     }
 
@@ -34,5 +48,10 @@ public class Load {
     }
 
     public static Load zero() { return new Load(0, 0, 0); }
+
+    private static double divide(double a, double b) {
+        if (a == 0 && b == 0) return 0;
+        return a / b;
+    }
 
 }
