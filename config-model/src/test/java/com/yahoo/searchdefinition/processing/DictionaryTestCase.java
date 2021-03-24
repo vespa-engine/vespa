@@ -50,12 +50,13 @@ public class DictionaryTestCase {
 
     void verifyNumericDictionaryControl(Dictionary.Type expected,
                                         AttributesConfig.Attribute.Dictionary.Type.Enum expectedConfig,
+                                        String type,
                                         String ... cfg) throws ParseException
     {
         String def = TestUtil.joinLines(
                 "search test {",
                 "    document test {",
-                "        field n1 type int {",
+                "        field n1 type " + type + " {",
                 "            indexing: summary | attribute",
                 "            attribute:fast-search",
                 TestUtil.joinLines(cfg),
@@ -72,18 +73,35 @@ public class DictionaryTestCase {
     public void testNumericBtreeSettings() throws ParseException {
         verifyNumericDictionaryControl(Dictionary.Type.BTREE,
                 AttributesConfig.Attribute.Dictionary.Type.BTREE,
+                "int",
                 "dictionary:btree");
     }
     @Test
     public void testNumericHashSettings() throws ParseException {
         verifyNumericDictionaryControl(Dictionary.Type.HASH,
                 AttributesConfig.Attribute.Dictionary.Type.HASH,
+                "int",
                 "dictionary:hash");
     }
     @Test
     public void testNumericBtreeAndHashSettings() throws ParseException {
         verifyNumericDictionaryControl(Dictionary.Type.BTREE_AND_HASH,
                 AttributesConfig.Attribute.Dictionary.Type.BTREE_AND_HASH,
+                "int",
+                "dictionary:btree", "dictionary:hash");
+    }
+    @Test
+    public void testNumericArrayBtreeAndHashSettings() throws ParseException {
+        verifyNumericDictionaryControl(Dictionary.Type.BTREE_AND_HASH,
+                AttributesConfig.Attribute.Dictionary.Type.BTREE_AND_HASH,
+                "array<int>",
+                "dictionary:btree", "dictionary:hash");
+    }
+    @Test
+    public void testNumericWSetBtreeAndHashSettings() throws ParseException {
+        verifyNumericDictionaryControl(Dictionary.Type.BTREE_AND_HASH,
+                AttributesConfig.Attribute.Dictionary.Type.BTREE_AND_HASH,
+                "weightedset<int>",
                 "dictionary:btree", "dictionary:hash");
     }
     @Test
