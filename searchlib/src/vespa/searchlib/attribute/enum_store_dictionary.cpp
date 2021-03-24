@@ -237,20 +237,20 @@ EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::update_posting_list(Inde
 
 template <>
 bool
-EnumStoreDictionary<EnumTree>::check_posting_lists(std::function<EntryRef(EntryRef)>)
+EnumStoreDictionary<EnumTree>::normalize_posting_lists(std::function<EntryRef(EntryRef)>)
 {
     LOG_ABORT("should not be reached");
 }
 
 template <typename DictionaryT, typename UnorderedDictionaryT>
 bool
-EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::check_posting_lists(std::function<EntryRef(EntryRef)> updater)
+EnumStoreDictionary<DictionaryT, UnorderedDictionaryT>::normalize_posting_lists(std::function<EntryRef(EntryRef)> normalize)
 {
     bool changed = false;
     auto& dict = this->_dict;
     for (auto itr = dict.begin(); itr.valid(); ++itr) {
         EntryRef old_posting_idx(itr.getData());
-        EntryRef new_posting_idx = updater(old_posting_idx);
+        EntryRef new_posting_idx = normalize(old_posting_idx);
         if (new_posting_idx != old_posting_idx) {
             changed = true;
             dict.thaw(itr);

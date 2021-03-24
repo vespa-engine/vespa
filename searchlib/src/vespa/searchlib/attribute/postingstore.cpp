@@ -124,8 +124,8 @@ PostingStore<DataT>::removeSparseBitVectors()
         }
     }
     if (needscan) {
-        res = _dictionary.check_posting_lists([this](EntryRef posting_idx) -> EntryRef
-                                              { return consider_remove_sparse_bitvector(posting_idx); });
+        res = _dictionary.normalize_posting_lists([this](EntryRef posting_idx) -> EntryRef
+                                                  { return consider_remove_sparse_bitvector(posting_idx); });
     }
     return res;
 }
