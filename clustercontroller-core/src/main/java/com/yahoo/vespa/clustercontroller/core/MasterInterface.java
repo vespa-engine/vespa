@@ -5,5 +5,6 @@ public interface MasterInterface {
 
     boolean isMaster();
     Integer getMaster();
+    boolean inMasterMoratorium();
 
 }

@@ -94,7 +94,9 @@ public class FleetControllerOptions implements Cloneable {
      * Minimum time to pass (in milliseconds) before broadcasting our first systemstate. Set small in unit tests,
      * but should be a few seconds in a real system to prevent new nodes taking over from disturbing the system by
      * putting out a different systemstate just because all nodes don't answer witihin a single cycle.
-     * If all nodes have reported before this time, the min time is ignored and system state is broadcasted.
+     * The cluster state is allowed to be broadcasted before this time if all nodes have successfully
+     * reported their state in Slobrok and getnodestate. This value should typically be at least
+     * maxSlobrokDisconnectGracePeriod and nodeStateRequestTimeoutMS.
      */
     public long minTimeBeforeFirstSystemStateBroadcast = 0;
 
