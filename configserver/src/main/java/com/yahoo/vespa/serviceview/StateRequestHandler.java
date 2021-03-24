@@ -71,6 +71,8 @@ public class StateRequestHandler extends RestApiRequestHandler<StateRequestHandl
 
     private static RestApi createRestApiDefinition(StateRequestHandler self) {
         return RestApi.builder()
+                .addRoute(RestApi.route("/serviceview/v1")
+                        .get(self::getDefaultUserInfo))
                 .addRoute(RestApi.route("/serviceview/v1/")
                         .get(self::getDefaultUserInfo))
                 .addRoute(RestApi.route("/serviceview/v1/tenant/{tenantName}/application/{applicationName}/environment/{environmentName}/region/{regionName}/instance/{instanceName}")

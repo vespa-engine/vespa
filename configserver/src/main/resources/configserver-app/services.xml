@@ -68,7 +68,7 @@
     </rest-api>
 
     <handler id="com.yahoo.vespa.serviceview.StateRequestHandler" bundle="configserver">
-      <binding>http://*/serviceview/v1/</binding>
+      <binding>http://*/serviceview/v1</binding>
       <binding>http://*/serviceview/v1/*</binding>
     </handler>
     <handler id='com.yahoo.vespa.config.server.http.HttpGetConfigHandler' bundle='configserver'>
