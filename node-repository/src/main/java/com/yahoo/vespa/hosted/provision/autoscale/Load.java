@@ -30,6 +30,10 @@ public class Load {
         return new Load(cpu * resources.vcpu(), memory * resources.memoryGb(), disk * resources.diskGb());
     }
 
+    public Load multiply(double factor) {
+        return new Load(cpu * factor, memory * factor, disk * factor);
+    }
+
     public Load divide(NodeResources resources) {
         return new Load(divide(cpu, resources.vcpu()), divide(memory, resources.memoryGb()), divide(disk, resources.diskGb()));
     }

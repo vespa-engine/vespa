@@ -234,10 +234,8 @@ public class QuestMetricsDbTest {
         for (int i = 1; i <= countPerHost; i++) {
             for (String host : hosts)
                 timeseries.add(new Pair<>(host, new NodeMetricSnapshot(clock.instant(),
-                                                                   i * 0.1,
-                                                                   i * 0.2,
-                                                                   i * 0.4,
-                                                                   i % 100,
+                                                                       new Load(i * 0.1, i * 0.2, i * 0.4),
+                                                                       i % 100,
                                                                        true,
                                                                        true,
                                                                        30.0)));
@@ -260,11 +258,8 @@ public class QuestMetricsDbTest {
         Collection<Pair<String, NodeMetricSnapshot>> timeseries = new ArrayList<>();
         for (int i = 1; i <= countPerHost; i++) {
             for (String host : hosts)
-                timeseries.add(new Pair<>(host, new NodeMetricSnapshot(at,
-                                                                   i * 0.1,
-                                                                   i * 0.2,
-                                                                   i * 0.4,
-                                                                   i % 100,
+                timeseries.add(new Pair<>(host, new NodeMetricSnapshot(at, new Load(i * 0.1, i * 0.2, i * 0.4),
+                                                                       i % 100,
                                                                        true,
                                                                        false,
                                                                        0.0)));

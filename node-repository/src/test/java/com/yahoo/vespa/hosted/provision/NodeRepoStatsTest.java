@@ -91,7 +91,7 @@ public class NodeRepoStatsTest {
             else {
                 loadFactor = loadApp3;
             }
-            var snapshot = new NodeMetricSnapshot(now, 1.0 * loadFactor, 0.9 * loadFactor, 0.8 * loadFactor, 1, true, true, 1.0 );
+            var snapshot = new NodeMetricSnapshot(now, new Load(1.0, 0.9, 0.8).multiply(loadFactor), 1, true, true, 1.0 );
             tester.nodeRepository().metricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(), snapshot)));
         }
 

@@ -17,6 +17,7 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.autoscale.ClusterMetricSnapshot;
+import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
@@ -74,9 +75,7 @@ public class AutoscalingMaintainerTester {
             for (Node node : nodes)
                 nodeRepository().metricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
                                                                                new NodeMetricSnapshot(clock().instant(),
-                                                                                                      cpu,
-                                                                                                      mem,
-                                                                                                      disk,
+                                                                                                      new Load(cpu, mem, disk),
                                                                                                       generation,
                                                                                                       true,
                                                                                                       true,

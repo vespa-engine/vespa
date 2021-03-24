@@ -40,9 +40,7 @@ public class NodeMetricsDbTest {
         Collection<Pair<String, NodeMetricSnapshot>> values = new ArrayList<>();
         for (int i = 0; i < 40; i++) {
             values.add(new Pair<>(node0, new NodeMetricSnapshot(clock.instant(),
-                                                                0.9f,
-                                                                0.6f,
-                                                                0.6f,
+                                                                new Load(0.9, 0.6, 0.6),
                                                                 0,
                                                                 true,
                                                                 false,

@@ -18,11 +18,11 @@ public class NodeMetricSnapshot implements Comparable<NodeMetricSnapshot> {
     private final boolean stable;
     private final double queryRate;
 
-    public NodeMetricSnapshot(Instant at, double cpu, double memory, double disk,
+    public NodeMetricSnapshot(Instant at, Load load,
                               long generation, boolean inService, boolean stable,
                               double queryRate) {
         this.at = at;
-        this.load = new Load(cpu, memory, disk);
+        this.load = load;
         this.generation = generation;
         this.inService = inService;
         this.stable = stable;
