@@ -260,6 +260,11 @@ public class NodesV2ApiTest {
     }
 
     @Test
+    public void test_stats_request() throws Exception {
+        assertFile(new Request("http://localhost:8080/nodes/v2/stats"), "stats.json");
+    }
+
+    @Test
     public void maintenance_requests() throws Exception {
         // GET a list of all maintenance jobs
         assertFile(new Request("http://localhost:8080/nodes/v2/maintenance/"), "maintenance.json");

@@ -29,6 +29,7 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
+import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
@@ -125,6 +126,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         if (path.matches(    "/nodes/v2/capacity")) return new HostCapacityResponse(nodeRepository, request);
         if (path.matches(    "/nodes/v2/application")) return applicationList(request.getUri());
         if (path.matches(    "/nodes/v2/application/{applicationId}")) return application(path.get("applicationId"), request.getUri());
+        if (path.matches(    "/nodes/v2/stats")) return stats();
         throw new NotFoundException("Nothing at " + path);
     }
 
@@ -450,6 +452,34 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
                                                     nodeRepository,
                                                     withPath("/nodes/v2/applications/" + id, uri));
         return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse stats() {
+        var stats = nodeRepository.computeStats();
+
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+
+        toSlime(stats.load(), root.setObject("load"));
+        toSlime(stats.load(), root.setObject("activeLoad"));
+        Cursor applicationsObject = root.setArray("applications");
+        for (int i = 0; i <= 5; i++) {
+            if (i >= stats.applicationStats().size()) break;
+
+            var applicationStats = stats.applicationStats().get(i);
+            Cursor applicationObject = applicationsObject.addObject();
+            applicationObject.setString("application", applicationStats.id().toFullString());
+            toSlime(applicationStats.load(), applicationObject.setObject("load"));
+            applicationObject.setDouble("cost", applicationStats.cost());
+            applicationObject.setDouble("unutilizedCost", applicationStats.unutilizedCost());
+        }
+        return new SlimeJsonResponse(slime);
+    }
+
+    private void toSlime(Load load, Cursor object) {
+        object.setDouble("cpu", load.cpu());
+        object.setDouble("memory", load.memory());
+        object.setDouble("disk", load.disk());
     }
 
     /** Returns a copy of the given URI with the host and port from the given URI and the path set to the given path */
