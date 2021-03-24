@@ -83,9 +83,11 @@ public class NodeMembership {
         }
 
         public boolean isAdmin() { return "admin".equals(type); }
-        public boolean isContent() { return "content".equals(type) || isCombined(); }
+        public boolean isContent() { return "content".equals(type); }
         public boolean isCombined() { return "combined".equals(type); }
-        public boolean isContainer() { return "container".equals(type) || isCombined(); }
+        public boolean isContainer() { return "container".equals(type); }
+        public boolean hasContainer() { return isContainer() || isCombined(); }
+        public boolean hasContent() { return isContent() || isCombined(); }
 
         public String value() {
             return type;
