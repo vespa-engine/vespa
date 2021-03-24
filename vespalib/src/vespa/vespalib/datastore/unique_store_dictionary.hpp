@@ -60,8 +60,8 @@ ReadSnapshotImpl::foreach_key(std::function<void(EntryRef)> callback) const
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::UniqueStoreDictionary(std::unique_ptr<EntryComparator> compare)
     : ParentT(),
-      UniqueStoreHashDictionaryBase<HashDictionaryT>(std::move(compare)),
-      _btree_dict()
+      UniqueStoreBTreeDictionaryBase<BTreeDictionaryT>(),
+      UniqueStoreHashDictionaryBase<HashDictionaryT>(std::move(compare))
 {
 }
 
@@ -72,14 +72,14 @@ template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
 UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::freeze()
 {
-    _btree_dict.getAllocator().freeze();
+    this->_btree_dict.getAllocator().freeze();
 }
 
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
 UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::transfer_hold_lists(generation_t generation)
 {
-    _btree_dict.getAllocator().transferHoldLists(generation);
+    this->_btree_dict.getAllocator().transferHoldLists(generation);
     if constexpr (has_hash_dictionary) {
         this->_hash_dict.transfer_hold_lists(generation);
     }
@@ -89,7 +89,7 @@ template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
 UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::trim_hold_lists(generation_t firstUsed)
 {
-    _btree_dict.getAllocator().trimHoldLists(firstUsed);
+    this->_btree_dict.getAllocator().trimHoldLists(firstUsed);
     if constexpr (has_hash_dictionary) {
         this->_hash_dict.trim_hold_lists(firstUsed);
     }
@@ -100,7 +100,7 @@ UniqueStoreAddResult
 UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::add(const EntryComparator &comp,
                                                  std::function<EntryRef(void)> insertEntry)
 {
-    auto itr = _btree_dict.lowerBound(EntryRef(), comp);
+    auto itr = this->_btree_dict.lowerBound(EntryRef(), comp);
     if (itr.valid() && !comp.less(EntryRef(), itr.getKey())) {
         if constexpr (has_hash_dictionary) {
             auto* result = this->_hash_dict.find(comp, EntryRef());
@@ -110,7 +110,7 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::add(const Ent
 
     } else {
         EntryRef newRef = insertEntry();
-        _btree_dict.insert(itr, newRef, DataType());
+        this->_btree_dict.insert(itr, newRef, DataType());
         if constexpr (has_hash_dictionary) {
             std::function<EntryRef(void)> insert_hash_entry([newRef]() noexcept -> EntryRef { return newRef; });
             auto& add_result = this->_hash_dict.add(comp, newRef, insert_hash_entry);
@@ -124,7 +124,7 @@ template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 EntryRef
 UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::find(const EntryComparator &comp)
 {
-    auto itr = _btree_dict.lowerBound(EntryRef(), comp);
+    auto itr = this->_btree_dict.lowerBound(EntryRef(), comp);
     if (itr.valid() && !comp.less(EntryRef(), itr.getKey())) {
         if constexpr (has_hash_dictionary) {
             auto* result = this->_hash_dict.find(comp, EntryRef());
@@ -145,9 +145,9 @@ void
 UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::remove(const EntryComparator &comp, EntryRef ref)
 {
     assert(ref.valid());
-    auto itr = _btree_dict.lowerBound(ref, comp);
+    auto itr = this->_btree_dict.lowerBound(ref, comp);
     assert(itr.valid() && itr.getKey() == ref);
-    _btree_dict.remove(itr);
+    this->_btree_dict.remove(itr);
     if constexpr (has_hash_dictionary) {
         auto *result = this->_hash_dict.remove(comp, ref);
         assert(result != nullptr && result->first.load_relaxed() == ref);
@@ -158,12 +158,12 @@ template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
 UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::move_entries(ICompactable &compactable)
 {
-    auto itr = _btree_dict.begin();
+    auto itr = this->_btree_dict.begin();
     while (itr.valid()) {
         EntryRef oldRef(itr.getKey());
         EntryRef newRef(compactable.move(oldRef));
         if (newRef != oldRef) {
-            _btree_dict.thaw(itr);
+            this->_btree_dict.thaw(itr);
             itr.writeKey(newRef);
             if constexpr (has_hash_dictionary) {
                 auto result = this->_hash_dict.find(this->_hash_dict.get_default_comparator(), oldRef);
@@ -179,14 +179,14 @@ template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 uint32_t
 UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::get_num_uniques() const
 {
-    return _btree_dict.size();
+    return this->_btree_dict.size();
 }
 
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 vespalib::MemoryUsage
 UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::get_memory_usage() const
 {
-    return _btree_dict.getMemoryUsage();
+    return this->_btree_dict.getMemoryUsage();
 }
 
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
@@ -197,7 +197,7 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build(vespali
 {
     assert(refs.size() == ref_counts.size());
     assert(!refs.empty());
-    typename BTreeDictionaryType::Builder builder(_btree_dict.getAllocator());
+    typename BTreeDictionaryType::Builder builder(this->_btree_dict.getAllocator());
     for (size_t i = 1; i < refs.size(); ++i) {
         if (ref_counts[i] != 0u) {
             builder.insert(refs[i], DataType());
@@ -205,7 +205,7 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build(vespali
             hold(refs[i]);
         }
     }
-    _btree_dict.assign(builder);
+    this->_btree_dict.assign(builder);
     if constexpr (has_hash_dictionary) {
         for (size_t i = 1; i < refs.size(); ++i) {
             if (ref_counts[i] != 0u) {
@@ -222,11 +222,11 @@ template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 void
 UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build(vespalib::ConstArrayRef<EntryRef> refs)
 {
-    typename BTreeDictionaryType::Builder builder(_btree_dict.getAllocator());
+    typename BTreeDictionaryType::Builder builder(this->_btree_dict.getAllocator());
     for (const auto& ref : refs) {
         builder.insert(ref, DataType());
     }
-    _btree_dict.assign(builder);
+    this->_btree_dict.assign(builder);
     if constexpr (has_hash_dictionary) {
         for (const auto& ref : refs) {
             std::function<EntryRef(void)> insert_hash_entry([ref]() noexcept -> EntryRef { return ref; });
@@ -242,7 +242,7 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build_with_pa
                                                                 vespalib::ConstArrayRef<uint32_t> payloads)
 {
     assert(refs.size() == payloads.size());
-    typename BTreeDictionaryType::Builder builder(_btree_dict.getAllocator());
+    typename BTreeDictionaryType::Builder builder(this->_btree_dict.getAllocator());
     for (size_t i = 0; i < refs.size(); ++i) {
         if constexpr (std::is_same_v<DataType, uint32_t>) {
             builder.insert(refs[i], payloads[i]);
@@ -250,7 +250,7 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build_with_pa
             builder.insert(refs[i], DataType());
         }
     }
-    _btree_dict.assign(builder);
+    this->_btree_dict.assign(builder);
     if constexpr (has_hash_dictionary) {
         for (size_t i = 0; i < refs.size(); ++i) {
             EntryRef ref = refs[i];
@@ -268,7 +268,7 @@ template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 std::unique_ptr<typename ParentT::ReadSnapshot>
 UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::get_read_snapshot() const
 {
-    return std::make_unique<ReadSnapshotImpl>(_btree_dict.getFrozenView());
+    return std::make_unique<ReadSnapshotImpl>(this->_btree_dict.getFrozenView());
 }
 
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
