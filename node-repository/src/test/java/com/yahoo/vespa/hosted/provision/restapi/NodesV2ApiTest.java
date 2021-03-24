@@ -60,6 +60,8 @@ public class NodesV2ApiTest {
         assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true"), "nodes-recursive.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&includeDeprovisioned=true"), "nodes-recursive-include-deprovisioned.json");
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"), "node2.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/stats"), "stats.json");
+        assertFile(new Request("http://localhost:8080/nodes/v2/maintenance/"), "maintenance.json");
 
         // GET with filters
         assertFile(new Request("http://localhost:8080/nodes/v2/node/?recursive=true&hostname=host6.yahoo.com%20host2.yahoo.com"), "application2-nodes.json");
@@ -257,17 +259,6 @@ public class NodesV2ApiTest {
                                    Utf8.toBytes("{\"currentReadShare\": 0.3, " +
                                                 "\"maxReadShare\": 0.5 }"), Request.Method.PATCH),
                        "{\"message\":\"Updated application 'tenant1.application1.instance1'\"}");
-    }
-
-    @Test
-    public void test_stats_request() throws Exception {
-        assertFile(new Request("http://localhost:8080/nodes/v2/stats"), "stats.json");
-    }
-
-    @Test
-    public void maintenance_requests() throws Exception {
-        // GET a list of all maintenance jobs
-        assertFile(new Request("http://localhost:8080/nodes/v2/maintenance/"), "maintenance.json");
     }
 
     @Test

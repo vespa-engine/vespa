@@ -28,7 +28,6 @@ public class Cluster {
     private final double maxQueryGrowthRate;
     private final double currentQueryFractionOfMax;
 
-
     public Cluster(ClusterSpec.Id id,
                    ClusterSpec.Type type,
                    ClusterResources min,

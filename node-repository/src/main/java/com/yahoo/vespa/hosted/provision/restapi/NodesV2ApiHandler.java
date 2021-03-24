@@ -462,13 +462,13 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
 
         toSlime(stats.load(), root.setObject("load"));
         toSlime(stats.load(), root.setObject("activeLoad"));
-        Cursor applicationsObject = root.setArray("applications");
+        Cursor applicationsObject = root.setArray("applicationStats");
         for (int i = 0; i <= 5; i++) {
             if (i >= stats.applicationStats().size()) break;
 
             var applicationStats = stats.applicationStats().get(i);
             Cursor applicationObject = applicationsObject.addObject();
-            applicationObject.setString("application", applicationStats.id().toFullString());
+            applicationObject.setString("id", applicationStats.id().toFullString());
             toSlime(applicationStats.load(), applicationObject.setObject("load"));
             applicationObject.setDouble("cost", applicationStats.cost());
             applicationObject.setDouble("unutilizedCost", applicationStats.unutilizedCost());
