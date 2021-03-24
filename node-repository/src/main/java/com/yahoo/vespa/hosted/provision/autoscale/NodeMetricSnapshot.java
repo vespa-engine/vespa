@@ -30,9 +30,6 @@ public class NodeMetricSnapshot implements Comparable<NodeMetricSnapshot> {
     }
 
     public Instant at() { return at; }
-    public double cpu() { return load.cpu(); } // TODO: Remove
-    public double memory() { return load.memory(); } // TODO: Remove
-    public double disk() { return load.disk(); } // TODO: Remove
     public Load load() { return load; }
 
     /** Queries per second */

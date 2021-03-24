@@ -96,7 +96,7 @@ public class ClusterModel {
         return queryFractionOfMax = clusterTimeseries().queryFractionOfMax(scalingDuration(), clock);
     }
 
-    public double averageLoad(Resource resource) { return nodeTimeseries().averageLoad(resource); }
+    public Load averageLoad() { return nodeTimeseries().averageLoad(); }
 
     public double idealLoad(Resource resource) {
         switch (resource) {

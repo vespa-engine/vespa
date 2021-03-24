@@ -53,11 +53,11 @@ public class ResourceTarget {
     /** Create a target of achieving ideal load given a current load */
     public static ResourceTarget idealLoad(ClusterModel clusterModel,
                                            AllocatableClusterResources current) {
-        return new ResourceTarget(nodeUsage(Resource.cpu, clusterModel.averageLoad(Resource.cpu), current)
+        return new ResourceTarget(nodeUsage(Resource.cpu, clusterModel.averageLoad().cpu(), current)
                                   / clusterModel.idealLoad(Resource.cpu),
-                                  nodeUsage(Resource.memory, clusterModel.averageLoad(Resource.memory), current)
+                                  nodeUsage(Resource.memory, clusterModel.averageLoad().memory(), current)
                                   / clusterModel.idealLoad(Resource.memory),
-                                  nodeUsage(Resource.disk, clusterModel.averageLoad(Resource.disk), current)
+                                  nodeUsage(Resource.disk, clusterModel.averageLoad().disk(), current)
                                   / clusterModel.idealLoad(Resource.disk),
                                   true);
     }

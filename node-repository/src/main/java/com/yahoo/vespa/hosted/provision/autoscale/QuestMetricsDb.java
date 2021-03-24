@@ -113,9 +113,9 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
             TableWriter.Row row = writer.newRow(atMillis * 1000); // in microseconds
             row.putStr(0, snapshot.getFirst());
             // (1 is timestamp)
-            row.putFloat(2, (float)snapshot.getSecond().cpu());
-            row.putFloat(3, (float)snapshot.getSecond().memory());
-            row.putFloat(4, (float)snapshot.getSecond().disk());
+            row.putFloat(2, (float)snapshot.getSecond().load().cpu());
+            row.putFloat(3, (float)snapshot.getSecond().load().memory());
+            row.putFloat(4, (float)snapshot.getSecond().load().disk());
             row.putLong(5, snapshot.getSecond().generation());
             row.putBool(6, snapshot.getSecond().inService());
             row.putBool(7, snapshot.getSecond().stable());

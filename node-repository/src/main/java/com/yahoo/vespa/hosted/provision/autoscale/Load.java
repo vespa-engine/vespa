@@ -34,6 +34,10 @@ public class Load {
         return new Load(divide(cpu, resources.vcpu()), divide(memory, resources.memoryGb()), divide(disk, resources.diskGb()));
     }
 
+    public Load divide(double divisor) {
+        return new Load(divide(cpu, divisor), divide(memory, divisor), divide(disk, divisor));
+    }
+
     public NodeResources scaled(NodeResources resources) {
         return resources.withVcpu(cpu * resources.vcpu())
                         .withMemoryGb(memory * resources.memoryGb())

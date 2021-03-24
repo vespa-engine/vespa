@@ -54,9 +54,9 @@ public class QuestMetricsDbTest {
         assertEquals(1000, nodeTimeSeries1.get(0).size());
         NodeMetricSnapshot snapshot = nodeTimeSeries1.get(0).asList().get(0);
         assertEquals(startTime.plus(Duration.ofSeconds(1)), snapshot.at());
-        assertEquals(0.1, snapshot.cpu(), delta);
-        assertEquals(0.2, snapshot.memory(), delta);
-        assertEquals(0.4, snapshot.disk(), delta);
+        assertEquals(0.1, snapshot.load().cpu(), delta);
+        assertEquals(0.2, snapshot.load().memory(), delta);
+        assertEquals(0.4, snapshot.load().disk(), delta);
         assertEquals(1, snapshot.generation(), delta);
         assertEquals(30, snapshot.queryRate(), delta);
 
