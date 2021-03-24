@@ -461,7 +461,7 @@
         <jetty.version>9.4.38.v20210224</jetty.version>
         <org.lz4.version>1.7.1</org.lz4.version>
         <org.json.version>20090211</org.json.version>
-        <slf4j.version>1.7.30</slf4j.version>
+        <slf4j.version>1.7.5</slf4j.version>
         <xml-apis.version>1.4.01</xml-apis.version>
 
         <!-- These must be kept in sync with version used by current jersey2.version. -->

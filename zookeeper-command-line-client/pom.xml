@@ -36,7 +36,7 @@
     <dependency>
        <groupId>org.slf4j</groupId>
        <artifactId>slf4j-api</artifactId>
-       <scope>compile</scope>
+       <version>1.7.25</version>
     </dependency>
   </dependencies>
   <build>

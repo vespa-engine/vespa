@@ -35,7 +35,7 @@
         <junit5.platform.version>1.7.0</junit5.platform.version>
         <org.lz4.version>1.7.1</org.lz4.version>
         <org.json.version>20090211</org.json.version><!-- TODO Vespa 8: remove as provided dependency -->
-        <slf4j.version>1.7.30</slf4j.version>
+        <slf4j.version>1.7.5</slf4j.version>
         <tensorflow.version>1.12.0</tensorflow.version>
         <xml-apis.version>1.4.01</xml-apis.version>
 
