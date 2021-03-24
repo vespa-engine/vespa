@@ -17,8 +17,10 @@ import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
+import com.yahoo.vespa.curator.CompletionTimeoutException;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
+import com.yahoo.vespa.curator.mock.MockCuratorFramework;
 import com.yahoo.vespa.model.VespaModel;
 import com.yahoo.vespa.model.VespaModelFactory;
 import org.apache.curator.framework.CuratorFramework;
@@ -31,6 +33,7 @@ import org.xml.sax.SAXException;
 import java.io.File;
 import java.io.IOException;
 import java.time.Clock;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.LinkedHashMap;
@@ -39,13 +42,16 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.IntStream;
 
+import static com.yahoo.vespa.config.server.application.TenantApplications.RemoveApplicationWaiter;
 import static org.hamcrest.Matchers.is;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author Ulf Lilleengen
@@ -217,6 +223,41 @@ public class TenantApplicationsTest {
         assertEquals(applications.appendOneLevelOfId("", "search/music/qrservers/default/qr.0"), "search");
     }
 
+    @Test
+    public void testRemoveApplication2of3Respond() throws InterruptedException {
+        Curator curator = new MockCurator3ConfigServers();
+        Thread t1 = setupWaiter(curator);
+        notifyCompletion(curator, 2);
+        t1.join();
+    }
+
+    @Test
+    public void testRemoveApplicationAllRespond() throws InterruptedException {
+        Curator curator = new MockCurator3ConfigServers();
+        Thread t1 = setupWaiter(curator);
+        notifyCompletion(curator, 3);
+        t1.join();
+    }
+
+    private Thread setupWaiter(Curator curator) {
+        Curator.CompletionWaiter waiter = RemoveApplicationWaiter.createAndInitialize(curator, createApplicationId(), "cfg1", Duration.ofSeconds(1));
+        Thread t1 = new Thread(() -> {
+            try {
+                waiter.awaitCompletion(Duration.ofSeconds(120));
+            } catch (CompletionTimeoutException e) {
+                fail("Waiting failed due to timeout");
+            }
+        });
+        t1.start();
+        return t1;
+    }
+
+    private void notifyCompletion(Curator curator, int respondentCount) {
+        IntStream.range(0, respondentCount)
+                 .forEach(i -> RemoveApplicationWaiter.create(curator, createApplicationId(), "cfg" + i, Duration.ofSeconds(1))
+                                                      .notifyCompletion());
+    }
+
     private TenantApplications createZKAppRepo() {
         return TenantApplications.create(new HostRegistry(),
                                          tenantName,
@@ -224,6 +265,11 @@ public class TenantApplicationsTest {
                                          configserverConfig,
                                          Clock.systemUTC(),
                                          new TenantApplicationsTest.MockReloadListener());
+    }
+
+
+    private static ApplicationId createApplicationId() {
+        return createApplicationId("foo");
     }
 
     private static ApplicationId createApplicationId(String name) {
@@ -245,6 +291,14 @@ public class TenantApplicationsTest {
     private ModelFactoryRegistry createRegistry() {
         return new ModelFactoryRegistry(Arrays.asList(new TestModelFactory(vespaVersion),
                                                       new TestModelFactory(new Version(3, 2, 1))));
+    }
+
+    private static class MockCurator3ConfigServers extends Curator {
+
+        public MockCurator3ConfigServers() {
+            super("host1:2181,host2:2181,host3:2181", "host1:2181,host2:2181,host3:2181", (retryPolicy) -> new MockCuratorFramework(true, false));
+        }
+
     }
 
 }
