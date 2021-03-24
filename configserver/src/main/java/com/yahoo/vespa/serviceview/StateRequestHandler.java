@@ -117,13 +117,9 @@ public class StateRequestHandler extends RestApiRequestHandler<StateRequestHandl
     }
 
     protected ModelResponse getModelConfig(String tenant, String application, String environment, String region, String instance) {
-        try {
-            WebTarget target = client.target("http://localhost:" + restApiPort + "/");
-            ConfigClient resource = WebResourceFactory.newResource(ConfigClient.class, target);
-            return resource.getServiceModel(tenant, application, environment, region, instance);
-        } finally {
-            client.close();
-        }
+        WebTarget target = client.target("http://localhost:" + restApiPort + "/");
+        ConfigClient resource = WebResourceFactory.newResource(ConfigClient.class, target);
+        return resource.getServiceModel(tenant, application, environment, region, instance);
     }
 
     protected HashMap<?, ?> singleService(
@@ -131,14 +127,10 @@ public class StateRequestHandler extends RestApiRequestHandler<StateRequestHandl
         ServiceModel model = new ServiceModel(getModelConfig(tenantName, applicationName, environmentName, regionName, instanceName));
         Service s = model.getService(identifier);
         int requestedPort = s.matchIdentifierWithPort(identifier);
-        try {
-            HealthClient resource = getHealthClient(apiParams, s, requestedPort, requestUri.getRawQuery(), client);
-            HashMap<?, ?> apiResult = resource.getHealthInfo();
-            rewriteResourceLinks(requestUri, apiResult, model, s, applicationIdentifier(tenantName, applicationName, environmentName, regionName, instanceName), identifier);
-            return apiResult;
-        } finally {
-            client.close();
-        }
+        HealthClient resource = getHealthClient(apiParams, s, requestedPort, requestUri.getRawQuery(), client);
+        HashMap<?, ?> apiResult = resource.getHealthInfo();
+        rewriteResourceLinks(requestUri, apiResult, model, s, applicationIdentifier(tenantName, applicationName, environmentName, regionName, instanceName), identifier);
+        return apiResult;
     }
 
     protected HealthClient getHealthClient(String apiParams, Service s, int requestedPort, String uriQuery, Client client) {
