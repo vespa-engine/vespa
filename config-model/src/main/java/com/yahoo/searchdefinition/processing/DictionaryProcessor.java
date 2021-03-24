@@ -27,7 +27,7 @@ public class DictionaryProcessor extends Processor {
             if (dictionary == null) continue;
 
             Attribute attribute = field.getAttribute();
-            if (attribute.getDataType() instanceof NumericDataType ) {
+            if (attribute.getDataType().getPrimitiveType() instanceof NumericDataType ) {
                 if (attribute.isFastSearch()) {
                     attribute.setDictionary(dictionary);
                 } else {
