@@ -1,6 +1,7 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
+import com.google.common.base.Supplier;
 import com.google.common.base.Suppliers;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
@@ -22,6 +23,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordData;
 import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
+import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -43,6 +45,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.stream.Collectors;
@@ -83,10 +86,11 @@ public class RoutingController {
 
     /** Returns endpoints for given deployment */
     public EndpointList endpointsOf(DeploymentId deployment) {
-        var endpoints = new LinkedHashSet<Endpoint>();
+        Set<Endpoint> endpoints = new LinkedHashSet<>();
         boolean isSystemApplication = SystemApplication.matching(deployment.applicationId()).isPresent();
         // Avoid reading application more than once per call to this
-        var application = Suppliers.memoize(() -> controller.applications().requireApplication(TenantAndApplicationId.from(deployment.applicationId())));
+        Supplier<Application> application = Suppliers.memoize(() -> controller.applications().requireApplication(TenantAndApplicationId.from(deployment.applicationId())));
+        // To discover the cluster name for a zone-scoped endpoint, we need to read routing policies
         for (var policy : routingPolicies.get(deployment).values()) {
             if (!policy.status().isActive()) continue;
             for (var routingMethod :  controller.zoneRegistry().routingMethods(policy.id().zone())) {
@@ -100,37 +104,34 @@ public class RoutingController {
 
     /** Returns global-scoped endpoints for given instance */
     public EndpointList endpointsOf(ApplicationId instance) {
-        if (SystemApplication.matching(instance).isPresent()) return EndpointList.copyOf(List.of());
+        if (SystemApplication.matching(instance).isPresent()) return EndpointList.EMPTY;
         return endpointsOf(controller.applications().requireApplication(TenantAndApplicationId.from(instance)),
                                                                         instance.instance());
     }
 
     /** Returns global-scoped endpoints for given instance */
     public EndpointList endpointsOf(Application application, InstanceName instanceName) {
-        var endpoints = new LinkedHashSet<Endpoint>();
-        // Add global endpoints provided by rotations
-        var instance = application.require(instanceName);
-        for (var rotation : instance.rotations()) {
-            var deployments = rotation.regions().stream()
-                                      .map(region -> new DeploymentId(instance.id(), ZoneId.from(Environment.prod, region)))
-                                      .collect(Collectors.toList());
-            computeGlobalEndpoints(RoutingId.of(instance.id(), rotation.endpointId()), rotation.clusterId(),
-                                   application, deployments).requiresRotation()
-                                                            .forEach(endpoints::add);
-        }
-        // Add global endpoints provided by routing policies
-        var deploymentsByEndpointKey = new LinkedHashMap<EndpointKey, List<DeploymentId>>();
-        for (var policy : routingPolicies.get(instance.id()).values()) {
-            if (!policy.status().isActive()) continue;
-            for (var endpointId : policy.endpoints()) {
-                var endpointKey = new EndpointKey(RoutingId.of(instance.id(), endpointId), policy.id().cluster());
-                deploymentsByEndpointKey.computeIfAbsent(endpointKey, (k) -> new ArrayList<>())
-                                        .add(new DeploymentId(instance.id(), policy.id().zone()));
-            }
-        }
-        deploymentsByEndpointKey.forEach((endpointKey, deployments) -> {
-            computeGlobalEndpoints(endpointKey.routingId, endpointKey.cluster, application,
-                                   deployments).not().requiresRotation().forEach(endpoints::add);
+        Set<Endpoint> endpoints = new LinkedHashSet<>();
+        Instance instance = application.require(instanceName);
+        Optional<DeploymentInstanceSpec> spec = application.deploymentSpec().instance(instanceName);
+        if (spec.isEmpty()) return EndpointList.EMPTY;
+        // Add endpoint declared with legacy syntax
+        spec.get().globalServiceId().ifPresent(clusterId -> {
+            List<DeploymentId> deployments = spec.get().zones().stream()
+                                                 .filter(zone -> zone.concerns(Environment.prod))
+                                                 .map(zone -> new DeploymentId(instance.id(), ZoneId.from(Environment.prod, zone.region().get())))
+                                                 .collect(Collectors.toList());
+            RoutingId routingId = RoutingId.of(instance.id(), EndpointId.defaultId());
+            endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(clusterId), application, deployments));
+        });
+        // Add endpoints declared with current syntax
+        spec.get().endpoints().forEach(declaredEndpoint -> {
+            RoutingId routingId = RoutingId.of(instance.id(), EndpointId.of(declaredEndpoint.endpointId()));
+            List<DeploymentId> deployments = declaredEndpoint.regions().stream()
+                                                             .map(region -> new DeploymentId(instance.id(),
+                                                                                             ZoneId.from(Environment.prod, region)))
+                                                             .collect(Collectors.toList());
+            endpoints.addAll(computeGlobalEndpoints(routingId, ClusterSpec.Id.from(declaredEndpoint.containerId()), application, deployments));
         });
         return EndpointList.copyOf(endpoints);
     }
@@ -185,21 +186,19 @@ public class RoutingController {
         return application;
     }
 
-    /**
-     * Register endpoints for rotations assigned to given application and zone in DNS.
-     *
-     * @return the registered endpoints
-     */
-    public Set<ContainerEndpoint> registerEndpointsInDns(Application application, InstanceName instanceName, ZoneId zone) {
-        var instance = application.require(instanceName);
-        var containerEndpoints = new HashSet<ContainerEndpoint>();
+    /** Returns the global endpoints for given deployment as container endpoints */
+    public Set<ContainerEndpoint> containerEndpointsOf(Application application, InstanceName instanceName, ZoneId zone) {
+        Instance instance = application.require(instanceName);
         boolean registerLegacyNames = application.deploymentSpec().instance(instanceName)
                                                  .flatMap(DeploymentInstanceSpec::globalServiceId)
                                                  .isPresent();
+        Set<ContainerEndpoint> containerEndpoints = new HashSet<>();
+        EndpointList endpoints = endpointsOf(application, instanceName);
+        // Add endpoints backed by a rotation, and register them in DNS if necessary
         for (var assignedRotation : instance.rotations()) {
             var names = new ArrayList<String>();
-            var endpoints = endpointsOf(application, instanceName).named(assignedRotation.endpointId())
-                                                                  .requiresRotation();
+            EndpointList rotationEndpoints = endpoints.named(assignedRotation.endpointId())
+                                                      .requiresRotation();
 
             // Skip rotations which do not apply to this zone. Legacy names always point to all zones
             if (!registerLegacyNames && !assignedRotation.regions().contains(zone.region())) {
@@ -208,13 +207,13 @@ public class RoutingController {
 
             // Omit legacy DNS names when assigning rotations using <endpoints/> syntax
             if (!registerLegacyNames) {
-                endpoints = endpoints.not().legacy();
+                rotationEndpoints = rotationEndpoints.not().legacy();
             }
 
             // Register names in DNS
             var rotation = rotationRepository.getRotation(assignedRotation.rotationId());
             if (rotation.isPresent()) {
-                endpoints.forEach(endpoint -> {
+                rotationEndpoints.forEach(endpoint -> {
                     controller.nameServiceForwarder().createCname(RecordName.from(endpoint.dnsName()),
                                                                   RecordData.fqdn(rotation.get().name()),
                                                                   Priority.normal);
@@ -231,11 +230,21 @@ public class RoutingController {
 
     /** Remove endpoints in DNS for all rotations assigned to given instance */
     public void removeEndpointsInDns(Application application, InstanceName instanceName) {
-        endpointsOf(application, instanceName).requiresRotation()
-                                              .forEach(endpoint -> controller.nameServiceForwarder()
-                                                                             .removeRecords(Record.Type.CNAME,
-                                                                                            RecordName.from(endpoint.dnsName()),
-                                                                                            Priority.normal));
+        Set<Endpoint> endpointsToRemove = new LinkedHashSet<>();
+        Instance instance = application.require(instanceName);
+        // Compute endpoints from rotations. When removing DNS records for rotation-based endpoints we cannot use the
+        // deployment spec, because submitting an empty deployment spec is the first step of removing an application
+        for (var rotation : instance.rotations()) {
+            var deployments = rotation.regions().stream()
+                                      .map(region -> new DeploymentId(instance.id(), ZoneId.from(Environment.prod, region)))
+                                      .collect(Collectors.toList());
+            endpointsToRemove.addAll(computeGlobalEndpoints(RoutingId.of(instance.id(), rotation.endpointId()),
+                                                            rotation.clusterId(), application, deployments));
+        }
+        endpointsToRemove.forEach(endpoint -> controller.nameServiceForwarder()
+                                                        .removeRecords(Record.Type.CNAME,
+                                                                       RecordName.from(endpoint.dnsName()),
+                                                                       Priority.normal));
     }
 
     /** Returns the routing methods that are available across all given deployments */
@@ -283,7 +292,7 @@ public class RoutingController {
     }
 
     /** Compute global endpoints for given routing ID, application and deployments */
-    private EndpointList computeGlobalEndpoints(RoutingId routingId, ClusterSpec.Id cluster, Application application, List<DeploymentId> deployments) {
+    private List<Endpoint> computeGlobalEndpoints(RoutingId routingId, ClusterSpec.Id cluster, Application application, List<DeploymentId> deployments) {
         var endpoints = new ArrayList<Endpoint>();
         var directMethods = 0;
         var zones = deployments.stream().map(DeploymentId::zoneId).collect(Collectors.toList());
@@ -315,33 +324,7 @@ public class RoutingController {
                                       .in(controller.system()));
             }
         }
-        return EndpointList.copyOf(endpoints);
-    }
-
-    private static class EndpointKey {
-
-        private final RoutingId routingId;
-        private final ClusterSpec.Id cluster;
-
-        public EndpointKey(RoutingId routingId, ClusterSpec.Id cluster) {
-            this.routingId = routingId;
-            this.cluster = cluster;
-        }
-
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (o == null || getClass() != o.getClass()) return false;
-            EndpointKey that = (EndpointKey) o;
-            return routingId.equals(that.routingId) &&
-                   cluster.equals(that.cluster);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(routingId, cluster);
-        }
-
+        return endpoints;
     }
 
     /** Returns direct routing endpoints if any exist and feature flag is set for given application */

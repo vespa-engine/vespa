@@ -503,10 +503,12 @@ public class ControllerTest {
             context.submit(applicationPackage).deploy();
             assertEquals(1, tester.controllerTester().nameService().records().size());
 
-            Optional<Record> record = tester.controllerTester().findCname("app1--tenant1.global.vespa.oath.cloud");
-            assertTrue(record.isPresent());
-            assertEquals("app1--tenant1.global.vespa.oath.cloud", record.get().name().asString());
-            assertEquals("rotation-fqdn-01.", record.get().data().asString());
+            {
+                Optional<Record> record = tester.controllerTester().findCname("app1--tenant1.global.vespa.oath.cloud");
+                assertTrue(record.isPresent());
+                assertEquals("app1--tenant1.global.vespa.oath.cloud", record.get().name().asString());
+                assertEquals("rotation-fqdn-01.", record.get().data().asString());
+            }
 
             // Application is deleted and rotation is unassigned
             applicationPackage = new ApplicationPackageBuilder()
@@ -524,14 +526,13 @@ public class ControllerTest {
             context.flushDnsUpdates();
 
             // Records are removed
-            record = tester.controllerTester().findCname("app1--tenant1.global.vespa.yahooapis.com");
-            assertTrue(record.isEmpty());
-
-            record = tester.controllerTester().findCname("app1--tenant1.global.vespa.oath.cloud");
-            assertTrue(record.isEmpty());
-
-            record = tester.controllerTester().findCname("app1.tenant1.global.vespa.yahooapis.com");
-            assertTrue(record.isEmpty());
+            List<String> removed = List.of("app1--tenant1.global.vespa.yahooapis.com",
+                                           "app1--tenant1.global.vespa.oath.cloud",
+                                           "app1.tenant1.global.vespa.yahooapis.com");
+            for (var name : removed) {
+                Optional<Record> record = tester.controllerTester().findCname(name);
+                assertTrue(name + " is removed", record.isEmpty());
+            }
         }
 
         // Application 2 is deployed and assigned same rotation as application 1 had before deletion
