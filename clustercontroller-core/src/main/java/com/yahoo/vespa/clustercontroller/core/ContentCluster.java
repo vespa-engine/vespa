@@ -177,15 +177,17 @@ public class ContentCluster {
      * @param condition the upgrade condition
      * @param oldState the old/current wanted state
      * @param newState state wanted to be set  @return NodeUpgradePrechecker.Response
+     * @param inMoratorium whether the CC is in moratorium
      */
     public NodeStateChangeChecker.Result calculateEffectOfNewState(
             Node node, ClusterState clusterState, SetUnitStateRequest.Condition condition,
-            NodeState oldState, NodeState newState) {
+            NodeState oldState, NodeState newState, boolean inMoratorium) {
 
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
                 distribution.getRedundancy(),
                 new HierarchicalGroupVisitingAdapter(distribution),
-                clusterInfo
+                clusterInfo,
+                inMoratorium
         );
         return nodeStateChangeChecker.evaluateTransition(node, clusterState, condition, oldState, newState);
     }

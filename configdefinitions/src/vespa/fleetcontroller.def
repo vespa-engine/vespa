@@ -112,11 +112,12 @@ min_storage_up_ratio double default=0.01
 cycle_wait_time double default=0.1
 
 ## Minimum time to pass in seconds before broadcasting our first systemstate as
-## a new fleetcontroller. (Will broadcast earlier than this if we have gathered
-## state from all before this). To prevent disturbance when taking over as
+## a new fleetcontroller. Will broadcast earlier than this if we have gathered
+## state from all before this. To prevent disturbance when taking over as
 ## fleetcontroller, give nodes a bit of time to answer so we dont temporarily
-## report nodes as down.
-min_time_before_first_system_state_broadcast double default=5.0
+## report nodes as down.  See also max_slobrok_disconnect_grace_period and
+## get_node_state_request_timeout.
+min_time_before_first_system_state_broadcast double default=30.0
 
 ## Request timeout of node state requests. Keeping a high timeout allows us to
 ## always have a pending operation with very low cost. Keeping a low timeout is

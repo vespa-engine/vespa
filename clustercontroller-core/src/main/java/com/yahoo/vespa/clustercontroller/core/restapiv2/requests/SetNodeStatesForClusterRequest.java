@@ -72,6 +72,7 @@ public class SetNodeStatesForClusterRequest extends Request<SetResponse> {
                     node,
                     context.nodeStateOrHostInfoChangeHandler,
                     context.currentConsolidatedState,
+                    context.masterInfo.inMasterMoratorium(),
                     probe);
 
             if (!setResponse.getWasModified()) {

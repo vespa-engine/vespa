@@ -32,14 +32,17 @@ public class NodeStateChangeChecker {
     private final int requiredRedundancy;
     private final HierarchicalGroupVisiting groupVisiting;
     private final ClusterInfo clusterInfo;
+    private final boolean inMoratorium;
 
     public NodeStateChangeChecker(
             int requiredRedundancy,
             HierarchicalGroupVisiting groupVisiting,
-            ClusterInfo clusterInfo) {
+            ClusterInfo clusterInfo,
+            boolean inMoratorium) {
         this.requiredRedundancy = requiredRedundancy;
         this.groupVisiting = groupVisiting;
         this.clusterInfo = clusterInfo;
+        this.inMoratorium = inMoratorium;
     }
 
     public static class Result {
@@ -92,6 +95,10 @@ public class NodeStateChangeChecker {
             NodeState oldWantedState, NodeState newWantedState) {
         if (condition == SetUnitStateRequest.Condition.FORCE) {
             return Result.allowSettingOfWantedState();
+        }
+
+        if (inMoratorium) {
+            return Result.createDisallowed("Master cluster controller is bootstrapping and in moratorium");
         }
 
         if (condition != SetUnitStateRequest.Condition.SAFE) {
