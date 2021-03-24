@@ -13,7 +13,7 @@
 #include <vespa/log/log.h>
 LOG_SETUP("unique_store_test");
 
-enum class Ordering { ORDERED, UNORDERED };
+enum class DictionaryType { BTREE, HASH, BTREE_AND_HASH };
 
 using namespace vespalib::datastore;
 using vespalib::ArrayRef;
@@ -27,9 +27,9 @@ struct TestBaseValues {
     static std::vector<ValueType> values;
 };
 
-template <typename UniqueStoreTypeAndOrder>
+template <typename UniqueStoreTypeAndDictionaryType>
 struct TestBase : public ::testing::Test {
-    using UniqueStoreType = typename UniqueStoreTypeAndOrder::UniqueStoreType;
+    using UniqueStoreType = typename UniqueStoreTypeAndDictionaryType::UniqueStoreType;
     using EntryRefType = typename UniqueStoreType::RefType;
     using ValueType = typename UniqueStoreType::EntryType;
     using ValueConstRefType = typename UniqueStoreType::EntryConstRefType;
@@ -142,22 +142,22 @@ struct TestBase : public ::testing::Test {
     }
 };
 
-template <typename UniqueStoreTypeAndOrder>
-TestBase<UniqueStoreTypeAndOrder>::TestBase()
+template <typename UniqueStoreTypeAndDictionaryType>
+TestBase<UniqueStoreTypeAndDictionaryType>::TestBase()
     : store(),
       refStore(),
       generation(1)
 {
-    switch (UniqueStoreTypeAndOrder::ordering) {
-    case Ordering::ORDERED:
+    switch (UniqueStoreTypeAndDictionaryType::dictionary_type) {
+    case DictionaryType::BTREE:
         break;
     default:
         store.set_dictionary(std::make_unique<UniqueStoreDictionary<uniquestore::DefaultDictionary, IUniqueStoreDictionary, SimpleHashMap>>(std::make_unique<CompareType>(store.get_data_store())));
     }
 }
 
-template <typename UniqueStoreTypeAndOrder>
-TestBase<UniqueStoreTypeAndOrder>::~TestBase() = default;
+template <typename UniqueStoreTypeAndDictionaryType>
+TestBase<UniqueStoreTypeAndDictionaryType>::~TestBase() = default;
 
 using NumberUniqueStore  = UniqueStore<uint32_t>;
 using StringUniqueStore  = UniqueStore<std::string>;
@@ -177,61 +177,61 @@ std::vector<double> TestBaseValues<DoubleUniqueStore>::values{ 10.0, 20.0, 30.0,
 struct OrderedNumberUniqueStore
 {
     using UniqueStoreType = NumberUniqueStore;
-    static constexpr Ordering ordering = Ordering::ORDERED;
+    static constexpr DictionaryType dictionary_type = DictionaryType::BTREE;
 };
 
 struct OrderedStringUniqueStore
 {
     using UniqueStoreType = StringUniqueStore;
-    static constexpr Ordering ordering = Ordering::ORDERED;
+    static constexpr DictionaryType dictionary_type = DictionaryType::BTREE;
 };
 
 struct OrderedCStringUniqueStore
 {
     using UniqueStoreType = CStringUniqueStore;
-    static constexpr Ordering ordering = Ordering::ORDERED;
+    static constexpr DictionaryType dictionary_type = DictionaryType::BTREE;
 };
 
 struct OrderedDoubleUniqueStore
 {
     using UniqueStoreType = DoubleUniqueStore;
-    static constexpr Ordering ordering = Ordering::ORDERED;
+    static constexpr DictionaryType dictionary_type = DictionaryType::BTREE;
 };
 
 struct OrderedSmallOffsetNumberUniqueStore
 {
     using UniqueStoreType = SmallOffsetNumberUniqueStore;
-    static constexpr Ordering ordering = Ordering::ORDERED;
+    static constexpr DictionaryType dictionary_type = DictionaryType::BTREE;
 };
 
 struct UnorderedNumberUniqueStore
 {
     using UniqueStoreType = NumberUniqueStore;
-    static constexpr Ordering ordering = Ordering::UNORDERED;
+    static constexpr DictionaryType dictionary_type = DictionaryType::BTREE_AND_HASH;
 };
 
 struct UnorderedStringUniqueStore
 {
     using UniqueStoreType = StringUniqueStore;
-    static constexpr Ordering ordering = Ordering::UNORDERED;
+    static constexpr DictionaryType dictionary_type = DictionaryType::BTREE_AND_HASH;
 };
 
 struct UnorderedCStringUniqueStore
 {
     using UniqueStoreType = CStringUniqueStore;
-    static constexpr Ordering ordering = Ordering::UNORDERED;
+    static constexpr DictionaryType dictionary_type = DictionaryType::BTREE_AND_HASH;
 };
 
 struct UnorderedDoubleUniqueStore
 {
     using UniqueStoreType = DoubleUniqueStore;
-    static constexpr Ordering ordering = Ordering::UNORDERED;
+    static constexpr DictionaryType dictionary_type = DictionaryType::BTREE_AND_HASH;
 };
 
 struct UnorderedSmallOffsetNumberUniqueStore
 {
     using UniqueStoreType = SmallOffsetNumberUniqueStore;
-    static constexpr Ordering ordering = Ordering::UNORDERED;
+    static constexpr DictionaryType dictionary_type = DictionaryType::BTREE_AND_HASH;
 };
 
 using UniqueStoreTestTypes = ::testing::Types<OrderedNumberUniqueStore, OrderedStringUniqueStore, OrderedCStringUniqueStore, OrderedDoubleUniqueStore, UnorderedNumberUniqueStore, UnorderedStringUniqueStore, UnorderedCStringUniqueStore, UnorderedDoubleUniqueStore>;
