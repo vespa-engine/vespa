@@ -225,6 +225,14 @@ public class RoutingController {
             names.add(assignedRotation.rotationId().asString());
             containerEndpoints.add(new ContainerEndpoint(assignedRotation.clusterId().value(), names));
         }
+        // Add endpoints not backed by a rotation
+        endpoints.not().requiresRotation()
+                 .targets(zone)
+                 .groupingBy(Endpoint::cluster)
+                 .forEach((clusterId, clusterEndpoints) -> {
+                     containerEndpoints.add(new ContainerEndpoint(clusterId.value(),
+                                                                  clusterEndpoints.mapToList(Endpoint::dnsName)));
+                 });
         return Collections.unmodifiableSet(containerEndpoints);
     }
 

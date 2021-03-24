@@ -37,6 +37,7 @@ import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationLock;
+import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -818,7 +819,43 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDirectRoutingSupport() {
+    public void testDeploymentDirectRouting() {
+        // Rotation-less system
+        DeploymentTester tester = new DeploymentTester(new ControllerTester(new RotationsConfig.Builder().build()));
+        var context = tester.newDeploymentContext();
+        var zone1 = ZoneId.from("prod", "us-west-1");
+        var zone2 = ZoneId.from("prod", "us-east-3");
+        var zone3 = ZoneId.from("prod", "eu-west-1");
+        tester.controllerTester().zoneRegistry()
+              .exclusiveRoutingIn(ZoneApiMock.from(zone1), ZoneApiMock.from(zone2), ZoneApiMock.from(zone3));
+
+        var applicationPackageBuilder = new ApplicationPackageBuilder()
+                .region(zone1.region())
+                .region(zone2.region())
+                .region(zone3.region())
+                .endpoint("default", "default")
+                .endpoint("foo", "qrs")
+                .endpoint("us", "default", zone1.region().value(), zone2.region().value())
+                .athenzIdentity(AthenzDomain.from("domain"), AthenzService.from("service"))
+                .compileVersion(RoutingController.DIRECT_ROUTING_MIN_VERSION);
+        context.submit(applicationPackageBuilder.build()).deploy();
+
+        // Deployment passes container endpoints to config server
+        for (var zone : List.of(zone1, zone2)) {
+            assertEquals("Expected container endpoints in " + zone,
+                         Set.of("application.tenant.global.vespa.oath.cloud",
+                                "foo.application.tenant.global.vespa.oath.cloud",
+                                "us.application.tenant.global.vespa.oath.cloud"),
+                         tester.configServer().containerEndpoints().get(context.deploymentIdIn(zone)));
+        }
+        assertEquals("Expected container endpoints in " + zone3,
+                     Set.of("application.tenant.global.vespa.oath.cloud",
+                            "foo.application.tenant.global.vespa.oath.cloud"),
+                     tester.configServer().containerEndpoints().get(context.deploymentIdIn(zone3)));
+    }
+
+    @Test
+    public void testDeploymentWithSharedAndDirectRouting() {
         var context = tester.newDeploymentContext();
         var zone1 = ZoneId.from("prod", "us-west-1");
         var zone2 = ZoneId.from("prod", "us-east-3");
