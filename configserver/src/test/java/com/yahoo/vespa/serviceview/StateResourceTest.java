@@ -2,7 +2,7 @@
 package com.yahoo.vespa.serviceview;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.jdisc.test.MockMetric;
+import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.HealthClient;
 import com.yahoo.vespa.serviceview.bindings.ModelResponse;
@@ -12,30 +12,30 @@ import org.junit.Test;
 import org.mockito.Mockito;
 
 import javax.ws.rs.client.Client;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.concurrent.Executors;
 
 import static org.junit.Assert.assertEquals;
 
 /**
- * Functional test for {@link StateRequestHandler}.
+ * Functional test for {@link StateResource}.
  *
  * @author Steinar Knutsen
- * @author bjorncs
  */
-public class StateRequestHandlerTest {
+public class StateResourceTest {
 
-    private static final String EXTERNAL_BASE_URI = "http://someserver:8080/serviceview/v1/";
+    private static final String EXTERNAL_BASE_URI = "http://someserver:8080/serviceview/";
 
-    private static class TestHandler extends StateRequestHandler {
+    private static class TestResource extends StateResource {
         private static final String BASE_URI = "http://vespa.yahoo.com:8080/state/v1";
 
-        TestHandler(ConfigserverConfig config) {
-            super(new Context(Executors.newSingleThreadExecutor(), new MockMetric()), config);
+        TestResource(@Component ConfigServerLocation configServer, @Context UriInfo ui) {
+            super(configServer, ui);
         }
 
         @Override
@@ -44,7 +44,7 @@ public class StateRequestHandlerTest {
         }
 
         @Override
-        protected HealthClient getHealthClient(String apiParams, Service s, int requestedPort, String uriQuery, Client client) {
+        protected HealthClient getHealthClient(String apiParams, Service s, int requestedPort, Client client) {
             HealthClient healthClient = Mockito.mock(HealthClient.class);
             HashMap<Object, Object> dummyHealthData = new HashMap<>();
             HashMap<String, String> dummyLink = new HashMap<>();
@@ -55,36 +55,39 @@ public class StateRequestHandlerTest {
         }
     }
 
-    private StateRequestHandler testHandler;
+    private StateResource testResource;
     private ServiceModel correspondingModel;
 
     @Before
     public void setUp() throws Exception {
-        testHandler = new TestHandler(new ConfigserverConfig(new ConfigserverConfig.Builder()));
+        UriInfo base = Mockito.mock(UriInfo.class);
+        Mockito.when(base.getBaseUri()).thenReturn(new URI(EXTERNAL_BASE_URI));
+        ConfigServerLocation dummyLocation = new ConfigServerLocation(new ConfigserverConfig(new ConfigserverConfig.Builder()));
+        testResource = new TestResource(dummyLocation, base);
         correspondingModel = new ServiceModel(ServiceModelTest.syntheticModelResponse());
     }
 
     @After
     public void tearDown() {
-        testHandler = null;
+        testResource = null;
         correspondingModel = null;
     }
 
+    @SuppressWarnings("rawtypes")
     @Test
     public final void test() {
         Service s = correspondingModel.resolve("vespa.yahoo.com", 8080, null);
         String api = "/state/v1";
-        HashMap<?, ?> boom = testHandler.singleService(URI.create(EXTERNAL_BASE_URI), "default", "default", "default", "default", "default", s.getIdentifier(8080), api);
-        assertEquals(EXTERNAL_BASE_URI + "tenant/default/application/default/environment/default/region/default/instance/default/service/" + s.getIdentifier(8080) + api,
-                     ((Map<?, ?>) ((List<?>) boom.get("resources")).get(0)).get("url"));
+        HashMap boom = testResource.singleService("default", "default", "default", "default", "default", s.getIdentifier(8080), api);
+        assertEquals(EXTERNAL_BASE_URI + "v1/tenant/default/application/default/environment/default/region/default/instance/default/service/" + s.getIdentifier(8080) + api,
+                     ((Map) ((List) boom.get("resources")).get(0)).get("url"));
     }
 
     @Test
     public final void testLinkEquality() {
-        ApplicationView explicitParameters = testHandler.getUserInfo(URI.create(EXTERNAL_BASE_URI), "default", "default", "default", "default", "default");
-        assertEquals(EXTERNAL_BASE_URI + "tenant/default/application/default/environment/default/region/default/instance" +
-                        "/default/service/container-clustercontroller-2ul67p8psr451t3w8kdd0qwgg/state/v1/",
-                explicitParameters.clusters.get(0).services.get(0).url);
+        ApplicationView explicitParameters = testResource.getUserInfo("default", "default", "default", "default", "default");
+        ApplicationView implicitParameters = testResource.getDefaultUserInfo();
+        assertEquals(explicitParameters.clusters.get(0).services.get(0).url, implicitParameters.clusters.get(0).services.get(0).url);
     }
 
 }
