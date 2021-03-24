@@ -1,10 +1,10 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.clustercontroller.core;
 
+import java.util.logging.Level;
 import com.yahoo.vespa.clustercontroller.core.database.DatabaseHandler;
 
 import java.util.Map;
-import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -66,11 +66,6 @@ public class MasterElectionHandler implements MasterInterface {
     public boolean isMaster() {
         Integer master = getMaster();
         return (master != null && master == index);
-    }
-
-    @Override
-    public boolean inMasterMoratorium() {
-        return false;
     }
 
     @Override

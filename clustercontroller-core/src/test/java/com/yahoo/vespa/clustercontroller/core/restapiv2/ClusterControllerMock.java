@@ -31,11 +31,6 @@ public class ClusterControllerMock implements RemoteClusterControllerTaskSchedul
             }
 
             @Override
-            public boolean inMasterMoratorium() {
-                return false;
-            }
-
-            @Override
             public Integer getMaster() {
                 return fleetControllerMaster;
             }

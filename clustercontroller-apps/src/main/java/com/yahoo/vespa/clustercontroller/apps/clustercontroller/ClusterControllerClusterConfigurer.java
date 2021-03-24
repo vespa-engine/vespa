@@ -79,8 +79,11 @@ public class ClusterControllerClusterConfigurer {
         options.minRatioOfDistributorNodesUp = config.min_distributor_up_ratio();
         options.minRatioOfStorageNodesUp = config.min_storage_up_ratio();
         options.cycleWaitTime = (int) (config.cycle_wait_time() * 1000);
+        options.minTimeBeforeFirstSystemStateBroadcast = (int) (config.min_time_before_first_system_state_broadcast() * 1000);
+        options.nodeStateRequestTimeoutMS = (int) (config.get_node_state_request_timeout() * 1000);
         options.showLocalSystemStatesInEventLog = config.show_local_systemstates_in_event_log();
         options.minTimeBetweenNewSystemStates = config.min_time_between_new_systemstates();
+        options.maxSlobrokDisconnectGracePeriod = (int) (config.max_slobrok_disconnect_grace_period() * 1000);
         options.distributionBits = config.ideal_distribution_bits();
         options.minNodeRatioPerGroup = config.min_node_ratio_per_group();
         options.setMaxDeferredTaskVersionWaitTime(Duration.ofMillis((int)(config.max_deferred_task_version_wait_time_sec() * 1000)));
@@ -90,20 +93,6 @@ public class ClusterControllerClusterConfigurer {
         options.clusterFeedBlockEnabled = config.enable_cluster_feed_block();
         options.clusterFeedBlockLimit = Map.copyOf(config.cluster_feed_block_limit());
         options.clusterFeedBlockNoiseLevel = config.cluster_feed_block_noise_level();
-
-        // minTimeBeforeFirstSystemStateBroadcast is the minimum time the CC will wait for the storage
-        // nodes and distributors being down in Slobrok and/or getnodestate, before being allowed to
-        // broadcast a cluster state.  We therefore force a longer timeout depending on related settings.
-        options.maxSlobrokDisconnectGracePeriod = (int) (config.max_slobrok_disconnect_grace_period() * 1000);
-        options.nodeStateRequestTimeoutMS = (int) (config.get_node_state_request_timeout() * 1000);
-        options.minTimeBeforeFirstSystemStateBroadcast = max(
-                options.maxSlobrokDisconnectGracePeriod,
-                options.nodeStateRequestTimeoutMS,
-                (int) (config.min_time_before_first_system_state_broadcast() * 1000));
-    }
-
-    private static int max(int a, int b, int c) {
-        return Math.max(a, Math.max(b, c));
     }
 
     private static void configure(FleetControllerOptions options, SlobroksConfig config) {
