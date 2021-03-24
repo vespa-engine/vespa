@@ -38,7 +38,6 @@ public:
     const AttributeConfigInspector& get_attribute_config_inspector() const { return *_attribute_config_inspector; }
     const AttributeUsageStats &
     getUsage() const { return _usage; }
-    size_t get_transient_memory_usage() const { return _transient_memory_usage; }
 };
 
 } // namespace proton
