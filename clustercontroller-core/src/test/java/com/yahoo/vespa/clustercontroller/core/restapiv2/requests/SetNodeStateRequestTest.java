@@ -23,6 +23,7 @@ import java.util.Map;
 import java.util.Optional;
 
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyBoolean;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.times;
@@ -39,6 +40,7 @@ public class SetNodeStateRequestTest {
     private final Node storageNode = new Node(NodeType.STORAGE, NODE_INDEX);
     private final NodeStateOrHostInfoChangeHandler stateListener = mock(NodeStateOrHostInfoChangeHandler.class);
     private final ClusterState currentClusterState = mock(ClusterState.class);
+    private boolean inMasterMoratorium = false;
     private boolean probe = false;
 
     @Before
@@ -127,7 +129,7 @@ public class SetNodeStateRequestTest {
         when(unitState.getId()).thenReturn(wantedStateString);
         when(unitState.getReason()).thenReturn(REASON);
 
-        when(cluster.calculateEffectOfNewState(any(), any(), any(), any(), any())).thenReturn(result);
+        when(cluster.calculateEffectOfNewState(any(), any(), any(), any(), any(), anyBoolean())).thenReturn(result);
 
         when(storageNodeInfo.isStorage()).thenReturn(storageNode.getType() == NodeType.STORAGE);
         when(storageNodeInfo.getNodeIndex()).thenReturn(storageNode.getIndex());
@@ -173,6 +175,7 @@ public class SetNodeStateRequestTest {
                 storageNode,
                 stateListener,
                 currentClusterState,
+                inMasterMoratorium,
                 probe);
     }
 }

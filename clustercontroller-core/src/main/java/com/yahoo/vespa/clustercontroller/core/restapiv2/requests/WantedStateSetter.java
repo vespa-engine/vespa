@@ -23,5 +23,5 @@ public interface WantedStateSetter {
                     Node node,
                     NodeStateOrHostInfoChangeHandler stateListener,
                     ClusterState currentClusterState,
-                    boolean probe) throws StateRestApiException;
+                    boolean inMasterMoratorium, boolean probe) throws StateRestApiException;
 }
