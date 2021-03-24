@@ -12,21 +12,17 @@ public class NodeMetricSnapshot implements Comparable<NodeMetricSnapshot> {
 
     private final Instant at;
 
-    private final double cpu;
-    private final double memory;
-    private final double disk;
+    private final Load load;
     private final long generation;
     private final boolean inService;
     private final boolean stable;
     private final double queryRate;
 
-    public NodeMetricSnapshot(Instant at, double cpu, double memory, double disk,
+    public NodeMetricSnapshot(Instant at, Load load,
                               long generation, boolean inService, boolean stable,
                               double queryRate) {
         this.at = at;
-        this.cpu = cpu;
-        this.memory = memory;
-        this.disk = disk;
+        this.load = load;
         this.generation = generation;
         this.inService = inService;
         this.stable = stable;
@@ -34,9 +30,7 @@ public class NodeMetricSnapshot implements Comparable<NodeMetricSnapshot> {
     }
 
     public Instant at() { return at; }
-    public double cpu() { return cpu; }
-    public double memory() { return memory; }
-    public double disk() { return disk; }
+    public Load load() { return load; }
 
     /** Queries per second */
     public double queryRate() { return queryRate; }
@@ -53,10 +47,8 @@ public class NodeMetricSnapshot implements Comparable<NodeMetricSnapshot> {
     }
 
     @Override
-    public String toString() { return "metrics at " + at + ":" +
-                                      " cpu: " + cpu +
-                                      " memory: " + memory +
-                                      " disk: " + disk +
+    public String toString() { return "metrics at " + at + ": " +
+                                      load +
                                       " generation: " + generation +
                                       " inService: " + inService +
                                       " stable: " + stable +

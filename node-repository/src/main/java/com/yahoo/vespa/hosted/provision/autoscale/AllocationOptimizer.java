@@ -96,18 +96,18 @@ public class AllocationOptimizer {
             // Memory and disk: Scales with group size
 
             // The fixed cost portion of cpu does not scale with changes to the node count
-            double queryCpuPerGroup = fixedCpuCostFraction * target.nodeCpu() +
-                                      (1 - fixedCpuCostFraction) * target.nodeCpu() * current.groupSize() / groupSize;
+            double queryCpuPerGroup = fixedCpuCostFraction * target.resources().vcpu() +
+                                      (1 - fixedCpuCostFraction) * target.resources().vcpu() * current.groupSize() / groupSize;
             double queryCpu = queryCpuPerGroup * current.groups() / groups;
-            double writeCpu = target.nodeCpu() * current.groupSize() / groupSize;
+            double writeCpu = target.resources().vcpu() * current.groupSize() / groupSize;
             cpu = clusterModel.queryCpuFraction() * queryCpu + (1 - clusterModel.queryCpuFraction()) * writeCpu;
-            memory = target.nodeMemory() * current.groupSize() / groupSize;
-            disk = target.nodeDisk() * current.groupSize() / groupSize;
+            memory = target.resources().memoryGb() * current.groupSize() / groupSize;
+            disk = target.resources().diskGb() * current.groupSize() / groupSize;
         }
         else {
-            cpu = target.nodeCpu() * current.nodes() / nodes;
-            memory = target.nodeMemory();
-            disk = target.nodeDisk();
+            cpu = target.resources().vcpu() * current.nodes() / nodes;
+            memory = target.resources().memoryGb();
+            disk = target.resources().diskGb();
         }
 
         // Combine the scaled resource values computed here

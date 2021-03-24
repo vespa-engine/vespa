@@ -17,10 +17,8 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
-import com.yahoo.vespa.hosted.provision.autoscale.ClusterModel;
+import com.yahoo.vespa.hosted.provision.autoscale.Load;
 import com.yahoo.vespa.hosted.provision.autoscale.NodeMetricSnapshot;
-import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
-import com.yahoo.vespa.hosted.provision.autoscale.Resource;
 import com.yahoo.vespa.hosted.provision.provisioning.FlavorConfigBuilder;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import org.junit.Test;
@@ -124,9 +122,7 @@ public class ScalingSuggestionsMaintainerTest {
             for (Node node : nodes)
                 nodeRepository.metricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
                                                                              new NodeMetricSnapshot(nodeRepository.clock().instant(),
-                                                                                                    cpu,
-                                                                                                    memory,
-                                                                                                    disk,
+                                                                                                    new Load(cpu, memory, disk),
                                                                                                     generation,
                                                                                                     true,
                                                                                                     true,

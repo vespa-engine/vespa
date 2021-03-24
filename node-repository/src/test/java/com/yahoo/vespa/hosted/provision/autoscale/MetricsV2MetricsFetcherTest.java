@@ -51,14 +51,14 @@ public class MetricsV2MetricsFetcherTest {
             assertEquals(2, values.size());
 
             assertEquals("host-1.yahoo.com", values.get(0).getFirst());
-            assertEquals(0.162, values.get(0).getSecond().cpu(), delta);
-            assertEquals(0.231, values.get(0).getSecond().memory(), delta);
-            assertEquals(0.820, values.get(0).getSecond().disk(), delta);
+            assertEquals(0.162, values.get(0).getSecond().load().cpu(), delta);
+            assertEquals(0.231, values.get(0).getSecond().load().memory(), delta);
+            assertEquals(0.820, values.get(0).getSecond().load().disk(), delta);
 
             assertEquals("host-2.yahoo.com", values.get(1).getFirst());
-            assertEquals(0.2, values.get(1).getSecond().cpu(), delta);
-            assertEquals(0.0, values.get(1).getSecond().memory(), delta);
-            assertEquals(0.4, values.get(1).getSecond().disk(), delta);
+            assertEquals(0.2, values.get(1).getSecond().load().cpu(), delta);
+            assertEquals(0.0, values.get(1).getSecond().load().memory(), delta);
+            assertEquals(0.4, values.get(1).getSecond().load().disk(), delta);
             assertEquals(45.0, values.get(1).getSecond().queryRate(), delta);
         }
 
@@ -69,9 +69,9 @@ public class MetricsV2MetricsFetcherTest {
                          httpClient.requestsReceived.get(1));
             assertEquals(1, values.size());
             assertEquals("host-3.yahoo.com", values.get(0).getFirst());
-            assertEquals(0.10, values.get(0).getSecond().cpu(), delta);
-            assertEquals(0.15, values.get(0).getSecond().memory(), delta);
-            assertEquals(0.20, values.get(0).getSecond().disk(), delta);
+            assertEquals(0.10, values.get(0).getSecond().load().cpu(), delta);
+            assertEquals(0.15, values.get(0).getSecond().load().memory(), delta);
+            assertEquals(0.20, values.get(0).getSecond().load().disk(), delta);
             assertEquals(3, values.get(0).getSecond().generation(), delta);
             assertTrue(values.get(0).getSecond().stable());
         }

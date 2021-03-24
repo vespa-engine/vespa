@@ -138,14 +138,12 @@ class AutoscalingTester {
         for (int i = 0; i < count; i++) {
             clock().advance(Duration.ofMinutes(5));
             for (Node node : nodes) {
-                float cpu = value * oneExtraNodeFactor;
-                float memory  = (float) ClusterModel.idealMemoryLoad * otherResourcesLoad * oneExtraNodeFactor;
-                float disk = (float) ClusterModel.idealDiskLoad * otherResourcesLoad * oneExtraNodeFactor;
+                Load load = new Load(value,
+                                     ClusterModel.idealMemoryLoad * otherResourcesLoad,
+                                     ClusterModel.idealDiskLoad * otherResourcesLoad).multiply(oneExtraNodeFactor);
                 nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
                                                                   new NodeMetricSnapshot(clock().instant(),
-                                                                                         cpu,
-                                                                                         memory,
-                                                                                         disk,
+                                                                                         load,
                                                                                          0,
                                                                                          true,
                                                                                          true,
@@ -174,11 +172,12 @@ class AutoscalingTester {
                 float cpu  = (float) 0.2 * otherResourcesLoad * oneExtraNodeFactor;
                 float memory = value * oneExtraNodeFactor;
                 float disk = (float) ClusterModel.idealDiskLoad * otherResourcesLoad * oneExtraNodeFactor;
+                Load load = new Load(0.2 * otherResourcesLoad,
+                                     value,
+                                     ClusterModel.idealDiskLoad * otherResourcesLoad).multiply(oneExtraNodeFactor);
                 nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
                                                                   new NodeMetricSnapshot(clock().instant(),
-                                                                                         cpu,
-                                                                                         memory,
-                                                                                         disk,
+                                                                                         load,
                                                                                          0,
                                                                                          true,
                                                                                          true,
@@ -199,9 +198,7 @@ class AutoscalingTester {
             for (Node node : nodes) {
                 nodeMetricsDb().addNodeMetrics(List.of(new Pair<>(node.hostname(),
                                                                   new NodeMetricSnapshot(clock().instant(),
-                                                                                         cpu,
-                                                                                         memory,
-                                                                                         disk,
+                                                                                         new Load(cpu, memory, disk),
                                                                                          generation,
                                                                                          inService,
                                                                                          stable,

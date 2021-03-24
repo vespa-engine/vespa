@@ -54,9 +54,9 @@ public class QuestMetricsDbTest {
         assertEquals(1000, nodeTimeSeries1.get(0).size());
         NodeMetricSnapshot snapshot = nodeTimeSeries1.get(0).asList().get(0);
         assertEquals(startTime.plus(Duration.ofSeconds(1)), snapshot.at());
-        assertEquals(0.1, snapshot.cpu(), delta);
-        assertEquals(0.2, snapshot.memory(), delta);
-        assertEquals(0.4, snapshot.disk(), delta);
+        assertEquals(0.1, snapshot.load().cpu(), delta);
+        assertEquals(0.2, snapshot.load().memory(), delta);
+        assertEquals(0.4, snapshot.load().disk(), delta);
         assertEquals(1, snapshot.generation(), delta);
         assertEquals(30, snapshot.queryRate(), delta);
 
@@ -234,10 +234,8 @@ public class QuestMetricsDbTest {
         for (int i = 1; i <= countPerHost; i++) {
             for (String host : hosts)
                 timeseries.add(new Pair<>(host, new NodeMetricSnapshot(clock.instant(),
-                                                                   i * 0.1,
-                                                                   i * 0.2,
-                                                                   i * 0.4,
-                                                                   i % 100,
+                                                                       new Load(i * 0.1, i * 0.2, i * 0.4),
+                                                                       i % 100,
                                                                        true,
                                                                        true,
                                                                        30.0)));
@@ -260,11 +258,8 @@ public class QuestMetricsDbTest {
         Collection<Pair<String, NodeMetricSnapshot>> timeseries = new ArrayList<>();
         for (int i = 1; i <= countPerHost; i++) {
             for (String host : hosts)
-                timeseries.add(new Pair<>(host, new NodeMetricSnapshot(at,
-                                                                   i * 0.1,
-                                                                   i * 0.2,
-                                                                   i * 0.4,
-                                                                   i % 100,
+                timeseries.add(new Pair<>(host, new NodeMetricSnapshot(at, new Load(i * 0.1, i * 0.2, i * 0.4),
+                                                                       i % 100,
                                                                        true,
                                                                        false,
                                                                        0.0)));

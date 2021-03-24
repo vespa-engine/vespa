@@ -42,21 +42,17 @@ public class ClusterNodesTimeseries {
     /** Returns the number of nodes measured in this */
     public int nodesMeasured() { return timeseries.size(); }
 
-    /** Returns the average load of this resource in this */
-    public double averageLoad(Resource resource) {
-        int measurementCount = timeseries.stream().mapToInt(m -> m.size()).sum();
-        if (measurementCount == 0) return 0;
-        double measurementSum = timeseries.stream().flatMap(m -> m.asList().stream()).mapToDouble(m -> value(resource, m)).sum();
-        return measurementSum / measurementCount;
-    }
-
-    private double value(Resource resource, NodeMetricSnapshot snapshot) {
-        switch (resource) {
-            case cpu: return snapshot.cpu();
-            case memory: return snapshot.memory();
-            case disk: return snapshot.disk();
-            default: throw new IllegalArgumentException("Got an unknown resource " + resource);
+    /** Returns the average load in this */
+    public Load averageLoad() {
+        Load total = Load.zero();
+        int count = 0;
+        for (var nodeTimeseries : timeseries) {
+            for (var snapshot : nodeTimeseries.asList()) {
+                total = total.add(snapshot.load());
+                count++;
+            }
         }
+        return total.divide(count);
     }
 
     private List<NodeTimeseries> filter(List<NodeTimeseries> timeseries, Predicate<NodeMetricSnapshot> filter) {

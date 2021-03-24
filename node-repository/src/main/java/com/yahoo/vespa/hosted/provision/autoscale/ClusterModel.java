@@ -96,15 +96,10 @@ public class ClusterModel {
         return queryFractionOfMax = clusterTimeseries().queryFractionOfMax(scalingDuration(), clock);
     }
 
-    public double averageLoad(Resource resource) { return nodeTimeseries().averageLoad(resource); }
+    public Load averageLoad() { return nodeTimeseries().averageLoad(); }
 
-    public double idealLoad(Resource resource) {
-        switch (resource) {
-            case cpu : return idealCpuLoad();
-            case memory : return idealMemoryLoad;
-            case disk : return idealDiskLoad;
-            default : throw new IllegalStateException("No ideal load defined for " + resource);
-        }
+    public Load idealLoad() {
+        return new Load(idealCpuLoad(), idealMemoryLoad, idealDiskLoad);
     }
 
     /** Ideal cpu load must take the application traffic fraction into account */

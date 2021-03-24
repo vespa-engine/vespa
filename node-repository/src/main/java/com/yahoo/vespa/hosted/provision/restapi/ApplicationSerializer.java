@@ -1,27 +1,18 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.restapi;
 
-import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.Cluster;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
 import com.yahoo.vespa.hosted.provision.autoscale.ClusterModel;
-import com.yahoo.vespa.hosted.provision.autoscale.ClusterNodesTimeseries;
-import com.yahoo.vespa.hosted.provision.autoscale.ClusterTimeseries;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
-import com.yahoo.vespa.hosted.provision.autoscale.Resource;
-import com.yahoo.vespa.hosted.provision.autoscale.ResourceTarget;
 
 import java.net.URI;
-import java.time.Clock;
-import java.time.Duration;
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -94,12 +85,12 @@ public class ApplicationSerializer {
     }
 
     private static void clusterUtilizationToSlime(ClusterModel clusterModel, Cursor utilizationObject) {
-        utilizationObject.setDouble("cpu", clusterModel.averageLoad(Resource.cpu));
-        utilizationObject.setDouble("idealCpu", clusterModel.idealLoad(Resource.cpu));
-        utilizationObject.setDouble("memory", clusterModel.averageLoad(Resource.memory));
-        utilizationObject.setDouble("idealMemory", clusterModel.idealLoad(Resource.memory));
-        utilizationObject.setDouble("disk", clusterModel.averageLoad(Resource.disk));
-        utilizationObject.setDouble("idealDisk", clusterModel.idealLoad(Resource.disk));
+        utilizationObject.setDouble("cpu", clusterModel.averageLoad().cpu());
+        utilizationObject.setDouble("idealCpu", clusterModel.idealLoad().cpu());
+        utilizationObject.setDouble("memory", clusterModel.averageLoad().memory());
+        utilizationObject.setDouble("idealMemory", clusterModel.idealLoad().memory());
+        utilizationObject.setDouble("disk", clusterModel.averageLoad().disk());
+        utilizationObject.setDouble("idealDisk", clusterModel.idealLoad().disk());
     }
 
     private static void scalingEventsToSlime(List<ScalingEvent> scalingEvents, Cursor scalingEventsArray) {

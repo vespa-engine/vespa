@@ -316,4 +316,6 @@ public class NodeResources {
         return value;
     }
 
+    public static NodeResources zero() { return new NodeResources(0, 0, 0, 0); }
+
 }

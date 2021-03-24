@@ -67,9 +67,9 @@ public class MetricsResponse {
         consumeServiceMetrics(nodeObject.field("services"), nodeValues);
 
         nodeMetrics.add(new Pair<>(hostname, new NodeMetricSnapshot(at,
-                                                                    Metric.cpu.from(nodeValues),
-                                                                    Metric.memory.from(nodeValues),
-                                                                    Metric.disk.from(nodeValues),
+                                                                    new Load(Metric.cpu.from(nodeValues),
+                                                                             Metric.memory.from(nodeValues),
+                                                                             Metric.disk.from(nodeValues)),
                                                                     (long)Metric.generation.from(nodeValues),
                                                                     Metric.inService.from(nodeValues) > 0,
                                                                     clusterIsStable(node.get(), applicationNodes, nodeRepository),
