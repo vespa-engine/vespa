@@ -617,10 +617,8 @@ public class NodeAgentImpl implements NodeAgent {
         Optional<NodeMembership> membership = context.node().membership();
         return zone.getSystemName().isCd()
                || zone.getEnvironment().isTest()
-               || (context.nodeType() != NodeType.tenant)
-               || membership.map(mem -> ! (mem.type().isContainer() ||
-                                           mem.type().isCombined()))
-                                  .orElse(false)
+               || context.nodeType() != NodeType.tenant
+               || membership.map(mem -> ! (mem.type().isContainer() || mem.type().isAdmin())).orElse(false)
                 ? Duration.ofSeconds(-1)
                 : warmUpDuration;
     }
