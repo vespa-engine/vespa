@@ -12,20 +12,20 @@ class IEnumStore;
 /**
  * Concrete dictionary for an enum store that extends the functionality of a unique store dictionary.
  */
-template <typename DictionaryT, typename UnorderedDictionaryT = vespalib::datastore::NoUnorderedDictionary>
-class EnumStoreDictionary : public vespalib::datastore::UniqueStoreDictionary<DictionaryT, IEnumStoreDictionary, UnorderedDictionaryT> {
+template <typename BTreeDictionaryT, typename HashDictionaryT = vespalib::datastore::NoHashDictionary>
+class EnumStoreDictionary : public vespalib::datastore::UniqueStoreDictionary<BTreeDictionaryT, IEnumStoreDictionary, HashDictionaryT> {
 protected:
     using EntryRef = IEnumStoreDictionary::EntryRef;
     using Index = IEnumStoreDictionary::Index;
-    using DictionaryType = DictionaryT;
+    using BTreeDictionaryType = BTreeDictionaryT;
 private:
     using EnumVector = IEnumStoreDictionary::EnumVector;
     using IndexSet = IEnumStoreDictionary::IndexSet;
     using IndexVector = IEnumStoreDictionary::IndexVector;
-    using ParentUniqueStoreDictionary = vespalib::datastore::UniqueStoreDictionary<DictionaryT, IEnumStoreDictionary, UnorderedDictionaryT>;
+    using ParentUniqueStoreDictionary = vespalib::datastore::UniqueStoreDictionary<BTreeDictionaryT, IEnumStoreDictionary, HashDictionaryT>;
     using generation_t = IEnumStoreDictionary::generation_t;
 protected:
-    using ParentUniqueStoreDictionary::has_unordered_dictionary;
+    using ParentUniqueStoreDictionary::has_hash_dictionary;
 private:
     IEnumStore& _enumStore;
 
@@ -37,7 +37,7 @@ public:
 
     ~EnumStoreDictionary() override;
 
-    const DictionaryT& get_raw_dictionary() const { return this->_dict; }
+    const BTreeDictionaryT& get_raw_dictionary() const { return this->_btree_dict; }
 
     void free_unused_values(const vespalib::datastore::EntryComparator& cmp) override;
 
