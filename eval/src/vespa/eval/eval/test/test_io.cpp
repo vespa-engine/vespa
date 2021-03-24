@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "test_io.h"
-#include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/data/slime/json_format.h>
 #include <vespa/vespalib/util/size_literals.h>
@@ -75,8 +75,8 @@ void
 TestWriter::maybe_write_test()
 {
     if (_test.get().type().getId() != slime::NIX::ID) {
-        ASSERT_GREATER(_test.get().fields(), 0u);
-        ASSERT_FALSE(_test[num_tests_str].valid());
+        REQUIRE(_test.get().fields() > 0u);
+        REQUIRE(!_test[num_tests_str].valid());
         write_compact(_test, _out);
         ++_num_tests;
     }
@@ -116,21 +116,21 @@ void for_each_test(Input &in,
         if (JsonFormat::decode(in, slime)) {
             bool is_summary = slime[num_tests_str].valid();
             bool is_test = (!is_summary && (slime.get().fields() > 0));
-            ASSERT_TRUE(is_test != is_summary);
+            REQUIRE(is_test != is_summary);
             if (is_test) {
                 ++num_tests;
-                ASSERT_TRUE(!got_summary);
+                REQUIRE(!got_summary);
                 handle_test(slime);
             } else {
                 got_summary = true;
-                ASSERT_EQUAL(slime[num_tests_str].asLong(), int64_t(num_tests));
+                REQUIRE_EQ(slime[num_tests_str].asLong(), int64_t(num_tests));
                 handle_summary(slime);
             }
         } else {
-            ASSERT_EQUAL(in.obtain().size, 0u);
+            REQUIRE_EQ(in.obtain().size, 0u);
         }
     }
-    ASSERT_TRUE(got_summary);
+    REQUIRE(got_summary);
 }
 
 //-----------------------------------------------------------------------------
