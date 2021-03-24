@@ -57,7 +57,7 @@ public class NodeRepoStats {
     }
 
     private static Pair<Load, Load> computeLoad(NodeList allNodes, List<NodeTimeseries> allNodeTimeseries) {
-        NodeResources totalActiveResources = new NodeResources(0, 0, 0, 0);
+        NodeResources totalActiveResources = NodeResources.zero();
         Load load = Load.zero();
         for (var nodeTimeseries : allNodeTimeseries) {
             Optional<Node> node = allNodes.node(nodeTimeseries.hostname());
@@ -70,7 +70,7 @@ public class NodeRepoStats {
             totalActiveResources = totalActiveResources.add(node.get().resources().justNumbers());
         }
 
-        NodeResources totalHostResources = new NodeResources(0, 0, 0, 0);
+        NodeResources totalHostResources = NodeResources.zero();
         for (var host : allNodes.hosts())
             totalHostResources = totalHostResources.add(host.resources().justNumbers());
 
@@ -86,25 +86,19 @@ public class NodeRepoStats {
                                             .matching(node -> ! node.allocation().get().owner().instance().isTester())
                                             .groupingBy(node -> node.allocation().get().owner()).entrySet()) {
 
-            NodeResources totalResources = new NodeResources(0, 0, 0, 0);
-            double utilizedCost = 0;
-            double totalCpu = 0, totalMemory = 0, totalDisk = 0;
+            NodeResources totalResources = NodeResources.zero();
+            NodeResources totalUtilizedResources = NodeResources.zero();
             for (var node : applicationNodes.getValue()) {
                 var snapshot = snapshotsByHost.get(node.hostname());
                 if (snapshot == null) continue;
-                double cpu = snapshot.cpu() * node.resources().vcpu();
-                double memory = snapshot.memory() * node.resources().memoryGb();
-                double disk = snapshot.disk() * node.resources().diskGb();
-                utilizedCost += new NodeResources(cpu, memory, disk, 0).cost();
-                totalCpu += cpu;
-                totalMemory += memory;
-                totalDisk += disk;
+
                 totalResources = totalResources.add(node.resources().justNumbers());
+                totalUtilizedResources = totalUtilizedResources.add(snapshot.load().scaled(node.resources().justNumbers()));
             }
-            Load load = new Load(divide(totalCpu, totalResources.vcpu()),
-                                 divide(totalMemory, totalResources.memoryGb()),
-                                 divide(totalDisk, totalResources.diskGb()));
-            applicationStats.add(new ApplicationStats(applicationNodes.getKey(), load, totalResources.cost(), utilizedCost));
+            applicationStats.add(new ApplicationStats(applicationNodes.getKey(),
+                                                      Load.byDividing(totalUtilizedResources, totalResources),
+                                                      totalResources.cost(),
+                                                      totalUtilizedResources.cost()));
         }
         Collections.sort(applicationStats);
         return applicationStats;

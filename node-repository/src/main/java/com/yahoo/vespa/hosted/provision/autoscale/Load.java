@@ -34,6 +34,12 @@ public class Load {
         return new Load(divide(cpu, resources.vcpu()), divide(memory, resources.memoryGb()), divide(disk, resources.diskGb()));
     }
 
+    public NodeResources scaled(NodeResources resources) {
+        return resources.withVcpu(cpu * resources.vcpu())
+                        .withMemoryGb(memory * resources.memoryGb())
+                        .withDiskGb(disk * resources.diskGb());
+    }
+
     private double requireNormalized(double value, String name) {
         if (Double.isNaN(value))
             throw new IllegalArgumentException(name + " must be a number but is NaN");
@@ -52,6 +58,10 @@ public class Load {
     private static double divide(double a, double b) {
         if (a == 0 && b == 0) return 0;
         return a / b;
+    }
+
+    public static Load byDividing(NodeResources a, NodeResources b) {
+        return new Load(divide(a.vcpu(), b.vcpu()), divide(a.memoryGb(), b.memoryGb()), divide(a.diskGb(), b.diskGb()));
     }
 
 }
