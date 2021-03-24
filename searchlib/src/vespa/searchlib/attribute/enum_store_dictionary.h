@@ -37,8 +37,6 @@ public:
 
     ~EnumStoreDictionary() override;
 
-    const BTreeDictionaryT& get_raw_dictionary() const { return this->_btree_dict; }
-
     void free_unused_values(const vespalib::datastore::EntryComparator& cmp) override;
 
     void free_unused_values(const IndexSet& to_remove,
