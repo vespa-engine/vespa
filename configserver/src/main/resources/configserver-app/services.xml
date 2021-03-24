@@ -69,10 +69,12 @@
       <components bundle="orchestrator" />      
     </rest-api>
 
-    <handler id="com.yahoo.vespa.serviceview.StateRequestHandler" bundle="configserver">
-      <binding>http://*/serviceview/v1/</binding>
-      <binding>http://*/serviceview/v1/*</binding>
-    </handler>
+    <rest-api path="serviceview" jersey2="true">
+      <components bundle="configserver">
+        <package>com.yahoo.vespa.serviceview</package>
+      </components>
+    </rest-api>
+
     <handler id='com.yahoo.vespa.config.server.http.HttpGetConfigHandler' bundle='configserver'>
       <binding>http://*/config/v1/*/*</binding>
       <binding>http://*/config/v1/*</binding>
