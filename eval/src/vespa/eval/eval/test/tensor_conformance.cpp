@@ -9,6 +9,7 @@
 #include <vespa/eval/eval/simple_value.h>
 #include <vespa/eval/eval/value_type_spec.h>
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -47,7 +48,7 @@ TensorSpec eval(const ValueBuilderFactory &factory, const vespalib::string &expr
     }
     NodeTypes types(*fun, param_types);
     const auto &expect_type = types.get_type(fun->root());
-    ASSERT_FALSE(expect_type.is_error());
+    REQUIRE(!expect_type.is_error());
     InterpretedFunction ifun(factory, *fun, types);
     InterpretedFunction::Context ctx(ifun);
     const Value &result = ifun.eval(ctx, SimpleObjectParams{param_refs});
@@ -451,7 +452,7 @@ struct TestContext {
             {x({"a","b","c"}),y(5)},                            float_cells({y(5),z({"i","j","k","l"})}),
             float_cells({x({"a","b","c"}),y(5)}),               float_cells({y(5),z({"i","j","k","l"})})
         };
-        ASSERT_TRUE((layouts.size() % 2) == 0);
+        REQUIRE((layouts.size() % 2) == 0);
         for (size_t i = 0; i < layouts.size(); i += 2) {
             TensorSpec lhs_input = spec(layouts[i], seq);
             TensorSpec rhs_input = spec(layouts[i + 1], seq);
