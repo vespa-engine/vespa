@@ -7,6 +7,9 @@
 #include <chrono>
 #include <thread>
 
+#include <vespa/log/log.h>
+LOG_SETUP("disk_mem_usage_sampler_test");
+
 using namespace proton;
 using namespace std::chrono_literals;
 
@@ -50,7 +53,15 @@ struct DiskMemUsageSamplerTest : public ::testing::Test {
 
 TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled)
 {
-    std::this_thread::sleep_for(100ms);
+    // Poll for up to 20 seconds to get a sample.
+    size_t i = 0;
+    for (; i < (20s / 50ms); ++i) {
+        if (filter().get_transient_memory_usage() > 0) {
+            break;
+        }
+        std::this_thread::sleep_for(50ms);
+    }
+    LOG(info, "Polled %zu times (%zu ms) to get a sample", i, i * 50);
     EXPECT_GT(filter().getMemoryStats().getAnonymousRss(), 0);
     EXPECT_GT(filter().getDiskUsedSize(), 0);
     EXPECT_EQ(100, filter().get_transient_memory_usage());
