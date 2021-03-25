@@ -243,6 +243,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     // (when getting event from zookeeper to remove application,
     // the lock should be held by the thread that causes the event to happen)
     public void removeApplication(ApplicationId applicationId) {
+        log.log(Level.FINE, "Removing application " + applicationId);
         if (exists(applicationId)) {
             log.log(Level.INFO, "Tried removing application " + applicationId + ", but it seems to have been deployed again");
             return;
