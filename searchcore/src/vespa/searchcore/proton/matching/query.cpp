@@ -101,6 +101,10 @@ GeoLocationSpec process_location_term(ProtonLocationTerm &pterm) {
 }
 
 void exchange_location_nodes(const string &location_str,
+                             Node::UP &query_tree,
+                             std::vector<GeoLocationSpec> &fef_locations) __attribute__((noinline));
+
+void exchange_location_nodes(const string &location_str,
                            Node::UP &query_tree,
                            std::vector<GeoLocationSpec> &fef_locations)
 {
