@@ -16,6 +16,7 @@ import com.yahoo.jdisc.application.MetricConsumer;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
+import com.yahoo.jdisc.handler.NullContent;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
@@ -834,22 +835,30 @@ public class HttpServerTest {
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
         InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
         Module overrideModule = binder -> binder.bind(ConnectionLog.class).toInstance(connectionLog);
-        TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.NEED, overrideModule);
+        TestDriver driver = TestDrivers.newInstanceWithSsl(new OkRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.NEED, overrideModule);
         int listenPort = driver.server().getListenPort();
-        driver.client().get("/status.html");
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < 1000; i++) {
+            builder.append(i);
+        }
+        byte[] content = builder.toString().getBytes();
+        for (int i = 0; i < 100; i++) {
+            driver.client().newPost("/status.html").setBinaryContent(content).execute()
+                    .expectStatusCode(is(OK));
+        }
         assertTrue(driver.close());
         List<ConnectionLogEntry> logEntries = connectionLog.logEntries();
         Assertions.assertThat(logEntries).hasSize(1);
         ConnectionLogEntry logEntry = logEntries.get(0);
         assertEquals(4, UUID.fromString(logEntry.id()).version());
         Assertions.assertThat(logEntry.timestamp()).isAfter(Instant.EPOCH);
-        Assertions.assertThat(logEntry.requests()).hasValue(1L);
-        Assertions.assertThat(logEntry.responses()).hasValue(1L);
+        Assertions.assertThat(logEntry.requests()).hasValue(100L);
+        Assertions.assertThat(logEntry.responses()).hasValue(100L);
         Assertions.assertThat(logEntry.peerAddress()).hasValue("127.0.0.1");
         Assertions.assertThat(logEntry.localAddress()).hasValue("127.0.0.1");
         Assertions.assertThat(logEntry.localPort()).hasValue(listenPort);
-        Assertions.assertThat(logEntry.httpBytesReceived()).hasValueSatisfying(value -> Assertions.assertThat(value).isPositive());
-        Assertions.assertThat(logEntry.httpBytesSent()).hasValueSatisfying(value -> Assertions.assertThat(value).isPositive());
+        Assertions.assertThat(logEntry.httpBytesReceived()).hasValueSatisfying(value -> Assertions.assertThat(value).isGreaterThan(100000L));
+        Assertions.assertThat(logEntry.httpBytesSent()).hasValueSatisfying(value -> Assertions.assertThat(value).isGreaterThan(10000L));
         Assertions.assertThat(logEntry.sslProtocol()).hasValueSatisfying(TlsContext.ALLOWED_PROTOCOLS::contains);
         Assertions.assertThat(logEntry.sslPeerSubject()).hasValue("CN=localhost");
         Assertions.assertThat(logEntry.sslCipherSuite()).hasValueSatisfying(cipher -> Assertions.assertThat(cipher).isNotBlank());
@@ -1153,6 +1162,15 @@ public class HttpServerTest {
             Response response = new Response(OK);
             response.headers().put("Jdisc-Local-Port", Integer.toString(port));
             return handler.handleResponse(response);
+        }
+    }
+
+    private static class OkRequestHandler extends AbstractRequestHandler {
+        @Override
+        public ContentChannel handleRequest(Request request, ResponseHandler handler) {
+            Response response = new Response(OK);
+            handler.handleResponse(response).close(null);
+            return NullContent.INSTANCE;
         }
     }
 
