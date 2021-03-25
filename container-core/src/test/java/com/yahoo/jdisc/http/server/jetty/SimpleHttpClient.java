@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import com.yahoo.jdisc.Request;
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -34,7 +33,6 @@ import java.util.Arrays;
 import java.util.List;
 
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertNotNull;
@@ -58,6 +56,7 @@ public class SimpleHttpClient implements AutoCloseable {
     public SimpleHttpClient(SSLContext sslContext, List<String> enabledProtocols, List<String> enabledCiphers,
                             int listenPort, boolean useCompression) {
         HttpClientBuilder builder = HttpClientBuilder.create();
+        builder.disableConnectionState(); // Reuse SSL connection when client authentication is enabled
         if (!useCompression) {
             builder.disableContentCompression();
         }
