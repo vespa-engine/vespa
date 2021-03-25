@@ -14,11 +14,15 @@ namespace search::tensor {
 
 std::unique_ptr<Value> deserialize_tensor(vespalib::nbostream &buffer)
 {
-    auto tensor = vespalib::eval::decode_value(buffer, FastValueBuilderFactory::get());
-    if (buffer.size() != 0) {
-        throw DeserializeException("Leftover bytes deserializing tensor attribute value.", VESPA_STRLOC);
+    try {
+        auto tensor = vespalib::eval::decode_value(buffer, FastValueBuilderFactory::get());
+        if (buffer.size() != 0) {
+            throw DeserializeException("Leftover bytes deserializing tensor attribute value.", VESPA_STRLOC);
+        }
+        return tensor;
+    } catch (const vespalib::eval::DecodeValueException &e) {
+        throw DeserializeException("tensor value decode failed", e, VESPA_STRLOC);
     }
-    return tensor;
 }
 
 std::unique_ptr<Value> deserialize_tensor(const void *data, size_t size)

@@ -14,6 +14,8 @@ using vespalib::make_string_short::fmt;
 
 namespace vespalib::eval {
 
+VESPA_IMPLEMENT_EXCEPTION(DecodeValueException, Exception);
+
 namespace {
 
 constexpr uint32_t DOUBLE_CELL_TYPE = 0;
@@ -308,13 +310,19 @@ void encode_value(const Value &value, nbostream &output) {
 }
 
 std::unique_ptr<Value> decode_value(nbostream &input, const ValueBuilderFactory &factory) {
-    Format format(input.getInt1_4Bytes());
-    ValueType type = decode_type(input, format);
-    size_t num_mapped_dims = type.count_mapped_dimensions();
-    size_t dense_subspace_size = type.dense_subspace_size();
-    const size_t num_blocks = maybe_decode_num_blocks(input, (num_mapped_dims > 0), format);
-    DecodeState state{type, dense_subspace_size, num_blocks, num_mapped_dims};
-    return typify_invoke<1,TypifyCellType,ContentDecoder>(type.cell_type(), input, state, factory);
+    try {
+        Format format(input.getInt1_4Bytes());
+        ValueType type = decode_type(input, format);
+        size_t num_mapped_dims = type.count_mapped_dimensions();
+        size_t dense_subspace_size = type.dense_subspace_size();
+        const size_t num_blocks = maybe_decode_num_blocks(input, (num_mapped_dims > 0), format);
+        DecodeState state{type, dense_subspace_size, num_blocks, num_mapped_dims};
+        return typify_invoke<1,TypifyCellType,ContentDecoder>(type.cell_type(), input, state, factory);
+    } catch (const OOMException &) {
+        throw;
+    } catch (const Exception &e) {
+        throw DecodeValueException("failed to decode value", e);
+    }
 }
 
 //-----------------------------------------------------------------------------

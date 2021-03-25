@@ -373,7 +373,11 @@ VespaDocumentDeserializer::readTensor()
     std::unique_ptr<vespalib::eval::Value> tensor;
     if (length != 0) {
         nbostream wrapStream(_stream.peek(), length);
-        tensor = vespalib::eval::decode_value(wrapStream, FastValueBuilderFactory::get());
+        try {
+            tensor = vespalib::eval::decode_value(wrapStream, FastValueBuilderFactory::get());
+        } catch (const vespalib::eval::DecodeValueException &e) {
+            throw DeserializeException("tensor value decode failed", e, VESPA_STRLOC);
+        }
         if (wrapStream.size() != 0) {
             throw DeserializeException("Leftover bytes deserializing tensor field value.", VESPA_STRLOC);
         }

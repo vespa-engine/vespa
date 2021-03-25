@@ -335,11 +335,11 @@ TEST(ValueCodecTest, bad_sparse_tensors_are_caught) {
     bad.encode_default(data_default);
     bad.encode_with_double(data_double);
     bad.encode_with_float(data_float);
-    VESPA_EXPECT_EXCEPTION(decode_value(data_default, factory), vespalib::IllegalStateException,
+    VESPA_EXPECT_EXCEPTION(decode_value(data_default, factory), vespalib::eval::DecodeValueException,
                      "serialized input claims 12345678 blocks of size 1*8, but only");
-    VESPA_EXPECT_EXCEPTION(decode_value(data_double, factory), vespalib::IllegalStateException,
+    VESPA_EXPECT_EXCEPTION(decode_value(data_double, factory), vespalib::eval::DecodeValueException,
                      "serialized input claims 12345678 blocks of size 1*8, but only");
-    VESPA_EXPECT_EXCEPTION(decode_value(data_float, factory), vespalib::IllegalStateException,
+    VESPA_EXPECT_EXCEPTION(decode_value(data_float, factory), vespalib::eval::DecodeValueException,
                      "serialized input claims 12345678 blocks of size 1*4, but only");
 }
 
@@ -388,11 +388,11 @@ TEST(ValueCodecTest, bad_dense_tensors_are_caught) {
     bad.encode_default(data_default);
     bad.encode_with_double(data_double);
     bad.encode_with_float(data_float);
-    VESPA_EXPECT_EXCEPTION(decode_value(data_default, factory), vespalib::IllegalStateException,
+    VESPA_EXPECT_EXCEPTION(decode_value(data_default, factory), vespalib::eval::DecodeValueException,
                      "serialized input claims 1 blocks of size 60000*8, but only");
-    VESPA_EXPECT_EXCEPTION(decode_value(data_double, factory), vespalib::IllegalStateException,
+    VESPA_EXPECT_EXCEPTION(decode_value(data_double, factory), vespalib::eval::DecodeValueException,
                      "serialized input claims 1 blocks of size 60000*8, but only");
-    VESPA_EXPECT_EXCEPTION(decode_value(data_float, factory), vespalib::IllegalStateException,
+    VESPA_EXPECT_EXCEPTION(decode_value(data_float, factory), vespalib::eval::DecodeValueException,
                      "serialized input claims 1 blocks of size 60000*4, but only");
 }
 

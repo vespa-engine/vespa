@@ -501,12 +501,16 @@ template <typename T>
 ArrayParam<T>::ArrayParam(vespalib::nbostream & stream) {
     using vespalib::typify_invoke;
     using vespalib::eval::TypifyCellType;
-    auto tensor = vespalib::eval::decode_value(stream, FastValueBuilderFactory::get());
-    if (tensor->type().is_dense()) {
-        TypedCells cells = tensor->cells();
-        typify_invoke<1,TypifyCellType,CopyCellsToVector<T>>(cells.type, cells, values);
-    } else {
-        LOG(warning, "Expected dense tensor, but got type '%s'", tensor->type().to_spec().c_str());
+    try {
+        auto tensor = vespalib::eval::decode_value(stream, FastValueBuilderFactory::get());
+        if (tensor->type().is_dense()) {
+            TypedCells cells = tensor->cells();
+            typify_invoke<1,TypifyCellType,CopyCellsToVector<T>>(cells.type, cells, values);
+        } else {
+            LOG(warning, "Expected dense tensor, but got type '%s'", tensor->type().to_spec().c_str());
+        }
+    } catch (const vespalib::eval::DecodeValueException &e) {
+        LOG(warning, "Failed to decode tensor: %s", e.what());
     }
 }
 
