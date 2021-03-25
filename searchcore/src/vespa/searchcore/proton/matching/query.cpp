@@ -36,6 +36,7 @@ using search::queryeval::IntermediateBlueprint;
 using search::queryeval::Blueprint;
 using search::queryeval::IRequestContext;
 using search::queryeval::SearchIterator;
+using search::query::LocationTerm;
 using vespalib::string;
 using std::vector;
 
@@ -59,16 +60,16 @@ inject(Node::UP query, Node::UP to_inject) {
     return query;
 }
 
-std::vector<ProtonLocationTerm *>
+std::vector<LocationTerm *>
 find_location_terms(Node *tree) {
-    std::vector<ProtonLocationTerm *> retval;
+    std::vector<LocationTerm *> retval;
     std::vector<Node *> nodes;
     nodes.push_back(tree);
     // Note the nodes vector being iterated over is appended in the loop
     for (size_t i = 0; i < nodes.size(); ++i) {
         Node * node = nodes[i];
-        if (auto loc = dynamic_cast<ProtonLocationTerm *>(node)) {
-            retval.push_back(loc);
+        if (node->isLocationTerm() ) {
+            retval.push_back(static_cast<LocationTerm *>(node));
         }
         if (node->isIntermediate()) {
             auto parent = static_cast<const search::query::Intermediate *>(node);
@@ -95,7 +96,7 @@ GeoLocationSpec parse_location_string(string str) {
     return empty;
 }
 
-GeoLocationSpec process_location_term(ProtonLocationTerm &pterm) {
+GeoLocationSpec process_location_term(LocationTerm &pterm) {
     auto old_view = pterm.getView();
     auto new_view = PositionDataType::getZCurveFieldName(old_view);
     pterm.setView(new_view);
@@ -117,7 +118,7 @@ void exchange_location_nodes(const string &location_str,
     if (parsed.location.valid()) {
         locationSpecs.push_back(parsed);
     }
-    for (ProtonLocationTerm * pterm : find_location_terms(query_tree.get())) {
+    for (LocationTerm * pterm : find_location_terms(query_tree.get())) {
         auto spec = process_location_term(*pterm);
         if (spec.location.valid()) {
             locationSpecs.push_back(spec);
