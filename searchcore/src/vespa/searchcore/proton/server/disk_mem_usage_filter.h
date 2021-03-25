@@ -45,6 +45,7 @@ private:
     vespalib::ProcessMemoryStats _memoryStats;
     uint64_t                     _diskUsedSizeBytes;
     size_t                       _transient_memory_usage;
+    size_t                       _transient_disk_usage;
     Config                       _config;
     State                        _state;
     std::atomic<bool>            _acceptWrite;
@@ -61,12 +62,14 @@ public:
     ~DiskMemUsageFilter() override;
     void setMemoryStats(vespalib::ProcessMemoryStats memoryStats_in);
     void setDiskUsedSize(uint64_t diskUsedSizeBytes);
-    void set_transient_memory_usage(size_t transient_memory_usage);
+    void set_transient_resource_usage(size_t transient_memory_usage, size_t transient_disk_usage);
     void setConfig(Config config);
     vespalib::ProcessMemoryStats getMemoryStats() const;
     uint64_t getDiskUsedSize() const;
     size_t get_transient_memory_usage() const;
     double get_relative_transient_memory_usage() const;
+    size_t get_transient_disk_usage() const;
+    double get_relative_transient_disk_usage() const;
     Config getConfig() const;
     const HwInfo &getHwInfo() const { return _hwInfo; }
     DiskMemUsageState usageState() const;

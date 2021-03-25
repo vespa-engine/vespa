@@ -88,6 +88,21 @@ public:
     }
 };
 
+class DocumentDBResourceUsageProvider : public TransientResourceUsageProvider {
+private:
+    const DocumentDB& _doc_db;
+
+public:
+    DocumentDBResourceUsageProvider(const DocumentDB& doc_db)
+        : _doc_db(doc_db)
+    {}
+    size_t get_transient_disk_usage() const override {
+        // We estimate the transient disk usage for the next disk index fusion
+        // as the size of the largest disk index.
+        return _doc_db.getReadySubDB()->getSearchableStats().max_component_size_on_disk();
+    }
+};
+
 }
 
 template <typename FunctionType>
@@ -152,7 +167,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _state(),
       _dmUsageForwarder(_writeService.master()),
       _writeFilter(),
-      _transient_usage_provider(std::make_shared<TransientResourceUsageProvider>()),
+      _transient_usage_provider(std::make_shared<DocumentDBResourceUsageProvider>(*this)),
       _feedHandler(std::make_unique<FeedHandler>(_writeService, tlsSpec, docTypeName, *this, _writeFilter, *this, tlsWriterFactory)),
       _subDBs(*this, *this, *_feedHandler, _docTypeName, _writeService, warmupExecutor, fileHeaderContext,
               metricsWireService, getMetrics(), queryLimiter, clock, _configMutex, _baseDir,

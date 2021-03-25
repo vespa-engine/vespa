@@ -26,7 +26,7 @@ class DiskMemUsageSampler {
     void sampleUsage();
     void sampleDiskUsage();
     void sampleMemoryUsage();
-    void sample_transient_memory_usage();
+    void sample_transient_resource_usage();
 public:
     struct Config {
         DiskMemUsageFilter::Config filterConfig;

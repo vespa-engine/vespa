@@ -19,6 +19,7 @@ public:
     TransientResourceUsageProvider();
     virtual ~TransientResourceUsageProvider();
     size_t get_transient_memory_usage() const override;
+    size_t get_transient_disk_usage() const override { return 0; }
     void set_transient_memory_usage(size_t transient_memory_usage);
 };
 
