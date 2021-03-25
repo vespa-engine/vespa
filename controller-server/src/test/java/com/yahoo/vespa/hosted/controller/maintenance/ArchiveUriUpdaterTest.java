@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveBucketDb;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -16,6 +17,7 @@ import org.junit.Test;
 import java.net.URI;
 import java.time.Duration;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -66,7 +68,7 @@ public class ArchiveUriUpdaterTest {
 
     private void setArchiveUriInService(Map<TenantName, String> archiveUris, ZoneId zone) {
         MockArchiveBucketDb archiveBucketDb = (MockArchiveBucketDb) tester.controller().serviceRegistry().archiveBucketDb();
-        archiveUris.forEach((tenant, uri) -> archiveBucketDb.setArchiveUri(zone, tenant, URI.create(uri)));
+        archiveUris.forEach((tenant, uri) -> archiveBucketDb.addBucket(zone, new ArchiveBucket(uri, "keyArn", Set.of(tenant))));
     }
 
     private void setArchiveUriInNodeRepo(Map<TenantName, String> archiveUris, ZoneId zone) {

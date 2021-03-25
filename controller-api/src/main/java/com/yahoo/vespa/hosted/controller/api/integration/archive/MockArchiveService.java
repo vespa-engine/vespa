@@ -4,13 +4,17 @@ package com.yahoo.vespa.hosted.controller.api.integration.archive;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
 /**
  * @author freva
+ * @author andreer
  */
 public class MockArchiveService implements ArchiveService {
+
+    public Map<ArchiveBucket, Map<TenantName, String>> authorizedIamRoles = new HashMap<>();
 
     @Override
     public ArchiveBucket createArchiveBucketFor(ZoneId zoneId, Set<TenantName> tenantNames) {
@@ -19,6 +23,6 @@ public class MockArchiveService implements ArchiveService {
 
     @Override
     public void updateBucketAndKeyPolicy(ZoneId zoneId, ArchiveBucket bucket, Map<TenantName, String> authorizeIamRoleByTenantName) {
-        // noop
+        authorizedIamRoles.put(bucket, authorizeIamRoleByTenantName);
     }
 }
