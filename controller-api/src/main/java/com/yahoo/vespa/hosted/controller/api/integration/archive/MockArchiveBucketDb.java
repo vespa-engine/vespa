@@ -8,6 +8,7 @@ import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public class MockArchiveBucketDb implements ArchiveBucketDb {
 
@@ -19,8 +20,8 @@ public class MockArchiveBucketDb implements ArchiveBucketDb {
     }
 
     @Override
-    public Map<ZoneId, String> zoneBuckets() {
-        return Map.of();
+    public Set<ArchiveBucket> buckets(ZoneId zoneId) {
+        return Set.of();
     }
 
     public void setArchiveUri(ZoneId zone, TenantName tenantName, URI archiveUri) {

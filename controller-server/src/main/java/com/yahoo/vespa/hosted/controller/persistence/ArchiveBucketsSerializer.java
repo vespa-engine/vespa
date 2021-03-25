@@ -1,12 +1,11 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.persistence;
 
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
-import com.yahoo.slime.Type;
-import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 
 import java.util.Set;
@@ -41,9 +40,9 @@ public class ArchiveBucketsSerializer {
         archiveBuckets.forEach(bucket -> {
                     Cursor cursor = bucketsArray.addObject();
                     cursor.setString(bucketArnFieldName, bucket.bucketArn());
-                    bucket.keyArn().ifPresent(keyArn -> cursor.setString(keyArnFieldName, keyArn));
+                    cursor.setString(keyArnFieldName, bucket.keyArn());
                     Cursor tenants = cursor.setArray(tenantsFieldName);
-                    bucket.tenants().forEach(tenantId -> tenants.addString(tenantId.id()));
+                    bucket.tenants().forEach(tenantName -> tenants.addString(tenantName.value()));
                 }
         );
 
@@ -51,9 +50,6 @@ public class ArchiveBucketsSerializer {
     }
 
     public static Set<ArchiveBucket> fromSlime(Inspector inspector) {
-        if (inspector.type() != Type.OBJECT)
-            throw new IllegalArgumentException("Unknown format encountered for tenant/bucket mapping!");
-
         Inspector buckets = inspector.field(bucketsFieldName);
 
         return IntStream.range(0, buckets.entries()).mapToObj(buckets::entry)
@@ -61,14 +57,14 @@ public class ArchiveBucketsSerializer {
     }
 
     private static ArchiveBucket fromInspector(Inspector inspector) {
-        Set<TenantId> tenants =
+        Set<TenantName> tenants =
                 IntStream.range(0, inspector.field(tenantsFieldName).entries())
                         .mapToObj(i -> inspector.field(tenantsFieldName).entry(i).asString())
-                        .map(TenantId::new)
+                        .map(TenantName::from)
                         .collect(Collectors.toUnmodifiableSet());
 
         return new ArchiveBucket(inspector.field(bucketArnFieldName).asString(),
-                SlimeUtils.optionalString(inspector.field(keyArnFieldName)),
+                inspector.field(keyArnFieldName).asString(),
                 tenants);
     }
 

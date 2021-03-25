@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucketDb;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
+import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
@@ -19,11 +20,13 @@ public class ArchiveAccessMaintainer extends ControllerMaintainer {
 
     private final ArchiveBucketDb archiveBucketDb;
     private final ArchiveService archiveService;
+    private final ZoneRegistry zoneRegistry;
 
     public ArchiveAccessMaintainer(Controller controller, Duration interval) {
         super(controller, interval);
         this.archiveBucketDb = controller.serviceRegistry().archiveBucketDb();
         this.archiveService = controller.serviceRegistry().archiveService();
+        this.zoneRegistry = controller().zoneRegistry();
     }
 
     @Override
@@ -35,8 +38,10 @@ public class ArchiveAccessMaintainer extends ControllerMaintainer {
                 .collect(Collectors.toUnmodifiableMap(
                         Tenant::name, cloudTenant -> cloudTenant.archiveAccessRole().orElseThrow()));
 
-        archiveBucketDb.zoneBuckets().forEach(((zoneId, bucketName) ->
-                archiveService.updateBucketAndKeyPolicy(zoneId, bucketName, tenantArchiveAccessRoles)));
+        zoneRegistry.zones().controllerUpgraded().ids().forEach(zoneId ->
+                archiveBucketDb.buckets(zoneId).forEach(archiveBucket ->
+                        archiveService.updateBucketAndKeyPolicy(zoneId, archiveBucket, tenantArchiveAccessRoles))
+        );
 
         return true;
     }

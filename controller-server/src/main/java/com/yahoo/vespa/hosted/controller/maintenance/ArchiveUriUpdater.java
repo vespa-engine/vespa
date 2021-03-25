@@ -58,7 +58,7 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
             }
 
             zoneArchiveUris.keySet().stream()
-                    .filter(tenant -> ! tenants.contains(tenant))
+                    .filter(tenant -> !tenants.contains(tenant))
                     .forEach(tenant -> nodeRepository.removeArchiveUri(zone, tenant));
         });
 

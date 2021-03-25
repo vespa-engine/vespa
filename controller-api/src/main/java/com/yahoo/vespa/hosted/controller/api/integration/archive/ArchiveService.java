@@ -4,19 +4,18 @@ package com.yahoo.vespa.hosted.controller.api.integration.archive;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 
-import java.net.URI;
-import java.util.Collection;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
 
 /**
  * Service that manages archive storage URIs for tenant nodes.
  *
  * @author freva
+ * @author andreer
  */
 public interface ArchiveService {
 
-    public String createArchiveBucketFor(ZoneId zoneId);
+    ArchiveBucket createArchiveBucketFor(ZoneId zoneId, Set<TenantName> tenantName);
 
-    void updateBucketAndKeyPolicy(ZoneId zoneId, String bucketName, Map<TenantName, String> authorizeIamRoleByTenantName);
+    void updateBucketAndKeyPolicy(ZoneId zoneId, ArchiveBucket bucket, Map<TenantName, String> authorizeIamRoleByTenantName);
 }

@@ -1,36 +1,36 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.archive;
 
-import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
+import com.yahoo.config.provision.TenantName;
 
 import java.util.Objects;
-import java.util.Optional;
 import java.util.Set;
 
 /**
  * Represents an S3 bucket used to store archive data - logs, heap/core dumps, etc.
+ *
  * @author andreer
  */
 public class ArchiveBucket {
-    private final String name;
-    private final Optional<String> keyArn;
-    private final Set<TenantId> tenants;
+    private final String bucketArn;
+    private final String keyArn;
+    private final Set<TenantName> tenants;
 
-    public ArchiveBucket(String name, Optional<String> keyArn, Set<TenantId> tenants) {
-        this.name = name;
+    public ArchiveBucket(String bucketArn, String keyArn, Set<TenantName> tenants) {
+        this.bucketArn = bucketArn;
         this.keyArn = keyArn;
         this.tenants = tenants;
     }
 
     public String bucketArn() {
-        return name;
+        return bucketArn;
     }
 
-    public Optional<String> keyArn() {
+    public String keyArn() {
         return keyArn;
     }
 
-    public Set<TenantId> tenants() {
+    public Set<TenantName> tenants() {
         return tenants;
     }
 
@@ -39,11 +39,11 @@ public class ArchiveBucket {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ArchiveBucket that = (ArchiveBucket) o;
-        return name.equals(that.name) && keyArn.equals(that.keyArn) && tenants.equals(that.tenants);
+        return bucketArn.equals(that.bucketArn) && keyArn.equals(that.keyArn) && tenants.equals(that.tenants);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(name, keyArn, tenants);
+        return Objects.hash(bucketArn, keyArn, tenants);
     }
 }

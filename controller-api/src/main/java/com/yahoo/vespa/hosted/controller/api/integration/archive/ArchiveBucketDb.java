@@ -5,12 +5,12 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 
 import java.net.URI;
-import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 public interface ArchiveBucketDb {
 
     Optional<URI> archiveUriFor(ZoneId zoneId, TenantName tenant);
 
-    Map<ZoneId, String> zoneBuckets();
+    Set<ArchiveBucket> buckets(ZoneId zoneId);
 }
