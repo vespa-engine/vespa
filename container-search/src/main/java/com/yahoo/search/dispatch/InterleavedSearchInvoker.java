@@ -202,6 +202,17 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         return nextAdaptive;
     }
 
+    private String dbg(LeanHit hit) {
+        var buf = new StringBuilder();
+        buf.append("LeanHit[");
+        if (hit.hasSortData()) buf.append("hasSortData,");
+        buf.append("relevance=").append(hit.getRelevance());
+        buf.append(",partId=").append(hit.getPartId());
+        buf.append(",distributionKey=").append(hit.getDistributionKey());
+        buf.append("]");
+        return buf.toString();
+    }
+
     private List<LeanHit> mergeResult(Result result, InvokerResult partialResult, List<LeanHit> current) {
         collectCoverage(partialResult.getResult().getCoverage(true));
 
@@ -224,28 +235,45 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         List<LeanHit> merged = new ArrayList<>(needed);
         int indexCurrent = 0;
         int indexPartial = 0;
+        log.fine(() -> "Merging "+current.size()+" and "+partial.size()+" lean hits (want "+needed+")");
         while (indexCurrent < current.size() && indexPartial < partial.size() && merged.size() < needed) {
-            LeanHit incommingHit = partial.get(indexPartial);
+            LeanHit incomingHit = partial.get(indexPartial);
             LeanHit currentHit = current.get(indexCurrent);
 
-            int cmpRes = currentHit.compareTo(incommingHit);
+            int cmpRes = currentHit.compareTo(incomingHit);
             if (cmpRes < 0) {
+                log.fine(() -> "Prefer current "+dbg(currentHit));
                 merged.add(currentHit);
                 indexCurrent++;
             } else if (cmpRes > 0) {
-                merged.add(incommingHit);
+                log.fine(() -> "Prefer incoming "+dbg(incomingHit));
+                merged.add(incomingHit);
                 indexPartial++;
             } else { // Duplicates
+                log.fine(() -> "Equal, prefer current "+dbg(currentHit)+" before incoming "+dbg(incomingHit));
                 merged.add(currentHit);
                 indexCurrent++;
                 indexPartial++;
             }
         }
         while ((indexCurrent < current.size()) && (merged.size() < needed)) {
-            merged.add(current.get(indexCurrent++));
+            LeanHit currentHit = current.get(indexCurrent++);
+            log.fine(() -> "Also use current "+dbg(currentHit));
+            merged.add(currentHit);
+        }
+        while (indexCurrent < current.size()) {
+            LeanHit currentHit = current.get(indexCurrent++);
+            log.fine(() -> "Do not use current "+dbg(currentHit));
+            merged.add(currentHit);
         }
         while ((indexPartial < partial.size()) && (merged.size() < needed)) {
-            merged.add(partial.get(indexPartial++));
+            LeanHit incomingHit = partial.get(indexPartial++);
+            log.fine(() -> "Also use incoming "+dbg(incomingHit));
+            merged.add(incomingHit);
+        }
+        while (indexPartial < partial.size()) {
+            LeanHit incomingHit = partial.get(indexPartial++);
+            log.fine(() -> "Do not use incoming "+dbg(incomingHit));
         }
         return merged;
     }
