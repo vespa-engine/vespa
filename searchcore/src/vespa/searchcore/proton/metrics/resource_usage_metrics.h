@@ -17,6 +17,7 @@ struct ResourceUsageMetrics : metrics::MetricSet
     metrics::DoubleValueMetric memory;
     metrics::DoubleValueMetric memoryUtilization;
     metrics::DoubleValueMetric transient_memory;
+    metrics::DoubleValueMetric transient_disk;
     metrics::LongValueMetric memoryMappings;
     metrics::LongValueMetric openFileDescriptors;
     metrics::LongValueMetric feedingBlocked;

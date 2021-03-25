@@ -9,7 +9,7 @@ namespace proton {
 struct IAttributeManager;
 class AttributeConfigInspector;
 class AttributeUsageFilter;
-class TransientMemoryUsageProvider;
+class TransientResourceUsageProvider;
 
 /**
  * Class used to sample attribute resource usage and pass aggregated
@@ -24,7 +24,7 @@ class SampleAttributeUsageJob : public IMaintenanceJob
     IAttributeManagerSP   _notReadyAttributeManager;
     AttributeUsageFilter &_attributeUsageFilter;
     std::shared_ptr<const AttributeConfigInspector> _attribute_config_inspector;
-    std::shared_ptr<TransientMemoryUsageProvider> _transient_memory_usage_provider;
+    std::shared_ptr<TransientResourceUsageProvider> _transient_usage_provider;
 public:
     SampleAttributeUsageJob(IAttributeManagerSP readyAttributeManager,
                             IAttributeManagerSP notReadyAttributeManager,
@@ -32,7 +32,7 @@ public:
                             const vespalib::string &docTypeName,
                             vespalib::duration interval,
                             std::unique_ptr<const AttributeConfigInspector> attribute_config_inspector,
-                            std::shared_ptr<TransientMemoryUsageProvider> transient_memory_usage_provider);
+                            std::shared_ptr<TransientResourceUsageProvider> transient_usage_provider);
     ~SampleAttributeUsageJob() override;
 
     bool run() override;

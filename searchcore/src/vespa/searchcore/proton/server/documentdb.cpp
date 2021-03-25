@@ -20,7 +20,7 @@
 #include <vespa/searchcore/proton/attribute/imported_attributes_repo.h>
 #include <vespa/searchcore/proton/common/eventlogger.h>
 #include <vespa/searchcore/proton/common/statusreport.h>
-#include <vespa/searchcore/proton/common/transient_memory_usage_provider.h>
+#include <vespa/searchcore/proton/common/transient_resource_usage_provider.h>
 #include <vespa/searchcore/proton/docsummary/isummarymanager.h>
 #include <vespa/searchcore/proton/feedoperation/noopoperation.h>
 #include <vespa/searchcore/proton/index/index_writer.h>
@@ -88,6 +88,21 @@ public:
     }
 };
 
+class DocumentDBResourceUsageProvider : public TransientResourceUsageProvider {
+private:
+    const DocumentDB& _doc_db;
+
+public:
+    DocumentDBResourceUsageProvider(const DocumentDB& doc_db)
+        : _doc_db(doc_db)
+    {}
+    size_t get_transient_disk_usage() const override {
+        // We estimate the transient disk usage for the next disk index fusion
+        // as the size of the largest disk index.
+        return _doc_db.getReadySubDB()->getSearchableStats().max_component_size_on_disk();
+    }
+};
+
 }
 
 template <typename FunctionType>
@@ -152,7 +167,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       _state(),
       _dmUsageForwarder(_writeService.master()),
       _writeFilter(),
-      _transient_memory_usage_provider(std::make_shared<TransientMemoryUsageProvider>()),
+      _transient_usage_provider(std::make_shared<DocumentDBResourceUsageProvider>(*this)),
       _feedHandler(std::make_unique<FeedHandler>(_writeService, tlsSpec, docTypeName, *this, _writeFilter, *this, tlsWriterFactory)),
       _subDBs(*this, *this, *_feedHandler, _docTypeName, _writeService, warmupExecutor, fileHeaderContext,
               metricsWireService, getMetrics(), queryLimiter, clock, _configMutex, _baseDir,
@@ -938,7 +953,7 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config, std
             _subDBs.getReadySubDB()->getAttributeManager(),
             _subDBs.getNotReadySubDB()->getAttributeManager(),
             std::move(attribute_config_inspector),
-            _transient_memory_usage_provider,
+            _transient_usage_provider,
             _writeFilter);
 }
 
@@ -1085,10 +1100,10 @@ DocumentDB::getDistributionKey() const
     return _owner.getDistributionKey();
 }
 
-std::shared_ptr<const ITransientMemoryUsageProvider>
-DocumentDB::transient_memory_usage_provider()
+std::shared_ptr<const ITransientResourceUsageProvider>
+DocumentDB::transient_usage_provider()
 {
-    return _transient_memory_usage_provider;
+    return _transient_usage_provider;
 }
 
 void

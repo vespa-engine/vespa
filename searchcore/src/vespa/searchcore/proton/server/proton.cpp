@@ -643,7 +643,7 @@ Proton::addDocumentDB(const document::DocumentType &docType,
     auto flushHandler = std::make_shared<FlushHandlerProxy>(ret);
     _flushEngine->putFlushHandler(docTypeName, flushHandler);
     _diskMemUsageSampler->notifier().addDiskMemUsageListener(ret->diskMemUsageListener());
-    _diskMemUsageSampler->add_transient_memory_usage_provider(ret->transient_memory_usage_provider());
+    _diskMemUsageSampler->add_transient_usage_provider(ret->transient_usage_provider());
     return ret;
 }
 
@@ -681,7 +681,7 @@ Proton::removeDocumentDB(const DocTypeName &docTypeName)
     _metricsEngine->removeMetricsHook(old->getMetricsUpdateHook());
     _metricsEngine->removeDocumentDBMetrics(old->getMetrics());
     _diskMemUsageSampler->notifier().removeDiskMemUsageListener(old->diskMemUsageListener());
-    _diskMemUsageSampler->remove_transient_memory_usage_provider(old->transient_memory_usage_provider());
+    _diskMemUsageSampler->remove_transient_usage_provider(old->transient_usage_provider());
     // Caller should have removed & drained relevant timer tasks
     old->close();
 }
@@ -750,6 +750,7 @@ Proton::updateMetrics(const metrics::MetricLockGuard &)
         metrics.resourceUsage.memory.set(usageState.memoryState().usage());
         metrics.resourceUsage.memoryUtilization.set(usageState.memoryState().utilization());
         metrics.resourceUsage.transient_memory.set(usageFilter.get_relative_transient_memory_usage());
+        metrics.resourceUsage.transient_disk.set(usageFilter.get_relative_transient_disk_usage());
         metrics.resourceUsage.memoryMappings.set(usageFilter.getMemoryStats().getMappingsCount());
         metrics.resourceUsage.openFileDescriptors.set(FastOS_File::count_open_files());
         metrics.resourceUsage.feedingBlocked.set((usageFilter.acceptWriteOperation() ? 0.0 : 1.0));

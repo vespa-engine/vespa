@@ -16,13 +16,13 @@ SampleAttributeUsageJob(IAttributeManagerSP readyAttributeManager,
                         const vespalib::string &docTypeName,
                         vespalib::duration interval,
                         std::unique_ptr<const AttributeConfigInspector> attribute_config_inspector,
-                        std::shared_ptr<TransientMemoryUsageProvider> transient_memory_usage_provider)
+                        std::shared_ptr<TransientResourceUsageProvider> transient_usage_provider)
     : IMaintenanceJob("sample_attribute_usage." + docTypeName, vespalib::duration::zero(), interval),
       _readyAttributeManager(readyAttributeManager),
       _notReadyAttributeManager(notReadyAttributeManager),
       _attributeUsageFilter(attributeUsageFilter),
       _attribute_config_inspector(std::move(attribute_config_inspector)),
-      _transient_memory_usage_provider(std::move(transient_memory_usage_provider))
+      _transient_usage_provider(std::move(transient_usage_provider))
 {
 }
 
@@ -31,7 +31,7 @@ SampleAttributeUsageJob::~SampleAttributeUsageJob() = default;
 bool
 SampleAttributeUsageJob::run()
 {
-    auto context = std::make_shared<AttributeUsageSamplerContext> (_attributeUsageFilter, _attribute_config_inspector, _transient_memory_usage_provider);
+    auto context = std::make_shared<AttributeUsageSamplerContext> (_attributeUsageFilter, _attribute_config_inspector, _transient_usage_provider);
     _readyAttributeManager->asyncForEachAttribute(std::make_shared<AttributeUsageSamplerFunctor>(context, "ready"));
     _notReadyAttributeManager->asyncForEachAttribute(std::make_shared<AttributeUsageSamplerFunctor>(context, "notready"));
     return true;

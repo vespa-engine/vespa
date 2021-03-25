@@ -183,10 +183,11 @@ DiskMemUsageFilter::setDiskUsedSize(uint64_t diskUsedSizeBytes)
 }
 
 void
-DiskMemUsageFilter::set_transient_memory_usage(size_t transient_memory_usage)
+DiskMemUsageFilter::set_transient_resource_usage(size_t transient_memory_usage, size_t transient_disk_usage)
 {
     Guard guard(_lock);
     _transient_memory_usage = transient_memory_usage;
+    _transient_disk_usage = transient_disk_usage;
 }
 
 void
@@ -223,6 +224,20 @@ DiskMemUsageFilter::get_relative_transient_memory_usage() const
 {
     Guard guard(_lock);
     return  static_cast<double>(_transient_memory_usage) / _hwInfo.memory().sizeBytes();
+}
+
+size_t
+DiskMemUsageFilter::get_transient_disk_usage() const
+{
+    Guard guard(_lock);
+    return _transient_disk_usage;
+}
+
+double
+DiskMemUsageFilter::get_relative_transient_disk_usage() const
+{
+    Guard guard(_lock);
+    return  static_cast<double>(_transient_disk_usage) / _hwInfo.disk().sizeBytes();
 }
 
 DiskMemUsageFilter::Config

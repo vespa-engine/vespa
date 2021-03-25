@@ -3,7 +3,7 @@
 #include "disk_mem_usage_sampler.h"
 #include <vespa/vespalib/util/scheduledexecutor.h>
 #include <vespa/vespalib/util/lambdatask.h>
-#include <vespa/searchcore/proton/common/i_transient_memory_usage_provider.h>
+#include <vespa/searchcore/proton/common/i_transient_resource_usage_provider.h>
 #include <filesystem>
 
 using vespalib::makeLambdaTask;
@@ -17,7 +17,7 @@ DiskMemUsageSampler::DiskMemUsageSampler(const std::string &path_in, const Confi
       _lastSampleTime(vespalib::steady_clock::now()),
       _periodicTimer(),
       _lock(),
-      _transient_memory_usage_providers()
+      _transient_usage_providers()
 {
     setConfig(config);
 }
@@ -52,7 +52,7 @@ DiskMemUsageSampler::sampleUsage()
 {
     sampleMemoryUsage();
     sampleDiskUsage();
-    sample_transient_memory_usage();
+    sample_transient_resource_usage();
 }
 
 namespace {
@@ -123,33 +123,34 @@ DiskMemUsageSampler::sampleMemoryUsage()
 }
 
 void
-DiskMemUsageSampler::sample_transient_memory_usage()
+DiskMemUsageSampler::sample_transient_resource_usage()
 {
     size_t max_transient_memory_usage = 0;
+    size_t max_transient_disk_usage = 0;
     {
         std::lock_guard<std::mutex> guard(_lock);
-        for (auto provider : _transient_memory_usage_providers) {
-            auto transient_memory_usage = provider->get_transient_memory_usage();
-            max_transient_memory_usage = std::max(max_transient_memory_usage, transient_memory_usage);
+        for (auto provider : _transient_usage_providers) {
+            max_transient_memory_usage = std::max(max_transient_memory_usage, provider->get_transient_memory_usage());
+            max_transient_disk_usage = std::max(max_transient_disk_usage, provider->get_transient_disk_usage());
         }
     }
-    _filter.set_transient_memory_usage(max_transient_memory_usage);
+    _filter.set_transient_resource_usage(max_transient_memory_usage, max_transient_disk_usage);
 }
 
 void
-DiskMemUsageSampler::add_transient_memory_usage_provider(std::shared_ptr<const ITransientMemoryUsageProvider> provider)
+DiskMemUsageSampler::add_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider)
 {
     std::lock_guard<std::mutex> guard(_lock);
-    _transient_memory_usage_providers.push_back(provider);
+    _transient_usage_providers.push_back(provider);
 }
 
 void
-DiskMemUsageSampler::remove_transient_memory_usage_provider(std::shared_ptr<const ITransientMemoryUsageProvider> provider)
+DiskMemUsageSampler::remove_transient_usage_provider(std::shared_ptr<const ITransientResourceUsageProvider> provider)
 {
     std::lock_guard<std::mutex> guard(_lock);
-    for (auto itr = _transient_memory_usage_providers.begin(); itr != _transient_memory_usage_providers.end(); ++itr) {
+    for (auto itr = _transient_usage_providers.begin(); itr != _transient_usage_providers.end(); ++itr) {
         if (*itr == provider) {
-            _transient_memory_usage_providers.erase(itr);
+            _transient_usage_providers.erase(itr);
             break;
         }
     }
