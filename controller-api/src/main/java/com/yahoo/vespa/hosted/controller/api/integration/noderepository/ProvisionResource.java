@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration.noderepository;
 
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepoStats;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -67,6 +68,10 @@ public interface ProvisionResource {
     @Path("/application/{application}")
     String patchApplication(@PathParam("application") String applicationId, ApplicationPatch applicationPatch,
                    @HeaderParam("X-HTTP-Method-Override") String patchOverride);
+
+    @GET
+    @Path("/stats")
+    NodeRepoStatsData getStats();
 
     @PUT
     @Path("/state/{state}/{hostname}")

@@ -68,6 +68,7 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
         if (path.matches("/controller/v1/")) return root(request);
         if (path.matches("/controller/v1/auditlog/")) return new AuditLogResponse(controller.auditLogger().readLog());
         if (path.matches("/controller/v1/maintenance/")) return new JobsResponse(controller.jobControl());
+        if (path.matches("/controller/v1/stats")) return new StatsResponse(controller);
         if (path.matches("/controller/v1/jobs/upgrader")) return new UpgraderResponse(maintenance.upgrader());
         if (path.matches("/controller/v1/metering/tenant/{tenant}/month/{month}")) return new MeteringResponse(controller.serviceRegistry().meteringService(), path.get("tenant"), path.get("month"));
         return notFound(path);
@@ -94,7 +95,7 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse notFound(Path path) { return ErrorResponse.notFoundError("Nothing at " + path); }
 
     private HttpResponse root(HttpRequest request) {
-        return new ResourceResponse(request, "auditlog", "jobs/upgrader", "maintenance");
+        return new ResourceResponse(request, "auditlog", "maintenance", "stats", "jobs/upgrader", "metering/tenant");
     }
 
     private HttpResponse configureUpgrader(HttpRequest request) {

@@ -1,13 +1,22 @@
 {
   "resources": [
     {
-      "url": "http://localhost:8080/nodes/v2/state/"
-    },
-    {
       "url": "http://localhost:8080/nodes/v2/node/"
     },
     {
+      "url": "http://localhost:8080/nodes/v2/state/"
+    },
+    {
+      "url": "http://localhost:8080/nodes/v2/acl/"
+    },
+    {
       "url": "http://localhost:8080/nodes/v2/command/"
+    },
+    {
+      "url":"http://localhost:8080/nodes/v2/archive/"
+    },
+    {
+      "url":"http://localhost:8080/nodes/v2/locks/"
     },
     {
       "url": "http://localhost:8080/nodes/v2/maintenance/"
@@ -16,13 +25,13 @@
       "url":"http://localhost:8080/nodes/v2/upgrade/"
     },
     {
+      "url":"http://localhost:8080/nodes/v2/capacity/"
+    },
+    {
       "url":"http://localhost:8080/nodes/v2/application/"
     },
     {
-      "url":"http://localhost:8080/nodes/v2/archive/"
-    },
-    {
-      "url":"http://localhost:8080/nodes/v2/locks/"
+      "url":"http://localhost:8080/nodes/v2/stats/"
     }
   ]
 }

@@ -1,0 +1,54 @@
+{
+  "load": {
+    "cpu": 0.0,
+    "memory": 0.0,
+    "disk": 0.0
+  },
+  "activeLoad": {
+    "cpu": 0.0,
+    "memory": 0.0,
+    "disk": 0.0
+  },
+  "applications": [
+    {
+      "id": "tenant3.application3.instance3",
+      "load": {
+        "cpu": 0.0,
+        "memory": 0.0,
+        "disk": 0.0
+      },
+      "cost": 0.0,
+      "unutilizedCost": 0.0
+    },
+    {
+      "id": "tenant2.application2.instance2",
+      "load": {
+        "cpu": 0.0,
+        "memory": 0.0,
+        "disk": 0.0
+      },
+      "cost": 0.0,
+      "unutilizedCost": 0.0
+    },
+    {
+      "id": "tenant4.application4.instance4",
+      "load": {
+        "cpu": 0.0,
+        "memory": 0.0,
+        "disk": 0.0
+      },
+      "cost": 0.0,
+      "unutilizedCost": 0.0
+    },
+    {
+      "id": "tenant1.application1.instance1",
+      "load": {
+        "cpu": 0.0,
+        "memory": 0.0,
+        "disk": 0.0
+      },
+      "cost": 0.0,
+      "unutilizedCost": 0.0
+    }
+  ]
+}
