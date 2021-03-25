@@ -186,7 +186,14 @@ template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 vespalib::MemoryUsage
 UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::get_memory_usage() const
 {
-    return this->_btree_dict.getMemoryUsage();
+    vespalib::MemoryUsage memory_usage;
+    if constexpr (has_btree_dictionary) {
+        memory_usage.merge(this->_btree_dict.getMemoryUsage());
+    }
+    if constexpr (has_hash_dictionary) {
+        memory_usage.merge(this->_hash_dict.get_memory_usage());
+    }
+    return memory_usage;
 }
 
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>

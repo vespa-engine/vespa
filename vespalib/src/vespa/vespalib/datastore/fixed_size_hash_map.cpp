@@ -3,6 +3,7 @@
 #include "fixed_size_hash_map.h"
 #include "entry_comparator.h"
 #include <vespa/vespalib/util/array.hpp>
+#include <vespa/vespalib/util/memoryusage.h>
 #include <cassert>
 #include <stdexcept>
 
@@ -169,6 +170,21 @@ FixedSizeHashMap::find(const EntryComparator& comp, EntryRef key_ref)
         node_idx = node.get_next_node_idx().load(std::memory_order_acquire);
     }
     return nullptr;
+}
+
+MemoryUsage
+FixedSizeHashMap::get_memory_usage() const
+{
+    size_t fixed_size = sizeof(FixedSizeHashMap);
+    size_t chain_heads_size = sizeof(ChainHead) * _chain_heads.size();
+    size_t nodes_used_size = sizeof(Node) * _nodes.size();
+    size_t nodes_alloc_size = sizeof(Node) * _nodes.capacity();
+    size_t nodes_dead_size = sizeof(Node) * _free_count;
+    size_t nodes_hold_size = sizeof(Node) * _hold_count;
+    return MemoryUsage(fixed_size + chain_heads_size + nodes_alloc_size,
+                       fixed_size + chain_heads_size + nodes_used_size,
+                       nodes_dead_size,
+                       nodes_hold_size);
 }
 
 }

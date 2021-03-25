@@ -11,7 +11,10 @@
 #include <deque>
 #include <functional>
 
-namespace vespalib { class GenerationHolder; }
+namespace vespalib {
+class GenerationHolder;
+class MemoryUsage;
+}
 namespace vespalib::datastore {
 
 class EntryComparator;
@@ -114,6 +117,7 @@ public:
 
     bool full() const noexcept { return _nodes.size() == _nodes.capacity() && _free_count == 0u; }
     size_t size() const noexcept { return _count; }
+    MemoryUsage get_memory_usage() const;
 };
 
 }

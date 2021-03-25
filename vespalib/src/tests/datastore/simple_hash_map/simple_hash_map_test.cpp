@@ -200,4 +200,20 @@ TEST_F(DataStoreSimpleHashTest, multi_threaded_reader_during_updates)
     }
 }
 
+TEST_F(DataStoreSimpleHashTest, memory_usage_is_reported)
+{
+    auto initial_usage = _hash_map.get_memory_usage();
+    EXPECT_LT(0, initial_usage.allocatedBytes());
+    EXPECT_LT(0, initial_usage.usedBytes());
+    EXPECT_EQ(0, initial_usage.deadBytes());
+    EXPECT_EQ(0, initial_usage.allocatedBytesOnHold());
+    auto guard = _generationHandler.takeGuard();
+    for (uint32_t i = 0; i < 50; ++i) {
+        insert(i);
+    }
+    auto usage = _hash_map.get_memory_usage();
+    EXPECT_EQ(0, usage.deadBytes());
+    EXPECT_LT(0, usage.allocatedBytesOnHold());
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()

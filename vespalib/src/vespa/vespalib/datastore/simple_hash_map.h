@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/generationholder.h>
 #include <functional>
 
+namespace vespalib { class MemoryUsage; }
 namespace vespalib::datastore {
 
 class FixedSizeHashMap;
@@ -54,6 +55,7 @@ public:
     void trim_hold_lists(generation_t first_used);
     size_t size() const noexcept;
     const EntryComparator &get_default_comparator() const noexcept { return *_comp; }
+    MemoryUsage get_memory_usage() const;
 };
 
 }
