@@ -53,7 +53,6 @@
         <module>config_test</module>
         <module>container</module>
         <module>container-core</module>
-        <module>container-core-config</module>
         <module>container-dependencies-enforcer</module>
         <module>container-dependency-versions</module>
         <module>container-dev</module>
@@ -94,7 +93,6 @@
         <module>jdisc-security-filters</module>
         <module>jdisc_core</module>
         <module>jdisc_core_test</module>
-        <module>jdisc_http_service</module>
         <module>jdisc_jetty</module>
         <module>jdisc_messagebus_service</module>
         <module>jrt</module>

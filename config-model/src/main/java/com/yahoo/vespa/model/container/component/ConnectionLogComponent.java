@@ -20,7 +20,7 @@ public class ConnectionLogComponent extends SimpleComponent implements Connectio
     }
 
     public ConnectionLogComponent(ContainerCluster<?> cluster, Class<? extends ConnectionLog> cls, String logDirectoryName, String clusterName) {
-        super(new ComponentModel(cls.getName(), null, "jdisc_http_service", null));
+        super(cls.getName());
         this.logDirectoryName = logDirectoryName;
         this.clusterName = clusterName;
         this.queueSize = queueSize(cluster).orElse(-1);

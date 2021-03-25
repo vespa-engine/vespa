@@ -178,6 +178,7 @@
             <buildLegacyVespaPlatformBundle>true</buildLegacyVespaPlatformBundle>
             <discPreInstallBundle>
                 <!-- Vespa bundles -->
+                component-jar-with-dependencies.jar,
                 configgen.jar,
                 config-bundle-jar-with-dependencies.jar,
                 configdefinitions-jar-with-dependencies.jar,
@@ -187,7 +188,6 @@
                 docprocs-jar-with-dependencies.jar,
                 hosted-zone-api-jar-with-dependencies.jar,
                 jdisc-security-filters-jar-with-dependencies.jar,
-                jdisc_http_service-jar-with-dependencies.jar,
                 model-evaluation-jar-with-dependencies.jar,
                 model-integration-jar-with-dependencies.jar,
                 vespaclient-container-plugin-jar-with-dependencies.jar,
@@ -198,9 +198,21 @@
                 component-jar-with-dependencies.jar,
                 zkfacade-jar-with-dependencies.jar,
                 zookeeper-server-jar-with-dependencies.jar,
+                <!-- Jetty -->
+                jetty-continuation-${jetty.version}.jar,
+                jetty-http-${jetty.version}.jar,
+                jetty-io-${jetty.version}.jar,
+                jetty-jmx-${jetty.version}.jar,
+                jetty-security-${jetty.version}.jar,
+                jetty-server-${jetty.version}.jar,
+                jetty-servlet-${jetty.version}.jar,
+                jetty-servlets-${jetty.version}.jar,
+                jetty-util-${jetty.version}.jar,
+                jetty-util-ajax-${jetty.version}.jar,
                 <!-- Misc 3rd party bundles -->
                 bcpkix-jdk15on-${bouncycastle.version}.jar,
                 bcprov-jdk15on-${bouncycastle.version}.jar,
+                javax.servlet-api-3.1.0.jar,
                 <!-- Jersey 2 + Jackson 2 -->
                 aopalliance-repackaged-${hk2.version}.jar,
                 hk2-api-${hk2.version}.jar,

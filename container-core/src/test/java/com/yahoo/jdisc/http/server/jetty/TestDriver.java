@@ -13,8 +13,7 @@ import java.nio.file.Paths;
 import static com.yahoo.yolean.Exceptions.uncheck;
 
 /**
- * This class is based on the class by the same name in the jdisc_http_service module.
- * It provides functionality for setting up a jdisc container with an HTTP server and handlers.
+ * Provides functionality for setting up a jdisc container with an HTTP server and handlers.
  *
  * @author Simon Thoresen Hult
  * @author bakksjo

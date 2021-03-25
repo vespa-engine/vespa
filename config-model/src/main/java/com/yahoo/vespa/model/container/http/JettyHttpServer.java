@@ -26,15 +26,11 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
     private volatile boolean isHostedVespa;
     private final List<ConnectorFactory> connectorFactories = new ArrayList<>();
 
-    public JettyHttpServer(ComponentId id, ContainerCluster<?> cluster, boolean isHostedVespa) {
-        super(new ComponentModel(
-                new BundleInstantiationSpecification(id,
-                                                     fromString("com.yahoo.jdisc.http.server.jetty.JettyHttpServer"),
-                                                     fromString("jdisc_http_service"))
-        ));
+    public JettyHttpServer(String componentId, ContainerCluster<?> cluster, boolean isHostedVespa) {
+        super(new ComponentModel(componentId, com.yahoo.jdisc.http.server.jetty.JettyHttpServer.class.getName(), null));
         this.isHostedVespa = isHostedVespa;
         this.cluster = cluster;
-        final FilterBindingsProviderComponent filterBindingsProviderComponent = new FilterBindingsProviderComponent(id);
+        final FilterBindingsProviderComponent filterBindingsProviderComponent = new FilterBindingsProviderComponent(componentId);
         addChild(filterBindingsProviderComponent);
         inject(filterBindingsProviderComponent);
     }
@@ -89,17 +85,17 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
         }
     }
 
-    static ComponentModel providerComponentModel(final ComponentId parentId, String className) {
+    static ComponentModel providerComponentModel(String parentId, String className) {
         final ComponentSpecification classNameSpec = new ComponentSpecification(
                 className);
         return new ComponentModel(new BundleInstantiationSpecification(
-                classNameSpec.nestInNamespace(parentId),
+                classNameSpec.nestInNamespace(new ComponentId(parentId)),
                 classNameSpec,
                 null));
     }
 
     public static final class FilterBindingsProviderComponent extends SimpleComponent {
-        public FilterBindingsProviderComponent(final ComponentId parentId) {
+        public FilterBindingsProviderComponent(String parentId) {
             super(providerComponentModel(parentId, "com.yahoo.container.jdisc.FilterBindingsProvider"));
         }
 

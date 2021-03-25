@@ -17,7 +17,6 @@ import static com.yahoo.jdisc.http.ConnectorConfig.Ssl.ClientAuth;
 public class ConfiguredDirectSslProvider extends SslProvider {
     public static final String COMPONENT_ID_PREFIX = "configured-ssl-provider@";
     public static final String COMPONENT_CLASS = ConfiguredSslContextFactoryProvider.class.getName();
-    public static final String COMPONENT_BUNDLE = "jdisc_http_service";
 
     private final String privateKey;
     private final String certificate;
@@ -26,7 +25,7 @@ public class ConfiguredDirectSslProvider extends SslProvider {
     private final ClientAuth.Enum clientAuthentication;
 
     public ConfiguredDirectSslProvider(String servername, String privateKey, String certificate, String caCertificatePath, String caCertificate, ClientAuth.Enum clientAuthentication) {
-        super(COMPONENT_ID_PREFIX, servername, COMPONENT_CLASS, COMPONENT_BUNDLE);
+        super(COMPONENT_ID_PREFIX, servername, COMPONENT_CLASS, null);
         this.privateKey = privateKey;
         this.certificate = certificate;
         this.caCertificatePath = caCertificatePath;
