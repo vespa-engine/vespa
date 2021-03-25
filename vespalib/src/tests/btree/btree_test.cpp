@@ -1,6 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/testkit/testapp.h>
 #include <string>
 #include <vespa/vespalib/btree/btreeroot.h>
 #include <vespa/vespalib/btree/btreebuilder.h>
@@ -19,6 +18,7 @@
 #include <vespa/vespalib/btree/btreestore.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 #include <vespa/vespalib/test/btree/btree_printer.h>
+#include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP("btree_test");
@@ -191,8 +191,9 @@ assertTree(const std::string &exp, const Tree &t)
     std::stringstream ss;
     test::BTreePrinter<std::stringstream, typename Tree::NodeAllocatorType> printer(ss, t.getAllocator());
     printer.print(t.getRoot());
-    if (!EXPECT_EQUAL(exp, ss.str())) return false;
-    return true;
+    bool result = true;
+    EXPECT_EQ(exp, ss.str()) << (result = false, "");
+    return result;
 }
 
 template <typename Tree>
@@ -216,60 +217,24 @@ populateLeafNode(Tree &t)
 }
 
 
-class Test : public vespalib::TestApp {
-private:
+class BTreeTest : public ::testing::Test {
+protected:
     template <typename LeafNodeType>
     bool assertLeafNode(const std::string & exp, const LeafNodeType & n);
     bool assertSeek(int skey, int ekey, const MyTree & tree);
     bool assertSeek(int skey, int ekey, MyTree::Iterator & itr);
     bool assertMemoryUsage(const vespalib::MemoryUsage & exp, const vespalib::MemoryUsage & act);
-
-    void
-    buildSubTree(const std::vector<LeafPair> &sub,
-                 size_t numEntries);
-
-    void requireThatNodeInsertWorks();
-    void requireThatTreeInsertWorks();
-    void requireThatNodeSplitInsertWorks();
-    void requireThatNodeStealWorks();
-    void requireThatTreeRemoveStealWorks();
-    void requireThatNodeRemoveWorks();
-    void requireThatNodeLowerBoundWorks();
-    void requireThatWeCanInsertAndRemoveFromTree();
-    void requireThatSortedTreeInsertWorks();
-    void requireThatCornerCaseTreeFindWorks();
-    void requireThatBasicTreeIteratorWorks();
-    void requireThatTreeIteratorSeekWorks();
-    void requireThatTreeIteratorAssignWorks();
-    void requireThatMemoryUsageIsCalculated();
+    void buildSubTree(const std::vector<LeafPair> &sub, size_t numEntries);
     template <typename TreeType>
     void requireThatLowerBoundWorksT();
-    void requireThatLowerBoundWorks();
     template <typename TreeType>
     void requireThatUpperBoundWorksT();
-    void requireThatUpperBoundWorks();
-    void requireThatUpdateOfKeyWorks();
-
-    void
-    requireThatSmallNodesWorks();
-
-    void
-    requireThatApplyWorks();
-
-    void
-    requireThatIteratorDistanceWorks(int numEntries);
-
-    void
-    requireThatIteratorDistanceWorks();
-
-    void requireThatForeachKeyWorks();
-public:
-    int Main() override;
+    void requireThatIteratorDistanceWorks(int numEntries);
 };
 
 template <typename LeafNodeType>
 bool
-Test::assertLeafNode(const std::string & exp, const LeafNodeType & n)
+BTreeTest::assertLeafNode(const std::string & exp, const LeafNodeType & n)
 {
     std::stringstream ss;
     ss << "[";
@@ -278,49 +243,66 @@ Test::assertLeafNode(const std::string & exp, const LeafNodeType & n)
         ss << n.getKey(i) << ":" << n.getData(i);
     }
     ss << "]";
-    if (!EXPECT_EQUAL(exp, ss.str())) return false;
-    return true;
+    bool result = true;
+    EXPECT_EQ(exp, ss.str()) << (result = false, "");
+    return result;
 }
 
 bool
-Test::assertSeek(int skey, int ekey, const MyTree & tree)
+BTreeTest::assertSeek(int skey, int ekey, const MyTree & tree)
 {
     MyTree::Iterator itr = tree.begin();
     return assertSeek(skey, ekey, itr);
 }
 
 bool
-Test::assertSeek(int skey, int ekey, MyTree::Iterator & itr)
+BTreeTest::assertSeek(int skey, int ekey, MyTree::Iterator & itr)
 {
     MyTree::Iterator bseekItr = itr;
     MyTree::Iterator lseekItr = itr;
     bseekItr.binarySeek(skey);
     lseekItr.linearSeek(skey);
-    if (!EXPECT_EQUAL(ekey, UNWRAP(bseekItr.getKey()))) return false;
-    if (!EXPECT_EQUAL(ekey, UNWRAP(lseekItr.getKey()))) return false;
+    bool result = true;
+    EXPECT_EQ(ekey, UNWRAP(bseekItr.getKey())) << (result = false, "");
+    if (!result) {
+        return false;
+    }
+    EXPECT_EQ(ekey, UNWRAP(lseekItr.getKey())) << (result = false, "");
+    if (!result) {
+        return false;
+    }
     itr = bseekItr;
-    return true;
+    return result;
 }
 
 bool
-Test::assertMemoryUsage(const vespalib::MemoryUsage & exp, const vespalib::MemoryUsage & act)
+BTreeTest::assertMemoryUsage(const vespalib::MemoryUsage & exp, const vespalib::MemoryUsage & act)
 {
-    if (!EXPECT_EQUAL(exp.allocatedBytes(), act.allocatedBytes())) return false;
-    if (!EXPECT_EQUAL(exp.usedBytes(), act.usedBytes())) return false;
-    if (!EXPECT_EQUAL(exp.deadBytes(), act.deadBytes())) return false;
-    if (!EXPECT_EQUAL(exp.allocatedBytesOnHold(), act.allocatedBytesOnHold())) return false;
-    return true;
+    bool result = true;
+    EXPECT_EQ(exp.allocatedBytes(), act.allocatedBytes()) << (result = false, "");
+    if (!result) {
+        return false;
+    }
+    EXPECT_EQ(exp.usedBytes(), act.usedBytes()) << (result = false, "");
+    if (!result) {
+        return false;
+    }
+    EXPECT_EQ(exp.deadBytes(), act.deadBytes()) << (result = false, "");
+    if (!result) {
+        return result;
+    }
+    EXPECT_EQ(exp.allocatedBytesOnHold(), act.allocatedBytesOnHold()) << (result = false, "");
+    return result;
 }
 
-void
-Test::requireThatNodeInsertWorks()
+TEST_F(BTreeTest, require_that_node_insert_works)
 {
     GenerationHandler g;
     MyNodeAllocator m;
     MyLeafNode::RefPair nPair = m.allocLeafNode();
     MyLeafNode *n = nPair.data;
     EXPECT_TRUE(n->isLeaf());
-    EXPECT_EQUAL(0u, n->validSlots());
+    EXPECT_EQ(0u, n->validSlots());
     n->insert(0, 20, "b");
     EXPECT_TRUE(!n->isFull());
     EXPECT_TRUE(!n->isAtLeastHalfFull());
@@ -329,8 +311,8 @@ Test::requireThatNodeInsertWorks()
     EXPECT_TRUE(!n->isFull());
     EXPECT_TRUE(n->isAtLeastHalfFull());
     EXPECT_TRUE(assertLeafNode("[10:a,20:b]", *n));
-    EXPECT_EQUAL(20, UNWRAP(n->getLastKey()));
-    EXPECT_EQUAL("b", n->getLastData());
+    EXPECT_EQ(20, UNWRAP(n->getLastKey()));
+    EXPECT_EQ("b", n->getLastData());
     n->insert(2, 30, "c");
     EXPECT_TRUE(!n->isFull());
     n->insert(3, 40, "d");
@@ -340,8 +322,8 @@ Test::requireThatNodeInsertWorks()
     cleanup(g, m, nPair.ref, n);
 }
 
-void
-Test::requireThatTreeInsertWorks()
+
+TEST_F(BTreeTest, require_that_tree_insert_works)
 {
     using Tree = BTree<MyKey, int32_t, btree::NoAggregated, MyComp, MyTraits>;
     {
@@ -476,8 +458,7 @@ getLeafNode(MyNodeAllocator &allocator)
     return nPair;
 }
 
-void
-Test::requireThatNodeSplitInsertWorks()
+TEST_F(BTreeTest, require_that_node_split_insert_works)
 {
     { // new entry in current node
         GenerationHandler g;
@@ -529,8 +510,7 @@ struct BTreeStealTraits
 
 }
 
-void
-Test::requireThatNodeStealWorks()
+TEST_F(BTreeTest, require_that_node_steal_works)
 {
     typedef BTreeLeafNode<int, std::string,
         btree::NoAggregated, 6> MyStealNode;
@@ -618,8 +598,7 @@ Test::requireThatNodeStealWorks()
     }
 }
 
-void
-Test::requireThatTreeRemoveStealWorks()
+TEST_F(BTreeTest, require_that_tree_remove_steal_works)
 {
     using MyStealTree = BTree<MyKey, int32_t,btree::NoAggregated, MyComp, BTreeStealTraits, NoAggrCalc>;
     { // steal all from left
@@ -694,8 +673,7 @@ Test::requireThatTreeRemoveStealWorks()
     }
 }
 
-void
-Test::requireThatNodeRemoveWorks()
+TEST_F(BTreeTest, require_that_node_remove_works)
 {
     GenerationHandler g;
     MyNodeAllocator m;
@@ -706,22 +684,21 @@ Test::requireThatNodeRemoveWorks()
     cleanup(g, m, nPair.ref, n);
 }
 
-void
-Test::requireThatNodeLowerBoundWorks()
+TEST_F(BTreeTest, require_that_node_lower_bound_works)
 {
     GenerationHandler g;
     MyNodeAllocator m;
     MyLeafNode::RefPair nPair = getLeafNode(m);
     MyLeafNode *n = nPair.data;
-    EXPECT_EQUAL(1u, n->lower_bound(3, MyComp()));
+    EXPECT_EQ(1u, n->lower_bound(3, MyComp()));
     EXPECT_FALSE(MyComp()(3, n->getKey(1u)));
-    EXPECT_EQUAL(0u, n->lower_bound(0, MyComp()));
+    EXPECT_EQ(0u, n->lower_bound(0, MyComp()));
     EXPECT_TRUE(MyComp()(0, n->getKey(0u)));
-    EXPECT_EQUAL(1u, n->lower_bound(2, MyComp()));
+    EXPECT_EQ(1u, n->lower_bound(2, MyComp()));
     EXPECT_TRUE(MyComp()(2, n->getKey(1u)));
-    EXPECT_EQUAL(3u, n->lower_bound(6, MyComp()));
+    EXPECT_EQ(3u, n->lower_bound(6, MyComp()));
     EXPECT_TRUE(MyComp()(6, n->getKey(3u)));
-    EXPECT_EQUAL(4u, n->lower_bound(8, MyComp()));
+    EXPECT_EQ(4u, n->lower_bound(8, MyComp()));
     cleanup(g, m, nPair.ref, n);
 }
 
@@ -740,7 +717,7 @@ generateData(std::vector<LeafPair> & data, size_t numEntries)
 
 
 void
-Test::buildSubTree(const std::vector<LeafPair> &sub,
+BTreeTest::buildSubTree(const std::vector<LeafPair> &sub,
                    size_t numEntries)
 {
     GenerationHandler g;
@@ -757,30 +734,30 @@ Test::buildSubTree(const std::vector<LeafPair> &sub,
     tree.assign(builder);
     assert(numEntries == tree.size());
     assert(tree.isValid());
-    EXPECT_EQUAL(numEntries, tree.size());
+    EXPECT_EQ(numEntries, tree.size());
     EXPECT_TRUE(tree.isValid());
     MyTree::Iterator itr = tree.begin();
     MyTree::Iterator ritr = itr;
     if (numEntries > 0) {
         EXPECT_TRUE(ritr.valid());
-        EXPECT_EQUAL(0u, ritr.position());
+        EXPECT_EQ(0u, ritr.position());
         --ritr;
         EXPECT_TRUE(!ritr.valid());
-        EXPECT_EQUAL(numEntries, ritr.position());
+        EXPECT_EQ(numEntries, ritr.position());
         --ritr;
         EXPECT_TRUE(ritr.valid());
-        EXPECT_EQUAL(numEntries - 1, ritr.position());
+        EXPECT_EQ(numEntries - 1, ritr.position());
     } else {
         EXPECT_TRUE(!ritr.valid());
-        EXPECT_EQUAL(0u, ritr.position());
+        EXPECT_EQ(0u, ritr.position());
         --ritr;
         EXPECT_TRUE(!ritr.valid());
-        EXPECT_EQUAL(0u, ritr.position());
+        EXPECT_EQ(0u, ritr.position());
     }
     for (size_t i = 0; i < numEntries; ++i) {
         EXPECT_TRUE(itr.valid());
-        EXPECT_EQUAL(sorted[i].first, itr.getKey());
-        EXPECT_EQUAL(sorted[i].second, itr.getData());
+        EXPECT_EQ(sorted[i].first, itr.getKey());
+        EXPECT_EQ(sorted[i].second, itr.getData());
         ++itr;
     }
     EXPECT_TRUE(!itr.valid());
@@ -789,15 +766,14 @@ Test::buildSubTree(const std::vector<LeafPair> &sub,
     --ritr;
     for (size_t i = 0; i < numEntries; ++i) {
         EXPECT_TRUE(ritr.valid());
-        EXPECT_EQUAL(sorted[numEntries - 1 - i].first, ritr.getKey());
-        EXPECT_EQUAL(sorted[numEntries - 1 - i].second, ritr.getData());
+        EXPECT_EQ(sorted[numEntries - 1 - i].first, ritr.getKey());
+        EXPECT_EQ(sorted[numEntries - 1 - i].second, ritr.getData());
         --ritr;
     }
     EXPECT_TRUE(!ritr.valid());
 }
 
-void
-Test::requireThatWeCanInsertAndRemoveFromTree()
+TEST_F(BTreeTest, require_that_we_can_insert_and_remove_from_tree)
 {
     GenerationHandler g;
     MyTree tree;
@@ -819,10 +795,10 @@ Test::requireThatWeCanInsertAndRemoveFromTree()
             //LOG(info, "find[%zu](%d)", j, exp[j].first._val);
             MyTree::Iterator itr = tree.find(exp[j].first);
             EXPECT_TRUE(itr.valid());
-            EXPECT_EQUAL(exp[j].first, itr.getKey());
-            EXPECT_EQUAL(exp[j].second, itr.getData());
+            EXPECT_EQ(exp[j].first, itr.getKey());
+            EXPECT_EQ(exp[j].second, itr.getData());
         }
-        EXPECT_EQUAL(i + 1u, tree.size());
+        EXPECT_EQ(i + 1u, tree.size());
         EXPECT_TRUE(tree.isValid());
         buildSubTree(exp, i + 1);
     }
@@ -837,36 +813,36 @@ Test::requireThatWeCanInsertAndRemoveFromTree()
             ++itre;
         if (numEntries > 0) {
             EXPECT_TRUE(ritr.valid());
-            EXPECT_EQUAL(0u, ritr.position());
+            EXPECT_EQ(0u, ritr.position());
             --ritr;
             EXPECT_TRUE(!ritr.valid());
-            EXPECT_EQUAL(numEntries, ritr.position());
+            EXPECT_EQ(numEntries, ritr.position());
             --ritr;
             EXPECT_TRUE(ritr.valid());
-            EXPECT_EQUAL(numEntries - 1, ritr.position());
+            EXPECT_EQ(numEntries - 1, ritr.position());
         } else {
             EXPECT_TRUE(!ritr.valid());
-            EXPECT_EQUAL(0u, ritr.position());
+            EXPECT_EQ(0u, ritr.position());
             --ritr;
             EXPECT_TRUE(!ritr.valid());
-            EXPECT_EQUAL(0u, ritr.position());
+            EXPECT_EQ(0u, ritr.position());
         }
         MyTree::Iterator pitr = itr;
         for (size_t i = 0; i < numEntries; ++i) {
             ssize_t si = i;
             ssize_t sileft = numEntries - i;
             EXPECT_TRUE(itr.valid());
-            EXPECT_EQUAL(i, itr.position());
-            EXPECT_EQUAL(sileft, itre - itr);
-            EXPECT_EQUAL(-sileft, itr - itre);
-            EXPECT_EQUAL(sileft, itre2 - itr);
-            EXPECT_EQUAL(-sileft, itr - itre2);
-            EXPECT_EQUAL(si, itr - tree.begin());
-            EXPECT_EQUAL(-si, tree.begin() - itr);
-            EXPECT_EQUAL(i != 0, itr - pitr);
-            EXPECT_EQUAL(-(i != 0), pitr - itr);
-            EXPECT_EQUAL(sorted[i].first, itr.getKey());
-            EXPECT_EQUAL(sorted[i].second, itr.getData());
+            EXPECT_EQ(i, itr.position());
+            EXPECT_EQ(sileft, itre - itr);
+            EXPECT_EQ(-sileft, itr - itre);
+            EXPECT_EQ(sileft, itre2 - itr);
+            EXPECT_EQ(-sileft, itr - itre2);
+            EXPECT_EQ(si, itr - tree.begin());
+            EXPECT_EQ(-si, tree.begin() - itr);
+            EXPECT_EQ(i != 0, itr - pitr);
+            EXPECT_EQ(-(i != 0), pitr - itr);
+            EXPECT_EQ(sorted[i].first, itr.getKey());
+            EXPECT_EQ(sorted[i].second, itr.getData());
             pitr = itr;
             ++itr;
             ritr = itr;
@@ -875,12 +851,12 @@ Test::requireThatWeCanInsertAndRemoveFromTree()
             EXPECT_TRUE(ritr == pitr);
         }
         EXPECT_TRUE(!itr.valid());
-        EXPECT_EQUAL(numEntries, itr.position());
+        EXPECT_EQ(numEntries, itr.position());
         ssize_t sNumEntries = numEntries;
-        EXPECT_EQUAL(sNumEntries, itr - tree.begin());
-        EXPECT_EQUAL(-sNumEntries, tree.begin() - itr);
-        EXPECT_EQUAL(1, itr - pitr);
-        EXPECT_EQUAL(-1, pitr - itr);
+        EXPECT_EQ(sNumEntries, itr - tree.begin());
+        EXPECT_EQ(-sNumEntries, tree.begin() - itr);
+        EXPECT_EQ(1, itr - pitr);
+        EXPECT_EQ(-1, pitr - itr);
     }
     // compact full tree by calling incremental compaction methods in a loop
     {
@@ -910,15 +886,14 @@ Test::requireThatWeCanInsertAndRemoveFromTree()
         for (size_t j = i + 1; j < numEntries; ++j) {
             MyTree::Iterator itr = tree.find(exp[j].first);
             EXPECT_TRUE(itr.valid());
-            EXPECT_EQUAL(exp[j].first, itr.getKey());
-            EXPECT_EQUAL(exp[j].second, itr.getData());
+            EXPECT_EQ(exp[j].first, itr.getKey());
+            EXPECT_EQ(exp[j].second, itr.getData());
         }
-        EXPECT_EQUAL(numEntries - 1 - i, tree.size());
+        EXPECT_EQ(numEntries - 1 - i, tree.size());
     }
 }
 
-void
-Test::requireThatSortedTreeInsertWorks()
+TEST_F(BTreeTest, require_that_sorted_tree_insert_works)
 {
     {
         GenerationHandler g;
@@ -927,7 +902,7 @@ Test::requireThatSortedTreeInsertWorks()
             EXPECT_TRUE(tree.insert(i, toStr(i)));
             MyTree::Iterator itr = tree.find(i);
             EXPECT_TRUE(itr.valid());
-            EXPECT_EQUAL(toStr(i), itr.getData());
+            EXPECT_EQ(toStr(i), itr.getData());
             EXPECT_TRUE(tree.isValid());
         }
     }
@@ -938,14 +913,13 @@ Test::requireThatSortedTreeInsertWorks()
             EXPECT_TRUE(tree.insert(i, toStr(i)));
             MyTree::Iterator itr = tree.find(i);
             EXPECT_TRUE(itr.valid());
-            EXPECT_EQUAL(toStr(i), itr.getData());
+            EXPECT_EQ(toStr(i), itr.getData());
             EXPECT_TRUE(tree.isValid());
         }
     }
 }
 
-void
-Test::requireThatCornerCaseTreeFindWorks()
+TEST_F(BTreeTest, require_that_corner_case_tree_find_works)
 {
     GenerationHandler g;
     MyTree tree;
@@ -956,8 +930,7 @@ Test::requireThatCornerCaseTreeFindWorks()
     EXPECT_TRUE(!tree.find(1000).valid()); // higher than highest
 }
 
-void
-Test::requireThatBasicTreeIteratorWorks()
+TEST_F(BTreeTest, require_that_basic_tree_iterator_works)
 {
     GenerationHandler g;
     MyTree tree;
@@ -972,25 +945,24 @@ Test::requireThatBasicTreeIteratorWorks()
     size_t ei = 0;
     MyTree::Iterator itr = tree.begin();
     MyTree::Iterator ritr;
-    EXPECT_EQUAL(1000u, itr.size());
+    EXPECT_EQ(1000u, itr.size());
     for (; itr.valid(); ++itr) {
         //LOG(info, "itr(%d, %s)", itr.getKey(), itr.getData().c_str());
-        EXPECT_EQUAL(UNWRAP(exp[ei].first), UNWRAP(itr.getKey()));
-        EXPECT_EQUAL(exp[ei].second, itr.getData());
+        EXPECT_EQ(UNWRAP(exp[ei].first), UNWRAP(itr.getKey()));
+        EXPECT_EQ(exp[ei].second, itr.getData());
         ei++;
         ritr = itr;
     }
-    EXPECT_EQUAL(numEntries, ei);
+    EXPECT_EQ(numEntries, ei);
     for (; ritr.valid(); --ritr) {
         --ei;
         //LOG(info, "itr(%d, %s)", itr.getKey(), itr.getData().c_str());
-        EXPECT_EQUAL(UNWRAP(exp[ei].first), UNWRAP(ritr.getKey()));
-        EXPECT_EQUAL(exp[ei].second, ritr.getData());
+        EXPECT_EQ(UNWRAP(exp[ei].first), UNWRAP(ritr.getKey()));
+        EXPECT_EQ(exp[ei].second, ritr.getData());
     }
 }
 
-void
-Test::requireThatTreeIteratorSeekWorks()
+TEST_F(BTreeTest, require_that_tree_iterator_seek_works)
 {
     GenerationHandler g;
     MyTree tree;
@@ -1030,7 +1002,7 @@ Test::requireThatTreeIteratorSeekWorks()
         EXPECT_TRUE(assertSeek(8, 8, itr));
         for (int i = 10; i < 40; i += 2) {
             ++itr;
-            EXPECT_EQUAL(i, UNWRAP(itr.getKey()));
+            EXPECT_EQ(i, UNWRAP(itr.getKey()));
         }
     }
     {
@@ -1038,7 +1010,7 @@ Test::requireThatTreeIteratorSeekWorks()
         EXPECT_TRUE(assertSeek(26, 26, itr));
         for (int i = 28; i < 40; i += 2) {
             ++itr;
-            EXPECT_EQUAL(i, UNWRAP(itr.getKey()));
+            EXPECT_EQ(i, UNWRAP(itr.getKey()));
         }
     }
     GenerationHandler g2;
@@ -1058,8 +1030,7 @@ Test::requireThatTreeIteratorSeekWorks()
     }
 }
 
-void
-Test::requireThatTreeIteratorAssignWorks()
+TEST_F(BTreeTest, require_that_tree_iterator_assign_works)
 {
     GenerationHandler g;
     MyTree tree;
@@ -1072,9 +1043,9 @@ Test::requireThatTreeIteratorAssignWorks()
         EXPECT_TRUE(itr == itr2);
         int expNum = i;
         for (; itr2.valid(); ++itr2) {
-            EXPECT_EQUAL(expNum++, UNWRAP(itr2.getKey()));
+            EXPECT_EQ(expNum++, UNWRAP(itr2.getKey()));
         }
-        EXPECT_EQUAL(1000, expNum);
+        EXPECT_EQ(1000, expNum);
     }
 }
 
@@ -1087,8 +1058,7 @@ adjustAllocatedBytes(size_t nodeCount, size_t nodeSize)
     return adjustedNodeCount * nodeSize;
 }
 
-void
-Test::requireThatMemoryUsageIsCalculated()
+TEST_F(BTreeTest, require_that_memory_usage_is_calculated)
 {
     typedef BTreeNodeAllocator<int32_t, int8_t,
         btree::NoAggregated,
@@ -1099,7 +1069,7 @@ Test::requireThatMemoryUsageIsCalculated()
     typedef NodeAllocator::LeafNodeTypeRefPair     LRef;
     LOG(info, "sizeof(BTreeNode)=%zu, sizeof(INode)=%zu, sizeof(LNode)=%zu",
         sizeof(BTreeNode), sizeof(INode), sizeof(LNode));
-    EXPECT_GREATER(sizeof(INode), sizeof(LNode));
+    EXPECT_GT(sizeof(INode), sizeof(LNode));
     GenerationHandler gh;
     gh.incGeneration();
     NodeAllocator tm;
@@ -1147,30 +1117,29 @@ Test::requireThatMemoryUsageIsCalculated()
 
 template <typename TreeType>
 void
-Test::requireThatLowerBoundWorksT()
+BTreeTest::requireThatLowerBoundWorksT()
 {
     GenerationHandler g;
     TreeType t;
     EXPECT_TRUE(t.insert(10, BTreeNoLeafData()));
     EXPECT_TRUE(t.insert(20, BTreeNoLeafData()));
     EXPECT_TRUE(t.insert(30, BTreeNoLeafData()));
-    EXPECT_EQUAL(10, t.lowerBound(9).getKey());
-    EXPECT_EQUAL(20, t.lowerBound(20).getKey());
-    EXPECT_EQUAL(30, t.lowerBound(21).getKey());
-    EXPECT_EQUAL(30, t.lowerBound(30).getKey());
+    EXPECT_EQ(10, t.lowerBound(9).getKey());
+    EXPECT_EQ(20, t.lowerBound(20).getKey());
+    EXPECT_EQ(30, t.lowerBound(21).getKey());
+    EXPECT_EQ(30, t.lowerBound(30).getKey());
     EXPECT_TRUE(!t.lowerBound(31).valid());
     for (int i = 40; i < 1000; i+=10) {
         EXPECT_TRUE(t.insert(i, BTreeNoLeafData()));
     }
     for (int i = 9; i < 990; i+=10) {
-        EXPECT_EQUAL(i + 1, t.lowerBound(i).getKey());
-        EXPECT_EQUAL(i + 1, t.lowerBound(i + 1).getKey());
+        EXPECT_EQ(i + 1, t.lowerBound(i).getKey());
+        EXPECT_EQ(i + 1, t.lowerBound(i + 1).getKey());
     }
     EXPECT_TRUE(!t.lowerBound(991).valid());
 }
 
-void
-Test::requireThatLowerBoundWorks()
+TEST_F(BTreeTest, require_that_lower_bound_works)
 {
     requireThatLowerBoundWorksT<SetTreeB>();
     requireThatLowerBoundWorksT<SetTreeL>();
@@ -1178,29 +1147,28 @@ Test::requireThatLowerBoundWorks()
 
 template <typename TreeType>
 void
-Test::requireThatUpperBoundWorksT()
+BTreeTest::requireThatUpperBoundWorksT()
 {
     GenerationHandler g;
     TreeType t;
     EXPECT_TRUE(t.insert(10, BTreeNoLeafData()));
     EXPECT_TRUE(t.insert(20, BTreeNoLeafData()));
     EXPECT_TRUE(t.insert(30, BTreeNoLeafData()));
-    EXPECT_EQUAL(10, t.upperBound(9).getKey());
-    EXPECT_EQUAL(30, t.upperBound(20).getKey());
-    EXPECT_EQUAL(30, t.upperBound(21).getKey());
+    EXPECT_EQ(10, t.upperBound(9).getKey());
+    EXPECT_EQ(30, t.upperBound(20).getKey());
+    EXPECT_EQ(30, t.upperBound(21).getKey());
     EXPECT_TRUE(!t.upperBound(30).valid());
     for (int i = 40; i < 1000; i+=10) {
         EXPECT_TRUE(t.insert(i, BTreeNoLeafData()));
     }
     for (int i = 9; i < 980; i+=10) {
-        EXPECT_EQUAL(i + 1, t.upperBound(i).getKey());
-        EXPECT_EQUAL(i + 11, t.upperBound(i + 1).getKey());
+        EXPECT_EQ(i + 1, t.upperBound(i).getKey());
+        EXPECT_EQ(i + 11, t.upperBound(i + 1).getKey());
     }
     EXPECT_TRUE(!t.upperBound(990).valid());
 }
 
-void
-Test::requireThatUpperBoundWorks()
+TEST_F(BTreeTest, require_that_upper_bound_works)
 {
     requireThatUpperBoundWorksT<SetTreeB>();
     requireThatUpperBoundWorksT<SetTreeL>();
@@ -1217,8 +1185,7 @@ struct UpdKeyComp {
     }
 };
 
-void
-Test::requireThatUpdateOfKeyWorks()
+TEST_F(BTreeTest, require_that_update_of_key_works)
 {
     typedef BTree<int, BTreeNoLeafData,
         btree::NoAggregated,
@@ -1230,7 +1197,7 @@ Test::requireThatUpdateOfKeyWorks()
     for (int i = 0; i < 1000; i+=2) {
         EXPECT_TRUE(t.insert(i, BTreeNoLeafData(), cmp1));
     }
-    EXPECT_EQUAL(0u, cmp1._numErrors);
+    EXPECT_EQ(0u, cmp1._numErrors);
     for (int i = 0; i < 1000; i+=2) {
         UpdKeyTreeIterator itr = t.find(i, cmp1);
         itr.writeKey(i + 1);
@@ -1240,12 +1207,11 @@ Test::requireThatUpdateOfKeyWorks()
         UpdKeyTreeIterator itr = t.find(i, cmp2);
         EXPECT_TRUE(itr.valid());
     }
-    EXPECT_EQUAL(0u, cmp2._numErrors);
+    EXPECT_EQ(0u, cmp2._numErrors);
 }
 
 
-void
-Test::requireThatSmallNodesWorks()
+TEST_F(BTreeTest, require_that_small_nodes_works)
 {
     typedef BTreeStore<MyKey, std::string, btree::NoAggregated, MyComp,
         BTreeDefaultTraits> TreeStore;
@@ -1253,29 +1219,29 @@ Test::requireThatSmallNodesWorks()
     TreeStore s;
 
     EntryRef root;
-    EXPECT_EQUAL(0u, s.size(root));
+    EXPECT_EQ(0u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
     EXPECT_TRUE(s.insert(root, 40, "fourty"));
     EXPECT_TRUE(!s.insert(root, 40, "fourty.not"));
-    EXPECT_EQUAL(1u, s.size(root));
+    EXPECT_EQ(1u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
     EXPECT_TRUE(s.insert(root, 20, "twenty"));
     EXPECT_TRUE(!s.insert(root, 20, "twenty.not"));
     EXPECT_TRUE(!s.insert(root, 40, "fourty.not"));
-    EXPECT_EQUAL(2u, s.size(root));
+    EXPECT_EQ(2u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
     EXPECT_TRUE(s.insert(root, 60, "sixty"));
     EXPECT_TRUE(!s.insert(root, 60, "sixty.not"));
     EXPECT_TRUE(!s.insert(root, 20, "twenty.not"));
     EXPECT_TRUE(!s.insert(root, 40, "fourty.not"));
-    EXPECT_EQUAL(3u, s.size(root));
+    EXPECT_EQ(3u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
     EXPECT_TRUE(s.insert(root, 50, "fifty"));
     EXPECT_TRUE(!s.insert(root, 50, "fifty.not"));
     EXPECT_TRUE(!s.insert(root, 60, "sixty.not"));
     EXPECT_TRUE(!s.insert(root, 20, "twenty.not"));
     EXPECT_TRUE(!s.insert(root, 40, "fourty.not"));
-    EXPECT_EQUAL(4u, s.size(root));
+    EXPECT_EQ(4u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
 
     for (uint32_t i = 0; i < 100; ++i) {
@@ -1283,30 +1249,30 @@ Test::requireThatSmallNodesWorks()
         if (i > 0) {
             EXPECT_TRUE(!s.insert(root, 1000 + i - 1, "big"));
         }
-        EXPECT_EQUAL(5u + i, s.size(root));
-        EXPECT_EQUAL(5u + i <= 8u,  s.isSmallArray(root));
+        EXPECT_EQ(5u + i, s.size(root));
+        EXPECT_EQ(5u + i <= 8u,  s.isSmallArray(root));
     }
     EXPECT_TRUE(s.remove(root, 40));
     EXPECT_TRUE(!s.remove(root, 40));
-    EXPECT_EQUAL(103u, s.size(root));
+    EXPECT_EQ(103u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
     EXPECT_TRUE(s.remove(root, 20));
     EXPECT_TRUE(!s.remove(root, 20));
-    EXPECT_EQUAL(102u, s.size(root));
+    EXPECT_EQ(102u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
     EXPECT_TRUE(s.remove(root, 50));
     EXPECT_TRUE(!s.remove(root, 50));
-    EXPECT_EQUAL(101u, s.size(root));
+    EXPECT_EQ(101u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
     for (uint32_t i = 0; i < 100; ++i) {
         EXPECT_TRUE(s.remove(root, 1000 + i));
         if (i > 0) {
             EXPECT_TRUE(!s.remove(root, 1000 + i - 1));
         }
-        EXPECT_EQUAL(100 - i, s.size(root));
-        EXPECT_EQUAL(100 - i <= 8u,  s.isSmallArray(root));
+        EXPECT_EQ(100 - i, s.size(root));
+        EXPECT_EQ(100 - i <= 8u,  s.isSmallArray(root));
     }
-    EXPECT_EQUAL(1u, s.size(root));
+    EXPECT_EQ(1u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
 
     s.clear(root);
@@ -1318,8 +1284,7 @@ Test::requireThatSmallNodesWorks()
 }
 
 
-void
-Test::requireThatApplyWorks()
+TEST_F(BTreeTest, require_that_apply_works)
 {
     typedef BTreeStore<MyKey, std::string, btree::NoAggregated, MyComp,
         BTreeDefaultTraits> TreeStore;
@@ -1331,7 +1296,7 @@ Test::requireThatApplyWorks()
     std::vector<KeyType> removals;
 
     EntryRef root;
-    EXPECT_EQUAL(0u, s.size(root));
+    EXPECT_EQ(0u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
 
     additions.clear();
@@ -1339,7 +1304,7 @@ Test::requireThatApplyWorks()
     additions.push_back(KeyDataType(40, "fourty"));
     s.apply(root, &additions[0], &additions[0] + additions.size(),
                   &removals[0], &removals[0] + removals.size());
-    EXPECT_EQUAL(1u, s.size(root));
+    EXPECT_EQ(1u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
 
     additions.clear();
@@ -1347,7 +1312,7 @@ Test::requireThatApplyWorks()
     additions.push_back(KeyDataType(20, "twenty"));
     s.apply(root, &additions[0], &additions[0] + additions.size(),
                   &removals[0], &removals[0] + removals.size());
-    EXPECT_EQUAL(2u, s.size(root));
+    EXPECT_EQ(2u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
 
     additions.clear();
@@ -1355,7 +1320,7 @@ Test::requireThatApplyWorks()
     additions.push_back(KeyDataType(60, "sixty"));
     s.apply(root, &additions[0], &additions[0] + additions.size(),
                   &removals[0], &removals[0] + removals.size());
-    EXPECT_EQUAL(3u, s.size(root));
+    EXPECT_EQ(3u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
 
     additions.clear();
@@ -1363,7 +1328,7 @@ Test::requireThatApplyWorks()
     additions.push_back(KeyDataType(50, "fifty"));
     s.apply(root, &additions[0], &additions[0] + additions.size(),
                   &removals[0], &removals[0] + removals.size());
-    EXPECT_EQUAL(4u, s.size(root));
+    EXPECT_EQ(4u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
 
     for (uint32_t i = 0; i < 100; ++i) {
@@ -1372,8 +1337,8 @@ Test::requireThatApplyWorks()
         additions.push_back(KeyDataType(1000 + i, "big"));
         s.apply(root, &additions[0], &additions[0] + additions.size(),
                       &removals[0], &removals[0] + removals.size());
-        EXPECT_EQUAL(5u + i, s.size(root));
-        EXPECT_EQUAL(5u + i <= 8u,  s.isSmallArray(root));
+        EXPECT_EQ(5u + i, s.size(root));
+        EXPECT_EQ(5u + i <= 8u,  s.isSmallArray(root));
     }
 
     additions.clear();
@@ -1381,7 +1346,7 @@ Test::requireThatApplyWorks()
     removals.push_back(40);
     s.apply(root, &additions[0], &additions[0] + additions.size(),
                   &removals[0], &removals[0] + removals.size());
-    EXPECT_EQUAL(103u, s.size(root));
+    EXPECT_EQ(103u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
 
     additions.clear();
@@ -1389,7 +1354,7 @@ Test::requireThatApplyWorks()
     removals.push_back(20);
     s.apply(root, &additions[0], &additions[0] + additions.size(),
                   &removals[0], &removals[0] + removals.size());
-    EXPECT_EQUAL(102u, s.size(root));
+    EXPECT_EQ(102u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
 
     additions.clear();
@@ -1397,7 +1362,7 @@ Test::requireThatApplyWorks()
     removals.push_back(50);
     s.apply(root, &additions[0], &additions[0] + additions.size(),
                   &removals[0], &removals[0] + removals.size());
-    EXPECT_EQUAL(101u, s.size(root));
+    EXPECT_EQ(101u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
     for (uint32_t i = 0; i < 100; ++i) {
         additions.clear();
@@ -1405,10 +1370,10 @@ Test::requireThatApplyWorks()
         removals.push_back(1000 +i);
         s.apply(root, &additions[0], &additions[0] + additions.size(),
                       &removals[0], &removals[0] + removals.size());
-        EXPECT_EQUAL(100 - i, s.size(root));
-        EXPECT_EQUAL(100 - i <= 8u,  s.isSmallArray(root));
+        EXPECT_EQ(100 - i, s.size(root));
+        EXPECT_EQ(100 - i <= 8u,  s.isSmallArray(root));
     }
-    EXPECT_EQUAL(1u, s.size(root));
+    EXPECT_EQ(1u, s.size(root));
     EXPECT_TRUE(s.isSmallArray(root));
 
     additions.clear();
@@ -1419,13 +1384,13 @@ Test::requireThatApplyWorks()
     removals.push_back(1002);
     s.apply(root, &additions[0], &additions[0] + additions.size(),
                   &removals[0], &removals[0] + removals.size());
-    EXPECT_EQUAL(20u, s.size(root));
+    EXPECT_EQ(20u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
 
     additions.clear();
     s.apply(root, &additions[0], &additions[0] + additions.size(),
                   &removals[0], &removals[0] + removals.size());
-    EXPECT_EQUAL(19u, s.size(root));
+    EXPECT_EQ(19u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
 
     additions.clear();
@@ -1436,7 +1401,7 @@ Test::requireThatApplyWorks()
         removals.push_back(1000 + i);
     s.apply(root, &additions[0], &additions[0] + additions.size(),
                   &removals[0], &removals[0] + removals.size());
-    EXPECT_EQUAL(30u, s.size(root));
+    EXPECT_EQ(30u, s.size(root));
     EXPECT_TRUE(!s.isSmallArray(root));
 
     s.clear(root);
@@ -1460,7 +1425,7 @@ public:
 
 
 void
-Test::requireThatIteratorDistanceWorks(int numEntries)
+BTreeTest::requireThatIteratorDistanceWorks(int numEntries)
 {
     GenerationHandler g;
     MyTree tree;
@@ -1500,8 +1465,8 @@ Test::requireThatIteratorDistanceWorks(int numEntries)
             iitlsp2.linearSeekPast(i);
             iitbsp2.binarySeekPast(i);
         }
-        EXPECT_EQUAL(i, static_cast<int>(iit.position()));
-        EXPECT_EQUAL(i < numEntries, iit.valid()); 
+        EXPECT_EQ(i, static_cast<int>(iit.position()));
+        EXPECT_EQ(i < numEntries, iit.valid()); 
         EXPECT_TRUE(iit.identical(it));
         EXPECT_TRUE(iit.identical(iitls));
         EXPECT_TRUE(iit.identical(iitbs));
@@ -1514,29 +1479,28 @@ Test::requireThatIteratorDistanceWorks(int numEntries)
         EXPECT_TRUE(iitn.identical(iitlsp2));
         EXPECT_TRUE(iitn.identical(iitbsp2));
         if (i < numEntries) {
-            EXPECT_EQUAL(i + 1, static_cast<int>(iitn.position()));
-            EXPECT_EQUAL(i + 1 < numEntries, iitn.valid());
+            EXPECT_EQ(i + 1, static_cast<int>(iitn.position()));
+            EXPECT_EQ(i + 1 < numEntries, iitn.valid());
         }
         for (int j = 0; j <= numEntries; ++j) {
             Iterator jit = tree.lowerBound(j);
-            EXPECT_EQUAL(j, static_cast<int>(jit.position()));
-            EXPECT_EQUAL(j < numEntries, jit.valid()); 
-            EXPECT_EQUAL(i - j, iit - jit);
-            EXPECT_EQUAL(j - i, jit - iit);
+            EXPECT_EQ(j, static_cast<int>(jit.position()));
+            EXPECT_EQ(j < numEntries, jit.valid()); 
+            EXPECT_EQ(i - j, iit - jit);
+            EXPECT_EQ(j - i, jit - iit);
 
             Iterator jit2 = jit;
             jit2.setupEnd();
-            EXPECT_EQUAL(numEntries - j, jit2 - jit);
-            EXPECT_EQUAL(numEntries - i, jit2 - iit);
-            EXPECT_EQUAL(j - numEntries, jit - jit2);
-            EXPECT_EQUAL(i - numEntries, iit - jit2);
+            EXPECT_EQ(numEntries - j, jit2 - jit);
+            EXPECT_EQ(numEntries - i, jit2 - iit);
+            EXPECT_EQ(j - numEntries, jit - jit2);
+            EXPECT_EQ(i - numEntries, iit - jit2);
         }
     }
 }
 
 
-void
-Test::requireThatIteratorDistanceWorks()
+TEST_F(BTreeTest, require_that_iterator_distance_works)
 {
     requireThatIteratorDistanceWorks(1);
     requireThatIteratorDistanceWorks(3);
@@ -1546,8 +1510,7 @@ Test::requireThatIteratorDistanceWorks()
     requireThatIteratorDistanceWorks(400);
 }
 
-void
-Test::requireThatForeachKeyWorks()
+TEST_F(BTreeTest, require_that_foreach_key_works)
 {
     using Tree = BTree<int, int, btree::NoAggregated, MyComp, MyTraits>;
     using Iterator = typename Tree::ConstIterator;
@@ -1571,38 +1534,47 @@ Test::requireThatForeachKeyWorks()
             }
         }
     }
-};
+}
 
-int
-Test::Main()
+namespace {
+
+template <typename Tree>
+void
+inc_generation(GenerationHandler &g, Tree &t)
 {
-    TEST_INIT("btree_test");
-
-    requireThatNodeInsertWorks();
-    requireThatTreeInsertWorks();
-    requireThatNodeSplitInsertWorks();
-    requireThatNodeStealWorks();
-    requireThatTreeRemoveStealWorks();
-    requireThatNodeRemoveWorks();
-    requireThatNodeLowerBoundWorks();
-    requireThatWeCanInsertAndRemoveFromTree();
-    requireThatSortedTreeInsertWorks();
-    requireThatCornerCaseTreeFindWorks();
-    requireThatBasicTreeIteratorWorks();
-    requireThatTreeIteratorSeekWorks();
-    requireThatTreeIteratorAssignWorks();
-    requireThatMemoryUsageIsCalculated();
-    requireThatLowerBoundWorks();
-    requireThatUpperBoundWorks();
-    requireThatUpdateOfKeyWorks();
-    requireThatSmallNodesWorks();
-    requireThatApplyWorks();
-    requireThatIteratorDistanceWorks();
-    requireThatForeachKeyWorks();
-
-    TEST_DONE();
+    auto &s = t.getAllocator();
+    s.freeze();
+    s.transferHoldLists(g.getCurrentGeneration());
+    g.incGeneration();
+    s.trimHoldLists(g.getFirstUsedGeneration());
 }
 
 }
 
-TEST_APPHOOK(vespalib::btree::Test);
+TEST_F(BTreeTest, require_that_compaction_works)
+{
+    using Tree = BTree<int, int, btree::NoAggregated, MyComp, MyTraits>;
+    GenerationHandler g;
+    Tree t;
+    std::vector<int> before_list;
+    std::vector<int> after_list;
+    for (uint32_t i = 1; i < 256; ++i) {
+        t.insert(i, 101);
+    }
+    for (uint32_t i = 50; i < 100; ++i) {
+        t.remove(i);
+    }
+    inc_generation(g, t);
+    auto memory_usage_before = t.getAllocator().getMemoryUsage();
+    t.foreach_key([&before_list](int key) { before_list.emplace_back(key); });
+    t.compact_worst();
+    inc_generation(g, t);
+    auto memory_usage_after = t.getAllocator().getMemoryUsage();
+    t.foreach_key([&after_list](int key) { after_list.emplace_back(key); });
+    EXPECT_LT(memory_usage_after.deadBytes(), memory_usage_before.deadBytes());
+    EXPECT_EQ(before_list, after_list);
+}
+
+}
+
+GTEST_MAIN_RUN_ALL_TESTS()

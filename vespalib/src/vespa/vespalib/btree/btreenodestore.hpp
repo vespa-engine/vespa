@@ -67,6 +67,14 @@ startCompact()
     return ret;
 }
 
+template <typename KeyT, typename DataT, typename AggrT,
+          size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>
+std::vector<uint32_t>
+BTreeNodeStore<KeyT, DataT, AggrT, INTERNAL_SLOTS, LEAF_SLOTS>::
+start_compact_worst()
+{
+    return _store.startCompactWorstBuffers(true, false);
+}
 
 template <typename KeyT, typename DataT, typename AggrT,
           size_t INTERNAL_SLOTS, size_t LEAF_SLOTS>

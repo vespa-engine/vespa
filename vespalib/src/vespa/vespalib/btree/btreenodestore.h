@@ -159,6 +159,8 @@ public:
 
     std::vector<uint32_t> startCompact();
 
+    std::vector<uint32_t> start_compact_worst();
+
     void finishCompact(const std::vector<uint32_t> &toHold);
 
     void transferHoldLists(generation_t generation) {

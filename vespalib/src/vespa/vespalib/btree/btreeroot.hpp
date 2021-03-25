@@ -486,4 +486,17 @@ remove(Iterator &itr,
         itr.getAllocator().needFreeze(this);
 }
 
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
+          typename TraitsT, class AggrCalcT>
+void
+BTreeRoot<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
+move_nodes(NodeAllocatorType &allocator)
+{
+    Iterator itr = this->begin(allocator);
+    this->setRoot(itr.moveFirstLeafNode(this->getRoot()), allocator);
+    while (itr.valid()) {
+        itr.moveNextLeafNode();
+    }
+}
+
 }
