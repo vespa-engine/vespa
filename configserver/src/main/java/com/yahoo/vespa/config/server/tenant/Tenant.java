@@ -27,14 +27,19 @@ public class Tenant {
     private final RequestHandler requestHandler;
     private final Instant created;
 
+    Tenant(TenantName name, SessionRepository sessionRepository, TenantApplications applicationRepo, Instant created) {
+        this(name, sessionRepository, applicationRepo, applicationRepo, created);
+    }
+
     // Protected due to being subclassed in a system test
     protected Tenant(TenantName name,
                      SessionRepository sessionRepository,
+                     RequestHandler requestHandler,
                      TenantApplications applicationRepo,
                      Instant created) {
         this.name = name;
         this.path = TenantRepository.getTenantPath(name);
-        this.requestHandler = applicationRepo;
+        this.requestHandler = requestHandler;
         this.sessionRepository = sessionRepository;
         this.applicationRepo = applicationRepo;
         this.created = created;
