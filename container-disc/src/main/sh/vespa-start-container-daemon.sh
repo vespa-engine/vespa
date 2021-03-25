@@ -220,6 +220,7 @@ exec $numactlcmd $envcmd java \
         -Djava.library.path="${VESPA_HOME}/lib64" \
         -Djava.awt.headless=true \
         -Djavax.net.ssl.keyStoreType=JKS \
+        -Djdk.tls.rejectClientInitiatedRenegotiation=true \
         -Dsun.rmi.dgc.client.gcInterval=3600000 \
         -Dsun.net.client.defaultConnectTimeout=5000 -Dsun.net.client.defaultReadTimeout=60000 \
         -Djdisc.config.file="$cfpfile" \

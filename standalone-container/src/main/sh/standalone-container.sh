@@ -174,6 +174,7 @@ StartCommand() {
         -Dsun.net.client.defaultConnectTimeout=5000 \
         -Dsun.net.client.defaultReadTimeout=60000 \
         -Djavax.net.ssl.keyStoreType=JKS \
+        -Djdk.tls.rejectClientInitiatedRenegotiation=true \
         -Djdisc.config.file="$cfpfile" \
         -Djdisc.export.packages= \
         -Djdisc.cache.path="$bundlecachedir" \
