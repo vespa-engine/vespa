@@ -19,6 +19,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Change;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Versions;
 import com.yahoo.vespa.hosted.controller.restapi.application.EmptyResponse;
@@ -125,9 +126,9 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
             var statusByInstance = deploymentStatuses.asList().stream()
                                                      .flatMap(status -> status.instanceJobs().keySet().stream()
                                                                               .map(instance -> Map.entry(instance, status)))
-                                                     .collect(toUnmodifiableMap(entry -> entry.getKey(), entry -> entry.getValue()));
+                                                     .collect(toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
             var jobsByInstance = statusByInstance.entrySet().stream()
-                                                 .collect(toUnmodifiableMap(entry -> entry.getKey(),
+                                                 .collect(toUnmodifiableMap(Map.Entry::getKey,
                                                                             entry -> entry.getValue().instanceJobs().get(entry.getKey())));
             Cursor productionArray = versionObject.setArray("productionApplications");
             statistics.productionSuccesses().stream()
@@ -146,12 +147,6 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                 applicationObject.setString("running", run.id().type().jobName());
             }
 
-            class RunInfo { //  ヽ༼ຈل͜ຈ༽━☆ﾟ.*･｡ﾟ
-                final Run run;
-                final boolean upgrade;
-                RunInfo(Run run, boolean upgrade) { this.run = run; this.upgrade = upgrade; }
-                @Override public String toString() { return run.id().toString(); }
-            }
             Cursor instancesArray = versionObject.setArray("applications");
             Stream.of(statistics.failingUpgrades().stream().map(run -> new RunInfo(run, true)),
                       statistics.otherFailing().stream().map(run -> new RunInfo(run, false)),
@@ -172,8 +167,11 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
                       instanceObject.setString("application", instance.application().value());
                       instanceObject.setString("instance", instance.instance().value());
                       instanceObject.setBool("upgrading", status.application().require(instance.instance()).change().platform().equals(Optional.of(statistics.version())));
-                      status.instanceSteps().get(instance.instance()).blockedUntil(Change.of(statistics.version()))
-                            .ifPresent(until -> instanceObject.setLong("blockedUntil", until.toEpochMilli()));
+                      DeploymentStatus.StepStatus stepStatus = status.instanceSteps().get(instance.instance());
+                      if (stepStatus != null) { // Instance may not have any steps, i.e. an empty deployment spec has been submitted
+                          stepStatus.blockedUntil(Change.of(statistics.version()))
+                                    .ifPresent(until -> instanceObject.setLong("blockedUntil", until.toEpochMilli()));
+                      }
                       instanceObject.setString("upgradePolicy", toString(status.application().deploymentSpec().instance(instance.instance())
                                                                                .map(DeploymentInstanceSpec::upgradePolicy)
                                                                                .orElse(DeploymentSpec.UpgradePolicy.defaultPolicy)));
@@ -244,5 +242,22 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
         }
         return upgradePolicy.name();
     }
+
+    private static class RunInfo {
+        final Run run;
+        final boolean upgrade;
+
+        RunInfo(Run run, boolean upgrade) {
+            this.run = run;
+            this.upgrade = upgrade;
+        }
+
+        @Override
+        public String toString() {
+            return run.id().toString();
+        }
+
+    }
+
 
 }
