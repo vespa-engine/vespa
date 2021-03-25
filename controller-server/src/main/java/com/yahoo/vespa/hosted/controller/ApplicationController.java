@@ -32,7 +32,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.Quota;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationReindexing;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServer;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;

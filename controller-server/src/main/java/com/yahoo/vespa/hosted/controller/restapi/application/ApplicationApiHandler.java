@@ -938,7 +938,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             jsonObject.set("metrics", jsonArray);
             return new JsonResponse(200, jsonMapper.writerWithDefaultPrettyPrinter().writeValueAsString(jsonObject));
         } catch (JsonProcessingException e) {
-            log.log(Level.SEVERE, "Unable to build JsonResponse with Proton data: " + e.getMessage(), e);
+            log.log(Level.WARNING, "Unable to build JsonResponse with Proton data: " + e.getMessage(), e);
             return new JsonResponse(500, "");
         }
     }
