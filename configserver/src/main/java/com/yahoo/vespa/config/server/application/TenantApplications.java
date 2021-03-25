@@ -3,7 +3,6 @@ package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
-import com.yahoo.concurrent.InThreadExecutorService;
 import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.provision.ApplicationId;
@@ -13,7 +12,6 @@ import com.yahoo.transaction.Transaction;
 import com.yahoo.vespa.config.ConfigKey;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
-import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.NotFoundException;
 import com.yahoo.vespa.config.server.ReloadListener;
 import com.yahoo.vespa.config.server.RequestHandler;
@@ -46,7 +44,6 @@ import java.util.concurrent.ExecutorService;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.vespa.config.server.tenant.TenantRepository.getBarriersPath;
 import static com.yahoo.vespa.curator.Curator.CompletionWaiter;
 import static java.util.stream.Collectors.toSet;
 
@@ -94,25 +91,6 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         this.tenantFileSystemDirs = tenantFileSystemDirs;
         this.clock = clock;
         this.configserverConfig = configserverConfig;
-    }
-
-    // For testing only
-    public static TenantApplications create(HostRegistry hostRegistry,
-                                            TenantName tenantName,
-                                            Curator curator,
-                                            ConfigserverConfig configserverConfig,
-                                            Clock clock,
-                                            ReloadListener reloadListener) {
-        return new TenantApplications(tenantName,
-                                      curator,
-                                      new StripedExecutor<>(new InThreadExecutorService()),
-                                      new InThreadExecutorService(),
-                                      Metrics.createTestMetrics(),
-                                      reloadListener,
-                                      configserverConfig,
-                                      hostRegistry,
-                                      new TenantFileSystemDirs(new ConfigServerDB(configserverConfig), tenantName),
-                                      clock);
     }
 
     /** The curator backed ZK storage of this. */
@@ -431,7 +409,6 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     }
 
     /**
-     *
      * Waiter for removing application. Will wait for some time for all servers to remove application,
      * but will accept majority of servers to have removed app if it takes a long time.
      */
