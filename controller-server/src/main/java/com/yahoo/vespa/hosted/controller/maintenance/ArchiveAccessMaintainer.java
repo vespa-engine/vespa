@@ -12,17 +12,17 @@ import java.util.stream.Collectors;
 
 /**
  * Update archive access permissions with roles from tenants
+ *
+ * @author andreer
  */
 public class ArchiveAccessMaintainer extends ControllerMaintainer {
-
-    // TODO archive: Add to ControllerMaintenance, so it actually runs
 
     private final ArchiveBucketDb archiveBucketDb;
     private final ArchiveService archiveService;
 
-    public ArchiveAccessMaintainer(Controller controller, Duration interval, ArchiveBucketDb archiveBucketDb) {
+    public ArchiveAccessMaintainer(Controller controller, Duration interval) {
         super(controller, interval);
-        this.archiveBucketDb = archiveBucketDb;
+        this.archiveBucketDb = controller.serviceRegistry().archiveBucketDb();
         this.archiveService = controller.serviceRegistry().archiveService();
     }
 
