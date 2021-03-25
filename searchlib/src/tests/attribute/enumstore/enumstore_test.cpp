@@ -176,19 +176,16 @@ TEST(EnumStoreTest, test_find_folded_on_string_enum_store)
     EXPECT_EQ(1u, ses.find_folded_enums("three").size());
 }
 
-template <typename DictionaryT>
 void
 testUniques(const StringEnumStore& ses, const std::vector<std::string>& unique)
 {
-    const auto* enumDict = dynamic_cast<const EnumStoreDictionary<DictionaryT>*>(&ses.get_dictionary());
-    assert(enumDict != nullptr);
-    const DictionaryT& dict = enumDict->get_raw_dictionary();
+    auto read_snapshot = ses.get_dictionary().get_read_snapshot();
+    std::vector<EnumIndex> saved_indexes;
+    read_snapshot->foreach_key([&saved_indexes](EntryRef idx) { saved_indexes.push_back(idx); });
     uint32_t i = 0;
-    EnumIndex idx;
-    for (typename DictionaryT::Iterator iter = dict.begin();
-         iter.valid(); ++iter, ++i) {
-        idx = iter.getKey();
+    for (auto idx : saved_indexes) {
         EXPECT_TRUE(strcmp(unique[i].c_str(), ses.get_value(idx)) == 0);
+        ++i;
     }
     EXPECT_EQ(static_cast<uint32_t>(unique.size()), i);
 }
@@ -232,11 +229,7 @@ StringEnumStoreTest::testInsert(bool hasPostings)
         EXPECT_TRUE(strcmp(unique[i].c_str(), value) == 0);
     }
 
-    if (hasPostings) {
-        testUniques<EnumPostingTree>(ses, unique);
-    } else {
-        testUniques<EnumTree>(ses, unique);
-    }
+    testUniques(ses, unique);
 }
 
 TEST_F(StringEnumStoreTest, test_insert_on_store_without_posting_lists)
