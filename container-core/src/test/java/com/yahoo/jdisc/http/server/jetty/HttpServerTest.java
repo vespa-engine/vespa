@@ -65,7 +65,6 @@ import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -181,7 +180,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatAccessLogIsCalledForRequestRejectedByJetty() throws Exception {
-        BlockingQueueRequestLog requestLogMock = new BlockingQueueRequestLog();
+        InMemoryRequestLog requestLogMock = new InMemoryRequestLog();
         final TestDriver driver = TestDrivers.newConfiguredInstance(
                 mockRequestHandler(),
                 new ServerConfig.Builder(),
@@ -189,9 +188,9 @@ public class HttpServerTest {
                 binder -> binder.bind(RequestLog.class).toInstance(requestLogMock));
         driver.client().get("/status.html")
                 .expectStatusCode(is(REQUEST_URI_TOO_LONG));
-        RequestLogEntry entry = requestLogMock.poll(Duration.ofSeconds(30));
-        assertEquals(414, entry.statusCode().getAsInt());
         assertThat(driver.close(), is(true));
+        RequestLogEntry entry = requestLogMock.entries().get(0);
+        assertEquals(414, entry.statusCode().getAsInt());
     }
 
     @Test
