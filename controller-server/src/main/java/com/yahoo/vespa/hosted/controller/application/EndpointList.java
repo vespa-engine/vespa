@@ -17,6 +17,8 @@ import java.util.Optional;
  */
 public class EndpointList extends AbstractFilteringList<Endpoint, EndpointList> {
 
+    public static final EndpointList EMPTY = EndpointList.copyOf(List.of());
+
     private EndpointList(Collection<? extends Endpoint> endpoints, boolean negate) {
         super(endpoints, negate, EndpointList::new);
         if (endpoints.stream().distinct().count() != endpoints.size()) {

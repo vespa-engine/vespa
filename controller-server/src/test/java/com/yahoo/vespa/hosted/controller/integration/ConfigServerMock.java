@@ -88,7 +88,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     private final Map<ZoneId, Set<LoadBalancer>> loadBalancers = new HashMap<>();
     private final Set<Environment> deferLoadBalancerProvisioning = new HashSet<>();
     private final Map<DeploymentId, List<Log>> warnings = new HashMap<>();
-    private final Map<DeploymentId, Set<String>> rotationNames = new HashMap<>();
+    private final Map<DeploymentId, Set<String>> containerEndpoints = new HashMap<>();
     private final Map<DeploymentId, List<ClusterMetrics>> clusterMetrics = new HashMap<>();
     private final Map<DeploymentId, TestReport> testReport = new HashMap<>();
     private List<ProtonMetrics> protonMetrics;
@@ -271,8 +271,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         warnings.put(deployment, List.copyOf(logs));
     }
 
-    public Map<DeploymentId, Set<String>> rotationNames() {
-        return Collections.unmodifiableMap(rotationNames);
+    public Map<DeploymentId, Set<String>> containerEndpoints() {
+        return Collections.unmodifiableMap(containerEndpoints);
     }
 
     public void setMetrics(DeploymentId deployment, ClusterMetrics clusterMetrics) {
@@ -378,7 +378,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
         if (nodeRepository().list(id.zoneId(), id.applicationId()).isEmpty())
             provision(id.zoneId(), id.applicationId(), cluster);
 
-        this.rotationNames.put(
+        this.containerEndpoints.put(
                 id,
                 deployment.containerEndpoints().stream()
                           .map(ContainerEndpoint::names)

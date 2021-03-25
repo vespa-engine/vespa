@@ -358,7 +358,7 @@ public class ApplicationController {
         ZoneId zone = job.type().zone(controller.system());
 
         try (Lock deploymentLock = lockForDeployment(job.application(), zone)) {
-            Set<ContainerEndpoint> endpoints;
+            Set<ContainerEndpoint> containerEndpoints;
             Optional<EndpointCertificateMetadata> endpointCertificateMetadata;
             Optional<TenantRoles> tenantRoles = Optional.empty();
 
@@ -383,12 +383,12 @@ public class ApplicationController {
 
                 endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(instance, zone, applicationPackage.deploymentSpec().instance(instance.name()));
 
-                endpoints = controller.routing().registerEndpointsInDns(application.get(), job.application().instance(), zone);
+                containerEndpoints = controller.routing().containerEndpointsOf(application.get(), job.application().instance(), zone);
 
             } // Release application lock while doing the deployment, which is a lengthy task.
 
             // Carry out deployment without holding the application lock.
-            ActivateResult result = deploy(job.application(), applicationPackage, zone, platform, endpoints, endpointCertificateMetadata, tenantRoles);
+            ActivateResult result = deploy(job.application(), applicationPackage, zone, platform, containerEndpoints, endpointCertificateMetadata, tenantRoles);
 
             // Record the quota usage for this application
             var quotaUsage = deploymentQuotaUsage(zone, job.application());
