@@ -281,19 +281,19 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                         TenantSecretStore::getName,
                         store -> store
                 ));
-
-        for (Element group : XML.getChildren(secretStoreElement, "aws-parameter-store")) {
-            String name = group.getAttribute("name");
-            String region = group.getAttribute("region");
-            TenantSecretStore secretStore = secretStoresByName.get(name);
+        Element store = XML.getChild(secretStoreElement, "store");
+        for (Element group : XML.getChildren(store, "aws-parameter-store")) {
+            String account = group.getAttribute("account");
+            String region = group.getAttribute("aws-region");
+            TenantSecretStore secretStore = secretStoresByName.get(account);
 
             if (secretStore == null)
-                throw new RuntimeException("No configured secret store named " + name);
+                throw new RuntimeException("No configured secret store named " + account);
 
             if (secretStore.getExternalId().isEmpty())
                 throw new RuntimeException("No external ID has been set");
 
-            cloudSecretStore.addConfig(name, region, secretStore.getAwsId(), secretStore.getRole(), secretStore.getExternalId().get());
+            cloudSecretStore.addConfig(account, region, secretStore.getAwsId(), secretStore.getRole(), secretStore.getExternalId().get());
         }
 
         cluster.addComponent(cloudSecretStore);

@@ -244,4 +244,11 @@
     </nodes>
   </container>
 
+  <container id='qrsCluster_2' version='1.0'>
+    <secret-store type="cloud">
+      <store id="foo">
+        <aws-parameter-store account="foo" aws-region="us-east-1"/>
+      </store>
+    </secret-store>
+  </container>
 </services>
