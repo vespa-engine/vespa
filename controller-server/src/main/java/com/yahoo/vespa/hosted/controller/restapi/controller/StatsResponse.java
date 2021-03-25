@@ -22,27 +22,21 @@ public class StatsResponse extends SlimeJsonResponse {
     }
 
     private static Slime toSlime(Controller controller) {
-        try {
-            Slime slime = new Slime();
-            Cursor root = slime.setObject();
-            Cursor zonesArray = root.setArray("zones");
-            for (ZoneId zone : controller.zoneRegistry().zones().reachable().ids()) {
-                NodeRepoStats stats = controller.serviceRegistry().configServer().nodeRepository().getStats(zone);
-                if (stats.applicationStats().isEmpty()) continue; // skip empty zones
-                Cursor zoneObject = zonesArray.addObject();
-                zoneObject.setString("id", zone.toString());
-                toSlime(stats.load(), zoneObject.setObject("load"));
-                toSlime(stats.activeLoad(), zoneObject.setObject("activeLoad"));
-                Cursor applicationsArray = zoneObject.setArray("applications");
-                for (var applicationStats : stats.applicationStats())
-                    toSlime(applicationStats, applicationsArray.addObject());
-            }
-            return slime;
+        Slime slime = new Slime();
+        Cursor root = slime.setObject();
+        Cursor zonesArray = root.setArray("zones");
+        for (ZoneId zone : controller.zoneRegistry().zones().reachable().ids()) {
+            NodeRepoStats stats = controller.serviceRegistry().configServer().nodeRepository().getStats(zone);
+            if (stats.applicationStats().isEmpty()) continue; // skip empty zones
+            Cursor zoneObject = zonesArray.addObject();
+            zoneObject.setString("id", zone.toString());
+            toSlime(stats.load(), zoneObject.setObject("load"));
+            toSlime(stats.activeLoad(), zoneObject.setObject("activeLoad"));
+            Cursor applicationsArray = zoneObject.setArray("applications");
+            for (var applicationStats : stats.applicationStats())
+                toSlime(applicationStats, applicationsArray.addObject());
         }
-        catch (Exception e) {
-            e.printStackTrace();
-            throw e;
-        }
+        return slime;
     }
 
     private static void toSlime(ApplicationStats stats, Cursor applicationObject) {
