@@ -10,7 +10,7 @@ namespace proton {
 
 class AttributeUsageFilter;
 class AttributeConfigInspector;
-class TransientMemoryUsageProvider;
+class TransientResourceUsageProvider;
 
 /*
  * Context for sampling attribute usage stats and transient memory usage.
@@ -27,9 +27,11 @@ class AttributeUsageSamplerContext
     Mutex _lock;
     AttributeUsageFilter &_filter;
     std::shared_ptr<const AttributeConfigInspector> _attribute_config_inspector;
-    std::shared_ptr<TransientMemoryUsageProvider> _transient_memory_usage_provider;
+    std::shared_ptr<TransientResourceUsageProvider> _transient_usage_provider;
 public:
-    AttributeUsageSamplerContext(AttributeUsageFilter &filter, std::shared_ptr<const AttributeConfigInspector> attribute_config_inspector, std::shared_ptr<TransientMemoryUsageProvider> transient_memory_usage_provider);
+    AttributeUsageSamplerContext(AttributeUsageFilter& filter,
+                                 std::shared_ptr<const AttributeConfigInspector> attribute_config_inspector,
+                                 std::shared_ptr<TransientResourceUsageProvider> transient_usage_provider);
     ~AttributeUsageSamplerContext();
     void merge(const search::AddressSpaceUsage &usage,
                size_t transient_memory_usage,

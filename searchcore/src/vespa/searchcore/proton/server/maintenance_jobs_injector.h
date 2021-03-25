@@ -22,7 +22,7 @@ struct IBucketStateCalculator;
 struct IAttributeManager;
 class AttributeUsageFilter;
 class IDiskMemUsageNotifier;
-class TransientMemoryUsageProvider;
+class TransientResourceUsageProvider;
 namespace bucketdb { class IBucketCreateNotifier; }
 
 /**
@@ -54,7 +54,7 @@ struct MaintenanceJobsInjector
                            IAttributeManagerSP readyAttributeManager,
                            IAttributeManagerSP notReadyAttributeManager,
                            std::unique_ptr<const AttributeConfigInspector> attribute_config_inspector,
-                           std::shared_ptr<TransientMemoryUsageProvider> transient_memory_usage_provider,
+                           std::shared_ptr<TransientResourceUsageProvider> transient_usage_provider,
                            AttributeUsageFilter &attributeUsageFilter);
 };
 

@@ -134,7 +134,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     IAttributeManagerSP readyAttributeManager,
                                     IAttributeManagerSP notReadyAttributeManager,
                                     std::unique_ptr<const AttributeConfigInspector> attribute_config_inspector,
-                                    std::shared_ptr<TransientMemoryUsageProvider> transient_memory_usage_provider,
+                                    std::shared_ptr<TransientResourceUsageProvider> transient_usage_provider,
                                     AttributeUsageFilter &attributeUsageFilter)
 {
     controller.registerJobInMasterThread(std::make_unique<HeartBeatJob>(hbHandler, config.getHeartBeatConfig()));
@@ -160,7 +160,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                                       attributeUsageFilter, docTypeName,
                                                       config.getAttributeUsageSampleInterval(),
                                                       std::move(attribute_config_inspector),
-                                                      transient_memory_usage_provider));
+                                                      transient_usage_provider));
 }
 
 } // namespace proton

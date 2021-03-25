@@ -50,11 +50,11 @@ namespace storage::spi { struct BucketExecutor; }
 namespace proton {
 class AttributeConfigInspector;
 class IDocumentDBOwner;
-class ITransientMemoryUsageProvider;
+class ITransientResourceUsageProvider;
 struct MetricsWireService;
 class StatusReport;
 class ExecutorThreadingServiceStats;
-class TransientMemoryUsageProvider;
+class TransientResourceUsageProvider;
 
 namespace matching { class SessionManager; }
 
@@ -119,7 +119,7 @@ private:
     DDBState                      _state;
     DiskMemUsageForwarder         _dmUsageForwarder;
     AttributeUsageFilter          _writeFilter;
-    std::shared_ptr<TransientMemoryUsageProvider> _transient_memory_usage_provider;
+    std::shared_ptr<TransientResourceUsageProvider> _transient_usage_provider;
     std::unique_ptr<FeedHandler>                  _feedHandler;
     DocumentSubDBCollection                       _subDBs;
     MaintenanceController                         _maintenanceController;
@@ -414,7 +414,7 @@ public:
     void enterOnlineState();
     void waitForOnlineState();
     IDiskMemUsageListener *diskMemUsageListener() { return &_dmUsageForwarder; }
-    std::shared_ptr<const ITransientMemoryUsageProvider> transient_memory_usage_provider();
+    std::shared_ptr<const ITransientResourceUsageProvider> transient_usage_provider();
     ExecutorThreadingService & getWriteService() { return _writeService; }
 
     void set_attribute_usage_listener(std::unique_ptr<IAttributeUsageListener> listener);

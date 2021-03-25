@@ -8,7 +8,7 @@
 #include <vespa/searchcore/proton/attribute/attribute_usage_filter.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_sampler_context.h>
 #include <vespa/searchcore/proton/attribute/attribute_usage_sampler_functor.h>
-#include <vespa/searchcore/proton/common/transient_memory_usage_provider.h>
+#include <vespa/searchcore/proton/common/transient_resource_usage_provider.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/stllike/string.h>
 
@@ -61,18 +61,18 @@ std::shared_ptr<AttributeVector> build_attribute_vector(const vespalib::string& 
 class AttributeUsageSamplerFunctorTest : public ::testing::Test {
 protected:
     AttributeUsageFilter                          _filter;
-    std::shared_ptr<TransientMemoryUsageProvider> _transient_memory_usage_provider;
+    std::shared_ptr<TransientResourceUsageProvider> _transient_usage_provider;
 public:
     AttributeUsageSamplerFunctorTest();
     ~AttributeUsageSamplerFunctorTest();
 protected:
     void sample_usage(bool sample_a1, bool sample_a2, bool old_fast_search, bool new_fast_search = true);
-    size_t get_transient_memory_usage() const { return _transient_memory_usage_provider->get_transient_memory_usage(); }
+    size_t get_transient_memory_usage() const { return _transient_usage_provider->get_transient_memory_usage(); }
 };
 
 AttributeUsageSamplerFunctorTest::AttributeUsageSamplerFunctorTest()
     : _filter(),
-      _transient_memory_usage_provider(std::make_shared<TransientMemoryUsageProvider>())
+      _transient_usage_provider(std::make_shared<TransientResourceUsageProvider>())
 {
 }
 
@@ -88,7 +88,7 @@ AttributeUsageSamplerFunctorTest::sample_usage(bool sample_a1, bool sample_a2, b
     EXPECT_EQ(av1->getEnumeratedSave(), old_fast_search);
     auto new_config = build_config(new_fast_search);
     auto new_inspector = std::make_shared<AttributeConfigInspector>(new_config);
-    auto context = std::make_shared<AttributeUsageSamplerContext>(_filter, new_inspector, _transient_memory_usage_provider);
+    auto context = std::make_shared<AttributeUsageSamplerContext>(_filter, new_inspector, _transient_usage_provider);
     if (sample_a1) {
         AttributeUsageSamplerFunctor functor1(context, "ready");
         functor1(*av1);
