@@ -11,7 +11,7 @@
 
 namespace vespalib::eval {
 
-enum class CellType : char { FLOAT, DOUBLE, BFLOAT16, INT8 };
+enum class CellType : char { DOUBLE, FLOAT, BFLOAT16, INT8 };
 
 // converts actual cell type to CellType enum value
 template <typename CT> constexpr CellType get_cell_type();
@@ -199,6 +199,8 @@ struct CellTypeUtils {
     static uint32_t alignment(CellType cell_type);
     static size_t mem_size(CellType cell_type, size_t sz);
     static std::vector<CellType> list_types();
+    static std::vector<CellType> list_stable_types();
+    static std::vector<CellType> list_unstable_types();
 };
 
 } // namespace

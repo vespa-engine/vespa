@@ -33,7 +33,19 @@ CellTypeUtils::mem_size(CellType cell_type, size_t sz)
 std::vector<CellType>
 CellTypeUtils::list_types()
 {
-    return {CellType::INT8, CellType::BFLOAT16, CellType::FLOAT, CellType::DOUBLE};
+    return {CellType::DOUBLE, CellType::FLOAT, CellType::BFLOAT16, CellType::INT8 };
+}
+
+std::vector<CellType>
+CellTypeUtils::list_stable_types()
+{
+    return {CellType::DOUBLE, CellType::FLOAT};
+}
+
+std::vector<CellType>
+CellTypeUtils::list_unstable_types()
+{
+    return {CellType::BFLOAT16, CellType::INT8 };
 }
 
 }
