@@ -32,7 +32,7 @@ public class StatsResponse extends SlimeJsonResponse {
                 Cursor zoneObject = zonesArray.addObject();
                 zoneObject.setString("id", zone.toString());
                 toSlime(stats.load(), zoneObject.setObject("load"));
-                toSlime(stats.load(), zoneObject.setObject("activeLoad"));
+                toSlime(stats.activeLoad(), zoneObject.setObject("activeLoad"));
                 Cursor applicationsArray = zoneObject.setArray("applications");
                 for (var applicationStats : stats.applicationStats())
                     toSlime(applicationStats, applicationsArray.addObject());
