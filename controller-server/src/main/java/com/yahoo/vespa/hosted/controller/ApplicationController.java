@@ -656,15 +656,7 @@ public class ApplicationController {
      * Not in a state where it should receive traffic.
      */
     public boolean isSuspended(DeploymentId deploymentId) {
-        try {
-            return configServer.isSuspended(deploymentId);
-        }
-        catch (ConfigServerException e) {
-            if (e.getErrorCode() == ConfigServerException.ErrorCode.NOT_FOUND)
-                return false; // If the application wasn't found, it's not suspended.
-
-            throw e;
-        }
+        return configServer.isSuspended(deploymentId);
     }
 
     /** Sets suspension status of the given deployment in its zone. */
