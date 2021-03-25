@@ -867,6 +867,21 @@ public class HttpServerTest {
         Assertions.assertThat(logEntry.sslPeerNotAfter()).hasValue(Instant.EPOCH.plus(100_000, ChronoUnit.DAYS));
     }
 
+    @Test
+    public void requireThatRequestIsTrackedInAccessLog() throws IOException {
+        InMemoryRequestLog requestLogMock = new InMemoryRequestLog();
+        TestDriver driver = TestDrivers.newConfiguredInstance(
+                new EchoRequestHandler(),
+                new ServerConfig.Builder(),
+                new ConnectorConfig.Builder(),
+                binder -> binder.bind(RequestLog.class).toInstance(requestLogMock));
+        driver.client().newPost("/status.html").setContent("abcdef").execute().expectStatusCode(is(OK));
+        assertThat(driver.close(), is(true));
+        RequestLogEntry entry = requestLogMock.entries().get(0);
+        Assertions.assertThat(entry.statusCode()).hasValue(200);
+        Assertions.assertThat(entry.requestSize()).hasValue(6);
+    }
+
     private ContentResponse sendJettyClientRequest(TestDriver testDriver, Path certificateFile, Object tag)
             throws Exception {
         HttpClient client = createJettyHttpClient(certificateFile);
