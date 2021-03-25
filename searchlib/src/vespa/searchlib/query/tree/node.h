@@ -15,9 +15,10 @@ class Node {
  public:
     typedef std::unique_ptr<Node> UP;
 
-    virtual ~Node() {}
-
+    virtual ~Node() = default;
     virtual void accept(QueryVisitor &visitor) = 0;
+    virtual bool isIntermediate() const { return false; }
+    virtual bool isLocationTerm() const { return false; }
 };
 
 }

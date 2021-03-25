@@ -36,6 +36,7 @@ using search::queryeval::IntermediateBlueprint;
 using search::queryeval::Blueprint;
 using search::queryeval::IRequestContext;
 using search::queryeval::SearchIterator;
+using search::query::LocationTerm;
 using vespalib::string;
 using std::vector;
 
@@ -59,16 +60,17 @@ inject(Node::UP query, Node::UP to_inject) {
     return query;
 }
 
-std::vector<ProtonLocationTerm *>
+std::vector<LocationTerm *>
 find_location_terms(Node *tree) {
-    std::vector<ProtonLocationTerm *> retval;
+    std::vector<LocationTerm *> retval;
     std::vector<Node *> nodes;
     nodes.push_back(tree);
-    for (size_t i = 0; i < nodes.size(); ++i) {
-        if (auto loc = dynamic_cast<ProtonLocationTerm *>(nodes[i])) {
-            retval.push_back(loc);
+    for (Node * node : nodes) {
+        if (node->isLocationTerm()) {
+            retval.push_back(static_cast<LocationTerm *>(node));
         }
-        if (auto parent = dynamic_cast<const search::query::Intermediate *>(nodes[i])) {
+        if (node->isIntermediate()) {
+            auto parent = static_cast<const search::query::Intermediate *>(node);
             for (Node * child : parent->getChildren()) {
                 nodes.push_back(child);
             }
@@ -92,13 +94,17 @@ GeoLocationSpec parse_location_string(string str) {
     return empty;
 }
 
-GeoLocationSpec process_location_term(ProtonLocationTerm &pterm) {
+GeoLocationSpec process_location_term(LocationTerm &pterm) {
     auto old_view = pterm.getView();
     auto new_view = PositionDataType::getZCurveFieldName(old_view);
     pterm.setView(new_view);
     const GeoLocation &loc = pterm.getTerm();
     return GeoLocationSpec{new_view, loc};
 }
+
+void exchange_location_nodes(const string &location_str,
+                             Node::UP &query_tree,
+                             std::vector<GeoLocationSpec> &fef_locations) __attribute__((noinline));
 
 void exchange_location_nodes(const string &location_str,
                            Node::UP &query_tree,
@@ -110,7 +116,7 @@ void exchange_location_nodes(const string &location_str,
     if (parsed.location.valid()) {
         locationSpecs.push_back(parsed);
     }
-    for (ProtonLocationTerm * pterm : find_location_terms(query_tree.get())) {
+    for (LocationTerm * pterm : find_location_terms(query_tree.get())) {
         auto spec = process_location_term(*pterm);
         if (spec.location.valid()) {
             locationSpecs.push_back(spec);
