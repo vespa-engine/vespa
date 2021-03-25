@@ -12,7 +12,10 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Application;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.ApplicationStats;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Load;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepoStats;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.TargetVersions;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeList;
@@ -64,6 +67,18 @@ public class NodeRepositoryMock implements NodeRepository {
     public void putApplication(ZoneId zone, Application application) {
         applications.putIfAbsent(zone, new HashMap<>());
         applications.get(zone).put(application.id(), application);
+    }
+
+    @Override
+    public NodeRepoStats getStats(ZoneId zone) {
+        List<ApplicationStats> applicationStats =
+            applications.containsKey(zone)
+                ? applications.get(zone).keySet().stream()
+                              .map(id -> new ApplicationStats(id, Load.zero(), 0, 0))
+                              .collect(Collectors.toList())
+               : List.of();
+
+        return new NodeRepoStats(Load.zero(), Load.zero(), applicationStats);
     }
 
     public Pair<Double, Double> getTrafficFraction(ApplicationId application, ZoneId zone) {

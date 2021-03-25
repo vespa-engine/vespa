@@ -24,4 +24,6 @@ public class Load {
         return "load: cpu "  + cpu  + ", memory " + memory + ", disk " + disk;
     }
 
+    public static Load zero() { return new Load(0, 0, 0); }
+
 }

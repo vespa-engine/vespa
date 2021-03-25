@@ -10,7 +10,7 @@ public class NodeRepoStats {
 
     private final Load load;
     private final Load activeLoad;
-    private List<ApplicationStats> applicationStats;
+    private final List<ApplicationStats> applicationStats;
 
     public NodeRepoStats(Load load, Load activeLoad, List<ApplicationStats> applicationStats) {
         this.load = load;

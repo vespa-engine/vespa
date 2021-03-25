@@ -9,7 +9,7 @@
     "memory": 0.0,
     "disk": 0.0
   },
-  "applicationStats": [
+  "applications": [
     {
       "id": "tenant3.application3.instance3",
       "load": {

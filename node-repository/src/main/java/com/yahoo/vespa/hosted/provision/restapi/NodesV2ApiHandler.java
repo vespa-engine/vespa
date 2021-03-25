@@ -112,7 +112,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     private HttpResponse handleGET(HttpRequest request) {
         Path path = new Path(request.getUri());
         String pathS = request.getUri().getPath();
-        if (path.matches(    "/nodes/v2")) return new ResourceResponse(request.getUri(), "state", "node", "command", "maintenance", "upgrade", "application", "archive", "locks");
+        if (path.matches(    "/nodes/v2")) return new ResourceResponse(request.getUri(), "node", "state", "acl", "command", "archive", "locks", "maintenance", "upgrade", "capacity", "application", "stats");
         if (path.matches(    "/nodes/v2/node")) return new NodesResponse(ResponseType.nodeList, request, orchestrator, nodeRepository);
         if (pathS.startsWith("/nodes/v2/node/")) return new NodesResponse(ResponseType.singleNode, request, orchestrator, nodeRepository);
         if (path.matches(    "/nodes/v2/state")) return new NodesResponse(ResponseType.stateList, request, orchestrator, nodeRepository);
@@ -462,7 +462,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
 
         toSlime(stats.load(), root.setObject("load"));
         toSlime(stats.load(), root.setObject("activeLoad"));
-        Cursor applicationsObject = root.setArray("applicationStats");
+        Cursor applicationsObject = root.setArray("applications");
         for (int i = 0; i <= 5; i++) {
             if (i >= stats.applicationStats().size()) break;
 

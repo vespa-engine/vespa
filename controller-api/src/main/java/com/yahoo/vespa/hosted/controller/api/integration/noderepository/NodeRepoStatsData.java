@@ -22,12 +22,12 @@ public class NodeRepoStatsData {
     @JsonProperty("activeLoad")
     public LoadData activeLoad;
 
-    @JsonProperty("applicationStats")
-    public List<ApplicationStatsData> applicationStats;
+    @JsonProperty("applications")
+    public List<ApplicationStatsData> applications;
 
     public NodeRepoStats toNodeRepoStats() {
         return new NodeRepoStats(load.toLoad(), activeLoad.toLoad(),
-                                 applicationStats.stream().map(stats -> stats.toApplicationStats()).collect(Collectors.toList()));
+                                 applications.stream().map(stats -> stats.toApplicationStats()).collect(Collectors.toList()));
     }
 
 }

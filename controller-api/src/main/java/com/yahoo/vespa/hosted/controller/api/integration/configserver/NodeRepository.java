@@ -79,6 +79,8 @@ public interface NodeRepository {
     void patchApplication(ZoneId zone, ApplicationId application,
                           double currentReadShare, double maxReadShare);
 
+    NodeRepoStats getStats(ZoneId zone);
+
     Map<TenantName, URI> getArchiveUris(ZoneId zone);
 
     void setArchiveUri(ZoneId zone, TenantName tenantName, URI archiveUri);

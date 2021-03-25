@@ -8,8 +8,10 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
+import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.junit.Before;
@@ -47,6 +49,20 @@ public class ControllerApiTest extends ControllerContainerTest {
         // GET a list of all maintenance jobs
         tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/maintenance/", "", Request.Method.GET),
                               new File("maintenance.json"));
+    }
+
+    @Test
+    public void testStats() {
+        var mock = (NodeRepositoryMock)tester.controller().serviceRegistry().configServer().nodeRepository();
+        mock.putApplication(ZoneId.from("prod", "us-west-1"),
+                            new Application(ApplicationId.fromFullString("t1.a1.i1"), List.of()));
+        mock.putApplication(ZoneId.from("prod", "us-west-1"),
+                            new Application(ApplicationId.fromFullString("t2.a2.i2"), List.of()));
+        mock.putApplication(ZoneId.from("prod", "us-east-3"),
+                            new Application(ApplicationId.fromFullString("t1.a1.i1"), List.of()));
+
+        tester.assertResponse(authenticatedRequest("http://localhost:8080/controller/v1/stats", "", Request.Method.GET),
+                              new File("stats.json"));
     }
 
     @Test
