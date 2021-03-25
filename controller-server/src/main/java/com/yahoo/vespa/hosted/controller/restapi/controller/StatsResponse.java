@@ -26,7 +26,7 @@ public class StatsResponse extends SlimeJsonResponse {
             Slime slime = new Slime();
             Cursor root = slime.setObject();
             Cursor zonesArray = root.setArray("zones");
-            for (ZoneId zone : controller.zoneRegistry().zones().all().ids()) {
+            for (ZoneId zone : controller.zoneRegistry().zones().reachable().ids()) {
                 NodeRepoStats stats = controller.serviceRegistry().configServer().nodeRepository().getStats(zone);
                 if (stats.applicationStats().isEmpty()) continue; // skip empty zones
                 Cursor zoneObject = zonesArray.addObject();
