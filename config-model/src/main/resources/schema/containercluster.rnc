@@ -91,10 +91,13 @@ SecretStore = element secret-store {
       attribute name { string } &
       attribute environment { string "alpha" | string "corp" | string "prod" | string "aws" | string "aws_stage" }
     } * &
-    element aws-parameter-store {
-      attribute name { string } &
-      attribute region { string }
-    } *
+    element store {
+      attribute id { string } &
+      element aws-parameter-store {
+        attribute account { string } &
+        attribute aws-region { string }
+      } *
+    }?
 }
 
 ZooKeeper = element zookeeper {

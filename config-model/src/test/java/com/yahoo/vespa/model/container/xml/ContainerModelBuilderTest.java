@@ -728,7 +728,9 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
                 "  <secret-store type='cloud'>",
-                "    <aws-parameter-store name='store1' region='eu-north-1'/>",
+                "    <store id='store'>",
+                "      <aws-parameter-store account='store1' region='eu-north-1'/>",
+                "    </store>",
                 "  </secret-store>",
                 "</container>");
         try {
@@ -749,7 +751,9 @@ public class ContainerModelBuilderTest extends ContainerModelBuilderTestBase {
         Element clusterElem = DomBuilderTest.parse(
                 "<container version='1.0'>",
                 "  <secret-store type='cloud'>",
-                "    <aws-parameter-store name='store1' region='eu-north-1'/>",
+                "    <store id='store'>",
+                "      <aws-parameter-store account='store1' region='eu-north-1'/>",
+                "    </store>",
                 "  </secret-store>",
                 "</container>");
 
