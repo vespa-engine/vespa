@@ -86,7 +86,6 @@ public:
                  int32_t id, Weight weight)
         : QueryNodeMixinType(term, view, id, weight)
     {}
-    bool isLocationTerm() const override { return true; }
     virtual ~LocationTerm() = 0;
 };
 
