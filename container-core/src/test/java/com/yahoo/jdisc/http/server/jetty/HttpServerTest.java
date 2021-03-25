@@ -65,7 +65,6 @@ import java.nio.file.Path;
 import java.security.KeyPair;
 import java.security.PrivateKey;
 import java.security.cert.X509Certificate;
-import java.time.Duration;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -181,7 +180,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatAccessLogIsCalledForRequestRejectedByJetty() throws Exception {
-        BlockingQueueRequestLog requestLogMock = new BlockingQueueRequestLog();
+        InMemoryRequestLog requestLogMock = new InMemoryRequestLog();
         final TestDriver driver = TestDrivers.newConfiguredInstance(
                 mockRequestHandler(),
                 new ServerConfig.Builder(),
@@ -189,9 +188,9 @@ public class HttpServerTest {
                 binder -> binder.bind(RequestLog.class).toInstance(requestLogMock));
         driver.client().get("/status.html")
                 .expectStatusCode(is(REQUEST_URI_TOO_LONG));
-        RequestLogEntry entry = requestLogMock.poll(Duration.ofSeconds(30));
-        assertEquals(414, entry.statusCode().getAsInt());
         assertThat(driver.close(), is(true));
+        RequestLogEntry entry = requestLogMock.entries().get(0);
+        assertEquals(414, entry.statusCode().getAsInt());
     }
 
     @Test
@@ -865,6 +864,21 @@ public class HttpServerTest {
         Assertions.assertThat(logEntry.sslSessionId()).hasValueSatisfying(sessionId -> Assertions.assertThat(sessionId).hasSize(64));
         Assertions.assertThat(logEntry.sslPeerNotBefore()).hasValue(Instant.EPOCH);
         Assertions.assertThat(logEntry.sslPeerNotAfter()).hasValue(Instant.EPOCH.plus(100_000, ChronoUnit.DAYS));
+    }
+
+    @Test
+    public void requireThatRequestIsTrackedInAccessLog() throws IOException {
+        InMemoryRequestLog requestLogMock = new InMemoryRequestLog();
+        TestDriver driver = TestDrivers.newConfiguredInstance(
+                new EchoRequestHandler(),
+                new ServerConfig.Builder(),
+                new ConnectorConfig.Builder(),
+                binder -> binder.bind(RequestLog.class).toInstance(requestLogMock));
+        driver.client().newPost("/status.html").setContent("abcdef").execute().expectStatusCode(is(OK));
+        assertThat(driver.close(), is(true));
+        RequestLogEntry entry = requestLogMock.entries().get(0);
+        Assertions.assertThat(entry.statusCode()).hasValue(200);
+        Assertions.assertThat(entry.requestSize()).hasValue(6);
     }
 
     private ContentResponse sendJettyClientRequest(TestDriver testDriver, Path certificateFile, Object tag)
