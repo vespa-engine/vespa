@@ -461,7 +461,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         Cursor root = slime.setObject();
 
         toSlime(stats.load(), root.setObject("load"));
-        toSlime(stats.load(), root.setObject("activeLoad"));
+        toSlime(stats.activeLoad(), root.setObject("activeLoad"));
         Cursor applicationsObject = root.setArray("applications");
         for (int i = 0; i <= 5; i++) {
             if (i >= stats.applicationStats().size()) break;
