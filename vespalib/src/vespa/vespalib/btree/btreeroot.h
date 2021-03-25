@@ -208,6 +208,8 @@ public:
     bool isValid(const NodeAllocatorType &allocator, CompareT comp = CompareT()) const;
 
     bool isValidFrozen(const NodeAllocatorType &allocator, CompareT comp = CompareT()) const;
+
+    void move_nodes(NodeAllocatorType &allocator);
 };
 
 

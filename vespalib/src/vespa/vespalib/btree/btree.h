@@ -149,6 +149,8 @@ public:
         _tree.thaw(itr);
     }
 
+    void compact_worst();
+
     template <typename FunctionType>
     void
     foreach_key(FunctionType func) const
