@@ -47,7 +47,8 @@ public class JSONFormatter implements LogWriter<RequestLogEntry> {
             long time = entry.timestamp().get().toEpochMilli();
             FormatUtil.writeSecondsField(generator, "time", time);
             FormatUtil.writeSecondsField(generator, "duration", entry.duration().get());
-            generator.writeNumberField("responsesize", entry.contentSize().orElse(0));
+            generator.writeNumberField("responsesize", entry.responseSize().orElse(0));
+            generator.writeNumberField("requestsize", entry.requestSize().orElse(0));
             generator.writeNumberField("code", entry.statusCode().orElse(0));
             generator.writeStringField("method", entry.httpMethod().orElse(""));
             generator.writeStringField("uri", getNormalizedURI(entry.rawPath().orElse(null), entry.rawQuery().orElse(null)));

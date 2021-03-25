@@ -38,7 +38,8 @@ public class RequestLogEntry {
     private final String httpVersion;
     private final String hostString;
     private final int statusCode;
-    private final long contentSize;
+    private final long responseSize;
+    private final long requestSize;
     private final String scheme;
     private final String rawPath;
     private final String rawQuery;
@@ -63,7 +64,8 @@ public class RequestLogEntry {
         this.httpVersion = builder.httpVersion;
         this.hostString = builder.hostString;
         this.statusCode = builder.statusCode;
-        this.contentSize = builder.contentSize;
+        this.responseSize = builder.responseSize;
+        this.requestSize = builder.requestSize;
         this.scheme = builder.scheme;
         this.rawPath = builder.rawPath;
         this.rawQuery = builder.rawQuery;
@@ -88,7 +90,8 @@ public class RequestLogEntry {
     public Optional<String> httpVersion() { return Optional.ofNullable(httpVersion); }
     public Optional<String> hostString() { return Optional.ofNullable(hostString); }
     public OptionalInt statusCode() { return optionalInt(statusCode); }
-    public OptionalLong contentSize() { return optionalLong(contentSize); }
+    public OptionalLong responseSize() { return optionalLong(responseSize); }
+    public OptionalLong requestSize() { return optionalLong(requestSize); }
     public Optional<String> scheme() { return Optional.ofNullable(scheme); }
     public Optional<String> rawPath() { return Optional.ofNullable(rawPath); }
     public Optional<String> rawQuery() { return Optional.ofNullable(rawQuery); }
@@ -131,7 +134,8 @@ public class RequestLogEntry {
         private String httpVersion;
         private String hostString;
         private int statusCode = -1;
-        private long contentSize = -1;
+        private long responseSize = -1;
+        private long requestSize = -1;
         private String scheme;
         private String rawPath;
         private String rawQuery;
@@ -155,7 +159,8 @@ public class RequestLogEntry {
         public Builder httpVersion(String httpVersion) { this.httpVersion = requireNonNull(httpVersion); return this; }
         public Builder hostString(String hostString) { this.hostString = requireNonNull(hostString); return this; }
         public Builder statusCode(int statusCode) { this.statusCode = requireNonNegative(statusCode); return this; }
-        public Builder contentSize(long contentSize) { this.contentSize = requireNonNegative(contentSize); return this; }
+        public Builder responseSize(long contentSize) { this.responseSize = requireNonNegative(contentSize); return this; }
+        public Builder requestSize(long contentSize) { this.requestSize = requireNonNegative(contentSize); return this; }
         public Builder scheme(String scheme) { this.scheme = requireNonNull(scheme); return this; }
         public Builder rawPath(String rawPath) { this.rawPath = requireNonNull(rawPath); return this; }
         public Builder rawQuery(String rawQuery) { this.rawQuery = requireNonNull(rawQuery); return this; }

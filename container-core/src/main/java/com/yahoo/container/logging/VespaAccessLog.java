@@ -106,7 +106,7 @@ public final class VespaAccessLog extends AbstractComponent implements RequestLo
                         entry.referer().orElse(null),
                         entry.userAgent().orElse(null),
                         entry.duration().get().toMillis(),
-                        entry.contentSize().orElse(0L),
+                        entry.responseSize().orElse(0L),
                         entry.hitCounts().orElse(null),
                         entry.statusCode().orElse(0)).getBytes(StandardCharsets.UTF_8));
     }

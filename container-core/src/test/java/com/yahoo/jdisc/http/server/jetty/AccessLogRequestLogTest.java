@@ -9,6 +9,7 @@ import com.yahoo.jdisc.http.ServerConfig;
 import org.eclipse.jetty.http.MetaData;
 import org.eclipse.jetty.server.HttpChannel;
 import org.eclipse.jetty.server.HttpConnection;
+import org.eclipse.jetty.server.HttpInput;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.junit.Test;
@@ -144,6 +145,9 @@ public class AccessLogRequestLogTest {
         when(request.getTimeStamp()).thenReturn(0L);
         when(request.getAttribute(JDiscHttpServlet.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY)).thenReturn(new AccessLogEntry());
         when(request.getAttribute("org.eclipse.jetty.server.HttpConnection")).thenReturn(httpConnection);
+        HttpInput httpInput = mock(HttpInput.class);
+        when(httpInput.getContentReceived()).thenReturn(2345L);
+        when(request.getHttpInput()).thenReturn(httpInput);
         return request;
     }
 
