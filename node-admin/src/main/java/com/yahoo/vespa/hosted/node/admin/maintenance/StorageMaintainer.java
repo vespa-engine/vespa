@@ -149,7 +149,7 @@ public class StorageMaintainer {
 
         rules.add(CoredumpCleanupRule.forContainer(pathOnHostUnderContainerVespaHome(context, "var/crash")));
 
-        if (context.node().membership().map(m -> m.type().isContainer()).orElse(false))
+        if (context.node().membership().map(m -> m.type().hasContainer()).orElse(false))
             rules.add(new LinearCleanupRule(() -> FileFinder.files(pathOnHostUnderContainerVespaHome(context, "logs/vespa/qrs")).list(),
                     fa -> monthNormalizer.apply(fa.lastModifiedTime()), Priority.LOWEST, Priority.HIGHEST));
 

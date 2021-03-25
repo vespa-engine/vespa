@@ -98,7 +98,7 @@ public class ContainerOperationsImpl implements ContainerOperations {
         if (context.nodeType() != NodeType.proxy && context.nodeType() != NodeType.controller)
             command.withSecurityOpt("no-new-privileges");
 
-        if (context.node().membership().map(m -> m.type().isContent()).orElse(false))
+        if (context.node().membership().map(m -> m.type().hasContent()).orElse(false))
             command.withSecurityOpt("seccomp=unconfined");
 
         ContainerNetworkMode networkMode = context.networkMode();
