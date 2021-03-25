@@ -64,11 +64,14 @@ find_location_terms(Node *tree) {
     std::vector<ProtonLocationTerm *> retval;
     std::vector<Node *> nodes;
     nodes.push_back(tree);
+    // Note the nodes vector being iterated over is appended in the loop
     for (size_t i = 0; i < nodes.size(); ++i) {
-        if (auto loc = dynamic_cast<ProtonLocationTerm *>(nodes[i])) {
+        Node * node = nodes[i];
+        if (auto loc = dynamic_cast<ProtonLocationTerm *>(node)) {
             retval.push_back(loc);
         }
-        if (auto parent = dynamic_cast<const search::query::Intermediate *>(nodes[i])) {
+        if (node->isIntermediate()) {
+            auto parent = static_cast<const search::query::Intermediate *>(node);
             for (Node * child : parent->getChildren()) {
                 nodes.push_back(child);
             }
