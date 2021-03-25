@@ -6,7 +6,6 @@ import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -40,10 +39,10 @@ public class CuratorArchiveBucketDb extends AbstractComponent implements Archive
     private final StringFlag bucketNameFlag;
 
     @Inject
-    public CuratorArchiveBucketDb(FlagSource flagSource, Controller controller) {
+    public CuratorArchiveBucketDb(Controller controller) {
         this.archiveService = controller.serviceRegistry().archiveService();
         this.curatorDb = controller.curator();
-        this.bucketNameFlag = Flags.SYNC_HOST_LOGS_TO_S3_BUCKET.bindTo(flagSource);
+        this.bucketNameFlag = Flags.SYNC_HOST_LOGS_TO_S3_BUCKET.bindTo(controller.flagSource());
     }
 
     @Override

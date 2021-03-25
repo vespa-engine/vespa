@@ -46,4 +46,13 @@ public class ArchiveBucket {
     public int hashCode() {
         return Objects.hash(bucketArn, keyArn, tenants);
     }
+
+    @Override
+    public String toString() {
+        return "ArchiveBucket{" +
+                "bucketArn='" + bucketArn + '\'' +
+                ", keyArn='" + keyArn + '\'' +
+                ", tenants=" + tenants +
+                '}';
+    }
 }
