@@ -5,9 +5,8 @@
 #include <vespa/vespalib/gtest/gtest.h>
 #include <stdio.h>
 #include <cmath>
+#include <cstring>
 #include <vector>
-#include <onnxruntime/core/session/onnxruntime_cxx_api.h>
-#include <onnxruntime/onnxruntime_cxx_api.h>
 
 using namespace vespalib;
 
@@ -197,15 +196,14 @@ struct BFloat16 {
     }
     return result;
   }
-
-  operator float() const {
-    return ToFloat();
-  }
 };
 
 }  // namespace onnxruntime
 
 TEST(OnnxBFloat16Test, has_same_encoding) {
+    EXPECT_EQ(sizeof(vespalib::BFloat16), sizeof(onnxruntime::BFloat16));
+    EXPECT_EQ(sizeof(vespalib::BFloat16), sizeof(uint16_t));
+    EXPECT_EQ(sizeof(onnxruntime::BFloat16), sizeof(uint16_t));
     vespalib::BFloat16 our_value;
     uint32_t ok_count = 0;
     uint32_t nan_count = 0;
@@ -220,6 +218,7 @@ TEST(OnnxBFloat16Test, has_same_encoding) {
             continue;
         }
         EXPECT_EQ(their_value.val, bits);
+        EXPECT_EQ(memcmp(&our_value, &their_value, sizeof(our_value)), 0);
         if (their_value.val != bits) {
             printf("bad bits %04x -> %04x (onnx)\n", bits, their_value.val);
             continue;
