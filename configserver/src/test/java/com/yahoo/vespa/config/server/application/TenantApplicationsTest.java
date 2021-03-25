@@ -3,18 +3,23 @@ package com.yahoo.vespa.config.server.application;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.component.Version;
+import com.yahoo.concurrent.InThreadExecutorService;
+import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.model.NullConfigModelRegistry;
 import com.yahoo.config.model.application.provider.FilesApplicationPackage;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.text.Utf8;
 import com.yahoo.vespa.config.ConfigKey;
+import com.yahoo.vespa.config.server.ConfigServerDB;
 import com.yahoo.vespa.config.server.ReloadListener;
 import com.yahoo.vespa.config.server.ServerCache;
+import com.yahoo.vespa.config.server.deploy.TenantFileSystemDirs;
 import com.yahoo.vespa.config.server.host.HostRegistry;
 import com.yahoo.vespa.config.server.model.TestModelFactory;
 import com.yahoo.vespa.config.server.modelfactory.ModelFactoryRegistry;
 import com.yahoo.vespa.config.server.monitoring.MetricUpdater;
+import com.yahoo.vespa.config.server.monitoring.Metrics;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import com.yahoo.vespa.curator.CompletionTimeoutException;
@@ -78,7 +83,6 @@ public class TenantApplicationsTest {
                 .configServerDBDir(tempFolder.newFolder("configserverdb").getAbsolutePath())
                 .configDefinitionsDir(tempFolder.newFolder("configdefinitions").getAbsolutePath())
                 .build();
-        HostRegistry hostRegistry = new HostRegistry();
         TenantRepository tenantRepository = new TestTenantRepository.Builder()
                 .withConfigserverConfig(configserverConfig)
                 .withCurator(curator)
@@ -86,12 +90,7 @@ public class TenantApplicationsTest {
                 .build();
         tenantRepository.addTenant(TenantRepository.HOSTED_VESPA_TENANT);
         tenantRepository.addTenant(tenantName);
-        applications = TenantApplications.create(hostRegistry,
-                                                 tenantName,
-                                                 curator,
-                                                 configserverConfig,
-                                                 Clock.systemUTC(),
-                                                 new TenantApplicationsTest.MockReloadListener());
+        applications = createTenantApplications(tenantName, curator, configserverConfig, new MockReloadListener());
     }
 
     @Test
@@ -184,12 +183,7 @@ public class TenantApplicationsTest {
 
     @Test
     public void testListConfigs() throws IOException, SAXException {
-        applications = TenantApplications.create(new HostRegistry(),
-                                                 TenantName.defaultName(),
-                                                 new MockCurator(),
-                                                 configserverConfig,
-                                                 Clock.systemUTC(),
-                                                 new TenantApplicationsTest.MockReloadListener());
+        applications = createTenantApplications(TenantName.defaultName(), new MockCurator(), configserverConfig, new MockReloadListener());
         assertdefaultAppNotFound();
 
         VespaModel model = new VespaModel(FilesApplicationPackage.fromFile(new File("src/test/apps/app")));
@@ -259,12 +253,7 @@ public class TenantApplicationsTest {
     }
 
     private TenantApplications createZKAppRepo() {
-        return TenantApplications.create(new HostRegistry(),
-                                         tenantName,
-                                         curator,
-                                         configserverConfig,
-                                         Clock.systemUTC(),
-                                         new TenantApplicationsTest.MockReloadListener());
+        return createTenantApplications(tenantName, curator, configserverConfig, new MockReloadListener());
     }
 
 
@@ -291,6 +280,24 @@ public class TenantApplicationsTest {
     private ModelFactoryRegistry createRegistry() {
         return new ModelFactoryRegistry(Arrays.asList(new TestModelFactory(vespaVersion),
                                                       new TestModelFactory(new Version(3, 2, 1))));
+    }
+
+
+    // For testing only
+    private TenantApplications createTenantApplications(TenantName tenantName,
+                       Curator curator,
+                       ConfigserverConfig configserverConfig,
+                       ReloadListener reloadListener) {
+        return new TenantApplications(tenantName,
+             curator,
+             new StripedExecutor<>(new InThreadExecutorService()),
+             new InThreadExecutorService(),
+             Metrics.createTestMetrics(),
+             reloadListener,
+             configserverConfig,
+             new HostRegistry(),
+             new TenantFileSystemDirs(new ConfigServerDB(configserverConfig), tenantName),
+             Clock.systemUTC());
     }
 
     private static class MockCurator3ConfigServers extends Curator {

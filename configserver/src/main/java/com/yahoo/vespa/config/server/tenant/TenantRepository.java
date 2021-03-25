@@ -354,7 +354,7 @@ public class TenantRepository {
                                                                     tenantListener);
         log.log(Level.INFO, "Adding tenant '" + tenantName + "'" + ", created " + created +
                             ". Bootstrapping in " + Duration.between(start, Instant.now()));
-        Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, applicationRepo, created);
+        Tenant tenant = new Tenant(tenantName, sessionRepository, applicationRepo, created);
         createAndWriteTenantMetaData(tenant);
         tenants.putIfAbsent(tenantName, tenant);
         notifyNewTenant(tenant);

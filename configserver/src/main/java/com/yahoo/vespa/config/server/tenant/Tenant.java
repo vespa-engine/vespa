@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.tenant;
 
 import com.yahoo.config.provision.TenantName;
@@ -10,8 +10,7 @@ import com.yahoo.vespa.config.server.session.SessionRepository;
 import java.time.Instant;
 
 /**
- * Contains all tenant-level components for a single tenant, dealing with editing sessions and
- * applications for a single tenant.
+ * Tenant, mostly a wrapper for sessions and applications belonging to a tenant
  *
  * @author vegardh
  * @author Ulf Lilleengen
@@ -31,22 +30,16 @@ public class Tenant {
     // Protected due to being subclassed in a system test
     protected Tenant(TenantName name,
                      SessionRepository sessionRepository,
-                     RequestHandler requestHandler,
                      TenantApplications applicationRepo,
                      Instant created) {
         this.name = name;
         this.path = TenantRepository.getTenantPath(name);
-        this.requestHandler = requestHandler;
+        this.requestHandler = applicationRepo;
         this.sessionRepository = sessionRepository;
         this.applicationRepo = applicationRepo;
         this.created = created;
     }
 
-    /**
-     * The request handler for this
-     *
-     * @return handler
-     */
     public RequestHandler getRequestHandler() {
         return requestHandler;
     }
