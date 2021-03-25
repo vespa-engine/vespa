@@ -38,7 +38,7 @@ public class AthenzCredentials extends Credentials {
     /** Returns the Okta access token required for Athenz tenancy operation */
     public OktaAccessToken accessToken() { return accessToken; }
 
-    /**     /** Returns the Okta identity token required for Athenz tenancy operation */
+    /** Returns the Okta identity token required for Athenz tenancy operation */
     public OktaIdentityToken identityToken() { return identityToken; }
 
 

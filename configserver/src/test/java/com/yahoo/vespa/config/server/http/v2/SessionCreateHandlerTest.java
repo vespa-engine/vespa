@@ -90,13 +90,13 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     public void require_that_from_parameter_cannot_be_set_if_data_in_request() throws IOException {
         HttpRequest request = post(Collections.singletonMap("from", "active"));
         HttpResponse response = createHandler().handle(request);
-        assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Parameter 'from' is illegal for POST");
+        assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.ErrorCode.BAD_REQUEST, "Parameter 'from' is illegal for POST");
     }
 
     @Test
     public void require_that_post_request_must_contain_data() throws IOException {
         HttpResponse response = createHandler().handle(post());
-        assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Request contains no data");
+        assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.ErrorCode.BAD_REQUEST, "Request contains no data");
     }
 
     @Test
@@ -104,13 +104,13 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
         HashMap<String, String> headers = new HashMap<>(); // no Content-Type header
         File outFile = CompressedApplicationInputStreamTest.createTarFile();
         HttpResponse response = createHandler().handle(post(outFile, headers, null));
-        assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Request contains no Content-Type header");
+        assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.ErrorCode.BAD_REQUEST, "Request contains no Content-Type header");
     }
 
     private void assertIllegalFromParameter(String fromValue) throws IOException {
         File outFile = CompressedApplicationInputStreamTest.createTarFile();
         HttpRequest request = post(outFile, postHeaders, Collections.singletonMap("from", fromValue));
-        assertHttpStatusCodeErrorCodeAndMessage(createHandler().handle(request), BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Parameter 'from' has illegal value '" + fromValue + "'");
+        assertHttpStatusCodeErrorCodeAndMessage(createHandler().handle(request), BAD_REQUEST, HttpErrorResponse.ErrorCode.BAD_REQUEST, "Parameter 'from' has illegal value '" + fromValue + "'");
     }
 
     @Test
@@ -130,8 +130,8 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
     public void require_that_handler_does_not_support_get() throws IOException {
         HttpResponse response = createHandler().handle(HttpRequest.createTestRequest(pathPrefix, GET));
         assertHttpStatusCodeErrorCodeAndMessage(response, METHOD_NOT_ALLOWED,
-                                                            HttpErrorResponse.errorCodes.METHOD_NOT_ALLOWED,
-                                                            "Method 'GET' is not supported");
+                                                HttpErrorResponse.ErrorCode.METHOD_NOT_ALLOWED,
+                                                "Method 'GET' is not supported");
     }
 
     @Test
@@ -140,7 +140,7 @@ public class SessionCreateHandlerTest extends SessionHandlerTest {
         new FileWriter(outFile).write("rubbish");
         HttpResponse response = createHandler().handle(post(outFile));
         assertHttpStatusCodeErrorCodeAndMessage(response, INTERNAL_SERVER_ERROR,
-                                                HttpErrorResponse.errorCodes.INTERNAL_SERVER_ERROR,
+                                                HttpErrorResponse.ErrorCode.INTERNAL_SERVER_ERROR,
                                                 "Unable to create compressed application stream");
     }
 

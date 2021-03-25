@@ -8,14 +8,13 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.logging.Level;
-import java.util.logging.LogManager;
 import java.util.logging.Logger;
 
 public class ProtonMetrics {
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
-    private static final Logger logger = LogManager.getLogManager().getLogger(ProtonMetrics.class.getName());
+    private static final Logger logger = Logger.getLogger(ProtonMetrics.class.getName());
 
     public static final String DOCUMENTS_ACTIVE_COUNT = "documentsActiveCount";
     public static final String DOCUMENTS_READY_COUNT = "documentsReadyCount";

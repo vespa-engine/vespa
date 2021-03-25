@@ -98,7 +98,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void require_error_when_session_id_does_not_exist() throws Exception {
         // No session with this id exists
         HttpResponse response = request(HttpRequest.Method.PUT, 9999L);
-        assertHttpStatusCodeErrorCodeAndMessage(response, NOT_FOUND, HttpErrorResponse.errorCodes.NOT_FOUND, "Session 9999 was not found");
+        assertHttpStatusCodeErrorCodeAndMessage(response, NOT_FOUND, HttpErrorResponse.ErrorCode.NOT_FOUND, "Session 9999 was not found");
     }
 
     @Test
@@ -106,7 +106,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         final String session = "notanumber/prepared";
         HttpResponse response = createHandler().handle(SessionHandlerTest.createTestRequest(pathPrefix + session));
         assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST,
-                                                HttpErrorResponse.errorCodes.BAD_REQUEST,
+                                                HttpErrorResponse.ErrorCode.BAD_REQUEST,
                                                 "Session id in request is not a number, request was 'http://" + hostname + ":" + port + pathPrefix + session + "'");
     }
 
@@ -119,7 +119,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     private void testUnsupportedMethod(com.yahoo.container.jdisc.HttpRequest request) throws Exception {
         HttpResponse response = createHandler().handle(request);
         assertHttpStatusCodeErrorCodeAndMessage(response, METHOD_NOT_ALLOWED,
-                                                HttpErrorResponse.errorCodes.METHOD_NOT_ALLOWED,
+                                                HttpErrorResponse.ErrorCode.METHOD_NOT_ALLOWED,
                                                 "Method '" + request.getMethod().name() + "' is not supported");
     }
 
@@ -166,7 +166,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
         HttpResponse getResponse = request(HttpRequest.Method.GET, sessionId);
         assertHttpStatusCodeErrorCodeAndMessage(getResponse, BAD_REQUEST,
-                                                HttpErrorResponse.errorCodes.BAD_REQUEST,
+                                                HttpErrorResponse.ErrorCode.BAD_REQUEST,
                                                 "Session not prepared: " + sessionId);
 
         request(HttpRequest.Method.PUT, sessionId);
@@ -174,7 +174,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
 
         getResponse = request(HttpRequest.Method.GET, sessionId);
         assertHttpStatusCodeErrorCodeAndMessage(getResponse, BAD_REQUEST,
-                                                HttpErrorResponse.errorCodes.BAD_REQUEST,
+                                                HttpErrorResponse.ErrorCode.BAD_REQUEST,
                                                 "Session is active: " + sessionId);
     }
 
@@ -182,7 +182,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
     public void require_get_response_error_when_session_id_does_not_exist() throws Exception {
         HttpResponse getResponse = request(HttpRequest.Method.GET, 9999L);
         assertHttpStatusCodeErrorCodeAndMessage(getResponse, NOT_FOUND,
-                                                HttpErrorResponse.errorCodes.NOT_FOUND,
+                                                HttpErrorResponse.ErrorCode.NOT_FOUND,
                                                 "Session 9999 was not found");
     }
 
@@ -256,7 +256,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
         assertEquals(400, response.getStatus());
         Slime data = getData(response);
-        assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.errorCodes.OUT_OF_CAPACITY.name()));
+        assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.ErrorCode.OUT_OF_CAPACITY.name()));
         assertThat(data.get().field("message").asString(), is(exceptionMessage));
     }
 
@@ -271,7 +271,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
         assertEquals(500, response.getStatus());
         Slime data = getData(response);
-        assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.errorCodes.INTERNAL_SERVER_ERROR.name()));
+        assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.ErrorCode.INTERNAL_SERVER_ERROR.name()));
         assertThat(data.get().field("message").asString(), is(exceptionMessage));
     }
 
@@ -286,7 +286,7 @@ public class SessionPrepareHandlerTest extends SessionHandlerTest {
         HttpResponse response = handler.handle(createTestRequest(pathPrefix, HttpRequest.Method.PUT, Cmd.PREPARED, sessionId));
         assertEquals(500, response.getStatus());
         Slime data = getData(response);
-        assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.errorCodes.APPLICATION_LOCK_FAILURE.name()));
+        assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.ErrorCode.APPLICATION_LOCK_FAILURE.name()));
         assertThat(data.get().field("message").asString(), is(exceptionMessage));
     }
 

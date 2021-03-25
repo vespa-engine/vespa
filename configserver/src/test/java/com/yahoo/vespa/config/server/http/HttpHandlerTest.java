@@ -31,7 +31,7 @@ public class HttpHandlerTest {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         response.render(baos);
         Slime data = SlimeUtils.jsonToSlime(baos.toByteArray());
-        assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.errorCodes.INVALID_APPLICATION_PACKAGE.name()));
+        assertThat(data.get().field("error-code").asString(), is(HttpErrorResponse.ErrorCode.INVALID_APPLICATION_PACKAGE.name()));
         assertThat(data.get().field("message").asString(), is(message));
     }
 

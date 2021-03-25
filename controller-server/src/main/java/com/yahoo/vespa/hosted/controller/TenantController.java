@@ -71,12 +71,6 @@ public class TenantController {
                       .collect(Collectors.toList());
     }
 
-    // TODO jonmv: Remove.
-    /** Returns the list of tenants accessible to the given user. */
-    public List<Tenant> asList(Credentials credentials) {
-        return ((AthenzFacade) accessControl).accessibleTenants(asList(), credentials);
-    }
-
     /** Locks a tenant for modification and applies the given action. */
     public <T extends LockedTenant> void lockIfPresent(TenantName name, Class<T> token, Consumer<T> action) {
         try (Lock lock = lock(name)) {

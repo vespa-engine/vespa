@@ -153,13 +153,13 @@ public class HttpListConfigsHandlerTest {
     public void require_error_on_bad_request() throws IOException {
         HttpRequest req = createTestRequest(baseUri + "foobar/hosts/localhost/sentinel/", GET);
         HttpResponse resp = namedHandler.handle(req);
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(resp, BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Illegal config, must be of form namespace.name.");
+        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(resp, BAD_REQUEST, HttpErrorResponse.ErrorCode.BAD_REQUEST, "Illegal config, must be of form namespace.name.");
         req = createTestRequest(baseUri + "foo.barNOPE/conf/id/", GET);
         resp = namedHandler.handle(req);
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(resp, NOT_FOUND, HttpErrorResponse.errorCodes.NOT_FOUND, "No such config: foo.barNOPE");
+        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(resp, NOT_FOUND, HttpErrorResponse.ErrorCode.NOT_FOUND, "No such config: foo.barNOPE");
         req = createTestRequest(baseUri + "cloud.config.sentinel/conf/id/NOPE/", GET);
         resp = namedHandler.handle(req);
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(resp, NOT_FOUND, HttpErrorResponse.errorCodes.NOT_FOUND, "No such config id: conf/id/NOPE");
+        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(resp, NOT_FOUND, HttpErrorResponse.ErrorCode.NOT_FOUND, "No such config id: conf/id/NOPE");
     }
 
     @Test
