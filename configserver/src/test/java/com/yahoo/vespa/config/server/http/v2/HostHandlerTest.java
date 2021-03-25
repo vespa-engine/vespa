@@ -91,7 +91,7 @@ public class HostHandlerTest {
     private void assertNotAllowed(Method method) throws IOException {
         String url = urlPrefix + "somehostname";
         executeAndAssertResponse(url, Response.Status.METHOD_NOT_ALLOWED,
-                                 HttpErrorResponse.errorCodes.METHOD_NOT_ALLOWED,
+                                 HttpErrorResponse.ErrorCode.METHOD_NOT_ALLOWED,
                 "{\"error-code\":\"METHOD_NOT_ALLOWED\",\"message\":\"Method '" + method + "' is not supported\"}",
                                  method);
     }
@@ -111,10 +111,10 @@ public class HostHandlerTest {
     private void assertErrorForUnknownHost(String hostname, int expectedStatus, String expectedResponse) throws IOException {
         String url = urlPrefix + hostname;
         HttpResponse response = handler.handle(HttpRequest.createTestRequest(url, com.yahoo.jdisc.http.HttpRequest.Method.GET));
-        assertHttpStatusCodeErrorCodeAndMessage(response, expectedStatus, HttpErrorResponse.errorCodes.NOT_FOUND, expectedResponse);
+        assertHttpStatusCodeErrorCodeAndMessage(response, expectedStatus, HttpErrorResponse.ErrorCode.NOT_FOUND, expectedResponse);
     }
 
-    private void executeAndAssertResponse(String url, int expectedStatus, HttpErrorResponse.errorCodes errorCode,
+    private void executeAndAssertResponse(String url, int expectedStatus, HttpErrorResponse.ErrorCode errorCode,
                                           String expectedResponse, Method method) throws IOException {
         HttpResponse response = handler.handle(HttpRequest.createTestRequest(url, method));
         assertHttpStatusCodeErrorCodeAndMessage(response, expectedStatus, errorCode, expectedResponse);

@@ -111,7 +111,7 @@ public class SessionActiveHandlerTest {
         HttpResponse response = handler.handle(request);
         HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response,
                                                             METHOD_NOT_ALLOWED,
-                                                            HttpErrorResponse.errorCodes.METHOD_NOT_ALLOWED,
+                                                            HttpErrorResponse.ErrorCode.METHOD_NOT_ALLOWED,
                                                             "Method '" + request.getMethod().name() + "' is not supported");
     }
 

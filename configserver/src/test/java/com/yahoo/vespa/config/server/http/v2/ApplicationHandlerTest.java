@@ -186,7 +186,7 @@ public class ApplicationHandlerTest {
         deleteAndAssertResponse(myTenantApplicationId,
                                 Zone.defaultZone(),
                                 Response.Status.NOT_FOUND,
-                                HttpErrorResponse.errorCodes.NOT_FOUND,
+                                HttpErrorResponse.ErrorCode.NOT_FOUND,
                                 "Unable to delete mytenant.default.default: Not found");
     }
 
@@ -543,7 +543,7 @@ public class ApplicationHandlerTest {
 
     private void assertNotAllowed(Method method) throws IOException {
         String url = "http://myhost:14000/application/v2/tenant/" + mytenantName + "/application/default";
-        deleteAndAssertResponse(url, Response.Status.METHOD_NOT_ALLOWED, HttpErrorResponse.errorCodes.METHOD_NOT_ALLOWED, "{\"error-code\":\"METHOD_NOT_ALLOWED\",\"message\":\"Method '" + method + "' is not supported\"}",
+        deleteAndAssertResponse(url, Response.Status.METHOD_NOT_ALLOWED, HttpErrorResponse.ErrorCode.METHOD_NOT_ALLOWED, "{\"error-code\":\"METHOD_NOT_ALLOWED\",\"message\":\"Method '" + method + "' is not supported\"}",
                                 method);
     }
 
@@ -558,16 +558,16 @@ public class ApplicationHandlerTest {
         deleteAndAssertResponse(applicationId, Zone.defaultZone(), Response.Status.OK, null, true);
     }
 
-    private void deleteAndAssertResponse(ApplicationId applicationId, Zone zone, int expectedStatus, HttpErrorResponse.errorCodes errorCode, boolean fullAppIdInUrl) throws IOException {
+    private void deleteAndAssertResponse(ApplicationId applicationId, Zone zone, int expectedStatus, HttpErrorResponse.ErrorCode errorCode, boolean fullAppIdInUrl) throws IOException {
         String expectedResponse = "{\"message\":\"Application '" + applicationId + "' deleted\"}";
         deleteAndAssertResponse(toUrlPath(applicationId, zone, fullAppIdInUrl), expectedStatus, errorCode, expectedResponse, Method.DELETE);
     }
 
-    private void deleteAndAssertResponse(ApplicationId applicationId, Zone zone, int expectedStatus, HttpErrorResponse.errorCodes errorCode, String expectedResponse) throws IOException {
+    private void deleteAndAssertResponse(ApplicationId applicationId, Zone zone, int expectedStatus, HttpErrorResponse.ErrorCode errorCode, String expectedResponse) throws IOException {
         deleteAndAssertResponse(toUrlPath(applicationId, zone, true), expectedStatus, errorCode, expectedResponse, Method.DELETE);
     }
 
-    private void deleteAndAssertResponse(String url, int expectedStatus, HttpErrorResponse.errorCodes errorCode, String expectedResponse, Method method) throws IOException {
+    private void deleteAndAssertResponse(String url, int expectedStatus, HttpErrorResponse.ErrorCode errorCode, String expectedResponse, Method method) throws IOException {
         ApplicationHandler handler = createApplicationHandler();
         HttpResponse response = handler.handle(createTestRequest(url, method));
         if (expectedStatus == 200) {

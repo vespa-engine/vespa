@@ -24,7 +24,7 @@ public class HttpErrorResponseTest {
     @Test
     public void testThatHttpErrorResponseProvidesCorrectErrorMessage() throws IOException {
         HttpErrorResponse response = HttpErrorResponse.badRequest("Error doing something");
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Error doing something");
+        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.ErrorCode.BAD_REQUEST, "Error doing something");
     }
 
     @Test

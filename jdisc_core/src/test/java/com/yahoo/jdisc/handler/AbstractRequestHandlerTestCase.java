@@ -10,9 +10,9 @@ import org.junit.Test;
 
 import java.net.URI;
 import java.nio.ByteBuffer;
-import java.nio.charset.Charset;
 import java.util.concurrent.TimeUnit;
 
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
@@ -25,8 +25,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class AbstractRequestHandlerTestCase {
 
-    private static final Charset UTF8 = Charset.forName("utf-8");
-    private static int NUM_REQUESTS = 666;
+    private static final int NUM_REQUESTS = 666;
 
     @Test
     public void requireThatHandleTimeoutIsImplemented() throws Exception {
@@ -56,7 +55,7 @@ public class AbstractRequestHandlerTestCase {
 
             ByteBuffer buf = responseHandler.content.read();
             assertNotNull(buf);
-            assertEquals("Hello World!", new String(buf.array(), buf.arrayOffset() + buf.position(), buf.remaining(), UTF8));
+            assertEquals("Hello World!", new String(buf.array(), buf.arrayOffset() + buf.position(), buf.remaining(), UTF_8));
             assertNull(responseHandler.content.read());
         }
         assertTrue(driver.close());

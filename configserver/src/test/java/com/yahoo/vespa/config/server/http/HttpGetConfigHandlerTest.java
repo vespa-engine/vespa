@@ -81,14 +81,14 @@ public class HttpGetConfigHandlerTest {
         final String illegalConfigNameUri = baseUri + "/foobar/myid";
 
         HttpResponse response = handler.handle(HttpRequest.createTestRequest(nonExistingConfigNameUri, GET));
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, NOT_FOUND, HttpErrorResponse.errorCodes.NOT_FOUND, "No such config: nonexisting.config");
+        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, NOT_FOUND, HttpErrorResponse.ErrorCode.NOT_FOUND, "No such config: nonexisting.config");
         assertTrue(SessionHandlerTest.getRenderedString(response).contains("No such config:"));
         response = handler.handle(HttpRequest.createTestRequest(nonExistingConfigUri, GET));
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, NOT_FOUND, HttpErrorResponse.errorCodes.NOT_FOUND, "No such config id: myid/nonexisting/id");
+        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, NOT_FOUND, HttpErrorResponse.ErrorCode.NOT_FOUND, "No such config id: myid/nonexisting/id");
         assertEquals(response.getContentType(), "application/json");
         assertTrue(SessionHandlerTest.getRenderedString(response).contains("No such config id:"));
         response = handler.handle(HttpRequest.createTestRequest(illegalConfigNameUri, GET));
-        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.errorCodes.BAD_REQUEST, "Illegal config, must be of form namespace.name.");
+        HandlerTest.assertHttpStatusCodeErrorCodeAndMessage(response, BAD_REQUEST, HttpErrorResponse.ErrorCode.BAD_REQUEST, "Illegal config, must be of form namespace.name.");
     }
 
     @Test

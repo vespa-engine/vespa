@@ -37,7 +37,7 @@ public class HttpErrorResponse extends HttpResponse {
         }
     }
 
-    public enum errorCodes {
+    public enum ErrorCode {
         APPLICATION_LOCK_FAILURE,
         BAD_REQUEST,
         ACTIVATION_CONFLICT,
@@ -54,55 +54,55 @@ public class HttpErrorResponse extends HttpResponse {
     }
 
     public static HttpErrorResponse notFoundError(String msg) {
-        return new HttpErrorResponse(NOT_FOUND, errorCodes.NOT_FOUND.name(), msg);
+        return new HttpErrorResponse(NOT_FOUND, ErrorCode.NOT_FOUND.name(), msg);
     }
 
     public static HttpErrorResponse internalServerError(String msg) {
-        return new HttpErrorResponse(INTERNAL_SERVER_ERROR, errorCodes.INTERNAL_SERVER_ERROR.name(), msg);
+        return new HttpErrorResponse(INTERNAL_SERVER_ERROR, ErrorCode.INTERNAL_SERVER_ERROR.name(), msg);
     }
 
     public static HttpErrorResponse invalidApplicationPackage(String msg) {
-        return new HttpErrorResponse(BAD_REQUEST, errorCodes.INVALID_APPLICATION_PACKAGE.name(), msg);
+        return new HttpErrorResponse(BAD_REQUEST, ErrorCode.INVALID_APPLICATION_PACKAGE.name(), msg);
     }
 
     public static HttpErrorResponse outOfCapacity(String msg) {
-        return new HttpErrorResponse(BAD_REQUEST, errorCodes.OUT_OF_CAPACITY.name(), msg);
+        return new HttpErrorResponse(BAD_REQUEST, ErrorCode.OUT_OF_CAPACITY.name(), msg);
     }
 
     public static HttpErrorResponse badRequest(String msg) {
-        return new HttpErrorResponse(BAD_REQUEST, errorCodes.BAD_REQUEST.name(), msg);
+        return new HttpErrorResponse(BAD_REQUEST, ErrorCode.BAD_REQUEST.name(), msg);
     }
 
     public static HttpErrorResponse conflictWhenActivating(String msg) {
-        return new HttpErrorResponse(CONFLICT, errorCodes.ACTIVATION_CONFLICT.name(), msg);
+        return new HttpErrorResponse(CONFLICT, ErrorCode.ACTIVATION_CONFLICT.name(), msg);
     }
 
     public static HttpErrorResponse methodNotAllowed(String msg) {
-        return new HttpErrorResponse(METHOD_NOT_ALLOWED, errorCodes.METHOD_NOT_ALLOWED.name(), msg);
+        return new HttpErrorResponse(METHOD_NOT_ALLOWED, ErrorCode.METHOD_NOT_ALLOWED.name(), msg);
     }
 
     public static HttpResponse unknownVespaVersion(String message) {
-        return new HttpErrorResponse(BAD_REQUEST, errorCodes.UNKNOWN_VESPA_VERSION.name(), message);
+        return new HttpErrorResponse(BAD_REQUEST, ErrorCode.UNKNOWN_VESPA_VERSION.name(), message);
     }
 
     public static HttpResponse requestTimeout(String message) {
-        return new HttpErrorResponse(REQUEST_TIMEOUT, errorCodes.REQUEST_TIMEOUT.name(), message);
+        return new HttpErrorResponse(REQUEST_TIMEOUT, ErrorCode.REQUEST_TIMEOUT.name(), message);
     }
 
     public static HttpErrorResponse applicationLockFailure(String msg) {
-        return new HttpErrorResponse(INTERNAL_SERVER_ERROR, errorCodes.APPLICATION_LOCK_FAILURE.name(), msg);
+        return new HttpErrorResponse(INTERNAL_SERVER_ERROR, ErrorCode.APPLICATION_LOCK_FAILURE.name(), msg);
     }
 
     public static HttpErrorResponse parentHostNotReady(String msg) {
-        return new HttpErrorResponse(CONFLICT, errorCodes.PARENT_HOST_NOT_READY.name(), msg);
+        return new HttpErrorResponse(CONFLICT, ErrorCode.PARENT_HOST_NOT_READY.name(), msg);
     }
 
     public static HttpErrorResponse certificateNotReady(String msg) {
-        return new HttpErrorResponse(CONFLICT, errorCodes.CERTIFICATE_NOT_READY.name(), msg);
+        return new HttpErrorResponse(CONFLICT, ErrorCode.CERTIFICATE_NOT_READY.name(), msg);
     }
 
     public static HttpErrorResponse loadBalancerNotReady(String msg) {
-        return new HttpErrorResponse(CONFLICT, errorCodes.LOAD_BALANCER_NOT_READY.name(), msg);
+        return new HttpErrorResponse(CONFLICT, ErrorCode.LOAD_BALANCER_NOT_READY.name(), msg);
     }
 
     @Override
