@@ -2,6 +2,8 @@
 
 #include <vespa/vespalib/datastore/unique_store.hpp>
 #include <vespa/vespalib/datastore/unique_store_dictionary.hpp>
+#include <vespa/vespalib/datastore/simple_hash_map.h>
+#include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
 #include <vespa/log/log.h>
@@ -36,12 +38,13 @@ public:
     }
 };
 
+template <typename UniqueStoreDictionaryType>
 struct DictionaryReadTest : public ::testing::Test {
-    DefaultUniqueStoreDictionary dict;
+    UniqueStoreDictionaryType dict;
     IUniqueStoreDictionary::ReadSnapshot::UP snapshot;
 
     DictionaryReadTest()
-        : dict(std::unique_ptr<EntryComparator>()),
+        : dict(std::make_unique<Comparator>(0)),
           snapshot()
     {
     }
@@ -56,35 +59,56 @@ struct DictionaryReadTest : public ::testing::Test {
     }
 };
 
-TEST_F(DictionaryReadTest, can_count_occurrences_of_a_key)
+using DictionaryReadTestTypes = ::testing::Types<DefaultUniqueStoreDictionary, UniqueStoreDictionary<DefaultDictionary, IUniqueStoreDictionary, SimpleHashMap>>;
+VESPA_GTEST_TYPED_TEST_SUITE(DictionaryReadTest, DictionaryReadTestTypes);
+
+// Disable warnings emitted by gtest generated files when using typed tests
+#pragma GCC diagnostic push
+#ifndef __clang__
+#pragma GCC diagnostic ignored "-Wsuggest-override"
+#endif
+
+TYPED_TEST(DictionaryReadTest, can_count_occurrences_of_a_key)
 {
-    add(3).add(5).take_snapshot();
-    EXPECT_EQ(0, snapshot->count(Comparator(2)));
-    EXPECT_EQ(1, snapshot->count(Comparator(3)));
-    EXPECT_EQ(0, snapshot->count(Comparator(4)));
-    EXPECT_EQ(1, snapshot->count(Comparator(5)));
+    this->add(3).add(5).take_snapshot();
+    EXPECT_EQ(0, this->snapshot->count(Comparator(2)));
+    EXPECT_EQ(1, this->snapshot->count(Comparator(3)));
+    EXPECT_EQ(0, this->snapshot->count(Comparator(4)));
+    EXPECT_EQ(1, this->snapshot->count(Comparator(5)));
 }
 
-TEST_F(DictionaryReadTest, can_count_occurrences_of_keys_in_a_range)
+TYPED_TEST(DictionaryReadTest, can_count_occurrences_of_keys_in_a_range)
 {
-    add(3).add(5).add(7).add(9).take_snapshot();
-    EXPECT_EQ(1, snapshot->count_in_range(Comparator(3), Comparator(3)));
-    EXPECT_EQ(1, snapshot->count_in_range(Comparator(3), Comparator(4)));
-    EXPECT_EQ(2, snapshot->count_in_range(Comparator(3), Comparator(5)));
-    EXPECT_EQ(3, snapshot->count_in_range(Comparator(3), Comparator(7)));
-    EXPECT_EQ(4, snapshot->count_in_range(Comparator(3), Comparator(9)));
-    EXPECT_EQ(4, snapshot->count_in_range(Comparator(3), Comparator(10)));
+    this->add(3).add(5).add(7).add(9).take_snapshot();
+    EXPECT_EQ(1, this->snapshot->count_in_range(Comparator(3), Comparator(3)));
+    EXPECT_EQ(1, this->snapshot->count_in_range(Comparator(3), Comparator(4)));
+    EXPECT_EQ(2, this->snapshot->count_in_range(Comparator(3), Comparator(5)));
+    EXPECT_EQ(3, this->snapshot->count_in_range(Comparator(3), Comparator(7)));
+    EXPECT_EQ(4, this->snapshot->count_in_range(Comparator(3), Comparator(9)));
+    EXPECT_EQ(4, this->snapshot->count_in_range(Comparator(3), Comparator(10)));
 
-    EXPECT_EQ(0, snapshot->count_in_range(Comparator(5), Comparator(3)));
+    EXPECT_EQ(0, this->snapshot->count_in_range(Comparator(5), Comparator(3)));
 }
 
-TEST_F(DictionaryReadTest, can_iterate_all_keys)
+TYPED_TEST(DictionaryReadTest, can_iterate_all_keys)
 {
     using EntryRefVector = std::vector<EntryRef>;
-    add(3).add(5).add(7).take_snapshot();
+    this->add(3).add(5).add(7).take_snapshot();
     EntryRefVector refs;
-    snapshot->foreach_key([&](EntryRef ref){ refs.emplace_back(ref); });
+    this->snapshot->foreach_key([&](EntryRef ref){ refs.emplace_back(ref); });
     EXPECT_EQ(EntryRefVector({EntryRef(3), EntryRef(5), EntryRef(7)}), refs);
 }
+
+TYPED_TEST(DictionaryReadTest, memory_usage_is_reported)
+{
+    auto initial_usage = this->dict.get_memory_usage();
+    this->add(10);
+    auto usage = this->dict.get_memory_usage();
+    EXPECT_LT(initial_usage.usedBytes(), usage.usedBytes());
+    EXPECT_EQ(initial_usage.deadBytes(), usage.deadBytes());
+    EXPECT_EQ(0, usage.allocatedBytesOnHold());
+}
+
+#pragma GCC diagnostic pop
 
 GTEST_MAIN_RUN_ALL_TESTS()

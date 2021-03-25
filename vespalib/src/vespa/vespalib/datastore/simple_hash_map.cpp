@@ -3,6 +3,7 @@
 #include "simple_hash_map.h"
 #include "fixed_size_hash_map.h"
 #include "entry_comparator.h"
+#include <vespa/vespalib/util/memoryusage.h>
 
 namespace vespalib::datastore {
 
@@ -61,8 +62,8 @@ SimpleHashMap::alloc_stripe(size_t stripe)
 void
 SimpleHashMap::hold_stripe(std::unique_ptr<const FixedSizeHashMap> map)
 {
-    // TODO: Provider proper held size
-    auto hold = std::make_unique<SimpleHashMapStripeHeld>(0, std::move(map));
+    auto usage = map->get_memory_usage();
+    auto hold = std::make_unique<SimpleHashMapStripeHeld>(usage.allocatedBytes(), std::move(map));
     _gen_holder.hold(std::move(hold));
 }
 
@@ -146,6 +147,22 @@ SimpleHashMap::size() const noexcept
         }
     }
     return result;
+}
+
+MemoryUsage
+SimpleHashMap::get_memory_usage() const
+{
+    MemoryUsage memory_usage(sizeof(SimpleHashMap), sizeof(SimpleHashMap), 0, 0);
+    for (size_t i = 0; i < num_stripes; ++i) {
+        auto map = _maps[i].load(std::memory_order_relaxed);
+        if (map != nullptr) {
+            memory_usage.merge(map->get_memory_usage());
+        }
+    }
+    size_t gen_holder_held_bytes = _gen_holder.getHeldBytes();
+    memory_usage.incAllocatedBytes(gen_holder_held_bytes);
+    memory_usage.incAllocatedBytesOnHold(gen_holder_held_bytes);
+    return memory_usage;
 }
 
 }
