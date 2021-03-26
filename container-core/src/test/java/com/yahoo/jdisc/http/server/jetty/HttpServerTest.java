@@ -189,7 +189,7 @@ public class HttpServerTest {
                 binder -> binder.bind(RequestLog.class).toInstance(requestLogMock));
         driver.client().get("/status.html")
                 .expectStatusCode(is(REQUEST_URI_TOO_LONG));
-        RequestLogEntry entry = requestLogMock.poll(Duration.ofSeconds(30));
+        RequestLogEntry entry = requestLogMock.poll(Duration.ofSeconds(5));
         assertEquals(414, entry.statusCode().getAsInt());
         assertThat(driver.close(), is(true));
     }
@@ -876,10 +876,10 @@ public class HttpServerTest {
                 new ConnectorConfig.Builder(),
                 binder -> binder.bind(RequestLog.class).toInstance(requestLogMock));
         driver.client().newPost("/status.html").setContent("abcdef").execute().expectStatusCode(is(OK));
-        assertThat(driver.close(), is(true));
-        RequestLogEntry entry = requestLogMock.poll(Duration.ofSeconds(30));
+        RequestLogEntry entry = requestLogMock.poll(Duration.ofSeconds(5));
         Assertions.assertThat(entry.statusCode()).hasValue(200);
         Assertions.assertThat(entry.requestSize()).hasValue(6);
+        assertThat(driver.close(), is(true));
     }
 
     private ContentResponse sendJettyClientRequest(TestDriver testDriver, Path certificateFile, Object tag)
