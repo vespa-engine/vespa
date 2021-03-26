@@ -51,7 +51,7 @@ public abstract class TermProduction extends Production {
 
     /** Sets the term type to produce */
     public void setTermType(TermType termType) {
-        Validator.ensureNotNull("Type of produced Term",termType);
+        Validator.ensureNotNull("Type of produced Term", termType);
         this.termType = termType;
     }
 
@@ -61,18 +61,19 @@ public abstract class TermProduction extends Production {
      */
     protected void insertMatch(RuleEvaluation e, Match matched, Item newItem, int offset) {
         newItem.setWeight(getWeight());
-        int insertPosition=matched.getPosition()+offset;
+        int insertPosition = matched.getPosition()+offset;
 
         // This check is necessary (?) because earlier items may have been removed
         // after we recorded the match position. It is sort of hackish. A cleaner
         // solution would be to update the match position on changes
-        if (insertPosition>matched.getParent().getItemCount()) {
-            insertPosition=matched.getParent().getItemCount();
+        if (insertPosition > matched.getParent().getItemCount()) {
+            insertPosition = matched.getParent().getItemCount();
         }
 
-        e.insertItem(newItem,matched.getParent(),insertPosition,getTermType());
-        if (e.getTraceLevel()>=6)
-            e.trace(6,"Inserted item '" + newItem + "' at position " + insertPosition + " producing " + e.getEvaluation().getQuery().getModel().getQueryTree());
+        e.insertItem(newItem, matched.getParent(), insertPosition,getTermType());
+        if (e.getTraceLevel() >= 6)
+            e.trace(6, "Inserted item '" + newItem + "' at position " + insertPosition + " producing " +
+                       e.getEvaluation().getQuery().getModel().getQueryTree());
     }
 
     protected String getLabelString() {

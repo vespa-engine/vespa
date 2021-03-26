@@ -48,7 +48,7 @@ public class ReferenceTermProduction extends TermProduction {
      * @param label the label of the produced term
      * @param reference the label of the condition this should take it's value from
      */
-    public ReferenceTermProduction(String label,String reference) {
+    public ReferenceTermProduction(String label, String reference) {
         super(label);
         setReference(reference);
     }
@@ -60,15 +60,15 @@ public class ReferenceTermProduction extends TermProduction {
      * @param reference the label of the condition this should take it's value from
      * @param termType the type of term to produce
      */
-    public ReferenceTermProduction(String label,String reference, TermType termType) {
-        super(label,termType);
+    public ReferenceTermProduction(String label, String reference, TermType termType) {
+        super(label, termType);
         setReference(reference);
     }
 
     /** The label of the condition this should take its value from, never null */
     public void setReference(String reference) {
         Validator.ensureNotNull("reference name of a produced reference term",reference);
-        this.reference =reference;
+        this.reference = reference;
     }
 
     /** Returns the label of the condition this should take its value from, never null */
@@ -78,29 +78,29 @@ public class ReferenceTermProduction extends TermProduction {
         matchReferences.add(reference);
     }
 
-    public void produce(RuleEvaluation e,int offset) {
-        ReferencedMatches referencedMatches=e.getReferencedMatches(reference);
-        if (referencedMatches==null)
+    public void produce(RuleEvaluation e, int offset) {
+        ReferencedMatches referencedMatches = e.getReferencedMatches(reference);
+        if (referencedMatches == null)
             throw new EvaluationException("Referred match '" + reference + "' not found");
         if (replacing) {
-            replaceMatches(e,referencedMatches);
+            replaceMatches(e, referencedMatches);
         }
         else {
-            addMatches(e,referencedMatches);
+            addMatches(e, referencedMatches);
         }
     }
 
-    public void replaceMatches(RuleEvaluation e,ReferencedMatches referencedMatches) {
-        Item referencedItem=referencedMatches.toItem(getLabel());
-        if (referencedItem==null) return;
+    public void replaceMatches(RuleEvaluation e, ReferencedMatches referencedMatches) {
+        Item referencedItem = referencedMatches.toItem(getLabel());
+        if (referencedItem == null) return;
         e.removeMatches(referencedMatches);
-        insertMatch(e, referencedMatches.matchIterator().next(),referencedItem,0);
+        insertMatch(e, referencedMatches.matchIterator().next(), referencedItem, 0);
     }
 
-    private void addMatches(RuleEvaluation e,ReferencedMatches referencedMatches) {
-        Item referencedItem=referencedMatches.toItem(getLabel());
-        if (referencedItem==null) return;
-        e.addItem(referencedItem,getTermType());
+    private void addMatches(RuleEvaluation e, ReferencedMatches referencedMatches) {
+        Item referencedItem = referencedMatches.toItem(getLabel());
+        if (referencedItem == null) return;
+        e.addItem(referencedItem, getTermType());
     }
 
     public String toInnerTermString() {

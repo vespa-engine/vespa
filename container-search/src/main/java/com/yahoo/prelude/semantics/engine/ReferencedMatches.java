@@ -14,12 +14,12 @@ import com.yahoo.prelude.query.PhraseItem;
  */
 public class ReferencedMatches {
 
-    private String contextName;
+    private final String contextName;
 
-    private List<Match> matches=new java.util.ArrayList<>(1);
+    private final List<Match> matches = new java.util.ArrayList<>(1);
 
     public ReferencedMatches(String contextName) {
-        this.contextName=contextName;
+        this.contextName = contextName;
     }
 
     public void addMatch(Match match) {
@@ -38,12 +38,12 @@ public class ReferencedMatches {
      * @param label the label of the matches
      */
     public Item toItem(String label) {
-        if (matches.size()==0) return null;
-        if (matches.size()==1) return matches.get(0).toItem(label);
+        if (matches.size() == 0) return null;
+        if (matches.size() == 1) return matches.get(0).toItem(label);
 
-        PhraseItem phrase=new PhraseItem(); // TODO: Somehow allow AND items instead here
+        PhraseItem phrase = new PhraseItem(); // TODO: Somehow allow AND items instead here
         phrase.setIndexName(label);
-        for (Iterator<Match> i=matches.iterator(); i.hasNext(); ) {
+        for (Iterator<Match> i = matches.iterator(); i.hasNext(); ) {
             phrase.addItem(i.next().toItem(label));
         }
         return phrase;

@@ -246,13 +246,12 @@ public class Evaluation {
     public void insertItem(Item item, CompositeItem parent, int index, TermType desiredParentType) {
         if (parent == null) { // TODO: Accommodate for termtype in this case too
             query.getModel().getQueryTree().setRoot(item);
-
             return;
         }
 
         if (parent.getItemCount()>0 && parent instanceof QueryTree && parent.getItem(0) instanceof CompositeItem) {
             // combine with the existing root instead
-            parent=(CompositeItem)parent.getItem(0);
+            parent = (CompositeItem)parent.getItem(0);
             if (index == 1) { // that means adding it after the existing root
                 index = parent.getItemCount();
             }
@@ -260,7 +259,7 @@ public class Evaluation {
 
         if (( desiredParentType == TermType.DEFAULT || desiredParentType.hasItemClass(parent.getClass()) )
              && equalIndexNameIfParentIsPhrase(item, parent)) {
-            addItem(parent,index,item,desiredParentType);
+            addItem(parent, index, item, desiredParentType);
         }
         else {
             insertIncompatibleItem(item, parent, query, desiredParentType);
@@ -273,27 +272,27 @@ public class Evaluation {
                 parent.setItem(0, item);
             }
             else if (index<=1 && !(parent.getItem(0) instanceof CompositeItem))  { // Case 2: The positive must become a composite
-                CompositeItem positiveComposite=(CompositeItem)desiredParentType.createItemClass();
+                CompositeItem positiveComposite = (CompositeItem)desiredParentType.createItemClass();
                 positiveComposite.addItem(parent.getItem(0));
-                positiveComposite.addItem(index,item);
-                parent.setItem(0,positiveComposite);
+                positiveComposite.addItem(index, item);
+                parent.setItem(0, positiveComposite);
             }
             else if (parent.getItem(0)!=null && parent.getItem(0) instanceof CompositeItem // Case 3: Add to the positive composite
-                     && index<=((CompositeItem)parent.getItem(0)).getItemCount()) {
-                ((CompositeItem)parent.getItem(0)).addItem(index,item);
+                     && index <= ((CompositeItem)parent.getItem(0)).getItemCount()) {
+                ((CompositeItem)parent.getItem(0)).addItem(index, item);
             }
             else { // Case 4: Add negative
-                parent.addItem(index,item);
+                parent.addItem(index, item);
             }
         }
-        else if (parent.getItemCount()>0 && parent instanceof QueryTree) {
-            CompositeItem composite=(CompositeItem)desiredParentType.createItemClass();
+        else if (parent.getItemCount() > 0 && parent instanceof QueryTree) {
+            CompositeItem composite = (CompositeItem)desiredParentType.createItemClass();
             composite.addItem(parent.getItem(0));
-            composite.addItem(index,item);
-            parent.setItem(0,composite);
+            composite.addItem(index, item);
+            parent.setItem(0, composite);
         }
         else {
-            parent.addItem(index,item);
+            parent.addItem(index, item);
         }
     }
 
@@ -305,32 +304,32 @@ public class Evaluation {
         return ((PhraseItem)parent).getIndexName().equals(((IndexedItem)item).getIndexName());
     }
 
-    private void insertIncompatibleItem(Item item,CompositeItem parent,Query query,TermType desiredParentType) {
+    private void insertIncompatibleItem(Item item, CompositeItem parent, Query query, TermType desiredParentType) {
         // Create new parent
         CompositeItem newParent;
-        if (desiredParentType==TermType.DEFAULT)
-            newParent=new AndItem();
+        if (desiredParentType == TermType.DEFAULT)
+            newParent = new AndItem();
         else
-            newParent=(CompositeItem)desiredParentType.createItemClass();
+            newParent = (CompositeItem)desiredParentType.createItemClass();
 
         // Save previous parent parent
-        CompositeItem parentsParent=parent.getParent();
+        CompositeItem parentsParent = parent.getParent();
 
         // Add items to new parent
         newParent.addItem(parent);
         newParent.addItem(item);
 
         // Insert new parent as root or child of old parents parent
-        if (parentsParent==null) {
+        if (parentsParent == null) {
             query.getModel().getQueryTree().setRoot(newParent);
 
         }
         else {
-            int parentIndex=0;
-            if (parentsParent!=null) {
-                parentIndex=parentsParent.getItemIndex(parent);
+            int parentIndex = 0;
+            if (parentsParent != null) {
+                parentIndex = parentsParent.getItemIndex(parent);
             }
-            parentsParent.setItem(parentIndex,newParent);
+            parentsParent.setItem(parentIndex, newParent);
         }
     }
 
@@ -338,19 +337,19 @@ public class Evaluation {
         if (first instanceof NullItem) {
             return second;
         } else if (first instanceof NotItem) {
-            NotItem notItem=(NotItem)first;
-            if (termType==TermType.NOT) {
+            NotItem notItem = (NotItem)first;
+            if (termType == TermType.NOT) {
                 notItem.addNegativeItem(second);
             }
             else {
-                Item newPositive=combineItems(notItem.getPositiveItem(),second,termType);
+                Item newPositive = combineItems(notItem.getPositiveItem(), second, termType);
                 notItem.setPositiveItem(newPositive);
             }
             return notItem;
         }
         else if (first instanceof CompositeItem) {
-            CompositeItem composite=(CompositeItem)first;
-            CompositeItem combined=createType(termType);
+            CompositeItem composite = (CompositeItem)first;
+            CompositeItem combined = createType(termType);
             if (combined.getClass().equals(composite.getClass())) {
                 composite.addItem(second);
                 return composite;
@@ -362,7 +361,7 @@ public class Evaluation {
             }
         }
         else if (first instanceof TermItem) {
-            CompositeItem combined=createType(termType);
+            CompositeItem combined = createType(termType);
             combined.addItem(first);
             combined.addItem(second);
             return combined;
