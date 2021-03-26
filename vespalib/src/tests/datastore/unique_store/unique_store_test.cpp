@@ -3,7 +3,7 @@
 #include <vespa/vespalib/datastore/unique_store_remapper.h>
 #include <vespa/vespalib/datastore/unique_store_string_allocator.hpp>
 #include <vespa/vespalib/datastore/unique_store_string_comparator.h>
-#include <vespa/vespalib/datastore/simple_hash_map.h>
+#include <vespa/vespalib/datastore/sharded_hash_map.h>
 #include <vespa/vespalib/gtest/gtest.h>
 #include <vespa/vespalib/test/datastore/buffer_stats.h>
 #include <vespa/vespalib/test/insertion_operators.h>
@@ -152,7 +152,7 @@ TestBase<UniqueStoreTypeAndDictionaryType>::TestBase()
     case DictionaryType::BTREE:
         break;
     default:
-        store.set_dictionary(std::make_unique<UniqueStoreDictionary<uniquestore::DefaultDictionary, IUniqueStoreDictionary, SimpleHashMap>>(std::make_unique<CompareType>(store.get_data_store())));
+        store.set_dictionary(std::make_unique<UniqueStoreDictionary<uniquestore::DefaultDictionary, IUniqueStoreDictionary, ShardedHashMap>>(std::make_unique<CompareType>(store.get_data_store())));
     }
 }
 

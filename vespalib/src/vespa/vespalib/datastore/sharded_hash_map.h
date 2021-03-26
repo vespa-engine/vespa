@@ -30,23 +30,23 @@ class EntryComparator;
  * trim_hold_lists as needed to free up memory no longer needed by any
  * readers.
  */
-class SimpleHashMap {
+class ShardedHashMap {
 public:
     using KvType = std::pair<AtomicEntryRef, AtomicEntryRef>;
     using generation_t = GenerationHandler::generation_t;
     using sgeneration_t = GenerationHandler::sgeneration_t;
 private:
     GenerationHolder _gen_holder;
-    static constexpr size_t num_stripes = 3;
-    std::atomic<FixedSizeHashMap *> _maps[num_stripes];
+    static constexpr size_t num_shards = 3;
+    std::atomic<FixedSizeHashMap *> _maps[num_shards];
     std::unique_ptr<const EntryComparator> _comp;
 
-    size_t get_stripe(const EntryComparator& comp, EntryRef key_ref) const;
-    void alloc_stripe(size_t stripe);
-    void hold_stripe(std::unique_ptr<const FixedSizeHashMap> map);
+    size_t get_shard_idx(const EntryComparator& comp, EntryRef key_ref) const;
+    void alloc_shard(size_t shard_idx);
+    void hold_shard(std::unique_ptr<const FixedSizeHashMap> map);
 public:
-    SimpleHashMap(std::unique_ptr<const EntryComparator> comp);
-    ~SimpleHashMap();
+    ShardedHashMap(std::unique_ptr<const EntryComparator> comp);
+    ~ShardedHashMap();
     KvType& add(const EntryComparator& comp, EntryRef key_ref, std::function<EntryRef(void)> &insert_entry);
     KvType* remove(const EntryComparator& comp, EntryRef key_ref);
     KvType* find(const EntryComparator& comp, EntryRef key_ref);

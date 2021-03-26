@@ -20,7 +20,7 @@ FixedSizeHashMap::Node::on_free()
     _kv = std::make_pair(AtomicEntryRef(), AtomicEntryRef());
 }
 
-FixedSizeHashMap::FixedSizeHashMap(uint32_t modulo, uint32_t capacity, uint32_t num_stripes)
+FixedSizeHashMap::FixedSizeHashMap(uint32_t modulo, uint32_t capacity, uint32_t num_shards)
     : _chain_heads(modulo),
       _nodes(),
       _modulo(modulo),
@@ -30,13 +30,13 @@ FixedSizeHashMap::FixedSizeHashMap(uint32_t modulo, uint32_t capacity, uint32_t 
       _hold_count(0u),
       _hold_1_list(),
       _hold_2_list(),
-      _num_stripes(num_stripes)
+      _num_shards(num_shards)
 {
     _nodes.reserve(capacity);
 }
 
-FixedSizeHashMap::FixedSizeHashMap(uint32_t modulo, uint32_t capacity, uint32_t num_stripes, const FixedSizeHashMap &orig, const EntryComparator& comp)
-    : FixedSizeHashMap(modulo, capacity, num_stripes)
+FixedSizeHashMap::FixedSizeHashMap(uint32_t modulo, uint32_t capacity, uint32_t num_shards, const FixedSizeHashMap &orig, const EntryComparator& comp)
+    : FixedSizeHashMap(modulo, capacity, num_shards)
 {
     for (const auto &chain_head : orig._chain_heads) {
         for (uint32_t node_idx = chain_head.load_relaxed(); node_idx != no_node_idx;) {
@@ -52,7 +52,7 @@ FixedSizeHashMap::~FixedSizeHashMap() = default;
 void
 FixedSizeHashMap::force_add(const EntryComparator& comp, const KvType& kv)
 {
-    size_t hash_idx = comp.hash(kv.first.load_relaxed()) / _num_stripes;
+    size_t hash_idx = comp.hash(kv.first.load_relaxed()) / _num_shards;
     hash_idx %= _modulo;
     auto& chain_head = _chain_heads[hash_idx];
     assert(_nodes.size() < _nodes.capacity());
@@ -65,7 +65,7 @@ FixedSizeHashMap::force_add(const EntryComparator& comp, const KvType& kv)
 FixedSizeHashMap::KvType&
 FixedSizeHashMap::add(const EntryComparator& comp, EntryRef key_ref, std::function<EntryRef(void)>& insert_entry)
 {
-    size_t hash_idx = comp.hash(key_ref) / _num_stripes;
+    size_t hash_idx = comp.hash(key_ref) / _num_shards;
     hash_idx %= _modulo;
     auto& chain_head = _chain_heads[hash_idx];
     uint32_t node_idx = chain_head.load_relaxed();
@@ -129,7 +129,7 @@ FixedSizeHashMap::trim_hold_lists_slow(generation_t first_used)
 FixedSizeHashMap::KvType*
 FixedSizeHashMap::remove(const EntryComparator& comp, EntryRef key_ref)
 {
-    size_t hash_idx = comp.hash(key_ref) / _num_stripes;
+    size_t hash_idx = comp.hash(key_ref) / _num_shards;
     hash_idx %= _modulo;
     auto& chain_head = _chain_heads[hash_idx];
     uint32_t node_idx = chain_head.load_relaxed();
@@ -157,7 +157,7 @@ FixedSizeHashMap::remove(const EntryComparator& comp, EntryRef key_ref)
 FixedSizeHashMap::KvType*
 FixedSizeHashMap::find(const EntryComparator& comp, EntryRef key_ref)
 {
-    size_t hash_idx = comp.hash(key_ref) / _num_stripes;
+    size_t hash_idx = comp.hash(key_ref) / _num_shards;
     hash_idx %= _modulo;
     auto& chain_head = _chain_heads[hash_idx];
     uint32_t node_idx = chain_head.load_acquire();

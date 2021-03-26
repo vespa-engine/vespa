@@ -1,6 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include <vespa/vespalib/datastore/simple_hash_map.h>
+#include <vespa/vespalib/datastore/sharded_hash_map.h>
 #include <vespa/vespalib/datastore/unique_store_allocator.h>
 #include <vespa/vespalib/datastore/unique_store_comparator.h>
 
@@ -13,18 +13,18 @@
 #include <vespa/vespalib/datastore/unique_store_allocator.hpp>
 
 #include <vespa/log/log.h>
-LOG_SETUP("vespalib_datastore_simple_hash_test");
+LOG_SETUP("vespalib_datastore_shared_hash_test");
 
 using vespalib::datastore::EntryRef;
 using RefT = vespalib::datastore::EntryRefT<22>;
 using MyAllocator = vespalib::datastore::UniqueStoreAllocator<uint32_t, RefT>;
 using MyDataStore = vespalib::datastore::DataStoreT<RefT>;
 using MyCompare = vespalib::datastore::UniqueStoreComparator<uint32_t, RefT>;
-using MyHashMap = vespalib::datastore::SimpleHashMap;
+using MyHashMap = vespalib::datastore::ShardedHashMap;
 using GenerationHandler = vespalib::GenerationHandler;
 using vespalib::makeLambdaTask;
 
-struct DataStoreSimpleHashTest : public ::testing::Test
+struct DataStoreShardedHashTest : public ::testing::Test
 {
     GenerationHandler _generationHandler;
     MyAllocator       _allocator;
@@ -41,8 +41,8 @@ struct DataStoreSimpleHashTest : public ::testing::Test
     std::atomic<int> _stop_read;
     bool _report_work;
 
-    DataStoreSimpleHashTest();
-    ~DataStoreSimpleHashTest();
+    DataStoreShardedHashTest();
+    ~DataStoreShardedHashTest();
     void commit();
     void insert(uint32_t key);
     void remove(uint32_t key);
@@ -53,7 +53,7 @@ struct DataStoreSimpleHashTest : public ::testing::Test
 };
 
 
-DataStoreSimpleHashTest::DataStoreSimpleHashTest()
+DataStoreShardedHashTest::DataStoreShardedHashTest()
     : _generationHandler(),
       _allocator(),
       _store(_allocator.get_data_store()),
@@ -73,7 +73,7 @@ DataStoreSimpleHashTest::DataStoreSimpleHashTest()
 }
 
 
-DataStoreSimpleHashTest::~DataStoreSimpleHashTest()
+DataStoreShardedHashTest::~DataStoreShardedHashTest()
 {
     _readers.sync();
     _readers.shutdown();
@@ -89,7 +89,7 @@ DataStoreSimpleHashTest::~DataStoreSimpleHashTest()
 
 
 void
-DataStoreSimpleHashTest::commit()
+DataStoreShardedHashTest::commit()
 {
     _store.transferHoldLists(_generationHandler.getCurrentGeneration());
     _hash_map.transfer_hold_lists(_generationHandler.getCurrentGeneration());
@@ -99,7 +99,7 @@ DataStoreSimpleHashTest::commit()
 }
 
 void
-DataStoreSimpleHashTest::insert(uint32_t key)
+DataStoreShardedHashTest::insert(uint32_t key)
 {
     MyCompare comp(_store, key);
     std::function<EntryRef(void)> insert_entry([this, key]() -> EntryRef { return _allocator.allocate(key); });
@@ -110,7 +110,7 @@ DataStoreSimpleHashTest::insert(uint32_t key)
 }
 
 void
-DataStoreSimpleHashTest::remove(uint32_t key)
+DataStoreShardedHashTest::remove(uint32_t key)
 {
     MyCompare comp(_store, key);
     auto result = _hash_map.remove(comp, EntryRef());
@@ -124,7 +124,7 @@ DataStoreSimpleHashTest::remove(uint32_t key)
 
 
 void
-DataStoreSimpleHashTest::read_work(uint32_t cnt)
+DataStoreShardedHashTest::read_work(uint32_t cnt)
 {
     vespalib::Rand48 rnd;
     long found = 0;
@@ -149,14 +149,14 @@ DataStoreSimpleHashTest::read_work(uint32_t cnt)
 
 
 void
-DataStoreSimpleHashTest::read_work()
+DataStoreShardedHashTest::read_work()
 {
     read_work(std::numeric_limits<uint32_t>::max());
 }
 
 
 void
-DataStoreSimpleHashTest::write_work(uint32_t cnt)
+DataStoreShardedHashTest::write_work(uint32_t cnt)
 {
     vespalib::Rand48 &rnd(_rnd);
     for (uint32_t i = 0; i < cnt; ++i) {
@@ -174,7 +174,7 @@ DataStoreSimpleHashTest::write_work(uint32_t cnt)
 }
 
 
-TEST_F(DataStoreSimpleHashTest, single_threaded_reader_without_updates)
+TEST_F(DataStoreShardedHashTest, single_threaded_reader_without_updates)
 {
     _report_work = true;
     write_work(10);
@@ -182,7 +182,7 @@ TEST_F(DataStoreSimpleHashTest, single_threaded_reader_without_updates)
     read_work(10);
 }
 
-TEST_F(DataStoreSimpleHashTest, single_threaded_reader_during_updates)
+TEST_F(DataStoreShardedHashTest, single_threaded_reader_during_updates)
 {
     uint32_t cnt = 1000000;
     _report_work = true;
@@ -190,7 +190,7 @@ TEST_F(DataStoreSimpleHashTest, single_threaded_reader_during_updates)
     _readers.execute(makeLambdaTask([this]() { read_work(); }));
 }
 
-TEST_F(DataStoreSimpleHashTest, multi_threaded_reader_during_updates)
+TEST_F(DataStoreShardedHashTest, multi_threaded_reader_during_updates)
 {
     uint32_t cnt = 1000000;
     _report_work = true;
@@ -200,7 +200,7 @@ TEST_F(DataStoreSimpleHashTest, multi_threaded_reader_during_updates)
     }
 }
 
-TEST_F(DataStoreSimpleHashTest, memory_usage_is_reported)
+TEST_F(DataStoreShardedHashTest, memory_usage_is_reported)
 {
     auto initial_usage = _hash_map.get_memory_usage();
     EXPECT_LT(0, initial_usage.allocatedBytes());
