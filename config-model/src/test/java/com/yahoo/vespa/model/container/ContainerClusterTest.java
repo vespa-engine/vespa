@@ -76,7 +76,7 @@ public class ContainerClusterTest {
                                                      .zone(new Zone(SystemName.cd, Environment.test, RegionName.from("some-region")))
                                                      .build();
         MockRoot root = new MockRoot("foo", state);
-        ContainerCluster cluster = new ApplicationContainerCluster(root, "container0", "container1", state);
+        ContainerCluster<?> cluster = new ApplicationContainerCluster(root, "container0", "container1", state);
         ConfigserverConfig.Builder builder = new ConfigserverConfig.Builder();
         cluster.getConfig(builder);
         ConfigserverConfig config = new ConfigserverConfig(builder);
@@ -101,10 +101,14 @@ public class ContainerClusterTest {
     }
     private MockRoot createRoot(boolean isHosted) {
         DeployState state = new DeployState.Builder().properties(new TestProperties().setHostedVespa(isHosted)).build();
-        return new MockRoot("foo", state);
+        return createRoot(state);
+    }
+    private MockRoot createRoot(DeployState deployState) {
+        return new MockRoot("foo", deployState);
     }
 
-    private void verifyHeapSizeAsPercentageOfPhysicalMemory(boolean isHosted, boolean isCombinedCluster,
+    private void verifyHeapSizeAsPercentageOfPhysicalMemory(boolean isHosted,
+                                                            boolean isCombinedCluster,
                                                             Integer explicitMemoryPercentage,
                                                             int expectedMemoryPercentage) {
         ContainerCluster<?> cluster = createContainerCluster(createRoot(isHosted), isCombinedCluster, explicitMemoryPercentage);
@@ -147,7 +151,7 @@ public class ContainerClusterTest {
         if (hasDocProc) {
             cluster.setDocproc(new ContainerDocproc(cluster, null));
         }
-        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+        addContainer(root, cluster, "c1", "host-c1");
         assertEquals(1, cluster.getContainers().size());
         ApplicationContainer container = cluster.getContainers().get(0);
         verifyJvmArgs(isHosted, hasDocProc, "", container.getJvmOptions());
@@ -205,10 +209,28 @@ public class ContainerClusterTest {
     }
 
     @Test
-    public void requireThatWeCanhandleNull() {
+    public void requireThatJvmOmitStackTraceInFastThrowOptionWorks() {
+        // Empty option if option not set in property
+        MockRoot root = createRoot(new DeployState.Builder().build());
+        ApplicationContainerCluster cluster = createContainerCluster(root, false);
+        addContainer(root, cluster, "c1", "host-c1");
+        ApplicationContainer container = cluster.getContainers().get(0);
+        assertEquals("", container.getJvmOptions());
+
+        String jvmOption = "-XX:-foo";
+        DeployState deployState = new DeployState.Builder().properties(new TestProperties().setJvmOmitStackTraceInFastThrowOption(jvmOption)).build();
+        root = createRoot(deployState);
+        cluster = createContainerCluster(root, false);
+        addContainer(root, cluster, "c1", "host-c1");
+        container = cluster.getContainers().get(0);
+        assertEquals(jvmOption, container.getJvmOptions());
+    }
+
+    @Test
+    public void requireThatWeCanHandleNull() {
         MockRoot root = createRoot(false);
         ApplicationContainerCluster cluster = createContainerCluster(root, false);
-        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+        addContainer(root, cluster, "c1", "host-c1");
         Container container = cluster.getContainers().get(0);
         container.setJvmOptions("");
         String empty = container.getJvmOptions();
@@ -220,7 +242,7 @@ public class ContainerClusterTest {
     public void requireThatPoolAndQueueCanNotBeControlledByPropertiesWhenNoFlavor() {
         MockRoot root = new MockRoot("foo");
         ApplicationContainerCluster cluster = createContainerCluster(root, false);
-        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+        addContainer(root, cluster, "c1", "host-c1");
         root.freezeModelTopology();
 
         ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
@@ -232,7 +254,7 @@ public class ContainerClusterTest {
     public void requireThatDefaultThreadPoolConfigIsSane() {
         MockRoot root = new MockRoot("foo");
         ApplicationContainerCluster cluster = createContainerCluster(root, false);
-        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+        addContainer(root, cluster, "c1", "host-c1");
         root.freezeModelTopology();
 
         ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
@@ -244,7 +266,7 @@ public class ContainerClusterTest {
     public void container_cluster_has_default_threadpool_provider() {
         MockRoot root = new MockRoot("foo");
         ApplicationContainerCluster cluster = createContainerCluster(root, false);
-        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
+        addContainer(root, cluster, "c1", "host-c1");
         root.freezeModelTopology();
 
         ComponentId expectedComponentId = new ComponentId("default-threadpool");
@@ -267,7 +289,7 @@ public class ContainerClusterTest {
         HostResource hostResource = new HostResource(
                 new Host(null, "host-c1"),
                 hostProvisioner.allocateHost("host-c1"));
-        addContainerWithHostResource(root.deployLogger(), cluster, "c1", hostResource);
+        addContainerWithHostResource(root, cluster, "c1", hostResource);
         root.freezeModelTopology();
 
         ThreadpoolConfig threadpoolConfig = root.getConfig(ThreadpoolConfig.class, "container0/component/default-threadpool");
@@ -288,7 +310,7 @@ public class ContainerClusterTest {
         HostResource hostResource = new HostResource(
                 new Host(null, "host-c1"),
                 hostProvisioner.allocateHost("host-c1"));
-        addContainerWithHostResource(root.deployLogger(), cluster, "c1", hostResource);
+        addContainerWithHostResource(root, cluster, "c1", hostResource);
         root.freezeModelTopology();
 
         ServerConfig cfg = root.getConfig(ServerConfig.class, "container0/c1/DefaultHttpServer");
@@ -316,8 +338,8 @@ public class ContainerClusterTest {
         DeployState state = new DeployState.Builder().build();
         MockRoot root = new MockRoot("foo", state);
         var cluster = new ApplicationContainerCluster(root, "container", "search-cluster", state);
-        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
-        addContainer(root.deployLogger(), cluster, "c2", "host-c2");
+        addContainer(root, cluster, "c1", "host-c1");
+        addContainer(root, cluster, "c2", "host-c2");
         CuratorConfig.Builder configBuilder = new CuratorConfig.Builder();
         cluster.getConfig(configBuilder);
         CuratorConfig config = configBuilder.build();
@@ -331,9 +353,9 @@ public class ContainerClusterTest {
         DeployState state = new DeployState.Builder().build();
         MockRoot root = new MockRoot("foo", state);
         var cluster = new ApplicationContainerCluster(root, "container", "search-cluster", state);
-        addContainer(root.deployLogger(), cluster, "c1", "host-c1");
-        addContainer(root.deployLogger(), cluster, "c2", "host-c2");
-        addContainer(root.deployLogger(), cluster, "c3", "host-c3");
+        addContainer(root, cluster, "c1", "host-c1");
+        addContainer(root, cluster, "c2", "host-c2");
+        addContainer(root, cluster, "c3", "host-c3");
 
         // Only myid is set for container
         ZookeeperServerConfig.Builder configBuilder = new ZookeeperServerConfig.Builder();
@@ -368,14 +390,17 @@ public class ContainerClusterTest {
     }
 
 
-    private static void addContainer(DeployLogger deployLogger, ApplicationContainerCluster cluster, String name, String hostName) {
-        addContainerWithHostResource(deployLogger, cluster, name, new HostResource(new Host(null, hostName)));
+    private static void addContainer(MockRoot root, ApplicationContainerCluster cluster, String name, String hostName) {
+        addContainerWithHostResource(root, cluster, name, new HostResource(new Host(null, hostName)));
     }
 
-    private static void addContainerWithHostResource(DeployLogger deployLogger, ApplicationContainerCluster cluster, String name, HostResource hostResource) {
-        ApplicationContainer container = new ApplicationContainer(cluster, name, 0, cluster.isHostedVespa());
+    private static void addContainerWithHostResource(MockRoot root,
+                                                     ApplicationContainerCluster cluster,
+                                                     String name,
+                                                     HostResource hostResource) {
+        ApplicationContainer container = new ApplicationContainer(cluster, name, 0, root.getDeployState());
         container.setHostResource(hostResource);
-        container.initService(deployLogger);
+        container.initService(root.deployLogger());
         cluster.addContainer(container);
     }
 
@@ -393,8 +418,8 @@ public class ContainerClusterTest {
         DeployState deployState = DeployState.createTestState();
         MockRoot root = new MockRoot("foo", deployState);
         ApplicationContainerCluster cluster = new ApplicationContainerCluster(root, "subId", "name", deployState);
-        addContainer(deployState.getDeployLogger(), cluster, "c1", "host-c1");
-        addContainer(deployState.getDeployLogger(), cluster, "c2", "host-c2");
+        addContainer(root, cluster, "c1", "host-c1");
+        addContainer(root, cluster, "c2", "host-c2");
         return cluster;
     }
 

@@ -17,6 +17,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.Provisioned;
 import com.yahoo.config.model.api.Quota;
 import com.yahoo.config.model.api.Reindexing;
+import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.AthenzDomain;
 import com.yahoo.config.provision.ClusterSpec;
@@ -25,7 +26,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
-import com.yahoo.config.model.api.TenantSecretStore;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import com.yahoo.vespa.flags.FetchVector;
@@ -37,12 +37,9 @@ import com.yahoo.vespa.flags.UnboundFlag;
 
 import java.io.File;
 import java.net.URI;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.function.Function;
 import java.util.function.ToIntFunction;
 
 import static com.yahoo.vespa.config.server.ConfigServerSpec.fromConfig;
@@ -181,6 +178,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<String> allowedAthenzProxyIdentities;
         private final boolean tenantIamRole;
         private final int maxActivationInhibitedOutOfSyncGroups;
+        private final ToIntFunction<ClusterSpec.Type> jvmOmitStackTraceInFastThrow;
 
         public FeatureFlags(FlagSource source, ApplicationId appId) {
             this.dedicatedClusterControllerFlavor = parseDedicatedClusterControllerFlavor(flagValue(source, appId, Flags.DEDICATED_CLUSTER_CONTROLLER_FLAVOR));
@@ -205,6 +203,7 @@ public class ModelContextImpl implements ModelContext {
             this.allowedAthenzProxyIdentities = flagValue(source, appId, Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES);
             this.tenantIamRole = flagValue(source, appId.tenant(), Flags.TENANT_IAM_ROLE);
             this.maxActivationInhibitedOutOfSyncGroups = flagValue(source, appId, Flags.MAX_ACTIVATION_INHIBITED_OUT_OF_SYNC_GROUPS);
+            this.jvmOmitStackTraceInFastThrow = type -> flagValueAsInt(source, appId, type, PermanentFlags.JVM_OMIT_STACK_TRACE_IN_FAST_THROW);
         }
 
         @Override public Optional<NodeResources> dedicatedClusterControllerFlavor() { return Optional.ofNullable(dedicatedClusterControllerFlavor); }
@@ -229,6 +228,9 @@ public class ModelContextImpl implements ModelContext {
         @Override public List<String> allowedAthenzProxyIdentities() { return allowedAthenzProxyIdentities; }
         @Override public boolean tenantIamRole() { return tenantIamRole; }
         @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
+        @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) {
+            return translateJvmOmitStackTraceInFastThrowIntToString(jvmOmitStackTraceInFastThrow, type);
+        }
 
         private static <V> V flagValue(FlagSource source, ApplicationId appId, UnboundFlag<? extends V, ?, ?> flag) {
             return flag.bindTo(source)
@@ -240,6 +242,28 @@ public class ModelContextImpl implements ModelContext {
             return flag.bindTo(source)
                     .with(FetchVector.Dimension.TENANT_ID, tenant.value())
                     .boxedValue();
+        }
+
+        private static <V> V flagValue(FlagSource source,
+                                       ApplicationId appId,
+                                       ClusterSpec.Type clusterType,
+                                       UnboundFlag<? extends V, ?, ?> flag) {
+            return flag.bindTo(source)
+                       .with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm())
+                       .with(FetchVector.Dimension.CLUSTER_TYPE, clusterType.name())
+                       .boxedValue();
+        }
+
+        static int flagValueAsInt(FlagSource source,
+                                  ApplicationId appId,
+                                  ClusterSpec.Type clusterType,
+                                  UnboundFlag<? extends Boolean, ?, ?> flag) {
+            return flagValue(source, appId, clusterType, flag) ? 1 : 0;
+        }
+
+        private String translateJvmOmitStackTraceInFastThrowIntToString(ToIntFunction<ClusterSpec.Type> function,
+                                                                        ClusterSpec.Type clusterType) {
+            return function.applyAsInt(clusterType) == 1 ? "" : "-XX:-OmitStackTraceInFastThrow";
         }
 
     }
@@ -359,8 +383,13 @@ public class ModelContextImpl implements ModelContext {
         }
 
         @Override public String jvmGCOptions(Optional<ClusterSpec.Type> clusterType) {
-            return clusterType.map(type -> jvmGCOptionsFlag.with(CLUSTER_TYPE, type.name()))
-                              .orElse(jvmGCOptionsFlag)
+            return flagValueForClusterType(jvmGCOptionsFlag, clusterType);
+        }
+
+
+        public String flagValueForClusterType(StringFlag flag, Optional<ClusterSpec.Type> clusterType) {
+            return clusterType.map(type -> flag.with(CLUSTER_TYPE, type.name()))
+                              .orElse(flag)
                               .value();
         }
 

@@ -35,7 +35,7 @@ public class PermanentFlags {
 
     public static final UnboundStringFlag JVM_GC_OPTIONS = defineStringFlag(
             "jvm-gc-options", "",
-            "Sets deafult jvm gc options",
+            "Sets default jvm gc options",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
@@ -136,6 +136,12 @@ public class PermanentFlags {
             "Invalidate console sessions (cookies) issued before this unix timestamp",
             "Takes effect on next api request"
     );
+
+    public static final UnboundBooleanFlag JVM_OMIT_STACK_TRACE_IN_FAST_THROW = defineFeatureFlag(
+            "jvm-omit-stack-trace-in-fast-throw", true,
+            "Controls JVM option OmitStackTraceInFastThrow (default feature flag value is true, which is the default JVM option value as well)",
+            "takes effect on JVM restart",
+            NODE_TYPE, APPLICATION_ID);
 
     private PermanentFlags() {}
 

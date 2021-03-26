@@ -1,10 +1,12 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container;
 
-import com.yahoo.component.ComponentId;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.ComponentsConfig;
 import com.yahoo.container.QrConfig;
 import com.yahoo.container.core.ContainerHttpConfig;
@@ -78,23 +80,29 @@ public abstract class Container extends AbstractService implements
 
     private final JettyHttpServer defaultHttpServer;
 
-    protected Container(AbstractConfigProducer<?> parent, String name, int index, boolean isHostedVespa) {
-        this(parent, name, false, index, isHostedVespa);
+    protected Container(AbstractConfigProducer<?> parent, String name, int index, DeployState deployState) {
+        this(parent, name, false, index, deployState);
     }
 
-    protected Container(AbstractConfigProducer<?> parent, String name, boolean retired, int index, boolean isHostedVespa) {
+    protected Container(AbstractConfigProducer<?> parent, String name, boolean retired, int index, DeployState deployState) {
         super(parent, name);
         this.name = name;
         this.parent = parent;
         this.retired = retired;
         this.index = index;
-        this.defaultHttpServer = new JettyHttpServer("DefaultHttpServer", containerClusterOrNull(parent), isHostedVespa);
+        this.defaultHttpServer = new JettyHttpServer("DefaultHttpServer", containerClusterOrNull(parent), deployState.isHosted());
         if (getHttp() == null) {
             addChild(defaultHttpServer);
         }
         addBuiltinHandlers();
 
         addChild(new SimpleComponent("com.yahoo.container.jdisc.ConfiguredApplication$ApplicationContext"));
+
+        appendJvmOptions(jvmOmitStackTraceInFastThrowOption(deployState.featureFlags()));
+    }
+
+    protected String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {
+        return featureFlags.jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type.container);
     }
 
     void setOwner(ContainerCluster<?> owner) { this.owner = owner; }

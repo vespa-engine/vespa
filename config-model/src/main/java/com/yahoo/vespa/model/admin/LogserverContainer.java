@@ -1,8 +1,11 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.admin;
 
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.component.AccessLogComponent;
 import com.yahoo.vespa.model.container.component.AccessLogComponent.AccessLogType;
@@ -14,8 +17,8 @@ import com.yahoo.vespa.model.container.component.AccessLogComponent.CompressionT
  */
 public class LogserverContainer extends Container {
 
-    public LogserverContainer(AbstractConfigProducer<?> parent, boolean isHostedVespa) {
-        super(parent, "" + 0, 0, isHostedVespa);
+    public LogserverContainer(AbstractConfigProducer<?> parent, DeployState deployState) {
+        super(parent, "" + 0, 0, deployState);
         LogserverContainerCluster cluster = (LogserverContainerCluster) parent;
         addComponent(new AccessLogComponent(
                 cluster, AccessLogType.jsonAccessLog, CompressionType.GZIP, cluster.getName(), true));
@@ -29,6 +32,11 @@ public class LogserverContainer extends Container {
     @Override
     public String defaultPreload() {
         return "";
+    }
+
+    @Override
+    protected String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {
+        return featureFlags.jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type.admin);
     }
 
 }

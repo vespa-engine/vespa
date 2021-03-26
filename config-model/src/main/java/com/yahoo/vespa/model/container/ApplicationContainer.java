@@ -2,8 +2,11 @@
 package com.yahoo.vespa.model.container;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
+import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.osgi.provider.model.ComponentModel;
@@ -24,13 +27,13 @@ public final class ApplicationContainer extends Container implements
 
     private final boolean isHostedVespa;
 
-    public ApplicationContainer(AbstractConfigProducer<?> parent, String name, int index, boolean isHostedVespa) {
-        this(parent, name, false, index, isHostedVespa);
+    public ApplicationContainer(AbstractConfigProducer<?> parent, String name, int index, DeployState deployState) {
+        this(parent, name, false, index, deployState);
     }
 
-    public ApplicationContainer(AbstractConfigProducer<?> parent, String name, boolean retired, int index, boolean isHostedVespa) {
-        super(parent, name, retired, index, isHostedVespa);
-        this.isHostedVespa = isHostedVespa;
+    public ApplicationContainer(AbstractConfigProducer<?> parent, String name, boolean retired, int index, DeployState deployState) {
+        super(parent, name, retired, index, deployState);
+        this.isHostedVespa = deployState.isHosted();
 
         addComponent(getFS4ResourcePool()); // TODO Remove when FS4 based search protocol is gone
     }
@@ -79,6 +82,11 @@ public final class ApplicationContainer extends Container implements
     @Override
     public void getConfig(ZookeeperServerConfig.Builder builder) {
         builder.myid(index());
+    }
+
+    @Override
+    protected String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {
+        return featureFlags.jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type.container);
     }
 
 }

@@ -1,4 +1,4 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 package com.yahoo.vespa.model.admin.metricsproxy;
 
@@ -15,6 +15,7 @@ import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.ClusterMembership;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.search.config.QrStartConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.PortAllocBridge;
@@ -50,7 +51,7 @@ public class MetricsProxyContainer extends Container implements
 
 
     public MetricsProxyContainer(MetricsProxyContainerCluster cluster, HostResource host, int index, DeployState deployState) {
-        super(cluster, host.getHostname(), index, deployState.isHosted());
+        super(cluster, host.getHostname(), index, deployState);
         this.isHostedVespa = deployState.isHosted();
         this.clusterMembership = host.spec().membership();
         this.featureFlags = deployState.featureFlags();
@@ -71,6 +72,11 @@ public class MetricsProxyContainer extends Container implements
     @Override
     protected ContainerServiceType myServiceType() {
         return METRICS_PROXY_CONTAINER;
+    }
+
+    @Override
+    protected String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {
+        return featureFlags.jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type.admin);
     }
 
     @Override

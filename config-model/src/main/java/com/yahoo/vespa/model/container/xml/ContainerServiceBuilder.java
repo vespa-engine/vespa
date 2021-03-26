@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
 import com.yahoo.config.model.deploy.DeployState;
@@ -22,7 +22,7 @@ public class ContainerServiceBuilder extends VespaDomBuilder.DomConfigProducerBu
 
     @Override
     protected ApplicationContainer doBuild(DeployState deployState, AbstractConfigProducer<?> parent, Element nodeElem) {
-        return new ApplicationContainer(parent, id, index, deployState.isHosted());
+        return new ApplicationContainer(parent, id, index, deployState);
     }
 
 }
