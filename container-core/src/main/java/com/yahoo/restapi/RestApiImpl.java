@@ -80,7 +80,7 @@ class RestApiImpl implements RestApi {
         }
         Object responseEntity;
         try {
-            responseEntity = resolvedHandler.toHttpResponse(context, requestEntity);
+            responseEntity = resolvedHandler.executeHandler(context, requestEntity);
         } catch (RuntimeException e) {
             return mapException(context, e);
         }
@@ -459,7 +459,7 @@ class RestApiImpl implements RestApi {
                     (HandlerWithRequestEntity<Void, RESPONSE_ENTITY>) (context, nullEntity) -> handler.handleRequest(context));
         }
 
-        Object toHttpResponse(RestApi.RequestContext context, Object entity) { return handler.handleRequest(context, type.cast(entity)); }
+        Object executeHandler(RestApi.RequestContext context, Object entity) { return handler.handleRequest(context, type.cast(entity)); }
     }
 
     private static class RequestMapperHolder<ENTITY> {
