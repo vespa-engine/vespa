@@ -14,12 +14,12 @@ public class WeightingTestCase extends RuleBaseAbstractTestCase {
 
     @Test
     public void testWeighting() {
-        assertSemantics("foo!150","foo");
-        assertSemantics("AND foo!150 snip","foo snip");
-        assertSemantics("AND foo!150 bar","foo bar");
-        assertSemantics("AND bar!57 foo","bar foo");
-        assertSemantics("AND foo!150 fu","foo fu");
-        assertSemantics("AND foo!150 bar kanoo boat!237","foo bar kanoo");
+        assertSemantics("foo!150", "foo");
+        assertSemantics("AND foo!150 snip", "foo snip");
+        assertSemantics("AND foo!150 bar", "foo bar");
+        assertSemantics("AND bar!57 foo", "bar foo");
+        assertSemantics("AND foo!150 fu", "foo fu");
+        assertSemantics("AND foo!150 bar kanoo boat!237", "foo bar kanoo");
     }
 
 }

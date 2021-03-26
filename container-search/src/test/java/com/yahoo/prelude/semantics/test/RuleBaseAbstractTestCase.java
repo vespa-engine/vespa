@@ -57,13 +57,14 @@ public abstract class RuleBaseAbstractTestCase {
     }
 
     protected Query assertSemantics(String result, String input, int tracelevel, Query.Type queryType) {
-        Query query=new Query("?query=" + QueryTestCase.httpEncode(input) + "&tracelevel=0&tracelevel.rules=" + tracelevel +
-                             "&language=und&type=" + queryType.toString());
+        Query query = new Query("?query=" + QueryTestCase.httpEncode(input) + "&tracelevel=0&tracelevel.rules=" + tracelevel +
+                               "&language=und&type=" + queryType);
         return assertSemantics(result, query);
     }
 
     protected Query assertSemantics(String result, Query query) {
         createExecution(searcher).search(query);
+        System.out.println(query.getModel().getQueryTree().getRoot() + " is " + result);
         assertEquals(result, query.getModel().getQueryTree().getRoot().toString());
         return query;
     }
