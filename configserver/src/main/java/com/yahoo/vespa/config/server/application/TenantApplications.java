@@ -196,8 +196,6 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                 default:
                     break;
             }
-            // We may have lost events and may need to remove applications.
-            removeUnusedApplications();
         });
     }
 
