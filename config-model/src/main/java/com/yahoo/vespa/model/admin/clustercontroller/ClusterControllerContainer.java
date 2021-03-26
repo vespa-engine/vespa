@@ -3,9 +3,11 @@ package com.yahoo.vespa.model.admin.clustercontroller;
 
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.component.ComponentSpecification;
+import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.api.container.ContainerServiceType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.container.core.documentapi.DocumentAccessProvider;
 import com.yahoo.container.di.config.PlatformBundlesConfig;
@@ -46,7 +48,7 @@ public class ClusterControllerContainer extends Container implements
                                       boolean runStandaloneZooKeeper,
                                       DeployState deployState,
                                       boolean retired) {
-        super(parent, "" + index, retired, index, deployState.isHosted());
+        super(parent, "" + index, retired, index, deployState);
         addHandler("clustercontroller-status",
                    "com.yahoo.vespa.clustercontroller.apps.clustercontroller.StatusHandler",
                    "/clustercontroller-status/*",
@@ -82,6 +84,11 @@ public class ClusterControllerContainer extends Container implements
     @Override
     public ContainerServiceType myServiceType() {
         return ContainerServiceType.CLUSTERCONTROLLER_CONTAINER;
+    }
+
+    @Override
+    protected String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {
+        return featureFlags.jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type.admin);
     }
 
     private void configureZooKeeperServer(boolean runStandaloneZooKeeper) {

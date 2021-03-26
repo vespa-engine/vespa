@@ -1,8 +1,7 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.container.xml;
 
 import com.google.common.collect.ImmutableList;
-import com.yahoo.component.ComponentId;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.Xml;
 import com.yahoo.config.application.api.ApplicationPackage;
@@ -598,13 +597,13 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void addNodes(ApplicationContainerCluster cluster, Element spec, ConfigModelContext context) {
         if (standaloneBuilder)
-            addStandaloneNode(cluster);
+            addStandaloneNode(cluster, context.getDeployState());
         else
             addNodesFromXml(cluster, spec, context);
     }
 
-    private void addStandaloneNode(ApplicationContainerCluster cluster) {
-        ApplicationContainer container =  new ApplicationContainer(cluster, "standalone", cluster.getContainers().size(), cluster.isHostedVespa());
+    private void addStandaloneNode(ApplicationContainerCluster cluster, DeployState deployState) {
+        ApplicationContainer container = new ApplicationContainer(cluster, "standalone", cluster.getContainers().size(), deployState);
         cluster.addContainers(Collections.singleton(container));
     }
 
@@ -769,7 +768,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                               false,
                                               !deployState.getProperties().isBootstrap());
             var hosts = hostSystem.allocateHosts(clusterSpec, capacity, log);
-            return createNodesFromHosts(log, hosts, cluster);
+            return createNodesFromHosts(log, hosts, cluster, context.getDeployState());
         }
         else {
             return singleHostContainerCluster(cluster, hostSystem.getHost(Container.SINGLENODE_CONTAINER_SERVICESPEC), context);
@@ -777,7 +776,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
     }
 
     private List<ApplicationContainer> singleHostContainerCluster(ApplicationContainerCluster cluster, HostResource host, ConfigModelContext context) {
-        ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, cluster.isHostedVespa());
+        ApplicationContainer node = new ApplicationContainer(cluster, "container.0", 0, context.getDeployState());
         node.setHostResource(host);
         node.initService(context.getDeployLogger());
         return List.of(node);
@@ -790,7 +789,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                                                                   ClusterSpec.Id.from(cluster.getName()), 
                                                                                   log,
                                                                                   hasZooKeeper(containerElement));
-        return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
+        return createNodesFromHosts(context.getDeployLogger(), hosts, cluster, context.getDeployState());
     }
 
     private List<ApplicationContainer> createNodesFromNodeType(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
@@ -802,7 +801,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         Map<HostResource, ClusterMembership> hosts = 
                 cluster.getRoot().hostSystem().allocateHosts(clusterSpec,
                                                              Capacity.fromRequiredNodeType(type), log);
-        return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
+        return createNodesFromHosts(context.getDeployLogger(), hosts, cluster, context.getDeployState());
     }
     
     private List<ApplicationContainer> createNodesFromContentServiceReference(ApplicationContainerCluster cluster, Element nodesElement, ConfigModelContext context) {
@@ -820,14 +819,17 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                                             referenceId, 
                                             cluster.getRoot().hostSystem(),
                                             context.getDeployLogger());
-        return createNodesFromHosts(context.getDeployLogger(), hosts, cluster);
+        return createNodesFromHosts(context.getDeployLogger(), hosts, cluster, context.getDeployState());
     }
 
-    private List<ApplicationContainer> createNodesFromHosts(DeployLogger deployLogger, Map<HostResource, ClusterMembership> hosts, ApplicationContainerCluster cluster) {
+    private List<ApplicationContainer> createNodesFromHosts(DeployLogger deployLogger,
+                                                            Map<HostResource, ClusterMembership> hosts,
+                                                            ApplicationContainerCluster cluster,
+                                                            DeployState deployState) {
         List<ApplicationContainer> nodes = new ArrayList<>();
         for (Map.Entry<HostResource, ClusterMembership> entry : hosts.entrySet()) {
             String id = "container." + entry.getValue().index();
-            ApplicationContainer container = new ApplicationContainer(cluster, id, entry.getValue().retired(), entry.getValue().index(), cluster.isHostedVespa());
+            ApplicationContainer container = new ApplicationContainer(cluster, id, entry.getValue().retired(), entry.getValue().index(), deployState);
             container.setHostResource(entry.getKey());
             container.initService(deployLogger);
             nodes.add(container);

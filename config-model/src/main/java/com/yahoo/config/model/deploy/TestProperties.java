@@ -60,6 +60,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int metricsProxyMaxHeapSizeInMb = 256;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
+    private String jvmOmitStackTraceInFastThrowOption;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -100,6 +101,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return metricsProxyMaxHeapSizeInMb; }
     @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
     @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
+    @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return jvmOmitStackTraceInFastThrowOption; }
 
     public TestProperties setFeedConcurrency(double feedConcurrency) {
         this.feedConcurrency = feedConcurrency;
@@ -238,6 +240,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setTenantSecretStores(List<TenantSecretStore> secretStores) {
         this.tenantSecretStores = List.copyOf(secretStores);
+        return this;
+    }
+
+    public TestProperties setJvmOmitStackTraceInFastThrowOption(String value) {
+        this.jvmOmitStackTraceInFastThrowOption = value;
         return this;
     }
 
