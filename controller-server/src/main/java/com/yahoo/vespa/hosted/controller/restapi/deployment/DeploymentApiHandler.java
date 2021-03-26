@@ -11,7 +11,7 @@ import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.restapi.SlimeJsonResponse;
-import com.yahoo.restapi.Uri;
+import com.yahoo.restapi.UriBuilder;
 import com.yahoo.slime.Cursor;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -227,7 +227,7 @@ public class DeploymentApiHandler extends LoggingRequestHandler {
         object.setString("tenant", id.tenant().value());
         object.setString("application", id.application().value());
         object.setString("instance", id.instance().value());
-        object.setString("url", new Uri(request.getUri()).withPath("/application/v4/tenant/" +
+        object.setString("url", new UriBuilder(request.getUri()).withPath("/application/v4/tenant/" +
                                                                    id.tenant().value() +
                                                                    "/application/" +
                                                                    id.application().value()).toString());

@@ -10,16 +10,16 @@ import java.net.URISyntaxException;
  * 
  * @author bratseth
  */
-public class Uri {
+public class UriBuilder {
 
     /** The URI instance wrapped by this */
     private final URI uri;
     
-    public Uri(URI uri) {
+    public UriBuilder(URI uri) {
         this.uri = uri;
     }
 
-    public Uri(String uri) {
+    public UriBuilder(String uri) {
         try {
             this.uri = new URI(uri);
         }
@@ -29,21 +29,21 @@ public class Uri {
     }
 
     /** Returns a uri with the given path appended and all parameters removed */
-    public Uri append(String pathElement) {
-        return new Uri(withoutParameters().withTrailingSlash() + pathElement);
+    public UriBuilder append(String pathElement) {
+        return new UriBuilder(withoutParameters().withTrailingSlash() + pathElement);
     }
     
-    public Uri withoutParameters() {
+    public UriBuilder withoutParameters() {
         int parameterStart = uri.toString().indexOf("?");
         if (parameterStart < 0)
-            return new Uri(uri.toString());
+            return new UriBuilder(uri.toString());
         else
-            return new Uri(uri.toString().substring(0, parameterStart));
+            return new UriBuilder(uri.toString().substring(0, parameterStart));
     }
 
-    public Uri withPath(String path) {
+    public UriBuilder withPath(String path) {
         try {
-            return new Uri(new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(),
+            return new UriBuilder(new URI(uri.getScheme(), uri.getUserInfo(), uri.getHost(),
                                    uri.getPort(), path, uri.getQuery(), uri.getFragment()));
         }
         catch (URISyntaxException e) {
@@ -51,9 +51,9 @@ public class Uri {
         }
     }
 
-    public Uri withTrailingSlash() {
+    public UriBuilder withTrailingSlash() {
         if (toString().endsWith("/")) return this;
-        return new Uri(toString() + "/");
+        return new UriBuilder(toString() + "/");
     }
 
     public URI toURI() { return uri; }
