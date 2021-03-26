@@ -714,15 +714,12 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             && currentTime >= nextStateSendTime)
         {
             if (inMasterMoratorium) {
-                log.fine(currentTime < firstAllowedStateBroadcast ?
+                log.info(currentTime < firstAllowedStateBroadcast ?
                          "Master moratorium complete: all nodes have reported in" :
                          "Master moratorium complete: timed out waiting for all nodes to report in");
-                inMasterMoratorium = false;
-            }
-            if (currentTime < firstAllowedStateBroadcast) {
-                log.log(Level.FINE, "Not set to broadcast states just yet, but as we have gotten info from all nodes we can do so safely.");
-                // Reset timer to only see warning once.
+                // Reset firstAllowedStateBroadcast to make sure all future times are after firstAllowedStateBroadcast
                 firstAllowedStateBroadcast = currentTime;
+                inMasterMoratorium = false;
             }
             sentAny = systemStateBroadcaster.broadcastNewStateBundleIfRequired(
                     databaseContext, communicator, database.getLastKnownStateBundleVersionWrittenBySelf());
