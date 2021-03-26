@@ -40,7 +40,6 @@ public final class Change {
             throw new IllegalArgumentException("Application version to deploy must be a known version");
         }
         this.pinned = pinned;
-
     }
 
     public Change withoutPlatform() {
