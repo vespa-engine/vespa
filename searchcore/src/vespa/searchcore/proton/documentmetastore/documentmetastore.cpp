@@ -222,6 +222,8 @@ DocumentMetaStore::onCommit()
 {
     if (consider_compact_gid_to_lid_map()) {
         _gidToLidMap.compact_worst();
+        _gid_to_lid_map_write_itr_prepare_serial_num = 0u;
+        _gid_to_lid_map_write_itr.begin(_gidToLidMap.getRoot());
         this->incGeneration();
         this->updateStat(true);
     }
