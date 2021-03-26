@@ -133,6 +133,7 @@ public class MetricsProxyContainer extends Container implements
             getHostResource().spec().membership().map(ClusterMembership::cluster).ifPresent(cluster -> {
                 dimensions.put(PublicDimensions.INTERNAL_CLUSTER_TYPE, cluster.type().name());
                 dimensions.put(PublicDimensions.INTERNAL_CLUSTER_ID, cluster.id().value());
+                cluster.group().ifPresent(group -> dimensions.put(PublicDimensions.GROUP_ID, group.toString()));
             });
 
             builder.dimensions(dimensions);
