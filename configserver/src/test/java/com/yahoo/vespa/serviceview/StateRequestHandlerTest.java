@@ -3,6 +3,7 @@ package com.yahoo.vespa.serviceview;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.jdisc.test.MockMetric;
+import com.yahoo.restapi.UriBuilder;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
 import com.yahoo.vespa.serviceview.bindings.HealthClient;
 import com.yahoo.vespa.serviceview.bindings.ModelResponse;
@@ -74,14 +75,14 @@ public class StateRequestHandlerTest {
     public final void test() {
         Service s = correspondingModel.resolve("vespa.yahoo.com", 8080, null);
         String api = "/state/v1";
-        HashMap<?, ?> boom = testHandler.singleService(URI.create(EXTERNAL_BASE_URI), "default", "default", "default", "default", "default", s.getIdentifier(8080), api);
+        HashMap<?, ?> boom = testHandler.singleService(new UriBuilder("http://someserver:8080"), URI.create(EXTERNAL_BASE_URI), "default", "default", "default", "default", "default", s.getIdentifier(8080), api);
         assertEquals(EXTERNAL_BASE_URI + "tenant/default/application/default/environment/default/region/default/instance/default/service/" + s.getIdentifier(8080) + api,
                      ((Map<?, ?>) ((List<?>) boom.get("resources")).get(0)).get("url"));
     }
 
     @Test
     public final void testLinkEquality() {
-        ApplicationView explicitParameters = testHandler.getUserInfo(URI.create(EXTERNAL_BASE_URI), "default", "default", "default", "default", "default");
+        ApplicationView explicitParameters = testHandler.getUserInfo(new UriBuilder("http://someserver:8080"), "default", "default", "default", "default", "default");
         assertEquals(EXTERNAL_BASE_URI + "tenant/default/application/default/environment/default/region/default/instance" +
                         "/default/service/container-clustercontroller-2ul67p8psr451t3w8kdd0qwgg/state/v1/",
                 explicitParameters.clusters.get(0).services.get(0).url);
