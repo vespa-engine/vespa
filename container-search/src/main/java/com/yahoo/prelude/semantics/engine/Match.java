@@ -60,7 +60,9 @@ public class Match {
 
     /** Returns a new item representing this match */
     public Item toItem(String label) {
-        return new WordItem(getReplaceValue(), label);
+        var newItem = new WordItem(getReplaceValue(), label);
+        newItem.setWeight(item.getWeight());
+        return newItem;
     }
 
     @Override

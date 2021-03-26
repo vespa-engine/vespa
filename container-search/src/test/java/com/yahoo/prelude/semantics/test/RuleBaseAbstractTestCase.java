@@ -64,7 +64,6 @@ public abstract class RuleBaseAbstractTestCase {
 
     protected Query assertSemantics(String result, Query query) {
         createExecution(searcher).search(query);
-        System.out.println(query.getModel().getQueryTree().getRoot() + " is " + result);
         assertEquals(result, query.getModel().getQueryTree().getRoot().toString());
         return query;
     }

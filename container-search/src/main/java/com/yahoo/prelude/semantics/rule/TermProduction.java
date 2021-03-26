@@ -60,7 +60,8 @@ public abstract class TermProduction extends Production {
      * TODO: Move to ruleevaluation
      */
     protected void insertMatch(RuleEvaluation e, Match matched, Item newItem, int offset) {
-        newItem.setWeight(getWeight());
+        if (getWeight() != 100)
+            newItem.setWeight(getWeight());
         int insertPosition = matched.getPosition()+offset;
 
         // This check is necessary (?) because earlier items may have been removed
