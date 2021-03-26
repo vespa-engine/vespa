@@ -868,8 +868,8 @@ public class HttpServerTest {
     }
 
     @Test
-    public void requireThatRequestIsTrackedInAccessLog() throws IOException {
-        InMemoryRequestLog requestLogMock = new InMemoryRequestLog();
+    public void requireThatRequestIsTrackedInAccessLog() throws IOException, InterruptedException {
+        BlockingQueueRequestLog requestLogMock = new BlockingQueueRequestLog();
         TestDriver driver = TestDrivers.newConfiguredInstance(
                 new EchoRequestHandler(),
                 new ServerConfig.Builder(),
@@ -877,7 +877,7 @@ public class HttpServerTest {
                 binder -> binder.bind(RequestLog.class).toInstance(requestLogMock));
         driver.client().newPost("/status.html").setContent("abcdef").execute().expectStatusCode(is(OK));
         assertThat(driver.close(), is(true));
-        RequestLogEntry entry = requestLogMock.entries().get(0);
+        RequestLogEntry entry = requestLogMock.poll(Duration.ofSeconds(30));
         Assertions.assertThat(entry.statusCode()).hasValue(200);
         Assertions.assertThat(entry.requestSize()).hasValue(6);
     }
