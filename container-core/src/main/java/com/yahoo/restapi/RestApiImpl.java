@@ -371,6 +371,11 @@ class RestApiImpl implements RestApi {
                 return getString(name)
                         .orElseThrow(() -> new RestApiException.BadRequest("Query parameter '" + name + "' is missing"));
             }
+            @Override public List<String> getStringList(String name) {
+                List<String> result = request.getJDiscRequest().parameters().get(name);
+                if (result == null) return List.of();
+                return List.copyOf(result);
+            }
         }
 
         private class HeadersImpl implements RestApi.RequestContext.Headers {
