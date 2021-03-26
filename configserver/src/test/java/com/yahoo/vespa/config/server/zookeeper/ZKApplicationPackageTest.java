@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.zookeeper;
 
 import com.yahoo.component.Version;
@@ -25,9 +25,9 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.Reader;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 import java.util.regex.Pattern;
 
 import static com.yahoo.config.provision.serialization.AllocatedHostsSerializer.toJson;
@@ -43,15 +43,21 @@ public class ZKApplicationPackageTest {
     private static final String APP = "src/test/apps/zkapp";
     private static final String TEST_FLAVOR_NAME = "test-flavor";
     private static final Optional<Flavor> TEST_FLAVOR = new MockNodeFlavors().getFlavor(TEST_FLAVOR_NAME);
-    private static final AllocatedHosts ALLOCATED_HOSTS = AllocatedHosts.withHosts(
-            Collections.singleton(new HostSpec("foo.yahoo.com",
-                                               TEST_FLAVOR.get().resources(),
-                                               TEST_FLAVOR.get().resources(),
-                                               TEST_FLAVOR.get().resources(),
-                                               ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
-                                                                      Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar"))),
-                                               Optional.of(Version.fromString("6.0.1")), Optional.empty(),
-                                               Optional.of(DockerImage.fromString("docker.foo.com:4443/vespa/bar")))));
+    private static final AllocatedHosts ALLOCATED_HOSTS;
+    private static final String dockerImage = "docker.foo.com:4443/vespa/bar";
+
+    static {
+        var nodeResources = TEST_FLAVOR.orElseThrow(() -> new IllegalArgumentException("node resource found")).resources();
+        ALLOCATED_HOSTS = AllocatedHosts.withHosts(
+                Set.of(new HostSpec("foo.yahoo.com",
+                                    nodeResources,
+                                    nodeResources,
+                                    nodeResources,
+                                    ClusterMembership.from("container/test/0/0", Version.fromString("6.73.1"),
+                                                           Optional.of(DockerImage.fromString(dockerImage))),
+                                    Optional.of(Version.fromString("6.0.1")), Optional.empty(),
+                                    Optional.of(DockerImage.fromString(dockerImage)))));
+    }
 
     private ConfigCurator configCurator;
 
@@ -92,8 +98,7 @@ public class ZKApplicationPackageTest {
         assertEquals(Utf8.toString(toJson(ALLOCATED_HOSTS)), Utf8.toString(toJson(readInfo)));
         assertEquals(TEST_FLAVOR.get().resources(), readInfo.getHosts().iterator().next().advertisedResources());
         assertEquals("6.0.1", readInfo.getHosts().iterator().next().version().get().toString());
-        // TODO: Enable when dockerImageRepo is written to zk
-        //assertEquals("docker repo", readInfo.getHosts().iterator().next().dockerImageRepo().get());
+        assertEquals(dockerImage, readInfo.getHosts().iterator().next().dockerImageRepo().get().asString());
         assertTrue(zkApp.getDeployment().isPresent());
         assertEquals("mydisc", DeploymentSpec.fromXml(zkApp.getDeployment().get()).requireInstance("default").globalServiceId().get());
     }
