@@ -5,8 +5,8 @@
 #include <vespa/eval/eval/test/eval_fixture.h>
 #include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/instruction/join_with_number_function.h>
-
 #include <vespa/vespalib/util/stringfmt.h>
+#include <vespa/vespalib/util/unwind_message.h>
 
 using namespace vespalib;
 using namespace vespalib::eval;
@@ -47,16 +47,17 @@ struct FunInfo {
 };
 
 void verify_optimized(const vespalib::string &expr, Primary primary, bool inplace) {
-    // fprintf(stderr, "%s\n", expr.c_str());
+    UNWIND_MSG("optimize %s", expr.c_str());
     const CellTypeSpace stable_types(CellTypeUtils::list_stable_types(), 2);
     FunInfo stable_details{primary, inplace};
     TEST_DO(EvalFixture::verify<FunInfo>(expr, {stable_details}, stable_types));
     const CellTypeSpace unstable_types(CellTypeUtils::list_unstable_types(), 2);
-    TEST_DO(EvalFixture::verify<FunInfo>(expr, {}, unstable_types));
+    FunInfo unstable_details{primary, false};
+    TEST_DO(EvalFixture::verify<FunInfo>(expr, {unstable_details}, unstable_types));
 }
 
 void verify_not_optimized(const vespalib::string &expr) {
-    // fprintf(stderr, "%s\n", expr.c_str());
+    UNWIND_MSG("not: %s", expr.c_str());
     CellTypeSpace all_types(CellTypeUtils::list_types(), 2);
     TEST_DO(EvalFixture::verify<FunInfo>(expr, {}, all_types));
 }
