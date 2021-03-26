@@ -3,6 +3,9 @@ package com.yahoo.vespa.hosted.controller.deployment;
 
 import com.yahoo.vespa.curator.Lock;
 
+/**
+ * @author jonmv
+ */
 public class LockedStep {
 
     private final Step step;

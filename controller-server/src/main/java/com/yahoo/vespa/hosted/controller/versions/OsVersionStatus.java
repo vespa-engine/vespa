@@ -75,8 +75,8 @@ public class OsVersionStatus {
                     var nodeVersion = new NodeVersion(node.hostname(), zone.getVirtualId(), node.currentOsVersion(),
                                                       targetOsVersion, suspendedAt);
                     var osVersion = new OsVersion(nodeVersion.currentVersion(), zone.getCloudName());
-                    osVersions.putIfAbsent(osVersion, new ArrayList<>());
-                    osVersions.get(osVersion).add(nodeVersion);
+                    osVersions.computeIfAbsent(osVersion, (k) -> new ArrayList<>())
+                              .add(nodeVersion);
                 }
             }
         }

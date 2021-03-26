@@ -9,6 +9,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveServ
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Test;
@@ -33,7 +34,7 @@ public class ArchiveUriUpdaterTest {
 
         var tenant1 = TenantName.from("tenant1");
         var tenant2 = TenantName.from("tenant2");
-        var tenantInfra = TenantName.from("hosted-vespa");
+        var tenantInfra = SystemApplication.TENANT;
         var application = tester.newDeploymentContext(tenant1.value(), "app1", "instance1");
         ZoneId zone = ZoneId.from("prod", "ap-northeast-1");
 

@@ -3,7 +3,9 @@ package com.yahoo.vespa.hosted.controller.application;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
@@ -23,19 +25,22 @@ import java.util.Optional;
  */
 public enum SystemApplication {
 
-    controllerHost(ApplicationId.from("hosted-vespa", "controller-host", "default"), NodeType.controllerhost),
-    configServerHost(ApplicationId.from("hosted-vespa", "configserver-host", "default"), NodeType.confighost),
-    configServer(ApplicationId.from("hosted-vespa", "zone-config-servers", "default"), NodeType.config),
-    proxyHost(ApplicationId.from("hosted-vespa", "proxy-host", "default"), NodeType.proxyhost),
-    proxy(ApplicationId.from("hosted-vespa", "routing", "default"), NodeType.proxy, proxyHost, configServer),
-    tenantHost(ApplicationId.from("hosted-vespa", "tenant-host", "default"), NodeType.host);
+    controllerHost("controller-host", NodeType.controllerhost),
+    configServerHost("configserver-host", NodeType.confighost),
+    configServer("zone-config-servers", NodeType.config),
+    proxyHost("proxy-host", NodeType.proxyhost),
+    proxy( "routing", NodeType.proxy, proxyHost, configServer),
+    tenantHost("tenant-host", NodeType.host);
+
+    /** The tenant owning all system applications */
+    public static final TenantName TENANT = TenantName.from(Constants.TENANT_NAME);
 
     private final ApplicationId id;
     private final NodeType nodeType;
     private final List<SystemApplication> dependencies;
 
-    SystemApplication(ApplicationId id, NodeType nodeType, SystemApplication... dependencies) {
-        this.id = id;
+    SystemApplication(String application, NodeType nodeType, SystemApplication... dependencies) {
+        this.id = ApplicationId.from(Constants.TENANT_NAME, application, InstanceName.defaultName().value());
         this.nodeType = nodeType;
         this.dependencies = List.of(dependencies);
     }
@@ -101,6 +106,10 @@ public enum SystemApplication {
     @Override
     public String toString() {
         return String.format("system application %s of type %s", id, nodeType);
+    }
+
+    private static class Constants {
+        private static final String TENANT_NAME = "hosted-vespa";
     }
 
 }

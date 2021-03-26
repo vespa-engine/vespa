@@ -73,8 +73,8 @@ public class RoutingPolicy {
     public Endpoint endpointIn(SystemName system, RoutingMethod routingMethod, ZoneRegistry zoneRegistry) {
         Optional<Endpoint> infraEndpoint = SystemApplication.matching(id.owner())
                                                             .flatMap(app -> app.endpointIn(id.zone(), zoneRegistry));
-        if (infraEndpoint.isPresent()) return infraEndpoint.get();
-        return endpoint(routingMethod).target(id.cluster(), id.zone()).in(system);
+        return infraEndpoint.orElseGet(() -> endpoint(routingMethod).target(id.cluster(), id.zone())
+                                                                    .in(system));
     }
 
     /** Returns the region endpoint of this */
