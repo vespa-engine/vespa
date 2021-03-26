@@ -1,10 +1,12 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.orchestrator.resources;
+package com.yahoo.vespa.orchestrator.resources.health;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jaxrs.annotation.Component;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
+import com.yahoo.vespa.orchestrator.resources.ApplicationServices;
+import com.yahoo.vespa.orchestrator.resources.ServiceResource;
 import com.yahoo.vespa.orchestrator.restapi.wire.ApplicationReferenceList;
 import com.yahoo.vespa.orchestrator.restapi.wire.UrlReference;
 import com.yahoo.vespa.service.manager.HealthMonitorApi;
@@ -26,7 +28,7 @@ import java.util.stream.Collectors;
 /**
  * @author hakonhall
  */
-@Path("/v1/health")
+@Path("")
 public class HealthResource {
     private final UriInfo uriInfo;
     private final HealthMonitorApi healthMonitorApi;

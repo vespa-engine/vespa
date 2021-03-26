@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.orchestrator.resources;
+package com.yahoo.vespa.orchestrator.resources.instance;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.config.provision.ApplicationId;
@@ -9,6 +9,7 @@ import com.yahoo.vespa.applicationmodel.ConfigId;
 import com.yahoo.vespa.applicationmodel.ServiceStatus;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.applicationmodel.ServiceType;
+import com.yahoo.vespa.orchestrator.resources.instance.InstanceResource;
 import com.yahoo.vespa.orchestrator.restapi.wire.SlobrokEntryResponse;
 import com.yahoo.vespa.service.manager.UnionMonitorManager;
 import com.yahoo.vespa.service.monitor.SlobrokApi;

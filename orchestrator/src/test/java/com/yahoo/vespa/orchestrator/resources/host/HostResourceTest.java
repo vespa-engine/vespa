@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.orchestrator.resources;
+package com.yahoo.vespa.orchestrator.resources.host;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.jdisc.Metric;
@@ -33,6 +33,7 @@ import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.Policy;
 import com.yahoo.vespa.orchestrator.policy.SuspensionReasons;
+import com.yahoo.vespa.orchestrator.resources.hostsuspension.HostSuspensionResource;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 import com.yahoo.vespa.orchestrator.restapi.wire.GetHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostRequest;

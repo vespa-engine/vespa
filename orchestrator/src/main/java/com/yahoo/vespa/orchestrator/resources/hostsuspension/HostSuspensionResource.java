@@ -1,9 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.orchestrator.resources;
+package com.yahoo.vespa.orchestrator.resources.hostsuspension;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.container.jaxrs.annotation.Component;
-import java.util.logging.Level;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.BatchHostNameNotFoundException;
 import com.yahoo.vespa.orchestrator.BatchInternalErrorException;
@@ -18,13 +17,14 @@ import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * @author hakonhall
  */
-@Path(HostSuspensionApi.PATH_PREFIX)
+@Path("")
 public class HostSuspensionResource implements HostSuspensionApi {
 
     private static final Logger log = Logger.getLogger(HostSuspensionResource.class.getName());

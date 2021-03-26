@@ -1,9 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.orchestrator.resources;
+package com.yahoo.vespa.orchestrator.resources.appsuspension;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jaxrs.annotation.Component;
-import java.util.logging.Level;
 import com.yahoo.vespa.orchestrator.ApplicationIdNotFoundException;
 import com.yahoo.vespa.orchestrator.ApplicationStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.OrchestratorImpl;
@@ -18,13 +17,14 @@ import javax.ws.rs.Path;
 import javax.ws.rs.WebApplicationException;
 import javax.ws.rs.core.Response;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * @author smorgrav
  */
-@Path(ApplicationSuspensionApi.PATH_PREFIX)
+@Path("")
 public class ApplicationSuspensionResource implements ApplicationSuspensionApi {
 
     private static final Logger log = Logger.getLogger(ApplicationSuspensionResource.class.getName());

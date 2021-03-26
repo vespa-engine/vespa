@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.orchestrator.resources;
+package com.yahoo.vespa.orchestrator.resources.appsuspension;
 
 import com.yahoo.application.Application;
 import com.yahoo.application.Networking;
@@ -152,8 +152,10 @@ public class ApplicationSuspensionResourceTest {
                 "        <component id=\"com.yahoo.vespa.orchestrator.OrchestratorImpl\" bundle=\"orchestrator\" />\n" +
                 "        <component id=\"com.yahoo.vespa.orchestrator.controller.ClusterControllerClientFactoryMock\" bundle=\"orchestrator\" />\n" +
                 "\n" +
-                "        <rest-api path=\"orchestrator\">\n" +
-                "            <components bundle=\"orchestrator\" />\n" +
+                "        <rest-api path=\"orchestrator/v1/suspensions/applications\" jersey2=\"true\">\n" +
+                "            <components bundle=\"orchestrator\">\n" +
+                "                <package>com.yahoo.vespa.orchestrator.resources.appsuspension</package>\n" +
+                "            </components>\n" +
                 "        </rest-api>\n" +
                 "\n" +
                 "        <http>\n" +
