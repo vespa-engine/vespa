@@ -24,7 +24,6 @@ import static org.junit.Assert.assertEquals;
  *
  * @author bratseth
  */
-@SuppressWarnings("deprecation")
 public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
 
     public SemanticSearcherTestCase() {
@@ -35,6 +34,8 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
     public void testSingleShopping() {
         assertSemantics("brand:sony",
                                "sony");
+        assertSemantics("brand:sony!150",
+                        "sony!150");
     }
 
     @Test
@@ -63,7 +64,7 @@ public class SemanticSearcherTestCase extends RuleBaseAbstractTestCase {
 
     @Test
     public void testLiteralReplacing() {
-        assertSemantics("AND lord of rings","lotr");
+        assertSemantics("AND lord of rings", "lotr");
     }
 
     @Test
