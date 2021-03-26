@@ -23,8 +23,6 @@ public:
     size_t getFixedWidth() const override {
         return document::GlobalId::LENGTH;
     }
-
-    void onCommit() override {}
 };
 
 }

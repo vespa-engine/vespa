@@ -2091,6 +2091,35 @@ TEST(DocumentMetaStoreTest, call_to_remove_is_notified)
     EXPECT_EQ(1, listener->remove_cnt);
 }
 
+TEST(DocumentMetaStoreTest, gid_to_lid_map_can_be_compacted)
+{
+    auto dms = std::make_shared<DocumentMetaStore>(createBucketDB());
+    dms->constructFreeList();
+    static constexpr uint32_t full_size = 1000;
+    for (uint32_t i = 1; i < full_size; ++i) {
+        addLid(*dms, i);
+    }
+    dms->commit(true);
+    AttributeGuard guard(dms);
+    remove(full_size - 1, 100, *dms);
+    dms->commit(true);
+    auto status_before = dms->getStatus();
+    EXPECT_LT(0, status_before.getOnHold());
+    guard = AttributeGuard();
+    dms->removeAllOldGenerations();
+    dms->commit(true);
+    auto status_middle = dms->getStatus();
+    EXPECT_LT(status_before.getDead(), status_middle.getDead());
+    EXPECT_EQ(0, status_middle.getOnHold());
+    for (uint32_t i = 0; i < 15; ++i) {
+        dms->commit(true);
+    }
+    auto status_after = dms->getStatus();
+    EXPECT_GT(status_before.getUsed(), status_after.getUsed());
+    EXPECT_GT(status_middle.getDead(), status_after.getDead());
+    EXPECT_EQ(0, status_after.getOnHold());
+}
+
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

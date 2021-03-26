@@ -199,6 +199,34 @@ DocumentMetaStore::insert(GidToLidMapKey key, const RawDocumentMetaData &metaDat
     updateCommittedDocIdLimit();
 }
 
+namespace {
+
+// minimum dead bytes in gid to lid map before consider compaction
+constexpr size_t DEAD_BYTES_SLACK = 0x10000u;
+
+}
+
+bool
+DocumentMetaStore::consider_compact_gid_to_lid_map()
+{
+    auto &compaction_strategy = getConfig().getCompactionStrategy();
+    size_t used_bytes = _cached_gid_to_lid_map_memory_usage.usedBytes();
+    size_t dead_bytes = _cached_gid_to_lid_map_memory_usage.deadBytes();
+    bool compact_memory = ((dead_bytes >= DEAD_BYTES_SLACK) &&
+                           (used_bytes * compaction_strategy.getMaxDeadBytesRatio() < dead_bytes));
+    return compact_memory;
+}
+
+void
+DocumentMetaStore::onCommit()
+{
+    if (consider_compact_gid_to_lid_map()) {
+        _gidToLidMap.compact_worst();
+        this->incGeneration();
+        this->updateStat(true);
+    }
+}
+
 void
 DocumentMetaStore::onUpdateStat()
 {
@@ -207,7 +235,8 @@ DocumentMetaStore::onUpdateStat()
     size_t bvSize = _lidAlloc.getUsedLidsSize();
     usage.incAllocatedBytes(bvSize);
     usage.incUsedBytes(bvSize);
-    usage.merge(_gidToLidMap.getMemoryUsage());
+    _cached_gid_to_lid_map_memory_usage = _gidToLidMap.getMemoryUsage();
+    usage.merge(_cached_gid_to_lid_map_memory_usage);
     // the free lists are not taken into account here
     updateStatistics(_metaDataStore.size(),
                      _metaDataStore.size(),
@@ -400,7 +429,8 @@ DocumentMetaStore::DocumentMetaStore(BucketDBOwnerSP bucketDB,
       _shrinkLidSpaceBlockers(0),
       _subDbType(subDbType),
       _trackDocumentSizes(true),
-      _op_listener()
+      _op_listener(),
+      _cached_gid_to_lid_map_memory_usage()
 {
     ensureSpace(0);         // lid 0 is reserved
     setCommittedDocIdLimit(1u);         // lid 0 is reserved
