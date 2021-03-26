@@ -9,6 +9,8 @@ import com.yahoo.vespa.model.container.ContainerCluster;
 import com.yahoo.vespa.model.container.component.Handler;
 import com.yahoo.vespa.model.container.component.SystemBindingPattern;
 
+import java.util.Optional;
+
 /**
  * @author hmusum
  */
@@ -19,7 +21,7 @@ public class LogserverContainerCluster extends ContainerCluster<LogserverContain
 
         addDefaultHandlersWithVip();
         addLogHandler();
-        setJvmGCOptions(deployState.featureFlags().jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type.admin));
+        setJvmGCOptions(deployState.getProperties().jvmGCOptions(Optional.of(ClusterSpec.Type.admin)));
     }
 
     @Override
