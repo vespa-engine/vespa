@@ -42,9 +42,12 @@ public class IdentityProviderRequestHandler extends RestApiRequestHandler<Identi
                 .addRoute(RestApi.route("/athenz/v1/provider/identity-document/tenant/{host}")
                         .get(self::getTenantIdentityDocument))
                 .addRoute(RestApi.route("/athenz/v1/provider/instance")
-                        .post(self::confirmInstance))
+                        .post(InstanceConfirmation.class, self::confirmInstance))
                 .addRoute(RestApi.route("/athenz/v1/provider/refresh")
-                        .post(self::confirmInstanceRefresh))
+                        .post(InstanceConfirmation.class, self::confirmInstanceRefresh))
+                .registerJacksonRequestEntity(InstanceConfirmation.class)
+                .registerJacksonResponseEntity(InstanceConfirmation.class)
+                .registerJacksonResponseEntity(SignedIdentityDocumentEntity.class)
                 // Overriding object mapper to change serialization of timestamps
                 .setObjectMapper(new ObjectMapper()
                         .registerModule(new JavaTimeModule())
@@ -63,8 +66,7 @@ public class IdentityProviderRequestHandler extends RestApiRequestHandler<Identi
         return getIdentityDocument(host, IdentityType.TENANT);
     }
 
-    private InstanceConfirmation confirmInstance(RestApi.RequestContext context) {
-        InstanceConfirmation instanceConfirmation = context.requestContentOrThrow().consumeJacksonEntity(InstanceConfirmation.class);
+    private InstanceConfirmation confirmInstance(RestApi.RequestContext context, InstanceConfirmation instanceConfirmation) {
         log.log(Level.FINE, instanceConfirmation.toString());
         if (!instanceValidator.isValidInstance(instanceConfirmation)) {
             log.log(Level.SEVERE, "Invalid instance: " + instanceConfirmation);
@@ -73,8 +75,7 @@ public class IdentityProviderRequestHandler extends RestApiRequestHandler<Identi
         return instanceConfirmation;
     }
 
-    private InstanceConfirmation confirmInstanceRefresh(RestApi.RequestContext context) {
-        InstanceConfirmation instanceConfirmation = context.requestContentOrThrow().consumeJacksonEntity(InstanceConfirmation.class);
+    private InstanceConfirmation confirmInstanceRefresh(RestApi.RequestContext context, InstanceConfirmation instanceConfirmation) {
         log.log(Level.FINE, instanceConfirmation.toString());
         if (!instanceValidator.isValidRefresh(instanceConfirmation)) {
             log.log(Level.SEVERE, "Invalid instance refresh: " + instanceConfirmation);

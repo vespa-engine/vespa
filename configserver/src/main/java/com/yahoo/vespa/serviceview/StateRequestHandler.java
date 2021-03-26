@@ -4,7 +4,6 @@ package com.yahoo.vespa.serviceview;
 import com.google.inject.Inject;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
-import com.yahoo.restapi.JacksonJsonResponse;
 import com.yahoo.restapi.RestApi;
 import com.yahoo.restapi.RestApiRequestHandler;
 import com.yahoo.vespa.serviceview.bindings.ApplicationView;
@@ -79,8 +78,8 @@ public class StateRequestHandler extends RestApiRequestHandler<StateRequestHandl
                         .get(self::getUserInfo))
                 .addRoute(RestApi.route("/serviceview/v1/tenant/{tenantName}/application/{applicationName}/environment/{environmentName}/region/{regionName}/instance/{instanceName}/service/{serviceIdentifier}/{*}")
                         .get(self::singleService))
-                .addResponseMapper(HashMap.class, (hashMap, context) -> new JacksonJsonResponse<>(200, hashMap, true))
-                .addResponseMapper(ApplicationView.class, (applicationView, context) -> new JacksonJsonResponse<>(200, applicationView, true))
+                .registerJacksonResponseEntity(HashMap.class)
+                .registerJacksonResponseEntity(ApplicationView.class)
                 .build();
     }
 
