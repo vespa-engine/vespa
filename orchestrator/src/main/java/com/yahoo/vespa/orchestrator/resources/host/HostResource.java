@@ -1,9 +1,8 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.orchestrator.resources;
+package com.yahoo.vespa.orchestrator.resources.host;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.container.jaxrs.annotation.Component;
-import java.util.logging.Level;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.Host;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
@@ -11,6 +10,7 @@ import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
+import com.yahoo.vespa.orchestrator.resources.instance.InstanceResource;
 import com.yahoo.vespa.orchestrator.restapi.HostApi;
 import com.yahoo.vespa.orchestrator.restapi.wire.GetHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.HostService;
@@ -33,13 +33,14 @@ import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
  * @author oyving
  */
-@Path(HostApi.PATH_PREFIX)
+@Path("")
 public class HostResource implements HostApi {
     private static final Logger log = Logger.getLogger(HostResource.class.getName());
 

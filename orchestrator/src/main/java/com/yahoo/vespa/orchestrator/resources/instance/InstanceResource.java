@@ -1,5 +1,5 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.orchestrator.resources;
+package com.yahoo.vespa.orchestrator.resources.instance;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.container.jaxrs.annotation.Component;
@@ -12,6 +12,7 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
+import com.yahoo.vespa.orchestrator.resources.InstanceStatusResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.SlobrokEntryResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.WireHostInfo;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
@@ -46,7 +47,7 @@ import static com.yahoo.vespa.orchestrator.OrchestratorUtil.parseApplicationInst
  * @author andreer
  * @author bakksjo
  */
-@Path("/v1/instances")
+@Path("")
 public class InstanceResource {
 
     public static final String DEFAULT_SLOBROK_PATTERN = "**";
