@@ -60,25 +60,23 @@ inject(Node::UP query, Node::UP to_inject) {
     return query;
 }
 
-std::vector<LocationTerm *>
-find_location_terms(Node *tree) {
-    std::vector<LocationTerm *> retval;
-    std::vector<Node *> nodes;
-    nodes.push_back(tree);
-    // Note the nodes vector being iterated over is appended in the loop
-    for (size_t i = 0; i < nodes.size(); ++i) {
-        Node * node = nodes[i];
-        if (node->isLocationTerm() ) {
-            retval.push_back(static_cast<LocationTerm *>(node));
-        }
-        if (node->isIntermediate()) {
-            auto parent = static_cast<const search::query::Intermediate *>(node);
-            for (Node * child : parent->getChildren()) {
-                nodes.push_back(child);
-            }
+void
+find_location_terms(Node *node, std::vector<LocationTerm *> & locations) {
+    if (node->isLocationTerm() ) {
+        locations.push_back(static_cast<LocationTerm *>(node));
+    } else if (node->isIntermediate()) {
+        auto parent = static_cast<const search::query::Intermediate *>(node);
+        for (Node * child : parent->getChildren()) {
+            find_location_terms(child, locations);
         }
     }
-    return retval;
+}
+
+std::vector<LocationTerm *>
+find_location_terms(Node *tree) {
+    std::vector<LocationTerm *> locations;
+    find_location_terms(tree, locations);
+    return locations;
 }
 
 GeoLocationSpec parse_location_string(string str) {
