@@ -4,6 +4,8 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.container.logging.RequestLog;
 import com.yahoo.container.logging.RequestLogEntry;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.CopyOnWriteArrayList;
 
@@ -12,7 +14,7 @@ import java.util.concurrent.CopyOnWriteArrayList;
  */
 public class InMemoryRequestLog implements RequestLog {
 
-    private final List<RequestLogEntry> entries = new CopyOnWriteArrayList<>();
+    private final List<RequestLogEntry> entries = Collections.synchronizedList(new ArrayList<>());
 
     @Override public void log(RequestLogEntry entry) { entries.add(entry); }
 
