@@ -41,14 +41,14 @@ public interface RestApi {
         RouteBuilder name(String name);
         RouteBuilder get(Handler<?> handler);
         RouteBuilder post(Handler<?> handler);
-        <ENTITY> RouteBuilder post(Class<ENTITY> type, HandlerWithRequestEntity<?, ENTITY> handler);
+        <ENTITY> RouteBuilder post(Class<ENTITY> type, HandlerWithRequestEntity<ENTITY, ?> handler);
         RouteBuilder put(Handler<?> handler);
-        <ENTITY> RouteBuilder put(Class<ENTITY> type, HandlerWithRequestEntity<?, ENTITY> handler);
+        <ENTITY> RouteBuilder put(Class<ENTITY> type, HandlerWithRequestEntity<ENTITY, ?> handler);
         RouteBuilder delete(Handler<?> handler);
         RouteBuilder patch(Handler<?> handler);
-        <ENTITY> RouteBuilder patch(Class<ENTITY> type, HandlerWithRequestEntity<?, ENTITY> handler);
+        <ENTITY> RouteBuilder patch(Class<ENTITY> type, HandlerWithRequestEntity<ENTITY, ?> handler);
         RouteBuilder defaultHandler(Handler<?> handler);
-        <ENTITY> RouteBuilder defaultHandler(Class<ENTITY> type, HandlerWithRequestEntity<?, ENTITY> handler);
+        <ENTITY> RouteBuilder defaultHandler(Class<ENTITY> type, HandlerWithRequestEntity<ENTITY, ?> handler);
         RouteBuilder addFilter(Filter filter);
     }
 
@@ -56,7 +56,7 @@ public interface RestApi {
         ENTITY handleRequest(RequestContext context) throws RestApiException;
     }
 
-    @FunctionalInterface interface HandlerWithRequestEntity<RESPONSE_ENTITY, REQUEST_ENTITY> {
+    @FunctionalInterface interface HandlerWithRequestEntity<REQUEST_ENTITY, RESPONSE_ENTITY> {
         RESPONSE_ENTITY handleRequest(RequestContext context, REQUEST_ENTITY requestEntity) throws RestApiException;
     }
 
