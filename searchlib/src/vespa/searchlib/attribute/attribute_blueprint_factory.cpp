@@ -620,17 +620,11 @@ public:
     void visit(PredicateQuery &n) override { visitPredicate(n); }
     void visit(RegExpTerm & n) override { visitTerm(n); }
 
-    template <typename WS, typename NODE>
-    void createDirectWeightedSet(WS *bp, NODE &n) {
-        Blueprint::UP result(bp);
-        for (size_t i = 0; i < n.getChildren().size(); ++i) {
-            const query::Node &node = *n.getChildren()[i];
-            vespalib::string term = queryeval::termAsString(node);
-            uint32_t weight = queryeval::getWeightFromNode(node).percent();
-            bp->addTerm(term, weight);
-        }
-        setResult(std::move(result));
-    }
+    template <typename WS>
+    void createDirectWeightedSet(WS *bp, search::query::Intermediate &n);
+
+    template <typename WS>
+    void createShallowWeightedSet(WS *bp, search::query::Intermediate &n, const FieldSpec &fs, bool isInteger);
 
     static QueryTermSimple::UP
     extractTerm(const query::Node &node, bool isInteger) {
@@ -639,18 +633,6 @@ public:
             return std::make_unique<QueryTermSimple>(term, QueryTermSimple::Type::WORD);
         }
         return std::make_unique<QueryTermUCS4>(term, QueryTermSimple::Type::WORD);
-    }
-
-    template <typename WS, typename NODE>
-    void createShallowWeightedSet(WS *bp, NODE &n, const FieldSpec &fs, bool isInteger) {
-        Blueprint::UP result(bp);
-        for (size_t i = 0; i < n.getChildren().size(); ++i) {
-            const query::Node &node = *n.getChildren()[i];
-            uint32_t weight = queryeval::getWeightFromNode(node).percent();
-            FieldSpec childfs = bp->getNextChildField(fs);
-            bp->addTerm(std::make_unique<AttributeFieldBlueprint>(childfs, _attr, extractTerm(node, isInteger)), weight);
-        }
-        setResult(std::move(result));
     }
 
     void visit(query::WeightedSetTerm &n) override {
@@ -740,6 +722,30 @@ public:
                                                                         getRequestContext().get_attribute_blueprint_params().nearest_neighbor_brute_force_limit));
     }
 };
+
+template <typename WS>
+void
+CreateBlueprintVisitor::createDirectWeightedSet(WS *bp, search::query::Intermediate &n) {
+    Blueprint::UP result(bp);
+    for (const Node * node : n.getChildren()) {
+        vespalib::string term = queryeval::termAsString(*node);
+        uint32_t weight = queryeval::getWeightFromNode(*node).percent();
+        bp->addTerm(term, weight);
+    }
+    setResult(std::move(result));
+}
+
+template <typename WS>
+void
+CreateBlueprintVisitor::createShallowWeightedSet(WS *bp, search::query::Intermediate &n, const FieldSpec &fs, bool isInteger) {
+    Blueprint::UP result(bp);
+    for (const Node * node : n.getChildren()) {
+        uint32_t weight = queryeval::getWeightFromNode(*node).percent();
+        FieldSpec childfs = bp->getNextChildField(fs);
+        bp->addTerm(std::make_unique<AttributeFieldBlueprint>(childfs, _attr, extractTerm(*node, isInteger)), weight);
+    }
+    setResult(std::move(result));
+}
 
 } // namespace
 
