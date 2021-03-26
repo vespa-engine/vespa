@@ -8,7 +8,7 @@
 #include <vespa/vespalib/btree/btreenodeallocator.hpp>
 #include <vespa/vespalib/btree/btreeroot.hpp>
 #include <vespa/vespalib/datastore/datastore.hpp>
-#include <vespa/vespalib/datastore/simple_hash_map.h>
+#include <vespa/vespalib/datastore/sharded_hash_map.h>
 #include <vespa/vespalib/datastore/unique_store_dictionary.hpp>
 #include <vespa/searchlib/util/bufferwriter.h>
 
@@ -355,7 +355,7 @@ template class EnumStoreDictionary<EnumTree>;
 
 template class EnumStoreDictionary<EnumPostingTree>;
 
-template class EnumStoreDictionary<EnumPostingTree, vespalib::datastore::SimpleHashMap>;
+template class EnumStoreDictionary<EnumPostingTree, vespalib::datastore::ShardedHashMap>;
 
 }
 

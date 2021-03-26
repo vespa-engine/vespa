@@ -2,7 +2,7 @@
 
 #include <vespa/vespalib/datastore/unique_store.hpp>
 #include <vespa/vespalib/datastore/unique_store_dictionary.hpp>
-#include <vespa/vespalib/datastore/simple_hash_map.h>
+#include <vespa/vespalib/datastore/sharded_hash_map.h>
 #include <vespa/vespalib/util/memoryusage.h>
 #include <vespa/vespalib/gtest/gtest.h>
 
@@ -59,7 +59,7 @@ struct DictionaryReadTest : public ::testing::Test {
     }
 };
 
-using DictionaryReadTestTypes = ::testing::Types<DefaultUniqueStoreDictionary, UniqueStoreDictionary<DefaultDictionary, IUniqueStoreDictionary, SimpleHashMap>>;
+using DictionaryReadTestTypes = ::testing::Types<DefaultUniqueStoreDictionary, UniqueStoreDictionary<DefaultDictionary, IUniqueStoreDictionary, ShardedHashMap>>;
 VESPA_GTEST_TYPED_TEST_SUITE(DictionaryReadTest, DictionaryReadTestTypes);
 
 // Disable warnings emitted by gtest generated files when using typed tests

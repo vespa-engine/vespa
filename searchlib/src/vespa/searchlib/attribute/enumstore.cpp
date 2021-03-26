@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "enumstore.hpp"
-#include <vespa/vespalib/datastore/simple_hash_map.h>
+#include <vespa/vespalib/datastore/sharded_hash_map.h>
 #include <vespa/vespalib/util/rcuvector.hpp>
 #include <iomanip>
 
@@ -51,7 +51,7 @@ make_enum_store_dictionary(IEnumStore &store, bool has_postings, search::Diction
             switch (type) {
             case search::DictionaryConfig::Type::HASH:
             case search::DictionaryConfig::Type::BTREE_AND_HASH:
-                return std::make_unique<EnumStoreDictionary<EnumPostingTree, vespalib::datastore::SimpleHashMap>>(store, std::move(compare));
+                return std::make_unique<EnumStoreDictionary<EnumPostingTree, vespalib::datastore::ShardedHashMap>>(store, std::move(compare));
             default:
                 return std::make_unique<EnumStoreDictionary<EnumPostingTree>>(store, std::move(compare));
             }

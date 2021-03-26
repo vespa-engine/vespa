@@ -89,14 +89,14 @@ private:
     uint32_t          _hold_count;
     Array<uint32_t>   _hold_1_list;
     std::deque<std::pair<generation_t, uint32_t>> _hold_2_list;
-    uint32_t          _num_stripes;
+    uint32_t          _num_shards;
 
     void transfer_hold_lists_slow(generation_t generation);
     void trim_hold_lists_slow(generation_t first_used);
     void force_add(const EntryComparator& comp, const KvType& kv);
 public:
-    FixedSizeHashMap(uint32_t module, uint32_t capacity, uint32_t num_stripes);
-    FixedSizeHashMap(uint32_t module, uint32_t capacity, uint32_t num_stripes, const FixedSizeHashMap &orig, const EntryComparator& comp);
+    FixedSizeHashMap(uint32_t module, uint32_t capacity, uint32_t num_shards);
+    FixedSizeHashMap(uint32_t module, uint32_t capacity, uint32_t num_shards, const FixedSizeHashMap &orig, const EntryComparator& comp);
     ~FixedSizeHashMap();
 
     KvType& add(const EntryComparator& comp, EntryRef key_ref, std::function<EntryRef(void)>& insert_entry);
