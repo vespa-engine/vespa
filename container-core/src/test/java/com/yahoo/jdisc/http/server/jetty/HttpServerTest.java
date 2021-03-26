@@ -180,7 +180,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatAccessLogIsCalledForRequestRejectedByJetty() throws Exception {
-        InMemoryRequestLog requestLogMock = new InMemoryRequestLog();
+        BlockingRequestLog requestLogMock = new BlockingRequestLog();
         final TestDriver driver = TestDrivers.newConfiguredInstance(
                 mockRequestHandler(),
                 new ServerConfig.Builder(),
@@ -189,7 +189,7 @@ public class HttpServerTest {
         driver.client().get("/status.html")
                 .expectStatusCode(is(REQUEST_URI_TOO_LONG));
         assertThat(driver.close(), is(true));
-        RequestLogEntry entry = requestLogMock.entries().get(0);
+        RequestLogEntry entry = requestLogMock.take();
         assertEquals(414, entry.statusCode().getAsInt());
     }
 
@@ -868,7 +868,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatRequestIsTrackedInAccessLog() throws IOException {
-        InMemoryRequestLog requestLogMock = new InMemoryRequestLog();
+        BlockingRequestLog requestLogMock = new BlockingRequestLog();
         TestDriver driver = TestDrivers.newConfiguredInstance(
                 new EchoRequestHandler(),
                 new ServerConfig.Builder(),
@@ -876,7 +876,7 @@ public class HttpServerTest {
                 binder -> binder.bind(RequestLog.class).toInstance(requestLogMock));
         driver.client().newPost("/status.html").setContent("abcdef").execute().expectStatusCode(is(OK));
         assertThat(driver.close(), is(true));
-        RequestLogEntry entry = requestLogMock.entries().get(0);
+        RequestLogEntry entry = requestLogMock.take();
         Assertions.assertThat(entry.statusCode()).hasValue(200);
         Assertions.assertThat(entry.requestSize()).hasValue(6);
     }

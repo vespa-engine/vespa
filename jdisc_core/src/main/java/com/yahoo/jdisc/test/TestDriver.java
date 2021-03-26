@@ -184,7 +184,7 @@ public class TestDriver implements ContainerActivator, CurrentContainer {
     }
 
     /**
-     * <p>Initiatiates shut down of this TestDriver and waits for it to complete. If shut down fails to complete within
+     * <p>Initiates shut down of this TestDriver and waits for it to complete. If shut down fails to complete within
      * 60 seconds, this method throws an exception.</p>
      *
      * @return True if shut down completed within the allocated time.
