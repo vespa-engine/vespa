@@ -39,8 +39,8 @@ struct FunInfo {
 void verify_optimized(const vespalib::string &expr, const FunInfo &details)
 {
     TEST_STATE(expr.c_str());
-    auto stable_types = CellTypeSpace({CellType::FLOAT, CellType::DOUBLE}, 2);
-    auto unstable_types = CellTypeSpace({CellType::BFLOAT16, CellType::INT8}, 2);
+    CellTypeSpace stable_types(CellTypeUtils::list_stable_types(), 2);
+    CellTypeSpace unstable_types(CellTypeUtils::list_unstable_types(), 2);
     EvalFixture::verify<FunInfo>(expr, {details}, CellTypeSpace(stable_types).same());
     EvalFixture::verify<FunInfo>(expr, {}, CellTypeSpace(stable_types).different());
     EvalFixture::verify<FunInfo>(expr, {}, unstable_types);

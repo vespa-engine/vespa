@@ -48,10 +48,10 @@ struct FunInfo {
 
 void verify_optimized(const vespalib::string &expr, Primary primary, bool inplace) {
     // fprintf(stderr, "%s\n", expr.c_str());
-    const auto stable_types = CellTypeSpace({CellType::FLOAT, CellType::DOUBLE}, 2);
+    const CellTypeSpace stable_types(CellTypeUtils::list_stable_types(), 2);
     FunInfo stable_details{primary, inplace};
     TEST_DO(EvalFixture::verify<FunInfo>(expr, {stable_details}, stable_types));
-    const auto unstable_types = CellTypeSpace({CellType::BFLOAT16, CellType::INT8}, 2);
+    const CellTypeSpace unstable_types(CellTypeUtils::list_unstable_types(), 2);
     TEST_DO(EvalFixture::verify<FunInfo>(expr, {}, unstable_types));
 }
 
