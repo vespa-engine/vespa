@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 
 import java.net.URI;
 import java.time.Duration;
@@ -23,7 +24,7 @@ import java.util.Set;
  */
 public class ArchiveUriUpdater extends ControllerMaintainer {
 
-    private static final Set<TenantName> INFRASTRUCTURE_TENANTS = Set.of(TenantName.from("hosted-vespa"));
+    private static final Set<TenantName> INFRASTRUCTURE_TENANTS = Set.of(SystemApplication.TENANT);
 
     private final ApplicationController applications;
     private final NodeRepository nodeRepository;
