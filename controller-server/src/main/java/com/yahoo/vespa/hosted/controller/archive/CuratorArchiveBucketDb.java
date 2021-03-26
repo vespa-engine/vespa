@@ -25,7 +25,7 @@ import java.util.Set;
  *
  * @author andreer
  */
-public class CuratorArchiveBucketDb extends AbstractComponent implements ArchiveBucketDb {
+public class CuratorArchiveBucketDb implements ArchiveBucketDb {
 
     /**
      * Due to policy limits, we can't put data for more than this many tenants in a bucket.

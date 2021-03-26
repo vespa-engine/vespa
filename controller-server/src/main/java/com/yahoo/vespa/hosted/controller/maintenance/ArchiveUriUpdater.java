@@ -33,7 +33,7 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
         super(controller, duration, ArchiveUriUpdater.class.getSimpleName(), SystemName.all());
         this.applications = controller.applications();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
-        this.archiveBucketDb = controller.serviceRegistry().archiveBucketDb();
+        this.archiveBucketDb = controller.archiveBucketDb();
     }
 
     @Override

@@ -24,7 +24,7 @@ public class ArchiveAccessMaintainer extends ControllerMaintainer {
 
     public ArchiveAccessMaintainer(Controller controller, Duration interval) {
         super(controller, interval);
-        this.archiveBucketDb = controller.serviceRegistry().archiveBucketDb();
+        this.archiveBucketDb = controller.archiveBucketDb();
         this.archiveService = controller.serviceRegistry().archiveService();
         this.zoneRegistry = controller().zoneRegistry();
     }
