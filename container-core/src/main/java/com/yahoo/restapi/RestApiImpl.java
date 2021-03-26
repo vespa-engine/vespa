@@ -12,6 +12,7 @@ import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -344,6 +345,10 @@ class RestApiImpl implements RestApi {
             return requestContent().orElseThrow(() -> new RestApiException.BadRequest("Request content missing"));
         }
         @Override public ObjectMapper jacksonJsonMapper() { return jacksonJsonMapper; }
+        @Override public UriBuilder uriBuilder() {
+            URI uri = request.getUri();
+            return new UriBuilder(uri.getScheme() + "://" + uri.getHost() + ':' + uri.getPort());
+        }
 
         private class PathParametersImpl implements RestApi.RequestContext.PathParameters {
             @Override

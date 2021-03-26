@@ -77,6 +77,7 @@ public interface RestApi {
         Optional<RequestContent> requestContent();
         RequestContent requestContentOrThrow();
         ObjectMapper jacksonJsonMapper();
+        UriBuilder uriBuilder();
 
         interface Parameters {
             Optional<String> getString(String name);
