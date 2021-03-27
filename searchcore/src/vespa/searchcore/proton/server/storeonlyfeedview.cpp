@@ -783,9 +783,7 @@ StoreOnlyFeedView::heartBeat(SerialNum serialNum)
 {
     assert(_writeService.master().isCurrentThread());
     _metaStore.removeAllOldGenerations();
-    if (serialNum > _metaStore.getLastSerialNum()) {
-        _metaStore.commit(CommitParam(serialNum));
-    }
+    _metaStore.commit(CommitParam(serialNum));
     heartBeatSummary(serialNum);
     heartBeatIndexedFields(serialNum);
     heartBeatAttributes(serialNum);

@@ -75,6 +75,7 @@ private:
     const SubDbType     _subDbType;
     bool                _trackDocumentSizes;
     OperationListenerSP _op_listener;
+    vespalib::MemoryUsage _cached_gid_to_lid_map_memory_usage;
 
     DocId getFreeLid();
     DocId peekFreeLid();
@@ -83,6 +84,8 @@ private:
 
     const GlobalId & getRawGid(DocId lid) const { return getRawMetaData(lid).getGid(); }
 
+    bool consider_compact_gid_to_lid_map();
+    void onCommit() override;
     void onUpdateStat() override;
 
     // Implements AttributeVector
