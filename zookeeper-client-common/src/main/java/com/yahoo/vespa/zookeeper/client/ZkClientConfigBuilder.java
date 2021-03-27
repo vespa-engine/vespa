@@ -46,7 +46,7 @@ public class ZkClientConfigBuilder {
     public ZKClientConfig toConfig(Path configFile) throws IOException, QuorumPeerConfig.ConfigException {
         String configString = toConfigString();
         Files.createDirectories(configFile.getParent());
-        Path tempFile = configFile.resolveSibling("." + configFile.getFileName() + ".tmp");
+        Path tempFile = Files.createTempFile(configFile.toAbsolutePath().getParent(), "." + configFile.getFileName(), ".tmp");
         Files.writeString(tempFile, configString);
         Files.move(tempFile, configFile, StandardCopyOption.ATOMIC_MOVE);
         return new ZKClientConfig(configFile.toString());
