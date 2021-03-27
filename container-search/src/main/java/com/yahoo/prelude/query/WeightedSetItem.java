@@ -25,9 +25,8 @@ import java.util.Map;
  */
 public class WeightedSetItem extends SimpleTaggableItem {
 
-    private String indexName = "";
-
-    private CopyOnWriteHashMap<Object,Integer> set = new CopyOnWriteHashMap<>(1000);
+    private String indexName;
+    private CopyOnWriteHashMap<Object,Integer> set;
 
     /** Creates an empty weighted set; note you must provide an index name up front */
     public WeightedSetItem(String indexName) {
@@ -36,6 +35,15 @@ public class WeightedSetItem extends SimpleTaggableItem {
         } else {
             this.indexName = indexName;
         }
+        set = new CopyOnWriteHashMap<>(1000);
+    }
+    public WeightedSetItem(String indexName, Map<Object, Integer> map) {
+        if (indexName == null) {
+            this.indexName = "";
+        } else {
+            this.indexName = indexName;
+        }
+        set = new CopyOnWriteHashMap<>(map);
     }
 
     public Integer addToken(long value, int weight) {
