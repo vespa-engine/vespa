@@ -155,17 +155,6 @@ public:
      */
     virtual bool VisitANDNOT(const QueryItem* item, int arity) = 0;
 
-    /** To be called upon by IQuery::Traverse visiting a THRESHOLD query item
-     * @param item The (opaque to IQueryVisitor) item that is visited
-     * @param arity The number of children of this item
-     * @param threshold The threshold value for which the sum of the individual
-     *   subexpressions' weights (as obtained by the IQueryVisitor::Weight function
-     *   should result in a hit for the THRESHOLD expression.
-     * @return if false, caller should skip calling this element's children visitors,
-     *   otherwise caller should proceed as normal
-     */
-    virtual bool VisitTHRESHOLD(const QueryItem* item, int arity, int threshold) = 0;
-
     /** To be called upon by IQuery::Traverse visiting any other query item
      *  than the ones handled by Juniper (to avoid inconsistency in the
      *  traversal wrt. arities)

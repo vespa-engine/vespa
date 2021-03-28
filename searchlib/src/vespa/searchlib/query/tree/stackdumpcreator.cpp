@@ -169,18 +169,28 @@ class QueryNodeConverter : public QueryVisitor {
         if (typefield & ParseItem::IF_FLAGS) {
             appendByte(flags);
         }
-        appendCompressedPositiveNumber(node.getChildren().size());
+        appendCompressedPositiveNumber(node.getNumTerms());
         appendString(node.getView());
+    }
+
+    void createMultiTermNodes(const MultiTerm & mt) {
+        for (size_t i = 0; i < mt.getNumTerms(); ++i) {
+            auto term = mt.getAsString(i);
+            uint8_t typeField = static_cast<uint8_t>(ParseItem::ITEM_PURE_WEIGHTED_STRING) | static_cast<uint8_t>(ParseItem::IF_WEIGHT);
+            appendByte(typeField);
+            appendCompressedNumber(term.second.percent());
+            appendString(term.first);
+        }
     }
 
     void visit(WeightedSetTerm &node) override {
         createWeightedSet(node, static_cast<uint8_t>(ParseItem::ITEM_WEIGHTED_SET) | static_cast<uint8_t>(ParseItem::IF_WEIGHT));
-        visitNodes(node.getChildren());
+        createMultiTermNodes(node);
     }
 
     void visit(DotProduct &node) override {
         createWeightedSet(node, static_cast<uint8_t>(ParseItem::ITEM_DOT_PRODUCT) | static_cast<uint8_t>(ParseItem::IF_WEIGHT));
-        visitNodes(node.getChildren());
+        createMultiTermNodes(node);
     }
 
     void visit(WandTerm &node) override {
@@ -188,7 +198,7 @@ class QueryNodeConverter : public QueryVisitor {
         appendCompressedPositiveNumber(node.getTargetNumHits());
         appendDouble(node.getScoreThreshold());
         appendDouble(node.getThresholdBoostFactor());
-        visitNodes(node.getChildren());
+        createMultiTermNodes(node);
     }
 
     void visit(Rank &node) override {

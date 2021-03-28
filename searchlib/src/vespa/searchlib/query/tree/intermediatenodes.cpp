@@ -13,8 +13,5 @@ Near::~Near() = default;
 ONear::~ONear() = default;
 Phrase::~Phrase() = default;
 SameElement::~SameElement() = default;
-WeightedSetTerm::~WeightedSetTerm() = default;
-DotProduct::~DotProduct() = default;
-WandTerm::~WandTerm() = default;
 
 }

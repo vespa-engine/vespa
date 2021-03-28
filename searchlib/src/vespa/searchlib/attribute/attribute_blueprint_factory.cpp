@@ -621,14 +621,21 @@ public:
     void visit(RegExpTerm & n) override { visitTerm(n); }
 
     template <typename WS>
-    void createDirectWeightedSet(WS *bp, search::query::Intermediate &n);
+    void createDirectWeightedSet(WS *bp, search::query::MultiTerm &n);
 
     template <typename WS>
-    void createShallowWeightedSet(WS *bp, search::query::Intermediate &n, const FieldSpec &fs, bool isInteger);
+    void createShallowWeightedSet(WS *bp, search::query::MultiTerm &n, const FieldSpec &fs, bool isInteger);
 
     static QueryTermSimple::UP
     extractTerm(const query::Node &node, bool isInteger) {
         vespalib::string term = queryeval::termAsString(node);
+        if (isInteger) {
+            return std::make_unique<QueryTermSimple>(term, QueryTermSimple::Type::WORD);
+        }
+        return std::make_unique<QueryTermUCS4>(term, QueryTermSimple::Type::WORD);
+    }
+    static QueryTermSimple::UP
+    extractTerm(vespalib::stringref term, bool isInteger) {
         if (isInteger) {
             return std::make_unique<QueryTermSimple>(term, QueryTermSimple::Type::WORD);
         }
@@ -641,15 +648,14 @@ public:
         bool isInteger = _attr.isIntegerType();
         if (isSingleValue && (isString || isInteger)) {
             auto ws = std::make_unique<AttributeWeightedSetBlueprint>(_field, _attr);
-            for (size_t i = 0; i < n.getChildren().size(); ++i) {
-                const query::Node &node = *n.getChildren()[i];
-                uint32_t weight = queryeval::getWeightFromNode(node).percent();
-                ws->addToken(_attr.createSearchContext(extractTerm(node, isInteger), attribute::SearchContextParams()), weight);
+            for (size_t i = 0; i < n.getNumTerms(); ++i) {
+                auto term = n.getAsString(i);
+                ws->addToken(_attr.createSearchContext(extractTerm(term.first, isInteger), attribute::SearchContextParams()), term.second.percent());
             }
             setResult(std::move(ws));
         } else {
             if (_dwa != nullptr) {
-                auto *bp = new DirectWeightedSetBlueprint<queryeval::WeightedSetTermSearch>(_field, _attr, *_dwa, n.getChildren().size());
+                auto *bp = new DirectWeightedSetBlueprint<queryeval::WeightedSetTermSearch>(_field, _attr, *_dwa, n.getNumTerms());
                 createDirectWeightedSet(bp, n);
             } else {
                 auto *bp = new WeightedSetTermBlueprint(_field);
@@ -660,7 +666,7 @@ public:
 
     void visit(query::DotProduct &n) override {
         if (_dwa != nullptr) {
-            auto *bp = new DirectWeightedSetBlueprint<queryeval::DotProductSearch>(_field, _attr, *_dwa, n.getChildren().size());
+            auto *bp = new DirectWeightedSetBlueprint<queryeval::DotProductSearch>(_field, _attr, *_dwa, n.getNumTerms());
             createDirectWeightedSet(bp, n);
         } else {
             auto *bp = new DotProductBlueprint(_field);
@@ -672,7 +678,7 @@ public:
         if (_dwa != nullptr) {
             auto *bp = new DirectWandBlueprint(_field, *_dwa,
                                                n.getTargetNumHits(), n.getScoreThreshold(), n.getThresholdBoostFactor(),
-                                               n.getChildren().size());
+                                               n.getNumTerms());
             createDirectWeightedSet(bp, n);
         } else {
             auto *bp = new ParallelWeakAndBlueprint(_field,
@@ -725,24 +731,23 @@ public:
 
 template <typename WS>
 void
-CreateBlueprintVisitor::createDirectWeightedSet(WS *bp, search::query::Intermediate &n) {
+CreateBlueprintVisitor::createDirectWeightedSet(WS *bp, search::query::MultiTerm &n) {
     Blueprint::UP result(bp);
-    for (const Node * node : n.getChildren()) {
-        vespalib::string term = queryeval::termAsString(*node);
-        uint32_t weight = queryeval::getWeightFromNode(*node).percent();
-        bp->addTerm(term, weight);
+    for (uint32_t i(0); i < n.getNumTerms(); i++) {
+        auto term = n.getAsString(i);
+        bp->addTerm(term.first, term.second.percent());
     }
     setResult(std::move(result));
 }
 
 template <typename WS>
 void
-CreateBlueprintVisitor::createShallowWeightedSet(WS *bp, search::query::Intermediate &n, const FieldSpec &fs, bool isInteger) {
+CreateBlueprintVisitor::createShallowWeightedSet(WS *bp, search::query::MultiTerm &n, const FieldSpec &fs, bool isInteger) {
     Blueprint::UP result(bp);
-    for (const Node * node : n.getChildren()) {
-        uint32_t weight = queryeval::getWeightFromNode(*node).percent();
+    for (uint32_t i(0); i < n.getNumTerms(); i++) {
         FieldSpec childfs = bp->getNextChildField(fs);
-        bp->addTerm(std::make_unique<AttributeFieldBlueprint>(childfs, _attr, extractTerm(*node, isInteger)), weight);
+        auto term = n.getAsString(i);
+        bp->addTerm(std::make_unique<AttributeFieldBlueprint>(childfs, _attr, extractTerm(term.first, isInteger)), term.second.percent());
     }
     setResult(std::move(result));
 }

@@ -8,6 +8,8 @@
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/searchlib/common/geo_location_parser.h>
 #include <vespa/vespalib/objects/hexdump.h>
+#include <vespa/vespalib/util/stringfmt.h>
+#include <charconv>
 
 namespace search::query {
 
@@ -45,8 +47,26 @@ public:
         return builder.build();
     }
 
-private: 
-    static Term * createQueryTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilder<NodeTypes> & builder, vespalib::stringref & pureTermView) {
+private:
+    static void populateMultiTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilderBase & builder, MultiTerm & mt) {
+        for (uint32_t i(0); i < mt.getNumTerms(); i++) {
+            queryStack.next();
+            ParseItem::ItemType type = queryStack.getType();
+            switch (type) {
+                case ParseItem::ITEM_PURE_WEIGHTED_LONG:
+                    mt.addTerm(queryStack.getIntergerTerm(), queryStack.GetWeight());
+                    break;
+                case ParseItem::ITEM_PURE_WEIGHTED_STRING:
+                    mt.addTerm(queryStack.getTerm(), queryStack.GetWeight());
+                    break;
+                default:
+                    builder.reportError(vespalib::make_string("Got unexpected node %d for multiterm node at child term %d", type, i));
+                    return;
+            }
+        }
+    }
+    static Term *
+    createQueryTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilder<NodeTypes> & builder, vespalib::stringref & pureTermView) {
         uint32_t arity = queryStack.getArity();
         ParseItem::ItemType type = queryStack.getType();
         Node::UP node;
@@ -92,14 +112,18 @@ private:
             vespalib::stringref view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
-            t = &builder.addWeightedSetTerm(arity, view, id, weight);
+           auto & ws = builder.addWeightedSetTerm(arity, view, id, weight);
             pureTermView = vespalib::stringref();
+            populateMultiTerm(queryStack, builder, ws);
+            t = &ws;
         } else if (type == ParseItem::ITEM_DOT_PRODUCT) {
             vespalib::stringref view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
             Weight weight = queryStack.GetWeight();
-            t = &builder.addDotProduct(arity, view, id, weight);
+            auto & dotProduct = builder.addDotProduct(arity, view, id, weight);
             pureTermView = vespalib::stringref();
+            populateMultiTerm(queryStack, builder, dotProduct);
+            t = &dotProduct;
         } else if (type == ParseItem::ITEM_WAND) {
             vespalib::stringref view = queryStack.getIndexName();
             int32_t id = queryStack.getUniqueId();
@@ -107,9 +131,10 @@ private:
             uint32_t targetNumHits = queryStack.getTargetNumHits();
             double scoreThreshold = queryStack.getScoreThreshold();
             double thresholdBoostFactor = queryStack.getThresholdBoostFactor();
-            t = &builder.addWandTerm(arity, view, id, weight,
-                                     targetNumHits, scoreThreshold, thresholdBoostFactor);
+            auto & wand = builder.addWandTerm(arity, view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor);
             pureTermView = vespalib::stringref();
+            populateMultiTerm(queryStack, builder, wand);
+            t = & wand;
         } else if (type == ParseItem::ITEM_NOT) {
             builder.addAndNot(arity);
         } else if (type == ParseItem::ITEM_NEAREST_NEIGHBOR) {
@@ -135,7 +160,9 @@ private:
             } else if (type == ParseItem::ITEM_PURE_WEIGHTED_STRING) {
                 t = &builder.addStringTerm(term, pureTermView, id, weight);
             } else if (type == ParseItem::ITEM_PURE_WEIGHTED_LONG) {
-                t = &builder.addNumberTerm(term, pureTermView, id, weight);
+                char buf[24];
+                auto res = std::to_chars(buf, buf + sizeof(buf), queryStack.getIntergerTerm(), 10);
+                t = &builder.addNumberTerm(vespalib::stringref(buf, res.ptr - buf), pureTermView, id, weight);
             } else if (type == ParseItem::ITEM_PREFIXTERM) {
                 t = &builder.addPrefixTerm(term, view, id, weight);
             } else if (type == ParseItem::ITEM_SUBSTRINGTERM) {

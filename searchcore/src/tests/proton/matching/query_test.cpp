@@ -898,9 +898,9 @@ void Test::requireThatWeakAndBlueprintsAreCreatedCorrectly() {
 void Test::requireThatParallelWandBlueprintsAreCreatedCorrectly() {
     using search::queryeval::WeakAndBlueprint;
 
-    ProtonWandTerm wand(field, 42, Weight(100), 123, 9000, 1.25);
-    wand.append(Node::UP(new ProtonStringTerm("foo", field, 0, Weight(3))));
-    wand.append(Node::UP(new ProtonStringTerm("bar", field, 0, Weight(7))));
+    ProtonWandTerm wand(2, field, 42, Weight(100), 123, 9000, 1.25);
+    wand.addTerm("foo", Weight(3));
+    wand.addTerm("bar", Weight(7));
 
     ViewResolver viewResolver;
     ResolveViewVisitor resolve_visitor(viewResolver, attribute_index_env);

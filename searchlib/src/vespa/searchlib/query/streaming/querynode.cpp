@@ -2,7 +2,7 @@
 
 #include "query.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
-
+#include <charconv>
 #include <vespa/log/log.h>
 LOG_SETUP(".vsm.querynode");
 
@@ -90,7 +90,6 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
         if (dynamic_cast<const SameElementQueryNode *>(parent) != nullptr) {
             index = parent->getIndex() + "." + index;
         }
-        vespalib::stringref term = queryRep.getTerm();
         using TermType = QueryTerm::Type;
         TermType sTerm(TermType::WORD);
         switch (type) {
@@ -112,12 +111,19 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
         default:
             break;
         }
-        QueryTerm::string ssTerm(term);
+        QueryTerm::string ssTerm;
+        if (type == ParseItem::ITEM_PURE_WEIGHTED_LONG) {
+            char buf[24];
+            auto res = std::to_chars(buf, buf + sizeof(buf), queryRep.getIntergerTerm(), 10);
+            ssTerm.assign(buf, res.ptr - buf);
+        } else {
+            ssTerm = queryRep.getTerm();
+        }
         QueryTerm::string ssIndex(index);
         if (ssIndex == "sddocname") {
             // This is suboptimal as the term should be checked too.
             // But it will do for now as only correct sddocname queries are sent down.
-            qn.reset(new TrueNode());
+            qn = std::make_unique<TrueNode>();
         } else {
             auto qt = std::make_unique<QueryTerm>(factory.create(), ssTerm, ssIndex, sTerm);
             qt->setWeight(queryRep.GetWeight());
@@ -131,7 +137,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
                 auto orqn = std::make_unique<EquivQueryNode>();
                 orqn->push_back(std::move(qt));
                 orqn->push_back(std::move(phrase));
-                qn.reset(orqn.release());
+                qn = std::move(orqn);
             }
         }
     }

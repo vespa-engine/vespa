@@ -35,17 +35,17 @@ struct SimpleSameElement : SameElement {
     SimpleSameElement(vespalib::stringref view) : SameElement(view) {}
 };
 struct SimpleWeightedSetTerm : WeightedSetTerm {
-    SimpleWeightedSetTerm(vespalib::stringref view, int32_t id, Weight weight)
-        : WeightedSetTerm(view, id, weight) {}
+    SimpleWeightedSetTerm(uint32_t num_terms, vespalib::stringref view, int32_t id, Weight weight)
+        : WeightedSetTerm(num_terms, view, id, weight) {}
 };
 struct SimpleDotProduct : DotProduct {
-    SimpleDotProduct(vespalib::stringref view, int32_t id, Weight weight)
-        : DotProduct(view, id, weight) {}
+    SimpleDotProduct(uint32_t num_terms, vespalib::stringref view, int32_t id, Weight weight)
+        : DotProduct(num_terms, view, id, weight) {}
 };
 struct SimpleWandTerm : WandTerm {
-    SimpleWandTerm(vespalib::stringref view, int32_t id, Weight weight,
+    SimpleWandTerm(uint32_t num_terms, vespalib::stringref view, int32_t id, Weight weight,
                    uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor)
-        : WandTerm(view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor) {}
+        : WandTerm(num_terms, view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor) {}
 };
 struct SimpleRank : Rank {};
 struct SimpleNumberTerm : NumberTerm {

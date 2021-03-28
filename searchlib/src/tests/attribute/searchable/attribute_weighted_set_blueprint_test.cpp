@@ -89,9 +89,9 @@ struct WS {
     }
 
     Node::UP createNode() const {
-        SimpleWeightedSetTerm *node = new SimpleWeightedSetTerm("view", 0, Weight(0));
+        SimpleWeightedSetTerm *node = new SimpleWeightedSetTerm(tokens.size(), "view", 0, Weight(0));
         for (size_t i = 0; i < tokens.size(); ++i) {
-            node->append(Node::UP(new SimpleStringTerm(tokens[i].first, "view", 0, Weight(tokens[i].second))));
+            node->addTerm(tokens[i].first, Weight(tokens[i].second));
         }
         return Node::UP(node);
     }
@@ -138,42 +138,30 @@ struct WS {
 
 } // namespace <unnamed>
 
-class Test : public vespalib::TestApp
-{
-public:
-    int Main() override;
-};
+TEST("attribute_weighted_set_test") {
+    MockAttributeManager manager;
+    setupAttributeManager(manager);
+    AttributeBlueprintFactory adapter;
 
-int
-Test::Main()
-{
-    TEST_INIT("attribute_weighted_set_test");
-    {
-        MockAttributeManager manager;
-        setupAttributeManager(manager);
-        AttributeBlueprintFactory adapter;
+    FakeResult expect = FakeResult()
+                        .doc(3).elem(0).weight(30).pos(0)
+                        .doc(5).elem(0).weight(50).pos(0)
+                        .doc(7).elem(0).weight(70).pos(0);
+    WS ws = WS(manager).add("7", 70).add("5", 50).add("3", 30);
 
-        FakeResult expect = FakeResult()
-                            .doc(3).elem(0).weight(30).pos(0)
-                            .doc(5).elem(0).weight(50).pos(0)
-                            .doc(7).elem(0).weight(70).pos(0);
-        WS ws = WS(manager).add("7", 70).add("5", 50).add("3", 30);
+    EXPECT_TRUE(ws.isGenericSearch(adapter, "integer", true));
+    EXPECT_TRUE(!ws.isGenericSearch(adapter, "integer", false));
+    EXPECT_TRUE(ws.isGenericSearch(adapter, "string", true));
+    EXPECT_TRUE(!ws.isGenericSearch(adapter, "string", false));
+    EXPECT_TRUE(ws.isGenericSearch(adapter, "multi", true));
+    EXPECT_TRUE(ws.isGenericSearch(adapter, "multi", false));
 
-        EXPECT_TRUE(ws.isGenericSearch(adapter, "integer", true));
-        EXPECT_TRUE(!ws.isGenericSearch(adapter, "integer", false));
-        EXPECT_TRUE(ws.isGenericSearch(adapter, "string", true));
-        EXPECT_TRUE(!ws.isGenericSearch(adapter, "string", false));
-        EXPECT_TRUE(ws.isGenericSearch(adapter, "multi", true));
-        EXPECT_TRUE(ws.isGenericSearch(adapter, "multi", false));
-
-        EXPECT_EQUAL(expect, ws.search(adapter, "integer", true));
-        EXPECT_EQUAL(expect, ws.search(adapter, "integer", false));
-        EXPECT_EQUAL(expect, ws.search(adapter, "string", true));
-        EXPECT_EQUAL(expect, ws.search(adapter, "string", false));
-        EXPECT_EQUAL(expect, ws.search(adapter, "multi", true));
-        EXPECT_EQUAL(expect, ws.search(adapter, "multi", false));
-    }
-    TEST_DONE();
+    EXPECT_EQUAL(expect, ws.search(adapter, "integer", true));
+    EXPECT_EQUAL(expect, ws.search(adapter, "integer", false));
+    EXPECT_EQUAL(expect, ws.search(adapter, "string", true));
+    EXPECT_EQUAL(expect, ws.search(adapter, "string", false));
+    EXPECT_EQUAL(expect, ws.search(adapter, "multi", true));
+    EXPECT_EQUAL(expect, ws.search(adapter, "multi", false));
 }
 
-TEST_APPHOOK(Test);
+TEST_MAIN() { TEST_RUN_ALL(); }
