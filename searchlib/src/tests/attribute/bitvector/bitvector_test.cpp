@@ -488,7 +488,7 @@ BitVectorTest::test(BasicType bt,
                 !filter, true);
     const search::IDocumentWeightAttribute *dwa =
         v->asDocumentWeightAttribute();
-    if (dwa != NULL) {
+    if (dwa != nullptr) {
         search::IDocumentWeightAttribute::LookupResult lres = 
             dwa->lookup(getSearchStr<VectorType>(), dwa->get_dictionary_snapshot());
         typedef search::queryeval::DocumentWeightSearchIterator DWSI;

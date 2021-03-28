@@ -50,7 +50,7 @@ private:
         uint32_t arity = queryStack.getArity();
         ParseItem::ItemType type = queryStack.getType();
         Node::UP node;
-        Term *t = 0;
+        Term *t = nullptr;
         if (type == ParseItem::ITEM_AND) {
             builder.addAnd(arity);
         } else if (type == ParseItem::ITEM_RANK) {

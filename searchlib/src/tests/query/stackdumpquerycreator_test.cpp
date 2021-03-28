@@ -48,8 +48,7 @@ TEST("requireThatTooLargeNumTermIsTreatedAsFloat") {
     appendNumTerm(buf, term_string);
 
     SimpleQueryStackDumpIterator query_stack(vespalib::stringref(buf.GetDrainPos(), buf.GetUsedLen()));
-    Node::UP node =
-        StackDumpQueryCreator<SimpleQueryNodeTypes>::create(query_stack);
+    Node::UP node = StackDumpQueryCreator<SimpleQueryNodeTypes>::create(query_stack);
     ASSERT_TRUE(node.get());
     NumberTerm *term = dynamic_cast<NumberTerm *>(node.get());
     ASSERT_TRUE(term);

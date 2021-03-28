@@ -4,7 +4,6 @@
 
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/query/tree/predicate_query_term.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace search {
@@ -15,9 +14,6 @@ namespace search {
 class SimpleQueryStackDumpIterator
 {
 private:
-    SimpleQueryStackDumpIterator(const SimpleQueryStackDumpIterator &);
-    SimpleQueryStackDumpIterator& operator=(const SimpleQueryStackDumpIterator &);
-
     /** Pointer to the start of the input buffer */
     const char *_buf;
     /** Pointer to just past the input buffer */
@@ -42,36 +38,33 @@ private:
 
     /** The arity of the current item */
     uint32_t _currArity;
+    /** The index name (field name) in the current item */
+    vespalib::stringref _curr_index_name;
+    /** The term in the current item */
+    vespalib::stringref _curr_term;
+    char                _scratch[24];
 
     /* extra arguments */
     uint32_t _extraIntArg1;
     uint32_t _extraIntArg2;
     uint32_t _extraIntArg3;
-    double _extraDoubleArg4;
-    double _extraDoubleArg5;
+    double   _extraDoubleArg4;
+    double   _extraDoubleArg5;
     /** The predicate query specification */
     query::PredicateQueryTerm::UP _predicate_query_term;
-    /** The index name (field name) in the current item */
-    vespalib::stringref _curr_index_name;
-    /** The term in the current item */
-    vespalib::stringref _curr_term;
-    vespalib::asciistream _generatedTerm;
 
-    vespalib::string readString(const char *&p);
-    vespalib::stringref read_stringref(const char *&p);
-    uint64_t readUint64(const char *&p);
-    double read_double(const char *&p);
-    uint64_t readCompressedPositiveInt(const char *&p);
-
+    VESPA_DLL_LOCAL vespalib::string readString(const char *&p);
+    VESPA_DLL_LOCAL vespalib::stringref read_stringref(const char *&p);
+    VESPA_DLL_LOCAL uint64_t readUint64(const char *&p);
+    VESPA_DLL_LOCAL double read_double(const char *&p);
+    VESPA_DLL_LOCAL uint64_t readCompressedPositiveInt(const char *&p);
 public:
     /**
-     * Make an iterator on a buffer. To get the first item, next
-     * must be called.
-     *
-     * @param buf A pointer to the buffer holding the stackdump
-     * @param buflen The length of the buffer in bytes
+     * Make an iterator on a buffer. To get the first item, next must be called.
      */
     SimpleQueryStackDumpIterator(vespalib::stringref buf);
+    SimpleQueryStackDumpIterator(const SimpleQueryStackDumpIterator &) = delete;
+    SimpleQueryStackDumpIterator& operator=(const SimpleQueryStackDumpIterator &) = delete;
     ~SimpleQueryStackDumpIterator();
 
     vespalib::stringref getStack() const { return vespalib::stringref(_buf, _bufLen); }
@@ -125,12 +118,10 @@ public:
     bool getAllowApproximate() const { return (_extraIntArg2 != 0); }
     uint32_t getExploreAdditionalHits() const { return _extraIntArg3; }
 
-    query::PredicateQueryTerm::UP getPredicateQueryTerm()
-    { return std::move(_predicate_query_term); }
+    query::PredicateQueryTerm::UP getPredicateQueryTerm() { return std::move(_predicate_query_term); }
 
     vespalib::stringref getIndexName() const { return _curr_index_name; }
     vespalib::stringref getTerm() const { return _curr_term; }
 };
 
 }
-

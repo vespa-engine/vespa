@@ -592,6 +592,10 @@ TEST("require that empty intermediate node can be added") {
     EXPECT_EQUAL(0u, and_node->getChildren().size());
 }
 
+TEST("control size of SimpleQueryStackDumpIterator") {
+    EXPECT_EQUAL(160u, sizeof(SimpleQueryStackDumpIterator));
+}
+
 TEST("test query parsing error") {
     const char * STACK =
          "\001\002\001\003\000\005\002\004\001\034F\001\002\004term\004\004term\002dx\004\004term\002ifD\002\004term\001xD\003\004term\002dxE\004\004term\001\060F\005\002\004term"
