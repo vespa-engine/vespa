@@ -13,6 +13,8 @@ public class TopKEstimator {
     private final double defaultP;
     private final boolean estimate;
     private final double skewFactor;
+    private final double [] defaultCumulativeProbability;
+    private final static int MIN_N = 2;
 
     private static boolean needEstimate(double p) {
         return (0.0 < p) && (p < 1.0);
@@ -25,24 +27,40 @@ public class TopKEstimator {
         defaultP = defaultProbability;
         estimate = needEstimate(defaultP);
         this.skewFactor = skewFactor;
+        defaultCumulativeProbability = new double[64];
+        for (int i=0; i < defaultCumulativeProbability.length; i++) {
+            defaultCumulativeProbability[i] = computeCumulativeProbability(i+MIN_N, defaultP);
+        }
     }
-    double estimateExactK(double k, double n, double p) {
+    private double inverseCumulativeProbability(int n, double p) {
+        if (p == defaultP && (n >= MIN_N) && (n < defaultCumulativeProbability.length + MIN_N)) {
+            return defaultCumulativeProbability[n - MIN_N];
+        }
+        return computeCumulativeProbability(n, p);
+    }
+    private double computeCumulativeProbability(int n, double p) {
+        double p_inverse = 1 - (1 - p)/computeN(n);
+        return studentT.inverseCumulativeProbability(p_inverse);
+    }
+    private double computeN(double n) {
         double p_max = (1 + skewFactor)/n;
-        n = Math.max(1, 1/p_max);
-        double variance = k * 1/n * (1 - 1/n);
-        double p_inverse = 1 - (1 - p)/n;
-        return k/n + studentT.inverseCumulativeProbability(p_inverse) * Math.sqrt(variance);
+        return Math.max(1, 1/p_max);
     }
-    double estimateExactK(double k, double n) {
+    double estimateExactK(double k, int n_i, double p) {
+        double n = computeN(n_i);
+        double variance = k * 1/n * (1 - 1/n);
+        return k/n + inverseCumulativeProbability(n_i, p) * Math.sqrt(variance);
+    }
+    double estimateExactK(double k, int n) {
         return estimateExactK(k, n, defaultP);
     }
     public int estimateK(int k, int n) {
-        return (estimate && n > 1)
+        return (estimate && (n >= MIN_N))
                 ? Math.min(k, (int)Math.ceil(estimateExactK(k, n, defaultP)))
                 : k;
     }
     public int estimateK(int k, int n, double p) {
-        return (needEstimate(p) && (n > 1))
+        return (needEstimate(p) && (n >= MIN_N))
                 ? Math.min(k, (int)Math.ceil(estimateExactK(k, n, p)))
                 : k;
     }
