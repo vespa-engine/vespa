@@ -474,6 +474,7 @@
     ],
     "methods": [
       "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.util.Map)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()"
     ],
     "fields": []
@@ -1620,6 +1621,7 @@
     ],
     "methods": [
       "public void <init>(java.lang.String, int)",
+      "public void <init>(java.lang.String, int, java.util.Map)",
       "public void setScoreThreshold(double)",
       "public void setThresholdBoostFactor(double)",
       "public int getTargetNumHits()",
@@ -1667,6 +1669,7 @@
     ],
     "methods": [
       "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.util.Map)",
       "public java.lang.Integer addToken(long, int)",
       "public java.lang.Integer addToken(java.lang.String, int)",
       "public java.lang.Integer addToken(java.lang.String)",

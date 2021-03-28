@@ -3,7 +3,13 @@ package com.yahoo.search.querytransform;
 
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
-import com.yahoo.prelude.query.*;
+import com.yahoo.prelude.query.CompositeItem;
+import com.yahoo.prelude.query.DotProductItem;
+import com.yahoo.prelude.query.Item;
+import com.yahoo.prelude.query.OrItem;
+import com.yahoo.prelude.query.WandItem;
+import com.yahoo.prelude.query.WeakAndItem;
+import com.yahoo.prelude.query.WordItem;
 import com.yahoo.processing.IllegalInputException;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
@@ -11,11 +17,11 @@ import com.yahoo.search.Result;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.result.ErrorMessage;
 import com.yahoo.search.searchchain.Execution;
-import com.yahoo.text.MapParser;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import com.yahoo.text.SimpleMapParser;
 import com.yahoo.yolean.Exceptions;
 
 /**
@@ -65,7 +71,7 @@ public class WandSearcher extends Searcher {
         private static final CompoundName WAND_THRESHOLD_BOOST_FACTOR = new CompoundName("wand.thresholdBoostFactor");
         private final String fieldName;
         private final WandType wandType;
-        private final Map<String, Integer> tokens;
+        private final Map<Object, Integer> tokens;
         private final int heapSize;
         private final double scoreThreshold;
         private final double thresholdBoostFactor;
@@ -75,8 +81,14 @@ public class WandSearcher extends Searcher {
             if (fieldName != null) {
                 String tokens = query.properties().getString(WAND_TOKENS);
                 if (tokens != null) {
-                    wandType = resolveWandType(execution.context().getIndexFacts().newSession(query), query);
-                    this.tokens = new IntegerMapParser().parse(tokens, new LinkedHashMap<>());
+                    IndexFacts.Session indexFacts = execution.context().getIndexFacts().newSession(query);
+                    Index index = indexFacts.getIndex(fieldName);
+                    wandType = resolveWandType(index, indexFacts, query);
+                    if (index.isNumerical() && (wandType == WandType.DOT_PRODUCT || wandType == WandType.PARALLEL)) {
+                        this.tokens = new LongIntegerMapParser().parse(tokens, new LinkedHashMap<>(200));
+                    } else {
+                        this.tokens = new MapObjectIntegerParser().parse(tokens, new LinkedHashMap<>(200));
+                    }
                     heapSize = resolveHeapSize(query);
                     scoreThreshold = resolveScoreThreshold(query);
                     thresholdBoostFactor = resolveThresholdBoostFactor(query);
@@ -90,8 +102,7 @@ public class WandSearcher extends Searcher {
             thresholdBoostFactor = 1;
         }
 
-        private WandType resolveWandType(IndexFacts.Session indexFacts, Query query) {
-            Index index = indexFacts.getIndex(fieldName);
+        private WandType resolveWandType(Index index, IndexFacts.Session indexFacts, Query query) {
             if (index.isNull()) {
                 throw new IllegalInputException("Field '" + fieldName + "' was not found in " + indexFacts);
             } else {
@@ -120,7 +131,7 @@ public class WandSearcher extends Searcher {
             return fieldName;
         }
 
-        public Map<String, Integer> getTokens() {
+        public Map<Object, Integer> getTokens() {
             return tokens;
         }
 
@@ -162,17 +173,17 @@ public class WandSearcher extends Searcher {
         } else if (inputs.getWandType().equals(WandType.OR)) {
             return populate(new OrItem(), inputs.getFieldName(), inputs.getTokens());
         } else if (inputs.getWandType().equals(WandType.PARALLEL)) {
-            return populate(new WandItem(inputs.getFieldName(), inputs.getHeapSize()),
-                    inputs.getScoreThreshold(), inputs.getThresholdBoostFactor(), inputs.getTokens());
+            return populate(new WandItem(inputs.getFieldName(), inputs.getHeapSize(), inputs.getTokens()),
+                            inputs.getScoreThreshold(), inputs.getThresholdBoostFactor());
         } else if (inputs.getWandType().equals(WandType.DOT_PRODUCT)) {
-            return populate(new DotProductItem(inputs.getFieldName()), inputs.getTokens());
+            return new DotProductItem(inputs.getFieldName(), inputs.getTokens());
         }
         throw new IllegalInputException("Unknown type '" + inputs.getWandType() + "'");
     }
 
-    private CompositeItem populate(CompositeItem parent, String fieldName, Map<String,Integer> tokens) {
-        for (Map.Entry<String,Integer> entry : tokens.entrySet()) {
-            WordItem wordItem = new WordItem(entry.getKey(), fieldName);
+    private CompositeItem populate(CompositeItem parent, String fieldName, Map<Object,Integer> tokens) {
+        for (Map.Entry<Object,Integer> entry : tokens.entrySet()) {
+            WordItem wordItem = new WordItem(entry.getKey().toString(), fieldName);
             wordItem.setWeight(entry.getValue());
             wordItem.setStemmed(true);
             wordItem.setNormalizable(false);
@@ -181,25 +192,32 @@ public class WandSearcher extends Searcher {
         return parent;
     }
 
-    private WeightedSetItem populate(WeightedSetItem item, Map<String,Integer> tokens) {
-        for (Map.Entry<String,Integer> entry : tokens.entrySet()) {
-            item.addToken(entry.getKey(), entry.getValue());
-        }
-        return item;
-    }
-
-    private WandItem populate(WandItem item, double scoreThreshold, double thresholdBoostFactor, Map<String,Integer> tokens) {
-        populate(item, tokens);
+    private WandItem populate(WandItem item, double scoreThreshold, double thresholdBoostFactor) {
         item.setScoreThreshold(scoreThreshold);
         item.setThresholdBoostFactor(thresholdBoostFactor);
         return item;
     }
 
-    private static class IntegerMapParser extends MapParser<Integer> {
+    private static class MapObjectIntegerParser extends SimpleMapParser {
+        protected Map<Object, Integer> map;
+
+        public Map<Object,Integer> parse(String string, Map<Object,Integer> map) {
+            this.map = map;
+            parse(string);
+            return this.map;
+        }
 
         @Override
-        protected Integer parseValue(String s) {
-            return Integer.parseInt(s);
+        protected void handleKeyValue(String key, String value) {
+            map.put(key, Integer.parseInt(value));
+        }
+    }
+
+    private static class LongIntegerMapParser extends MapObjectIntegerParser {
+
+        @Override
+        protected void handleKeyValue(String key, String value) {
+            map.put(Long.parseLong(key), Integer.parseInt(value));
         }
 
     }
