@@ -32,7 +32,6 @@ options {
   SOURCES : 'sources';
   AS : 'as';
 
-  ON : 'on'; // TODO: not used?
   COMMA : ',';
   OUTPUT : 'output';
   COUNT : 'count';
@@ -174,7 +173,7 @@ ident
    ;
 
 keyword_as_ident
-   : SELECT | LIMIT | OFFSET | WHERE | 'order' | 'by' | DESC | ON | OUTPUT | COUNT | SOURCES | MATCHES | LIKE
+   : SELECT | LIMIT | OFFSET | WHERE | 'order' | 'by' | DESC | OUTPUT | COUNT | SOURCES | MATCHES | LIKE
    ;
 
 program : (statement SEMI)* EOF
