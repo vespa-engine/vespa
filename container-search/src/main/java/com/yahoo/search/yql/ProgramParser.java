@@ -19,19 +19,12 @@ import com.yahoo.search.yql.yqlplusParser.ConstantArrayContext;
 import com.yahoo.search.yql.yqlplusParser.ConstantExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.ConstantMapExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.ConstantPropertyNameAndValueContext;
-import com.yahoo.search.yql.yqlplusParser.Delete_statementContext;
 import com.yahoo.search.yql.yqlplusParser.DereferencedExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.EqualityExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.ExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.Field_defContext;
-import com.yahoo.search.yql.yqlplusParser.Field_names_specContext;
-import com.yahoo.search.yql.yqlplusParser.Field_values_group_specContext;
-import com.yahoo.search.yql.yqlplusParser.Field_values_specContext;
 import com.yahoo.search.yql.yqlplusParser.IdentContext;
 import com.yahoo.search.yql.yqlplusParser.InNotInTargetContext;
-import com.yahoo.search.yql.yqlplusParser.Insert_sourceContext;
-import com.yahoo.search.yql.yqlplusParser.Insert_statementContext;
-import com.yahoo.search.yql.yqlplusParser.Insert_valuesContext;
 import com.yahoo.search.yql.yqlplusParser.LimitContext;
 import com.yahoo.search.yql.yqlplusParser.Literal_elementContext;
 import com.yahoo.search.yql.yqlplusParser.Literal_listContext;
@@ -51,9 +44,7 @@ import com.yahoo.search.yql.yqlplusParser.PropertyNameAndValueContext;
 import com.yahoo.search.yql.yqlplusParser.Query_statementContext;
 import com.yahoo.search.yql.yqlplusParser.RelationalExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.RelationalOpContext;
-import com.yahoo.search.yql.yqlplusParser.Returning_specContext;
 import com.yahoo.search.yql.yqlplusParser.Scalar_literalContext;
-import com.yahoo.search.yql.yqlplusParser.Select_source_fromContext;
 import com.yahoo.search.yql.yqlplusParser.Select_source_multiContext;
 import com.yahoo.search.yql.yqlplusParser.Select_statementContext;
 import com.yahoo.search.yql.yqlplusParser.Sequence_sourceContext;
@@ -63,8 +54,6 @@ import com.yahoo.search.yql.yqlplusParser.Source_statementContext;
 import com.yahoo.search.yql.yqlplusParser.StatementContext;
 import com.yahoo.search.yql.yqlplusParser.TimeoutContext;
 import com.yahoo.search.yql.yqlplusParser.UnaryExpressionContext;
-import com.yahoo.search.yql.yqlplusParser.Update_statementContext;
-import com.yahoo.search.yql.yqlplusParser.Update_valuesContext;
 import com.yahoo.search.yql.yqlplusParser.WhereContext;
 
 import org.antlr.v4.runtime.BaseErrorListener;
@@ -334,10 +323,9 @@ final class ProgramParser {
         }
     }
 
-    private OperatorNode<SequenceOperator> convertSelectOrInsertOrUpdateOrDelete(ParseTree node, Scope scopeParent) {
+    private OperatorNode<SequenceOperator> convertSelect(ParseTree node, Scope scopeParent) {
 
-        Preconditions.checkArgument(node instanceof Select_statementContext || node instanceof Insert_statementContext ||
-              node instanceof Update_statementContext || node instanceof Delete_statementContext);
+        Preconditions.checkArgument(node instanceof Select_statementContext);
 
         // SELECT^ select_field_spec select_source where? orderby? limit? offset? timeout?
         // select is the only place to define where/orderby/limit/offset
@@ -352,24 +340,17 @@ final class ProgramParser {
         OperatorNode<SequenceOperator> insertValues = null;
         OperatorNode<ExpressionOperator> updateValues = null;
 
-        ParseTree sourceNode;
-
-        if (node instanceof Select_statementContext ) {
-            sourceNode = node.getChild(2) != null ?  node.getChild(2).getChild(0):null;
-        } else {
-            sourceNode = node.getChild(1);
-        }
+        ParseTree sourceNode = node.getChild(2) != null ?  node.getChild(2).getChild(0):null;
 
         if (sourceNode != null) {
             switch (getParseTreeIndex(sourceNode)) {
                 // ALL_SOURCE and MULTI_SOURCE are how FROM SOURCES
                 // *|source_name,... are parsed
-                case yqlplusParser.RULE_select_source_all: {
+                case yqlplusParser.RULE_select_source_all:
                 	Location location = toLocation(scope, sourceNode.getChild(2));
                     source = OperatorNode.create(location, SequenceOperator.ALL);
                     source.putAnnotation("alias", "row");
                     scope.defineDataSource(location, "row");
-                }
                     break;
                 case yqlplusParser.RULE_select_source_multi:
                 	Source_listContext multiSourceContext = ((Select_source_multiContext) sourceNode).source_list();
@@ -379,16 +360,6 @@ final class ProgramParser {
                     break;
                 case yqlplusParser.RULE_select_source_from:
                     source = convertSource((ParserRuleContext) sourceNode.getChild(1), scope);
-                    break;
-                case yqlplusParser.RULE_insert_source:
-                    Insert_sourceContext insertSourceContext = (Insert_sourceContext) sourceNode;
-                    source = convertSource((ParserRuleContext)insertSourceContext.getChild(1), scope);
-                    break;
-                case yqlplusParser.RULE_delete_source:
-                    source = convertSource((ParserRuleContext)sourceNode.getChild(1), scope);
-                    break;
-                case yqlplusParser.RULE_update_source:
-                    source = convertSource((ParserRuleContext)sourceNode.getChild(0), scope);
                     break;
                 }
             } else {
@@ -402,9 +373,6 @@ final class ProgramParser {
                     if (getParseTreeIndex(child.getChild(0)) == yqlplusParser.RULE_project_spec) {
                         proj = readProjection(((Project_specContext) child.getChild(0)).field_def(), scope);
                     }
-                    break;
-                case yqlplusParser.RULE_returning_spec:
-                    proj = readProjection(((Returning_specContext) child).select_field_spec().project_spec().field_def(), scope);
                     break;
                 case yqlplusParser.RULE_where:
                     filter = convertExpr(((WhereContext) child).expression(), scope);
@@ -427,20 +395,6 @@ final class ProgramParser {
                 case yqlplusParser.RULE_timeout:
                     timeout = convertExpr(((TimeoutContext) child).fixed_or_parameter(), scope);
                     break;
-                case yqlplusParser.RULE_insert_values:
-                    if (child.getChild(0) instanceof yqlplusParser.Query_statementContext) {
-                		insertValues = convertQuery(child.getChild(0).getChild(0), scope);
-                	} else {
-                			insertValues = readBatchValues(((Insert_valuesContext) child).field_names_spec(), ((Insert_valuesContext)child).field_values_group_spec(), scope);
-                	}
-                    break;
-                case yqlplusParser.RULE_update_values:
-                    if (getParseTreeIndex(child.getChild(0)) == yqlplusParser.RULE_field_def) {
-                        updateValues = readValues(((Update_valuesContext)child).field_def(), scope);
-                    } else {
-                        updateValues = readValues((Field_names_specContext)child.getChild(0), (Field_values_specContext)child.getChild(2), scope);
-                    }
-                    break;
                 }
             }
         // now assemble the logical plan
@@ -448,26 +402,6 @@ final class ProgramParser {
         // filter
         if (filter != null) {
             result = OperatorNode.create(SequenceOperator.FILTER, result, filter);
-        }
-        // insert values
-        if (insertValues != null) {
-            result = OperatorNode.create(SequenceOperator.INSERT, result, insertValues);
-        }
-        // update
-        if (updateValues != null) {
-            if (filter != null) {
-                result = OperatorNode.create(SequenceOperator.UPDATE, source, updateValues, filter);
-            } else {
-                result = OperatorNode.create(SequenceOperator.UPDATE_ALL, source, updateValues);
-            }
-        }
-        // delete
-        if (getParseTreeIndex(node) == yqlplusParser.RULE_delete_statement) {
-            if (filter != null) {
-                result = OperatorNode.create(SequenceOperator.DELETE, source, filter);
-            } else {
-                result = OperatorNode.create(SequenceOperator.DELETE_ALL, source);
-            }
         }
         // then sort (or project and sort)
         boolean projectBeforeSort = false;
@@ -567,11 +501,8 @@ final class ProgramParser {
     }
 
     private OperatorNode<SequenceOperator> convertQuery(ParseTree node, Scope scope) {
-        if (node instanceof Select_statementContext
-           || node instanceof Insert_statementContext
-           || node instanceof Update_statementContext
-           || node instanceof Delete_statementContext) {
-            return convertSelectOrInsertOrUpdateOrDelete(node, scope.getRoot());
+        if (node instanceof Select_statementContext) {
+            return convertSelect(node, scope.getRoot());
         } else if (node instanceof Source_statementContext) { // for pipe
             Source_statementContext sourceStatementContext = (Source_statementContext)node;
             return convertPipe(sourceStatementContext.query_statement(), sourceStatementContext.pipeline_step(), scope);
@@ -586,7 +517,7 @@ final class ProgramParser {
             alias = "source";
         }
         
-        if (node != null && node instanceof yqlplusParser.Alias_defContext) {
+        if (node instanceof yqlplusParser.Alias_defContext) {
             //alias_def :   (AS? ID);
             ParseTree idChild = node;
             if (node.getChildCount() > 1) {
@@ -607,20 +538,14 @@ final class ProgramParser {
             scope.defineDataSource(null, candidate);
             return alias;
         }
-   }
+    }
 
-   private OperatorNode<SequenceOperator> convertSource(ParserRuleContext sourceSpecNode, Scope scope) {
-
+    private OperatorNode<SequenceOperator> convertSource(ParserRuleContext sourceSpecNode, Scope scope) {
         // DataSources
        String alias;
        OperatorNode<SequenceOperator> result;
        ParserRuleContext dataSourceNode = sourceSpecNode;
        ParserRuleContext aliasContext = null;
-       //data_source
-       //:   call_source
-       //|   LPAREN source_statement RPAREN
-       //|   sequence_source
-       //;
        if (sourceSpecNode instanceof Source_specContext) {
            dataSourceNode = (ParserRuleContext)sourceSpecNode.getChild(0);
            if (sourceSpecNode.getChildCount() == 2) {
@@ -634,7 +559,6 @@ final class ProgramParser {
            }
        }
        switch (getParseTreeIndex(dataSourceNode)) {
-           case yqlplusParser.RULE_write_data_source:
            case yqlplusParser.RULE_call_source: {
                List<String> names = readName(dataSourceNode.getChild(Namespaced_nameContext.class, 0));
                alias = assignAlias(names.get(names.size() - 1), aliasContext, scope);
@@ -1108,8 +1032,6 @@ final class ProgramParser {
 		}
 		case yqlplusParser.RULE_scalar_literal:
 			return OperatorNode.create(toLocation(scope, parseTree), ExpressionOperator.LITERAL, convertLiteral((Scalar_literalContext) parseTree));
-		case yqlplusParser.RULE_insert_values:
-			return readValues((Insert_valuesContext) parseTree, scope);
 		case yqlplusParser.RULE_constantExpression:
 			return convertExpr(parseTree.getChild(0), scope);
 		case yqlplusParser.RULE_literal_list:
@@ -1232,77 +1154,7 @@ final class ProgramParser {
         }
     }
 
-    private OperatorNode<ExpressionOperator> readValues(Field_names_specContext nameDefs, Field_values_specContext values, Scope scope) {
-    	List<Field_defContext> fieldDefs = nameDefs.field_def();
-        List<ExpressionContext> valueDefs = values.expression();
-        assert fieldDefs.size() == valueDefs.size();
-        List<String> fieldNames;
-        List<OperatorNode<ExpressionOperator>> fieldValues;
-        int numPairs = fieldDefs.size();
-            fieldNames = Lists.newArrayListWithExpectedSize(numPairs);
-            fieldValues = Lists.newArrayListWithExpectedSize(numPairs);
-            for (int i = 0; i < numPairs; i++) {
-                fieldNames.add((String) convertExpr(fieldDefs.get(i).expression(), scope).getArgument(1));
-                fieldValues.add(convertExpr(valueDefs.get(i), scope));
-            }
-        return OperatorNode.create(ExpressionOperator.MAP, fieldNames, fieldValues);
-    }
-
-    private OperatorNode<ExpressionOperator> readValues(ParserRuleContext node, Scope scope) {
-        List<String> fieldNames;
-        List<OperatorNode<ExpressionOperator>> fieldValues;
-        if (node.getRuleIndex() == yqlplusParser.RULE_field_def) {
-            Field_defContext fieldDefContext = (Field_defContext)node;
-            //TODO double check
-            fieldNames = Lists.newArrayListWithExpectedSize(node.getChildCount());
-            fieldValues = Lists.newArrayListWithExpectedSize(node.getChildCount());
-            for (int i = 0; i < node.getChildCount(); i++) {
-                fieldNames.add((String) convertExpr(node.getChild(i).getChild(0).getChild(0), scope).getArgument(1));
-                fieldValues.add(convertExpr(node.getChild(i).getChild(0).getChild(1), scope));
-            }
-        } else {
-            assert node.getChildCount() % 2 == 0;
-            int numPairs = node.getChildCount() / 2;
-            fieldNames = Lists.newArrayListWithExpectedSize(numPairs);
-            fieldValues = Lists.newArrayListWithExpectedSize(numPairs);
-            for (int i = 0; i < numPairs; i++) {
-                fieldNames.add((String) convertExpr(node.getChild(i).getChild(0), scope).getArgument(1));
-                fieldValues.add(convertExpr(node.getChild(numPairs + i), scope));
-            }
-        }
-        return OperatorNode.create(ExpressionOperator.MAP, fieldNames, fieldValues);
-    }
-
-    /*
-     * Converts node list
-     *
-     *   a_name, b_name, c_name, a_value_1, b_value_1, c_value_1, a_value_2, b_value_2, c_value2, a_value_3, b_value_3, c_value_3
-     *
-     * into corresponding constant sequence:
-     *
-     *   [ { a_name : a_value_1, b_name : b_value_1, c_name : c_value_1 }, ... ]
-     *
-     */
-    private OperatorNode<SequenceOperator> readBatchValues(Field_names_specContext nameDefs, List<Field_values_group_specContext> valueGroups, Scope scope) {
-    	List<Field_defContext> nameContexts = nameDefs.field_def();
-        List<String> fieldNames = Lists.newArrayList();
-        for (Field_defContext nameContext:nameContexts) {
-        	fieldNames.add((String) convertExpr(nameContext.getChild(0), scope).getArgument(1));
-        }
-        List<OperatorNode> records = Lists.newArrayList();
-        for (Field_values_group_specContext valueGorup:valueGroups) {
-        	List<ExpressionContext> expressionList = valueGorup.expression();
-            List<OperatorNode<ExpressionOperator>> fieldValues = Lists.newArrayListWithExpectedSize(expressionList.size());
-            for (ExpressionContext expressionContext:expressionList) {
-                fieldValues.add(convertExpr(expressionContext, scope));
-            }
-            records.add(OperatorNode.create(ExpressionOperator.MAP, fieldNames, fieldValues));
-        }
-        // Return constant sequence of records with the given name/values
-        return OperatorNode.create(SequenceOperator.EVALUATE, OperatorNode.create(ExpressionOperator.ARRAY, records));
-    }
-
-    /*
+    /**
      * Scans the given node for READ_FIELD expressions.
      *
      * TODO: Search recursively and consider additional operators
@@ -1327,4 +1179,5 @@ final class ProgramParser {
         }
         return readFieldList;
     }
+
 }

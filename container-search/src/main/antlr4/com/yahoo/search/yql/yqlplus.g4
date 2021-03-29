@@ -225,9 +225,6 @@ output_spec
 
 query_statement
     : select_statement
-    | insert_statement
-    | delete_statement
-    | update_statement
     ;
 
 select_statement
@@ -543,63 +540,3 @@ fixed_or_parameter
     : INT
 	| parameter
 	;
-
-// INSERT
-
-insert_statement
-    : INSERT insert_source insert_values returning_spec?
-    ;
-
-insert_source
-    : INTO write_data_source
-    ;
-
-write_data_source
-    :	namespaced_name
-    ;
-
-insert_values
-    : field_names_spec VALUES field_values_group_spec (COMMA field_values_group_spec)*
-    | query_statement
-    ;
-
-field_names_spec
-    : LPAREN field_def (COMMA field_def)* RPAREN
-    ;
-
-field_values_spec
-    : LPAREN expression[true] (COMMA expression[true])* RPAREN
-    ;
-
-field_values_group_spec
-    : LPAREN expression[true] (COMMA expression[true])* RPAREN
-    ;
-    
-returning_spec
-    : RETURNING select_field_spec
-    ;
-
-// DELETE
-
-delete_statement
-    : DELETE delete_source where? returning_spec?
-    ;
-
-delete_source
-    : FROM write_data_source
-    ;
-
-// UPDATE
-
-update_statement
-    : UPDATE update_source SET update_values where? returning_spec?
-    ;
-
-update_source
-    : write_data_source
-    ;
-
-update_values
-    : field_names_spec EQ field_values_spec
-    | field_def (COMMA field_def)*
-    ;
