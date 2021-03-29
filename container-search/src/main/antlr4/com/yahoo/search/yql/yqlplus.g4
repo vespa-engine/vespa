@@ -436,15 +436,6 @@ indexref[boolean in_select]
 propertyref
 	: 	DOT nm=ID
 	;
-operatorCall
-@init{
-	boolean	in_select = expression_stack.peek().in_select;	
-}
-    : multOp arguments[in_select]
-    | additiveOp arguments[in_select]
-    | AND arguments[in_select]
-    | OR arguments[in_select]
-    ;
 
 primaryExpression
 @init {
