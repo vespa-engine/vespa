@@ -18,17 +18,10 @@ struct ExplicitItemData
 {
     const char *_index;
     uint32_t _indexlen;
-    const char *_term;
-    uint32_t _termlen;
     uint32_t _weight;
 
     ExplicitItemData()
-        : _index(nullptr), _indexlen(0), _term(nullptr), _termlen(0), _weight(0)
-        {}
-
-    ExplicitItemData(const char *index, uint32_t indexlen, const char* term,
-                     uint32_t termlen, uint32_t weight = 0)
-        : _index(index), _indexlen(indexlen), _term(term), _termlen(termlen), _weight(weight)
+        : _index(nullptr), _indexlen(0), _weight(0)
         {}
 };
 
@@ -86,14 +79,10 @@ TermVisitor::visitProperty(const Property::Value &key, const Property &values)
             _visitor->VisitPHRASE(&item, phraseLen);
             s = & values.getAt(index++);
             while ((*s)[0] != '"') {
-                data._term = s->c_str();
-                data._termlen = s->length();
                 _visitor->VisitKeyword(&item, s->c_str(), s->length());
                 s = & values.getAt(index++);
             }
         } else {
-            data._term = s->c_str();
-            data._termlen = s->length();
             _visitor->VisitKeyword(&item, s->c_str(), s->length());
         }
     }

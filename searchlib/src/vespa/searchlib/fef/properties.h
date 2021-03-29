@@ -153,6 +153,10 @@ public:
      * Create an empty properties object.
      **/
     Properties();
+    Properties(Properties &&) noexcept = default;
+    Properties & operator=(Properties &&) noexcept = default;
+    Properties(const Properties &);
+    Properties & operator=(const Properties &);
 
     /**
      * The destructor asserts that key/value counts look sane before

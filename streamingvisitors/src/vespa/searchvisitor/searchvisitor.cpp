@@ -265,11 +265,6 @@ void SearchVisitor::init(const Parameters & params)
         LOG(debug, "No rank properties received");
     }
 
-    if (params.lookup("rankprofile", valueRef)) {
-        vespalib::string tmp(valueRef.data(), valueRef.size());
-        _summaryGenerator.getDocsumState()._args.SetRankProfile(tmp);
-    }
-
     vespalib::string location;
     if (params.lookup("location", valueRef)) {
         location = vespalib::string(valueRef.data(), valueRef.size());
@@ -299,7 +294,7 @@ void SearchVisitor::init(const Parameters & params)
 
             int stackCount = 0;
             if (params.get("querystackcount", stackCount)) {
-                _summaryGenerator.getDocsumState()._args.SetStackDump(stackCount, queryBlob.size(), (const char*)queryBlob.data());
+                _summaryGenerator.getDocsumState()._args.SetStackDump(queryBlob.size(), (const char*)queryBlob.data());
             } else {
                 LOG(warning, "Request without query stack count");
             }

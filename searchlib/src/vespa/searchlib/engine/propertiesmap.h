@@ -34,6 +34,8 @@ public:
     typedef PropsMap::const_iterator ITR;
 
     PropertiesMap();
+    PropertiesMap(const PropertiesMap &) = delete;
+    PropertiesMap & operator=(const PropertiesMap &) = delete;
     ~PropertiesMap();
 
     /**
