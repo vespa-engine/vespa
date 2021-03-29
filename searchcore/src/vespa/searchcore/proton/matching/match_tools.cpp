@@ -167,7 +167,8 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
                   const IIndexEnvironment    & indexEnv,
                   const RankSetup            & rankSetup,
                   const Properties           & rankProperties,
-                  const Properties           & featureOverrides)
+                  const Properties           & featureOverrides,
+                  bool                         is_search)
     : _queryLimiter(queryLimiter),
       _requestContext(doom, attributeContext, rankProperties, extractAttributeBlueprintParams(rankSetup, rankProperties)),
       _query(),
@@ -193,9 +194,11 @@ MatchToolsFactory(QueryLimiter               & queryLimiter,
         _query.optimize();
         trace.addEvent(4, "MTF: Fetch Postings");
         _query.fetchPostings();
-        trace.addEvent(5, "MTF: Handle Global Filters");
-        double global_filter_limit = GlobalFilterLimit::lookup(rankProperties, rankSetup.get_global_filter_limit());
-        _query.handle_global_filters(searchContext.getDocIdLimit(), global_filter_limit);
+        if (is_search) {
+            trace.addEvent(5, "MTF: Handle Global Filters");
+            double global_filter_limit = GlobalFilterLimit::lookup(rankProperties, rankSetup.get_global_filter_limit());
+            _query.handle_global_filters(searchContext.getDocIdLimit(), global_filter_limit);
+        }
         _query.freeze();
         trace.addEvent(5, "MTF: prepareSharedState");
         _rankSetup.prepareSharedState(_queryEnv, _queryEnv.getObjectStore());

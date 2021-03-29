@@ -107,7 +107,7 @@ public:
     std::unique_ptr<MatchToolsFactory>
     create_match_tools_factory(const search::engine::Request &request, ISearchContext &searchContext,
                                IAttributeContext &attrContext, const search::IDocumentMetaStore &metaStore,
-                               const Properties &feature_overrides) const;
+                               const Properties &feature_overrides, bool is_search) const;
 
     /**
      * Perform a search against this matcher.
