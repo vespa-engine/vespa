@@ -262,21 +262,12 @@ select_source_multi
  	;
  	
 select_source_join
-	:	FROM source_spec join_expr*
+	:	FROM source_spec
 	;
 
 source_list
     : namespaced_name (COMMA namespaced_name )*
     ;
-
-join_expr
-    : (join_spec source_spec ON joinExpression)
-    ;
-
-join_spec
-	: LEFT JOIN
-	| 'inner'? JOIN
-	;
 
 source_spec
 	:	( data_source (alias_def { ($data_source.ctx).addChild($alias_def.ctx); })? )

@@ -33,7 +33,6 @@ import com.yahoo.search.yql.yqlplusParser.Insert_sourceContext;
 import com.yahoo.search.yql.yqlplusParser.Insert_statementContext;
 import com.yahoo.search.yql.yqlplusParser.Insert_valuesContext;
 import com.yahoo.search.yql.yqlplusParser.JoinExpressionContext;
-import com.yahoo.search.yql.yqlplusParser.Join_exprContext;
 import com.yahoo.search.yql.yqlplusParser.LimitContext;
 import com.yahoo.search.yql.yqlplusParser.Literal_elementContext;
 import com.yahoo.search.yql.yqlplusParser.Literal_listContext;
@@ -382,10 +381,6 @@ final class ProgramParser {
                     break;
                 case yqlplusParser.RULE_select_source_join:
                     source = convertSource((ParserRuleContext) sourceNode.getChild(1), scope);
-                    List<Join_exprContext> joinContexts = ((Select_source_joinContext)sourceNode).join_expr();
-                    for (Join_exprContext joinContext:joinContexts) {
-                        source = convertJoin(joinContext, source, scope);
-                    }
                     break;
                 case yqlplusParser.RULE_insert_source:
                     Insert_sourceContext insertSourceContext = (Insert_sourceContext) sourceNode;
@@ -586,17 +581,6 @@ final class ProgramParser {
             throw new IllegalArgumentException("Unexpected argument type to convertQueryStatement: " + node.toStringTree());
         }
 
-    }
-
-    private OperatorNode<SequenceOperator> convertJoin(Join_exprContext node, OperatorNode<SequenceOperator> left, Scope scope) {
-        Source_specContext sourceSpec = node.source_spec();
-        OperatorNode<SequenceOperator> right = convertSource(sourceSpec, scope);
-        JoinExpressionContext joinContext = node.joinExpression();
-        OperatorNode<ExpressionOperator> joinExpression = readBinOp(ExpressionOperator.valueOf("EQ"), joinContext.getChild(0), joinContext.getChild(2), scope);
-        if (joinExpression.getOperator() != ExpressionOperator.EQ) {
-            throw new ProgramCompileException(joinExpression.getLocation(), "Unexpected join expression type: %s (expected EQ)", joinExpression.getOperator());
-        }
-        return OperatorNode.create(toLocation(scope, sourceSpec), node.join_spec().LEFT() != null ? SequenceOperator.LEFT_JOIN : SequenceOperator.JOIN, left, right, joinExpression);
     }
 
     private String assignAlias(String alias, ParserRuleContext node, Scope scope) {
