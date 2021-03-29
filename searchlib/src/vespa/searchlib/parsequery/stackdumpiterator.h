@@ -18,11 +18,10 @@ private:
     const char *_buf;
     /** Pointer to just past the input buffer */
     const char *_bufEnd;
-
     /** Pointer to the position of the current item in the buffer */
-    const char *_currPos;
+    uint32_t    _currPos;
     /** Pointer to after the current item */
-    const char *_currEnd;
+    uint32_t    _currEnd;
     /** The type of the current item */
     ParseItem::ItemType _currType;
     /** flags of the current item **/
@@ -48,11 +47,14 @@ private:
     /** The predicate query specification */
     query::PredicateQueryTerm::UP _predicate_query_term;
 
-    VESPA_DLL_LOCAL vespalib::string readString(const char *&p);
     VESPA_DLL_LOCAL vespalib::stringref read_stringref(const char *&p);
     VESPA_DLL_LOCAL uint64_t readUint64(const char *&p);
     VESPA_DLL_LOCAL double read_double(const char *&p);
     VESPA_DLL_LOCAL uint64_t readCompressedPositiveInt(const char *&p);
+    VESPA_DLL_LOCAL bool readPredicate(const char *&p);
+    VESPA_DLL_LOCAL bool readNN(const char *&p);
+    VESPA_DLL_LOCAL bool readComplexTerm(const char *& p);
+    VESPA_DLL_LOCAL bool readNext();
 public:
     /**
      * Make an iterator on a buffer. To get the first item, next must be called.
@@ -63,7 +65,7 @@ public:
     ~SimpleQueryStackDumpIterator();
 
     vespalib::stringref getStack() const { return vespalib::stringref(_buf, _bufEnd - _buf); }
-    size_t getPosition() const { return _currPos - _buf; }
+    size_t getPosition() const { return _currPos; }
 
     /**
      * Moves to the next item in the buffer.
