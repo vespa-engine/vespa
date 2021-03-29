@@ -102,16 +102,15 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
             }
             execution =  CompletableFuture.supplyAsync(() -> launchJunit(loadClasses(testBundle.get(), testDescriptor.get(), category)));
         } catch (Exception e) {
-            execution = createReportWithFailedInitialization(e);
+            execution = CompletableFuture.completedFuture(createReportWithFailedInitialization(e));
         }
     }
 
-    private static Future<TestReport> createReportWithFailedInitialization(Exception exception) {
+    private static TestReport createReportWithFailedInitialization(Exception exception) {
         TestReport.Failure failure = new TestReport.Failure("init", exception);
-        return CompletableFuture.completedFuture(
-                new TestReport.Builder()
+        return new TestReport.Builder()
                         .withFailures(List.of(failure))
-                        .build());
+                        .build();
     }
 
     @Override
@@ -222,7 +221,8 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
             }
         } catch (InterruptedException|ExecutionException e) {
             logger.log(Level.WARNING, "Error while getting test report", e);
-            return LegacyTestRunner.Status.ERROR;
+            // Return FAILURE to enforce getting the test report from the caller.
+            return LegacyTestRunner.Status.FAILURE;
         }
     }
 
@@ -233,7 +233,9 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
                 return execution.get();
             } catch (Exception e) {
                 logger.log(Level.WARNING, "Error getting test report", e);
-                return null;
+                // Likely this is something wrong with the provided test bundle. Create a test report
+                // and present in the console to enable tenants to act on it.
+                return createReportWithFailedInitialization(e);
             }
         } else {
             return null;
