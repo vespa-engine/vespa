@@ -32,7 +32,6 @@ import com.yahoo.search.yql.yqlplusParser.InNotInTargetContext;
 import com.yahoo.search.yql.yqlplusParser.Insert_sourceContext;
 import com.yahoo.search.yql.yqlplusParser.Insert_statementContext;
 import com.yahoo.search.yql.yqlplusParser.Insert_valuesContext;
-import com.yahoo.search.yql.yqlplusParser.JoinExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.LimitContext;
 import com.yahoo.search.yql.yqlplusParser.Literal_elementContext;
 import com.yahoo.search.yql.yqlplusParser.Literal_listContext;
@@ -54,7 +53,7 @@ import com.yahoo.search.yql.yqlplusParser.RelationalExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.RelationalOpContext;
 import com.yahoo.search.yql.yqlplusParser.Returning_specContext;
 import com.yahoo.search.yql.yqlplusParser.Scalar_literalContext;
-import com.yahoo.search.yql.yqlplusParser.Select_source_joinContext;
+import com.yahoo.search.yql.yqlplusParser.Select_source_fromContext;
 import com.yahoo.search.yql.yqlplusParser.Select_source_multiContext;
 import com.yahoo.search.yql.yqlplusParser.Select_statementContext;
 import com.yahoo.search.yql.yqlplusParser.Sequence_sourceContext;
@@ -379,7 +378,7 @@ final class ProgramParser {
                     source.putAnnotation("alias", "row");
                     scope.defineDataSource(toLocation(scope, multiSourceContext), "row");
                     break;
-                case yqlplusParser.RULE_select_source_join:
+                case yqlplusParser.RULE_select_source_from:
                     source = convertSource((ParserRuleContext) sourceNode.getChild(1), scope);
                     break;
                 case yqlplusParser.RULE_insert_source:

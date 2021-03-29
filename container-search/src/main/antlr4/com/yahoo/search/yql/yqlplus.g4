@@ -250,7 +250,7 @@ timeout
 select_source
     :   select_source_all
     |   select_source_multi
-	|	select_source_join
+	|	select_source_from
 	;
 
 select_source_all
@@ -261,7 +261,7 @@ select_source_multi
  	: 	FROM SOURCES source_list
  	;
  	
-select_source_join
+select_source_from
 	:	FROM source_spec
 	;
 
