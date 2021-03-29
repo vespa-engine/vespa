@@ -54,7 +54,7 @@ ProtonTermData::resolve(const ViewResolver &resolver,
     for (size_t i = 0; i < fields.size(); ++i) {
         const FieldInfo *info = idxEnv.getFieldByName(fields[i]);
         if (info != 0) {
-            _fields.push_back(FieldEntry(fields[i], info->id()));
+            _fields.emplace_back(fields[i], info->id());
             _fields.back().attribute_field =
                 (info->type() == FieldType::ATTRIBUTE) ||
                 (info->type() == FieldType::HIDDEN_ATTRIBUTE);
@@ -79,7 +79,7 @@ ProtonTermData::resolveFromChildren(const std::vector<Node *> &subterms)
             if (lookupField(subSpec.getFieldId()) == 0) {
                 // this must happen before handles are reserved
                 LOG_ASSERT(subSpec.getHandle() == search::fef::IllegalHandle);
-                _fields.push_back(FieldEntry(subSpec.getName(), subSpec.getFieldId()));
+                _fields.emplace_back(subSpec.getName(), subSpec.getFieldId());
             }
         }
     }
