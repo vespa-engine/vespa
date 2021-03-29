@@ -167,10 +167,8 @@
                                         <include>com.yahoo.vespa:hosted-zone-api:*:jar:provided</include>
                                         <include>com.yahoo.vespa:http-utils:*:jar:provided</include>
                                         <include>com.yahoo.vespa:jdisc_core:*:jar:provided</include>
-                                        <include>com.yahoo.vespa:jdisc_messagebus_service:*:jar:provided</include>
                                         <include>com.yahoo.vespa:jrt:*:jar:provided</include>
                                         <include>com.yahoo.vespa:linguistics:*:jar:provided</include>
-                                        <include>com.yahoo.vespa:messagebus-disc:*:jar:provided</include>
                                         <include>com.yahoo.vespa:messagebus:*:jar:provided</include>
                                         <include>com.yahoo.vespa:model-evaluation:*:jar:provided</include>
                                         <include>com.yahoo.vespa:predicate-search-core:*:jar:provided</include>
