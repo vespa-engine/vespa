@@ -85,7 +85,7 @@ public class NodeSerializerTest {
         assertEquals(1, node.history().events().size());
         node = node.withRestart(new Generation(1, 2));
         node = node.withReboot(new Generation(3, 4));
-        node = node.with(FlavorConfigBuilder.createDummies("large").getFlavorOrThrow("large"));
+        node = node.with(FlavorConfigBuilder.createDummies("large").getFlavorOrThrow("large"), Agent.system, clock.instant());
         node = node.with(node.status().withVespaVersion(Version.fromString("1.2.3")));
         node = node.with(node.status().withIncreasedFailCount().withIncreasedFailCount());
         node = node.with(NodeType.tenant);
@@ -105,7 +105,7 @@ public class NodeSerializerTest {
         assertEquals(node.allocation().get().membership(), copy.allocation().get().membership());
         assertEquals(node.allocation().get().requestedResources(), copy.allocation().get().requestedResources());
         assertEquals(node.allocation().get().isRemovable(), copy.allocation().get().isRemovable());
-        assertEquals(1, copy.history().events().size());
+        assertEquals(2, copy.history().events().size());
         assertEquals(clock.instant().truncatedTo(MILLIS), copy.history().event(History.Event.Type.reserved).get().at());
         assertEquals(NodeType.tenant, copy.type());
     }
@@ -283,12 +283,13 @@ public class NodeSerializerTest {
     public void flavor_overrides_serialization() {
         Node node = createNode();
         assertEquals(20, node.flavor().resources().diskGb(), 0);
-        node = node.with(node.flavor().with(FlavorOverrides.ofDisk(1234)));
+        node = node.with(node.flavor().with(FlavorOverrides.ofDisk(1234)), Agent.system, clock.instant());
         assertEquals(1234, node.flavor().resources().diskGb(), 0);
 
         Node copy = nodeSerializer.fromJson(Node.State.provisioned, nodeSerializer.toJson(node));
         assertEquals(1234, copy.flavor().resources().diskGb(), 0);
         assertEquals(node, copy);
+        assertTrue(node.history().event(History.Event.Type.resized).isPresent());
     }
 
     @Test

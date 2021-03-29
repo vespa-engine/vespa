@@ -760,7 +760,8 @@ public class ProvisioningTest {
         // Pick out a random application node and make it's parent larger, this will make it the spare host
         NodeList nodes = tester.nodeRepository().nodes().list();
         Node randomNode = nodes.owner(application).shuffle(new Random()).first().get();
-        tester.nodeRepository().nodes().write(nodes.parentOf(randomNode).get().with(new Flavor(new NodeResources(2, 10, 20, 8))), () -> {});
+        tester.nodeRepository().nodes().write(nodes.parentOf(randomNode).get()
+                .with(new Flavor(new NodeResources(2, 10, 20, 8)), Agent.system, tester.nodeRepository().clock().instant()), () -> {});
 
         // Re-deploy application with 1 node less, the retired node should be on the spare host
         tester.deploy(application, spec, Capacity.from(new ClusterResources(5, 1, defaultResources)));

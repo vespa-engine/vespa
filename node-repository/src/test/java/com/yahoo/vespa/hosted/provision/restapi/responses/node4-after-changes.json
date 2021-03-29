@@ -70,6 +70,11 @@
       "agent": "system"
     },
     {
+      "event": "resized",
+      "at": 123,
+      "agent": "operator"
+    },
+    {
       "event": "wantToRetire",
       "at": 123,
       "agent": "operator"

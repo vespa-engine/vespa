@@ -269,8 +269,10 @@ public final class Node implements Nodelike {
     }
 
     /** Returns a node with the flavor assigned to the given value */
-    public Node with(Flavor flavor) {
-        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state, allocation, history, type,
+    public Node with(Flavor flavor, Agent agent, Instant instant) {
+        if (flavor.equals(this.flavor)) return this;
+        History updateHistory = history.with(new History.Event(History.Event.Type.resized, agent, instant));
+        return new Node(id, ipConfig, hostname, parentHostname, flavor, status, state, allocation, updateHistory, type,
                         reports, modelName, reservedTo, exclusiveTo, switchHostname);
     }
 
