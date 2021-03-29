@@ -7,6 +7,7 @@
 #include "i_compactable.h"
 #include "unique_store_add_result.h"
 #include "unique_store_dictionary.h"
+#include "unique_store_btree_dictionary_read_snapshot.hpp"
 #include <vespa/vespalib/btree/btree.hpp>
 #include <vespa/vespalib/btree/btreebuilder.hpp>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
@@ -15,47 +16,6 @@
 #include <vespa/vespalib/btree/btreeroot.hpp>
 
 namespace vespalib::datastore {
-
-template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
-UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::
-ReadSnapshotImpl::ReadSnapshotImpl(FrozenView frozen_view)
-    : _frozen_view(frozen_view)
-{
-}
-
-template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
-size_t
-UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::
-ReadSnapshotImpl::count(const EntryComparator& comp) const
-{
-    auto itr = _frozen_view.lowerBound(EntryRef(), comp);
-    if (itr.valid() && !comp.less(EntryRef(), itr.getKey())) {
-        return 1u;
-    }
-    return 0u;
-}
-
-template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
-size_t
-UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::
-ReadSnapshotImpl::count_in_range(const EntryComparator& low,
-                                 const EntryComparator& high) const
-{
-    auto low_itr = _frozen_view.lowerBound(EntryRef(), low);
-    auto high_itr = low_itr;
-    if (high_itr.valid() && !high.less(EntryRef(), high_itr.getKey())) {
-        high_itr.seekPast(EntryRef(), high);
-    }
-    return high_itr - low_itr;
-}
-
-template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
-void
-UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::
-ReadSnapshotImpl::foreach_key(std::function<void(EntryRef)> callback) const
-{
-    _frozen_view.foreach_key(callback);
-}
 
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
 UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::UniqueStoreDictionary(std::unique_ptr<EntryComparator> compare)
@@ -272,10 +232,10 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::build_with_pa
 }
 
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
-std::unique_ptr<typename ParentT::ReadSnapshot>
+std::unique_ptr<IUniqueStoreDictionaryReadSnapshot>
 UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::get_read_snapshot() const
 {
-    return std::make_unique<ReadSnapshotImpl>(this->_btree_dict.getFrozenView());
+    return std::make_unique<UniqueStoreBTreeDictionaryReadSnapshot<BTreeDictionaryT>>(this->_btree_dict.getFrozenView());
 }
 
 template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>

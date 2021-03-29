@@ -6,7 +6,10 @@
 #include "ipostinglistsearchcontext.h"
 #include <vespa/searchlib/queryeval/searchiterator.h>
 
-namespace vespalib::datastore { class EntryComparator; }
+namespace vespalib::datastore {
+class EntryComparator;
+class IUniqueStoreDictionaryReadSnapshot;
+}
 
 namespace search::attribute {
 
@@ -17,7 +20,7 @@ namespace search::attribute {
 
 class EnumHintSearchContext : public IPostingListSearchContext
 {
-    const IEnumStoreDictionary::ReadSnapshot::UP _dict_snapshot;
+    const std::unique_ptr<vespalib::datastore::IUniqueStoreDictionaryReadSnapshot> _dict_snapshot;
     uint32_t                _uniqueValues;
     uint32_t                _docIdLimit;
     uint64_t                _numValues; // attr.getStatus().getNumValues();
