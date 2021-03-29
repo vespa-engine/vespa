@@ -339,8 +339,8 @@ final class ProgramParser {
         Preconditions.checkArgument(node instanceof Select_statementContext || node instanceof Insert_statementContext ||
               node instanceof Update_statementContext || node instanceof Delete_statementContext);
 
-      // 	SELECT^ select_field_spec select_source where? orderby? limit? offset? timeout?
-        // select is the only place to define where/orderby/limit/offset and joins
+        // SELECT^ select_field_spec select_source where? orderby? limit? offset? timeout?
+        // select is the only place to define where/orderby/limit/offset
         Scope scope = scopeParent.child();
         ProjectionBuilder proj = null;
         OperatorNode<SequenceOperator> source = null;
@@ -364,7 +364,6 @@ final class ProgramParser {
             switch (getParseTreeIndex(sourceNode)) {
                 // ALL_SOURCE and MULTI_SOURCE are how FROM SOURCES
                 // *|source_name,... are parsed
-                // They can't be used directly with the JOIN syntax at this time
                 case yqlplusParser.RULE_select_source_all: {
                 	Location location = toLocation(scope, sourceNode.getChild(2));
                     source = OperatorNode.create(location, SequenceOperator.ALL);
@@ -1068,8 +1067,7 @@ final class ProgramParser {
 				throw new ProgramCompileException(toLocation(scope, parseTree),"Unknown child count " + parseTree.getChildCount() + " of " + parseTree.getText());
 			}
 		}
-		case yqlplusParser.RULE_fieldref:
-		case yqlplusParser.RULE_joinDereferencedExpression: {
+		case yqlplusParser.RULE_fieldref: {
 			// all in-scope data sources should be defined in scope
 			// the 'first' field in a namespaced reference must be:
 			// - a field name if (and only if) there is exactly one data source

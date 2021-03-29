@@ -341,21 +341,6 @@ argument[boolean in_select]
     : expression[$in_select]
     ;
 
-// -------- join expressions ------------
-
-// Limit expression syntax for joins: A single equality test and one field from each source.
-// This means it can always turn the join into a query to one source, collecting all of the
-// keys from the results, and then a query to the other source (or querying the other source inline).
-// Does not support map or index references.
-
-joinExpression
-    : joinDereferencedExpression EQ joinDereferencedExpression
-	;
-
-joinDereferencedExpression
-	:	 namespaced_name
-	;
-
 // --------- expressions ------------
 
 expression [boolean select]
