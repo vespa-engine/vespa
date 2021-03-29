@@ -50,6 +50,7 @@
     <dependency>
       <groupId>org.apache.curator</groupId>
       <artifactId>curator-recipes</artifactId>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <groupId>com.google.guava</groupId>
@@ -59,6 +60,7 @@
     <dependency>
       <groupId>org.slf4j</groupId>
       <artifactId>slf4j-jdk14</artifactId>
+      <scope>compile</scope>
     </dependency>
     <dependency>
       <!-- Needed to have the same version as slf4j-api -->
@@ -70,6 +72,7 @@
       <groupId>org.apache.zookeeper</groupId>
       <artifactId>zookeeper</artifactId>
       <version>${zookeeper.client.version}</version>
+      <scope>provided</scope>
     </dependency>
     <!-- snappy-java and metrics-core are included here
      to be able to work with ZooKeeper 3.6.2 due to
