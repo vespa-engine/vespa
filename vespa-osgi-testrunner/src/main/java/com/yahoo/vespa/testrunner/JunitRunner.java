@@ -19,7 +19,6 @@ import org.junit.platform.launcher.LauncherDiscoveryRequest;
 import org.junit.platform.launcher.core.LauncherConfig;
 import org.junit.platform.launcher.core.LauncherDiscoveryRequestBuilder;
 import org.junit.platform.launcher.core.LauncherFactory;
-import org.junit.platform.launcher.listeners.LoggingListener;
 import org.junit.platform.launcher.listeners.SummaryGeneratingListener;
 import org.osgi.framework.Bundle;
 import org.osgi.framework.BundleContext;
@@ -178,7 +177,7 @@ public class JunitRunner extends AbstractComponent implements TestRunner {
 
         // Create log listener:
         var logLines = new ArrayList<LogRecord>();
-        var logListener = LoggingListener.forBiConsumer((t, m) -> log(logLines, m.get(), t));
+        var logListener = VespaJunitLogListener.forBiConsumer((t, m) -> log(logLines, m.get(), t));
         // Create a summary listener:
         var summaryListener = new SummaryGeneratingListener();
         launcher.registerTestExecutionListeners(logListener, summaryListener);
