@@ -111,7 +111,6 @@ FLOAT
 fragment
 EXPONENT : ('e'|'E') ('+'|'-')? ('0'..'9')+ ;
 
-
 fragment
 DIGIT : '0'..'9'
     ;
@@ -125,7 +124,6 @@ STRING  :  '"' ( ESC_SEQ | ~('\\'| '"') )* '"'
         |  '\'' ( ESC_SEQ | ~('\\' | '\'') )* '\''
 	;
 
-/////////////////////////////
 fragment
 HEX_DIGIT : ('0'..'9'|'a'..'f'|'A'..'F') ;
 	
@@ -145,13 +143,11 @@ WS  :   ( ' '
         | '\t'
         | '\r'
         | '\n'
-  //      ) {$channel=HIDDEN;}
   	) -> channel(HIDDEN)
     ;
 
 COMMENT
     :  ( ('//') ~('\n'|'\r')* '\r'? '\n'? 
-  //  |   '/*' ( options {greedy=false;} : . )* '*/' 
     | '/*' .*? '*/'
     )
     -> channel(HIDDEN)
@@ -170,13 +166,10 @@ VESPA_GROUPING_ARG
         (')' | ']' | '>')
     ;
 
-/*------------------------------------------------------------------
- * PARSER RULES
- *------------------------------------------------------------------*/
+// --------- parser rules ------------
 
 ident
    : keyword_as_ident //{addChild(new TerminalNodeImpl(keyword_as_ident.getText()));}
-   		//{return ID<IDNode>[$keyword_as_ident.text];}
    | ID
    ;
 
@@ -528,7 +521,7 @@ array_parameter
     ;
     
 literal_list
-	: LPAREN literal_element (COMMA literal_element)* RPAREN //{return ^(ARRAY_LITERAL literal_element+);}
+	: LPAREN literal_element (COMMA literal_element)* RPAREN
 	;
 	
 literal_element
