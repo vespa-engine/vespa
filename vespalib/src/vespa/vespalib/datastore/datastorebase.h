@@ -156,6 +156,7 @@ protected:
     ElemHold2List _elemHold2List;
 
     const uint32_t _numBuffers;
+    uint32_t       _hold_buffer_count;
     const size_t   _maxArrays;
     mutable std::atomic<uint64_t> _compaction_count;
 
@@ -350,6 +351,7 @@ private:
      */
     void onActive(uint32_t bufferId, uint32_t typeId, size_t elemsNeeded);
 
+    void inc_hold_buffer_count();
 public:
     uint32_t getTypeId(uint32_t bufferId) const {
         return _buffers[bufferId].getTypeId();
@@ -368,6 +370,7 @@ public:
     std::vector<uint32_t> startCompactWorstBuffers(bool compactMemory, bool compactAddressSpace);
     uint64_t get_compaction_count() const { return _compaction_count.load(std::memory_order_relaxed); }
     void inc_compaction_count() const { ++_compaction_count; }
+    bool has_held_buffers() const noexcept { return _hold_buffer_count != 0u; }
 };
 
 }
