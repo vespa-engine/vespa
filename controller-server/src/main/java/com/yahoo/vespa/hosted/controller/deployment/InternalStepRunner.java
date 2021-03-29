@@ -954,7 +954,7 @@ public class InternalStepRunner implements StepRunner {
             return new Timeouts(system);
         }
 
-        Duration capacity() { return Duration.ofMinutes(system.isCd() ? 5 : 0); }
+        Duration capacity() { return Duration.ofMinutes(system.isCd() ? 15 : 0); }
         Duration endpoint() { return Duration.ofMinutes(15); }
         Duration endpointCertificate() { return Duration.ofMinutes(20); }
         Duration tester() { return Duration.ofMinutes(30); }
