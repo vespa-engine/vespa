@@ -78,6 +78,7 @@ using search::queryeval::Searchable;
 using search::queryeval::SimpleLeafBlueprint;
 using search::queryeval::WeightedSetTermBlueprint;
 using search::tensor::DenseTensorAttribute;
+using search::tensor::ITensorAttribute;
 using vespalib::geo::ZCurve;
 using vespalib::make_string;
 using vespalib::string;
@@ -688,17 +689,13 @@ public:
         setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
     }
     void visit(query::NearestNeighborTerm &n) override {
-        if (_attr.asTensorAttribute() == nullptr) {
+        const ITensorAttribute *tensor_attr = _attr.asTensorAttribute();
+        if (tensor_attr == nullptr) {
             return fail_nearest_neighbor_term(n, "Attribute is not a tensor");
         }
-        const auto* dense_attr_tensor = dynamic_cast<const DenseTensorAttribute*>(_attr.asTensorAttribute());
-        if (dense_attr_tensor == nullptr) {
-            return fail_nearest_neighbor_term(n, make_string("Attribute is not a dense tensor (type=%s)",
-                                                             _attr.asTensorAttribute()->getTensorType().to_spec().c_str()));
-        }
-        if (dense_attr_tensor->getTensorType().dimensions().size() != 1) {
+        if (tensor_attr->getTensorType().dimensions().size() != 1) {
             return fail_nearest_neighbor_term(n, make_string("Attribute tensor type (%s) is not of order 1",
-                                                             dense_attr_tensor->getTensorType().to_spec().c_str()));
+                                                             tensor_attr->getTensorType().to_spec().c_str()));
         }
         auto query_tensor = getRequestContext().get_query_tensor(n.get_query_tensor_name());
         if (query_tensor.get() == nullptr) {
@@ -709,11 +706,15 @@ public:
             return fail_nearest_neighbor_term(n, make_string("Query tensor is not a dense tensor (type=%s)",
                                                              qt_type.to_spec().c_str()));
         }
-        if (!is_compatible_for_nearest_neighbor(dense_attr_tensor->getTensorType(), qt_type)) {
+        if (!is_compatible_for_nearest_neighbor(tensor_attr->getTensorType(), qt_type)) {
             return fail_nearest_neighbor_term(n, make_string("Attribute tensor type (%s) and query tensor type (%s) are not compatible",
-                                                             dense_attr_tensor->getTensorType().to_spec().c_str(), qt_type.to_spec().c_str()));
+                                                             tensor_attr->getTensorType().to_spec().c_str(), qt_type.to_spec().c_str()));
         }
-        setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field, *dense_attr_tensor,
+        if (tensor_attr->supports_extract_cells_ref() == false) {
+            return fail_nearest_neighbor_term(n, make_string("Attribute does not support access to tensor data (type=%s)",
+                                                             tensor_attr->getTensorType().to_spec().c_str()));
+        }
+        setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field, *tensor_attr,
                                                                         std::move(query_tensor),
                                                                         n.get_target_num_hits(),
                                                                         n.get_allow_approximate(),
