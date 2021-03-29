@@ -272,7 +272,8 @@ class NodeAllocation {
         NodeResources hostResources = allNodes.parentOf(node).get().flavor().resources();
         return node.with(new Flavor(requestedNodes.resources().get()
                                                   .with(hostResources.diskSpeed())
-                                                  .with(hostResources.storageType())));
+                                                  .with(hostResources.storageType())),
+                Agent.application, nodeRepository.clock().instant());
     }
 
     private Node setCluster(ClusterSpec cluster, Node node) {

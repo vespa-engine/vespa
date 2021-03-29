@@ -158,6 +158,8 @@ public class History {
             down, 
             // The node made a config request, indicating it is live
             requested,
+            // The node resources/flavor were changed
+            resized(false),
             // The node was rebooted
             rebooted(false),
             // The node upgraded its OS (implies a reboot)
