@@ -664,7 +664,7 @@ TYPED_TEST(EnumStoreDictionaryTest, normalize_posting_lists_works)
     auto find_result = dict.find_posting_list(this->make_bound_comparator(0), root);
     EXPECT_EQ(value_0_idx, find_result.first);
     EXPECT_EQ(this->fake_pidx(), find_result.second);
-    auto dummy = [](EntryRef posting_idx) { return posting_idx; };
+    auto dummy = [](EntryRef posting_idx) noexcept { return posting_idx; };
     std::vector<EntryRef> saved_refs;
     auto save_refs_and_clear = [&saved_refs](EntryRef posting_idx) { saved_refs.push_back(posting_idx); return EntryRef(); };
     EXPECT_FALSE(dict.normalize_posting_lists(dummy));
