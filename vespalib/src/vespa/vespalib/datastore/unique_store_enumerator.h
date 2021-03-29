@@ -3,6 +3,7 @@
 #pragma once
 
 #include "i_unique_store_dictionary.h"
+#include "i_unique_store_dictionary_read_snapshot.h"
 #include <vespa/vespalib/stllike/allocator.h>
 
 namespace vespalib::datastore {
@@ -23,7 +24,7 @@ public:
 private:
     using UInt32Vector = std::vector<uint32_t, vespalib::allocator_large<uint32_t>>;
     using EnumValues = std::vector<UInt32Vector>;
-    IUniqueStoreDictionary::ReadSnapshot::UP _dict_snapshot;
+    std::unique_ptr<IUniqueStoreDictionaryReadSnapshot> _dict_snapshot;
     const DataStoreBase &_store;
     EnumValues _enumValues;
     uint32_t _next_enum_val;

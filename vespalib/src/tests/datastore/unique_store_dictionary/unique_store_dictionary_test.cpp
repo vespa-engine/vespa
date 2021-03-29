@@ -41,7 +41,7 @@ public:
 template <typename UniqueStoreDictionaryType>
 struct DictionaryReadTest : public ::testing::Test {
     UniqueStoreDictionaryType dict;
-    IUniqueStoreDictionary::ReadSnapshot::UP snapshot;
+    std::unique_ptr<IUniqueStoreDictionaryReadSnapshot> snapshot;
 
     DictionaryReadTest()
         : dict(std::make_unique<Comparator>(0)),
