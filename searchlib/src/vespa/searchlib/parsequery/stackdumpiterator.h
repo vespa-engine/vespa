@@ -18,8 +18,6 @@ private:
     const char *_buf;
     /** Pointer to just past the input buffer */
     const char *_bufEnd;
-    /** Total length of the input buffer */
-    size_t _bufLen;
 
     /** Pointer to the position of the current item in the buffer */
     const char *_currPos;
@@ -27,15 +25,12 @@ private:
     const char *_currEnd;
     /** The type of the current item */
     ParseItem::ItemType _currType;
-    ParseItem::ItemCreator _currCreator;
+    /** flags of the current item **/
+    uint8_t _currFlags;
     /** Rank weight of current item **/
     query::Weight _currWeight;
     /** unique id of the current item **/
     uint32_t _currUniqueId;
-
-    /** flags of the current item **/
-    uint32_t _currFlags;
-
     /** The arity of the current item */
     uint32_t _currArity;
     /** The index name (field name) in the current item */
@@ -67,7 +62,7 @@ public:
     SimpleQueryStackDumpIterator& operator=(const SimpleQueryStackDumpIterator &) = delete;
     ~SimpleQueryStackDumpIterator();
 
-    vespalib::stringref getStack() const { return vespalib::stringref(_buf, _bufLen); }
+    vespalib::stringref getStack() const { return vespalib::stringref(_buf, _bufEnd - _buf); }
     size_t getPosition() const { return _currPos - _buf; }
 
     /**
@@ -87,7 +82,7 @@ public:
      * Get the type of the current item.
      * @return the type.
      */
-    ParseItem::ItemCreator getCreator() const { return _currCreator; }
+    ParseItem::ItemCreator getCreator() const { return ParseItem::GetCreator(_currFlags); }
 
     /**
      * Get the rank weight of the current item.

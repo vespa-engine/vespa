@@ -10,27 +10,25 @@ using search::query::PredicateQueryTerm;
 
 namespace search {
 
-SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(vespalib::stringref buf) :
-        _buf(buf.begin()),
-        _bufEnd(buf.end()),
-        _bufLen(buf.size()),
-        _currPos(_buf),
-        _currEnd(_buf),
-        _currType(ParseItem::ITEM_UNDEF),
-        _currCreator(ParseItem::CREA_ORIG),
-        _currWeight(100),
-        _currUniqueId(0),
-        _currFlags(0),
-        _currArity(0),
-        _curr_index_name(),
-        _curr_term(),
-        _scratch(),
-        _extraIntArg1(0),
-        _extraIntArg2(0),
-        _extraIntArg3(0),
-        _extraDoubleArg4(0),
-        _extraDoubleArg5(0),
-        _predicate_query_term()
+SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(vespalib::stringref buf)
+    : _buf(buf.begin()),
+      _bufEnd(buf.end()),
+      _currPos(_buf),
+      _currEnd(_buf),
+      _currType(ParseItem::ITEM_UNDEF),
+      _currFlags(0),
+      _currWeight(100),
+      _currUniqueId(0),
+      _currArity(0),
+      _curr_index_name(),
+      _curr_term(),
+      _scratch(),
+      _extraIntArg1(0),
+      _extraIntArg2(0),
+      _extraIntArg3(0),
+      _extraDoubleArg4(0),
+      _extraDoubleArg5(0),
+      _predicate_query_term()
 {
 }
 
@@ -123,14 +121,11 @@ SimpleQueryStackDumpIterator::next()
         _currUniqueId = 0;
     }
     if (ParseItem::getFeature_Flags(typefield)) {
-        if ((p + sizeof(uint32_t)) > _bufEnd) {
-            return false;
-        }
+        if ((p + sizeof(uint8_t)) > _bufEnd) return false;
         _currFlags = (uint8_t)*p++;
     } else {
         _currFlags = 0;
     }
-    _currCreator = ParseItem::GetCreator(_currFlags);
 
     switch (_currType) {
     case ParseItem::ITEM_OR:
