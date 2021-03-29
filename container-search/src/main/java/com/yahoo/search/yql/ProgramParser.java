@@ -14,7 +14,6 @@ import com.yahoo.search.yql.yqlplusParser.AnnotateExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.ArgumentContext;
 import com.yahoo.search.yql.yqlplusParser.ArgumentsContext;
 import com.yahoo.search.yql.yqlplusParser.ArrayLiteralContext;
-import com.yahoo.search.yql.yqlplusParser.ArrayTypeContext;
 import com.yahoo.search.yql.yqlplusParser.Call_sourceContext;
 import com.yahoo.search.yql.yqlplusParser.ConstantArrayContext;
 import com.yahoo.search.yql.yqlplusParser.ConstantExpressionContext;
@@ -24,14 +23,11 @@ import com.yahoo.search.yql.yqlplusParser.Delete_statementContext;
 import com.yahoo.search.yql.yqlplusParser.DereferencedExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.EqualityExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.ExpressionContext;
-import com.yahoo.search.yql.yqlplusParser.FallbackContext;
 import com.yahoo.search.yql.yqlplusParser.Field_defContext;
 import com.yahoo.search.yql.yqlplusParser.Field_names_specContext;
 import com.yahoo.search.yql.yqlplusParser.Field_values_group_specContext;
 import com.yahoo.search.yql.yqlplusParser.Field_values_specContext;
 import com.yahoo.search.yql.yqlplusParser.IdentContext;
-import com.yahoo.search.yql.yqlplusParser.Import_listContext;
-import com.yahoo.search.yql.yqlplusParser.Import_statementContext;
 import com.yahoo.search.yql.yqlplusParser.InNotInTargetContext;
 import com.yahoo.search.yql.yqlplusParser.Insert_sourceContext;
 import com.yahoo.search.yql.yqlplusParser.Insert_statementContext;
@@ -44,23 +40,13 @@ import com.yahoo.search.yql.yqlplusParser.Literal_listContext;
 import com.yahoo.search.yql.yqlplusParser.LogicalANDExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.LogicalORExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.MapExpressionContext;
-import com.yahoo.search.yql.yqlplusParser.MapTypeContext;
-import com.yahoo.search.yql.yqlplusParser.Merge_componentContext;
-import com.yahoo.search.yql.yqlplusParser.Merge_statementContext;
-import com.yahoo.search.yql.yqlplusParser.ModuleIdContext;
-import com.yahoo.search.yql.yqlplusParser.ModuleNameContext;
 import com.yahoo.search.yql.yqlplusParser.MultiplicativeExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.Namespaced_nameContext;
-import com.yahoo.search.yql.yqlplusParser.Next_statementContext;
 import com.yahoo.search.yql.yqlplusParser.OffsetContext;
 import com.yahoo.search.yql.yqlplusParser.OrderbyContext;
 import com.yahoo.search.yql.yqlplusParser.Orderby_fieldContext;
 import com.yahoo.search.yql.yqlplusParser.Output_specContext;
-import com.yahoo.search.yql.yqlplusParser.Paged_clauseContext;
-import com.yahoo.search.yql.yqlplusParser.ParamsContext;
 import com.yahoo.search.yql.yqlplusParser.Pipeline_stepContext;
-import com.yahoo.search.yql.yqlplusParser.Procedure_argumentContext;
-import com.yahoo.search.yql.yqlplusParser.Program_arglistContext;
 import com.yahoo.search.yql.yqlplusParser.Project_specContext;
 import com.yahoo.search.yql.yqlplusParser.ProgramContext;
 import com.yahoo.search.yql.yqlplusParser.PropertyNameAndValueContext;
@@ -72,18 +58,15 @@ import com.yahoo.search.yql.yqlplusParser.Scalar_literalContext;
 import com.yahoo.search.yql.yqlplusParser.Select_source_joinContext;
 import com.yahoo.search.yql.yqlplusParser.Select_source_multiContext;
 import com.yahoo.search.yql.yqlplusParser.Select_statementContext;
-import com.yahoo.search.yql.yqlplusParser.Selectvar_statementContext;
 import com.yahoo.search.yql.yqlplusParser.Sequence_sourceContext;
 import com.yahoo.search.yql.yqlplusParser.Source_listContext;
 import com.yahoo.search.yql.yqlplusParser.Source_specContext;
 import com.yahoo.search.yql.yqlplusParser.Source_statementContext;
 import com.yahoo.search.yql.yqlplusParser.StatementContext;
 import com.yahoo.search.yql.yqlplusParser.TimeoutContext;
-import com.yahoo.search.yql.yqlplusParser.TypenameContext;
 import com.yahoo.search.yql.yqlplusParser.UnaryExpressionContext;
 import com.yahoo.search.yql.yqlplusParser.Update_statementContext;
 import com.yahoo.search.yql.yqlplusParser.Update_valuesContext;
-import com.yahoo.search.yql.yqlplusParser.ViewContext;
 import com.yahoo.search.yql.yqlplusParser.WhereContext;
 
 import org.antlr.v4.runtime.BaseErrorListener;
@@ -175,32 +158,9 @@ final class ProgramParser {
         }
     }
 
-    public OperatorNode<StatementOperator> parse(String programName, InputStream program) throws IOException, RecognitionException {
-        yqlplusParser parser = prepareParser(programName, program);
-        return convertProgram(parseProgram(parser), parser, programName);
-    }
-
     public OperatorNode<StatementOperator> parse(String programName, String program) throws IOException, RecognitionException {
         yqlplusParser parser = prepareParser(programName, program);
         return convertProgram(parseProgram(parser), parser, programName);
-    }
-
-    public OperatorNode<StatementOperator> parse(File input) throws IOException, RecognitionException {
-        yqlplusParser parser = prepareParser(input);
-        return convertProgram(parseProgram(parser), parser, input.getAbsoluteFile().toString());
-    }
-
-    public OperatorNode<ExpressionOperator> parseExpression(String input) throws IOException, RecognitionException {
-        return convertExpr(prepareParser("<expression>", input).expression(false).getRuleContext(), new Scope());
-    }
-
-    public OperatorNode<ExpressionOperator> parseExpression(String input, Set<String> visibleAliases) throws IOException, RecognitionException {
-        Scope scope = new Scope();
-        final Location loc = new Location("<expression>", -1, -1);
-        for (String alias : visibleAliases) {
-            scope.defineDataSource(loc, alias);
-        }
-        return convertExpr(prepareParser("<expression>", input).expression(false).getRuleContext(), scope);
     }
 
     private Location toLocation(Scope scope, ParseTree node) {
@@ -381,7 +341,7 @@ final class ProgramParser {
         Preconditions.checkArgument(node instanceof Select_statementContext || node instanceof Insert_statementContext ||
               node instanceof Update_statementContext || node instanceof Delete_statementContext);
 
-      // 	SELECT^ select_field_spec select_source where? orderby? limit? offset? timeout? fallback?
+      // 	SELECT^ select_field_spec select_source where? orderby? limit? offset? timeout?
         // select is the only place to define where/orderby/limit/offset and joins
         Scope scope = scopeParent.child();
         ProjectionBuilder proj = null;
@@ -391,7 +351,6 @@ final class ProgramParser {
         OperatorNode<ExpressionOperator> offset = null;
         OperatorNode<ExpressionOperator> limit = null;
         OperatorNode<ExpressionOperator> timeout = null;
-        OperatorNode<SequenceOperator> fallback = null;
         OperatorNode<SequenceOperator> insertValues = null;
         OperatorNode<ExpressionOperator> updateValues = null;
 
@@ -475,9 +434,6 @@ final class ProgramParser {
                 case yqlplusParser.RULE_timeout:
                     timeout = convertExpr(((TimeoutContext) child).fixed_or_parameter(), scope);
                     break;
-                case yqlplusParser.RULE_fallback:
-                    fallback = convertQuery(((FallbackContext) child).select_statement(), scope);
-                    break;
                 case yqlplusParser.RULE_insert_values:
                     if (child.getChild(0) instanceof yqlplusParser.Query_statementContext) {
                 		insertValues = convertQuery(child.getChild(0).getChild(0), scope);
@@ -558,10 +514,6 @@ final class ProgramParser {
         if (timeout != null) {
             result = OperatorNode.create(SequenceOperator.TIMEOUT, result, timeout);
         }
-        // if there's a fallback, emit a fallback node
-        if (fallback != null) {
-            result = OperatorNode.create(SequenceOperator.FALLBACK, result, fallback);
-        }
         return result;
     }
 
@@ -621,21 +573,6 @@ final class ProgramParser {
         return result;
     }
 
-    private OperatorNode<SequenceOperator> convertMerge(List<Merge_componentContext> mergeComponentList, Scope scope) {
-        Preconditions.checkArgument(mergeComponentList != null);
-        List<OperatorNode<SequenceOperator>> sources = Lists.newArrayListWithExpectedSize(mergeComponentList.size());
-        for (Merge_componentContext mergeComponent:mergeComponentList) {
-            Select_statementContext selectContext = mergeComponent.select_statement();
-            Source_statementContext sourceContext = mergeComponent.source_statement();
-            if (selectContext != null) {
-                sources.add(convertQuery(selectContext, scope.getRoot()));
-            } else {
-                sources.add(convertQuery(sourceContext, scope.getRoot()));
-            }
-        }
-        return OperatorNode.create(SequenceOperator.MERGE, sources);
-    }
-
     private OperatorNode<SequenceOperator> convertQuery(ParseTree node, Scope scope) {
         if (node instanceof Select_statementContext
            || node instanceof Insert_statementContext
@@ -645,8 +582,6 @@ final class ProgramParser {
         } else if (node instanceof Source_statementContext) { // for pipe
             Source_statementContext sourceStatementContext = (Source_statementContext)node;
             return convertPipe(sourceStatementContext.query_statement(), sourceStatementContext.pipeline_step(), scope);
-        } else if (node instanceof Merge_statementContext) {
-            return convertMerge(((Merge_statementContext)node).merge_component(), scope);
         } else {
             throw new IllegalArgumentException("Unexpected argument type to convertQueryStatement: " + node.toStringTree());
         }
@@ -763,58 +698,6 @@ final class ProgramParser {
         return result;
     }
 
-    private OperatorNode<TypeOperator> decodeType(Scope scope, TypenameContext type) {
-
-        TypeOperator op;
-        ParseTree typeNode = type.getChild(0);
-        switch (getParseTreeIndex(typeNode)) {
-            case yqlplusParser.TYPE_BOOLEAN:
-                op = TypeOperator.BOOLEAN;
-                break;
-            case yqlplusParser.TYPE_BYTE:
-                op = TypeOperator.BYTE;
-                break;
-            case yqlplusParser.TYPE_DOUBLE:
-                op = TypeOperator.DOUBLE;
-                break;
-            case yqlplusParser.TYPE_INT16:
-                op = TypeOperator.INT16;
-                break;
-            case yqlplusParser.TYPE_INT32:
-                op = TypeOperator.INT32;
-                break;
-            case yqlplusParser.TYPE_INT64:
-                op = TypeOperator.INT64;
-                break;
-            case yqlplusParser.TYPE_STRING:
-                op = TypeOperator.STRING;
-                break;
-            case yqlplusParser.TYPE_TIMESTAMP:
-                op = TypeOperator.TIMESTAMP;
-                break;
-            case yqlplusParser.RULE_arrayType:
-                return OperatorNode.create(toLocation(scope, typeNode), TypeOperator.ARRAY, decodeType(scope, ((ArrayTypeContext)typeNode).getChild(TypenameContext.class, 0)));
-            case yqlplusParser.RULE_mapType:
-                return OperatorNode.create(toLocation(scope, typeNode), TypeOperator.MAP, decodeType(scope, ((MapTypeContext)typeNode).getChild(TypenameContext.class, 0)));
-            default:
-                throw new ProgramCompileException("Unknown type " + typeNode.getText());
-        }
-        return OperatorNode.create(toLocation(scope, typeNode), op);
-    }
-
-    private List<String> createBindingName(ParseTree node) {
-        if (node instanceof ModuleNameContext) {
-            if (((ModuleNameContext)node).namespaced_name() != null) {
-                return readName(((ModuleNameContext)node).namespaced_name());
-            } else if (((ModuleNameContext)node).literalString() != null) {
-                return ImmutableList.of(((ModuleNameContext)node).literalString().STRING().getText());
-            }
-        } else if (node instanceof ModuleIdContext) {
-            return ImmutableList.of(node.getText());
-        }
-        throw new ProgramCompileException("Wrong context");
-    }
-
     private OperatorNode<StatementOperator> convertProgram(
             ParserRuleContext program, yqlplusParser parser, String programName) {
         Scope scope = new Scope(parser, programName);
@@ -826,99 +709,12 @@ final class ProgramParser {
             }
             ParserRuleContext ruleContext = (ParserRuleContext) node;
             switch (ruleContext.getRuleIndex()) {
-            case yqlplusParser.RULE_params: {
-                // ^(ARGUMENT ident typeref expression?)
-                ParamsContext paramsContext = (ParamsContext) ruleContext;
-                Program_arglistContext program_arglistContext = paramsContext.program_arglist();
-                if (program_arglistContext != null) {
-                    List<Procedure_argumentContext> argList = program_arglistContext.procedure_argument();
-                    for (Procedure_argumentContext procedureArgumentContext : argList) {
-                        String name = procedureArgumentContext.ident().getText();
-                        OperatorNode<TypeOperator> type = decodeType(scope, procedureArgumentContext.getChild(TypenameContext.class, 0));
-                        OperatorNode<ExpressionOperator> defaultValue = OperatorNode.create(ExpressionOperator.NULL);
-                        if (procedureArgumentContext.expression() != null) {
-                            defaultValue = convertExpr(procedureArgumentContext.expression(), scope);
-                        }
-                        scope.defineVariable(toLocation(scope, procedureArgumentContext), name);
-                        stmts.add(OperatorNode.create(StatementOperator.ARGUMENT, name, type, defaultValue));
-                    }
-                }
-                break;
-            }
-            case yqlplusParser.RULE_import_statement: {
-                Import_statementContext importContext = (Import_statementContext) ruleContext;
-                if (null == importContext.import_list()) {
-                     List<String> name = createBindingName(node.getChild(1));
-                    String target;
-                    Location location = toLocation(scope, node.getChild(1));
-                    if (node.getChildCount() == 2) {
-                        target = name.get(0);
-                    } else if (node.getChildCount() == 4) {
-                        target = node.getChild(3).getText();
-                    } else {
-                        throw new ProgramCompileException("Unknown node count for IMPORT: " + node.toStringTree());
-                    }
-                    scope.bindModule(location, name, target);
-                } else {
-                    // | FROM moduleName IMPORT import_list -> ^(IMPORT_FROM
-                    // moduleName import_list+)
-                    Import_listContext importListContext = importContext.import_list();
-                    List<String> name = createBindingName(importContext.moduleName());
-                    Location location = toLocation(scope, importContext.moduleName());
-                    List<ModuleIdContext> moduleIds = importListContext.moduleId();
-                    List<String> symbols = Lists.newArrayListWithExpectedSize(moduleIds.size());
-                    for (ModuleIdContext cnode : moduleIds) {
-                        symbols.add(cnode.ID().getText());
-                    }
-                    for (String sym : symbols) {
-                        scope.bindModuleSymbol(location, name, sym, sym);
-                    }
-                }
-                break;
-            }
 
-            // DDL
-            case yqlplusParser.RULE_ddl:
-                ruleContext = (ParserRuleContext)ruleContext.getChild(0);
-                break;
-            case yqlplusParser.RULE_view: {
-                // view and projection expansion now has to be done by the
-                // execution engine
-                // since views/projections, in order to be useful, have to
-                // support being used from outside the same program
-                ViewContext viewContext = (ViewContext) ruleContext;
-                Location loc = toLocation(scope, viewContext);
-                scope.getRoot().defineView(loc, viewContext.ID().getText());
-                stmts.add(OperatorNode.create(loc, StatementOperator.DEFINE_VIEW, viewContext.ID().getText(), convertQuery(viewContext.source_statement(), scope.getRoot())));
-                break;
-            }
             case yqlplusParser.RULE_statement: {
                 // ^(STATEMENT_QUERY source_statement paged_clause?
                 // output_spec?)
                 StatementContext statementContext = (StatementContext) ruleContext;
                 switch (getParseTreeIndex(ruleContext.getChild(0))) {
-                case yqlplusParser.RULE_selectvar_statement: {
-                    // ^(STATEMENT_SELECTVAR ident source_statement)
-                    Selectvar_statementContext selectVarContext = (Selectvar_statementContext) ruleContext.getChild(0);
-                    String variable = selectVarContext.ident().getText();
-                    OperatorNode<SequenceOperator> query = convertQuery(selectVarContext.source_statement(), scope);
-                    Location location = toLocation(scope, selectVarContext.ident());
-                    scope.defineVariable(location, variable);
-                    stmts.add(OperatorNode.create(location, StatementOperator.EXECUTE, query, variable));
-                    break;
-                }
-                case yqlplusParser.RULE_next_statement: {
-                    // NEXT^ literalString OUTPUT! AS! ident
-                    Next_statementContext nextStateContext = (Next_statementContext) ruleContext.getChild(0);
-                    String continuationValue = StringUnescaper.unquote(nextStateContext.literalString().getText());
-                    String variable = nextStateContext.ident().getText();
-                    Location location = toLocation(scope, node);
-                    OperatorNode<SequenceOperator> next = OperatorNode.create(location, SequenceOperator.NEXT, continuationValue);
-                    stmts.add(OperatorNode.create(location, StatementOperator.EXECUTE, next, variable));
-                    stmts.add(OperatorNode.create(location, StatementOperator.OUTPUT, variable));
-                    scope.defineVariable(location, variable);
-                    break;
-                }
                 case yqlplusParser.RULE_output_statement:
                     Source_statementContext source_statement = statementContext.output_statement().source_statement();
                     OperatorNode<SequenceOperator> query;
@@ -935,10 +731,6 @@ final class ProgramParser {
                     for (int i = 1; i < outputStatement.getChildCount(); ++i) {
                         ParseTree child = outputStatement.getChild(i);
                         switch (getParseTreeIndex(child)) {
-                        case yqlplusParser.RULE_paged_clause:
-                            Paged_clauseContext pagedContext = (Paged_clauseContext) child;
-                            pageSize = convertExpr(pagedContext.fixed_or_parameter(), scope);
-                            break;
                         case yqlplusParser.RULE_output_spec:
                             Output_specContext outputSpecContext = (Output_specContext) child;
                             variable = outputSpecContext.ident().getText();
@@ -951,9 +743,6 @@ final class ProgramParser {
                         }
                     }
                     scope.defineVariable(location, variable);
-                    if (pageSize != null) {
-                        query = OperatorNode.create(SequenceOperator.PAGE, query, pageSize);
-                    }
                     stmts.add(OperatorNode.create(location, StatementOperator.EXECUTE, query, variable));
                     stmts.add(OperatorNode.create(location, isCountVariable ? StatementOperator.COUNT:StatementOperator.OUTPUT, variable));
                 }

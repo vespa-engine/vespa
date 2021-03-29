@@ -18,22 +18,9 @@ options {
     protected Stack<expression_scope> expression_stack = new Stack();    
 }
 
-// tokens for command syntax
-  CREATE : 'create';
+// tokens
+
   SELECT : 'select';
-  INSERT : 'insert';
-  UPDATE : 'update';
-  SET : 'set';
-  VIEW : 'view';
-  TABLE  : 'table';
-  DELETE : 'delete';
-  INTO   : 'into';
-  VALUES : 'values';
-  IMPORT : 'import';
-  NEXT : 'next';
-  PAGED : 'paged';
-  FALLBACK : 'fallback';
-  IMPORT_FROM :;
 
   LIMIT : 'limit';
   OFFSET : 'offset';
@@ -44,36 +31,12 @@ options {
   FROM : 'from';
   SOURCES : 'sources';
   AS : 'as';
-  MERGE : 'merge';
-  LEFT : 'left';
-  JOIN : 'join';
-  
-  ON : 'on';
+
+  ON : 'on'; // TODO: not used?
   COMMA : ',';
   OUTPUT : 'output';
   COUNT : 'count';
-  RETURNING : 'returning';
-  APPLY : 'apply';
-  CAST : 'cast';
 
-  BEGIN : 'begin';
-  END : 'end';
-
-  // type-related
-  TYPE_BYTE : 'byte';
-  TYPE_INT16 : 'int16';
-  TYPE_INT32 : 'int32';
-  TYPE_INT64 : 'int64';
-  TYPE_STRING : 'string';
-  TYPE_DOUBLE : 'double';
-  TYPE_TIMESTAMP : 'timestamp';
-  TYPE_BOOLEAN : 'boolean';
-  TYPE_ARRAY : 'array';
-  TYPE_MAP : 'map';
-
-  // READ_FIELD;
-
-  // token literals
   TRUE : 'true';
   FALSE : 'false';
 
@@ -123,7 +86,6 @@ options {
   // statement delimiter
   SEMI : ';';
 
-  PROGRAM : 'program';
   TIMEOUT : 'timeout';
 
 
@@ -219,27 +181,11 @@ ident
    ;
 
 keyword_as_ident
-   : SELECT | TABLE | DELETE | INTO | VALUES | LIMIT | OFFSET | WHERE | 'order' | 'by' | DESC | MERGE | LEFT | JOIN
-   | ON | OUTPUT | COUNT | BEGIN | END | APPLY | TYPE_BYTE | TYPE_INT16 | TYPE_INT32 | TYPE_INT64 | TYPE_BOOLEAN | TYPE_TIMESTAMP | TYPE_DOUBLE | TYPE_STRING | TYPE_ARRAY | TYPE_MAP
-   | VIEW | CREATE | IMPORT | PROGRAM | NEXT | PAGED | SOURCES | SET | MATCHES | LIKE | CAST
+   : SELECT | LIMIT | OFFSET | WHERE | 'order' | 'by' | DESC | ON | OUTPUT | COUNT | SOURCES | MATCHES | LIKE
    ;
 
-program : params? (import_statement SEMI)* (ddl SEMI)* (statement SEMI)* EOF
+program : (statement SEMI)* EOF
 	;
-
-params
-     : PROGRAM LPAREN program_arglist? RPAREN SEMI
-     ;
-
-import_statement
-      : IMPORT moduleName AS moduleId
-      | IMPORT moduleId               
-      | FROM moduleName IMPORT import_list
-      ;
-
-import_list
-      : moduleId (',' moduleId)*
-      ;
 
 moduleId
     :  ID
@@ -250,45 +196,17 @@ moduleName
 	| namespaced_name
 	;
 
-ddl
-      : view
-      ;
-
-view  : CREATE VIEW ID AS source_statement
-      ;
-
-program_arglist
-      : procedure_argument (',' procedure_argument)*
-      ;
-
-procedure_argument
-      :
-      	AT (ident TYPE_ARRAY LT typename GTEQ (expression[false])? ) {registerParameter($ident.start.getText(), $typename.start.getText());}
-      | AT (ident typename ('=' expression[false])? ) {registerParameter($ident.start.getText(), $typename.start.getText());}
-      ;
-
 statement
       : output_statement
-	  | selectvar_statement
-	  | next_statement
 	  ;
 
 output_statement
-      : source_statement paged_clause? output_spec?
+      : source_statement output_spec?
       ;
-
-paged_clause
-      : PAGED fixed_or_parameter
-      ;
-
-next_statement
-	  : NEXT literalString OUTPUT AS ident
-	  ;
 
 source_statement
       : query_statement (PIPE pipeline_step)*
       ;
-
 
 pipeline_step
       : namespaced_name arguments[false]?
@@ -300,50 +218,20 @@ vespa_grouping
       | annotation VESPA_GROUPING
       ;
 
-selectvar_statement
-      : CREATE ('temp' | 'temporary') TABLE ident AS LPAREN source_statement RPAREN
-      ;
-
-typename
-      : TYPE_BYTE | TYPE_INT16 | TYPE_INT32 | TYPE_INT64 | TYPE_STRING | TYPE_BOOLEAN | TYPE_TIMESTAMP
-      | arrayType | mapType | TYPE_DOUBLE
-      ;
-
-arrayType
-      : TYPE_ARRAY LT typename GT
-      ;
-
-mapType
-      : TYPE_MAP LT typename GT
-      ;
-
 output_spec
       : (OUTPUT AS ident)
       | (OUTPUT COUNT AS ident)
       ;
 
 query_statement
-    : merge_statement
-    | select_statement
+    : select_statement
     | insert_statement
     | delete_statement
     | update_statement
     ;
 
-// This does not use the UNION / UNION ALL from SQL because the semantics are different than SQL UNION
-//   - no set operation is implied (no DISTINCT)
-//   - CQL resultsets may be heterogeneous (rows may have heterogenous types)
-merge_statement
-	:	merge_component (MERGE merge_component)+
-	;
-
-merge_component
-	: select_statement
-	| LPAREN source_statement RPAREN
-	;
-
 select_statement
-	:	SELECT select_field_spec select_source? where? orderby? limit? offset? timeout? fallback?
+	:	SELECT select_field_spec select_source? where? orderby? limit? offset? timeout?
     ;
 
 select_field_spec
@@ -354,10 +242,6 @@ select_field_spec
 project_spec
 	: field_def (COMMA  field_def)*
 	;
-
-fallback
-    : FALLBACK select_statement
-    ;
 
 timeout
 	:  TIMEOUT fixed_or_parameter
