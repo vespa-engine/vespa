@@ -12,7 +12,7 @@ namespace vespalib {
  * step 1 unit in the last place towards the other number.  This means the
  * two numbers must be equal to 23 bits precision.
  **/
-inline bool approx_equal(double a, double b)
+constexpr bool approx_equal(double a, double b)
 {
     if (a == b) return true;
     if (a > 1.0 || a < -1.0) {
