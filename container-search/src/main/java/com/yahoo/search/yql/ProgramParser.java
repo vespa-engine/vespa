@@ -572,43 +572,32 @@ final class ProgramParser {
 
             // ^(STATEMENT_QUERY source_statement paged_clause? output_spec?)
             StatementContext statementContext = (StatementContext) ruleContext;
-            switch (getParseTreeIndex(ruleContext.getChild(0))) {
-                case yqlplusParser.RULE_output_statement:
-                    Source_statementContext source_statement = statementContext.output_statement().source_statement();
-                    OperatorNode<SequenceOperator> query;
-                    if (source_statement.getChildCount() == 1) {
-                        query = convertQuery( source_statement.query_statement().getChild(0), scope);
-                    } else {
-                        query = convertQuery(source_statement, scope);
-                    }
-                    String variable = "result" + (++output);
-                    boolean isCountVariable = false;
-                    OperatorNode<ExpressionOperator> pageSize = null;
-                    ParseTree outputStatement = node.getChild(0);
-                    Location location = toLocation(scope, outputStatement);
-                    for (int i = 1; i < outputStatement.getChildCount(); ++i) {
-                        ParseTree child = outputStatement.getChild(i);
-                        switch (getParseTreeIndex(child)) {
-                            case yqlplusParser.RULE_output_spec:
-                                Output_specContext outputSpecContext = (Output_specContext) child;
-                                variable = outputSpecContext.ident().getText();
-                                if (outputSpecContext.COUNT() != null) {
-                                    isCountVariable = true;
-                                }
-                                break;
-                            default:
-                                throw new ProgramCompileException( "Unknown statement attribute: " + child.toStringTree());
-                        }
-                    }
-                    scope.defineVariable(location, variable);
-                    stmts.add(OperatorNode.create(location, StatementOperator.EXECUTE, query, variable));
-                    stmts.add(OperatorNode.create(location, isCountVariable ? StatementOperator.COUNT:StatementOperator.OUTPUT, variable));
+            Source_statementContext source_statement = statementContext.output_statement().source_statement();
+            OperatorNode<SequenceOperator> query;
+            if (source_statement.getChildCount() == 1) {
+                query = convertQuery( source_statement.query_statement().getChild(0), scope);
+            } else {
+                query = convertQuery(source_statement, scope);
             }
+            String variable = "result" + (++output);
+            boolean isCountVariable = false;
+            ParseTree outputStatement = node.getChild(0);
+            Location location = toLocation(scope, outputStatement);
+            for (int i = 1; i < outputStatement.getChildCount(); ++i) {
+                ParseTree child = outputStatement.getChild(i);
+                if ( getParseTreeIndex(child) != yqlplusParser.RULE_output_spec)
+                    throw new ProgramCompileException( "Unknown statement attribute: " + child.toStringTree());
+
+                Output_specContext outputSpecContext = (Output_specContext) child;
+                variable = outputSpecContext.ident().getText();
+                if (outputSpecContext.COUNT() != null) {
+                    isCountVariable = true;
+                }
+            }
+            scope.defineVariable(location, variable);
+            stmts.add(OperatorNode.create(location, StatementOperator.EXECUTE, query, variable));
+            stmts.add(OperatorNode.create(location, isCountVariable ? StatementOperator.COUNT:StatementOperator.OUTPUT, variable));
         }
-        // traverse the tree, find all of the namespaced calls not covered by
-        // imports so we can
-        // define "implicit" import statements for them (to make engine
-        // implementation easier)
         return OperatorNode.create(StatementOperator.PROGRAM, stmts);
     }
 
@@ -624,19 +613,19 @@ final class ProgramParser {
 
     private ProjectionBuilder readProjection(List<Field_defContext> fieldDefs, Scope scope) {
         if (null == fieldDefs)
-                throw new ProgramCompileException("Null fieldDefs");
+            throw new ProgramCompileException("Null fieldDefs");
         ProjectionBuilder proj = new ProjectionBuilder();
         for (Field_defContext rulenode : fieldDefs) {
             // FIELD
-                // expression alias_def?
-                OperatorNode<ExpressionOperator> expr = convertExpr(rulenode.getChild(0), scope);
+            // expression alias_def?
+            OperatorNode<ExpressionOperator> expr = convertExpr(rulenode.getChild(0), scope);
 
-                String aliasName = null;
-                if (rulenode.getChildCount() > 1) {
-                   // ^(ALIAS ID)
-                    aliasName = rulenode.alias_def().ID().getText();
-                }
-                proj.addField(aliasName, expr);
+            String aliasName = null;
+            if (rulenode.getChildCount() > 1) {
+                // ^(ALIAS ID)
+                aliasName = rulenode.alias_def().ID().getText();
+            }
+            proj.addField(aliasName, expr);
             // no grammar for the other rule types at this time
         }
         return proj;
@@ -651,355 +640,348 @@ final class ProgramParser {
     }
 
 	public OperatorNode<ExpressionOperator> convertExpr(ParseTree parseTree, Scope scope) {
-	  switch (getParseTreeIndex(parseTree)) {
-	        case yqlplusParser.RULE_vespa_grouping: {
-	                ParseTree firstChild = parseTree.getChild(0);
-	                if (getParseTreeIndex(firstChild) == yqlplusParser.RULE_annotation) {
-	                    ParseTree secondChild = parseTree.getChild(1);
-	                    OperatorNode<ExpressionOperator> annotation = convertExpr(((AnnotationContext) firstChild)
-	                            .constantMapExpression(), scope);
-	                    OperatorNode<ExpressionOperator> expr = OperatorNode.create(toLocation(scope, secondChild),
-	                            ExpressionOperator.VESPA_GROUPING, secondChild.getText());
-	                    List<String> names = annotation.getArgument(0);
-	                    List<OperatorNode<ExpressionOperator>> annotates = annotation.getArgument(1);
-	                    for (int i = 0; i < names.size(); ++i) {
-	                        expr.putAnnotation(names.get(i), readConstantExpression(annotates.get(i)));
-	                    }
-	                    return expr;
-	                } else {
-	                    return OperatorNode.create(toLocation(scope, firstChild), ExpressionOperator.VESPA_GROUPING,
-	                            firstChild.getText());
-	                }
-	        }
-		case yqlplusParser.RULE_nullOperator:
-			return OperatorNode.create(ExpressionOperator.NULL);
-		case yqlplusParser.RULE_argument:
-			return convertExpr(parseTree.getChild(0), scope);
-		case yqlplusParser.RULE_fixed_or_parameter: {
-			ParseTree firstChild = parseTree.getChild(0);
-			if (getParseTreeIndex(firstChild) == yqlplusParser.INT) {
-				return OperatorNode.create(toLocation(scope, firstChild), ExpressionOperator.LITERAL, Integer.valueOf(firstChild.getText()));
-			} else {
-				return convertExpr(firstChild, scope);
-			}
-		}
-        case yqlplusParser.RULE_constantMapExpression: {
-            List<ConstantPropertyNameAndValueContext> propertyList = ((ConstantMapExpressionContext) parseTree).constantPropertyNameAndValue();
-            List<String> names = Lists.newArrayListWithExpectedSize(propertyList.size());
-            List<OperatorNode<ExpressionOperator>> exprs = Lists.newArrayListWithExpectedSize(propertyList.size());
-            for (ConstantPropertyNameAndValueContext child : propertyList) {
-                // : propertyName ':' expression[$expression::namespace] ->
-                // ^(PROPERTY propertyName expression)
-                names.add(StringUnescaper.unquote(child.getChild(0).getText()));
-                exprs.add(convertExpr(child.getChild(2), scope));
+        switch (getParseTreeIndex(parseTree)) {
+            case yqlplusParser.RULE_vespa_grouping: {
+                ParseTree firstChild = parseTree.getChild(0);
+                if (getParseTreeIndex(firstChild) == yqlplusParser.RULE_annotation) {
+                    ParseTree secondChild = parseTree.getChild(1);
+                    OperatorNode<ExpressionOperator> annotation = convertExpr(((AnnotationContext) firstChild)
+                                                                                      .constantMapExpression(), scope);
+                    OperatorNode<ExpressionOperator> expr = OperatorNode.create(toLocation(scope, secondChild),
+                                                                                ExpressionOperator.VESPA_GROUPING, secondChild.getText());
+                    List<String> names = annotation.getArgument(0);
+                    List<OperatorNode<ExpressionOperator>> annotates = annotation.getArgument(1);
+                    for (int i = 0; i < names.size(); ++i) {
+                        expr.putAnnotation(names.get(i), readConstantExpression(annotates.get(i)));
+                    }
+                    return expr;
+                } else {
+                    return OperatorNode.create(toLocation(scope, firstChild), ExpressionOperator.VESPA_GROUPING,
+                                               firstChild.getText());
+                }
             }
-            return OperatorNode.create(toLocation(scope, parseTree),ExpressionOperator.MAP, names, exprs);
-        }
-		case yqlplusParser.RULE_mapExpression: {
-			List<PropertyNameAndValueContext> propertyList = ((MapExpressionContext)parseTree).propertyNameAndValue();
-			List<String> names = Lists.newArrayListWithExpectedSize(propertyList.size());
-			List<OperatorNode<ExpressionOperator>> exprs = Lists.newArrayListWithCapacity(propertyList.size());
-			for (PropertyNameAndValueContext child : propertyList) {
-				// : propertyName ':' expression[$expression::namespace] ->
-				// ^(PROPERTY propertyName expression)
-				names.add(StringUnescaper.unquote(child.getChild(0).getText()));
-				exprs.add(convertExpr(child.getChild(2), scope));
-			}
-			return OperatorNode.create(toLocation(scope, parseTree),ExpressionOperator.MAP, names, exprs);
-		}
-		case yqlplusParser.RULE_constantArray: {
-            List<ConstantExpressionContext> expressionList = ((ConstantArrayContext)parseTree).constantExpression();
-            List<OperatorNode<ExpressionOperator>> values = Lists.newArrayListWithExpectedSize(expressionList.size());
-            for (ConstantExpressionContext expr : expressionList) {
-                values.add(convertExpr(expr, scope));
+            case yqlplusParser.RULE_nullOperator:
+                return OperatorNode.create(ExpressionOperator.NULL);
+            case yqlplusParser.RULE_argument:
+                return convertExpr(parseTree.getChild(0), scope);
+            case yqlplusParser.RULE_fixed_or_parameter: {
+                ParseTree firstChild = parseTree.getChild(0);
+                if (getParseTreeIndex(firstChild) == yqlplusParser.INT) {
+                    return OperatorNode.create(toLocation(scope, firstChild), ExpressionOperator.LITERAL, Integer.valueOf(firstChild.getText()));
+                } else {
+                    return convertExpr(firstChild, scope);
+                }
             }
-            return OperatorNode.create(toLocation(scope, expressionList.isEmpty()? parseTree:expressionList.get(0)), ExpressionOperator.ARRAY, values);
+            case yqlplusParser.RULE_constantMapExpression: {
+                List<ConstantPropertyNameAndValueContext> propertyList = ((ConstantMapExpressionContext) parseTree).constantPropertyNameAndValue();
+                List<String> names = Lists.newArrayListWithExpectedSize(propertyList.size());
+                List<OperatorNode<ExpressionOperator>> exprs = Lists.newArrayListWithExpectedSize(propertyList.size());
+                for (ConstantPropertyNameAndValueContext child : propertyList) {
+                    // : propertyName ':' expression[$expression::namespace] ->
+                    // ^(PROPERTY propertyName expression)
+                    names.add(StringUnescaper.unquote(child.getChild(0).getText()));
+                    exprs.add(convertExpr(child.getChild(2), scope));
+                }
+                return OperatorNode.create(toLocation(scope, parseTree),ExpressionOperator.MAP, names, exprs);
+            }
+            case yqlplusParser.RULE_mapExpression: {
+                List<PropertyNameAndValueContext> propertyList = ((MapExpressionContext)parseTree).propertyNameAndValue();
+                List<String> names = Lists.newArrayListWithExpectedSize(propertyList.size());
+                List<OperatorNode<ExpressionOperator>> exprs = Lists.newArrayListWithCapacity(propertyList.size());
+                for (PropertyNameAndValueContext child : propertyList) {
+                    // : propertyName ':' expression[$expression::namespace] ->
+                    // ^(PROPERTY propertyName expression)
+                    names.add(StringUnescaper.unquote(child.getChild(0).getText()));
+                    exprs.add(convertExpr(child.getChild(2), scope));
+                }
+                return OperatorNode.create(toLocation(scope, parseTree),ExpressionOperator.MAP, names, exprs);
+            }
+            case yqlplusParser.RULE_constantArray: {
+                List<ConstantExpressionContext> expressionList = ((ConstantArrayContext)parseTree).constantExpression();
+                List<OperatorNode<ExpressionOperator>> values = Lists.newArrayListWithExpectedSize(expressionList.size());
+                for (ConstantExpressionContext expr : expressionList) {
+                    values.add(convertExpr(expr, scope));
+                }
+                return OperatorNode.create(toLocation(scope, expressionList.isEmpty()? parseTree:expressionList.get(0)), ExpressionOperator.ARRAY, values);
+            }
+            case yqlplusParser.RULE_arrayLiteral: {
+                List<ExpressionContext> expressionList = ((ArrayLiteralContext) parseTree).expression();
+                List<OperatorNode<ExpressionOperator>> values = Lists.newArrayListWithExpectedSize(expressionList.size());
+                for (ExpressionContext expr : expressionList) {
+                    values.add(convertExpr(expr, scope));
+                }
+                return OperatorNode.create(toLocation(scope, expressionList.isEmpty()? parseTree:expressionList.get(0)), ExpressionOperator.ARRAY, values);
+            }
+            //dereferencedExpression: primaryExpression(indexref[in_select]| propertyref)*
+            case yqlplusParser.RULE_dereferencedExpression: {
+                DereferencedExpressionContext dereferencedExpression = (DereferencedExpressionContext) parseTree;
+                Iterator<ParseTree> it = dereferencedExpression.children.iterator();
+                OperatorNode<ExpressionOperator> result = convertExpr(it.next(), scope);
+                while (it.hasNext()) {
+                    ParseTree defTree = it.next();
+                    if (getParseTreeIndex(defTree) == yqlplusParser.RULE_propertyref) {
+                        //DOT nm=ID
+                        result = OperatorNode.create(toLocation(scope, parseTree), ExpressionOperator.PROPREF, result, defTree.getChild(1).getText());
+                    } else {
+                        //indexref
+                        result = OperatorNode.create(toLocation(scope, parseTree), ExpressionOperator.INDEX, result, convertExpr(defTree.getChild(1), scope));
+                    }
+                }
+                return result;
+            }
+            case yqlplusParser.RULE_primaryExpression: {
+                // ^(CALL namespaced_name arguments)
+                ParseTree firstChild = parseTree.getChild(0);
+                switch (getParseTreeIndex(firstChild)) {
+                    case yqlplusParser.RULE_fieldref: {
+                        return convertExpr(firstChild, scope);
+                    }
+                    case yqlplusParser.RULE_callExpresion: {
+                        List<ArgumentContext> args = ((ArgumentsContext) firstChild.getChild(1)).argument();
+                        List<OperatorNode<ExpressionOperator>> arguments = Lists.newArrayListWithExpectedSize(args.size());
+                        for (ArgumentContext argContext : args) {
+                            arguments.add(convertExpr(argContext.expression(),scope));
+                        }
+                        return OperatorNode.create(toLocation(scope, parseTree), ExpressionOperator.CALL, scope.resolvePath(readName((Namespaced_nameContext) firstChild.getChild(0))), arguments);
+                    }
+                    // TODO add processing this is not implemented in V3
+                    // case yqlplusParser.APPLY:
+
+                    case yqlplusParser.RULE_parameter:
+                        // external variable reference
+                        return OperatorNode.create(toLocation(scope, firstChild), ExpressionOperator.VARREF, firstChild.getChild(1).getText());
+                    case yqlplusParser.RULE_scalar_literal:
+                    case yqlplusParser.RULE_arrayLiteral:
+                    case yqlplusParser.RULE_mapExpression:
+                        return convertExpr(firstChild, scope);
+                    case yqlplusParser.LPAREN:
+                        return convertExpr(parseTree.getChild(1), scope);
+                }
+                break;
+            }
+            case yqlplusParser.RULE_parameter: {
+                // external variable reference
+                ParserRuleContext parameterContext = (ParserRuleContext) parseTree;
+                IdentContext identContext = parameterContext.getRuleContext(IdentContext.class, 0);
+                return OperatorNode.create(toLocation(scope, identContext), ExpressionOperator.VARREF, identContext.getText());
+            }
+            case yqlplusParser.RULE_annotateExpression: {
+                //annotation logicalORExpression
+                AnnotationContext annotateExpressionContext = ((AnnotateExpressionContext)parseTree).annotation();
+                OperatorNode<ExpressionOperator> annotation = convertExpr(annotateExpressionContext.constantMapExpression(), scope);
+                OperatorNode<ExpressionOperator> expr = convertExpr(parseTree.getChild(1), scope);
+                List<String> names = annotation.getArgument(0);
+                List<OperatorNode<ExpressionOperator>> annotates = annotation.getArgument(1);
+                for (int i = 0; i < names.size(); ++i) {
+                    expr.putAnnotation(names.get(i), readConstantExpression(annotates.get(i)));
+                }
+                return expr;
+            }
+            case yqlplusParser.RULE_expression: {
+                return convertExpr(parseTree.getChild(0), scope);
+            }
+            case yqlplusParser.RULE_logicalANDExpression:
+                LogicalANDExpressionContext andExpressionContext = (LogicalANDExpressionContext) parseTree;
+                return readConjOp(ExpressionOperator.AND, andExpressionContext.equalityExpression(), scope);
+            case yqlplusParser.RULE_logicalORExpression: {
+                int childCount = parseTree.getChildCount();
+                LogicalORExpressionContext logicalORExpressionContext = (LogicalORExpressionContext) parseTree;
+                if (childCount > 1) {
+                    return readConjOrOp(ExpressionOperator.OR, logicalORExpressionContext, scope);
+                } else {
+                    List<EqualityExpressionContext> equalityExpressionList = ((LogicalANDExpressionContext) parseTree.getChild(0)).equalityExpression();
+                    if (equalityExpressionList.size() > 1) {
+                        return readConjOp(ExpressionOperator.AND, equalityExpressionList, scope);
+                    } else {
+                        return convertExpr(equalityExpressionList.get(0), scope);
+                    }
+                }
+            }
+            case yqlplusParser.RULE_equalityExpression: {
+                EqualityExpressionContext equalityExpression = (EqualityExpressionContext) parseTree;
+                RelationalExpressionContext relationalExpressionContext = equalityExpression.relationalExpression(0);
+                OperatorNode<ExpressionOperator> expr = convertExpr(relationalExpressionContext, scope);
+                InNotInTargetContext inNotInTarget = equalityExpression.inNotInTarget();
+                int childCount = equalityExpression.getChildCount();
+                if (childCount == 1) {
+                    return expr;
+                }
+                if (inNotInTarget != null) {
+                    Literal_listContext literalListContext = inNotInTarget.literal_list();
+                    boolean isIN = equalityExpression.IN() != null;
+                    if (literalListContext == null) {
+                        Select_statementContext selectStatementContext = inNotInTarget.select_statement();
+                        OperatorNode<SequenceOperator> query = convertQuery(selectStatementContext, scope);
+                        return OperatorNode.create(expr.getLocation(),isIN ? ExpressionOperator.IN_QUERY: ExpressionOperator.NOT_IN_QUERY, expr, query);
+                    } else {
+                        // we need to identify the type of the target; if it's a
+                        // scalar we need to wrap it in a CREATE_ARRAY
+                        // if it's already a CREATE ARRAY then it's fine, otherwise
+                        // we need to know the variable type
+                        // return readBinOp(node.getType() == yqlplusParser.IN ?
+                        // ExpressionOperator.IN : ExpressionOperator.NOT_IN, node,
+                        // scope);
+                        return readBinOp(isIN ? ExpressionOperator.IN: ExpressionOperator.NOT_IN, equalityExpression.getChild(0), literalListContext, scope);
+                    }
+
+                } else {
+                    ParseTree firstChild = equalityExpression.getChild(1);
+                    if (equalityExpression.getChildCount() == 2) {
+                        switch (getParseTreeIndex(firstChild)) {
+                            case yqlplusParser.IS_NULL:
+                                return readUnOp(ExpressionOperator.IS_NULL, relationalExpressionContext, scope);
+                            case yqlplusParser.IS_NOT_NULL:
+                                return readUnOp(ExpressionOperator.IS_NOT_NULL, relationalExpressionContext, scope);
+                        }
+                    } else {
+                        switch (getParseTreeIndex(firstChild.getChild(0))) {
+                            case yqlplusParser.EQ:
+                                return readBinOp(ExpressionOperator.EQ, equalityExpression.getChild(0), equalityExpression.getChild(2), scope);
+                            case yqlplusParser.NEQ:
+                                return readBinOp(ExpressionOperator.NEQ, equalityExpression.getChild(0), equalityExpression.getChild(2), scope);
+                            case yqlplusParser.LIKE:
+                                return readBinOp(ExpressionOperator.LIKE, equalityExpression.getChild(0), equalityExpression.getChild(2), scope);
+                            case yqlplusParser.NOTLIKE:
+                                return readBinOp(ExpressionOperator.NOT_LIKE, equalityExpression.getChild(0), equalityExpression.getChild(2), scope);
+                            case yqlplusParser.MATCHES:
+                                return readBinOp(ExpressionOperator.MATCHES, equalityExpression.getChild(0), equalityExpression.getChild(2), scope);
+                            case yqlplusParser.NOTMATCHES:
+                                return readBinOp(ExpressionOperator.NOT_MATCHES, equalityExpression.getChild(0), equalityExpression.getChild(2), scope);
+                            case yqlplusParser.CONTAINS:
+                                return readBinOp(ExpressionOperator.CONTAINS, equalityExpression.getChild(0), equalityExpression.getChild(2), scope);
+                        }
+                    }
+
+                }
+                break;
+            }
+            case yqlplusParser.RULE_relationalExpression: {
+                RelationalExpressionContext relationalExpressionContext = (RelationalExpressionContext) parseTree;
+                RelationalOpContext opContext = relationalExpressionContext.relationalOp();
+                if (opContext != null) {
+                    switch (getParseTreeIndex(relationalExpressionContext.relationalOp().getChild(0))) {
+                        case yqlplusParser.LT:
+                            return readBinOp(ExpressionOperator.LT, parseTree, scope);
+                        case yqlplusParser.LTEQ:
+                            return readBinOp(ExpressionOperator.LTEQ, parseTree, scope);
+                        case yqlplusParser.GT:
+                            return readBinOp(ExpressionOperator.GT, parseTree, scope);
+                        case yqlplusParser.GTEQ:
+                            return readBinOp(ExpressionOperator.GTEQ, parseTree, scope);
+                    }
+                } else {
+                    return convertExpr(relationalExpressionContext.additiveExpression(0), scope);
+                }
+            }
+            break;
+            case yqlplusParser.RULE_additiveExpression:
+            case yqlplusParser.RULE_multiplicativeExpression: {
+                if (parseTree.getChildCount() > 1) {
+                    String opStr = parseTree.getChild(1).getText();
+                    switch (opStr) {
+                        case "+":
+                            return readBinOp(ExpressionOperator.ADD, parseTree, scope);
+                        case "-":
+                            return readBinOp(ExpressionOperator.SUB, parseTree, scope);
+                        case "/":
+                            return readBinOp(ExpressionOperator.DIV, parseTree, scope);
+                        case "*":
+                            return readBinOp(ExpressionOperator.MULT, parseTree, scope);
+                        case "%":
+                            return readBinOp(ExpressionOperator.MOD, parseTree, scope);
+                        default:
+                            if (parseTree.getChild(0) instanceof UnaryExpressionContext) {
+                                return convertExpr(parseTree.getChild(0), scope);
+                            } else {
+                                throw new ProgramCompileException(toLocation(scope, parseTree), "Unknown expression type: " + parseTree.toStringTree());
+                            }
+                    }
+                } else {
+                    if (parseTree.getChild(0) instanceof UnaryExpressionContext) {
+                        return convertExpr(parseTree.getChild(0), scope);
+                    } else if (parseTree.getChild(0) instanceof MultiplicativeExpressionContext) {
+                        return convertExpr(parseTree.getChild(0), scope);
+                    } else {
+                        throw new ProgramCompileException(toLocation(scope, parseTree), "Unknown expression type: " + parseTree.getText());
+                    }
+                }
+            }
+            case yqlplusParser.RULE_unaryExpression: {
+                if (1 == parseTree.getChildCount()) {
+                    return convertExpr(parseTree.getChild(0), scope);
+                } else if (2 == parseTree.getChildCount()) {
+                    if ("-".equals(parseTree.getChild(0).getText())) {
+                        return readUnOp(ExpressionOperator.NEGATE, parseTree, scope);
+                    } else if ("!".equals(parseTree.getChild(0).getText())) {
+                        return readUnOp(ExpressionOperator.NOT, parseTree, scope);
+                    }
+                    throw new ProgramCompileException(toLocation(scope, parseTree),"Unknown unary operator " + parseTree.getText());
+                } else {
+                    throw new ProgramCompileException(toLocation(scope, parseTree),"Unknown child count " + parseTree.getChildCount() + " of " + parseTree.getText());
+                }
+            }
+            case yqlplusParser.RULE_fieldref: {
+                // all in-scope data sources should be defined in scope
+                // the 'first' field in a namespaced reference must be:
+                // - a field name if (and only if) there is exactly one data source
+                // in scope OR
+                // - an alias name, which will be followed by a field name
+                // ^(FIELDREF<FieldReference>[$expression::namespace]
+                // namespaced_name)
+                List<String> path = readName((Namespaced_nameContext) parseTree.getChild(0));
+                Location loc = toLocation(scope, parseTree.getChild(0));
+                String alias = path.get(0);
+                OperatorNode<ExpressionOperator> result = null;
+                int start = 0;
+                if (scope.isCursor(alias)) {
+                    if (path.size() > 1) {
+                        result = OperatorNode.create(loc, ExpressionOperator.READ_FIELD, alias, path.get(1));
+                        start = 2;
+                    } else {
+                        result = OperatorNode.create(loc, ExpressionOperator.READ_RECORD, alias);
+                        start = 1;
+                    }
+                } else if (scope.isBound(alias)) {
+                    return OperatorNode.create(loc, ExpressionOperator.READ_MODULE, scope.getBinding(alias).toPathWith(path.subList(1, path.size())));
+                } else if (scope.getCursors().size() == 1) {
+                    alias = scope.getCursors().iterator().next();
+                    result = OperatorNode.create(loc, ExpressionOperator.READ_FIELD, alias, path.get(0));
+                    start = 1;
+                } else {
+                    // ah ha, we can't end up with a 'loose' UDF call because it
+                    // won't be a module or known alias
+                    // so we need not support implicit imports for constants used in
+                    // UDFs
+                    throw new ProgramCompileException(loc, "Unknown field or alias '%s'", alias);
+                }
+                for (int idx = start; idx < path.size(); ++idx) {
+                    result = OperatorNode.create(loc, ExpressionOperator.PROPREF, result, path.get(idx));
+                }
+                return result;
+            }
+            case yqlplusParser.RULE_scalar_literal:
+                return OperatorNode.create(toLocation(scope, parseTree), ExpressionOperator.LITERAL, convertLiteral((Scalar_literalContext) parseTree));
+            case yqlplusParser.RULE_constantExpression:
+                return convertExpr(parseTree.getChild(0), scope);
+            case yqlplusParser.RULE_literal_list:
+                if (getParseTreeIndex(parseTree.getChild(1)) == yqlplusParser.RULE_array_parameter) {
+                    return convertExpr(parseTree.getChild(1), scope);
+                } else {
+                    List<Literal_elementContext> elements = ((Literal_listContext) parseTree).literal_element();
+                    ParseTree firldElement = elements.get(0).getChild(0);
+                    if (elements.size() == 1 && scope.getParser().isArrayParameter(firldElement)) {
+                        return convertExpr(firldElement, scope);
+                    } else {
+                        List<OperatorNode<ExpressionOperator>> values = Lists.newArrayListWithExpectedSize(elements.size());
+                        for (Literal_elementContext child : elements) {
+                            values.add(convertExpr(child.getChild(0), scope));
+                        }
+                        return OperatorNode.create(toLocation(scope, elements.get(0)),ExpressionOperator.ARRAY, values);
+                    }
+                }
         }
-		case yqlplusParser.RULE_arrayLiteral: {
-			List<ExpressionContext> expressionList = ((ArrayLiteralContext) parseTree).expression();
-			List<OperatorNode<ExpressionOperator>> values = Lists.newArrayListWithExpectedSize(expressionList.size());
-			for (ExpressionContext expr : expressionList) {
-				values.add(convertExpr(expr, scope));
-			}
-			return OperatorNode.create(toLocation(scope, expressionList.isEmpty()? parseTree:expressionList.get(0)), ExpressionOperator.ARRAY, values);
-		}
-		//dereferencedExpression: primaryExpression(indexref[in_select]| propertyref)*
-		case yqlplusParser.RULE_dereferencedExpression: {
-			DereferencedExpressionContext dereferencedExpression = (DereferencedExpressionContext) parseTree;
-			Iterator<ParseTree> it = dereferencedExpression.children.iterator();
-			OperatorNode<ExpressionOperator> result = convertExpr(it.next(), scope);
-			while (it.hasNext()) {
-				ParseTree defTree = it.next();
-				if (getParseTreeIndex(defTree) == yqlplusParser.RULE_propertyref) {
-				    //DOT nm=ID
-					result = OperatorNode.create(toLocation(scope, parseTree), ExpressionOperator.PROPREF, result, defTree.getChild(1).getText());
-				} else {
-				    //indexref
-					result = OperatorNode.create(toLocation(scope, parseTree), ExpressionOperator.INDEX, result, convertExpr(defTree.getChild(1), scope));
-				}
-			}
-			return result;
-		}
-		case yqlplusParser.RULE_primaryExpression: {
-			// ^(CALL namespaced_name arguments)
-		    ParseTree firstChild = parseTree.getChild(0);
-			switch (getParseTreeIndex(firstChild)) {
-			    case yqlplusParser.RULE_fieldref: {
-			         return convertExpr(firstChild, scope);
-			    }
-			    case yqlplusParser.RULE_callExpresion: {
-					List<ArgumentContext> args = ((ArgumentsContext) firstChild.getChild(1)).argument();
-					List<OperatorNode<ExpressionOperator>> arguments = Lists.newArrayListWithExpectedSize(args.size());
-					for (ArgumentContext argContext : args) {
-						arguments.add(convertExpr(argContext.expression(),scope));
-					}
-					return OperatorNode.create(toLocation(scope, parseTree), ExpressionOperator.CALL, scope.resolvePath(readName((Namespaced_nameContext) firstChild.getChild(0))), arguments);
-				}
-				// TODO add processing this is not implemented in V3
-				// case yqlplusParser.APPLY:
-
-			    case yqlplusParser.RULE_parameter:
-			        // external variable reference
-			        return OperatorNode.create(toLocation(scope, firstChild), ExpressionOperator.VARREF, firstChild.getChild(1).getText());
-			    case yqlplusParser.RULE_scalar_literal:
-			    case yqlplusParser.RULE_arrayLiteral:
-			    case yqlplusParser.RULE_mapExpression:
-			        return convertExpr(firstChild, scope);
-			    case yqlplusParser.LPAREN:
-			        return convertExpr(parseTree.getChild(1), scope);
-			}
-			break;
-		}
-
-		// TODO: Temporarily disable CAST - think through how types are named
-		// case yqlplusParser.CAST: {
-		//
-		// return new Cast()
-		// }
-		// return new CastExpression(payload);
-		case yqlplusParser.RULE_parameter: {
-			// external variable reference
-			ParserRuleContext parameterContext = (ParserRuleContext) parseTree;
-			IdentContext identContext = parameterContext.getRuleContext(IdentContext.class, 0);
-			return OperatorNode.create(toLocation(scope, identContext), ExpressionOperator.VARREF, identContext.getText());
-		}
-		case yqlplusParser.RULE_annotateExpression: {
-		    //annotation logicalORExpression
-			AnnotationContext annotateExpressionContext = ((AnnotateExpressionContext)parseTree).annotation();
-			OperatorNode<ExpressionOperator> annotation = convertExpr(annotateExpressionContext.constantMapExpression(), scope);
-			OperatorNode<ExpressionOperator> expr = convertExpr(parseTree.getChild(1), scope);
-			List<String> names = annotation.getArgument(0);
-			List<OperatorNode<ExpressionOperator>> annotates = annotation.getArgument(1);
-			for (int i = 0; i < names.size(); ++i) {
-				expr.putAnnotation(names.get(i), readConstantExpression(annotates.get(i)));
-			}
-			return expr;
-		}
-		case yqlplusParser.RULE_expression: {
-		    return convertExpr(parseTree.getChild(0), scope);
-		}
-		case yqlplusParser.RULE_logicalANDExpression:
-			LogicalANDExpressionContext andExpressionContext = (LogicalANDExpressionContext) parseTree;
-			return readConjOp(ExpressionOperator.AND, andExpressionContext.equalityExpression(), scope);
-		case yqlplusParser.RULE_logicalORExpression: {
-			int childCount = parseTree.getChildCount();
-			LogicalORExpressionContext logicalORExpressionContext = (LogicalORExpressionContext) parseTree;
-			if (childCount > 1) {
-				return readConjOrOp(ExpressionOperator.OR, logicalORExpressionContext, scope);
-			} else {
-				List<EqualityExpressionContext> equalityExpressionList = ((LogicalANDExpressionContext) parseTree.getChild(0)).equalityExpression();
-				if (equalityExpressionList.size() > 1) {
-					return readConjOp(ExpressionOperator.AND, equalityExpressionList, scope);
-				} else {
-					return convertExpr(equalityExpressionList.get(0), scope);
-				}
-			}
-		}
-		case yqlplusParser.RULE_equalityExpression: {
-			EqualityExpressionContext equalityExpression = (EqualityExpressionContext) parseTree;
-			RelationalExpressionContext relationalExpressionContext = equalityExpression.relationalExpression(0);
-			OperatorNode<ExpressionOperator> expr = convertExpr(relationalExpressionContext, scope);
-			InNotInTargetContext inNotInTarget = equalityExpression.inNotInTarget();
-			int childCount = equalityExpression.getChildCount();
-			if (childCount == 1) {
-				return expr;
-			}
-			if (inNotInTarget != null) {
-				Literal_listContext literalListContext = inNotInTarget.literal_list();
-				boolean isIN = equalityExpression.IN() != null;
-				if (literalListContext == null) {
-					Select_statementContext selectStatementContext = inNotInTarget.select_statement();
-					OperatorNode<SequenceOperator> query = convertQuery(selectStatementContext, scope);
-					return OperatorNode.create(expr.getLocation(),isIN ? ExpressionOperator.IN_QUERY: ExpressionOperator.NOT_IN_QUERY, expr, query);
-				} else {
-					// we need to identify the type of the target; if it's a
-					// scalar we need to wrap it in a CREATE_ARRAY
-					// if it's already a CREATE ARRAY then it's fine, otherwise
-					// we need to know the variable type
-					// return readBinOp(node.getType() == yqlplusParser.IN ?
-					// ExpressionOperator.IN : ExpressionOperator.NOT_IN, node,
-					// scope);
-					return readBinOp(isIN ? ExpressionOperator.IN: ExpressionOperator.NOT_IN, equalityExpression.getChild(0), literalListContext, scope);
-				}
-
-			} else {
-				ParseTree firstChild = equalityExpression.getChild(1);
-				if (equalityExpression.getChildCount() == 2) {
-					switch (getParseTreeIndex(firstChild)) {
-					    case yqlplusParser.IS_NULL:
-					        return readUnOp(ExpressionOperator.IS_NULL, relationalExpressionContext, scope);
-					    case yqlplusParser.IS_NOT_NULL:
-					        return readUnOp(ExpressionOperator.IS_NOT_NULL, relationalExpressionContext, scope);
-					}
-				} else {
-					switch (getParseTreeIndex(firstChild.getChild(0))) {
-					    case yqlplusParser.EQ:
-					        return readBinOp(ExpressionOperator.EQ, equalityExpression.getChild(0), equalityExpression.getChild(2), scope);
-					    case yqlplusParser.NEQ:
-					        return readBinOp(ExpressionOperator.NEQ, equalityExpression.getChild(0), equalityExpression.getChild(2), scope);
-					    case yqlplusParser.LIKE:
-					        return readBinOp(ExpressionOperator.LIKE, equalityExpression.getChild(0), equalityExpression.getChild(2), scope);
-					    case yqlplusParser.NOTLIKE:
-					        return readBinOp(ExpressionOperator.NOT_LIKE, equalityExpression.getChild(0), equalityExpression.getChild(2), scope);
-					    case yqlplusParser.MATCHES:
-					        return readBinOp(ExpressionOperator.MATCHES, equalityExpression.getChild(0), equalityExpression.getChild(2), scope);
-					    case yqlplusParser.NOTMATCHES:
-					        return readBinOp(ExpressionOperator.NOT_MATCHES, equalityExpression.getChild(0), equalityExpression.getChild(2), scope);
-					    case yqlplusParser.CONTAINS:
-					        return readBinOp(ExpressionOperator.CONTAINS, equalityExpression.getChild(0), equalityExpression.getChild(2), scope);
-					}
-				}
-
-			}
-			break;
-		}
-		case yqlplusParser.RULE_relationalExpression: {
-			RelationalExpressionContext relationalExpressionContext = (RelationalExpressionContext) parseTree;
-			RelationalOpContext opContext = relationalExpressionContext.relationalOp();
-			if (opContext != null) {
-				switch (getParseTreeIndex(relationalExpressionContext.relationalOp().getChild(0))) {
-					case yqlplusParser.LT:
-					    return readBinOp(ExpressionOperator.LT, parseTree, scope);
-					case yqlplusParser.LTEQ:
-					    return readBinOp(ExpressionOperator.LTEQ, parseTree, scope);
-					case yqlplusParser.GT:
-					    return readBinOp(ExpressionOperator.GT, parseTree, scope);
-					case yqlplusParser.GTEQ:
-					    return readBinOp(ExpressionOperator.GTEQ, parseTree, scope);
-				}
-			} else {
-				return convertExpr(relationalExpressionContext.additiveExpression(0), scope);
-			}
-		    }
-			break;
-		case yqlplusParser.RULE_additiveExpression:
-		case yqlplusParser.RULE_multiplicativeExpression: {
-			if (parseTree.getChildCount() > 1) {
-				String opStr = parseTree.getChild(1).getText();
-				switch (opStr) {
-				    case "+":
-				        return readBinOp(ExpressionOperator.ADD, parseTree, scope);
-				    case "-":
-				        return readBinOp(ExpressionOperator.SUB, parseTree, scope);
-				    case "/":
-				        return readBinOp(ExpressionOperator.DIV, parseTree, scope);
-				    case "*":
-				        return readBinOp(ExpressionOperator.MULT, parseTree, scope);
-				    case "%":
-				        return readBinOp(ExpressionOperator.MOD, parseTree, scope);
-				    default:
-				        if (parseTree.getChild(0) instanceof UnaryExpressionContext) {
-				            return convertExpr(parseTree.getChild(0), scope);
-				        } else {
-				            throw new ProgramCompileException(toLocation(scope, parseTree), "Unknown expression type: " + parseTree.toStringTree());
-				        }
-				}
-			} else {
-				if (parseTree.getChild(0) instanceof UnaryExpressionContext) {
-					return convertExpr(parseTree.getChild(0), scope);
-				} else if (parseTree.getChild(0) instanceof MultiplicativeExpressionContext) {
-					return convertExpr(parseTree.getChild(0), scope);
-				} else {
-					throw new ProgramCompileException(toLocation(scope, parseTree), "Unknown expression type: " + parseTree.getText());
-				}
-			}
-		}
-		case yqlplusParser.RULE_unaryExpression: {
-			if (1 == parseTree.getChildCount()) {
-				return convertExpr(parseTree.getChild(0), scope);
-			} else if (2 == parseTree.getChildCount()) {
-				if ("-".equals(parseTree.getChild(0).getText())) {
-					return readUnOp(ExpressionOperator.NEGATE, parseTree, scope);
-				} else if ("!".equals(parseTree.getChild(0).getText())) {
-					return readUnOp(ExpressionOperator.NOT, parseTree, scope);
-				}
-				throw new ProgramCompileException(toLocation(scope, parseTree),"Unknown unary operator " + parseTree.getText());
-			} else {
-				throw new ProgramCompileException(toLocation(scope, parseTree),"Unknown child count " + parseTree.getChildCount() + " of " + parseTree.getText());
-			}
-		}
-		case yqlplusParser.RULE_fieldref: {
-			// all in-scope data sources should be defined in scope
-			// the 'first' field in a namespaced reference must be:
-			// - a field name if (and only if) there is exactly one data source
-			// in scope OR
-			// - an alias name, which will be followed by a field name
-			// ^(FIELDREF<FieldReference>[$expression::namespace]
-			// namespaced_name)
-			List<String> path = readName((Namespaced_nameContext) parseTree.getChild(0));
-			Location loc = toLocation(scope, parseTree.getChild(0));
-			String alias = path.get(0);
-			OperatorNode<ExpressionOperator> result = null;
-			int start = 0;
-			if (scope.isCursor(alias)) {
-				if (path.size() > 1) {
-					result = OperatorNode.create(loc, ExpressionOperator.READ_FIELD, alias, path.get(1));
-					start = 2;
-				} else {
-					result = OperatorNode.create(loc, ExpressionOperator.READ_RECORD, alias);
-					start = 1;
-				}
-			} else if (scope.isBound(alias)) {
-				return OperatorNode.create(loc, ExpressionOperator.READ_MODULE, scope.getBinding(alias).toPathWith(path.subList(1, path.size())));
-			} else if (scope.getCursors().size() == 1) {
-				alias = scope.getCursors().iterator().next();
-				result = OperatorNode.create(loc, ExpressionOperator.READ_FIELD, alias, path.get(0));
-				start = 1;
-			} else {
-				// ah ha, we can't end up with a 'loose' UDF call because it
-				// won't be a module or known alias
-				// so we need not support implicit imports for constants used in
-				// UDFs
-				throw new ProgramCompileException(loc, "Unknown field or alias '%s'", alias);
-			}
-			for (int idx = start; idx < path.size(); ++idx) {
-				result = OperatorNode.create(loc, ExpressionOperator.PROPREF, result, path.get(idx));
-			}
-			return result;
-		}
-		case yqlplusParser.RULE_scalar_literal:
-			return OperatorNode.create(toLocation(scope, parseTree), ExpressionOperator.LITERAL, convertLiteral((Scalar_literalContext) parseTree));
-		case yqlplusParser.RULE_constantExpression:
-			return convertExpr(parseTree.getChild(0), scope);
-		case yqlplusParser.RULE_literal_list:
-			if (getParseTreeIndex(parseTree.getChild(1)) == yqlplusParser.RULE_array_parameter) {
-				return convertExpr(parseTree.getChild(1), scope);
-			} else {
-				List<Literal_elementContext> elements = ((Literal_listContext) parseTree).literal_element();
-				ParseTree firldElement = elements.get(0).getChild(0);
-				if (elements.size() == 1 && scope.getParser().isArrayParameter(firldElement)) {
-					return convertExpr(firldElement, scope);
-				} else {
-					List<OperatorNode<ExpressionOperator>> values = Lists.newArrayListWithExpectedSize(elements.size());
-					for (Literal_elementContext child : elements) {
-						values.add(convertExpr(child.getChild(0), scope));
-					}
-					return OperatorNode.create(toLocation(scope, elements.get(0)),ExpressionOperator.ARRAY, values);
-				}
-			}
-		}
-		throw new ProgramCompileException(toLocation(scope, parseTree),
-				"Unknown expression type: " + parseTree.getText());
+        throw new ProgramCompileException(toLocation(scope, parseTree),
+                                          "Unknown expression type: " + parseTree.getText());
 	}
 
     public Object convertLiteral(Scalar_literalContext literal) {
