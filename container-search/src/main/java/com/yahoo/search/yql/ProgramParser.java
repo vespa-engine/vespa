@@ -96,7 +96,6 @@ final class ProgramParser {
         return prepareParser(file.getAbsoluteFile().toString(), new CaseInsensitiveFileStream(file.getAbsolutePath()));
     }
 
-
     private yqlplusParser prepareParser(String programName, CharStream input) {
         yqlplusLexer lexer = new yqlplusLexer(input);
         lexer.removeErrorListeners();
@@ -138,7 +137,7 @@ final class ProgramParser {
         try {
             return parser.program();
         } catch (RecognitionException e) {
-            //Retry parsing using full LL mode
+            // Retry parsing using full LL mode
             parser.reset();
             parser.getInterpreter().setPredictionMode(PredictionMode.LL);
             return parser.program();
@@ -159,8 +158,7 @@ final class ProgramParser {
         } else {
         	throw new ProgramCompileException("Location is not available for type " + node.getClass());
         }
-        Location location = new Location(scope != null? scope.programName: "<string>", start.getLine(), start.getCharPositionInLine());
-        return location;
+        return new Location(scope != null? scope.programName: "<string>", start.getLine(), start.getCharPositionInLine());
     }
 
     private List<String> readName(Namespaced_nameContext node) {
@@ -176,14 +174,6 @@ final class ProgramParser {
     static class Binding {
 
         private final List<String> binding;
-
-        Binding(String moduleName, String exportName) {
-            this.binding = ImmutableList.of(moduleName, exportName);
-        }
-
-        Binding(String moduleName) {
-            this.binding = ImmutableList.of(moduleName);
-        }
 
         Binding(List<String> binding) {
             this.binding = binding;
@@ -210,13 +200,6 @@ final class ProgramParser {
         final yqlplusParser parser;
         final String programName;
 
-        Scope() {
-            this.parser = null;
-            this.programName = null;
-            this.root = this;
-            this.parent = null;
-        }
-
         Scope(yqlplusParser parser, String programName) {
             this.parser = parser;
             this.programName = programName;
@@ -235,14 +218,9 @@ final class ProgramParser {
             return parser;
         }
 
-        public String getProgramName() {
-            return programName;
-        }
-
         public Set<String> getCursors() {
             return cursors;
         }
-
 
         boolean isBound(String name) {
             // bindings live only in the 'root' node
@@ -274,13 +252,6 @@ final class ProgramParser {
                 throw new ProgramCompileException(loc, "Name '%s' is already used.", symbolName);
             }
             root.bindings.put(symbolName, new Binding(binding));
-        }
-
-        public void bindModuleSymbol(Location loc, List<String> moduleName, String exportName, String symbolName) {
-            ImmutableList.Builder<String> builder = ImmutableList.builder();
-            builder.addAll(moduleName);
-            builder.add(exportName);
-            bindModule(loc, builder.build(), symbolName);
         }
 
         public void defineDataSource(Location loc, String name) {
@@ -444,23 +415,6 @@ final class ProgramParser {
         return result;
     }
 
-    private OperatorNode<ExpressionOperator> readValues(List<Field_defContext> fieldDefs, Scope scope) {
-        List<String> fieldNames;
-        List<OperatorNode<ExpressionOperator>> fieldValues;
-        int numPairs = fieldDefs.size();
-        fieldNames = Lists.newArrayListWithExpectedSize(numPairs);
-        fieldValues = Lists.newArrayListWithExpectedSize(numPairs);
-        for (int j = 0; j < numPairs; j++) {
-            ParseTree startNode = fieldDefs.get(j);
-            while(startNode.getChildCount() < 3) {
-                startNode = startNode.getChild(0);
-            }
-            fieldNames.add((String) convertExpr(startNode.getChild(0), scope).getArgument(1));
-            fieldValues.add(convertExpr(startNode.getChild(2), scope));
-        }
-        return OperatorNode.create(ExpressionOperator.MAP, fieldNames, fieldValues);
-    }
-
     private OperatorNode<SequenceOperator> readMultiSource(Scope scope, Source_listContext multiSource) {
         List<List<String>> sourceNameList = Lists.newArrayList();
         List<Namespaced_nameContext> nameSpaces = multiSource.namespaced_name();
@@ -470,9 +424,7 @@ final class ProgramParser {
         }
         return OperatorNode.create(toLocation(scope, multiSource), SequenceOperator.MULTISOURCE, sourceNameList);
     }
-//    pipeline_step
-//    : namespaced_name arguments[false]?
-//    ;
+
     private OperatorNode<SequenceOperator> convertPipe(Query_statementContext queryStatementContext, List<Pipeline_stepContext> nodes, Scope scope) {
         OperatorNode<SequenceOperator> result = convertQuery(queryStatementContext.getChild(0), scope.getRoot());
         for (Pipeline_stepContext step:nodes) {
@@ -482,7 +434,7 @@ final class ProgramParser {
             } else {
                 List<String> name = readName(step.namespaced_name());
                 List<OperatorNode<ExpressionOperator>> args = ImmutableList.of();
-                //LPAREN (argument[$in_select] (COMMA argument[$in_select])*) RPAREN
+                // LPAREN (argument[$in_select] (COMMA argument[$in_select])*) RPAREN
                 if (step.getChildCount() > 1) {
                     ArgumentsContext arguments = step.arguments();
                     if (arguments.getChildCount() > 2) {
@@ -518,7 +470,7 @@ final class ProgramParser {
         }
         
         if (node instanceof yqlplusParser.Alias_defContext) {
-            //alias_def :   (AS? ID);
+            // alias_def :   (AS? ID);
             ParseTree idChild = node;
             if (node.getChildCount() > 1) {
                 idChild = node.getChild(1);
@@ -604,8 +556,9 @@ final class ProgramParser {
         return result;
     }
 
-    private OperatorNode<StatementOperator> convertProgram(
-            ParserRuleContext program, yqlplusParser parser, String programName) {
+    private OperatorNode<StatementOperator> convertProgram(ParserRuleContext program,
+                                                           yqlplusParser parser,
+                                                           String programName) {
         Scope scope = new Scope(parser, programName);
         List<OperatorNode<StatementOperator>> stmts = Lists.newArrayList();
         int output = 0;
@@ -614,13 +567,12 @@ final class ProgramParser {
                 continue;
             }
             ParserRuleContext ruleContext = (ParserRuleContext) node;
-            switch (ruleContext.getRuleIndex()) {
+            if (ruleContext.getRuleIndex() != yqlplusParser.RULE_statement)
+                throw new ProgramCompileException("Unknown program element: " + node.getText());
 
-            case yqlplusParser.RULE_statement: {
-                // ^(STATEMENT_QUERY source_statement paged_clause?
-                // output_spec?)
-                StatementContext statementContext = (StatementContext) ruleContext;
-                switch (getParseTreeIndex(ruleContext.getChild(0))) {
+            // ^(STATEMENT_QUERY source_statement paged_clause? output_spec?)
+            StatementContext statementContext = (StatementContext) ruleContext;
+            switch (getParseTreeIndex(ruleContext.getChild(0))) {
                 case yqlplusParser.RULE_output_statement:
                     Source_statementContext source_statement = statementContext.output_statement().source_statement();
                     OperatorNode<SequenceOperator> query;
@@ -637,25 +589,20 @@ final class ProgramParser {
                     for (int i = 1; i < outputStatement.getChildCount(); ++i) {
                         ParseTree child = outputStatement.getChild(i);
                         switch (getParseTreeIndex(child)) {
-                        case yqlplusParser.RULE_output_spec:
-                            Output_specContext outputSpecContext = (Output_specContext) child;
-                            variable = outputSpecContext.ident().getText();
-                            if (outputSpecContext.COUNT() != null) {
-                                isCountVariable = true;
-                            }
-                            break;
-                        default:
-                            throw new ProgramCompileException( "Unknown statement attribute: " + child.toStringTree());
+                            case yqlplusParser.RULE_output_spec:
+                                Output_specContext outputSpecContext = (Output_specContext) child;
+                                variable = outputSpecContext.ident().getText();
+                                if (outputSpecContext.COUNT() != null) {
+                                    isCountVariable = true;
+                                }
+                                break;
+                            default:
+                                throw new ProgramCompileException( "Unknown statement attribute: " + child.toStringTree());
                         }
                     }
                     scope.defineVariable(location, variable);
                     stmts.add(OperatorNode.create(location, StatementOperator.EXECUTE, query, variable));
                     stmts.add(OperatorNode.create(location, isCountVariable ? StatementOperator.COUNT:StatementOperator.OUTPUT, variable));
-                }
-                break;
-            }
-            default:
-                throw new ProgramCompileException("Unknown program element: " + node.getText());
             }
         }
         // traverse the tree, find all of the namespaced calls not covered by
