@@ -165,12 +165,14 @@ public:
         virtual void addTerm(int64_t term, Weight weight) = 0;
         virtual StringAndWeight getAsString(uint32_t index) const = 0;
         virtual IntegerAndWeight getAsInteger(uint32_t index) const = 0;
+        virtual Weight getWeight(uint32_t index) const = 0;
     };
     ~MultiTerm() override;
     void addTerm(vespalib::stringref term, Weight weight);
     void addTerm(int64_t term, Weight weight);
     StringAndWeight getAsString(uint32_t index) const { return _terms->getAsString(index); }
     IntegerAndWeight getAsInteger(uint32_t index) const { return _terms->getAsInteger(index); }
+    Weight weight(uint32_t index) const { return _terms->getWeight(index); }
     uint32_t getNumTerms() const { return _num_terms; }
 protected:
     MultiTerm(uint32_t num_terms);
@@ -182,8 +184,8 @@ private:
 class WeightedSetTerm : public QueryNodeMixin<WeightedSetTerm, MultiTerm>, public Term {
 public:
     WeightedSetTerm(uint32_t num_terms, const vespalib::string &view, int32_t id, Weight weight)
-            : QueryNodeMixinType(num_terms),
-              Term(view, id, weight)
+        : QueryNodeMixinType(num_terms),
+          Term(view, id, weight)
     {}
     virtual ~WeightedSetTerm() = 0;
 };
@@ -191,8 +193,8 @@ public:
 class DotProduct : public QueryNodeMixin<DotProduct, MultiTerm>, public Term {
 public:
     DotProduct(uint32_t num_terms, const vespalib::string &view, int32_t id, Weight weight)
-            : QueryNodeMixinType(num_terms),
-              Term(view, id, weight)
+        : QueryNodeMixinType(num_terms),
+          Term(view, id, weight)
     {}
     virtual ~DotProduct() = 0;
 };
@@ -205,11 +207,12 @@ private:
 public:
     WandTerm(uint32_t num_terms, const vespalib::string &view, int32_t id, Weight weight,
              uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor)
-            : QueryNodeMixinType(num_terms),
-              Term(view, id, weight),
-              _targetNumHits(targetNumHits),
-              _scoreThreshold(scoreThreshold),
-              _thresholdBoostFactor(thresholdBoostFactor) {}
+        : QueryNodeMixinType(num_terms),
+          Term(view, id, weight),
+          _targetNumHits(targetNumHits),
+          _scoreThreshold(scoreThreshold),
+          _thresholdBoostFactor(thresholdBoostFactor)
+    {}
     virtual ~WandTerm() = 0;
     uint32_t getTargetNumHits() const { return _targetNumHits; }
     int64_t getScoreThreshold() const { return _scoreThreshold; }

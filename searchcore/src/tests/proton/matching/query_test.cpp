@@ -164,6 +164,17 @@ fef_test::IndexEnvironment plain_index_env;
 fef_test::IndexEnvironment resolved_index_env;
 fef_test::IndexEnvironment attribute_index_env;
 
+vespalib::string
+termAsString(const search::query::Range &term) {
+    vespalib::asciistream os;
+    return (os << term).str();
+}
+
+const vespalib::string &
+termAsString(const vespalib::string & term) {
+    return term;
+}
+
 void setupIndexEnvironments()
 {
     FieldInfo field_info(FieldType::INDEX, CollectionType::SINGLE, field, field_id);

@@ -37,6 +37,7 @@
 #include <vespa/vespalib/util/regexp.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <sstream>
+#include <charconv>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attribute_blueprint_factory");
@@ -58,6 +59,7 @@ using search::query::StackDumpCreator;
 using search::query::StringTerm;
 using search::query::SubstringTerm;
 using search::query::SuffixTerm;
+using search::query::MultiTerm;
 using search::queryeval::AndBlueprint;
 using search::queryeval::AndSearchStrict;
 using search::queryeval::Blueprint;
@@ -81,10 +83,26 @@ using search::tensor::DenseTensorAttribute;
 using vespalib::geo::ZCurve;
 using vespalib::make_string;
 using vespalib::string;
+using vespalib::stringref;
 
 namespace search {
 namespace {
 
+class NodeAsKey final : public IDocumentWeightAttribute::LookupKey {
+public:
+    NodeAsKey(const Node & node, vespalib::string & scratchPad)
+        : _node(node),
+          _scratchPad(scratchPad)
+    { }
+
+    stringref asString() const override {
+        return queryeval::termAsString(_node, _scratchPad);
+    }
+
+private:
+    const Node       & _node;
+    vespalib::string & _scratchPad;
+};
 //-----------------------------------------------------------------------------
 
 /**
@@ -312,6 +330,24 @@ make_location_blueprint(const FieldSpec &field, const IAttributeVector &attribut
     return root;
 }
 
+class LookupKey : public IDocumentWeightAttribute::LookupKey {
+public:
+    LookupKey(MultiTerm & terms, uint32_t index) : _terms(terms), _index(index) {}
+
+    stringref asString() const override {
+        return _terms.getAsString(_index).first;
+    }
+
+    bool asInteger(int64_t &value) const override {
+        value = _terms.getAsInteger(_index).first;
+        return true;
+    }
+
+private:
+    const MultiTerm & _terms;
+    uint32_t          _index;
+};
+
 //-----------------------------------------------------------------------------
 
 template <typename SearchType>
@@ -342,8 +378,8 @@ public:
         _terms.reserve(size_hint);
     }
 
-    void addTerm(const vespalib::string &term, int32_t weight) {
-        IDocumentWeightAttribute::LookupResult result = _attr.lookup(term, _dictionary_snapshot);
+    void addTerm(const IDocumentWeightAttribute::LookupKey & key, int32_t weight) {
+        IDocumentWeightAttribute::LookupResult result = _attr.lookup(key, _dictionary_snapshot);
         HitEstimate childEst(result.posting_size, (result.posting_size == 0));
         if (!childEst.empty) {
             if (_estimate.empty) {
@@ -422,14 +458,13 @@ public:
           _terms(),
           _attr(attr),
           _dictionary_snapshot(_attr.get_dictionary_snapshot())
-        
     {
         _weights.reserve(size_hint);
         _terms.reserve(size_hint);
     }
 
-    void addTerm(const vespalib::string &term, int32_t weight) {
-        IDocumentWeightAttribute::LookupResult result = _attr.lookup(term, _dictionary_snapshot);
+    void addTerm(const IDocumentWeightAttribute::LookupKey & key, int32_t weight) {
+        IDocumentWeightAttribute::LookupResult result = _attr.lookup(key, _dictionary_snapshot);
         HitEstimate childEst(result.posting_size, (result.posting_size == 0));
         if (!childEst.empty) {
             if (_estimate.empty) {
@@ -487,13 +522,14 @@ private:
 public:
     DirectAttributeBlueprint(const FieldSpec &field, const vespalib::string & name,
                              const IAttributeVector &iattr,
-                             const IDocumentWeightAttribute &attr, const vespalib::string &term)
+                             const IDocumentWeightAttribute &attr,
+                             const IDocumentWeightAttribute::LookupKey & key)
         : SimpleLeafBlueprint(field),
           _attrName(name),
           _iattr(iattr),
           _attr(attr),
           _dictionary_snapshot(_attr.get_dictionary_snapshot()),
-          _dict_entry(_attr.lookup(term, _dictionary_snapshot))
+          _dict_entry(_attr.lookup(key, _dictionary_snapshot))
     {
         setEstimate(HitEstimate(_dict_entry.posting_size, (_dict_entry.posting_size == 0)));
     }
@@ -547,6 +583,7 @@ private:
     const FieldSpec &_field;
     const IAttributeVector &_attr;
     const IDocumentWeightAttribute *_dwa;
+    vespalib::string _scratchPad;
 
 public:
     CreateBlueprintVisitor(Searchable &searchable, const IRequestContext &requestContext,
@@ -554,15 +591,17 @@ public:
         : CreateBlueprintVisitorHelper(searchable, field, requestContext),
           _field(field),
           _attr(attr),
-          _dwa(attr.asDocumentWeightAttribute())
+          _dwa(attr.asDocumentWeightAttribute()),
+          _scratchPad()
     {
     }
+    ~CreateBlueprintVisitor() override;
 
     template <class TermNode>
     void visitTerm(TermNode &n, bool simple = false) {
         if (simple && (_dwa != nullptr) && !_field.isFilter() && n.isRanked()) {
-            vespalib::string term = queryeval::termAsString(n);
-            setResult(std::make_unique<DirectAttributeBlueprint>(_field, _attr.getName(), _attr, *_dwa, term));
+            NodeAsKey key(n, _scratchPad);
+            setResult(std::make_unique<DirectAttributeBlueprint>(_field, _attr.getName(), _attr, *_dwa, key));
         } else {
             const string stack = StackDumpCreator::create(n);
             setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, stack));
@@ -621,19 +660,11 @@ public:
     void visit(RegExpTerm & n) override { visitTerm(n); }
 
     template <typename WS>
-    void createDirectWeightedSet(WS *bp, search::query::MultiTerm &n);
+    void createDirectWeightedSet(WS *bp, MultiTerm &n);
 
     template <typename WS>
-    void createShallowWeightedSet(WS *bp, search::query::MultiTerm &n, const FieldSpec &fs, bool isInteger);
+    void createShallowWeightedSet(WS *bp, MultiTerm &n, const FieldSpec &fs, bool isInteger);
 
-    static QueryTermSimple::UP
-    extractTerm(const query::Node &node, bool isInteger) {
-        vespalib::string term = queryeval::termAsString(node);
-        if (isInteger) {
-            return std::make_unique<QueryTermSimple>(term, QueryTermSimple::Type::WORD);
-        }
-        return std::make_unique<QueryTermUCS4>(term, QueryTermSimple::Type::WORD);
-    }
     static QueryTermSimple::UP
     extractTerm(vespalib::stringref term, bool isInteger) {
         if (isInteger) {
@@ -731,18 +762,17 @@ public:
 
 template <typename WS>
 void
-CreateBlueprintVisitor::createDirectWeightedSet(WS *bp, search::query::MultiTerm &n) {
+CreateBlueprintVisitor::createDirectWeightedSet(WS *bp, MultiTerm &n) {
     Blueprint::UP result(bp);
     for (uint32_t i(0); i < n.getNumTerms(); i++) {
-        auto term = n.getAsString(i);
-        bp->addTerm(term.first, term.second.percent());
+        bp->addTerm(LookupKey(n, i), n.weight(i).percent());
     }
     setResult(std::move(result));
 }
 
 template <typename WS>
 void
-CreateBlueprintVisitor::createShallowWeightedSet(WS *bp, search::query::MultiTerm &n, const FieldSpec &fs, bool isInteger) {
+CreateBlueprintVisitor::createShallowWeightedSet(WS *bp, MultiTerm &n, const FieldSpec &fs, bool isInteger) {
     Blueprint::UP result(bp);
     for (uint32_t i(0); i < n.getNumTerms(); i++) {
         FieldSpec childfs = bp->getNextChildField(fs);
@@ -751,6 +781,8 @@ CreateBlueprintVisitor::createShallowWeightedSet(WS *bp, search::query::MultiTer
     }
     setResult(std::move(result));
 }
+
+CreateBlueprintVisitor::~CreateBlueprintVisitor() = default;
 
 } // namespace
 

@@ -51,6 +51,9 @@ public:
         std::from_chars(v.first.c_str(), v.first.c_str() + v.first.size(), value);
         return IntegerAndWeight(value, v.second);
     }
+    Weight getWeight(uint32_t index) const override {
+        return _terms[index].second;
+    }
 private:
     std::vector<std::pair<vespalib::string, Weight>> _terms;
 };
@@ -71,6 +74,9 @@ public:
     }
     IntegerAndWeight getAsInteger(uint32_t index) const override {
         return _terms[index];
+    }
+    Weight getWeight(uint32_t index) const override {
+        return _terms[index].second;
     }
 private:
     std::vector<IntegerAndWeight> _terms;
