@@ -66,6 +66,7 @@ public:
           _dsb(dsb),
           _bufferId(bufferId)
     {
+        _dsb.inc_hold_buffer_count();
     }
 
     ~BufferHold() override
@@ -85,6 +86,7 @@ DataStoreBase::DataStoreBase(uint32_t numBuffers, size_t maxArrays)
       _elemHold1List(),
       _elemHold2List(),
       _numBuffers(numBuffers),
+      _hold_buffer_count(0u),
       _maxArrays(maxArrays),
       _compaction_count(0u),
       _genHolder()
@@ -187,6 +189,8 @@ DataStoreBase::transferHoldLists(generation_t generation)
 void
 DataStoreBase::doneHoldBuffer(uint32_t bufferId)
 {
+    assert(_hold_buffer_count > 0);
+    --_hold_buffer_count;
     _states[bufferId].onFree(_buffers[bufferId].getBuffer());
 }
 
@@ -513,6 +517,13 @@ DataStoreBase::startCompactWorstBuffers(bool compactMemory, bool compactAddressS
         result.emplace_back(worstAddressSpaceBufferId);
     }
     return result;
+}
+
+void
+DataStoreBase::inc_hold_buffer_count()
+{
+    assert(_hold_buffer_count < std::numeric_limits<uint32_t>::max());
+    ++_hold_buffer_count;
 }
 
 }

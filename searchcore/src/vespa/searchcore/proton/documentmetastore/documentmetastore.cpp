@@ -209,6 +209,9 @@ constexpr size_t DEAD_BYTES_SLACK = 0x10000u;
 bool
 DocumentMetaStore::consider_compact_gid_to_lid_map()
 {
+    if (_gidToLidMap.getAllocator().getNodeStore().has_held_buffers()) {
+        return false;
+    }
     auto &compaction_strategy = getConfig().getCompactionStrategy();
     size_t used_bytes = _cached_gid_to_lid_map_memory_usage.usedBytes();
     size_t dead_bytes = _cached_gid_to_lid_map_memory_usage.deadBytes();

@@ -191,6 +191,10 @@ public:
         return _store.getCompacting(ref);
     }
 
+    bool has_held_buffers() const {
+        return _store.has_held_buffers();
+    }
+    
     template <typename FunctionType>
     void foreach_key(EntryRef ref, FunctionType func) const {
         if (!ref.valid())
