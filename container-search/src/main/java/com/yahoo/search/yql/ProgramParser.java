@@ -308,8 +308,6 @@ final class ProgramParser {
         OperatorNode<ExpressionOperator> offset = null;
         OperatorNode<ExpressionOperator> limit = null;
         OperatorNode<ExpressionOperator> timeout = null;
-        OperatorNode<SequenceOperator> insertValues = null;
-        OperatorNode<ExpressionOperator> updateValues = null;
 
         ParseTree sourceNode = node.getChild(2) != null ?  node.getChild(2).getChild(0):null;
 
@@ -712,7 +710,7 @@ final class ProgramParser {
                 }
                 return OperatorNode.create(toLocation(scope, expressionList.isEmpty()? parseTree:expressionList.get(0)), ExpressionOperator.ARRAY, values);
             }
-            //dereferencedExpression: primaryExpression(indexref[in_select]| propertyref)*
+            // dereferencedExpression: primaryExpression(indexref[in_select]| propertyref)*
             case yqlplusParser.RULE_dereferencedExpression: {
                 DereferencedExpressionContext dereferencedExpression = (DereferencedExpressionContext) parseTree;
                 Iterator<ParseTree> it = dereferencedExpression.children.iterator();
@@ -720,10 +718,10 @@ final class ProgramParser {
                 while (it.hasNext()) {
                     ParseTree defTree = it.next();
                     if (getParseTreeIndex(defTree) == yqlplusParser.RULE_propertyref) {
-                        //DOT nm=ID
+                        // DOT nm=ID
                         result = OperatorNode.create(toLocation(scope, parseTree), ExpressionOperator.PROPREF, result, defTree.getChild(1).getText());
                     } else {
-                        //indexref
+                        // indexref
                         result = OperatorNode.create(toLocation(scope, parseTree), ExpressionOperator.INDEX, result, convertExpr(defTree.getChild(1), scope));
                     }
                 }
@@ -744,9 +742,6 @@ final class ProgramParser {
                         }
                         return OperatorNode.create(toLocation(scope, parseTree), ExpressionOperator.CALL, scope.resolvePath(readName((Namespaced_nameContext) firstChild.getChild(0))), arguments);
                     }
-                    // TODO add processing this is not implemented in V3
-                    // case yqlplusParser.APPLY:
-
                     case yqlplusParser.RULE_parameter:
                         // external variable reference
                         return OperatorNode.create(toLocation(scope, firstChild), ExpressionOperator.VARREF, firstChild.getChild(1).getText());
