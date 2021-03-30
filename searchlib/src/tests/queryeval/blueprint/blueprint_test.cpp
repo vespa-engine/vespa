@@ -43,7 +43,7 @@ public:
     createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, MatchData &md) const override
     {
-        return SearchIterator::UP(new MySearch("or", std::move(subSearches), &md, strict));
+        return std::make_unique<MySearch>("or", std::move(subSearches), &md, strict);
     }
 
     static MyOr& create() { return *(new MyOr()); }
@@ -60,7 +60,7 @@ public:
     createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, MatchData &md) const override
     {
-        return SearchIterator::UP(new MySearch("or", std::move(subSearches), &md, strict));
+        return std::make_unique<MySearch>("or", std::move(subSearches), &md, strict);
     }
 
     static OtherOr& create() { return *(new OtherOr()); }
@@ -74,15 +74,15 @@ class MyAnd : public AndBlueprint
 {
 private:
 public:
-    virtual HitEstimate combine(const std::vector<HitEstimate> &data) const override {
+    HitEstimate combine(const std::vector<HitEstimate> &data) const override {
         return min(data);
     }
 
-    virtual FieldSpecBaseList exposeFields() const override {
+    FieldSpecBaseList exposeFields() const override {
         return FieldSpecBaseList();
     }
 
-    virtual bool inheritStrict(size_t i) const override {
+    bool inheritStrict(size_t i) const override {
         return (i == 0);
     }
 
@@ -90,7 +90,7 @@ public:
     createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, MatchData &md) const override
     {
-        return SearchIterator::UP(new MySearch("and", std::move(subSearches), &md, strict));
+        return std::make_unique<MySearch>("and", std::move(subSearches), &md, strict);
     }
 
     static MyAnd& create() { return *(new MyAnd()); }
@@ -107,7 +107,7 @@ public:
     createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, MatchData &md) const override
     {
-        return SearchIterator::UP(new MySearch("and", std::move(subSearches), &md, strict));
+        return std::make_unique<MySearch>("and", std::move(subSearches), &md, strict);
     }
 
     static OtherAnd& create() { return *(new OtherAnd()); }
@@ -122,7 +122,7 @@ public:
     createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, MatchData &md) const override
     {
-        return SearchIterator::UP(new MySearch("andnot", std::move(subSearches), &md, strict));
+        return std::make_unique<MySearch>("andnot", std::move(subSearches), &md, strict);
     }
 
     static OtherAndNot& create() { return *(new OtherAndNot()); }
@@ -641,7 +641,7 @@ Test::testSearchCreation()
 template<typename T>
 Blueprint::UP makeNew(T *orig)
 {
-    return Blueprint::UP(new T(*orig));
+    return std::make_unique<T>(*orig);
 }
 
 void

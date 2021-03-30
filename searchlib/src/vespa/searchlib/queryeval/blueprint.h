@@ -220,6 +220,9 @@ public:
     virtual bool isEquiv() const { return false; }
     virtual bool isWhiteList() const { return false; }
     virtual bool isIntermediate() const { return false; }
+    virtual bool isAnd() const { return false; }
+    virtual bool isAndNot() const { return false; }
+    virtual bool isOr() const { return false; }
     virtual const attribute::ISearchContext *get_attribute_search_context() const { return nullptr; }
 
     // For document summaries with matched-elements-only set.
