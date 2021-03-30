@@ -79,9 +79,19 @@ private:
     }
 
     void replicateMultiTerm(const MultiTerm &original, MultiTerm & replica) {
-        for (uint32_t i(0); i < original.getNumTerms(); i++) {
-            auto v = original.getAsString(i);
-            replica.addTerm(v.first, v.second);
+        if (original.getType() == MultiTerm::Type::STRING) {
+            for (uint32_t i(0); i < original.getNumTerms(); i++) {
+                auto v = original.getAsString(i);
+                replica.addTerm(v.first, v.second);
+            }
+        } else if (original.getType() == MultiTerm::Type::INTEGER) {
+            for (uint32_t i(0); i < original.getNumTerms(); i++) {
+                auto v = original.getAsInteger(i);
+                replica.addTerm(v.first, v.second);
+            }
+        } else {
+            assert (original.getType() == MultiTerm::Type::UNKNOWN);
+            assert (original.getNumTerms() == 0);
         }
     }
 

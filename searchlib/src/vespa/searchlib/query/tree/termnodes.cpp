@@ -69,7 +69,8 @@ public:
     }
     StringAndWeight getAsString(uint32_t index) const override {
         const auto & v = _terms[index];
-        auto res = std::to_chars(_scratchPad, _scratchPad + sizeof(_scratchPad), v.first, 10);
+        auto res = std::to_chars(_scratchPad, _scratchPad + sizeof(_scratchPad)-1, v.first, 10);
+        res.ptr[0] = '\0';
         return StringAndWeight(stringref(_scratchPad, res.ptr - _scratchPad), v.second);
     }
     IntegerAndWeight getAsInteger(uint32_t index) const override {
@@ -87,7 +88,8 @@ private:
 
 MultiTerm::MultiTerm(uint32_t num_terms)
     : _terms(),
-      _num_terms(num_terms)
+      _num_terms(num_terms),
+      _type(Type::UNKNOWN)
 {}
 
 MultiTerm::~MultiTerm() = default;
@@ -96,6 +98,7 @@ void
 MultiTerm::addTerm(vespalib::stringref term, Weight weight) {
     if ( ! _terms) {
         _terms = std::make_unique<StringTermVector>(_num_terms);
+        _type = Type::STRING;
     }
     _terms->addTerm(term, weight);
 }
@@ -104,6 +107,7 @@ void
 MultiTerm::addTerm(int64_t term, Weight weight) {
     if ( ! _terms) {
         _terms = std::make_unique<IntegerTermVector>(_num_terms);
+        _type = Type::INTEGER;
     }
     _terms->addTerm(term, weight);
 }

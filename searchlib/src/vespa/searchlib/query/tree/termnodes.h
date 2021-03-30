@@ -155,6 +155,7 @@ public:
 
 class MultiTerm : public Node {
 public:
+    enum class Type {STRING, INTEGER, UNKNOWN};
     using StringAndWeight = std::pair<vespalib::stringref, Weight>;
     using IntegerAndWeight = std::pair<int64_t, Weight>;
     struct TermVector {
@@ -170,15 +171,19 @@ public:
     ~MultiTerm() override;
     void addTerm(vespalib::stringref term, Weight weight);
     void addTerm(int64_t term, Weight weight);
+    // Note that the first refers to a zero terminated string.
+    // That is required as the comparator for the enum store requires it.
     StringAndWeight getAsString(uint32_t index) const { return _terms->getAsString(index); }
     IntegerAndWeight getAsInteger(uint32_t index) const { return _terms->getAsInteger(index); }
     Weight weight(uint32_t index) const { return _terms->getWeight(index); }
     uint32_t getNumTerms() const { return _num_terms; }
+    Type getType() const { return _type; }
 protected:
     MultiTerm(uint32_t num_terms);
 private:
     std::unique_ptr<TermVector> _terms;
     uint32_t _num_terms;
+    Type _type;
 };
 
 class WeightedSetTerm : public QueryNodeMixin<WeightedSetTerm, MultiTerm>, public Term {
