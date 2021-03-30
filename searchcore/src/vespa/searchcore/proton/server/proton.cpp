@@ -287,9 +287,10 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _fileHeaderContext.setClusterName(protonConfig.clustername, protonConfig.basedir);
     _matchEngine = std::make_unique<MatchEngine>(protonConfig.numsearcherthreads,
                                                  protonConfig.numthreadspersearch,
-                                                 protonConfig.distributionkey);
+                                                 protonConfig.distributionkey,
+                                                 protonConfig.asyncsearch);
     _distributionKey = protonConfig.distributionkey;
-    _summaryEngine= std::make_unique<SummaryEngine>(protonConfig.numsummarythreads);
+    _summaryEngine= std::make_unique<SummaryEngine>(protonConfig.numsummarythreads, protonConfig.asyncsearch);
     _docsumBySlime = std::make_unique<DocsumBySlime>(*_summaryEngine);
 
     IFlushStrategy::SP strategy;

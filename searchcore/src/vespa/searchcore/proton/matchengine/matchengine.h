@@ -19,6 +19,7 @@ class MatchEngine : public search::engine::SearchServer,
 private:
     std::mutex                         _lock;
     const uint32_t                     _distributionKey;
+    bool                               _async;
     bool                               _closed;
     HandlerMap<ISearchHandler>         _handlers;
     vespalib::ThreadStackExecutor      _executor;
@@ -43,8 +44,12 @@ public:
      * @param numThreads Number of threads allocated for handling search requests.
      * @param threadsPerSearch number of threads used for each search
      * @param distributionKey distributionkey of this node.
+     * @param async if query is dispatched to threadpool
      */
-    MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t distributionKey);
+    MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t distributionKey, bool async);
+    MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t distributionKey)
+        : MatchEngine(numThreads, threadsPerSearch, distributionKey, true)
+    {}
 
     /**
      * Frees any allocated resources. this will also stop all internal threads
@@ -114,8 +119,8 @@ public:
      * @param req    The search request to perform.
      * @param client The client to pass the results to.
      */
-    void performSearch(search::engine::SearchRequest::Source req,
-                       search::engine::SearchClient &client);
+    std::unique_ptr<search::engine::SearchReply>
+    performSearch(search::engine::SearchRequest::Source req);
 
     /** obtain current online status */
     bool isOnline() const;
@@ -123,8 +128,7 @@ public:
     /** 
      * Set node up/down, based on info from cluster controller.
      */
-    void
-    setNodeUp(bool nodeUp);
+    void setNodeUp(bool nodeUp);
 
     StatusReport::UP reportStatus() const;
 

@@ -22,6 +22,10 @@ distributionkey int default=-1
 ## Number of threads used for rpc transport threads
 rpctransportthreads int default=4 restart
 
+## Dispatch requests to threadpool
+## If false, rpctransportthreads will be set to num cores
+asyncsearch bool default=true
+
 ## Num searcher threads
 numsearcherthreads int default=64 restart
 

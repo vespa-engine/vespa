@@ -59,8 +59,9 @@ SummaryEngine::DocsumMetrics::DocsumMetrics()
 
 SummaryEngine::DocsumMetrics::~DocsumMetrics() = default;
 
-SummaryEngine::SummaryEngine(size_t numThreads)
+SummaryEngine::SummaryEngine(size_t numThreads, bool async)
     : _lock(),
+      _async(async),
       _closed(false),
       _handlers(),
       _executor(numThreads, 128_Ki, summary_engine_executor),
@@ -116,9 +117,12 @@ SummaryEngine::getDocsums(DocsumRequest::Source request, DocsumClient & client)
 
         return ret;
     }
-    auto task =std::make_unique<DocsumTask>(*this, std::move(request), client);
-    _executor.execute(std::move(task));
-    return DocsumReply::UP();
+    if (_async) {
+        auto task = std::make_unique<DocsumTask>(*this, std::move(request), client);
+        _executor.execute(std::move(task));
+        return DocsumReply::UP();
+    }
+    return getDocsums(request.release());
 }
 
 DocsumReply::UP
