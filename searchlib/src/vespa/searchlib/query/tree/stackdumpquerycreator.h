@@ -49,8 +49,8 @@ public:
 
 private:
     static void populateMultiTerm(search::SimpleQueryStackDumpIterator &queryStack, QueryBuilderBase & builder, MultiTerm & mt) {
-        for (uint32_t i(0); i < mt.getNumTerms(); i++) {
-            queryStack.next();
+        uint32_t added(0);
+        for (added = 0; (added < mt.getNumTerms()) && queryStack.next(); added++) {
             ParseItem::ItemType type = queryStack.getType();
             switch (type) {
                 case ParseItem::ITEM_PURE_WEIGHTED_LONG:
@@ -60,9 +60,12 @@ private:
                     mt.addTerm(queryStack.getTerm(), queryStack.GetWeight());
                     break;
                 default:
-                    builder.reportError(vespalib::make_string("Got unexpected node %d for multiterm node at child term %d", type, i));
+                    builder.reportError(vespalib::make_string("Got unexpected node %d for multiterm node at child term %d", type, added));
                     return;
             }
+        }
+        if (added < mt.getNumTerms()) {
+            builder.reportError(vespalib::make_string("Too few nodes(%d) for multiterm(%d)", added, mt.getNumTerms()));
         }
     }
     static Term *
