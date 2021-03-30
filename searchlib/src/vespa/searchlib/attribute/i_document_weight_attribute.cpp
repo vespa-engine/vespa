@@ -13,7 +13,7 @@ public:
 
     vespalib::stringref asString() const override { return _key; }
 private:
-    vespalib::string _key;
+    vespalib::stringref _key;
 };
 }
 
