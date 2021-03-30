@@ -18,6 +18,7 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self() override;
+    bool isAndNot() const override { return true; }
     Blueprint::UP get_replacement() override;
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
@@ -40,11 +41,7 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self() override;
-
-private:
-    double computeNextHitRate(const Blueprint & child, double hitRate) const override;
-
-public:
+    bool isAnd() const override { return true; }
     Blueprint::UP get_replacement() override;
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
@@ -53,6 +50,8 @@ public:
                              bool strict, fef::MatchData &md) const override;
     SearchIterator::UP
     createFilterSearch(bool strict, FilterConstraint constraint) const override;
+private:
+    double computeNextHitRate(const Blueprint & child, double hitRate) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -65,6 +64,7 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self() override;
+    bool isOr() const override { return true; }
     Blueprint::UP get_replacement() override;
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;

@@ -117,8 +117,8 @@ AndNotBlueprint::optimize_self()
     if (childCnt() == 0) {
         return;
     }
-    AndNotBlueprint *child = dynamic_cast<AndNotBlueprint *>(&getChild(0));
-    if (child != nullptr) {
+    if (getChild(0).isAndNot()) {
+        AndNotBlueprint *child = static_cast<AndNotBlueprint *>(&getChild(0));
         while (child->childCnt() > 1) {
             addChild(child->removeChild(1));
         }
@@ -130,7 +130,7 @@ AndNotBlueprint::optimize_self()
             removeChild(i--);
         }
     }
-    if (dynamic_cast<AndNotBlueprint *>(getParent()) == nullptr) {
+    if ( !(getParent() && getParent()->isAndNot()) ) {
         optimize_source_blenders<OrBlueprint>(*this, 1);
     }
 }
@@ -224,15 +224,15 @@ void
 AndBlueprint::optimize_self()
 {
     for (size_t i = 0; i < childCnt(); ++i) {
-        AndBlueprint *child = dynamic_cast<AndBlueprint *>(&getChild(i));
-        if (child != nullptr) {
+        if (getChild(i).isAnd()) {
+            AndBlueprint *child = static_cast<AndBlueprint *>(&getChild(i));
             while (child->childCnt() > 0) {
                 addChild(child->removeChild(0));
             }
             removeChild(i--);
         }
     }
-    if (dynamic_cast<AndBlueprint *>(getParent()) == nullptr) {
+    if ( !(getParent() && getParent()->isAnd()) ) {
         optimize_source_blenders<AndBlueprint>(*this, 0);
     }
 }
@@ -311,8 +311,8 @@ void
 OrBlueprint::optimize_self()
 {
     for (size_t i = 0; (childCnt() > 1) && (i < childCnt()); ++i) {
-        OrBlueprint *child = dynamic_cast<OrBlueprint *>(&getChild(i));
-        if (child != nullptr) {
+        if (getChild(i).isOr()) {
+            OrBlueprint *child = static_cast<OrBlueprint *>(&getChild(i));
             while (child->childCnt() > 0) {
                 addChild(child->removeChild(0));
             }
@@ -321,7 +321,7 @@ OrBlueprint::optimize_self()
             removeChild(i--);
         }
     }
-    if (dynamic_cast<OrBlueprint *>(getParent()) == nullptr) {
+    if ( !(getParent() && getParent()->isOr()) ) {
         optimize_source_blenders<OrBlueprint>(*this, 0);
     }
 }
