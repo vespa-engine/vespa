@@ -642,6 +642,77 @@ TEST("test query parsing error") {
     EXPECT_FALSE(new_node);
 }
 
+class SimpleMultiTerm : public MultiTerm {
+public:
+    SimpleMultiTerm(size_t numTerms) : MultiTerm(numTerms) {}
+    void accept(QueryVisitor & ) override { }
+};
+
+TEST("initial state of MultiTerm") {
+    SimpleMultiTerm mt(7);
+    EXPECT_EQUAL(7u, mt.getNumTerms());
+    EXPECT_TRUE(MultiTerm::Type::UNKNOWN == mt.getType());
+}
+
+void
+verify_multiterm_get(const MultiTerm & mt) {
+    EXPECT_EQUAL(7u, mt.getNumTerms());
+    for (int64_t i(0); i < mt.getNumTerms(); i++) {
+        auto v = mt.getAsInteger(i);
+        EXPECT_EQUAL(v.first, i-3);
+        EXPECT_EQUAL(v.second.percent(), i-4);
+    }
+    for (int64_t i(0); i < mt.getNumTerms(); i++) {
+        auto v = mt.getAsString(i);
+        char buf[24];
+        auto res = std::to_chars(buf, buf + sizeof(buf), i-3);
+        EXPECT_EQUAL(v.first, vespalib::stringref(buf, res.ptr - buf));
+        EXPECT_EQUAL(v.second.percent(), i-4);
+    }
+}
+
+TEST("add and get of integer MultiTerm") {
+    SimpleMultiTerm mt(7);
+    for (int64_t i(0); i < mt.getNumTerms(); i++) {
+        mt.addTerm(i-3, Weight(i-4));
+    }
+    EXPECT_TRUE(MultiTerm::Type::INTEGER == mt.getType());
+    verify_multiterm_get(mt);
+}
+
+TEST("add and get of string MultiTerm") {
+    SimpleMultiTerm mt(7);
+    for (int64_t i(0); i < mt.getNumTerms(); i++) {
+        char buf[24];
+        auto res = std::to_chars(buf, buf + sizeof(buf), i-3);
+        mt.addTerm(vespalib::stringref(buf, res.ptr - buf), Weight(i-4));
+    }
+    EXPECT_TRUE(MultiTerm::Type::STRING == mt.getType());
+    verify_multiterm_get(mt);
+}
+
+TEST("first string then integer MultiTerm") {
+    SimpleMultiTerm mt(7);
+    mt.addTerm("-3", Weight(-4));
+    for (int64_t i(1); i < mt.getNumTerms(); i++) {
+        mt.addTerm(i-3, Weight(i-4));
+    }
+    EXPECT_TRUE(MultiTerm::Type::STRING == mt.getType());
+    verify_multiterm_get(mt);
+}
+
+TEST("first integer then string MultiTerm") {
+    SimpleMultiTerm mt(7);
+    mt.addTerm(-3, Weight(-4));
+    for (int64_t i(1); i < mt.getNumTerms(); i++) {
+        char buf[24];
+        auto res = std::to_chars(buf, buf + sizeof(buf), i-3);
+        mt.addTerm(vespalib::stringref(buf, res.ptr - buf), Weight(i-4));
+    }
+    EXPECT_TRUE(MultiTerm::Type::INTEGER == mt.getType());
+    verify_multiterm_get(mt);
+}
+
 }  // namespace
 
 TEST_MAIN() { TEST_RUN_ALL(); }

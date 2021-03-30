@@ -27,19 +27,16 @@ WandTerm::~WandTerm() = default;
 
 namespace {
 
-void badType(const char *expected, const char *got) __attribute__((noinline));
-void badType(const char *expected, const char *got) {
-    throw IllegalArgumentException(fmt("Expected '%s' type, got '%s'", expected, got), VESPA_STRLOC);
-}
-
 class StringTermVector final : public MultiTerm::TermVector {
 public:
     StringTermVector(uint32_t sz) : _terms() { _terms.reserve(sz); }
     void addTerm(stringref term, Weight weight) override {
         _terms.emplace_back(term, weight);
     }
-    void addTerm(int64_t, Weight) override {
-        badType("string", "int64_t");
+    void addTerm(int64_t value, Weight weight) override {
+        char buf[24];
+        auto res = std::to_chars(buf, buf + sizeof(buf), value, 10);
+        addTerm(stringref(buf, res.ptr - buf), weight);
     }
     StringAndWeight getAsString(uint32_t index) const override {
         const auto & v = _terms[index];
@@ -61,8 +58,10 @@ private:
 class IntegerTermVector final : public MultiTerm::TermVector {
 public:
     IntegerTermVector(uint32_t sz) : _terms() { _terms.reserve(sz); }
-    void addTerm(stringref, Weight) override {
-        badType("int64_t", "string");
+    void addTerm(stringref valueS, Weight weight) override {
+        int64_t value;
+        std::from_chars(valueS.data(), valueS.data() + valueS.size(), value);
+        addTerm(value, weight);
     }
     void addTerm(int64_t term, Weight weight) override {
         _terms.emplace_back(term, weight);
