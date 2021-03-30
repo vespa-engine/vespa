@@ -158,11 +158,10 @@ struct WandBlueprintSpec
     Node::UP createNode(uint32_t scoresToTrack = 100,
                         score_t scoreThreshold = 0,
                         double thresholdBoostFactor = 1) const {
-        SimpleWandTerm *node = new SimpleWandTerm("view", 0, Weight(0),
+        SimpleWandTerm *node = new SimpleWandTerm(tokens.size(), "view", 0, Weight(0),
                                                   scoresToTrack, scoreThreshold, thresholdBoostFactor);
         for (size_t i = 0; i < tokens.size(); ++i) {
-            node->append(Node::UP(new SimpleStringTerm(tokens[i].first, "view", 0,
-                                                       Weight(tokens[i].second))));
+            node->addTerm(tokens[i].first, Weight(tokens[i].second));
         }
         return Node::UP(node);
     }

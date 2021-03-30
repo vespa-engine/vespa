@@ -22,7 +22,7 @@ SimpleQueryStackDumpIterator::SimpleQueryStackDumpIterator(vespalib::stringref b
       _currArity(0),
       _curr_index_name(),
       _curr_term(),
-      _scratch(),
+      _curr_integer_term(0),
       _extraIntArg1(0),
       _extraIntArg2(0),
       _extraIntArg3(0),
@@ -152,9 +152,7 @@ bool SimpleQueryStackDumpIterator::readNext() {
     case ParseItem::ITEM_PURE_WEIGHTED_LONG:
         {
             if (p + sizeof(int64_t) > _bufEnd) return false;
-            int64_t value = vespalib::nbo::n2h(*reinterpret_cast<const int64_t *>(p));
-            auto res = std::to_chars(_scratch, _scratch + sizeof(_scratch), value, 10);
-            _curr_term = vespalib::stringref(_scratch, res.ptr - _scratch);
+            _curr_integer_term = vespalib::nbo::n2h(*reinterpret_cast<const int64_t *>(p));
             p += sizeof(int64_t);
             _currArity = 0;
         }

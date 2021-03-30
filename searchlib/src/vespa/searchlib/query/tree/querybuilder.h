@@ -50,9 +50,6 @@ class QueryBuilderBase
     std::stack<NodeInfo> _nodes;
     vespalib::string _error_msg;
 
-    void reportError(const vespalib::string &msg);
-    void reportError(const vespalib::string &msg, const Node & incomming, const Node & root);
-
 protected:
     QueryBuilderBase();
     ~QueryBuilderBase();
@@ -91,6 +88,9 @@ public:
      * build a new query tree with the same builder.
      */
     void reset();
+
+    void reportError(const vespalib::string &msg);
+    void reportError(const vespalib::string &msg, const Node & incomming, const Node & root);
 };
 
 
@@ -126,17 +126,17 @@ typename NodeTypes::SameElement *createSameElement(vespalib::stringref view) {
     return new typename NodeTypes::SameElement(view);
 }
 template <class NodeTypes>
-typename NodeTypes::WeightedSetTerm *createWeightedSetTerm(vespalib::stringref view, int32_t id, Weight weight) {
-    return new typename NodeTypes::WeightedSetTerm(view, id, weight);
+typename NodeTypes::WeightedSetTerm *createWeightedSetTerm(uint32_t num_terms, vespalib::stringref view, int32_t id, Weight weight) {
+    return new typename NodeTypes::WeightedSetTerm(num_terms, view, id, weight);
 }
 template <class NodeTypes>
-typename NodeTypes::DotProduct *createDotProduct(vespalib::stringref view, int32_t id, Weight weight) {
-    return new typename NodeTypes::DotProduct(view, id, weight);
+typename NodeTypes::DotProduct *createDotProduct(uint32_t num_terms, vespalib::stringref view, int32_t id, Weight weight) {
+    return new typename NodeTypes::DotProduct(num_terms, view, id, weight);
 }
 template <class NodeTypes>
 typename NodeTypes::WandTerm *
-createWandTerm(vespalib::stringref view, int32_t id, Weight weight, uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor) {
-    return new typename NodeTypes::WandTerm(view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor);
+createWandTerm(uint32_t num_terms, vespalib::stringref view, int32_t id, Weight weight, uint32_t targetNumHits, int64_t scoreThreshold, double thresholdBoostFactor) {
+    return new typename NodeTypes::WandTerm(num_terms, view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor);
 }
 template <class NodeTypes>
 typename NodeTypes::Rank *createRank() {
@@ -262,12 +262,12 @@ public:
     }
     typename NodeTypes::WeightedSetTerm &addWeightedSetTerm( int child_count, stringref view, int32_t id, Weight weight) {
         adjustWeight(weight);
-        typename NodeTypes::WeightedSetTerm &node = addIntermediate(createWeightedSetTerm<NodeTypes>(view, id, weight), child_count);
+        typename NodeTypes::WeightedSetTerm &node = addTerm(createWeightedSetTerm<NodeTypes>(child_count, view, id, weight));
         return node;
     }
     typename NodeTypes::DotProduct &addDotProduct( int child_count, stringref view, int32_t id, Weight weight) {
         adjustWeight(weight);
-        typename NodeTypes::DotProduct &node = addIntermediate( createDotProduct<NodeTypes>(view, id, weight), child_count);
+        typename NodeTypes::DotProduct &node = addTerm( createDotProduct<NodeTypes>(child_count, view, id, weight));
         return node;
     }
     typename NodeTypes::WandTerm &addWandTerm(
@@ -276,9 +276,8 @@ public:
             int64_t scoreThreshold, double thresholdBoostFactor)
     {
         adjustWeight(weight);
-        typename NodeTypes::WandTerm &node = addIntermediate(
-                createWandTerm<NodeTypes>(view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor),
-                child_count);
+        typename NodeTypes::WandTerm &node = addTerm(
+                createWandTerm<NodeTypes>(child_count, view, id, weight, targetNumHits, scoreThreshold, thresholdBoostFactor));
         return node;
     }
     typename NodeTypes::Rank &addRank(int child_count) {

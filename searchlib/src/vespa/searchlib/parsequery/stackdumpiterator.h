@@ -36,7 +36,7 @@ private:
     vespalib::stringref _curr_index_name;
     /** The term in the current item */
     vespalib::stringref _curr_term;
-    char                _scratch[24];
+    int64_t             _curr_integer_term;
 
     /* extra arguments */
     uint32_t _extraIntArg1;
@@ -119,6 +119,7 @@ public:
 
     vespalib::stringref getIndexName() const { return _curr_index_name; }
     vespalib::stringref getTerm() const { return _curr_term; }
+    int64_t getIntergerTerm() const { return _curr_integer_term; }
 };
 
 }

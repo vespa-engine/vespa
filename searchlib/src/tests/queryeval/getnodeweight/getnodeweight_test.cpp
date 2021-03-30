@@ -34,9 +34,9 @@ TEST("test variations of getWeight")
     EXPECT_EQUAL(42, getWeight(SimpleStringTerm("foo", "bar", 1, Weight(42))));
     EXPECT_EQUAL(42, getWeight(SimpleSubstringTerm("foo", "bar", 1, Weight(42))));
     EXPECT_EQUAL(42, getWeight(SimpleSuffixTerm("foo", "bar", 1, Weight(42))));
-    EXPECT_EQUAL(42, getWeight(SimpleWeightedSetTerm("bar", 1, Weight(42))));
-    EXPECT_EQUAL(42, getWeight(SimpleDotProduct("bar", 1, Weight(42))));
-    EXPECT_EQUAL(42, getWeight(SimpleWandTerm("bar", 1, Weight(42), 57, 67, 77.7)));
+    EXPECT_EQUAL(42, getWeight(SimpleWeightedSetTerm(0, "bar", 1, Weight(42))));
+    EXPECT_EQUAL(42, getWeight(SimpleDotProduct(0, "bar", 1, Weight(42))));
+    EXPECT_EQUAL(42, getWeight(SimpleWandTerm(0, "bar", 1, Weight(42), 57, 67, 77.7)));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

@@ -45,9 +45,9 @@ struct DP {
     }
 
     Node::UP createNode() const {
-        SimpleDotProduct *node = new SimpleDotProduct("view", 0, Weight(0));
+        SimpleDotProduct *node = new SimpleDotProduct(tokens.size(), "view", 0, Weight(0));
         for (size_t i = 0; i < tokens.size(); ++i) {
-            node->append(Node::UP(new SimpleStringTerm(tokens[i].first, "view", 0, Weight(tokens[i].second))));
+            node->addTerm(tokens[i].first, Weight(tokens[i].second));
         }
         return Node::UP(node);
     }

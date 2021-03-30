@@ -15,25 +15,6 @@ using namespace search::query;
 
 namespace {
 
-class Test : public vespalib::TestApp {
-    void requireThatAllNodesCanBeVisited();
-
-    template <class T> void checkVisit(T *node);
-
-public:
-    int Main() override;
-};
-
-int
-Test::Main()
-{
-    TEST_INIT("query_visitor_test");
-
-    TEST_DO(requireThatAllNodesCanBeVisited());
-
-    TEST_DONE();
-}
-
 class MyVisitor : public QueryVisitor
 {
 public:
@@ -69,7 +50,7 @@ public:
 };
 
 template <class T>
-void Test::checkVisit(T *node) {
+void checkVisit(T *node) {
     Node::UP query(node);
     MyVisitor visitor;
     visitor.isVisited<T>() = false;
@@ -77,7 +58,7 @@ void Test::checkVisit(T *node) {
     ASSERT_TRUE(visitor.isVisited<T>());
 }
 
-void Test::requireThatAllNodesCanBeVisited() {
+TEST("requireThatAllNodesCanBeVisited") {
     checkVisit<And>(new SimpleAnd);
     checkVisit<AndNot>(new SimpleAndNot);
     checkVisit<Near>(new SimpleNear(0));
@@ -85,9 +66,9 @@ void Test::requireThatAllNodesCanBeVisited() {
     checkVisit<Or>(new SimpleOr);
     checkVisit<Phrase>(new SimplePhrase("field", 0, Weight(42)));
     checkVisit<SameElement>(new SimpleSameElement("field"));
-    checkVisit<WeightedSetTerm>(new SimpleWeightedSetTerm("field", 0, Weight(42)));
-    checkVisit<DotProduct>(new SimpleDotProduct("field", 0, Weight(42)));
-    checkVisit<WandTerm>(new SimpleWandTerm("field", 0, Weight(42), 57, 67, 77.7));
+    checkVisit<WeightedSetTerm>(new SimpleWeightedSetTerm(0, "field", 0, Weight(42)));
+    checkVisit<DotProduct>(new SimpleDotProduct(0, "field", 0, Weight(42)));
+    checkVisit<WandTerm>(new SimpleWandTerm(0, "field", 0, Weight(42), 57, 67, 77.7));
     checkVisit<Rank>(new SimpleRank);
     checkVisit<NumberTerm>(new SimpleNumberTerm("0.42", "field", 0, Weight(0)));
     const Location location(Point{10, 10}, 20, 0);
@@ -104,4 +85,4 @@ void Test::requireThatAllNodesCanBeVisited() {
 
 }  // namespace
 
-TEST_APPHOOK(Test);
+TEST_MAIN() { TEST_RUN_ALL(); }

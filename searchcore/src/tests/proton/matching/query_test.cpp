@@ -164,6 +164,17 @@ fef_test::IndexEnvironment plain_index_env;
 fef_test::IndexEnvironment resolved_index_env;
 fef_test::IndexEnvironment attribute_index_env;
 
+vespalib::string
+termAsString(const search::query::Range &term) {
+    vespalib::asciistream os;
+    return (os << term).str();
+}
+
+const vespalib::string &
+termAsString(const vespalib::string & term) {
+    return term;
+}
+
 void setupIndexEnvironments()
 {
     FieldInfo field_info(FieldType::INDEX, CollectionType::SINGLE, field, field_id);
@@ -898,9 +909,9 @@ void Test::requireThatWeakAndBlueprintsAreCreatedCorrectly() {
 void Test::requireThatParallelWandBlueprintsAreCreatedCorrectly() {
     using search::queryeval::WeakAndBlueprint;
 
-    ProtonWandTerm wand(field, 42, Weight(100), 123, 9000, 1.25);
-    wand.append(Node::UP(new ProtonStringTerm("foo", field, 0, Weight(3))));
-    wand.append(Node::UP(new ProtonStringTerm("bar", field, 0, Weight(7))));
+    ProtonWandTerm wand(2, field, 42, Weight(100), 123, 9000, 1.25);
+    wand.addTerm("foo", Weight(3));
+    wand.addTerm("bar", Weight(7));
 
     ViewResolver viewResolver;
     ResolveViewVisitor resolve_visitor(viewResolver, attribute_index_env);
