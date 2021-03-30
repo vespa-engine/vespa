@@ -113,18 +113,6 @@ public class LbServicesProducerTest {
     }
 
     @Test
-    public void use_power_of_two_lb_is_configured_from_feature_flag() {
-            RegionName regionName = RegionName.from("us-east-1");
-
-            LbServicesConfig conf = createModelAndGetLbServicesConfig(regionName);
-            assertFalse(conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").usePowerOfTwoChoicesLb());
-
-            flagSource.withBooleanFlag(Flags.USE_POWER_OF_TWO_CHOICES_LOAD_BALANCING.id(), true);
-            conf = createModelAndGetLbServicesConfig(regionName);
-            assertTrue(conf.tenants("foo").applications("foo:prod:" + regionName.value() + ":default").usePowerOfTwoChoicesLb());
-    }
-
-    @Test
     public void generate_non_mtls_endpoints_from_feature_flag() {
         RegionName regionName = RegionName.from("us-east-1");
 
