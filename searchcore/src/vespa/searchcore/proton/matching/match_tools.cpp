@@ -92,7 +92,7 @@ MatchTools::setup(search::fef::RankProgram::UP rank_program, double termwise_lim
         recorder.tag_match_data(*_match_data);
         _match_data->set_termwise_limit(termwise_limit);
         _search = _query.createSearch(*_match_data);
-        _used_handles = recorder.get_handles();
+        _used_handles = std::move(recorder).steal_handles();
         _search_has_changed = false;
     }
 }

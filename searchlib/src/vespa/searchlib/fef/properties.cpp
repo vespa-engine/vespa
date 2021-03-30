@@ -77,6 +77,9 @@ Properties::Properties()
 {
 }
 
+Properties::Properties(const Properties &) = default;
+Properties & Properties::operator=(const Properties &) = default;
+
 Properties::~Properties()
 {
     assert(_numValues >= _data.size());

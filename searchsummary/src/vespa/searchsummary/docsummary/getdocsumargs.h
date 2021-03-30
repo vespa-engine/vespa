@@ -10,28 +10,22 @@ namespace search::docsummary {
 
 class GetDocsumArgs
 {
-public:
-    typedef engine::PropertiesMap PropsMap;
-
 private:
-    vespalib::string   _ranking;
     vespalib::string   _resultClassName;
     bool               _dumpFeatures;
     bool               _locations_possible;
-    uint32_t           _stackItems;
     std::vector<char>  _stackDump;
     vespalib::string   _location;
     vespalib::duration _timeout;
-    PropsMap           _propertiesMap;
+    fef::Properties    _highlightTerms;
 public:
     GetDocsumArgs();
     ~GetDocsumArgs();
 
     void initFromDocsumRequest(const search::engine::DocsumRequest &req);
 
-    void SetRankProfile(const vespalib::string &ranking) { _ranking = ranking; }
     void setResultClassName(vespalib::stringref name) { _resultClassName = name; }
-    void SetStackDump(uint32_t stackItems, uint32_t stackDumpLen, const char *stackDump);
+    void SetStackDump(uint32_t stackDumpLen, const char *stackDump);
     void locations_possible(bool value) { _locations_possible = value; }
     bool locations_possible() const { return _locations_possible; }
     const vespalib::string &getLocation() const { return _location; }
@@ -47,10 +41,8 @@ public:
     void dumpFeatures(bool v) { _dumpFeatures = v; }
     bool dumpFeatures() const { return _dumpFeatures; }
 
-    const PropsMap &propertiesMap() const { return _propertiesMap; }
-
-    const search::fef::Properties &highlightTerms() const {
-        return _propertiesMap.highlightTerms();
+    const fef::Properties &highlightTerms() const {
+        return _highlightTerms;
     }
 };
 
