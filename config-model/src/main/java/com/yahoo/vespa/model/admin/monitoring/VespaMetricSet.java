@@ -54,6 +54,7 @@ public class VespaMetricSet {
 
         metrics.add(new Metric("slobrok.heartbeats.failed.count"));
         metrics.add(new Metric("logd.processed.lines.count"));
+        metrics.add(new Metric("worker.connections.max"));
 
         // Java (JRT) TLS metrics
         metrics.add(new Metric("jrt.transport.tls-certificate-verification-failures"));
