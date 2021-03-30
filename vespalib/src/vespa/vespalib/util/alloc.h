@@ -43,7 +43,11 @@ public:
     }
     Alloc & operator=(Alloc && rhs) noexcept;
     Alloc() noexcept : _alloc(nullptr, 0), _allocator(nullptr) { }
-    ~Alloc();
+    ~Alloc() {
+        if (_alloc.first != nullptr) {
+            free();
+        }
+    }
     void swap(Alloc & rhs) noexcept {
         std::swap(_alloc, rhs._alloc);
         std::swap(_allocator, rhs._allocator);
@@ -72,6 +76,7 @@ private:
         _alloc.second = 0;
         _allocator = nullptr;
     }
+    void free();
     PtrAndSize              _alloc;
     const MemoryAllocator * _allocator;
 };
