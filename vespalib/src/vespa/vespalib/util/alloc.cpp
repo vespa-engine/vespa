@@ -473,12 +473,10 @@ Alloc::Alloc(const MemoryAllocator * allocator, size_t sz) noexcept
 {
 }
 
-Alloc::~Alloc()
-{ 
-    if (_alloc.first != nullptr) {
-        _allocator->free(_alloc);
-        _alloc.first = nullptr;
-    }
+void
+Alloc::free() {
+    _allocator->free(_alloc);
+    _alloc.first = nullptr;
 }
 
 Alloc&
