@@ -36,6 +36,7 @@ public:
     HandleRecorder();
     ~HandleRecorder();
     const HandleMap& get_handles() const { return _handles; }
+    HandleMap steal_handles() && { return std::move(_handles); }
     static void register_handle(search::fef::TermFieldHandle handle,
                                 search::fef::MatchDataDetails requested_details);
     vespalib::string to_string() const;
