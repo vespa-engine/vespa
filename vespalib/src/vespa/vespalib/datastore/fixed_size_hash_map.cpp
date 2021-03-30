@@ -187,4 +187,54 @@ FixedSizeHashMap::get_memory_usage() const
                        nodes_hold_size);
 }
 
+void
+FixedSizeHashMap::foreach_key(const std::function<void(EntryRef)>& callback) const
+{
+    for (auto& chain_head : _chain_heads) {
+        uint32_t node_idx = chain_head.load_relaxed();
+        while (node_idx != no_node_idx) {
+            auto& node = _nodes[node_idx];
+            callback(node.get_kv().first.load_relaxed());
+            node_idx = node.get_next_node_idx().load(std::memory_order_relaxed);
+        }
+    }
+}
+
+void
+FixedSizeHashMap::move_keys(const std::function<EntryRef(EntryRef)>& callback)
+{
+    for (auto& chain_head : _chain_heads) {
+        uint32_t node_idx = chain_head.load_relaxed();
+        while (node_idx != no_node_idx) {
+            auto& node = _nodes[node_idx];
+            EntryRef old_ref = node.get_kv().first.load_relaxed();
+            EntryRef new_ref = callback(old_ref);
+            if (new_ref != old_ref) {
+                node.get_kv().first.store_release(new_ref);
+            }
+            node_idx = node.get_next_node_idx().load(std::memory_order_relaxed);
+        }
+    }
+}
+
+bool
+FixedSizeHashMap::normalize_values(const std::function<EntryRef(EntryRef)>& normalize)
+{
+    bool changed = false;
+    for (auto& chain_head : _chain_heads) {
+        uint32_t node_idx = chain_head.load_relaxed();
+        while (node_idx != no_node_idx) {
+            auto& node = _nodes[node_idx];
+            EntryRef old_ref = node.get_kv().second.load_relaxed();
+            EntryRef new_ref = normalize(old_ref);
+            if (new_ref != old_ref) {
+                node.get_kv().second.store_release(new_ref);
+                changed = true;
+            }
+            node_idx = node.get_next_node_idx().load(std::memory_order_relaxed);
+        }
+    }
+    return changed;
+}
+
 }

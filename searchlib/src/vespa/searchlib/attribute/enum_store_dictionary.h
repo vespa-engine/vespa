@@ -25,6 +25,7 @@ private:
     using ParentUniqueStoreDictionary = vespalib::datastore::UniqueStoreDictionary<BTreeDictionaryT, IEnumStoreDictionary, HashDictionaryT>;
     using generation_t = IEnumStoreDictionary::generation_t;
 protected:
+    using ParentUniqueStoreDictionary::has_btree_dictionary;
     using ParentUniqueStoreDictionary::has_hash_dictionary;
 private:
     IEnumStore& _enumStore;

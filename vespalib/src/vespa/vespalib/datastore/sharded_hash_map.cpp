@@ -165,4 +165,39 @@ ShardedHashMap::get_memory_usage() const
     return memory_usage;
 }
 
+void
+ShardedHashMap::foreach_key(std::function<void(EntryRef)> callback) const
+{
+    for (size_t i = 0; i < num_shards; ++i) {
+        auto map = _maps[i].load(std::memory_order_relaxed);
+        if (map != nullptr) {
+            map->foreach_key(callback);
+        }
+    }
+}
+
+void
+ShardedHashMap::move_keys(std::function<EntryRef(EntryRef)> callback)
+{
+    for (size_t i = 0; i < num_shards; ++i) {
+        auto map = _maps[i].load(std::memory_order_relaxed);
+        if (map != nullptr) {
+            map->move_keys(callback);
+        }
+    }
+}
+
+bool
+ShardedHashMap::normalize_values(std::function<EntryRef(EntryRef)> normalize)
+{
+    bool changed = false;
+    for (size_t i = 0; i < num_shards; ++i) {
+        auto map = _maps[i].load(std::memory_order_relaxed);
+        if (map != nullptr) {
+            changed |= map->normalize_values(normalize);
+        }
+    }
+    return changed;
+}
+
 }

@@ -56,6 +56,9 @@ public:
     size_t size() const noexcept;
     const EntryComparator &get_default_comparator() const noexcept { return *_comp; }
     MemoryUsage get_memory_usage() const;
+    void foreach_key(std::function<void(EntryRef)> callback) const;
+    void move_keys(std::function<EntryRef(EntryRef)> callback);
+    bool normalize_values(std::function<EntryRef(EntryRef)> normalize);
 };
 
 }

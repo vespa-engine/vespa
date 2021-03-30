@@ -22,9 +22,14 @@ struct OrderedDoubleEnumStore {
     static constexpr Type type = Type::BTREE;
 };
 
-struct UnorderedDoubleEnumStore {
+struct HybridDoubleEnumStore {
     using EnumStoreType = DoubleEnumStore;
     static constexpr Type type = Type::BTREE_AND_HASH;
+};
+
+struct UnorderedDoubleEnumStore {
+    using EnumStoreType = DoubleEnumStore;
+    static constexpr Type type = Type::HASH;
 };
 
 struct OrderedFloatEnumStore {
@@ -32,9 +37,14 @@ struct OrderedFloatEnumStore {
     static constexpr Type type = Type::BTREE;
 };
 
-struct UnorderedFloatEnumStore {
+struct HybridFloatEnumStore {
     using EnumStoreType = FloatEnumStore;
     static constexpr Type type = Type::BTREE_AND_HASH;
+};
+
+struct UnorderedFloatEnumStore {
+    using EnumStoreType = FloatEnumStore;
+    static constexpr Type type = Type::HASH;
 };
 
 struct OrderedNumericEnumStore {
@@ -42,9 +52,14 @@ struct OrderedNumericEnumStore {
     static constexpr Type type = Type::BTREE;
 };
 
-struct UnorderedNumericEnumStore {
+struct HybridNumericEnumStore {
     using EnumStoreType = NumericEnumStore;
     static constexpr Type type = Type::BTREE_AND_HASH;
+};
+
+struct UnorderedNumericEnumStore {
+    using EnumStoreType = NumericEnumStore;
+    static constexpr Type type = Type::HASH;
 };
 
 struct OrderedStringEnumStore {
@@ -52,9 +67,14 @@ struct OrderedStringEnumStore {
     static constexpr Type type = Type::BTREE;
 };
 
-struct UnorderedStringEnumStore {
+struct HybridStringEnumStore {
     using EnumStoreType = StringEnumStore;
     static constexpr Type type = Type::BTREE_AND_HASH;
+};
+
+struct UnorderedStringEnumStore {
+    using EnumStoreType = StringEnumStore;
+    static constexpr Type type = Type::HASH;
 };
 
 using StringVector = std::vector<std::string>;
@@ -116,7 +136,7 @@ public:
 #pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 
-using FloatEnumStoreTestTypes = ::testing::Types<OrderedFloatEnumStore, OrderedDoubleEnumStore, UnorderedFloatEnumStore, UnorderedDoubleEnumStore>;
+using FloatEnumStoreTestTypes = ::testing::Types<OrderedFloatEnumStore, OrderedDoubleEnumStore, HybridFloatEnumStore, HybridDoubleEnumStore, UnorderedFloatEnumStore, UnorderedDoubleEnumStore>;
 VESPA_GTEST_TYPED_TEST_SUITE(FloatEnumStoreTest, FloatEnumStoreTestTypes);
 
 TYPED_TEST(FloatEnumStoreTest, numbers_can_be_inserted_and_retrieved)
@@ -180,6 +200,8 @@ void
 testUniques(const StringEnumStore& ses, const std::vector<std::string>& unique)
 {
     auto read_snapshot = ses.get_dictionary().get_read_snapshot();
+    read_snapshot->fill();
+    read_snapshot->sort();
     std::vector<EnumIndex> saved_indexes;
     read_snapshot->foreach_key([&saved_indexes](EntryRef idx) { saved_indexes.push_back(idx); });
     uint32_t i = 0;
@@ -503,7 +525,7 @@ public:
 #pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 
-using LoaderTestTypes = ::testing::Types<OrderedNumericEnumStore, OrderedFloatEnumStore, OrderedStringEnumStore, UnorderedNumericEnumStore, UnorderedFloatEnumStore, UnorderedStringEnumStore>;
+using LoaderTestTypes = ::testing::Types<OrderedNumericEnumStore, OrderedFloatEnumStore, OrderedStringEnumStore, HybridNumericEnumStore, HybridFloatEnumStore, HybridStringEnumStore, UnorderedNumericEnumStore, UnorderedFloatEnumStore, UnorderedStringEnumStore>;
 VESPA_GTEST_TYPED_TEST_SUITE(LoaderTest, LoaderTestTypes);
 
 TYPED_TEST(LoaderTest, store_is_instantiated_with_enumerated_loader)
@@ -604,7 +626,7 @@ EnumStoreDictionaryTest<EnumStoreTypeAndOrdering>::insert_value(size_t value_idx
 #pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 
-using EnumStoreDictionaryTestTypes = ::testing::Types<OrderedNumericEnumStore, UnorderedNumericEnumStore>;
+using EnumStoreDictionaryTestTypes = ::testing::Types<OrderedNumericEnumStore, HybridNumericEnumStore, UnorderedNumericEnumStore>;
 VESPA_GTEST_TYPED_TEST_SUITE(EnumStoreDictionaryTest, EnumStoreDictionaryTestTypes);
 
 TYPED_TEST(EnumStoreDictionaryTest, find_frozen_index_works)

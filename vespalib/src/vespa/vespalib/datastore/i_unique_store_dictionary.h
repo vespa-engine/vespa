@@ -35,6 +35,7 @@ public:
     virtual void build(vespalib::ConstArrayRef<EntryRef> refs) = 0;
     virtual void build_with_payload(vespalib::ConstArrayRef<EntryRef> refs, vespalib::ConstArrayRef<uint32_t> payloads) = 0;
     virtual std::unique_ptr<IUniqueStoreDictionaryReadSnapshot> get_read_snapshot() const = 0;
+    virtual bool get_has_btree_dictionary() const = 0;
     virtual bool get_has_hash_dictionary() const = 0;
 };
 

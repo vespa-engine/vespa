@@ -13,6 +13,18 @@ UniqueStoreBTreeDictionaryReadSnapshot<BTreeDictionaryT>::UniqueStoreBTreeDictio
 }
 
 template <typename BTreeDictionaryT>
+void
+UniqueStoreBTreeDictionaryReadSnapshot<BTreeDictionaryT>::fill()
+{
+}
+
+template <typename BTreeDictionaryT>
+void
+UniqueStoreBTreeDictionaryReadSnapshot<BTreeDictionaryT>::sort()
+{
+}
+
+template <typename BTreeDictionaryT>
 size_t
 UniqueStoreBTreeDictionaryReadSnapshot<BTreeDictionaryT>::count(const EntryComparator& comp) const
 {

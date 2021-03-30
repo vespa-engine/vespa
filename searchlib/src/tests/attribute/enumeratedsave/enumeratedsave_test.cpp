@@ -164,7 +164,7 @@ private:
     void testReload(AttributePtr v0, AttributePtr v1, AttributePtr v2,
                     MemAttr::SP mv0, MemAttr::SP mv1, MemAttr::SP mv2,
                     MemAttr::SP emv0, MemAttr::SP emv1, MemAttr::SP emv2,
-                    Config cfg, const vespalib::string &pref, bool fastSearch);
+                    Config cfg, const vespalib::string &pref, bool fastSearch, search::DictionaryConfig dictionary_config);
 
 public:
     template <typename VectorType, typename BufferType>
@@ -596,7 +596,8 @@ EnumeratedSaveTest::testReload(AttributePtr v0,
                                MemAttr::SP emv2,
                                Config cfg,
                                const vespalib::string &pref,
-                               bool fastSearch)
+                               bool fastSearch,
+                               search::DictionaryConfig dictionary_config)
 {
     // typedef AttributePtr AVP;
 
@@ -611,6 +612,7 @@ EnumeratedSaveTest::testReload(AttributePtr v0,
 
     Config check_cfg(cfg);
     check_cfg.setFastSearch(fastSearch);
+    check_cfg.set_dictionary_config(dictionary_config);
     TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "0", v0)));
     TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "1", v1)));
     TEST_DO((checkLoad<VectorType, BufferType>(check_cfg, pref + "2", v2)));
@@ -695,11 +697,27 @@ EnumeratedSaveTest::test(BasicType bt, CollectionType ct,
     TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
                                                 mv0, mv1, mv2,
                                                 emv0, emv1, emv2,
-                                                cfg, pref, false)));
+                                                cfg, pref, false, search::DictionaryConfig(search::DictionaryConfig::Type::BTREE))));
     TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
                                                 mv0, mv1, mv2,
                                                 emv0, emv1, emv2,
-                                                cfg, pref, true)));
+                                                cfg, pref, true, search::DictionaryConfig(search::DictionaryConfig::Type::BTREE))));
+    TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
+                                                mv0, mv1, mv2,
+                                                emv0, emv1, emv2,
+                                                cfg, pref, false, search::DictionaryConfig(search::DictionaryConfig::Type::BTREE_AND_HASH))));
+    TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
+                                                mv0, mv1, mv2,
+                                                emv0, emv1, emv2,
+                                                cfg, pref, true, search::DictionaryConfig(search::DictionaryConfig::Type::BTREE_AND_HASH))));
+    TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
+                                                mv0, mv1, mv2,
+                                                emv0, emv1, emv2,
+                                                cfg, pref, false, search::DictionaryConfig(search::DictionaryConfig::Type::HASH))));
+    TEST_DO((testReload<VectorType, BufferType>(v0, v1, v2,
+                                                mv0, mv1, mv2,
+                                                emv0, emv1, emv2,
+                                                cfg, pref, true, search::DictionaryConfig(search::DictionaryConfig::Type::HASH))));
 }
 
 TEST_F("Test enumerated save with single value int8", EnumeratedSaveTest)

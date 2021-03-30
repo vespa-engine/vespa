@@ -118,6 +118,9 @@ public:
     bool full() const noexcept { return _nodes.size() == _nodes.capacity() && _free_count == 0u; }
     size_t size() const noexcept { return _count; }
     MemoryUsage get_memory_usage() const;
+    void foreach_key(const std::function<void(EntryRef)>& callback) const;
+    void move_keys(const std::function<EntryRef(EntryRef)>& callback);
+    bool normalize_values(const std::function<EntryRef(EntryRef)>& normalize);
 };
 
 }

@@ -50,6 +50,7 @@ make_enum_store_dictionary(IEnumStore &store, bool has_postings, search::Diction
         } else {
             switch (type) {
             case search::DictionaryConfig::Type::HASH:
+                return std::make_unique<EnumStoreDictionary<vespalib::datastore::NoBTreeDictionary, vespalib::datastore::ShardedHashMap>>(store, std::move(compare));
             case search::DictionaryConfig::Type::BTREE_AND_HASH:
                 return std::make_unique<EnumStoreDictionary<EnumPostingTree, vespalib::datastore::ShardedHashMap>>(store, std::move(compare));
             default:

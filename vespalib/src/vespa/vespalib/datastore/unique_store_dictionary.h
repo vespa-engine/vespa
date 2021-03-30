@@ -10,6 +10,7 @@ namespace vespalib::datastore {
 class EntryComparatorWrapper;
 class IUniqueStoreDictionaryReadSnapshot;
 
+class NoBTreeDictionary { };
 class NoHashDictionary;
 
 template <typename BTreeDictionaryT>
@@ -21,6 +22,16 @@ public:
     static constexpr bool has_btree_dictionary = true;
     UniqueStoreBTreeDictionaryBase()
         : _btree_dict()
+    {
+    }
+};
+
+template <>
+class UniqueStoreBTreeDictionaryBase<NoBTreeDictionary>
+{
+public:
+    static constexpr bool has_btree_dictionary = false;
+    UniqueStoreBTreeDictionaryBase()
     {
     }
 };
@@ -55,8 +66,6 @@ template <typename BTreeDictionaryT, typename ParentT = IUniqueStoreDictionary, 
 class UniqueStoreDictionary : public ParentT, public UniqueStoreBTreeDictionaryBase<BTreeDictionaryT>, public UniqueStoreHashDictionaryBase<HashDictionaryT> {
 protected:
     using BTreeDictionaryType = BTreeDictionaryT;
-    using DataType = typename BTreeDictionaryType::DataType;
-    using FrozenView = typename BTreeDictionaryType::FrozenView;
     using generation_t = typename ParentT::generation_t;
 
 public:
@@ -77,6 +86,7 @@ public:
     void build(vespalib::ConstArrayRef<EntryRef> refs) override;
     void build_with_payload(vespalib::ConstArrayRef<EntryRef>, vespalib::ConstArrayRef<uint32_t> payloads) override;
     std::unique_ptr<IUniqueStoreDictionaryReadSnapshot> get_read_snapshot() const override;
+    bool get_has_btree_dictionary() const override;
     bool get_has_hash_dictionary() const override;
 };
 
