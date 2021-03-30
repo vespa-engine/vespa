@@ -118,6 +118,12 @@ derive_shared_threads(const ProtonConfig &proton,
     return std::max(scaledCores, proton.documentdb.size() + proton.flush.maxconcurrent + 1);
 }
 
+size_t
+computeThreads(uint32_t minimum, uint32_t configured, const HwInfo::Cpu &cpuInfo) {
+    uint32_t threads = configured ? configured : cpuInfo.cores();
+    return std::max(minimum, threads);
+}
+
 struct MetricsUpdateHook : metrics::UpdateHook
 {
     Proton &self;
@@ -335,6 +341,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 
     _prepareRestartHandler = std::make_unique<PrepareRestartHandler>(*_flushEngine);
     RPCHooks::Params rpcParams(*this, protonConfig.rpcport, _configUri.getConfigId(),
+                               computeThreads(2, protonConfig.rpctransportthreads, hwInfo.cpu()),
                                std::max(2u, hwInfo.cpu().cores()/4));
     rpcParams.slobrok_config = _configUri.createWithNewId(protonConfig.slobrokconfigid);
     _rpcHooks = std::make_unique<RPCHooks>(rpcParams);
