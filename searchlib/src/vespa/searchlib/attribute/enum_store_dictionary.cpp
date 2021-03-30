@@ -53,8 +53,12 @@ EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::free_unused_values(const
     IndexSet unused;
 
     // find unused enums
-    for (auto iter = this->_btree_dict.begin(); iter.valid(); ++iter) {
-        _enumStore.free_value_if_unused(iter.getKey(), unused);
+    if constexpr (has_btree_dictionary) {
+        for (auto iter = this->_btree_dict.begin(); iter.valid(); ++iter) {
+            _enumStore.free_value_if_unused(iter.getKey(), unused);
+        }
+    } else {
+        this->_hash_dict.foreach_key([this, &unused](EntryRef ref) { _enumStore.free_value_if_unused(ref, unused); });
     }
     remove_unused_values(unused, cmp);
 }
@@ -76,12 +80,14 @@ void
 EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::remove(const EntryComparator &comp, EntryRef ref)
 {
     assert(ref.valid());
-    auto itr = this->_btree_dict.lowerBound(ref, comp);
-    assert(itr.valid() && itr.getKey() == ref);
-    if constexpr (std::is_same_v<BTreeDictionaryT, EnumPostingTree>) {
-        assert(EntryRef(itr.getData()) == EntryRef());
+    if constexpr (has_btree_dictionary) {
+        auto itr = this->_btree_dict.lowerBound(ref, comp);
+        assert(itr.valid() && itr.getKey() == ref);
+        if constexpr (std::is_same_v<BTreeDictionaryT, EnumPostingTree>) {
+            assert(EntryRef(itr.getData()) == EntryRef());
+        }
+        this->_btree_dict.remove(itr);
     }
-    this->_btree_dict.remove(itr);
     if constexpr (has_hash_dictionary) {
         auto *result = this->_hash_dict.remove(comp, ref);
         assert(result != nullptr && result->first.load_relaxed() == ref);
@@ -93,12 +99,21 @@ bool
 EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::find_index(const vespalib::datastore::EntryComparator& cmp,
                                              Index& idx) const
 {
-    auto itr = this->_btree_dict.find(Index(), cmp);
-    if (!itr.valid()) {
+    if constexpr (has_hash_dictionary) {
+        auto find_result = this->_hash_dict.find(cmp, EntryRef());
+        if (find_result != nullptr) {
+            idx = find_result->first.load_acquire();
+            return true;
+        }
         return false;
+    } else {
+        auto itr = this->_btree_dict.find(Index(), cmp);
+        if (!itr.valid()) {
+            return false;
+        }
+        idx = itr.getKey();
+        return true;
     }
-    idx = itr.getKey();
-    return true;
 }
 
 template <typename BTreeDictionaryT, typename HashDictionaryT>
@@ -113,13 +128,14 @@ EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::find_frozen_index(const 
             return true;
         }
         return false;
+    } else {
+        auto itr = this->_btree_dict.getFrozenView().find(Index(), cmp);
+        if (!itr.valid()) {
+            return false;
+        }
+        idx = itr.getKey();
+        return true;
     }
-    auto itr = this->_btree_dict.getFrozenView().find(Index(), cmp);
-    if (!itr.valid()) {
-        return false;
-    }
-    idx = itr.getKey();
-    return true;
 }
 
 template <typename BTreeDictionaryT, typename HashDictionaryT>
@@ -127,10 +143,17 @@ std::vector<IEnumStore::EnumHandle>
 EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::find_matching_enums(const vespalib::datastore::EntryComparator& cmp) const
 {
     std::vector<IEnumStore::EnumHandle> result;
-    auto itr = this->_btree_dict.getFrozenView().find(Index(), cmp);
-    while (itr.valid() && !cmp.less(Index(), itr.getKey())) {
-        result.push_back(itr.getKey().ref());
-        ++itr;
+    if constexpr (has_btree_dictionary) {
+        auto itr = this->_btree_dict.getFrozenView().find(Index(), cmp);
+        while (itr.valid() && !cmp.less(Index(), itr.getKey())) {
+            result.push_back(itr.getKey().ref());
+            ++itr;
+        }
+    } else {
+        auto find_result = this->_hash_dict.find(cmp, EntryRef());
+        if (find_result != nullptr) {
+            result.push_back(find_result->first.load_acquire().ref());
+        }
     }
     return result;
 }
@@ -139,7 +162,11 @@ template <typename BTreeDictionaryT, typename HashDictionaryT>
 EntryRef
 EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::get_frozen_root() const
 {
-    return this->_btree_dict.getFrozenView().getRoot();
+    if constexpr (has_btree_dictionary) {
+        return this->_btree_dict.getFrozenView().getRoot();
+    } else {
+        return EntryRef();
+    }
 }
 
 template <>
@@ -154,18 +181,20 @@ std::pair<IEnumStore::Index, EntryRef>
 EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::find_posting_list(const vespalib::datastore::EntryComparator& cmp, EntryRef root) const
 {
     if constexpr (has_hash_dictionary) {
+        (void) root;
         auto find_result = this->_hash_dict.find(cmp, EntryRef());
         if (find_result != nullptr) {
             return std::make_pair(find_result->first.load_acquire(), find_result->second.load_acquire());
         }
         return std::make_pair(Index(), EntryRef());
+    } else {
+        typename BTreeDictionaryType::ConstIterator itr(vespalib::btree::BTreeNode::Ref(), this->_btree_dict.getAllocator());
+        itr.lower_bound(root, Index(), cmp);
+        if (itr.valid() && !cmp.less(Index(), itr.getKey())) {
+            return std::make_pair(itr.getKey(), EntryRef(itr.getData()));
+        }
+        return std::make_pair(Index(), EntryRef());
     }
-    typename BTreeDictionaryType::ConstIterator itr(vespalib::btree::BTreeNode::Ref(), this->_btree_dict.getAllocator());
-    itr.lower_bound(root, Index(), cmp);
-    if (itr.valid() && !cmp.less(Index(), itr.getKey())) {
-        return std::make_pair(itr.getKey(), EntryRef(itr.getData()));
-    }
-    return std::make_pair(Index(), EntryRef());
 }
 
 template <typename BTreeDictionaryT, typename HashDictionaryT>
@@ -193,19 +222,23 @@ template <typename BTreeDictionaryT, typename HashDictionaryT>
 void
 EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::clear_all_posting_lists(std::function<void(EntryRef)> clearer)
 {
-    auto& dict = this->_btree_dict;
-    auto itr = dict.begin();
-    EntryRef prev;
-    while (itr.valid()) {
-        EntryRef ref(itr.getData());
-        if (ref.ref() != prev.ref()) {
-            if (ref.valid()) {
-                clearer(ref);
+    if constexpr (has_btree_dictionary) {
+        auto& dict = this->_btree_dict;
+        auto itr = dict.begin();
+        EntryRef prev;
+        while (itr.valid()) {
+            EntryRef ref(itr.getData());
+            if (ref.ref() != prev.ref()) {
+                if (ref.valid()) {
+                    clearer(ref);
+                }
+                prev = ref;
             }
-            prev = ref;
+            itr.writeData(EntryRef().ref());
+            ++itr;
         }
-        itr.writeData(EntryRef().ref());
-        ++itr;
+    } else {
+        this->_hash_dict.normalize_values([&clearer](EntryRef ref) { clearer(ref); return EntryRef(); });
     }
 }
 
@@ -220,17 +253,25 @@ template <typename BTreeDictionaryT, typename HashDictionaryT>
 void
 EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::update_posting_list(Index idx, const vespalib::datastore::EntryComparator& cmp, std::function<EntryRef(EntryRef)> updater)
 {
-    auto& dict = this->_btree_dict;
-    auto itr = dict.lowerBound(idx, cmp);
-    assert(itr.valid() && itr.getKey() == idx);
-    EntryRef old_posting_idx(itr.getData());
-    EntryRef new_posting_idx = updater(old_posting_idx);
-    dict.thaw(itr);
-    itr.writeData(new_posting_idx.ref());
-    if constexpr (has_hash_dictionary) {
+    if constexpr (has_btree_dictionary) {
+        auto& dict = this->_btree_dict;
+        auto itr = dict.lowerBound(idx, cmp);
+        assert(itr.valid() && itr.getKey() == idx);
+        EntryRef old_posting_idx(itr.getData());
+        EntryRef new_posting_idx = updater(old_posting_idx);
+        dict.thaw(itr);
+        itr.writeData(new_posting_idx.ref());
+        if constexpr (has_hash_dictionary) {
+            auto find_result = this->_hash_dict.find(this->_hash_dict.get_default_comparator(), idx);
+            assert(find_result != nullptr && find_result->first.load_relaxed() == idx);
+            assert(find_result->second.load_relaxed() == old_posting_idx);
+            find_result->second.store_release(new_posting_idx);
+        }
+    } else {
         auto find_result = this->_hash_dict.find(this->_hash_dict.get_default_comparator(), idx);
         assert(find_result != nullptr && find_result->first.load_relaxed() == idx);
-        assert(find_result->second.load_relaxed() == old_posting_idx);
+        EntryRef old_posting_idx = find_result->second.load_relaxed();
+        EntryRef new_posting_idx = updater(old_posting_idx);
         find_result->second.store_release(new_posting_idx);
     }
 }
@@ -246,29 +287,40 @@ template <typename BTreeDictionaryT, typename HashDictionaryT>
 bool
 EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::normalize_posting_lists(std::function<EntryRef(EntryRef)> normalize)
 {
-    bool changed = false;
-    auto& dict = this->_btree_dict;
-    for (auto itr = dict.begin(); itr.valid(); ++itr) {
-        EntryRef old_posting_idx(itr.getData());
-        EntryRef new_posting_idx = normalize(old_posting_idx);
-        if (new_posting_idx != old_posting_idx) {
-            changed = true;
-            dict.thaw(itr);
-            itr.writeData(new_posting_idx.ref());
-            if constexpr (has_hash_dictionary) {
-                auto find_result = this->_hash_dict.find(this->_hash_dict.get_default_comparator(), itr.getKey());
-                assert(find_result != nullptr && find_result->first.load_relaxed() == itr.getKey());
-                assert(find_result->second.load_relaxed() == old_posting_idx);
-                find_result->second.store_release(new_posting_idx);
+    if constexpr (has_btree_dictionary) {
+        bool changed = false;
+        auto& dict = this->_btree_dict;
+        for (auto itr = dict.begin(); itr.valid(); ++itr) {
+            EntryRef old_posting_idx(itr.getData());
+            EntryRef new_posting_idx = normalize(old_posting_idx);
+            if (new_posting_idx != old_posting_idx) {
+                changed = true;
+                dict.thaw(itr);
+                itr.writeData(new_posting_idx.ref());
+                if constexpr (has_hash_dictionary) {
+                    auto find_result = this->_hash_dict.find(this->_hash_dict.get_default_comparator(), itr.getKey());
+                    assert(find_result != nullptr && find_result->first.load_relaxed() == itr.getKey());
+                    assert(find_result->second.load_relaxed() == old_posting_idx);
+                    find_result->second.store_release(new_posting_idx);
+                }
             }
         }
+        return changed;
+    } else {
+        return this->_hash_dict.normalize_values(normalize);
     }
-    return changed;
 }
 
 template <>
 const EnumPostingTree &
 EnumStoreDictionary<EnumTree>::get_posting_dictionary() const
+{
+    LOG_ABORT("should not be reached");
+}
+
+template <>
+const EnumPostingTree &
+EnumStoreDictionary<vespalib::datastore::NoBTreeDictionary, vespalib::datastore::ShardedHashMap>::get_posting_dictionary() const
 {
     LOG_ABORT("should not be reached");
 }
@@ -356,6 +408,8 @@ template class EnumStoreDictionary<EnumTree>;
 template class EnumStoreDictionary<EnumPostingTree>;
 
 template class EnumStoreDictionary<EnumPostingTree, vespalib::datastore::ShardedHashMap>;
+
+template class EnumStoreDictionary<vespalib::datastore::NoBTreeDictionary, vespalib::datastore::ShardedHashMap>;
 
 }
 

@@ -7,19 +7,23 @@
 namespace vespalib::datastore {
 
 /**
- * Class that provides a read snapshot of a unique store dictionary using a btree.
+ * Class that provides a read snapshot of a unique store dictionary using a hash.
  *
  * A generation guard that must be taken and held while the snapshot is considered valid.
+ *
+ * fill() must be called by the writer thread.
+ * sort() must be called if order of refs should correspond to sorted dictionary order.
+ *
  */
-template <typename BTreeDictionaryT>
-class UniqueStoreBTreeDictionaryReadSnapshot : public IUniqueStoreDictionaryReadSnapshot {
+template <typename HashDictionaryT>
+class UniqueStoreHashDictionaryReadSnapshot : public IUniqueStoreDictionaryReadSnapshot {
 private:
-    using BTreeDictionaryType = BTreeDictionaryT;
-    using FrozenView = typename BTreeDictionaryType::FrozenView;
-    FrozenView _frozen_view;
-    
+    using HashDictionaryType = HashDictionaryT;
+    const HashDictionaryType& _hash;
+    std::vector<EntryRef>     _refs;
+
 public:
-    UniqueStoreBTreeDictionaryReadSnapshot(FrozenView frozen_view);
+    UniqueStoreHashDictionaryReadSnapshot(const HashDictionaryType &hash);
     void fill() override;
     void sort() override;
     size_t count(const EntryComparator& comp) const override;

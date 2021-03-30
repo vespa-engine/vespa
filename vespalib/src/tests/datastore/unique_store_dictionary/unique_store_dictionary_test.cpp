@@ -56,10 +56,12 @@ struct DictionaryReadTest : public ::testing::Test {
     void take_snapshot() {
         dict.freeze();
         snapshot = dict.get_read_snapshot();
+        snapshot->fill();
+        snapshot->sort();
     }
 };
 
-using DictionaryReadTestTypes = ::testing::Types<DefaultUniqueStoreDictionary, UniqueStoreDictionary<DefaultDictionary, IUniqueStoreDictionary, ShardedHashMap>>;
+using DictionaryReadTestTypes = ::testing::Types<DefaultUniqueStoreDictionary, UniqueStoreDictionary<DefaultDictionary, IUniqueStoreDictionary, ShardedHashMap>, UniqueStoreDictionary<NoBTreeDictionary, IUniqueStoreDictionary, ShardedHashMap>>;
 VESPA_GTEST_TYPED_TEST_SUITE(DictionaryReadTest, DictionaryReadTestTypes);
 
 // Disable warnings emitted by gtest generated files when using typed tests
@@ -79,6 +81,9 @@ TYPED_TEST(DictionaryReadTest, can_count_occurrences_of_a_key)
 
 TYPED_TEST(DictionaryReadTest, can_count_occurrences_of_keys_in_a_range)
 {
+    if (!this->dict.get_has_btree_dictionary()) {
+        return;
+    }
     this->add(3).add(5).add(7).add(9).take_snapshot();
     EXPECT_EQ(1, this->snapshot->count_in_range(Comparator(3), Comparator(3)));
     EXPECT_EQ(1, this->snapshot->count_in_range(Comparator(3), Comparator(4)));
