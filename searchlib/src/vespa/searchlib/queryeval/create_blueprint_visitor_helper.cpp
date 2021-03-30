@@ -69,7 +69,7 @@ CreateBlueprintVisitorHelper::createWeightedSet(std::unique_ptr<WS> bp, NODE &n)
     for (size_t i = 0; i < n.getNumTerms(); ++i) {
         fields.clear();
         fields.add(bp->getNextChildField(_field));
-        const auto & term = n.getAsString(i);
+        auto term = n.getAsString(i);
         query::SimpleStringTerm node(term.first, n.getView(), 0, term.second); // TODO Temporary
         bp->addTerm(_searchable.createBlueprint(_requestContext, fields, node), term.second.percent());
     }
