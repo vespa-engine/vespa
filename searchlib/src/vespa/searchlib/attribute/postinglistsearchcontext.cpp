@@ -57,6 +57,10 @@ void
 PostingListSearchContext::lookupRange(const vespalib::datastore::EntryComparator &low,
                                       const vespalib::datastore::EntryComparator &high)
 {
+    if (!_dictionary.get_has_btree_dictionary()) {
+        _uniqueValues = 2; // Avoid zero and single value optimizations, use filtering
+        return;
+    }
     _lowerDictItr.lower_bound(_frozenDictionary.getRoot(), EnumIndex(), low);
     _upperDictItr = _lowerDictItr;
     if (_upperDictItr.valid() && !high.less(EnumIndex(), _upperDictItr.getKey())) {

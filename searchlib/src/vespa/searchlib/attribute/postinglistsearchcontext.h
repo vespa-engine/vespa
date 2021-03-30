@@ -80,6 +80,9 @@ protected:
     }
 
     virtual bool fallbackToFiltering() const {
+        if (_uniqueValues >= 2 && !_dictionary.get_has_btree_dictionary()) {
+            return true; // force filtering for range search
+        }
         uint32_t numHits = calculateApproxNumHits();
         // numHits > 1000: make sure that posting lists are unit tested.
         return (numHits > 1000) &&
@@ -216,7 +219,7 @@ private:
 
     bool fallbackToFiltering() const override {
         return (this->getRangeLimit() != 0)
-            ? false
+            ? (this->_uniqueValues >= 2 && !this->_dictionary.get_has_btree_dictionary())
             : Parent::fallbackToFiltering();
     }
     unsigned int approximateHits() const override {
@@ -339,6 +342,11 @@ getIterators(bool shouldApplyRangeLimit)
     auto compHigh = _enumStore.make_comparator(capped.upper());
 
     this->lookupRange(compLow, compHigh);
+    if (!this->_dictionary.get_has_btree_dictionary()) {
+        _low = capped.lower();
+        _high = capped.upper();
+        return;
+    }
     if (shouldApplyRangeLimit) {
         this->applyRangeLimit(this->getRangeLimit());
     }
