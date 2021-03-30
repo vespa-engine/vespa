@@ -55,7 +55,7 @@ TEST_F(DiskMemUsageSamplerTest, resource_usage_is_sampled)
 {
     // Poll for up to 20 seconds to get a sample.
     size_t i = 0;
-    for (; i < (20s / 50ms); ++i) {
+    for (; i < static_cast<size_t>(20s / 50ms); ++i) {
         if (filter().get_transient_memory_usage() > 0) {
             break;
         }
