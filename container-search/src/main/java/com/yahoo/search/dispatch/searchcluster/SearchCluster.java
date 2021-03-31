@@ -94,7 +94,7 @@ public class SearchCluster implements NodeManager<Node> {
         this(clusterId, dispatchConfig, 1, vipStatus, pingFactory);
     }
 
-    public void addMonitoring(ClusterMonitor clusterMonitor) {
+    public void addMonitoring(ClusterMonitor<Node> clusterMonitor) {
         for (var group : orderedGroups()) {
             for (var node : group.nodes())
                 clusterMonitor.add(node, true);
@@ -158,8 +158,11 @@ public class SearchCluster implements NodeManager<Node> {
         }
     }
 
-    /** Returns the number of nodes per group - size()/groups.size() */
-    public int groupSize() {
+    /**
+     * Returns the wanted number of nodes per group - size()/groups.size().
+     * The actual node count for a given group may differ due to node retirements.
+     */
+    public int wantedGroupSize() {
         if (groups().size() == 0) return size();
         return size() / groups().size();
     }
@@ -305,7 +308,7 @@ public class SearchCluster implements NodeManager<Node> {
         // With just one group sufficient coverage may not be the same as full coverage, as the
         // group will always be marked sufficient for use.
         updateSufficientCoverage(group, true);
-        boolean fullCoverage = isGroupCoverageSufficient(group.workingNodes(), group.nodes().size(), group.getActiveDocuments(),
+        boolean fullCoverage = isGroupCoverageSufficient(group.workingNodes(), group, group.getActiveDocuments(),
                                                          group.getActiveDocuments());
         trackGroupCoverageChanges(0, group, fullCoverage, group.getActiveDocuments());
     }
@@ -327,7 +330,7 @@ public class SearchCluster implements NodeManager<Node> {
             Group group = orderedGroups().get(i);
             long activeDocuments = activeDocumentsInGroup[i];
             long averageDocumentsInOtherGroups = (sumOfActiveDocuments - activeDocuments) / (numGroups - 1);
-            boolean sufficientCoverage = isGroupCoverageSufficient(group.workingNodes(), group.nodes().size(), activeDocuments, averageDocumentsInOtherGroups);
+            boolean sufficientCoverage = isGroupCoverageSufficient(group.workingNodes(), group, activeDocuments, averageDocumentsInOtherGroups);
             anyGroupsSufficientCoverage = anyGroupsSufficientCoverage || sufficientCoverage;
             updateSufficientCoverage(group, sufficientCoverage);
             trackGroupCoverageChanges(i, group, sufficientCoverage, averageDocumentsInOtherGroups);
@@ -349,7 +352,7 @@ public class SearchCluster implements NodeManager<Node> {
         }
     }
 
-    private boolean isGroupCoverageSufficient(int workingNodes, int nodesInGroup, long activeDocuments, long averageDocumentsInOtherGroups) {
+    private boolean isGroupCoverageSufficient(int workingNodes, Group group, long activeDocuments, long averageDocumentsInOtherGroups) {
         boolean sufficientCoverage = true;
 
         if (averageDocumentsInOtherGroups > 0) {
@@ -357,7 +360,7 @@ public class SearchCluster implements NodeManager<Node> {
             sufficientCoverage = coverage >= dispatchConfig.minActivedocsPercentage();
         }
         if (sufficientCoverage) {
-            sufficientCoverage = isGroupNodeCoverageSufficient(workingNodes, nodesInGroup);
+            sufficientCoverage = isGroupNodeCoverageSufficient(workingNodes, group.nodes().size());
         }
         return sufficientCoverage;
     }
@@ -379,7 +382,7 @@ public class SearchCluster implements NodeManager<Node> {
      */
     public boolean isPartialGroupCoverageSufficient(OptionalInt knownGroupId, List<Node> nodes) {
         if (orderedGroups().size() == 1) {
-            boolean sufficient = nodes.size() >= groupSize() - dispatchConfig.maxNodesDownPerGroup();
+            boolean sufficient = nodes.size() >= wantedGroupSize() - dispatchConfig.maxNodesDownPerGroup();
             return sufficient;
         }
 
@@ -391,7 +394,6 @@ public class SearchCluster implements NodeManager<Node> {
         if (group == null) {
             return false;
         }
-        int nodesInGroup = group.nodes().size();
         long sumOfActiveDocuments = 0;
         int otherGroups = 0;
         for (Group g : orderedGroups()) {
@@ -405,7 +407,7 @@ public class SearchCluster implements NodeManager<Node> {
             activeDocuments += n.getActiveDocuments();
         }
         long averageDocumentsInOtherGroups = sumOfActiveDocuments / otherGroups;
-        return isGroupCoverageSufficient(nodes.size(), nodesInGroup, activeDocuments, averageDocumentsInOtherGroups);
+        return isGroupCoverageSufficient(nodes.size(), group, activeDocuments, averageDocumentsInOtherGroups);
     }
 
     private void trackGroupCoverageChanges(int index, Group group, boolean fullCoverage, long averageDocuments) {
@@ -413,19 +415,21 @@ public class SearchCluster implements NodeManager<Node> {
         boolean changed = group.isFullCoverageStatusChanged(fullCoverage);
         if (changed || (!fullCoverage && System.currentTimeMillis() > nextLogTime)) {
             nextLogTime = System.currentTimeMillis() + 30 * 1000;
-            int requiredNodes = groupSize() - dispatchConfig.maxNodesDownPerGroup();
+            int requiredNodes = group.nodes().size() - dispatchConfig.maxNodesDownPerGroup();
             if (fullCoverage) {
-                log.info(() -> String.format("Group %d is now good again (%d/%d active docs, coverage %d/%d)",
-                                             index, group.getActiveDocuments(), averageDocuments, group.workingNodes(), groupSize()));
+                log.info(() -> String.format("Cluster %s: Group %d is now good again (%d/%d active docs, coverage %d/%d)",
+                                             clusterId, index, group.getActiveDocuments(), averageDocuments,
+                                             group.workingNodes(), group.nodes().size()));
             } else {
                 StringBuilder missing = new StringBuilder();
                 for (var node : group.nodes()) {
                     if (node.isWorking() != Boolean.TRUE) {
-                        missing.append('\n').append(node.toString());
+                        missing.append('\n').append(node);
                     }
                 }
-                log.warning(() -> String.format("Coverage of group %d is only %d/%d (requires %d) (%d/%d active docs) Failed nodes are:%s",
-                        index, group.workingNodes(), groupSize(), requiredNodes, group.getActiveDocuments(), averageDocuments, missing.toString()));
+                log.warning(() -> String.format("Cluster %s: Coverage of group %d is only %d/%d (requires %d) (%d/%d active docs) Failed nodes are:%s",
+                                                clusterId, index, group.workingNodes(), group.nodes().size(), requiredNodes,
+                                                group.getActiveDocuments(), averageDocuments, missing));
             }
         }
     }
