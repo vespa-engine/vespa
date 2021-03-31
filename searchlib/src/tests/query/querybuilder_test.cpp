@@ -704,12 +704,13 @@ TEST("first string then integer MultiTerm") {
 TEST("first integer then string MultiTerm") {
     SimpleMultiTerm mt(7);
     mt.addTerm(-3, Weight(-4));
+    EXPECT_TRUE(MultiTerm::Type::INTEGER == mt.getType());
     for (int64_t i(1); i < mt.getNumTerms(); i++) {
         char buf[24];
         auto res = std::to_chars(buf, buf + sizeof(buf), i-3);
         mt.addTerm(vespalib::stringref(buf, res.ptr - buf), Weight(i-4));
     }
-    EXPECT_TRUE(MultiTerm::Type::INTEGER == mt.getType());
+    EXPECT_TRUE(MultiTerm::Type::STRING == mt.getType());
     verify_multiterm_get(mt);
 }
 
