@@ -177,12 +177,14 @@ RPCHooksBase::initRPC()
     
 }
 
-RPCHooksBase::Params::Params(Proton &parent, uint32_t port, const vespalib::string &ident, uint32_t numThreads)
+RPCHooksBase::Params::Params(Proton &parent, uint32_t port, const vespalib::string &ident,
+                             uint32_t transportThreads, uint32_t executorThreads)
     : proton(parent),
       slobrok_config(config::ConfigUri("admin/slobrok.0")),
       identity(ident),
       rtcPort(port),
-      numRpcThreads(numThreads)
+      numTranportThreads(transportThreads),
+      numDocsumRpcThreads(executorThreads)
 { }
 
 RPCHooksBase::Params::~Params() = default;
@@ -190,7 +192,7 @@ RPCHooksBase::Params::~Params() = default;
 RPCHooksBase::RPCHooksBase(Params &params)
     : _proton(params.proton),
       _docsumByRPC(std::make_unique<DocsumByRPC>(_proton.getDocsumBySlime())),
-      _transport(std::make_unique<FNET_Transport>(2)),
+      _transport(std::make_unique<FNET_Transport>(params.numTranportThreads)),
       _orb(std::make_unique<FRT_Supervisor>(_transport.get())),
       _proto_rpc_adapter(std::make_unique<ProtoRpcAdapter>(
                       _proton.get_search_server(),
@@ -199,7 +201,7 @@ RPCHooksBase::RPCHooksBase(Params &params)
       _regAPI(*_orb, slobrok::ConfiguratorFactory(params.slobrok_config)),
       _stateLock(),
       _stateCond(),
-      _executor(params.numRpcThreads, 128_Ki, proton_rpc_executor)
+      _executor(params.numDocsumRpcThreads, 128_Ki, proton_rpc_executor)
 { }
 
 void

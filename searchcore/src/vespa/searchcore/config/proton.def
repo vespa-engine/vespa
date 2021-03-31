@@ -19,6 +19,9 @@ partition     int default=0 restart
 ## Distribution key
 distributionkey int default=-1
 
+## Number of threads used for rpc transport threads
+rpctransportthreads int default=4 restart
+
 ## Num searcher threads
 numsearcherthreads int default=64 restart
 

@@ -86,9 +86,13 @@ public:
         config::ConfigUri slobrok_config;
         vespalib::string  identity;
         uint32_t          rtcPort;
-        uint32_t          numRpcThreads;
+        uint32_t          numTranportThreads;
+        // TODO: This can be eliminated and reduced to a fixed low number once old rpc has been removed from the qrs.
+        //       Or even use the shared executor
+        uint32_t          numDocsumRpcThreads;
 
-        Params(Proton &parent, uint32_t port, const vespalib::string &ident, uint32_t numRpcThreads);
+        Params(Proton &parent, uint32_t port, const vespalib::string &ident,
+               uint32_t numTransportThreads, uint32_t numDocsumRpcThreads);
         ~Params();
     };
     RPCHooksBase(const RPCHooksBase &) = delete;
@@ -96,7 +100,7 @@ public:
     RPCHooksBase(Params &params);
     auto &proto_rpc_adapter_metrics() { return _proto_rpc_adapter->metrics(); }
     void set_online();
-    virtual ~RPCHooksBase();
+    ~RPCHooksBase() override;
     void close();
 
     void rpc_GetState(FRT_RPCRequest *req);
