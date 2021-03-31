@@ -467,32 +467,6 @@ MemoryAllocator::select_allocator(size_t mmapLimit, size_t alignment) {
     return & AutoAllocator::getAllocator(mmapLimit, alignment);
 }
 
-Alloc::Alloc(const MemoryAllocator * allocator, size_t sz) noexcept
-    : _alloc(allocator->alloc(sz)),
-      _allocator(allocator)
-{
-}
-
-void
-Alloc::free() {
-    _allocator->free(_alloc);
-    _alloc.first = nullptr;
-}
-
-Alloc&
-Alloc::operator=(Alloc && rhs) noexcept
-{
-    if (this != & rhs) {
-        if (_alloc.first != nullptr) {
-            _allocator->free(_alloc);
-        }
-        _alloc = rhs._alloc;
-        _allocator = rhs._allocator;
-        rhs.clear();
-    }
-    return *this;
-}
-
 Alloc
 Alloc::allocHeap(size_t sz)
 {

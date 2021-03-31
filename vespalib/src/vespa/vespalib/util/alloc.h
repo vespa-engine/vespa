@@ -1,12 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <vespa/vespalib/util/optimized.h>
+#include "optimized.h"
+#include "memory_allocator.h"
 #include <memory>
 
 namespace vespalib::alloc {
-
-class MemoryAllocator;
 
 /**
  * This represents an allocation.
@@ -41,11 +40,22 @@ public:
     {
         rhs.clear();
     }
-    Alloc & operator=(Alloc && rhs) noexcept;
+    Alloc & operator=(Alloc && rhs) noexcept {
+        if (this != & rhs) {
+            if (_alloc.first != nullptr) {
+                _allocator->free(_alloc);
+            }
+            _alloc = rhs._alloc;
+            _allocator = rhs._allocator;
+            rhs.clear();
+        }
+        return *this;
+    }
     Alloc() noexcept : _alloc(nullptr, 0), _allocator(nullptr) { }
     ~Alloc() {
         if (_alloc.first != nullptr) {
-            free();
+            _allocator->free(_alloc);
+            _alloc.first = nullptr;
         }
     }
     void swap(Alloc & rhs) noexcept {
@@ -69,14 +79,20 @@ public:
     static Alloc alloc() noexcept;
     static Alloc alloc_with_allocator(const MemoryAllocator* allocator) noexcept;
 private:
-    Alloc(const MemoryAllocator * allocator, size_t sz) noexcept;
-    Alloc(const MemoryAllocator * allocator) noexcept : _alloc(nullptr, 0), _allocator(allocator) { }
+    Alloc(const MemoryAllocator * allocator, size_t sz) noexcept
+        : _alloc(allocator->alloc(sz)),
+          _allocator(allocator)
+    {
+    }
+    Alloc(const MemoryAllocator * allocator) noexcept
+        : _alloc(nullptr, 0),
+          _allocator(allocator)
+    { }
     void clear() {
         _alloc.first = nullptr;
         _alloc.second = 0;
         _allocator = nullptr;
     }
-    void free();
     PtrAndSize              _alloc;
     const MemoryAllocator * _allocator;
 };
