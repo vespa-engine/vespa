@@ -13,6 +13,7 @@ struct IDocumentWeightAttribute
 {
     struct LookupKey {
         virtual ~LookupKey() = default;
+        // It is required that the string is zero terminated
         virtual vespalib::stringref asString() const = 0;
         virtual bool asInteger(int64_t &value) const;
     };
@@ -29,6 +30,8 @@ struct IDocumentWeightAttribute
     };
     virtual vespalib::datastore::EntryRef get_dictionary_snapshot() const = 0;
     virtual LookupResult lookup(const LookupKey & key, vespalib::datastore::EntryRef dictionary_snapshot) const = 0;
+
+    // Convenience only use by various tests.
     LookupResult lookup(vespalib::stringref term, vespalib::datastore::EntryRef dictionary_snapshot) const;
     /*
      * Collect enum indexes (via callback) where folded
