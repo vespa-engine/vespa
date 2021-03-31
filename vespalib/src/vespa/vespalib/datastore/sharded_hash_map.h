@@ -5,7 +5,6 @@
 #include "atomic_entry_ref.h"
 #include <atomic>
 #include <vespa/vespalib/util/generationholder.h>
-#include <vespa/vespalib/stllike/string.h>
 #include <functional>
 
 namespace vespalib { class MemoryUsage; }
@@ -42,7 +41,6 @@ private:
     std::atomic<FixedSizeHashMap *> _maps[num_shards];
     std::unique_ptr<const EntryComparator> _comp;
 
-    VESPA_DLL_LOCAL static size_t get_shard_idx(const EntryComparator& comp, EntryRef key_ref);
     void alloc_shard(size_t shard_idx);
     void hold_shard(std::unique_ptr<const FixedSizeHashMap> map);
 public:
