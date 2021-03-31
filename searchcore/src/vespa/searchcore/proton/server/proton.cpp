@@ -109,8 +109,7 @@ diskMemUsageSamplerConfig(const ProtonConfig &proton, const HwInfo &hwInfo)
 }
 
 size_t
-derive_shared_threads(const ProtonConfig &proton,
-                      const HwInfo::Cpu &cpuInfo) {
+derive_shared_threads(const ProtonConfig &proton, const HwInfo::Cpu &cpuInfo) {
     size_t scaledCores = (size_t)std::ceil(cpuInfo.cores() * proton.feeding.concurrency);
 
     // We need at least 1 guaranteed free worker in order to ensure progress so #documentsdbs + 1 should suffice,
@@ -118,10 +117,14 @@ derive_shared_threads(const ProtonConfig &proton,
     return std::max(scaledCores, proton.documentdb.size() + proton.flush.maxconcurrent + 1);
 }
 
-size_t
-computeThreads(uint32_t minimum, uint32_t configured, const HwInfo::Cpu &cpuInfo) {
-    uint32_t threads = configured ? configured : cpuInfo.cores();
-    return std::max(minimum, threads);
+uint32_t
+computeRpcTransportThreads(const ProtonConfig & cfg, const HwInfo::Cpu &cpuInfo) {
+    bool areSearchAndDocsumAsync = cfg.docsum.async && cfg.search.async;
+    return (cfg.rpc.transportthreads > 0)
+            ? cfg.rpc.transportthreads
+            : areSearchAndDocsumAsync
+                ? cpuInfo.cores()/8
+                : cpuInfo.cores();
 }
 
 struct MetricsUpdateHook : metrics::UpdateHook
@@ -287,9 +290,10 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
     _fileHeaderContext.setClusterName(protonConfig.clustername, protonConfig.basedir);
     _matchEngine = std::make_unique<MatchEngine>(protonConfig.numsearcherthreads,
                                                  protonConfig.numthreadspersearch,
-                                                 protonConfig.distributionkey);
+                                                 protonConfig.distributionkey,
+                                                 protonConfig.search.async);
     _distributionKey = protonConfig.distributionkey;
-    _summaryEngine= std::make_unique<SummaryEngine>(protonConfig.numsummarythreads);
+    _summaryEngine= std::make_unique<SummaryEngine>(protonConfig.numsummarythreads, protonConfig.docsum.async);
     _docsumBySlime = std::make_unique<DocsumBySlime>(*_summaryEngine);
 
     IFlushStrategy::SP strategy;
@@ -341,7 +345,7 @@ Proton::init(const BootstrapConfig::SP & configSnapshot)
 
     _prepareRestartHandler = std::make_unique<PrepareRestartHandler>(*_flushEngine);
     RPCHooks::Params rpcParams(*this, protonConfig.rpcport, _configUri.getConfigId(),
-                               computeThreads(2, protonConfig.rpctransportthreads, hwInfo.cpu()),
+                               std::max(2u, computeRpcTransportThreads(protonConfig, hwInfo.cpu())),
                                std::max(2u, hwInfo.cpu().cores()/4));
     rpcParams.slobrok_config = _configUri.createWithNewId(protonConfig.slobrokconfigid);
     _rpcHooks = std::make_unique<RPCHooks>(rpcParams);

@@ -20,7 +20,14 @@ partition     int default=0 restart
 distributionkey int default=-1
 
 ## Number of threads used for rpc transport threads
-rpctransportthreads int default=4 restart
+## A zero value will make the backend smart about the number.
+rpc.transportthreads int default=0 restart
+
+## Dispatch search requests to threadpool
+search.async bool default=true
+
+## Dispatch docsum requests to threadpool
+docsum.async bool default=true
 
 ## Num searcher threads
 numsearcherthreads int default=64 restart
