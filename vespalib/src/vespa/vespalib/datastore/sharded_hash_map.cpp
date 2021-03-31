@@ -40,7 +40,7 @@ ShardedHashMap::~ShardedHashMap()
 }
 
 size_t
-ShardedHashMap::get_shard_idx(const EntryComparator& comp, EntryRef key_ref) const
+ShardedHashMap::get_shard_idx(const EntryComparator& comp, EntryRef key_ref)
 {
     return comp.hash(key_ref) % num_shards;
 }
