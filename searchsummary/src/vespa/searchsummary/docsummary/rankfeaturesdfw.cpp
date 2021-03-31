@@ -43,7 +43,7 @@ RankFeaturesDFW::insertField(uint32_t docid, GetDocsumsState *state,
         }
         return;
     }
-    vespalib::JSONStringer & json(state->_jsonStringer);
+    vespalib::JSONStringer & json(state->jsonStringer());
     if (values != nullptr) {
         json.clear();
         json.beginObject();
