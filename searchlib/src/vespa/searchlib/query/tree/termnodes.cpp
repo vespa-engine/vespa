@@ -59,10 +59,9 @@ private:
 class IntegerTermVector final : public MultiTerm::TermVector {
 public:
     IntegerTermVector(uint32_t sz) : _terms() { _terms.reserve(sz); }
-    void addTerm(stringref valueS, Weight weight) override {
-        int64_t value;
-        std::from_chars(valueS.data(), valueS.data() + valueS.size(), value);
-        addTerm(value, weight);
+    void addTerm(stringref, Weight) override {
+        // Will/should never happen
+        assert(false);
     }
     void addTerm(int64_t term, Weight weight) override {
         _terms.emplace_back(term, weight);
