@@ -19,7 +19,7 @@ PostingListSearchContext(const IEnumStoreDictionary& dictionary,
                          bool useBitVector,
                          const ISearchContext &baseSearchCtx)
     : _dictionary(dictionary),
-      _frozenDictionary(_dictionary.get_has_btree_dictionary() ? _dictionary.get_posting_dictionary().getFrozenView() : FrozenDictionary(EnumIndex(), *((Dictionary::NodeAllocatorType *) 0))),
+      _frozenDictionary(_dictionary.get_has_btree_dictionary() ? _dictionary.get_posting_dictionary().getFrozenView() : FrozenDictionary()),
       _lowerDictItr(BTreeNode::Ref(), _frozenDictionary.getAllocator()),
       _upperDictItr(BTreeNode::Ref(), _frozenDictionary.getAllocator()),
       _uniqueValues(0u),
