@@ -97,16 +97,17 @@ MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::lookup(
 {
     const IEnumStoreDictionary& dictionary = self._enumStore.get_dictionary();
     int64_t int_term;
-    if (key.asInteger(int_term)) {
-        auto comp = self._enumStore.make_comparator(int_term);
-        auto find_result = dictionary.find_posting_list(comp, dictionary_snapshot);
-        if (find_result.first.valid()) {
-            auto pidx = find_result.second;
-            if (pidx.valid()) {
-                const PostingList &plist = self.getPostingList();
-                auto minmax = plist.getAggregated(pidx);
-                return LookupResult(pidx, plist.frozenSize(pidx), minmax.getMin(), minmax.getMax(), find_result.first);
-            }
+    if ( !key.asInteger(int_term)) {
+        return LookupResult();
+    }
+    auto comp = self._enumStore.make_comparator(int_term);
+    auto find_result = dictionary.find_posting_list(comp, dictionary_snapshot);
+    if (find_result.first.valid()) {
+        auto pidx = find_result.second;
+        if (pidx.valid()) {
+            const PostingList &plist = self.getPostingList();
+            auto minmax = plist.getAggregated(pidx);
+            return LookupResult(pidx, plist.frozenSize(pidx), minmax.getMin(), minmax.getMax(), find_result.first);
         }
     }
     return LookupResult();

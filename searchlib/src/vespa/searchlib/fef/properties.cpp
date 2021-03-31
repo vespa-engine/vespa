@@ -10,44 +10,6 @@ namespace search::fef {
 const Property::Value Property::_emptyValue;
 const Property::Values Property::_emptyValues;
 
-Property::Property(const Property::Values &values)
-    : _values(&values)
-{ }
-
-Property::Property()
-    : _values(&_emptyValues)
-{ }
-
-bool
-Property::found() const
-{
-    return !(*_values).empty();
-}
-
-const Property::Value &
-Property::get() const
-{
-    if ((*_values).empty()) {
-        return _emptyValue;
-    }
-    return (*_values)[0];
-}
-
-const Property::Value &
-Property::get(const Property::Value &fallBack) const
-{
-    if ((*_values).empty()) {
-        return fallBack;
-    }
-    return (*_values)[0];
-}
-
-uint32_t
-Property::size() const
-{
-    return (*_values).size();
-}
-
 const Property::Value &
 Property::getAt(uint32_t idx) const
 {
