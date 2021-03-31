@@ -4,6 +4,7 @@
 #include <vespa/eval/eval/string_stuff.h>
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/stringfmt.h>
+#include <ostream>
 
 using vespalib::make_string_short::fmt;
 
@@ -160,6 +161,12 @@ GenSpec::gen() const
     };
     add_cells(0);
     return result.normalize();
+}
+
+std::ostream &operator<<(std::ostream &out, const GenSpec &spec)
+{
+    out << spec.gen();
+    return out;
 }
 
 } // namespace

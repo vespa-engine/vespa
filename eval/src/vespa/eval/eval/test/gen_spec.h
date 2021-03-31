@@ -153,4 +153,6 @@ public:
     operator TensorSpec() const { return gen(); }
 };
 
+std::ostream &operator<<(std::ostream &out, const GenSpec &spec);
+
 } // namespace
