@@ -167,6 +167,7 @@ public:
         virtual StringAndWeight getAsString(uint32_t index) const = 0;
         virtual IntegerAndWeight getAsInteger(uint32_t index) const = 0;
         virtual Weight getWeight(uint32_t index) const = 0;
+        virtual uint32_t size() const = 0;
     };
     ~MultiTerm() override;
     void addTerm(vespalib::stringref term, Weight weight);
@@ -181,6 +182,7 @@ public:
 protected:
     MultiTerm(uint32_t num_terms);
 private:
+    VESPA_DLL_LOCAL std::unique_ptr<TermVector> downgrade() __attribute__((noinline));
     std::unique_ptr<TermVector> _terms;
     uint32_t _num_terms;
     Type _type;

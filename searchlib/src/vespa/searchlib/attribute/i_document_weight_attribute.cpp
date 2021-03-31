@@ -8,12 +8,12 @@ namespace {
 class StringAsKey final : public IDocumentWeightAttribute::LookupKey {
 public:
     StringAsKey(vespalib::stringref key)
-            : _key(key)
+        : _key(key)
     { }
 
     vespalib::stringref asString() const override { return _key; }
 private:
-    vespalib::stringref _key;
+    vespalib::string _key;
 };
 }
 

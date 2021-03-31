@@ -51,6 +51,7 @@ public:
     Weight getWeight(uint32_t index) const override {
         return _terms[index].second;
     }
+    uint32_t size() const override { return _terms.size(); }
 private:
     std::vector<std::pair<vespalib::string, Weight>> _terms;
 };
@@ -58,10 +59,9 @@ private:
 class IntegerTermVector final : public MultiTerm::TermVector {
 public:
     IntegerTermVector(uint32_t sz) : _terms() { _terms.reserve(sz); }
-    void addTerm(stringref valueS, Weight weight) override {
-        int64_t value;
-        std::from_chars(valueS.data(), valueS.data() + valueS.size(), value);
-        addTerm(value, weight);
+    void addTerm(stringref, Weight) override {
+        // Will/should never happen
+        assert(false);
     }
     void addTerm(int64_t term, Weight weight) override {
         _terms.emplace_back(term, weight);
@@ -78,6 +78,7 @@ public:
     Weight getWeight(uint32_t index) const override {
         return _terms[index].second;
     }
+    uint32_t size() const override { return _terms.size(); }
 private:
     std::vector<IntegerAndWeight> _terms;
     mutable char                  _scratchPad[24];
@@ -93,10 +94,25 @@ MultiTerm::MultiTerm(uint32_t num_terms)
 
 MultiTerm::~MultiTerm() = default;
 
+std::unique_ptr<MultiTerm::TermVector>
+MultiTerm::downgrade() {
+    // Downgrade all number to string. This should really not happen
+    auto new_terms = std::make_unique<StringTermVector>(_num_terms);
+    for (uint32_t i(0), m(_terms->size()); i < m; i++) {
+        auto v = _terms->getAsString(i);
+        new_terms->addTerm(v.first, v.second);
+    }
+    return new_terms;
+}
+
 void
 MultiTerm::addTerm(vespalib::stringref term, Weight weight) {
     if ( ! _terms) {
         _terms = std::make_unique<StringTermVector>(_num_terms);
+        _type = Type::STRING;
+    }
+    if (_type == Type::INTEGER) {
+        _terms = downgrade();
         _type = Type::STRING;
     }
     _terms->addTerm(term, weight);
