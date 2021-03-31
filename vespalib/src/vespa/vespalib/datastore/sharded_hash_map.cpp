@@ -12,7 +12,7 @@ class ShardedHashMapShardHeld : public GenerationHeldBase
     std::unique_ptr<const FixedSizeHashMap> _data;
 public:
     ShardedHashMapShardHeld(size_t size, std::unique_ptr<const FixedSizeHashMap> data);
-    ~ShardedHashMapShardHeld();
+    ~ShardedHashMapShardHeld() override;
 };
 
 ShardedHashMapShardHeld::ShardedHashMapShardHeld(size_t size, std::unique_ptr<const FixedSizeHashMap> data)

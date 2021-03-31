@@ -41,7 +41,7 @@ private:
     std::atomic<FixedSizeHashMap *> _maps[num_shards];
     std::unique_ptr<const EntryComparator> _comp;
 
-    size_t get_shard_idx(const EntryComparator& comp, EntryRef key_ref) const;
+    VESPA_DLL_LOCAL static size_t get_shard_idx(const EntryComparator& comp, EntryRef key_ref) const;
     void alloc_shard(size_t shard_idx);
     void hold_shard(std::unique_ptr<const FixedSizeHashMap> map);
 public:
