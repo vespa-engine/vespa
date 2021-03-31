@@ -48,7 +48,7 @@ public:
     // Implements DocVectorAccess
     vespalib::eval::TypedCells get_vector(uint32_t docid) const override;
 
-    const NearestNeighborIndex* nearest_neighbor_index() const { return _index.get(); }
+    const NearestNeighborIndex* nearest_neighbor_index() const override { return _index.get(); }
 };
 
 }

@@ -46,7 +46,7 @@ struct ConvertCellsSelector
 } // namespace <unnamed>
 
 NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& field,
-                                                   const tensor::DenseTensorAttribute& attr_tensor,
+                                                   const tensor::ITensorAttribute& attr_tensor,
                                                    std::unique_ptr<Value> query_tensor,
                                                    uint32_t target_num_hits, bool approximate, uint32_t explore_additional_hits,
                                                    double distance_threshold, double brute_force_limit)
@@ -68,7 +68,7 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
     using MyTypify = vespalib::eval::TypifyCellType;
     auto fixup_fun = vespalib::typify_invoke<2,MyTypify,ConvertCellsSelector>(lct, rct);
     fixup_fun(_query_tensor, _attr_tensor.getTensorType());
-    _fallback_dist_fun = search::tensor::make_distance_function(_attr_tensor.getConfig().distance_metric(), rct);
+    _fallback_dist_fun = search::tensor::make_distance_function(_attr_tensor.distance_metric(), rct);
     _dist_fun = _fallback_dist_fun.get();
     assert(_dist_fun);
     auto nns_index = _attr_tensor.nearest_neighbor_index();
@@ -80,7 +80,7 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
         _distance_threshold = _dist_fun->convert_threshold(distance_threshold);
         _distance_heap.set_distance_threshold(_distance_threshold);
     }
-    uint32_t est_hits = _attr_tensor.getNumDocs();
+    uint32_t est_hits = _attr_tensor.get_num_docs();
     setEstimate(HitEstimate(est_hits, false));
     set_want_global_filter(true);
 }
@@ -97,7 +97,7 @@ NearestNeighborBlueprint::set_global_filter(const GlobalFilter &global_filter)
         (nns_index ? "nns_index" : "no_index"),
         (_global_filter->has_filter() ? "has_filter" : "no_filter"));
     if (_approximate && nns_index) {
-        uint32_t est_hits = _attr_tensor.getNumDocs();
+        uint32_t est_hits = _attr_tensor.get_num_docs();
         if (_global_filter->has_filter()) {
             uint32_t max_hits = _global_filter->filter()->countTrueBits();
             LOG(debug, "set_global_filter getNumDocs: %u / max_hits %u", est_hits, max_hits);
