@@ -39,12 +39,6 @@ ShardedHashMap::~ShardedHashMap()
     }
 }
 
-size_t
-ShardedHashMap::get_shard_idx(const EntryComparator& comp, EntryRef key_ref)
-{
-    return comp.hash(key_ref) % num_shards;
-}
-
 void
 ShardedHashMap::alloc_shard(size_t shard_idx)
 {
@@ -70,46 +64,46 @@ ShardedHashMap::hold_shard(std::unique_ptr<const FixedSizeHashMap> map)
 ShardedHashMap::KvType&
 ShardedHashMap::add(const EntryComparator& comp, EntryRef key_ref, std::function<EntryRef(void)>& insert_entry)
 {
-    size_t shard_idx = get_shard_idx(comp, key_ref);
-    auto map = _maps[shard_idx].load(std::memory_order_relaxed);
+    ShardedHashComparator shardedComp(comp, key_ref, num_shards);
+    auto map = _maps[shardedComp.shard_idx()].load(std::memory_order_relaxed);
     if (map == nullptr || map->full()) {
-        alloc_shard(shard_idx);
-        map = _maps[shard_idx].load(std::memory_order_relaxed);
+        alloc_shard(shardedComp.shard_idx());
+        map = _maps[shardedComp.shard_idx()].load(std::memory_order_relaxed);
     }
-    return map->add(comp, key_ref, insert_entry);
+    return map->add(shardedComp, insert_entry);
 }
 
 ShardedHashMap::KvType*
 ShardedHashMap::remove(const EntryComparator& comp, EntryRef key_ref)
 {
-    size_t shard_idx = get_shard_idx(comp, key_ref);
-    auto map = _maps[shard_idx].load(std::memory_order_relaxed);
+    ShardedHashComparator shardedComp(comp, key_ref, num_shards);
+    auto map = _maps[shardedComp.shard_idx()].load(std::memory_order_relaxed);
     if (map == nullptr) {
         return nullptr;
     }
-    return map->remove(comp, key_ref);
+    return map->remove(shardedComp);
 }
 
 ShardedHashMap::KvType*
 ShardedHashMap::find(const EntryComparator& comp, EntryRef key_ref)
 {
-    size_t shard_idx = get_shard_idx(comp, key_ref);
-    auto map = _maps[shard_idx].load(std::memory_order_relaxed);
+    ShardedHashComparator shardedComp(comp, key_ref, num_shards);
+    auto map = _maps[shardedComp.shard_idx()].load(std::memory_order_relaxed);
     if (map == nullptr) {
         return nullptr;
     }
-    return map->find(comp, key_ref);
+    return map->find(shardedComp);
 }
 
 const ShardedHashMap::KvType*
 ShardedHashMap::find(const EntryComparator& comp, EntryRef key_ref) const
 {
-    size_t shard_idx = get_shard_idx(comp, key_ref);
-    auto map = _maps[shard_idx].load(std::memory_order_relaxed);
+    ShardedHashComparator shardedComp(comp, key_ref, num_shards);
+    auto map = _maps[shardedComp.shard_idx()].load(std::memory_order_relaxed);
     if (map == nullptr) {
         return nullptr;
     }
-    return map->find(comp, key_ref);
+    return map->find(shardedComp);
 }
 
 void

@@ -52,8 +52,8 @@ FixedSizeHashMap::~FixedSizeHashMap() = default;
 void
 FixedSizeHashMap::force_add(const EntryComparator& comp, const KvType& kv)
 {
-    size_t hash_idx = comp.hash(kv.first.load_relaxed()) / _num_shards;
-    hash_idx %= _modulo;
+    ShardedHashComparator shardedComp(comp, kv.first.load_relaxed(), _num_shards);
+    uint32_t hash_idx = shardedComp.hash_idx() % _modulo;
     auto& chain_head = _chain_heads[hash_idx];
     assert(_nodes.size() < _nodes.capacity());
     uint32_t node_idx = _nodes.size();
@@ -63,15 +63,14 @@ FixedSizeHashMap::force_add(const EntryComparator& comp, const KvType& kv)
 }
 
 FixedSizeHashMap::KvType&
-FixedSizeHashMap::add(const EntryComparator& comp, EntryRef key_ref, std::function<EntryRef(void)>& insert_entry)
+FixedSizeHashMap::add(const ShardedHashComparator & comp, std::function<EntryRef(void)>& insert_entry)
 {
-    size_t hash_idx = comp.hash(key_ref) / _num_shards;
-    hash_idx %= _modulo;
+    uint32_t hash_idx = comp.hash_idx() % _modulo;
     auto& chain_head = _chain_heads[hash_idx];
     uint32_t node_idx = chain_head.load_relaxed();
     while (node_idx != no_node_idx) {
         auto& node = _nodes[node_idx];
-        if (comp.equal(key_ref, node.get_kv().first.load_relaxed())) {
+        if (comp.equal(node.get_kv().first.load_relaxed())) {
             return node.get_kv();
         }
         node_idx = node.get_next_node_idx().load(std::memory_order_relaxed);
@@ -127,17 +126,16 @@ FixedSizeHashMap::trim_hold_lists_slow(generation_t first_used)
 }
 
 FixedSizeHashMap::KvType*
-FixedSizeHashMap::remove(const EntryComparator& comp, EntryRef key_ref)
+FixedSizeHashMap::remove(const ShardedHashComparator & comp)
 {
-    size_t hash_idx = comp.hash(key_ref) / _num_shards;
-    hash_idx %= _modulo;
+    uint32_t hash_idx = comp.hash_idx() % _modulo;
     auto& chain_head = _chain_heads[hash_idx];
     uint32_t node_idx = chain_head.load_relaxed();
     uint32_t prev_node_idx = no_node_idx;
     while (node_idx != no_node_idx) {
         auto &node = _nodes[node_idx];
         uint32_t next_node_idx = node.get_next_node_idx().load(std::memory_order_relaxed);
-        if (comp.equal(key_ref, node.get_kv().first.load_relaxed())) {
+        if (comp.equal(node.get_kv().first.load_relaxed())) {
             if (prev_node_idx != no_node_idx) {
                 _nodes[prev_node_idx].get_next_node_idx().store(next_node_idx, std::memory_order_release);
             } else {
@@ -150,24 +148,6 @@ FixedSizeHashMap::remove(const EntryComparator& comp, EntryRef key_ref)
         }
         prev_node_idx = node_idx;
         node_idx = next_node_idx;
-    }
-    return nullptr;
-}
-
-FixedSizeHashMap::KvType*
-FixedSizeHashMap::find(const EntryComparator& comp, EntryRef key_ref)
-{
-    size_t hash_idx = comp.hash(key_ref) / _num_shards;
-    hash_idx %= _modulo;
-    auto& chain_head = _chain_heads[hash_idx];
-    uint32_t node_idx = chain_head.load_acquire();
-    while (node_idx != no_node_idx) {
-        auto &node = _nodes[node_idx];
-        EntryRef node_key_ref = node.get_kv().first.load_acquire();
-        if (node_key_ref.valid() && comp.equal(key_ref, node_key_ref)) {
-            return &_nodes[node_idx].get_kv();
-        }
-        node_idx = node.get_next_node_idx().load(std::memory_order_acquire);
     }
     return nullptr;
 }

@@ -3,6 +3,7 @@
 #pragma once
 
 #include "atomic_entry_ref.h"
+#include "entry_comparator.h"
 #include <vespa/vespalib/util/array.h>
 #include <vespa/vespalib/util/arrayref.h>
 #include <vespa/vespalib/util/generationhandler.h>
@@ -17,7 +18,27 @@ class MemoryUsage;
 }
 namespace vespalib::datastore {
 
-class EntryComparator;
+class ShardedHashComparator {
+public:
+    ShardedHashComparator(const EntryComparator& comp, const EntryRef key_ref, uint32_t num_shards)
+        : _comp(comp),
+          _key_ref(key_ref)
+    {
+        size_t hash = comp.hash(key_ref);
+        _shard_idx = hash % num_shards;
+        _hash_idx = hash / num_shards;
+    }
+    uint32_t hash_idx() const { return _hash_idx; }
+    uint32_t shard_idx() const { return _shard_idx; }
+    bool equal(const EntryRef rhs) const {
+        return _comp.equal(_key_ref, rhs);
+    }
+private:
+    const EntryComparator& _comp;
+    const EntryRef         _key_ref;
+    uint32_t               _shard_idx;
+    uint32_t               _hash_idx;
+};
 
 /*
  * Fixed sized hash map over keys in data store, meant to support a faster
@@ -42,7 +63,6 @@ public:
     using KvType = std::pair<AtomicEntryRef, AtomicEntryRef>;
     using generation_t = GenerationHandler::generation_t;
     using sgeneration_t = GenerationHandler::sgeneration_t;
-
 private:
     class ChainHead {
         std::atomic<uint32_t> _node_idx;
@@ -99,9 +119,26 @@ public:
     FixedSizeHashMap(uint32_t module, uint32_t capacity, uint32_t num_shards, const FixedSizeHashMap &orig, const EntryComparator& comp);
     ~FixedSizeHashMap();
 
-    KvType& add(const EntryComparator& comp, EntryRef key_ref, std::function<EntryRef(void)>& insert_entry);
-    KvType* remove(const EntryComparator& comp, EntryRef key_ref);
-    KvType* find(const EntryComparator& comp, EntryRef key_ref);
+    ShardedHashComparator getComp(const EntryComparator& comp) {
+        return ShardedHashComparator(comp, EntryRef(), _num_shards);
+    }
+
+    KvType& add(const ShardedHashComparator & comp, std::function<EntryRef(void)>& insert_entry);
+    KvType* remove(const ShardedHashComparator & comp);
+    KvType* find(const ShardedHashComparator & comp) {
+        uint32_t hash_idx = comp.hash_idx() % _modulo;
+        auto& chain_head = _chain_heads[hash_idx];
+        uint32_t node_idx = chain_head.load_acquire();
+        while (node_idx != no_node_idx) {
+            auto &node = _nodes[node_idx];
+            EntryRef node_key_ref = node.get_kv().first.load_acquire();
+            if (node_key_ref.valid() && comp.equal(node_key_ref)) {
+                return &_nodes[node_idx].get_kv();
+            }
+            node_idx = node.get_next_node_idx().load(std::memory_order_acquire);
+        }
+        return nullptr;
+    }
 
     void transfer_hold_lists(generation_t generation) {
         if (!_hold_1_list.empty()) {
