@@ -353,16 +353,15 @@ public class SearchCluster implements NodeManager<Node> {
     }
 
     private boolean isGroupCoverageSufficient(int workingNodes, Group group, long activeDocuments, long averageDocumentsInOtherGroups) {
-        boolean sufficientCoverage = true;
+        double documentCoverage = 100.0 * (double) activeDocuments / averageDocumentsInOtherGroups;
 
-        if (averageDocumentsInOtherGroups > 0) {
-            double coverage = 100.0 * (double) activeDocuments / averageDocumentsInOtherGroups;
-            sufficientCoverage = coverage >= dispatchConfig.minActivedocsPercentage();
-        }
-        if (sufficientCoverage) {
-            sufficientCoverage = isGroupNodeCoverageSufficient(workingNodes, group.nodes().size());
-        }
-        return sufficientCoverage;
+        if (averageDocumentsInOtherGroups > 0 && documentCoverage < dispatchConfig.minActivedocsPercentage())
+            return false;
+
+        if ( ! isGroupNodeCoverageSufficient(workingNodes, group.nodes().size()))
+            return false;
+
+        return true;
     }
 
     private boolean isGroupNodeCoverageSufficient(int workingNodes, int nodesInGroup) {
