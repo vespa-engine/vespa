@@ -1,5 +1,6 @@
 <!-- Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root. -->
 
+
 [![#Vespa](https://vespa.ai/assets/vespa-logo-color.png)](https://vespa.ai)
 
 The open big data serving engine - Store, search, organize and make machine-learned inferences 
