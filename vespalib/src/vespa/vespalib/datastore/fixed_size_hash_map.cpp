@@ -152,23 +152,6 @@ FixedSizeHashMap::remove(const ShardedHashComparator & comp)
     return nullptr;
 }
 
-FixedSizeHashMap::KvType*
-FixedSizeHashMap::find(const ShardedHashComparator & comp)
-{
-    uint32_t hash_idx = comp.hash_idx() % _modulo;
-    auto& chain_head = _chain_heads[hash_idx];
-    uint32_t node_idx = chain_head.load_acquire();
-    while (node_idx != no_node_idx) {
-        auto &node = _nodes[node_idx];
-        EntryRef node_key_ref = node.get_kv().first.load_acquire();
-        if (node_key_ref.valid() && comp.equal(node_key_ref)) {
-            return &_nodes[node_idx].get_kv();
-        }
-        node_idx = node.get_next_node_idx().load(std::memory_order_acquire);
-    }
-    return nullptr;
-}
-
 MemoryUsage
 FixedSizeHashMap::get_memory_usage() const
 {
