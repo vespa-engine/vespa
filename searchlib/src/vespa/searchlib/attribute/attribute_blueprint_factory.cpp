@@ -693,9 +693,10 @@ public:
         if (tensor_attr == nullptr) {
             return fail_nearest_neighbor_term(n, "Attribute is not a tensor");
         }
-        if (tensor_attr->getTensorType().dimensions().size() != 1) {
-            return fail_nearest_neighbor_term(n, make_string("Attribute tensor type (%s) is not of order 1",
-                                                             tensor_attr->getTensorType().to_spec().c_str()));
+        const auto & ta_type = tensor_attr->getTensorType();
+        if ((! ta_type.is_dense()) || (ta_type.dimensions().size() != 1)) {
+            return fail_nearest_neighbor_term(n, make_string("Attribute tensor type (%s) is not a dense tensor of order 1",
+                                                             ta_type.to_spec().c_str()));
         }
         auto query_tensor = getRequestContext().get_query_tensor(n.get_query_tensor_name());
         if (query_tensor.get() == nullptr) {
@@ -706,13 +707,13 @@ public:
             return fail_nearest_neighbor_term(n, make_string("Query tensor is not a dense tensor (type=%s)",
                                                              qt_type.to_spec().c_str()));
         }
-        if (!is_compatible_for_nearest_neighbor(tensor_attr->getTensorType(), qt_type)) {
+        if (!is_compatible_for_nearest_neighbor(ta_type, qt_type)) {
             return fail_nearest_neighbor_term(n, make_string("Attribute tensor type (%s) and query tensor type (%s) are not compatible",
-                                                             tensor_attr->getTensorType().to_spec().c_str(), qt_type.to_spec().c_str()));
+                                                             ta_type.to_spec().c_str(), qt_type.to_spec().c_str()));
         }
         if (tensor_attr->supports_extract_cells_ref() == false) {
             return fail_nearest_neighbor_term(n, make_string("Attribute does not support access to tensor data (type=%s)",
-                                                             tensor_attr->getTensorType().to_spec().c_str()));
+                                                             ta_type.to_spec().c_str()));
         }
         setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field, *tensor_attr,
                                                                         std::move(query_tensor),
