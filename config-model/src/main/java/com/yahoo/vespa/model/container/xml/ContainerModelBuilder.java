@@ -435,7 +435,8 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
             }
             EndpointCertificateSecrets endpointCertificateSecrets = deployState.endpointCertificateSecrets().get();
 
-            boolean enforceHandshakeClientAuth = cluster.getHttp().getAccessControl()
+            boolean enforceHandshakeClientAuth = context.properties().featureFlags().useAccessControlTlsHandshakeClientAuth() &&
+                    cluster.getHttp().getAccessControl()
                     .map(accessControl -> accessControl.clientAuthentication)
                     .map(clientAuth -> clientAuth.equals(AccessControl.ClientAuthentication.need))
                     .orElse(false);

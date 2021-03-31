@@ -151,6 +151,13 @@ public class Flags {
             APPLICATION_ID
     );
 
+    public static final UnboundBooleanFlag USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION = defineFeatureFlag(
+            "use-access-control-client-authentication", false,
+            List.of("tokle"), "2020-12-02", "2021-04-01",
+            "Whether application container should set up client authentication on default port based on access control element",
+            "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
     public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
             "async-message-handling-on-schedule", false,
             List.of("baldersheim"), "2020-12-02", "2022-01-01",
