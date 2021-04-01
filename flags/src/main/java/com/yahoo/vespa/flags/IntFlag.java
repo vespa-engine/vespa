@@ -12,6 +12,11 @@ public class IntFlag extends FlagImpl<Integer, IntFlag> {
         super(id, defaultValue, vector, serializer, source, IntFlag::new);
     }
 
+    @Override
+    public IntFlag self() {
+        return this;
+    }
+
     public int value() {
         return boxedValue();
     }

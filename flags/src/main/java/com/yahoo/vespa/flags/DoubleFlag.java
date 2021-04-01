@@ -12,6 +12,11 @@ public class DoubleFlag extends FlagImpl<Double, DoubleFlag> {
         super(id, defaultValue, vector, serializer, source, DoubleFlag::new);
     }
 
+    @Override
+    public DoubleFlag self() {
+        return this;
+    }
+
     public double value() {
         return boxedValue();
     }
