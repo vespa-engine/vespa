@@ -379,13 +379,25 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private ContainerResources getContainerResources(NodeAgentContext context) {
-        double cpuCap = noCpuCap(context.zone()) ?
-                0 :
-                context.node().owner()
-                        .map(appId -> containerCpuCap.with(FetchVector.Dimension.APPLICATION_ID, appId.serializedForm()))
-                        .orElse(containerCpuCap)
-                        .with(FetchVector.Dimension.HOSTNAME, context.node().hostname())
-                        .value() * context.vcpuOnThisHost();
+        final double cpuCap;
+        if (noCpuCap(context.zone())) {
+            cpuCap = 0.0;
+        } else {
+            DoubleFlag containerCpuCapFlag = containerCpuCap.with(FetchVector.Dimension.HOSTNAME, context.node().hostname());;
+
+            if (context.node().owner().isPresent()) {
+                containerCpuCapFlag = containerCpuCapFlag.with(FetchVector.Dimension.APPLICATION_ID,
+                                                               context.node().owner().get().serializedForm());
+            }
+
+            if (context.node().membership().isPresent()) {
+                containerCpuCapFlag = containerCpuCapFlag
+                        .with(FetchVector.Dimension.CLUSTER_TYPE, context.node().membership().get().type().value())
+                        .with(FetchVector.Dimension.CLUSTER_ID, context.node().membership().get().clusterId());
+            }
+
+            cpuCap = context.vcpuOnThisHost() * containerCpuCapFlag.value();
+        }
 
         return ContainerResources.from(cpuCap, context.vcpuOnThisHost(), context.node().memoryGb());
     }
