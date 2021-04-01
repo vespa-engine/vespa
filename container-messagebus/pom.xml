@@ -72,12 +72,6 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>jdisc_messagebus_service</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>messagebus</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
@@ -92,17 +86,6 @@
   </dependencies>
   <build>
     <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifestEntries>
-              <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-            </manifestEntries>
-          </archive>
-        </configuration>
-      </plugin>
       <plugin>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>config-class-plugin</artifactId>
