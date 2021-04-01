@@ -170,7 +170,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                                          StatusPageServerInterface statusPageServer,
                                          MetricReporter metricReporter) throws Exception {
         Timer timer = new RealTimer();
-        MetricUpdater metricUpdater = new MetricUpdater(metricReporter, options.fleetControllerIndex);
+        MetricUpdater metricUpdater = new MetricUpdater(metricReporter, options.fleetControllerIndex, options.clusterName);
         EventLog log = new EventLog(timer, metricUpdater);
         ContentCluster cluster = new ContentCluster(
                 options.clusterName,
@@ -757,21 +757,25 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
     }
 
     private boolean processNextQueuedRemoteTask() {
-        if ( ! remoteTasks.isEmpty()) {
-            final RemoteClusterControllerTask.Context context = createRemoteTaskProcessingContext();
-            final RemoteClusterControllerTask task = remoteTasks.poll();
-            log.finest(() -> String.format("Processing remote task of type '%s'", task.getClass().getName()));
-            task.doRemoteFleetControllerTask(context);
-            if (taskMayBeCompletedImmediately(task)) {
-                log.finest(() -> String.format("Done processing remote task of type '%s'", task.getClass().getName()));
-                task.notifyCompleted();
-            } else {
-                log.finest(() -> String.format("Remote task of type '%s' queued until state recomputation", task.getClass().getName()));
-                tasksPendingStateRecompute.add(task);
-            }
-            return true;
+        metricUpdater.updateRemoteTaskQueueSize(remoteTasks.size());
+
+        RemoteClusterControllerTask task = remoteTasks.poll();
+        if (task == null) {
+            return false;
         }
-        return false;
+
+        final RemoteClusterControllerTask.Context context = createRemoteTaskProcessingContext();
+        log.finest(() -> String.format("Processing remote task of type '%s'", task.getClass().getName()));
+        task.doRemoteFleetControllerTask(context);
+        if (taskMayBeCompletedImmediately(task)) {
+            log.finest(() -> String.format("Done processing remote task of type '%s'", task.getClass().getName()));
+            task.notifyCompleted();
+        } else {
+            log.finest(() -> String.format("Remote task of type '%s' queued until state recomputation", task.getClass().getName()));
+            tasksPendingStateRecompute.add(task);
+        }
+
+        return true;
     }
 
     private boolean taskMayBeCompletedImmediately(RemoteClusterControllerTask task) {

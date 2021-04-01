@@ -14,9 +14,10 @@ public class MetricUpdater {
 
     private final ComponentMetricReporter metricReporter;
 
-    public MetricUpdater(MetricReporter metricReporter, int controllerIndex) {
+    public MetricUpdater(MetricReporter metricReporter, int controllerIndex, String clusterName) {
         this.metricReporter = new ComponentMetricReporter(metricReporter, "cluster-controller.");
         this.metricReporter.addDimension("controller-index", String.valueOf(controllerIndex));
+        this.metricReporter.addDimension("clusterid", clusterName);
     }
 
     public MetricReporter.Context createContext(Map<String, String> dimensions) {
@@ -99,4 +100,7 @@ public class MetricUpdater {
         metricReporter.add("node-event", 1);
     }
 
+    public void updateRemoteTaskQueueSize(int size) {
+        metricReporter.set("remote-task-queue.size", size);
+    }
 }
