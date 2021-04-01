@@ -101,12 +101,12 @@ bool SimpleQueryStackDumpIterator::readNext() {
     } else {
         _currWeight.setPercent(100);
     }
-    if (ParseItem::getFeature_UniqueId(typefield)) {
+    if (__builtin_expect(ParseItem::getFeature_UniqueId(typefield), false)) {
         _currUniqueId = readCompressedPositiveInt(p);
     } else {
         _currUniqueId = 0;
     }
-    if (ParseItem::getFeature_Flags(typefield)) {
+    if (__builtin_expect(ParseItem::getFeature_Flags(typefield), false)) {
         if ((p + sizeof(uint8_t)) > _bufEnd) return false;
         _currFlags = (uint8_t)*p++;
     } else {
