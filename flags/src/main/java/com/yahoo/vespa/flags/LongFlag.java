@@ -12,6 +12,11 @@ public class LongFlag extends FlagImpl<Long, LongFlag> {
         super(id, defaultValue, vector, serializer, source, LongFlag::new);
     }
 
+    @Override
+    public LongFlag self() {
+        return this;
+    }
+
     public long value() {
         return boxedValue();
     }

@@ -13,6 +13,11 @@ public class ListFlag<T> extends FlagImpl<List<T>, ListFlag<T>> {
         super(id, defaultValue, vector, serializer, source, ListFlag::new);
     }
 
+    @Override
+    public ListFlag<T> self() {
+        return this;
+    }
+
     public List<T> value() {
         return boxedValue();
     }

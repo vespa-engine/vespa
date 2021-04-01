@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
+import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.DockerImage;
 import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.NodeType;
@@ -379,25 +380,14 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     private ContainerResources getContainerResources(NodeAgentContext context) {
-        final double cpuCap;
-        if (noCpuCap(context.zone())) {
-            cpuCap = 0.0;
-        } else {
-            DoubleFlag containerCpuCapFlag = containerCpuCap.with(FetchVector.Dimension.HOSTNAME, context.node().hostname());;
-
-            if (context.node().owner().isPresent()) {
-                containerCpuCapFlag = containerCpuCapFlag.with(FetchVector.Dimension.APPLICATION_ID,
-                                                               context.node().owner().get().serializedForm());
-            }
-
-            if (context.node().membership().isPresent()) {
-                containerCpuCapFlag = containerCpuCapFlag
-                        .with(FetchVector.Dimension.CLUSTER_TYPE, context.node().membership().get().type().value())
-                        .with(FetchVector.Dimension.CLUSTER_ID, context.node().membership().get().clusterId());
-            }
-
-            cpuCap = context.vcpuOnThisHost() * containerCpuCapFlag.value();
-        }
+        double cpuCap = noCpuCap(context.zone()) ?
+                0 :
+                context.vcpuOnThisHost() * containerCpuCap
+                        .with(FetchVector.Dimension.APPLICATION_ID, context.node().owner().map(ApplicationId::serializedForm))
+                        .with(FetchVector.Dimension.CLUSTER_ID, context.node().membership().map(NodeMembership::clusterId))
+                        .with(FetchVector.Dimension.CLUSTER_TYPE, context.node().membership().map(membership -> membership.type().value()))
+                        .with(FetchVector.Dimension.HOSTNAME, context.node().hostname())
+                        .value();
 
         return ContainerResources.from(cpuCap, context.vcpuOnThisHost(), context.node().memoryGb());
     }
