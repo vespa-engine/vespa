@@ -67,7 +67,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
             Artifacts.ArtifactSet artifactSet = Artifacts.getArtifacts(project);
             warnOnUnsupportedArtifacts(artifactSet.getNonJarArtifacts());
             if (! isContainerDiscArtifact(project.getArtifact()))
-                warnIfInternalContainerArtifactsAreIncluded(artifactSet.getJarArtifactsToInclude());
+                throwIfInternalContainerArtifactsAreIncluded(artifactSet.getJarArtifactsToInclude());
 
             List<Export> exportedPackagesFromProvidedJars = exportedPackagesAggregated(
                     artifactSet.getJarArtifactsProvided().stream().map(Artifact::getFile).collect(Collectors.toList()));
@@ -189,7 +189,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
                         artifact.getId(), artifact.getType())));
     }
 
-    private void warnIfInternalContainerArtifactsAreIncluded(Collection<Artifact> includedArtifacts) throws MojoExecutionException {
+    private void throwIfInternalContainerArtifactsAreIncluded(Collection<Artifact> includedArtifacts) throws MojoExecutionException {
         /* In most cases it's sufficient to test for 'component', as it's the lowest level container artifact,
          * Embedding container artifacts will cause class loading issues at runtime, because the classes will
          * not be equal to those seen by the framework (e.g. AbstractComponent). */
