@@ -241,6 +241,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("cluster-controller.cluster-state-change.count"));
 
         metrics.add(new Metric("cluster-controller.is-master.last"));
+        metrics.add(new Metric("cluster-controller.remote-task-queue.size.last"));
         // TODO(hakonhall): Update this name once persistent "count" metrics has been implemented.
         // DO NOT RELY ON THIS METRIC YET.
         metrics.add(new Metric("cluster-controller.node-event.count"));
