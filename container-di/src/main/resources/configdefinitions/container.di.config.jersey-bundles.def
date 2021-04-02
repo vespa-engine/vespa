@@ -1,8 +1,0 @@
-# Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-namespace=container.di.config
-
-# The SymbolicName[:Version] of the Jersey bundles
-bundles[].spec string
-
-# The packages to scan for Jersey resources
-bundles[].packages[] string
