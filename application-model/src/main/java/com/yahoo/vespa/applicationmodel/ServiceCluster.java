@@ -52,10 +52,12 @@ public class ServiceCluster {
         return applicationInstance.get();
     }
 
+    @JsonIgnore
     public boolean isConfigServerLike() {
         return isConfigServer() || isController();
     }
 
+    @JsonIgnore
     public boolean isController() {
         return isHostedVespaApplicationWithId(ApplicationInstanceId.CONTROLLER) &&
                 Objects.equals(clusterId, ClusterId.CONTROLLER) &&
@@ -63,28 +65,33 @@ public class ServiceCluster {
     }
 
     /** Is a config server (and not controller!) */
+    @JsonIgnore
     public boolean isConfigServer() {
         return isHostedVespaApplicationWithId(ApplicationInstanceId.CONFIG_SERVER) &&
                 Objects.equals(clusterId, ClusterId.CONFIG_SERVER) &&
                 Objects.equals(serviceType, ServiceType.CONFIG_SERVER);
     }
 
+    @JsonIgnore
     public boolean isConfigServerHost() {
         return isHostedVespaApplicationWithPredicate(ApplicationInstanceId::isConfigServerHost) &&
                 Objects.equals(clusterId, ClusterId.CONFIG_SERVER_HOST) &&
                 Objects.equals(serviceType, ServiceType.HOST_ADMIN);
     }
 
+    @JsonIgnore
     public boolean isControllerHost() {
         return isHostedVespaApplicationWithId(ApplicationInstanceId.CONTROLLER_HOST) &&
                 Objects.equals(clusterId, ClusterId.CONTROLLER_HOST) &&
                 Objects.equals(serviceType, ServiceType.HOST_ADMIN);
     }
 
+    @JsonIgnore
     public boolean isConfigServerHostLike() {
         return isConfigServerHost() || isControllerHost();
     }
 
+    @JsonIgnore
     public boolean isTenantHost() {
         return isHostedVespaApplicationWithPredicate(ApplicationInstanceId::isTenantHost) &&
                 Objects.equals(clusterId, ClusterId.TENANT_HOST) &&
