@@ -13,7 +13,7 @@
   </parent>
   <artifactId>container-core</artifactId>
   <version>7-SNAPSHOT</version>
-  <packaging>container-plugin</packaging>
+  <packaging>jar</packaging>
   <dependencies>
 
     <!-- COMPILE scope -->
@@ -334,11 +334,6 @@
             </configuration>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>com.yahoo.vespa</groupId>
-        <artifactId>bundle-plugin</artifactId>
-        <extensions>true</extensions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
