@@ -449,20 +449,6 @@ IntermediateBlueprint::createSearch(fef::MatchData &md, bool strict) const
 
 IntermediateBlueprint::IntermediateBlueprint() = default;
 
-const Blueprint &
-IntermediateBlueprint::getChild(size_t n) const
-{
-    assert(n < _children.size());
-    return *_children[n];
-}
-
-Blueprint &
-IntermediateBlueprint::getChild(size_t n)
-{
-    assert(n < _children.size());
-    return *_children[n];
-}
-
 IntermediateBlueprint &
 IntermediateBlueprint::addChild(Blueprint::UP child)
 {
