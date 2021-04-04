@@ -1559,6 +1559,28 @@ make_iterators(Tree& t, std::vector<int>& list, std::vector<typename Tree::Const
     iterators.emplace_back(t.lowerBound(300));
 }
 
+class KeyRangeValidator
+{
+    std::vector<int> &_list;
+    size_t _start_pos;
+    size_t _end_pos;
+    size_t _curr_pos;
+public:
+    KeyRangeValidator(std::vector<int> &list, size_t start_pos, size_t end_pos)
+        : _list(list),
+          _start_pos(start_pos),
+          _end_pos(end_pos),
+          _curr_pos(start_pos)
+    {
+    }
+    void operator()(int key) {
+        assert(_curr_pos < _list.size());
+        EXPECT_EQ(key, _list[_curr_pos]);
+        ++_curr_pos;
+    }
+    size_t curr_pos() const noexcept { return _curr_pos; }
+};
+
 }
 
 TEST_F(BTreeTest, require_that_compaction_works)
@@ -1577,10 +1599,13 @@ TEST_F(BTreeTest, require_that_compaction_works)
         t.remove(i);
     }
     inc_generation(g, t);
+    auto guard = g.takeGuard();
     auto memory_usage_before = t.getAllocator().getMemoryUsage();
     t.foreach_key([&before_list](int key) { before_list.emplace_back(key); });
     make_iterators(t, before_list, before_iterators);
-    t.compact_worst();
+    for (int i = 0; i < 15; ++i) {
+        t.compact_worst();
+    }
     inc_generation(g, t);
     auto memory_usage_after = t.getAllocator().getMemoryUsage();
     t.foreach_key([&after_list](int key) { after_list.emplace_back(key); });
@@ -1588,9 +1613,23 @@ TEST_F(BTreeTest, require_that_compaction_works)
     EXPECT_LT(memory_usage_after.deadBytes(), memory_usage_before.deadBytes());
     EXPECT_EQ(before_list, after_list);
     EXPECT_EQ(before_iterators.size(), after_iterators.size());
-    for (size_t i = 1; i < before_iterators.size(); ++i) {
-        for (size_t j = 1; j < after_iterators.size(); ++j) {
+    for (size_t i = 0; i < before_iterators.size(); ++i) {
+        for (size_t j = 0; j < after_iterators.size(); ++j) {
             EXPECT_EQ(before_iterators[i] == after_iterators[j], i == j);
+            EXPECT_EQ(before_iterators[i] - after_iterators[j], static_cast<ssize_t>(i - j));
+            EXPECT_EQ(after_iterators[j] - before_iterators[i], static_cast<ssize_t>(j - i));
+            if (i <= j) {
+                KeyRangeValidator validate_keys(before_list, i, j);
+                EXPECT_EQ(i, validate_keys.curr_pos());
+                before_iterators[i].foreach_key_range(after_iterators[j], [&validate_keys](int key) { validate_keys(key); });
+                EXPECT_EQ(j, validate_keys.curr_pos());
+            }
+            if (j <= i) {
+                KeyRangeValidator validate_keys(before_list, j, i);
+                EXPECT_EQ(j, validate_keys.curr_pos());
+                after_iterators[j].foreach_key_range(before_iterators[i], [&validate_keys](int key) { validate_keys(key); });
+                EXPECT_EQ(i, validate_keys.curr_pos());
+            }
         }
     }
 }
