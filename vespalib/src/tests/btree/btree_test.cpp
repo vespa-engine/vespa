@@ -1549,6 +1549,16 @@ inc_generation(GenerationHandler &g, Tree &t)
     s.trimHoldLists(g.getFirstUsedGeneration());
 }
 
+template <typename Tree>
+void
+make_iterators(Tree& t, std::vector<int>& list, std::vector<typename Tree::ConstIterator>& iterators)
+{
+    for (auto key : list) {
+        iterators.emplace_back(t.lowerBound(key));
+    }
+    iterators.emplace_back(t.lowerBound(300));
+}
+
 }
 
 TEST_F(BTreeTest, require_that_compaction_works)
@@ -1557,7 +1567,9 @@ TEST_F(BTreeTest, require_that_compaction_works)
     GenerationHandler g;
     Tree t;
     std::vector<int> before_list;
+    std::vector<typename Tree::ConstIterator> before_iterators;
     std::vector<int> after_list;
+    std::vector<typename Tree::ConstIterator> after_iterators;
     for (uint32_t i = 1; i < 256; ++i) {
         t.insert(i, 101);
     }
@@ -1567,12 +1579,20 @@ TEST_F(BTreeTest, require_that_compaction_works)
     inc_generation(g, t);
     auto memory_usage_before = t.getAllocator().getMemoryUsage();
     t.foreach_key([&before_list](int key) { before_list.emplace_back(key); });
+    make_iterators(t, before_list, before_iterators);
     t.compact_worst();
     inc_generation(g, t);
     auto memory_usage_after = t.getAllocator().getMemoryUsage();
     t.foreach_key([&after_list](int key) { after_list.emplace_back(key); });
+    make_iterators(t, after_list, after_iterators);
     EXPECT_LT(memory_usage_after.deadBytes(), memory_usage_before.deadBytes());
     EXPECT_EQ(before_list, after_list);
+    EXPECT_EQ(before_iterators.size(), after_iterators.size());
+    for (size_t i = 1; i < before_iterators.size(); ++i) {
+        for (size_t j = 1; j < after_iterators.size(); ++j) {
+            EXPECT_EQ(before_iterators[i] == after_iterators[j], i == j);
+        }
+    }
 }
 
 }

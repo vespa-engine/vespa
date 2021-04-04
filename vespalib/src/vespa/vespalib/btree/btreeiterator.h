@@ -348,9 +348,19 @@ public:
 
     bool
     operator==(const BTreeIteratorBase & rhs) const {
-        if (_leaf.getNode() != rhs._leaf.getNode() ||
-            _leaf.getIdx() != rhs._leaf.getIdx()) {
+        if (_leaf.getIdx() != rhs._leaf.getIdx()) {
             return false;
+        }
+        if (_leaf.getNode() == rhs._leaf.getNode()) {
+            return true;
+        }
+        if ((_leaf.getNode() == nullptr) || (rhs._leaf.getNode() == nullptr) || (_pathSize != rhs._pathSize)) {
+            return false;
+        }
+        for (uint32_t level = 0; level < _pathSize; ++level) {
+            if (_path[level].getIdx() != rhs._path[level].getIdx()) {
+                return false;
+            }
         }
         return true;
     }
