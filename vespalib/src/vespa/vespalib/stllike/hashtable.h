@@ -103,26 +103,68 @@ public:
     enum {npos=-1u, invalid=-2u};
     hash_node() : _node(), _next(invalid) {}
     hash_node(const V & node, next_t next=npos)
-        : _node(node), _next(next) {}
-    hash_node(V &&node, next_t next=npos)
-        : _node(std::move(node)), _next(next) {}
-    hash_node(hash_node &&) noexcept = default;
-    hash_node &operator=(hash_node &&) noexcept = default;
-    hash_node(const hash_node &) = default;             // These will not be created
-    hash_node &operator=(const hash_node &) = default;  // if V is non-copyable.
-    bool operator == (const hash_node & rhs) const {
-        return (_next == rhs._next) && (_node == rhs._node);
+        : _node(),
+          _next(next)
+    {
+        new (_node) V(node);
     }
-    V & getValue()             { return _node; }
-    const V & getValue() const { return _node; }
+    hash_node(V &&node, next_t next=npos)
+        : _node(),
+          _next(next)
+    {
+        new (_node) V(std::move(node));
+    }
+    hash_node(hash_node && rhs) noexcept
+        : hash_node(std::move(rhs.getValue()), rhs._next)
+    { }
+    hash_node &operator=(hash_node && rhs) noexcept {
+        destruct();
+        if (rhs.valid()) {
+            new (_node) V(std::move(rhs.getValue()));
+            _next = rhs._next;
+        }
+        return *this;
+    }
+    hash_node(const hash_node & rhs)
+        : _node(),
+          _next(rhs._next)
+    {
+        if (rhs.valid()) {
+            new (_node) V(rhs.getValue());
+        }
+    }
+    hash_node &operator=(const hash_node & rhs) {
+        destruct();
+        if (rhs.valid()) {
+            new (_node) V(rhs.getValue());
+            _next = rhs._next;
+        }
+        return *this;
+    }
+    ~hash_node() {
+        if (valid()) {
+            getValue().~V();
+        }
+    }
+    bool operator == (const hash_node & rhs) const {
+        return (_next == rhs._next) && (!valid() || (getValue() == rhs.getValue()));
+    }
+    V & getValue()             { return *reinterpret_cast<V *>(_node); }
+    const V & getValue() const { return *reinterpret_cast<const V *>(_node); }
     next_t getNext()     const { return _next; }
     void setNext(next_t next)  { _next = next; }
-    void invalidate()          { _next = invalid; _node = V(); }
+    void invalidate()          { destruct(); }
     void terminate()           { _next = npos; }
     bool valid()         const { return _next != invalid; }
     bool hasNext()       const { return valid() && (_next != npos); }
 private:
-    V       _node;
+    void destruct() {
+        if (valid()) {
+            getValue().~V();
+            _next = invalid;
+        }
+    }
+    char    _node[sizeof(V)] alignas(V);
     next_t  _next;
 };
 
