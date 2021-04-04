@@ -515,15 +515,12 @@ operator-(const BTreeIteratorBase &rhs) const
     if (_pathSize != 0) {
         uint32_t pidx = _pathSize;
         while (pidx > 0) {
-            assert(_path[pidx - 1].getNode() == rhs._path[pidx - 1].getNode());
             if (_path[pidx - 1].getIdx() != rhs._path[pidx - 1].getIdx())
                 break;
             --pidx;
         }
         return position(pidx) - rhs.position(pidx);
     } else {
-        assert(_leaf.getNode() == nullptr || rhs._leaf.getNode() == nullptr ||
-               _leaf.getNode() == rhs._leaf.getNode());
         return position(0) - rhs.position(0);
     }
 }

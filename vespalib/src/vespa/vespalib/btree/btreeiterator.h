@@ -348,9 +348,19 @@ public:
 
     bool
     operator==(const BTreeIteratorBase & rhs) const {
-        if (_leaf.getNode() != rhs._leaf.getNode() ||
-            _leaf.getIdx() != rhs._leaf.getIdx()) {
+        if (_leaf.getIdx() != rhs._leaf.getIdx()) {
             return false;
+        }
+        if (_leaf.getNode() == rhs._leaf.getNode()) {
+            return true;
+        }
+        if ((_leaf.getNode() == nullptr) || (rhs._leaf.getNode() == nullptr) || (_pathSize != rhs._pathSize)) {
+            return false;
+        }
+        for (uint32_t level = 0; level < _pathSize; ++level) {
+            if (_path[level].getIdx() != rhs._path[level].getIdx()) {
+                return false;
+            }
         }
         return true;
     }
@@ -521,7 +531,6 @@ public:
             uint32_t eidx;
             do {
                 --level;
-                assert(_path[level].getNode() == end_itr._path[level].getNode());
                 idx = _path[level].getIdx();
                 eidx = end_itr._path[level].getIdx();
                 if (idx > eidx) {
@@ -545,7 +554,6 @@ public:
                 return;
             } else {
                 // Lowest shared node is a leaf node.
-                assert(_leaf.getNode() == end_itr._leaf.getNode());
             }
         }
         uint32_t idx = _leaf.getIdx();
