@@ -212,7 +212,7 @@ public class TenantRepositoryTest {
                   ConfigCurator.create(new MockCurator()),
                   Metrics.createTestMetrics(),
                   new StripedExecutor<>(new InThreadExecutorService()),
-                  new FileDistributionFactory(new ConfigserverConfig.Builder().build()),
+                  new FileDistributionFactory(configserverConfig),
                   new InMemoryFlagSource(),
                   new InThreadExecutorService(),
                   new MockSecretStore(),
