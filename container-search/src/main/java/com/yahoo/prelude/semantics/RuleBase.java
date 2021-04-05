@@ -26,43 +26,43 @@ public class RuleBase {
     private String source;
 
     /** The name of the automata file used, or null if none */
-    protected String automataFileName=null;
+    protected String automataFileName = null;
 
     /**
      * True if this rule base is default.
      * The semantics of default is left to the surrounding framework
      */
-    private boolean isDefault=false;
+    private boolean isDefault = false;
 
-    private List<ProductionRule> productionRules=new java.util.ArrayList<>();
+    private final List<ProductionRule> productionRules = new java.util.ArrayList<>();
 
-    private Map<String, NamedCondition> namedConditions=new java.util.LinkedHashMap<>();
+    private Map<String, NamedCondition> namedConditions = new java.util.LinkedHashMap<>();
 
     /** The analyzer used to do evaluations over this rule base */
-    private RuleEngine analyzer=new RuleEngine(this);
+    private final RuleEngine analyzer = new RuleEngine(this);
 
-    private static final PhraseMatcher nullPhraseMatcher=PhraseMatcher.getNullMatcher();
+    private static final PhraseMatcher nullPhraseMatcher = PhraseMatcher.getNullMatcher();
 
     /**
      * The matcher using an automata to match terms and phrases prior to matching rules
      * or the null matcher if no matcher is used.
      */
-    private PhraseMatcher phraseMatcher=nullPhraseMatcher;
+    private PhraseMatcher phraseMatcher = nullPhraseMatcher;
 
     /**
      * The names of the rule bases included indirectly or directly in this
      * Ordered by first to last included
      */
-    private Set<String> includedNames=new java.util.LinkedHashSet<>();
+    private final Set<String> includedNames = new java.util.LinkedHashSet<>();
 
     /**
      * True if this uses an automata, even if an automata is not present right now. Useful to validate without
      * having automatas available
      */
-    private boolean usesAutomata=false;
+    private boolean usesAutomata = false;
 
     /** Should we allow stemmed matches? */
-    private boolean stemming=true;
+    private boolean stemming = true;
 
     /** Creates an empty rule base. TODO: Disallow */
     public RuleBase() {
@@ -82,8 +82,8 @@ public class RuleBase {
      * @throws ParseException if the rule file can not be parsed correctly
      * @throws RuleBaseException if the rule file contains inconsistencies
      */
-    public static RuleBase createFromFile(String ruleFile,String automataFile) throws java.io.IOException, ParseException {
-        return new RuleImporter().importFile(ruleFile,automataFile);
+    public static RuleBase createFromFile(String ruleFile, String automataFile) throws java.io.IOException, ParseException {
+        return new RuleImporter().importFile(ruleFile, automataFile);
     }
 
     /**
@@ -96,14 +96,14 @@ public class RuleBase {
      * @throws com.yahoo.prelude.semantics.parser.ParseException if the rule file can not be parsed correctly
      * @throws com.yahoo.prelude.semantics.RuleBaseException if the rule file contains inconsistencies
      */
-    public static RuleBase createFromString(String name,String ruleString,String automataFile) throws java.io.IOException, ParseException {
-        RuleBase base=new RuleImporter().importString(ruleString,automataFile,new RuleBase());
+    public static RuleBase createFromString(String name, String ruleString, String automataFile) throws java.io.IOException, ParseException {
+        RuleBase base = new RuleImporter().importString(ruleString, automataFile, new RuleBase());
         base.setName(name);
         return base;
     }
 
     /** Set to true to enable stemmed matches. True by default */
-    public void setStemming(boolean stemming) { this.stemming=stemming; }
+    public void setStemming(boolean stemming) { this.stemming = stemming; }
 
     /** Returns whether stemmed matches are allowed. True by default */
     public boolean getStemming() { return stemming; }
@@ -125,19 +125,19 @@ public class RuleBase {
     /** Rules are order based - they are included recursively depth first */
     private void inlineIncluded() {
         // Re-add our own conditions last to - added later overrides
-        Map<String, NamedCondition> thisConditions=namedConditions;
-        namedConditions=new LinkedHashMap<>();
+        Map<String, NamedCondition> thisConditions = namedConditions;
+        namedConditions = new LinkedHashMap<>();
 
-        Set<RuleBase> included=new HashSet<>();
+        Set<RuleBase> included = new HashSet<>();
         included.add(this);
-        for (ListIterator<ProductionRule> i=productionRules.listIterator(); i.hasNext(); ) {
-            ProductionRule rule=i.next();
+        for (ListIterator<ProductionRule> i = productionRules.listIterator(); i.hasNext(); ) {
+            ProductionRule rule = i.next();
             if ( ! (rule instanceof IncludeDirective) ) continue;
 
             i.remove();
-            RuleBase toInclude=((IncludeDirective)rule).getIncludedBase();
+            RuleBase toInclude = ((IncludeDirective)rule).getIncludedBase();
             if ( ! included.contains(toInclude))
-                toInclude.inlineIn(this,i,included);
+                toInclude.inlineIn(this, i, included);
         }
 
         namedConditions.putAll(thisConditions);
@@ -147,14 +147,14 @@ public class RuleBase {
      * Recursively include this and everything it includes into the given rule base.
      * Skips bases already included in this.
      */
-    private void inlineIn(RuleBase receiver,ListIterator<ProductionRule> receiverRules,Set<RuleBase> included) {
+    private void inlineIn(RuleBase receiver, ListIterator<ProductionRule> receiverRules, Set<RuleBase> included) {
         if (included.contains(this)) return;
         included.add(this);
 
-        for (Iterator<ProductionRule> i=productionRules.iterator(); i.hasNext(); ) {
-            ProductionRule rule=i.next();
+        for (Iterator<ProductionRule> i = productionRules.iterator(); i.hasNext(); ) {
+            ProductionRule rule = i.next();
             if (rule instanceof IncludeDirective)
-                ((IncludeDirective)rule).getIncludedBase().inlineIn(receiver,receiverRules,included);
+                ((IncludeDirective)rule).getIncludedBase().inlineIn(receiver, receiverRules, included);
             else
                 receiverRules.add(rule);
         }
@@ -164,11 +164,11 @@ public class RuleBase {
 
     /** Adds a named condition which can be referenced by rules */
     public void addCondition(NamedCondition namedCondition) {
-        namedConditions.put(namedCondition.getName(),namedCondition);
+        namedConditions.put(namedCondition.getName(), namedCondition);
 
-        Condition condition=namedCondition.getCondition();
-        Condition superCondition=findIncludedCondition(namedCondition.getName());
-        resolveSuper(condition,superCondition);
+        Condition condition = namedCondition.getCondition();
+        Condition superCondition = findIncludedCondition(namedCondition.getName());
+        resolveSuper(condition, superCondition);
     }
 
     private void resolveSuper(Condition condition,Condition superCondition) {
@@ -176,24 +176,22 @@ public class RuleBase {
             ((SuperCondition)condition).setCondition(superCondition);
         }
         else if (condition instanceof CompositeCondition) {
-            for (Iterator<Condition> i=((CompositeCondition)condition).conditionIterator(); i.hasNext(); ) {
-                Condition subCondition=i.next();
-                resolveSuper(subCondition,superCondition);
+            for (Iterator<Condition> i = ((CompositeCondition)condition).conditionIterator(); i.hasNext(); ) {
+                Condition subCondition = i.next();
+                resolveSuper(subCondition, superCondition);
             }
         }
     }
 
     private Condition findIncludedCondition(String name) {
-        for (Iterator<ProductionRule> i=productionRules.iterator(); i.hasNext(); ) {
-            ProductionRule rule=i.next();
+        for (Iterator<ProductionRule> i = productionRules.iterator(); i.hasNext(); ) {
+            ProductionRule rule = i.next();
             if ( ! (rule instanceof IncludeDirective) ) continue;
 
-            RuleBase included=((IncludeDirective)rule).getIncludedBase();
-            NamedCondition condition=included.getCondition(name);
-            if (condition!=null) return condition.getCondition();
+            RuleBase included = ((IncludeDirective)rule).getIncludedBase();
+            NamedCondition condition = included.getCondition(name);
+            if (condition != null) return condition.getCondition();
             included.findIncludedCondition(name);
-            // FIXME: dead code commented out
-            // if (condition!=null) return condition.getCondition();
         }
         return null;
     }
@@ -212,8 +210,8 @@ public class RuleBase {
      * change, and then re-added
      */
     public void setName(String name) {
-        Validator.ensureNotNull("Rule base name",name);
-        this.name=name;
+        Validator.ensureNotNull("Rule base name", name);
+        this.name = name;
     }
 
     /** Returns the name of this rule base. This is never null. */
@@ -230,27 +228,27 @@ public class RuleBase {
         if ( ! new File(automataFile).exists())
             throw new IllegalArgumentException("Automata file '" + automataFile + "' " +
                                                "included in " + this + " not found");
-        phraseMatcher=new PhraseMatcher(automataFile);
+        phraseMatcher = new PhraseMatcher(automataFile);
         phraseMatcher.setIgnorePluralForm(true);
         phraseMatcher.setMatchAll(true);
         phraseMatcher.setMatchPhraseItems(true);
         phraseMatcher.setMatchSingleItems(true);
         setPhraseMatcher(phraseMatcher);
-        this.automataFileName=automataFile;
+        this.automataFileName = automataFile;
     }
 
     /** Returns the name of the automata file used, or null if none */
     public String getAutomataFile() { return automataFileName; }
 
     /** Sets whether this base is default, the semantics of default is left to the application */
-    public void setDefault(boolean isDefault) { this.isDefault=isDefault; }
+    public void setDefault(boolean isDefault) { this.isDefault = isDefault; }
 
     /** Returns whether this base is default, the semantics of default is left to the application */
     public boolean isDefault() { return isDefault; }
 
     /** Thread safely sets the phrase matcher to use in this, or null to not use a phrase matcher */
     public synchronized void setPhraseMatcher(PhraseMatcher matcher) {
-        if (matcher==null)
+        if (matcher == null)
             this.phraseMatcher = nullPhraseMatcher;
         else
             this.phraseMatcher = matcher;
@@ -282,7 +280,7 @@ public class RuleBase {
      * Set to truew if this uses an automata, even if an automata is not present right now.
      * Useful to validate without having automatas available
      */
-    void setUsesAutomata(boolean usesAutomata) { this.usesAutomata=usesAutomata; }
+    void setUsesAutomata(boolean usesAutomata) { this.usesAutomata = usesAutomata; }
 
     // Note that included rules are added though a list iterator, not this */
     public void addRule(ProductionRule productionRule) {
@@ -399,13 +397,13 @@ public class RuleBase {
     public String toContentString() {
         StringBuilder b = new StringBuilder();
         for (Iterator<ProductionRule> i = productionRules.iterator(); i.hasNext(); ) {
-            b.append(i.next().toString());
+            b.append(i.next());
             b.append("\n");
         }
         b.append("\n");
         b.append("\n");
         for (Iterator<NamedCondition> i = namedConditions.values().iterator(); i.hasNext(); ) {
-            b.append(i.next().toString());
+            b.append(i.next());
             b.append("\n");
         }
         return b.toString();
@@ -414,17 +412,16 @@ public class RuleBase {
     /** A placeholder for an included rule base until it is inlined */
     private static class IncludeDirective extends ProductionRule {
 
-        private RuleBase includedBase;
+        private final RuleBase includedBase;
 
         public IncludeDirective(RuleBase ruleBase) {
-            this.includedBase=ruleBase;
+            this.includedBase = ruleBase;
         }
 
         public RuleBase getIncludedBase() { return includedBase; }
 
         /** Not used */
         public String getSymbol() { return ""; }
-
 
     }
 
