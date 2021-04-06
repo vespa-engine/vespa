@@ -41,7 +41,7 @@ public class ArchiveAccessMaintainerTest extends ControllerContainerCloudTest {
         createTenantWithAccessRole(tester, "tenant2", tenant2role);
 
         tester.controller().archiveBucketDb().archiveUriFor(ZoneId.from("prod.us-east-3"), tenant1);
-        var testBucket = new ArchiveBucket("bucketArn", "keyArn").withTenant(tenant1);
+        var testBucket = new ArchiveBucket("bucketName", "keyArn").withTenant(tenant1);
 
         MockArchiveService archiveService = (MockArchiveService) tester.controller().serviceRegistry().archiveService();
         assertNull(archiveService.authorizedIamRoles.get(testBucket));

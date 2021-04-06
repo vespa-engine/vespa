@@ -17,7 +17,7 @@ public class MockArchiveService implements ArchiveService {
 
     @Override
     public ArchiveBucket createArchiveBucketFor(ZoneId zoneId) {
-        return new ArchiveBucket("bucketArn", "keyArn");
+        return new ArchiveBucket("bucketName", "keyArn");
     }
 
     @Override

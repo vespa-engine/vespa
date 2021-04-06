@@ -46,16 +46,16 @@ public class CuratorArchiveBucketDb implements ArchiveBucketDb {
 
     @Override
     public Optional<URI> archiveUriFor(ZoneId zoneId, TenantName tenant) {
-        String bucketArn = bucketNameFlag
+        String bucketName = bucketNameFlag
                 .with(FetchVector.Dimension.ZONE_ID, zoneId.value())
                 .with(FetchVector.Dimension.TENANT_ID, tenant.value())
                 .value();
 
-        if (bucketArn.isBlank()) return Optional.empty();
+        if (bucketName.isBlank()) return Optional.empty();
 
-        if ("auto".equals(bucketArn)) bucketArn = findOrAssignBucket(zoneId, tenant);
+        if ("auto".equals(bucketName)) bucketName = findOrAssignBucket(zoneId, tenant);
 
-        return Optional.of(URI.create(String.format("s3://%s/%s/", bucketArn, tenant.value())));
+        return Optional.of(URI.create(String.format("s3://%s/%s/", bucketName, tenant.value())));
     }
 
     private String findOrAssignBucket(ZoneId zoneId, TenantName tenant) {
@@ -82,14 +82,14 @@ public class CuratorArchiveBucketDb implements ArchiveBucketDb {
                             zoneBuckets.add(unfilled.withTenant(tenant));
                             curatorDb.writeArchiveBuckets(zoneId, zoneBuckets);
 
-                            return unfilled.bucketArn();
+                            return unfilled.bucketName();
                         }
 
                         // We'll have to create a new bucket
                         var newBucket = archiveService.createArchiveBucketFor(zoneId).withTenant(tenant);
                         zoneBuckets.add(newBucket);
                         curatorDb.writeArchiveBuckets(zoneId, zoneBuckets);
-                        return newBucket.bucketArn();
+                        return newBucket.bucketName();
                     });
         }
     }
@@ -99,7 +99,7 @@ public class CuratorArchiveBucketDb implements ArchiveBucketDb {
         return zoneBuckets.stream()
                 .filter(bucket -> bucket.tenants().contains(tenant))
                 .findAny()
-                .map(ArchiveBucket::bucketArn);
+                .map(ArchiveBucket::bucketName);
     }
 
     @Override

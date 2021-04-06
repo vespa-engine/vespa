@@ -13,22 +13,22 @@ import java.util.Set;
  * @author andreer
  */
 public class ArchiveBucket {
-    private final String bucketArn;
+    private final String bucketName;
     private final String keyArn;
     private final Set<TenantName> tenants;
 
-    public ArchiveBucket(String bucketArn, String keyArn) {
-        this(bucketArn, keyArn, Set.of());
+    public ArchiveBucket(String bucketName, String keyArn) {
+        this(bucketName, keyArn, Set.of());
     }
 
-    private ArchiveBucket(String bucketArn, String keyArn, Set<TenantName> tenants) {
-        this.bucketArn = bucketArn;
+    private ArchiveBucket(String bucketName, String keyArn, Set<TenantName> tenants) {
+        this.bucketName = bucketName;
         this.keyArn = keyArn;
         this.tenants = Set.copyOf(tenants);
     }
 
-    public String bucketArn() {
-        return bucketArn;
+    public String bucketName() {
+        return bucketName;
     }
 
     public String keyArn() {
@@ -44,7 +44,7 @@ public class ArchiveBucket {
     }
 
     public ArchiveBucket withTenants(Set<TenantName> tenants) {
-        return new ArchiveBucket(bucketArn, keyArn, Sets.union(this.tenants, tenants));
+        return new ArchiveBucket(bucketName, keyArn, Sets.union(this.tenants, tenants));
     }
 
     @Override
@@ -52,18 +52,18 @@ public class ArchiveBucket {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         ArchiveBucket that = (ArchiveBucket) o;
-        return bucketArn.equals(that.bucketArn) && keyArn.equals(that.keyArn) && tenants.equals(that.tenants);
+        return bucketName.equals(that.bucketName) && keyArn.equals(that.keyArn) && tenants.equals(that.tenants);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(bucketArn, keyArn, tenants);
+        return Objects.hash(bucketName, keyArn, tenants);
     }
 
     @Override
     public String toString() {
         return "ArchiveBucket{" +
-                "bucketArn='" + bucketArn + '\'' +
+                "bucketName='" + bucketName + '\'' +
                 ", keyArn='" + keyArn + '\'' +
                 ", tenants=" + tenants +
                 '}';

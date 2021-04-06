@@ -17,10 +17,10 @@ public class ArchiveBucketsSerializerTest {
         testTenants.add(TenantName.from("tenant2"));
 
         var testBuckets = new LinkedHashSet<ArchiveBucket>();
-        testBuckets.add(new ArchiveBucket("bucket1Arn", "key1Arn").withTenants(testTenants));
-        testBuckets.add(new ArchiveBucket("bucket2Arn", "key2Arn"));
+        testBuckets.add(new ArchiveBucket("bucket1Name", "key1Arn").withTenants(testTenants));
+        testBuckets.add(new ArchiveBucket("bucket2Name", "key2Arn"));
 
-        String zkData = "{\"buckets\":[{\"bucketArn\":\"bucket1Arn\",\"keyArn\":\"key1Arn\",\"tenantIds\":[\"tenant1\",\"tenant2\"]},{\"bucketArn\":\"bucket2Arn\",\"keyArn\":\"key2Arn\",\"tenantIds\":[]}]}";
+        String zkData = "{\"buckets\":[{\"bucketName\":\"bucket1Name\",\"keyArn\":\"key1Arn\",\"tenantIds\":[\"tenant1\",\"tenant2\"]},{\"bucketName\":\"bucket2Name\",\"keyArn\":\"key2Arn\",\"tenantIds\":[]}]}";
 
         assertEquals(testBuckets, ArchiveBucketsSerializer.fromJsonString(zkData));
         assertEquals(testBuckets, ArchiveBucketsSerializer.fromJsonString(ArchiveBucketsSerializer.toSlime(testBuckets).toString()));

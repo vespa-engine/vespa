@@ -27,7 +27,7 @@ public class ArchiveBucketsSerializer {
     //          - CHANGING THE FORMAT OF A FIELD: Don't do it bro.
 
     private final static String bucketsFieldName = "buckets";
-    private final static String bucketArnFieldName = "bucketArn";
+    private final static String bucketNameFieldName = "bucketName";
     private final static String keyArnFieldName = "keyArn";
     private final static String tenantsFieldName = "tenantIds";
 
@@ -38,7 +38,7 @@ public class ArchiveBucketsSerializer {
 
         archiveBuckets.forEach(bucket -> {
                     Cursor cursor = bucketsArray.addObject();
-                    cursor.setString(bucketArnFieldName, bucket.bucketArn());
+                    cursor.setString(bucketNameFieldName, bucket.bucketName());
                     cursor.setString(keyArnFieldName, bucket.keyArn());
                     Cursor tenants = cursor.setArray(tenantsFieldName);
                     bucket.tenants().forEach(tenantName -> tenants.addString(tenantName.value()));
@@ -60,7 +60,7 @@ public class ArchiveBucketsSerializer {
                 .collect(Collectors.toUnmodifiableSet());
 
         return new ArchiveBucket(
-                inspector.field(bucketArnFieldName).asString(),
+                inspector.field(bucketNameFieldName).asString(),
                 inspector.field(keyArnFieldName).asString())
                 .withTenants(tenants);
     }

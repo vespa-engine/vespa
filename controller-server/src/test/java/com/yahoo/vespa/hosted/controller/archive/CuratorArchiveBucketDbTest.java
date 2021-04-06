@@ -47,20 +47,20 @@ public class CuratorArchiveBucketDbTest {
                                 .archiveUriFor(ZoneId.defaultId(), TenantName.from("tenant" + i))));
 
         // Creates new bucket when existing buckets are full
-        assertEquals(Optional.of(URI.create("s3://bucketArn/lastDrop/")), bucketDb.archiveUriFor(ZoneId.defaultId(), TenantName.from("lastDrop")));
+        assertEquals(Optional.of(URI.create("s3://bucketName/lastDrop/")), bucketDb.archiveUriFor(ZoneId.defaultId(), TenantName.from("lastDrop")));
 
         // Creates new bucket when there are no existing buckets in zone
-        assertEquals(Optional.of(URI.create("s3://bucketArn/firstInZone/")), bucketDb.archiveUriFor(ZoneId.from("prod.us-east-3"), TenantName.from("firstInZone")));
+        assertEquals(Optional.of(URI.create("s3://bucketName/firstInZone/")), bucketDb.archiveUriFor(ZoneId.from("prod.us-east-3"), TenantName.from("firstInZone")));
 
         // Lists all buckets by zone
         Set<TenantName> existingBucketTenants = Streams.concat(Stream.of(TenantName.defaultName()), IntStream.range(0, 29).mapToObj(i -> TenantName.from("tenant" + i))).collect(Collectors.toUnmodifiableSet());
         assertEquals(
                 Set.of(
                         new ArchiveBucket("existingBucket", "keyArn").withTenants(existingBucketTenants),
-                        new ArchiveBucket("bucketArn", "keyArn").withTenant(TenantName.from("lastDrop"))),
+                        new ArchiveBucket("bucketName", "keyArn").withTenant(TenantName.from("lastDrop"))),
                 bucketDb.buckets(ZoneId.defaultId()));
         assertEquals(
-                Set.of(new ArchiveBucket("bucketArn", "keyArn").withTenant(TenantName.from("firstInZone"))),
+                Set.of(new ArchiveBucket("bucketName", "keyArn").withTenant(TenantName.from("firstInZone"))),
                 bucketDb.buckets(ZoneId.from("prod.us-east-3")));
     }
 }
