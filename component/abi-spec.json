@@ -348,20 +348,5 @@
       "public bridge synthetic java.lang.Object clone()"
     ],
     "fields": []
-  },
-  "com.yahoo.container.di.componentgraph.Provider": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.component.Deconstructable"
-    ],
-    "attributes": [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods": [
-      "public abstract java.lang.Object get()"
-    ],
-    "fields": []
   }
 }
