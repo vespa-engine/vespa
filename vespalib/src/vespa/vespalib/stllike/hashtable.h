@@ -1,9 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <iterator>
 #include <vespa/vespalib/util/array.h>
+#include <vespa/vespalib/util/traits.h>
 #include <algorithm>
+#include <iterator>
 
 namespace vespalib {
 
@@ -103,26 +104,75 @@ public:
     enum {npos=-1u, invalid=-2u};
     hash_node() : _node(), _next(invalid) {}
     hash_node(const V & node, next_t next=npos)
-        : _node(node), _next(next) {}
-    hash_node(V &&node, next_t next=npos)
-        : _node(std::move(node)), _next(next) {}
-    hash_node(hash_node &&) noexcept = default;
-    hash_node &operator=(hash_node &&) noexcept = default;
-    hash_node(const hash_node &) = default;             // These will not be created
-    hash_node &operator=(const hash_node &) = default;  // if V is non-copyable.
-    bool operator == (const hash_node & rhs) const {
-        return (_next == rhs._next) && (_node == rhs._node);
+        : _next(next)
+    {
+        new (_node) V(node);
     }
-    V & getValue()             { return _node; }
-    const V & getValue() const { return _node; }
+    hash_node(V &&node, next_t next=npos)
+        : _next(next)
+    {
+        new (_node) V(std::move(node));
+    }
+    hash_node(hash_node && rhs) noexcept
+        : _next(rhs._next)
+    {
+        if (rhs.valid()) {
+            new (_node) V(std::move(rhs.getValue()));
+        }
+    }
+    hash_node &operator=(hash_node && rhs) noexcept {
+        destruct();
+        if (rhs.valid()) {
+            new (_node) V(std::move(rhs.getValue()));
+            _next = rhs._next;
+        } else {
+            _next = invalid;
+        }
+        return *this;
+    }
+    hash_node(const hash_node & rhs)
+        : _next(rhs._next)
+    {
+        if (rhs.valid()) {
+            new (_node) V(rhs.getValue());
+        }
+    }
+    hash_node &operator=(const hash_node & rhs) {
+        destruct();
+        if (rhs.valid()) {
+            new (_node) V(rhs.getValue());
+            _next = rhs._next;
+        } else {
+            _next = invalid;
+        }
+        return *this;
+    }
+    ~hash_node() {
+        destruct();
+    }
+    bool operator == (const hash_node & rhs) const {
+        return (_next == rhs._next) && (!valid() || (getValue() == rhs.getValue()));
+    }
+    V & getValue()             { return *reinterpret_cast<V *>(_node); }
+    const V & getValue() const { return *reinterpret_cast<const V *>(_node); }
     next_t getNext()     const { return _next; }
     void setNext(next_t next)  { _next = next; }
-    void invalidate()          { _next = invalid; _node = V(); }
+    void invalidate()          {
+        destruct();
+        _next = invalid;
+    }
     void terminate()           { _next = npos; }
     bool valid()         const { return _next != invalid; }
     bool hasNext()       const { return valid() && (_next != npos); }
 private:
-    V       _node;
+    void destruct() {
+        if constexpr (!can_skip_destruction<V>::value) {
+            if (valid()) {
+                getValue().~V();
+            }
+        }
+    }
+    char    _node[sizeof(V)] alignas(V);
     next_t  _next;
 };
 
