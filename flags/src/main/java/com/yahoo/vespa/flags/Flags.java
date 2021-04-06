@@ -154,7 +154,7 @@ public class Flags {
 
     public static final UnboundIntFlag MAX_PENDING_MOVE_OPS = defineIntFlag(
             "max-pending-move-ops", 10,
-            List.of("baldersheim"), "2021-02-15", "2021-04-01",
+            List.of("baldersheim"), "2021-02-15", "2021-05-01",
             "Max number of move operations inflight",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -168,14 +168,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_LID_SPACE_COMPACT = defineFeatureFlag(
             "use-bucket-executor-for-lid-space-compact", false,
-            List.of("baldersheim"), "2021-01-24", "2021-04-01",
+            List.of("baldersheim"), "2021-01-24", "2021-05-01",
             "Wheter to use content-level bucket executor or legacy frozen buckets",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_BUCKET_MOVE = defineFeatureFlag(
             "use-bucket-executor-for-bucket-move", false,
-            List.of("baldersheim"), "2021-02-15", "2021-04-01",
+            List.of("baldersheim"), "2021-02-15", "2021-05-01",
             "Wheter to use content-level bucket executor or legacy frozen buckets",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
@@ -189,14 +189,14 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
             "enable-feed-block-in-distributor", true,
-            List.of("geirst"), "2021-01-27", "2021-04-01",
+            List.of("geirst"), "2021-01-27", "2021-05-01",
             "Enables blocking of feed in the distributor if resource usage is above limit on at least one content node",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundDoubleFlag MAX_DEAD_BYTES_RATIO = defineDoubleFlag(
             "max-dead-bytes-ratio", 0.2,
-            List.of("baldersheim", "geirst","toregge"), "2021-02-03", "2021-04-01",
+            List.of("baldersheim", "geirst","toregge"), "2021-02-03", "2021-05-01",
             "max ratio of dead to used memory bytes in large data structures before compaction is attempted",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
