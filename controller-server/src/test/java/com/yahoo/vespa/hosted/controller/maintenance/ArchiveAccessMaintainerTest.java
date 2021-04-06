@@ -39,7 +39,7 @@ public class ArchiveAccessMaintainerTest extends ControllerContainerCloudTest {
                 "{\"message\":\"Archive access role set to 'arn:aws:iam::123456789012:role/my-role' for tenant tenant1.\"}", 200);
 
         tester.controller().archiveBucketDb().archiveUriFor(ZoneId.from("prod.us-east-3"), tenantName);
-        var testBucket = new ArchiveBucket("bucketArn", "keyArn", Set.of(tenantName));
+        var testBucket = new ArchiveBucket("bucketArn", "keyArn").withTenant(tenantName);
 
         MockArchiveService archiveService = (MockArchiveService) tester.controller().serviceRegistry().archiveService();
         assertNull(archiveService.authorizedIamRoles.get(testBucket));

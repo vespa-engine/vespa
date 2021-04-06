@@ -63,9 +63,10 @@ public class ArchiveBucketsSerializer {
                         .map(TenantName::from)
                         .collect(Collectors.toUnmodifiableSet());
 
-        return new ArchiveBucket(inspector.field(bucketArnFieldName).asString(),
-                inspector.field(keyArnFieldName).asString(),
-                tenants);
+        return new ArchiveBucket(
+                inspector.field(bucketArnFieldName).asString(),
+                inspector.field(keyArnFieldName).asString())
+                .withTenants(tenants);
     }
 
     public static Set<ArchiveBucket> fromJsonString(String zkData) {

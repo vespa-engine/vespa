@@ -81,15 +81,11 @@ public class CuratorArchiveBucketDb implements ArchiveBucketDb {
             if (unfilledBucket.isPresent()) {
                 var unfilled = unfilledBucket.get();
 
-                var tenants = new HashSet<>(unfilled.tenants());
-                tenants.add(tenant);
-                var updatedBucket = new ArchiveBucket(unfilled.bucketArn(), unfilled.keyArn(), tenants);
-
                 zoneBuckets.remove(unfilled);
-                zoneBuckets.add(updatedBucket);
+                zoneBuckets.add(unfilled.withTenant(tenant));
                 curatorDb.writeArchiveBuckets(zoneId, zoneBuckets);
 
-                return updatedBucket.bucketArn();
+                return unfilled.bucketArn();
             }
 
             // We'll have to create a new bucket

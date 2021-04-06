@@ -27,7 +27,7 @@ public class CuratorArchiveBucketDbTest {
         CuratorArchiveBucketDb bucketDb = new CuratorArchiveBucketDb(tester.controller());
 
         tester.curator().writeArchiveBuckets(ZoneId.defaultId(),
-                Set.of(new ArchiveBucket("existingBucket", "keyArn", Set.of(TenantName.defaultName()))));
+                Set.of(new ArchiveBucket("existingBucket", "keyArn").withTenant(TenantName.defaultName())));
 
         // Nothing when feature flag is not set.
         assertEquals(Optional.empty(), bucketDb.archiveUriFor(ZoneId.defaultId(), TenantName.defaultName()));
@@ -56,11 +56,11 @@ public class CuratorArchiveBucketDbTest {
         Set<TenantName> existingBucketTenants = Streams.concat(Stream.of(TenantName.defaultName()), IntStream.range(0, 29).mapToObj(i -> TenantName.from("tenant" + i))).collect(Collectors.toUnmodifiableSet());
         assertEquals(
                 Set.of(
-                        new ArchiveBucket("existingBucket", "keyArn", existingBucketTenants),
-                        new ArchiveBucket("bucketArn", "keyArn", Set.of(TenantName.from("lastDrop")))),
+                        new ArchiveBucket("existingBucket", "keyArn").withTenants(existingBucketTenants),
+                        new ArchiveBucket("bucketArn", "keyArn").withTenant(TenantName.from("lastDrop"))),
                 bucketDb.buckets(ZoneId.defaultId()));
         assertEquals(
-                Set.of(new ArchiveBucket("bucketArn", "keyArn", Set.of(TenantName.from("firstInZone")))),
+                Set.of(new ArchiveBucket("bucketArn", "keyArn").withTenant(TenantName.from("firstInZone"))),
                 bucketDb.buckets(ZoneId.from("prod.us-east-3")));
     }
 }

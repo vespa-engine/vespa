@@ -5,7 +5,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import org.junit.Test;
 
 import java.util.LinkedHashSet;
-import java.util.Set;
 
 import static org.junit.Assert.assertEquals;
 
@@ -18,12 +17,12 @@ public class ArchiveBucketsSerializerTest {
         testTenants.add(TenantName.from("tenant2"));
 
         var testBuckets = new LinkedHashSet<ArchiveBucket>();
-        testBuckets.add(new ArchiveBucket("bucket1Arn", "key1Arn", testTenants));
-        testBuckets.add(new ArchiveBucket("bucket2Arn", "key2Arn", Set.of()));
+        testBuckets.add(new ArchiveBucket("bucket1Arn", "key1Arn").withTenants(testTenants));
+        testBuckets.add(new ArchiveBucket("bucket2Arn", "key2Arn"));
 
         String zkData = "{\"buckets\":[{\"bucketArn\":\"bucket1Arn\",\"keyArn\":\"key1Arn\",\"tenantIds\":[\"tenant1\",\"tenant2\"]},{\"bucketArn\":\"bucket2Arn\",\"keyArn\":\"key2Arn\",\"tenantIds\":[]}]}";
 
-        assertEquals(zkData, ArchiveBucketsSerializer.toSlime(testBuckets).toString());
         assertEquals(testBuckets, ArchiveBucketsSerializer.fromJsonString(zkData));
+        assertEquals(testBuckets, ArchiveBucketsSerializer.fromJsonString(ArchiveBucketsSerializer.toSlime(testBuckets).toString()));
     }
 }

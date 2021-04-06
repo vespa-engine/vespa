@@ -74,7 +74,7 @@ public class ArchiveUriUpdaterTest {
     private void setBucketNameInService(Map<TenantName, String> bucketNames, ZoneId zone) {
         var archiveBuckets = new LinkedHashSet<>(tester.controller().curator().readArchiveBuckets(zone));
         bucketNames.forEach((tenantName, bucketName) ->
-                archiveBuckets.add(new ArchiveBucket(bucketName, "keyArn", Set.of(tenantName))));
+                archiveBuckets.add(new ArchiveBucket(bucketName, "keyArn").withTenant(tenantName)));
         tester.controller().curator().writeArchiveBuckets(zone, archiveBuckets);
     }
 
