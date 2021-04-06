@@ -11,6 +11,10 @@ PropertiesMap::PropertiesMap()
     : _propertiesMap()
 { }
 
+PropertiesMap::PropertiesMap(uint32_t sz)
+    : _propertiesMap(sz)
+{ }
+
 PropertiesMap::~PropertiesMap() = default;
 
 fef::Properties &
