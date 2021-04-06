@@ -144,7 +144,7 @@ public:
         return *this;
     }
     ~hash_node() {
-        if (can_skip_destruction<V>::value) {
+        if (!can_skip_destruction<V>::value) {
             if (valid()) {
                 getValue().~V();
             }
@@ -164,7 +164,7 @@ public:
 private:
     void destruct() {
         if (valid()) {
-            if (can_skip_destruction<V>::value) {
+            if (!can_skip_destruction<V>::value) {
                 getValue().~V();
             }
             _next = invalid;
