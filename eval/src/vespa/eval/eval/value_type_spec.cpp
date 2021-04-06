@@ -10,8 +10,10 @@ namespace vespalib::eval::value_type {
 
 vespalib::string cell_type_to_name(CellType cell_type) {
     switch (cell_type) {
-    case CellType::DOUBLE: return "double";
-    case CellType::FLOAT: return "float";
+    case CellType::DOUBLE:   return "double";
+    case CellType::FLOAT:    return "float";
+    case CellType::BFLOAT16: return "bfloat16";
+    case CellType::INT8:     return "int8";
     }
     abort();
 }

@@ -15,5 +15,7 @@ DenseCellsValue<T>::get_memory_usage() const {
 
 template class DenseCellsValue<double>;
 template class DenseCellsValue<float>;
+template class DenseCellsValue<BFloat16>;
+template class DenseCellsValue<Int8Float>;
 
 }

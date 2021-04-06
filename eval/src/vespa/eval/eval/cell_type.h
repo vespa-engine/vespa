@@ -6,15 +6,19 @@
 #include <vector>
 #include <cstdint>
 #include <cassert>
+#include "int8float.h"
+#include <vespa/vespalib/util/bfloat16.h>
 
 namespace vespalib::eval {
 
-enum class CellType : char { FLOAT, DOUBLE };
+enum class CellType : char { DOUBLE, FLOAT, BFLOAT16, INT8 };
 
 // converts actual cell type to CellType enum value
 template <typename CT> constexpr CellType get_cell_type();
 template <> constexpr CellType get_cell_type<double>() { return CellType::DOUBLE; }
 template <> constexpr CellType get_cell_type<float>() { return CellType::FLOAT; }
+template <> constexpr CellType get_cell_type<BFloat16>() { return CellType::BFLOAT16; }
+template <> constexpr CellType get_cell_type<Int8Float>() { return CellType::INT8; }
 
 // check if the given CellType enum value and actual cell type match
 template <typename CT> constexpr bool check_cell_type(CellType type) {
@@ -29,6 +33,10 @@ template <CellType cell_type> constexpr auto get_cell_value() {
         return double();
     } else if constexpr (cell_type == CellType::FLOAT) {
         return float();
+    } else if constexpr (cell_type == CellType::BFLOAT16) {
+        return BFloat16();
+    } else if constexpr (cell_type == CellType::INT8) {
+        return Int8Float();
     } else {
         static_assert((cell_type == CellType::DOUBLE), "unknown cell type");
     }
@@ -136,9 +144,11 @@ struct CellMeta {
 struct TypifyCellType {
     template <typename T> using Result = TypifyResultType<T>;
     template <typename F> static decltype(auto) resolve(CellType value, F &&f) {
-        switch (value) {
-        case CellType::DOUBLE: return f(Result<double>());
-        case CellType::FLOAT:  return f(Result<float>());
+        switch(value) {
+        case CellType::DOUBLE:   return f(Result<double>());
+        case CellType::FLOAT:    return f(Result<float>());
+        case CellType::BFLOAT16: return f(Result<BFloat16>());
+        case CellType::INT8:     return f(Result<Int8Float>());
         }
         abort();
     }
@@ -158,8 +168,10 @@ struct TypifyCellMeta {
     }
     template <typename F> static decltype(auto) resolve(CellMetaNotScalar value, F &&f) {
         switch (value.cell_type) {
-        case CellType::DOUBLE: return f(Result<CellMeta(CellType::DOUBLE, false)>());
-        case CellType::FLOAT:  return f(Result<CellMeta(CellType::FLOAT, false)>());
+        case CellType::DOUBLE:   return f(Result<CellMeta(CellType::DOUBLE, false)>());
+        case CellType::FLOAT:    return f(Result<CellMeta(CellType::FLOAT, false)>());
+        case CellType::BFLOAT16: return f(Result<CellMeta(CellType::BFLOAT16, false)>());
+        case CellType::INT8:     return f(Result<CellMeta(CellType::INT8, false)>());
         }
         abort();
     }
@@ -175,8 +187,8 @@ struct TypifyCellMeta {
     }
     template <typename F> static decltype(auto) resolve(LimitedCellMetaNotScalar value, F &&f) {
         switch (value.cell_type) {
-        case CellType::DOUBLE: return f(Result<CellMeta(CellType::DOUBLE, false)>());
-        case CellType::FLOAT:  return f(Result<CellMeta(CellType::FLOAT, false)>());
+        case CellType::DOUBLE:   return f(Result<CellMeta(CellType::DOUBLE, false)>());
+        case CellType::FLOAT:    return f(Result<CellMeta(CellType::FLOAT, false)>());
         default: break;
         }
         abort();
@@ -187,6 +199,8 @@ struct CellTypeUtils {
     static uint32_t alignment(CellType cell_type);
     static size_t mem_size(CellType cell_type, size_t sz);
     static std::vector<CellType> list_types();
+    static std::vector<CellType> list_stable_types();
+    static std::vector<CellType> list_unstable_types();
 };
 
 } // namespace
