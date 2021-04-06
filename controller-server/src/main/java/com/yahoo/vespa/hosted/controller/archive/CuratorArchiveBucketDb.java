@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.archive;
 
 import com.google.inject.Inject;
-import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.flags.FetchVector;
@@ -61,44 +60,46 @@ public class CuratorArchiveBucketDb implements ArchiveBucketDb {
 
     private String findOrAssignBucket(ZoneId zoneId, TenantName tenant) {
         var zoneBuckets = curatorDb.readArchiveBuckets(zoneId);
-        if (find(tenant, zoneBuckets).isPresent()) return find(tenant, zoneBuckets).get().bucketArn();
-        else return assignToBucket(zoneId, tenant);
+        return find(tenant, zoneBuckets).orElseGet(() -> assignToBucket(zoneId, tenant));
     }
 
     private String assignToBucket(ZoneId zoneId, TenantName tenant) {
         try (var lock = curatorDb.lockArchiveBuckets(zoneId)) {
             Set<ArchiveBucket> zoneBuckets = new HashSet<>(curatorDb.readArchiveBuckets(zoneId));
 
-            // Some other thread might have assigned it before we grabbed the lock
-            if (find(tenant, zoneBuckets).isPresent()) return find(tenant, zoneBuckets).get().bucketArn();
+            return find(tenant, zoneBuckets) // Some other thread might have assigned it before we grabbed the lock
+                    .orElseGet(() -> {
+                        // If not, find an existing bucket with space
+                        Optional<ArchiveBucket> unfilledBucket = zoneBuckets.stream()
+                                .filter(bucket -> bucket.tenants().size() < TENANTS_PER_BUCKET)
+                                .findAny();
 
-            // If not, find an existing bucket with space
-            Optional<ArchiveBucket> unfilledBucket = zoneBuckets.stream()
-                    .filter(bucket -> bucket.tenants().size() < TENANTS_PER_BUCKET)
-                    .findAny();
+                        // And place the tenant in that bucket.
+                        if (unfilledBucket.isPresent()) {
+                            var unfilled = unfilledBucket.get();
 
-            // And place the tenant in that bucket.
-            if (unfilledBucket.isPresent()) {
-                var unfilled = unfilledBucket.get();
+                            zoneBuckets.remove(unfilled);
+                            zoneBuckets.add(unfilled.withTenant(tenant));
+                            curatorDb.writeArchiveBuckets(zoneId, zoneBuckets);
 
-                zoneBuckets.remove(unfilled);
-                zoneBuckets.add(unfilled.withTenant(tenant));
-                curatorDb.writeArchiveBuckets(zoneId, zoneBuckets);
+                            return unfilled.bucketArn();
+                        }
 
-                return unfilled.bucketArn();
-            }
-
-            // We'll have to create a new bucket
-            var newBucket = archiveService.createArchiveBucketFor(zoneId, Set.of(tenant));
-            zoneBuckets.add(newBucket);
-            curatorDb.writeArchiveBuckets(zoneId, zoneBuckets);
-            return newBucket.bucketArn();
+                        // We'll have to create a new bucket
+                        var newBucket = archiveService.createArchiveBucketFor(zoneId, Set.of(tenant));
+                        zoneBuckets.add(newBucket);
+                        curatorDb.writeArchiveBuckets(zoneId, zoneBuckets);
+                        return newBucket.bucketArn();
+                    });
         }
     }
 
     @NotNull
-    private Optional<ArchiveBucket> find(TenantName tenant, Set<ArchiveBucket> zoneBuckets) {
-        return zoneBuckets.stream().filter(bucket -> bucket.tenants().contains(tenant)).findAny();
+    private Optional<String> find(TenantName tenant, Set<ArchiveBucket> zoneBuckets) {
+        return zoneBuckets.stream()
+                .filter(bucket -> bucket.tenants().contains(tenant))
+                .findAny()
+                .map(ArchiveBucket::bucketArn);
     }
 
     @Override
