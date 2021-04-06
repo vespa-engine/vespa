@@ -145,6 +145,12 @@ public class PermanentFlags {
             "takes effect on JVM restart",
             NODE_TYPE, APPLICATION_ID);
 
+    public static final UnboundIntFlag MAX_TRIAL_TENANTS = defineIntFlag(
+            "max-trial-tenants", -1,
+            "The maximum nr. of tenants with trial plan, -1 is unlimited",
+            "Takes effect immediately"
+    );
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(

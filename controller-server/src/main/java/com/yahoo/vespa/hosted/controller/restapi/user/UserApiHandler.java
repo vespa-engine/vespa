@@ -21,7 +21,6 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.Controller;
@@ -76,7 +75,7 @@ public class UserApiHandler extends LoggingRequestHandler {
         this.users = users;
         this.controller = controller;
         this.enable_public_signup_flow = PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.bindTo(flagSource);
-        this.maxTrialTenants = Flags.MAX_TRIAL_TENANTS.bindTo(flagSource);
+        this.maxTrialTenants = PermanentFlags.MAX_TRIAL_TENANTS.bindTo(flagSource);
     }
 
     @Override
