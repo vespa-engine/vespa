@@ -6,6 +6,7 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalLong;
@@ -95,7 +96,9 @@ public interface RestApi {
         }
 
         interface PathParameters extends Parameters {}
-        interface QueryParameters extends Parameters {}
+        interface QueryParameters extends Parameters {
+            List<String> getStringList(String name);
+        }
         interface Headers extends Parameters {}
 
         interface Attributes {
