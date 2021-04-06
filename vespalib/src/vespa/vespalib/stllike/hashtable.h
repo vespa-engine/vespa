@@ -125,6 +125,8 @@ public:
         if (rhs.valid()) {
             new (_node) V(std::move(rhs.getValue()));
             _next = rhs._next;
+        } else {
+            _next = invalid;
         }
         return *this;
     }
@@ -140,15 +142,13 @@ public:
         if (rhs.valid()) {
             new (_node) V(rhs.getValue());
             _next = rhs._next;
+        } else {
+            _next = invalid;
         }
         return *this;
     }
     ~hash_node() {
-        if (!can_skip_destruction<V>::value) {
-            if (valid()) {
-                getValue().~V();
-            }
-        }
+        destruct();
     }
     bool operator == (const hash_node & rhs) const {
         return (_next == rhs._next) && (!valid() || (getValue() == rhs.getValue()));
@@ -157,17 +157,19 @@ public:
     const V & getValue() const { return *reinterpret_cast<const V *>(_node); }
     next_t getNext()     const { return _next; }
     void setNext(next_t next)  { _next = next; }
-    void invalidate()          { destruct(); }
+    void invalidate()          {
+        destruct();
+        _next = invalid;
+    }
     void terminate()           { _next = npos; }
     bool valid()         const { return _next != invalid; }
     bool hasNext()       const { return valid() && (_next != npos); }
 private:
     void destruct() {
-        if (valid()) {
-            if (!can_skip_destruction<V>::value) {
+        if (!can_skip_destruction<V>::value) {
+            if (valid()) {
                 getValue().~V();
             }
-            _next = invalid;
         }
     }
     char    _node[sizeof(V)] alignas(V);
