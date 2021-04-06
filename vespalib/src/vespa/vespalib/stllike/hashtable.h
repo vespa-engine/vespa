@@ -166,7 +166,7 @@ public:
     bool hasNext()       const { return valid() && (_next != npos); }
 private:
     void destruct() {
-        if (!can_skip_destruction<V>::value) {
+        if constexpr (!can_skip_destruction<V>::value) {
             if (valid()) {
                 getValue().~V();
             }
