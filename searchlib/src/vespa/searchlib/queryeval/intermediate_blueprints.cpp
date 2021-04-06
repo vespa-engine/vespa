@@ -59,7 +59,6 @@ void optimize_source_blenders(IntermediateBlueprint &self, size_t begin_idx) {
         }
         assert(blender_up->isSourceBlender());
         auto *top = static_cast<SourceBlenderBlueprint *>(blender_up.get());
-        assert(top != nullptr);
         while (!sources.empty()) {
             top->addChild(std::move(sources.back()));
             sources.pop_back();
