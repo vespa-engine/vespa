@@ -86,7 +86,7 @@ public class CuratorArchiveBucketDb implements ArchiveBucketDb {
                         }
 
                         // We'll have to create a new bucket
-                        var newBucket = archiveService.createArchiveBucketFor(zoneId, Set.of(tenant));
+                        var newBucket = archiveService.createArchiveBucketFor(zoneId).withTenant(tenant);
                         zoneBuckets.add(newBucket);
                         curatorDb.writeArchiveBuckets(zoneId, zoneBuckets);
                         return newBucket.bucketArn();

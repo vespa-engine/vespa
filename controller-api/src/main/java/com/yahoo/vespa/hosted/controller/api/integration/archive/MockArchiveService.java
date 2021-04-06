@@ -6,7 +6,6 @@ import com.yahoo.config.provision.zone.ZoneId;
 
 import java.util.HashMap;
 import java.util.Map;
-import java.util.Set;
 
 /**
  * @author freva
@@ -17,8 +16,8 @@ public class MockArchiveService implements ArchiveService {
     public Map<ArchiveBucket, Map<TenantName, String>> authorizedIamRoles = new HashMap<>();
 
     @Override
-    public ArchiveBucket createArchiveBucketFor(ZoneId zoneId, Set<TenantName> tenantNames) {
-        return new ArchiveBucket("bucketArn", "keyArn").withTenants(tenantNames);
+    public ArchiveBucket createArchiveBucketFor(ZoneId zoneId) {
+        return new ArchiveBucket("bucketArn", "keyArn");
     }
 
     @Override
