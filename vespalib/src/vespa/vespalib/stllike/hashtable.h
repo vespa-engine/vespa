@@ -1,9 +1,10 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #pragma once
 
-#include <iterator>
 #include <vespa/vespalib/util/array.h>
+#include <vespa/vespalib/util/traits.h>
 #include <algorithm>
+#include <iterator>
 
 namespace vespalib {
 
@@ -103,20 +104,22 @@ public:
     enum {npos=-1u, invalid=-2u};
     hash_node() : _node(), _next(invalid) {}
     hash_node(const V & node, next_t next=npos)
-        : _node(),
-          _next(next)
+        : _next(next)
     {
         new (_node) V(node);
     }
     hash_node(V &&node, next_t next=npos)
-        : _node(),
-          _next(next)
+        : _next(next)
     {
         new (_node) V(std::move(node));
     }
     hash_node(hash_node && rhs) noexcept
-        : hash_node(std::move(rhs.getValue()), rhs._next)
-    { }
+        : _next(rhs._next)
+    {
+        if (rhs.valid()) {
+            new (_node) V(std::move(rhs.getValue()));
+        }
+    }
     hash_node &operator=(hash_node && rhs) noexcept {
         destruct();
         if (rhs.valid()) {
@@ -126,8 +129,7 @@ public:
         return *this;
     }
     hash_node(const hash_node & rhs)
-        : _node(),
-          _next(rhs._next)
+        : _next(rhs._next)
     {
         if (rhs.valid()) {
             new (_node) V(rhs.getValue());
@@ -142,8 +144,10 @@ public:
         return *this;
     }
     ~hash_node() {
-        if (valid()) {
-            getValue().~V();
+        if (can_skip_destruction<V>::value) {
+            if (valid()) {
+                getValue().~V();
+            }
         }
     }
     bool operator == (const hash_node & rhs) const {
@@ -160,7 +164,9 @@ public:
 private:
     void destruct() {
         if (valid()) {
-            getValue().~V();
+            if (can_skip_destruction<V>::value) {
+                getValue().~V();
+            }
             _next = invalid;
         }
     }
