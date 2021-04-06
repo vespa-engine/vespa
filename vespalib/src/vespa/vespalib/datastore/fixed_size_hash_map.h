@@ -119,7 +119,7 @@ public:
     FixedSizeHashMap(uint32_t module, uint32_t capacity, uint32_t num_shards, const FixedSizeHashMap &orig, const EntryComparator& comp);
     ~FixedSizeHashMap();
 
-    ShardedHashComparator getComp(const EntryComparator& comp) {
+    ShardedHashComparator get_comp(const EntryComparator& comp) {
         return ShardedHashComparator(comp, EntryRef(), _num_shards);
     }
 
