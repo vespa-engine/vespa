@@ -108,7 +108,7 @@ DataStoreFixedSizeHashTest::insert(uint32_t key)
 {
     MyCompare comp(_store, key);
     std::function<EntryRef(void)> insert_entry([this, key]() -> EntryRef { return _allocator.allocate(key); });
-    auto& result = _hash_map->add(_hash_map->getComp(comp), insert_entry);
+    auto& result = _hash_map->add(_hash_map->get_comp(comp), insert_entry);
     auto ref = result.first.load_relaxed();
     auto &wrapped_entry = _allocator.get_wrapped(ref);
     EXPECT_EQ(key, wrapped_entry.value());
@@ -118,7 +118,7 @@ void
 DataStoreFixedSizeHashTest::remove(uint32_t key)
 {
     MyCompare comp(_store, key);
-    auto result = _hash_map->remove(_hash_map->getComp(comp));
+    auto result = _hash_map->remove(_hash_map->get_comp(comp));
     if (result != nullptr) {
         auto ref = result->first.load_relaxed();
         auto &wrapped_entry = _allocator.get_wrapped(ref);
@@ -131,7 +131,7 @@ bool
 DataStoreFixedSizeHashTest::has_key(uint32_t key)
 {
     MyCompare comp(_store, key);
-    auto result = _hash_map->find(_hash_map->getComp(comp));
+    auto result = _hash_map->find(_hash_map->get_comp(comp));
     if (result != nullptr) {
         auto ref = result->first.load_relaxed();
         auto& wrapped_entry = _allocator.get_wrapped(ref);
@@ -271,7 +271,7 @@ TEST_F(DataStoreFixedSizeHashTest, lookups_works_after_insert_and_remove)
     }
     for (auto &kv : expected) {
         MyCompare comp(_store, kv.first);
-        EXPECT_EQ(kv.second, _hash_map->find(_hash_map->getComp(comp)) != nullptr);
+        EXPECT_EQ(kv.second, _hash_map->find(_hash_map->get_comp(comp)) != nullptr);
     }
 }
 
