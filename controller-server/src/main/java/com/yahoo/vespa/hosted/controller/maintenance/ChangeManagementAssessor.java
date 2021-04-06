@@ -3,20 +3,16 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeType;
 
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 public class ChangeManagementAssessor {
@@ -50,12 +46,14 @@ public class ChangeManagementAssessor {
                 .flatMap(Collection::stream)
                 .collect(Collectors.groupingBy(ChangeManagementAssessor::clusterKey));
 
-        boolean allHostsReplacable = nodeRepository.isReplaceable(
+        var tenantHosts = prParentHost.keySet().stream()
+                .filter(node -> node.getType() == NodeType.host)
+                .map(node -> HostName.from(node.getHostname()))
+                .collect(Collectors.toList());
+
+        boolean allHostsReplacable = tenantHosts.isEmpty() || nodeRepository.isReplaceable(
                 zone,
-                prParentHost.keySet().stream()
-                        .filter(node -> node.getType() == NodeType.host)
-                        .map(node -> HostName.from(node.getHostname()))
-                        .collect(Collectors.toList())
+                tenantHosts
         );
 
         // Report assessment pr cluster
@@ -120,6 +118,8 @@ public class ChangeManagementAssessor {
     }
 
     private static Cluster clusterKey(NodeRepositoryNode node) {
+        if (node.getOwner() == null)
+            return Cluster.EMPTY;
         String appId = String.format("%s:%s:%s", node.getOwner().tenant, node.getOwner().application, node.getOwner().instance);
         return new Cluster(Node.ClusterType.valueOf(node.getMembership().clustertype), node.getMembership().clusterid, appId, node.getType());
     }
@@ -224,6 +224,8 @@ public class ChangeManagementAssessor {
         private String clusterId;
         private String app;
         private NodeType nodeType;
+
+        public final static Cluster EMPTY = new Cluster(Node.ClusterType.unknown, "na", "na", NodeType.tenant);
 
         public Cluster(Node.ClusterType clusterType, String clusterId, String app, NodeType nodeType) {
             this.clusterType = clusterType;
