@@ -56,6 +56,7 @@
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>component</artifactId>
       <version>${project.version}</version>
+      <scope>provided</scope>
     </dependency>
     <dependency>
       <groupId>javax.servlet</groupId>
@@ -166,6 +167,7 @@
             <buildLegacyVespaPlatformBundle>true</buildLegacyVespaPlatformBundle>
             <discPreInstallBundle>
                 <!-- Vespa bundles -->
+                component-jar-with-dependencies.jar,
                 configgen.jar,
                 config-bundle-jar-with-dependencies.jar,
                 configdefinitions-jar-with-dependencies.jar,
@@ -182,6 +184,7 @@
                 security-utils-jar-with-dependencies.jar,
                 simplemetrics-jar-with-dependencies.jar,
                 defaults-jar-with-dependencies.jar,
+                component-jar-with-dependencies.jar,
                 zkfacade-jar-with-dependencies.jar,
                 zookeeper-server-jar-with-dependencies.jar,
                 <!-- Jetty -->

@@ -625,6 +625,7 @@ fi
 %{_prefix}/lib/jars/aopalliance-repackaged-*.jar
 %{_prefix}/lib/jars/bcpkix-jdk15on-*.jar
 %{_prefix}/lib/jars/bcprov-jdk15on-*.jar
+%{_prefix}/lib/jars/component-jar-with-dependencies.jar
 %{_prefix}/lib/jars/config-bundle-jar-with-dependencies.jar
 %{_prefix}/lib/jars/configdefinitions-jar-with-dependencies.jar
 %{_prefix}/lib/jars/configgen.jar

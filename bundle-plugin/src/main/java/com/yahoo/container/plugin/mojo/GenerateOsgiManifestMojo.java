@@ -61,13 +61,12 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
     public void execute() throws MojoExecutionException {
         try {
-            if (discPreInstallBundle != null && ! buildLegacyVespaPlatformBundle)
+            if (discPreInstallBundle != null && !buildLegacyVespaPlatformBundle)
                 throw new MojoExecutionException("The 'discPreInstallBundle' parameter can only be used by legacy Vespa platform bundles.");
 
             Artifacts.ArtifactSet artifactSet = Artifacts.getArtifacts(project);
             warnOnUnsupportedArtifacts(artifactSet.getNonJarArtifacts());
-            if (! isContainerDiscArtifact(project.getArtifact()))
-                throwIfInternalContainerArtifactsAreIncluded(artifactSet.getJarArtifactsToInclude());
+            warnIfInternalContainerArtifactsAreIncluded(artifactSet.getJarArtifactsToInclude());
 
             List<Export> exportedPackagesFromProvidedJars = exportedPackagesAggregated(
                     artifactSet.getJarArtifactsProvided().stream().map(Artifact::getFile).collect(Collectors.toList()));
@@ -189,7 +188,7 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
                         artifact.getId(), artifact.getType())));
     }
 
-    private void throwIfInternalContainerArtifactsAreIncluded(Collection<Artifact> includedArtifacts) throws MojoExecutionException {
+    private void warnIfInternalContainerArtifactsAreIncluded(Collection<Artifact> includedArtifacts) throws MojoExecutionException {
         /* In most cases it's sufficient to test for 'component', as it's the lowest level container artifact,
          * Embedding container artifacts will cause class loading issues at runtime, because the classes will
          * not be equal to those seen by the framework (e.g. AbstractComponent). */
@@ -203,10 +202,6 @@ public class GenerateOsgiManifestMojo extends AbstractGenerateOsgiManifestMojo {
 
     private boolean isJdiscComponentArtifact(Artifact a) {
         return a.getArtifactId().equals("component") && a.getGroupId().equals("com.yahoo.vespa");
-    }
-
-    private boolean isContainerDiscArtifact(Artifact a) {
-        return a.getArtifactId().equals("container-disc") && a.getGroupId().equals("com.yahoo.vespa");
     }
 
     private PackageTally getProjectClassesTally() {
