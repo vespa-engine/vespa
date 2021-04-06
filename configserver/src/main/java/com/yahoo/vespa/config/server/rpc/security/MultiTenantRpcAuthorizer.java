@@ -161,7 +161,7 @@ public class MultiTenantRpcAuthorizer implements RpcAuthorizer {
         JrtErrorCode error = isAuthorizationException ? JrtErrorCode.UNAUTHORIZED : JrtErrorCode.AUTHORIZATION_FAILED;
         request.setError(error.code, errorMessage);
         request.returnRequest();
-        throwUnchecked(throwable); // rethrow exception to ensure that subsequent completion stages are not executed (don't execute implementation of rpc method).
+        throw throwUnchecked(throwable); // rethrow exception to ensure that subsequent completion stages are not executed (don't execute implementation of rpc method).
     }
 
     // TODO Make peer identity mandatory once TLS mixed mode is removed
