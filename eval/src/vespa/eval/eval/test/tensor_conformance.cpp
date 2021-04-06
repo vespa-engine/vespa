@@ -15,7 +15,6 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include "tensor_model.h"
-#include "test_io.h"
 #include "reference_evaluation.h"
 
 using vespalib::make_string_short::fmt;
@@ -69,31 +68,6 @@ void verify_result(const ValueBuilderFactory &factory, const vespalib::string &e
 
 // NaN value
 const double my_nan = std::numeric_limits<double>::quiet_NaN();
-
-uint8_t unhex(char c) {
-    if (c >= '0' && c <= '9') {
-        return (c - '0');
-    }
-    if (c >= 'A' && c <= 'F') {
-        return ((c - 'A') + 10);
-    }
-    TEST_ERROR("bad hex char");
-    return 0;
-}
-
-nbostream extract_data(const Memory &hex_dump) {
-    nbostream data;
-    if ((hex_dump.size > 2) && (hex_dump.data[0] == '0') && (hex_dump.data[1] == 'x')) {
-        for (size_t i = 2; i < (hex_dump.size - 1); i += 2) {
-            data << uint8_t((unhex(hex_dump.data[i]) << 4) | unhex(hex_dump.data[i + 1]));
-        }
-    }
-    return data;
-}
-
-bool is_same(const nbostream &a, const nbostream &b) {
-    return (Memory(a.peek(), a.size()) == Memory(b.peek(), b.size()));
-}
 
 // Test wrapper to avoid passing global test parameters around
 struct TestContext {
@@ -678,82 +652,6 @@ struct TestContext {
 
     //-------------------------------------------------------------------------
 
-    void verify_encode_decode(const TensorSpec &spec,
-                              const ValueBuilderFactory &encode_factory,
-                              const ValueBuilderFactory &decode_factory)
-    {
-        nbostream data;
-        auto value = value_from_spec(spec, encode_factory);
-        encode_value(*value, data);
-        auto value2 = decode_value(data, decode_factory);
-        TensorSpec spec2 = spec_from_value(*value2);
-        EXPECT_EQUAL(spec2, spec);
-    }
-
-    void verify_encode_decode(const TensorSpec &spec) {
-        const ValueBuilderFactory &simple = SimpleValueBuilderFactory::get();
-        TEST_DO(verify_encode_decode(spec, factory, simple));
-        if (&factory != &simple) {
-            TEST_DO(verify_encode_decode(spec, simple, factory));
-        }
-    }
-
-    void test_binary_format_spec(Cursor &test) {
-        Stash stash;
-        TensorSpec spec = TensorSpec::from_slime(test["tensor"]);
-        const Inspector &binary = test["binary"];
-        EXPECT_GREATER(binary.entries(), 0u);
-        nbostream encoded;
-        encode_value(*value_from_spec(spec, factory), encoded);
-        test.setData("encoded", Memory(encoded.peek(), encoded.size()));
-        bool matched_encode = false;
-        for (size_t i = 0; i < binary.entries(); ++i) {
-            nbostream data = extract_data(binary[i].asString());
-            matched_encode = (matched_encode || is_same(encoded, data));
-            EXPECT_EQUAL(spec_from_value(*decode_value(data, factory)), spec);
-            EXPECT_EQUAL(data.size(), 0u);
-        }
-        EXPECT_TRUE(matched_encode);
-    }
-
-    void test_binary_format_spec() {
-        vespalib::string path = module_path;
-        path.append("src/apps/make_tensor_binary_format_test_spec/test_spec.json");
-        MappedFileInput file(path);
-        EXPECT_TRUE(file.valid());
-        auto handle_test = [this](Slime &slime)
-                           {
-                               size_t fail_cnt = TEST_MASTER.getProgress().failCnt;
-                               TEST_DO(test_binary_format_spec(slime.get()));
-                               if (TEST_MASTER.getProgress().failCnt > fail_cnt) {
-                                   fprintf(stderr, "failed:\n%s", slime.get().toString().c_str());
-                               }
-                           };
-        auto handle_summary = [](Slime &slime)
-                              {
-                                  EXPECT_GREATER(slime["num_tests"].asLong(), 0);
-                              };
-        for_each_test(file, handle_test, handle_summary);
-    }
-
-    void test_binary_format() {
-        TEST_DO(test_binary_format_spec());
-        TEST_DO(verify_encode_decode(spec(42)));
-        TEST_DO(verify_encode_decode(spec({x(3)}, N())));
-        TEST_DO(verify_encode_decode(spec({x(3),y(5)}, N())));
-        TEST_DO(verify_encode_decode(spec({x(3),y(5),z(7)}, N())));
-        TEST_DO(verify_encode_decode(spec(float_cells({x(3),y(5),z(7)}), N())));
-        TEST_DO(verify_encode_decode(spec({x({"a","b","c"})}, N())));
-        TEST_DO(verify_encode_decode(spec({x({"a","b","c"}),y({"foo","bar"})}, N())));
-        TEST_DO(verify_encode_decode(spec({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}, N())));
-        TEST_DO(verify_encode_decode(spec(float_cells({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}), N())));
-        TEST_DO(verify_encode_decode(spec({x(3),y({"foo", "bar"}),z(7)}, N())));
-        TEST_DO(verify_encode_decode(spec({x({"a","b","c"}),y(5),z({"i","j","k","l"})}, N())));
-        TEST_DO(verify_encode_decode(spec(float_cells({x({"a","b","c"}),y(5),z({"i","j","k","l"})}), N())));
-    }
-
-    //-------------------------------------------------------------------------
-
     void run_tests() {
         TEST_DO(test_tensor_create_type());
         TEST_DO(test_tensor_reduce());
@@ -767,7 +665,6 @@ struct TestContext {
         TEST_DO(test_tensor_create());
         TEST_DO(test_tensor_peek());
         TEST_DO(test_tensor_merge());
-        TEST_DO(test_binary_format());
     }
 };
 

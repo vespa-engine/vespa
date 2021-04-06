@@ -32,13 +32,6 @@ TEST("require that FastValue implementation passes all conformance tests") {
     TEST_DO(TensorConformance::run_tests(module_src_path, FastValueBuilderFactory::get()));
 }
 
-TEST("require that tensor serialization test spec can be generated") {
-    vespalib::string spec = module_src_path + "src/apps/make_tensor_binary_format_test_spec/test_spec.json";
-    vespalib::string binary = module_build_path + "src/apps/make_tensor_binary_format_test_spec/eval_make_tensor_binary_format_test_spec_app";
-    EXPECT_EQUAL(system(fmt("%s > binary_test_spec.json", binary.c_str()).c_str()), 0);
-    EXPECT_EQUAL(system(fmt("diff -u %s binary_test_spec.json", spec.c_str()).c_str()), 0);
-}
-
 TEST("require that cross-language tensor conformance tests pass with C++ expression evaluation") {
     vespalib::string result_file = "conformance_result.json";
     vespalib::string binary = module_build_path + "src/apps/tensor_conformance/vespa-tensor-conformance";

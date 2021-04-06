@@ -75,6 +75,7 @@ vespa_define_module(
     src/tests/instruction/sum_max_dot_product_function
     src/tests/instruction/vector_from_doubles_function
     src/tests/streamed/value
+    src/tests/tensor/binary_format
     src/tests/tensor/instruction_benchmark
     src/tests/tensor/onnx_wrapper
     src/tests/tensor/tensor_conformance
