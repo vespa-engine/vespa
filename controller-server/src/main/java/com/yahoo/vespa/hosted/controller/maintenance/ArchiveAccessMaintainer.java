@@ -1,6 +1,7 @@
 // Copyright 2021 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root
 package com.yahoo.vespa.hosted.controller.maintenance;
 
+import com.google.common.collect.Maps;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucketDb;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
@@ -40,7 +41,10 @@ public class ArchiveAccessMaintainer extends ControllerMaintainer {
 
         zoneRegistry.zones().controllerUpgraded().ids().forEach(zoneId ->
                 archiveBucketDb.buckets(zoneId).forEach(archiveBucket ->
-                        archiveService.updateBucketAndKeyPolicy(zoneId, archiveBucket, tenantArchiveAccessRoles))
+                        archiveService.updateBucketAndKeyPolicy(zoneId, archiveBucket,
+                                Maps.filterEntries(tenantArchiveAccessRoles,
+                                        entry -> archiveBucket.tenants().contains(entry.getKey())))
+                )
         );
 
         return true;

@@ -15,7 +15,7 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Set;
+import java.util.Map;
 
 import static com.yahoo.application.container.handler.Request.Method.PUT;
 import static org.junit.Assert.assertEquals;
@@ -33,17 +33,23 @@ public class ArchiveAccessMaintainerTest extends ControllerContainerCloudTest {
                 .withBooleanFlag(PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true)
                 .withStringFlag(Flags.SYNC_HOST_LOGS_TO_S3_BUCKET.id(), "auto");
         var tester = new ControllerTester(containerTester);
-        var tenantName = tester.createTenant("tenant1", Tenant.Type.cloud);
+        var tenant1 = tester.createTenant("tenant1", Tenant.Type.cloud);
+        var tenant2 = tester.createTenant("tenant2", Tenant.Type.cloud);
+
         containerTester.assertResponse(request("/application/v4/tenant/tenant1/archive-access", PUT)
-                        .data("{\"role\":\"arn:aws:iam::123456789012:role/my-role\"}").roles(Role.administrator(tenantName)),
+                        .data("{\"role\":\"arn:aws:iam::123456789012:role/my-role\"}").roles(Role.administrator(tenant1)),
                 "{\"message\":\"Archive access role set to 'arn:aws:iam::123456789012:role/my-role' for tenant tenant1.\"}", 200);
 
-        tester.controller().archiveBucketDb().archiveUriFor(ZoneId.from("prod.us-east-3"), tenantName);
-        var testBucket = new ArchiveBucket("bucketArn", "keyArn").withTenant(tenantName);
+        containerTester.assertResponse(request("/application/v4/tenant/tenant2/archive-access", PUT)
+                        .data("{\"role\":\"arn:aws:iam::210987654321:role/their-role\"}").roles(Role.administrator(tenant2)),
+                "{\"message\":\"Archive access role set to 'arn:aws:iam::210987654321:role/their-role' for tenant tenant2.\"}", 200);
+
+        tester.controller().archiveBucketDb().archiveUriFor(ZoneId.from("prod.us-east-3"), tenant1);
+        var testBucket = new ArchiveBucket("bucketArn", "keyArn").withTenant(tenant1);
 
         MockArchiveService archiveService = (MockArchiveService) tester.controller().serviceRegistry().archiveService();
         assertNull(archiveService.authorizedIamRoles.get(testBucket));
         new ArchiveAccessMaintainer(containerTester.controller(), Duration.ofMinutes(10)).maintain();
-        assertEquals("arn:aws:iam::123456789012:role/my-role", archiveService.authorizedIamRoles.get(testBucket).get(tenantName));
+        assertEquals(Map.of(tenant1, "arn:aws:iam::123456789012:role/my-role"), archiveService.authorizedIamRoles.get(testBucket));
     }
 }
