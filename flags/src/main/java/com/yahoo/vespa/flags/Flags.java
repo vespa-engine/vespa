@@ -104,7 +104,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_THREE_PHASE_UPDATES = defineFeatureFlag(
             "use-three-phase-updates", false,
-            List.of("vekterli"), "2020-12-02", "2021-04-01",
+            List.of("vekterli"), "2020-12-02", "2021-06-01",
             "Whether to enable the use of three-phase updates when bucket replicas are out of sync.",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
