@@ -1,0 +1,21 @@
+schema lowercase {
+
+  document lowercase {
+
+    field single_field_source type string {
+    }
+
+    field array_field_source type array<string> {
+    }
+
+  }
+
+  field single_field type string {
+    indexing: input single_field_source | lowercase | summary | index
+  }
+
+  field array_field type array<string> {
+    indexing: input array_field_source | for_each { lowercase } | summary | index
+  }
+
+}
