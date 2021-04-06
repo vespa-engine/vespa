@@ -125,14 +125,14 @@ public class Flags {
     
     public static final UnboundBooleanFlag PROVISION_TENANT_ROLES = defineFeatureFlag(
             "provision-tenant-roles", false,
-            List.of("tokle"), "2020-12-02", "2021-04-01",
+            List.of("tokle"), "2020-12-02", "2021-06-01",
             "Whether tenant roles should be provisioned",
             "Takes effect on next deployment (controller)",
             TENANT_ID);
 
     public static final UnboundBooleanFlag TENANT_IAM_ROLE = defineFeatureFlag(
             "application-iam-roles", false,
-            List.of("tokle"), "2020-12-02", "2021-04-01",
+            List.of("tokle"), "2020-12-02", "2021-06-01",
             "Allow separate iam roles when provisioning/assigning hosts",
             "Takes effect immediately on new hosts, on next redeploy for applications",
             TENANT_ID);
