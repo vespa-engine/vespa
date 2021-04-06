@@ -68,7 +68,7 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
 
     private HttpResponse post(HttpRequest request) {
         Path path = new Path(request.getUri());
-        if (path.matches("/changemanagement/v1/assessment")) return new SlimeJsonResponse(doAssessment(request));
+        if (path.matches("/changemanagement/v1/assessment")) return doAssessment(request);
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -97,31 +97,24 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
             return ErrorResponse.notFoundError("Could not find any upcoming change requests with id " + changeRequestId);
 
         var changeRequest = optionalChangeRequest.get();
-        var zone = affectedZone(changeRequest);
 
-        if (zone.isEmpty())
-            return ErrorResponse.notFoundError("Could not find prod zone affected by change request " + changeRequestId);
-
-        var assessment = doAssessment(changeRequest.getImpactedHosts(), zone.get());
-        return new SlimeJsonResponse(assessment);
+        return doAssessment(changeRequest.getImpactedHosts());
     }
 
     // The structure here should be
     //
     // {
-    //   zone: string
     //   hosts: string[]
     //   switches: string[]
     //   switchInSequence: boolean
     // }
     //
-    // Only zone and host are supported right now
-    private Slime doAssessment(HttpRequest request) {
+    // Only hosts is supported right now
+    private HttpResponse doAssessment(HttpRequest request) {
 
         Inspector inspector = inspectorOrThrow(request);
 
         // For now; mandatory fields
-        String zoneStr = getInspectorFieldOrThrow(inspector, "zone").asString();
         Inspector hostArray = getInspectorFieldOrThrow(inspector, "hosts");
 
         // The impacted hostnames
@@ -130,11 +123,15 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
             hostArray.traverse((ArrayTraverser) (i, host) -> hostNames.add(host.asString()));
         }
 
-        return doAssessment(hostNames, ZoneId.from(zoneStr));
+        return doAssessment(hostNames);
     }
 
-    private Slime doAssessment(List<String> hostNames, ZoneId zoneId) {
-        ChangeManagementAssessor.Assessment assessments = assessor.assessment(hostNames, zoneId);
+    private HttpResponse doAssessment(List<String> hostNames) {
+        var zone = affectedZone(hostNames);
+        if (zone.isEmpty())
+            return ErrorResponse.notFoundError("Could not infer prod zone from host list:  " + hostNames);
+
+        ChangeManagementAssessor.Assessment assessments = assessor.assessment(hostNames, zone.get());
 
         Slime slime = new Slime();
         Cursor root = slime.setObject();
@@ -171,12 +168,11 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
             hostObject.setLong("numberOfProblematicChildren", assessment.numberOfProblematicChildren);
         });
 
-        return slime;
+        return new SlimeJsonResponse(slime);
     }
 
-    private Optional<ZoneId> affectedZone(ChangeRequest changeRequest) {
-        var affectedHosts = changeRequest.getImpactedHosts()
-                .stream()
+    private Optional<ZoneId> affectedZone(List<String> hosts) {
+        var affectedHosts = hosts.stream()
                 .map(HostName::from)
                 .collect(Collectors.toList());
 
