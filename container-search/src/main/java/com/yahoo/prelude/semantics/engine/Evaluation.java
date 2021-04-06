@@ -244,12 +244,14 @@ public class Evaluation {
      * @param desiredParentType the desired type of the composite which contains item when this returns
      */
     public void insertItem(Item item, CompositeItem parent, int index, TermType desiredParentType) {
-        if (parent == null) { // TODO: Accommodate for termtype in this case too
-            query.getModel().getQueryTree().setRoot(item);
+        if (isEmpty(parent)) {
+            CompositeItem newParent = (CompositeItem)desiredParentType.createItemClass();
+            newParent.addItem(item);
+            query.getModel().getQueryTree().setRoot(newParent);
             return;
         }
 
-        if (parent.getItemCount()>0 && parent instanceof QueryTree && parent.getItem(0) instanceof CompositeItem) {
+        if (parent.getItemCount() > 0 && parent instanceof QueryTree && parent.getItem(0) instanceof CompositeItem) {
             // combine with the existing root instead
             parent = (CompositeItem)parent.getItem(0);
             if (index == 1) { // that means adding it after the existing root
@@ -261,9 +263,23 @@ public class Evaluation {
              && equalIndexNameIfParentIsPhrase(item, parent)) {
             addItem(parent, index, item, desiredParentType);
         }
-        else {
+        else if (incompatible(desiredParentType, parent)) {
             insertIncompatibleItem(item, parent, query, desiredParentType);
         }
+        else {
+            insertIncompatibleItemAsParent(item, parent, query, desiredParentType);
+        }
+    }
+
+    private boolean isEmpty(Item item) {
+        if (item == null) return true;
+        if (item instanceof QueryTree && ((QueryTree) item).isEmpty()) return true;
+        return false;
+    }
+
+    /** Returns true if the desired type cannot have childCandidate as a child */
+    private boolean incompatible(TermType desiredParentType, Item childCandidate) {
+        return desiredParentType == TermType.EQUIV && childCandidate.getItemType() != Item.ItemType.EQUIV;
     }
 
     private void addItem(CompositeItem parent, int index, Item item, TermType desiredParentType) {
@@ -305,6 +321,17 @@ public class Evaluation {
     }
 
     private void insertIncompatibleItem(Item item, CompositeItem parent, Query query, TermType desiredParentType) {
+        CompositeItem newParent;
+        if (desiredParentType == TermType.DEFAULT)
+            newParent = new AndItem();
+        else
+            newParent = (CompositeItem)desiredParentType.createItemClass();
+
+        newParent.addItem(item);
+        parent.addItem(newParent);
+    }
+
+    private void insertIncompatibleItemAsParent(Item item, CompositeItem parent, Query query, TermType desiredParentType) {
         // Create new parent
         CompositeItem newParent;
         if (desiredParentType == TermType.DEFAULT)
@@ -325,11 +352,7 @@ public class Evaluation {
 
         }
         else {
-            int parentIndex = 0;
-            if (parentsParent != null) {
-                parentIndex = parentsParent.getItemIndex(parent);
-            }
-            parentsParent.setItem(parentIndex, newParent);
+            parentsParent.setItem(parentsParent.getItemIndex(parent), newParent);
         }
     }
 
