@@ -12,7 +12,7 @@
     <relativePath>../parent/pom.xml</relativePath>
   </parent>
   <artifactId>component</artifactId>
-  <packaging>container-plugin</packaging>
+  <packaging>jar</packaging>
   <version>7-SNAPSHOT</version>
   <dependencies>
     <dependency>
@@ -58,11 +58,6 @@
   </dependencies>
   <build>
     <plugins>
-      <plugin>
-        <groupId>com.yahoo.vespa</groupId>
-        <artifactId>bundle-plugin</artifactId>
-        <extensions>true</extensions>
-      </plugin>
       <plugin>
         <groupId>org.codehaus.mojo</groupId>
         <artifactId>exec-maven-plugin</artifactId>

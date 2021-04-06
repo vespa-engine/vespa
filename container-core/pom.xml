@@ -13,18 +13,13 @@
   </parent>
   <artifactId>container-core</artifactId>
   <version>7-SNAPSHOT</version>
-  <packaging>container-plugin</packaging>
+  <packaging>jar</packaging>
   <dependencies>
 
     <!-- COMPILE scope -->
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
       <artifactId>annotations</artifactId>
-      <version>${project.version}</version>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
-      <artifactId>container-di</artifactId>
       <version>${project.version}</version>
     </dependency>
     <dependency>
@@ -147,16 +142,6 @@
     <dependency>
       <groupId>org.apache.httpcomponents</groupId>
       <artifactId>httpclient</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.jupiter</groupId>
-      <artifactId>junit-jupiter</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>org.junit.vintage</groupId>
-      <artifactId>junit-vintage-engine</artifactId>
-      <scope>test</scope>
     </dependency>
     <dependency>
       <!-- TODO Vespa 8: stop providing org.json:json -->
@@ -327,17 +312,6 @@
   <build>
     <plugins>
       <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-jar-plugin</artifactId>
-        <configuration>
-          <archive>
-            <manifestEntries>
-              <Bundle-SymbolicName>${project.artifactId}</Bundle-SymbolicName>
-            </manifestEntries>
-          </archive>
-        </configuration>
-      </plugin>
-      <plugin>
         <groupId>com.yahoo.vespa</groupId>
         <artifactId>config-class-plugin</artifactId>
         <version>${project.version}</version>
@@ -360,11 +334,6 @@
             </configuration>
           </execution>
         </executions>
-      </plugin>
-      <plugin>
-        <groupId>com.yahoo.vespa</groupId>
-        <artifactId>bundle-plugin</artifactId>
-        <extensions>true</extensions>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
