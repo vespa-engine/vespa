@@ -184,31 +184,31 @@ std::vector<const char *> TestBaseValues<CStringUniqueStore>::values{ "aa", "bbb
 template <>
 std::vector<double> TestBaseValues<DoubleUniqueStore>::values{ 10.0, 20.0, 30.0, 10.0 };
 
-struct OrderedNumberUniqueStore
+struct BTreeNumberUniqueStore
 {
     using UniqueStoreType = NumberUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::BTREE;
 };
 
-struct OrderedStringUniqueStore
+struct BTreeStringUniqueStore
 {
     using UniqueStoreType = StringUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::BTREE;
 };
 
-struct OrderedCStringUniqueStore
+struct BTreeCStringUniqueStore
 {
     using UniqueStoreType = CStringUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::BTREE;
 };
 
-struct OrderedDoubleUniqueStore
+struct BTreeDoubleUniqueStore
 {
     using UniqueStoreType = DoubleUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::BTREE;
 };
 
-struct OrderedSmallOffsetNumberUniqueStore
+struct BTreeSmallOffsetNumberUniqueStore
 {
     using UniqueStoreType = SmallOffsetNumberUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::BTREE;
@@ -244,37 +244,37 @@ struct HybridSmallOffsetNumberUniqueStore
     static constexpr DictionaryType dictionary_type = DictionaryType::BTREE_AND_HASH;
 };
 
-struct UnorderedNumberUniqueStore
+struct HashNumberUniqueStore
 {
     using UniqueStoreType = NumberUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::HASH;
 };
 
-struct UnorderedStringUniqueStore
+struct HashStringUniqueStore
 {
     using UniqueStoreType = StringUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::HASH;
 };
 
-struct UnorderedCStringUniqueStore
+struct HashCStringUniqueStore
 {
     using UniqueStoreType = CStringUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::HASH;
 };
 
-struct UnorderedDoubleUniqueStore
+struct HashDoubleUniqueStore
 {
     using UniqueStoreType = DoubleUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::HASH;
 };
 
-struct UnorderedSmallOffsetNumberUniqueStore
+struct HashSmallOffsetNumberUniqueStore
 {
     using UniqueStoreType = SmallOffsetNumberUniqueStore;
     static constexpr DictionaryType dictionary_type = DictionaryType::HASH;
 };
 
-using UniqueStoreTestTypes = ::testing::Types<OrderedNumberUniqueStore, OrderedStringUniqueStore, OrderedCStringUniqueStore, OrderedDoubleUniqueStore, HybridNumberUniqueStore, HybridStringUniqueStore, HybridCStringUniqueStore, HybridDoubleUniqueStore, UnorderedNumberUniqueStore, UnorderedStringUniqueStore, UnorderedCStringUniqueStore, UnorderedDoubleUniqueStore>;
+using UniqueStoreTestTypes = ::testing::Types<BTreeNumberUniqueStore, BTreeStringUniqueStore, BTreeCStringUniqueStore, BTreeDoubleUniqueStore, HybridNumberUniqueStore, HybridStringUniqueStore, HybridCStringUniqueStore, HybridDoubleUniqueStore, HashNumberUniqueStore, HashStringUniqueStore, HashCStringUniqueStore, HashDoubleUniqueStore>;
 VESPA_GTEST_TYPED_TEST_SUITE(TestBase, UniqueStoreTestTypes);
 
 // Disable warnings emitted by gtest generated files when using typed tests
@@ -283,11 +283,11 @@ VESPA_GTEST_TYPED_TEST_SUITE(TestBase, UniqueStoreTestTypes);
 #pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 
-using NumberTest = TestBase<OrderedNumberUniqueStore>;
-using StringTest = TestBase<OrderedStringUniqueStore>;
-using CStringTest = TestBase<OrderedCStringUniqueStore>;
-using DoubleTest = TestBase<OrderedDoubleUniqueStore>;
-using SmallOffsetNumberTest = TestBase<OrderedSmallOffsetNumberUniqueStore>;
+using NumberTest = TestBase<BTreeNumberUniqueStore>;
+using StringTest = TestBase<BTreeStringUniqueStore>;
+using CStringTest = TestBase<BTreeCStringUniqueStore>;
+using DoubleTest = TestBase<BTreeDoubleUniqueStore>;
+using SmallOffsetNumberTest = TestBase<BTreeSmallOffsetNumberUniqueStore>;
 
 TEST(UniqueStoreTest, trivial_and_non_trivial_types_are_tested)
 {

@@ -17,7 +17,7 @@ using FloatEnumStore = EnumStoreT<float>;
 using NumericEnumStore = EnumStoreT<int32_t>;
 using StringEnumStore = EnumStoreT<const char*>;
 
-struct OrderedDoubleEnumStore {
+struct BTreeDoubleEnumStore {
     using EnumStoreType = DoubleEnumStore;
     static constexpr Type type = Type::BTREE;
 };
@@ -27,12 +27,12 @@ struct HybridDoubleEnumStore {
     static constexpr Type type = Type::BTREE_AND_HASH;
 };
 
-struct UnorderedDoubleEnumStore {
+struct HashDoubleEnumStore {
     using EnumStoreType = DoubleEnumStore;
     static constexpr Type type = Type::HASH;
 };
 
-struct OrderedFloatEnumStore {
+struct BTreeFloatEnumStore {
     using EnumStoreType = FloatEnumStore;
     static constexpr Type type = Type::BTREE;
 };
@@ -42,12 +42,12 @@ struct HybridFloatEnumStore {
     static constexpr Type type = Type::BTREE_AND_HASH;
 };
 
-struct UnorderedFloatEnumStore {
+struct HashFloatEnumStore {
     using EnumStoreType = FloatEnumStore;
     static constexpr Type type = Type::HASH;
 };
 
-struct OrderedNumericEnumStore {
+struct BTreeNumericEnumStore {
     using EnumStoreType = NumericEnumStore;
     static constexpr Type type = Type::BTREE;
 };
@@ -57,12 +57,12 @@ struct HybridNumericEnumStore {
     static constexpr Type type = Type::BTREE_AND_HASH;
 };
 
-struct UnorderedNumericEnumStore {
+struct HashNumericEnumStore {
     using EnumStoreType = NumericEnumStore;
     static constexpr Type type = Type::HASH;
 };
 
-struct OrderedStringEnumStore {
+struct BTreeStringEnumStore {
     using EnumStoreType = StringEnumStore;
     static constexpr Type type = Type::BTREE;
 };
@@ -72,7 +72,7 @@ struct HybridStringEnumStore {
     static constexpr Type type = Type::BTREE_AND_HASH;
 };
 
-struct UnorderedStringEnumStore {
+struct HashStringEnumStore {
     using EnumStoreType = StringEnumStore;
     static constexpr Type type = Type::HASH;
 };
@@ -120,13 +120,13 @@ checkReaders(const StringEnumStore& ses,
     }
 }
 
-template <typename EnumStoreTypeAndOrdering>
+template <typename EnumStoreTypeAndDictionaryType>
 class FloatEnumStoreTest : public ::testing::Test {
 public:
-    using EnumStoreType = typename EnumStoreTypeAndOrdering::EnumStoreType;
+    using EnumStoreType = typename EnumStoreTypeAndDictionaryType::EnumStoreType;
     EnumStoreType es;
     FloatEnumStoreTest()
-        : es(false, EnumStoreTypeAndOrdering::type)
+        : es(false, EnumStoreTypeAndDictionaryType::type)
     {}
 };
 
@@ -136,7 +136,7 @@ public:
 #pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 
-using FloatEnumStoreTestTypes = ::testing::Types<OrderedFloatEnumStore, OrderedDoubleEnumStore, HybridFloatEnumStore, HybridDoubleEnumStore, UnorderedFloatEnumStore, UnorderedDoubleEnumStore>;
+using FloatEnumStoreTestTypes = ::testing::Types<BTreeFloatEnumStore, BTreeDoubleEnumStore, HybridFloatEnumStore, HybridDoubleEnumStore, HashFloatEnumStore, HashDoubleEnumStore>;
 VESPA_GTEST_TYPED_TEST_SUITE(FloatEnumStoreTest, FloatEnumStoreTestTypes);
 
 TYPED_TEST(FloatEnumStoreTest, numbers_can_be_inserted_and_retrieved)
@@ -464,16 +464,16 @@ LoaderTestValues<StringEnumStore>::load_values(enumstore::EnumeratedLoaderBase& 
     loader.load_unique_values(raw_values.data(), raw_values.size());
 }
 
-template <typename EnumStoreTypeAndOrdering>
+template <typename EnumStoreTypeAndDictionaryType>
 class LoaderTest : public ::testing::Test {
 public:
-    using EnumStoreType = typename EnumStoreTypeAndOrdering::EnumStoreType;
+    using EnumStoreType = typename EnumStoreTypeAndDictionaryType::EnumStoreType;
     using EntryType = typename EnumStoreType::EntryType;
     EnumStoreType store;
     using Values = LoaderTestValues<EnumStoreType>;
 
     LoaderTest()
-        : store(true, EnumStoreTypeAndOrdering::type)
+        : store(true, EnumStoreTypeAndDictionaryType::type)
     {}
 
     void load_values(enumstore::EnumeratedLoaderBase& loader) const {
@@ -525,7 +525,7 @@ public:
 #pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 
-using LoaderTestTypes = ::testing::Types<OrderedNumericEnumStore, OrderedFloatEnumStore, OrderedStringEnumStore, HybridNumericEnumStore, HybridFloatEnumStore, HybridStringEnumStore, UnorderedNumericEnumStore, UnorderedFloatEnumStore, UnorderedStringEnumStore>;
+using LoaderTestTypes = ::testing::Types<BTreeNumericEnumStore, BTreeFloatEnumStore, BTreeStringEnumStore, HybridNumericEnumStore, HybridFloatEnumStore, HybridStringEnumStore, HashNumericEnumStore, HashFloatEnumStore, HashStringEnumStore>;
 VESPA_GTEST_TYPED_TEST_SUITE(LoaderTest, LoaderTestTypes);
 
 TYPED_TEST(LoaderTest, store_is_instantiated_with_enumerated_loader)
@@ -579,15 +579,15 @@ TYPED_TEST(LoaderTest, store_is_instantiated_with_non_enumerated_loader)
 
 #pragma GCC diagnostic pop
 
-template <typename EnumStoreTypeAndOrdering>
+template <typename EnumStoreTypeAndDictionaryType>
 class EnumStoreDictionaryTest : public ::testing::Test {
 public:
-    using EnumStoreType = typename EnumStoreTypeAndOrdering::EnumStoreType;
+    using EnumStoreType = typename EnumStoreTypeAndDictionaryType::EnumStoreType;
     using EntryType = typename EnumStoreType::EntryType;
     EnumStoreType store;
 
     EnumStoreDictionaryTest()
-        : store(true, EnumStoreTypeAndOrdering::type)
+        : store(true, EnumStoreTypeAndDictionaryType::type)
     {}
 
     // Reuse test values from LoaderTest
@@ -600,9 +600,9 @@ public:
     static EntryRef fake_pidx() { return EntryRef(42); }
 };
 
-template <typename EnumStoreTypeAndOrdering>
+template <typename EnumStoreTypeAndDictionaryType>
 void
-EnumStoreDictionaryTest<EnumStoreTypeAndOrdering>::update_posting_idx(EnumIndex enum_idx, EntryRef old_posting_idx, EntryRef new_posting_idx)
+EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::update_posting_idx(EnumIndex enum_idx, EntryRef old_posting_idx, EntryRef new_posting_idx)
 {
     auto& dict = store.get_dictionary();
     EntryRef old_posting_idx_check;
@@ -610,9 +610,9 @@ EnumStoreDictionaryTest<EnumStoreTypeAndOrdering>::update_posting_idx(EnumIndex 
     EXPECT_EQ(old_posting_idx, old_posting_idx_check);
 }
 
-template <typename EnumStoreTypeAndOrdering>
+template <typename EnumStoreTypeAndDictionaryType>
 EnumIndex
-EnumStoreDictionaryTest<EnumStoreTypeAndOrdering>::insert_value(size_t value_idx)
+EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::insert_value(size_t value_idx)
 {
     assert(value_idx < values().size());
     auto enum_idx = store.insert(values()[value_idx]);
@@ -626,7 +626,7 @@ EnumStoreDictionaryTest<EnumStoreTypeAndOrdering>::insert_value(size_t value_idx
 #pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 
-using EnumStoreDictionaryTestTypes = ::testing::Types<OrderedNumericEnumStore, HybridNumericEnumStore, UnorderedNumericEnumStore>;
+using EnumStoreDictionaryTestTypes = ::testing::Types<BTreeNumericEnumStore, HybridNumericEnumStore, HashNumericEnumStore>;
 VESPA_GTEST_TYPED_TEST_SUITE(EnumStoreDictionaryTest, EnumStoreDictionaryTestTypes);
 
 TYPED_TEST(EnumStoreDictionaryTest, find_frozen_index_works)
