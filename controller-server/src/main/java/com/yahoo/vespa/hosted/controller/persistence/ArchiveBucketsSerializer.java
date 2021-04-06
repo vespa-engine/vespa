@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 
 import java.util.Set;
 import java.util.stream.Collectors;
-import java.util.stream.IntStream;
 
 /**
  * (de)serializes tenant/bucket mappings for a zone
@@ -50,18 +49,15 @@ public class ArchiveBucketsSerializer {
     }
 
     public static Set<ArchiveBucket> fromSlime(Inspector inspector) {
-        Inspector buckets = inspector.field(bucketsFieldName);
-
-        return IntStream.range(0, buckets.entries()).mapToObj(buckets::entry)
-                .map(ArchiveBucketsSerializer::fromInspector).collect(Collectors.toUnmodifiableSet());
+        return SlimeUtils.entriesStream(inspector.field(bucketsFieldName))
+                .map(ArchiveBucketsSerializer::fromInspector)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     private static ArchiveBucket fromInspector(Inspector inspector) {
-        Set<TenantName> tenants =
-                IntStream.range(0, inspector.field(tenantsFieldName).entries())
-                        .mapToObj(i -> inspector.field(tenantsFieldName).entry(i).asString())
-                        .map(TenantName::from)
-                        .collect(Collectors.toUnmodifiableSet());
+        Set<TenantName> tenants = SlimeUtils.entriesStream(inspector.field(tenantsFieldName))
+                .map(i -> TenantName.from(i.asString()))
+                .collect(Collectors.toUnmodifiableSet());
 
         return new ArchiveBucket(
                 inspector.field(bucketArnFieldName).asString(),
