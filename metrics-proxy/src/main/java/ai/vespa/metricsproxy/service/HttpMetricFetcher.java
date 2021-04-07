@@ -1,13 +1,15 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.service;
 
-import ai.vespa.util.http.hc4.VespaHttpClientBuilder;
+import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
+
 import java.util.logging.Level;
 import com.yahoo.yolean.Exceptions;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.BasicResponseHandler;
-import org.apache.http.impl.client.CloseableHttpClient;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
 import java.net.URI;
@@ -45,7 +47,7 @@ public abstract class HttpMetricFetcher {
 
     String getJson() throws IOException {
         log.log(Level.FINE, "Connecting to url " + url + " for service '" + service + "'");
-        return httpClient.execute(new HttpGet(url), new BasicResponseHandler());
+        return httpClient.execute(new HttpGet(url), new BasicHttpClientResponseHandler());
     }
 
     public String toString() {
@@ -82,8 +84,8 @@ public abstract class HttpMetricFetcher {
         return VespaHttpClientBuilder.create()
                 .setUserAgent("metrics-proxy-http-client")
                 .setDefaultRequestConfig(RequestConfig.custom()
-                                                 .setConnectTimeout(CONNECTION_TIMEOUT)
-                                                 .setSocketTimeout(SOCKET_TIMEOUT)
+                                                 .setConnectTimeout(Timeout.ofMilliseconds(CONNECTION_TIMEOUT))
+                                                 .setResponseTimeout(Timeout.ofMilliseconds(SOCKET_TIMEOUT))
                                                  .build())
                 .build();
     }
