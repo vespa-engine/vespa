@@ -47,11 +47,11 @@ public abstract class HttpMetricFetcher {
         log.log(Level.FINE, "Fetching metrics from " + u + " with timeout " + CONNECTION_TIMEOUT);
     }
 
-    String getJson() throws IOException {
+    byte [] getJson() throws IOException {
         log.log(Level.FINE, "Connecting to url " + url + " for service '" + service + "'");
         Future<SimpleHttpResponse> response = httpClient.execute(new SimpleHttpRequest("GET", url), null);
         try {
-            return response.get().getBodyText();
+            return response.get().getBodyBytes();
         } catch (InterruptedException | ExecutionException e) {
             throw new IOException("Failed fetching '" + url + "': " + e);
         }
@@ -66,7 +66,7 @@ public abstract class HttpMetricFetcher {
                 Exceptions.toMessageString(e);
     }
 
-    void handleException(Exception e, String data, int timesFetched) {
+    void handleException(Exception e, Object data, int timesFetched) {
         logMessage("Unable to parse json '" + data + "' for service '" + service + "': " +
                            Exceptions.toMessageString(e), timesFetched);
     }
