@@ -51,6 +51,7 @@
     "commit": "commit1"
   },
   "status": "complete",
+  "archiveUri":"s3://my-bucket/tenant1/",
   "activity": {
     "lastQueried": 1527848130000,
     "lastWritten": 1527848130000,

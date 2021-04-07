@@ -41,7 +41,6 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.NotExistsException;
-import com.yahoo.vespa.hosted.controller.application.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.EnvironmentResource;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.EndpointStatus;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.ProtonMetrics;
@@ -70,6 +69,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretSto
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.RoleDefinition;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
+import com.yahoo.vespa.hosted.controller.application.ActivateResult;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.AssignedRotation;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -1315,6 +1315,9 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                        else response.setString("status", "running");
                    });
         }
+
+        controller.archiveBucketDb().archiveUriFor(deploymentId.zoneId(), deploymentId.applicationId().tenant())
+                .ifPresent(archiveUri -> response.setString("archiveUri", archiveUri.toString()));
 
         Cursor activity = response.setObject("activity");
         deployment.activity().lastQueried().ifPresent(instant -> activity.setLong("lastQueried",

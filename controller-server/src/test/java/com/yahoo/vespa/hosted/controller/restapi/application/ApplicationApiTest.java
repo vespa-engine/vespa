@@ -153,6 +153,7 @@ public class ApplicationApiTest extends ControllerContainerTest {
     @Test
     public void testApplicationApi() {
         createAthenzDomainWithAdmin(ATHENZ_TENANT_DOMAIN, USER_ID); // (Necessary but not provided in this API)
+        ((InMemoryFlagSource) tester.controller().flagSource()).withStringFlag(Flags.SYNC_HOST_LOGS_TO_S3_BUCKET.id(), "my-bucket");
 
         // GET API root
         tester.assertResponse(request("/application/v4/", GET).userIdentity(USER_ID),
