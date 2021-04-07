@@ -2,9 +2,11 @@
 package com.yahoo.vespa.hosted.controller.restapi.changemanagement;
 
 import com.yahoo.application.container.handler.Request;
+import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzUser;
+import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeMembership;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwner;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
@@ -32,6 +34,7 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
         tester = new ContainerTester(container, responses);
         addUserToHostedOperatorRole(operator);
         tester.serviceRegistry().configServer().nodeRepository().addNodes(ZoneId.from("prod.us-east-3"), createNodes());
+        tester.serviceRegistry().configServer().nodeRepository().putNodes(ZoneId.from("prod.us-east-3"), createNode());
     }
 
     @Test
@@ -47,6 +50,12 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
     private void assertFile(Request request, String filename) {
         addIdentityToRequest(request, operator);
         tester.assertResponse(request, new File(filename));
+    }
+
+    private Node createNode() {
+        return new Node.Builder()
+                .hostname(HostName.from("host1"))
+                .build();
     }
 
     private List<NodeRepositoryNode> createNodes() {
