@@ -83,7 +83,7 @@ public class NodeRepoStats {
         Map<String, NodeMetricSnapshot> snapshotsByHost = byHost(allNodeTimeseries);
         for (var applicationNodes : allNodes.state(Node.State.active)
                                             .nodeType(NodeType.tenant)
-                                            .matching(node -> ! node.allocation().get().owner().instance().isTester())
+                                            .not().tester()
                                             .groupingBy(node -> node.allocation().get().owner()).entrySet()) {
 
             NodeResources totalResources = NodeResources.zero();

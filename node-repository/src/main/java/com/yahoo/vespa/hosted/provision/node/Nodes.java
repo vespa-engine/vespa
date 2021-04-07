@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
@@ -360,9 +359,7 @@ public class Nodes {
      * Moves a host to breakfixed state, removing any children.
      */
     public List<Node> breakfixRecursively(String hostname, Agent agent, String reason) {
-        Node node = node(hostname).orElseThrow(() ->
-                                                          new NoSuchNodeException("Could not breakfix " + hostname + ": Node not found"));
-
+        Node node = node(hostname).orElseThrow(() -> new NoSuchNodeException("Could not breakfix " + hostname + ": Node not found"));
         try (Mutex lock = lockUnallocated()) {
             requireBreakfixable(node);
             List<Node> removed = removeChildren(node, false);
@@ -389,9 +386,7 @@ public class Nodes {
 
     private Node move(String hostname, boolean keepAllocation, Node.State toState, Agent agent, Optional<String> reason,
                       NestedTransaction transaction) {
-        Node node = node(hostname).orElseThrow(() ->
-                                                          new NoSuchNodeException("Could not move " + hostname + " to " + toState + ": Node not found"));
-
+        Node node = node(hostname).orElseThrow(() -> new NoSuchNodeException("Could not move " + hostname + " to " + toState + ": Node not found"));
         if (!keepAllocation && node.allocation().isPresent()) {
             node = node.withoutAllocation();
         }
