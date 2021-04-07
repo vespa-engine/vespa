@@ -475,7 +475,7 @@ public class DynamicProvisioningMaintainerTest {
         Supplier<Node> nodeToRemove = () -> tester.nodeRepository().nodes().node(configNodes.childrenOf(hostnameToRemove).first().get().hostname()).get();
 
         // Set want to retire and deprovision on host and children
-        tester.nodeRepository().nodes().deprovision(hostToRemove.get(), Agent.system, tester.clock().instant());
+        tester.nodeRepository().nodes().deprovision(hostToRemove.get().hostname(), Agent.system, tester.clock().instant());
 
         // Redeployment of config server application retires node
         tester.prepareAndActivateInfraApplication(configSrvApp, hostType.childNodeType());

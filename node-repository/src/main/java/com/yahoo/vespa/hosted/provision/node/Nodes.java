@@ -197,6 +197,22 @@ public class Nodes {
         return setReady(List.of(nodeToReady), agent, reason).get(0);
     }
 
+    /** Restore a node that has been rebuilt */
+    public Node restore(String hostname, Agent agent, String reason) {
+        // A deprovisioned host has no children so this doesn't need to to be recursive
+        try (NodeMutex lock = lockAndGetRequired(hostname)) {
+            Node existing = lock.node();
+            if (existing.state() != Node.State.deprovisioned) illegal("Can not move node " + hostname + " to " +
+                                                                      Node.State.provisioned + ". It is not in " +
+                                                                      Node.State.deprovisioned);
+            if (!existing.status().wantToRebuild()) illegal("Can not move node " + hostname + " to " +
+                                                            Node.State.provisioned +
+                                                            ". Rebuild has not been requested");
+            Node nodeWithResetFields = existing.withWantToRetire(false, false, false, agent, clock.instant());
+            return db.writeTo(Node.State.provisioned, nodeWithResetFields, agent, Optional.of(reason));
+        }
+    }
+
     /** Reserve nodes. This method does <b>not</b> lock the node repository */
     public List<Node> reserve(List<Node> nodes) {
         return db.writeTo(Node.State.reserved, nodes, Agent.application, Optional.empty());
@@ -459,7 +475,9 @@ public class Nodes {
                 if (zone.getCloud().dynamicProvisioning() || node.type() != NodeType.host)
                     db.removeNodes(List.of(node));
                 else {
-                    node = node.with(IP.Config.EMPTY);
+                    if (!node.status().wantToRebuild()) { // Keep IP addresses if we're rebuilding
+                        node = node.with(IP.Config.EMPTY);
+                    }
                     move(node, Node.State.deprovisioned, Agent.system, Optional.empty());
                 }
                 removed.add(node);
@@ -577,19 +595,31 @@ public class Nodes {
     }
 
     /** Retire and deprovision given host and all of its children */
-    public List<Node> deprovision(Node host, Agent agent, Instant instant) {
-        if (!host.type().isHost()) throw new IllegalArgumentException("Cannot deprovision non-host " + host);
-        Optional<NodeMutex> nodeMutex = lockAndGet(host);
+    public List<Node> deprovision(String hostname, Agent agent, Instant instant) {
+        return decomission(hostname, DecommisionOperation.deprovision, agent, instant);
+    }
+
+    /** Retire and rebuild given host and all of its children */
+    public List<Node> rebuild(String hostname, Agent agent, Instant instant) {
+        return decomission(hostname, DecommisionOperation.rebuild, agent, instant);
+    }
+
+    private List<Node> decomission(String hostname, DecommisionOperation op, Agent agent, Instant instant) {
+        Optional<NodeMutex> nodeMutex = lockAndGet(hostname);
         if (nodeMutex.isEmpty()) return List.of();
+        Node host = nodeMutex.get().node();
+        if (!host.type().isHost()) throw new IllegalArgumentException("Cannot " + op + " non-host " + host);
         List<Node> result;
+        boolean wantToDeprovision = op == DecommisionOperation.deprovision;
+        boolean wantToRebuild = op == DecommisionOperation.rebuild;
         try (NodeMutex lock = nodeMutex.get(); Mutex allocationLock = lockUnallocated()) {
             // This takes allocationLock to prevent any further allocation of nodes on this host
             host = lock.node();
             NodeList children = list(allocationLock).childrenOf(host);
             result = performOn(NodeListFilter.from(children.asList()),
-                               (node, nodeLock) -> write(node.withWantToRetire(true, true, agent, instant),
+                               (node, nodeLock) -> write(node.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant),
                                                          nodeLock));
-            result.add(write(host.withWantToRetire(true, true, agent, instant), lock));
+            result.add(write(host.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant), lock));
         }
         return result;
     }
@@ -740,6 +770,12 @@ public class Nodes {
 
     private void illegal(String message) {
         throw new IllegalArgumentException(message);
+    }
+
+    /** The different ways a host can be decomissioned */
+    private enum DecommisionOperation {
+        deprovision,
+        rebuild,
     }
 
 }

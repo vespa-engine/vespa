@@ -220,6 +220,18 @@ public class IP {
             ipv6
         }
 
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+            IpAddresses that = (IpAddresses) o;
+            return ipAddresses.equals(that.ipAddresses) && protocol == that.protocol;
+        }
+
+        @Override
+        public int hashCode() {
+            return Objects.hash(ipAddresses, protocol);
+        }
     }
 
     /**
@@ -346,13 +358,13 @@ public class IP {
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
-            Pool that = (Pool) o;
-            return Objects.equals(ipAddresses, that.ipAddresses);
+            Pool pool = (Pool) o;
+            return ipAddresses.equals(pool.ipAddresses) && addresses.equals(pool.addresses);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(ipAddresses);
+            return Objects.hash(ipAddresses, addresses);
         }
 
     }
