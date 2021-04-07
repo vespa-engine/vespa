@@ -590,17 +590,13 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     private HttpResponse validateSecretStore(String tenantName, String secretStoreName, HttpRequest request) {
-
         var awsRegion = request.getProperty("aws-region");
         var parameterName = request.getProperty("parameter-name");
         var applicationId = ApplicationId.fromFullString(request.getProperty("application-id"));
         var zoneId = ZoneId.from(request.getProperty("zone"));
         var deploymentId = new DeploymentId(applicationId, zoneId);
 
-        var tenant = (CloudTenant)controller.tenants().require(applicationId.tenant());
-        if (tenant.type() != Tenant.Type.cloud) {
-            return ErrorResponse.badRequest("Tenant '" + applicationId.tenant() + "' is not a cloud tenant");
-        }
+        var tenant = controller.tenants().require(applicationId.tenant(), CloudTenant.class);
 
         var tenantSecretStore = tenant.tenantSecretStores()
                 .stream()
@@ -630,7 +626,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         String pemDeveloperKey = toSlime(request.getData()).get().field("key").asString();
         PublicKey developerKey = KeyUtils.fromPemEncodedPublicKey(pemDeveloperKey);
-        Principal user = ((CloudTenant) controller.tenants().require(TenantName.from(tenantName))).developerKeys().get(developerKey);
+        Principal user = controller.tenants().require(TenantName.from(tenantName), CloudTenant.class).developerKeys().get(developerKey);
         Slime root = new Slime();
         controller.tenants().lockOrThrow(TenantName.from(tenantName), LockedTenant.Cloud.class, tenant -> {
             tenant = tenant.withoutDeveloperKey(developerKey);
@@ -685,7 +681,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         var externalId = mandatory("externalId", data).asString();
         var role = mandatory("role", data).asString();
 
-        var tenant = (CloudTenant) controller.tenants().require(TenantName.from(tenantName));
+        var tenant = controller.tenants().require(TenantName.from(tenantName), CloudTenant.class);
         var tenantSecretStore = new TenantSecretStore(name, awsId, role);
 
         if (!tenantSecretStore.isValid()) {
@@ -703,14 +699,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             controller.tenants().store(lockedTenant);
         });
 
-        tenant = (CloudTenant) controller.tenants().require(TenantName.from(tenantName));
+        tenant = controller.tenants().require(TenantName.from(tenantName), CloudTenant.class);
         var slime = new Slime();
         toSlime(slime.setObject(), tenant.tenantSecretStores());
         return new SlimeJsonResponse(slime);
     }
 
     private HttpResponse deleteSecretStore(String tenantName, String name, HttpRequest request) {
-        var tenant = (CloudTenant) controller.tenants().require(TenantName.from(tenantName));
+        var tenant = controller.tenants().require(TenantName.from(tenantName), CloudTenant.class);
 
         var optionalSecretStore = tenant.tenantSecretStores().stream()
                 .filter(secretStore -> secretStore.getName().equals(name))
@@ -727,7 +723,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             controller.tenants().store(lockedTenant);
         });
 
-        tenant = (CloudTenant) controller.tenants().require(TenantName.from(tenantName));
+        tenant = controller.tenants().require(TenantName.from(tenantName), CloudTenant.class);
         var slime = new Slime();
         toSlime(slime.setObject(), tenant.tenantSecretStores());
         return new SlimeJsonResponse(slime);
