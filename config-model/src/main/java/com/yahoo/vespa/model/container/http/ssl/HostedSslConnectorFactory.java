@@ -28,7 +28,6 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
     /**
      * Create connector factory that uses a certificate provided by the config-model / configserver and default hosted Vespa truststore.
      */
-    // TODO Enforce client authentication
     public static HostedSslConnectorFactory withProvidedCertificate(
             String serverName, EndpointCertificateSecrets endpointCertificateSecrets, boolean enforceHandshakeClientAuth) {
         return new HostedSslConnectorFactory(createConfiguredDirectSslProvider(serverName, endpointCertificateSecrets, DEFAULT_HOSTED_TRUSTSTORE, /*tlsCaCertificates*/null, enforceHandshakeClientAuth), false, enforceHandshakeClientAuth);
