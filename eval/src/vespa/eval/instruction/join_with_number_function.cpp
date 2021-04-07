@@ -93,7 +93,7 @@ JoinWithNumberFunction::compile_self(const ValueBuilderFactory &, Stash &stash) 
 {
     const auto &param = stash.create<JoinWithNumberParam>(result_type(), _function);
     auto input_type = (_primary == Primary::LHS) ? lhs().result_type() : rhs().result_type();
-    assert(result_type() == input_type.map());
+    assert(result_type() == ValueType::join(input_type, ValueType::double_type()));
     auto op = typify_invoke<4,MyTypify,SelectJoinWithNumberOp>(input_type.cell_meta(),
                                                                _function,
                                                                primary_is_mutable(),
@@ -114,15 +114,12 @@ JoinWithNumberFunction::optimize(const TensorFunction &expr, Stash &stash)
 {
     if (! expr.result_type().is_double()) {
         if (const auto *join = as<Join>(expr)) {
-            const ValueType &result_type = join->result_type();
             const TensorFunction &lhs = join->lhs();
             const TensorFunction &rhs = join->rhs();
             if (lhs.result_type().is_double()) {
-                assert(result_type.dimensions() == rhs.result_type().dimensions());
                 return stash.create<JoinWithNumberFunction>(*join, true);
             }
             if (rhs.result_type().is_double()) {
-                assert(result_type.dimensions() == lhs.result_type().dimensions());
                 return stash.create<JoinWithNumberFunction>(*join, false);
             }
         }
