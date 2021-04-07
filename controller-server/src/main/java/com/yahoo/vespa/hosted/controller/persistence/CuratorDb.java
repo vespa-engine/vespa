@@ -15,6 +15,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Application;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
@@ -87,6 +88,7 @@ public class CuratorDb {
     private static final Path routingPoliciesRoot = root.append("routingPolicies");
     private static final Path zoneRoutingPoliciesRoot = root.append("zoneRoutingPolicies");
     private static final Path endpointCertificateRoot = root.append("applicationCertificates");
+    private static final Path archiveBucketsRoot = root.append("archiveBuckets");
 
     private final NodeVersionSerializer nodeVersionSerializer = new NodeVersionSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer(nodeVersionSerializer);
@@ -196,6 +198,10 @@ public class CuratorDb {
 
     public Lock lockMeteringRefreshTime() throws TimeoutException {
         return tryLock(lockRoot.append("meteringRefreshTime"));
+    }
+
+    public Lock lockArchiveBuckets(ZoneId zoneId) {
+        return curator.lock(lockRoot.append("archiveBuckets").append(zoneId.value()), defaultLockTimeout);
     }
 
     // -------------- Helpers ------------------------------------------
@@ -546,6 +552,17 @@ public class CuratorDb {
                       .orElse(0L);
     }
 
+    // -------------- Archive buckets -----------------------------------------
+
+    public Set<ArchiveBucket> readArchiveBuckets(ZoneId zoneId) {
+        return curator.getData(archiveBucketsPath(zoneId)).map(String::new).map(ArchiveBucketsSerializer::fromJsonString)
+                .orElse(Set.of());
+    }
+
+    public void writeArchiveBuckets(ZoneId zoneid, Set<ArchiveBucket> archiveBuckets) {
+        curator.set(archiveBucketsPath(zoneid), asJson(ArchiveBucketsSerializer.toSlime(archiveBuckets)));
+    }
+
     // -------------- Paths ---------------------------------------------------
 
     private Path lockPath(TenantName tenant) {
@@ -665,6 +682,10 @@ public class CuratorDb {
 
     private static Path meteringRefreshPath() {
         return root.append("meteringRefreshTime");
+    }
+
+    private static Path archiveBucketsPath(ZoneId zoneId) {
+        return archiveBucketsRoot.append(zoneId.value());
     }
 
 }

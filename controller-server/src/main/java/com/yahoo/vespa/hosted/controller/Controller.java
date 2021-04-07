@@ -17,6 +17,7 @@ import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.controller.api.integration.ServiceRegistry;
 import com.yahoo.vespa.hosted.controller.api.integration.maven.MavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
+import com.yahoo.vespa.hosted.controller.archive.CuratorArchiveBucketDb;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
 import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
@@ -80,6 +81,7 @@ public class Controller extends AbstractComponent {
     private final RoutingController routingController;
     private final ControllerConfig controllerConfig;
     private final SecretStore secretStore;
+    private final CuratorArchiveBucketDb archiveBucketDb;
 
     /**
      * Creates a controller 
@@ -115,6 +117,7 @@ public class Controller extends AbstractComponent {
         routingController = new RoutingController(this, Objects.requireNonNull(rotationsConfig, "RotationsConfig cannot be null"));
         auditLogger = new AuditLogger(curator, clock);
         jobControl = new JobControl(new JobControlFlags(curator, flagSource));
+        archiveBucketDb = new CuratorArchiveBucketDb(this);
         this.controllerConfig = controllerConfig;
         this.secretStore = secretStore;
 
@@ -301,5 +304,9 @@ public class Controller extends AbstractComponent {
 
     public JobControl jobControl() {
         return jobControl;
+    }
+
+    public CuratorArchiveBucketDb archiveBucketDb() {
+        return archiveBucketDb;
     }
 }

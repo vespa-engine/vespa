@@ -6,7 +6,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ApplicationController;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucketDb;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 
@@ -28,13 +28,13 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
 
     private final ApplicationController applications;
     private final NodeRepository nodeRepository;
-    private final ArchiveService archiveService;
+    private final ArchiveBucketDb archiveBucketDb;
 
     public ArchiveUriUpdater(Controller controller, Duration duration) {
         super(controller, duration, ArchiveUriUpdater.class.getSimpleName(), SystemName.all());
         this.applications = controller.applications();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
-        this.archiveService = controller.serviceRegistry().archiveService();
+        this.archiveBucketDb = controller.archiveBucketDb();
     }
 
     @Override
@@ -53,13 +53,13 @@ public class ArchiveUriUpdater extends ControllerMaintainer {
         tenantsByZone.forEach((zone, tenants) -> {
             Map<TenantName, URI> zoneArchiveUris = nodeRepository.getArchiveUris(zone);
             for (TenantName tenant : tenants) {
-                archiveService.archiveUriFor(zone, tenant)
+                archiveBucketDb.archiveUriFor(zone, tenant)
                         .filter(uri -> !uri.equals(zoneArchiveUris.get(tenant)))
                         .ifPresent(uri -> nodeRepository.setArchiveUri(zone, tenant, uri));
             }
 
             zoneArchiveUris.keySet().stream()
-                    .filter(tenant -> ! tenants.contains(tenant))
+                    .filter(tenant -> !tenants.contains(tenant))
                     .forEach(tenant -> nodeRepository.removeArchiveUri(zone, tenant));
         });
 
