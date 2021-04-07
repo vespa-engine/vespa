@@ -3,14 +3,15 @@ package ai.vespa.metricsproxy.http.application;
 
 import ai.vespa.metricsproxy.metric.model.ConsumerId;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
-import ai.vespa.util.http.hc4.VespaHttpClientBuilder;
+import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.core5.util.Timeout;
+
 import java.util.logging.Level;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.conn.PoolingHttpClientConnectionManager;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -103,11 +104,11 @@ public class ApplicationMetricsRetriever extends AbstractComponent {
    }
 
     private static CloseableHttpClient createHttpClient() {
-        return VespaHttpClientBuilder.create(PoolingHttpClientConnectionManager::new)
+        return VespaHttpClientBuilder.create()
                 .setUserAgent("application-metrics-retriever")
                 .setDefaultRequestConfig(RequestConfig.custom()
-                                                 .setConnectTimeout(HTTP_CONNECT_TIMEOUT)
-                                                 .setSocketTimeout(HTTP_SOCKET_TIMEOUT)
+                                                 .setConnectTimeout(Timeout.ofMilliseconds(HTTP_CONNECT_TIMEOUT))
+                                                 .setResponseTimeout(Timeout.ofMilliseconds(HTTP_SOCKET_TIMEOUT))
                                                  .build())
                 .build();
     }

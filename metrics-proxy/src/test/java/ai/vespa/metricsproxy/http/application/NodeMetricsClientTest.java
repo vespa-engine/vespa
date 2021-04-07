@@ -5,8 +5,9 @@ import ai.vespa.metricsproxy.http.metrics.MetricsV1Handler;
 import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import com.github.tomakehurst.wiremock.junit.WireMockClassRule;
 import com.yahoo.test.ManualClock;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClients;
+
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.HttpClients;
 import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.ClassRule;
