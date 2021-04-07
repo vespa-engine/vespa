@@ -54,14 +54,14 @@ void my_number_join_op(State &state, uint64_t param_in) {
 
 struct SelectJoinWithNumberOp {
     template<typename CM, typename Fun,
-             typename Inplace, typename NumberWasLeft>
+             typename PrimaryMutable, typename NumberWasLeft>
     static auto invoke() {
         constexpr CellMeta icm = CM::value;
         constexpr CellMeta num(CellType::DOUBLE, true);
         constexpr CellMeta ocm = CellMeta::join(icm, num); 
         using ICT = CellValueType<icm.cell_type>;
         using OCT = CellValueType<ocm.cell_type>;
-        constexpr bool inplace = (Inplace::value && std::is_same_v<ICT,OCT>);
+        constexpr bool inplace = (PrimaryMutable::value && std::is_same_v<ICT,OCT>);
         return my_number_join_op<ICT, OCT, Fun, inplace, NumberWasLeft::value>;
     }
 };
@@ -78,13 +78,11 @@ JoinWithNumberFunction::JoinWithNumberFunction(const Join &original, bool tensor
 JoinWithNumberFunction::~JoinWithNumberFunction() = default;
 
 bool
-JoinWithNumberFunction::inplace() const {
+JoinWithNumberFunction::primary_is_mutable() const {
     if (_primary == Primary::LHS) {
-        return lhs().result_type() == result_type()
-            && lhs().result_is_mutable();
+        return lhs().result_is_mutable();
     } else {
-        return rhs().result_type() == result_type()
-            && rhs().result_is_mutable();
+        return rhs().result_is_mutable();
     }
 }
 
@@ -98,7 +96,7 @@ JoinWithNumberFunction::compile_self(const ValueBuilderFactory &, Stash &stash) 
     assert(result_type() == input_type.map());
     auto op = typify_invoke<4,MyTypify,SelectJoinWithNumberOp>(input_type.cell_meta(),
                                                                _function,
-                                                               inplace(),
+                                                               primary_is_mutable(),
                                                                (_primary == Primary::RHS));
     return Instruction(op, wrap_param<JoinWithNumberParam>(param));
 }
@@ -108,7 +106,7 @@ JoinWithNumberFunction::visit_self(vespalib::ObjectVisitor &visitor) const
 {
     Super::visit_self(visitor);
     visitor.visitBool("tensor_was_right", (_primary == Primary::RHS));
-    visitor.visitBool("is_inplace", inplace());
+    visitor.visitBool("primary_is_mutable", primary_is_mutable());
 }
 
 const TensorFunction &

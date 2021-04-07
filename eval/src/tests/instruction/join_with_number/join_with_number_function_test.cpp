@@ -33,11 +33,12 @@ std::ostream &operator<<(std::ostream &os, Primary primary)
 struct FunInfo {
     using LookFor = JoinWithNumberFunction;
     Primary primary;
+    bool pri_mut;
     bool inplace;
     void verify(const EvalFixture &fixture, const LookFor &fun) const {
         EXPECT_TRUE(fun.result_is_mutable());
         EXPECT_EQUAL(fun.primary(), primary);
-        EXPECT_EQUAL(fun.inplace(), inplace);
+        EXPECT_EQUAL(fun.primary_is_mutable(), pri_mut);
         if (inplace) {
             size_t idx = (fun.primary() == Primary::LHS) ? 0 : 1;
             EXPECT_EQUAL(fixture.result_value().cells().data,
@@ -46,13 +47,13 @@ struct FunInfo {
     }
 };
 
-void verify_optimized(const vespalib::string &expr, Primary primary, bool inplace) {
+void verify_optimized(const vespalib::string &expr, Primary primary, bool pri_mut) {
     UNWIND_MSG("optimize %s", expr.c_str());
     const CellTypeSpace stable_types(CellTypeUtils::list_stable_types(), 2);
-    FunInfo stable_details{primary, inplace};
+    FunInfo stable_details{primary, pri_mut, pri_mut};
     TEST_DO(EvalFixture::verify<FunInfo>(expr, {stable_details}, stable_types));
     const CellTypeSpace unstable_types(CellTypeUtils::list_unstable_types(), 2);
-    FunInfo unstable_details{primary, false};
+    FunInfo unstable_details{primary, pri_mut, false};
     TEST_DO(EvalFixture::verify<FunInfo>(expr, {unstable_details}, unstable_types));
 }
 
