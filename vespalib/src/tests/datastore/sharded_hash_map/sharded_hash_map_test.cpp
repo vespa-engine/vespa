@@ -266,7 +266,7 @@ TEST_F(DataStoreShardedHashTest, normalize_values_works)
         EXPECT_EQ(i, _allocator.get_wrapped(result->first.load_relaxed()).value());
         result->second.store_relaxed(EntryRef(i + 200));
     }
-    _hash_map.normalize_values([](EntryRef ref) { return EntryRef(ref.ref() + 300); });
+    _hash_map.normalize_values([](EntryRef ref) noexcept { return EntryRef(ref.ref() + 300); });
     for (uint32_t i = 0; i < 50; ++i) {
         MyCompare comp(_store, i);
         auto result = _hash_map.find(comp, EntryRef());
