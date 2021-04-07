@@ -157,6 +157,10 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
             List<Node> breakfixedNodes = nodeRepository.nodes().breakfixRecursively(path.get("hostname"), Agent.operator, "Breakfixed through the nodes/v2 API");
             return new MessageResponse("Moved " + hostnamesAsString(breakfixedNodes) + " to " + Node.State.breakfixed);
         }
+        else if (path.matches("/nodes/v2/state/provisioned/{hostname}")) {
+            Node restoredNode = nodeRepository.nodes().restore(path.get("hostname"), Agent.operator, "Restored through the nodes/v2 API");
+            return new MessageResponse("Moved " + hostnamesAsString(List.of(restoredNode)) + " to " + Node.State.provisioned);
+        }
 
         throw new NotFoundException("Cannot put to path '" + path + "'");
     }
