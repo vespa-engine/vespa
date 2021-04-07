@@ -18,7 +18,7 @@ fi
 
 ./dist.sh ${VESPA_VERSION}
 
-yum -y install epel-release
+yum -y install https://download-ib01.fedoraproject.org/pub/epel/7/x86_64/Packages/e/epel-release-7-13.noarch.rpm
 yum -y install centos-release-scl
 
 if ! yum-config-manager --add-repo https://copr.fedorainfracloud.org/coprs/g/vespa/vespa/repo/epel-7/group_vespa-vespa-epel-7.repo; then
