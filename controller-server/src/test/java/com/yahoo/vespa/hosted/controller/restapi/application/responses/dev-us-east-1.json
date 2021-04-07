@@ -20,6 +20,7 @@
   "revision": "(ignore)",
   "deployTimeEpochMs": "(ignore)",
   "screwdriverId": "123",
+  "archiveUri":"s3://my-bucket/tenant1/",
   "activity": {
     "lastQueried": 1527848130000,
     "lastWritten": 1527848130000,

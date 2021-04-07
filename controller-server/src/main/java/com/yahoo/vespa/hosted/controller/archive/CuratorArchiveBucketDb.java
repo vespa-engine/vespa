@@ -16,8 +16,11 @@ import org.jetbrains.annotations.NotNull;
 
 import java.net.URI;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
 
 /**
  * This class decides which tenant goes in what bucket, and creates new buckets when required.
@@ -32,6 +35,12 @@ public class CuratorArchiveBucketDb implements ArchiveBucketDb {
      * We set the maximum a bit lower to have a solid margin of error.
      */
     private final static int TENANTS_PER_BUCKET = 30;
+
+    /**
+     * Archive URIs are often requested because they are returned in /application/v4 API. Since they
+     * never change, it's safe to cache them and only update on misses
+     */
+    private final Map<ZoneId, Map<TenantName, String>> archiveUriCache = new ConcurrentHashMap<>();
 
     private final ArchiveService archiveService;
     private final CuratorDb curatorDb;
@@ -59,15 +68,16 @@ public class CuratorArchiveBucketDb implements ArchiveBucketDb {
     }
 
     private String findOrAssignBucket(ZoneId zoneId, TenantName tenant) {
-        var zoneBuckets = curatorDb.readArchiveBuckets(zoneId);
-        return find(tenant, zoneBuckets).orElseGet(() -> assignToBucket(zoneId, tenant));
+        return getBucketNameFromCache(zoneId, tenant)
+                .or(() -> findAndUpdateArchiveUriCache(zoneId, tenant, buckets(zoneId)))
+                .orElseGet(() -> assignToBucket(zoneId, tenant));
     }
 
     private String assignToBucket(ZoneId zoneId, TenantName tenant) {
         try (var lock = curatorDb.lockArchiveBuckets(zoneId)) {
-            Set<ArchiveBucket> zoneBuckets = new HashSet<>(curatorDb.readArchiveBuckets(zoneId));
+            Set<ArchiveBucket> zoneBuckets = new HashSet<>(buckets(zoneId));
 
-            return find(tenant, zoneBuckets) // Some other thread might have assigned it before we grabbed the lock
+            return findAndUpdateArchiveUriCache(zoneId, tenant, zoneBuckets) // Some other thread might have assigned it before we grabbed the lock
                     .orElseGet(() -> {
                         // If not, find an existing bucket with space
                         Optional<ArchiveBucket> unfilledBucket = zoneBuckets.stream()
@@ -89,21 +99,36 @@ public class CuratorArchiveBucketDb implements ArchiveBucketDb {
                         var newBucket = archiveService.createArchiveBucketFor(zoneId).withTenant(tenant);
                         zoneBuckets.add(newBucket);
                         curatorDb.writeArchiveBuckets(zoneId, zoneBuckets);
+                        updateArchiveUriCache(zoneId, zoneBuckets);
                         return newBucket.bucketName();
                     });
         }
     }
 
-    @NotNull
-    private Optional<String> find(TenantName tenant, Set<ArchiveBucket> zoneBuckets) {
-        return zoneBuckets.stream()
-                .filter(bucket -> bucket.tenants().contains(tenant))
-                .findAny()
-                .map(ArchiveBucket::bucketName);
-    }
-
     @Override
     public Set<ArchiveBucket> buckets(ZoneId zoneId) {
         return curatorDb.readArchiveBuckets(zoneId);
+    }
+
+    @NotNull
+    private Optional<String> findAndUpdateArchiveUriCache(ZoneId zoneId, TenantName tenant, Set<ArchiveBucket> zoneBuckets) {
+        Optional<String> bucketName = zoneBuckets.stream()
+                .filter(bucket -> bucket.tenants().contains(tenant))
+                .findAny()
+                .map(ArchiveBucket::bucketName);
+        if (bucketName.isPresent()) updateArchiveUriCache(zoneId, zoneBuckets);
+        return bucketName;
+    }
+
+    private Optional<String> getBucketNameFromCache(ZoneId zoneId, TenantName tenantName) {
+        return Optional.ofNullable(archiveUriCache.get(zoneId)).map(map -> map.get(tenantName));
+    }
+
+    private void updateArchiveUriCache(ZoneId zoneId, Set<ArchiveBucket> zoneBuckets) {
+        Map<TenantName, String> bucketNameByTenant = zoneBuckets.stream()
+                .flatMap(bucket -> bucket.tenants().stream()
+                        .map(tenant -> Map.entry(tenant, bucket.bucketName())))
+                .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
+        archiveUriCache.put(zoneId, bucketNameByTenant);
     }
 }
