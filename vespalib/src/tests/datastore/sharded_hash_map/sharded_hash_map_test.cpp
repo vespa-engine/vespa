@@ -50,6 +50,7 @@ struct DataStoreShardedHashTest : public ::testing::Test
     void read_work(uint32_t cnt);
     void read_work();
     void write_work(uint32_t cnt);
+    void populate_sample_data();
 };
 
 
@@ -173,6 +174,13 @@ DataStoreShardedHashTest::write_work(uint32_t cnt)
     LOG(info, "done %u write work", cnt);
 }
 
+void
+DataStoreShardedHashTest::populate_sample_data()
+{
+    for (uint32_t i = 0; i < 50; ++i) {
+        insert(i);
+    }
+}
 
 TEST_F(DataStoreShardedHashTest, single_threaded_reader_without_updates)
 {
@@ -214,6 +222,59 @@ TEST_F(DataStoreShardedHashTest, memory_usage_is_reported)
     auto usage = _hash_map.get_memory_usage();
     EXPECT_EQ(0, usage.deadBytes());
     EXPECT_LT(0, usage.allocatedBytesOnHold());
+}
+
+TEST_F(DataStoreShardedHashTest, foreach_key_works)
+{
+    populate_sample_data();
+    std::vector<uint32_t> keys;
+    _hash_map.foreach_key([this, &keys](EntryRef ref) { keys.emplace_back(_allocator.get_wrapped(ref).value()); });
+    std::sort(keys.begin(), keys.end());
+    EXPECT_EQ(50, keys.size());
+    for (uint32_t i = 0; i < 50; ++i) {
+        EXPECT_EQ(i, keys[i]);
+    }
+}
+
+TEST_F(DataStoreShardedHashTest, move_keys_works)
+{
+    populate_sample_data();
+    std::vector<EntryRef> refs;
+    _hash_map.foreach_key([&refs](EntryRef ref) { refs.emplace_back(ref); });
+    std::vector<EntryRef> new_refs;
+    _hash_map.move_keys([this, &new_refs](EntryRef ref) { auto new_ref = _allocator.move(ref); _allocator.hold(ref); new_refs.emplace_back(new_ref); return new_ref; });
+    std::vector<EntryRef> verify_new_refs;
+    _hash_map.foreach_key([&verify_new_refs](EntryRef ref) { verify_new_refs.emplace_back(ref); });
+    EXPECT_EQ(50u, refs.size());
+    EXPECT_NE(refs, new_refs);
+    EXPECT_EQ(new_refs, verify_new_refs);
+    for (uint32_t i = 0; i < 50; ++i) {
+        EXPECT_NE(refs[i], new_refs[i]);
+        auto value = _allocator.get_wrapped(refs[i]).value();
+        auto new_value = _allocator.get_wrapped(refs[i]).value();
+        EXPECT_EQ(value, new_value);
+    }
+}
+
+TEST_F(DataStoreShardedHashTest, normalize_values_works)
+{
+    populate_sample_data();
+    for (uint32_t i = 0; i < 50; ++i) {
+        MyCompare comp(_store, i);
+        auto result = _hash_map.find(comp, EntryRef());
+        ASSERT_NE(result, nullptr);
+        EXPECT_EQ(i, _allocator.get_wrapped(result->first.load_relaxed()).value());
+        result->second.store_relaxed(EntryRef(i + 200));
+    }
+    _hash_map.normalize_values([](EntryRef ref) { return EntryRef(ref.ref() + 300); });
+    for (uint32_t i = 0; i < 50; ++i) {
+        MyCompare comp(_store, i);
+        auto result = _hash_map.find(comp, EntryRef());
+        ASSERT_NE(result, nullptr);
+        EXPECT_EQ(i, _allocator.get_wrapped(result->first.load_relaxed()).value());
+        ASSERT_EQ(i + 500, result->second.load_relaxed().ref());
+        result->second.store_relaxed(EntryRef());
+    }
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()
