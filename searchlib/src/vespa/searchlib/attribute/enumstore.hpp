@@ -66,13 +66,13 @@ EnumStoreT<EntryT>::load_unique_value(const void* src, size_t available, Index& 
 }
 
 template <typename EntryT>
-EnumStoreT<EntryT>::EnumStoreT(bool has_postings, search::DictionaryConfig::Type type)
+EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const search::DictionaryConfig & dict_cfg)
     : _store(),
       _dict(),
       _cached_values_memory_usage(),
       _cached_values_address_space_usage(0, 0, (1ull << 32))
 {
-    _store.set_dictionary(make_enum_store_dictionary(*this, has_postings, type,
+    _store.set_dictionary(make_enum_store_dictionary(*this, has_postings, dict_cfg,
                                                      std::make_unique<ComparatorType>(_store.get_data_store()),
                                                      (has_string_type() ?
                                                       std::make_unique<FoldedComparatorType>(_store.get_data_store()) :

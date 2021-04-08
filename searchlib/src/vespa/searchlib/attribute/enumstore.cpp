@@ -42,17 +42,21 @@ EnumStoreT<const char*>::load_unique_value(const void* src,
 }
 
 std::unique_ptr<vespalib::datastore::IUniqueStoreDictionary>
-make_enum_store_dictionary(IEnumStore &store, bool has_postings, search::DictionaryConfig::Type type, std::unique_ptr<vespalib::datastore::EntryComparator> compare, std::unique_ptr<vespalib::datastore::EntryComparator> folded_compare)
+make_enum_store_dictionary(IEnumStore &store, bool has_postings, const search::DictionaryConfig & dict_cfg,
+                           std::unique_ptr<vespalib::datastore::EntryComparator> compare,
+                           std::unique_ptr<vespalib::datastore::EntryComparator> folded_compare)
 {
+    using NoBTreeDictionary = vespalib::datastore::NoBTreeDictionary;
+    using ShardedHashMap = vespalib::datastore::ShardedHashMap;
     if (has_postings) {
         if (folded_compare) {
             return std::make_unique<EnumStoreFoldedDictionary>(store, std::move(compare), std::move(folded_compare));
         } else {
-            switch (type) {
+            switch (dict_cfg.getType()) {
             case search::DictionaryConfig::Type::HASH:
-                return std::make_unique<EnumStoreDictionary<vespalib::datastore::NoBTreeDictionary, vespalib::datastore::ShardedHashMap>>(store, std::move(compare));
+                return std::make_unique<EnumStoreDictionary<NoBTreeDictionary, ShardedHashMap>>(store, std::move(compare));
             case search::DictionaryConfig::Type::BTREE_AND_HASH:
-                return std::make_unique<EnumStoreDictionary<EnumPostingTree, vespalib::datastore::ShardedHashMap>>(store, std::move(compare));
+                return std::make_unique<EnumStoreDictionary<EnumPostingTree, ShardedHashMap>>(store, std::move(compare));
             default:
                 return std::make_unique<EnumStoreDictionary<EnumPostingTree>>(store, std::move(compare));
             }
