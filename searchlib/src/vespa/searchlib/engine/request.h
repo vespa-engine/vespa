@@ -11,6 +11,7 @@ class Request
 {
 public:
     Request(RelativeTime relativeTime);
+    Request(RelativeTime relativeTime, uint32_t reservePropMaps);
     Request(const Request &) = delete;
     Request & operator =(const Request &) = delete;
     virtual ~Request();
@@ -44,7 +45,6 @@ public:
     vespalib::string   ranking;
     vespalib::string   location;
     PropertiesMap      propertiesMap;
-    uint32_t           stackItems;
     std::vector<char>  stackDump;
 private:
     mutable Trace      _trace;

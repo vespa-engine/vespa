@@ -12,7 +12,7 @@ class ShardedHashMapShardHeld : public GenerationHeldBase
     std::unique_ptr<const FixedSizeHashMap> _data;
 public:
     ShardedHashMapShardHeld(size_t size, std::unique_ptr<const FixedSizeHashMap> data);
-    ~ShardedHashMapShardHeld();
+    ~ShardedHashMapShardHeld() override;
 };
 
 ShardedHashMapShardHeld::ShardedHashMapShardHeld(size_t size, std::unique_ptr<const FixedSizeHashMap> data)
@@ -37,12 +37,6 @@ ShardedHashMap::~ShardedHashMap()
         auto map = _maps[i].load(std::memory_order_relaxed);
         delete map;
     }
-}
-
-size_t
-ShardedHashMap::get_shard_idx(const EntryComparator& comp, EntryRef key_ref) const
-{
-    return comp.hash(key_ref) % num_shards;
 }
 
 void
@@ -70,46 +64,46 @@ ShardedHashMap::hold_shard(std::unique_ptr<const FixedSizeHashMap> map)
 ShardedHashMap::KvType&
 ShardedHashMap::add(const EntryComparator& comp, EntryRef key_ref, std::function<EntryRef(void)>& insert_entry)
 {
-    size_t shard_idx = get_shard_idx(comp, key_ref);
-    auto map = _maps[shard_idx].load(std::memory_order_relaxed);
+    ShardedHashComparator shardedComp(comp, key_ref, num_shards);
+    auto map = _maps[shardedComp.shard_idx()].load(std::memory_order_relaxed);
     if (map == nullptr || map->full()) {
-        alloc_shard(shard_idx);
-        map = _maps[shard_idx].load(std::memory_order_relaxed);
+        alloc_shard(shardedComp.shard_idx());
+        map = _maps[shardedComp.shard_idx()].load(std::memory_order_relaxed);
     }
-    return map->add(comp, key_ref, insert_entry);
+    return map->add(shardedComp, insert_entry);
 }
 
 ShardedHashMap::KvType*
 ShardedHashMap::remove(const EntryComparator& comp, EntryRef key_ref)
 {
-    size_t shard_idx = get_shard_idx(comp, key_ref);
-    auto map = _maps[shard_idx].load(std::memory_order_relaxed);
+    ShardedHashComparator shardedComp(comp, key_ref, num_shards);
+    auto map = _maps[shardedComp.shard_idx()].load(std::memory_order_relaxed);
     if (map == nullptr) {
         return nullptr;
     }
-    return map->remove(comp, key_ref);
+    return map->remove(shardedComp);
 }
 
 ShardedHashMap::KvType*
 ShardedHashMap::find(const EntryComparator& comp, EntryRef key_ref)
 {
-    size_t shard_idx = get_shard_idx(comp, key_ref);
-    auto map = _maps[shard_idx].load(std::memory_order_relaxed);
+    ShardedHashComparator shardedComp(comp, key_ref, num_shards);
+    auto map = _maps[shardedComp.shard_idx()].load(std::memory_order_relaxed);
     if (map == nullptr) {
         return nullptr;
     }
-    return map->find(comp, key_ref);
+    return map->find(shardedComp);
 }
 
 const ShardedHashMap::KvType*
 ShardedHashMap::find(const EntryComparator& comp, EntryRef key_ref) const
 {
-    size_t shard_idx = get_shard_idx(comp, key_ref);
-    auto map = _maps[shard_idx].load(std::memory_order_relaxed);
+    ShardedHashComparator shardedComp(comp, key_ref, num_shards);
+    auto map = _maps[shardedComp.shard_idx()].load(std::memory_order_relaxed);
     if (map == nullptr) {
         return nullptr;
     }
-    return map->find(comp, key_ref);
+    return map->find(shardedComp);
 }
 
 void
@@ -163,6 +157,41 @@ ShardedHashMap::get_memory_usage() const
     memory_usage.incAllocatedBytes(gen_holder_held_bytes);
     memory_usage.incAllocatedBytesOnHold(gen_holder_held_bytes);
     return memory_usage;
+}
+
+void
+ShardedHashMap::foreach_key(std::function<void(EntryRef)> callback) const
+{
+    for (size_t i = 0; i < num_shards; ++i) {
+        auto map = _maps[i].load(std::memory_order_relaxed);
+        if (map != nullptr) {
+            map->foreach_key(callback);
+        }
+    }
+}
+
+void
+ShardedHashMap::move_keys(std::function<EntryRef(EntryRef)> callback)
+{
+    for (size_t i = 0; i < num_shards; ++i) {
+        auto map = _maps[i].load(std::memory_order_relaxed);
+        if (map != nullptr) {
+            map->move_keys(callback);
+        }
+    }
+}
+
+bool
+ShardedHashMap::normalize_values(std::function<EntryRef(EntryRef)> normalize)
+{
+    bool changed = false;
+    for (size_t i = 0; i < num_shards; ++i) {
+        auto map = _maps[i].load(std::memory_order_relaxed);
+        if (map != nullptr) {
+            changed |= map->normalize_values(normalize);
+        }
+    }
+    return changed;
 }
 
 }

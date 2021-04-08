@@ -4,7 +4,7 @@ package com.yahoo.jrt;
 
 class Worker {
 
-    private static int WORK_LIMIT = 1024;
+    private static final int WORK_LIMIT = 1024;
 
     private class Run implements Runnable {
         public void run() {
@@ -27,7 +27,7 @@ class Worker {
     }
 
     private static class DoHandshakeWork implements Runnable {
-        private Connection connection;
+        private final Connection connection;
         DoHandshakeWork(Connection c) {
             connection = c;
         }

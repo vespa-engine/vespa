@@ -110,7 +110,7 @@ case $1 in
         nohup sbin/vespa-retention-enforcer > ${LOGDIR}/vre-start.log 2>&1 </dev/null &
         configsources=`bin/vespa-print-default configservers_rpc`
         userargs=$VESPA_CONFIGPROXY_JVMARGS
-        jvmopts="-Xms32M -Xmx256M -XX:CompressedClassSpaceSize=32m -XX:MaxDirectMemorySize=32m -XX:ThreadStackSize=256 -XX:MaxJavaStackTraceDepth=1000"
+        jvmopts="-Xms32M -Xmx256M -XX:CompressedClassSpaceSize=32m -XX:MaxDirectMemorySize=32m -XX:ThreadStackSize=256 -XX:MaxJavaStackTraceDepth=1000 -XX:-OmitStackTraceInFastThrow"
 
         VESPA_SERVICE_NAME=configproxy
         export VESPA_SERVICE_NAME

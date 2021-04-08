@@ -71,7 +71,7 @@ public class MockSearchCluster extends SearchCluster {
     }
 
     @Override
-    public int groupSize() {
+    public int wantedGroupSize() {
         return numNodesPerGroup;
     }
 

@@ -6,6 +6,9 @@
 #include <vespa/vespalib/data/slime/binary_format.h>
 #include <vespa/vespalib/data/smart_buffer.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/log/log.h>
+
+LOG_SETUP(".searchlib.engine.proto_converter");
 
 namespace search::engine {
 
@@ -91,6 +94,15 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
     proto.set_degraded_by_soft_timeout(reply.coverage.wasDegradedByTimeout());
     bool has_sort_data = (reply.sortIndex.size() > 0);
     assert(!has_sort_data || (reply.sortIndex.size() == (reply.hits.size() + 1)));
+    if (reply.request) {
+        uint32_t asked_offset = reply.request->offset;
+        uint32_t asked_hits = reply.request->maxhits;
+        size_t got_hits = reply.hits.size();
+        if (got_hits < asked_hits && asked_offset + got_hits < reply.totalHitCount) {
+            LOG(warning, "asked for %u hits [at offset %u] but only returning %zu hits from %zu available",
+                asked_hits, asked_offset, got_hits, reply.totalHitCount);
+        }
+    }
     for (size_t i = 0; i < reply.hits.size(); ++i) {
         auto *hit = proto.add_hits();
         hit->set_global_id(reply.hits[i].gid.get(), document::GlobalId::LENGTH);

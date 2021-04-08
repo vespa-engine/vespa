@@ -237,6 +237,8 @@ public class EvaluationTestCase {
 
         // tensor join
         tester.assertEvaluates("{ {x:0,y:0}:15, {x:1,y:0}:35 }", "join(tensor0, tensor1, f(x,y) (x*y))", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0,y:0}:6, {x:1,y:0}:14 }", "join(tensor0, tensor1, f(x,y) (x+x))", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
+        tester.assertEvaluates("{ {x:0}:2, {x:1}:-3 }", "join(tensor0, tensor1, f(x,y) (y-x))", "{ {x:0}:3, {x:1}:7 }", "{ {x:0}:5, {x:1}:4 }");
         // -- join composites
         tester.assertEvaluates("{ }", "tensor0 * tensor0", "{}");
         tester.assertEvaluates("{{x:0,y:0,z:0}:0.0}", "( tensor0 * tensor1 ) * ( tensor2 * tensor1 )",

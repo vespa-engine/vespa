@@ -37,6 +37,7 @@
 #include <vespa/vespalib/util/regexp.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <sstream>
+#include <charconv>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.attribute.attribute_blueprint_factory");
@@ -58,6 +59,7 @@ using search::query::StackDumpCreator;
 using search::query::StringTerm;
 using search::query::SubstringTerm;
 using search::query::SuffixTerm;
+using search::query::MultiTerm;
 using search::queryeval::AndBlueprint;
 using search::queryeval::AndSearchStrict;
 using search::queryeval::Blueprint;
@@ -78,13 +80,30 @@ using search::queryeval::Searchable;
 using search::queryeval::SimpleLeafBlueprint;
 using search::queryeval::WeightedSetTermBlueprint;
 using search::tensor::DenseTensorAttribute;
+using search::tensor::ITensorAttribute;
 using vespalib::geo::ZCurve;
 using vespalib::make_string;
 using vespalib::string;
+using vespalib::stringref;
 
 namespace search {
 namespace {
 
+class NodeAsKey final : public IDocumentWeightAttribute::LookupKey {
+public:
+    NodeAsKey(const Node & node, vespalib::string & scratchPad)
+        : _node(node),
+          _scratchPad(scratchPad)
+    { }
+
+    stringref asString() const override {
+        return queryeval::termAsString(_node, _scratchPad);
+    }
+
+private:
+    const Node       & _node;
+    vespalib::string & _scratchPad;
+};
 //-----------------------------------------------------------------------------
 
 /**
@@ -312,6 +331,24 @@ make_location_blueprint(const FieldSpec &field, const IAttributeVector &attribut
     return root;
 }
 
+class LookupKey : public IDocumentWeightAttribute::LookupKey {
+public:
+    LookupKey(MultiTerm & terms, uint32_t index) : _terms(terms), _index(index) {}
+
+    stringref asString() const override {
+        return _terms.getAsString(_index).first;
+    }
+
+    bool asInteger(int64_t &value) const override {
+        value = _terms.getAsInteger(_index).first;
+        return true;
+    }
+
+private:
+    const MultiTerm & _terms;
+    uint32_t          _index;
+};
+
 //-----------------------------------------------------------------------------
 
 template <typename SearchType>
@@ -342,8 +379,8 @@ public:
         _terms.reserve(size_hint);
     }
 
-    void addTerm(const vespalib::string &term, int32_t weight) {
-        IDocumentWeightAttribute::LookupResult result = _attr.lookup(term, _dictionary_snapshot);
+    void addTerm(const IDocumentWeightAttribute::LookupKey & key, int32_t weight) {
+        IDocumentWeightAttribute::LookupResult result = _attr.lookup(key, _dictionary_snapshot);
         HitEstimate childEst(result.posting_size, (result.posting_size == 0));
         if (!childEst.empty) {
             if (_estimate.empty) {
@@ -422,14 +459,13 @@ public:
           _terms(),
           _attr(attr),
           _dictionary_snapshot(_attr.get_dictionary_snapshot())
-        
     {
         _weights.reserve(size_hint);
         _terms.reserve(size_hint);
     }
 
-    void addTerm(const vespalib::string &term, int32_t weight) {
-        IDocumentWeightAttribute::LookupResult result = _attr.lookup(term, _dictionary_snapshot);
+    void addTerm(const IDocumentWeightAttribute::LookupKey & key, int32_t weight) {
+        IDocumentWeightAttribute::LookupResult result = _attr.lookup(key, _dictionary_snapshot);
         HitEstimate childEst(result.posting_size, (result.posting_size == 0));
         if (!childEst.empty) {
             if (_estimate.empty) {
@@ -487,13 +523,14 @@ private:
 public:
     DirectAttributeBlueprint(const FieldSpec &field, const vespalib::string & name,
                              const IAttributeVector &iattr,
-                             const IDocumentWeightAttribute &attr, const vespalib::string &term)
+                             const IDocumentWeightAttribute &attr,
+                             const IDocumentWeightAttribute::LookupKey & key)
         : SimpleLeafBlueprint(field),
           _attrName(name),
           _iattr(iattr),
           _attr(attr),
           _dictionary_snapshot(_attr.get_dictionary_snapshot()),
-          _dict_entry(_attr.lookup(term, _dictionary_snapshot))
+          _dict_entry(_attr.lookup(key, _dictionary_snapshot))
     {
         setEstimate(HitEstimate(_dict_entry.posting_size, (_dict_entry.posting_size == 0)));
     }
@@ -547,6 +584,7 @@ private:
     const FieldSpec &_field;
     const IAttributeVector &_attr;
     const IDocumentWeightAttribute *_dwa;
+    vespalib::string _scratchPad;
 
 public:
     CreateBlueprintVisitor(Searchable &searchable, const IRequestContext &requestContext,
@@ -554,15 +592,17 @@ public:
         : CreateBlueprintVisitorHelper(searchable, field, requestContext),
           _field(field),
           _attr(attr),
-          _dwa(attr.asDocumentWeightAttribute())
+          _dwa(attr.asDocumentWeightAttribute()),
+          _scratchPad()
     {
     }
+    ~CreateBlueprintVisitor() override;
 
     template <class TermNode>
     void visitTerm(TermNode &n, bool simple = false) {
         if (simple && (_dwa != nullptr) && !_field.isFilter() && n.isRanked()) {
-            vespalib::string term = queryeval::termAsString(n);
-            setResult(std::make_unique<DirectAttributeBlueprint>(_field, _attr.getName(), _attr, *_dwa, term));
+            NodeAsKey key(n, _scratchPad);
+            setResult(std::make_unique<DirectAttributeBlueprint>(_field, _attr.getName(), _attr, *_dwa, key));
         } else {
             const string stack = StackDumpCreator::create(n);
             setResult(std::make_unique<AttributeFieldBlueprint>(_field, _attr, stack));
@@ -620,37 +660,18 @@ public:
     void visit(PredicateQuery &n) override { visitPredicate(n); }
     void visit(RegExpTerm & n) override { visitTerm(n); }
 
-    template <typename WS, typename NODE>
-    void createDirectWeightedSet(WS *bp, NODE &n) {
-        Blueprint::UP result(bp);
-        for (size_t i = 0; i < n.getChildren().size(); ++i) {
-            const query::Node &node = *n.getChildren()[i];
-            vespalib::string term = queryeval::termAsString(node);
-            uint32_t weight = queryeval::getWeightFromNode(node).percent();
-            bp->addTerm(term, weight);
-        }
-        setResult(std::move(result));
-    }
+    template <typename WS>
+    void createDirectWeightedSet(WS *bp, MultiTerm &n);
+
+    template <typename WS>
+    void createShallowWeightedSet(WS *bp, MultiTerm &n, const FieldSpec &fs, bool isInteger);
 
     static QueryTermSimple::UP
-    extractTerm(const query::Node &node, bool isInteger) {
-        vespalib::string term = queryeval::termAsString(node);
+    extractTerm(vespalib::stringref term, bool isInteger) {
         if (isInteger) {
             return std::make_unique<QueryTermSimple>(term, QueryTermSimple::Type::WORD);
         }
         return std::make_unique<QueryTermUCS4>(term, QueryTermSimple::Type::WORD);
-    }
-
-    template <typename WS, typename NODE>
-    void createShallowWeightedSet(WS *bp, NODE &n, const FieldSpec &fs, bool isInteger) {
-        Blueprint::UP result(bp);
-        for (size_t i = 0; i < n.getChildren().size(); ++i) {
-            const query::Node &node = *n.getChildren()[i];
-            uint32_t weight = queryeval::getWeightFromNode(node).percent();
-            FieldSpec childfs = bp->getNextChildField(fs);
-            bp->addTerm(std::make_unique<AttributeFieldBlueprint>(childfs, _attr, extractTerm(node, isInteger)), weight);
-        }
-        setResult(std::move(result));
     }
 
     void visit(query::WeightedSetTerm &n) override {
@@ -659,15 +680,14 @@ public:
         bool isInteger = _attr.isIntegerType();
         if (isSingleValue && (isString || isInteger)) {
             auto ws = std::make_unique<AttributeWeightedSetBlueprint>(_field, _attr);
-            for (size_t i = 0; i < n.getChildren().size(); ++i) {
-                const query::Node &node = *n.getChildren()[i];
-                uint32_t weight = queryeval::getWeightFromNode(node).percent();
-                ws->addToken(_attr.createSearchContext(extractTerm(node, isInteger), attribute::SearchContextParams()), weight);
+            for (size_t i = 0; i < n.getNumTerms(); ++i) {
+                auto term = n.getAsString(i);
+                ws->addToken(_attr.createSearchContext(extractTerm(term.first, isInteger), attribute::SearchContextParams()), term.second.percent());
             }
             setResult(std::move(ws));
         } else {
             if (_dwa != nullptr) {
-                auto *bp = new DirectWeightedSetBlueprint<queryeval::WeightedSetTermSearch>(_field, _attr, *_dwa, n.getChildren().size());
+                auto *bp = new DirectWeightedSetBlueprint<queryeval::WeightedSetTermSearch>(_field, _attr, *_dwa, n.getNumTerms());
                 createDirectWeightedSet(bp, n);
             } else {
                 auto *bp = new WeightedSetTermBlueprint(_field);
@@ -678,7 +698,7 @@ public:
 
     void visit(query::DotProduct &n) override {
         if (_dwa != nullptr) {
-            auto *bp = new DirectWeightedSetBlueprint<queryeval::DotProductSearch>(_field, _attr, *_dwa, n.getChildren().size());
+            auto *bp = new DirectWeightedSetBlueprint<queryeval::DotProductSearch>(_field, _attr, *_dwa, n.getNumTerms());
             createDirectWeightedSet(bp, n);
         } else {
             auto *bp = new DotProductBlueprint(_field);
@@ -690,7 +710,7 @@ public:
         if (_dwa != nullptr) {
             auto *bp = new DirectWandBlueprint(_field, *_dwa,
                                                n.getTargetNumHits(), n.getScoreThreshold(), n.getThresholdBoostFactor(),
-                                               n.getChildren().size());
+                                               n.getNumTerms());
             createDirectWeightedSet(bp, n);
         } else {
             auto *bp = new ParallelWeakAndBlueprint(_field,
@@ -706,17 +726,14 @@ public:
         setResult(std::make_unique<queryeval::EmptyBlueprint>(_field));
     }
     void visit(query::NearestNeighborTerm &n) override {
-        if (_attr.asTensorAttribute() == nullptr) {
+        const ITensorAttribute *tensor_attr = _attr.asTensorAttribute();
+        if (tensor_attr == nullptr) {
             return fail_nearest_neighbor_term(n, "Attribute is not a tensor");
         }
-        const auto* dense_attr_tensor = dynamic_cast<const DenseTensorAttribute*>(_attr.asTensorAttribute());
-        if (dense_attr_tensor == nullptr) {
-            return fail_nearest_neighbor_term(n, make_string("Attribute is not a dense tensor (type=%s)",
-                                                             _attr.asTensorAttribute()->getTensorType().to_spec().c_str()));
-        }
-        if (dense_attr_tensor->getTensorType().dimensions().size() != 1) {
-            return fail_nearest_neighbor_term(n, make_string("Attribute tensor type (%s) is not of order 1",
-                                                             dense_attr_tensor->getTensorType().to_spec().c_str()));
+        const auto & ta_type = tensor_attr->getTensorType();
+        if ((! ta_type.is_dense()) || (ta_type.dimensions().size() != 1)) {
+            return fail_nearest_neighbor_term(n, make_string("Attribute tensor type (%s) is not a dense tensor of order 1",
+                                                             ta_type.to_spec().c_str()));
         }
         auto query_tensor = getRequestContext().get_query_tensor(n.get_query_tensor_name());
         if (query_tensor.get() == nullptr) {
@@ -727,11 +744,15 @@ public:
             return fail_nearest_neighbor_term(n, make_string("Query tensor is not a dense tensor (type=%s)",
                                                              qt_type.to_spec().c_str()));
         }
-        if (!is_compatible_for_nearest_neighbor(dense_attr_tensor->getTensorType(), qt_type)) {
+        if (!is_compatible_for_nearest_neighbor(ta_type, qt_type)) {
             return fail_nearest_neighbor_term(n, make_string("Attribute tensor type (%s) and query tensor type (%s) are not compatible",
-                                                             dense_attr_tensor->getTensorType().to_spec().c_str(), qt_type.to_spec().c_str()));
+                                                             ta_type.to_spec().c_str(), qt_type.to_spec().c_str()));
         }
-        setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field, *dense_attr_tensor,
+        if (tensor_attr->supports_extract_cells_ref() == false) {
+            return fail_nearest_neighbor_term(n, make_string("Attribute does not support access to tensor data (type=%s)",
+                                                             ta_type.to_spec().c_str()));
+        }
+        setResult(std::make_unique<queryeval::NearestNeighborBlueprint>(_field, *tensor_attr,
                                                                         std::move(query_tensor),
                                                                         n.get_target_num_hits(),
                                                                         n.get_allow_approximate(),
@@ -740,6 +761,30 @@ public:
                                                                         getRequestContext().get_attribute_blueprint_params().nearest_neighbor_brute_force_limit));
     }
 };
+
+template <typename WS>
+void
+CreateBlueprintVisitor::createDirectWeightedSet(WS *bp, MultiTerm &n) {
+    Blueprint::UP result(bp);
+    for (uint32_t i(0); i < n.getNumTerms(); i++) {
+        bp->addTerm(LookupKey(n, i), n.weight(i).percent());
+    }
+    setResult(std::move(result));
+}
+
+template <typename WS>
+void
+CreateBlueprintVisitor::createShallowWeightedSet(WS *bp, MultiTerm &n, const FieldSpec &fs, bool isInteger) {
+    Blueprint::UP result(bp);
+    for (uint32_t i(0); i < n.getNumTerms(); i++) {
+        FieldSpec childfs = bp->getNextChildField(fs);
+        auto term = n.getAsString(i);
+        bp->addTerm(std::make_unique<AttributeFieldBlueprint>(childfs, _attr, extractTerm(term.first, isInteger)), term.second.percent());
+    }
+    setResult(std::move(result));
+}
+
+CreateBlueprintVisitor::~CreateBlueprintVisitor() = default;
 
 } // namespace
 

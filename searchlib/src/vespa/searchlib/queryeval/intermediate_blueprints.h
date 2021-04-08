@@ -18,6 +18,7 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self() override;
+    bool isAndNot() const override { return true; }
     Blueprint::UP get_replacement() override;
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
@@ -40,11 +41,7 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self() override;
-
-private:
-    double computeNextHitRate(const Blueprint & child, double hitRate) const override;
-
-public:
+    bool isAnd() const override { return true; }
     Blueprint::UP get_replacement() override;
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
@@ -53,6 +50,8 @@ public:
                              bool strict, fef::MatchData &md) const override;
     SearchIterator::UP
     createFilterSearch(bool strict, FilterConstraint constraint) const override;
+private:
+    double computeNextHitRate(const Blueprint & child, double hitRate) const override;
 };
 
 //-----------------------------------------------------------------------------
@@ -65,6 +64,7 @@ public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
     FieldSpecBaseList exposeFields() const override;
     void optimize_self() override;
+    bool isOr() const override { return true; }
     Blueprint::UP get_replacement() override;
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
@@ -150,7 +150,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-class RankBlueprint : public IntermediateBlueprint
+class RankBlueprint final : public IntermediateBlueprint
 {
 public:
     HitEstimate combine(const std::vector<HitEstimate> &data) const override;
@@ -159,6 +159,7 @@ public:
     Blueprint::UP get_replacement() override;
     void sort(std::vector<Blueprint*> &children) const override;
     bool inheritStrict(size_t i) const override;
+    bool isRank() const override { return true; }
     SearchIterator::UP
     createIntermediateSearch(MultiSearch::Children subSearches,
                              bool strict, fef::MatchData &md) const override;
@@ -168,7 +169,7 @@ public:
 
 //-----------------------------------------------------------------------------
 
-class SourceBlenderBlueprint : public IntermediateBlueprint
+class SourceBlenderBlueprint final : public IntermediateBlueprint
 {
 private:
     const ISourceSelector &_selector;
@@ -193,6 +194,7 @@ public:
 
     /** check if this blueprint has the same source selector as the other */
     bool isCompatibleWith(const SourceBlenderBlueprint &other) const;
+    bool isSourceBlender() const override { return true; }
 };
 
 }

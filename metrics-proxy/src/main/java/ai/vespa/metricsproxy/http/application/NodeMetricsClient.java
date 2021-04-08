@@ -6,9 +6,9 @@ import ai.vespa.metricsproxy.metric.model.MetricsPacket;
 import ai.vespa.metricsproxy.metric.model.json.GenericJsonUtil;
 import ai.vespa.metricsproxy.metric.model.processing.MetricsProcessor;
 import com.yahoo.yolean.Exceptions;
-import org.apache.http.client.HttpClient;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.hc.client5.http.classic.HttpClient;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
 
 import java.io.IOException;
 import java.time.Clock;
@@ -70,7 +70,7 @@ public class NodeMetricsClient {
         log.log(FINE, () -> "Retrieving metrics from host " + metricsUri);
 
         try {
-            String metricsJson = httpClient.execute(new HttpGet(metricsUri), new BasicResponseHandler());
+            String metricsJson = httpClient.execute(new HttpGet(metricsUri), new BasicHttpClientResponseHandler());
             var metricsBuilders = GenericJsonUtil.toMetricsPackets(metricsJson);
             var metrics = processAndBuild(metricsBuilders,
                                           new ServiceIdDimensionProcessor(),

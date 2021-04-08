@@ -4,7 +4,6 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
@@ -107,7 +106,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
     @Test
     public void trial_tenant_limit_reached() {
-        ((InMemoryFlagSource) tester.controller().flagSource()).withIntFlag(Flags.MAX_TRIAL_TENANTS.id(), 1);
+        ((InMemoryFlagSource) tester.controller().flagSource()).withIntFlag(PermanentFlags.MAX_TRIAL_TENANTS.id(), 1);
         tester.controller().serviceRegistry().billingController().setPlan(tenantName, PlanId.from("pay-as-you-go"), false);
 
         // tests that we can create the one trial tenant the flag says we can have -- and that the tenant created
@@ -190,10 +189,10 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
             lockedTenant = lockedTenant.withSecretStore(new TenantSecretStore("secret-foo", "123", "some-role"));
             tester.controller().tenants().store(lockedTenant);
         });
-        var tenant = (CloudTenant) tester.controller().tenants().require(tenantName);
+        var tenant = tester.controller().tenants().require(tenantName, CloudTenant.class);
         assertEquals(1, tenant.tenantSecretStores().size());
         tester.assertResponse(deleteRequest, "{\"secretStores\":[]}", 200);
-        tenant = (CloudTenant) tester.controller().tenants().require(tenantName);
+        tenant = tester.controller().tenants().require(tenantName, CloudTenant.class);
         assertEquals(0, tenant.tenantSecretStores().size());
     }
 

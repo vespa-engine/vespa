@@ -65,7 +65,7 @@ public abstract class Item implements Cloneable {
 
         public final int code;
 
-        private ItemType(int code) {
+        ItemType(int code) {
             this.code = code;
         }
 

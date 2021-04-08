@@ -49,7 +49,7 @@ public class ClusterFeedBlockTest extends FleetControllerTest {
         }
 
         communicator = new DummyCommunicator(nodes, timer);
-        MetricUpdater metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex);
+        MetricUpdater metricUpdater = new MetricUpdater(new NoMetricReporter(), options.fleetControllerIndex, options.clusterName);
         EventLog eventLog = new EventLog(timer, metricUpdater);
         ContentCluster cluster = new ContentCluster(options.clusterName, options.nodes, options.storageDistribution);
         NodeStateGatherer stateGatherer = new NodeStateGatherer(timer, timer, eventLog);

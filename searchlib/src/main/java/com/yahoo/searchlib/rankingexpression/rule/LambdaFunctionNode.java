@@ -112,6 +112,11 @@ public class LambdaFunctionNode extends CompositeNode {
         if ( ! (node.children().get(0) instanceof ReferenceNode) || ! (node.children().get(1) instanceof ReferenceNode)) {
             return Optional.empty();
         }
+        var lhs = (ReferenceNode) node.children().get(0);
+        var rhs = (ReferenceNode) node.children().get(1);
+        if (! lhs.getName().equals(arguments.get(0)) || ! rhs.getName().equals(arguments.get(1))) {
+            return Optional.empty();
+        }
         if (node.operators().size() != 1) {
             return Optional.empty();
         }

@@ -92,17 +92,6 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>messagebus-disc</artifactId>
-      <version>${project.version}</version>
-      <exclusions>
-        <exclusion>
-          <groupId>com.yahoo.vespa</groupId>
-          <artifactId>config</artifactId>
-        </exclusion>
-      </exclusions>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>vespajlib</artifactId>
       <version>${project.version}</version>
     </dependency>

@@ -56,7 +56,7 @@ Document operation modules:
 
 - [document](https://github.com/vespa-engine/vespa/tree/master/document) - the document model - documents, fields and document types, and operations on documents. Implemented in both Java and C++.
 - [messagebus](https://github.com/vespa-engine/vespa/tree/master/messagebus) - generic async, multi-hop message passing implemented in both Java and C++.
-- [jdisc_messagebus_service](https://github.com/vespa-engine/vespa/tree/master/jdisc_messagebus_service) - MessageBus connector for jDisc.
+- [container-messagebus](https://github.com/vespa-engine/vespa/tree/master/container-messagebus) - MessageBus connector for jDisc.
 - [documentapi](https://github.com/vespa-engine/vespa/tree/master/documentapi) - API for issuing document operations to Vespa over messagebus.
 - [docproc](https://github.com/vespa-engine/vespa/tree/master/docproc) - chainable document (operation) processors: Document operations issued over messagebus to Vespa will usually be routed through a container running a document processor chain.
 - [indexinglanguage](https://github.com/vespa-engine/vespa/tree/master/indexinglanguage) - implementation of the "indexing" language which is used to express the statements prefixed by "indexing:" in the search definition. 

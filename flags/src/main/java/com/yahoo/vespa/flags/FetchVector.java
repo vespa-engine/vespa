@@ -33,8 +33,11 @@ public class FetchVector {
         /** Node type from com.yahoo.config.provision.NodeType::name, e.g. tenant, host, confighost, controller, etc. */
         NODE_TYPE,
 
-        /** Cluster type from com.yahoo.config.provision.ClusterSpec.Type::name, e.g. content, container, admin */
+        /** Cluster type from com.yahoo.config.provision.ClusterSpec.Type::value, e.g. content, container, admin */
         CLUSTER_TYPE,
+
+        /** Cluster ID from com.yahoo.config.provision.ClusterSpec.Id::value, e.g. cluster-controllers, logserver. */
+        CLUSTER_ID,
 
         /**
          * Fully qualified hostname.

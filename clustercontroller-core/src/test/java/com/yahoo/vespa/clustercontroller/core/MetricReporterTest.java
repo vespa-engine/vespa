@@ -21,9 +21,11 @@ import static org.mockito.hamcrest.MockitoHamcrest.doubleThat;
 
 public class MetricReporterTest {
 
+    private static final String CLUSTER_NAME = "foo";
+
     private static class Fixture {
         final MetricReporter mockReporter = mock(MetricReporter.class);
-        final MetricUpdater metricUpdater = new MetricUpdater(mockReporter, 0);
+        final MetricUpdater metricUpdater = new MetricUpdater(mockReporter, 0, CLUSTER_NAME);
         final ClusterFixture clusterFixture;
 
         Fixture() {
@@ -42,8 +44,8 @@ public class MetricReporterTest {
     private static HasMetricContext.Dimension[] withClusterDimension() {
         // Dimensions that are always present
         HasMetricContext.Dimension controllerDim = withDimension("controller-index", "0");
-        HasMetricContext.Dimension clusterDim = withDimension("cluster", "foo");
-        HasMetricContext.Dimension clusteridDim = withDimension("clusterid", "foo");
+        HasMetricContext.Dimension clusterDim = withDimension("cluster", CLUSTER_NAME);
+        HasMetricContext.Dimension clusteridDim = withDimension("clusterid", CLUSTER_NAME);
         return new HasMetricContext.Dimension[] { controllerDim, clusterDim, clusteridDim };
     }
 

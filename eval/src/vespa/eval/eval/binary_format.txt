@@ -23,7 +23,7 @@ mixed_with_cell_type[7].
   (mixed tensors are tagged as both 'sparse' and 'dense')
 
 if ('with_cell_type')
-  1_4_int -> cell_type (0:double, 1:float)
+  1_4_int -> cell_type (0:double, 1:float, 2:bfloat16, 3:int8)
 
 if ('sparse'):
   1_4_int: number of mapped dimensions -> 'n_mapped'

@@ -8,7 +8,7 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
-import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
@@ -92,6 +92,17 @@ public class TenantController {
         return get(name).orElseThrow(() -> new IllegalArgumentException("No such tenant '" + name + "'."));
     }
 
+    /** Returns the tenant with the given name, and ensures the type */
+    public <T extends Tenant> T require(TenantName name, Class<T> tenantType) {
+        return get(name)
+                .map(t -> {
+                    try { return tenantType.cast(t); } catch (ClassCastException e) {
+                        throw new IllegalArgumentException("Tenant '" + name + "' was of type '" + t.getClass().getSimpleName() + "' and not '" + tenantType.getSimpleName() + "'");
+                    }
+                })
+                .orElseThrow(() -> new IllegalArgumentException("No such tenant '" + name + "'."));
+    }
+
     /** Replace and store any previous version of given tenant */
     public void store(LockedTenant tenant) {
         curator.writeTenant(tenant.get());
@@ -164,7 +175,7 @@ public class TenantController {
     }
 
     private void requireNonExistent(TenantName name) {
-        if ("hosted-vespa".equals(name.value())
+        if (SystemApplication.TENANT.equals(name)
             || get(name).isPresent()
             // Underscores are allowed in existing tenant names, but tenants with - and _ cannot co-exist. E.g.
             // my-tenant cannot be created if my_tenant exists.

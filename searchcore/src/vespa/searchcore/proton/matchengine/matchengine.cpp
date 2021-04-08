@@ -26,12 +26,10 @@ public:
         : _engine(engine),
           _request(std::move(request)),
           _client(client)
-    {
-        // empty
-    }
+    { }
 
     void run() override {
-        _engine.performSearch(std::move(_request), _client);
+        _client.searchDone(_engine.performSearch(std::move(_request)));
     }
 };
 
@@ -43,9 +41,10 @@ namespace proton {
 
 using namespace vespalib::slime;
 
-MatchEngine::MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t distributionKey)
+MatchEngine::MatchEngine(size_t numThreads, size_t threadsPerSearch, uint32_t distributionKey, bool async)
     : _lock(),
       _distributionKey(distributionKey),
+      _async(async),
       _closed(false),
       _handlers(),
       _executor(std::max(size_t(1), numThreads / threadsPerSearch), 256_Ki, match_engine_executor),
@@ -106,13 +105,15 @@ MatchEngine::search(search::engine::SearchRequest::Source request,
 
         return ret;
     }
-    _executor.execute(std::make_unique<SearchTask>(*this, std::move(request), client));
-    return search::engine::SearchReply::UP();
+    if (_async) {
+        _executor.execute(std::make_unique<SearchTask>(*this, std::move(request), client));
+        return search::engine::SearchReply::UP();
+    }
+    return performSearch(std::move(request));
 }
 
-void
-MatchEngine::performSearch(search::engine::SearchRequest::Source req,
-                           search::engine::SearchClient &client)
+std::unique_ptr<search::engine::SearchReply>
+MatchEngine::performSearch(search::engine::SearchRequest::Source req)
 {
     auto ret = std::make_unique<search::engine::SearchReply>();
 
@@ -151,7 +152,7 @@ MatchEngine::performSearch(search::engine::SearchRequest::Source req,
         vespalib::slime::BinaryFormat::encode(ret->request->trace().getSlime(), output);
         trace.add("slime", output.obtain().make_stringref());
     }
-    client.searchDone(std::move(ret));
+    return ret;
 }
 
 bool MatchEngine::isOnline() const {

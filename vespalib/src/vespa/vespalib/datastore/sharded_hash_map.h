@@ -41,7 +41,6 @@ private:
     std::atomic<FixedSizeHashMap *> _maps[num_shards];
     std::unique_ptr<const EntryComparator> _comp;
 
-    size_t get_shard_idx(const EntryComparator& comp, EntryRef key_ref) const;
     void alloc_shard(size_t shard_idx);
     void hold_shard(std::unique_ptr<const FixedSizeHashMap> map);
 public:
@@ -56,6 +55,9 @@ public:
     size_t size() const noexcept;
     const EntryComparator &get_default_comparator() const noexcept { return *_comp; }
     MemoryUsage get_memory_usage() const;
+    void foreach_key(std::function<void(EntryRef)> callback) const;
+    void move_keys(std::function<EntryRef(EntryRef)> callback);
+    bool normalize_values(std::function<EntryRef(EntryRef)> normalize);
 };
 
 }

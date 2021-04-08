@@ -425,11 +425,11 @@ TEST("require that attribute dot product works") {
         bool fast_search = ((i & 0x1) != 0);
         bool strict = ((i & 0x2) != 0);
         MyAttributeManager attribute_manager = make_weighted_string_attribute_manager(fast_search);
-        SimpleDotProduct node(field, 0, Weight(1));
-        node.append(Node::UP(new SimpleStringTerm("foo", "", 0, Weight(1))));
-        node.append(Node::UP(new SimpleStringTerm("bar", "", 0, Weight(1))));
-        node.append(Node::UP(new SimpleStringTerm("baz", "", 0, Weight(1))));
-        node.append(Node::UP(new SimpleStringTerm("fox", "", 0, Weight(1))));
+        SimpleDotProduct node(4, field, 0, Weight(1));
+        node.addTerm("foo", Weight(1));
+        node.addTerm("bar", Weight(1));
+        node.addTerm("baz", Weight(1));
+        node.addTerm("fox", Weight(1));
         Result result = do_search(attribute_manager, node, strict);
         ASSERT_EQUAL(5u, result.hits.size());
         if (fast_search) {
@@ -457,11 +457,11 @@ TEST("require that attribute dot product can produce no hits") {
         bool fast_search = ((i & 0x1) != 0);
         bool strict = ((i & 0x2) != 0);
         MyAttributeManager attribute_manager = make_weighted_string_attribute_manager(fast_search);
-        SimpleDotProduct node(field, 0, Weight(1));
-        node.append(Node::UP(new SimpleStringTerm("notfoo", "", 0, Weight(1))));
-        node.append(Node::UP(new SimpleStringTerm("notbar", "", 0, Weight(1))));
-        node.append(Node::UP(new SimpleStringTerm("notbaz", "", 0, Weight(1))));
-        node.append(Node::UP(new SimpleStringTerm("notfox", "", 0, Weight(1))));
+        SimpleDotProduct node(4, field, 0, Weight(1));
+        node.addTerm("notfoo", Weight(1));
+        node.addTerm("notbar", Weight(1));
+        node.addTerm("notbaz", Weight(1));
+        node.addTerm("notfox", Weight(1));
         Result result = do_search(attribute_manager, node, strict);
         ASSERT_EQUAL(0u, result.hits.size());
         EXPECT_EQUAL(0u, result.est_hits);
@@ -525,11 +525,11 @@ TEST("require that attribute parallel wand works") {
         bool fast_search = ((i & 0x1) != 0);
         bool strict = ((i & 0x2) != 0);
         MyAttributeManager attribute_manager = make_weighted_string_attribute_manager(fast_search);
-        SimpleWandTerm node(field, 0, Weight(1), 10, 500, 1.5);
-        node.append(Node::UP(new SimpleStringTerm("foo", "", 0, Weight(1))));
-        node.append(Node::UP(new SimpleStringTerm("bar", "", 0, Weight(1))));
-        node.append(Node::UP(new SimpleStringTerm("baz", "", 0, Weight(1))));
-        node.append(Node::UP(new SimpleStringTerm("fox", "", 0, Weight(1))));
+        SimpleWandTerm node(4, field, 0, Weight(1), 10, 500, 1.5);
+        node.addTerm("foo", Weight(1));
+        node.addTerm("bar", Weight(1));
+        node.addTerm("baz", Weight(1));
+        node.addTerm("fox", Weight(1));
         Result result = do_search(attribute_manager, node, strict);
         EXPECT_FALSE(result.est_empty);
         if (fast_search) {
@@ -561,11 +561,11 @@ TEST("require that attribute weighted set term works") {
         bool fast_search = ((i & 0x1) != 0);
         bool strict = ((i & 0x2) != 0);
         MyAttributeManager attribute_manager = make_weighted_string_attribute_manager(fast_search);
-        SimpleWeightedSetTerm node(field, 0, Weight(1));
-        node.append(Node::UP(new SimpleStringTerm("foo", "", 0, Weight(10))));
-        node.append(Node::UP(new SimpleStringTerm("bar", "", 0, Weight(20))));
-        node.append(Node::UP(new SimpleStringTerm("baz", "", 0, Weight(30))));
-        node.append(Node::UP(new SimpleStringTerm("fox", "", 0, Weight(40))));
+        SimpleWeightedSetTerm node(4, field, 0, Weight(1));
+        node.addTerm("foo", Weight(10));
+        node.addTerm("bar", Weight(20));
+        node.addTerm("baz", Weight(30));
+        node.addTerm("fox", Weight(40));
         Result result = do_search(attribute_manager, node, strict);
         EXPECT_FALSE(result.est_empty);
         ASSERT_EQUAL(5u, result.hits.size());

@@ -9,7 +9,6 @@
 #include "singlenumericattribute.hpp"
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
-#include <vespa/searchlib/tensor/serialized_tensor_attribute.h>
 #include <vespa/searchlib/tensor/serialized_fast_value_attribute.h>
 
 namespace search {

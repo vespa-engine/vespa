@@ -19,7 +19,7 @@ PostingListSearchContext(const IEnumStoreDictionary& dictionary,
                          bool useBitVector,
                          const ISearchContext &baseSearchCtx)
     : _dictionary(dictionary),
-      _frozenDictionary(_dictionary.get_posting_dictionary().getFrozenView()),
+      _frozenDictionary(_dictionary.get_has_btree_dictionary() ? _dictionary.get_posting_dictionary().getFrozenView() : FrozenDictionary()),
       _lowerDictItr(BTreeNode::Ref(), _frozenDictionary.getAllocator()),
       _upperDictItr(BTreeNode::Ref(), _frozenDictionary.getAllocator()),
       _uniqueValues(0u),
@@ -57,6 +57,10 @@ void
 PostingListSearchContext::lookupRange(const vespalib::datastore::EntryComparator &low,
                                       const vespalib::datastore::EntryComparator &high)
 {
+    if (!_dictionary.get_has_btree_dictionary()) {
+        _uniqueValues = 2; // Avoid zero and single value optimizations, use filtering
+        return;
+    }
     _lowerDictItr.lower_bound(_frozenDictionary.getRoot(), EnumIndex(), low);
     _upperDictItr = _lowerDictItr;
     if (_upperDictItr.valid() && !high.less(EnumIndex(), _upperDictItr.getKey())) {

@@ -19,8 +19,8 @@ public:
     void setPool(AllocPool & pool) {
         _allocPool = & pool;
     }
-    void malloc(size_t sz, MemBlockPtrT & mem) __attribute__((noinline));
-    void free(MemBlockPtrT mem, SizeClassT sc) __attribute__((noinline));
+    void malloc(size_t sz, MemBlockPtrT & mem);
+    void free(MemBlockPtrT mem, SizeClassT sc);
 
     void info(FILE * os, size_t level, const DataSegment<MemBlockPtrT> & ds) const __attribute__((noinline));
     /**

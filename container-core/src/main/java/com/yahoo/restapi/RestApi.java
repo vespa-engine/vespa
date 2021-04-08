@@ -1,13 +1,12 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.restapi;
 
-import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.slime.Slime;
 
 import java.io.InputStream;
+import java.util.List;
 import java.util.Optional;
 import java.util.OptionalDouble;
 import java.util.OptionalLong;
@@ -23,7 +22,6 @@ public interface RestApi {
     static RouteBuilder route(String pathPattern) { return new RestApiImpl.RouteBuilderImpl(pathPattern); }
 
     HttpResponse handleRequest(HttpRequest request);
-    ObjectMapper jacksonJsonMapper();
 
     interface Builder {
         Builder setObjectMapper(ObjectMapper mapper);
@@ -31,7 +29,10 @@ public interface RestApi {
         Builder addRoute(RouteBuilder route);
         Builder addFilter(Filter filter);
         <EXCEPTION extends RuntimeException> Builder addExceptionMapper(Class<EXCEPTION> type, ExceptionMapper<EXCEPTION> mapper);
-        <ENTITY> Builder addResponseMapper(Class<ENTITY> type, ResponseMapper<ENTITY> mapper);
+        <RESPONSE_ENTITY> Builder addResponseMapper(Class<RESPONSE_ENTITY> type, ResponseMapper<RESPONSE_ENTITY> mapper);
+        <REQUEST_ENTITY> Builder addRequestMapper(Class<REQUEST_ENTITY> type, RequestMapper<REQUEST_ENTITY> mapper);
+        <RESPONSE_ENTITY> Builder registerJacksonResponseEntity(Class<RESPONSE_ENTITY> type);
+        <REQUEST_ENTITY> Builder registerJacksonRequestEntity(Class<REQUEST_ENTITY> type);
         Builder disableDefaultExceptionMappers();
         Builder disableDefaultResponseMappers();
         RestApi build();
@@ -39,28 +40,34 @@ public interface RestApi {
 
     interface RouteBuilder {
         RouteBuilder name(String name);
-        RouteBuilder get(MethodHandler<?> handler);
-        RouteBuilder post(MethodHandler<?> handler);
-        RouteBuilder put(MethodHandler<?> handler);
-        RouteBuilder delete(MethodHandler<?> handler);
-        RouteBuilder patch(MethodHandler<?> handler);
-        RouteBuilder defaultHandler(MethodHandler<?> handler);
+        RouteBuilder get(Handler<?> handler);
+        RouteBuilder post(Handler<?> handler);
+        <REQUEST_ENTITY> RouteBuilder post(Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
+        RouteBuilder put(Handler<?> handler);
+        <REQUEST_ENTITY> RouteBuilder put(Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
+        RouteBuilder delete(Handler<?> handler);
+        RouteBuilder patch(Handler<?> handler);
+        <REQUEST_ENTITY> RouteBuilder patch(Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
+        RouteBuilder defaultHandler(Handler<?> handler);
+        <REQUEST_ENTITY> RouteBuilder defaultHandler(Class<REQUEST_ENTITY> type, HandlerWithRequestEntity<REQUEST_ENTITY, ?> handler);
         RouteBuilder addFilter(Filter filter);
     }
 
-    @FunctionalInterface interface ExceptionMapper<EXCEPTION extends RuntimeException> { HttpResponse toResponse(EXCEPTION exception, RequestContext context); }
+    @FunctionalInterface interface Handler<RESPONSE_ENTITY> {
+        RESPONSE_ENTITY handleRequest(RequestContext context) throws RestApiException;
+    }
 
-    @FunctionalInterface interface MethodHandler<ENTITY> { ENTITY handleRequest(RequestContext context) throws RestApiException; }
+    @FunctionalInterface interface HandlerWithRequestEntity<REQUEST_ENTITY, RESPONSE_ENTITY> {
+        RESPONSE_ENTITY handleRequest(RequestContext context, REQUEST_ENTITY requestEntity) throws RestApiException;
+    }
 
-    @FunctionalInterface interface ResponseMapper<ENTITY> { HttpResponse toHttpResponse(ENTITY responseEntity, RequestContext context); }
+    @FunctionalInterface interface ExceptionMapper<EXCEPTION extends RuntimeException> { HttpResponse toResponse(RequestContext context, EXCEPTION exception); }
+
+    @FunctionalInterface interface ResponseMapper<RESPONSE_ENTITY> { HttpResponse toHttpResponse(RequestContext context, RESPONSE_ENTITY responseEntity) throws RestApiException; }
+
+    @FunctionalInterface interface RequestMapper<REQUEST_ENTITY> { Optional<REQUEST_ENTITY> toRequestEntity(RequestContext context) throws RestApiException; }
 
     @FunctionalInterface interface Filter { HttpResponse filterRequest(FilterContext context); }
-
-    /** Marker interface required for automatic serialization of Jackson response entities */
-    interface JacksonResponseEntity {}
-
-    /** Marker interface required for automatic serialization of Jackson request entities */
-    interface JacksonRequestEntity {}
 
     interface RequestContext {
         HttpRequest request();
@@ -70,6 +77,8 @@ public interface RestApi {
         Attributes attributes();
         Optional<RequestContent> requestContent();
         RequestContent requestContentOrThrow();
+        ObjectMapper jacksonJsonMapper();
+        UriBuilder uriBuilder();
 
         interface Parameters {
             Optional<String> getString(String name);
@@ -87,7 +96,9 @@ public interface RestApi {
         }
 
         interface PathParameters extends Parameters {}
-        interface QueryParameters extends Parameters {}
+        interface QueryParameters extends Parameters {
+            List<String> getStringList(String name);
+        }
         interface Headers extends Parameters {}
 
         interface Attributes {
@@ -97,13 +108,7 @@ public interface RestApi {
 
         interface RequestContent {
             String contentType();
-            InputStream inputStream();
-            ObjectMapper jacksonJsonMapper();
-            byte[] consumeByteArray();
-            String consumeString();
-            JsonNode consumeJsonNode();
-            Slime consumeSlime();
-            <T extends JacksonRequestEntity> T consumeJacksonEntity(Class<T> type);
+            InputStream content();
         }
     }
 

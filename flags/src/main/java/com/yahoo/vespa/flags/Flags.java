@@ -13,6 +13,7 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
@@ -103,45 +104,38 @@ public class Flags {
 
     public static final UnboundBooleanFlag USE_THREE_PHASE_UPDATES = defineFeatureFlag(
             "use-three-phase-updates", false,
-            List.of("vekterli"), "2020-12-02", "2021-04-01",
+            List.of("vekterli"), "2020-12-02", "2021-06-01",
             "Whether to enable the use of three-phase updates when bucket replicas are out of sync.",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag TLS_FOR_ZOOKEEPER_CLIENT_SERVER_COMMUNICATION = defineStringFlag(
-            "tls-for-zookeeper-client-server-communication", "OFF",
-            List.of("hmusum"), "2020-12-02", "2021-04-01",
+            "tls-for-zookeeper-client-server-communication", "TLS_WITH_PORT_UNIFICATION",
+            List.of("hmusum"), "2020-12-02", "2021-06-01",
             "How to setup TLS for ZooKeeper client/server communication. Valid values are OFF, PORT_UNIFICATION, TLS_WITH_PORT_UNIFICATION, TLS_ONLY",
             "Takes effect on restart of config server",
             NODE_TYPE, HOSTNAME);
 
     public static final UnboundBooleanFlag USE_TLS_FOR_ZOOKEEPER_CLIENT = defineFeatureFlag(
-            "use-tls-for-zookeeper-client", false,
-            List.of("hmusum"), "2020-12-02", "2021-04-01",
+            "use-tls-for-zookeeper-client", true,
+            List.of("hmusum"), "2020-12-02", "2021-05-01",
             "Whether to use TLS for ZooKeeper clients",
             "Takes effect on restart of process",
             NODE_TYPE, HOSTNAME);
     
     public static final UnboundBooleanFlag PROVISION_TENANT_ROLES = defineFeatureFlag(
             "provision-tenant-roles", false,
-            List.of("tokle"), "2020-12-02", "2021-04-01",
+            List.of("tokle"), "2020-12-02", "2021-06-01",
             "Whether tenant roles should be provisioned",
             "Takes effect on next deployment (controller)",
             TENANT_ID);
 
     public static final UnboundBooleanFlag TENANT_IAM_ROLE = defineFeatureFlag(
             "application-iam-roles", false,
-            List.of("tokle"), "2020-12-02", "2021-04-01",
+            List.of("tokle"), "2020-12-02", "2021-06-01",
             "Allow separate iam roles when provisioning/assigning hosts",
             "Takes effect immediately on new hosts, on next redeploy for applications",
             TENANT_ID);
-
-    public static final UnboundIntFlag MAX_TRIAL_TENANTS = defineIntFlag(
-            "max-trial-tenants", -1,
-            List.of("ogronnesby"), "2020-12-03", "2021-04-01",
-            "The maximum nr. of tenants with trial plan, -1 is unlimited",
-            "Takes effect immediately"
-    );
 
     public static final UnboundBooleanFlag HIDE_SHARED_ROUTING_ENDPOINT = defineFeatureFlag(
             "hide-shared-routing-endpoint", false,
@@ -151,13 +145,6 @@ public class Flags {
             APPLICATION_ID
     );
 
-    public static final UnboundBooleanFlag USE_ACCESS_CONTROL_CLIENT_AUTHENTICATION = defineFeatureFlag(
-            "use-access-control-client-authentication", false,
-            List.of("tokle"), "2020-12-02", "2021-04-01",
-            "Whether application container should set up client authentication on default port based on access control element",
-            "Takes effect on next internal redeployment",
-            APPLICATION_ID);
-
     public static final UnboundBooleanFlag USE_ASYNC_MESSAGE_HANDLING_ON_SCHEDULE = defineFeatureFlag(
             "async-message-handling-on-schedule", false,
             List.of("baldersheim"), "2020-12-02", "2022-01-01",
@@ -166,8 +153,8 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag MAX_PENDING_MOVE_OPS = defineIntFlag(
-            "max-pending-move-ops", 10,
-            List.of("baldersheim"), "2021-02-15", "2021-04-01",
+            "max-pending-move-ops", 100,
+            List.of("baldersheim"), "2021-02-15", "2021-05-01",
             "Max number of move operations inflight",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -180,23 +167,16 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_LID_SPACE_COMPACT = defineFeatureFlag(
-            "use-bucket-executor-for-lid-space-compact", false,
-            List.of("baldersheim"), "2021-01-24", "2021-04-01",
+            "use-bucket-executor-for-lid-space-compact", true,
+            List.of("baldersheim"), "2021-01-24", "2021-05-01",
             "Wheter to use content-level bucket executor or legacy frozen buckets",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_BUCKET_MOVE = defineFeatureFlag(
-            "use-bucket-executor-for-bucket-move", false,
-            List.of("baldersheim"), "2021-02-15", "2021-04-01",
+            "use-bucket-executor-for-bucket-move", true,
+            List.of("baldersheim"), "2021-02-15", "2021-05-01",
             "Wheter to use content-level bucket executor or legacy frozen buckets",
-            "Takes effect on next internal redeployment",
-            APPLICATION_ID);
-
-    public static final UnboundBooleanFlag USE_POWER_OF_TWO_CHOICES_LOAD_BALANCING = defineFeatureFlag(
-            "use-power-of-two-choices-load-balancing", false,
-            List.of("tokle"), "2020-12-02", "2021-04-01",
-            "Whether to use Power of two load balancing algorithm for application",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
@@ -209,20 +189,20 @@ public class Flags {
 
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
             "enable-feed-block-in-distributor", true,
-            List.of("geirst"), "2021-01-27", "2021-04-01",
+            List.of("geirst"), "2021-01-27", "2021-05-01",
             "Enables blocking of feed in the distributor if resource usage is above limit on at least one content node",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundDoubleFlag MAX_DEAD_BYTES_RATIO = defineDoubleFlag(
             "max-dead-bytes-ratio", 0.2,
-            List.of("baldersheim", "geirst","toregge"), "2021-02-03", "2021-04-01",
+            List.of("baldersheim", "geirst","toregge"), "2021-02-03", "2021-05-01",
             "max ratio of dead to used memory bytes in large data structures before compaction is attempted",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag SYNC_HOST_LOGS_TO_S3_BUCKET = defineStringFlag(
-            "sync-host-logs-to-s3-bucket", "", List.of("andreer", "valerijf"), "2021-02-10", "2021-04-01",
+            "sync-host-logs-to-s3-bucket", "", List.of("andreer", "valerijf"), "2021-02-10", "2021-05-01",
             "Host-admin should sync host logs to an S3 bucket named by this flag. If left empty, sync is disabled",
             "Takes effect on next run of S3 log sync task in host-admin",
             TENANT_ID, ZONE_ID);
@@ -245,7 +225,7 @@ public class Flags {
             List.of("hmusum"), "2021-03-15", "2021-05-15",
             "JVM max heap size for config proxy in Mb",
             "Takes effect on restart of Docker container",
-            CLUSTER_TYPE);
+            CLUSTER_TYPE, CLUSTER_ID);
 
     public static final UnboundStringFlag DEDICATED_CLUSTER_CONTROLLER_FLAVOR = defineStringFlag(
             "dedicated-cluster-controller-flavor", "", List.of("jonmv"), "2021-02-25", "2021-04-25",

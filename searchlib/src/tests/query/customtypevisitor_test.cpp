@@ -15,18 +15,6 @@ using namespace search::query;
 
 namespace {
 
-class Test : public vespalib::TestApp {
-    const char *current_state;
-    virtual void DumpState(bool) {
-      fprintf(stderr, "%s: ERROR: in %s\n", GetName(), current_state);
-    }
-
-    template <class T> void requireThatNodeIsVisited();
-
-public:
-    int Main() override;
-};
-
 template <class Base>
 struct InitTerm : Base {
     InitTerm() : Base(typename Base::Type(), "view", 0, Weight(0)) {}
@@ -49,9 +37,9 @@ struct MyStringTerm : InitTerm<StringTerm>  {};
 struct MySubstrTerm : InitTerm<SubstringTerm>  {};
 struct MySuffixTerm : InitTerm<SuffixTerm>  {};
 struct MyWeakAnd : WeakAnd { MyWeakAnd() : WeakAnd(1234, "view") {} };
-struct MyWeightedSetTerm : WeightedSetTerm { MyWeightedSetTerm() : WeightedSetTerm("view", 0, Weight(42)) {} };
-struct MyDotProduct : DotProduct { MyDotProduct() : DotProduct("view", 0, Weight(42)) {} };
-struct MyWandTerm : WandTerm { MyWandTerm() : WandTerm("view", 0, Weight(42), 57, 67, 77.7) {} };
+struct MyWeightedSetTerm : WeightedSetTerm { MyWeightedSetTerm() : WeightedSetTerm(0, "view", 0, Weight(42)) {} };
+struct MyDotProduct : DotProduct { MyDotProduct() : DotProduct(0, "view", 0, Weight(42)) {} };
+struct MyWandTerm : WandTerm { MyWandTerm() : WandTerm(0, "view", 0, Weight(42), 57, 67, 77.7) {} };
 struct MyPredicateQuery : InitTerm<PredicateQuery> {};
 struct MyRegExpTerm : InitTerm<RegExpTerm>  {};
 struct MyNearestNeighborTerm : NearestNeighborTerm {};
@@ -119,7 +107,7 @@ public:
 };
 
 template <class T>
-void Test::requireThatNodeIsVisited() {
+void requireThatNodeIsVisited() {
     MyCustomVisitor visitor;
     Node::UP query(new T);
     visitor.isVisited<T>() = false;
@@ -127,37 +115,28 @@ void Test::requireThatNodeIsVisited() {
     ASSERT_TRUE(visitor.isVisited<T>());
 }
 
-#define TEST_CALL(func) \
-    current_state = #func; \
-    func();
+TEST("customtypevisitor_test") {
 
-int
-Test::Main()
-{
-    TEST_INIT("customtypevisitor_test");
-
-    TEST_CALL(requireThatNodeIsVisited<MyAnd>);
-    TEST_CALL(requireThatNodeIsVisited<MyAndNot>);
-    TEST_CALL(requireThatNodeIsVisited<MyNear>);
-    TEST_CALL(requireThatNodeIsVisited<MyONear>);
-    TEST_CALL(requireThatNodeIsVisited<MyOr>);
-    TEST_CALL(requireThatNodeIsVisited<MyPhrase>);
-    TEST_CALL(requireThatNodeIsVisited<MySameElement>);
-    TEST_CALL(requireThatNodeIsVisited<MyRangeTerm>);
-    TEST_CALL(requireThatNodeIsVisited<MyRank>);
-    TEST_CALL(requireThatNodeIsVisited<MyNumberTerm>);
-    TEST_CALL(requireThatNodeIsVisited<MyPrefixTerm>);
-    TEST_CALL(requireThatNodeIsVisited<MyStringTerm>);
-    TEST_CALL(requireThatNodeIsVisited<MySubstrTerm>);
-    TEST_CALL(requireThatNodeIsVisited<MySuffixTerm>);
-    TEST_CALL(requireThatNodeIsVisited<MyWeightedSetTerm>);
-    TEST_CALL(requireThatNodeIsVisited<MyDotProduct>);
-    TEST_CALL(requireThatNodeIsVisited<MyWandTerm>);
-    TEST_CALL(requireThatNodeIsVisited<MyPredicateQuery>);
-    TEST_CALL(requireThatNodeIsVisited<MyRegExpTerm>);
-
-    TEST_DONE();
+    requireThatNodeIsVisited<MyAnd>();
+    requireThatNodeIsVisited<MyAndNot>();
+    requireThatNodeIsVisited<MyNear>();
+    requireThatNodeIsVisited<MyONear>();
+    requireThatNodeIsVisited<MyOr>();
+    requireThatNodeIsVisited<MyPhrase>();
+    requireThatNodeIsVisited<MySameElement>();
+    requireThatNodeIsVisited<MyRangeTerm>();
+    requireThatNodeIsVisited<MyRank>();
+    requireThatNodeIsVisited<MyNumberTerm>();
+    requireThatNodeIsVisited<MyPrefixTerm>();
+    requireThatNodeIsVisited<MyStringTerm>();
+    requireThatNodeIsVisited<MySubstrTerm>();
+    requireThatNodeIsVisited<MySuffixTerm>();
+    requireThatNodeIsVisited<MyWeightedSetTerm>();
+    requireThatNodeIsVisited<MyDotProduct>();
+    requireThatNodeIsVisited<MyWandTerm>();
+    requireThatNodeIsVisited<MyPredicateQuery>();
+    requireThatNodeIsVisited<MyRegExpTerm>();
 }
 }  // namespace
 
-TEST_APPHOOK(Test);
+TEST_MAIN() { TEST_RUN_ALL(); }

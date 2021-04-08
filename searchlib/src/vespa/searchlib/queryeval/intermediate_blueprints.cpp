@@ -35,8 +35,8 @@ void optimize_source_blenders(IntermediateBlueprint &self, size_t begin_idx) {
     std::vector<size_t> source_blenders;
     SourceBlenderBlueprint *reference = nullptr;
     for (size_t i = begin_idx; i < self.childCnt(); ++i) {
-        SourceBlenderBlueprint *child = dynamic_cast<SourceBlenderBlueprint *>(&self.getChild(i));
-        if (child != nullptr) {
+        if (self.getChild(i).isSourceBlender()) {
+            auto *child = static_cast<SourceBlenderBlueprint *>(&self.getChild(i));
             if (reference == nullptr || reference->isCompatibleWith(*child)) {
                 source_blenders.push_back(i);
                 reference = child;
@@ -49,16 +49,16 @@ void optimize_source_blenders(IntermediateBlueprint &self, size_t begin_idx) {
         while (!source_blenders.empty()) {
             blender_up = self.removeChild(source_blenders.back());
             source_blenders.pop_back();
-            SourceBlenderBlueprint *blender = dynamic_cast<SourceBlenderBlueprint *>(blender_up.get());
-            assert(blender != nullptr);
+            assert(blender_up->isSourceBlender());
+            auto *blender = static_cast<SourceBlenderBlueprint *>(blender_up.get());
             while (blender->childCnt() > 0) {
                 Blueprint::UP child_up = blender->removeChild(blender->childCnt() - 1);
                 size_t source_idx = lookup_create_source(sources, child_up->getSourceId());
                 sources[source_idx]->addChild(std::move(child_up));
             }
         }
-        SourceBlenderBlueprint *top = dynamic_cast<SourceBlenderBlueprint *>(blender_up.get());
-        assert(top != nullptr);
+        assert(blender_up->isSourceBlender());
+        auto *top = static_cast<SourceBlenderBlueprint *>(blender_up.get());
         while (!sources.empty()) {
             top->addChild(std::move(sources.back()));
             sources.pop_back();
@@ -117,8 +117,8 @@ AndNotBlueprint::optimize_self()
     if (childCnt() == 0) {
         return;
     }
-    AndNotBlueprint *child = dynamic_cast<AndNotBlueprint *>(&getChild(0));
-    if (child != nullptr) {
+    if (getChild(0).isAndNot()) {
+        auto *child = static_cast<AndNotBlueprint *>(&getChild(0));
         while (child->childCnt() > 1) {
             addChild(child->removeChild(1));
         }
@@ -130,7 +130,7 @@ AndNotBlueprint::optimize_self()
             removeChild(i--);
         }
     }
-    if (dynamic_cast<AndNotBlueprint *>(getParent()) == nullptr) {
+    if ( !(getParent() && getParent()->isAndNot()) ) {
         optimize_source_blenders<OrBlueprint>(*this, 1);
     }
 }
@@ -224,15 +224,15 @@ void
 AndBlueprint::optimize_self()
 {
     for (size_t i = 0; i < childCnt(); ++i) {
-        AndBlueprint *child = dynamic_cast<AndBlueprint *>(&getChild(i));
-        if (child != nullptr) {
+        if (getChild(i).isAnd()) {
+            auto *child = static_cast<AndBlueprint *>(&getChild(i));
             while (child->childCnt() > 0) {
                 addChild(child->removeChild(0));
             }
             removeChild(i--);
         }
     }
-    if (dynamic_cast<AndBlueprint *>(getParent()) == nullptr) {
+    if ( !(getParent() && getParent()->isAnd()) ) {
         optimize_source_blenders<AndBlueprint>(*this, 0);
     }
 }
@@ -311,8 +311,8 @@ void
 OrBlueprint::optimize_self()
 {
     for (size_t i = 0; (childCnt() > 1) && (i < childCnt()); ++i) {
-        OrBlueprint *child = dynamic_cast<OrBlueprint *>(&getChild(i));
-        if (child != nullptr) {
+        if (getChild(i).isOr()) {
+            auto *child = static_cast<OrBlueprint *>(&getChild(i));
             while (child->childCnt() > 0) {
                 addChild(child->removeChild(0));
             }
@@ -321,7 +321,7 @@ OrBlueprint::optimize_self()
             removeChild(i--);
         }
     }
-    if (dynamic_cast<OrBlueprint *>(getParent()) == nullptr) {
+    if ( !(getParent() && getParent()->isOr()) ) {
         optimize_source_blenders<OrBlueprint>(*this, 0);
     }
 }

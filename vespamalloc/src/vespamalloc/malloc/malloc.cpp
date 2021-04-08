@@ -3,6 +3,7 @@
 #include <vespamalloc/malloc/memorywatcher.h>
 #include <vespamalloc/malloc/memblock.h>
 #include <vespamalloc/malloc/stat.h>
+#include <vespamalloc/malloc/threadpool.hpp>
 
 namespace vespamalloc {
 

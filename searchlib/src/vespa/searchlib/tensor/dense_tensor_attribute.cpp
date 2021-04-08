@@ -10,8 +10,6 @@
 #include <vespa/searchlib/attribute/load_utils.h>
 #include <vespa/searchlib/attribute/readerbase.h>
 #include <vespa/vespalib/data/slime/inserter.h>
-#include <vespa/vespalib/util/memory_allocator.h>
-#include <vespa/vespalib/util/mmap_file_allocator_factory.h>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".searchlib.tensor.dense_tensor_attribute");
@@ -74,15 +72,6 @@ can_use_index_save_file(const search::attribute::Config &config, const search::a
     return true;
 }
 
-std::unique_ptr<vespalib::alloc::MemoryAllocator>
-make_memory_allocator(const vespalib::string& name, bool huge)
-{
-    if (huge) {
-        return vespalib::alloc::MmapFileAllocatorFactory::instance().make_memory_allocator(name);
-    }
-    return {};
-}
-
 }
 
 void
@@ -115,7 +104,7 @@ DenseTensorAttribute::memory_usage() const
 DenseTensorAttribute::DenseTensorAttribute(vespalib::stringref baseFileName, const Config& cfg,
                                            const NearestNeighborIndexFactory& index_factory)
     : TensorAttribute(baseFileName, cfg, _denseTensorStore),
-      _denseTensorStore(cfg.tensorType(), make_memory_allocator(getName(), cfg.huge())),
+      _denseTensorStore(cfg.tensorType()),
       _index()
 {
     if (cfg.hnsw_index_params().has_value()) {

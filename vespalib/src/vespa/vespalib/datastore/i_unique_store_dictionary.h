@@ -12,6 +12,7 @@ namespace vespalib::datastore {
 
 class EntryComparator;
 struct ICompactable;
+class IUniqueStoreDictionaryReadSnapshot;
 class UniqueStoreAddResult;
 
 /**
@@ -19,20 +20,6 @@ class UniqueStoreAddResult;
  */
 class IUniqueStoreDictionary {
 public:
-    /**
-     * Class that provides a read snapshot of the dictionary.
-     *
-     * A generation guard that must be taken and held while the snapshot is considered valid.
-     */
-    class ReadSnapshot {
-    public:
-        using UP = std::unique_ptr<ReadSnapshot>;
-        virtual ~ReadSnapshot() = default;
-        virtual size_t count(const EntryComparator& comp) const = 0;
-        virtual size_t count_in_range(const EntryComparator& low, const EntryComparator& high) const = 0;
-        virtual void foreach_key(std::function<void(EntryRef)> callback) const = 0;
-    };
-
     using generation_t = vespalib::GenerationHandler::generation_t;
     virtual ~IUniqueStoreDictionary() = default;
     virtual void freeze() = 0;
@@ -47,7 +34,8 @@ public:
     virtual void build(vespalib::ConstArrayRef<EntryRef>, vespalib::ConstArrayRef<uint32_t> ref_counts, std::function<void(EntryRef)> hold) = 0;
     virtual void build(vespalib::ConstArrayRef<EntryRef> refs) = 0;
     virtual void build_with_payload(vespalib::ConstArrayRef<EntryRef> refs, vespalib::ConstArrayRef<uint32_t> payloads) = 0;
-    virtual std::unique_ptr<ReadSnapshot> get_read_snapshot() const = 0;
+    virtual std::unique_ptr<IUniqueStoreDictionaryReadSnapshot> get_read_snapshot() const = 0;
+    virtual bool get_has_btree_dictionary() const = 0;
     virtual bool get_has_hash_dictionary() const = 0;
 };
 

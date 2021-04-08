@@ -53,9 +53,9 @@ struct WS {
     }
 
     Node::UP createNode() const {
-        SimpleWeightedSetTerm *node = new SimpleWeightedSetTerm("view", 0, Weight(0));
+        SimpleWeightedSetTerm *node = new SimpleWeightedSetTerm(tokens.size(), "view", 0, Weight(0));
         for (size_t i = 0; i < tokens.size(); ++i) {
-            node->append(Node::UP(new SimpleStringTerm(tokens[i].first, "view", 0, Weight(tokens[i].second))));
+            node->addTerm(tokens[i].first,Weight(tokens[i].second));
         }
         return Node::UP(node);
     }

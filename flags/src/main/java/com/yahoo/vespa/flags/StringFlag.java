@@ -12,6 +12,11 @@ public class StringFlag extends FlagImpl<String, StringFlag> {
         super(id, defaultValue, vector, serializer, source, StringFlag::new);
     }
 
+    @Override
+    public StringFlag self() {
+        return this;
+    }
+
     public String value() {
         return boxedValue();
     }

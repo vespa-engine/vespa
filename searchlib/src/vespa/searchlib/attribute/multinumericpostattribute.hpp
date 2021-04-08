@@ -3,6 +3,7 @@
 #pragma once
 
 #include "multinumericpostattribute.h"
+#include <charconv>
 
 namespace search {
 
@@ -92,21 +93,21 @@ MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::get_dic
 
 template <typename B, typename M>
 IDocumentWeightAttribute::LookupResult
-MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::lookup(const vespalib::string &term, vespalib::datastore::EntryRef dictionary_snapshot) const
+MultiValueNumericPostingAttribute<B, M>::DocumentWeightAttributeAdapter::lookup(const LookupKey & key, vespalib::datastore::EntryRef dictionary_snapshot) const
 {
     const IEnumStoreDictionary& dictionary = self._enumStore.get_dictionary();
-    char *end = nullptr;
-    int64_t int_term = strtoll(term.c_str(), &end, 10);
-    if (*end == '\0') {
-        auto comp = self._enumStore.make_comparator(int_term);
-        auto find_result = dictionary.find_posting_list(comp, dictionary_snapshot);
-        if (find_result.first.valid()) {
-            auto pidx = find_result.second;
-            if (pidx.valid()) {
-                const PostingList &plist = self.getPostingList();
-                auto minmax = plist.getAggregated(pidx);
-                return LookupResult(pidx, plist.frozenSize(pidx), minmax.getMin(), minmax.getMax(), find_result.first);
-            }
+    int64_t int_term;
+    if ( !key.asInteger(int_term)) {
+        return LookupResult();
+    }
+    auto comp = self._enumStore.make_comparator(int_term);
+    auto find_result = dictionary.find_posting_list(comp, dictionary_snapshot);
+    if (find_result.first.valid()) {
+        auto pidx = find_result.second;
+        if (pidx.valid()) {
+            const PostingList &plist = self.getPostingList();
+            auto minmax = plist.getAggregated(pidx);
+            return LookupResult(pidx, plist.frozenSize(pidx), minmax.getMin(), minmax.getMax(), find_result.first);
         }
     }
     return LookupResult();

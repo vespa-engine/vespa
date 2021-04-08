@@ -518,6 +518,13 @@ TEST("requireThatSimpleIntermediatesGetProperBlending") {
     TEST_DO(checkProperBlendingWithParent<Rank>());
 }
 
+TEST("control query nodes size") {
+    EXPECT_EQUAL(160u, sizeof(search::query::NumberTerm));
+    EXPECT_EQUAL(192u, sizeof(ProtonNodeTypes::NumberTerm));
+    EXPECT_EQUAL(160u, sizeof(search::query::StringTerm));
+    EXPECT_EQUAL(192u, sizeof(ProtonNodeTypes::StringTerm));
+}
+
 }  // namespace
 
 TEST_MAIN() { TEST_RUN_ALL(); }

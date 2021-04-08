@@ -220,6 +220,11 @@ public:
     virtual bool isEquiv() const { return false; }
     virtual bool isWhiteList() const { return false; }
     virtual bool isIntermediate() const { return false; }
+    virtual bool isAnd() const { return false; }
+    virtual bool isAndNot() const { return false; }
+    virtual bool isOr() const { return false; }
+    virtual bool isSourceBlender() const { return false; }
+    virtual bool isRank() const { return false; }
     virtual const attribute::ISearchContext *get_attribute_search_context() const { return nullptr; }
 
     // For document summaries with matched-elements-only set.
@@ -295,8 +300,8 @@ public:
 
     IndexList find(const IPredicate & check) const;
     size_t childCnt() const { return _children.size(); }
-    const Blueprint &getChild(size_t n) const;
-    Blueprint &getChild(size_t n);
+    const Blueprint &getChild(size_t n) const { return *_children[n]; }
+    Blueprint &getChild(size_t n) { return *_children[n]; }
     IntermediateBlueprint & insertChild(size_t n, Blueprint::UP child);
     IntermediateBlueprint &addChild(Blueprint::UP child);
     Blueprint::UP removeChild(size_t n);

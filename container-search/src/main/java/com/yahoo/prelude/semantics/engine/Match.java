@@ -6,6 +6,8 @@ import com.yahoo.prelude.query.Item;
 import com.yahoo.prelude.query.TermItem;
 import com.yahoo.prelude.query.WordItem;
 
+import java.util.Objects;
+
 /**
  * A match
  *
@@ -14,15 +16,15 @@ import com.yahoo.prelude.query.WordItem;
 public class Match {
 
     /** The start position of this match */
-    private int position;
+    private final int position;
 
-    private TermItem item;
+    private final TermItem item;
 
     /** The string to replace the match by, usually item.getIndexedString() */
-    private String replaceValue;
+    private final String replaceValue;
 
     /** The parent of the matched item */
-    private CompositeItem parent=null;
+    private final CompositeItem parent;
 
     /**
      * Creates a match
@@ -56,23 +58,25 @@ public class Match {
      */
     public CompositeItem getParent() { return parent; }
 
-    public int hashCode() {
-        return
-                17*item.getIndexedString().hashCode()+
-                33*item.getIndexName().hashCode();
-    }
-
     /** Returns a new item representing this match */
     public Item toItem(String label) {
-        return new WordItem(getReplaceValue(),label);
+        var newItem = new WordItem(getReplaceValue(), label);
+        newItem.setWeight(item.getWeight());
+        return newItem;
     }
 
+    @Override
+    public int hashCode() {
+        return Objects.hash(item.getIndexedString(), item.getIndexName());
+    }
+
+    @Override
     public boolean equals(Object o) {
         if (! (o instanceof Match)) return false;
 
-        Match other=(Match)o;
-        if (other.position!=position) return false;
-        if (!other.item.equals(item)) return false;
+        Match other = (Match)o;
+        if (other.position != position) return false;
+        if ( ! other.item.equals(item)) return false;
 
         return true;
     }

@@ -62,6 +62,11 @@ public:
     virtual void update_tensor(DocId docId,
                                const document::TensorUpdate &update,
                                bool create_empty_if_non_existing);
+    DistanceMetric distance_metric() const override {
+        return getConfig().distance_metric();
+    }
+    uint32_t get_num_docs() const override { return getNumDocs(); }
+
     /**
      * Performs the prepare step in a two-phase operation to set a tensor for a document.
      *

@@ -37,7 +37,7 @@ private:
      *
      * @param values the values for this property
      **/
-    Property(const Values &values);
+    Property(const Values &values) : _values(&values) { }
 
 public:
     /**
@@ -46,14 +46,16 @@ public:
      * object on the stack in the application, and will also be used
      * by the @ref Properties class when a lookup gives no results.
      **/
-    Property();
+    Property() : _values(&_emptyValues) { }
 
     /**
      * Check if we found what we were looking for or not.
      *
      * @return true if the key we looked up had at least one value
      **/
-    bool found() const;
+    bool found() const {
+        return !(*_values).empty();
+    }
 
     /**
      * Get the first value assigned to the looked up key. This method
@@ -61,7 +63,12 @@ public:
      *
      * @return first value for the looked up key, or ""
      **/
-    const Value &get() const;
+    const Value &get() const {
+        if ((*_values).empty()) {
+            return _emptyValue;
+        }
+        return (*_values)[0];
+    }
 
     /**
      * Get the first value assigned to the looked up key. This method
@@ -71,14 +78,19 @@ public:
      * @return first value for the looked up key, or fallBack
      * @param fallBack value to return if no values were found
      **/
-    const Value & get(const Value &fallBack) const;
+    const Value & get(const Value &fallBack) const {
+        if ((*_values).empty()) {
+            return fallBack;
+        }
+        return (*_values)[0];
+    }
 
     /**
      * The number of values found for the looked up key.
      *
      * @return number of values for this property
      **/
-    uint32_t size() const;
+    uint32_t size() const { return (*_values).size(); }
 
     /**
      * Obtain a specific value for the looked up key.
@@ -153,6 +165,10 @@ public:
      * Create an empty properties object.
      **/
     Properties();
+    Properties(Properties &&) noexcept = default;
+    Properties & operator=(Properties &&) noexcept = default;
+    Properties(const Properties &);
+    Properties & operator=(const Properties &);
 
     /**
      * The destructor asserts that key/value counts look sane before

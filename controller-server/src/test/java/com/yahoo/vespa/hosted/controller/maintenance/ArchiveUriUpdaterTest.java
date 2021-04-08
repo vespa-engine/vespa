@@ -5,17 +5,22 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveService;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Test;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -31,9 +36,12 @@ public class ArchiveUriUpdaterTest {
     public void archive_uri_test() {
         var updater = new ArchiveUriUpdater(tester.controller(), Duration.ofDays(1));
 
+        ((InMemoryFlagSource) tester.controller().flagSource())
+                .withStringFlag(Flags.SYNC_HOST_LOGS_TO_S3_BUCKET.id(), "auto");
+
         var tenant1 = TenantName.from("tenant1");
         var tenant2 = TenantName.from("tenant2");
-        var tenantInfra = TenantName.from("hosted-vespa");
+        var tenantInfra = SystemApplication.TENANT;
         var application = tester.newDeploymentContext(tenant1.value(), "app1", "instance1");
         ZoneId zone = ZoneId.from("prod", "ap-northeast-1");
 
@@ -42,19 +50,19 @@ public class ArchiveUriUpdaterTest {
         assertArchiveUris(Map.of(), zone);
 
         // Archive service now has URI for tenant1, but tenant1 is not deployed in zone
-        setArchiveUriInService(Map.of(tenant1, "uri-1"), zone);
-        setArchiveUriInService(Map.of(tenantInfra, "uri-3"), zone);
+        setBucketNameInService(Map.of(tenant1, "uri-1"), zone);
+        setBucketNameInService(Map.of(tenantInfra, "uri-3"), zone);
         updater.maintain();
         assertArchiveUris(Map.of(), zone);
 
         deploy(application, zone);
         updater.maintain();
-        assertArchiveUris(Map.of(tenant1, "uri-1", tenantInfra, "uri-3"), zone);
+        assertArchiveUris(Map.of(tenant1, "s3://uri-1/tenant1/", tenantInfra, "s3://uri-3/hosted-vespa/"), zone);
 
         // URI for tenant1 should be updated and removed for tenant2
         setArchiveUriInNodeRepo(Map.of(tenant1, "wrong-uri", tenant2, "uri-2"), zone);
         updater.maintain();
-        assertArchiveUris(Map.of(tenant1, "uri-1", tenantInfra, "uri-3"), zone);
+        assertArchiveUris(Map.of(tenant1, "s3://uri-1/tenant1/", tenantInfra, "s3://uri-3/hosted-vespa/"), zone);
     }
 
     private void assertArchiveUris(Map<TenantName, String> expectedUris, ZoneId zone) {
@@ -64,9 +72,11 @@ public class ArchiveUriUpdaterTest {
         assertEquals(expectedUris, actualUris);
     }
 
-    private void setArchiveUriInService(Map<TenantName, String> archiveUris, ZoneId zone) {
-        MockArchiveService archiveService = (MockArchiveService) tester.controller().serviceRegistry().archiveService();
-        archiveUris.forEach((tenant, uri) -> archiveService.setArchiveUri(zone, tenant, URI.create(uri)));
+    private void setBucketNameInService(Map<TenantName, String> bucketNames, ZoneId zone) {
+        var archiveBuckets = new LinkedHashSet<>(tester.controller().curator().readArchiveBuckets(zone));
+        bucketNames.forEach((tenantName, bucketName) ->
+                archiveBuckets.add(new ArchiveBucket(bucketName, "keyArn").withTenant(tenantName)));
+        tester.controller().curator().writeArchiveBuckets(zone, archiveBuckets);
     }
 
     private void setArchiveUriInNodeRepo(Map<TenantName, String> archiveUris, ZoneId zone) {

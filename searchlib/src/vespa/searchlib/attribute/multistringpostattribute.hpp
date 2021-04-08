@@ -108,10 +108,14 @@ MultiValueStringPostingAttributeT<B, T>::DocumentWeightAttributeAdapter::get_dic
 
 template <typename B, typename T>
 IDocumentWeightAttribute::LookupResult
-MultiValueStringPostingAttributeT<B, T>::DocumentWeightAttributeAdapter::lookup(const vespalib::string &term, vespalib::datastore::EntryRef dictionary_snapshot) const
+MultiValueStringPostingAttributeT<B, T>::DocumentWeightAttributeAdapter::lookup(const LookupKey & key, vespalib::datastore::EntryRef dictionary_snapshot) const
 {
     const IEnumStoreDictionary& dictionary = self._enumStore.get_dictionary();
-    auto comp = self._enumStore.make_folded_comparator(term.c_str());
+    vespalib::stringref keyAsString = key.asString();
+    // Assert the unfortunate assumption of the comparators.
+    // Should be lifted once they take the length too.
+    assert(keyAsString.data()[keyAsString.size()] == '\0');
+    auto comp = self._enumStore.make_folded_comparator(keyAsString.data());
     auto find_result = dictionary.find_posting_list(comp, dictionary_snapshot);
     if (find_result.first.valid()) {
         auto pidx = find_result.second;

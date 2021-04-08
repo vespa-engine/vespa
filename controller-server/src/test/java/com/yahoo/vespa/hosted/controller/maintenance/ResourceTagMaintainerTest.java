@@ -8,6 +8,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.MockResourceTagger;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import org.junit.Test;
 
@@ -52,7 +53,7 @@ public class ResourceTagMaintainerTest {
         var hostA = new Node.Builder()
                 .hostname(HostName.from("parentHostA." + zone.value()))
                 .type(NodeType.host)
-                .owner(ApplicationId.from("hosted-vespa", "tenant-host", "default"))
+                .owner(ApplicationId.from(SystemApplication.TENANT.value(), "tenant-host", "default"))
                 .exclusiveTo(ApplicationId.from("t1", "a1", "i1"))
                 .build();
         var nodeA = new Node.Builder()
@@ -64,7 +65,7 @@ public class ResourceTagMaintainerTest {
         var hostB = new Node.Builder()
                 .hostname(HostName.from("parentHostB." + zone.value()))
                 .type(NodeType.host)
-                .owner(ApplicationId.from("hosted-vespa", "tenant-host", "default"))
+                .owner(ApplicationId.from(SystemApplication.TENANT.value(), "tenant-host", "default"))
                 .build();
         tester.configServer().nodeRepository().setNodes(zone, List.of(hostA, nodeA, hostB));
     }

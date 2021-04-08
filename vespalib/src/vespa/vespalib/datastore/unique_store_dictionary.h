@@ -8,7 +8,9 @@
 namespace vespalib::datastore {
 
 class EntryComparatorWrapper;
+class IUniqueStoreDictionaryReadSnapshot;
 
+class NoBTreeDictionary { };
 class NoHashDictionary;
 
 template <typename BTreeDictionaryT>
@@ -20,6 +22,16 @@ public:
     static constexpr bool has_btree_dictionary = true;
     UniqueStoreBTreeDictionaryBase()
         : _btree_dict()
+    {
+    }
+};
+
+template <>
+class UniqueStoreBTreeDictionaryBase<NoBTreeDictionary>
+{
+public:
+    static constexpr bool has_btree_dictionary = false;
+    UniqueStoreBTreeDictionaryBase()
     {
     }
 };
@@ -54,21 +66,7 @@ template <typename BTreeDictionaryT, typename ParentT = IUniqueStoreDictionary, 
 class UniqueStoreDictionary : public ParentT, public UniqueStoreBTreeDictionaryBase<BTreeDictionaryT>, public UniqueStoreHashDictionaryBase<HashDictionaryT> {
 protected:
     using BTreeDictionaryType = BTreeDictionaryT;
-    using DataType = typename BTreeDictionaryType::DataType;
-    using FrozenView = typename BTreeDictionaryType::FrozenView;
-    using ReadSnapshot = typename ParentT::ReadSnapshot;
     using generation_t = typename ParentT::generation_t;
-
-    class ReadSnapshotImpl : public ReadSnapshot {
-    private:
-        FrozenView _frozen_view;
-
-    public:
-        ReadSnapshotImpl(FrozenView frozen_view);
-        size_t count(const EntryComparator& comp) const override;
-        size_t count_in_range(const EntryComparator& low, const EntryComparator& high) const override;
-        void foreach_key(std::function<void(EntryRef)> callback) const override;
-    };
 
 public:
     using UniqueStoreBTreeDictionaryBase<BTreeDictionaryT>::has_btree_dictionary;
@@ -87,7 +85,8 @@ public:
     void build(vespalib::ConstArrayRef<EntryRef>, vespalib::ConstArrayRef<uint32_t> ref_counts, std::function<void(EntryRef)> hold) override;
     void build(vespalib::ConstArrayRef<EntryRef> refs) override;
     void build_with_payload(vespalib::ConstArrayRef<EntryRef>, vespalib::ConstArrayRef<uint32_t> payloads) override;
-    std::unique_ptr<ReadSnapshot> get_read_snapshot() const override;
+    std::unique_ptr<IUniqueStoreDictionaryReadSnapshot> get_read_snapshot() const override;
+    bool get_has_btree_dictionary() const override;
     bool get_has_hash_dictionary() const override;
 };
 

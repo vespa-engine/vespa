@@ -31,7 +31,7 @@ public class ResourceResponse extends SlimeJsonResponse {
         var resourceArray = slime.setObject().setArray("resources");
         for (var subResource : subResources) {
             var resourceEntry = resourceArray.addObject();
-            resourceEntry.setString("url", new Uri(parentUrl).append(subResource)
+            resourceEntry.setString("url", new UriBuilder(parentUrl).append(subResource)
                                                              .withTrailingSlash()
                                                              .toString());
         }

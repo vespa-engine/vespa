@@ -5,38 +5,33 @@
 namespace search::docsummary {
 
 GetDocsumArgs::GetDocsumArgs()
-    : _ranking(),
-      _resultClassName(),
+    : _resultClassName(),
       _dumpFeatures(false),
       _locations_possible(true),
-      _stackItems(0),
       _stackDump(),
       _location(),
       _timeout(30s),
-      _propertiesMap()
+      _highlightTerms()
 { }
 
 
 GetDocsumArgs::~GetDocsumArgs() = default;
 
 void
-GetDocsumArgs::initFromDocsumRequest(const search::engine::DocsumRequest &req)
+GetDocsumArgs::initFromDocsumRequest(const engine::DocsumRequest &req)
 {
-    _ranking           = req.ranking;
-    _dumpFeatures      = req.dumpFeatures;
-    _resultClassName   = req.resultClassName;
-    _stackItems        = req.stackItems;
-    _stackDump         = req.stackDump;
-    _location          = req.location;
+    _dumpFeatures       = req.dumpFeatures;
+    _resultClassName    = req.resultClassName;
+    _stackDump          = req.stackDump;
+    _location           = req.location;
     _locations_possible = true;
-    _timeout           = req.getTimeLeft();
-    _propertiesMap     = req.propertiesMap;
+    _timeout            = req.getTimeLeft();
+    _highlightTerms     = req.propertiesMap.highlightTerms();
 }
 
 void
-GetDocsumArgs::SetStackDump(uint32_t stackItems, uint32_t stackDumpLen, const char *stackDump)
+GetDocsumArgs::SetStackDump(uint32_t stackDumpLen, const char *stackDump)
 {
-    _stackItems = stackItems;
     _stackDump.resize(stackDumpLen);
     memcpy(&_stackDump[0], stackDump, _stackDump.size());
 }

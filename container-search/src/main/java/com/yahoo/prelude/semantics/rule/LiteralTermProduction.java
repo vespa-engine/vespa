@@ -44,31 +44,32 @@ public class LiteralTermProduction extends TermProduction {
      * @param literal this term word
      * @param termType the type of term to produce
      */
-    public LiteralTermProduction(String label,String literal, TermType termType) {
-        super(label,termType);
+    public LiteralTermProduction(String label, String literal, TermType termType) {
+        super(label, termType);
         setLiteral(literal);
     }
 
     /** The literal term value, never null */
     public void setLiteral(String literal) {
-        Validator.ensureNotNull("A produced term",literal);
+        Validator.ensureNotNull("A produced term", literal);
         this.literal=literal;
     }
 
     /** Returns the term word produced, never null */
     public String getLiteral() { return literal; }
 
-    public void produce(RuleEvaluation e,int offset) {
-        WordItem newItem=new WordItem(literal,getLabel());
+    public void produce(RuleEvaluation e, int offset) {
+        WordItem newItem = new WordItem(literal, getLabel());
         if (replacing) {
-            Match matched=e.getNonreferencedMatch(0);
-            insertMatch(e,matched,newItem,offset);
+            Match matched = e.getNonreferencedMatch(0);
+            newItem.setWeight(matched.getItem().getWeight());
+            insertMatch(e, matched, newItem, offset);
         }
         else {
             newItem.setWeight(getWeight());
-            if (e.getTraceLevel()>=6)
-                e.trace(6,"Adding '" + newItem + "'");
-            e.addItem(newItem,getTermType());
+            if (e.getTraceLevel() >= 6)
+                e.trace(6, "Adding '" + newItem + "'");
+            e.addItem(newItem, getTermType());
         }
     }
 

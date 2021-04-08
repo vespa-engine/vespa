@@ -474,21 +474,17 @@ BitVectorTest::test(BasicType bt,
                     bool filter)
 {
     Config cfg(bt, ct);
-    AttributePtr v = make(cfg, pref, fastSearch,
-                          enableBitVectors, enableOnlyBitVector, filter);
+    AttributePtr v = make(cfg, pref, fastSearch, enableBitVectors, enableOnlyBitVector, filter);
     addDocs(v, 1024);
     VectorType &tv = as<VectorType>(v);  
     populate(tv, 2, 1023, true);
 
     SearchContextPtr sc = getSearch<VectorType>(tv, true);
-    checkSearch(v, std::move(sc), 2, 1022, 205, !enableBitVectors && !filter,
-                true);
+    checkSearch(v, std::move(sc), 2, 1022, 205, !enableBitVectors && !filter, true);
     sc = getSearch<VectorType>(tv, false);
-    checkSearch(v, std::move(sc), 2, 1022, 205, !enableOnlyBitVector &&
-                !filter, true);
-    const search::IDocumentWeightAttribute *dwa =
-        v->asDocumentWeightAttribute();
-    if (dwa != NULL) {
+    checkSearch(v, std::move(sc), 2, 1022, 205, !enableOnlyBitVector && !filter, true);
+    const search::IDocumentWeightAttribute *dwa = v->asDocumentWeightAttribute();
+    if (dwa != nullptr) {
         search::IDocumentWeightAttribute::LookupResult lres = 
             dwa->lookup(getSearchStr<VectorType>(), dwa->get_dictionary_snapshot());
         typedef search::queryeval::DocumentWeightSearchIterator DWSI;
@@ -504,21 +500,16 @@ BitVectorTest::test(BasicType bt,
     }
     populate(tv, 2, 973, false);
     sc = getSearch<VectorType>(tv, true);
-    checkSearch(v, std::move(sc), 977, 1022, 10, !enableOnlyBitVector &&
-                !filter, true);
+    checkSearch(v, std::move(sc), 977, 1022, 10, !enableOnlyBitVector &&!filter, true);
     populate(tv, 2, 973, true);
     sc = getSearch<VectorType>(tv, true);
-    checkSearch(v, std::move(sc), 2, 1022, 205, !enableBitVectors && !filter,
-                true);
+    checkSearch(v, std::move(sc), 2, 1022, 205, !enableBitVectors && !filter, true);
     addDocs(v, 15000);
     sc = getSearch<VectorType>(tv, true);
-    checkSearch(v, std::move(sc), 2, 1022, 205, !enableOnlyBitVector &&
-                !filter, true);
+    checkSearch(v, std::move(sc), 2, 1022, 205, !enableOnlyBitVector && !filter, true);
     populateAll(tv, 10, 15000, true);
     sc = getSearch<VectorType>(tv, true);
-    checkSearch(v, std::move(sc), 2, 14999, 14992,
-                !enableBitVectors && !filter,
-                false);
+    checkSearch(v, std::move(sc), 2, 14999, 14992, !enableBitVectors && !filter, false);
 }
 
 

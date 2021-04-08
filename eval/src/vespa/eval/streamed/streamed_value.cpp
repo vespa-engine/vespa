@@ -22,6 +22,8 @@ StreamedValue<T>::get_memory_usage() const
 
 template class StreamedValue<double>;
 template class StreamedValue<float>;
+template class StreamedValue<BFloat16>;
+template class StreamedValue<Int8Float>;
 
 } // namespace
 

@@ -21,12 +21,12 @@ class PredicateQueryTerm {
         uint64_t _sub_query_bitmap;
 
     public:
-        Entry(const vespalib::string &key, const ValueType &value,
+        Entry(vespalib::stringref key, const ValueType &value,
               uint64_t sub_query_bitmap = ALL_SUB_QUERIES) noexcept
             : _key(key), _value(value), _sub_query_bitmap(sub_query_bitmap) {}
 
-        vespalib::string getKey() const { return _key; }
-        ValueType getValue() const { return _value; }
+        const vespalib::string & getKey() const { return _key; }
+        const ValueType & getValue() const { return _value; }
         uint64_t getSubQueryBitmap() const { return _sub_query_bitmap; }
         bool operator==(const Entry<ValueType> &other) const {
             return _key == other._key
@@ -43,12 +43,12 @@ public:
 
     PredicateQueryTerm() noexcept : _features(), _range_features() {}
 
-    void addFeature(const vespalib::string &key, const vespalib::string &value,
+    void addFeature(vespalib::stringref key, vespalib::stringref value,
                     uint64_t sub_query_bitmask = ALL_SUB_QUERIES) {
         _features.emplace_back(key, value, sub_query_bitmask);
     }
 
-    void addRangeFeature(const vespalib::string &key, uint64_t value,
+    void addRangeFeature(vespalib::stringref key, uint64_t value,
                          uint64_t sub_query_bitmask = ALL_SUB_QUERIES) {
         _range_features.emplace_back(key, value, sub_query_bitmask);
     }

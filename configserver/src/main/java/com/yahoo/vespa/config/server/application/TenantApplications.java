@@ -466,7 +466,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
 
                 // If all config servers responded, return
                 if (respondents.size() == curator.zooKeeperEnsembleCount()) {
-                    log.log(Level.FINE, barrierCompletedMessage(respondents, startTime));
+                    logBarrierCompleted(respondents, startTime);
                     break;
                 }
 
@@ -477,7 +477,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
 
                     // Give up if more than some time has passed since we got quorum, otherwise continue
                     if (Duration.between(Instant.now(), gotQuorumTime.plus(waitForAll)).isNegative()) {
-                        log.log(Level.FINE, barrierCompletedMessage(respondents, startTime));
+                        logBarrierCompleted(respondents, startTime);
                         break;
                     }
                 }
@@ -488,8 +488,14 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
             return respondents;
         }
 
-        private String barrierCompletedMessage(List<String> respondents, Instant startTime) {
-            return barrierPath + " completed in " + Duration.between(startTime, Instant.now()).toString() +
+        private void logBarrierCompleted(List<String> respondents, Instant startTime) {
+            Duration duration = Duration.between(startTime, Instant.now());
+            Level level = (duration.minus(Duration.ofSeconds(5))).isNegative() ? Level.FINE : Level.INFO;
+            log.log(level, barrierCompletedMessage(respondents, duration));
+        }
+
+        private String barrierCompletedMessage(List<String> respondents, Duration duration) {
+            return barrierPath + " completed in " + duration.toString() +
                    ", " + respondents.size() + "/" + curator.zooKeeperEnsembleCount() + " responded: " + respondents;
         }
 

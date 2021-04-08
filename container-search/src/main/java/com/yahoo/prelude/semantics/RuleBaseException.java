@@ -6,7 +6,6 @@ package com.yahoo.prelude.semantics;
  *
  * @author bratseth
  */
-@SuppressWarnings("serial")
 public class RuleBaseException extends RuntimeException {
 
     public RuleBaseException(String message) {
@@ -14,7 +13,7 @@ public class RuleBaseException extends RuntimeException {
     }
 
     public RuleBaseException(String message,Exception cause) {
-        super(message,cause);
+        super(message, cause);
     }
 
 }

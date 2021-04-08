@@ -132,7 +132,7 @@ public class NodePatcher implements AutoCloseable {
             case "failCount" :
                 return node.with(node.status().withFailCount(asLong(value).intValue()));
             case "flavor" :
-                return node.with(nodeFlavors.getFlavorOrThrow(asString(value)));
+                return node.with(nodeFlavors.getFlavorOrThrow(asString(value)), Agent.operator, clock.instant());
             case "parentHostname" :
                 return node.withParentHostname(asString(value));
             case "ipAddresses" :
@@ -152,19 +152,19 @@ public class NodePatcher implements AutoCloseable {
                 return node.withOpenStackId(asString(value));
             case "diskGb":
             case "minDiskAvailableGb":
-                return node.with(node.flavor().with(node.flavor().resources().withDiskGb(value.asDouble())));
+                return node.with(node.flavor().with(node.flavor().resources().withDiskGb(value.asDouble())), Agent.operator, clock.instant());
             case "memoryGb":
             case "minMainMemoryAvailableGb":
-                return node.with(node.flavor().with(node.flavor().resources().withMemoryGb(value.asDouble())));
+                return node.with(node.flavor().with(node.flavor().resources().withMemoryGb(value.asDouble())), Agent.operator, clock.instant());
             case "vcpu":
             case "minCpuCores":
-                return node.with(node.flavor().with(node.flavor().resources().withVcpu(value.asDouble())));
+                return node.with(node.flavor().with(node.flavor().resources().withVcpu(value.asDouble())), Agent.operator, clock.instant());
             case "fastDisk":
-                return node.with(node.flavor().with(node.flavor().resources().with(value.asBool() ? fast : slow)));
+                return node.with(node.flavor().with(node.flavor().resources().with(value.asBool() ? fast : slow)), Agent.operator, clock.instant());
             case "remoteStorage":
-                return node.with(node.flavor().with(node.flavor().resources().with(value.asBool() ? remote : local)));
+                return node.with(node.flavor().with(node.flavor().resources().with(value.asBool() ? remote : local)), Agent.operator, clock.instant());
             case "bandwidthGbps":
-                return node.with(node.flavor().with(node.flavor().resources().withBandwidthGbps(value.asDouble())));
+                return node.with(node.flavor().with(node.flavor().resources().withBandwidthGbps(value.asDouble())), Agent.operator, clock.instant());
             case "modelName":
                 return value.type() == Type.NIX ? node.withoutModelName() : node.withModelName(asString(value));
             case "requiredDiskSpeed":

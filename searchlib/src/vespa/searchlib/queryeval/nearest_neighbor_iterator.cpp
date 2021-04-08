@@ -3,7 +3,7 @@
 #include "nearest_neighbor_iterator.h"
 #include <vespa/searchlib/common/bitvector.h>
 
-using search::tensor::DenseTensorAttribute;
+using search::tensor::ITensorAttribute;
 using vespalib::ConstArrayRef;
 using vespalib::eval::TypedCells;
 using vespalib::eval::CellType;
@@ -109,7 +109,7 @@ NearestNeighborIterator::create(
         bool strict,
         fef::TermFieldMatchData &tfmd,
         const vespalib::eval::Value &queryTensor,
-        const search::tensor::DenseTensorAttribute &tensorAttribute,
+        const search::tensor::ITensorAttribute &tensorAttribute,
         NearestNeighborDistanceHeap &distanceHeap,
         const search::BitVector *filter,
         const search::tensor::DistanceFunction *dist_fun)

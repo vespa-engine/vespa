@@ -6,7 +6,7 @@
 #include <vespa/searchlib/tensor/distance_function.h>
 #include <vespa/searchlib/tensor/nearest_neighbor_index.h>
 
-namespace search::tensor { class DenseTensorAttribute; }
+namespace search::tensor { class ITensorAttribute; }
 namespace vespalib::eval { struct Value; }
 
 namespace search::queryeval {
@@ -19,7 +19,7 @@ namespace search::queryeval {
  */
 class NearestNeighborBlueprint : public ComplexLeafBlueprint {
 private:
-    const tensor::DenseTensorAttribute& _attr_tensor;
+    const tensor::ITensorAttribute& _attr_tensor;
     std::unique_ptr<vespalib::eval::Value> _query_tensor;
     uint32_t _target_num_hits;
     bool _approximate;
@@ -35,7 +35,7 @@ private:
     void perform_top_k();
 public:
     NearestNeighborBlueprint(const queryeval::FieldSpec& field,
-                             const tensor::DenseTensorAttribute& attr_tensor,
+                             const tensor::ITensorAttribute& attr_tensor,
                              std::unique_ptr<vespalib::eval::Value> query_tensor,
                              uint32_t target_num_hits, bool approximate, uint32_t explore_additional_hits,
                              double distance_threshold,
@@ -43,7 +43,7 @@ public:
     NearestNeighborBlueprint(const NearestNeighborBlueprint&) = delete;
     NearestNeighborBlueprint& operator=(const NearestNeighborBlueprint&) = delete;
     ~NearestNeighborBlueprint();
-    const tensor::DenseTensorAttribute& get_attribute_tensor() const { return _attr_tensor; }
+    const tensor::ITensorAttribute& get_attribute_tensor() const { return _attr_tensor; }
     const vespalib::eval::Value& get_query_tensor() const { return *_query_tensor; }
     uint32_t get_target_num_hits() const { return _target_num_hits; }
     void set_global_filter(const GlobalFilter &global_filter) override;

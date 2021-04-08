@@ -38,44 +38,46 @@ using search::query::WandTerm;
 using search::query::WeakAnd;
 using search::query::WeightedSetTerm;
 using vespalib::string;
+using vespalib::stringref;
 
 namespace search::queryeval {
 
-vespalib::string termAsString(double float_term) {
-    vespalib::asciistream os;
-    return (os << float_term).str();
-}
-
-vespalib::string termAsString(int64_t int_term) {
-    vespalib::asciistream os;
-    return (os << int_term).str();
-}
-
-vespalib::string termAsString(const search::query::Range &term) {
-    vespalib::asciistream os;
-    return (os << term).str();
-}
-
-vespalib::string termAsString(const search::query::Location &term) {
-    vespalib::asciistream os;
-    return (os << term).str();
-}
-
 namespace {
-struct TermAsStringVisitor : public QueryVisitor {
-    string term;
-    bool isSet;
 
-    TermAsStringVisitor() : term(), isSet(false) {}
+stringref
+termAsString(const search::query::Range &term, string & scratchPad) {
+    vespalib::asciistream os;
+    scratchPad = (os << term).str();
+    return scratchPad;
+}
+
+stringref
+termAsString(const search::query::Location &term, string & scratchPad) {
+    vespalib::asciistream os;
+    scratchPad = (os << term).str();
+    return scratchPad;
+}
+
+stringref
+termAsString(const string &term, string &) {
+    return term;
+}
+
+struct TermAsStringVisitor : public QueryVisitor {
+    string  & _scratchPad;
+    stringref term;
+    bool      isSet;
+
+    TermAsStringVisitor(string & scratchPad) : _scratchPad(scratchPad), term(), isSet(false) {}
 
     template <class TermNode>
     void visitTerm(TermNode &n) {
-        term = termAsString(n.getTerm());
+        term = termAsString(n.getTerm(), _scratchPad);
         isSet = true;
     }
 
     void illegalVisit() {
-        term.clear();
+        term = stringref();
         isSet = false;
     }
 
@@ -104,15 +106,30 @@ struct TermAsStringVisitor : public QueryVisitor {
     void visit(PredicateQuery &) override {illegalVisit(); }
     void visit(NearestNeighborTerm &) override { illegalVisit(); }
 };
+
+void throwFailure(const search::query::Node &term_node) __attribute((noinline));
+
+void
+throwFailure(const search::query::Node &term_node) {
+    string err(vespalib::make_string("Trying to convert a non-term node ('%s') to a term string.", typeid(term_node).name()));
+    LOG(warning, "%s", err.c_str());
+    throw vespalib::IllegalArgumentException(err, VESPA_STRLOC);
+}
+
 }  // namespace
 
-string termAsString(const Node &term_node) {
-    TermAsStringVisitor visitor;
+string
+termAsString(const Node &term_node) {
+    string scratchPad;
+    return termAsString(term_node, scratchPad);
+}
+
+stringref
+termAsString(const search::query::Node &term_node, string & scratchPad) {
+    TermAsStringVisitor visitor(scratchPad);
     const_cast<Node &>(term_node).accept(visitor);
     if (!visitor.isSet) {
-        vespalib::string err(vespalib::make_string("Trying to convert a non-term node ('%s') to a term string.", typeid(term_node).name()));
-        LOG(warning, "%s", err.c_str());
-        throw vespalib::IllegalArgumentException(err, VESPA_STRLOC);
+        throwFailure(term_node);
     }
     return visitor.term;
 }

@@ -20,11 +20,15 @@ namespace {
 
 constexpr uint32_t DOUBLE_CELL_TYPE = 0;
 constexpr uint32_t FLOAT_CELL_TYPE = 1;
+constexpr uint32_t BFLOAT16_CELL_TYPE = 2;
+constexpr uint32_t INT8_CELL_TYPE = 3;
 
 inline uint32_t cell_type_to_id(CellType cell_type) {
     switch (cell_type) {
     case CellType::DOUBLE: return DOUBLE_CELL_TYPE;
     case CellType::FLOAT: return FLOAT_CELL_TYPE;
+    case CellType::BFLOAT16: return BFLOAT16_CELL_TYPE;
+    case CellType::INT8: return INT8_CELL_TYPE;
     }
     throw IllegalArgumentException(fmt("Unknown CellType=%u", (uint32_t)cell_type));
 }
@@ -33,6 +37,8 @@ inline CellType id_to_cell_type(uint32_t id) {
     switch (id) {
     case DOUBLE_CELL_TYPE: return CellType::DOUBLE;
     case FLOAT_CELL_TYPE: return CellType::FLOAT;
+    case BFLOAT16_CELL_TYPE: return CellType::BFLOAT16;
+    case INT8_CELL_TYPE: return CellType::INT8;
     }
     throw IllegalArgumentException(fmt("Unknown CellType id=%u", id));
 }

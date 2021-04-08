@@ -72,12 +72,6 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>jdisc_messagebus_service</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>messagebus</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>

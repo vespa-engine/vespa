@@ -4,7 +4,6 @@
 
 #include <vespa/searchlib/parsequery/parse.h>
 #include <vespa/searchlib/query/tree/predicate_query_term.h>
-#include <vespa/vespalib/stllike/asciistream.h>
 #include <vespa/vespalib/stllike/string.h>
 
 namespace search {
@@ -15,67 +14,58 @@ namespace search {
 class SimpleQueryStackDumpIterator
 {
 private:
-    SimpleQueryStackDumpIterator(const SimpleQueryStackDumpIterator &);
-    SimpleQueryStackDumpIterator& operator=(const SimpleQueryStackDumpIterator &);
-
     /** Pointer to the start of the input buffer */
     const char *_buf;
     /** Pointer to just past the input buffer */
     const char *_bufEnd;
-    /** Total length of the input buffer */
-    size_t _bufLen;
-
     /** Pointer to the position of the current item in the buffer */
-    const char *_currPos;
+    uint32_t    _currPos;
     /** Pointer to after the current item */
-    const char *_currEnd;
+    uint32_t    _currEnd;
     /** The type of the current item */
     ParseItem::ItemType _currType;
-    ParseItem::ItemCreator _currCreator;
+    /** flags of the current item **/
+    uint8_t _currFlags;
     /** Rank weight of current item **/
     query::Weight _currWeight;
     /** unique id of the current item **/
     uint32_t _currUniqueId;
-
-    /** flags of the current item **/
-    uint32_t _currFlags;
-
     /** The arity of the current item */
     uint32_t _currArity;
+    /** The index name (field name) in the current item */
+    vespalib::stringref _curr_index_name;
+    /** The term in the current item */
+    vespalib::stringref _curr_term;
+    int64_t             _curr_integer_term;
 
     /* extra arguments */
     uint32_t _extraIntArg1;
     uint32_t _extraIntArg2;
     uint32_t _extraIntArg3;
-    double _extraDoubleArg4;
-    double _extraDoubleArg5;
+    double   _extraDoubleArg4;
+    double   _extraDoubleArg5;
     /** The predicate query specification */
     query::PredicateQueryTerm::UP _predicate_query_term;
-    /** The index name (field name) in the current item */
-    vespalib::stringref _curr_index_name;
-    /** The term in the current item */
-    vespalib::stringref _curr_term;
-    vespalib::asciistream _generatedTerm;
 
-    vespalib::string readString(const char *&p);
-    vespalib::stringref read_stringref(const char *&p);
-    uint64_t readUint64(const char *&p);
-    double read_double(const char *&p);
-    uint64_t readCompressedPositiveInt(const char *&p);
-
+    VESPA_DLL_LOCAL vespalib::stringref read_stringref(const char *&p);
+    VESPA_DLL_LOCAL uint64_t readUint64(const char *&p);
+    VESPA_DLL_LOCAL double read_double(const char *&p);
+    VESPA_DLL_LOCAL uint64_t readCompressedPositiveInt(const char *&p);
+    VESPA_DLL_LOCAL bool readPredicate(const char *&p);
+    VESPA_DLL_LOCAL bool readNN(const char *&p);
+    VESPA_DLL_LOCAL bool readComplexTerm(const char *& p);
+    VESPA_DLL_LOCAL bool readNext();
 public:
     /**
-     * Make an iterator on a buffer. To get the first item, next
-     * must be called.
-     *
-     * @param buf A pointer to the buffer holding the stackdump
-     * @param buflen The length of the buffer in bytes
+     * Make an iterator on a buffer. To get the first item, next must be called.
      */
     SimpleQueryStackDumpIterator(vespalib::stringref buf);
+    SimpleQueryStackDumpIterator(const SimpleQueryStackDumpIterator &) = delete;
+    SimpleQueryStackDumpIterator& operator=(const SimpleQueryStackDumpIterator &) = delete;
     ~SimpleQueryStackDumpIterator();
 
-    vespalib::stringref getStack() const { return vespalib::stringref(_buf, _bufLen); }
-    size_t getPosition() const { return _currPos - _buf; }
+    vespalib::stringref getStack() const { return vespalib::stringref(_buf, _bufEnd - _buf); }
+    size_t getPosition() const { return _currPos; }
 
     /**
      * Moves to the next item in the buffer.
@@ -94,7 +84,7 @@ public:
      * Get the type of the current item.
      * @return the type.
      */
-    ParseItem::ItemCreator getCreator() const { return _currCreator; }
+    ParseItem::ItemCreator getCreator() const { return ParseItem::GetCreator(_currFlags); }
 
     /**
      * Get the rank weight of the current item.
@@ -125,12 +115,11 @@ public:
     bool getAllowApproximate() const { return (_extraIntArg2 != 0); }
     uint32_t getExploreAdditionalHits() const { return _extraIntArg3; }
 
-    query::PredicateQueryTerm::UP getPredicateQueryTerm()
-    { return std::move(_predicate_query_term); }
+    query::PredicateQueryTerm::UP getPredicateQueryTerm() { return std::move(_predicate_query_term); }
 
     vespalib::stringref getIndexName() const { return _curr_index_name; }
     vespalib::stringref getTerm() const { return _curr_term; }
+    int64_t getIntergerTerm() const { return _curr_integer_term; }
 };
 
 }
-

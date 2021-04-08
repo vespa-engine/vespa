@@ -11,6 +11,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.MeteringClient;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.yolean.Exceptions;
 
@@ -100,7 +101,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
 
     private Collection<ResourceSnapshot> createResourceSnapshotsFromNodes(ZoneId zoneId, List<Node> nodes) {
         return nodes.stream()
-                .filter(this::unlessNodeOwnerIsHostedVespa)
+                .filter(this::unlessNodeOwnerIsSystemApplication)
                 .filter(this::isNodeStateMeterable)
                 .filter(this::isNodeTypeMeterable)
                 .collect(Collectors.groupingBy(node ->
@@ -113,10 +114,10 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                                 )).values();
     }
 
-    private boolean unlessNodeOwnerIsHostedVespa(Node node) {
+    private boolean unlessNodeOwnerIsSystemApplication(Node node) {
         return node.owner()
-                .map(owner -> !owner.tenant().value().equals("hosted-vespa"))
-                .orElse(false);
+                   .map(owner -> !owner.tenant().equals(SystemApplication.TENANT))
+                   .orElse(false);
     }
 
     /**

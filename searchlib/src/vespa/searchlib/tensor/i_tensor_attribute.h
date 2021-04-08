@@ -4,11 +4,14 @@
 
 #include <memory>
 #include <vespa/eval/eval/typed_cells.h>
+#include <vespa/searchcommon/attribute/distance_metric.h>
 
 namespace vespalib::eval { class ValueType; struct Value; }
 namespace vespalib::slime { struct Inserter; }
 
 namespace search::tensor {
+
+class NearestNeighborIndex;
 
 /**
  * Interface for tensor attribute used by feature executors to get information.
@@ -25,6 +28,11 @@ public:
     virtual bool supports_get_tensor_ref() const = 0;
 
     virtual const vespalib::eval::ValueType & getTensorType() const = 0;
+
+    virtual const NearestNeighborIndex* nearest_neighbor_index() const { return nullptr; }
+    using DistanceMetric = search::attribute::DistanceMetric;
+    virtual DistanceMetric distance_metric() const = 0;
+    virtual uint32_t get_num_docs() const = 0;
 
     /**
      * Gets custom state for this tensor attribute by inserting it into the given Slime inserter.

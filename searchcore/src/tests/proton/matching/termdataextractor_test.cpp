@@ -39,31 +39,6 @@ namespace search { class AttributeManager; }
 
 namespace {
 
-class Test : public vespalib::TestApp {
-    void requireThatTermsAreAdded();
-    void requireThatAViewWithTwoFieldsGivesOneTermDataPerTerm();
-    void requireThatUnrankedTermsAreSkipped();
-    void requireThatNegativeTermsAreSkipped();
-    void requireThatSameElementIsSkipped();
-
-public:
-    int Main() override;
-};
-
-int
-Test::Main()
-{
-    TEST_INIT("termdataextractor_test");
-
-    TEST_DO(requireThatTermsAreAdded());
-    TEST_DO(requireThatAViewWithTwoFieldsGivesOneTermDataPerTerm());
-    TEST_DO(requireThatUnrankedTermsAreSkipped());
-    TEST_DO(requireThatNegativeTermsAreSkipped());
-    TEST_DO(requireThatSameElementIsSkipped());
-
-    TEST_DONE();
-}
-
 const string field = "field";
 const uint32_t id[] = { 10, 11, 12, 13, 14, 15, 16, 17, 18 };
 
@@ -77,14 +52,10 @@ Node::UP getQuery(const ViewResolver &resolver)
     query_builder.addSubstringTerm("baz", field, id[3], Weight(0));
     query_builder.addSuffixTerm("qux", field, id[4], Weight(0));
     query_builder.addRangeTerm(Range(), field, id[5], Weight(0));
-    query_builder.addWeightedSetTerm(1, field, id[6], Weight(0));
-    {
-        // weighted token
-        query_builder.addStringTerm("bar", field, id[3], Weight(0));
-    }
+    query_builder.addWeightedSetTerm(1, field, id[6], Weight(0))
+                 .addTerm("bar", Weight(0));
 
-    query_builder.addLocationTerm(Location(Point{10, 10}, 3, 0),
-                                  field, id[7], Weight(0));
+    query_builder.addLocationTerm(Location(Point{10, 10}, 3, 0), field, id[7], Weight(0));
     Node::UP node = query_builder.build();
 
     fef_test::IndexEnvironment index_environment;
@@ -98,7 +69,7 @@ Node::UP getQuery(const ViewResolver &resolver)
     return node;
 }
 
-void Test::requireThatTermsAreAdded() {
+TEST("requireThatTermsAreAdded") {
     Node::UP node = getQuery(ViewResolver());
 
     vector<const ITermData *> term_data;
@@ -110,7 +81,7 @@ void Test::requireThatTermsAreAdded() {
     }
 }
 
-void Test::requireThatAViewWithTwoFieldsGivesOneTermDataPerTerm() {
+TEST("requireThatAViewWithTwoFieldsGivesOneTermDataPerTerm") {
     ViewResolver resolver;
     resolver.add(field, "foo");
     resolver.add(field, "bar");
@@ -125,9 +96,7 @@ void Test::requireThatAViewWithTwoFieldsGivesOneTermDataPerTerm() {
     }
 }
 
-void
-Test::requireThatUnrankedTermsAreSkipped()
-{
+TEST("requireThatUnrankedTermsAreSkipped") {
     QueryBuilder<ProtonNodeTypes> query_builder;
     query_builder.addAnd(2);
     query_builder.addStringTerm("term1", field, id[0], Weight(0));
@@ -142,9 +111,7 @@ Test::requireThatUnrankedTermsAreSkipped()
     EXPECT_EQUAL(id[0], term_data[0]->getUniqueId());
 }
 
-void
-Test::requireThatNegativeTermsAreSkipped()
-{
+TEST("requireThatNegativeTermsAreSkipped") {
     QueryBuilder<ProtonNodeTypes> query_builder;
     query_builder.addAnd(2);
     query_builder.addStringTerm("term1", field, id[0], Weight(0));
@@ -163,8 +130,7 @@ Test::requireThatNegativeTermsAreSkipped()
     EXPECT_EQUAL(id[1], term_data[1]->getUniqueId());
 }
 
-void
-Test::requireThatSameElementIsSkipped()
+TEST("requireThatSameElementIsSkipped")
 {
     QueryBuilder<ProtonNodeTypes> query_builder;
     query_builder.addAnd(2);
@@ -183,4 +149,4 @@ Test::requireThatSameElementIsSkipped()
 
 }  // namespace
 
-TEST_APPHOOK(Test);
+TEST_MAIN() { TEST_RUN_ALL(); }

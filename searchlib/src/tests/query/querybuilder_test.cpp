@@ -90,18 +90,17 @@ Node::UP createQueryTree() {
             builder.addStringTerm(str[4], view[4], id[4], weight[4]);
             builder.addStringTerm(str[5], view[5], id[5], weight[5]);
         }
-        builder.addPredicateQuery(getPredicateQueryTerm(),
-                                  view[3], id[3], weight[3]);
-        builder.addDotProduct(3, view[2], id[2], weight[2]);
+        builder.addPredicateQuery(getPredicateQueryTerm(), view[3], id[3], weight[3]);
         {
-            builder.addStringTerm(str[3], view[3], id[3], weight[3]);
-            builder.addStringTerm(str[4], view[4], id[4], weight[4]);
-            builder.addStringTerm(str[5], view[5], id[5], weight[5]);
+            auto & n = builder.addDotProduct(3, view[2], id[2], weight[2]);
+            n.addTerm(str[3], weight[3]);
+            n.addTerm(str[4], weight[4]);
+            n.addTerm(str[5], weight[5]);
         }
-        builder.addWandTerm(2, view[0], id[0], weight[0], 57, 67, 77.7);
         {
-            builder.addStringTerm(str[1], view[1], id[1], weight[1]);
-            builder.addStringTerm(str[2], view[2], id[2], weight[2]);
+            auto & n = builder.addWandTerm(2, view[0], id[0], weight[0], 57, 67, 77.7);
+            n.addTerm(str[1], weight[1]);
+            n.addTerm(str[2], weight[2]);
         }
         builder.addRegExpTerm(str[5], view[5], id[5], weight[5]);
         builder.addSameElement(3, view[4]);
@@ -246,23 +245,33 @@ void checkQueryTreeTypes(Node *node) {
     EXPECT_TRUE(checkTerm(predicateQuery, getPredicateQueryTerm(), view[3], id[3], weight[3]));
 
     auto* dotProduct = as_node<DotProduct>(and_node->getChildren()[6]);
-    EXPECT_EQUAL(3u, dotProduct->getChildren().size());
-    string_term = as_node<StringTerm>(dotProduct->getChildren()[0]);
-    EXPECT_TRUE(checkTerm(string_term, str[3], view[3], id[3], weight[3]));
-    string_term = as_node<StringTerm>(dotProduct->getChildren()[1]);
-    EXPECT_TRUE(checkTerm(string_term, str[4], view[4], id[4], weight[4]));
-    string_term = as_node<StringTerm>(dotProduct->getChildren()[2]);
-    EXPECT_TRUE(checkTerm(string_term, str[5], view[5], id[5], weight[5]));
+    EXPECT_EQUAL(3u, dotProduct->getNumTerms());
+
+    {
+        const auto &w1 = dotProduct->getAsString(0);
+        EXPECT_EQUAL(w1.first, str[3]);
+        EXPECT_TRUE(w1.second == weight[3]);
+        const auto &w2 = dotProduct->getAsString(1);
+        EXPECT_EQUAL(w2.first, str[4]);
+        EXPECT_TRUE(w2.second == weight[4]);
+        const auto &w3 = dotProduct->getAsString(2);
+        EXPECT_EQUAL(w3.first, str[5]);
+        EXPECT_TRUE(w3.second == weight[5]);
+    }
 
     auto* wandTerm = as_node<WandTerm>(and_node->getChildren()[7]);
     EXPECT_EQUAL(57u, wandTerm->getTargetNumHits());
     EXPECT_EQUAL(67, wandTerm->getScoreThreshold());
     EXPECT_EQUAL(77.7, wandTerm->getThresholdBoostFactor());
-    EXPECT_EQUAL(2u, wandTerm->getChildren().size());
-    string_term = as_node<StringTerm>(wandTerm->getChildren()[0]);
-    EXPECT_TRUE(checkTerm(string_term, str[1], view[1], id[1], weight[1]));
-    string_term = as_node<StringTerm>(wandTerm->getChildren()[1]);
-    EXPECT_TRUE(checkTerm(string_term, str[2], view[2], id[2], weight[2]));
+    EXPECT_EQUAL(2u, wandTerm->getNumTerms());
+    {
+        const auto &w1 = wandTerm->getAsString(0);
+        EXPECT_EQUAL(w1.first, str[1]);
+        EXPECT_TRUE(w1.second == weight[1]);
+        const auto &w2 = wandTerm->getAsString(1);
+        EXPECT_EQUAL(w2.first, str[2]);
+        EXPECT_TRUE(w2.second == weight[2]);
+    }
 
     auto* regexp_term = as_node<RegExpTerm>(and_node->getChildren()[8]);
     EXPECT_TRUE(checkTerm(regexp_term, str[5], view[5], id[5], weight[5]));
@@ -336,15 +345,15 @@ struct MyPhrase : Phrase { MyPhrase(const string &f, int32_t i, Weight w) : Phra
 struct MySameElement : SameElement { MySameElement(const string &f) : SameElement(f) {}};
 
 struct MyWeightedSetTerm : WeightedSetTerm {
-    MyWeightedSetTerm(const string &f, int32_t i, Weight w) : WeightedSetTerm(f, i, w) {}
+    MyWeightedSetTerm(uint32_t n, const string &f, int32_t i, Weight w) : WeightedSetTerm(n, f, i, w) {}
 };
 struct MyDotProduct : DotProduct {
-    MyDotProduct(const string &f, int32_t i, Weight w) : DotProduct(f, i, w) {}
+    MyDotProduct(uint32_t n, const string &f, int32_t i, Weight w) : DotProduct(n, f, i, w) {}
 };
 struct MyWandTerm : WandTerm {
-    MyWandTerm(const string &f, int32_t i, Weight w, uint32_t targetNumHits,
+    MyWandTerm(uint32_t n, const string &f, int32_t i, Weight w, uint32_t targetNumHits,
                int64_t scoreThreshold, double thresholdBoostFactor)
-        : WandTerm(f, i, w, targetNumHits, scoreThreshold, thresholdBoostFactor) {}
+        : WandTerm(n, f, i, w, targetNumHits, scoreThreshold, thresholdBoostFactor) {}
 };
 struct MyRank : Rank {};
 struct MyNumberTerm : NumberTerm {
@@ -592,6 +601,10 @@ TEST("require that empty intermediate node can be added") {
     EXPECT_EQUAL(0u, and_node->getChildren().size());
 }
 
+TEST("control size of SimpleQueryStackDumpIterator") {
+    EXPECT_EQUAL(128u, sizeof(SimpleQueryStackDumpIterator));
+}
+
 TEST("test query parsing error") {
     const char * STACK =
          "\001\002\001\003\000\005\002\004\001\034F\001\002\004term\004\004term\002dx\004\004term\002ifD\002\004term\001xD\003\004term\002dxE\004\004term\001\060F\005\002\004term"
@@ -627,6 +640,78 @@ TEST("test query parsing error") {
     SimpleQueryStackDumpIterator iterator(stackDump);
     Node::UP new_node = QueryTreeCreator<SimpleQueryNodeTypes>::create(iterator);
     EXPECT_FALSE(new_node);
+}
+
+class SimpleMultiTerm : public MultiTerm {
+public:
+    SimpleMultiTerm(size_t numTerms) : MultiTerm(numTerms) {}
+    void accept(QueryVisitor & ) override { }
+};
+
+TEST("initial state of MultiTerm") {
+    SimpleMultiTerm mt(7);
+    EXPECT_EQUAL(7u, mt.getNumTerms());
+    EXPECT_TRUE(MultiTerm::Type::UNKNOWN == mt.getType());
+}
+
+void
+verify_multiterm_get(const MultiTerm & mt) {
+    EXPECT_EQUAL(7u, mt.getNumTerms());
+    for (int64_t i(0); i < mt.getNumTerms(); i++) {
+        auto v = mt.getAsInteger(i);
+        EXPECT_EQUAL(v.first, i-3);
+        EXPECT_EQUAL(v.second.percent(), i-4);
+    }
+    for (int64_t i(0); i < mt.getNumTerms(); i++) {
+        auto v = mt.getAsString(i);
+        char buf[24];
+        auto res = std::to_chars(buf, buf + sizeof(buf), i-3);
+        EXPECT_EQUAL(v.first, vespalib::stringref(buf, res.ptr - buf));
+        EXPECT_EQUAL(v.second.percent(), i-4);
+    }
+}
+
+TEST("add and get of integer MultiTerm") {
+    SimpleMultiTerm mt(7);
+    for (int64_t i(0); i < mt.getNumTerms(); i++) {
+        mt.addTerm(i-3, Weight(i-4));
+    }
+    EXPECT_TRUE(MultiTerm::Type::INTEGER == mt.getType());
+    verify_multiterm_get(mt);
+}
+
+TEST("add and get of string MultiTerm") {
+    SimpleMultiTerm mt(7);
+    for (int64_t i(0); i < mt.getNumTerms(); i++) {
+        char buf[24];
+        auto res = std::to_chars(buf, buf + sizeof(buf), i-3);
+        mt.addTerm(vespalib::stringref(buf, res.ptr - buf), Weight(i-4));
+    }
+    EXPECT_TRUE(MultiTerm::Type::STRING == mt.getType());
+    verify_multiterm_get(mt);
+}
+
+TEST("first string then integer MultiTerm") {
+    SimpleMultiTerm mt(7);
+    mt.addTerm("-3", Weight(-4));
+    for (int64_t i(1); i < mt.getNumTerms(); i++) {
+        mt.addTerm(i-3, Weight(i-4));
+    }
+    EXPECT_TRUE(MultiTerm::Type::STRING == mt.getType());
+    verify_multiterm_get(mt);
+}
+
+TEST("first integer then string MultiTerm") {
+    SimpleMultiTerm mt(7);
+    mt.addTerm(-3, Weight(-4));
+    EXPECT_TRUE(MultiTerm::Type::INTEGER == mt.getType());
+    for (int64_t i(1); i < mt.getNumTerms(); i++) {
+        char buf[24];
+        auto res = std::to_chars(buf, buf + sizeof(buf), i-3);
+        mt.addTerm(vespalib::stringref(buf, res.ptr - buf), Weight(i-4));
+    }
+    EXPECT_TRUE(MultiTerm::Type::STRING == mt.getType());
+    verify_multiterm_get(mt);
 }
 
 }  // namespace

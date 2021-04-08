@@ -11,6 +11,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_ID;
+import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CONSOLE_USER_EMAIL;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
@@ -102,9 +104,9 @@ public class PermanentFlags {
     public static final UnboundDoubleFlag CONTAINER_CPU_CAP = defineDoubleFlag(
             "container-cpu-cap", 0,
             "Hard limit on how many CPUs a container may use. This value is multiplied by CPU allocated to node, so " +
-                    "to cap CPU at 200%, set this to 2, etc.",
+                    "to cap CPU at 200%, set this to 2, etc. 0 disables the cap to allow unlimited CPU.",
             "Takes effect on next node agent tick. Change is orchestrated, but does NOT require container restart",
-            HOSTNAME, APPLICATION_ID);
+            HOSTNAME, APPLICATION_ID, CLUSTER_ID, CLUSTER_TYPE);
 
     public static final UnboundListFlag<String> DISABLED_HOST_ADMIN_TASKS = defineListFlag(
             "disabled-host-admin-tasks", List.of(), String.class,
@@ -142,6 +144,12 @@ public class PermanentFlags {
             "Controls JVM option OmitStackTraceInFastThrow (default feature flag value is true, which is the default JVM option value as well)",
             "takes effect on JVM restart",
             NODE_TYPE, APPLICATION_ID);
+
+    public static final UnboundIntFlag MAX_TRIAL_TENANTS = defineIntFlag(
+            "max-trial-tenants", -1,
+            "The maximum nr. of tenants with trial plan, -1 is unlimited",
+            "Takes effect immediately"
+    );
 
     private PermanentFlags() {}
 

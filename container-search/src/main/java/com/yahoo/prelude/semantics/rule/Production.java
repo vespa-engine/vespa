@@ -33,7 +33,7 @@ public abstract class Production {
     public void setPosition(int position) { this.position = position; }
 
     /** Sets the weight of this production as a percentage (default is 100) */
-    public void setWeight(int weight) { this.weight=weight; }
+    public void setWeight(int weight) { this.weight = weight; }
 
     /** Returns the weight of this production as a percentage (default is 100) */
     public int getWeight() { return weight; }

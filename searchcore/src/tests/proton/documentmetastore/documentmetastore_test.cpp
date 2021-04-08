@@ -2091,6 +2091,63 @@ TEST(DocumentMetaStoreTest, call_to_remove_is_notified)
     EXPECT_EQ(1, listener->remove_cnt);
 }
 
+namespace {
+
+void try_compact_document_meta_store(DocumentMetaStore &dms)
+{
+    dms.removeAllOldGenerations();
+    dms.commit(true);
+}
+
+}
+
+TEST(DocumentMetaStoreTest, gid_to_lid_map_can_be_compacted)
+{
+    auto dms = std::make_shared<DocumentMetaStore>(createBucketDB());
+    dms->constructFreeList();
+    static constexpr uint32_t full_size = 1000;
+    for (uint32_t i = 1; i < full_size; ++i) {
+        addLid(*dms, i);
+    }
+    dms->commit(true);
+    AttributeGuard guard(dms);
+    remove(full_size - 1, 100, *dms);
+    dms->commit(true);
+    auto status_before = dms->getStatus();
+    EXPECT_LT(0, status_before.getOnHold());
+    guard = AttributeGuard();
+    try_compact_document_meta_store(*dms);
+    auto status_early = dms->getStatus();
+    EXPECT_LT(status_before.getDead(), status_early.getDead());
+    EXPECT_EQ(0, status_early.getOnHold());
+    bool compaction_done = false;
+    for (uint32_t i = 0; i < 15 && !compaction_done; ++i) {
+        AttributeGuard guard2(dms);
+        auto status_loop_iteration_start = dms->getStatus();
+        try_compact_document_meta_store(*dms);
+        try_compact_document_meta_store(*dms);
+        auto status_second = dms->getStatus();
+        if (i > 0) {
+            EXPECT_GT(status_before.getUsed(), status_second.getUsed());
+        }
+        EXPECT_GT(status_early.getDead(), status_second.getDead());
+        try_compact_document_meta_store(*dms);
+        auto status_third = dms->getStatus();
+        EXPECT_EQ(status_second.getDead(), status_third.getDead());
+        EXPECT_EQ(status_second.getUsed(), status_third.getUsed());
+        EXPECT_EQ(status_second.getOnHold(), status_third.getOnHold());
+        EXPECT_GE(status_loop_iteration_start.getDead(), status_third.getDead());
+        if (status_loop_iteration_start.getDead() == status_third.getDead()) {
+            compaction_done = true;
+        }
+    }
+    EXPECT_TRUE(compaction_done);
+    auto status_after = dms->getStatus();
+    EXPECT_GT(status_before.getUsed(), status_after.getUsed());
+    EXPECT_GT(status_early.getDead(), status_after.getDead());
+    EXPECT_EQ(0, status_after.getOnHold());
+}
+
 }
 
 GTEST_MAIN_RUN_ALL_TESTS()

@@ -25,7 +25,7 @@ import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
-import com.yahoo.vespa.hosted.controller.api.ActivateResult;
+import com.yahoo.vespa.hosted.controller.application.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
@@ -954,7 +954,7 @@ public class InternalStepRunner implements StepRunner {
             return new Timeouts(system);
         }
 
-        Duration capacity() { return Duration.ofMinutes(system.isCd() ? 5 : 0); }
+        Duration capacity() { return Duration.ofMinutes(system.isCd() ? 15 : 0); }
         Duration endpoint() { return Duration.ofMinutes(15); }
         Duration endpointCertificate() { return Duration.ofMinutes(20); }
         Duration tester() { return Duration.ofMinutes(30); }

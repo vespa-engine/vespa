@@ -15,8 +15,19 @@ public class ExpansionTestCase extends RuleBaseAbstractTestCase {
     }
 
     @Test
-    public void testEquivExpansion() {
+    public void testEquivExpansion1() {
         assertSemantics("EQUIV equiv1 equiv2 equiv3", "equiv1");
+    }
+
+    @Test
+    public void testEquivExpansion2() {
+        assertSemantics("EQUIV testfield:e1 testfield:e2 testfield:e3", "testfield:foo");
+    }
+
+    @Test
+    public void testEquivExpansion3() {
+        assertSemantics("AND testfield:e1 testfield:e2 testfield:e3 testfield:e1 testfield:e2 testfield:e3",
+                        "testfield:foo testfield:bar");
     }
 
 }

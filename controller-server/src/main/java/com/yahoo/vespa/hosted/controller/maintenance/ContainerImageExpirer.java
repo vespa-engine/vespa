@@ -38,7 +38,7 @@ public class ContainerImageExpirer extends ControllerMaintainer {
         Instant now = controller().clock().instant();
         VersionStatus versionStatus = controller().readVersionStatus();
         List<ContainerImage> imagesToExpire = controller().serviceRegistry().containerRegistry().list().stream()
-                                                          .filter(image -> canExpire(image, now, versionStatus))
+                                                          .filter(image -> isExpired(image, now, versionStatus))
                                                           .collect(Collectors.toList());
         if (!imagesToExpire.isEmpty()) {
             log.log(Level.INFO, "Expiring " + imagesToExpire.size() + " container images: " + imagesToExpire);
@@ -47,8 +47,8 @@ public class ContainerImageExpirer extends ControllerMaintainer {
         return true;
     }
 
-    /** Returns whether given image can be expired */
-    private boolean canExpire(ContainerImage image, Instant now, VersionStatus versionStatus) {
+    /** Returns whether given image is expired */
+    private boolean isExpired(ContainerImage image, Instant now, VersionStatus versionStatus) {
         List<VespaVersion> versions = versionStatus.versions();
         if (versions.isEmpty()) return false;
 

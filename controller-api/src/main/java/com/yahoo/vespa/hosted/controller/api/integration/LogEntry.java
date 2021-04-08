@@ -69,6 +69,7 @@ public class LogEntry {
                                                     parts[6].replaceAll("\\\\n", "\n")
                                                             .replaceAll("\\\\t", "\t")))
                          .filter(entry -> entry.at().isAfter(from))
+                         .limit(100_000)
                          .collect(Collectors.toUnmodifiableList());
         }
         catch (IOException e) {

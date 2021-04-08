@@ -25,7 +25,6 @@ LOG_SETUP(".proton.server.bucketmovejob");
 using document::BucketId;
 using storage::spi::BucketInfo;
 using storage::spi::Bucket;
-using storage::spi::makeBucketTask;
 using proton::bucketdb::BucketMover;
 using vespalib::makeLambdaTask;
 using vespalib::Trinary;

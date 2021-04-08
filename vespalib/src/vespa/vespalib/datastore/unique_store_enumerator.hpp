@@ -15,6 +15,8 @@ UniqueStoreEnumerator<RefT>::UniqueStoreEnumerator(const IUniqueStoreDictionary 
       _enumValues(),
       _next_enum_val(1)
 {
+    _dict_snapshot->fill();
+    _dict_snapshot->sort();
     allocate_enum_values();
 }
 

@@ -78,26 +78,42 @@ private:
         visitNodes(node.getChildren());
     }
 
+    void replicateMultiTerm(const MultiTerm &original, MultiTerm & replica) {
+        if (original.getType() == MultiTerm::Type::STRING) {
+            for (uint32_t i(0); i < original.getNumTerms(); i++) {
+                auto v = original.getAsString(i);
+                replica.addTerm(v.first, v.second);
+            }
+        } else if (original.getType() == MultiTerm::Type::INTEGER) {
+            for (uint32_t i(0); i < original.getNumTerms(); i++) {
+                auto v = original.getAsInteger(i);
+                replica.addTerm(v.first, v.second);
+            }
+        } else {
+            assert (original.getType() == MultiTerm::Type::UNKNOWN);
+            assert (original.getNumTerms() == 0);
+        }
+    }
+
     void visit(WeightedSetTerm &node) override {
-        replicate(node, _builder.addWeightedSetTerm(node.getChildren().size(), node.getView(),
-                                                    node.getId(), node.getWeight()));
-        visitNodes(node.getChildren());
+        auto & replica = _builder.addWeightedSetTerm(node.getNumTerms(), node.getView(), node.getId(), node.getWeight());
+        replicate(node, replica);
+        replicateMultiTerm(node, replica);
     }
 
     void visit(DotProduct &node) override {
-        replicate(node, _builder.addDotProduct(node.getChildren().size(), node.getView(),
-                                               node.getId(), node.getWeight()));
-        visitNodes(node.getChildren());
+        auto & replica = _builder.addDotProduct(node.getNumTerms(), node.getView(), node.getId(), node.getWeight());
+        replicate(node, replica);
+        replicateMultiTerm(node, replica);
     }
 
     void visit(WandTerm &node) override {
-        replicate(node, _builder.addWandTerm(node.getChildren().size(),
-                                             node.getView(),
-                                             node.getId(), node.getWeight(),
-                                             node.getTargetNumHits(),
-                                             node.getScoreThreshold(),
-                                             node.getThresholdBoostFactor()));
-        visitNodes(node.getChildren());
+        auto & replica = _builder.addWandTerm(node.getNumTerms(), node.getView(), node.getId(), node.getWeight(),
+                                              node.getTargetNumHits(),
+                                              node.getScoreThreshold(),
+                                              node.getThresholdBoostFactor());
+        replicate(node, replica);
+        replicateMultiTerm(node, replica);
     }
 
     void visit(Rank &node) override {

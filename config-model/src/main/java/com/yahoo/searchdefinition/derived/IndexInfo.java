@@ -161,7 +161,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             addUriIndexCommands(field);
         }
 
-        if (field.getDataType() instanceof NumericDataType) {
+        if (field.getDataType().getPrimitiveType() instanceof NumericDataType) {
             addIndexCommand(field, CMD_NUMERICAL);
         }
 

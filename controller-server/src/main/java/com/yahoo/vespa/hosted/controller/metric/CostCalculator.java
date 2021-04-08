@@ -8,6 +8,7 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.identifiers.Property;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceAllocation;
+import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.tenant.AthenzTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
@@ -48,7 +49,7 @@ public class CostCalculator {
         var nodes = controller.zoneRegistry().zones()
                               .reachable().in(Environment.prod).ofCloud(cloudName).zones().stream()
                               .flatMap(zone -> uncheck(() -> nodeRepository.list(zone.getId()).stream()))
-                              .filter(node -> node.owner().isPresent() && !node.owner().get().tenant().value().equals("hosted-vespa"))
+                              .filter(node -> node.owner().isPresent() && !node.owner().get().tenant().equals(SystemApplication.TENANT))
                               .collect(Collectors.toList());
         var totalAllocation = ResourceAllocation.ZERO;
         for (var node : nodes) {

@@ -22,29 +22,30 @@ namespace search::docsummary {
 
 GetDocsumsState::GetDocsumsState(GetDocsumsStateCallback &callback)
     : _args(),
-      _docsumbuf(NULL),
+      _docsumbuf(nullptr),
       _docsumcnt(0),
-      _kwExtractor(NULL),
-      _keywords(NULL),
+      _kwExtractor(nullptr),
+      _keywords(nullptr),
       _callback(callback),
       _dynteaser(),
+      _docSumFieldSpaceStore(),
       _docSumFieldSpace(_docSumFieldSpaceStore, sizeof(_docSumFieldSpaceStore)), // only alloc buffer if needed
       _attrCtx(),
       _attributes(),
       _fieldWriterStates(),
-      _jsonStringer(),
       _parsedLocations(),
-      _summaryFeatures(NULL),
+      _summaryFeatures(nullptr),
       _summaryFeaturesCached(false),
-      _rankFeatures(NULL),
-      _matching_elements()
+      _rankFeatures(nullptr),
+      _matching_elements(),
+      _jsonStringer()
 {
     _dynteaser._docid    = static_cast<uint32_t>(-1);
     _dynteaser._input    = static_cast<uint32_t>(-1);
     _dynteaser._lang     = static_cast<uint32_t>(-1);
-    _dynteaser._config   = NULL;
-    _dynteaser._query    = NULL;
-    _dynteaser._result   = NULL;
+    _dynteaser._config   = nullptr;
+    _dynteaser._query    = nullptr;
+    _dynteaser._result   = nullptr;
 }
 
 
@@ -52,10 +53,10 @@ GetDocsumsState::~GetDocsumsState()
 {
     free(_docsumbuf);
     free(_keywords);
-    if (_dynteaser._result != NULL) {
+    if (_dynteaser._result != nullptr) {
         juniper::ReleaseResult(_dynteaser._result);
     }
-    if (_dynteaser._query != NULL) {
+    if (_dynteaser._query != nullptr) {
         juniper::ReleaseQueryHandle(_dynteaser._query);
     }
 }
@@ -67,6 +68,14 @@ GetDocsumsState::get_matching_elements(const MatchingElementsFields &matching_el
         _matching_elements = _callback.fill_matching_elements(matching_elems_fields);
     }
     return *_matching_elements;
+}
+
+vespalib::JSONStringer &
+GetDocsumsState::jsonStringer() {
+    if (!_jsonStringer) {
+        _jsonStringer = std::make_unique<vespalib::JSONStringer>();
+    }
+    return *_jsonStringer;
 }
 
 void

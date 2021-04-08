@@ -6,7 +6,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
-import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.IntFlag;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.controller.Application;
@@ -47,7 +46,7 @@ public class CloudAccessControl implements AccessControl {
     public CloudAccessControl(UserManagement userManagement, FlagSource flagSource, ServiceRegistry serviceRegistry) {
         this.userManagement = userManagement;
         this.enablePublicSignup = PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.bindTo(flagSource);
-        this.maxTrialTenants = Flags.MAX_TRIAL_TENANTS.bindTo(flagSource);
+        this.maxTrialTenants = PermanentFlags.MAX_TRIAL_TENANTS.bindTo(flagSource);
         billingController = serviceRegistry.billingController();
     }
 

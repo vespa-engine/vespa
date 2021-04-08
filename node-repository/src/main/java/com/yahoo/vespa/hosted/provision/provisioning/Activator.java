@@ -14,6 +14,7 @@ import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
 import com.yahoo.vespa.hosted.provision.applications.ScalingEvent;
+import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Allocation;
 
 import java.time.Instant;
@@ -216,7 +217,7 @@ class Activator {
             HostSpec hostSpec = getHost(node.hostname(), hosts);
             node = hostSpec.membership().get().retired() ? node.retire(at) : node.unretire();
             if (! hostSpec.advertisedResources().equals(node.resources())) // A resized node
-                node = node.with(new Flavor(hostSpec.advertisedResources()));
+                node = node.with(new Flavor(hostSpec.advertisedResources()), Agent.application, at);
             Allocation allocation = node.allocation().get()
                                         .with(hostSpec.membership().get())
                                         .withRequestedResources(hostSpec.requestedResources()

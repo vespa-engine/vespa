@@ -43,7 +43,7 @@ class RestApiImplTest {
     @Test
     void executes_filters_and_handler_in_correct_order() {
         List<String> actualEvaluationOrdering = new ArrayList<>();
-        RestApi.MethodHandler<HttpResponse> handler = context -> {
+        RestApi.Handler<HttpResponse> handler = context -> {
             actualEvaluationOrdering.add("handler");
             return new MessageResponse("get-method-response");
         };
@@ -83,8 +83,8 @@ class RestApiImplTest {
                 .disableDefaultResponseMappers()
                 .addRoute(route("/long").get(ctx -> 123456L))
                 .addRoute(route("/exception").get(ctx -> 123L / 0L))
-                .addResponseMapper(Long.class, (entity, ctx) -> new MessageResponse("long value is " + entity))
-                .addExceptionMapper(ArithmeticException.class, (exception, ctx) -> ErrorResponse.internalServerError("oops division by zero"))
+                .addResponseMapper(Long.class, (ctx, entity) -> new MessageResponse("long value is " + entity))
+                .addExceptionMapper(ArithmeticException.class, (ctx, exception) -> ErrorResponse.internalServerError("oops division by zero"))
                 .build();
         verifyJsonResponse(restApi, Method.GET, "/long", null, 200, "{\"message\":\"long value is 123456\"}");
         verifyJsonResponse(restApi, Method.GET, "/exception", null, 500, "{\"message\":\"oops division by zero\", \"error-code\":\"INTERNAL_SERVER_ERROR\"}");
@@ -92,9 +92,11 @@ class RestApiImplTest {
 
     @Test
     void method_handler_can_consume_and_produce_json() {
+        RestApi.HandlerWithRequestEntity<TestEntity, TestEntity> handler = (context, requestEntity) -> requestEntity;
         RestApi restApi = RestApi.builder()
-                .addRoute(route("/api").post(
-                        ctx -> ctx.requestContent().get().consumeJacksonEntity(TestEntity.class)))
+                .registerJacksonRequestEntity(TestEntity.class)
+                .registerJacksonResponseEntity(TestEntity.class)
+                .addRoute(route("/api").post(TestEntity.class, handler))
                 .build();
         String rawJson = "{\"mystring\":\"my-string-value\", \"myinstant\":\"2000-01-01T00:00:00Z\"}";
         verifyJsonResponse(restApi, Method.POST, "/api", rawJson, 200, rawJson);
@@ -118,7 +120,7 @@ class RestApiImplTest {
         }
     }
 
-    public static class TestEntity implements RestApi.JacksonRequestEntity, RestApi.JacksonResponseEntity {
+    public static class TestEntity {
         @JsonProperty("mystring") public String stringValue;
         @JsonProperty("myinstant") public Instant instantValue;
     }
