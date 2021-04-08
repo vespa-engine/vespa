@@ -99,8 +99,8 @@ class Activator {
 
     private void deactivate(List<Node> toDeactivateList, ApplicationTransaction transaction) {
         NodeList toDeactivate = NodeList.copyOf(toDeactivateList);
-        nodeRepository.nodes().deactivate(toDeactivate.wantToFail(false).asList(), transaction);
-        nodeRepository.nodes().fail(toDeactivate.wantToFail(true).asList(), transaction);
+        nodeRepository.nodes().deactivate(toDeactivate.not().failing().asList(), transaction);
+        nodeRepository.nodes().fail(toDeactivate.failing().asList(), transaction);
     }
 
     private void rememberResourceChange(ApplicationTransaction transaction, long generation, Instant at,
