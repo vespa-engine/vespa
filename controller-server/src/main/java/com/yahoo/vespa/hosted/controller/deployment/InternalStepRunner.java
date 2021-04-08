@@ -367,7 +367,7 @@ public class InternalStepRunner implements StepRunner {
         }
 
         if ( ! firstTick)
-            logger.log(nodeList.expectedDown().concat(nodeList.needsNewConfig()).asList().stream()
+            logger.log(nodeList.expectedDown().and(nodeList.needsNewConfig()).asList().stream()
                                .distinct()
                                .flatMap(node -> nodeDetails(node, false))
                                .collect(toList()));
