@@ -82,6 +82,7 @@ public class NodeSerializer {
     private static final String nodeTypeKey = "type";
     private static final String wantToRetireKey = "wantToRetire";
     private static final String wantToDeprovisionKey = "wantToDeprovision";
+    private static final String wantToRebuildKey = "wantToRebuild";
     private static final String preferToRetireKey = "preferToRetire";
     private static final String osVersionKey = "osVersion";
     private static final String wantedOsVersionKey = "wantedOsVersion";
@@ -164,6 +165,7 @@ public class NodeSerializer {
         object.setBool(wantToRetireKey, node.status().wantToRetire());
         object.setBool(preferToRetireKey, node.status().preferToRetire());
         object.setBool(wantToDeprovisionKey, node.status().wantToDeprovision());
+        object.setBool(wantToRebuildKey, node.status().wantToRebuild());
         node.allocation().ifPresent(allocation -> toSlime(allocation, object.setObject(instanceKey)));
         toSlime(node.history(), object.setArray(historyKey));
         object.setString(nodeTypeKey, toString(node.type()));
@@ -271,6 +273,7 @@ public class NodeSerializer {
                           (int) object.field(failCountKey).asLong(),
                           object.field(wantToRetireKey).asBool(),
                           object.field(wantToDeprovisionKey).asBool(),
+                          object.field(wantToRebuildKey).asBool(),
                           object.field(preferToRetireKey).asBool(),
                           new OsVersion(versionFromSlime(object.field(osVersionKey)),
                                         versionFromSlime(object.field(wantedOsVersionKey))),

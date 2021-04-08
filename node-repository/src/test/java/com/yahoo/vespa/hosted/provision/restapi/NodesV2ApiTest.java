@@ -221,6 +221,9 @@ public class NodesV2ApiTest {
         // Make sure that wantToRetire is applied recursively, but wantToDeprovision isn't
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host5.yahoo.com"),
                 "\"wantToRetire\":true,\"preferToRetire\":false,\"wantToDeprovision\":false,");
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                                   Utf8.toBytes("{\"wantToRebuild\": true, \"wantToRetire\": true}"), Request.Method.PATCH),
+                       "{\"message\":\"Updated dockerhost1.yahoo.com\"}");
 
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com"), "\"modelName\":\"foo\"");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
@@ -234,7 +237,16 @@ public class NodesV2ApiTest {
 
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-after-changes.json");
 
-        // move the docker host to deprovisioned
+        // move a host marked as wantToRebuild to deprovisioned
+        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
+                                   new byte[0], Request.Method.DELETE),
+                       "{\"message\":\"Removed dockerhost1.yahoo.com\"}");
+        // ... and then restore it
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/provisioned/dockerhost1.yahoo.com",
+                                   new byte[0], Request.Method.PUT),
+                       "{\"message\":\"Moved dockerhost1.yahoo.com to provisioned\"}");
+
+        // move a host to deprovisioned
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                    new byte[0], Request.Method.DELETE),
                        "{\"message\":\"Removed dockerhost1.yahoo.com\"}");
@@ -242,8 +254,6 @@ public class NodesV2ApiTest {
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                    new byte[0], Request.Method.DELETE),
                        "{\"message\":\"Permanently removed dockerhost1.yahoo.com\"}");
-
-
     }
 
     @Test

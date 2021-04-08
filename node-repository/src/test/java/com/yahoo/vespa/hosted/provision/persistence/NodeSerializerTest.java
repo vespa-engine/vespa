@@ -228,7 +228,7 @@ public class NodeSerializerTest {
     }
 
     @Test
-    public void serialize_parentHostname() {
+    public void serialize_parent_hostname() {
         final String parentHostname = "parent.yahoo.com";
         Node node = Node.create("myId", new IP.Config(Set.of("127.0.0.1"), Set.of()), "myHostname", nodeFlavors.getFlavorOrThrow("default"), NodeType.tenant)
                 .parentHostname(parentHostname)
@@ -304,6 +304,17 @@ public class NodeSerializerTest {
                         "}";
         Node node = nodeSerializer.fromJson(State.provisioned, Utf8.toBytes(nodeData));
         assertFalse(node.status().wantToDeprovision());
+    }
+
+    @Test
+    public void want_to_rebuild() {
+        Node node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(createNode()));
+        assertFalse(node.status().wantToRebuild());
+        node = node.with(node.status().withWantToRetire(true, false, true));
+        node = nodeSerializer.fromJson(State.active, nodeSerializer.toJson(node));
+        assertTrue(node.status().wantToRetire());
+        assertFalse(node.status().wantToDeprovision());
+        assertTrue(node.status().wantToRebuild());
     }
 
     @Test

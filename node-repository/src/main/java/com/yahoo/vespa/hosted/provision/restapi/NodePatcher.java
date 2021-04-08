@@ -54,6 +54,7 @@ public class NodePatcher implements AutoCloseable {
 
     private static final String WANT_TO_RETIRE = "wantToRetire";
     private static final String WANT_TO_DEPROVISION = "wantToDeprovision";
+    private static final String WANT_TO_REBUILD = "wantToRebuild";
     private static final Set<String> RECURSIVE_FIELDS = Set.of(WANT_TO_RETIRE);
 
     private final NodeRepository nodeRepository;
@@ -141,11 +142,17 @@ public class NodePatcher implements AutoCloseable {
                 return IP.Config.verify(node.with(node.ipConfig().withPool(node.ipConfig().pool().withIpAddresses(asStringSet(value)))), memoizedNodes.get());
             case "additionalHostnames" :
                 return IP.Config.verify(node.with(node.ipConfig().withPool(node.ipConfig().pool().withAddresses(asAddressList(value)))), memoizedNodes.get());
-            case WANT_TO_RETIRE :
-            case WANT_TO_DEPROVISION :
+            case WANT_TO_RETIRE:
+            case WANT_TO_DEPROVISION:
+            case WANT_TO_REBUILD:
                 boolean wantToRetire = asOptionalBoolean(root.field(WANT_TO_RETIRE)).orElse(node.status().wantToRetire());
                 boolean wantToDeprovision = asOptionalBoolean(root.field(WANT_TO_DEPROVISION)).orElse(node.status().wantToDeprovision());
-                return node.withWantToRetire(wantToRetire, wantToDeprovision && !applyingAsChild, Agent.operator, clock.instant());
+                boolean wantToRebuild = asOptionalBoolean(root.field(WANT_TO_REBUILD)).orElse(node.status().wantToRebuild());
+                return node.withWantToRetire(wantToRetire,
+                                             wantToDeprovision && !applyingAsChild,
+                                             wantToRebuild && !applyingAsChild,
+                                             Agent.operator,
+                                             clock.instant());
             case "reports" :
                 return nodeWithPatchedReports(node, value);
             case "openStackId" :

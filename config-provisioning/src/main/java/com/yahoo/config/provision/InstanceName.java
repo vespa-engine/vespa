@@ -11,6 +11,8 @@ import java.util.Objects;
  */
 public class InstanceName implements Comparable<InstanceName> {
 
+    private static final InstanceName defaultInstance = new InstanceName("default");
+
     private final String instanceName;
 
     private InstanceName(String instanceName) {
@@ -38,7 +40,7 @@ public class InstanceName implements Comparable<InstanceName> {
     }
 
     public static InstanceName defaultName() {
-        return new InstanceName("default");
+        return defaultInstance;
     }
 
     public boolean isDefault() {

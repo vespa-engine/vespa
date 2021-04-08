@@ -129,6 +129,11 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         return matching(node -> node.allocation().map(a -> a.owner().equals(application)).orElse(false));
     }
 
+    /** Returns the subset of nodes allocated to a tester instance */
+    public NodeList tester() {
+        return matching(node -> node.allocation().isPresent() && node.allocation().get().owner().instance().isTester());
+    }
+
     /** Returns the subset of nodes matching the given node type(s) */
     public NodeList nodeType(NodeType first, NodeType... rest) {
         if (rest.length == 0) {

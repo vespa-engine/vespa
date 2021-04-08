@@ -97,7 +97,7 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
                 List<String> unparkedChildren = !candidate.type().isHost() ? List.of() :
                                                 nodeRepository.nodes().list()
                                                               .childrenOf(candidate)
-                                                              .matching(node -> node.state() != Node.State.parked)
+                                                              .not().state(Node.State.parked)
                                                               .mapToList(Node::hostname);
 
                 if (unparkedChildren.isEmpty()) {

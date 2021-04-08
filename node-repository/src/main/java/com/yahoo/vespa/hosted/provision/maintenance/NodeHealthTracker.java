@@ -78,7 +78,7 @@ public class NodeHealthTracker extends NodeRepositoryMaintainer {
     private void updateActiveNodeDownState() {
         NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
         serviceMonitor.getServiceModelSnapshot().getServiceInstancesByHostName().forEach((hostname, serviceInstances) -> {
-            Optional<Node> node = activeNodes.matching(n -> n.hostname().equals(hostname.toString())).first();
+            Optional<Node> node = activeNodes.node(hostname.toString());
             if (node.isEmpty()) return;
 
             // Already correct record, nothing to do

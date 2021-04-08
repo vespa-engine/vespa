@@ -135,27 +135,31 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         // Check paths to disallow illegal state changes
         if (path.matches("/nodes/v2/state/ready/{hostname}")) {
             nodeRepository.nodes().markNodeAvailableForNewAllocation(path.get("hostname"), Agent.operator, "Readied through the nodes/v2 API");
-            return new MessageResponse("Moved " + path.get("hostname") + " to ready");
+            return new MessageResponse("Moved " + path.get("hostname") + " to " + Node.State.ready);
         }
         else if (path.matches("/nodes/v2/state/failed/{hostname}")) {
             List<Node> failedNodes = nodeRepository.nodes().failRecursively(path.get("hostname"), Agent.operator, "Failed through the nodes/v2 API");
-            return new MessageResponse("Moved " + hostnamesAsString(failedNodes) + " to failed");
+            return new MessageResponse("Moved " + hostnamesAsString(failedNodes) + " to " + Node.State.failed);
         }
         else if (path.matches("/nodes/v2/state/parked/{hostname}")) {
             List<Node> parkedNodes = nodeRepository.nodes().parkRecursively(path.get("hostname"), Agent.operator, "Parked through the nodes/v2 API");
-            return new MessageResponse("Moved " + hostnamesAsString(parkedNodes) + " to parked");
+            return new MessageResponse("Moved " + hostnamesAsString(parkedNodes) + " to " + Node.State.parked);
         }
         else if (path.matches("/nodes/v2/state/dirty/{hostname}")) {
             List<Node> dirtiedNodes = nodeRepository.nodes().deallocateRecursively(path.get("hostname"), Agent.operator, "Dirtied through the nodes/v2 API");
-            return new MessageResponse("Moved " + hostnamesAsString(dirtiedNodes) + " to dirty");
+            return new MessageResponse("Moved " + hostnamesAsString(dirtiedNodes) + " to " + Node.State.dirty);
         }
         else if (path.matches("/nodes/v2/state/active/{hostname}")) {
             nodeRepository.nodes().reactivate(path.get("hostname"), Agent.operator, "Reactivated through nodes/v2 API");
-            return new MessageResponse("Moved " + path.get("hostname") + " to active");
+            return new MessageResponse("Moved " + path.get("hostname") + " to " + Node.State.active);
         }
         else if (path.matches("/nodes/v2/state/breakfixed/{hostname}")) {
             List<Node> breakfixedNodes = nodeRepository.nodes().breakfixRecursively(path.get("hostname"), Agent.operator, "Breakfixed through the nodes/v2 API");
-            return new MessageResponse("Breakfixed " + hostnamesAsString(breakfixedNodes));
+            return new MessageResponse("Moved " + hostnamesAsString(breakfixedNodes) + " to " + Node.State.breakfixed);
+        }
+        else if (path.matches("/nodes/v2/state/provisioned/{hostname}")) {
+            Node restoredNode = nodeRepository.nodes().restore(path.get("hostname"), Agent.operator, "Restored through the nodes/v2 API");
+            return new MessageResponse("Moved " + hostnamesAsString(List.of(restoredNode)) + " to " + Node.State.provisioned);
         }
 
         throw new NotFoundException("Cannot put to path '" + path + "'");
