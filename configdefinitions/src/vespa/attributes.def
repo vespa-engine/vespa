@@ -7,7 +7,7 @@ attribute[].collectiontype      enum { SINGLE, ARRAY, WEIGHTEDSET } default=SING
 # Deprecated/ do-not-use, will soon be GCed.
 attribute[].dictionary.ordering enum { ORDERED, UNORDERED } default = ORDERED
 attribute[].dictionary.type     enum { BTREE, HASH, BTREE_AND_HASH } default = BTREE
-attribute[].dictionary.match    enum { CASE_SENSITIVE, CASE_INSENSITIVE } default=CASE_INSENSITIVE
+attribute[].dictionary.match    enum { CASE_SENSITIVE, CASE_INSENSITIVE, CASED, UNCASED } default=UNCASED
 attribute[].removeifzero        bool default=false
 attribute[].createifnonexistent bool default=false
 attribute[].fastsearch          bool default=false

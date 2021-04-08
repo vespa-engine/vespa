@@ -63,9 +63,22 @@ convert(AttributesConfig::Attribute::Dictionary::Type type_cfg) {
     assert(false);
 }
 
+DictionaryConfig::Match
+convert(AttributesConfig::Attribute::Dictionary::Match match_cfg) {
+    switch (match_cfg) {
+    case AttributesConfig::Attribute::Dictionary::Match::CASE_SENSITIVE:
+    case AttributesConfig::Attribute::Dictionary::Match::CASED:
+        return DictionaryConfig::Match::CASED;
+    case AttributesConfig::Attribute::Dictionary::Match::CASE_INSENSITIVE:
+    case AttributesConfig::Attribute::Dictionary::Match::UNCASED:
+        return DictionaryConfig::Match::UNCASED;
+    }
+    assert(false);
+}
+
 DictionaryConfig
 convert_dictionary(const AttributesConfig::Attribute::Dictionary & dictionary) {
-    return DictionaryConfig(convert(dictionary.type));
+    return DictionaryConfig(convert(dictionary.type), convert(dictionary.match));
 }
 
 }
