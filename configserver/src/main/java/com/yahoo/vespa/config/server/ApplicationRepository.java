@@ -625,7 +625,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private List<String> sortedUnusedFileReferences(File fileReferencesPath, Set<String> fileReferencesInUse, Duration keepFileReferences) {
         Set<String> fileReferencesOnDisk = getFileReferencesOnDisk(fileReferencesPath);
-        log.log(Level.INFO, "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
+        log.log(Level.FINE, "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
         Instant instant = Instant.now().minus(keepFileReferences);
         return fileReferencesOnDisk
                 .stream()

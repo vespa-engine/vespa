@@ -123,7 +123,6 @@ public class TenantRepository {
 
     /**
      * Creates a new tenant repository
-     * 
      */
     @Inject
     public TenantRepository(HostRegistry hostRegistry,
@@ -202,11 +201,8 @@ public class TenantRepository {
 
         curator.framework().getConnectionStateListenable().addListener(this::stateChanged);
 
-        curator.create(tenantsPath);
-        curator.create(locksPath);
-        curator.create(barriersPath);
+        createPaths();
         createSystemTenants(configserverConfig);
-        curator.create(vespaPath);
 
         this.directoryCache = Optional.of(curator.createDirectoryCache(tenantsPath.getAbsolute(), false, false, zkCacheExecutor));
         this.directoryCache.get().addListener(this::childEvent);
@@ -260,8 +256,15 @@ public class TenantRepository {
         return metaData.orElse(new TenantMetaData(tenant.getName(), tenant.getCreatedTime(), tenant.getCreatedTime()));
     }
 
-     private static Set<TenantName> readTenantsFromZooKeeper(Curator curator) {
+    private static Set<TenantName> readTenantsFromZooKeeper(Curator curator) {
         return curator.getChildren(tenantsPath).stream().map(TenantName::from).collect(Collectors.toSet());
+    }
+
+    private void createPaths() {
+        curator.create(tenantsPath);
+        curator.create(locksPath);
+        curator.create(barriersPath);
+        curator.create(vespaPath);
     }
 
     private void bootstrapTenants() {
