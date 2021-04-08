@@ -39,4 +39,14 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
 
         return remoteMetrics;
     }
+    Metrics createMetrics(byte [] data, int fetchCount) {
+        Metrics remoteMetrics = new Metrics();
+        try {
+            remoteMetrics = MetricsParser.parse(data);
+        } catch (Exception e) {
+            handleException(e, data, fetchCount);
+        }
+
+        return remoteMetrics;
+    }
 }

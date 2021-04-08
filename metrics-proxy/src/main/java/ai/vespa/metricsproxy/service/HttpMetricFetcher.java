@@ -1,14 +1,17 @@
 // Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.metricsproxy.service;
 
-import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
+import ai.vespa.util.http.hc5.VespaAsyncHttpClientBuilder;
 
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.Future;
 import java.util.logging.Level;
+
 import com.yahoo.yolean.Exceptions;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
+import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.config.RequestConfig;
-import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
@@ -30,8 +33,7 @@ public abstract class HttpMetricFetcher {
     private final static int SOCKET_TIMEOUT = 60000;
     private final URI url;
     protected final VespaService service;
-    private static final CloseableHttpClient httpClient = createHttpClient();
-
+    private static final CloseableHttpAsyncClient httpClient = createHttpClient();
 
     /**
      * @param service the service to fetch metrics from
@@ -45,9 +47,14 @@ public abstract class HttpMetricFetcher {
         log.log(Level.FINE, "Fetching metrics from " + u + " with timeout " + CONNECTION_TIMEOUT);
     }
 
-    String getJson() throws IOException {
+    byte [] getJson() throws IOException {
         log.log(Level.FINE, "Connecting to url " + url + " for service '" + service + "'");
-        return httpClient.execute(new HttpGet(url), new BasicHttpClientResponseHandler());
+        Future<SimpleHttpResponse> response = httpClient.execute(new SimpleHttpRequest("GET", url), null);
+        try {
+            return response.get().getBodyBytes();
+        } catch (InterruptedException | ExecutionException e) {
+            throw new IOException("Failed fetching '" + url + "': " + e);
+        }
     }
 
     public String toString() {
@@ -59,7 +66,7 @@ public abstract class HttpMetricFetcher {
                 Exceptions.toMessageString(e);
     }
 
-    void handleException(Exception e, String data, int timesFetched) {
+    void handleException(Exception e, Object data, int timesFetched) {
         logMessage("Unable to parse json '" + data + "' for service '" + service + "': " +
                            Exceptions.toMessageString(e), timesFetched);
     }
@@ -80,14 +87,16 @@ public abstract class HttpMetricFetcher {
         }
     }
 
-    private static CloseableHttpClient createHttpClient() {
-        return VespaHttpClientBuilder.create()
+    private static CloseableHttpAsyncClient createHttpClient() {
+        CloseableHttpAsyncClient client =  VespaAsyncHttpClientBuilder.create()
                 .setUserAgent("metrics-proxy-http-client")
                 .setDefaultRequestConfig(RequestConfig.custom()
                                                  .setConnectTimeout(Timeout.ofMilliseconds(CONNECTION_TIMEOUT))
                                                  .setResponseTimeout(Timeout.ofMilliseconds(SOCKET_TIMEOUT))
                                                  .build())
                 .build();
+        client.start();
+        return client;
     }
 
 }

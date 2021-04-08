@@ -27,8 +27,12 @@ public class MetricsParser {
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
     static Metrics parse(String data) throws IOException {
-        JsonParser parser = jsonMapper.createParser(data);
-
+        return parse(jsonMapper.createParser(data));
+    }
+    static Metrics parse(byte [] data) throws IOException {
+        return parse(jsonMapper.createParser(data));
+    }
+    private static Metrics parse(JsonParser parser) throws IOException {
         if (parser.nextToken() != JsonToken.START_OBJECT) {
             throw new IOException("Expected start of object, got " + parser.currentToken());
         }

@@ -29,7 +29,7 @@ public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
      * Connect to remote service over http and fetch metrics
      */
     public HealthMetric getHealth(int fetchCount) {
-        String data = "{}";
+        byte [] data = {'{', '}'};
         try {
             data = getJson();
         } catch (IOException e) {
@@ -41,7 +41,7 @@ public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
     /**
      * Connect to remote service over http and fetch metrics
      */
-    private HealthMetric createHealthMetrics(String data, int fetchCount) {
+    private HealthMetric createHealthMetrics(byte [] data, int fetchCount) {
         HealthMetric healthMetric = HealthMetric.getDown("Failed fetching status page for service");
         try {
             healthMetric = parse(data);
@@ -51,8 +51,8 @@ public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
         return healthMetric;
     }
 
-    private HealthMetric parse(String data) {
-        if (data == null || data.isEmpty()) {
+    private HealthMetric parse(byte [] data) {
+        if ((data == null) || (data.length == 0)) {
             return HealthMetric.getUnknown("Empty response from status page");
         }
         try {
