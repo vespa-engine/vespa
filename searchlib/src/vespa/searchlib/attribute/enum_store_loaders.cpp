@@ -43,7 +43,7 @@ EnumeratedLoaderBase::build_enum_value_remapping()
     }
     auto comp_up = _store.allocate_comparator();
     auto& comp = *comp_up;
-    if (std::is_sorted(_indexes.begin(), _indexes.end(), [&comp](Index lhs, Index rhs) { return !comp.less(rhs, lhs); })) {
+    if (std::adjacent_find(_indexes.begin(), _indexes.end(), [&comp](Index lhs, Index rhs) { return !comp.less(lhs, rhs); }) == _indexes.end()) {
         return; // Unique values are already sorted
     }
     vespalib::Array<std::pair<Index, uint32_t>> sortdata;
@@ -61,7 +61,7 @@ EnumeratedLoaderBase::build_enum_value_remapping()
         _enum_value_remapping[entry.second] = enum_value;
         ++enum_value;
     }
-    assert(std::is_sorted(_indexes.begin(), _indexes.end(), [&comp](Index lhs, Index rhs) { return !comp.less(rhs, lhs); }));
+    assert(std::adjacent_find(_indexes.begin(), _indexes.end(), [&comp](Index lhs, Index rhs) { return !comp.less(lhs, rhs); }) == _indexes.end());
 }
 
 void

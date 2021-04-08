@@ -552,6 +552,8 @@ EnumeratedSaveTest::checkMem(AttributeVector &v, const MemAttr &e)
         MemAttr m2;
         EXPECT_TRUE(v2->save(m2, v.getBaseFileName()));
         ASSERT_TRUE(m2 == e);
+        auto v3 = AttributeFactory::createAttribute("convert", v.getConfig());
+        EXPECT_TRUE(v3->load());
     }
 }
 
