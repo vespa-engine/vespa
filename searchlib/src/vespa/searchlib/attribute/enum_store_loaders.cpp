@@ -96,7 +96,8 @@ EnumeratedLoader::build_dictionary()
 EnumeratedPostingsLoader::EnumeratedPostingsLoader(IEnumStore& store)
     : EnumeratedLoaderBase(store),
       _loaded_enums(),
-      _posting_indexes()
+      _posting_indexes(),
+      _has_btree_dictionary(_store.get_dictionary().get_has_btree_dictionary())
 {
 }
 
@@ -105,7 +106,7 @@ EnumeratedPostingsLoader::~EnumeratedPostingsLoader() = default;
 bool
 EnumeratedPostingsLoader::is_folded_change(Index lhs, Index rhs) const
 {
-    return _store.is_folded_change(lhs, rhs);
+    return !_has_btree_dictionary || _store.is_folded_change(lhs, rhs);
 }
 
 void
