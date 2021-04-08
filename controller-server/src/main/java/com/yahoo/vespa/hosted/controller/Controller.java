@@ -217,16 +217,13 @@ public class Controller extends AbstractComponent {
     }
 
     /** Set the target OS version for infrastructure on cloud in this system */
-    public void upgradeOsIn(CloudName cloudName, Version version, Optional<Duration> upgradeBudget, boolean force) {
+    public void upgradeOsIn(CloudName cloudName, Version version, Duration upgradeBudget, boolean force) {
         if (version.isEmpty()) {
             throw new IllegalArgumentException("Invalid version '" + version.toFullString() + "'");
         }
         Set<CloudName> clouds = clouds();
         if (!clouds.contains(cloudName)) {
             throw new IllegalArgumentException("Cloud '" + cloudName + "' does not exist in this system");
-        }
-        if (!zoneRegistry.zones().ofCloud(cloudName).reprovisionToUpgradeOs().ids().isEmpty() && upgradeBudget.isEmpty()) {
-            throw new IllegalArgumentException("Cloud '" + cloudName.value() + "' requires a time budget for OS upgrades");
         }
         try (Lock lock = curator.lockOsVersions()) {
             Set<OsVersionTarget> targets = new TreeSet<>(curator.readOsVersionTargets());
@@ -239,7 +236,7 @@ public class Controller extends AbstractComponent {
             targets.add(new OsVersionTarget(new OsVersion(version, cloudName), upgradeBudget));
             curator.writeOsVersionTargets(targets);
             log.info("Triggered OS upgrade to " + version.toFullString() + " in cloud " +
-                     cloudName.value() + upgradeBudget.map(b -> ", with upgrade budget " + b).orElse(""));
+                     cloudName.value() + ", with upgrade budget " + upgradeBudget);
         }
     }
 

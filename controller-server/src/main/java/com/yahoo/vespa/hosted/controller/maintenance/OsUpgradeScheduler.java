@@ -46,7 +46,7 @@ public class OsUpgradeScheduler extends ControllerMaintainer {
         for (var cloud : supportedClouds()) {
             Optional<Version> newTarget = newTargetIn(cloud);
             if (newTarget.isEmpty()) continue;
-            controller().upgradeOsIn(cloud, newTarget.get(), Optional.of(upgradeBudget()), false);
+            controller().upgradeOsIn(cloud, newTarget.get(), upgradeBudget(), false);
         }
         return true;
     }

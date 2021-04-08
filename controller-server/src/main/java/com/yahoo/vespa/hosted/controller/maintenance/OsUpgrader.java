@@ -43,15 +43,14 @@ public class OsUpgrader extends InfrastructureUpgrader<OsVersionTarget> {
 
     @Override
     protected void upgrade(OsVersionTarget target, SystemApplication application, ZoneApi zone) {
-        Optional<Duration> zoneUpgradeBudget = target.upgradeBudget()
-                                                     .map(totalBudget -> zoneBudgetOf(totalBudget, zone));
+        Duration zoneUpgradeBudget = zoneBudgetOf(target.upgradeBudget(), zone);
         log.info(String.format("Upgrading OS of %s to version %s in %s in cloud %s%s", application.id(),
                                target.osVersion().version().toFullString(),
                                zone.getVirtualId(), zone.getCloudName(),
-                               zoneUpgradeBudget.map(d -> " with time budget " + d).orElse("")));
+                               " with time budget " + zoneUpgradeBudget));
         controller().serviceRegistry().configServer().nodeRepository().upgradeOs(zone.getVirtualId(), application.nodeType(),
                                                                                  target.osVersion().version(),
-                                                                                 zoneUpgradeBudget);
+                                                                                 Optional.of(zoneUpgradeBudget));
     }
 
     @Override

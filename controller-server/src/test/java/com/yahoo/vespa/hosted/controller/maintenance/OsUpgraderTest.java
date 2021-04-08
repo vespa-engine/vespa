@@ -17,13 +17,11 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.Collection;
 import java.util.List;
-import java.util.Optional;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * @author mpolden
@@ -67,8 +65,8 @@ public class OsUpgraderTest {
 
         // New OS version released
         Version version1 = Version.fromString("7.1");
-        tester.controller().upgradeOsIn(cloud1, Version.fromString("7.0"), Optional.empty(), false);
-        tester.controller().upgradeOsIn(cloud1, version1, Optional.empty(), false);
+        tester.controller().upgradeOsIn(cloud1, Version.fromString("7.0"), Duration.ZERO, false);
+        tester.controller().upgradeOsIn(cloud1, version1, Duration.ZERO, false);
         assertEquals(1, tester.controller().osVersionTargets().size()); // Only allows one version per cloud
         statusUpdater.maintain();
 
@@ -136,16 +134,10 @@ public class OsUpgraderTest {
         tester.configServer().bootstrap(List.of(zone1.getId(), zone2.getId(), zone3.getId(), zone4.getId()),
                                         nodeTypes);
 
-        // Upgrade without budget fails
-        Version version = Version.fromString("7.1");
-        try {
-            tester.controller().upgradeOsIn(cloud, version, Optional.empty(), false);
-            fail("Expected exception");
-        } catch (IllegalArgumentException ignored) {}
-
         // Upgrade with budget
-        tester.controller().upgradeOsIn(cloud, version, Optional.of(Duration.ofHours(12)), false);
-        assertEquals(Duration.ofHours(12), tester.controller().osVersionTarget(cloud).get().upgradeBudget().get());
+        Version version = Version.fromString("7.1");
+        tester.controller().upgradeOsIn(cloud, version, Duration.ofHours(12), false);
+        assertEquals(Duration.ofHours(12), tester.controller().osVersionTarget(cloud).get().upgradeBudget());
         statusUpdater.maintain();
         osUpgrader.maintain();
 
@@ -195,8 +187,8 @@ public class OsUpgraderTest {
 
         // New OS version released
         Version version = Version.fromString("7.1");
-        tester.controller().upgradeOsIn(cloud, Version.fromString("7.0"), Optional.empty(), false);
-        tester.controller().upgradeOsIn(cloud, version, Optional.empty(), false);
+        tester.controller().upgradeOsIn(cloud, Version.fromString("7.0"), Duration.ZERO, false);
+        tester.controller().upgradeOsIn(cloud, version, Duration.ZERO, false);
         statusUpdater.maintain();
 
         // zone 1 upgrades

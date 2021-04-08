@@ -69,8 +69,8 @@ public class OsApiTest extends ControllerContainerTest {
         // All nodes are initially on empty version
         upgradeAndUpdateStatus();
         // Upgrade OS to a different version in each cloud
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.2\", \"cloud\": \"cloud1\"}", Request.Method.PATCH),
-                       "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.2\"}", 200);
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.2\", \"cloud\": \"cloud1\", \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
+                       "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.2 with upgrade budget PT0S\"}", 200);
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"8.2.1\", \"cloud\": \"cloud2\", \"upgradeBudget\": \"PT24H\"}", Request.Method.PATCH),
                        "{\"message\":\"Set target OS version for cloud 'cloud2' to 8.2.1 with upgrade budget PT24H\"}", 200);
 
@@ -85,27 +85,27 @@ public class OsApiTest extends ControllerContainerTest {
         assertFile(new Request("http://localhost:8080/os/v1/"), "versions-all-upgraded.json");
 
         // Downgrade with force is permitted
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.1\", \"cloud\": \"cloud1\", \"force\": true}", Request.Method.PATCH),
-                       "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.1\"}", 200);
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.5.1\", \"cloud\": \"cloud1\", \"force\": true, \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
+                       "{\"message\":\"Set target OS version for cloud 'cloud1' to 7.5.1 with upgrade budget PT0S\"}", 200);
 
-        // Error: Missing field 'cloud' or 'version'
+        // Error: Missing fields
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.6\"}", Request.Method.PATCH),
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Fields 'version' and 'cloud' are required\"}", 400);
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Fields 'version', 'cloud' and 'upgradeBudget' are required\"}", 400);
         assertResponse(new Request("http://localhost:8080/os/v1/", "{\"cloud\": \"cloud1\"}", Request.Method.PATCH),
-                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Fields 'version' and 'cloud' are required\"}", 400);
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Fields 'version', 'cloud' and 'upgradeBudget' are required\"}", 400);
 
         // Error: Invalid versions
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": null, \"cloud\": \"cloud1\"}", Request.Method.PATCH),
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": null, \"cloud\": \"cloud1\", \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version '0.0.0'\"}", 400);
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"foo\", \"cloud\": \"cloud1\"}", Request.Method.PATCH),
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"foo\", \"cloud\": \"cloud1\", \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Invalid version 'foo': For input string: \\\"foo\\\"\"}", 400);
 
         // Error: Invalid cloud
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.6\", \"cloud\": \"foo\"}", Request.Method.PATCH),
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.6\", \"cloud\": \"foo\", \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cloud 'foo' does not exist in this system\"}", 400);
 
         // Error: Downgrade OS
-        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.4.1\", \"cloud\": \"cloud1\"}", Request.Method.PATCH),
+        assertResponse(new Request("http://localhost:8080/os/v1/", "{\"version\": \"7.4.1\", \"cloud\": \"cloud1\", \"upgradeBudget\": \"PT0S\"}", Request.Method.PATCH),
                        "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot downgrade cloud 'cloud1' to version 7.4.1\"}", 400);
 
         // Request firmware checks in all zones.

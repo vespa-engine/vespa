@@ -5,7 +5,6 @@ import org.jetbrains.annotations.NotNull;
 
 import java.time.Duration;
 import java.util.Objects;
-import java.util.Optional;
 
 /**
  * An {@link OsVersion} and its upgrade budget.
@@ -22,11 +21,12 @@ public class OsVersionTarget implements Comparable<OsVersionTarget> {
     //          - CHANGING THE FORMAT OF A FIELD: Don't do it bro.
 
     private final OsVersion osVersion;
-    private final Optional<Duration> upgradeBudget;
+    private final Duration upgradeBudget;
 
-    public OsVersionTarget(OsVersion osVersion, Optional<Duration> upgradeBudget) {
+    public OsVersionTarget(OsVersion osVersion, Duration upgradeBudget) {
         this.osVersion = Objects.requireNonNull(osVersion);
-        this.upgradeBudget = requireNotNegative(upgradeBudget);
+        this.upgradeBudget = Objects.requireNonNull(upgradeBudget);
+        if (upgradeBudget.isNegative()) throw new IllegalArgumentException("upgradeBudget cannot be negative");
     }
 
     /** The OS version contained in this target */
@@ -35,7 +35,7 @@ public class OsVersionTarget implements Comparable<OsVersionTarget> {
     }
 
     /** The total time budget across all zones for applying target, if any */
-    public Optional<Duration> upgradeBudget() {
+    public Duration upgradeBudget() {
         return upgradeBudget;
     }
 
@@ -51,13 +51,6 @@ public class OsVersionTarget implements Comparable<OsVersionTarget> {
     @Override
     public int hashCode() {
         return Objects.hash(osVersion, upgradeBudget);
-    }
-
-    private static Optional<Duration> requireNotNegative(Optional<Duration> duration) {
-        Objects.requireNonNull(duration);
-        if (duration.isEmpty()) return duration;
-        if (duration.get().isNegative()) throw new IllegalArgumentException("Duration cannot be negative");
-        return duration;
     }
 
     @Override
