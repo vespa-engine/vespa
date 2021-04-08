@@ -4,6 +4,7 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.servlet.ServletRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
+import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.util.Utf8Appendable;
 
 import javax.servlet.http.HttpServletRequest;
@@ -13,8 +14,8 @@ import java.security.cert.X509Certificate;
 import java.util.Enumeration;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
-import static com.yahoo.jdisc.http.server.jetty.HttpServletRequestUtils.getConnection;
-import static com.yahoo.jdisc.http.server.jetty.HttpServletRequestUtils.getConnectorLocalPort;
+import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnection;
+import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnectorLocalPort;
 
 /**
  * @author Simon Thoresen Hult
@@ -30,7 +31,7 @@ class HttpRequestFactory {
                     HttpRequest.Method.valueOf(servletRequest.getMethod()),
                     HttpRequest.Version.fromString(servletRequest.getProtocol()),
                     new InetSocketAddress(servletRequest.getRemoteAddr(), servletRequest.getRemotePort()),
-                    getConnection(servletRequest).getCreatedTimeStamp());
+                    getConnection((Request) servletRequest).getCreatedTimeStamp());
             httpRequest.context().put(ServletRequest.JDISC_REQUEST_X509CERT, getCertChain(servletRequest));
             return httpRequest;
         } catch (Utf8Appendable.NotUtf8Exception e) {
@@ -43,7 +44,7 @@ class HttpRequestFactory {
         try {
             String scheme = servletRequest.getScheme();
             String host = servletRequest.getServerName();
-            int port = getConnectorLocalPort(servletRequest);
+            int port = getConnectorLocalPort((Request) servletRequest);
             String path = servletRequest.getRequestURI();
             String query = servletRequest.getQueryString();
 

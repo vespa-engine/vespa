@@ -1465,7 +1465,8 @@
     ],
     "fields": [
       "public static final enum com.yahoo.jdisc.http.HttpRequest$Version HTTP_1_0",
-      "public static final enum com.yahoo.jdisc.http.HttpRequest$Version HTTP_1_1"
+      "public static final enum com.yahoo.jdisc.http.HttpRequest$Version HTTP_1_1",
+      "public static final enum com.yahoo.jdisc.http.HttpRequest$Version HTTP_2_0"
     ]
   },
   "com.yahoo.jdisc.http.HttpRequest": {
