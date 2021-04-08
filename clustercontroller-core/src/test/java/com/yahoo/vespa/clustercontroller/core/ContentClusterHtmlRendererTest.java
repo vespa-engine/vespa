@@ -19,7 +19,7 @@ import static org.hamcrest.core.Is.is;
 import static org.junit.Assert.assertThat;
 import static org.mockito.Mockito.mock;
 
-public class ContentClusterHtmlRendrerTest {
+public class ContentClusterHtmlRendererTest {
     private final VdsClusterHtmlRenderer renderer = new VdsClusterHtmlRenderer();
     private final static int slobrokGeneration = 34;
     private final static String clusterName = "clustername";

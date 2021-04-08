@@ -63,7 +63,7 @@ public class RetiringOsUpgrader implements OsUpgrader {
         LOG.info("Retiring and deprovisioning " + host + ": On stale OS version " +
                  host.status().osVersion().current().map(Version::toFullString).orElse("<unset>") +
                  ", want " + target);
-        nodeRepository.nodes().deprovision(host, Agent.RetiringUpgrader, now);
+        nodeRepository.nodes().deprovision(host.hostname(), Agent.RetiringUpgrader, now);
         nodeRepository.nodes().upgradeOs(NodeListFilter.from(host), Optional.of(target));
         nodeRepository.osVersions().writeChange((change) -> change.withRetirementAt(now, host.type()));
     }

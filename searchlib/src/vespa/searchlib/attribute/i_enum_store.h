@@ -79,6 +79,7 @@ public:
     }
 
     virtual std::unique_ptr<Enumerator> make_enumerator() const = 0;
+    virtual std::unique_ptr<vespalib::datastore::EntryComparator> allocate_comparator() const = 0;
 };
 
 }

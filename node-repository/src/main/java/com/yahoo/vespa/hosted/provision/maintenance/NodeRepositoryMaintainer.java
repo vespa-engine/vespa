@@ -44,7 +44,7 @@ public abstract class NodeRepositoryMaintainer extends Maintainer {
         return nodeRepository().nodes()
                                .list(Node.State.active)
                                .nodeType(NodeType.tenant)
-                               .matching(node -> ! node.allocation().get().owner().instance().isTester())
+                               .not().tester()
                                .groupingBy(node -> node.allocation().get().owner());
     }
 

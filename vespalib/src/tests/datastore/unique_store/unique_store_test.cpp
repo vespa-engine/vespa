@@ -133,7 +133,7 @@ struct TestBase : public ::testing::Test {
     }
     size_t entrySize() const { return sizeof(ValueType); }
     auto getBuilder(uint32_t uniqueValuesHint) { return store.getBuilder(uniqueValuesHint); }
-    auto getEnumerator() { return store.getEnumerator(); }
+    auto getEnumerator(bool sort_unique_values) { return store.getEnumerator(sort_unique_values); }
     size_t get_reserved(EntryRef ref) {
         return store.bufferState(ref).getTypeHandler()->getReservedElements(getBufferId(ref));
     }
@@ -404,7 +404,7 @@ TYPED_TEST(TestBase, store_can_be_enumerated)
     this->remove(this->add(this->values()[2]));
     this->trimHoldLists();
 
-    auto enumerator = this->getEnumerator();
+    auto enumerator = this->getEnumerator(true);
     std::vector<uint32_t> refs;
     enumerator.foreach_key([&](EntryRef ref) { refs.push_back(ref.ref()); });
     std::vector<uint32_t> expRefs;
@@ -445,7 +445,7 @@ TEST_F(DoubleTest, nan_is_handled)
     EXPECT_FALSE(std::signbit(store.get(refs[2])));
     EXPECT_TRUE(std::isinf(store.get(refs[3])));
     EXPECT_TRUE(std::signbit(store.get(refs[3])));
-    auto enumerator = getEnumerator();
+    auto enumerator = getEnumerator(true);
     enumerator.enumerateValues();
     std::vector<uint32_t> enumerated;
     for (auto &ref : refs) {

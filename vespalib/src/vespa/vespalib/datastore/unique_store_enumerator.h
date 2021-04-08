@@ -31,7 +31,7 @@ private:
 
     void allocate_enum_values();
 public:
-    UniqueStoreEnumerator(const IUniqueStoreDictionary &dict, const DataStoreBase &store);
+    UniqueStoreEnumerator(const IUniqueStoreDictionary &dict, const DataStoreBase &store, bool sort_unique_values);
     ~UniqueStoreEnumerator();
     void enumerateValue(EntryRef ref);
     void enumerateValues();

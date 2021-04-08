@@ -94,7 +94,7 @@ FlagAttributeT<B>::onLoadEnumerated(ReaderBase &attrReader)
     vespalib::ConstArrayRef<TT> map(reinterpret_cast<const TT *>(udatBuffer->buffer()),
                                     udatBuffer->size() / sizeof(TT));
     SaveBits<FlagAttributeT<B>, TT> saver(map, *this);
-    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, map, saver);
+    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, map, vespalib::ConstArrayRef<uint32_t>(), saver);
     this->checkSetMaxValueCount(maxvc);
     
     return true;

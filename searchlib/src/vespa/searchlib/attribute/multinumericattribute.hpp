@@ -120,7 +120,7 @@ MultiValueNumericAttribute<B, M>::onLoadEnumerated(ReaderBase & attrReader)
     auto udatBuffer = attribute::LoadUtils::loadUDAT(*this);
     assert((udatBuffer->size() % sizeof(T)) == 0);
     vespalib::ConstArrayRef<T> map(reinterpret_cast<const T *>(udatBuffer->buffer()), udatBuffer->size() / sizeof(T));
-    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, map, attribute::NoSaveLoadedEnum());
+    uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader, map, vespalib::ConstArrayRef<uint32_t>(), attribute::NoSaveLoadedEnum());
     this->checkSetMaxValueCount(maxvc);
     
     return true;

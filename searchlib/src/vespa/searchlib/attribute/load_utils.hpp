@@ -12,6 +12,7 @@ uint32_t
 loadFromEnumeratedMultiValue(MvMapping & mapping,
                              ReaderBase & attrReader,
                              vespalib::ConstArrayRef<typename MvMapping::MultiValueType::ValueType> enumValueToValueMap,
+                             vespalib::ConstArrayRef<uint32_t> enum_value_remapping,
                              Saver saver)
 {
     mapping.prepareLoadFromMultiValue();
@@ -30,6 +31,9 @@ loadFromEnumeratedMultiValue(MvMapping & mapping,
         for (uint32_t vci = 0; vci < valueCount; ++vci) {
             uint32_t enumValue = attrReader.getNextEnum();
             assert(enumValue < enumValueToValueMap.size());
+            if (!enum_value_remapping.empty()) {
+                enumValue = enum_value_remapping[enumValue];
+            }
             int32_t weight = MultiValueType::_hasWeight ? attrReader.getNextWeight() : 1;
             indices.emplace_back(enumValueToValueMap[enumValue], weight);
             saver.save(enumValue, doc, weight);
@@ -51,6 +55,7 @@ loadFromEnumeratedSingleValue(Vector &vector,
                               vespalib::GenerationHolder &genHolder,
                               ReaderBase &attrReader,
                               vespalib::ConstArrayRef<typename Vector::ValueType> enumValueToValueMap,
+                              vespalib::ConstArrayRef<uint32_t> enum_value_remapping,
                               Saver saver)
 {
     uint32_t numDocs = attrReader.getEnumCount();
@@ -60,6 +65,9 @@ loadFromEnumeratedSingleValue(Vector &vector,
     for (uint32_t doc = 0; doc < numDocs; ++doc) {
         uint32_t enumValue = attrReader.getNextEnum();
         assert(enumValue < enumValueToValueMap.size());
+        if (!enum_value_remapping.empty()) {
+            enumValue = enum_value_remapping[enumValue];
+        }
         vector.push_back(enumValueToValueMap[enumValue]);
         saver.save(enumValue, doc, 1);
     }

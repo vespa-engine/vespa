@@ -208,7 +208,9 @@ SingleValueEnumAttribute<B>::load_enumerated_data(ReaderBase& attrReader,
                                              getGenerationHolder(),
                                              attrReader,
                                              loader.get_enum_indexes(),
+                                             loader.get_enum_value_remapping(),
                                              attribute::SaveLoadedEnum(loader.get_loaded_enums()));
+    loader.free_enum_value_remapping();
     loader.sort_loaded_enums();
 }
     
@@ -222,7 +224,9 @@ SingleValueEnumAttribute<B>::load_enumerated_data(ReaderBase& attrReader,
                                              getGenerationHolder(),
                                              attrReader,
                                              loader.get_enum_indexes(),
+                                             loader.get_enum_value_remapping(),
                                              attribute::SaveEnumHist(loader.get_enums_histogram()));
+    loader.free_enum_value_remapping();
     loader.set_ref_counts();
     loader.build_dictionary();
     loader.free_unused_values();

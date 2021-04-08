@@ -90,6 +90,7 @@ SingleValueNumericEnumAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
     if (this->hasPostings()) {
         auto loader = this->getEnumStore().make_enumerated_postings_loader();
         loader.load_unique_values(udatBuffer->buffer(), udatBuffer->size());
+        loader.build_enum_value_remapping();
         this->load_enumerated_data(attrReader, loader, numValues);
         if (numDocs > 0) {
             this->onAddDoc(numDocs - 1);
@@ -98,6 +99,7 @@ SingleValueNumericEnumAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
     } else {
         auto loader = this->getEnumStore().make_enumerated_loader();
         loader.load_unique_values(udatBuffer->buffer(), udatBuffer->size());
+        loader.build_enum_value_remapping();
         this->load_enumerated_data(attrReader, loader);
     }
     return true;
