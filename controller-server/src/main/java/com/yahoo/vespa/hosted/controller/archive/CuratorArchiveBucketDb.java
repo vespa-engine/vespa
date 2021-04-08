@@ -31,8 +31,9 @@ public class CuratorArchiveBucketDb implements ArchiveBucketDb {
 
     /**
      * Due to policy limits, we can't put data for more than this many tenants in a bucket.
-     * Policy size limit is 20kb, with approx. 500 bytes of policy required per tenant = 40 tenants.
-     * We set the maximum a bit lower to have a solid margin of error.
+     * Policy size limit is 20kb, about 550 bytes for non-tenant related policies. Each tenant
+     * needs about 500 + len(role_arn) bytes, we limit role_arn to 100 characters, so we can
+     * fit about (20k - 550) / 600 ~ 32 tenants per bucket.
      */
     private final static int TENANTS_PER_BUCKET = 30;
 
