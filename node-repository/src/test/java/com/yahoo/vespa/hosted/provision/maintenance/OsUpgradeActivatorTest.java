@@ -62,7 +62,7 @@ public class OsUpgradeActivatorTest {
 
         // New OS version is activated as there is no ongoing Vespa upgrade
         osUpgradeActivator.maintain();
-        assertTrue("OS version " + osVersion0 + " is active", isOsVersionActive(NodeType.confighost, NodeType.host));
+        assertTrue("OS version " + osVersion0 + " is active", osUpgradeActive(NodeType.confighost, NodeType.host));
 
         // Tenant hosts start upgrading to next Vespa version
         var version1 = Version.fromString("7.1");
@@ -72,8 +72,8 @@ public class OsUpgradeActivatorTest {
 
         // Activator pauses upgrade for tenant hosts only
         osUpgradeActivator.maintain();
-        assertTrue("OS version " + osVersion0 + " is active", isOsVersionActive(NodeType.confighost));
-        assertFalse("OS version " + osVersion0 + " is inactive", isOsVersionActive(NodeType.host));
+        assertTrue("OS version " + osVersion0 + " is active", osUpgradeActive(NodeType.confighost));
+        assertFalse("OS version " + osVersion0 + " is inactive", osUpgradeActive(NodeType.host));
 
         // One tenant host fails and is no longer considered
         tester.nodeRepository().nodes().fail(tenantHostNodes.get(0).hostname(), Agent.system, this.getClass().getSimpleName());
@@ -85,15 +85,11 @@ public class OsUpgradeActivatorTest {
 
         // Activator resumes OS upgrade of tenant hosts
         osUpgradeActivator.run();
-        assertTrue("OS version " + osVersion0 + " is active", isOsVersionActive(NodeType.confighost, NodeType.host));
+        assertTrue("OS version " + osVersion0 + " is active", osUpgradeActive(NodeType.confighost, NodeType.host));
     }
 
-    private boolean isOsVersionActive(NodeType... types) {
-        var active = true;
-        for (var type : types) {
-            active &= tester.nodeRepository().nodes().list().nodeType(type).changingOsVersion().size() > 0;
-        }
-        return active;
+    private boolean osUpgradeActive(NodeType first, NodeType... rest) {
+        return tester.nodeRepository().nodes().list().nodeType(first, rest).changingOsVersion().size() > 0;
     }
 
     private void completeUpgradeOf(List<Node> nodes) {
@@ -101,11 +97,7 @@ public class OsUpgradeActivatorTest {
     }
 
     private Stream<Node> streamUpdatedNodes(List<Node> nodes) {
-        Stream<Node> stream = Stream.empty();
-        for (var node : nodes) {
-            stream = Stream.concat(stream, tester.nodeRepository().nodes().node(node.hostname()).stream());
-        }
-        return stream;
+        return tester.nodeRepository().nodes().list().stream().filter(nodes::contains);
     }
 
     private Version minCurrentVersion(List<Node> nodes) {
