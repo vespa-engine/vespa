@@ -298,18 +298,10 @@ public class Nodes {
     }
 
     public Node deallocate(Node node, Agent agent, String reason, NestedTransaction transaction) {
-        if (node.state() != Node.State.parked && agent != Agent.operator
-            && (node.status().wantToDeprovision() || retiredByOperator(node)))
+        if (parkOnDeallocationOf(node, agent))
             return park(node.hostname(), false, agent, reason, transaction);
         else
             return db.writeTo(Node.State.dirty, List.of(node), agent, Optional.of(reason), transaction).get(0);
-    }
-
-    private static boolean retiredByOperator(Node node) {
-        return node.status().wantToRetire() && node.history().event(History.Event.Type.wantToRetire)
-                                                   .map(History.Event::agent)
-                                                   .map(agent -> agent == Agent.operator)
-                                                   .orElse(false);
     }
 
     /**
@@ -770,6 +762,20 @@ public class Nodes {
 
     private void illegal(String message) {
         throw new IllegalArgumentException(message);
+    }
+
+    /** Returns whether node should be parked when deallocated by given agent */
+    private static boolean parkOnDeallocationOf(Node node, Agent agent) {
+        if (node.state() == Node.State.parked) return false;
+        if (agent == Agent.operator) return false;
+        boolean retirementRequestedByOperator = node.status().wantToRetire() &&
+                                                node.history().event(History.Event.Type.wantToRetire)
+                                                    .map(History.Event::agent)
+                                                    .map(a -> a == Agent.operator)
+                                                    .orElse(false);
+        return node.status().wantToDeprovision() ||
+               node.status().wantToRebuild() ||
+               retirementRequestedByOperator;
     }
 
     /** The different ways a host can be decomissioned */
