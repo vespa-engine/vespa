@@ -37,6 +37,8 @@ public:
     virtual std::unique_ptr<IUniqueStoreDictionaryReadSnapshot> get_read_snapshot() const = 0;
     virtual bool get_has_btree_dictionary() const = 0;
     virtual bool get_has_hash_dictionary() const = 0;
+    virtual vespalib::MemoryUsage get_btree_memory_usage() const = 0;
+    virtual vespalib::MemoryUsage get_hash_memory_usage() const = 0;
 };
 
 }

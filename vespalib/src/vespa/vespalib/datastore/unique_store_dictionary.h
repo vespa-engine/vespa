@@ -88,6 +88,8 @@ public:
     std::unique_ptr<IUniqueStoreDictionaryReadSnapshot> get_read_snapshot() const override;
     bool get_has_btree_dictionary() const override;
     bool get_has_hash_dictionary() const override;
+    vespalib::MemoryUsage get_btree_memory_usage() const override;
+    vespalib::MemoryUsage get_hash_memory_usage() const override;
 };
 
 }
