@@ -61,13 +61,7 @@ EnumStoreT<EntryT>::load_unique_value(const void* src, size_t available, Index& 
         return -1;
     }
     const auto* value = static_cast<const EntryType*>(src);
-    Index prev_idx = idx;
     idx = _store.get_allocator().allocate(*value);
-
-    if (prev_idx.valid()) {
-        auto cmp = make_comparator(*value);
-        assert(cmp.less(prev_idx, Index()));
-    }
     return sizeof(EntryType);
 }
 
@@ -261,7 +255,14 @@ template <typename EntryT>
 std::unique_ptr<IEnumStore::Enumerator>
 EnumStoreT<EntryT>::make_enumerator() const
 {
-    return std::make_unique<Enumerator>(*_dict, _store.get_data_store());
+    return std::make_unique<Enumerator>(*_dict, _store.get_data_store(), false);
+}
+
+template <typename EntryT>
+std::unique_ptr<vespalib::datastore::EntryComparator>
+EnumStoreT<EntryT>::allocate_comparator() const
+{
+    return std::make_unique<ComparatorType>(_store.get_data_store());
 }
 
 }

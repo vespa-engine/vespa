@@ -308,6 +308,7 @@ StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
     if (hasPostings()) {
         auto loader = this->getEnumStoreBase()->make_enumerated_postings_loader();
         loader.load_unique_values(udatBuffer->buffer(), udatBuffer->size());
+        loader.build_enum_value_remapping();
         load_enumerated_data(attrReader, loader, numValues);
         if (numDocs > 0) {
             onAddDoc(numDocs - 1);
@@ -316,6 +317,7 @@ StringAttribute::onLoadEnumerated(ReaderBase &attrReader)
     } else {
         auto loader = this->getEnumStoreBase()->make_enumerated_loader();
         loader.load_unique_values(udatBuffer->buffer(), udatBuffer->size());
+        loader.build_enum_value_remapping();
         load_enumerated_data(attrReader, loader);
     }
     return true;

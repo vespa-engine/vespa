@@ -9,9 +9,12 @@ namespace search::enumstore {
 
 EnumeratedLoaderBase::EnumeratedLoaderBase(IEnumStore& store)
     : _store(store),
-      _indexes()
+      _indexes(),
+      _enum_value_remapping()
 {
 }
+
+EnumeratedLoaderBase::~EnumeratedLoaderBase() = default;
 
 void
 EnumeratedLoaderBase::load_unique_values(const void* src, size_t available)
@@ -30,6 +33,41 @@ void
 EnumeratedLoaderBase::free_unused_values()
 {
     _store.free_unused_values();
+}
+
+void
+EnumeratedLoaderBase::build_enum_value_remapping()
+{
+    if (!_store.get_dictionary().get_has_btree_dictionary() || _indexes.size() < 2u) {
+        return; // No need for unique values to be sorted
+    }
+    auto comp_up = _store.allocate_comparator();
+    auto& comp = *comp_up;
+    if (std::is_sorted(_indexes.begin(), _indexes.end(), [&comp](Index lhs, Index rhs) { return !comp.less(rhs, lhs); })) {
+        return; // Unique values are already sorted
+    }
+    vespalib::Array<std::pair<Index, uint32_t>> sortdata;
+    uint32_t enum_value = 0;
+    sortdata.reserve(_indexes.size());
+    for (auto index : _indexes) {
+        sortdata.push_back(std::make_pair(index, enum_value));
+        ++enum_value;
+    }
+    std::sort(sortdata.begin(), sortdata.end(), [&comp](auto lhs, auto rhs) { return comp.less(lhs.first, rhs.first); });
+    _enum_value_remapping.resize(_indexes.size());
+    enum_value = 0;
+    for (auto &entry : sortdata) {
+        _indexes[enum_value] = entry.first;
+        _enum_value_remapping[entry.second] = enum_value;
+        ++enum_value;
+    }
+    assert(std::is_sorted(_indexes.begin(), _indexes.end(), [&comp](Index lhs, Index rhs) { return !comp.less(rhs, lhs); }));
+}
+
+void
+EnumeratedLoaderBase::free_enum_value_remapping()
+{
+    EnumVector().swap(_enum_value_remapping);
 }
 
 EnumeratedLoader::EnumeratedLoader(IEnumStore& store)

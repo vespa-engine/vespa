@@ -76,7 +76,7 @@ public:
     uint32_t getNumUniques() const;
 
     Builder getBuilder(uint32_t uniqueValuesHint);
-    Enumerator getEnumerator() const;
+    Enumerator getEnumerator(bool sort_unique_values) const;
 
     // Should only be used for unit testing
     const BufferState &bufferState(EntryRef ref) const;
