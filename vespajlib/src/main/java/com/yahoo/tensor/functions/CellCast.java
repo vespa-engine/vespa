@@ -64,10 +64,14 @@ public class CellCast<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAM
         TensorType.Value fromValueType = tensor.type().valueType();
         for (Iterator<Tensor.Cell> i = tensor.cellIterator(); i.hasNext(); ) {
             Tensor.Cell cell = i.next();
-            if (fromValueType == TensorType.Value.FLOAT) {
-                builder.cell(cell.getKey(), cell.getFloatValue());
-            } else if (fromValueType == TensorType.Value.DOUBLE) {
+            if (fromValueType == TensorType.Value.DOUBLE) {
                 builder.cell(cell.getKey(), cell.getDoubleValue());
+            } else if (fromValueType == TensorType.Value.FLOAT) {
+                builder.cell(cell.getKey(), cell.getFloatValue());
+            } else if (fromValueType == TensorType.Value.BFLOAT16) {
+                builder.cell(cell.getKey(), cell.getFloatValue());
+            } else if (fromValueType == TensorType.Value.INT8) {
+                builder.cell(cell.getKey(), cell.getFloatValue());
             } else {
                 builder.cell(cell.getKey(), cell.getValue());
             }
