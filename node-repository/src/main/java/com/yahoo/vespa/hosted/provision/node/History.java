@@ -152,6 +152,8 @@ public class History {
             wantToRetire(false),
             // The node was scheduled for retirement (soft)
             preferToRetire(false),
+            // This node was scheduled for failing
+            wantToFail,
             // The active node was retired
             retired,
             // The active node went down according to the service monitor

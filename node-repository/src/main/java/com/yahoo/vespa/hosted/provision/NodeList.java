@@ -91,6 +91,11 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
                                 !node.status().vespaVersion().get().equals(node.allocation().get().membership().cluster().vespaVersion()));
     }
 
+    /** Returns the subset of nodes with want to fail status matching the given value */
+    public NodeList wantToFail(boolean wantToFail) {
+        return matching(node -> node.status().wantToFail() == wantToFail);
+    }
+
     /** Returns the subset of nodes that are currently changing their OS version to given version */
     public NodeList changingOsVersionTo(Version version) {
         return matching(node -> node.status().osVersion().changingTo(version));

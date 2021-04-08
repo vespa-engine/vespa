@@ -42,7 +42,6 @@ import static org.mockito.Mockito.when;
  */
 public class NodeFailerTest {
 
-
     private static final Report badTotalMemorySizeReport = Report.basicReport(
             "badTotalMemorySize", HARD_FAIL, Instant.now(), "too low");
 
@@ -308,6 +307,10 @@ public class NodeFailerTest {
                    tester.highestIndex(tester.nodeRepository.nodes().list(Node.State.active).owner(NodeFailTester.app1)).allocation().get().membership().index()
                    >
                    lastNode.allocation().get().membership().index());
+
+        assertEquals("Node failing does not cause recording of scaling events",
+                     1,
+                     tester.nodeRepository.applications().get(NodeFailTester.app1).get().cluster(NodeFailTester.testCluster).get().scalingEvents().size());
     }
 
     @Test

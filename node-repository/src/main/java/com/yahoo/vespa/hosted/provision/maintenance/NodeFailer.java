@@ -277,7 +277,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             }
 
             if (! allTenantNodesFailedOutSuccessfully) return false;
-            node = nodeRepository().nodes().fail(node.hostname(), Agent.NodeFailer, reason);
+            wantToFail(node, true, reason, lock);
             try {
                 deployment.get().activate();
                 return true;
@@ -287,15 +287,18 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                                     Exceptions.toMessageString(e));
                 return true;
             } catch (RuntimeException e) {
-                // The expected reason for deployment to fail here is that there is no capacity available to redeploy.
-                // In that case we should leave the node in the active state to avoid failing additional nodes.
-                nodeRepository().nodes().reactivate(node.hostname(), Agent.NodeFailer,
-                                                    "Failed to redeploy after being failed by NodeFailer");
-                log.log(Level.WARNING, "Attempted to fail " + node + " for " + node.allocation().get().owner() +
-                                       ", but redeploying without the node failed", e);
+                // Reset want to fail: We'll retry failing unless it heals in the meantime
+                nodeRepository().nodes().node(node.hostname())
+                                        .ifPresent(n -> wantToFail(n, false, "Could not fail", lock));
+                log.log(Level.WARNING, "Could not fail " + node + " for " + node.allocation().get().owner() +
+                                       " for " + reason + ": " + Exceptions.toMessageString(e));
                 return false;
             }
         }
+    }
+
+    private void wantToFail(Node node, boolean wantToFail, String reason, Mutex lock) {
+        nodeRepository().nodes().write(node.withWantToFail(wantToFail, Agent.NodeFailer, reason, clock().instant()), lock);
     }
 
     /** Returns true if node failing should be throttled */
