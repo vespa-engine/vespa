@@ -225,7 +225,7 @@ public abstract class IndexedTensor implements Tensor {
                 case DOUBLE:   b.append(tensor.get(index)); break;
                 case FLOAT:    b.append(tensor.getFloat(index)); break;
                 case BFLOAT16: b.append(tensor.getFloat(index)); break;
-                case INT8:     b.append(tensor.getFloat(index)); break;
+                case INT8:     b.append((byte)tensor.getFloat(index)); break;
                 default:
                     throw new IllegalStateException("Unexpected value type " + tensor.type().valueType());
             }
@@ -300,7 +300,7 @@ public abstract class IndexedTensor implements Tensor {
                 case BFLOAT16: return new IndexedFloatTensor.BoundFloatBuilder(type, sizes);
                 case INT8: return new IndexedFloatTensor.BoundFloatBuilder(type, sizes);
                 default:
-                    return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes);
+                    throw new IllegalStateException("Unexpected value type " + type.valueType());
             }
         }
 
@@ -321,7 +321,7 @@ public abstract class IndexedTensor implements Tensor {
                 case BFLOAT16: return new IndexedFloatTensor.BoundFloatBuilder(type, sizes, values);
                 case INT8: return new IndexedFloatTensor.BoundFloatBuilder(type, sizes, values);
                 default:
-                    return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes).fill(values); // Default
+                    throw new IllegalStateException("Unexpected value type " + type.valueType());
             }
         }
 
@@ -342,8 +342,7 @@ public abstract class IndexedTensor implements Tensor {
                 case BFLOAT16: return new IndexedFloatTensor.BoundFloatBuilder(type, sizes).fill(values);
                 case INT8: return new IndexedFloatTensor.BoundFloatBuilder(type, sizes).fill(values);
                 default:
-                    return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes, values); // Default
-
+                    throw new IllegalStateException("Unexpected value type " + type.valueType());
             }
         }
 
