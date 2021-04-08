@@ -23,7 +23,7 @@ public:
     JoinWithNumberFunction(const tensor_function::Join &original_join, bool number_on_left);
     ~JoinWithNumberFunction();
     Primary primary() const { return _primary; }
-    bool inplace() const;
+    bool primary_is_mutable() const;
     bool result_is_mutable() const override { return true; }
 
     InterpretedFunction::Instruction compile_self(const ValueBuilderFactory &factory, Stash &stash) const override;
