@@ -54,6 +54,7 @@ class EnumeratedPostingsLoader : public EnumeratedLoaderBase {
 private:
     attribute::LoadedEnumAttributeVector _loaded_enums;
     vespalib::Array<uint32_t>            _posting_indexes;
+    bool                                 _has_btree_dictionary;
 
 public:
     EnumeratedPostingsLoader(IEnumStore& store);
