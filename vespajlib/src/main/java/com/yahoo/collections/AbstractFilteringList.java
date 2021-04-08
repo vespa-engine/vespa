@@ -68,8 +68,14 @@ public abstract class AbstractFilteringList<Type, ListType extends AbstractFilte
         return matching(new HashSet<>(others.asList())::contains);
     }
 
-    /** Returns the union of the two lists. */
+    /** @deprecated use and(others) */
+    @Deprecated // TODO: Remove on Vespa 8
     public ListType concat(ListType others) {
+        return and(others);
+    }
+
+    /** Returns the union of the two lists. */
+    public ListType and(ListType others) {
         return constructor.apply(Stream.concat(items.stream(), others.asList().stream()).collect(toUnmodifiableList()), false);
     }
 

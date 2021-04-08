@@ -73,8 +73,7 @@ class Activator {
                                                                    .matching(node -> hostnames.contains(node.hostname())));
         NodeList oldActive = applicationNodes.state(Node.State.active); // All nodes active now
         NodeList continuedActive = oldActive.matching(node -> hostnames.contains(node.hostname()));
-        List<Node> newActive = updateFrom(hosts, continuedActive, activationTime); // All nodes that will be active when this is committed
-        newActive.addAll(reserved.asList());
+        NodeList newActive = withHostInfo(continuedActive, hosts, activationTime).and(reserved); // All nodes that will be active when this is committed
         if ( ! containsAll(hostnames, newActive))
             throw new IllegalArgumentException("Activation of " + application + " failed. " +
                                                "Could not find all requested hosts." +
@@ -89,11 +88,11 @@ class Activator {
         NodeList activeToRemove = oldActive.matching(node ->  ! hostnames.contains(node.hostname()));
         activeToRemove = NodeList.copyOf(activeToRemove.mapToList(Node::unretire)); // only active nodes can be retired. TODO: Move this line to deactivate
         deactivate(activeToRemove, transaction); // TODO: Pass activation time in this call and next line
-        nodeRepository.nodes().activate(newActive, transaction.nested()); // activate also continued active to update node state
+        nodeRepository.nodes().activate(newActive.asList(), transaction.nested()); // activate also continued active to update node state
 
         rememberResourceChange(transaction, generation, activationTime,
                                oldActive.not().retired(),
-                               NodeList.copyOf(newActive).not().retired());
+                               newActive.not().retired());
         unreserveParentsOf(reserved);
     }
 
@@ -200,7 +199,7 @@ class Activator {
         return nodes.stream().map(Node::hostname).collect(Collectors.toSet());
     }
 
-    private boolean containsAll(Set<String> hosts, List<Node> nodes) {
+    private boolean containsAll(Set<String> hosts, NodeList nodes) {
         Set<String> notFoundHosts = new HashSet<>(hosts);
         for (Node node : nodes)
             notFoundHosts.remove(node.hostname());
@@ -208,7 +207,7 @@ class Activator {
     }
 
     /** Returns the input nodes with the changes resulting from applying the settings in hosts to the given list of nodes. */
-    private List<Node> updateFrom(Collection<HostSpec> hosts, NodeList nodes, Instant at) {
+    private NodeList withHostInfo(NodeList nodes, Collection<HostSpec> hosts, Instant at) {
         List<Node> updated = new ArrayList<>();
         for (Node node : nodes) {
             HostSpec hostSpec = getHost(node.hostname(), hosts);
@@ -224,7 +223,7 @@ class Activator {
             node = node.with(allocation);
             updated.add(node);
         }
-        return updated;
+        return NodeList.copyOf(updated);
     }
 
     /**
