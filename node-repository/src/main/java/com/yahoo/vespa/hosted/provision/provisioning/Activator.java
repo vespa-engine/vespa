@@ -88,13 +88,19 @@ class Activator {
 
         List<Node> activeToRemove = removeHostsFromList(hostnames, oldActive);
         activeToRemove = activeToRemove.stream().map(Node::unretire).collect(Collectors.toList()); // only active nodes can be retired. TODO: Move this line to deactivate
-        nodeRepository.nodes().deactivate(activeToRemove, transaction); // TODO: Pass activation time in this call and next line
+        deactivate(activeToRemove, transaction); // TODO: Pass activation time in this call and next line
         nodeRepository.nodes().activate(newActive, transaction.nested()); // activate also continued active to update node state
 
         rememberResourceChange(transaction, generation, activationTime,
                                NodeList.copyOf(oldActive).not().retired(),
                                NodeList.copyOf(newActive).not().retired());
         unreserveParentsOf(reservedToActivate);
+    }
+
+    private void deactivate(List<Node> toDeactivateList, ApplicationTransaction transaction) {
+        NodeList toDeactivate = NodeList.copyOf(toDeactivateList);
+        nodeRepository.nodes().deactivate(toDeactivate.not().failing().asList(), transaction);
+        nodeRepository.nodes().fail(toDeactivate.failing().asList(), transaction);
     }
 
     private void rememberResourceChange(ApplicationTransaction transaction, long generation, Instant at,

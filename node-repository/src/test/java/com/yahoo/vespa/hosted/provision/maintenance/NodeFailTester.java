@@ -52,6 +52,7 @@ public class NodeFailTester {
     public static final ApplicationId tenantHostApp = ApplicationId.from("hosted-vespa", "tenant-host", "default");
     public static final ApplicationId app1 = ApplicationId.from("foo1", "bar", "fuz");
     public static final ApplicationId app2 = ApplicationId.from("foo2", "bar", "fuz");
+    public static final ClusterSpec.Id testCluster = ClusterSpec.Id.from("test");
     public static final NodeFlavors hostFlavors = FlavorConfigBuilder.createDummies("default", "docker");
     private static final Duration downtimeLimitOneHour = Duration.ofMinutes(60);
 
@@ -96,8 +97,8 @@ public class NodeFailTester {
         tester.createHostNodes(3);
 
         // Create applications
-        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
-        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
+        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, testCluster).vespaVersion("6.42").build();
+        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, testCluster).vespaVersion("6.42").build();
         Capacity capacity1 = Capacity.from(new ClusterResources(5, 1, nodeResources), false, true);
         Capacity capacity2 = Capacity.from(new ClusterResources(7, 1, nodeResources), false, true);
 
@@ -125,8 +126,8 @@ public class NodeFailTester {
 
         // Create applications
         ClusterSpec clusterNodeAdminApp = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("node-admin")).vespaVersion("6.42").build();
-        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.75.0").build();
-        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.75.0").build();
+        ClusterSpec clusterApp1 = ClusterSpec.request(ClusterSpec.Type.container, testCluster).vespaVersion("6.75.0").build();
+        ClusterSpec clusterApp2 = ClusterSpec.request(ClusterSpec.Type.content, testCluster).vespaVersion("6.75.0").build();
         Capacity allHosts = Capacity.fromRequiredNodeType(NodeType.host);
         Capacity capacity1 = Capacity.from(new ClusterResources(3, 1, new NodeResources(1, 4, 100, 0.3)), false, true);
         Capacity capacity2 = Capacity.from(new ClusterResources(5, 1, new NodeResources(1, 4, 100, 0.3)), false, true);
@@ -150,7 +151,7 @@ public class NodeFailTester {
         NodeFailTester tester = new NodeFailTester();
 
         // Create applications
-        ClusterSpec clusterApp = ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
+        ClusterSpec clusterApp = ClusterSpec.request(ClusterSpec.Type.container, testCluster).vespaVersion("6.42").build();
         Map<ApplicationId, MockDeployer.ApplicationContext> apps = Map.of(app1, new MockDeployer.ApplicationContext(app1, clusterApp, capacity));
         tester.initializeMaintainers(apps);
         return tester;

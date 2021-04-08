@@ -252,6 +252,14 @@ public class Nodes {
 
     }
 
+    /**
+     * Fails these nodes in a transaction and returns the nodes in the new state which will hold if the
+     * transaction commits.
+     */
+    public List<Node> fail(List<Node> nodes, ApplicationTransaction transaction) {
+        return db.writeTo(Node.State.failed, nodes, Agent.application, Optional.of("Failed by application"), transaction.nested());
+    }
+
     /** Move nodes to the dirty state */
     public List<Node> deallocate(List<Node> nodes, Agent agent, String reason) {
         return performOn(NodeListFilter.from(nodes), (node, lock) -> deallocate(node, agent, reason));

@@ -57,7 +57,6 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
     /** This node can be resized to the new NodeResources */
     final boolean isResizable;
 
-
     private NodeCandidate(NodeResources freeParentCapacity, Optional<Node> parent, boolean violatesSpares, boolean exclusiveSwitch, boolean isSurplus, boolean isNew, boolean isResizeable) {
         if (isResizeable && isNew)
             throw new IllegalArgumentException("A new node cannot be resizable");
@@ -78,6 +77,8 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
     public abstract boolean wantToRetire();
 
     public abstract boolean preferToRetire();
+
+    public abstract boolean wantToFail();
 
     public abstract Flavor flavor();
 
@@ -301,6 +302,9 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
         public boolean preferToRetire() { return node.status().preferToRetire(); }
 
         @Override
+        public boolean wantToFail() { return node.status().wantToFail(); }
+
+        @Override
         public Flavor flavor() { return node.flavor(); }
 
         @Override
@@ -385,6 +389,9 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
 
         @Override
         public boolean preferToRetire() { return false; }
+
+        @Override
+        public boolean wantToFail() { return false; }
 
         @Override
         public Flavor flavor() { return new Flavor(resources); }
@@ -481,6 +488,9 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
 
         @Override
         public boolean preferToRetire() { return false; }
+
+        @Override
+        public boolean wantToFail() { return false; }
 
         @Override
         public Flavor flavor() { return new Flavor(resources); }

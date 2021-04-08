@@ -194,6 +194,17 @@ public final class Node implements Nodelike {
     }
 
     /**
+     * Returns a copy of this where wantToFail is set to true and history is updated to reflect this.
+     */
+    public Node withWantToFail(boolean wantToFail, Agent agent, String reason, Instant at) {
+        Node node = this.with(status.withWantToFail(wantToFail));
+        if (wantToFail)
+            node = node.with(history.with(new History.Event(History.Event.Type.wantToFail, agent, at)));
+        return node;
+
+    }
+
+    /**
      * Returns a copy of this node with wantToRetire and wantToDeprovision set to the given values and updated history.
      *
      * If both given wantToRetire and wantToDeprovision are equal to the current values, the method is no-op.
