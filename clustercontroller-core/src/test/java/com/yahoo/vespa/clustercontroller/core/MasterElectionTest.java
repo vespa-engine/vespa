@@ -42,7 +42,7 @@ public class MasterElectionTest extends FleetControllerTest {
     public TestRule cleanupZookeeperLogsOnSuccess = new CleanupZookeeperLogsOnSuccess();
 
     @Rule
-    public Timeout globalTimeout= Timeout.seconds(120);
+    public Timeout globalTimeout = Timeout.seconds(120);
 
     private static int defaultZkSessionTimeoutInMillis() { return 30_000; }
 
