@@ -50,6 +50,29 @@ public class TensorTestCase {
         assertEquals(Tensor.from("tensor<float>(x[1]):{{x:0}:5}").getClass(), IndexedFloatTensor.class);
         assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor<float>(x[1])")).cell(5.0, 0).build().getClass(),
                      IndexedFloatTensor.class);
+
+        assertEquals(Tensor.from("tensor<bfloat16>(x[1]):[5]").getClass(), IndexedFloatTensor.class);
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor<bfloat16>(x[1])")).cell(5.0, 0).build().getClass(),
+                IndexedFloatTensor.class);
+
+        assertEquals(Tensor.from("tensor<int8>(x[1]):[5]").getClass(), IndexedFloatTensor.class);
+        assertEquals(Tensor.Builder.of(TensorType.fromSpec("tensor<int8>(x[1])")).cell(5.0, 0).build().getClass(),
+                IndexedFloatTensor.class);
+    }
+
+    private void assertCellTypeResult(TensorType.Value valueType, String type1, String type2) {
+        Tensor t1 = Tensor.from("tensor<" + type1 + ">(x[1]):[3] }");
+        Tensor t2 = Tensor.from("tensor<" + type2 + ">(x[1]):[5] }");
+        assertEquals(valueType, t1.multiply(t2).type().valueType());
+        assertEquals(valueType, t2.multiply(t1).type().valueType());
+    }
+
+    @Test
+    public void testValueTypeResolving() {
+        assertCellTypeResult(TensorType.Value.DOUBLE, "double", "double");
+        assertCellTypeResult(TensorType.Value.DOUBLE, "double", "float");
+        assertCellTypeResult(TensorType.Value.FLOAT, "float", "float");
+        // Test bfloat16 and int8 when we have proper cell type resolving in place.
     }
 
     @Test

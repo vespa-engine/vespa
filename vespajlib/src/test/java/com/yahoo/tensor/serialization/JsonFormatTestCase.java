@@ -134,4 +134,19 @@ public class JsonFormatTestCase {
         }
     }
 
+    private void assertEncodeDecode(Tensor tensor) {
+        Tensor decoded = JsonFormat.decode(tensor.type(), JsonFormat.encodeWithType(tensor));
+        assertEquals(tensor, decoded);
+        assertEquals(tensor.type(), decoded.type());
+    }
+
+    @Test
+    public void testTensorCellTypes() {
+        assertEncodeDecode(Tensor.from("tensor(x[2],y[2]):[2.0, 3.0, 5.0 ,8.0]"));
+        assertEncodeDecode(Tensor.from("tensor<double>(x[2],y[2]):[2.0, 3.0, 5.0 ,8.0]"));
+        assertEncodeDecode(Tensor.from("tensor<float>(x[2],y[2]):[2.0, 3.0, 5.0 ,8.0]"));
+        assertEncodeDecode(Tensor.from("tensor<bfloat16>(x[2],y[2]):[2.0, 3.0, 5.0 ,8.0]"));
+        assertEncodeDecode(Tensor.from("tensor<int8>(x[2],y[2]):[2,3,5,8]"));
+    }
+
 }

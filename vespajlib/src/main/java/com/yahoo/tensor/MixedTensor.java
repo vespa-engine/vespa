@@ -529,12 +529,14 @@ public class MixedTensor implements Tensor {
                     b.append("[");
 
                 // value
-                if (type.valueType() == TensorType.Value.DOUBLE)
-                    b.append(getDouble(subspaceIndex, index, tensor));
-                else if (tensor.type().valueType() == TensorType.Value.FLOAT)
-                    b.append(getDouble(subspaceIndex, index, tensor)); // TODO: Really use floats
-                else
-                    throw new IllegalStateException("Unexpected value type " + type.valueType());
+                switch (type.valueType()) {
+                    case DOUBLE:   b.append(getDouble(subspaceIndex, index, tensor)); break;
+                    case FLOAT:    b.append(getDouble(subspaceIndex, index, tensor)); break; // TODO: Really use floats
+                    case BFLOAT16: b.append(getDouble(subspaceIndex, index, tensor)); break;
+                    case INT8:     b.append(getDouble(subspaceIndex, index, tensor)); break;
+                    default:
+                        throw new IllegalStateException("Unexpected value type " + type.valueType());
+                }
 
                 // end bracket and comma
                 for (int i = 0; i < indexes.nextDimensionsAtEnd(); i++)

@@ -7,10 +7,7 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
-import java.util.Iterator;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  * Implementation of a dense binary format for a tensor on the form:
@@ -53,6 +50,8 @@ public class DenseBinaryFormat implements BinaryFormat {
         switch (serializationValueType) {
             case DOUBLE: encodeDoubleCells(tensor, buffer); break;
             case FLOAT: encodeFloatCells(tensor, buffer); break;
+            case BFLOAT16: encodeBFloat16Cells(tensor, buffer); break;
+            case INT8: encodeInt8Cells(tensor, buffer); break;
         }
     }
 
@@ -64,6 +63,16 @@ public class DenseBinaryFormat implements BinaryFormat {
     private void encodeFloatCells(IndexedTensor tensor, GrowableByteBuffer buffer) {
         for (int i = 0; i < tensor.size(); i++)
             buffer.putFloat(tensor.getFloat(i));
+    }
+
+    private void encodeBFloat16Cells(IndexedTensor tensor, GrowableByteBuffer buffer) {
+        for (int i = 0; i < tensor.size(); i++)
+            buffer.putShort(TypedBinaryFormat.bFloat16BitsFromFloat(tensor.getFloat(i)));
+    }
+
+    private void encodeInt8Cells(IndexedTensor tensor, GrowableByteBuffer buffer) {
+        for (int i = 0; i < tensor.size(); i++)
+            buffer.put((byte) tensor.getFloat(i));
     }
 
     @Override
@@ -111,6 +120,8 @@ public class DenseBinaryFormat implements BinaryFormat {
         switch (serializationValueType) {
             case DOUBLE: decodeDoubleCells(sizes, builder, buffer); break;
             case FLOAT: decodeFloatCells(sizes, builder, buffer); break;
+            case BFLOAT16: decodeBFloat16Cells(sizes, builder, buffer); break;
+            case INT8: decodeInt8Cells(sizes, builder, buffer); break;
         }
     }
 
@@ -122,6 +133,18 @@ public class DenseBinaryFormat implements BinaryFormat {
     private void decodeFloatCells(DimensionSizes sizes, IndexedTensor.BoundBuilder builder, GrowableByteBuffer buffer) {
         for (long i = 0; i < sizes.totalSize(); i++)
             builder.cellByDirectIndex(i, buffer.getFloat());
+    }
+
+    private void decodeBFloat16Cells(DimensionSizes sizes, IndexedTensor.BoundBuilder builder, GrowableByteBuffer buffer) {
+        for (long i = 0; i < sizes.totalSize(); i++) {
+            builder.cellByDirectIndex(i, TypedBinaryFormat.floatFromBFloat16Bits(buffer.getShort()));
+        }
+    }
+
+    private void decodeInt8Cells(DimensionSizes sizes, IndexedTensor.BoundBuilder builder, GrowableByteBuffer buffer) {
+        for (long i = 0; i < sizes.totalSize(); i++) {
+            builder.cellByDirectIndex(i, (float) buffer.get());
+        }
     }
 
 }
