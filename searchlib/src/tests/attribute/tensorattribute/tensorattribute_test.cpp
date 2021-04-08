@@ -230,7 +230,7 @@ public:
 
     
     const search::tensor::DistanceFunction *distance_function() const override {
-        static search::tensor::SquaredEuclideanDistance<double> my_dist_fun;
+        static search::tensor::SquaredEuclideanDistance my_dist_fun;
         return &my_dist_fun;
     }
 };

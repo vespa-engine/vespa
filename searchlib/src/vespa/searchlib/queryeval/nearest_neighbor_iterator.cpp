@@ -16,7 +16,7 @@ bool
 is_compatible(const vespalib::eval::ValueType& lhs,
               const vespalib::eval::ValueType& rhs)
 {
-    return (lhs == rhs);
+    return (lhs.dimensions() == rhs.dimensions());
 }
 
 }
