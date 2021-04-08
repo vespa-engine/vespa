@@ -10,7 +10,6 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Iterator;
@@ -31,9 +30,6 @@ public class MetricsParser {
         return parse(jsonMapper.createParser(data));
     }
     static Metrics parse(byte [] data) throws IOException {
-        return parse(jsonMapper.createParser(data));
-    }
-    static Metrics parse(InputStream data) throws IOException {
         return parse(jsonMapper.createParser(data));
     }
     private static Metrics parse(JsonParser parser) throws IOException {
