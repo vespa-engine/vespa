@@ -4,6 +4,7 @@ package ai.vespa.metricsproxy.service;
 import ai.vespa.metricsproxy.metric.Metrics;
 
 import java.io.IOException;
+import java.io.InputStream;
 
 /**
  * Fetch metrics for a given vespa service
@@ -39,7 +40,7 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
 
         return remoteMetrics;
     }
-    Metrics createMetrics(byte [] data, int fetchCount) {
+    Metrics createMetrics(InputStream data, int fetchCount) {
         Metrics remoteMetrics = new Metrics();
         try {
             remoteMetrics = MetricsParser.parse(data);
