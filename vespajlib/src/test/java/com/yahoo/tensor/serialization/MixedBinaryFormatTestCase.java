@@ -8,6 +8,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import org.junit.Test;
 
+import java.util.Arrays;
 import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
@@ -78,9 +79,70 @@ public class MixedBinaryFormatTestCase {
     }
 
     @Test
+    public void requireThatDefaultSerializationFormatDoesNotChange() {
+        byte[] encodedTensor = new byte[] {3, // binary format type
+                1, // number of sparse dimensions
+                2, (byte)'x', (byte)'y',  // name of sparse dimension
+                1, // number of dense dimensions
+                1, (byte)'z', 1, // name and size of dense dimension
+                2, // num cells,
+                2, (byte)'a', (byte)'b', 64, 0, 0, 0, 0, 0, 0, 0, // cell 0
+                2, (byte)'c', (byte)'d', 64, 8, 0, 0, 0, 0, 0, 0}; // cell 1
+        Tensor tensor = Tensor.from("tensor(xy{},z[1]):{{xy:ab,z:0}:2.0,{xy:cd,z:0}:3.0}");
+        assertEquals(Arrays.toString(encodedTensor), Arrays.toString(TypedBinaryFormat.encode(tensor)));
+    }
+
+    @Test
+    public void requireThatFloatSerializationFormatDoesNotChange() {
+        byte[] encodedTensor = new byte[] {7, // binary format type
+                1, // float type
+                1, // number of sparse dimensions
+                2, (byte)'x', (byte)'y',  // name of sparse dimension
+                1, // number of dense dimensions
+                1, (byte)'z', 1, // name and size of dense dimension
+                2, // num cells,
+                2, (byte)'a', (byte)'b', 64, 0, 0, 0,  // cell 0
+                2, (byte)'c', (byte)'d', 64, 64, 0, 0}; // cell 1
+        Tensor tensor = Tensor.from("tensor<float>(xy{},z[1]):{{xy:ab,z:0}:2.0,{xy:cd,z:0}:3.0}");
+        assertEquals(Arrays.toString(encodedTensor), Arrays.toString(TypedBinaryFormat.encode(tensor)));
+    }
+
+    @Test
+    public void requireThatBFloat16SerializationFormatDoesNotChange() {
+        byte[] encodedTensor = new byte[] {7, // binary format type
+                2, // bfloat16 type
+                1, // number of sparse dimensions
+                2, (byte)'x', (byte)'y',  // name of sparse dimension
+                1, // number of dense dimensions
+                1, (byte)'z', 1, // name and size of dense dimension
+                2, // num cells,
+                2, (byte)'a', (byte)'b', 64, 0,  // cell 0
+                2, (byte)'c', (byte)'d', 64, 64}; // cell 1
+        Tensor tensor = Tensor.from("tensor<bfloat16>(xy{},z[1]):{{xy:ab,z:0}:2.0,{xy:cd,z:0}:3.0}");
+        assertEquals(Arrays.toString(encodedTensor), Arrays.toString(TypedBinaryFormat.encode(tensor)));
+    }
+
+    @Test
+    public void requireThatInt8SerializationFormatDoesNotChange() {
+        byte[] encodedTensor = new byte[] {7, // binary format type
+                3, // int8 type
+                1, // number of sparse dimensions
+                2, (byte)'x', (byte)'y',  // name of sparse dimension
+                1, // number of dense dimensions
+                1, (byte)'z', 1, // name and size of dense dimension
+                2, // num cells,
+                2, (byte)'a', (byte)'b', 2,  // cell 0
+                2, (byte)'c', (byte)'d', 3}; // cell 1
+        Tensor tensor = Tensor.from("tensor<int8>(xy{},z[1]):{{xy:ab,z:0}:2.0,{xy:cd,z:0}:3.0}");
+        assertEquals(Arrays.toString(encodedTensor), Arrays.toString(TypedBinaryFormat.encode(tensor)));
+    }
+
+    @Test
     public void testSerializationOfDifferentValueTypes() {
         assertSerialization("tensor<double>(x{},y[2]):{{x:0,y:0}:2.0, {x:0,y:1}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0}");
         assertSerialization("tensor<float>(x{},y[2]):{{x:0,y:0}:2.0, {x:0,y:1}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0}");
+        assertSerialization("tensor<bfloat16>(x{},y[2]):{{x:0,y:0}:2.0, {x:0,y:1}:3.0, {x:1,y:0}:4.0, {x:1,y:1}:5.0}");
+        assertSerialization("tensor<int8>(x{},y[2]):{{x:0,y:0}:2, {x:0,y:1}:3, {x:1,y:0}:4, {x:1,y:1}:5}");
     }
 
     private void assertSerialization(String tensorString) {

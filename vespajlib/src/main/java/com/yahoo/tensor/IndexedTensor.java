@@ -225,6 +225,10 @@ public abstract class IndexedTensor implements Tensor {
                 b.append(tensor.get(index));
             else if (tensor.type().valueType() == TensorType.Value.FLOAT)
                 b.append(tensor.getFloat(index));
+            else if (tensor.type().valueType() == TensorType.Value.BFLOAT16)
+                b.append(tensor.getFloat(index));
+            else if (tensor.type().valueType() == TensorType.Value.INT8)
+                b.append(tensor.getFloat(index));
             else
                 throw new IllegalStateException("Unexpected value type " + tensor.type().valueType());
 
@@ -295,6 +299,10 @@ public abstract class IndexedTensor implements Tensor {
 
             if (type.valueType() == TensorType.Value.FLOAT)
                 return new IndexedFloatTensor.BoundFloatBuilder(type, sizes);
+            else if (type.valueType() == TensorType.Value.BFLOAT16)
+                return new IndexedFloatTensor.BoundFloatBuilder(type, sizes);
+            else if (type.valueType() == TensorType.Value.INT8)
+                return new IndexedFloatTensor.BoundFloatBuilder(type, sizes);
             else if (type.valueType() == TensorType.Value.DOUBLE)
                 return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes);
             else
@@ -315,6 +323,10 @@ public abstract class IndexedTensor implements Tensor {
 
             if (type.valueType() == TensorType.Value.FLOAT)
                 return new IndexedFloatTensor.BoundFloatBuilder(type, sizes, values);
+            else if (type.valueType() == TensorType.Value.BFLOAT16)
+                return new IndexedFloatTensor.BoundFloatBuilder(type, sizes).fill(values);
+            else if (type.valueType() == TensorType.Value.INT8)
+                return new IndexedFloatTensor.BoundFloatBuilder(type, sizes).fill(values);
             else if (type.valueType() == TensorType.Value.DOUBLE)
                 return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes).fill(values);
             else
@@ -334,6 +346,10 @@ public abstract class IndexedTensor implements Tensor {
             validateSizes(sizes, values.length);
 
             if (type.valueType() == TensorType.Value.FLOAT)
+                return new IndexedFloatTensor.BoundFloatBuilder(type, sizes).fill(values);
+            else if (type.valueType() == TensorType.Value.BFLOAT16)
+                return new IndexedFloatTensor.BoundFloatBuilder(type, sizes).fill(values);
+            else if (type.valueType() == TensorType.Value.INT8)
                 return new IndexedFloatTensor.BoundFloatBuilder(type, sizes).fill(values);
             else if (type.valueType() == TensorType.Value.DOUBLE)
                 return new IndexedDoubleTensor.BoundDoubleBuilder(type, sizes, values);

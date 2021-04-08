@@ -1411,7 +1411,9 @@
     ],
     "fields": [
       "public static final enum com.yahoo.tensor.TensorType$Value DOUBLE",
-      "public static final enum com.yahoo.tensor.TensorType$Value FLOAT"
+      "public static final enum com.yahoo.tensor.TensorType$Value FLOAT",
+      "public static final enum com.yahoo.tensor.TensorType$Value INT8",
+      "public static final enum com.yahoo.tensor.TensorType$Value BFLOAT16"
     ]
   },
   "com.yahoo.tensor.TensorType": {

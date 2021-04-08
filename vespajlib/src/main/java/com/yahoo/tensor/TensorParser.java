@@ -201,6 +201,10 @@ class TensorParser {
                         return Double.parseDouble(cellValueString);
                     else if (cellValueType == TensorType.Value.FLOAT)
                         return Float.parseFloat(cellValueString);
+                    else if (cellValueType == TensorType.Value.BFLOAT16)
+                        return Float.parseFloat(cellValueString);
+                    else if (cellValueType == TensorType.Value.INT8)
+                        return Float.parseFloat(cellValueString);
                     else
                         throw new IllegalArgumentException(cellValueType + " is not supported");
                 } catch (NumberFormatException e) {
@@ -291,6 +295,10 @@ class TensorParser {
                 builder.cellByDirectIndex(indexes.toSourceValueIndex(), (Double)number);
             else if (builder.type().valueType() == TensorType.Value.FLOAT)
                 builder.cellByDirectIndex(indexes.toSourceValueIndex(), (Float)number);
+            else if (builder.type().valueType() == TensorType.Value.BFLOAT16)
+                builder.cellByDirectIndex(indexes.toSourceValueIndex(), (Float)number);
+            else if (builder.type().valueType() == TensorType.Value.INT8)
+                builder.cellByDirectIndex(indexes.toSourceValueIndex(), (Float)number);
         }
 
     }
@@ -355,6 +363,10 @@ class TensorParser {
                 builder.cell(address, (Double)number);
             else if (builder.type().valueType() == TensorType.Value.FLOAT)
                 builder.cell(address, (Float)number);
+            else if (builder.type().valueType() == TensorType.Value.BFLOAT16)
+                builder.cell(address, (Float)number);
+            else if (builder.type().valueType() == TensorType.Value.INT8)
+                builder.cell(address, (Float)number);
         }
 
     }
@@ -391,6 +403,10 @@ class TensorParser {
                     if (cellValueType == TensorType.Value.DOUBLE)
                         builder.cell(address, Double.parseDouble(cellValueString));
                     else if (cellValueType == TensorType.Value.FLOAT)
+                        builder.cell(address, Float.parseFloat(cellValueString));
+                    else if (cellValueType == TensorType.Value.BFLOAT16)
+                        builder.cell(address, Float.parseFloat(cellValueString));
+                    else if (cellValueType == TensorType.Value.INT8)
                         builder.cell(address, Float.parseFloat(cellValueString));
                     else
                         throw new IllegalArgumentException(cellValueType + " is not supported");

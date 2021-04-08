@@ -533,6 +533,10 @@ public class MixedTensor implements Tensor {
                     b.append(getDouble(subspaceIndex, index, tensor));
                 else if (tensor.type().valueType() == TensorType.Value.FLOAT)
                     b.append(getDouble(subspaceIndex, index, tensor)); // TODO: Really use floats
+                else if (tensor.type().valueType() == TensorType.Value.BFLOAT16)
+                    b.append(getDouble(subspaceIndex, index, tensor));
+                else if (tensor.type().valueType() == TensorType.Value.INT8)
+                    b.append(getDouble(subspaceIndex, index, tensor));
                 else
                     throw new IllegalStateException("Unexpected value type " + type.valueType());
 
