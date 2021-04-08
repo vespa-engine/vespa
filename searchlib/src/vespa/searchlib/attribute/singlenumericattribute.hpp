@@ -119,7 +119,7 @@ SingleValueNumericAttribute<B>::onLoadEnumerated(ReaderBase &attrReader)
     vespalib::ConstArrayRef<T> map(reinterpret_cast<const T *>(udatBuffer->buffer()),
                                    udatBuffer->size() / sizeof(T));
     attribute::loadFromEnumeratedSingleValue(_data, getGenerationHolder(), attrReader,
-                                             map, attribute::NoSaveLoadedEnum());
+                                             map, vespalib::ConstArrayRef<uint32_t>(), attribute::NoSaveLoadedEnum());
     return true;
 }
 

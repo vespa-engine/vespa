@@ -9,6 +9,7 @@
 #include <vespa/searchlib/attribute/attributememoryfilebufferwriter.h>
 #include <vespa/searchlib/attribute/attributememorysavetarget.h>
 #include <vespa/searchlib/attribute/attributesaver.h>
+#include <vespa/searchlib/attribute/i_enum_store_dictionary.h>
 #include <vespa/searchlib/queryeval/executeinfo.h>
 #include <vespa/searchlib/fef/termfieldmatchdata.h>
 #include <vespa/searchlib/index/dummyfileheadercontext.h>
@@ -530,9 +531,28 @@ EnumeratedSaveTest::saveMemDuringCompaction(AttributeVector &v)
 void
 EnumeratedSaveTest::checkMem(AttributeVector &v, const MemAttr &e)
 {
-    MemAttr m;
-    EXPECT_TRUE(v.save(m, v.getBaseFileName()));
-    ASSERT_TRUE(m == e);
+    auto *esb = v.getEnumStoreBase();
+    if (esb == nullptr || esb->get_dictionary().get_has_btree_dictionary()) {
+        MemAttr m;
+        EXPECT_TRUE(v.save(m, v.getBaseFileName()));
+        ASSERT_TRUE(m == e);
+    } else {
+        // Save without sorting unique values, load into temporary
+        // attribute vector with sorted dictionary and save again
+        // to verify data.
+        search::AttributeMemorySaveTarget ms;
+        search::TuneFileAttributes tune;
+        search::index::DummyFileHeaderContext fileHeaderContext;
+        EXPECT_TRUE(v.save(ms, "convert"));
+        EXPECT_TRUE(ms.writeToFile(tune, fileHeaderContext));
+        auto cfg = v.getConfig();
+        cfg.set_dictionary_config(search::DictionaryConfig(search::DictionaryConfig::Type::BTREE));
+        auto v2 = AttributeFactory::createAttribute("convert", cfg);
+        EXPECT_TRUE(v2->load());
+        MemAttr m2;
+        EXPECT_TRUE(v2->save(m2, v.getBaseFileName()));
+        ASSERT_TRUE(m2 == e);
+    }
 }
 
 

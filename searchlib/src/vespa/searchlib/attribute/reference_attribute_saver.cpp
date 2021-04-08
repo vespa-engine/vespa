@@ -21,7 +21,7 @@ ReferenceAttributeSaver(GenerationHandler::Guard &&guard,
     : AttributeSaver(std::move(guard), header),
       _indices(std::move(indices)),
       _store(store),
-      _enumerator(store.getEnumerator())
+      _enumerator(store.getEnumerator(true))
 {
 }
 

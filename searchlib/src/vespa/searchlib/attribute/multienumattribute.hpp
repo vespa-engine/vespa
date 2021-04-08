@@ -99,7 +99,9 @@ MultiValueEnumAttribute<B, M>::load_enumerated_data(ReaderBase& attrReader,
     loader.reserve_loaded_enums(num_values);
     uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader,
                                                              vespalib::ConstArrayRef<EnumIndex>(loader.get_enum_indexes()),
+                                                             loader.get_enum_value_remapping(),
                                                              attribute::SaveLoadedEnum(loader.get_loaded_enums()));
+    loader.free_enum_value_remapping();
     loader.sort_loaded_enums();
     this->checkSetMaxValueCount(maxvc);
 }
@@ -112,7 +114,9 @@ MultiValueEnumAttribute<B, M>::load_enumerated_data(ReaderBase& attrReader,
     loader.allocate_enums_histogram();
     uint32_t maxvc = attribute::loadFromEnumeratedMultiValue(this->_mvMapping, attrReader,
                                                              vespalib::ConstArrayRef<EnumIndex>(loader.get_enum_indexes()),
+                                                             loader.get_enum_value_remapping(),
                                                              attribute::SaveEnumHist(loader.get_enums_histogram()));
+    loader.free_enum_value_remapping();
     loader.set_ref_counts();
     loader.build_dictionary();
     loader.free_unused_values();

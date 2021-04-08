@@ -229,9 +229,9 @@ UniqueStore<EntryT, RefT, Compare, Allocator>::getBuilder(uint32_t uniqueValuesH
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>
 typename UniqueStore<EntryT, RefT, Compare, Allocator>::Enumerator
-UniqueStore<EntryT, RefT, Compare, Allocator>::getEnumerator() const
+UniqueStore<EntryT, RefT, Compare, Allocator>::getEnumerator(bool sort_unique_values) const
 {
-    return Enumerator(*_dict, _store);
+    return Enumerator(*_dict, _store, sort_unique_values);
 }
 
 template <typename EntryT, typename RefT, typename Compare, typename Allocator>

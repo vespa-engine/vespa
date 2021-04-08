@@ -208,6 +208,7 @@ public:
         _store.get_allocator().get_data_store().inc_compaction_count();
     }
     std::unique_ptr<Enumerator> make_enumerator() const override;
+    std::unique_ptr<vespalib::datastore::EntryComparator> allocate_comparator() const override;
 };
 
 std::unique_ptr<vespalib::datastore::IUniqueStoreDictionary>

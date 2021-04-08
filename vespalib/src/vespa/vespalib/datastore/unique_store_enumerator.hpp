@@ -9,14 +9,16 @@
 namespace vespalib::datastore {
 
 template <typename RefT>
-UniqueStoreEnumerator<RefT>::UniqueStoreEnumerator(const IUniqueStoreDictionary &dict, const DataStoreBase &store)
+UniqueStoreEnumerator<RefT>::UniqueStoreEnumerator(const IUniqueStoreDictionary &dict, const DataStoreBase &store, bool sort_unique_values)
     : _dict_snapshot(dict.get_read_snapshot()),
       _store(store),
       _enumValues(),
       _next_enum_val(1)
 {
     _dict_snapshot->fill();
-    _dict_snapshot->sort();
+    if (sort_unique_values) {
+        _dict_snapshot->sort();
+    }
     allocate_enum_values();
 }
 
