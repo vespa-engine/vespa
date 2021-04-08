@@ -48,6 +48,11 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         return matching(node -> node.status().wantToRetire() && node.status().wantToDeprovision());
     }
 
+    /** Returns the subset of nodes that are being rebuilt */
+    public NodeList rebuilding() {
+        return matching(node -> node.status().wantToRetire() && node.status().wantToRebuild());
+    }
+
     /** Returns the subset of nodes which are removable */
     public NodeList removable() {
         return matching(node -> node.allocation().isPresent() && node.allocation().get().isRemovable());

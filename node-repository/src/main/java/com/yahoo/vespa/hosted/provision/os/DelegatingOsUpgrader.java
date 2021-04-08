@@ -31,6 +31,7 @@ public class DelegatingOsUpgrader implements OsUpgrader {
     public DelegatingOsUpgrader(NodeRepository nodeRepository, int maxActiveUpgrades) {
         this.nodeRepository = Objects.requireNonNull(nodeRepository);
         this.maxActiveUpgrades = maxActiveUpgrades;
+        if (maxActiveUpgrades < 1) throw new IllegalArgumentException("maxActiveUpgrades must be positive");
     }
 
     @Override

@@ -26,7 +26,7 @@ public class RetiringOsUpgrader implements OsUpgrader {
 
     private static final Logger LOG = Logger.getLogger(RetiringOsUpgrader.class.getName());
 
-    private final NodeRepository nodeRepository;
+    protected final NodeRepository nodeRepository;
 
     public RetiringOsUpgrader(NodeRepository nodeRepository) {
         this.nodeRepository = nodeRepository;
@@ -44,11 +44,7 @@ public class RetiringOsUpgrader implements OsUpgrader {
         Instant retiredAt = target.lastRetiredAt().orElse(Instant.EPOCH);
         if (now.isBefore(retiredAt.plus(nodeBudget))) return; // Budget has not been spent yet
 
-        activeNodes.osVersionIsBefore(target.version())
-                   .not().deprovisioning()
-                   .byIncreasingOsVersion()
-                   .first(1)
-                   .forEach(node -> upgrade(node, target.version(), now));
+        upgradeNodes(activeNodes, target.version(), now);
     }
 
     @Override
@@ -56,8 +52,16 @@ public class RetiringOsUpgrader implements OsUpgrader {
         // No action needed in this implementation.
     }
 
+    protected void upgradeNodes(NodeList activeNodes, Version version, Instant instant) {
+        activeNodes.osVersionIsBefore(version)
+                   .not().deprovisioning()
+                   .byIncreasingOsVersion()
+                   .first(1)
+                   .forEach(node -> deprovision(node, version, instant));
+    }
+
     /** Upgrade given host by retiring and deprovisioning it */
-    private void upgrade(Node host, Version target, Instant now) {
+    private void deprovision(Node host, Version target, Instant now) {
         LOG.info("Retiring and deprovisioning " + host + ": On stale OS version " +
                  host.status().osVersion().current().map(Version::toFullString).orElse("<unset>") +
                  ", want " + target);

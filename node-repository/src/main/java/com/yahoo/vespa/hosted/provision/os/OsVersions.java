@@ -4,7 +4,9 @@ package com.yahoo.vespa.hosted.provision.os;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.curator.Lock;
+import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
+import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
 import java.time.Duration;
@@ -28,16 +30,20 @@ public class OsVersions {
 
     private static final Logger log = Logger.getLogger(OsVersions.class.getName());
 
+    private final NodeRepository nodeRepository;
     private final CuratorDatabaseClient db;
-    private final OsUpgrader upgrader;
+    private final boolean reprovisionToUpgradeOs;
+    private final int maxDelegatedUpgrades;
 
     public OsVersions(NodeRepository nodeRepository) {
-        this(nodeRepository, upgraderIn(nodeRepository));
+        this(nodeRepository, nodeRepository.zone().getCloud().reprovisionToUpgradeOs(), 30);
     }
 
-    OsVersions(NodeRepository nodeRepository, OsUpgrader upgrader) {
-        this.db = Objects.requireNonNull(nodeRepository).database();
-        this.upgrader = Objects.requireNonNull(upgrader);
+    OsVersions(NodeRepository nodeRepository, boolean reprovisionToUpgradeOs, int maxDelegatedUpgrades) {
+        this.nodeRepository = Objects.requireNonNull(nodeRepository);
+        this.db = nodeRepository.database();
+        this.reprovisionToUpgradeOs = reprovisionToUpgradeOs;
+        this.maxDelegatedUpgrades = maxDelegatedUpgrades;
 
         // Read and write all versions to make sure they are stored in the latest version of the serialized format
         try (var lock = db.lockOsVersionChange()) {
@@ -72,7 +78,10 @@ public class OsVersions {
     public void removeTarget(NodeType nodeType) {
         require(nodeType);
         writeChange((change) -> {
-            upgrader.disableUpgrade(nodeType);
+            Version target = Optional.ofNullable(change.targets().get(nodeType))
+                                     .map(OsVersionTarget::version)
+                                     .orElse(Version.emptyVersion);
+            chooseUpgrader(nodeType, target).disableUpgrade(nodeType);
             return change.withoutTarget(nodeType);
         });
     }
@@ -102,8 +111,9 @@ public class OsVersions {
     public void resumeUpgradeOf(NodeType nodeType, boolean resume) {
         require(nodeType);
         try (Lock lock = db.lockOsVersionChange()) {
-            var target = readChange().targets().get(nodeType);
+            OsVersionTarget target = readChange().targets().get(nodeType);
             if (target == null) return; // No target set for this type
+            OsUpgrader upgrader = chooseUpgrader(nodeType, target.version());
             if (resume) {
                 upgrader.upgradeTo(target);
             } else {
@@ -112,10 +122,21 @@ public class OsVersions {
         }
     }
 
-    private void requireUpgradeBudget(Optional<Duration> upgradeBudget) {
-        if (upgrader instanceof RetiringOsUpgrader && upgradeBudget.isEmpty()) {
-            throw new IllegalArgumentException("Zone requires a time budget for OS upgrades");
+    /** Returns the upgrader to use when upgrading given node type to target */
+    private OsUpgrader chooseUpgrader(NodeType nodeType, Version target) {
+        if (reprovisionToUpgradeOs) {
+            return new RetiringOsUpgrader(nodeRepository);
         }
+        // Require rebuild if we have any nodes of this type on a major version lower than target
+        boolean rebuildRequired = nodeRepository.nodes().list(Node.State.active).nodeType(nodeType).stream()
+                                                .map(Node::status)
+                                                .map(Status::osVersion)
+                                                .anyMatch(osVersion -> osVersion.current().isPresent() &&
+                                                                       osVersion.current().get().getMajor() < target.getMajor());
+        if (rebuildRequired) {
+            return new RebuildingOsUpgrader(nodeRepository);
+        }
+        return new DelegatingOsUpgrader(nodeRepository, maxDelegatedUpgrades);
     }
 
     private static void requireNonZero(Version version) {
@@ -128,13 +149,6 @@ public class OsVersions {
         if (!nodeType.isHost()) {
             throw new IllegalArgumentException("Node type '" + nodeType + "' does not support OS upgrades");
         }
-    }
-
-    private static OsUpgrader upgraderIn(NodeRepository nodeRepository) {
-        if (nodeRepository.zone().getCloud().reprovisionToUpgradeOs()) {
-            return new RetiringOsUpgrader(nodeRepository);
-        }
-        return new DelegatingOsUpgrader(nodeRepository, 30);
     }
 
 }
