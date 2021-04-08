@@ -47,7 +47,9 @@ public class SimpleHttpFetcher implements HttpFetcher {
             logger.log(Level.WARNING, message, e);
             throw new RequestTimeoutException(message);
         } catch (ParseException e) {
-            logger.log(Level.WARNING, "Parse error of response from " + url, e);
+            String message = "Parse error in response from " + url;
+            logger.log(Level.WARNING, message, e);
+            throw new InternalServerException(message);
         } catch (IOException e) {
             String message = "Failed to get response from " + url;
             logger.log(Level.WARNING, message, e);
