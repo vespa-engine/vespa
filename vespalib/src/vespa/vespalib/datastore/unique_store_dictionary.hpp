@@ -298,4 +298,24 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::get_has_hash_
     return has_hash_dictionary;
 }
 
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
+vespalib::MemoryUsage
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::get_btree_memory_usage() const
+{
+    if constexpr (has_btree_dictionary) {
+        return this->_btree_dict.getMemoryUsage();
+    }
+    return {};
+}
+
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
+vespalib::MemoryUsage
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::get_hash_memory_usage() const
+{
+    if constexpr (has_hash_dictionary) {
+        return this->_hash_dict.get_memory_usage();
+    }
+    return {};
+}
+
 }

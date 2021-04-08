@@ -2,6 +2,7 @@
 
 #include "attribute_vector_explorer.h"
 #include <vespa/searchlib/attribute/i_enum_store.h>
+#include <vespa/searchlib/attribute/i_enum_store_dictionary.h>
 #include <vespa/searchlib/attribute/multi_value_mapping.h>
 #include <vespa/searchlib/attribute/attributevector.h>
 #include <vespa/searchlib/attribute/ipostinglistattributebase.h>
@@ -73,11 +74,23 @@ convertMemoryUsageToSlime(const MemoryUsage &usage, Cursor &object)
 }
 
 void
+convert_enum_store_dictionary_to_slime(const search::IEnumStoreDictionary &dictionary, Cursor &object)
+{
+    if (dictionary.get_has_btree_dictionary()) {
+        convertMemoryUsageToSlime(dictionary.get_btree_memory_usage(), object.setObject("btreeMemoryUsage"));
+    }
+    if (dictionary.get_has_hash_dictionary()) {
+        convertMemoryUsageToSlime(dictionary.get_hash_memory_usage(), object.setObject("hashMemoryUsage"));
+    }
+}
+
+void
 convertEnumStoreToSlime(const IEnumStore &enumStore, Cursor &object)
 {
     object.setLong("numUniques", enumStore.get_num_uniques());
     convertMemoryUsageToSlime(enumStore.get_values_memory_usage(), object.setObject("valuesMemoryUsage"));
     convertMemoryUsageToSlime(enumStore.get_dictionary_memory_usage(), object.setObject("dictionaryMemoryUsage"));
+    convert_enum_store_dictionary_to_slime(enumStore.get_dictionary(), object.setObject("dictionary"));
 }
 
 void
