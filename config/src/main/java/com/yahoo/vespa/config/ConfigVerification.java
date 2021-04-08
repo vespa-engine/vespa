@@ -1,14 +1,13 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
-import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
+import ai.vespa.util.http.hc4.VespaHttpClientBuilder;
 import com.yahoo.slime.ArrayTraverser;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
-import org.apache.hc.client5.http.classic.methods.HttpGet;
-import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.io.BasicHttpClientConnectionManager;
+import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.BasicResponseHandler;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -38,7 +37,7 @@ public class ConfigVerification {
         for (String arg : args) {
             configservers.add(prefix + arg + ":" + port + "/config/v2/tenant/" + tenant + "/application/" + appName + "/environment/" + environment + "/region/" + region + "/instance/" + instance + "/?recursive=true");
         }
-        try (CloseableHttpClient httpClient = VespaHttpClientBuilder.create(BasicHttpClientConnectionManager::new).build()) {
+        try (CloseableHttpClient httpClient = VespaHttpClientBuilder.createWithBasicConnectionManager().build()) {
             System.exit(compareConfigs(listConfigs(configservers, httpClient), httpClient));
         }
     }
@@ -92,6 +91,6 @@ public class ConfigVerification {
     }
 
     private static String performRequest(String url, CloseableHttpClient httpClient) throws IOException {
-        return httpClient.execute(new HttpGet(url), new BasicHttpClientResponseHandler());
+        return httpClient.execute(new HttpGet(url), new BasicResponseHandler());
     }
 }
