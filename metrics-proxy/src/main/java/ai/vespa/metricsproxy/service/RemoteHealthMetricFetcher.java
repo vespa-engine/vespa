@@ -5,8 +5,6 @@ import ai.vespa.metricsproxy.metric.HealthMetric;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.ByteArrayInputStream;
-import java.io.InputStream;
 import java.util.logging.Level;
 
 import java.io.IOException;
@@ -31,29 +29,32 @@ public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
      * Connect to remote service over http and fetch metrics
      */
     public HealthMetric getHealth(int fetchCount) {
+        byte [] data = {'{', '}'};
         try {
-            return createHealthMetrics(getJson(), fetchCount);
+            data = getJson();
         } catch (IOException e) {
             logMessageNoResponse(errMsgNoResponse(e), fetchCount);
-            byte [] empty = {'{','}'};
-            return createHealthMetrics(new ByteArrayInputStream(empty), fetchCount);
         }
+        return createHealthMetrics(data, fetchCount);
     }
 
     /**
      * Connect to remote service over http and fetch metrics
      */
-    private HealthMetric createHealthMetrics(InputStream data, int fetchCount) {
+    private HealthMetric createHealthMetrics(byte [] data, int fetchCount) {
+        HealthMetric healthMetric = HealthMetric.getDown("Failed fetching status page for service");
         try {
-            return parse(data);
+            healthMetric = parse(data);
         } catch (Exception e) {
             handleException(e, data, fetchCount);
-            return HealthMetric.getDown("Failed fetching status page for service");
         }
+        return healthMetric;
     }
 
-
-    private HealthMetric parse(InputStream data) {
+    private HealthMetric parse(byte [] data) {
+        if ((data == null) || (data.length == 0)) {
+            return HealthMetric.getUnknown("Empty response from status page");
+        }
         try {
             JsonNode o = jsonMapper.readTree(data);
             JsonNode status = o.get("status");
