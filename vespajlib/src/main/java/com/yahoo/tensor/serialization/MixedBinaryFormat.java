@@ -65,7 +65,7 @@ class MixedBinaryFormat implements BinaryFormat {
             case DOUBLE: encodeCells(buffer, tensor, buffer::putDouble); break;
             case FLOAT: encodeCells(buffer, tensor, (val) -> buffer.putFloat(val.floatValue())); break;
             case BFLOAT16: encodeCells(buffer, tensor, (val) ->
-                    buffer.putShort((short) (Float.floatToRawIntBits(val.floatValue()) >>> 16))); break;
+                    buffer.putShort(TypedBinaryFormat.bFloat16BitsFromFloat(val.floatValue()))); break;
             case INT8: encodeCells(buffer, tensor, (val) -> buffer.put(((byte)val.floatValue()))); break;
         }
     }
@@ -131,7 +131,7 @@ class MixedBinaryFormat implements BinaryFormat {
             case DOUBLE: decodeCells(buffer, builder, type, buffer::getDouble); break;
             case FLOAT: decodeCells(buffer, builder, type, () -> (double)buffer.getFloat()); break;
             case BFLOAT16: decodeCells(buffer, builder, type, () ->
-                    (double)Float.intBitsToFloat(buffer.getShort() << 16)); break;
+                    (double)TypedBinaryFormat.floatFromBFloat16Bits(buffer.getShort())); break;
             case INT8: decodeCells(buffer, builder, type, () -> (double)buffer.get()); break;
         }
     }

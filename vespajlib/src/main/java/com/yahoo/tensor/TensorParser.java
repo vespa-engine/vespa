@@ -197,16 +197,14 @@ class TensorParser {
             try {
                 String cellValueString = string.substring(position, nextNumberEnd);
                 try {
-                    if (cellValueType == TensorType.Value.DOUBLE)
-                        return Double.parseDouble(cellValueString);
-                    else if (cellValueType == TensorType.Value.FLOAT)
-                        return Float.parseFloat(cellValueString);
-                    else if (cellValueType == TensorType.Value.BFLOAT16)
-                        return Float.parseFloat(cellValueString);
-                    else if (cellValueType == TensorType.Value.INT8)
-                        return Float.parseFloat(cellValueString);
-                    else
-                        throw new IllegalArgumentException(cellValueType + " is not supported");
+                    switch (cellValueType) {
+                        case DOUBLE:   return Double.parseDouble(cellValueString);
+                        case FLOAT:    return Float.parseFloat(cellValueString);
+                        case BFLOAT16: return Float.parseFloat(cellValueString);
+                        case INT8:     return Float.parseFloat(cellValueString);
+                        default:
+                            throw new IllegalArgumentException(cellValueType + " is not supported");
+                    }
                 } catch (NumberFormatException e) {
                     throw new IllegalArgumentException("At value position " + position + ": '" +
                                                        cellValueString + "' is not a valid " + cellValueType);
@@ -291,16 +289,13 @@ class TensorParser {
 
         protected void consumeNumber() {
             Number number = consumeNumber(builder.type().valueType());
-            if (builder.type().valueType() == TensorType.Value.DOUBLE)
-                builder.cellByDirectIndex(indexes.toSourceValueIndex(), (Double)number);
-            else if (builder.type().valueType() == TensorType.Value.FLOAT)
-                builder.cellByDirectIndex(indexes.toSourceValueIndex(), (Float)number);
-            else if (builder.type().valueType() == TensorType.Value.BFLOAT16)
-                builder.cellByDirectIndex(indexes.toSourceValueIndex(), (Float)number);
-            else if (builder.type().valueType() == TensorType.Value.INT8)
-                builder.cellByDirectIndex(indexes.toSourceValueIndex(), (Float)number);
+            switch (builder.type().valueType()) {
+                case DOUBLE:   builder.cellByDirectIndex(indexes.toSourceValueIndex(), (Double)number); break;
+                case FLOAT:    builder.cellByDirectIndex(indexes.toSourceValueIndex(), (Float)number); break;
+                case BFLOAT16: builder.cellByDirectIndex(indexes.toSourceValueIndex(), (Float)number); break;
+                case INT8:     builder.cellByDirectIndex(indexes.toSourceValueIndex(), (Float)number); break;
+            }
         }
-
     }
 
     /**
@@ -359,16 +354,13 @@ class TensorParser {
 
         private void consumeNumber(TensorAddress address) {
             Number number = consumeNumber(builder.type().valueType());
-            if (builder.type().valueType() == TensorType.Value.DOUBLE)
-                builder.cell(address, (Double)number);
-            else if (builder.type().valueType() == TensorType.Value.FLOAT)
-                builder.cell(address, (Float)number);
-            else if (builder.type().valueType() == TensorType.Value.BFLOAT16)
-                builder.cell(address, (Float)number);
-            else if (builder.type().valueType() == TensorType.Value.INT8)
-                builder.cell(address, (Float)number);
+            switch (builder.type().valueType()) {
+                case DOUBLE:   builder.cell(address, (Double)number); break;
+                case FLOAT:    builder.cell(address, (Float)number); break;
+                case BFLOAT16: builder.cell(address, (Float)number); break;
+                case INT8:     builder.cell(address, (Float)number); break;
+            }
         }
-
     }
 
     private static class MappedValueParser extends ValueParser {
@@ -400,16 +392,14 @@ class TensorParser {
                 TensorType.Value cellValueType = builder.type().valueType();
                 String cellValueString = string.substring(position, valueEnd).trim();
                 try {
-                    if (cellValueType == TensorType.Value.DOUBLE)
-                        builder.cell(address, Double.parseDouble(cellValueString));
-                    else if (cellValueType == TensorType.Value.FLOAT)
-                        builder.cell(address, Float.parseFloat(cellValueString));
-                    else if (cellValueType == TensorType.Value.BFLOAT16)
-                        builder.cell(address, Float.parseFloat(cellValueString));
-                    else if (cellValueType == TensorType.Value.INT8)
-                        builder.cell(address, Float.parseFloat(cellValueString));
-                    else
-                        throw new IllegalArgumentException(cellValueType + " is not supported");
+                    switch (cellValueType) {
+                        case DOUBLE:   builder.cell(address, Double.parseDouble(cellValueString)); break;
+                        case FLOAT:    builder.cell(address, Float.parseFloat(cellValueString)); break;
+                        case BFLOAT16: builder.cell(address, Float.parseFloat(cellValueString)); break;
+                        case INT8:     builder.cell(address, Float.parseFloat(cellValueString)); break;
+                        default:
+                            throw new IllegalArgumentException(cellValueType + " is not supported");
+                    }
                 }
                 catch (NumberFormatException e) {
                     throw new IllegalArgumentException("At " + address.toString(builder.type()) + ": '" +

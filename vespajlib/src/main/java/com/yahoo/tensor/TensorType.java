@@ -60,23 +60,21 @@ public class TensorType {
         public static Value largestOf(Value value1, Value value2) {
             if (value1 == DOUBLE || value2 == DOUBLE) return DOUBLE;
             if (value1 == FLOAT || value2 == FLOAT) return FLOAT;
-            if (value1 == BFLOAT16 || value2 == BFLOAT16) return FLOAT;
-            if (value1 == INT8 || value2 == INT8) return FLOAT;
-            return FLOAT;
+            if (value1 == BFLOAT16 || value2 == BFLOAT16) return BFLOAT16;
+            return INT8;
         }
 
         @Override
         public String toString() { return name().toLowerCase(); }
 
         public static Value fromId(String valueTypeString) {
-            switch (valueTypeString) {
-                case "double" : return Value.DOUBLE;
-                case "float" : return Value.FLOAT;
-                case "bfloat16" : return Value.BFLOAT16;
-                case "int8" : return Value.INT8;
-                default : throw new IllegalArgumentException("Value type must be either 'double', 'float', " +
-                                                             "'bfloat16', or 'int8' but was '" + valueTypeString + "'");
+            for(Value value : Value.values()) {
+                if (value.id.equals(valueTypeString)) {
+                    return value;
+                }
             }
+            throw new IllegalArgumentException("Value type must be either 'double', 'float', " +
+                                               "'bfloat16', or 'int8' but was '" + valueTypeString + "'");
         }
 
     };

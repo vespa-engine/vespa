@@ -7,10 +7,7 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
-import java.util.Iterator;
 import java.util.Optional;
-import java.util.function.Consumer;
-import java.util.function.Supplier;
 
 /**
  * Implementation of a dense binary format for a tensor on the form:
@@ -70,7 +67,7 @@ public class DenseBinaryFormat implements BinaryFormat {
 
     private void encodeBFloat16Cells(IndexedTensor tensor, GrowableByteBuffer buffer) {
         for (int i = 0; i < tensor.size(); i++)
-            buffer.putShort((short)(Float.floatToRawIntBits(tensor.getFloat(i)) >>> 16));
+            buffer.putShort(TypedBinaryFormat.bFloat16BitsFromFloat(tensor.getFloat(i)));
     }
 
     private void encodeInt8Cells(IndexedTensor tensor, GrowableByteBuffer buffer) {
@@ -140,7 +137,7 @@ public class DenseBinaryFormat implements BinaryFormat {
 
     private void decodeBFloat16Cells(DimensionSizes sizes, IndexedTensor.BoundBuilder builder, GrowableByteBuffer buffer) {
         for (long i = 0; i < sizes.totalSize(); i++) {
-            builder.cellByDirectIndex(i, Float.intBitsToFloat(buffer.getShort() << 16));
+            builder.cellByDirectIndex(i, TypedBinaryFormat.floatFromBFloat16Bits(buffer.getShort()));
         }
     }
 

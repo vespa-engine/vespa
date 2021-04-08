@@ -141,4 +141,12 @@ public class TypedBinaryFormat {
         return result;
     }
 
+    static short bFloat16BitsFromFloat(float val) {
+        return (short) (Float.floatToRawIntBits(val) >>> 16);
+    }
+
+    static float floatFromBFloat16Bits(short bits) {
+        return Float.intBitsToFloat(bits << 16);
+    }
+
 }
