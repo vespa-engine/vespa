@@ -78,10 +78,9 @@ public class OsVersions {
     }
 
     /** Set the target OS version and upgrade budget for nodes of given type */
-    public void setTarget(NodeType nodeType, Version newTarget, Optional<Duration> upgradeBudget, boolean force) {
+    public void setTarget(NodeType nodeType, Version newTarget, Duration upgradeBudget, boolean force) {
         require(nodeType);
         requireNonZero(newTarget);
-        requireUpgradeBudget(upgradeBudget);
         writeChange((change) -> {
             var oldTarget = targetFor(nodeType);
             if (oldTarget.filter(v -> v.equals(newTarget)).isPresent()) {

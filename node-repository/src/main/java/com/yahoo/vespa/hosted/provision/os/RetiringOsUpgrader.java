@@ -15,10 +15,10 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
- * An upgrader that retires and deprovisions nodes on stale OS versions. Retirement of each node is spread out in time,
- * according to a time budget, to avoid potential service impact of retiring too many nodes close together.
+ * An upgrader that retires and deprovisions hosts on stale OS versions. Retirement of each host is spread out in time,
+ * according to a time budget, to avoid potential service impact of retiring too many hosts close together.
  *
- * Used in clouds where nodes must be re-provisioned to upgrade their OS.
+ * Used in clouds where hosts must be re-provisioned to upgrade their OS.
  *
  * @author mpolden
  */
@@ -40,8 +40,6 @@ public class RetiringOsUpgrader implements OsUpgrader {
 
         Instant now = nodeRepository.clock().instant();
         Duration nodeBudget = target.upgradeBudget()
-                                    .orElseThrow(() -> new IllegalStateException("OS upgrades in this zone requires " +
-                                                                                 "a time budget, but none is set"))
                                     .dividedBy(activeNodes.size());
         Instant retiredAt = target.lastRetiredAt().orElse(Instant.EPOCH);
         if (now.isBefore(retiredAt.plus(nodeBudget))) return; // Budget has not been spent yet

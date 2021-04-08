@@ -18,14 +18,15 @@ public class OsVersionTarget {
 
     private final NodeType nodeType;
     private final Version version;
-    private final Optional<Duration> upgradeBudget;
+    private final Duration upgradeBudget;
     private final Optional<Instant> lastRetiredAt;
 
-    public OsVersionTarget(NodeType nodeType, Version version, Optional<Duration> upgradeBudget, Optional<Instant> lastRetiredAt) {
+    public OsVersionTarget(NodeType nodeType, Version version, Duration upgradeBudget, Optional<Instant> lastRetiredAt) {
         this.nodeType = Objects.requireNonNull(nodeType);
         this.version = Objects.requireNonNull(version);
-        this.upgradeBudget = requireNotNegative(upgradeBudget);
+        this.upgradeBudget = Objects.requireNonNull(upgradeBudget);
         this.lastRetiredAt = Objects.requireNonNull(lastRetiredAt);
+        if (upgradeBudget.isNegative()) throw new IllegalArgumentException("Upgrade budget cannot be negative");
     }
 
     /** The node type this applies to */
@@ -39,7 +40,7 @@ public class OsVersionTarget {
     }
 
     /** The upgrade budget for this. All nodes targeting this must upgrade within this budget */
-    public Optional<Duration> upgradeBudget() {
+    public Duration upgradeBudget() {
         return upgradeBudget;
     }
 
@@ -62,13 +63,6 @@ public class OsVersionTarget {
     @Override
     public int hashCode() {
         return Objects.hash(nodeType, version, upgradeBudget, lastRetiredAt);
-    }
-
-    private static Optional<Duration> requireNotNegative(Optional<Duration> duration) {
-        Objects.requireNonNull(duration);
-        if (duration.isEmpty()) return duration;
-        if (duration.get().isNegative()) throw new IllegalArgumentException("Duration cannot be negative");
-        return duration;
     }
 
 }

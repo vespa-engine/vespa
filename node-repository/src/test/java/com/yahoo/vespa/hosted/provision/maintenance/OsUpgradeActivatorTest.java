@@ -57,8 +57,8 @@ public class OsUpgradeActivatorTest {
 
         // New OS target version is set
         var osVersion0 = Version.fromString("8.0");
-        osVersions.setTarget(NodeType.host, osVersion0, Optional.empty(), false);
-        osVersions.setTarget(NodeType.confighost, osVersion0, Optional.empty(), false);
+        osVersions.setTarget(NodeType.host, osVersion0, Duration.ZERO, false);
+        osVersions.setTarget(NodeType.confighost, osVersion0, Duration.ZERO, false);
 
         // New OS version is activated as there is no ongoing Vespa upgrade
         osUpgradeActivator.maintain();

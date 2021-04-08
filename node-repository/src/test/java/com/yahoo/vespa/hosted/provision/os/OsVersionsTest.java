@@ -45,7 +45,7 @@ public class OsVersionsTest {
         // Upgrade OS
         assertTrue("No versions set", versions.readChange().targets().isEmpty());
         var version1 = Version.fromString("7.1");
-        versions.setTarget(NodeType.host, version1, Optional.empty(), false);
+        versions.setTarget(NodeType.host, version1, Duration.ZERO, false);
         assertEquals(version1, versions.targetFor(NodeType.host).get());
         assertTrue("Per-node wanted OS version remains unset", hostNodes.get().stream().allMatch(node -> node.status().osVersion().wanted().isEmpty()));
 
@@ -55,15 +55,14 @@ public class OsVersionsTest {
 
         // Upgrade OS again
         var version2 = Version.fromString("7.2");
-        versions.setTarget(NodeType.host, version2, Optional.empty(), false);
+        versions.setTarget(NodeType.host, version2, Duration.ZERO, false);
         assertEquals(version2, versions.targetFor(NodeType.host).get());
 
         // Resume upgrade
         versions.resumeUpgradeOf(NodeType.host, true);
         NodeList allHosts = hostNodes.get();
-        assertTrue("Wanted version is set", allHosts.stream()
-                                                       .filter(node -> !node.equals(hostOnLaterVersion))
-                                                       .allMatch(node -> node.status().osVersion().wanted().isPresent()));
+        assertTrue("Wanted version is set", allHosts.except(hostOnLaterVersion).stream()
+                                                    .allMatch(node -> node.status().osVersion().wanted().isPresent()));
         assertTrue("Wanted version is not set for host on later version",
                    allHosts.first().get().status().osVersion().wanted().isEmpty());
 
@@ -74,12 +73,12 @@ public class OsVersionsTest {
 
         // Downgrading fails
         try {
-            versions.setTarget(NodeType.host, version1, Optional.empty(), false);
+            versions.setTarget(NodeType.host, version1, Duration.ZERO, false);
             fail("Expected exception");
         } catch (IllegalArgumentException ignored) {}
 
         // Forcing downgrade succeeds
-        versions.setTarget(NodeType.host, version1, Optional.empty(), true);
+        versions.setTarget(NodeType.host, version1, Duration.ZERO, true);
         assertEquals(version1, versions.targetFor(NodeType.host).get());
 
         // Target can be removed
@@ -111,7 +110,7 @@ public class OsVersionsTest {
 
         // Set target
         var version1 = Version.fromString("7.1");
-        versions.setTarget(NodeType.host, version1, Optional.empty(), false);
+        versions.setTarget(NodeType.host, version1, Duration.ZERO, false);
         assertEquals(version1, versions.targetFor(NodeType.host).get());
 
         // Activate target
@@ -148,7 +147,7 @@ public class OsVersionsTest {
 
         // Trigger upgrade to next version
         var version2 = Version.fromString("7.2");
-        versions.setTarget(NodeType.host, version2, Optional.empty(), false);
+        versions.setTarget(NodeType.host, version2, Duration.ZERO, false);
         versions.resumeUpgradeOf(NodeType.host, true);
 
         // Wanted version is changed to newest target for all nodes
@@ -174,7 +173,7 @@ public class OsVersionsTest {
         var version1 = Version.fromString("7.1");
         Duration totalBudget = Duration.ofHours(12);
         Duration nodeBudget = totalBudget.dividedBy(hostCount);
-        versions.setTarget(NodeType.host, version1, Optional.of(totalBudget),false);
+        versions.setTarget(NodeType.host, version1, totalBudget,false);
         versions.resumeUpgradeOf(NodeType.host, true);
 
         // One host is deprovisioning
@@ -216,7 +215,7 @@ public class OsVersionsTest {
         // Another upgrade is triggered. Last retirement time is preserved
         clock.advance(Duration.ofDays(1));
         var version2 = Version.fromString("7.2");
-        versions.setTarget(NodeType.host, version2, Optional.of(totalBudget), false);
+        versions.setTarget(NodeType.host, version2, totalBudget, false);
         assertEquals(lastRetiredAt, versions.readChange().targets().get(NodeType.host).lastRetiredAt().get());
     }
 
@@ -231,7 +230,7 @@ public class OsVersionsTest {
 
         // Target is set with zero budget and upgrade started
         var version1 = Version.fromString("7.1");
-        versions.setTarget(NodeType.confighost, version1, Optional.of(Duration.ZERO),false);
+        versions.setTarget(NodeType.confighost, version1, Duration.ZERO,false);
         for (int i = 0; i < hostCount; i++) {
             versions.resumeUpgradeOf(NodeType.confighost, true);
         }

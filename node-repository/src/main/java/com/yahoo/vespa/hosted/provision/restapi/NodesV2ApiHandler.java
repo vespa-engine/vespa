@@ -392,9 +392,10 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
                                                                    throw new IllegalArgumentException("Invalid duration '" + s + "'", e);
                                                                }
                                                            });
-                nodeRepository.osVersions().setTarget(nodeType, osVersion, upgradeBudget, force);
+                if (upgradeBudget.isEmpty()) throw new IllegalArgumentException("upgradeBudget must be set");
+                nodeRepository.osVersions().setTarget(nodeType, osVersion, upgradeBudget.get(), force);
                 messageParts.add("osVersion to " + osVersion.toFullString());
-                upgradeBudget.ifPresent(d -> messageParts.add("upgradeBudget to " + d));
+                messageParts.add("upgradeBudget to " + upgradeBudget.get());
             }
         }
 

@@ -40,7 +40,7 @@ public class OsVersionChange {
     }
 
     /** Returns a copy of this with given target added */
-    public OsVersionChange withTarget(Version version, NodeType nodeType, Optional<Duration> upgradeBudget) {
+    public OsVersionChange withTarget(Version version, NodeType nodeType, Duration upgradeBudget) {
         var targets = new HashMap<>(this.targets);
         targets.compute(nodeType, (key, prevTarget) -> {
             Optional<Instant> lastRetiredAt = Optional.ofNullable(prevTarget).flatMap(OsVersionTarget::lastRetiredAt);

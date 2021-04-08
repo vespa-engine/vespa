@@ -64,6 +64,11 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         return matching(node -> ! nodes.contains(node));
     }
 
+    /** Returns the subset of nodes excluding given node */
+    public NodeList except(Node node) {
+        return except(Set.of(node));
+    }
+
     /** Returns the subset of nodes assigned to the given cluster type */
     public NodeList type(ClusterSpec.Type type) {
         return matching(node -> node.allocation().isPresent() && node.allocation().get().membership().cluster().type().equals(type));

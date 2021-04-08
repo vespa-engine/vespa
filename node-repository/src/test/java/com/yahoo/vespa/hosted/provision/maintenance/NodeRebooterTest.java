@@ -16,7 +16,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -123,7 +122,7 @@ public class NodeRebooterTest {
 
     /** Schedule OS upgrade for all host nodes */
     private void scheduleOsUpgrade(NodeRepository nodeRepository) {
-        nodeRepository.osVersions().setTarget(NodeType.host, Version.fromString("7.0"), Optional.empty(), false);
+        nodeRepository.osVersions().setTarget(NodeType.host, Version.fromString("7.0"), Duration.ZERO, false);
     }
 
     /** Simulate completion of an OS upgrade */
