@@ -126,7 +126,7 @@ public class ConnectorFactory {
                     return List.of(detectorFactory, proxyProtocolFactory, sslFactory, http1Factory);
                 } else {
                     ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
-                    return List.of(proxyProtocolFactory, sslFactory, newHttp1ConnectionFactory());
+                    return List.of(proxyProtocolFactory, sslFactory, http1Factory);
                 }
             } else {
                 return List.of(sslFactory, http1Factory);
