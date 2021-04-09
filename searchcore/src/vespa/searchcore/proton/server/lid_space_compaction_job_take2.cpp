@@ -23,31 +23,40 @@ namespace proton::lidspace {
 
 namespace {
 
-class IncOnDestruct {
-public:
-    IncOnDestruct(std::atomic<size_t> & count) : _count(count) {}
-    ~IncOnDestruct() {
-        _count.fetch_add(1, std::memory_order_relaxed);
-    }
-private:
-    std::atomic<size_t> & _count;
-};
-
 bool
-isSameDocument(const search::DocumentMetaData & a, const search::DocumentMetaData & b) {
+isSameDocument(const search::DocumentMetaData &a, const search::DocumentMetaData &b) {
     return (a.lid == b.lid) &&
            (a.bucketId == b.bucketId) &&
            (a.gid == b.gid) &&
-           (a.timestamp == b.timestamp); // Timestamp check can be removed once logic has proved itself in large scale.
+           (a.timestamp ==
+            b.timestamp); // Timestamp check can be removed once logic has proved itself in large scale.
 }
 
 }
 
-void
-CompactionJob::failOperation() {
-    IncOnDestruct countGuard(_executedCount);
-    _master.execute(makeLambdaTask([this] { _scanItr.reset(); }));
-}
+class CompactionJob::MoveTask : public storage::spi::BucketTask {
+public:
+    MoveTask(std::shared_ptr<CompactionJob> job, const search::DocumentMetaData & meta, IDestructorCallback::SP opsTracker)
+        : _job(std::move(job)),
+          _meta(meta),
+          _opsTracker(std::move(opsTracker))
+    { }
+    void run(const Bucket & bucket, IDestructorCallback::SP onDone) override {
+        assert(bucket.getBucketId() == _meta.bucketId);
+        using DoneContext = vespalib::KeepAlive<std::pair<IDestructorCallback::SP, IDestructorCallback::SP>>;
+        CompactionJob::moveDocument(std::move(_job), _meta,
+                                    std::make_shared<DoneContext>(std::make_pair(std::move(_opsTracker), std::move(onDone))));
+    }
+    void fail(const Bucket & bucket) override {
+        assert(bucket.getBucketId() == _meta.bucketId);
+        auto & master = _job->_master;
+        master.execute(makeLambdaTask([job=std::move(_job)] { job->_scanItr.reset(); }));
+    }
+private:
+    std::shared_ptr<CompactionJob> _job;
+    const search::DocumentMetaData _meta;
+    IDestructorCallback::SP        _opsTracker;
+};
 
 bool
 CompactionJob::scanDocuments(const LidUsageStats &stats)
@@ -56,16 +65,7 @@ CompactionJob::scanDocuments(const LidUsageStats &stats)
         DocumentMetaData document = getNextDocument(stats, false);
         if (document.valid()) {
             Bucket metaBucket(document::Bucket(_bucketSpace, document.bucketId));
-            IDestructorCallback::SP context = getLimiter().beginOperation();
-            auto bucketTask = makeBucketTask([this, meta=document, opsTracker=std::move(context)]
-            (const Bucket & bucket, std::shared_ptr<IDestructorCallback> onDone) {
-                assert(bucket.getBucketId() == meta.bucketId);
-                using DoneContext = vespalib::KeepAlive<std::pair<IDestructorCallback::SP, IDestructorCallback::SP>>;
-                moveDocument(meta, std::make_shared<DoneContext>(std::make_pair(std::move(opsTracker), std::move(onDone))));
-            }, [this](const Bucket &) { failOperation(); });
-
-            _startedCount.fetch_add(1, std::memory_order_relaxed);
-            _bucketExecutor.execute(metaBucket, std::move(bucketTask));
+            _bucketExecutor.execute(metaBucket, std::make_unique<MoveTask>(shared_from_this(), document, getLimiter().beginOperation()));
             if (isBlocked(BlockedReason::OUTSTANDING_OPS)) {
                 return true;
             }
@@ -75,19 +75,20 @@ CompactionJob::scanDocuments(const LidUsageStats &stats)
 }
 
 void
-CompactionJob::moveDocument(const search::DocumentMetaData & metaThen, std::shared_ptr<IDestructorCallback> context) {
-    IncOnDestruct countGuard(_executedCount);
-    if (_stopped.load(std::memory_order_relaxed)) return;
+CompactionJob::moveDocument(std::shared_ptr<CompactionJob> job, const search::DocumentMetaData & metaThen,
+                            std::shared_ptr<IDestructorCallback> context)
+{
     // The real lid must be sampled in the master thread.
     //TODO remove target lid from createMoveOperation interface
-    auto op = _handler->createMoveOperation(metaThen, 0);
+    auto op = job->_handler->createMoveOperation(metaThen, 0);
     if (!op || !op->getDocument()) return;
     // Early detection and force md5 calculation outside of master thread
     if (metaThen.gid != op->getDocument()->getId().getGlobalId()) return;
 
-    _master.execute(makeLambdaTask([this, meta=metaThen, moveOp=std::move(op), onDone=std::move(context)]() mutable {
-        if (_stopped.load(std::memory_order_relaxed)) return;
-        completeMove(meta, std::move(moveOp), std::move(onDone));
+    auto & master = job->_master;
+    master.execute(makeLambdaTask([self=std::move(job), meta=metaThen, moveOp=std::move(op), onDone=std::move(context)]() mutable {
+        if (self->_stopped.load(std::memory_order_relaxed)) return;
+        self->completeMove(meta, std::move(moveOp), std::move(onDone));
     }));
 }
 
@@ -125,24 +126,14 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
       _master(master),
       _bucketExecutor(bucketExecutor),
       _bucketSpace(bucketSpace),
-      _stopped(false),
-      _startedCount(0),
-      _executedCount(0)
+      _stopped(false)
 { }
 
 CompactionJob::~CompactionJob() = default;
 
-bool
-CompactionJob::inSync() const {
-    return _executedCount == _startedCount;
-}
-
 void
 CompactionJob::onStop() {
     _stopped = true;
-    while ( ! inSync() ) {
-        std::this_thread::sleep_for(1ms);
-    }
 }
 
 } // namespace proton

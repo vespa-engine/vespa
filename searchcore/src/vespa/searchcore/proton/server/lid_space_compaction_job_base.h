@@ -50,7 +50,6 @@ private:
     void compactLidSpace(const search::LidUsageStats &stats);
     bool remove_batch_is_ongoing() const;
     bool remove_is_ongoing() const;
-    virtual bool inSync() const { return true; }
 protected:
     search::DocumentMetaData getNextDocument(const search::LidUsageStats &stats, bool retryLastDocument);
 public:

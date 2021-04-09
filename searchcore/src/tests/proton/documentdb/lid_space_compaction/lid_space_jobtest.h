@@ -16,7 +16,7 @@ struct JobTestBase : public ::testing::TestWithParam<bool> {
     MyFrozenBucketHandler _frozenHandler;
     test::DiskMemUsageNotifier _diskMemUsageNotifier;
     test::ClusterStateHandler _clusterStateHandler;
-    std::unique_ptr<BlockableMaintenanceJob> _job;
+    std::shared_ptr<BlockableMaintenanceJob> _job;
     JobTestBase();
     ~JobTestBase() override;
     void init(uint32_t allowedLidBloat,

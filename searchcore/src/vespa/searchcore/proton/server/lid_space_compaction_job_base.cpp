@@ -130,9 +130,6 @@ LidSpaceCompactionJobBase::run()
     }
 
     if (_scanItr && !_scanItr->valid()) {
-        if (!inSync()) {
-            return false;
-        }
         if (shouldRestartScanDocuments(_handler->getLidStatus())) {
             _scanItr = _handler->getIterator();
         } else {

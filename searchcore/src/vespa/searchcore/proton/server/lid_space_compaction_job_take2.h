@@ -31,16 +31,14 @@ private:
     BucketExecutor          &_bucketExecutor;
     document::BucketSpace    _bucketSpace;
     std::atomic<bool>        _stopped;
-    std::atomic<size_t>      _startedCount;
-    std::atomic<size_t>      _executedCount;
 
     bool scanDocuments(const search::LidUsageStats &stats) override;
-    void moveDocument(const search::DocumentMetaData & metaThen, std::shared_ptr<IDestructorCallback> onDone);
+    static void moveDocument(std::shared_ptr<CompactionJob> job, const search::DocumentMetaData & metaThen,
+                             std::shared_ptr<IDestructorCallback> onDone);
     void completeMove(const search::DocumentMetaData & metaThen, std::unique_ptr<MoveOperation> moveOp,
                       std::shared_ptr<IDestructorCallback> onDone);
     void onStop() override;
-    bool inSync() const override;
-    void failOperation();
+    class MoveTask;
 public:
     CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                   std::shared_ptr<ILidSpaceCompactionHandler> handler,
