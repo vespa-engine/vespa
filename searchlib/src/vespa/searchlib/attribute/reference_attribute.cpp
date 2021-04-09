@@ -27,9 +27,6 @@ using document::IdParseException;
 
 namespace {
 
-// minimum dead bytes in unique store before consider compaction
-constexpr size_t DEAD_BYTES_SLACK = 0x10000u;
-
 const vespalib::string uniqueValueCountTag = "uniqueValueCount";
 
 uint64_t
@@ -289,8 +286,7 @@ ReferenceAttribute::considerCompact(const CompactionStrategy &compactionStrategy
 {
     size_t usedBytes = _cached_unique_store_values_memory_usage.usedBytes();
     size_t deadBytes = _cached_unique_store_values_memory_usage.deadBytes();
-    bool compactMemory = ((deadBytes >= DEAD_BYTES_SLACK) &&
-                          (usedBytes * compactionStrategy.getMaxDeadBytesRatio() < deadBytes));
+    bool compactMemory = compactionStrategy.should_compact_memory(usedBytes, deadBytes);
     if (compactMemory) {
         compactWorst();
         return true;

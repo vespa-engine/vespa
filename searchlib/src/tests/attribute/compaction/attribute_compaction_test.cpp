@@ -237,8 +237,7 @@ TEST_F("Compaction limits address space usage (dead) when free lists are NOT use
 {
     populate_and_hammer(f, true);
     AddressSpace afterSpace = f.getMultiValueAddressSpaceUsage("after");
-    // DEAD_ARRAYS_SLACK in multi value mapping is is 64k
-    EXPECT_GREATER(65536u, afterSpace.dead());
+    EXPECT_GREATER(search::CompactionStrategy::DEAD_ADDRESS_SPACE_SLACK, afterSpace.dead());
 }
 
 TEST_F("Compaction is not executed when free lists are used",
@@ -267,8 +266,7 @@ TEST_F("Compaction is peformed when compaction strategy is changed to enable com
         f._v->commit(); // new commit might trigger further compaction
         after2 = f.getMultiValueAddressSpaceUsage("after2");
     }
-    // DEAD_ARRAYS_SLACK in multi value mapping is is 64k
-    EXPECT_GREATER(65536u, after2.dead());
+    EXPECT_GREATER(search::CompactionStrategy::DEAD_ADDRESS_SPACE_SLACK, after2.dead());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

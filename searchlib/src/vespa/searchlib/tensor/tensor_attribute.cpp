@@ -27,9 +27,6 @@ namespace {
 
 constexpr uint32_t TENSOR_ATTRIBUTE_VERSION = 0;
 
-// minimum dead bytes in tensor attribute before consider compaction
-constexpr size_t DEAD_SLACK = 0x10000u;
-
 Value::UP
 createEmptyTensor(const ValueType &type)
 {
@@ -90,7 +87,7 @@ TensorAttribute::onCommit()
         Status &status = getStatus();
         size_t used = status.getUsed();
         size_t dead = status.getDead();
-        if ((dead >= DEAD_SLACK) && (dead * 5 > used)) {
+        if (getConfig().getCompactionStrategy().should_compact_memory(used, dead)) {
             compactWorst();
         }
     }

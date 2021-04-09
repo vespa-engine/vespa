@@ -45,8 +45,6 @@ vespalib::string doc1("id:test:music::1");
 vespalib::string doc2("id:test:music::2");
 vespalib::string doc3("id:test:music::3");
 
-constexpr size_t DEAD_BYTES_SLACK = 0x10000u;
-
 }
 
 struct MyGidToLidMapperFactory : public search::attribute::test::MockGidToLidMapperFactory {
@@ -178,7 +176,7 @@ struct ReferenceAttributeTest : public ::testing::Test {
         search::attribute::Status newStatus = oldStatus;
         uint64_t iter = 0;
         AttributeGuard guard(_attr);
-        uint64_t dropCount = DEAD_BYTES_SLACK / sizeof(Reference);
+        uint64_t dropCount = search::CompactionStrategy::DEAD_BYTES_SLACK / sizeof(Reference);
         for (; iter < iterLimit; ++iter) {
             clear(2);
             set(2, toGid(doc2));
