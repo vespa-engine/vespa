@@ -411,13 +411,13 @@ lidspacecompaction.removebatchblockrate double default=0.5
 lidspacecompaction.removeblockrate double default=100.0
 
 ## Set to true to enable bucket locking via content layer
-lidspacecompaction.usebucketexecutor bool default=true
+lidspacecompaction.usebucketexecutor bool default=false
 
 ## Maximum docs to move in single operation per bucket
 bucketmove.maxdocstomoveperbucket int default=1
 
 ## Set to true to enable bucket locking via content layer
-bucketmove.usebucketexecutor bool default=true
+bucketmove.usebucketexecutor bool default=false
 
 ## This is the maximum value visibilitydelay you can have.
 ## A to higher value here will cost more memory while not improving too much.
@@ -513,7 +513,7 @@ maintenancejobs.resourcelimitfactor double default = 1.05
 ##
 ## The job is unblocked (and executed again) when this goes under the limit again.
 ## Currently used by 'lid_space_compaction' job.
-maintenancejobs.maxoutstandingmoveops int default=100
+maintenancejobs.maxoutstandingmoveops int default=10
 
 ## Controls the type of bucket checksum used. Do not change unless 
 ## in depth understanding is present.
