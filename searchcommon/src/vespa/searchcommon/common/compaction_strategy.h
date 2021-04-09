@@ -16,7 +16,7 @@ private:
     double _maxDeadAddressSpaceRatio; // Max ratio of dead address space before compaction
 public:
     CompactionStrategy() noexcept
-        : _maxDeadBytesRatio(0.2),
+        : _maxDeadBytesRatio(0.15),
           _maxDeadAddressSpaceRatio(0.2)
     {
     }
