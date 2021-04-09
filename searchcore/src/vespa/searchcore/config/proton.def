@@ -317,7 +317,7 @@ documentdb[].allocation.amortizecount int default=10000
 documentdb[].allocation.multivaluegrowfactor double default=0.2
 
 ## The ratio of used bytes that can be dead before attempting to perform compaction.
-documentdb[].allocation.max_dead_bytes_ratio double default=0.2
+documentdb[].allocation.max_dead_bytes_ratio double default=0.15
 
 ## The ratio of used address space that can be dead before attempting to perform compaction.
 documentdb[].allocation.max_dead_address_space_ratio double default=0.2
