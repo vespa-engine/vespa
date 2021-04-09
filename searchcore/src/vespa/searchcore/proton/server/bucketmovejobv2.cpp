@@ -73,6 +73,7 @@ BucketMoveJobV2::BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &
       bucketdb::IBucketCreateListener(),
       IBucketStateChangedHandler(),
       IDiskMemUsageListener(),
+      std::enable_shared_from_this<BucketMoveJobV2>(),
       _calc(calc),
       _moveHandler(moveHandler),
       _modifiedHandler(modifiedHandler),

@@ -23,7 +23,8 @@ private:
     const vespalib::duration   _interval;
 
 public:
-    typedef std::unique_ptr<IMaintenanceJob> UP;
+    using UP = std::unique_ptr<IMaintenanceJob>;
+    using SP = std::shared_ptr<IMaintenanceJob>;
 
     IMaintenanceJob(const vespalib::string &name,
                     vespalib::duration delay,

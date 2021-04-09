@@ -13,11 +13,11 @@ class JobTrackedMaintenanceJob : public IMaintenanceJob
 {
 private:
     IJobTracker::SP     _tracker;
-    IMaintenanceJob::UP _job;
+    IMaintenanceJob::SP _job;
     bool                _running;
 
 public:
-    JobTrackedMaintenanceJob(const IJobTracker::SP &tracker, IMaintenanceJob::UP job);
+    JobTrackedMaintenanceJob(IJobTracker::SP tracker, IMaintenanceJob::SP job);
     ~JobTrackedMaintenanceJob() override;
 
     bool isBlocked() const override { return _job->isBlocked(); }
