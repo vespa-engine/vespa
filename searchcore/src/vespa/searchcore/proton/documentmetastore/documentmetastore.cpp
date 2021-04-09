@@ -199,13 +199,6 @@ DocumentMetaStore::insert(GidToLidMapKey key, const RawDocumentMetaData &metaDat
     updateCommittedDocIdLimit();
 }
 
-namespace {
-
-// minimum dead bytes in gid to lid map before consider compaction
-constexpr size_t DEAD_BYTES_SLACK = 0x10000u;
-
-}
-
 bool
 DocumentMetaStore::consider_compact_gid_to_lid_map()
 {
@@ -215,9 +208,7 @@ DocumentMetaStore::consider_compact_gid_to_lid_map()
     auto &compaction_strategy = getConfig().getCompactionStrategy();
     size_t used_bytes = _cached_gid_to_lid_map_memory_usage.usedBytes();
     size_t dead_bytes = _cached_gid_to_lid_map_memory_usage.deadBytes();
-    bool compact_memory = ((dead_bytes >= DEAD_BYTES_SLACK) &&
-                           (used_bytes * compaction_strategy.getMaxDeadBytesRatio() < dead_bytes));
-    return compact_memory;
+    return compaction_strategy.should_compact_memory(used_bytes, dead_bytes);
 }
 
 void

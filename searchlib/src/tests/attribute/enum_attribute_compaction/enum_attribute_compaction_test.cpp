@@ -174,9 +174,8 @@ template <typename VectorType>
 void
 CompactionTest<VectorType>::test_enum_store_compaction()
 {
-    constexpr size_t DEAD_BYTES_SLACK = 0x10000u;
     constexpr uint32_t canary_stride = 256;
-    uint32_t dead_limit = DEAD_BYTES_SLACK / 8;
+    uint32_t dead_limit = search::CompactionStrategy::DEAD_BYTES_SLACK / 8;
     uint32_t doc_count = dead_limit * 3;
     if (_v->hasMultiValue() || std::is_same_v<VectorType,StringAttribute>) {
         doc_count /= 2;

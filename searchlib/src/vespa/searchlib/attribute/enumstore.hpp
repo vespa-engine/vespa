@@ -219,13 +219,6 @@ EnumStoreT<EntryT>::update_stat()
     return retval;
 }
 
-namespace {
-
-// minimum dead bytes in enum store before consider compaction
-constexpr size_t DEAD_BYTES_SLACK = 0x10000u;
-constexpr size_t DEAD_ADDRESS_SPACE_SLACK = 0x10000u;
-
-}
 template <typename EntryT>
 std::unique_ptr<IEnumStore::EnumIndexRemapper>
 EnumStoreT<EntryT>::consider_compact(const CompactionStrategy& compaction_strategy)
@@ -234,10 +227,8 @@ EnumStoreT<EntryT>::consider_compact(const CompactionStrategy& compaction_strate
     size_t dead_bytes = _cached_values_memory_usage.deadBytes();
     size_t used_address_space = _cached_values_address_space_usage.used();
     size_t dead_address_space = _cached_values_address_space_usage.dead();
-    bool compact_memory = ((dead_bytes >= DEAD_BYTES_SLACK) &&
-                           (used_bytes * compaction_strategy.getMaxDeadBytesRatio() < dead_bytes));
-    bool compact_address_space = ((dead_address_space >= DEAD_ADDRESS_SPACE_SLACK) &&
-                                  (used_address_space * compaction_strategy.getMaxDeadAddressSpaceRatio() < dead_address_space));
+    bool compact_memory = compaction_strategy.should_compact_memory(used_bytes, dead_bytes);
+    bool compact_address_space = compaction_strategy.should_compact_address_space(used_address_space, dead_address_space);
     if (compact_memory || compact_address_space) {
         return compact_worst(compact_memory, compact_address_space);
     }
