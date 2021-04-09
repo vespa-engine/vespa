@@ -8,6 +8,7 @@ import com.yahoo.slime.SlimeUtils;
 import org.apache.hc.client5.http.classic.methods.HttpGet;
 import org.apache.hc.client5.http.impl.classic.BasicHttpClientResponseHandler;
 import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.io.BasicHttpClientConnectionManager;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -37,7 +38,7 @@ public class ConfigVerification {
         for (String arg : args) {
             configservers.add(prefix + arg + ":" + port + "/config/v2/tenant/" + tenant + "/application/" + appName + "/environment/" + environment + "/region/" + region + "/instance/" + instance + "/?recursive=true");
         }
-        try (CloseableHttpClient httpClient = VespaHttpClientBuilder.create().build()) {
+        try (CloseableHttpClient httpClient = VespaHttpClientBuilder.create(BasicHttpClientConnectionManager::new).build()) {
             System.exit(compareConfigs(listConfigs(configservers, httpClient), httpClient));
         }
     }
