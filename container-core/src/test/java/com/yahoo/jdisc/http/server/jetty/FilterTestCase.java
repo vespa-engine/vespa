@@ -99,7 +99,7 @@ public class FilterTestCase {
         final MyRequestHandler requestHandler = new MyRequestHandler();
         final TestDriver testDriver = newDriver(requestHandler, filterBindings);
 
-        testDriver.client().get("status.html");
+        testDriver.client().get("/status.html");
 
         assertThat(requestHandler.awaitInvocation(), is(true));
         assertThat(requestHandler.getHeaderMap().get("foo").get(0), is("bar"));

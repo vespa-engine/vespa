@@ -35,10 +35,11 @@ import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.tls.TlsContext;
-import org.apache.http.conn.ssl.NoopHostnameVerifier;
-import org.apache.http.entity.ContentType;
-import org.apache.http.entity.mime.FormBodyPart;
-import org.apache.http.entity.mime.content.StringBody;
+import org.apache.hc.client5.http.entity.mime.FormBodyPart;
+import org.apache.hc.client5.http.entity.mime.FormBodyPartBuilder;
+import org.apache.hc.client5.http.entity.mime.StringBody;
+import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
+import org.apache.hc.core5.http.ContentType;
 import org.assertj.core.api.Assertions;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V1;
@@ -400,8 +401,8 @@ public class HttpServerTest {
         final ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .setMultipartContent(
-                                newFileBody("", "start.txt", startTxtContent),
-                                newFileBody("", "updater.conf", updaterConfContent))
+                                newFileBody("start.txt", startTxtContent),
+                                newFileBody("updater.conf", updaterConfContent))
                         .execute();
         response.expectStatusCode(is(OK))
                 .expectContent(containsString(startTxtContent))
@@ -501,6 +502,16 @@ public class HttpServerTest {
         final TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
         driver.client().get("/status.html")
               .expectStatusCode(is(OK));
+        assertTrue(driver.close());
+    }
+
+    @Test
+    public void requireThatServerCanRespondToHttp2Request() throws Exception {
+        Path privateKeyFile = tmpFolder.newFile().toPath();
+        Path certificateFile = tmpFolder.newFile().toPath();
+        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
+
+        TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
         assertTrue(driver.close());
     }
 
@@ -1068,30 +1079,16 @@ public class HttpServerTest {
                 new ConnectorConfig.Builder());
     }
 
-    private static FormBodyPart newFileBody(final String parameterName, final String fileName, final String fileContent) {
-        return new FormBodyPart(
-                parameterName,
-                new StringBody(fileContent, ContentType.TEXT_PLAIN) {
-                    @Override
-                    public String getFilename() {
-                        return fileName;
-                    }
-
-                    @Override
-                    public String getTransferEncoding() {
-                        return "binary";
-                    }
-
-                    @Override
-                    public String getMimeType() {
-                        return "";
-                    }
-
-                    @Override
-                    public String getCharset() {
-                        return null;
-                    }
-                });
+    private static FormBodyPart newFileBody(final String fileName, final String fileContent) {
+        return FormBodyPartBuilder.create()
+                .setBody(
+                        new StringBody(fileContent, ContentType.TEXT_PLAIN) {
+                            @Override public String getFilename() { return fileName; }
+                            @Override public String getMimeType() { return ""; }
+                            @Override public String getCharset() { return null; }
+                        })
+                .setName(fileName)
+                .build();
     }
 
     private static class ConnectedAtRequestHandler extends AbstractRequestHandler {
