@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
@@ -45,8 +46,10 @@ public class ArchiveAccessMaintainerTest extends ControllerContainerCloudTest {
 
         MockArchiveService archiveService = (MockArchiveService) tester.controller().serviceRegistry().archiveService();
         assertNull(archiveService.authorizedIamRoles.get(testBucket));
-        new ArchiveAccessMaintainer(containerTester.controller(), Duration.ofMinutes(10)).maintain();
+        MockMetric metric = new MockMetric();
+        new ArchiveAccessMaintainer(containerTester.controller(), metric, Duration.ofMinutes(10)).maintain();
         assertEquals(Map.of(tenant1, tenant1role), archiveService.authorizedIamRoles.get(testBucket));
+        assertEquals(Map.of("archive.bucketCount", Map.of(Map.of(), 1d)), metric.metrics());
     }
 
     private TenantName createTenantWithAccessRole(ControllerTester tester, String tenantName, String role) {

@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.maintenance;
 
 import com.google.common.collect.Maps;
+import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucketDb;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
@@ -10,6 +11,8 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.time.Duration;
+import java.util.Collection;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
@@ -19,19 +22,32 @@ import java.util.stream.Collectors;
  */
 public class ArchiveAccessMaintainer extends ControllerMaintainer {
 
+    private static final String bucketCountMetricName = "archive.bucketCount";
+
     private final ArchiveBucketDb archiveBucketDb;
     private final ArchiveService archiveService;
     private final ZoneRegistry zoneRegistry;
+    private final Metric metric;
 
-    public ArchiveAccessMaintainer(Controller controller, Duration interval) {
+    public ArchiveAccessMaintainer(Controller controller, Metric metric, Duration interval) {
         super(controller, interval);
         this.archiveBucketDb = controller.archiveBucketDb();
         this.archiveService = controller.serviceRegistry().archiveService();
         this.zoneRegistry = controller().zoneRegistry();
+        this.metric = metric;
     }
 
     @Override
     protected boolean maintain() {
+
+        // Count buckets - so we can alert if we get close to the account limit of 1000
+        metric.add(bucketCountMetricName,
+                zoneRegistry.zones().all().ids().stream()
+                        .map(archiveBucketDb::buckets)
+                        .mapToLong(Collection::size)
+                        .sum(),
+                metric.createContext(Map.of()));
+
         var tenantArchiveAccessRoles = controller().tenants().asList().stream()
                 .filter(t -> t instanceof CloudTenant)
                 .map(t -> (CloudTenant) t)
