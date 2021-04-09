@@ -31,7 +31,6 @@
         <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
         <jaxb.version>2.3.0</jaxb.version>
         <jetty.version>9.4.38.v20210224</jetty.version>
-        <jetty-alpn.version>1.1.3.v20160715</jetty-alpn.version>
         <junit5.version>5.7.0</junit5.version>
         <junit5.platform.version>1.7.0</junit5.platform.version>
         <org.lz4.version>1.7.1</org.lz4.version>
@@ -254,12 +253,6 @@
                                         <include>org.apache.opennlp:opennlp-tools:1.8.4:jar:test</include>
                                         <include>org.apiguardian:apiguardian-api:1.1.0:jar:test</include>
                                         <include>org.codehaus.woodstox:stax2-api:3.1.4:jar:test</include>
-                                        <include>org.eclipse.jetty.alpn:alpn-api:[${jetty-alpn.version}]:jar:test</include>
-                                        <include>org.eclipse.jetty.http2:http2-common:[${jetty.version}]:jar:test</include>
-                                        <include>org.eclipse.jetty.http2:http2-hpack:[${jetty.version}]:jar:test</include>
-                                        <include>org.eclipse.jetty.http2:http2-server:[${jetty.version}]:jar:test</include>
-                                        <include>org.eclipse.jetty:jetty-alpn-server:[${jetty.version}]:jar:test</include>
-                                        <include>org.eclipse.jetty:jetty-alpn-java-server:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-continuation:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-jmx:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-security:[${jetty.version}]:jar:test</include>

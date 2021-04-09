@@ -7,8 +7,6 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ssl.SslContextFactoryProvider;
 import com.yahoo.security.tls.MixedMode;
 import com.yahoo.security.tls.TransportSecurityUtils;
-import org.eclipse.jetty.alpn.server.ALPNServerConnectionFactory;
-import org.eclipse.jetty.http2.server.HTTP2ServerConnectionFactory;
 import org.eclipse.jetty.server.ConnectionFactory;
 import org.eclipse.jetty.server.DetectorConnectionFactory;
 import org.eclipse.jetty.server.HttpConfiguration;
@@ -20,7 +18,6 @@ import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
 import org.eclipse.jetty.util.ssl.SslContextFactory;
 
-import java.util.Collection;
 import java.util.List;
 
 /**
@@ -79,72 +76,41 @@ public class ConnectorFactory {
     }
 
     private List<ConnectionFactory> createConnectionFactories(Metric metric) {
+        HttpConnectionFactory httpFactory = newHttpConnectionFactory();
         if (!isSslEffectivelyEnabled(connectorConfig)) {
-            return List.of(newHttp1ConnectionFactory());
+            return List.of(httpFactory);
         } else if (connectorConfig.ssl().enabled()) {
-            return connectionFactoriesForHttps(metric);
+            return connectionFactoriesForHttps(metric, httpFactory);
         } else if (TransportSecurityUtils.isTransportSecurityEnabled()) {
             switch (TransportSecurityUtils.getInsecureMixedMode()) {
                 case TLS_CLIENT_MIXED_SERVER:
                 case PLAINTEXT_CLIENT_MIXED_SERVER:
-                    return connectionFactoriesForHttpsMixedMode(metric);
+                    return List.of(new DetectorConnectionFactory(newSslConnectionFactory(metric, httpFactory)), httpFactory);
                 case DISABLED:
-                    return connectionFactoriesForHttps(metric);
+                    return connectionFactoriesForHttps(metric, httpFactory);
                 default:
                     throw new IllegalStateException();
             }
         } else {
-            return List.of(newHttp1ConnectionFactory());
+            return List.of(httpFactory);
         }
     }
 
-    private List<ConnectionFactory> connectionFactoriesForHttps(Metric metric) {
+    private List<ConnectionFactory> connectionFactoriesForHttps(Metric metric, HttpConnectionFactory httpFactory) {
         ConnectorConfig.ProxyProtocol proxyProtocolConfig = connectorConfig.proxyProtocol();
-        HttpConnectionFactory http1Factory = newHttp1ConnectionFactory();
-        if (connectorConfig.http2Enabled()) {
-            HTTP2ServerConnectionFactory http2Factory = newHttp2ConnectionFactory();
-            ALPNServerConnectionFactory alpnFactory = newAlpnConnectionFactory(List.of(http1Factory, http2Factory), http1Factory);
-            SslConnectionFactory sslFactory = newSslConnectionFactory(metric, alpnFactory);
-            if (proxyProtocolConfig.enabled()) {
-                if (proxyProtocolConfig.mixedMode()) {
-                    ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(alpnFactory);
-                    DetectorConnectionFactory detectorFactory = newDetectorConnectionFactory(sslFactory, proxyProtocolFactory);
-                    return List.of(detectorFactory, proxyProtocolFactory, sslFactory, alpnFactory, http1Factory, http2Factory);
-                } else {
-                    ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(alpnFactory);
-                    return List.of(proxyProtocolFactory, sslFactory, alpnFactory, http1Factory, http2Factory);
-                }
+        SslConnectionFactory sslFactory = newSslConnectionFactory(metric, httpFactory);
+        if (proxyProtocolConfig.enabled()) {
+            if (proxyProtocolConfig.mixedMode()) {
+                return List.of(new DetectorConnectionFactory(sslFactory, new ProxyConnectionFactory(sslFactory.getProtocol())), sslFactory, httpFactory);
             } else {
-                return List.of(sslFactory, alpnFactory, http1Factory, http2Factory);
+                return List.of(new ProxyConnectionFactory(sslFactory.getProtocol()), sslFactory, httpFactory);
             }
         } else {
-            SslConnectionFactory sslFactory = newSslConnectionFactory(metric, http1Factory);
-            if (proxyProtocolConfig.enabled()) {
-                if (proxyProtocolConfig.mixedMode()) {
-                    ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
-                    DetectorConnectionFactory detectorFactory = newDetectorConnectionFactory(sslFactory, proxyProtocolFactory);
-                    return List.of(detectorFactory, proxyProtocolFactory, sslFactory, http1Factory);
-                } else {
-                    ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
-                    return List.of(proxyProtocolFactory, sslFactory, http1Factory);
-                }
-            } else {
-                return List.of(sslFactory, http1Factory);
-            }
+            return List.of(sslFactory, httpFactory);
         }
     }
 
-    private List<ConnectionFactory> connectionFactoriesForHttpsMixedMode(Metric metric) {
-        // No support for proxy-protocol/http2 when using HTTP with TLS mixed mode
-        HttpConnectionFactory httpFactory = newHttp1ConnectionFactory();
-        SslConnectionFactory sslFactory = newSslConnectionFactory(metric, httpFactory);
-        // Detector connection factory with single alternative will fallback to next protocol in list (httpFactory in this case)
-        // Cannot specify HttpConnectionFactory as alternative it does not implement ConnectionFactory.Detecting
-        DetectorConnectionFactory detectorFactory = newDetectorConnectionFactory(sslFactory);
-        return List.of(detectorFactory, httpFactory, sslFactory);
-    }
-
-    private HttpConfiguration newHttpConfiguration() {
+    private HttpConnectionFactory newHttpConnectionFactory() {
         HttpConfiguration httpConfig = new HttpConfiguration();
         httpConfig.setSendDateHeader(true);
         httpConfig.setSendServerVersion(false);
@@ -156,38 +122,14 @@ public class ConnectorFactory {
         if (isSslEffectivelyEnabled(connectorConfig)) {
             httpConfig.addCustomizer(new SecureRequestCustomizer());
         }
-        return httpConfig;
+        return new HttpConnectionFactory(httpConfig);
     }
 
-    private HttpConnectionFactory newHttp1ConnectionFactory() {
-        return new HttpConnectionFactory(newHttpConfiguration());
-    }
-
-    private HTTP2ServerConnectionFactory newHttp2ConnectionFactory() {
-        return new HTTP2ServerConnectionFactory(newHttpConfiguration());
-    }
-
-    private SslConnectionFactory newSslConnectionFactory(Metric metric, ConnectionFactory wrappedFactory) {
+    private SslConnectionFactory newSslConnectionFactory(Metric metric, HttpConnectionFactory httpFactory) {
         SslContextFactory ctxFactory = sslContextFactoryProvider.getInstance(connectorConfig.name(), connectorConfig.listenPort());
-        SslConnectionFactory connectionFactory = new SslConnectionFactory(ctxFactory, wrappedFactory.getProtocol());
+        SslConnectionFactory connectionFactory = new SslConnectionFactory(ctxFactory, httpFactory.getProtocol());
         connectionFactory.addBean(new SslHandshakeFailedListener(metric, connectorConfig.name(), connectorConfig.listenPort()));
         return connectionFactory;
-    }
-
-    private ALPNServerConnectionFactory newAlpnConnectionFactory(Collection<ConnectionFactory> alternatives,
-                                                                 ConnectionFactory defaultFactory) {
-        String[] protocols = alternatives.stream().map(ConnectionFactory::getProtocol).toArray(String[]::new);
-        ALPNServerConnectionFactory factory = new ALPNServerConnectionFactory(protocols);
-        factory.setDefaultProtocol(defaultFactory.getProtocol());
-        return factory;
-    }
-
-    private DetectorConnectionFactory newDetectorConnectionFactory(ConnectionFactory.Detecting... alternatives) {
-        return new DetectorConnectionFactory(alternatives);
-    }
-
-    private ProxyConnectionFactory newProxyProtocolConnectionFactory(ConnectionFactory wrappedFactory) {
-        return new ProxyConnectionFactory(wrappedFactory.getProtocol());
     }
 
     private static boolean isSslEffectivelyEnabled(ConnectorConfig config) {

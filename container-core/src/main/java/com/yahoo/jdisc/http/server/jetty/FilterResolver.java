@@ -11,13 +11,13 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.filter.RequestFilter;
 import com.yahoo.jdisc.http.filter.ResponseFilter;
 import com.yahoo.jdisc.http.servlet.ServletRequest;
-import org.eclipse.jetty.server.Request;
 
+import javax.servlet.http.HttpServletRequest;
 import java.net.URI;
 import java.util.Map;
 import java.util.Optional;
 
-import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnector;
+import static com.yahoo.jdisc.http.server.jetty.JDiscHttpServlet.getConnector;
 
 /**
  * Resolve request/response filter (chain) based on {@link FilterBindings}.
@@ -36,38 +36,38 @@ class FilterResolver {
         this.strictFiltering = strictFiltering;
     }
 
-    Optional<RequestFilter> resolveRequestFilter(Request request, URI jdiscUri) {
-        Optional<String> maybeFilterId = bindings.resolveRequestFilter(jdiscUri, getConnector(request).listenPort());
+    Optional<RequestFilter> resolveRequestFilter(HttpServletRequest servletRequest, URI jdiscUri) {
+        Optional<String> maybeFilterId = bindings.resolveRequestFilter(jdiscUri, getConnector(servletRequest).listenPort());
         if (maybeFilterId.isPresent()) {
-            metric.add(MetricDefinitions.FILTERING_REQUEST_HANDLED, 1L, createMetricContext(request, maybeFilterId.get()));
-            request.setAttribute(ServletRequest.JDISC_REQUEST_CHAIN, maybeFilterId.get());
+            metric.add(MetricDefinitions.FILTERING_REQUEST_HANDLED, 1L, createMetricContext(servletRequest, maybeFilterId.get()));
+            servletRequest.setAttribute(ServletRequest.JDISC_REQUEST_CHAIN, maybeFilterId.get());
         } else if (!strictFiltering) {
-            metric.add(MetricDefinitions.FILTERING_REQUEST_UNHANDLED, 1L, createMetricContext(request, null));
+            metric.add(MetricDefinitions.FILTERING_REQUEST_UNHANDLED, 1L, createMetricContext(servletRequest, null));
         } else {
             String syntheticFilterId = RejectingRequestFilter.SYNTHETIC_FILTER_CHAIN_ID;
-            metric.add(MetricDefinitions.FILTERING_REQUEST_HANDLED, 1L, createMetricContext(request, syntheticFilterId));
-            request.setAttribute(ServletRequest.JDISC_REQUEST_CHAIN, syntheticFilterId);
+            metric.add(MetricDefinitions.FILTERING_REQUEST_HANDLED, 1L, createMetricContext(servletRequest, syntheticFilterId));
+            servletRequest.setAttribute(ServletRequest.JDISC_REQUEST_CHAIN, syntheticFilterId);
             return Optional.of(RejectingRequestFilter.INSTANCE);
         }
         return maybeFilterId.map(bindings::getRequestFilter);
     }
 
-    Optional<ResponseFilter> resolveResponseFilter(Request request, URI jdiscUri) {
-        Optional<String> maybeFilterId = bindings.resolveResponseFilter(jdiscUri, getConnector(request).listenPort());
+    Optional<ResponseFilter> resolveResponseFilter(HttpServletRequest servletRequest, URI jdiscUri) {
+        Optional<String> maybeFilterId = bindings.resolveResponseFilter(jdiscUri, getConnector(servletRequest).listenPort());
         if (maybeFilterId.isPresent()) {
-            metric.add(MetricDefinitions.FILTERING_RESPONSE_HANDLED, 1L, createMetricContext(request, maybeFilterId.get()));
-            request.setAttribute(ServletRequest.JDISC_RESPONSE_CHAIN, maybeFilterId.get());
+            metric.add(MetricDefinitions.FILTERING_RESPONSE_HANDLED, 1L, createMetricContext(servletRequest, maybeFilterId.get()));
+            servletRequest.setAttribute(ServletRequest.JDISC_RESPONSE_CHAIN, maybeFilterId.get());
         } else {
-            metric.add(MetricDefinitions.FILTERING_RESPONSE_UNHANDLED, 1L, createMetricContext(request, null));
+            metric.add(MetricDefinitions.FILTERING_RESPONSE_UNHANDLED, 1L, createMetricContext(servletRequest, null));
         }
         return maybeFilterId.map(bindings::getResponseFilter);
     }
 
-    private Metric.Context createMetricContext(Request request, String filterId) {
+    private Metric.Context createMetricContext(HttpServletRequest request, String filterId) {
         Map<String, String> extraDimensions = filterId != null
                 ? Map.of(MetricDefinitions.FILTER_CHAIN_ID_DIMENSION, filterId)
                 : Map.of();
-        return getConnector(request).createRequestMetricContext(request, extraDimensions);
+        return JDiscHttpServlet.getConnector(request).createRequestMetricContext(request, extraDimensions);
     }
 
     private static class RejectingRequestFilter extends NoopSharedResource implements RequestFilter {
