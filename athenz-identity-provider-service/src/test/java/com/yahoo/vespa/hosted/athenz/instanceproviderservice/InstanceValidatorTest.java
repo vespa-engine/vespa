@@ -102,7 +102,7 @@ public class InstanceValidatorTest {
                 mockApplicationInfo(applicationId, 5, Collections.singletonList(serviceInfo)));
         IdentityDocumentSigner signer = mock(IdentityDocumentSigner.class);
         when(signer.hasValidSignature(any(), any())).thenReturn(true);
-        InstanceValidator instanceValidator = new InstanceValidator(mock(KeyProvider.class), superModelProvider, null, signer, vespaTenantDomain);
+        InstanceValidator instanceValidator = new InstanceValidator(mock(KeyProvider.class), superModelProvider, mockNodeRepo(), signer, vespaTenantDomain);
 
         assertTrue(instanceValidator.isValidInstance(createRegisterInstanceConfirmation(applicationId, domain, service)));
     }
@@ -114,6 +114,22 @@ public class InstanceValidatorTest {
         InstanceConfirmation instanceConfirmation = createRegisterInstanceConfirmation(applicationId, domain, service);
         VespaUniqueInstanceId tamperedId = new VespaUniqueInstanceId(0, "default", "instance", "app", "tenant", "us-north-1", "dev", IdentityType.NODE);
         instanceConfirmation.set("sanDNS", tamperedId.asDottedString() + ".instanceid.athenz.dev-us-north-1.vespa.yahoo.cloud");
+        assertFalse(instanceValidator.isValidInstance(instanceConfirmation));
+    }
+
+    @Test
+    public void rejects_unknown_ips_in_csr() {
+        NodeRepository nodeRepository = mockNodeRepo();
+        InstanceValidator instanceValidator = new InstanceValidator(null, mockSuperModelProvider(), nodeRepository, null, vespaTenantDomain);
+        InstanceConfirmation instanceConfirmation = createRegisterInstanceConfirmation(applicationId, domain, service);
+        Set<String> nodeIp = nodeRepository.nodes().list().owner(applicationId).stream().findFirst()
+                .map(Node::ipConfig)
+                .map(IP.Config::primary)
+                .orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
+
+        List<String> ips = new ArrayList<>(nodeIp);
+        ips.add("::ff");
+        instanceConfirmation.set("sanIP", String.join(",", ips));
         assertFalse(instanceValidator.isValidInstance(instanceConfirmation));
     }
 
@@ -136,20 +152,18 @@ public class InstanceValidatorTest {
 
     @Test
     public void rejects_refresh_on_ip_mismatch() {
-        NodeRepository nodeRepository = mock(NodeRepository.class);
-        Nodes nodes = mock(Nodes.class);
-        when(nodeRepository.nodes()).thenReturn(nodes);
-
+        NodeRepository nodeRepository = mockNodeRepo();
         InstanceValidator instanceValidator = new InstanceValidator(null, null, nodeRepository, new IdentityDocumentSigner(), vespaTenantDomain);
 
-        List<Node> nodeList = createNodes(10);
-        Node node = nodeList.get(0);
-        nodeList = allocateNode(nodeList, node, applicationId);
-        when(nodes.list()).thenReturn(NodeList.copyOf(nodeList));
-        String nodeIp = node.ipConfig().primary().stream().findAny().orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
+        Set<String> nodeIp = nodeRepository.nodes().list().owner(applicationId).stream().findFirst()
+                .map(Node::ipConfig)
+                .map(IP.Config::primary)
+                .orElseThrow(() -> new RuntimeException("No ipaddress for mocked node"));
 
+        List<String> ips = new ArrayList<>(nodeIp);
+        ips.add("::ff");
         // Add invalid ip to list of ip addresses
-        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, ImmutableList.of(nodeIp, "::ff"));
+        InstanceConfirmation instanceConfirmation = createRefreshInstanceConfirmation(applicationId, domain, service, ips);
 
         assertFalse(instanceValidator.isValidRefresh(instanceConfirmation));
     }
@@ -169,6 +183,19 @@ public class InstanceValidatorTest {
 
         assertFalse(instanceValidator.isValidRefresh(instanceConfirmation));
 
+    }
+
+    private NodeRepository mockNodeRepo() {
+        NodeRepository nodeRepository = mock(NodeRepository.class);
+        Nodes nodes = mock(Nodes.class);
+        when(nodeRepository.nodes()).thenReturn(nodes);
+        InstanceValidator instanceValidator = new InstanceValidator(null, null, nodeRepository, new IdentityDocumentSigner(), vespaTenantDomain);
+
+        List<Node> nodeList = createNodes(10);
+        Node node = nodeList.get(0);
+        nodeList = allocateNode(nodeList, node, applicationId);
+        when(nodes.list()).thenReturn(NodeList.copyOf(nodeList));
+        return nodeRepository;
     }
 
     private InstanceConfirmation createRegisterInstanceConfirmation(ApplicationId applicationId, String domain, String service) {
