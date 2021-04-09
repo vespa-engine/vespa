@@ -49,6 +49,7 @@
         <module>config-provisioning</module>
         <module>config-proxy</module>
         <module>configserver</module>
+        <module>configserver-client</module>
         <module>configserver-flags</module>
         <module>config_test</module>
         <module>container</module>
