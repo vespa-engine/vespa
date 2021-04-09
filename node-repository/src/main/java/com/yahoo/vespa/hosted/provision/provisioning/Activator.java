@@ -69,12 +69,11 @@ class Activator {
         NodeList allNodes = nodeRepository.nodes().list();
         NodeList applicationNodes = allNodes.owner(application);
 
-        List<Node> reserved = applicationNodes.state(Node.State.reserved).asList();
-        List<Node> reservedToActivate = updatePortsFrom(hosts, retainHostsInList(hostnames, reserved));
-        List<Node> oldActive = applicationNodes.state(Node.State.active).asList(); // All nodes active now
-        List<Node> continuedActive = retainHostsInList(hostnames, oldActive);
-        List<Node> newActive = updateFrom(hosts, continuedActive, activationTime); // All nodes that will be active when this is committed
-        newActive.addAll(reservedToActivate);
+        NodeList reserved = updatePortsFrom(hosts, applicationNodes.state(Node.State.reserved)
+                                                                   .matching(node -> hostnames.contains(node.hostname())));
+        NodeList oldActive = applicationNodes.state(Node.State.active); // All nodes active now
+        NodeList continuedActive = oldActive.matching(node -> hostnames.contains(node.hostname()));
+        NodeList newActive = withHostInfo(continuedActive, hosts, activationTime).and(reserved); // All nodes that will be active when this is committed
         if ( ! containsAll(hostnames, newActive))
             throw new IllegalArgumentException("Activation of " + application + " failed. " +
                                                "Could not find all requested hosts." +
@@ -84,21 +83,20 @@ class Activator {
                                                "\nThis might happen if the time from reserving host to activation takes " +
                                                "longer time than reservation expiry (the hosts will then no longer be reserved)");
 
-        validateParentHosts(application, allNodes, reservedToActivate);
+        validateParentHosts(application, allNodes, reserved);
 
-        List<Node> activeToRemove = removeHostsFromList(hostnames, oldActive);
-        activeToRemove = activeToRemove.stream().map(Node::unretire).collect(Collectors.toList()); // only active nodes can be retired. TODO: Move this line to deactivate
+        NodeList activeToRemove = oldActive.matching(node ->  ! hostnames.contains(node.hostname()));
+        activeToRemove = NodeList.copyOf(activeToRemove.mapToList(Node::unretire)); // only active nodes can be retired. TODO: Move this line to deactivate
         deactivate(activeToRemove, transaction); // TODO: Pass activation time in this call and next line
-        nodeRepository.nodes().activate(newActive, transaction.nested()); // activate also continued active to update node state
+        nodeRepository.nodes().activate(newActive.asList(), transaction.nested()); // activate also continued active to update node state
 
         rememberResourceChange(transaction, generation, activationTime,
-                               NodeList.copyOf(oldActive).not().retired(),
-                               NodeList.copyOf(newActive).not().retired());
-        unreserveParentsOf(reservedToActivate);
+                               oldActive.not().retired(),
+                               newActive.not().retired());
+        unreserveParentsOf(reserved);
     }
 
-    private void deactivate(List<Node> toDeactivateList, ApplicationTransaction transaction) {
-        NodeList toDeactivate = NodeList.copyOf(toDeactivateList);
+    private void deactivate(NodeList toDeactivate, ApplicationTransaction transaction) {
         nodeRepository.nodes().deactivate(toDeactivate.not().failing().asList(), transaction);
         nodeRepository.nodes().fail(toDeactivate.failing().asList(), transaction);
     }
@@ -130,7 +128,7 @@ class Activator {
     }
 
     /** When a tenant node is activated on a host, we can open up that host for use by others */
-    private void unreserveParentsOf(List<Node> nodes) {
+    private void unreserveParentsOf(NodeList nodes) {
         for (Node node : nodes) {
             if ( node.parentHostname().isEmpty()) continue;
             Optional<Node> parentNode = nodeRepository.nodes().node(node.parentHostname().get());
@@ -160,7 +158,7 @@ class Activator {
                     .collect(Collectors.toUnmodifiableSet());
     }
 
-    private static void validateParentHosts(ApplicationId application, NodeList nodes, List<Node> potentialChildren) {
+    private static void validateParentHosts(ApplicationId application, NodeList nodes, NodeList potentialChildren) {
         Set<String> parentHostnames = potentialChildren.stream()
                 .map(Node::parentHostname)
                 .flatMap(Optional::stream)
@@ -197,19 +195,11 @@ class Activator {
         }
     }
 
-    private List<Node> retainHostsInList(Set<String> hosts, List<Node> nodes) {
-        return nodes.stream().filter(node -> hosts.contains(node.hostname())).collect(Collectors.toList());
-    }
-
-    private List<Node> removeHostsFromList(Set<String> hosts, List<Node> nodes) {
-        return nodes.stream().filter(node ->  ! hosts.contains(node.hostname())).collect(Collectors.toList());
-    }
-
-    private Set<String> toHostNames(List<Node> nodes) {
+    private Set<String> toHostNames(NodeList nodes) {
         return nodes.stream().map(Node::hostname).collect(Collectors.toSet());
     }
 
-    private boolean containsAll(Set<String> hosts, List<Node> nodes) {
+    private boolean containsAll(Set<String> hosts, NodeList nodes) {
         Set<String> notFoundHosts = new HashSet<>(hosts);
         for (Node node : nodes)
             notFoundHosts.remove(node.hostname());
@@ -217,7 +207,7 @@ class Activator {
     }
 
     /** Returns the input nodes with the changes resulting from applying the settings in hosts to the given list of nodes. */
-    private List<Node> updateFrom(Collection<HostSpec> hosts, List<Node> nodes, Instant at) {
+    private NodeList withHostInfo(NodeList nodes, Collection<HostSpec> hosts, Instant at) {
         List<Node> updated = new ArrayList<>();
         for (Node node : nodes) {
             HostSpec hostSpec = getHost(node.hostname(), hosts);
@@ -233,13 +223,13 @@ class Activator {
             node = node.with(allocation);
             updated.add(node);
         }
-        return updated;
+        return NodeList.copyOf(updated);
     }
 
     /**
      * Returns the input nodes with any port allocations from the hosts
      */
-    private List<Node> updatePortsFrom(Collection<HostSpec> hosts, List<Node> nodes) {
+    private NodeList updatePortsFrom(Collection<HostSpec> hosts, NodeList nodes) {
         List<Node> updated = new ArrayList<>();
         for (Node node : nodes) {
             HostSpec hostSpec = getHost(node.hostname(), hosts);
@@ -250,7 +240,7 @@ class Activator {
             }
             updated.add(node);
         }
-        return updated;
+        return NodeList.copyOf(updated);
     }
 
     private HostSpec getHost(String hostname, Collection<HostSpec> fromHosts) {
