@@ -1,16 +1,18 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server.http;
 
-import ai.vespa.util.http.hc4.VespaHttpClientBuilder;
+import ai.vespa.util.http.hc5.VespaHttpClientBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.ParseException;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.util.Timeout;
+
 import java.util.logging.Level;
-import org.apache.http.HttpEntity;
-import org.apache.http.client.config.RequestConfig;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.conn.ConnectTimeoutException;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.util.EntityUtils;
 
 import java.io.IOException;
 import java.net.SocketTimeoutException;
@@ -30,20 +32,24 @@ public class SimpleHttpFetcher implements HttpFetcher {
             request.addHeader("Connection", "Close");
             request.setConfig(
                     RequestConfig.custom()
-                            .setConnectTimeout(params.readTimeoutMs)
-                            .setSocketTimeout(params.readTimeoutMs)
+                            .setConnectTimeout(Timeout.ofMilliseconds(params.readTimeoutMs))
+                            .setResponseTimeout(Timeout.ofMilliseconds(params.readTimeoutMs))
                             .build());
             try (CloseableHttpResponse response = client.execute(request)) {
                 HttpEntity entity = response.getEntity();
                 return new StaticResponse(
-                        response.getStatusLine().getStatusCode(),
-                        entity.getContentType().getValue(),
+                        response.getCode(),
+                        entity.getContentType(),
                         EntityUtils.toString(entity));
             }
-        } catch (ConnectTimeoutException | SocketTimeoutException e) {
+        } catch (SocketTimeoutException e) {
             String message = "Timed out after " + params.readTimeoutMs + " ms reading response from " + url;
             logger.log(Level.WARNING, message, e);
             throw new RequestTimeoutException(message);
+        } catch (ParseException e) {
+            String message = "Parse error in response from " + url;
+            logger.log(Level.WARNING, message, e);
+            throw new InternalServerException(message);
         } catch (IOException e) {
             String message = "Failed to get response from " + url;
             logger.log(Level.WARNING, message, e);
