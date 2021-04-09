@@ -121,6 +121,7 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                              document::BucketSpace bucketSpace)
     : LidSpaceCompactionJobBase(config, std::move(handler), opStorer, diskMemUsageNotifier,
                                 blockableConfig, clusterStateChangedNotifier, nodeRetired),
+      std::enable_shared_from_this<CompactionJob>(),
       _master(master),
       _bucketExecutor(bucketExecutor),
       _bucketSpace(bucketSpace),

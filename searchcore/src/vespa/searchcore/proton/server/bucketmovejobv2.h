@@ -37,7 +37,8 @@ class BucketMoveJobV2 : public BlockableMaintenanceJob,
                       public IClusterStateChangedHandler,
                       public bucketdb::IBucketCreateListener,
                       public IBucketStateChangedHandler,
-                      public IDiskMemUsageListener
+                      public IDiskMemUsageListener,
+                      public std::enable_shared_from_this<BucketMoveJobV2>
 {
 private:
     using BucketExecutor = storage::spi::BucketExecutor;

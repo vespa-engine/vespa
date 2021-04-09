@@ -21,7 +21,7 @@ namespace proton::lidspace {
  * Moves documents from higher lids to lower lids. It uses a BucketExecutor that ensures that the bucket
  * is locked for changes while the document is moved.
  */
-class CompactionJob : public LidSpaceCompactionJobBase
+class CompactionJob : public LidSpaceCompactionJobBase, public std::enable_shared_from_this<CompactionJob>
 {
 private:
     using BucketExecutor = storage::spi::BucketExecutor;
