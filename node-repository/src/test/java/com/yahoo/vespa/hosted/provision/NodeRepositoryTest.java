@@ -158,7 +158,17 @@ public class NodeRepositoryTest {
         assertEquals(2, tester.nodeRepository().nodes().list().size());
 
         // Fail host and container
-        tester.nodeRepository().nodes().failRecursively(cfghost1, Agent.system, getClass().getSimpleName());
+        tester.nodeRepository().nodes().failOrMarkRecursively(cfghost1, Agent.system, getClass().getSimpleName());
+
+        assertEquals("cfg1 is not failed yet as it active",
+                     Node.State.active, tester.nodeRepository().nodes().node(cfg1).get().state());
+        assertEquals("cfghost1 is not failed yet as it active",
+                     Node.State.active, tester.nodeRepository().nodes().node(cfghost1).get().state());
+        assertTrue(tester.nodeRepository().nodes().node(cfg1).get().status().wantToFail());
+        assertTrue(tester.nodeRepository().nodes().node(cfghost1).get().status().wantToFail());
+
+        tester.nodeRepository().nodes().fail(cfg1, Agent.system, "test");
+        tester.nodeRepository().nodes().fail(cfghost1, Agent.system, "test");
 
         // Remove recursively
         tester.nodeRepository().nodes().removeRecursively(cfghost1);

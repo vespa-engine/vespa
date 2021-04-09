@@ -26,6 +26,7 @@ import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.provision.NoSuchNodeException;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.applications.Application;
@@ -138,8 +139,9 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
             return new MessageResponse("Moved " + path.get("hostname") + " to " + Node.State.ready);
         }
         else if (path.matches("/nodes/v2/state/failed/{hostname}")) {
-            List<Node> failedNodes = nodeRepository.nodes().failRecursively(path.get("hostname"), Agent.operator, "Failed through the nodes/v2 API");
-            return new MessageResponse("Moved " + hostnamesAsString(failedNodes) + " to " + Node.State.failed);
+            var failedOrMarkedNodes = NodeList.copyOf(nodeRepository.nodes().failOrMarkRecursively(path.get("hostname"), Agent.operator, "Failed through the nodes/v2 API"));
+            return new MessageResponse("Moved " + hostnamesAsString(failedOrMarkedNodes.state(Node.State.failed).asList()) + " to " + Node.State.failed +
+                                       " and marked " + hostnamesAsString(failedOrMarkedNodes.failing().asList()) + " as wantToFail");
         }
         else if (path.matches("/nodes/v2/state/parked/{hostname}")) {
             List<Node> parkedNodes = nodeRepository.nodes().parkRecursively(path.get("hostname"), Agent.operator, "Parked through the nodes/v2 API");
@@ -430,6 +432,7 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
     }
 
     private static String hostnamesAsString(List<Node> nodes) {
+        if (nodes.isEmpty()) return "none";
         return nodes.stream().map(Node::hostname).sorted().collect(Collectors.joining(", "));
     }
 

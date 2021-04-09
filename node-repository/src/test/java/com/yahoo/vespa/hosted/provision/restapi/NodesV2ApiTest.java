@@ -133,7 +133,7 @@ public class NodesV2ApiTest {
         // PUT a node in failed ...
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host2.yahoo.com",
                                    new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved host2.yahoo.com to failed\"}");
+                       "{\"message\":\"Moved host2.yahoo.com to failed and marked none as wantToFail\"}");
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"),
                                      "\"state\":\"failed\"");
         // ... and put it back in active (after fixing). This is useful to restore data when multiple nodes fail.
@@ -149,7 +149,7 @@ public class NodesV2ApiTest {
         // or, PUT a node in failed ...
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/test-node-pool-102-2",
                                    new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved test-node-pool-102-2 to failed\"}");
+                       "{\"message\":\"Moved test-node-pool-102-2 to failed and marked none as wantToFail\"}");
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-102-2"),
                                                  "\"state\":\"failed\"");
         // ... and deallocate it such that it moves to dirty and is recycled
@@ -165,14 +165,12 @@ public class NodesV2ApiTest {
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node/test-node-pool-102-2",  new byte[0], Request.Method.GET),
                              404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node with hostname 'test-node-pool-102-2'\"}");
 
-        // Put a host in failed and make sure its children are also failed
+        // Mark a node and its children as want to fail
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/dockerhost1.yahoo.com", new byte[0], Request.Method.PUT),
-                "{\"message\":\"Moved dockerhost1.yahoo.com, host4.yahoo.com to failed\"}");
-
+                "{\"message\":\"Moved none to failed and marked dockerhost1.yahoo.com, host4.yahoo.com as wantToFail\"}");
+        // Nodes are not failed yet
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed"), "{\"nodes\":[" +
-                "{\"url\":\"http://localhost:8080/nodes/v2/node/host5.yahoo.com\"}," +
-                "{\"url\":\"http://localhost:8080/nodes/v2/node/host4.yahoo.com\"}," +
-                "{\"url\":\"http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com\"}]}");
+                       "{\"url\":\"http://localhost:8080/nodes/v2/node/host5.yahoo.com\"}]}");
 
         // Update (PATCH) a node (multiple fields can also be sent in one request body)
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com",
@@ -238,6 +236,9 @@ public class NodesV2ApiTest {
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-after-changes.json");
 
         // move a host marked as wantToRebuild to deprovisioned
+        assertResponse(new Request("http://localhost:8080/nodes/v2/state/parked/dockerhost1.yahoo.com",
+                                   new byte[0], Request.Method.PUT),
+                       "{\"message\":\"Moved dockerhost1.yahoo.com to parked\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                    new byte[0], Request.Method.DELETE),
                        "{\"message\":\"Removed dockerhost1.yahoo.com\"}");
@@ -423,7 +424,7 @@ public class NodesV2ApiTest {
                 "{\"message\":\"Added 1 nodes to the provisioned state\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/foo.yahoo.com",
                         new byte[0], Request.Method.PUT),
-                "{\"message\":\"Moved foo.yahoo.com to failed\"}");
+                "{\"message\":\"Moved foo.yahoo.com to failed and marked none as wantToFail\"}");
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/dirty/foo.yahoo.com",
                         new byte[0], Request.Method.PUT),
                 "{\"message\":\"Moved foo.yahoo.com to dirty\"}");
@@ -471,7 +472,7 @@ public class NodesV2ApiTest {
         // Attempt to fail and ready an allocated node without going through dirty
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host1.yahoo.com",
                                    new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved host1.yahoo.com to failed\"}");
+                       "{\"message\":\"Moved host1.yahoo.com to failed and marked none as wantToFail\"}");
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/state/ready/host1.yahoo.com",
                                           new byte[0], Request.Method.PUT),
                        400,
