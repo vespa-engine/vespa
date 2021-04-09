@@ -2,8 +2,6 @@
 package ai.vespa.util.http.hc5;
 
 import org.apache.hc.client5.http.HttpRoute;
-import org.apache.hc.client5.http.impl.DefaultSchemePortResolver;
-import org.apache.hc.client5.http.impl.routing.DefaultRoutePlanner;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
 import org.apache.hc.client5.http.routing.HttpRoutePlanner;
 import org.apache.hc.core5.http.HttpException;
@@ -20,8 +18,8 @@ class HttpToHttpsRoutePlanner implements HttpRoutePlanner {
 
     @Override
     public HttpRoute determineRoute(HttpHost target, HttpContext context) throws HttpException {
-        if ( ! target.getSchemeName().equals("http"))
-            throw new IllegalArgumentException("Scheme must be 'http' when using HttpToHttpsRoutePlanner, was '" + target.getSchemeName() + "'");
+        if ( ! target.getSchemeName().equals("http") && ! target.getSchemeName().equals("https"))
+            throw new IllegalArgumentException("Scheme must be 'http' or 'https' when using HttpToHttpsRoutePlanner, was '" + target.getSchemeName() + "'");
 
         if (target.getPort() == -1)
             throw new IllegalArgumentException("Port must be set when using HttpToHttpsRoutePlanner");
