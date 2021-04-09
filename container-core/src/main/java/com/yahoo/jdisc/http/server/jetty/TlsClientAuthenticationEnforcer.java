@@ -16,7 +16,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnectorLocalPort;
+import static com.yahoo.jdisc.http.server.jetty.HttpServletRequestUtils.getConnectorLocalPort;
 
 /**
  * A Jetty handler that enforces TLS client authentication with configurable white list.
@@ -34,7 +34,7 @@ class TlsClientAuthenticationEnforcer extends HandlerWrapper {
     @Override
     public void handle(String target, Request request, HttpServletRequest servletRequest, HttpServletResponse servletResponse) throws IOException, ServletException {
         if (isHttpsRequest(request)
-                && !isRequestToWhitelistedBinding(request)
+                && !isRequestToWhitelistedBinding(servletRequest)
                 && !isClientAuthenticated(servletRequest)) {
             servletResponse.sendError(
                     Response.Status.UNAUTHORIZED,
@@ -60,14 +60,14 @@ class TlsClientAuthenticationEnforcer extends HandlerWrapper {
         return request.getDispatcherType() == DispatcherType.REQUEST && request.getScheme().equalsIgnoreCase("https");
     }
 
-    private boolean isRequestToWhitelistedBinding(Request jettyRequest) {
-        int localPort = getConnectorLocalPort(jettyRequest);
+    private boolean isRequestToWhitelistedBinding(HttpServletRequest servletRequest) {
+        int localPort = getConnectorLocalPort(servletRequest);
         List<String> whiteListedPaths = getWhitelistedPathsForPort(localPort);
         if (whiteListedPaths == null) {
             return true; // enforcer not enabled
         }
         // Note: Same path definition as HttpRequestFactory.getUri()
-        return whiteListedPaths.contains(jettyRequest.getRequestURI());
+        return whiteListedPaths.contains(servletRequest.getRequestURI());
     }
 
     private List<String> getWhitelistedPathsForPort(int localPort) {
