@@ -169,6 +169,7 @@ class NodesResponse extends SlimeJsonResponse {
         object.setBool("wantToRetire", node.status().wantToRetire());
         object.setBool("preferToRetire", node.status().preferToRetire());
         object.setBool("wantToDeprovision", node.status().wantToDeprovision());
+        object.setBool("wantToRebuild", node.status().wantToRebuild());
         toSlime(node.history(), object.setArray("history"));
         ipAddressesToSlime(node.ipConfig().primary(), object.setArray("ipAddresses"));
         ipAddressesToSlime(node.ipConfig().pool().ipSet(), object.setArray("additionalIpAddresses"));
