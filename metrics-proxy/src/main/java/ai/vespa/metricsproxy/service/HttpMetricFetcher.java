@@ -4,21 +4,20 @@ package ai.vespa.metricsproxy.service;
 import ai.vespa.util.http.hc5.VespaAsyncHttpClientBuilder;
 
 import java.io.InputStream;
-import java.io.PipedInputStream;
-import java.io.PipedOutputStream;
-import java.nio.ByteBuffer;
+import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 
 import com.yahoo.yolean.Exceptions;
-import org.apache.hc.client5.http.async.methods.AbstractBinResponseConsumer;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.HttpException;
 import org.apache.hc.core5.http.HttpResponse;
+import org.apache.hc.core5.http.Message;
 import org.apache.hc.core5.http.Method;
 import org.apache.hc.core5.http.nio.support.BasicRequestProducer;
+import org.apache.hc.core5.http.nio.support.BasicResponseConsumer;
+import org.apache.hc.core5.http.nio.support.classic.AbstractClassicEntityConsumer;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
@@ -55,57 +54,24 @@ public abstract class HttpMetricFetcher {
         log.log(Level.FINE, "Fetching metrics from " + u + " with timeout " + CONNECTION_TIMEOUT);
     }
 
-    InputStream getJson() throws IOException {
+    InputStream getJson() throws IOException,InterruptedException, ExecutionException {
         log.log(Level.FINE, "Connecting to url " + url + " for service '" + service + "'");
-        PipedInputStream input = new PipedInputStream(BUFFER_SIZE);
-        final PipedOutputStream output = new PipedOutputStream(input);
-        Future<Void> response = httpClient.execute(
+        Future<Message<HttpResponse, InputStream>> response = httpClient.execute(
                 new BasicRequestProducer(Method.GET, url),
-                new AbstractBinResponseConsumer<Void>(){
+                new BasicResponseConsumer<>(new AbstractClassicEntityConsumer<>(BUFFER_SIZE, Runnable::run) {
                     @Override
-                    public void releaseResources() {
-                        try {
-                            output.close();
-                        } catch (IOException e) {
-                            System.out.println("releaseResources -> close failed");
-                        }
+                    protected InputStream consumeData(ContentType contentType, InputStream inputStream) {
+                        return inputStream;
                     }
-
-                    @Override
-                    protected int capacityIncrement() {
-                        return BUFFER_SIZE;
-                    }
-
-                    @Override
-                    protected void data(ByteBuffer src, boolean endOfStream) throws IOException {
-                        byte [] backingArray = src.array();
-                        int offset = src.arrayOffset();
-                        output.write(backingArray, offset, src.remaining());
-                        src.position(src.limit());
-                        output.flush();
-                        if (endOfStream) {
-                            output.close();
-                        }
-                    }
-
-                    @Override
-                    protected void start(HttpResponse response, ContentType contentType) throws HttpException, IOException {
-
-                    }
-
-                    @Override
-                    protected Void buildResult() {
-                        return null;
-                    }
-                }, null);
-        return input;
+                }), null);
+        return response.get().getBody();
     }
 
     public String toString() {
         return this.getClass().getSimpleName() + " using " + url;
     }
 
-    String errMsgNoResponse(IOException e) {
+    String errMsgNoResponse(Exception e) {
         return "Unable to get response from service '" + service + "': " +
                 Exceptions.toMessageString(e);
     }

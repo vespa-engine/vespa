@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
+import java.util.concurrent.ExecutionException;
 import java.util.logging.Level;
 
 import java.io.IOException;
@@ -33,7 +34,7 @@ public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
     public HealthMetric getHealth(int fetchCount) {
         try {
             return createHealthMetrics(getJson(), fetchCount);
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException | ExecutionException e) {
             logMessageNoResponse(errMsgNoResponse(e), fetchCount);
             byte [] empty = {'{','}'};
             return createHealthMetrics(new ByteArrayInputStream(empty), fetchCount);
