@@ -509,7 +509,7 @@ public class HttpServerTest {
         Path privateKeyFile = tmpFolder.newFile().toPath();
         Path certificateFile = tmpFolder.newFile().toPath();
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
-        TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
+        TestDriver driver = createSslWithTlsClientAuthenticationEnforcer(certificateFile, privateKeyFile);
 
         SSLContext trustStoreOnlyCtx = new SslContextBuilder()
                 .withTrustStore(certificateFile)
@@ -967,6 +967,25 @@ public class HttpServerTest {
                     binder.bind(RequestLog.class).toInstance(requestLog);
                     binder.bind(ConnectionLog.class).toInstance(connectionLog);
                 });
+    }
+
+    private static TestDriver createSslWithTlsClientAuthenticationEnforcer(Path certificateFile, Path privateKeyFile) {
+        ConnectorConfig.Builder connectorConfig = new ConnectorConfig.Builder()
+                .tlsClientAuthEnforcer(
+                        new ConnectorConfig.TlsClientAuthEnforcer.Builder()
+                                .enable(true)
+                                .pathWhitelist("/status.html"))
+                .ssl(new ConnectorConfig.Ssl.Builder()
+                        .enabled(true)
+                        .clientAuth(ConnectorConfig.Ssl.ClientAuth.Enum.WANT_AUTH)
+                        .privateKeyFile(privateKeyFile.toString())
+                        .certificateFile(certificateFile.toString())
+                        .caCertificateFile(certificateFile.toString()));
+        return TestDrivers.newConfiguredInstance(
+                new EchoRequestHandler(),
+                new ServerConfig.Builder().connectionLog(new ServerConfig.ConnectionLog.Builder().enabled(true)),
+                connectorConfig,
+                binder -> {});
     }
 
     private static TestDriver createSslTestDriver(
