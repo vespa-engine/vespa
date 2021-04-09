@@ -87,11 +87,15 @@ public class InstanceValidator {
         log.log(Level.FINE, () -> String.format("Validating instance %s.", providerUniqueId));
 
         PublicKey publicKey = keyProvider.getPublicKey(signedIdentityDocument.signingKeyVersion());
-        if (signer.hasValidSignature(signedIdentityDocument, publicKey)) {
+        if (! signer.hasValidSignature(signedIdentityDocument, publicKey)) {
+            log.log(Level.SEVERE, () -> String.format("Instance %s has invalid signature.", providerUniqueId));
+            return false;
+        }
+
+        if(validateAttributes(instanceConfirmation, providerUniqueId)) {
             log.log(Level.FINE, () -> String.format("Instance %s is valid.", providerUniqueId));
             return true;
         }
-        log.log(Level.SEVERE, () -> String.format("Instance %s has invalid signature.", providerUniqueId));
         return false;
     }
 
