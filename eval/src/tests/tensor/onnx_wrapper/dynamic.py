@@ -35,5 +35,5 @@ graph_def = helper.make_graph(
     ],
     [OUTPUT],
 )
-model_def = helper.make_model(graph_def, producer_name='dynamic.py')
+model_def = helper.make_model(graph_def, producer_name='dynamic.py', opset_imports=[onnx.OperatorSetIdProto(version=12)])
 onnx.save(model_def, 'dynamic.onnx')
