@@ -8,6 +8,8 @@ import java.io.IOException;
 /**
  * Forwards input from a source InputStream while making a copy of it into an outputstream.
  * Note that it also does read-ahead and copies up to 64K of data more than was used.
+ *
+ * @author arnej
  */
 class TeeInputStream extends InputStream {
     final InputStream src;

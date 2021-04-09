@@ -7,7 +7,7 @@ import java.nio.ByteBuffer;
 /**
  * Marker interface for use with the BufferChain data store.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public interface WritableByteTransmitter {
     void send(ByteBuffer src) throws IOException;
