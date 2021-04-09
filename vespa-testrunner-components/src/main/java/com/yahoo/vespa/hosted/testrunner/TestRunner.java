@@ -136,9 +136,10 @@ public class TestRunner implements LegacyTestRunner {
         ProcessBuilder builder = testBuilder.apply(testProfile);
         {
             LogRecord record = new LogRecord(Level.INFO,
-                                             String.format("Starting %s. Artifacts directory: %s Config file: %s\nCommand to run: %s\n",
+                                             String.format("Starting %s. Artifacts directory: %s Config file: %s\nCommand to run: %s\nEnv: %s\n",
                                                            testProfile.name(), artifactsPath, configFile,
-                                                           String.join(" ", builder.command())));
+                                                           String.join(" ", builder.command()),
+                                                           builder.environment()));
             log.put(record.getSequenceNumber(), record);
             logger.log(record);
             log.put(record.getSequenceNumber(), record);
