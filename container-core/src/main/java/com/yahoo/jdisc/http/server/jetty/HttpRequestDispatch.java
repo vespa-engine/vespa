@@ -14,7 +14,6 @@ import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.HttpRequest;
 import org.eclipse.jetty.io.EofException;
-import org.eclipse.jetty.server.HttpConnection;
 import org.eclipse.jetty.server.Request;
 
 import javax.servlet.AsyncContext;
@@ -34,8 +33,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.jdisc.http.HttpHeaders.Values.APPLICATION_X_WWW_FORM_URLENCODED;
-import static com.yahoo.jdisc.http.server.jetty.HttpServletRequestUtils.getConnection;
-import static com.yahoo.jdisc.http.server.jetty.JDiscHttpServlet.getConnector;
+import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnector;
+import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getHttp1Connection;
 import static com.yahoo.yolean.Exceptions.throwUnchecked;
 
 /**
@@ -72,7 +71,7 @@ class HttpRequestDispatch {
                                                                        jDiscContext.janitor,
                                                                        metricReporter,
                                                                        jDiscContext.developerMode());
-        markConnectionAsNonPersistentIfThresholdReached(servletRequest);
+        markHttp1ConnectionAsNonPersistentIfThresholdReached(jettyRequest);
         this.async = servletRequest.startAsync();
         async.setTimeout(0);
         metricReporter.uriLength(jettyRequest.getOriginalURI().length());
@@ -139,22 +138,24 @@ class HttpRequestDispatch {
         };
     }
 
-    private static void markConnectionAsNonPersistentIfThresholdReached(HttpServletRequest request) {
+    private static void markHttp1ConnectionAsNonPersistentIfThresholdReached(Request request) {
         ConnectorConfig connectorConfig = getConnector(request).connectorConfig();
         int maxRequestsPerConnection = connectorConfig.maxRequestsPerConnection();
         if (maxRequestsPerConnection > 0) {
-            HttpConnection connection = getConnection(request);
-            if (connection.getMessagesIn() >= maxRequestsPerConnection) {
-                connection.getGenerator().setPersistent(false);
-            }
+            getHttp1Connection(request).ifPresent(connection -> {
+                if (connection.getMessagesIn() >= maxRequestsPerConnection) {
+                    connection.getGenerator().setPersistent(false);
+                }
+            });
         }
         double maxConnectionLifeInSeconds = connectorConfig.maxConnectionLife();
         if (maxConnectionLifeInSeconds > 0) {
-            HttpConnection connection = getConnection(request);
-            Instant expireAt = Instant.ofEpochMilli((long)(connection.getCreatedTimeStamp() + maxConnectionLifeInSeconds * 1000));
-            if (Instant.now().isAfter(expireAt)) {
-                connection.getGenerator().setPersistent(false);
-            }
+            getHttp1Connection(request).ifPresent(connection -> {
+                Instant expireAt = Instant.ofEpochMilli((long) (connection.getCreatedTimeStamp() + maxConnectionLifeInSeconds * 1000));
+                if (Instant.now().isAfter(expireAt)) {
+                    connection.getGenerator().setPersistent(false);
+                }
+            });
         }
     }
 
@@ -212,7 +213,7 @@ class HttpRequestDispatch {
                                                     AccessLogEntry accessLogEntry,
                                                     HttpServletRequest servletRequest) {
         RequestHandler requestHandler = wrapHandlerIfFormPost(
-                new FilteringRequestHandler(context.filterResolver, servletRequest),
+                new FilteringRequestHandler(context.filterResolver, (Request)servletRequest),
                 servletRequest, context.serverConfig.removeRawPostBodyForWwwUrlEncodedPost());
 
         return new AccessLoggingRequestHandler(requestHandler, accessLogEntry);
