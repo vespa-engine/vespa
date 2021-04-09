@@ -268,6 +268,7 @@ public class Node {
         failed,
         parked,
         breakfixed,
+        deprovisioned,
         unknown
     }
 
