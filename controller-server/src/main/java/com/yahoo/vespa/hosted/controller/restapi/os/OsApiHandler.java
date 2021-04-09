@@ -137,8 +137,8 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
         Inspector cloudField = root.field("cloud");
         Inspector upgradeBudgetField = root.field("upgradeBudget");
         boolean force = root.field("force").asBool();
-        if (!versionField.valid() || !cloudField.valid()) {
-            throw new IllegalArgumentException("Fields 'version' and 'cloud' are required");
+        if (!versionField.valid() || !cloudField.valid() || !upgradeBudgetField.valid()) {
+            throw new IllegalArgumentException("Fields 'version', 'cloud' and 'upgradeBudget' are required");
         }
 
         CloudName cloud = CloudName.from(cloudField.asString());
@@ -148,22 +148,17 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
         } catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Invalid version '" + versionField.asString() + "'", e);
         }
-        Optional<Duration> upgradeBudget = Optional.of(upgradeBudgetField)
-                                                   .filter(Inspector::valid)
-                                                   .map(Inspector::asString).map(s -> {
-                    try {
-                        return Duration.parse(s);
-                    } catch (Exception e2) {
-                        throw new IllegalArgumentException("Invalid duration '" + s + "'", e2);
-                    }
-                });
-
+        Duration upgradeBudget;
+        try {
+            upgradeBudget = Duration.parse(upgradeBudgetField.asString());
+        } catch (Exception e) {
+            throw new IllegalArgumentException("Invalid duration '" + upgradeBudgetField.asString() + "'", e);
+        }
         controller.upgradeOsIn(cloud, target, upgradeBudget, force);
         Slime response = new Slime();
         Cursor cursor = response.setObject();
         cursor.setString("message", "Set target OS version for cloud '" + cloud.value() + "' to " +
-                                    target.toFullString() + upgradeBudget.map(d -> " with upgrade budget " + d)
-                                                                         .orElse(""));
+                                    target.toFullString() + " with upgrade budget " + upgradeBudget);
         return response;
     }
 
@@ -178,7 +173,7 @@ public class OsApiHandler extends AuditLoggingRequestHandler {
             currentVersionObject.setString("version", osVersion.version().toFullString());
             Optional<OsVersionTarget> target = targets.stream().filter(t -> t.osVersion().equals(osVersion)).findFirst();
             currentVersionObject.setBool("targetVersion", target.isPresent());
-            target.flatMap(OsVersionTarget::upgradeBudget).ifPresent(budget -> currentVersionObject.setString("upgradeBudget", budget.toString()));
+            target.ifPresent(t -> currentVersionObject.setString("upgradeBudget", t.upgradeBudget().toString()));
             currentVersionObject.setString("cloud", osVersion.cloud().value());
             Cursor nodesArray = currentVersionObject.setArray("nodes");
             nodeVersions.asMap().values().forEach(nodeVersion -> {

@@ -40,7 +40,7 @@ public class OsVersionChangeSerializer {
             var targetObject = targetsObject.addObject();
             targetObject.setString(NODE_TYPE_FIELD, NodeSerializer.toString(nodeType));
             targetObject.setString(VERSION_FIELD, target.version().toFullString());
-            target.upgradeBudget().ifPresent(duration -> targetObject.setLong(UPGRADE_BUDGET_FIELD, duration.toMillis()));
+            targetObject.setLong(UPGRADE_BUDGET_FIELD, target.upgradeBudget().toMillis());
             target.lastRetiredAt().ifPresent(instant -> targetObject.setLong(LAST_RETIRED_AT_FIELD, instant.toEpochMilli()));
         });
         try {
@@ -56,7 +56,9 @@ public class OsVersionChangeSerializer {
         inspector.field(TARGETS_FIELD).traverse((ArrayTraverser) (idx, arrayInspector) -> {
             var version = Version.fromString(arrayInspector.field(VERSION_FIELD).asString());
             var nodeType = NodeSerializer.nodeTypeFromString(arrayInspector.field(NODE_TYPE_FIELD).asString());
-            Optional<Duration> budget = optionalLong(arrayInspector.field(UPGRADE_BUDGET_FIELD)).map(Duration::ofMillis);
+            // TODO(mpolden): Require this field after 2021-05-01
+            Duration budget = optionalLong(arrayInspector.field(UPGRADE_BUDGET_FIELD)).map(Duration::ofMillis)
+                                                                                      .orElse(Duration.ZERO);
             Optional<Instant> lastRetiredAt = optionalLong(arrayInspector.field(LAST_RETIRED_AT_FIELD)).map(Instant::ofEpochMilli);
             targets.put(nodeType, new OsVersionTarget(nodeType, version, budget, lastRetiredAt));
         });

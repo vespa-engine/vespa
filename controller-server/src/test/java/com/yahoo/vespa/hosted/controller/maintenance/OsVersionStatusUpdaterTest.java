@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.versions.OsVersionStatus;
 import org.junit.Test;
 
 import java.time.Duration;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -41,7 +40,7 @@ public class OsVersionStatusUpdaterTest {
         // Setting a new target adds it to current status
         Version version1 = Version.fromString("7.1");
         CloudName cloud = CloudName.defaultName();
-        tester.controller().upgradeOsIn(cloud, version1, Optional.empty(), false);
+        tester.controller().upgradeOsIn(cloud, version1, Duration.ZERO, false);
         statusUpdater.maintain();
 
         var osVersions = tester.controller().osVersionStatus().versions();

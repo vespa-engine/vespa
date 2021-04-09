@@ -23,6 +23,7 @@ public enum Agent {
     ReservationExpirer,
     DynamicProvisioningMaintainer,
     RetiringUpgrader,
+    RebuildingOsUpgrader,
     SpareCapacityMaintainer,
     SwitchRebalancer,
 

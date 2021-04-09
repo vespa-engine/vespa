@@ -11,7 +11,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.List;
-import java.util.Optional;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -38,7 +37,7 @@ public class OsUpgradeSchedulerTest {
 
         // Target is set
         Version version0 = Version.fromString("7.0.0.20210123190005");
-        tester.controller().upgradeOsIn(cloud, version0, Optional.of(Duration.ofDays(1)), false);
+        tester.controller().upgradeOsIn(cloud, version0, Duration.ofDays(1), false);
 
         // Target remains unchanged as it hasn't expired yet
         for (var interval : List.of(Duration.ZERO, Duration.ofDays(15))) {

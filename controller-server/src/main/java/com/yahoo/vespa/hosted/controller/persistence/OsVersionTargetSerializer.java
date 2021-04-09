@@ -10,7 +10,6 @@ import com.yahoo.vespa.hosted.controller.versions.OsVersionTarget;
 
 import java.time.Duration;
 import java.util.Collections;
-import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -43,7 +42,9 @@ public class OsVersionTargetSerializer {
         Set<OsVersionTarget> osVersionTargets = new TreeSet<>();
         array.traverse((ArrayTraverser) (i, inspector) -> {
             OsVersion osVersion = osVersionSerializer.fromSlime(inspector);
-            Optional<Duration> upgradeBudget = Serializers.optionalDuration(inspector.field(upgradeBudgetField));
+            // TODO(mpolden): Require this field after 2021-05-01
+            Duration upgradeBudget = Serializers.optionalDuration(inspector.field(upgradeBudgetField))
+                                                .orElse(Duration.ZERO);
             osVersionTargets.add(new OsVersionTarget(osVersion, upgradeBudget));
         });
         return Collections.unmodifiableSet(osVersionTargets);
@@ -51,7 +52,7 @@ public class OsVersionTargetSerializer {
 
     private void toSlime(OsVersionTarget target, Cursor object) {
         osVersionSerializer.toSlime(target.osVersion(), object);
-        target.upgradeBudget().ifPresent(d -> object.setLong(upgradeBudgetField, d.toMillis()));
+        object.setLong(upgradeBudgetField, target.upgradeBudget().toMillis());
     }
 
 }

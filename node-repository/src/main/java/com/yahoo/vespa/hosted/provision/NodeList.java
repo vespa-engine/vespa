@@ -48,6 +48,11 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         return matching(node -> node.status().wantToRetire() && node.status().wantToDeprovision());
     }
 
+    /** Returns the subset of nodes that are being rebuilt */
+    public NodeList rebuilding() {
+        return matching(node -> node.status().wantToRetire() && node.status().wantToRebuild());
+    }
+
     /** Returns the subset of nodes which are removable */
     public NodeList removable() {
         return matching(node -> node.allocation().isPresent() && node.allocation().get().isRemovable());
@@ -62,6 +67,11 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     /** Returns the subset of nodes not in the given set */
     public NodeList except(Set<Node> nodes) {
         return matching(node -> ! nodes.contains(node));
+    }
+
+    /** Returns the subset of nodes excluding given node */
+    public NodeList except(Node node) {
+        return except(Set.of(node));
     }
 
     /** Returns the subset of nodes assigned to the given cluster type */

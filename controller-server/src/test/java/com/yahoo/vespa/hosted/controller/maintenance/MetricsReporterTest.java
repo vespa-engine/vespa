@@ -24,7 +24,6 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
-import java.util.Optional;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -353,7 +352,7 @@ public class MetricsReporterTest {
 
         // All nodes upgrade to initial OS version
         var version0 = Version.fromString("8.0");
-        tester.controller().upgradeOsIn(cloud, version0, Optional.empty(), false);
+        tester.controller().upgradeOsIn(cloud, version0, Duration.ZERO, false);
         osUpgrader.maintain();
         tester.configServer().setOsVersion(version0, SystemApplication.tenantHost.id(), zone);
         tester.configServer().setOsVersion(version0, SystemApplication.configServerHost.id(), zone);
@@ -367,7 +366,7 @@ public class MetricsReporterTest {
             var currentVersion = i == 0 ? version0 : targets.get(i - 1);
             var nextVersion = targets.get(i);
             // System starts upgrading to next OS version
-            tester.controller().upgradeOsIn(cloud, nextVersion, Optional.empty(), false);
+            tester.controller().upgradeOsIn(cloud, nextVersion, Duration.ZERO, false);
             runAll(osUpgrader, statusUpdater, reporter);
             assertOsChangeDuration(Duration.ZERO, hosts);
             assertOsNodeCount(hosts.size(), currentVersion);
