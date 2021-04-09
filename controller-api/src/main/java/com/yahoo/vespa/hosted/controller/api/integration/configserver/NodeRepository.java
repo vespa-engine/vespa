@@ -148,7 +148,7 @@ public interface NodeRepository {
                         Optional.ofNullable(node.getMembership()).map(NodeMembership::getRetired).orElse(false),
                         node.getWantToRetire(),
                         node.getWantToDeprovision(),
-                        node.getWantToRebuild(), Optional.ofNullable(node.getReservedTo()).map(TenantName::from),
+                        Optional.ofNullable(node.getReservedTo()).map(TenantName::from),
                         Optional.ofNullable(node.getExclusiveTo()).map(ApplicationId::fromSerializedForm),
                         dockerImageFrom(node.getWantedDockerImage()),
                         dockerImageFrom(node.getCurrentDockerImage()),

@@ -12,11 +12,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-/**
- * The wire format of a node retrieved from the node repository.
- *
- * @author bjorncs
- */
 @JsonIgnoreProperties(ignoreUnknown = true)
 @JsonInclude(JsonInclude.Include.NON_NULL)
 public class NodeRepositoryNode {
@@ -83,8 +78,6 @@ public class NodeRepositoryNode {
     private Boolean wantToRetire;
     @JsonProperty("wantToDeprovision")
     private Boolean wantToDeprovision;
-    @JsonProperty("wantToRebuild")
-    private Boolean wantToRebuild;
     @JsonProperty("cost")
     private Integer cost;
     @JsonProperty("history")
@@ -310,20 +303,12 @@ public class NodeRepositoryNode {
 
     public Boolean getWantToDeprovision() { return wantToDeprovision; }
 
-    public Boolean getWantToRebuild() {
-        return wantToRebuild;
-    }
-
     public void setWantToRetire(Boolean wantToRetire) {
         this.wantToRetire = wantToRetire;
     }
 
     public void setWantToDeprovision(Boolean wantToDeprovision) {
         this.wantToDeprovision = wantToDeprovision;
-    }
-
-    public void setWantToRebuild(Boolean wantToRebuild) {
-        this.wantToRebuild = wantToRebuild;
     }
 
     public Integer getCost() {
@@ -457,8 +442,6 @@ public class NodeRepositoryNode {
                ", wantedVespaVersion='" + wantedVespaVersion + '\'' +
                ", currentOsVersion='" + currentOsVersion + '\'' +
                ", wantedOsVersion='" + wantedOsVersion + '\'' +
-               ", currentFirmwareCheck=" + currentFirmwareCheck +
-               ", wantedFirmwareCheck=" + wantedFirmwareCheck +
                ", failCount=" + failCount +
                ", environment=" + environment +
                ", type=" + type +
@@ -467,16 +450,14 @@ public class NodeRepositoryNode {
                ", parentHostname='" + parentHostname + '\'' +
                ", wantToRetire=" + wantToRetire +
                ", wantToDeprovision=" + wantToDeprovision +
-               ", wantToRebuild=" + wantToRebuild +
                ", cost=" + cost +
                ", history=" + history +
-               ", orchestratorStatus='" + orchestratorStatus + '\'' +
-               ", suspendedSinceMillis=" + suspendedSinceMillis +
+               ", orchestratorStatus=" + orchestratorStatus +
                ", reports=" + reports +
-               ", modelName='" + modelName + '\'' +
-               ", reservedTo='" + reservedTo + '\'' +
-               ", exclusiveTo='" + exclusiveTo + '\'' +
-               ", switchHostname='" + switchHostname + '\'' +
+               ", modelName=" + modelName +
+               ", reservedTo=" + reservedTo +
+               ", exclusiveTo=" + exclusiveTo +
+               ", switchHostname=" + switchHostname +
                '}';
     }
 
