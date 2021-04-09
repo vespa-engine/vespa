@@ -3,15 +3,21 @@ package ai.vespa.metricsproxy.service;
 
 import ai.vespa.util.http.hc5.VespaAsyncHttpClientBuilder;
 
+import java.io.InputStream;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
 import java.util.logging.Level;
 
 import com.yahoo.yolean.Exceptions;
-import org.apache.hc.client5.http.async.methods.SimpleHttpRequest;
-import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.HttpResponse;
+import org.apache.hc.core5.http.Message;
+import org.apache.hc.core5.http.Method;
+import org.apache.hc.core5.http.nio.support.BasicRequestProducer;
+import org.apache.hc.core5.http.nio.support.BasicResponseConsumer;
+import org.apache.hc.core5.http.nio.support.classic.AbstractClassicEntityConsumer;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
@@ -31,6 +37,7 @@ public abstract class HttpMetricFetcher {
     // The call to apache will do 3 retries. As long as we check the services in series, we can't have this too high.
     public static int CONNECTION_TIMEOUT = 5000;
     private final static int SOCKET_TIMEOUT = 60000;
+    private final static int BUFFER_SIZE = 0x40000; // 256k
     private final URI url;
     protected final VespaService service;
     private static final CloseableHttpAsyncClient httpClient = createHttpClient();
@@ -47,21 +54,24 @@ public abstract class HttpMetricFetcher {
         log.log(Level.FINE, "Fetching metrics from " + u + " with timeout " + CONNECTION_TIMEOUT);
     }
 
-    byte [] getJson() throws IOException {
+    InputStream getJson() throws IOException,InterruptedException, ExecutionException {
         log.log(Level.FINE, "Connecting to url " + url + " for service '" + service + "'");
-        Future<SimpleHttpResponse> response = httpClient.execute(new SimpleHttpRequest("GET", url), null);
-        try {
-            return response.get().getBodyBytes();
-        } catch (InterruptedException | ExecutionException e) {
-            throw new IOException("Failed fetching '" + url + "': " + e);
-        }
+        Future<Message<HttpResponse, InputStream>> response = httpClient.execute(
+                new BasicRequestProducer(Method.GET, url),
+                new BasicResponseConsumer<>(new AbstractClassicEntityConsumer<>(BUFFER_SIZE, Runnable::run) {
+                    @Override
+                    protected InputStream consumeData(ContentType contentType, InputStream inputStream) {
+                        return inputStream;
+                    }
+                }), null);
+        return response.get().getBody();
     }
 
     public String toString() {
         return this.getClass().getSimpleName() + " using " + url;
     }
 
-    String errMsgNoResponse(IOException e) {
+    String errMsgNoResponse(Exception e) {
         return "Unable to get response from service '" + service + "': " +
                 Exceptions.toMessageString(e);
     }

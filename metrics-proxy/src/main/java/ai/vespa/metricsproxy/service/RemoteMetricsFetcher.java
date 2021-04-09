@@ -4,6 +4,8 @@ package ai.vespa.metricsproxy.service;
 import ai.vespa.metricsproxy.metric.Metrics;
 
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.concurrent.ExecutionException;
 
 /**
  * Fetch metrics for a given vespa service
@@ -24,7 +26,7 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
     public Metrics getMetrics(int fetchCount) {
         try {
             return createMetrics(getJson(), fetchCount);
-        } catch (IOException e) {
+        } catch (IOException | InterruptedException | ExecutionException e) {
             return new Metrics();
         }
     }
@@ -39,7 +41,7 @@ public class RemoteMetricsFetcher extends HttpMetricFetcher {
 
         return remoteMetrics;
     }
-    Metrics createMetrics(byte [] data, int fetchCount) {
+    Metrics createMetrics(InputStream data, int fetchCount) {
         Metrics remoteMetrics = new Metrics();
         try {
             remoteMetrics = MetricsParser.parse(data);
