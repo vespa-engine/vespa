@@ -33,6 +33,17 @@ public class CellCastTestCase {
         assertEquals(TensorType.Value.DOUBLE, tensor.cellCast(TensorType.Value.DOUBLE).type().valueType());
         assertEquals(TensorType.Value.FLOAT, tensor.cellCast(TensorType.Value.FLOAT).type().valueType());
         assertEquals(tensor, tensor.cellCast(TensorType.Value.DOUBLE));
+
+        tensor         = Tensor.from("tensor<double>(x{}):{{x:0}:2.25,{x:1}:1.00000000001,{x:2}:256.0,{x:3}:1.00390625}");
+        var asFloat    = Tensor.from("tensor<float>(x{}):{{x:0}:2.25,{x:1}:1.0,{x:2}:256.0,{x:3}:1.00390625}");
+        var asBFloat16 = Tensor.from("tensor<bfloat16>(x{}):{{x:0}:2.25,{x:1}:1.0,{x:2}:256.0,{x:3}:1.0}");
+        var asInt8     = Tensor.from("tensor<int8>(x{}):{{x:0}:2,{x:1}:1,{x:2}:0,{x:3}:1}");
+        assertEquals(asFloat,    tensor.cellCast(TensorType.Value.FLOAT));
+        assertEquals(asBFloat16, tensor.cellCast(TensorType.Value.BFLOAT16));
+        assertEquals(asInt8,     tensor.cellCast(TensorType.Value.INT8));
+        assertEquals(asBFloat16, asFloat.cellCast(TensorType.Value.BFLOAT16));
+        assertEquals(asInt8,     asFloat.cellCast(TensorType.Value.INT8));
+        assertEquals(asInt8,     asBFloat16.cellCast(TensorType.Value.INT8));
     }
 
 }
