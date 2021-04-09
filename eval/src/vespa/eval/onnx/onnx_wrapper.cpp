@@ -38,16 +38,17 @@ struct TypifyOnnxElementType {
     template <typename T> using Result = TypifyResultType<T>;
     template <typename F> static decltype(auto) resolve(Onnx::ElementType value, F &&f) {
         switch(value) {
-        case Onnx::ElementType::INT8:   return f(Result<int8_t>());
-        case Onnx::ElementType::INT16:  return f(Result<int16_t>());
-        case Onnx::ElementType::INT32:  return f(Result<int32_t>());
-        case Onnx::ElementType::INT64:  return f(Result<int64_t>());
-        case Onnx::ElementType::UINT8:  return f(Result<uint8_t>());
-        case Onnx::ElementType::UINT16: return f(Result<uint16_t>());
-        case Onnx::ElementType::UINT32: return f(Result<uint32_t>());
-        case Onnx::ElementType::UINT64: return f(Result<uint64_t>());
-        case Onnx::ElementType::FLOAT:  return f(Result<float>());
-        case Onnx::ElementType::DOUBLE: return f(Result<double>());
+        case Onnx::ElementType::INT8:     return f(Result<Int8Float>());
+        case Onnx::ElementType::INT16:    return f(Result<int16_t>());
+        case Onnx::ElementType::INT32:    return f(Result<int32_t>());
+        case Onnx::ElementType::INT64:    return f(Result<int64_t>());
+        case Onnx::ElementType::UINT8:    return f(Result<uint8_t>());
+        case Onnx::ElementType::UINT16:   return f(Result<uint16_t>());
+        case Onnx::ElementType::UINT32:   return f(Result<uint32_t>());
+        case Onnx::ElementType::UINT64:   return f(Result<uint64_t>());
+        case Onnx::ElementType::BFLOAT16: return f(Result<BFloat16>());
+        case Onnx::ElementType::FLOAT:    return f(Result<float>());
+        case Onnx::ElementType::DOUBLE:   return f(Result<double>());
         }
         abort();
     }
@@ -118,32 +119,34 @@ auto convert_optimize(Onnx::Optimize optimize) {
 
 CellType to_cell_type(Onnx::ElementType type) {
     switch (type) {
-    case Onnx::ElementType::INT8:   [[fallthrough]];
-    case Onnx::ElementType::INT16:  [[fallthrough]];
-    case Onnx::ElementType::UINT8:  [[fallthrough]];
-    case Onnx::ElementType::UINT16: [[fallthrough]];
-    case Onnx::ElementType::FLOAT:  return CellType::FLOAT;
-    case Onnx::ElementType::INT32:  [[fallthrough]];
-    case Onnx::ElementType::INT64:  [[fallthrough]];
-    case Onnx::ElementType::UINT32: [[fallthrough]];
-    case Onnx::ElementType::UINT64: [[fallthrough]];
-    case Onnx::ElementType::DOUBLE: return CellType::DOUBLE;
+    case Onnx::ElementType::INT8:     return CellType::INT8;
+    case Onnx::ElementType::BFLOAT16: return CellType::BFLOAT16;
+    case Onnx::ElementType::UINT8:    [[fallthrough]];
+    case Onnx::ElementType::INT16:    [[fallthrough]];
+    case Onnx::ElementType::UINT16:   [[fallthrough]];
+    case Onnx::ElementType::FLOAT:    return CellType::FLOAT;
+    case Onnx::ElementType::INT32:    [[fallthrough]];
+    case Onnx::ElementType::INT64:    [[fallthrough]];
+    case Onnx::ElementType::UINT32:   [[fallthrough]];
+    case Onnx::ElementType::UINT64:   [[fallthrough]];
+    case Onnx::ElementType::DOUBLE:   return CellType::DOUBLE;
     }
     abort();
 }
 
 Onnx::ElementType make_element_type(ONNXTensorElementDataType element_type) {
     switch (element_type) {
-    case ONNX_TENSOR_ELEMENT_DATA_TYPE_INT8:   return Onnx::ElementType::INT8;
-    case ONNX_TENSOR_ELEMENT_DATA_TYPE_INT16:  return Onnx::ElementType::INT16;
-    case ONNX_TENSOR_ELEMENT_DATA_TYPE_INT32:  return Onnx::ElementType::INT32;
-    case ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64:  return Onnx::ElementType::INT64;
-    case ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT8:  return Onnx::ElementType::UINT8;
-    case ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT16: return Onnx::ElementType::UINT16;
-    case ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT32: return Onnx::ElementType::UINT32;
-    case ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT64: return Onnx::ElementType::UINT64;
-    case ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT:  return Onnx::ElementType::FLOAT;
-    case ONNX_TENSOR_ELEMENT_DATA_TYPE_DOUBLE: return Onnx::ElementType::DOUBLE;
+    case ONNX_TENSOR_ELEMENT_DATA_TYPE_INT8:     return Onnx::ElementType::INT8;
+    case ONNX_TENSOR_ELEMENT_DATA_TYPE_INT16:    return Onnx::ElementType::INT16;
+    case ONNX_TENSOR_ELEMENT_DATA_TYPE_INT32:    return Onnx::ElementType::INT32;
+    case ONNX_TENSOR_ELEMENT_DATA_TYPE_INT64:    return Onnx::ElementType::INT64;
+    case ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT8:    return Onnx::ElementType::UINT8;
+    case ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT16:   return Onnx::ElementType::UINT16;
+    case ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT32:   return Onnx::ElementType::UINT32;
+    case ONNX_TENSOR_ELEMENT_DATA_TYPE_UINT64:   return Onnx::ElementType::UINT64;
+    case ONNX_TENSOR_ELEMENT_DATA_TYPE_BFLOAT16: return Onnx::ElementType::BFLOAT16;
+    case ONNX_TENSOR_ELEMENT_DATA_TYPE_FLOAT:    return Onnx::ElementType::FLOAT;
+    case ONNX_TENSOR_ELEMENT_DATA_TYPE_DOUBLE:   return Onnx::ElementType::DOUBLE;
     default:
         throw Ort::Exception(fmt("[onnx wrapper] unsupported element type: %d", element_type), ORT_FAIL);
     }

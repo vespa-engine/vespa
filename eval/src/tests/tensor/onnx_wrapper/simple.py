@@ -29,5 +29,6 @@ graph_def = helper.make_graph(
     ],
     [OUTPUT],
 )
-model_def = helper.make_model(graph_def, producer_name='simple.py')
+
+model_def = helper.make_model(graph_def, producer_name='simple.py', opset_imports=[onnx.OperatorSetIdProto(version=12)])
 onnx.save(model_def, 'simple.onnx')
