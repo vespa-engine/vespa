@@ -11,7 +11,6 @@ import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
 import java.time.Duration;
-import java.util.Collection;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -41,12 +40,9 @@ public class ArchiveAccessMaintainer extends ControllerMaintainer {
     protected boolean maintain() {
 
         // Count buckets - so we can alert if we get close to the account limit of 1000
-        metric.add(bucketCountMetricName,
-                zoneRegistry.zones().all().ids().stream()
-                        .map(archiveBucketDb::buckets)
-                        .mapToLong(Collection::size)
-                        .sum(),
-                metric.createContext(Map.of()));
+        zoneRegistry.zones().all().ids().forEach(zoneId ->
+                metric.set(bucketCountMetricName, archiveBucketDb.buckets(zoneId).size(),
+                        metric.createContext(Map.of("zone", zoneId.value()))));
 
         var tenantArchiveAccessRoles = controller().tenants().asList().stream()
                 .filter(t -> t instanceof CloudTenant)

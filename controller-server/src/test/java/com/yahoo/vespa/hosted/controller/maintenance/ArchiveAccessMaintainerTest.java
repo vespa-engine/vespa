@@ -19,6 +19,7 @@ import org.junit.Test;
 import java.time.Duration;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
@@ -41,7 +42,8 @@ public class ArchiveAccessMaintainerTest extends ControllerContainerCloudTest {
         var tenant1 = createTenantWithAccessRole(tester, "tenant1", tenant1role);
         createTenantWithAccessRole(tester, "tenant2", tenant2role);
 
-        tester.controller().archiveBucketDb().archiveUriFor(ZoneId.from("prod.us-east-3"), tenant1);
+        ZoneId testZone = ZoneId.from("prod.us-east-3");
+        tester.controller().archiveBucketDb().archiveUriFor(testZone, tenant1);
         var testBucket = new ArchiveBucket("bucketName", "keyArn").withTenant(tenant1);
 
         MockArchiveService archiveService = (MockArchiveService) tester.controller().serviceRegistry().archiveService();
@@ -49,7 +51,14 @@ public class ArchiveAccessMaintainerTest extends ControllerContainerCloudTest {
         MockMetric metric = new MockMetric();
         new ArchiveAccessMaintainer(containerTester.controller(), metric, Duration.ofMinutes(10)).maintain();
         assertEquals(Map.of(tenant1, tenant1role), archiveService.authorizedIamRoles.get(testBucket));
-        assertEquals(Map.of("archive.bucketCount", Map.of(Map.of(), 1d)), metric.metrics());
+
+        var expected = Map.of("archive.bucketCount",
+                tester.controller().zoneRegistry().zones().all().ids().stream()
+                        .collect(Collectors.toMap(
+                                zone -> Map.of("zone", zone.value()),
+                                zone -> zone.equals(testZone) ? 1d : 0d)));
+
+        assertEquals(expected, metric.metrics());
     }
 
     private TenantName createTenantWithAccessRole(ControllerTester tester, String tenantName, String role) {
