@@ -58,7 +58,7 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
                     clusterStateChangedNotifier,
                     (calc ? calc->nodeRetired() : false));
         }
-        controller.registerJobInMasterThread(trackJob(std::move(tracker), std::move(job)));
+        controller.registerJobInMasterThread(trackJob(tracker, std::move(job)));
     }
 }
 
