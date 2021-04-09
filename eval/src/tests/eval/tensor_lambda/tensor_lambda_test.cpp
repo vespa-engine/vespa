@@ -28,12 +28,18 @@ EvalFixture::ParamRepo make_params() {
         .add("a", GenSpec(1))
         .add("b", GenSpec(2))
         .add("x3", GenSpec().idx("x", 3))
-        .add("x3f", GenSpec().idx("x", 3).cells_float())
+        .add("x3_float", GenSpec().idx("x", 3).cells(CellType::FLOAT))
+        .add("x3_bfloat16", GenSpec().idx("x", 3).cells(CellType::BFLOAT16))
+        .add("x3_int8", GenSpec().idx("x", 3).cells(CellType::INT8))
         .add("x3m", GenSpec().map("x", 3))
         .add("x3y5", GenSpec().idx("x", 3).idx("y", 5))
-        .add("x3y5f", GenSpec().idx("x", 3).idx("y", 5).cells_float())
+        .add("x3y5_float", GenSpec().idx("x", 3).idx("y", 5).cells(CellType::FLOAT))
+        .add("x3y5_bfloat16", GenSpec().idx("x", 3).idx("y", 5).cells(CellType::BFLOAT16))
+        .add("x3y5_int8", GenSpec().idx("x", 3).idx("y", 5).cells(CellType::INT8))
         .add("x15", GenSpec().idx("x", 15))
-        .add("x15f", GenSpec().idx("x", 15).cells_float());
+        .add("x15_float", GenSpec().idx("x", 15).cells(CellType::FLOAT))
+        .add("x15_bfloat16", GenSpec().idx("x", 15).cells(CellType::BFLOAT16))
+        .add("x15_int8", GenSpec().idx("x", 15).cells(CellType::INT8));
 }
 EvalFixture::ParamRepo param_repo = make_params();
 
@@ -90,8 +96,12 @@ TEST("require that simple constant tensor lambda works") {
 }
 
 TEST("require that tensor lambda can be used for cell type casting") {
-    TEST_DO(verify_idx_fun("tensor(x[3])(x3f{x:(x)})", "tensor(x[3]):[1,2,3]", "f(x)(x)"));
+    TEST_DO(verify_idx_fun("tensor(x[3])(x3_float{x:(x)})", "tensor(x[3]):[1,2,3]", "f(x)(x)"));
+    TEST_DO(verify_idx_fun("tensor(x[3])(x3_bfloat16{x:(x)})", "tensor(x[3]):[1,2,3]", "f(x)(x)"));
+    TEST_DO(verify_idx_fun("tensor(x[3])(x3_int8{x:(x)})", "tensor(x[3]):[1,2,3]", "f(x)(x)"));
     TEST_DO(verify_idx_fun("tensor<float>(x[3])(x3{x:(x)})", "tensor<float>(x[3]):[1,2,3]", "f(x)(x)"));
+    TEST_DO(verify_idx_fun("tensor<bfloat16>(x[3])(x3{x:(x)})", "tensor<bfloat16>(x[3]):[1,2,3]", "f(x)(x)"));
+    TEST_DO(verify_idx_fun("tensor<int8>(x[3])(x3{x:(x)})", "tensor<int8>(x[3]):[1,2,3]", "f(x)(x)"));
 }
 
 TEST("require that constant nested tensor lambda using tensor peek works") {
@@ -101,37 +111,51 @@ TEST("require that constant nested tensor lambda using tensor peek works") {
 TEST("require that tensor reshape is optimized") {
     TEST_DO(verify_reshape("tensor(x[15])(x3y5{x:(x/5),y:(x%5)})", "x15"));
     TEST_DO(verify_reshape("tensor(x[3],y[5])(x15{x:(x*5+y)})", "x3y5"));
-    TEST_DO(verify_reshape("tensor<float>(x[15])(x3y5f{x:(x/5),y:(x%5)})", "x15f"));
+    TEST_DO(verify_reshape("tensor<float>(x[15])(x3y5_float{x:(x/5),y:(x%5)})", "x15_float"));
+    TEST_DO(verify_reshape("tensor<bfloat16>(x[15])(x3y5_bfloat16{x:(x/5),y:(x%5)})", "x15_bfloat16"));
+    TEST_DO(verify_reshape("tensor<int8>(x[15])(x3y5_int8{x:(x/5),y:(x%5)})", "x15_int8"));
 }
 
 TEST("require that tensor reshape with non-matching cell type requires cell copy") {
-    TEST_DO(verify_idx_fun("tensor(x[15])(x3y5f{x:(x/5),y:(x%5)})", "x15", "f(x)((floor((x/5))*5)+(x%5))"));
-    TEST_DO(verify_idx_fun("tensor<float>(x[15])(x3y5{x:(x/5),y:(x%5)})", "x15f", "f(x)((floor((x/5))*5)+(x%5))"));
-    TEST_DO(verify_idx_fun("tensor(x[3],y[5])(x15f{x:(x*5+y)})", "x3y5", "f(x,y)((x*5)+y)"));
-    TEST_DO(verify_idx_fun("tensor<float>(x[3],y[5])(x15{x:(x*5+y)})", "x3y5f", "f(x,y)((x*5)+y)"));
+    TEST_DO(verify_idx_fun("tensor(x[15])(x3y5_float{x:(x/5),y:(x%5)})", "x15", "f(x)((floor((x/5))*5)+(x%5))"));
+    TEST_DO(verify_idx_fun("tensor<float>(x[15])(x3y5{x:(x/5),y:(x%5)})", "x15_float", "f(x)((floor((x/5))*5)+(x%5))"));
+    TEST_DO(verify_idx_fun("tensor(x[3],y[5])(x15_float{x:(x*5+y)})", "x3y5", "f(x,y)((x*5)+y)"));
+    TEST_DO(verify_idx_fun("tensor<float>(x[3],y[5])(x15{x:(x*5+y)})", "x3y5_float", "f(x,y)((x*5)+y)"));
+    TEST_DO(verify_idx_fun("tensor<bfloat16>(x[3],y[5])(x15{x:(x*5+y)})", "x3y5_bfloat16", "f(x,y)((x*5)+y)"));
+    TEST_DO(verify_idx_fun("tensor<int8>(x[3],y[5])(x15{x:(x*5+y)})", "x3y5_int8", "f(x,y)((x*5)+y)"));
 }
 
 TEST("require that tensor cell subrange view is optimized") {
     TEST_DO(verify_range("tensor(y[5])(x3y5{x:1,y:(y)})", "x3y5{x:1}"));
     TEST_DO(verify_range("tensor(x[3])(x15{x:(x+5)})", "tensor(x[3]):[6,7,8]"));
-    TEST_DO(verify_range("tensor<float>(y[5])(x3y5f{x:1,y:(y)})", "x3y5f{x:1}"));
-    TEST_DO(verify_range("tensor<float>(x[3])(x15f{x:(x+5)})", "tensor<float>(x[3]):[6,7,8]"));
+    TEST_DO(verify_range("tensor<float>(y[5])(x3y5_float{x:1,y:(y)})", "x3y5_float{x:1}"));
+    TEST_DO(verify_range("tensor<float>(x[3])(x15_float{x:(x+5)})", "tensor<float>(x[3]):[6,7,8]"));
+    TEST_DO(verify_range("tensor<float>(x[3])(x15_float{x:(x+5)})", "tensor<float>(x[3]):[6,7,8]"));
+    TEST_DO(verify_range("tensor<bfloat16>(x[3])(x15_bfloat16{x:(x+5)})", "tensor<bfloat16>(x[3]):[6,7,8]"));
+    TEST_DO(verify_range("tensor<int8>(x[3])(x15_int8{x:(x+5)})", "tensor<int8>(x[3]):[6,7,8]"));
 }
 
 TEST("require that tensor cell subrange with non-matching cell type requires cell copy") {
-    TEST_DO(verify_idx_fun("tensor(x[3])(x15f{x:(x+5)})", "tensor(x[3]):[6,7,8]", "f(x)(x+5)"));
+    TEST_DO(verify_idx_fun("tensor(x[3])(x15_float{x:(x+5)})", "tensor(x[3]):[6,7,8]", "f(x)(x+5)"));
     TEST_DO(verify_idx_fun("tensor<float>(x[3])(x15{x:(x+5)})", "tensor<float>(x[3]):[6,7,8]", "f(x)(x+5)"));
+    TEST_DO(verify_idx_fun("tensor<bfloat16>(x[3])(x15{x:(x+5)})", "tensor<bfloat16>(x[3]):[6,7,8]", "f(x)(x+5)"));
+    TEST_DO(verify_idx_fun("tensor<int8>(x[3])(x15{x:(x+5)})", "tensor<int8>(x[3]):[6,7,8]", "f(x)(x+5)"));
 }
 
 TEST("require that non-continuous cell extraction is optimized") {
     TEST_DO(verify_idx_fun("tensor(x[3])(x3y5{x:(x),y:2})", "x3y5{y:2}", "f(x)((floor(x)*5)+2)"));
-    TEST_DO(verify_idx_fun("tensor(x[3])(x3y5f{x:(x),y:2})", "x3y5{y:2}", "f(x)((floor(x)*5)+2)"));
-    TEST_DO(verify_idx_fun("tensor<float>(x[3])(x3y5{x:(x),y:2})", "x3y5f{y:2}", "f(x)((floor(x)*5)+2)"));
-    TEST_DO(verify_idx_fun("tensor<float>(x[3])(x3y5f{x:(x),y:2})", "x3y5f{y:2}", "f(x)((floor(x)*5)+2)"));
+    TEST_DO(verify_idx_fun("tensor(x[3])(x3y5_float{x:(x),y:2})", "x3y5{y:2}", "f(x)((floor(x)*5)+2)"));
+    TEST_DO(verify_idx_fun("tensor<float>(x[3])(x3y5{x:(x),y:2})", "x3y5_float{y:2}", "f(x)((floor(x)*5)+2)"));
+    TEST_DO(verify_idx_fun("tensor<float>(x[3])(x3y5_float{x:(x),y:2})", "x3y5_float{y:2}", "f(x)((floor(x)*5)+2)"));
+    TEST_DO(verify_idx_fun("tensor<bfloat16>(x[3])(x3y5_bfloat16{x:(x),y:2})", "x3y5_bfloat16{y:2}", "f(x)((floor(x)*5)+2)"));
+    TEST_DO(verify_idx_fun("tensor<int8>(x[3])(x3y5_int8{x:(x),y:2})", "x3y5_int8{y:2}", "f(x)((floor(x)*5)+2)"));
 }
 
 TEST("require that simple dynamic tensor lambda works") {
     TEST_DO(verify_generic("tensor(x[3])(x+a)", "tensor(x[3]):[1,2,3]"));
+    TEST_DO(verify_generic("tensor<float>(x[3])(x+a)", "tensor<float>(x[3]):[1,2,3]"));
+    TEST_DO(verify_generic("tensor<bfloat16>(x[3])(x+a)", "tensor<bfloat16>(x[3]):[1,2,3]"));
+    TEST_DO(verify_generic("tensor<int8>(x[3])(x+a)", "tensor<int8>(x[3]):[1,2,3]"));
 }
 
 TEST("require that compiled multi-dimensional multi-param dynamic tensor lambda works") {
