@@ -11,6 +11,7 @@ import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
 import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLParameters;
 
 /**
@@ -37,13 +38,17 @@ public class VespaAsyncHttpClientBuilder {
     }
 
     public static HttpAsyncClientBuilder create(AsyncConnectionManagerFactory factory) {
+        return create(factory, new NoopHostnameVerifier());
+    }
+
+    public static HttpAsyncClientBuilder create(AsyncConnectionManagerFactory factory, HostnameVerifier hostnameVerifier) {
         HttpAsyncClientBuilder clientBuilder = HttpAsyncClientBuilder.create();
         TlsContext vespaTlsContext = TransportSecurityUtils.getSystemTlsContext().orElse(null);
         TlsStrategy tlsStrategy;
         if (vespaTlsContext != null) {
             SSLParameters vespaTlsParameters = vespaTlsContext.parameters();
             tlsStrategy = ClientTlsStrategyBuilder.create()
-                    .setHostnameVerifier(new NoopHostnameVerifier())
+                    .setHostnameVerifier(hostnameVerifier)
                     .setSslContext(vespaTlsContext.context())
                     .setTlsVersions(vespaTlsParameters.getProtocols())
                     .setCiphers(vespaTlsParameters.getCipherSuites())

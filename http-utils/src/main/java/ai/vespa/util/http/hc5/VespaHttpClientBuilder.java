@@ -11,6 +11,7 @@ import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
 import org.apache.hc.core5.http.config.Registry;
 import org.apache.hc.core5.http.config.RegistryBuilder;
 
+import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLParameters;
 
 import static com.yahoo.security.tls.MixedMode.PLAINTEXT_CLIENT_MIXED_SERVER;
@@ -37,9 +38,21 @@ public class VespaHttpClientBuilder {
     }
 
     public static HttpClientBuilder create(HttpClientConnectionManagerFactory connectionManagerFactory) {
+        return create(connectionManagerFactory, new NoopHostnameVerifier());
+    }
+
+    public static HttpClientBuilder create(HttpClientConnectionManagerFactory connectionManagerFactory,
+                                           HostnameVerifier hostnameVerifier) {
+        return create(connectionManagerFactory, hostnameVerifier, true);
+    }
+
+    public static HttpClientBuilder create(HttpClientConnectionManagerFactory connectionManagerFactory,
+                                           HostnameVerifier hostnameVerifier,
+                                           boolean rewriteHttpToHttps) {
         HttpClientBuilder builder = HttpClientBuilder.create();
-        addSslSocketFactory(builder, connectionManagerFactory);
-        addHttpsRewritingRoutePlanner(builder);
+        addSslSocketFactory(builder, connectionManagerFactory, hostnameVerifier);
+        if (rewriteHttpToHttps)
+            addHttpsRewritingRoutePlanner(builder);
 
         builder.disableConnectionState(); // Share connections between subsequent requests.
         builder.disableCookieManagement();
@@ -49,13 +62,14 @@ public class VespaHttpClientBuilder {
         return builder;
     }
 
-    private static void addSslSocketFactory(HttpClientBuilder builder, HttpClientConnectionManagerFactory connectionManagerFactory) {
+    private static void addSslSocketFactory(HttpClientBuilder builder, HttpClientConnectionManagerFactory connectionManagerFactory,
+                                            HostnameVerifier hostnameVerifier) {
         getSystemTlsContext().ifPresent(tlsContext -> {
             SSLParameters parameters = tlsContext.parameters();
             SSLConnectionSocketFactory socketFactory = new SSLConnectionSocketFactory(tlsContext.context(),
                                                                                       parameters.getProtocols(),
                                                                                       parameters.getCipherSuites(),
-                                                                                      new NoopHostnameVerifier());
+                                                                                      hostnameVerifier);
             builder.setConnectionManager(connectionManagerFactory.create(createRegistry(socketFactory)));
             // Workaround that allows re-using https connections, see https://stackoverflow.com/a/42112034/1615280 for details.
             // Proper solution would be to add a request interceptor that adds a x500 principal as user token,
