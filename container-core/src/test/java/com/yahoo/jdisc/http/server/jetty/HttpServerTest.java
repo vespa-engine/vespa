@@ -35,11 +35,19 @@ import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.tls.TlsContext;
+import org.apache.hc.client5.http.async.methods.SimpleHttpRequests;
+import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.client5.http.entity.mime.FormBodyPart;
 import org.apache.hc.client5.http.entity.mime.FormBodyPartBuilder;
 import org.apache.hc.client5.http.entity.mime.StringBody;
+import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
+import org.apache.hc.client5.http.impl.async.HttpAsyncClientBuilder;
+import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
 import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
 import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
+import org.apache.hc.core5.http2.HttpVersionPolicy;
 import org.assertj.core.api.Assertions;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V1;
@@ -108,6 +116,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
@@ -512,6 +521,12 @@ public class HttpServerTest {
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
 
         TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
+        try (CloseableHttpAsyncClient client = createHttp2Client(certificateFile, privateKeyFile)) {
+            String uri = "https://localhost:" + driver.server().getListenPort() + "/status.html";
+            SimpleHttpResponse response = client.execute(SimpleHttpRequests.get(uri), null).get();
+            assertNull(response.getBodyText());
+            assertEquals(OK, response.getCode());
+        }
         assertTrue(driver.close());
     }
 
@@ -925,6 +940,21 @@ public class HttpServerTest {
         clientSslCtxFactory.setSslContext(new SslContextBuilder().withTrustStore(certificateFile).build());
 
         HttpClient client = new HttpClient(clientSslCtxFactory);
+        client.start();
+        return client;
+    }
+
+    private static CloseableHttpAsyncClient createHttp2Client(Path certificateFile, Path privateKeyFile) {
+        TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
+        TlsStrategy tlsStrategy = ClientTlsStrategyBuilder.create()
+                .setSslContext(driver.newSslContext())
+                .build();
+        var client = HttpAsyncClientBuilder.create()
+                .setVersionPolicy(HttpVersionPolicy.FORCE_HTTP_2)
+                .disableConnectionState()
+                .disableAutomaticRetries()
+                .setConnectionManager(PoolingAsyncClientConnectionManagerBuilder.create().setTlsStrategy(tlsStrategy).build())
+                .build();
         client.start();
         return client;
     }
