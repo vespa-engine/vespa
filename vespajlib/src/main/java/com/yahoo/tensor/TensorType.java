@@ -33,7 +33,7 @@ public class TensorType {
     public enum Value {
 
         // Types added must also be added to TensorTypeParser.parseValueTypeSpec, serialization, and largestOf below
-        DOUBLE("double"), FLOAT("float"), INT8("int8"), BFLOAT16("bfloat16");
+        DOUBLE("double"), FLOAT("float"), BFLOAT16("bfloat16"), INT8("int8");
 
         private final String id;
 
@@ -61,14 +61,15 @@ public class TensorType {
             if (value1 == DOUBLE || value2 == DOUBLE) return DOUBLE;
             if (value1 == FLOAT || value2 == FLOAT) return FLOAT;
             if (value1 == BFLOAT16 || value2 == BFLOAT16) return BFLOAT16;
-            return INT8;
+            if (value1 == INT8 && value2 == INT8) return INT8;
+            throw new IllegalArgumentException("Cannot find largest of "+value1+" and "+value2);
         }
 
         @Override
         public String toString() { return name().toLowerCase(); }
 
         public static Value fromId(String valueTypeString) {
-            for(Value value : Value.values()) {
+            for (Value value : values()) {
                 if (value.id.equals(valueTypeString)) {
                     return value;
                 }
