@@ -21,7 +21,7 @@ class HttpToHttpsRoutePlanner implements HttpRoutePlanner {
     @Override
     public HttpRoute determineRoute(HttpHost target, HttpContext context) throws HttpException {
         if ( ! target.getSchemeName().equals("http"))
-            throw new IllegalArgumentException("Scheme must be 'http' when using HttpToHttpsRoutePlanner");
+            throw new IllegalArgumentException("Scheme must be 'http' when using HttpToHttpsRoutePlanner, was '" + target.getSchemeName() + "'");
 
         if (target.getPort() == -1)
             throw new IllegalArgumentException("Port must be set when using HttpToHttpsRoutePlanner");
