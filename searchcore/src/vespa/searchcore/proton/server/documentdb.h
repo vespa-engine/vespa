@@ -13,7 +13,6 @@
 #include "executorthreadingservice.h"
 #include "i_document_subdb_owner.h"
 #include "i_feed_handler_owner.h"
-#include "i_lid_space_compaction_handler.h"
 #include "ifeedview.h"
 #include "ireplayconfig.h"
 #include "maintenancecontroller.h"
@@ -123,7 +122,6 @@ private:
     std::unique_ptr<FeedHandler>                  _feedHandler;
     DocumentSubDBCollection                       _subDBs;
     MaintenanceController                         _maintenanceController;
-    ILidSpaceCompactionHandler::Vector            _lidSpaceCompactionHandlers;
     DocumentDBJobTrackers                         _jobTrackers;
     std::shared_ptr<IBucketStateCalculator>       _calc;
     DocumentDBMetricsUpdater                      _metricsUpdater;

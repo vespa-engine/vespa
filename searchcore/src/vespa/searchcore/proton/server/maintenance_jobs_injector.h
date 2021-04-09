@@ -37,7 +37,6 @@ struct MaintenanceJobsInjector
                            storage::spi::BucketExecutor & bucketExecutor,
                            IHeartBeatHandler &hbHandler,
                            matching::ISessionCachePruner &scPruner,
-                           const ILidSpaceCompactionHandler::Vector &lscHandlers,
                            IOperationStorer &opStorer,
                            IFrozenBucketHandler &fbHandler,
                            bucketdb::IBucketCreateNotifier &bucketCreateNotifier,

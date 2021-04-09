@@ -349,22 +349,6 @@ struct MyLongRunningJob : public BlockableMaintenanceJob
 
 using MyAttributeManager = test::MockAttributeManager;
 
-struct MockLidSpaceCompactionHandler : public ILidSpaceCompactionHandler
-{
-    vespalib::string name;
-
-    explicit MockLidSpaceCompactionHandler(const vespalib::string &name_) : name(name_) {}
-    vespalib::string getName() const override { return name; }
-    void set_operation_listener(documentmetastore::OperationListener::SP) override {}
-    uint32_t getSubDbId() const override { return 0; }
-    search::LidUsageStats getLidStatus() const override { return search::LidUsageStats(); }
-    IDocumentScanIterator::UP getIterator() const override { return IDocumentScanIterator::UP(); }
-    MoveOperation::UP createMoveOperation(const search::DocumentMetaData &, uint32_t) const override { return MoveOperation::UP(); }
-    void handleMove(const MoveOperation &, IDestructorCallback::SP) override {}
-    void handleCompactLidSpace(const CompactLidSpaceOperation &, std::shared_ptr<IDestructorCallback>) override {}
-    search::DocumentMetaData getMetaData(uint32_t ) const override { return {}; }
-};
-
 class MaintenanceControllerFixture
 {
 public:
@@ -384,7 +368,6 @@ public:
     MyDocumentSubDB                    _notReady;
     MySessionCachePruner               _gsp;
     MyFeedHandler                      _fh;
-    ILidSpaceCompactionHandler::Vector _lscHandlers;
     DocumentDBMaintenanceConfig::SP    _mcCfg;
     bool                               _injectDefaultJobs;
     DocumentDBJobTrackers              _jobTrackers;
@@ -804,7 +787,6 @@ MaintenanceControllerFixture::MaintenanceControllerFixture()
       _notReady(2u, SubDbType::NOTREADY, _builder.getRepo(), _bucketDB, _docTypeName),
       _gsp(),
       _fh(_executor._threadId),
-      _lscHandlers(),
       _mcCfg(new DocumentDBMaintenanceConfig),
       _injectDefaultJobs(true),
       _jobTrackers(),
@@ -864,7 +846,7 @@ void
 MaintenanceControllerFixture::injectMaintenanceJobs()
 {
     if (_injectDefaultJobs) {
-        MaintenanceJobsInjector::injectJobs(_mc, *_mcCfg, _bucketExecutor, _fh, _gsp, _lscHandlers, _fh, _mc,
+        MaintenanceJobsInjector::injectJobs(_mc, *_mcCfg, _bucketExecutor, _fh, _gsp, _fh, _mc,
                                             _bucketCreateNotifier, _docTypeName.getName(), makeBucketSpace(), _fh, _fh,
                                             _bmc, _clusterStateHandler, _bucketHandler, _calc, _diskMemUsageNotifier,
                                             _jobTrackers, _readyAttributeManager, _notReadyAttributeManager,
@@ -1288,18 +1270,17 @@ containsJobAndExecutedBy(const MaintenanceController::JobList &jobs, const vespa
 
 TEST_F("require that lid space compaction jobs can be disabled", MaintenanceControllerFixture)
 {
-    f._lscHandlers.push_back(std::make_unique<MockLidSpaceCompactionHandler>("my_handler"));
     f.forwardMaintenanceConfig();
     {
         auto jobs = f._mc.getJobList();
-        EXPECT_EQUAL(6u, jobs.size());
-        EXPECT_TRUE(containsJob(jobs, "lid_space_compaction.my_handler"));
+        EXPECT_EQUAL(8u, jobs.size());
+        EXPECT_TRUE(containsJob(jobs, "lid_space_compaction.searchdocument.my_sub_db"));
     }
     f.setLidSpaceCompactionConfig(DocumentDBLidSpaceCompactionConfig::createDisabled());
     {
         auto jobs = f._mc.getJobList();
         EXPECT_EQUAL(5u, jobs.size());
-        EXPECT_FALSE(containsJob(jobs, "lid_space_compaction.my_handler"));
+        EXPECT_FALSE(containsJob(jobs, "lid_space_compaction.searchdocument.my_sub_db"));
     }
 }
 
@@ -1307,7 +1288,7 @@ TEST_F("require that maintenance jobs are run by correct executor", MaintenanceC
 {
     f.injectMaintenanceJobs();
     auto jobs = f._mc.getJobList();
-    EXPECT_EQUAL(5u, jobs.size());
+    EXPECT_EQUAL(8u, jobs.size());
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "heart_beat", f._threadService));
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "prune_session_cache", f._genericExecutor));
     EXPECT_TRUE(containsJobAndExecutedBy(jobs, "prune_removed_documents.searchdocument", f._threadService));
