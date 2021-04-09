@@ -51,7 +51,7 @@ public:
     };
 
     // supported onnx element types
-    enum class ElementType { INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64, FLOAT, DOUBLE };
+    enum class ElementType { INT8, INT16, INT32, INT64, UINT8, UINT16, UINT32, UINT64, BFLOAT16, FLOAT, DOUBLE };
 
     // information about a single input or output tensor
     struct TensorInfo {
