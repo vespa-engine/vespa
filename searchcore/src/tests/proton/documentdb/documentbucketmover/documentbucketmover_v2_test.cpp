@@ -42,7 +42,7 @@ struct ControllerFixtureBase : public ::testing::Test
     DummyBucketExecutor         _bucketExecutor;
     MyMoveHandler               _moveHandler;
     DocumentDBTaggedMetrics     _metrics;
-    BucketMoveJobV2             _bmj;
+    std::shared_ptr<BucketMoveJobV2>  _bmj;
     MyCountJobRunner            _runner;
     ControllerFixtureBase(const BlockableMaintenanceJobConfig &blockableConfig, bool storeMoveDoneContexts);
     ~ControllerFixtureBase();
@@ -89,11 +89,11 @@ struct ControllerFixtureBase : public ::testing::Test
         return _calc->asked();
     }
     size_t numPending() {
-        _bmj.updateMetrics(_metrics);
+        _bmj->updateMetrics(_metrics);
         return _metrics.bucketMove.bucketsPending.getLast();
     }
     void runLoop() {
-        while (!_bmj.isBlocked() && !_bmj.run()) {
+        while (!_bmj->isBlocked() && !_bmj->run()) {
         }
     }
     void sync() {
@@ -123,11 +123,11 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
       _bucketExecutor(4),
       _moveHandler(*_bucketDB, storeMoveDoneContexts),
       _metrics("test", 1),
-      _bmj(_calc, _moveHandler, _modifiedHandler, _master, _bucketExecutor, _ready._subDb,
-           _notReady._subDb, _bucketCreateNotifier, _clusterStateHandler, _bucketHandler,
-           _diskMemUsageNotifier, blockableConfig,
-           "test", makeBucketSpace()),
-      _runner(_bmj)
+      _bmj(std::make_shared<BucketMoveJobV2>(_calc, _moveHandler, _modifiedHandler, _master, _bucketExecutor,
+                                             _ready._subDb, _notReady._subDb, _bucketCreateNotifier,
+                                             _clusterStateHandler, _bucketHandler, _diskMemUsageNotifier,
+                                             blockableConfig, "test", makeBucketSpace())),
+      _runner(*_bmj)
 {
 }
 
@@ -165,13 +165,13 @@ struct OnlyReadyControllerFixture : public ControllerFixtureBase
 
 TEST_F(ControllerFixture, require_that_nothing_is_moved_if_bucket_state_says_so)
 {
-    EXPECT_TRUE(_bmj.done());
+    EXPECT_TRUE(_bmj->done());
     addReady(_ready.bucket(1));
     addReady(_ready.bucket(2));
-    _bmj.recompute();
+    _bmj->recompute();
     masterExecute([this]() {
-        EXPECT_TRUE(_bmj.scanAndMove(4, 3));
-        EXPECT_TRUE(_bmj.done());
+        EXPECT_TRUE(_bmj->scanAndMove(4, 3));
+        EXPECT_TRUE(_bmj->done());
     });
     EXPECT_TRUE(docsMoved().empty());
     EXPECT_TRUE(bucketsModified().empty());
@@ -185,12 +185,12 @@ TEST_F(ControllerFixture, require_that_not_ready_bucket_is_moved_to_ready_if_buc
     addReady(_notReady.bucket(4));
 
     EXPECT_EQ(0, numPending());
-    _bmj.recompute();
+    _bmj->recompute();
     EXPECT_EQ(1, numPending());
     masterExecute([this]() {
-        EXPECT_FALSE(_bmj.done());
-        EXPECT_TRUE(_bmj.scanAndMove(4, 3));
-        EXPECT_TRUE(_bmj.done());
+        EXPECT_FALSE(_bmj->done());
+        EXPECT_TRUE(_bmj->scanAndMove(4, 3));
+        EXPECT_TRUE(_bmj->done());
     });
     sync();
     EXPECT_EQ(0, numPending());
@@ -206,11 +206,11 @@ TEST_F(ControllerFixture, require_that_ready_bucket_is_moved_to_not_ready_if_buc
 {
     // bucket 2 should be moved
     addReady(_ready.bucket(1));
-    _bmj.recompute();
+    _bmj->recompute();
     masterExecute([this]() {
-        EXPECT_FALSE(_bmj.done());
-        EXPECT_TRUE(_bmj.scanAndMove(4, 3));
-        EXPECT_TRUE(_bmj.done());
+        EXPECT_FALSE(_bmj->done());
+        EXPECT_TRUE(_bmj->scanAndMove(4, 3));
+        EXPECT_TRUE(_bmj->done());
     });
     sync();
     EXPECT_EQ(2u, docsMoved().size());
@@ -224,19 +224,19 @@ TEST_F(ControllerFixture, require_that_bucket_is_moved_even_with_error)
 {
     // bucket 2 should be moved
     addReady(_ready.bucket(1));
-    _bmj.recompute();
+    _bmj->recompute();
     failRetrieveForLid(5);
     masterExecute([this]() {
-        EXPECT_FALSE(_bmj.done());
-        EXPECT_TRUE(_bmj.scanAndMove(4, 3));
-        EXPECT_TRUE(_bmj.done());
+        EXPECT_FALSE(_bmj->done());
+        EXPECT_TRUE(_bmj->scanAndMove(4, 3));
+        EXPECT_TRUE(_bmj->done());
     });
     sync();
-    EXPECT_FALSE(_bmj.done());
+    EXPECT_FALSE(_bmj->done());
     fixRetriever();
     masterExecute([this]() {
-        EXPECT_TRUE(_bmj.scanAndMove(4, 3));
-        EXPECT_TRUE(_bmj.done());
+        EXPECT_TRUE(_bmj->scanAndMove(4, 3));
+        EXPECT_TRUE(_bmj->done());
     });
     sync();
     EXPECT_EQ(2u, docsMoved().size());
@@ -254,29 +254,29 @@ TEST_F(ControllerFixture, require_that_we_move_buckets_in_several_steps)
     addReady(_notReady.bucket(3));
     addReady(_notReady.bucket(4));
 
-    _bmj.recompute();
+    _bmj->recompute();
     EXPECT_EQ(3, numPending());
     masterExecute([this]() {
-        EXPECT_FALSE(_bmj.done());
+        EXPECT_FALSE(_bmj->done());
 
-        EXPECT_FALSE(_bmj.scanAndMove(1, 2));
-        EXPECT_FALSE(_bmj.done());
+        EXPECT_FALSE(_bmj->scanAndMove(1, 2));
+        EXPECT_FALSE(_bmj->done());
     });
     sync();
     EXPECT_EQ(2, numPending());
     EXPECT_EQ(2u, docsMoved().size());
 
     masterExecute([this]() {
-        EXPECT_FALSE(_bmj.scanAndMove(1, 2));
-        EXPECT_FALSE(_bmj.done());
+        EXPECT_FALSE(_bmj->scanAndMove(1, 2));
+        EXPECT_FALSE(_bmj->done());
     });
     sync();
     EXPECT_EQ(2, numPending());
     EXPECT_EQ(4u, docsMoved().size());
 
     masterExecute([this]() {
-        EXPECT_FALSE(_bmj.scanAndMove(1, 2));
-        EXPECT_FALSE(_bmj.done());
+        EXPECT_FALSE(_bmj->scanAndMove(1, 2));
+        EXPECT_FALSE(_bmj->done());
     });
     sync();
     EXPECT_EQ(1, numPending());
@@ -284,8 +284,8 @@ TEST_F(ControllerFixture, require_that_we_move_buckets_in_several_steps)
 
     // move bucket 4, docs 3
     masterExecute([this]() {
-        EXPECT_TRUE(_bmj.scanAndMove(1, 2));
-        EXPECT_TRUE(_bmj.done());
+        EXPECT_TRUE(_bmj->scanAndMove(1, 2));
+        EXPECT_TRUE(_bmj->done());
     });
     sync();
     EXPECT_EQ(0, numPending());
@@ -302,19 +302,19 @@ TEST_F(ControllerFixture, require_that_last_bucket_is_moved_before_reporting_don
     addReady(_ready.bucket(1));
     addReady(_ready.bucket(2));
     addReady(_notReady.bucket(4));
-    _bmj.recompute();
+    _bmj->recompute();
     masterExecute([this]() {
-        EXPECT_FALSE(_bmj.done());
+        EXPECT_FALSE(_bmj->done());
 
-        EXPECT_FALSE(_bmj.scanAndMove(1, 1));
-        EXPECT_FALSE(_bmj.done());
+        EXPECT_FALSE(_bmj->scanAndMove(1, 1));
+        EXPECT_FALSE(_bmj->done());
     });
     sync();
     EXPECT_EQ(1u, docsMoved().size());
     EXPECT_EQ(4u, calcAsked().size());
     masterExecute([this]() {
-        EXPECT_TRUE(_bmj.scanAndMove(1, 2));
-        EXPECT_TRUE(_bmj.done());
+        EXPECT_TRUE(_bmj->scanAndMove(1, 2));
+        EXPECT_TRUE(_bmj->done());
     });
     sync();
     EXPECT_EQ(3u, docsMoved().size());
@@ -326,12 +326,12 @@ TEST_F(ControllerFixture, require_that_active_bucket_is_not_moved_from_ready_to_
 {
     // bucket 1 should be moved but is active
     addReady(_ready.bucket(2));
-    _bmj.recompute();
-    EXPECT_FALSE(_bmj.done());
+    _bmj->recompute();
+    EXPECT_FALSE(_bmj->done());
     activateBucket(_ready.bucket(1));
     masterExecute([this]() {
-        EXPECT_TRUE(_bmj.scanAndMove(4, 3)); // scan all, delay active bucket 1
-        EXPECT_TRUE(_bmj.done());
+        EXPECT_TRUE(_bmj->scanAndMove(4, 3)); // scan all, delay active bucket 1
+        EXPECT_TRUE(_bmj->done());
     });
     sync();
     EXPECT_EQ(0u, docsMoved().size());
@@ -339,9 +339,9 @@ TEST_F(ControllerFixture, require_that_active_bucket_is_not_moved_from_ready_to_
 
     deactivateBucket(_ready.bucket(1));
     masterExecute([this]() {
-        EXPECT_FALSE(_bmj.done());
-        EXPECT_TRUE(_bmj.scanAndMove(4, 3)); // move delayed and de-activated bucket 1
-        EXPECT_TRUE(_bmj.done());
+        EXPECT_FALSE(_bmj->done());
+        EXPECT_TRUE(_bmj->scanAndMove(4, 3)); // move delayed and de-activated bucket 1
+        EXPECT_TRUE(_bmj->done());
     });
     sync();
     EXPECT_EQ(3u, docsMoved().size());
@@ -355,9 +355,9 @@ TEST_F(ControllerFixture, require_that_current_bucket_moving_is_cancelled_when_w
     addReady(_ready.bucket(2));
 
     masterExecute([this]() {
-        _bmj.recompute();
-        _bmj.scanAndMove(1, 1);
-        EXPECT_FALSE(_bmj.done());
+        _bmj->recompute();
+        _bmj->scanAndMove(1, 1);
+        EXPECT_FALSE(_bmj->done());
     });
     sync();
     EXPECT_EQ(1u, docsMoved().size());
@@ -367,8 +367,8 @@ TEST_F(ControllerFixture, require_that_current_bucket_moving_is_cancelled_when_w
         EXPECT_EQ(4u, calcAsked().size());
         EXPECT_EQ(_ready.bucket(1), calcAsked()[0]);
         _calc->resetAsked();
-        _bmj.scanAndMove(1, 1);
-        EXPECT_FALSE(_bmj.done());
+        _bmj->scanAndMove(1, 1);
+        EXPECT_FALSE(_bmj->done());
     });
     sync();
     EXPECT_EQ(1u, docsMoved().size());
@@ -383,7 +383,7 @@ TEST_F(ControllerFixture, require_that_current_bucket_moving_is_cancelled_when_w
         _calc->resetAsked();
         changeCalc(); // not cancelled.  No active bucket move
         EXPECT_EQ(4u, calcAsked().size());
-        _bmj.scanAndMove(1, 1);
+        _bmj->scanAndMove(1, 1);
     });
     sync();
     EXPECT_EQ(1u, docsMoved().size());
@@ -391,9 +391,9 @@ TEST_F(ControllerFixture, require_that_current_bucket_moving_is_cancelled_when_w
     EXPECT_EQ(_ready.bucket(2), calcAsked()[1]);
     EXPECT_EQ(_notReady.bucket(3), calcAsked()[2]);
     masterExecute([this]() {
-        _bmj.scanAndMove(2, 3);
+        _bmj->scanAndMove(2, 3);
     });
-    EXPECT_TRUE(_bmj.done());
+    EXPECT_TRUE(_bmj->done());
     sync();
     EXPECT_EQ(3u, docsMoved().size());
     EXPECT_EQ(4u, calcAsked().size());
@@ -405,10 +405,10 @@ TEST_F(ControllerFixture, require_that_de_activated_bucket_is_not_moved_if_new_c
 {
     // bucket 1 should be moved
     addReady(_ready.bucket(2));
-    _bmj.recompute();
+    _bmj->recompute();
     masterExecute([this]() {
         activateBucket(_ready.bucket(1));
-        _bmj.scanAndMove(4, 3); // scan all, delay active bucket 1
+        _bmj->scanAndMove(4, 3); // scan all, delay active bucket 1
     });
     sync();
     EXPECT_EQ(0u, docsMoved().size());
@@ -418,7 +418,7 @@ TEST_F(ControllerFixture, require_that_de_activated_bucket_is_not_moved_if_new_c
         deactivateBucket(_ready.bucket(1));
         addReady(_ready.bucket(1));
         changeCalc();
-        _bmj.scanAndMove(4, 3); // consider delayed bucket 3
+        _bmj->scanAndMove(4, 3); // consider delayed bucket 3
     });
     sync();
     EXPECT_EQ(0u, docsMoved().size());
@@ -433,9 +433,9 @@ TEST_F(ControllerFixture, ready_bucket_not_moved_to_not_ready_if_node_is_marked_
     // Bucket 2 would be moved from ready to not ready in a non-retired case, but not when retired.
     addReady(_ready.bucket(1));
     masterExecute([this]() {
-        _bmj.recompute();
-        _bmj.scanAndMove(4, 3);
-        EXPECT_TRUE(_bmj.done());
+        _bmj->recompute();
+        _bmj->scanAndMove(4, 3);
+        EXPECT_TRUE(_bmj->done());
     });
     sync();
     EXPECT_EQ(0u, docsMoved().size());
@@ -450,9 +450,9 @@ TEST_F(ControllerFixture, inactive_not_ready_bucket_not_moved_to_ready_if_node_i
     addReady(_ready.bucket(2));
     addReady(_notReady.bucket(3));
     masterExecute([this]() {
-        _bmj.recompute();
-        _bmj.scanAndMove(4, 3);
-        EXPECT_TRUE(_bmj.done());
+        _bmj->recompute();
+        _bmj->scanAndMove(4, 3);
+        EXPECT_TRUE(_bmj->done());
     });
     sync();
     EXPECT_EQ(0u, docsMoved().size());
@@ -464,11 +464,11 @@ TEST_F(ControllerFixture, explicitly_active_not_ready_bucket_can_be_moved_to_rea
     addReady(_ready.bucket(1));
     addReady(_ready.bucket(2));
     addReady(_notReady.bucket(3));
-    _bmj.recompute();
+    _bmj->recompute();
     masterExecute([this]() {
         activateBucket(_notReady.bucket(3));
-        _bmj.scanAndMove(4, 3);
-        EXPECT_TRUE(_bmj.done());
+        _bmj->scanAndMove(4, 3);
+        EXPECT_TRUE(_bmj->done());
     });
     sync();
     ASSERT_EQ(2u, docsMoved().size());
@@ -481,27 +481,27 @@ TEST_F(ControllerFixture, explicitly_active_not_ready_bucket_can_be_moved_to_rea
 
 TEST_F(ControllerFixture, require_that_notifyCreateBucket_causes_bucket_to_be_reconsidered_by_job)
 {
-    EXPECT_TRUE(_bmj.done());
+    EXPECT_TRUE(_bmj->done());
     addReady(_ready.bucket(1));
     addReady(_ready.bucket(2));
     runLoop();
-    EXPECT_TRUE(_bmj.done());
+    EXPECT_TRUE(_bmj->done());
     sync();
     EXPECT_TRUE(docsMoved().empty());
     EXPECT_TRUE(bucketsModified().empty());
     addReady(_notReady.bucket(3)); // bucket 3 now ready, no notify
-    EXPECT_TRUE(_bmj.done());        // move job still believes work done
+    EXPECT_TRUE(_bmj->done());        // move job still believes work done
     sync();
     EXPECT_TRUE(bucketsModified().empty());
     masterExecute([this]() {
-        _bmj.notifyCreateBucket(_bucketDB->takeGuard(), _notReady.bucket(3)); // reconsider bucket 3
-        EXPECT_FALSE(_bmj.done());
+        _bmj->notifyCreateBucket(_bucketDB->takeGuard(), _notReady.bucket(3)); // reconsider bucket 3
+        EXPECT_FALSE(_bmj->done());
         EXPECT_TRUE(bucketsModified().empty());
     });
     sync();
     EXPECT_TRUE(bucketsModified().empty());
     runLoop();
-    EXPECT_TRUE(_bmj.done());
+    EXPECT_TRUE(_bmj->done());
     sync();
 
     EXPECT_EQ(1u, bucketsModified().size());
@@ -518,22 +518,22 @@ struct ResourceLimitControllerFixture : public ControllerFixture
     void testJobStopping(DiskMemUsageState blockingUsageState) {
         // Bucket 1 should be moved
         addReady(_ready.bucket(2));
-        _bmj.recompute();
-        EXPECT_FALSE(_bmj.done());
-        // Note: This depends on _bmj.run() moving max 1 documents
-        EXPECT_FALSE(_bmj.run());
+        _bmj->recompute();
+        EXPECT_FALSE(_bmj->done());
+        // Note: This depends on _bmj->run() moving max 1 documents
+        EXPECT_FALSE(_bmj->run());
         sync();
         EXPECT_EQ(1u, docsMoved().size());
         EXPECT_EQ(0u, bucketsModified().size());
         // Notify that we've over limit
         _diskMemUsageNotifier.notify(blockingUsageState);
-        EXPECT_TRUE(_bmj.run());
+        EXPECT_TRUE(_bmj->run());
         sync();
         EXPECT_EQ(1u, docsMoved().size());
         EXPECT_EQ(0u, bucketsModified().size());
         // Notify that we've under limit
         _diskMemUsageNotifier.notify(DiskMemUsageState());
-        EXPECT_FALSE(_bmj.run());
+        EXPECT_FALSE(_bmj->run());
         sync();
         EXPECT_EQ(2u, docsMoved().size());
         EXPECT_EQ(0u, bucketsModified().size());
@@ -542,16 +542,16 @@ struct ResourceLimitControllerFixture : public ControllerFixture
     void testJobNotStopping(DiskMemUsageState blockingUsageState) {
         // Bucket 1 should be moved
         addReady(_ready.bucket(2));
-        _bmj.recompute();
-        EXPECT_FALSE(_bmj.done());
-        // Note: This depends on _bmj.run() moving max 1 documents
-        EXPECT_FALSE(_bmj.run());
+        _bmj->recompute();
+        EXPECT_FALSE(_bmj->done());
+        // Note: This depends on _bmj->run() moving max 1 documents
+        EXPECT_FALSE(_bmj->run());
         sync();
         EXPECT_EQ(1u, docsMoved().size());
         EXPECT_EQ(0u, bucketsModified().size());
         // Notify that we've over limit, but not over adjusted limit
         _diskMemUsageNotifier.notify(blockingUsageState);
-        EXPECT_FALSE(_bmj.run());
+        EXPECT_FALSE(_bmj->run());
         sync();
         EXPECT_EQ(2u, docsMoved().size());
         EXPECT_EQ(0u, bucketsModified().size());
@@ -600,24 +600,24 @@ struct MaxOutstandingMoveOpsFixture : public ControllerFixtureBase
         _builder.createDocs(14, 4, 5);
         _notReady.insertDocs(_builder.getDocs());
         addReady(_ready.bucket(3));
-        _bmj.recompute();
+        _bmj->recompute();
     }
 
     void assertRunToBlocked() {
-        EXPECT_TRUE(_bmj.run()); // job becomes blocked as max outstanding limit is reached
-        EXPECT_FALSE(_bmj.done());
-        EXPECT_TRUE(_bmj.isBlocked());
-        EXPECT_TRUE(_bmj.isBlocked(BlockedReason::OUTSTANDING_OPS));
+        EXPECT_TRUE(_bmj->run()); // job becomes blocked as max outstanding limit is reached
+        EXPECT_FALSE(_bmj->done());
+        EXPECT_TRUE(_bmj->isBlocked());
+        EXPECT_TRUE(_bmj->isBlocked(BlockedReason::OUTSTANDING_OPS));
     }
     void assertRunToNotBlocked() {
-        EXPECT_FALSE(_bmj.run());
-        EXPECT_FALSE(_bmj.done());
-        EXPECT_FALSE(_bmj.isBlocked());
+        EXPECT_FALSE(_bmj->run());
+        EXPECT_FALSE(_bmj->done());
+        EXPECT_FALSE(_bmj->isBlocked());
     }
     void assertRunToFinished() {
-        EXPECT_TRUE(_bmj.run());
-        EXPECT_TRUE(_bmj.done());
-        EXPECT_FALSE(_bmj.isBlocked());
+        EXPECT_TRUE(_bmj->run());
+        EXPECT_TRUE(_bmj->done());
+        EXPECT_FALSE(_bmj->isBlocked());
     }
     void assertDocsMoved(uint32_t expDocsMovedCnt, uint32_t expMoveContextsCnt) {
         EXPECT_EQ(expDocsMovedCnt, docsMoved().size());
@@ -626,7 +626,7 @@ struct MaxOutstandingMoveOpsFixture : public ControllerFixtureBase
     void unblockJob(uint32_t expRunnerCnt) {
         _moveHandler.clearMoveDoneContexts(); // unblocks job and try to execute it via runner
         EXPECT_EQ(expRunnerCnt, _runner.runCount);
-        EXPECT_FALSE(_bmj.isBlocked());
+        EXPECT_FALSE(_bmj->isBlocked());
     }
 };
 

@@ -72,7 +72,7 @@ struct ControllerFixtureBase : public ::testing::Test
     MyFrozenBucketHandler       _fbh;
     BucketCreateNotifier        _bucketCreateNotifier;
     test::DiskMemUsageNotifier  _diskMemUsageNotifier;
-    BucketMoveJob               _bmj;
+    std::shared_ptr<BucketMoveJob> _bmj;
     MyCountJobRunner            _runner;
     ControllerFixtureBase(const BlockableMaintenanceJobConfig &blockableConfig, bool storeMoveDoneContexts);
     ~ControllerFixtureBase();
@@ -97,7 +97,7 @@ struct ControllerFixtureBase : public ::testing::Test
     }
     ControllerFixtureBase &remFrozen(const BucketId &bucket) {
         _fbh.remFrozen(bucket);
-        _bmj.notifyThawedBucket(bucket);
+        _bmj->notifyThawedBucket(bucket);
         return *this;
     }
     ControllerFixtureBase &activateBucket(const BucketId &bucket) {
@@ -120,7 +120,7 @@ struct ControllerFixtureBase : public ::testing::Test
         return _calc->asked();
     }
     void runLoop() {
-        while (!_bmj.isBlocked() && !_bmj.run()) {
+        while (!_bmj->isBlocked() && !_bmj->run()) {
         }
     }
 };
@@ -137,11 +137,10 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
       _fbh(),
       _bucketCreateNotifier(),
       _diskMemUsageNotifier(),
-      _bmj(_calc, _moveHandler, _modifiedHandler, _ready._subDb,
-           _notReady._subDb, _fbh, _bucketCreateNotifier, _clusterStateHandler, _bucketHandler,
-           _diskMemUsageNotifier, blockableConfig,
-           "test", makeBucketSpace()),
-      _runner(_bmj)
+      _bmj(std::make_shared<BucketMoveJob>(_calc, _moveHandler, _modifiedHandler, _ready._subDb, _notReady._subDb,
+                                           _fbh, _bucketCreateNotifier, _clusterStateHandler, _bucketHandler,
+                                           _diskMemUsageNotifier, blockableConfig, "test", makeBucketSpace())),
+      _runner(*_bmj)
 {
 }
 
@@ -179,11 +178,11 @@ struct OnlyReadyControllerFixture : public ControllerFixtureBase
 
 TEST_F(ControllerFixture, require_that_nothing_is_moved_if_bucket_state_says_so)
 {
-    EXPECT_FALSE(_bmj.done());
+    EXPECT_FALSE(_bmj->done());
     addReady(_ready.bucket(1));
     addReady(_ready.bucket(2));
-    _bmj.scanAndMove(4, 3);
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(4, 3);
+    EXPECT_TRUE(_bmj->done());
     EXPECT_TRUE(docsMoved().empty());
     EXPECT_TRUE(bucketsModified().empty());
 }
@@ -194,8 +193,8 @@ TEST_F(ControllerFixture, require_that_not_ready_bucket_is_moved_to_ready_if_buc
     addReady(_ready.bucket(1));
     addReady(_ready.bucket(2));
     addReady(_notReady.bucket(4));
-    _bmj.scanAndMove(4, 3);
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(4, 3);
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(3u, docsMoved().size());
     assertEqual(_notReady.bucket(4), _notReady.docs(4)[0], 2, 1, docsMoved()[0]);
     assertEqual(_notReady.bucket(4), _notReady.docs(4)[1], 2, 1, docsMoved()[1]);
@@ -208,8 +207,8 @@ TEST_F(ControllerFixture, require_that_ready_bucket_is_moved_to_not_ready_if_buc
 {
     // bucket 2 should be moved
     addReady(_ready.bucket(1));
-    _bmj.scanAndMove(4, 3);
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(4, 3);
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(2u, docsMoved().size());
     assertEqual(_ready.bucket(2), _ready.docs(2)[0], 1, 2, docsMoved()[0]);
     assertEqual(_ready.bucket(2), _ready.docs(2)[1], 1, 2, docsMoved()[1]);
@@ -225,14 +224,14 @@ TEST_F(ControllerFixture, require_that_maxBucketsToScan_is_taken_into_considerat
     addReady(_notReady.bucket(4));
 
     // buckets 1, 2, and 3 considered
-    _bmj.scanAndMove(3, 3);
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(3, 3);
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(0u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
 
     // move bucket 4
-    _bmj.scanAndMove(1, 4);
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(1, 4);
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(3u, docsMoved().size());
     assertEqual(_notReady.bucket(4), _notReady.docs(4)[0], 2, 1, docsMoved()[0]);
     assertEqual(_notReady.bucket(4), _notReady.docs(4)[1], 2, 1, docsMoved()[1]);
@@ -249,14 +248,14 @@ TEST_F(ControllerFixture, require_that_we_move_buckets_in_several_steps)
     addReady(_notReady.bucket(4));
 
     // consider move bucket 1
-    _bmj.scanAndMove(1, 2);
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(1, 2);
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(0u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
 
     // move bucket 2, docs 1,2
-    _bmj.scanAndMove(1, 2);
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(1, 2);
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(2u, docsMoved().size());
     EXPECT_TRUE(assertEqual(_ready.bucket(2), _ready.docs(2)[0], 1, 2, docsMoved()[0]));
     EXPECT_TRUE(assertEqual(_ready.bucket(2), _ready.docs(2)[1], 1, 2, docsMoved()[1]));
@@ -264,8 +263,8 @@ TEST_F(ControllerFixture, require_that_we_move_buckets_in_several_steps)
     EXPECT_EQ(_ready.bucket(2), bucketsModified()[0]);
 
     // move bucket 3, docs 1,2
-    _bmj.scanAndMove(1, 2);
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(1, 2);
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(4u, docsMoved().size());
     EXPECT_TRUE(assertEqual(_notReady.bucket(3), _notReady.docs(3)[0], 2, 1, docsMoved()[2]));
     EXPECT_TRUE(assertEqual(_notReady.bucket(3), _notReady.docs(3)[1], 2, 1, docsMoved()[3]));
@@ -273,16 +272,16 @@ TEST_F(ControllerFixture, require_that_we_move_buckets_in_several_steps)
     EXPECT_EQ(_notReady.bucket(3), bucketsModified()[1]);
 
     // move bucket 4, docs 1,2
-    _bmj.scanAndMove(1, 2);
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(1, 2);
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(6u, docsMoved().size());
     EXPECT_TRUE(assertEqual(_notReady.bucket(4), _notReady.docs(4)[0], 2, 1, docsMoved()[4]));
     EXPECT_TRUE(assertEqual(_notReady.bucket(4), _notReady.docs(4)[1], 2, 1, docsMoved()[5]));
     EXPECT_EQ(2u, bucketsModified().size());
 
     // move bucket 4, docs 3
-    _bmj.scanAndMove(1, 2);
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(1, 2);
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(7u, docsMoved().size());
     EXPECT_TRUE(assertEqual(_notReady.bucket(4), _notReady.docs(4)[2], 2, 1, docsMoved()[6]));
     EXPECT_EQ(3u, bucketsModified().size());
@@ -297,10 +296,10 @@ TEST_F(ControllerFixture, require_that_we_can_change_calculator_and_continue_sca
     addReady(_ready.bucket(2));
 
     // start with bucket2
-    _bmj.scanAndMove(1, 0);
+    _bmj->scanAndMove(1, 0);
     changeCalc();
-    _bmj.scanAndMove(5, 0);
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(5, 0);
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(4u, calcAsked().size());
     EXPECT_EQ(_ready.bucket(2),    calcAsked()[0]);
     EXPECT_EQ(_notReady.bucket(3), calcAsked()[1]);
@@ -309,10 +308,10 @@ TEST_F(ControllerFixture, require_that_we_can_change_calculator_and_continue_sca
 
     // start with bucket3
     changeCalc();
-    _bmj.scanAndMove(2, 0);
+    _bmj->scanAndMove(2, 0);
     changeCalc();
-    _bmj.scanAndMove(5, 0);
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(5, 0);
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(4u, calcAsked().size());
     EXPECT_EQ(_notReady.bucket(3), calcAsked()[0]);
     EXPECT_EQ(_notReady.bucket(4), calcAsked()[1]);
@@ -321,10 +320,10 @@ TEST_F(ControllerFixture, require_that_we_can_change_calculator_and_continue_sca
 
     // start with bucket4
     changeCalc();
-    _bmj.scanAndMove(3, 0);
+    _bmj->scanAndMove(3, 0);
     changeCalc();
-    _bmj.scanAndMove(5, 0);
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(5, 0);
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(4u, calcAsked().size());
     EXPECT_EQ(_notReady.bucket(4), calcAsked()[0]);
     EXPECT_EQ(_ready.bucket(1),    calcAsked()[1]);
@@ -333,8 +332,8 @@ TEST_F(ControllerFixture, require_that_we_can_change_calculator_and_continue_sca
 
     // start with bucket1
     changeCalc();
-    _bmj.scanAndMove(5, 0);
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(5, 0);
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(4u, calcAsked().size());
     EXPECT_EQ(_ready.bucket(1),    calcAsked()[0]);
     EXPECT_EQ(_ready.bucket(2),    calcAsked()[1]);
@@ -343,16 +342,16 @@ TEST_F(ControllerFixture, require_that_we_can_change_calculator_and_continue_sca
 
     // change calc in second pass
     changeCalc();
-    _bmj.scanAndMove(3, 0);
+    _bmj->scanAndMove(3, 0);
     changeCalc();
-    _bmj.scanAndMove(2, 0);
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(2, 0);
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(2u, calcAsked().size());
     EXPECT_EQ(_notReady.bucket(4), calcAsked()[0]);
     EXPECT_EQ(_ready.bucket(1),    calcAsked()[1]);
     changeCalc();
-    _bmj.scanAndMove(5, 0);
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(5, 0);
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(4u, calcAsked().size());
     EXPECT_EQ(_ready.bucket(2),    calcAsked()[0]);
     EXPECT_EQ(_notReady.bucket(3), calcAsked()[1]);
@@ -361,22 +360,22 @@ TEST_F(ControllerFixture, require_that_we_can_change_calculator_and_continue_sca
 
     // check 1 bucket at a time, start with bucket2
     changeCalc();
-    _bmj.scanAndMove(1, 0);
+    _bmj->scanAndMove(1, 0);
     changeCalc();
-    _bmj.scanAndMove(1, 0);
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(1, 0);
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(1u, calcAsked().size());
     EXPECT_EQ(_ready.bucket(2), calcAsked()[0]);
-    _bmj.scanAndMove(1, 0);
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(1, 0);
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(2u, calcAsked().size());
     EXPECT_EQ(_notReady.bucket(3), calcAsked()[1]);
-    _bmj.scanAndMove(1, 0);
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(1, 0);
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(3u, calcAsked().size());
     EXPECT_EQ(_notReady.bucket(4), calcAsked()[2]);
-    _bmj.scanAndMove(1, 0);
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(1, 0);
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(4u, calcAsked().size());
     EXPECT_EQ(_ready.bucket(1), calcAsked()[3]);
 }
@@ -385,16 +384,16 @@ TEST_F(ControllerFixture, require_that_current_bucket_moving_is_cancelled_when_w
 {
     // bucket 1 should be moved
     addReady(_ready.bucket(2));
-    _bmj.scanAndMove(3, 1);
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(3, 1);
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(1u, docsMoved().size());
     EXPECT_EQ(1u, calcAsked().size());
     changeCalc(); // Not cancelled, bucket 1 still moving to notReady
     EXPECT_EQ(1u, calcAsked().size());
     EXPECT_EQ(_ready.bucket(1), calcAsked()[0]);
     _calc->resetAsked();
-    _bmj.scanAndMove(2, 1);
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(2, 1);
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(1u, docsMoved().size());
     EXPECT_EQ(0u, calcAsked().size());
     addReady(_ready.bucket(1));
@@ -406,13 +405,13 @@ TEST_F(ControllerFixture, require_that_current_bucket_moving_is_cancelled_when_w
     changeCalc(); // not cancelled.  No active bucket move
     EXPECT_EQ(0u, calcAsked().size());
     _calc->resetAsked();
-    _bmj.scanAndMove(2, 1);
+    _bmj->scanAndMove(2, 1);
     EXPECT_EQ(0u, docsMoved().size());
     EXPECT_EQ(2u, calcAsked().size());
     EXPECT_EQ(_ready.bucket(2), calcAsked()[0]);
     EXPECT_EQ(_notReady.bucket(3), calcAsked()[1]);
-    _bmj.scanAndMove(2, 3);
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(2, 3);
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(3u, docsMoved().size());
     EXPECT_EQ(4u, calcAsked().size());
     EXPECT_EQ(_notReady.bucket(4), calcAsked()[2]);
@@ -425,12 +424,12 @@ TEST_F(ControllerFixture, require_that_last_bucket_is_moved_before_reporting_don
     addReady(_ready.bucket(1));
     addReady(_ready.bucket(2));
     addReady(_notReady.bucket(4));
-    _bmj.scanAndMove(4, 1);
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(4, 1);
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(1u, docsMoved().size());
     EXPECT_EQ(4u, calcAsked().size());
-    _bmj.scanAndMove(0, 2);
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(0, 2);
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(3u, docsMoved().size());
     EXPECT_EQ(4u, calcAsked().size());
 }
@@ -440,13 +439,13 @@ TEST_F(ControllerFixture, require_that_frozen_bucket_is_not_moved_until_thawed)
     // bucket 1 should be moved but is frozen
     addReady(_ready.bucket(2));
     addFrozen(_ready.bucket(1));
-    _bmj.scanAndMove(4, 3); // scan all, delay frozen bucket 1
+    _bmj->scanAndMove(4, 3); // scan all, delay frozen bucket 1
     remFrozen(_ready.bucket(1));
-    EXPECT_FALSE(_bmj.done());
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(0u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
-    _bmj.scanAndMove(0, 3); // move delayed and thawed bucket 1
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(0, 3); // move delayed and thawed bucket 1
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(3u, docsMoved().size());
     EXPECT_EQ(1u, bucketsModified().size());
     EXPECT_EQ(_ready.bucket(1), bucketsModified()[0]);
@@ -460,19 +459,19 @@ TEST_F(ControllerFixture, require_that_thawed_bucket_is_moved_before_other_bucke
     addReady(_notReady.bucket(3));
     addReady(_notReady.bucket(4));
     addFrozen(_ready.bucket(2));
-    _bmj.scanAndMove(3, 2); // delay bucket 2, move bucket 3
+    _bmj->scanAndMove(3, 2); // delay bucket 2, move bucket 3
     remFrozen(_ready.bucket(2));
-    EXPECT_FALSE(_bmj.done());
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(2u, docsMoved().size());
     EXPECT_EQ(1u, bucketsModified().size());
     EXPECT_EQ(_notReady.bucket(3), bucketsModified()[0]);
-    _bmj.scanAndMove(2, 2); // move thawed bucket 2
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(2, 2); // move thawed bucket 2
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(4u, docsMoved().size());
     EXPECT_EQ(2u, bucketsModified().size());
     EXPECT_EQ(_ready.bucket(2), bucketsModified()[1]);
-    _bmj.scanAndMove(1, 4); // move bucket 4
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(1, 4); // move bucket 4
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(7u, docsMoved().size());
     EXPECT_EQ(3u, bucketsModified().size());
     EXPECT_EQ(_notReady.bucket(4), bucketsModified()[2]);
@@ -483,31 +482,31 @@ TEST_F(ControllerFixture, require_that_re_frozen_thawed_bucket_is_not_moved_unti
     // bucket 1 should be moved but is re-frozen
     addReady(_ready.bucket(2));
     addFrozen(_ready.bucket(1));
-    _bmj.scanAndMove(1, 0); // scan, delay frozen bucket 1
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(1, 0); // scan, delay frozen bucket 1
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(0u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
     EXPECT_EQ(1u, calcAsked().size());
     EXPECT_EQ(_ready.bucket(1), calcAsked()[0]);
     remFrozen(_ready.bucket(1));
     addFrozen(_ready.bucket(1));
-    _bmj.scanAndMove(1, 0); // scan, but nothing to move
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(1, 0); // scan, but nothing to move
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(0u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
     EXPECT_EQ(3u, calcAsked().size());
     EXPECT_EQ(_ready.bucket(1), calcAsked()[1]);
     EXPECT_EQ(_ready.bucket(2), calcAsked()[2]);
     remFrozen(_ready.bucket(1));
-    _bmj.scanAndMove(3, 4); // move delayed and thawed bucket 1
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(3, 4); // move delayed and thawed bucket 1
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(3u, docsMoved().size());
     EXPECT_EQ(1u, bucketsModified().size());
     EXPECT_EQ(_ready.bucket(1), bucketsModified()[0]);
     EXPECT_EQ(4u, calcAsked().size());
     EXPECT_EQ(_ready.bucket(1), calcAsked()[3]);
-    _bmj.scanAndMove(2, 0); // scan the rest
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(2, 0); // scan the rest
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(3u, docsMoved().size());
     EXPECT_EQ(1u, bucketsModified().size());
     EXPECT_EQ(6u, calcAsked().size());
@@ -520,15 +519,15 @@ TEST_F(ControllerFixture, require_that_thawed_bucket_is_not_moved_if_new_calcula
     addReady(_ready.bucket(2));
     addReady(_notReady.bucket(3));
     addFrozen(_notReady.bucket(3));
-    _bmj.scanAndMove(4, 3); // scan all, delay frozen bucket 3
+    _bmj->scanAndMove(4, 3); // scan all, delay frozen bucket 3
     remFrozen(_notReady.bucket(3));
-    EXPECT_FALSE(_bmj.done());
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(0u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
     EXPECT_EQ(4u, calcAsked().size());
     changeCalc();
     remReady(_notReady.bucket(3));
-    _bmj.scanAndMove(0, 3); // consider delayed bucket 3
+    _bmj->scanAndMove(0, 3); // consider delayed bucket 3
     EXPECT_EQ(0u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
     EXPECT_EQ(1u, calcAsked().size());
@@ -541,8 +540,8 @@ TEST_F(ControllerFixture, require_that_current_bucket_mover_is_cancelled_if_buck
     addReady(_ready.bucket(1));
     addReady(_ready.bucket(2));
     addReady(_notReady.bucket(3));
-    _bmj.scanAndMove(3, 1); // move 1 doc from bucket 3
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(3, 1); // move 1 doc from bucket 3
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(1u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
     EXPECT_EQ(3u, calcAsked().size());
@@ -551,22 +550,22 @@ TEST_F(ControllerFixture, require_that_current_bucket_mover_is_cancelled_if_buck
     EXPECT_EQ(_notReady.bucket(3), calcAsked()[2]);
 
     addFrozen(_notReady.bucket(3));
-    _bmj.scanAndMove(1, 3); // done scanning
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(1, 3); // done scanning
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(1u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
     EXPECT_EQ(3u, calcAsked().size());
 
-    _bmj.scanAndMove(1, 3); // done scanning
+    _bmj->scanAndMove(1, 3); // done scanning
     remFrozen(_notReady.bucket(3));
-    EXPECT_FALSE(_bmj.done());
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(1u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
     EXPECT_EQ(4u, calcAsked().size());
 
     EXPECT_EQ(_notReady.bucket(4), calcAsked()[3]);
-    _bmj.scanAndMove(0, 2); // move all docs from bucket 3 again
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(0, 2); // move all docs from bucket 3 again
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(3u, docsMoved().size());
     EXPECT_EQ(1u, bucketsModified().size());
     EXPECT_EQ(_notReady.bucket(3), bucketsModified()[0]);
@@ -581,14 +580,14 @@ TEST_F(ControllerFixture, require_that_current_bucket_mover_is_not_cancelled_if_
     addReady(_ready.bucket(2));
     addReady(_notReady.bucket(3));
     addReady(_notReady.bucket(4));
-    _bmj.scanAndMove(3, 1); // move 1 doc from bucket 3
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(3, 1); // move 1 doc from bucket 3
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(1u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
     EXPECT_EQ(3u, calcAsked().size());
     addFrozen(_notReady.bucket(4));
-    _bmj.scanAndMove(1, 2); // move rest of docs from bucket 3
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(1, 2); // move rest of docs from bucket 3
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(2u, docsMoved().size());
     EXPECT_EQ(1u, bucketsModified().size());
     EXPECT_EQ(_notReady.bucket(3), bucketsModified()[0]);
@@ -600,15 +599,15 @@ TEST_F(ControllerFixture, require_that_active_bucket_is_not_moved_from_ready_to_
     // bucket 1 should be moved but is active
     addReady(_ready.bucket(2));
     activateBucket(_ready.bucket(1));
-    _bmj.scanAndMove(4, 3); // scan all, delay active bucket 1
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(4, 3); // scan all, delay active bucket 1
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(0u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
 
     deactivateBucket(_ready.bucket(1));
-    EXPECT_FALSE(_bmj.done());
-    _bmj.scanAndMove(0, 3); // move delayed and de-activated bucket 1
-    EXPECT_TRUE(_bmj.done());
+    EXPECT_FALSE(_bmj->done());
+    _bmj->scanAndMove(0, 3); // move delayed and de-activated bucket 1
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(3u, docsMoved().size());
     EXPECT_EQ(1u, bucketsModified().size());
     EXPECT_EQ(_ready.bucket(1), bucketsModified()[0]);
@@ -619,21 +618,21 @@ TEST_F(OnlyReadyControllerFixture, require_that_de_activated_bucket_is_moved_bef
     // bucket 1, 2, 3 should be moved (but bucket 1 is active)
     addReady(_ready.bucket(4));
     activateBucket(_ready.bucket(1));
-    _bmj.scanAndMove(2, 4); // delay bucket 1, move bucket 2
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(2, 4); // delay bucket 1, move bucket 2
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(2u, docsMoved().size());
     EXPECT_EQ(1u, bucketsModified().size());
     EXPECT_EQ(_ready.bucket(2), bucketsModified()[0]);
 
     deactivateBucket(_ready.bucket(1));
-    _bmj.scanAndMove(2, 4); // move de-activated bucket 1
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(2, 4); // move de-activated bucket 1
+    EXPECT_FALSE(_bmj->done());
     EXPECT_EQ(3u, docsMoved().size());
     EXPECT_EQ(2u, bucketsModified().size());
     EXPECT_EQ(_ready.bucket(1), bucketsModified()[1]);
 
-    _bmj.scanAndMove(2, 4); // move bucket 3
-    // EXPECT_TRUE(_bmj.done()); // TODO(geirst): fix this
+    _bmj->scanAndMove(2, 4); // move bucket 3
+    // EXPECT_TRUE(_bmj->done()); // TODO(geirst): fix this
     EXPECT_EQ(6u, docsMoved().size());
     EXPECT_EQ(3u, bucketsModified().size());
     EXPECT_EQ(_ready.bucket(3), bucketsModified()[2]);
@@ -644,14 +643,14 @@ TEST_F(ControllerFixture, require_that_de_activated_bucket_is_not_moved_if_new_c
     // bucket 1 should be moved
     addReady(_ready.bucket(2));
     activateBucket(_ready.bucket(1));
-    _bmj.scanAndMove(4, 3); // scan all, delay active bucket 1
+    _bmj->scanAndMove(4, 3); // scan all, delay active bucket 1
     EXPECT_EQ(0u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
 
     deactivateBucket(_ready.bucket(1));
     addReady(_ready.bucket(1));
     changeCalc();
-    _bmj.scanAndMove(0, 3); // consider delayed bucket 3
+    _bmj->scanAndMove(0, 3); // consider delayed bucket 3
     EXPECT_EQ(0u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
     EXPECT_EQ(1u, calcAsked().size());
@@ -663,18 +662,18 @@ TEST_F(ControllerFixture, require_that_de_activated_bucket_is_not_moved_if_froze
     // bucket 1 should be moved
     addReady(_ready.bucket(2));
     activateBucket(_ready.bucket(1));
-    _bmj.scanAndMove(4, 3); // scan all, delay active bucket 1
+    _bmj->scanAndMove(4, 3); // scan all, delay active bucket 1
     EXPECT_EQ(0u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
 
     addFrozen(_ready.bucket(1));
     deactivateBucket(_ready.bucket(1));
-    _bmj.scanAndMove(0, 3); // bucket 1 de-activated but frozen
+    _bmj->scanAndMove(0, 3); // bucket 1 de-activated but frozen
     EXPECT_EQ(0u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
 
     remFrozen(_ready.bucket(1));
-    _bmj.scanAndMove(0, 3); // handle thawed bucket 1
+    _bmj->scanAndMove(0, 3); // handle thawed bucket 1
     EXPECT_EQ(3u, docsMoved().size());
     EXPECT_EQ(1u, bucketsModified().size());
     EXPECT_EQ(_ready.bucket(1), bucketsModified()[0]);
@@ -685,18 +684,18 @@ TEST_F(ControllerFixture, require_that_thawed_bucket_is_not_moved_if_active_as_w
     // bucket 1 should be moved
     addReady(_ready.bucket(2));
     addFrozen(_ready.bucket(1));
-    _bmj.scanAndMove(4, 3); // scan all, delay frozen bucket 1
+    _bmj->scanAndMove(4, 3); // scan all, delay frozen bucket 1
     EXPECT_EQ(0u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
 
     activateBucket(_ready.bucket(1));
     remFrozen(_ready.bucket(1));
-    _bmj.scanAndMove(0, 3); // bucket 1 thawed but active
+    _bmj->scanAndMove(0, 3); // bucket 1 thawed but active
     EXPECT_EQ(0u, docsMoved().size());
     EXPECT_EQ(0u, bucketsModified().size());
 
     deactivateBucket(_ready.bucket(1));
-    _bmj.scanAndMove(0, 3); // handle de-activated bucket 1
+    _bmj->scanAndMove(0, 3); // handle de-activated bucket 1
     EXPECT_EQ(3u, docsMoved().size());
     EXPECT_EQ(1u, bucketsModified().size());
     EXPECT_EQ(_ready.bucket(1), bucketsModified()[0]);
@@ -707,8 +706,8 @@ TEST_F(ControllerFixture, ready_bucket_not_moved_to_not_ready_if_node_is_marked_
     _calc->setNodeRetired(true);
     // Bucket 2 would be moved from ready to not ready in a non-retired case, but not when retired.
     addReady(_ready.bucket(1));
-    _bmj.scanAndMove(4, 3);
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(4, 3);
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(0u, docsMoved().size());
 }
 
@@ -720,8 +719,8 @@ TEST_F(ControllerFixture, inactive_not_ready_bucket_not_moved_to_ready_if_node_i
     addReady(_ready.bucket(1));
     addReady(_ready.bucket(2));
     addReady(_notReady.bucket(3));
-    _bmj.scanAndMove(4, 3);
-    EXPECT_TRUE(_bmj.done());
+    _bmj->scanAndMove(4, 3);
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(0u, docsMoved().size());
 }
 
@@ -732,8 +731,8 @@ TEST_F(ControllerFixture, explicitly_active_not_ready_bucket_can_be_moved_to_rea
     addReady(_ready.bucket(2));
     addReady(_notReady.bucket(3));
     activateBucket(_notReady.bucket(3));
-    _bmj.scanAndMove(4, 3);
-    EXPECT_FALSE(_bmj.done());
+    _bmj->scanAndMove(4, 3);
+    EXPECT_FALSE(_bmj->done());
     ASSERT_EQ(2u, docsMoved().size());
     assertEqual(_notReady.bucket(3), _notReady.docs(3)[0], 2, 1, docsMoved()[0]);
     assertEqual(_notReady.bucket(3), _notReady.docs(3)[1], 2, 1, docsMoved()[1]);
@@ -743,19 +742,19 @@ TEST_F(ControllerFixture, explicitly_active_not_ready_bucket_can_be_moved_to_rea
 
 TEST_F(ControllerFixture, require_that_notifyCreateBucket_causes_bucket_to_be_reconsidered_by_job)
 {
-    EXPECT_FALSE(_bmj.done());
+    EXPECT_FALSE(_bmj->done());
     addReady(_ready.bucket(1));
     addReady(_ready.bucket(2));
     runLoop();
-    EXPECT_TRUE(_bmj.done());
+    EXPECT_TRUE(_bmj->done());
     EXPECT_TRUE(docsMoved().empty());
     EXPECT_TRUE(bucketsModified().empty());
     addReady(_notReady.bucket(3)); // bucket 3 now ready, no notify
-    EXPECT_TRUE(_bmj.done());        // move job still believes work done
-    _bmj.notifyCreateBucket(_bucketDB->takeGuard(), _notReady.bucket(3)); // reconsider bucket 3
-    EXPECT_FALSE(_bmj.done());
+    EXPECT_TRUE(_bmj->done());        // move job still believes work done
+    _bmj->notifyCreateBucket(_bucketDB->takeGuard(), _notReady.bucket(3)); // reconsider bucket 3
+    EXPECT_FALSE(_bmj->done());
     runLoop();
-    EXPECT_TRUE(_bmj.done());
+    EXPECT_TRUE(_bmj->done());
     EXPECT_EQ(1u, bucketsModified().size());
     EXPECT_EQ(2u, docsMoved().size());
 }
@@ -769,18 +768,18 @@ struct ResourceLimitControllerFixture : public ControllerFixture
     void testJobStopping(DiskMemUsageState blockingUsageState) {
         // Bucket 1 should be moved
         addReady(_ready.bucket(2));
-        // Note: This depends on _bmj.run() moving max 1 documents
-        EXPECT_TRUE(!_bmj.run());
+        // Note: This depends on _bmj->run() moving max 1 documents
+        EXPECT_TRUE(!_bmj->run());
         EXPECT_EQ(1u, docsMoved().size());
         EXPECT_EQ(0u, bucketsModified().size());
         // Notify that we've over limit
         _diskMemUsageNotifier.notify(blockingUsageState);
-        EXPECT_TRUE(_bmj.run());
+        EXPECT_TRUE(_bmj->run());
         EXPECT_EQ(1u, docsMoved().size());
         EXPECT_EQ(0u, bucketsModified().size());
         // Notify that we've under limit
         _diskMemUsageNotifier.notify(DiskMemUsageState());
-        EXPECT_TRUE(!_bmj.run());
+        EXPECT_TRUE(!_bmj->run());
         EXPECT_EQ(2u, docsMoved().size());
         EXPECT_EQ(0u, bucketsModified().size());
     }
@@ -788,13 +787,13 @@ struct ResourceLimitControllerFixture : public ControllerFixture
     void testJobNotStopping(DiskMemUsageState blockingUsageState) {
         // Bucket 1 should be moved
         addReady(_ready.bucket(2));
-        // Note: This depends on _bmj.run() moving max 1 documents
-        EXPECT_TRUE(!_bmj.run());
+        // Note: This depends on _bmj->run() moving max 1 documents
+        EXPECT_TRUE(!_bmj->run());
         EXPECT_EQ(1u, docsMoved().size());
         EXPECT_EQ(0u, bucketsModified().size());
         // Notify that we've over limit, but not over adjusted limit
         _diskMemUsageNotifier.notify(blockingUsageState);
-        EXPECT_TRUE(!_bmj.run());
+        EXPECT_TRUE(!_bmj->run());
         EXPECT_EQ(2u, docsMoved().size());
         EXPECT_EQ(0u, bucketsModified().size());
     }
@@ -834,20 +833,20 @@ struct MaxOutstandingMoveOpsFixture : public ControllerFixture
     }
 
     void assertRunToBlocked() {
-        EXPECT_TRUE(_bmj.run()); // job becomes blocked as max outstanding limit is reached
-        EXPECT_FALSE(_bmj.done());
-        EXPECT_TRUE(_bmj.isBlocked());
-        EXPECT_TRUE(_bmj.isBlocked(BlockedReason::OUTSTANDING_OPS));
+        EXPECT_TRUE(_bmj->run()); // job becomes blocked as max outstanding limit is reached
+        EXPECT_FALSE(_bmj->done());
+        EXPECT_TRUE(_bmj->isBlocked());
+        EXPECT_TRUE(_bmj->isBlocked(BlockedReason::OUTSTANDING_OPS));
     }
     void assertRunToNotBlocked() {
-        EXPECT_FALSE(_bmj.run());
-        EXPECT_FALSE(_bmj.done());
-        EXPECT_FALSE(_bmj.isBlocked());
+        EXPECT_FALSE(_bmj->run());
+        EXPECT_FALSE(_bmj->done());
+        EXPECT_FALSE(_bmj->isBlocked());
     }
     void assertRunToFinished() {
-        EXPECT_TRUE(_bmj.run());
-        EXPECT_TRUE(_bmj.done());
-        EXPECT_FALSE(_bmj.isBlocked());
+        EXPECT_TRUE(_bmj->run());
+        EXPECT_TRUE(_bmj->done());
+        EXPECT_FALSE(_bmj->isBlocked());
     }
     void assertDocsMoved(uint32_t expDocsMovedCnt, uint32_t expMoveContextsCnt) {
         EXPECT_EQ(expDocsMovedCnt, docsMoved().size());
@@ -856,7 +855,7 @@ struct MaxOutstandingMoveOpsFixture : public ControllerFixture
     void unblockJob(uint32_t expRunnerCnt) {
         _moveHandler.clearMoveDoneContexts(); // unblocks job and try to execute it via runner
         EXPECT_EQ(expRunnerCnt, _runner.runCount);
-        EXPECT_FALSE(_bmj.isBlocked());
+        EXPECT_FALSE(_bmj->isBlocked());
     }
 };
 
