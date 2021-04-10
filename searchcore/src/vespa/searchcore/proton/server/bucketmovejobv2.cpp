@@ -4,7 +4,6 @@
 #include "imaintenancejobrunner.h"
 #include "ibucketstatechangednotifier.h"
 #include "iclusterstatechangednotifier.h"
-#include "maintenancedocumentsubdb.h"
 #include "i_disk_mem_usage_notifier.h"
 #include "ibucketmodifiedhandler.h"
 #include "move_operation_limiter.h"
@@ -87,8 +86,6 @@ BucketMoveJobV2::BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &
       _bucketsInFlight(),
       _buckets2Move(),
       _stopped(false),
-      _startedCount(0),
-      _executedCount(0),
       _bucketsPending(0),
       _bucketCreateNotifier(bucketCreateNotifier),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
@@ -151,24 +148,10 @@ BucketMoveJobV2::needMove(const ScanIterator &itr) const {
     return {true, wantReady};
 }
 
-namespace {
-
-class IncOnDestruct {
-public:
-    IncOnDestruct(std::atomic<size_t> & count) : _count(count) {}
-    ~IncOnDestruct() {
-        _count.fetch_add(1, std::memory_order_relaxed);
-    }
-private:
-    std::atomic<size_t> & _count;
-};
-
-}
-
-class StartMove : public storage::spi::BucketTask {
+class BucketMoveJobV2::StartMove : public storage::spi::BucketTask {
 public:
     using IDestructorCallbackSP = std::shared_ptr<vespalib::IDestructorCallback>;
-    StartMove(BucketMoveJobV2 & job, std::shared_ptr<BucketMover> mover,
+    StartMove(std::shared_ptr<BucketMoveJobV2> job, std::shared_ptr<BucketMover> mover,
               std::vector<BucketMover::MoveKey> keys,
               IDestructorCallbackSP opsTracker)
         : _job(job),
@@ -180,27 +163,27 @@ public:
     void run(const Bucket &bucket, IDestructorCallbackSP onDone) override {
         assert(_mover->getBucket() == bucket.getBucketId());
         using DoneContext = vespalib::KeepAlive<std::pair<IDestructorCallbackSP, IDestructorCallbackSP>>;
-        _job.prepareMove(std::move(_mover), std::move(_keys),
-                         std::make_shared<DoneContext>(std::make_pair(std::move(_opsTracker), std::move(onDone))));
+        BucketMoveJobV2::prepareMove(std::move(_job), std::move(_mover), std::move(_keys),
+                                     std::make_shared<DoneContext>(std::make_pair(std::move(_opsTracker), std::move(onDone))));
     }
 
     void fail(const Bucket &bucket) override {
-        _job.failOperation(bucket.getBucketId());
+        BucketMoveJobV2::failOperation(std::move(_job), bucket.getBucketId());
     }
 
 private:
-    BucketMoveJobV2                   & _job;
+    std::shared_ptr<BucketMoveJobV2>    _job;
     std::shared_ptr<BucketMover>        _mover;
     std::vector<BucketMover::MoveKey>   _keys;
     IDestructorCallbackSP               _opsTracker;
 };
 
 void
-BucketMoveJobV2::failOperation(BucketId bucketId) {
-    IncOnDestruct countGuard(_executedCount);
-    _master.execute(makeLambdaTask([this, bucketId]() {
-        if (_stopped.load(std::memory_order_relaxed)) return;
-        considerBucket(_ready.meta_store()->getBucketDB().takeGuard(), bucketId);
+BucketMoveJobV2::failOperation(std::shared_ptr<BucketMoveJobV2> job, BucketId bucketId) {
+    auto & master = job->_master;
+    master.execute(makeLambdaTask([job=std::move(job), bucketId]() {
+        if (job->_stopped.load(std::memory_order_relaxed)) return;
+        job->considerBucket(job->_ready.meta_store()->getBucketDB().takeGuard(), bucketId);
     }));
 }
 
@@ -213,19 +196,18 @@ BucketMoveJobV2::startMove(BucketMoverSP mover, size_t maxDocsToMove) {
     if (keys.empty()) return;
     mover->updateLastValidGid(keys.back()._gid);
     Bucket spiBucket(document::Bucket(_bucketSpace, mover->getBucket()));
-    auto bucketTask = std::make_unique<StartMove>(*this, std::move(mover), std::move(keys), getLimiter().beginOperation());
-    _startedCount.fetch_add(1, std::memory_order_relaxed);
+    auto bucketTask = std::make_unique<StartMove>(shared_from_this(), std::move(mover), std::move(keys), getLimiter().beginOperation());
     _bucketExecutor.execute(spiBucket, std::move(bucketTask));
 }
 
 void
-BucketMoveJobV2::prepareMove(BucketMoverSP mover, std::vector<MoveKey> keys, IDestructorCallbackSP onDone)
+BucketMoveJobV2::prepareMove(std::shared_ptr<BucketMoveJobV2> job, BucketMoverSP mover, std::vector<MoveKey> keys, IDestructorCallbackSP onDone)
 {
-    IncOnDestruct countGuard(_executedCount);
     auto moveOps = mover->createMoveOperations(std::move(keys));
-    _master.execute(makeLambdaTask([this, mover=std::move(mover), moveOps=std::move(moveOps), onDone=std::move(onDone)]() mutable {
-        if (_stopped.load(std::memory_order_relaxed)) return;
-        completeMove(std::move(mover), std::move(moveOps), std::move(onDone));
+    auto & master = job->_master;
+    master.execute(makeLambdaTask([job=std::move(job), mover=std::move(mover), moveOps=std::move(moveOps), onDone=std::move(onDone)]() mutable {
+        if (job->_stopped.load(std::memory_order_relaxed)) return;
+        job->completeMove(std::move(mover), std::move(moveOps), std::move(onDone));
     }));
 }
 
@@ -437,18 +419,10 @@ BucketMoveJobV2::notifyDiskMemUsage(DiskMemUsageState state)
     internalNotifyDiskMemUsage(state);
 }
 
-bool
-BucketMoveJobV2::inSync() const {
-    return _executedCount == _startedCount;
-}
-
 void
 BucketMoveJobV2::onStop() {
     // Called by master write thread
     _stopped = true;
-    while ( ! inSync() ) {
-        std::this_thread::sleep_for(1ms);
-    }
 }
 
 void
