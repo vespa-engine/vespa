@@ -123,10 +123,9 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
       _bucketExecutor(4),
       _moveHandler(*_bucketDB, storeMoveDoneContexts),
       _metrics("test", 1),
-      _bmj(std::make_shared<BucketMoveJobV2>(_calc, _moveHandler, _modifiedHandler, _master, _bucketExecutor,
-                                             _ready._subDb, _notReady._subDb, _bucketCreateNotifier,
-                                             _clusterStateHandler, _bucketHandler, _diskMemUsageNotifier,
-                                             blockableConfig, "test", makeBucketSpace())),
+      _bmj(BucketMoveJobV2::create(_calc, _moveHandler, _modifiedHandler, _master, _bucketExecutor, _ready._subDb,
+                                   _notReady._subDb, _bucketCreateNotifier,_clusterStateHandler, _bucketHandler,
+                                   _diskMemUsageNotifier, blockableConfig, "test", makeBucketSpace())),
       _runner(*_bmj)
 {
 }

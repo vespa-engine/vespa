@@ -41,14 +41,10 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
     for (auto &lidHandler : lscHandlers) {
         std::shared_ptr<IMaintenanceJob> job;
         if (config.getLidSpaceCompactionConfig().useBucketExecutor()) {
-            job = std::make_shared<lidspace::CompactionJob>(
-                    config.getLidSpaceCompactionConfig(),
-                    std::move(lidHandler), opStorer, controller.masterThread(), bucketExecutor,
-                    diskMemUsageNotifier,
-                    config.getBlockableJobConfig(),
-                    clusterStateChangedNotifier,
-                    (calc ? calc->nodeRetired() : false),
-                    bucketSpace);
+            job = lidspace::CompactionJob::create(config.getLidSpaceCompactionConfig(), std::move(lidHandler), opStorer,
+                                                  controller.masterThread(), bucketExecutor, diskMemUsageNotifier,
+                                                  config.getBlockableJobConfig(), clusterStateChangedNotifier,
+                                                  (calc ? calc->nodeRetired() : false), bucketSpace);
         } else {
             job = std::make_shared<LidSpaceCompactionJob>(
                     config.getLidSpaceCompactionConfig(),
@@ -80,19 +76,10 @@ injectBucketMoveJob(MaintenanceController &controller,
 {
     std::shared_ptr<IMaintenanceJob> bmj;
     if (config.getBucketMoveConfig().useBucketExecutor()) {
-        bmj = std::make_shared<BucketMoveJobV2>(calc,
-                                                moveHandler,
-                                                bucketModifiedHandler,
-                                                controller.masterThread(),
-                                                bucketExecutor,
-                                                controller.getReadySubDB(),
-                                                controller.getNotReadySubDB(),
-                                                bucketCreateNotifier,
-                                                clusterStateChangedNotifier,
-                                                bucketStateChangedNotifier,
-                                                diskMemUsageNotifier,
-                                                config.getBlockableJobConfig(),
-                                                docTypeName, bucketSpace);
+        bmj = BucketMoveJobV2::create(calc, moveHandler, bucketModifiedHandler, controller.masterThread(),
+                                      bucketExecutor, controller.getReadySubDB(), controller.getNotReadySubDB(),
+                                      bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
+                                      diskMemUsageNotifier, config.getBlockableJobConfig(), docTypeName, bucketSpace);
     } else {
         bmj = std::make_shared<BucketMoveJob>(calc,
                                               moveHandler,

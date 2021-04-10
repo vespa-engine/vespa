@@ -39,7 +39,7 @@ private:
                       std::shared_ptr<IDestructorCallback> onDone);
     void onStop() override;
     class MoveTask;
-public:
+
     CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
                   std::shared_ptr<ILidSpaceCompactionHandler> handler,
                   IOperationStorer &opStorer,
@@ -50,6 +50,23 @@ public:
                   IClusterStateChangedNotifier &clusterStateChangedNotifier,
                   bool nodeRetired,
                   document::BucketSpace bucketSpace);
+public:
+    static std::shared_ptr<CompactionJob>
+    create(const DocumentDBLidSpaceCompactionConfig &config,
+           std::shared_ptr<ILidSpaceCompactionHandler> handler,
+           IOperationStorer &opStorer,
+           IThreadService & master,
+           BucketExecutor & bucketExecutor,
+           IDiskMemUsageNotifier &diskMemUsageNotifier,
+           const BlockableMaintenanceJobConfig &blockableConfig,
+           IClusterStateChangedNotifier &clusterStateChangedNotifier,
+           bool nodeRetired,
+           document::BucketSpace bucketSpace)
+    {
+        return std::shared_ptr<CompactionJob>(
+                new CompactionJob(config, std::move(handler), opStorer, master, bucketExecutor, diskMemUsageNotifier,
+                                  blockableConfig, clusterStateChangedNotifier, nodeRetired, bucketSpace));
+    }
     ~CompactionJob() override;
 };
 
