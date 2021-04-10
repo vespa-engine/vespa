@@ -78,6 +78,21 @@ private:
     IBucketStateChangedNotifier       &_bucketStateChangedNotifier;
     IDiskMemUsageNotifier             &_diskMemUsageNotifier;
 
+    BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &calc,
+                    IDocumentMoveHandler &moveHandler,
+                    IBucketModifiedHandler &modifiedHandler,
+                    IThreadService & master,
+                    BucketExecutor & bucketExecutor,
+                    const MaintenanceDocumentSubDB &ready,
+                    const MaintenanceDocumentSubDB &notReady,
+                    bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
+                    IClusterStateChangedNotifier &clusterStateChangedNotifier,
+                    IBucketStateChangedNotifier &bucketStateChangedNotifier,
+                    IDiskMemUsageNotifier &diskMemUsageNotifier,
+                    const BlockableMaintenanceJobConfig &blockableConfig,
+                    const vespalib::string &docTypeName,
+                    document::BucketSpace bucketSpace);
+
     void startMove(BucketMoverSP mover, size_t maxDocsToMove);
     static void prepareMove(std::shared_ptr<BucketMoveJobV2> job, BucketMoverSP mover,
                             std::vector<MoveKey> keysToMove, IDestructorCallbackSP context);
@@ -97,20 +112,27 @@ private:
     void recompute(const bucketdb::Guard & guard);
     class StartMove;
 public:
-    BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &calc,
-                    IDocumentMoveHandler &moveHandler,
-                    IBucketModifiedHandler &modifiedHandler,
-                    IThreadService & master,
-                    BucketExecutor & bucketExecutor,
-                    const MaintenanceDocumentSubDB &ready,
-                    const MaintenanceDocumentSubDB &notReady,
-                    bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
-                    IClusterStateChangedNotifier &clusterStateChangedNotifier,
-                    IBucketStateChangedNotifier &bucketStateChangedNotifier,
-                    IDiskMemUsageNotifier &diskMemUsageNotifier,
-                    const BlockableMaintenanceJobConfig &blockableConfig,
-                    const vespalib::string &docTypeName,
-                    document::BucketSpace bucketSpace);
+    static std::shared_ptr<BucketMoveJobV2>
+    create(const std::shared_ptr<IBucketStateCalculator> &calc,
+           IDocumentMoveHandler &moveHandler,
+           IBucketModifiedHandler &modifiedHandler,
+           IThreadService & master,
+           BucketExecutor & bucketExecutor,
+           const MaintenanceDocumentSubDB &ready,
+           const MaintenanceDocumentSubDB &notReady,
+           bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
+           IClusterStateChangedNotifier &clusterStateChangedNotifier,
+           IBucketStateChangedNotifier &bucketStateChangedNotifier,
+           IDiskMemUsageNotifier &diskMemUsageNotifier,
+           const BlockableMaintenanceJobConfig &blockableConfig,
+           const vespalib::string &docTypeName,
+           document::BucketSpace bucketSpace)
+    {
+        return std::shared_ptr<BucketMoveJobV2>(
+                new BucketMoveJobV2(calc, moveHandler, modifiedHandler, master, bucketExecutor, ready, notReady,
+                                    bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
+                                    diskMemUsageNotifier, blockableConfig, docTypeName, bucketSpace));
+    }
 
     ~BucketMoveJobV2() override;
 
