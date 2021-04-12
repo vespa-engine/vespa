@@ -28,7 +28,7 @@ import static java.util.stream.Collectors.toList;
 public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuilder<ConnectorFactory>  {
 
     @Override
-    protected ConnectorFactory doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element serverSpec) {
+    protected ConnectorFactory doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element serverSpec) {
         String name = XmlHelper.getIdString(serverSpec);
         int port = HttpBuilder.readPort(new ModelElement(serverSpec), deployState.isHosted(), deployState.getDeployLogger());
         ConnectorFactory.Builder builder = new ConnectorFactory.Builder(name, port);
@@ -39,7 +39,7 @@ public class JettyConnectorBuilder extends VespaDomBuilder.DomConfigProducerBuil
                 .map(ComponentId::new)
                 .ifPresent(builder::defaultResponseFilterChain);
         SslProvider sslProviderComponent = getSslConfigComponents(name, serverSpec);
-        return builder.sslProvider(sslProviderComponent).build();
+        return builder.sslProvider(sslProviderComponent).enableHttp2(deployState.featureFlags().enableJdiscHttp2()).build();
     }
 
     SslProvider getSslConfigComponents(String serverName, Element serverSpec) {
