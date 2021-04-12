@@ -52,7 +52,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
     protected abstract ClassicHttpResponse execute(ClassicHttpRequest request, HttpClientContext context) throws IOException;
 
     /** Executes the given request with response/error handling and retries. */
-    private <T> T execute(RequestBuilder builder, BiFunction<ClassicHttpResponse, IOException, T> handler) {
+    private <T> T execute(RequestBuilder builder, Function<ClassicHttpResponse, T> handler, Function<IOException, T> catcher) {
         HttpClientContext context = HttpClientContext.create();
         context.setRequestConfig(builder.config);
 
@@ -62,10 +62,10 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
             request.setEntity(builder.entity);
             try {
                 try {
-                    return handler.apply(execute(request, context), null);
+                    return handler.apply(execute(request, context));
                 }
                 catch (IOException e) {
-                    return handler.apply(null, e);
+                    return catcher.apply(e);
                 }
             }
             catch (RetryException e) {
@@ -133,7 +133,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         }
 
         @Override
-        public RequestBuilder at(String... pathSegments) {
+        public RequestBuilder at(List<String> pathSegments) {
             uriBuilder.setPathSegments(requireNonNull(pathSegments));
             return this;
         }
@@ -150,19 +150,19 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         }
 
         @Override
-        public RequestBuilder parameters(String... pairs) {
-            if (pairs.length % 2 != 0)
+        public RequestBuilder parameters(List<String> pairs) {
+            if (pairs.size() % 2 != 0)
                 throw new IllegalArgumentException("Must supply parameter key/values in pairs");
 
-            for (int i = 0; i < pairs.length; )
-                uriBuilder.setParameter(pairs[i++], pairs[i++]);
+            for (int i = 0; i < pairs.size(); )
+                uriBuilder.setParameter(pairs.get(i++), pairs.get(i++));
 
             return this;
         }
 
         @Override
         public RequestBuilder timeout(Duration timeout) {
-            return config(RequestConfig.copy(defaultRequestConfig)
+            return config(RequestConfig.copy(config)
                                        .setResponseTimeout(timeout.toMillis(), TimeUnit.MILLISECONDS)
                                        .build());
         }
@@ -175,8 +175,8 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         }
 
         @Override
-        public <T> T handle(BiFunction<ClassicHttpResponse, IOException, T> handler) throws UncheckedIOException {
-            return execute(this, requireNonNull(handler));
+        public <T> T handle(Function<ClassicHttpResponse, T> handler, Function<IOException, T> catcher) throws UncheckedIOException {
+            return execute(this, requireNonNull(handler), requireNonNull(catcher));
         }
 
         @Override
@@ -210,37 +210,38 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
 
         /** Returns the mapped body, if successful, retrying any IOException. The caller must close the body stream. */
         private <T> T mapIfSuccess(Function<InputStream, T> mapper) {
-            return handle((response, ioException) -> {
-                if (response != null) {
-                    try {
-                        InputStream body = response.getEntity() != null ? response.getEntity().getContent()
-                                                                        : InputStream.nullInputStream();
-                        if (response.getCode() >= HttpStatus.SC_REDIRECTION)
-                            throw readException(body.readAllBytes());
+            return handle(response -> {
+                            try {
+                                InputStream body = response.getEntity() != null ? response.getEntity().getContent()
+                                                                                : InputStream.nullInputStream();
+                                if (response.getCode() >= HttpStatus.SC_REDIRECTION)
+                                    throw readException(body.readAllBytes());
 
-                        return mapper.apply(new ForwardingInputStream(body) {
-                            @Override
-                            public void close() throws IOException {
-                                super.close();
-                                response.close();
+                                return mapper.apply(new ForwardingInputStream(body) {
+                                    @Override
+                                    public void close() throws IOException {
+                                        super.close();
+                                        response.close();
+                                    }
+                                });
                             }
-                        });
-                    }
-                    catch (IOException | RuntimeException | Error e) {
-                        try {
-                            response.close();
-                        }
-                        catch (IOException f) {
-                            e.addSuppressed(f);
-                        }
-                        if (e instanceof IOException)
-                            ioException = (IOException) e;
-                        else
-                            sneakyThrow(e);
-                    }
-                }
-                throw new RetryException(ioException);
-            });
+                            catch (IOException | RuntimeException | Error e) {
+                                try {
+                                    response.close();
+                                }
+                                catch (IOException f) {
+                                    e.addSuppressed(f);
+                                }
+                                if (e instanceof IOException)
+                                    throw new RetryException((IOException) e);
+                                else
+                                    sneakyThrow(e);
+                                throw new AssertionError("Should not happen");
+                            }
+                          },
+                          ioException -> {
+                              throw new RetryException(ioException);
+                          });
         }
 
     }
