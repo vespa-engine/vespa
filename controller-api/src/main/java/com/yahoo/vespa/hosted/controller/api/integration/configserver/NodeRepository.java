@@ -185,6 +185,7 @@ public interface NodeRepository {
             case failed: return Node.State.failed;
             case parked: return Node.State.parked;
             case breakfixed: return Node.State.breakfixed;
+            case deprovisioned: return Node.State.deprovisioned;
         }
         return Node.State.unknown;
     }
