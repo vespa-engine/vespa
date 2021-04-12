@@ -43,8 +43,8 @@ public class LoadBalancer {
     }
 
     /**
-     * Select and allocate the search cluster group which is to be used for the next search query. Callers <b>must</b> call
-     * {@link #releaseGroup} symmetrically for each taken allocation.
+     * Select and allocate the search cluster group which is to be used for the next search query.
+     * Callers <b>must</b> call {@link #releaseGroup} symmetrically for each taken allocation.
      *
      * @param rejectedGroups if not null, the load balancer will only return groups with IDs not in the set
      * @return the node group to target, or <i>empty</i> if the internal dispatch logic cannot be used
@@ -76,7 +76,7 @@ public class LoadBalancer {
         synchronized (this) {
             for (GroupStatus sched : scoreboard) {
                 if (sched.group.id() == group.id()) {
-                    sched.release(success, (double) searchTimeMs / 1000.0);
+                    sched.release(success, searchTimeMs / 1000.0);
                     break;
                 }
             }

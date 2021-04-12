@@ -9,5 +9,7 @@ import com.yahoo.prelude.Pong;
  * @author baldersheim
  */
 public interface PongHandler {
+
     void handle(Pong pong);
+
 }

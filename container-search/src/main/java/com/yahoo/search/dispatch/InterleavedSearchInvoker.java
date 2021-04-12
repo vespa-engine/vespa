@@ -235,17 +235,6 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
         return nextAdaptive;
     }
 
-    private String dbg(LeanHit hit) {
-        var buf = new StringBuilder();
-        buf.append("LeanHit[");
-        if (hit.hasSortData()) buf.append("hasSortData,");
-        buf.append("relevance=").append(hit.getRelevance());
-        buf.append(",partId=").append(hit.getPartId());
-        buf.append(",distributionKey=").append(hit.getDistributionKey());
-        buf.append("]");
-        return buf.toString();
-    }
-
     private List<LeanHit> mergeResult(Result result, InvokerResult partialResult, List<LeanHit> current) {
         collectCoverage(partialResult.getResult().getCoverage(true));
 
@@ -382,4 +371,5 @@ public class InterleavedSearchInvoker extends SearchInvoker implements ResponseM
 
     // For testing
     Collection<SearchInvoker> invokers() { return invokers; }
+
 }

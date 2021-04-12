@@ -65,7 +65,7 @@ public class Dispatcher extends AbstractComponent {
 
     /** A model of the search cluster this dispatches to */
     private final SearchCluster searchCluster;
-    private final ClusterMonitor clusterMonitor;
+    private final ClusterMonitor<Node> clusterMonitor;
 
     private final LoadBalancer loadBalancer;
 
@@ -108,7 +108,7 @@ public class Dispatcher extends AbstractComponent {
     }
 
     /* Protected for simple mocking in tests. Beware that searchCluster is shutdown on in deconstruct() */
-    protected Dispatcher(ClusterMonitor clusterMonitor,
+    protected Dispatcher(ClusterMonitor<Node> clusterMonitor,
                          SearchCluster searchCluster,
                          DispatchConfig dispatchConfig,
                          InvokerFactory invokerFactory,
@@ -125,12 +125,7 @@ public class Dispatcher extends AbstractComponent {
         this.metricContext = metric.createContext(null);
         this.maxHitsPerNode = dispatchConfig.maxHitsPerNode();
         searchCluster.addMonitoring(clusterMonitor);
-        Thread warmup = new Thread(new Runnable() {
-            @Override
-            public void run() {
-                warmup(dispatchConfig.warmuptime());
-            }
-        });
+        Thread warmup = new Thread(() -> warmup(dispatchConfig.warmuptime()));
         warmup.start();
         try {
             while ( ! searchCluster.hasInformationAboutAllNodes()) {
@@ -139,20 +134,17 @@ public class Dispatcher extends AbstractComponent {
             warmup.join();
         } catch (InterruptedException e) {}
 
-        /*
-         * No we have information from all nodes and a ping iteration has completed.
-         * Instead of waiting until next ping interval to update coverage and group state,
-         * we should compute the state ourselves, so that when the dispatcher is ready the state
-         * of its groups are also known.
-         */
+        // Now we have information from all nodes and a ping iteration has completed.
+        // Instead of waiting until next ping interval to update coverage and group state,
+        // we should compute the state ourselves, so that when the dispatcher is ready the state
+        // of its groups are also known.
         searchCluster.pingIterationCompleted();
     }
 
-    /*
-     Will run important code in order to trigger JIT compilation and avoid cold start issues.
-     Currently warms up lz4 compression code.
+    /**
+     * Will run important code in order to trigger JIT compilation and avoid cold start issues.
+     * Currently warms up lz4 compression code.
      */
-
     private static long warmup(double seconds) {
         return new Compressor().warmup(seconds);
     }
@@ -164,7 +156,7 @@ public class Dispatcher extends AbstractComponent {
 
     @Override
     public void deconstruct() {
-        /* The clustermonitor must be shutdown first as it uses the invokerfactory through the searchCluster. */
+        // The clustermonitor must be shutdown first as it uses the invokerfactory through the searchCluster.
         clusterMonitor.shutdown();
         invokerFactory.release();
     }
@@ -212,7 +204,7 @@ public class Dispatcher extends AbstractComponent {
             return invokerFactory.createSearchInvoker(searcher,
                                                       query,
                                                       OptionalInt.empty(),
-                                                      Arrays.asList(node),
+                                                      List.of(node),
                                                       true,
                                                       maxHitsPerNode)
                                  .orElseThrow(() -> new IllegalStateException("Could not dispatch directly to " + node));
