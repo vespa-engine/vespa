@@ -33,7 +33,6 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.Set;
 import java.util.function.Function;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -162,7 +161,7 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     @Override
-    public void setState(ZoneId zone, NodeState nodeState, String nodename) {
+    public void setState(ZoneId zone, NodeState nodeState, String hostname) {
         throw new UnsupportedOperationException();
     }
 
@@ -177,17 +176,7 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     @Override
-    public NodeList listNodes(ZoneId zone, ApplicationId application) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public NodeList listNodes(ZoneId zone, List<HostName> hostnames) {
-        throw new UnsupportedOperationException();
-    }
-
-    @Override
-    public List<Node> list(ZoneId zone) {
+    public List<Node> list(ZoneId zone, boolean includeDeprovisioned) {
         return List.copyOf(nodeRepository.getOrDefault(zone, Map.of()).values());
     }
 

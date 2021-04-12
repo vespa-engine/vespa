@@ -54,7 +54,7 @@ public class CloudEventReporter extends ControllerMaintainer {
     /** Deprovision any host affected by given event */
     private void deprovisionAffectedHosts(String region, CloudEvent event) {
         for (var zone : zonesByCloudNativeRegion.get(region)) {
-            for (var node : nodeRepository.list(zone.getId())) {
+            for (var node : nodeRepository.list(zone.getId(), false)) {
                 if (!affects(node, event)) continue;
                 log.info("Retiring and deprovisioning " + node.hostname().value() + " in " + zone.getId() +
                          ": Affected by maintenance event " + event.instanceEventId);

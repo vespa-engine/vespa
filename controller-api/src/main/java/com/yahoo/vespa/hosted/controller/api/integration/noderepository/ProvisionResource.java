@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.api.integration.noderepository;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepoStats;
 
 import javax.ws.rs.Consumes;
 import javax.ws.rs.DELETE;
@@ -44,7 +43,7 @@ public interface ProvisionResource {
 
     @GET
     @Path("/node/")
-    NodeList listNodes(@QueryParam("recursive") boolean recursive);
+    NodeList listNodes(@QueryParam("recursive") boolean recursive, @QueryParam("includeDeprovisioned") boolean includeDeprovisioned);
 
     @GET
     @Path("/node/")

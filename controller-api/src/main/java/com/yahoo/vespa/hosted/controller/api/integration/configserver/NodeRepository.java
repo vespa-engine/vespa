@@ -36,36 +36,21 @@ public interface NodeRepository {
 
     void deleteNode(ZoneId zone, String hostname);
 
-    void setState(ZoneId zone, NodeState nodeState, String nodename);
+    void setState(ZoneId zone, NodeState nodeState, String hostname);
 
     NodeRepositoryNode getNode(ZoneId zone, String hostname);
 
+    // TODO: Migrate any callers to list() and remove this method
     NodeList listNodes(ZoneId zone);
 
-    NodeList listNodes(ZoneId zone, ApplicationId application);
-
-    NodeList listNodes(ZoneId zone, List<HostName> hostnames);
-
     /** List all nodes in given zone */
-    default List<Node> list(ZoneId zone) {
-        return listNodes(zone).nodes().stream()
-                              .map(NodeRepository::toNode)
-                              .collect(Collectors.toUnmodifiableList());
-    }
+    List<Node> list(ZoneId zone, boolean includeDeprovisioned);
 
     /** List all nodes in zone having given hostnames */
-    default List<Node> list(ZoneId zone, List<HostName> hostnames) {
-        return listNodes(zone, hostnames).nodes().stream()
-                                         .map(NodeRepository::toNode)
-                                         .collect(Collectors.toUnmodifiableList());
-    }
+    List<Node> list(ZoneId zone, List<HostName> hostnames);
 
     /** List all nodes in zone owned by given application */
-    default List<Node> list(ZoneId zone, ApplicationId application) {
-        return listNodes(zone, application).nodes().stream()
-                                           .map(NodeRepository::toNode)
-                                           .collect(Collectors.toUnmodifiableList());
-    }
+    List<Node> list(ZoneId zone, ApplicationId application);
 
     /** List all nodes in states, in zone owned by given application */
     default List<Node> list(ZoneId zone, ApplicationId application, Set<Node.State> states) {
@@ -111,7 +96,7 @@ public interface NodeRepository {
     /** Checks whether the zone has the spare capacity to remove the given hosts */
     boolean isReplaceable(ZoneId zoneId, List<HostName> hostNames);
 
-    private static Node toNode(NodeRepositoryNode node) {
+    static Node toNode(NodeRepositoryNode node) {
         var application = Optional.ofNullable(node.getOwner())
                                   .map(owner -> ApplicationId.from(owner.getTenant(), owner.getApplication(),
                                                                    owner.getInstance()));

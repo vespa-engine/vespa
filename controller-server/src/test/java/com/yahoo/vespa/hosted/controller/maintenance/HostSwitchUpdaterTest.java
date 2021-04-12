@@ -90,7 +90,7 @@ public class HostSwitchUpdaterTest {
     private static List<Node> allNodes(ControllerTester tester) {
         List<Node> nodes = new ArrayList<>();
         for (var zone : tester.zoneRegistry().zones().controllerUpgraded().all().ids()) {
-            nodes.addAll(tester.serviceRegistry().configServer().nodeRepository().list(zone));
+            nodes.addAll(tester.serviceRegistry().configServer().nodeRepository().list(zone, false));
         }
         return nodes;
     }
