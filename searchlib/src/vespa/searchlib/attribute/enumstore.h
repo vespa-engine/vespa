@@ -199,8 +199,8 @@ public:
     void free_unused_values() override;
     void free_unused_values(const IndexSet& to_remove);
     vespalib::MemoryUsage update_stat() override;
-    std::unique_ptr<EnumIndexRemapper> consider_compact(const CompactionStrategy& compaction_strategy) override;
-    std::unique_ptr<EnumIndexRemapper> compact_worst(bool compact_memory, bool compact_address_space) override;
+    std::unique_ptr<EnumIndexRemapper> consider_compact_values(const CompactionStrategy& compaction_strategy) override;
+    std::unique_ptr<EnumIndexRemapper> compact_worst_values(bool compact_memory, bool compact_address_space) override;
     uint64_t get_compaction_count() const override {
         return _store.get_data_store().get_compaction_count();
     }

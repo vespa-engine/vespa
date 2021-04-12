@@ -175,7 +175,7 @@ MultiValueEnumAttribute<B, M>::onCommit()
         this->incGeneration();
         this->updateStat(true);
     }
-    auto remapper = this->_enumStore.consider_compact(this->getConfig().getCompactionStrategy());
+    auto remapper = this->_enumStore.consider_compact_values(this->getConfig().getCompactionStrategy());
     if (remapper) {
         multienumattribute::remap_enum_store_refs(*remapper, *this, this->_mvMapping);
         remapper->done();

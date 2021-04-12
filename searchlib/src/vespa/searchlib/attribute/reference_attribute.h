@@ -55,8 +55,8 @@ private:
     bool onLoad() override;
     uint64_t getUniqueValueCount() const override;
 
-    bool considerCompact(const CompactionStrategy &compactionStrategy);
-    void compactWorst();
+    bool consider_compact_values(const CompactionStrategy &compactionStrategy);
+    void compact_worst_values();
     IndicesCopyVector getIndicesCopy(uint32_t size) const;
     void removeReverseMapping(EntryRef oldRef, uint32_t lid);
     void addReverseMapping(EntryRef newRef, uint32_t lid);
