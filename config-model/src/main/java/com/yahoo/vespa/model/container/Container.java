@@ -79,6 +79,7 @@ public abstract class Container extends AbstractService implements
     private final ComponentGroup<Component<?, ?>> components = new ComponentGroup<>(this, "components");
 
     private final JettyHttpServer defaultHttpServer;
+    private final boolean enableJdiscHttp2;
 
     protected Container(AbstractConfigProducer<?> parent, String name, int index, DeployState deployState) {
         this(parent, name, false, index, deployState);
@@ -99,6 +100,8 @@ public abstract class Container extends AbstractService implements
         addChild(new SimpleComponent("com.yahoo.container.jdisc.ConfiguredApplication$ApplicationContext"));
 
         appendJvmOptions(jvmOmitStackTraceInFastThrowOption(deployState.featureFlags()));
+
+        this.enableJdiscHttp2 = deployState.featureFlags().enableJdiscHttp2();
     }
 
     protected String jvmOmitStackTraceInFastThrowOption(ModelContext.FeatureFlags featureFlags) {
@@ -180,7 +183,7 @@ public abstract class Container extends AbstractService implements
     }
 
     private void initDefaultJettyConnector() {
-        defaultHttpServer.addConnector(new ConnectorFactory.Builder("SearchServer", getSearchPort()).build());
+        defaultHttpServer.addConnector(new ConnectorFactory.Builder("SearchServer", getSearchPort()).enableHttp2(enableJdiscHttp2).build());
     }
 
     private ContainerServiceType myServiceType = null;

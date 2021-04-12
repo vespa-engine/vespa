@@ -266,6 +266,13 @@ public class Flags {
             "Whether HostRebuilder should rebuild hosts marked wantToRebuild",
             "Takes effect on next HostRebuilder maintenance run");
 
+    public static final UnboundBooleanFlag ENABLE_JDISC_HTTP2 = defineFeatureFlag(
+            "enable-jdisc-http2", false,
+            List.of("bjorncs", "jonmv"), "2021-04-12", "2021-08-01",
+            "Whether jdisc HTTPS connectors should allow HTTP/2",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
