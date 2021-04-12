@@ -39,7 +39,7 @@ public interface ConfigServer {
 
     void reindex(DeploymentId deployment, List<String> clusterNames, List<String> documentTypes, boolean indexedOnly);
 
-    Optional<ApplicationReindexing> getReindexing(DeploymentId deployment);
+    ApplicationReindexing getReindexing(DeploymentId deployment);
 
     void disableReindexing(DeploymentId deployment);
 
@@ -47,7 +47,7 @@ public interface ConfigServer {
 
     void restart(DeploymentId deployment, RestartFilter restartFilter);
 
-    void deactivate(DeploymentId deployment) throws NotFoundException;
+    void deactivate(DeploymentId deployment);
 
     boolean isSuspended(DeploymentId deployment);
 

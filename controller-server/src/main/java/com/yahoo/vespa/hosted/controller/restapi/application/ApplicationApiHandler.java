@@ -203,11 +203,11 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         catch (ConfigServerException e) {
             switch (e.getErrorCode()) {
                 case NOT_FOUND:
-                    return new ErrorResponse(NOT_FOUND, e.getErrorCode().name(), Exceptions.toMessageString(e));
+                    return ErrorResponse.notFoundError(Exceptions.toMessageString(e));
                 case ACTIVATION_CONFLICT:
                     return new ErrorResponse(CONFLICT, e.getErrorCode().name(), Exceptions.toMessageString(e));
                 case INTERNAL_SERVER_ERROR:
-                    return new ErrorResponse(INTERNAL_SERVER_ERROR, e.getErrorCode().name(), Exceptions.toMessageString(e));
+                    return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
                 default:
                     return new ErrorResponse(BAD_REQUEST, e.getErrorCode().name(), Exceptions.toMessageString(e));
             }
