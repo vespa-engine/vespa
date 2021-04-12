@@ -12,6 +12,7 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -33,7 +34,10 @@ public interface ConfigServerClient extends AutoCloseable {
     interface RequestBuilder {
 
         /** Sets the request path. */
-        RequestBuilder at(String... pathSegments);
+        default RequestBuilder at(String... pathSegments) { return at(List.of(pathSegments)); }
+
+        /** Sets the request path. */
+        RequestBuilder at(List<String> pathSegments);
 
         /** Sets the request body as UTF-8 application/json. */
         RequestBuilder body(byte[] json);
@@ -42,24 +46,29 @@ public interface ConfigServerClient extends AutoCloseable {
         RequestBuilder body(HttpEntity entity);
 
         /** Sets the parameter key/values for the request. Number of arguments must be even. */
-        RequestBuilder parameters(String... pairs);
+        default RequestBuilder parameters(String... pairs) {
+            return parameters(Arrays.asList(pairs));
+        }
+
+        /** Sets the parameter key/values for the request. Number of arguments must be even. */
+        RequestBuilder parameters(List<String> pairs);
 
         /** Overrides the default socket read timeout of the request. {@code Duration.ZERO} gives infinite timeout. */
         RequestBuilder timeout(Duration timeout);
 
-        /** Overrides the default socket read timeout of the request. {@code null} allows infinite timeout. */
+        /** Overrides the default request config of the request. */
         RequestBuilder config(RequestConfig config);
 
         /**
          * Sets custom retry/failure logic for this.
          * <p>
-         * Exactly one of the arguments (response, exception) are non-null.
+         * Exactly one of the callbacks will be invoked, with a non-null argument.
          * Return a value to have that returned to the caller;
          * throw a {@link RetryException} to have the request retried; or
          * throw any other unchecked exception to have this propagate out to the caller.
          * The caller must close the provided response, if any.
          */
-        <T> T handle(BiFunction<ClassicHttpResponse, IOException, T> handler) throws UncheckedIOException;
+        <T> T handle(Function<ClassicHttpResponse, T> handler, Function<IOException, T> catcher) throws UncheckedIOException;
 
         /** Sets the response body mapper for this, for successful requests. */
         <T> T read(Function<byte[], T> mapper) throws UncheckedIOException, ConfigServerException;

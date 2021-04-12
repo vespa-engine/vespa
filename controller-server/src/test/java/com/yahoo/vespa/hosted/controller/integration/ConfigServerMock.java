@@ -432,20 +432,17 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     public void reindex(DeploymentId deployment, List<String> clusterNames, List<String> documentTypes, boolean indexedOnly) { }
 
     @Override
-    public Optional<ApplicationReindexing> getReindexing(DeploymentId deployment) {
-        return Optional.of(new ApplicationReindexing(true,
-                                                     Map.of("cluster",
-                                                            new ApplicationReindexing.Cluster(Map.of("type", 100L),
-                                                                                              Map.of("type", new Status(Instant.ofEpochMilli(345),
-                                                                                                                        Instant.ofEpochMilli(456),
-                                                                                                                        Instant.ofEpochMilli(567),
-                                                                                                                        ApplicationReindexing.State.FAILED,
-                                                                                                                        "(＃｀д´)ﾉ",
-                                                                                                                        0.1))))));
-
-
+    public ApplicationReindexing getReindexing(DeploymentId deployment) {
+        return new ApplicationReindexing(true,
+                                         Map.of("cluster",
+                                                new ApplicationReindexing.Cluster(Map.of("type", 100L),
+                                                                                  Map.of("type", new Status(Instant.ofEpochMilli(345),
+                                                                                                            Instant.ofEpochMilli(456),
+                                                                                                            Instant.ofEpochMilli(567),
+                                                                                                            ApplicationReindexing.State.FAILED,
+                                                                                                            "(＃｀д´)ﾉ",
+                                                                                                            0.1)))));
     }
-
 
     @Override
     public void disableReindexing(DeploymentId deployment) { }
@@ -464,12 +461,13 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public void deactivate(DeploymentId deployment) throws NotFoundException {
+    public void deactivate(DeploymentId deployment) {
         ApplicationId applicationId = deployment.applicationId();
         nodeRepository().removeNodes(deployment.zoneId(),
                                      nodeRepository().list(deployment.zoneId(), applicationId));
         if ( ! applications.containsKey(deployment))
-            throw new NotFoundException("No application with id " + applicationId + " exists, cannot deactivate");
+            return;
+
         applications.remove(deployment);
         serviceStatus.remove(deployment);
         removeLoadBalancers(deployment.applicationId(), deployment.zoneId());

@@ -183,8 +183,7 @@ public class ApplicationController {
 
     /** Returns the reindexing status for the given application in the given zone. */
     public ApplicationReindexing applicationReindexing(ApplicationId id, ZoneId zoneId) {
-        return configServer.getReindexing(new DeploymentId(id, zoneId))
-                .orElseThrow(() -> new NotExistsException("Reindexing status not found for " + id + " in " + zoneId));
+        return configServer.getReindexing(new DeploymentId(id, zoneId));
     }
 
     /** Enables reindexing for the given application in the given zone. */
@@ -678,8 +677,6 @@ public class ApplicationController {
         DeploymentId id = new DeploymentId(application.get().id().instance(instanceName), zone);
         try {
             configServer.deactivate(id);
-        } catch (NotFoundException ignored) {
-            // ok; already gone
         } finally {
             controller.routing().policies().refresh(application.get().id().instance(instanceName), application.get().deploymentSpec(), zone);
             if (zone.environment().isManuallyDeployed())
