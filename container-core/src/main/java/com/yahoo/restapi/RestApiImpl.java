@@ -70,6 +70,8 @@ class RestApiImpl implements RestApi {
         }
     }
 
+    @Override public ObjectMapper jacksonJsonMapper() { return jacksonJsonMapper; }
+
     private HttpResponse dispatchToRoute(Route route, RequestContextImpl context) {
         HandlerHolder<?> resolvedHandler = resolveHandler(context, route);
         RequestMapperHolder<?> resolvedRequestMapper = resolveRequestMapper(resolvedHandler);
