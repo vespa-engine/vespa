@@ -75,7 +75,7 @@
       <binding>http://*/orchestrator/v1/hosts</binding>
       <binding>http://*/orchestrator/v1/hosts/*</binding>
     </handler>
-    <handler id="com.yahoo.vespa.orchestrator.resources.HostSuspensionHandler" bundle="orchestrator">
+    <handler id="com.yahoo.vespa.orchestrator.resources.HostSuspensionRequestHandler" bundle="orchestrator">
       <binding>http://*/orchestrator/v1/suspensions/hosts</binding>
       <binding>http://*/orchestrator/v1/suspensions/hosts/*</binding>
     </handler>
