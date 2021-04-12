@@ -7,11 +7,6 @@
 
 struct TestBuilder {
     using TensorSpec = vespalib::eval::TensorSpec;
-    // add test with pre-defined expected result
-    virtual void add(const vespalib::string &expression,
-                     const std::map<vespalib::string,TensorSpec> &inputs,
-                     const TensorSpec &expect) = 0;
-    // add test with undefined expected result
     virtual void add(const vespalib::string &expression,
                      const std::map<vespalib::string,TensorSpec> &inputs) = 0;
     virtual ~TestBuilder() {}

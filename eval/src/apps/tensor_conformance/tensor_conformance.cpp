@@ -153,34 +153,18 @@ void print_test(const Inspector &test, OutputWriter &dst) {
 class MyTestBuilder : public TestBuilder {
 private:
     TestWriter _writer;
-    void make_test(const vespalib::string &expression,
-                   const std::map<vespalib::string,TensorSpec> &input_map,
-                   const TensorSpec *expect = nullptr)
+public:
+    MyTestBuilder(Output &out) : _writer(out) {}
+    void add(const vespalib::string &expression,
+             const std::map<vespalib::string,TensorSpec> &inputs_in) override
     {
         Cursor &test = _writer.create();
         test.setString("expression", expression);
         Cursor &inputs = test.setObject("inputs");
-        for (const auto &input: input_map) {
-            insert_value(inputs, input.first, input.second);
+        for (const auto [name, spec]: inputs_in) {
+            insert_value(inputs, name, spec);
         }
-        if (expect != nullptr) {
-            insert_value(test.setObject("result"), "expect", *expect);
-        } else {
-            insert_value(test.setObject("result"), "expect", ref_eval(test));
-        }
-    }
-public:
-    MyTestBuilder(Output &out) : _writer(out) {}
-    void add(const vespalib::string &expression,
-             const std::map<vespalib::string,TensorSpec> &inputs,
-             const TensorSpec &expect) override
-    {
-        make_test(expression, inputs, &expect);
-    }
-    void add(const vespalib::string &expression,
-             const std::map<vespalib::string,TensorSpec> &inputs) override
-    {
-        make_test(expression, inputs);
+        insert_value(test.setObject("result"), "expect", ref_eval(test));
     }
 };
 
