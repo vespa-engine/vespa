@@ -40,7 +40,7 @@ HammingDistance::calc(const vespalib::eval::TypedCells& lhs,
         size_t sz = lhs.size;
         assert(sz == rhs.size);
         size_t i = 0;
-        for (; i * 8 < sz; ++i) {
+        for (; i * 8 + 7 < sz; ++i) {
             uint64_t xor_bits = words_a[i] ^ words_b[i];
             sum += __builtin_popcountl(xor_bits);
         }
