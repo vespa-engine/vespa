@@ -532,6 +532,8 @@ public class JobController {
         var zone = type.zone(controller.system());
         try {
             controller.serviceRegistry().configServer().deactivate(new DeploymentId(id.id(), zone));
+        } catch (NotFoundException ignored) {
+            // Already gone -- great!
         } finally {
             // Passing an empty DeploymentSpec here is fine as it's used for registering global endpoint names, and
             // tester instances have none.
