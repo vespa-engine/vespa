@@ -48,8 +48,7 @@ void generate_tensor_reduce(TestBuilder &dst) {
     generate_reduce(Aggr::PROD, SigmoidF(N()), dst);
     generate_reduce(Aggr::SUM, N(), dst);
     generate_reduce(Aggr::MAX, N(), dst);
-    // add MEDIAN cases when supported in Java
-    // generate_reduce(Aggr::MEDIAN, N(), dst);
+    generate_reduce(Aggr::MEDIAN, N(), dst);
     generate_reduce(Aggr::MIN, N(), dst);
 }
 
@@ -103,8 +102,7 @@ void generate_tensor_map(TestBuilder &dst) {
     generate_op1_map("relu(a)", Sub2(Div16(N())), dst);
     generate_op1_map("sigmoid(a)", Sub2(Div16(N())), dst);
     generate_op1_map("elu(a)", Sub2(Div16(N())), dst);
-    // TODO(havardpe): add erf when supported by Java
-    // generate_op1_map("erf(a)", operation::Erf::f, Sub2(Div16(N())), dst);
+    generate_op1_map("erf(a)", Sub2(Div16(N())), dst);
     generate_op1_map("a in [1,5,7,13,42]", N(), dst);
     generate_map_expr("map(a,f(a)((a+1)*2))", Div16(N()), dst);
 }
