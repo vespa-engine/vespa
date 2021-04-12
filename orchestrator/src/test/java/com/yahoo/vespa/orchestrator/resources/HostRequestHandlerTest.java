@@ -1,9 +1,15 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.orchestrator.resources.host;
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.orchestrator.resources;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
+import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.jdisc.Metric;
+import com.yahoo.jdisc.http.HttpRequest.Method;
+import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.jdisc.test.TestTimer;
+import com.yahoo.test.json.JsonTestHelper;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
@@ -41,24 +47,21 @@ import com.yahoo.vespa.orchestrator.status.StatusService;
 import com.yahoo.vespa.orchestrator.status.ZkStatusService;
 import com.yahoo.vespa.service.monitor.ServiceModel;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
-import org.junit.Before;
-import org.junit.Test;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.Test;
 
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.UriBuilder;
-import javax.ws.rs.core.UriInfo;
-import java.net.URI;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.Clock;
 import java.time.Instant;
 import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.Executors;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.fail;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.mock;
@@ -68,8 +71,10 @@ import static org.mockito.Mockito.when;
 
 /**
  * @author hakonhall
+ * @author bjorncs
  */
-public class HostResourceTest {
+class HostRequestHandlerTest {
+
     private static final Clock clock = mock(Clock.class);
     private static final int SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS = 0;
     private static final TenantId TENANT_ID = new TenantId("tenantId");
@@ -121,14 +126,14 @@ public class HostResourceTest {
 
     private final OrchestratorImpl alwaysAllowOrchestrator = createAlwaysAllowOrchestrator(clock);
     private final OrchestratorImpl hostNotFoundOrchestrator = createHostNotFoundOrchestrator(clock);
-    private final UriInfo uriInfo = mock(UriInfo.class);
+    private final OrchestratorImpl alwaysRejectOrchestrator = createAlwaysRejectResolver(clock);
 
-    @Before
-    public void setUp() {
+    @BeforeEach
+    void setUp() {
         when(clock.instant()).thenReturn(Instant.now());
     }
 
-    public static OrchestratorImpl createAlwaysAllowOrchestrator(Clock clock) {
+    static OrchestratorImpl createAlwaysAllowOrchestrator(Clock clock) {
         return new OrchestratorImpl(
                 new AlwaysAllowPolicy(),
                 new ClusterControllerClientFactoryMock(),
@@ -140,7 +145,7 @@ public class HostResourceTest {
                 new InMemoryFlagSource());
     }
 
-    public static OrchestratorImpl createHostNotFoundOrchestrator(Clock clock) {
+    static OrchestratorImpl createHostNotFoundOrchestrator(Clock clock) {
         return new OrchestratorImpl(
                 new AlwaysAllowPolicy(),
                 new ClusterControllerClientFactoryMock(),
@@ -152,9 +157,9 @@ public class HostResourceTest {
                 new InMemoryFlagSource());
     }
 
-    public static OrchestratorImpl createAlwaysRejectResolver(Clock clock) {
+    static OrchestratorImpl createAlwaysRejectResolver(Clock clock) {
         return new OrchestratorImpl(
-                new HostResourceTest.AlwaysFailPolicy(),
+                new AlwaysFailPolicy(),
                 new ClusterControllerClientFactoryMock(),
                 EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,
                 serviceMonitor,
@@ -165,27 +170,20 @@ public class HostResourceTest {
     }
 
     @Test
-    public void returns_200_on_success() {
-        HostResource hostResource =
-                new HostResource(alwaysAllowOrchestrator, uriInfo);
+    void returns_200_on_success() throws IOException {
+        HostRequestHandler handler = createHandler(alwaysAllowOrchestrator);
 
-        final String hostName = "hostname";
-
-        UpdateHostResponse response = hostResource.suspend(hostName);
-
-        assertEquals(hostName, response.hostname());
+        HttpResponse response = executeRequest(handler, Method.PUT, "/orchestrator/v1/hosts/hostname/suspended", null);
+        UpdateHostResponse updateHostResponse = parseResponseContent(handler, response, UpdateHostResponse.class);
+        assertEquals("hostname", updateHostResponse.hostname());
     }
 
     @Test
-    public void throws_404_when_host_unknown() {
-        try {
-            HostResource hostResource =
-                    new HostResource(hostNotFoundOrchestrator, uriInfo);
-            hostResource.suspend("hostname");
-            fail();
-        } catch (WebApplicationException w) {
-            assertEquals(404, w.getResponse().getStatus());
-        }
+    void throws_404_when_host_unknown() throws IOException {
+        HostRequestHandler handler = createHandler(hostNotFoundOrchestrator);
+
+        HttpResponse response = executeRequest(handler, Method.PUT, "/orchestrator/v1/hosts/hostname/suspended", null);
+        assertEquals(404, response.getStatus());
     }
 
     private static class AlwaysFailPolicy implements Policy {
@@ -221,78 +219,60 @@ public class HostResourceTest {
     }
 
     @Test
-    public void throws_409_when_request_rejected_by_policies() {
-        final OrchestratorImpl alwaysRejectResolver = new OrchestratorImpl(
-                new AlwaysFailPolicy(),
-                new ClusterControllerClientFactoryMock(),
-                EVERY_HOST_IS_UP_HOST_STATUS_SERVICE,
-                serviceMonitor,
-                SERVICE_MONITOR_CONVERGENCE_LATENCY_SECONDS,
-                clock,
-                applicationApiFactory,
-                new InMemoryFlagSource());
+    void throws_409_when_request_rejected_by_policies() throws IOException {
+        HostRequestHandler handler = createHandler(alwaysRejectOrchestrator);
 
-        try {
-            HostResource hostResource = new HostResource(alwaysRejectResolver, uriInfo);
-            hostResource.suspend("hostname");
-            fail();
-        } catch (WebApplicationException w) {
-            assertEquals(409, w.getResponse().getStatus());
-        }
-    }
-
-    @Test(expected = BadRequestException.class)
-    public void patch_state_may_throw_bad_request() {
-        Orchestrator orchestrator = mock(Orchestrator.class);
-        HostResource hostResource = new HostResource(orchestrator, uriInfo);
-
-        String hostNameString = "hostname";
-        PatchHostRequest request = new PatchHostRequest();
-        request.state = "bad state";
-
-        hostResource.patch(hostNameString, request);
+        HttpResponse response = executeRequest(handler, Method.PUT, "/orchestrator/v1/hosts/hostname/suspended", null);
+        assertEquals(409, response.getStatus());
     }
 
     @Test
-    public void patch_works() throws OrchestrationException {
+    void patch_state_may_throw_bad_request() throws IOException {
         Orchestrator orchestrator = mock(Orchestrator.class);
-        HostResource hostResource = new HostResource(orchestrator, uriInfo);
+        HostRequestHandler handler = createHandler(orchestrator);
+
+        PatchHostRequest request = new PatchHostRequest();
+        request.state = "bad state";
+
+        HttpResponse response = executeRequest(handler, Method.PATCH, "/orchestrator/v1/hosts/hostname", request);
+        assertEquals(400, response.getStatus());
+    }
+
+    @Test
+    void patch_works() throws OrchestrationException, IOException {
+        Orchestrator orchestrator = mock(Orchestrator.class);
+        HostRequestHandler handler = createHandler(orchestrator);
 
         String hostNameString = "hostname";
         PatchHostRequest request = new PatchHostRequest();
         request.state = "NO_REMARKS";
 
-        PatchHostResponse response = hostResource.patch(hostNameString, request);
+        HttpResponse httpResponse = executeRequest(handler, Method.PATCH, "/orchestrator/v1/hosts/hostname", request);
+        PatchHostResponse response = parseResponseContent(handler, httpResponse, PatchHostResponse.class);
         assertEquals(response.description, "ok");
         verify(orchestrator, times(1)).setNodeStatus(new HostName(hostNameString), HostStatus.NO_REMARKS);
     }
 
-    @Test(expected = InternalServerErrorException.class)
-    public void patch_handles_exception_in_orchestrator() throws OrchestrationException {
+    @Test
+    void patch_handles_exception_in_orchestrator() throws OrchestrationException, IOException {
         Orchestrator orchestrator = mock(Orchestrator.class);
-        HostResource hostResource = new HostResource(orchestrator, uriInfo);
+        HostRequestHandler handler = createHandler(orchestrator);
 
         String hostNameString = "hostname";
         PatchHostRequest request = new PatchHostRequest();
         request.state = "NO_REMARKS";
 
         doThrow(new OrchestrationException("error")).when(orchestrator).setNodeStatus(new HostName(hostNameString), HostStatus.NO_REMARKS);
-        hostResource.patch(hostNameString, request);
+        HttpResponse httpResponse = executeRequest(handler, Method.PATCH, "/orchestrator/v1/hosts/hostname", request);
+        assertEquals(500, httpResponse.getStatus());
     }
 
     @Test
-    public void getHost_works() throws Exception {
+    void getHost_works() throws Exception {
         Orchestrator orchestrator = mock(Orchestrator.class);
-        HostResource hostResource = new HostResource(orchestrator, uriInfo);
+        HostRequestHandler handler = createHandler(orchestrator);
 
         HostName hostName = new HostName("hostname");
-
-        UriBuilder baseUriBuilder = mock(UriBuilder.class);
-        when(uriInfo.getBaseUriBuilder()).thenReturn(baseUriBuilder);
-        when(baseUriBuilder.path(any(String.class))).thenReturn(baseUriBuilder);
-        when(baseUriBuilder.path(any(Class.class))).thenReturn(baseUriBuilder);
-        URI uri = new URI("https://foo.com/bar");
-        when(baseUriBuilder.build()).thenReturn(uri);
 
         ServiceInstance serviceInstance = new ServiceInstance(
                 new ConfigId("configId"),
@@ -312,8 +292,11 @@ public class HostResourceTest {
                         new ApplicationInstanceId("applicationId")),
                 Collections.singletonList(serviceInstance));
         when(orchestrator.getHost(hostName)).thenReturn(host);
-        GetHostResponse response = hostResource.getHost(hostName.s());
-        assertEquals("https://foo.com/bar", response.applicationUrl());
+
+        HttpResponse httpResponse = executeRequest(handler, Method.GET, "/orchestrator/v1/hosts/hostname", null);
+        GetHostResponse response = parseResponseContent(handler, httpResponse, GetHostResponse.class);
+
+        assertEquals("http://localhost/orchestrator/v1/instances/tenantId:applicationId", response.applicationUrl());
         assertEquals("hostname", response.hostname());
         assertEquals("ALLOWED_TO_BE_DOWN", response.state());
         assertEquals("1970-01-01T00:00:00Z", response.suspendedSince());
@@ -325,18 +308,48 @@ public class HostResourceTest {
     }
 
     @Test
-    public void throws_409_on_timeout() throws HostNameNotFoundException, HostStateChangeDeniedException {
+    void throws_409_on_timeout() throws HostNameNotFoundException, HostStateChangeDeniedException, IOException {
         Orchestrator orchestrator = mock(Orchestrator.class);
         doThrow(new UncheckedTimeoutException("Timeout Message")).when(orchestrator).resume(any(HostName.class));
 
-        try {
-            HostResource hostResource = new HostResource(orchestrator, uriInfo);
-            hostResource.resume("hostname");
-            fail();
-        } catch (WebApplicationException w) {
-            assertEquals(409, w.getResponse().getStatus());
-            assertEquals("resume failed: Timeout Message [deadline]", w.getMessage());
+        HostRequestHandler handler = createHandler(orchestrator);
+        HttpResponse httpResponse = executeRequest(handler, Method.DELETE, "/orchestrator/v1/hosts/hostname/suspended", null);
+        assertEquals(409, httpResponse.getStatus());
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        httpResponse.render(out);
+        JsonTestHelper.assertJsonEquals("{\n" +
+                "  \"hostname\" : \"hostname\",\n" +
+                "  \"reason\" : {\n" +
+                "    \"constraint\" : \"deadline\",\n" +
+                "    \"message\" : \"resume failed: Timeout Message\"\n" +
+                "  }\n" +
+                "}",
+                out.toString());
+    }
+
+    private HostRequestHandler createHandler(Orchestrator orchestrator) {
+        var handlerContext = new LoggingRequestHandler.Context(Executors.newSingleThreadExecutor(), new MockMetric());
+        return new HostRequestHandler(handlerContext, orchestrator);
+    }
+
+    private HttpResponse executeRequest(HostRequestHandler handler, Method method, String path, Object requestEntity) throws IOException {
+        String uri = "http://localhost" + path;
+        HttpRequest request;
+        if (requestEntity != null) {
+            ByteArrayOutputStream out = new ByteArrayOutputStream();
+            handler.restApi().jacksonJsonMapper().writeValue(out, requestEntity);
+            request = HttpRequest.createTestRequest(uri, method, new ByteArrayInputStream(out.toByteArray()));
+        } else {
+            request = HttpRequest.createTestRequest(uri, method);
         }
+        return handler.handle(request);
+    }
+
+    private <T> T parseResponseContent(HostRequestHandler handler, HttpResponse response, Class<T> responseEntityType) throws IOException {
+        assertEquals(200, response.getStatus());
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        response.render(out);
+        return handler.restApi().jacksonJsonMapper().readValue(out.toByteArray(), responseEntityType);
     }
 
 }

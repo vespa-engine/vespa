@@ -1,8 +1,14 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.orchestrator.resources.host;
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.orchestrator.resources;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
-import com.yahoo.container.jaxrs.annotation.Component;
+import com.google.inject.Inject;
+import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.jdisc.Response;
+import com.yahoo.restapi.JacksonJsonResponse;
+import com.yahoo.restapi.RestApi;
+import com.yahoo.restapi.RestApiException;
+import com.yahoo.restapi.RestApiRequestHandler;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.orchestrator.Host;
 import com.yahoo.vespa.orchestrator.HostNameNotFoundException;
@@ -10,8 +16,6 @@ import com.yahoo.vespa.orchestrator.OrchestrationException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.policy.HostStateChangeDeniedException;
 import com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy;
-import com.yahoo.vespa.orchestrator.resources.instance.InstanceResource;
-import com.yahoo.vespa.orchestrator.restapi.HostApi;
 import com.yahoo.vespa.orchestrator.restapi.wire.GetHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.HostService;
 import com.yahoo.vespa.orchestrator.restapi.wire.HostStateChangeDenialReason;
@@ -20,16 +24,6 @@ import com.yahoo.vespa.orchestrator.restapi.wire.PatchHostResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
 
-import javax.inject.Inject;
-import javax.ws.rs.BadRequestException;
-import javax.ws.rs.InternalServerErrorException;
-import javax.ws.rs.NotFoundException;
-import javax.ws.rs.Path;
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.Response;
-import javax.ws.rs.core.UriInfo;
 import java.net.URI;
 import java.time.Instant;
 import java.util.List;
@@ -39,30 +33,47 @@ import java.util.stream.Collectors;
 
 /**
  * @author oyving
+ * @author bjorncs
  */
-@Path("")
-public class HostResource implements HostApi {
-    private static final Logger log = Logger.getLogger(HostResource.class.getName());
+public class HostRequestHandler extends RestApiRequestHandler<HostRequestHandler> {
+
+    private static final Logger log = Logger.getLogger(HostRequestHandler.class.getName());
 
     private final Orchestrator orchestrator;
-    private final UriInfo uriInfo;
 
     @Inject
-    public HostResource(@Component Orchestrator orchestrator, @Context UriInfo uriInfo) {
+    public HostRequestHandler(LoggingRequestHandler.Context context, Orchestrator orchestrator) {
+        super(context, HostRequestHandler::createRestApiDefinition);
         this.orchestrator = orchestrator;
-        this.uriInfo = uriInfo;
     }
 
-    @Override
-    public GetHostResponse getHost(String hostNameString) {
+    private static RestApi createRestApiDefinition(HostRequestHandler self) {
+        return RestApi.builder()
+                .addRoute(RestApi.route("/orchestrator/v1/hosts/{hostname}")
+                        .get(self::getHost)
+                        .patch(PatchHostRequest.class, self::patch))
+                .addRoute(RestApi.route("/orchestrator/v1/hosts/{hostname}/suspended")
+                        .put(self::suspend)
+                        .delete(self::resume))
+                .registerJacksonRequestEntity(PatchHostRequest.class)
+                .registerJacksonResponseEntity(GetHostResponse.class)
+                .registerJacksonResponseEntity(PatchHostResponse.class)
+                .registerJacksonResponseEntity(UpdateHostResponse.class)
+                .build();
+    }
+
+    /**
+     * Shows the Orchestrator state of a host.
+     */
+    private GetHostResponse getHost(RestApi.RequestContext context) {
+        String hostNameString = context.pathParameters().getStringOrThrow("hostname");
         HostName hostName = new HostName(hostNameString);
         try {
             Host host = orchestrator.getHost(hostName);
 
-            URI applicationUri = uriInfo.getBaseUriBuilder()
-                    .path(InstanceResource.class)
-                    .path(host.getApplicationInstanceReference().asString())
-                    .build();
+            URI applicationUri = context.uriBuilder()
+                    .withPath("/orchestrator/v1/instances/" + host.getApplicationInstanceReference().asString())
+                    .toURI();
 
             List<HostService> hostServices = host.getServiceInstances().stream()
                     .map(serviceInstance -> new HostService(
@@ -80,15 +91,18 @@ public class HostResource implements HostApi {
                     hostServices);
         } catch (UncheckedTimeoutException e) {
             log.log(Level.FINE, "Failed to get host " + hostName + ": " + e.getMessage());
-            throw webExceptionFromTimeout("getHost", hostName, e);
+            throw restApiExceptionFromTimeout("getHost", hostName, e);
         } catch (HostNameNotFoundException e) {
             log.log(Level.FINE, "Host not found: " + hostName);
-            throw new NotFoundException(e);
+            throw new RestApiException.NotFoundException(e);
         }
     }
 
-    @Override
-    public PatchHostResponse patch(String hostNameString, PatchHostRequest request) {
+    /**
+     * Tweak internal Orchestrator state for host.
+     */
+    private PatchHostResponse patch(RestApi.RequestContext context, PatchHostRequest request) {
+        String hostNameString = context.pathParameters().getStringOrThrow("hostname");
         HostName hostName = new HostName(hostNameString);
 
         if (request.state != null) {
@@ -96,21 +110,21 @@ public class HostResource implements HostApi {
             try {
                 state = HostStatus.valueOf(request.state);
             } catch (IllegalArgumentException dummy) {
-                throw new BadRequestException("Bad state in request: '" + request.state + "'");
+                throw new RestApiException.BadRequest("Bad state in request: '" + request.state + "'");
             }
 
             try {
                 orchestrator.setNodeStatus(hostName, state);
             } catch (HostNameNotFoundException e) {
                 log.log(Level.FINE, "Host not found: " + hostName);
-                throw new NotFoundException(e);
+                throw new RestApiException.NotFoundException(e);
             } catch (UncheckedTimeoutException e) {
                 log.log(Level.FINE, "Failed to patch " + hostName + ": " + e.getMessage());
-                throw webExceptionFromTimeout("patch", hostName, e);
+                throw restApiExceptionFromTimeout("patch", hostName, e);
             } catch (OrchestrationException e) {
                 String message = "Failed to set " + hostName + " to " + state + ": " + e.getMessage();
                 log.log(Level.FINE, message, e);
-                throw new InternalServerErrorException(message);
+                throw new RestApiException.InternalServerError(message);
             }
         }
 
@@ -119,74 +133,82 @@ public class HostResource implements HostApi {
         return response;
     }
 
-    @Override
-    public UpdateHostResponse suspend(String hostNameString) {
+    /**
+     * Ask for permission to temporarily suspend all services on a host.
+     *
+     * On success, none, some, or all services on the host may already have been effectively suspended,
+     * e.g. as of Feb 2015, a content node would already be set in the maintenance state.
+     *
+     * Once the host is ready to resume normal operations, it must finish with resume() (see below).
+     *
+     * If the host has already been granted permission to suspend all services, requesting
+     * suspension again is idempotent and will succeed.
+     */
+    private UpdateHostResponse suspend(RestApi.RequestContext context) {
+        String hostNameString = context.pathParameters().getStringOrThrow("hostname");
         HostName hostName = new HostName(hostNameString);
         try {
             orchestrator.suspend(hostName);
         } catch (HostNameNotFoundException e) {
             log.log(Level.FINE, "Host not found: " + hostName);
-            throw new NotFoundException(e);
+            throw new RestApiException.NotFoundException(e);
         } catch (UncheckedTimeoutException e) {
             log.log(Level.FINE, "Failed to suspend " + hostName + ": " + e.getMessage());
-            throw webExceptionFromTimeout("suspend", hostName, e);
+            throw restApiExceptionFromTimeout("suspend", hostName, e);
         } catch (HostStateChangeDeniedException e) {
             log.log(Level.FINE, "Failed to suspend " + hostName + ": " + e.getMessage());
-            throw webExceptionWithDenialReason("suspend", hostName, e);
+            throw restApiExceptionWithDenialReason("suspend", hostName, e);
         }
         return new UpdateHostResponse(hostName.s(), null);
     }
-
-    @Override
-    public UpdateHostResponse resume(final String hostNameString) {
+    /**
+     * Resume normal operations for all services on a host that has previously been allowed suspension.
+     *
+     * If the host is already registered as running normal operations, then resume() is idempotent
+     * and will succeed.
+     */
+    private UpdateHostResponse resume(RestApi.RequestContext context) {
+        String hostNameString = context.pathParameters().getStringOrThrow("hostname");
         HostName hostName = new HostName(hostNameString);
         try {
             orchestrator.resume(hostName);
         } catch (HostNameNotFoundException e) {
             log.log(Level.FINE, "Host not found: " + hostName);
-            throw new NotFoundException(e);
+            throw new RestApiException.NotFoundException(e);
         } catch (UncheckedTimeoutException e) {
             log.log(Level.FINE, "Failed to resume " + hostName + ": " + e.getMessage());
-            throw webExceptionFromTimeout("resume", hostName, e);
+            throw restApiExceptionFromTimeout("resume", hostName, e);
         } catch (HostStateChangeDeniedException e) {
             log.log(Level.FINE, "Failed to resume " + hostName + ": " + e.getMessage());
-            throw webExceptionWithDenialReason("resume", hostName, e);
+            throw restApiExceptionWithDenialReason("resume", hostName, e);
         }
         return new UpdateHostResponse(hostName.s(), null);
     }
 
-    private static WebApplicationException webExceptionFromTimeout(String operationDescription,
-                                                                   HostName hostName,
-                                                                   UncheckedTimeoutException e) {
+    private RestApiException restApiExceptionFromTimeout(String operationDescription,
+                                                                HostName hostName,
+                                                                UncheckedTimeoutException e) {
         // Return timeouts as 409 Conflict instead of 504 Gateway Timeout to reduce noise in 5xx graphs.
-        return createWebException(operationDescription, hostName, e,
+        return createRestApiException(operationDescription, hostName, e,
                 HostedVespaPolicy.DEADLINE_CONSTRAINT, e.getMessage(), Response.Status.CONFLICT);
     }
 
-    private static WebApplicationException webExceptionWithDenialReason(
+    private RestApiException restApiExceptionWithDenialReason(
             String operationDescription,
             HostName hostName,
             HostStateChangeDeniedException e) {
-        return createWebException(operationDescription, hostName, e, e.getConstraintName(), e.getMessage(),
+        return createRestApiException(operationDescription, hostName, e, e.getConstraintName(), e.getMessage(),
                 Response.Status.CONFLICT);
     }
 
-    private static WebApplicationException createWebException(String operationDescription,
-                                                              HostName hostname,
-                                                              Exception e,
-                                                              String constraint,
-                                                              String message,
-                                                              Response.Status status) {
+    private RestApiException createRestApiException(
+            String operationDescription, HostName hostname, Exception e, String constraint, String message, int status) {
         HostStateChangeDenialReason hostStateChangeDenialReason = new HostStateChangeDenialReason(
                 constraint, operationDescription + " failed: " + message);
         UpdateHostResponse response = new UpdateHostResponse(hostname.s(), hostStateChangeDenialReason);
-        return new WebApplicationException(
+        return new RestApiException(
+                new JacksonJsonResponse<>(status, response, restApi().jacksonJsonMapper(), true),
                 hostStateChangeDenialReason.toString(),
-                e,
-                Response.status(status)
-                        .entity(response)
-                        .type(MediaType.APPLICATION_JSON_TYPE)
-                        .build());
+                e);
     }
 }
-

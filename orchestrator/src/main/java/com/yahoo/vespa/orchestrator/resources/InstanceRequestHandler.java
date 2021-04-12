@@ -1,9 +1,17 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.orchestrator.resources.instance;
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.orchestrator.resources;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jdk8.Jdk8Module;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.container.jaxrs.annotation.Component;
+import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.jrt.slobrok.api.Mirror;
+import com.yahoo.restapi.RestApi;
+import com.yahoo.restapi.RestApiException;
+import com.yahoo.restapi.RestApiRequestHandler;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceReference;
 import com.yahoo.vespa.applicationmodel.ClusterId;
@@ -12,7 +20,6 @@ import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.orchestrator.OrchestratorUtil;
-import com.yahoo.vespa.orchestrator.resources.InstanceStatusResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.SlobrokEntryResponse;
 import com.yahoo.vespa.orchestrator.restapi.wire.WireHostInfo;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
@@ -23,14 +30,7 @@ import com.yahoo.vespa.service.manager.UnionMonitorManager;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.vespa.service.monitor.SlobrokApi;
 
-import javax.inject.Inject;
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.QueryParam;
 import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.List;
@@ -45,10 +45,10 @@ import static com.yahoo.vespa.orchestrator.OrchestratorUtil.parseApplicationInst
  * This API can be unstable and is not meant to be used programmatically.
  *
  * @author andreer
- * @author bakksjo
+ * @author Oyvind Bakksjo
+ * @author bjorncs
  */
-@Path("")
-public class InstanceResource {
+public class InstanceRequestHandler extends RestApiRequestHandler<InstanceRequestHandler> {
 
     public static final String DEFAULT_SLOBROK_PATTERN = "**";
 
@@ -58,26 +58,45 @@ public class InstanceResource {
     private final ServiceMonitor serviceMonitor;
 
     @Inject
-    public InstanceResource(@Component ServiceMonitor serviceMonitor,
-                            @Component StatusService statusService,
-                            @Component SlobrokApi slobrokApi,
-                            @Component UnionMonitorManager rootManager) {
-        this.serviceMonitor = serviceMonitor;
+    public InstanceRequestHandler(LoggingRequestHandler.Context context,
+                                  ServiceMonitor serviceMonitor,
+                                  StatusService statusService,
+                                  SlobrokApi slobrokApi,
+                                  UnionMonitorManager rootManager) {
+        super(context, InstanceRequestHandler::createRestApiDefinition);
         this.statusService = statusService;
         this.slobrokApi = slobrokApi;
         this.rootManager = rootManager;
+        this.serviceMonitor = serviceMonitor;
     }
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<ApplicationInstanceReference> getAllInstances() {
+    private static RestApi createRestApiDefinition(InstanceRequestHandler self) {
+        return RestApi.builder()
+                .addRoute(RestApi.route("/orchestrator/v1/instances")
+                        .get(self::getAllInstances))
+                .addRoute(RestApi.route("/orchestrator/v1/instances/{instanceId}")
+                        .get(self::getInstance))
+                .addRoute(RestApi.route("/orchestrator/v1/instances/{instanceId}/slobrok")
+                        .get(self::getSlobrokEntries))
+                .addRoute(RestApi.route("/orchestrator/v1/instances/{instanceId}/serviceStatusInfo")
+                        .get(self::getServiceStatus))
+                .registerJacksonResponseEntity(List.class)
+                .registerJacksonResponseEntity(InstanceStatusResponse.class)
+                .registerJacksonResponseEntity(ServiceStatusInfo.class)
+                // Overriding object mapper to change serialization of timestamps
+                .setObjectMapper(new ObjectMapper()
+                        .registerModule(new JavaTimeModule())
+                        .registerModule(new Jdk8Module())
+                        .configure(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS, true))
+                .build();
+    }
+
+    private List<ApplicationInstanceReference> getAllInstances(RestApi.RequestContext context) {
         return serviceMonitor.getAllApplicationInstanceReferences().stream().sorted().collect(Collectors.toList());
     }
 
-    @GET
-    @Path("/{instanceId}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public InstanceStatusResponse getInstance(@PathParam("instanceId") String instanceIdString) {
+    private InstanceStatusResponse getInstance(RestApi.RequestContext context) {
+        String instanceIdString = context.pathParameters().getStringOrThrow("instanceId");
         ApplicationInstanceReference instanceId = parseInstanceId(instanceIdString);
 
         ApplicationInstance applicationInstance
@@ -102,12 +121,9 @@ public class InstanceResource {
         return new WireHostInfo(hostStatusString, suspendedSinceUtcOrNull);
     }
 
-    @GET
-    @Path("/{instanceId}/slobrok")
-    @Produces(MediaType.APPLICATION_JSON)
-    public List<SlobrokEntryResponse> getSlobrokEntries(
-            @PathParam("instanceId") String instanceId,
-            @QueryParam("pattern") String pattern) {
+    private List<SlobrokEntryResponse> getSlobrokEntries(RestApi.RequestContext context) {
+        String instanceId = context.pathParameters().getStringOrThrow("instanceId");
+        String pattern = context.queryParameters().getString("pattern").orElse(null);
         ApplicationInstanceReference reference = parseInstanceId(instanceId);
         ApplicationId applicationId = OrchestratorUtil.toApplicationId(reference);
 
@@ -121,28 +137,13 @@ public class InstanceResource {
                 .collect(Collectors.toList());
     }
 
-    @GET
-    @Path("/{instanceId}/serviceStatusInfo")
-    @Produces(MediaType.APPLICATION_JSON)
-    public ServiceStatusInfo getServiceStatus(
-            @PathParam("instanceId") String instanceId,
-            @QueryParam("clusterId") String clusterIdString,
-            @QueryParam("serviceType") String serviceTypeString,
-            @QueryParam("configId") String configIdString) {
+    private ServiceStatusInfo getServiceStatus(RestApi.RequestContext context) {
+        String instanceId = context.pathParameters().getStringOrThrow("instanceId");
+        String clusterIdString = context.queryParameters().getStringOrThrow("clusterId");
+        String serviceTypeString = context.queryParameters().getStringOrThrow("serviceType");
+        String configIdString = context.queryParameters().getStringOrThrow("configId");
         ApplicationInstanceReference reference = parseInstanceId(instanceId);
         ApplicationId applicationId = OrchestratorUtil.toApplicationId(reference);
-
-        if (clusterIdString == null) {
-            throwBadRequest("Missing clusterId query parameter");
-        }
-
-        if (serviceTypeString == null) {
-            throwBadRequest("Missing serviceType query parameter");
-        }
-
-        if (configIdString == null) {
-            throwBadRequest("Missing configId query parameter");
-        }
 
         ClusterId clusterId = new ClusterId(clusterIdString);
         ServiceType serviceType = new ServiceType(serviceTypeString);
@@ -151,18 +152,12 @@ public class InstanceResource {
         return rootManager.getStatus(applicationId, clusterId, serviceType, configId);
     }
 
-    static ApplicationInstanceReference parseInstanceId(String instanceIdString) {
+    private static ApplicationInstanceReference parseInstanceId(String instanceIdString) {
         try {
             return parseApplicationInstanceReference(instanceIdString);
         } catch (IllegalArgumentException e) {
-            throwBadRequest(e.getMessage());
-            return null;  // Necessary for compiler
+            throw new RestApiException.BadRequest(e.getMessage(), e);
         }
-    }
-
-    static void throwBadRequest(String message) {
-        throw new WebApplicationException(
-                Response.status(Response.Status.BAD_REQUEST).entity(message).build());
     }
 
 }

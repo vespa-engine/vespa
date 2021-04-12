@@ -12,7 +12,6 @@ import com.yahoo.vespa.orchestrator.BatchInternalErrorException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.OrchestratorImpl;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
-import com.yahoo.vespa.orchestrator.resources.host.HostResourceTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -46,14 +45,14 @@ class HostSuspensionHandlerTest {
 
     @Test
     void returns_200_on_success_batch() throws IOException {
-        HostSuspensionHandler handler = createHandler(HostResourceTest.createAlwaysAllowOrchestrator(clock));
+        HostSuspensionHandler handler = createHandler(HostRequestHandlerTest.createAlwaysAllowOrchestrator(clock));
         HttpResponse response = executeSuspendAllRequest(handler, "parentHostname", List.of("hostname1", "hostname2"));
         assertSuccess(response);
     }
 
     @Test
     void returns_200_empty_batch() throws IOException {
-        HostSuspensionHandler handler = createHandler(HostResourceTest.createAlwaysAllowOrchestrator(clock));
+        HostSuspensionHandler handler = createHandler(HostRequestHandlerTest.createAlwaysAllowOrchestrator(clock));
         HttpResponse response = executeSuspendAllRequest(handler, "parentHostname", List.of());
         assertSuccess(response);
     }
@@ -63,14 +62,14 @@ class HostSuspensionHandlerTest {
     // hostnames are part of the request body for multi-host.
     @Test
     void returns_400_when_host_unknown_for_batch() {
-        HostSuspensionHandler handler = createHandler(HostResourceTest.createHostNotFoundOrchestrator(clock));
+        HostSuspensionHandler handler = createHandler(HostRequestHandlerTest.createHostNotFoundOrchestrator(clock));
         HttpResponse response = executeSuspendAllRequest(handler, "parentHostname", List.of("hostname1", "hostname2"));
         assertEquals(400, response.getStatus());
     }
 
     @Test
     void returns_409_when_request_rejected_by_policies_for_batch() {
-        OrchestratorImpl alwaysRejectResolver = HostResourceTest.createAlwaysRejectResolver(clock);
+        OrchestratorImpl alwaysRejectResolver = HostRequestHandlerTest.createAlwaysRejectResolver(clock);
         HostSuspensionHandler handler = createHandler(alwaysRejectResolver);
         HttpResponse response = executeSuspendAllRequest(handler, "parentHostname", List.of("hostname1", "hostname2"));
         assertEquals(409, response.getStatus());

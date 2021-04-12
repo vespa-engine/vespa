@@ -63,30 +63,26 @@
     <component id="com.yahoo.vespa.orchestrator.controller.RetryingClusterControllerClientFactory" bundle="orchestrator" />
     <component id="com.yahoo.vespa.orchestrator.OrchestratorImpl" bundle="orchestrator" />
     
-    <rest-api path="orchestrator/v1/suspensions/applications" jersey2="true">
-      <components bundle="orchestrator">
-        <package>com.yahoo.vespa.orchestrator.resources.appsuspension</package>
-      </components>
-    </rest-api>
+    <handler id="com.yahoo.vespa.orchestrator.resources.ApplicationSuspensionRequestHandler" bundle="orchestrator">
+      <binding>http://*/orchestrator/v1/suspensions/applications</binding>
+      <binding>http://*/orchestrator/v1/suspensions/applications/*</binding>
+    </handler>
     <handler id="com.yahoo.vespa.orchestrator.resources.HealthRequestHandler" bundle="orchestrator">
       <binding>http://*/orchestrator/v1/health</binding>
       <binding>http://*/orchestrator/v1/health/*</binding>
     </handler>
-    <rest-api path="orchestrator/v1/hosts" jersey2="true">
-      <components bundle="orchestrator">
-        <package>com.yahoo.vespa.orchestrator.resources.host</package>
-      </components>
-    </rest-api>
+    <handler id="com.yahoo.vespa.orchestrator.resources.HostRequestHandler" bundle="orchestrator">
+      <binding>http://*/orchestrator/v1/hosts</binding>
+      <binding>http://*/orchestrator/v1/hosts/*</binding>
+    </handler>
     <handler id="com.yahoo.vespa.orchestrator.resources.HostSuspensionHandler" bundle="orchestrator">
       <binding>http://*/orchestrator/v1/suspensions/hosts</binding>
       <binding>http://*/orchestrator/v1/suspensions/hosts/*</binding>
     </handler>
-    <rest-api path="orchestrator/v1/instances" jersey2="true">
-      <components bundle="orchestrator">
-        <package>com.yahoo.vespa.orchestrator.resources.instance</package>
-      </components>
-    </rest-api>
-
+    <handler id="com.yahoo.vespa.orchestrator.resources.InstanceRequestHandler" bundle="orchestrator">
+      <binding>http://*/orchestrator/v1/instances</binding>
+      <binding>http://*/orchestrator/v1/instances/*</binding>
+    </handler>
     <handler id="com.yahoo.vespa.serviceview.StateRequestHandler" bundle="configserver">
       <binding>http://*/serviceview/v1</binding>
       <binding>http://*/serviceview/v1/*</binding>
