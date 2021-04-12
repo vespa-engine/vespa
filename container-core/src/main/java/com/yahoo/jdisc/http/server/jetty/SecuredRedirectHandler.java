@@ -14,7 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static com.yahoo.jdisc.http.server.jetty.HttpServletRequestUtils.getConnectorLocalPort;
+import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnectorLocalPort;
 
 /**
  * A secure redirect handler inspired by {@link org.eclipse.jetty.server.handler.SecuredRedirectHandler}.
@@ -33,7 +33,7 @@ class SecuredRedirectHandler extends HandlerWrapper {
 
     @Override
     public void handle(String target, Request request, HttpServletRequest servletRequest, HttpServletResponse servletResponse) throws IOException, ServletException {
-        int localPort = getConnectorLocalPort(servletRequest);
+        int localPort = getConnectorLocalPort(request);
         if (!redirectMap.containsKey(localPort)) {
             _handler.handle(target, request, servletRequest, servletResponse);
             return;

@@ -3,12 +3,11 @@ package com.yahoo.jdisc.http.filter;
 
 import com.yahoo.jdisc.http.Cookie;
 import com.yahoo.jdisc.http.HttpHeaders;
+import com.yahoo.jdisc.http.server.jetty.JettyMockRequestBuilder;
 import com.yahoo.jdisc.http.servlet.ServletRequest;
-import org.eclipse.jetty.server.HttpConnection;
+import org.eclipse.jetty.server.Request;
 import org.junit.Before;
 import org.junit.Test;
-import org.mockito.Mockito;
-import org.springframework.mock.web.MockHttpServletRequest;
 
 import java.net.URI;
 import java.util.Arrays;
@@ -18,7 +17,6 @@ import java.util.List;
 import static com.yahoo.jdisc.http.HttpRequest.Version;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.when;
 
 /**
  * Test the parts of the DiscFilterRequest API that are implemented
@@ -26,7 +24,6 @@ import static org.mockito.Mockito.when;
  * {@link com.yahoo.jdisc.http.servlet.ServletRequest}.
  *
  * @author gjoranv
- * @since 5.27
  */
 public class ServletFilterRequestTest {
 
@@ -54,18 +51,14 @@ public class ServletFilterRequestTest {
         parentRequest = ((ServletFilterRequest)filterRequest).getServletRequest();
     }
 
-    private ServletRequest newServletRequest() throws Exception {
-        MockHttpServletRequest parent = new MockHttpServletRequest("GET", uri.toString());
-        parent.setProtocol(Version.HTTP_1_1.toString());
-        parent.setRemoteHost(host);
-        parent.setRemotePort(port);
-        parent.setParameter(paramName, paramValue);
-        parent.setParameter(listParamName, listParamValue);
-        parent.addHeader(headerName, headerValue);
-        parent.setAttribute(attributeName, attributeValue);
-        HttpConnection connection = Mockito.mock(HttpConnection.class);
-        when(connection.getCreatedTimeStamp()).thenReturn(System.currentTimeMillis());
-        parent.setAttribute("org.eclipse.jetty.server.HttpConnection", connection);
+    private ServletRequest newServletRequest() {
+        Request parent = JettyMockRequestBuilder.newBuilder()
+                .remote("1.2.3.4", host, port)
+                .header(headerName, List.of(headerValue))
+                .parameter(paramName, List.of(paramValue))
+                .parameter(listParamName, List.of(listParamValue))
+                .attribute(attributeName, attributeValue)
+                .build();
         return new ServletRequest(parent, uri);
     }
 

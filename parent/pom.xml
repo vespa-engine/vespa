@@ -736,11 +736,6 @@
                 <version>${asm.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-test</artifactId>
-                <version>4.0.6.RELEASE</version>
-            </dependency>
-            <dependency>
                 <groupId>org.tensorflow</groupId>
                 <artifactId>proto</artifactId>
                 <version>${tensorflow.version}</version>
