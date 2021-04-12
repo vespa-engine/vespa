@@ -35,19 +35,10 @@ import com.yahoo.security.SslContextBuilder;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.security.tls.TlsContext;
-import org.apache.hc.client5.http.async.methods.SimpleHttpRequests;
-import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
-import org.apache.hc.client5.http.entity.mime.FormBodyPart;
-import org.apache.hc.client5.http.entity.mime.FormBodyPartBuilder;
-import org.apache.hc.client5.http.entity.mime.StringBody;
-import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
-import org.apache.hc.client5.http.impl.async.HttpAsyncClientBuilder;
-import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
-import org.apache.hc.client5.http.ssl.ClientTlsStrategyBuilder;
-import org.apache.hc.client5.http.ssl.NoopHostnameVerifier;
-import org.apache.hc.core5.http.ContentType;
-import org.apache.hc.core5.http.nio.ssl.TlsStrategy;
-import org.apache.hc.core5.http2.HttpVersionPolicy;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+import org.apache.http.entity.ContentType;
+import org.apache.http.entity.mime.FormBodyPart;
+import org.apache.http.entity.mime.content.StringBody;
 import org.assertj.core.api.Assertions;
 import org.eclipse.jetty.client.HttpClient;
 import org.eclipse.jetty.client.ProxyProtocolClientConnectionFactory.V1;
@@ -116,7 +107,6 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.Matchers.anyOf;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.junit.Assume.assumeTrue;
@@ -410,8 +400,8 @@ public class HttpServerTest {
         final ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .setMultipartContent(
-                                newFileBody("start.txt", startTxtContent),
-                                newFileBody("updater.conf", updaterConfContent))
+                                newFileBody("", "start.txt", startTxtContent),
+                                newFileBody("", "updater.conf", updaterConfContent))
                         .execute();
         response.expectStatusCode(is(OK))
                 .expectContent(containsString(startTxtContent))
@@ -515,27 +505,11 @@ public class HttpServerTest {
     }
 
     @Test
-    public void requireThatServerCanRespondToHttp2Request() throws Exception {
-        Path privateKeyFile = tmpFolder.newFile().toPath();
-        Path certificateFile = tmpFolder.newFile().toPath();
-        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
-
-        TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
-        try (CloseableHttpAsyncClient client = createHttp2Client(certificateFile, privateKeyFile)) {
-            String uri = "https://localhost:" + driver.server().getListenPort() + "/status.html";
-            SimpleHttpResponse response = client.execute(SimpleHttpRequests.get(uri), null).get();
-            assertNull(response.getBodyText());
-            assertEquals(OK, response.getCode());
-        }
-        assertTrue(driver.close());
-    }
-
-    @Test
     public void requireThatTlsClientAuthenticationEnforcerRejectsRequestsForNonWhitelistedPaths() throws IOException {
         Path privateKeyFile = tmpFolder.newFile().toPath();
         Path certificateFile = tmpFolder.newFile().toPath();
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
-        TestDriver driver = createSslWithTlsClientAuthenticationEnforcer(certificateFile, privateKeyFile);
+        TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
 
         SSLContext trustStoreOnlyCtx = new SslContextBuilder()
                 .withTrustStore(certificateFile)
@@ -944,21 +918,6 @@ public class HttpServerTest {
         return client;
     }
 
-    private static CloseableHttpAsyncClient createHttp2Client(Path certificateFile, Path privateKeyFile) {
-        TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
-        TlsStrategy tlsStrategy = ClientTlsStrategyBuilder.create()
-                .setSslContext(driver.newSslContext())
-                .build();
-        var client = HttpAsyncClientBuilder.create()
-                .setVersionPolicy(HttpVersionPolicy.FORCE_HTTP_2)
-                .disableConnectionState()
-                .disableAutomaticRetries()
-                .setConnectionManager(PoolingAsyncClientConnectionManagerBuilder.create().setTlsStrategy(tlsStrategy).build())
-                .build();
-        client.start();
-        return client;
-    }
-
     private static void assertLogEntryHasRemote(RequestLogEntry entry, String expectedAddress, int expectedPort) {
         assertEquals(expectedAddress, entry.peerAddress().get());
         if (expectedPort > 0) {
@@ -1008,25 +967,6 @@ public class HttpServerTest {
                     binder.bind(RequestLog.class).toInstance(requestLog);
                     binder.bind(ConnectionLog.class).toInstance(connectionLog);
                 });
-    }
-
-    private static TestDriver createSslWithTlsClientAuthenticationEnforcer(Path certificateFile, Path privateKeyFile) {
-        ConnectorConfig.Builder connectorConfig = new ConnectorConfig.Builder()
-                .tlsClientAuthEnforcer(
-                        new ConnectorConfig.TlsClientAuthEnforcer.Builder()
-                                .enable(true)
-                                .pathWhitelist("/status.html"))
-                .ssl(new ConnectorConfig.Ssl.Builder()
-                        .enabled(true)
-                        .clientAuth(ConnectorConfig.Ssl.ClientAuth.Enum.WANT_AUTH)
-                        .privateKeyFile(privateKeyFile.toString())
-                        .certificateFile(certificateFile.toString())
-                        .caCertificateFile(certificateFile.toString()));
-        return TestDrivers.newConfiguredInstance(
-                new EchoRequestHandler(),
-                new ServerConfig.Builder().connectionLog(new ServerConfig.ConnectionLog.Builder().enabled(true)),
-                connectorConfig,
-                binder -> {});
     }
 
     private static TestDriver createSslTestDriver(
@@ -1109,16 +1049,30 @@ public class HttpServerTest {
                 new ConnectorConfig.Builder());
     }
 
-    private static FormBodyPart newFileBody(final String fileName, final String fileContent) {
-        return FormBodyPartBuilder.create()
-                .setBody(
-                        new StringBody(fileContent, ContentType.TEXT_PLAIN) {
-                            @Override public String getFilename() { return fileName; }
-                            @Override public String getMimeType() { return ""; }
-                            @Override public String getCharset() { return null; }
-                        })
-                .setName(fileName)
-                .build();
+    private static FormBodyPart newFileBody(final String parameterName, final String fileName, final String fileContent) {
+        return new FormBodyPart(
+                parameterName,
+                new StringBody(fileContent, ContentType.TEXT_PLAIN) {
+                    @Override
+                    public String getFilename() {
+                        return fileName;
+                    }
+
+                    @Override
+                    public String getTransferEncoding() {
+                        return "binary";
+                    }
+
+                    @Override
+                    public String getMimeType() {
+                        return "";
+                    }
+
+                    @Override
+                    public String getCharset() {
+                        return null;
+                    }
+                });
     }
 
     private static class ConnectedAtRequestHandler extends AbstractRequestHandler {

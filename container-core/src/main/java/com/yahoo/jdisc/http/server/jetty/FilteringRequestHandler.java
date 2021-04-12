@@ -15,6 +15,7 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.filter.RequestFilter;
 import com.yahoo.jdisc.http.filter.ResponseFilter;
 
+import javax.servlet.http.HttpServletRequest;
 import java.nio.ByteBuffer;
 import java.util.Objects;
 import java.util.concurrent.atomic.AtomicBoolean;
@@ -41,11 +42,11 @@ class FilteringRequestHandler extends AbstractRequestHandler {
     };
 
     private final FilterResolver filterResolver;
-    private final org.eclipse.jetty.server.Request jettyRequest;
+    private final HttpServletRequest servletRequest;
 
-    public FilteringRequestHandler(FilterResolver filterResolver, org.eclipse.jetty.server.Request jettyRequest) {
+    public FilteringRequestHandler(FilterResolver filterResolver, HttpServletRequest servletRequest) {
         this.filterResolver = filterResolver;
-        this.jettyRequest = jettyRequest;
+        this.servletRequest = servletRequest;
     }
 
     @Override
@@ -53,9 +54,9 @@ class FilteringRequestHandler extends AbstractRequestHandler {
         Preconditions.checkArgument(request instanceof HttpRequest, "Expected HttpRequest, got " + request);
         Objects.requireNonNull(originalResponseHandler, "responseHandler");
 
-        RequestFilter requestFilter = filterResolver.resolveRequestFilter(jettyRequest, request.getUri())
+        RequestFilter requestFilter = filterResolver.resolveRequestFilter(servletRequest, request.getUri())
                 .orElse(null);
-        ResponseFilter responseFilter = filterResolver.resolveResponseFilter(jettyRequest, request.getUri())
+        ResponseFilter responseFilter = filterResolver.resolveResponseFilter(servletRequest, request.getUri())
                 .orElse(null);
 
         // Not using request.connect() here - it adds logic for error handling that we'd rather leave to the framework.

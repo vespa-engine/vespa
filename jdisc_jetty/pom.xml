@@ -16,18 +16,6 @@
   <packaging>jar</packaging>
   <dependencies>
     <dependency>
-      <groupId>org.eclipse.jetty.alpn</groupId>
-      <artifactId>alpn-api</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty.http2</groupId>
-      <artifactId>http2-server</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.eclipse.jetty</groupId>
-      <artifactId>jetty-alpn-java-server</artifactId>
-    </dependency>
-    <dependency>
       <groupId>org.eclipse.jetty</groupId>
       <artifactId>jetty-continuation</artifactId>
     </dependency>

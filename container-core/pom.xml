@@ -254,6 +254,11 @@
       <artifactId>jaxb-api</artifactId>
       <scope>provided</scope>
     </dependency>
+    <dependency>
+      <groupId>org.eclipse.jetty</groupId>
+      <artifactId>jetty-servlet</artifactId>
+      <scope>provided</scope>
+    </dependency>
 
     <!-- TEST scope -->
     <dependency>
@@ -314,15 +319,9 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>org.apache.httpcomponents.client5</groupId>
-      <artifactId>httpclient5</artifactId>
+      <groupId>org.springframework</groupId>
+      <artifactId>spring-test</artifactId>
       <scope>test</scope>
-      <exclusions>
-        <exclusion>
-          <groupId>org.slf4j</groupId>
-          <artifactId>slf4j-api</artifactId>
-        </exclusion>
-      </exclusions>
     </dependency>
   </dependencies>
   <build>
