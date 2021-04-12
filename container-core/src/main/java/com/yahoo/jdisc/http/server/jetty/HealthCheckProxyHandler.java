@@ -40,7 +40,7 @@ import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnectorLocalPort;
+import static com.yahoo.jdisc.http.server.jetty.HttpServletRequestUtils.getConnectorLocalPort;
 
 /**
  * A handler that proxies status.html health checks
@@ -91,7 +91,7 @@ class HealthCheckProxyHandler extends HandlerWrapper {
 
     @Override
     public void handle(String target, Request request, HttpServletRequest servletRequest, HttpServletResponse servletResponse) throws IOException, ServletException {
-        int localPort = getConnectorLocalPort(request);
+        int localPort = getConnectorLocalPort(servletRequest);
         ProxyTarget proxyTarget = portToProxyTargetMapping.get(localPort);
         if (proxyTarget != null) {
             AsyncContext asyncContext = servletRequest.startAsync();

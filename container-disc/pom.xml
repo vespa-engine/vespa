@@ -188,12 +188,6 @@
                 zkfacade-jar-with-dependencies.jar,
                 zookeeper-server-jar-with-dependencies.jar,
                 <!-- Jetty -->
-                alpn-api-${jetty-alpn.version}.jar,
-                http2-server-${jetty.version}.jar,
-                http2-common-${jetty.version}.jar,
-                http2-hpack-${jetty.version}.jar,
-                jetty-alpn-java-server-${jetty.version}.jar,
-                jetty-alpn-server-${jetty.version}.jar,
                 jetty-continuation-${jetty.version}.jar,
                 jetty-http-${jetty.version}.jar,
                 jetty-io-${jetty.version}.jar,

@@ -7,8 +7,10 @@ import com.yahoo.jdisc.References;
 import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.RequestHandler;
+import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.service.CurrentContainer;
+import org.eclipse.jetty.server.HttpConnection;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -20,6 +22,8 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.fail;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Steinar Knutsen
@@ -137,14 +141,26 @@ public class HttpRequestFactoryTest {
         assertEquals(LOCAL_PORT, request.getUri().getPort());
     }
 
-    private HttpServletRequest createMockRequest(String scheme, String host, String path, String query) {
-        return JettyMockRequestBuilder.newBuilder()
-                .uri(scheme, host, LOCAL_PORT, path, query)
-                .remote("127.0.0.1", "localhost", 1234)
-                .localPort(LOCAL_PORT)
-                .build();
+    private static HttpServletRequest createMockRequest(String scheme, String serverName, String path, String queryString) {
+        HttpServletRequest request = mock(HttpServletRequest.class);
+        HttpConnection connection = mock(HttpConnection.class);
+        JDiscServerConnector connector = mock(JDiscServerConnector.class);
+        when(connector.connectorConfig()).thenReturn(new ConnectorConfig(new ConnectorConfig.Builder().listenPort(LOCAL_PORT)));
+        when(connector.getLocalPort()).thenReturn(LOCAL_PORT);
+        when(connection.getCreatedTimeStamp()).thenReturn(System.currentTimeMillis());
+        when(connection.getConnector()).thenReturn(connector);
+        when(request.getAttribute("org.eclipse.jetty.server.HttpConnection")).thenReturn(connection);
+        when(request.getProtocol()).thenReturn("HTTP/1.1");
+        when(request.getScheme()).thenReturn(scheme);
+        when(request.getServerName()).thenReturn(serverName);
+        when(request.getRemoteAddr()).thenReturn("127.0.0.1");
+        when(request.getRemotePort()).thenReturn(1234);
+        when(request.getLocalPort()).thenReturn(LOCAL_PORT);
+        when(request.getMethod()).thenReturn("GET");
+        when(request.getQueryString()).thenReturn(queryString);
+        when(request.getRequestURI()).thenReturn(path);
+        return request;
     }
-
 
     private static final class MockContainer implements CurrentContainer {
 
