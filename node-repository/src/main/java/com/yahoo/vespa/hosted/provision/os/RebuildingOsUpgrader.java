@@ -24,16 +24,28 @@ public class RebuildingOsUpgrader extends RetiringOsUpgrader {
 
     private static final Logger LOG = Logger.getLogger(RebuildingOsUpgrader.class.getName());
 
-    public RebuildingOsUpgrader(NodeRepository nodeRepository) {
+    private final int maxRebuilds;
+
+    public RebuildingOsUpgrader(NodeRepository nodeRepository, int maxRebuilds) {
         super(nodeRepository);
+        this.maxRebuilds = maxRebuilds;
+        if (maxRebuilds < 1) throw new IllegalArgumentException("maxRebuilds must be positive, was " + maxRebuilds);
     }
 
-    protected void upgradeNodes(NodeList activeNodes, Version version, Instant instant) {
-        activeNodes.osVersionIsBefore(version)
-                   .not().rebuilding()
-                   .byIncreasingOsVersion()
-                   .first(1)
-                   .forEach(node -> rebuild(node, version, instant));
+    @Override
+    protected NodeList candidates(Instant instant, OsVersionTarget target, NodeList allNodes) {
+        if (allNodes.rebuilding().size() < maxRebuilds) {
+            return super.candidates(instant, target, allNodes);
+        }
+        return NodeList.of();
+    }
+
+    @Override
+    protected void upgradeNodes(NodeList candidates, Version version, Instant instant) {
+        candidates.not().rebuilding()
+                  .byIncreasingOsVersion()
+                  .first(1)
+                  .forEach(node -> rebuild(node, version, instant));
     }
 
     private void rebuild(Node host, Version target, Instant now) {

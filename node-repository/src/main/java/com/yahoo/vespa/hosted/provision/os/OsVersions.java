@@ -33,20 +33,25 @@ public class OsVersions {
     /** The maximum number of concurrent upgrades triggered by {@link DelegatingOsUpgrader} */
     private static final int MAX_DELEGATED_UPGRADES = 30;
 
+    /** The maximum number of concurrent upgrades (rebuilds) triggered by {@link RebuildingOsUpgrader} */
+    private static final int MAX_REBUILDS = 3;
+
     private final NodeRepository nodeRepository;
     private final CuratorDatabaseClient db;
     private final boolean reprovisionToUpgradeOs;
     private final int maxDelegatedUpgrades;
+    private final int maxRebuilds;
 
     public OsVersions(NodeRepository nodeRepository) {
-        this(nodeRepository, nodeRepository.zone().getCloud().reprovisionToUpgradeOs(), MAX_DELEGATED_UPGRADES);
+        this(nodeRepository, nodeRepository.zone().getCloud().reprovisionToUpgradeOs(), MAX_DELEGATED_UPGRADES, MAX_REBUILDS);
     }
 
-    OsVersions(NodeRepository nodeRepository, boolean reprovisionToUpgradeOs, int maxDelegatedUpgrades) {
+    OsVersions(NodeRepository nodeRepository, boolean reprovisionToUpgradeOs, int maxDelegatedUpgrades, int maxRebuilds) {
         this.nodeRepository = Objects.requireNonNull(nodeRepository);
         this.db = nodeRepository.database();
         this.reprovisionToUpgradeOs = reprovisionToUpgradeOs;
         this.maxDelegatedUpgrades = maxDelegatedUpgrades;
+        this.maxRebuilds = maxRebuilds;
 
         // Read and write all versions to make sure they are stored in the latest version of the serialized format
         try (var lock = db.lockOsVersionChange()) {
@@ -137,7 +142,7 @@ public class OsVersions {
                                                 .anyMatch(osVersion -> osVersion.current().isPresent() &&
                                                                        osVersion.current().get().getMajor() < target.getMajor());
         if (rebuildRequired) {
-            return new RebuildingOsUpgrader(nodeRepository);
+            return new RebuildingOsUpgrader(nodeRepository, maxRebuilds);
         }
         return new DelegatingOsUpgrader(nodeRepository, maxDelegatedUpgrades);
     }
