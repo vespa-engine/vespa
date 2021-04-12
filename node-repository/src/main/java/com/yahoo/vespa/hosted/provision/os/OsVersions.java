@@ -30,13 +30,16 @@ public class OsVersions {
 
     private static final Logger log = Logger.getLogger(OsVersions.class.getName());
 
+    /** The maximum number of concurrent upgrades triggered by {@link DelegatingOsUpgrader} */
+    private static final int MAX_DELEGATED_UPGRADES = 30;
+
     private final NodeRepository nodeRepository;
     private final CuratorDatabaseClient db;
     private final boolean reprovisionToUpgradeOs;
     private final int maxDelegatedUpgrades;
 
     public OsVersions(NodeRepository nodeRepository) {
-        this(nodeRepository, nodeRepository.zone().getCloud().reprovisionToUpgradeOs(), 30);
+        this(nodeRepository, nodeRepository.zone().getCloud().reprovisionToUpgradeOs(), MAX_DELEGATED_UPGRADES);
     }
 
     OsVersions(NodeRepository nodeRepository, boolean reprovisionToUpgradeOs, int maxDelegatedUpgrades) {
