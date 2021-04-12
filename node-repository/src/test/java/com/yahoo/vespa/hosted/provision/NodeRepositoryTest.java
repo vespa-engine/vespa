@@ -246,6 +246,11 @@ public class NodeRepositoryTest {
         Node node = tester.nodeRepository().nodes().restore(host2, Agent.system, getClass().getSimpleName());
         assertSame(Node.State.provisioned, node.state());
         assertEquals("IP addresses are preserved", ipConfigOfHost2, node.ipConfig());
+        assertTrue(node.status().wantToRetire());
+        assertTrue(node.status().wantToRebuild());
+
+        // Readying host clears rebuild flag
+        node = tester.nodeRepository().nodes().setReady(host2, Agent.system, getClass().getSimpleName());
         assertFalse(node.status().wantToRetire());
         assertFalse(node.status().wantToRebuild());
     }

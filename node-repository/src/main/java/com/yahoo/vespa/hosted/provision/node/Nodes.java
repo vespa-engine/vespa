@@ -17,7 +17,6 @@ import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
-import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 import com.yahoo.vespa.hosted.provision.restapi.NotFoundException;
@@ -181,10 +180,13 @@ public class Nodes {
                                                    .map(node -> {
                                                        if (node.state() != Node.State.provisioned && node.state() != Node.State.dirty)
                                                            illegal("Can not set " + node + " ready. It is not provisioned or dirty.");
-                                                       return node.withWantToRetire(false, false, Agent.system, clock.instant());
+                                                       return node.withWantToRetire(false,
+                                                                                    false,
+                                                                                    false,
+                                                                                    Agent.system,
+                                                                                    clock.instant());
                                                    })
                                                    .collect(Collectors.toList());
-
             return db.writeTo(Node.State.ready, nodesWithResetFields, agent, Optional.of(reason));
         }
     }
@@ -201,15 +203,14 @@ public class Nodes {
     public Node restore(String hostname, Agent agent, String reason) {
         // A deprovisioned host has no children so this doesn't need to to be recursive
         try (NodeMutex lock = lockAndGetRequired(hostname)) {
-            Node existing = lock.node();
-            if (existing.state() != Node.State.deprovisioned) illegal("Can not move node " + hostname + " to " +
-                                                                      Node.State.provisioned + ". It is not in " +
-                                                                      Node.State.deprovisioned);
-            if (!existing.status().wantToRebuild()) illegal("Can not move node " + hostname + " to " +
-                                                            Node.State.provisioned +
-                                                            ". Rebuild has not been requested");
-            Node nodeWithResetFields = existing.withWantToRetire(false, false, false, agent, clock.instant());
-            return db.writeTo(Node.State.provisioned, nodeWithResetFields, agent, Optional.of(reason));
+            Node node = lock.node();
+            if (node.state() != Node.State.deprovisioned) illegal("Can not move node " + hostname + " to " +
+                                                                  Node.State.provisioned + ". It is not in " +
+                                                                  Node.State.deprovisioned);
+            if (!node.status().wantToRebuild()) illegal("Can not move node " + hostname + " to " +
+                                                        Node.State.provisioned +
+                                                        ". Rebuild has not been requested");
+            return db.writeTo(Node.State.provisioned, node, agent, Optional.of(reason));
         }
     }
 
