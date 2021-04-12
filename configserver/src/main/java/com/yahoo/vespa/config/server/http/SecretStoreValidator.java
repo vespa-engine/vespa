@@ -12,6 +12,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import com.yahoo.yolean.Exceptions;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
@@ -62,8 +63,8 @@ public class SecretStoreValidator {
         var data = uncheck(() -> SlimeUtils.toJsonBytes(slime));
         var entity = new ByteArrayEntity(data);
         postRequest.setEntity(entity);
-        try {
-            return new ProxyResponse(httpClient.execute(postRequest));
+        try (CloseableHttpResponse response = httpClient.execute(postRequest)) {
+            return new ProxyResponse(response);
         } catch (IOException e) {
             return HttpErrorResponse.internalServerError(
                     String.format("Failed to post request to %s: %s", uri, Exceptions.toMessageString(e))

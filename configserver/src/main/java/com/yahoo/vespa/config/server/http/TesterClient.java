@@ -4,12 +4,13 @@ package com.yahoo.vespa.config.server.http;
 import ai.vespa.util.http.hc4.VespaHttpClientBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.yolean.Exceptions;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 import java.io.IOException;
 import java.net.URI;
@@ -22,7 +23,7 @@ import java.util.logging.Logger;
  */
 public class TesterClient {
 
-    private final HttpClient httpClient = VespaHttpClientBuilder.create().build();
+    private final CloseableHttpClient httpClient = VespaHttpClientBuilder.create().build();
     private static final Logger logger = Logger.getLogger(TesterClient.class.getName());
 
     public HttpResponse getStatus(String testerHostname, int port) {
@@ -65,8 +66,8 @@ public class TesterClient {
 
     private HttpResponse execute(HttpUriRequest request, String messageIfRequestFails) {
         logger.log(Level.FINE, "Sending request to tester container " + request.getURI().toString());
-        try {
-            return new ProxyResponse(httpClient.execute(request));
+        try (CloseableHttpResponse response = httpClient.execute(request)) {
+            return new ProxyResponse(response);
         } catch (IOException e) {
             logger.warning(messageIfRequestFails + ": " + Exceptions.toMessageString(e));
             return HttpErrorResponse.internalServerError(Exceptions.toMessageString(e));
