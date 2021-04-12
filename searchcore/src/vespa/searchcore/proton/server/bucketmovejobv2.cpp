@@ -204,6 +204,7 @@ BucketMoveJobV2::startMove(BucketMoverSP mover, size_t maxDocsToMove) {
 void
 BucketMoveJobV2::prepareMove(std::shared_ptr<BucketMoveJobV2> job, BucketMoverSP mover, std::vector<MoveKey> keys, IDestructorCallbackSP onDone)
 {
+    if (job->_stopped) return; //TODO Remove once lidtracker is no longer in use.
     auto moveOps = mover->createMoveOperations(std::move(keys));
     auto & master = job->_master;
     if (job->_stopped) return;
