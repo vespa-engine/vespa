@@ -68,11 +68,10 @@
         <package>com.yahoo.vespa.orchestrator.resources.appsuspension</package>
       </components>
     </rest-api>
-    <rest-api path="orchestrator/v1/health" jersey2="true">
-      <components bundle="orchestrator">
-        <package>com.yahoo.vespa.orchestrator.resources.health</package>
-      </components>
-    </rest-api>
+    <handler id="com.yahoo.vespa.orchestrator.resources.HealthRequestHandler" bundle="orchestrator">
+      <binding>http://*/orchestrator/v1/health</binding>
+      <binding>http://*/orchestrator/v1/health/*</binding>
+    </handler>
     <rest-api path="orchestrator/v1/hosts" jersey2="true">
       <components bundle="orchestrator">
         <package>com.yahoo.vespa.orchestrator.resources.host</package>

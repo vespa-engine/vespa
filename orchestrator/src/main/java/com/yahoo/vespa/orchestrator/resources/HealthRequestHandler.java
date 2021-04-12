@@ -1,24 +1,17 @@
-// Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.orchestrator.resources.health;
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.vespa.orchestrator.resources;
 
 import com.google.inject.Inject;
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.container.jaxrs.annotation.Component;
+import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.restapi.RestApi;
+import com.yahoo.restapi.RestApiRequestHandler;
 import com.yahoo.vespa.applicationmodel.ServiceStatusInfo;
-import com.yahoo.vespa.orchestrator.resources.ApplicationServices;
-import com.yahoo.vespa.orchestrator.resources.ServiceResource;
 import com.yahoo.vespa.orchestrator.restapi.wire.ApplicationReferenceList;
 import com.yahoo.vespa.orchestrator.restapi.wire.UrlReference;
 import com.yahoo.vespa.service.manager.HealthMonitorApi;
 import com.yahoo.vespa.service.monitor.ServiceId;
 
-import javax.ws.rs.GET;
-import javax.ws.rs.Path;
-import javax.ws.rs.PathParam;
-import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
-import javax.ws.rs.core.MediaType;
-import javax.ws.rs.core.UriInfo;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -27,31 +20,39 @@ import java.util.stream.Collectors;
 
 /**
  * @author hakonhall
+ * @author bjorncs
  */
-@Path("")
-public class HealthResource {
-    private final UriInfo uriInfo;
+public class HealthRequestHandler extends RestApiRequestHandler<HealthRequestHandler> {
+
     private final HealthMonitorApi healthMonitorApi;
 
     @Inject
-    public HealthResource(@Context UriInfo uriInfo, @Component HealthMonitorApi healthMonitorApi) {
-        this.uriInfo = uriInfo;
+    public HealthRequestHandler(LoggingRequestHandler.Context context,
+                                HealthMonitorApi healthMonitorApi) {
+        super(context, HealthRequestHandler::createRestApiDefinition);
         this.healthMonitorApi = healthMonitorApi;
     }
 
-    @GET
-    @Produces(MediaType.APPLICATION_JSON)
-    public ApplicationReferenceList getAllInstances() {
+    private static RestApi createRestApiDefinition(HealthRequestHandler self) {
+        return RestApi.builder()
+                .addRoute(RestApi.route("/orchestrator/v1/health")
+                        .get(self::getAllInstances))
+                .addRoute(RestApi.route("/orchestrator/v1/health/{applicationId}")
+                        .get(self::getInstance))
+                .registerJacksonResponseEntity(ApplicationReferenceList.class)
+                .registerJacksonResponseEntity(ApplicationServices.class)
+                .build();
+    }
+
+    private ApplicationReferenceList getAllInstances(RestApi.RequestContext context) {
         List<ApplicationId> applications = new ArrayList<>(healthMonitorApi.getMonitoredApplicationIds());
         applications.sort(Comparator.comparing(ApplicationId::serializedForm));
 
         ApplicationReferenceList list = new ApplicationReferenceList();
         list.applicationList = applications.stream().map(applicationId -> {
             UrlReference reference = new UrlReference();
-            reference.url = uriInfo.getBaseUriBuilder()
-                    .path(HealthResource.class)
-                    .path(applicationId.serializedForm())
-                    .build()
+            reference.url = context.uriBuilder()
+                    .withPath("/orchestrator/v1/health/" + applicationId.serializedForm())
                     .toString();
             return reference;
         }).collect(Collectors.toList());
@@ -59,11 +60,8 @@ public class HealthResource {
         return list;
     }
 
-    @GET
-    @Path("/{applicationId}")
-    @Produces(MediaType.APPLICATION_JSON)
-    public ApplicationServices getInstance(@PathParam("applicationId") String applicationIdString) {
-        ApplicationId applicationId = ApplicationId.fromSerializedForm(applicationIdString);
+    private ApplicationServices getInstance(RestApi.RequestContext context) {
+        ApplicationId applicationId = ApplicationId.fromSerializedForm(context.pathParameters().getStringOrThrow("applicationId"));
 
         Map<ServiceId, ServiceStatusInfo> services = healthMonitorApi.getServices(applicationId);
 
@@ -82,5 +80,4 @@ public class HealthResource {
         applicationServices.services = serviceResources;
         return applicationServices;
     }
-
 }
