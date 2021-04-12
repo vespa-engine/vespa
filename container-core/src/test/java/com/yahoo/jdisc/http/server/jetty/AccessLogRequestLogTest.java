@@ -4,12 +4,7 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.container.logging.RequestLog;
 import com.yahoo.container.logging.RequestLogEntry;
-import com.yahoo.jdisc.http.ConnectorConfig;
 import com.yahoo.jdisc.http.ServerConfig;
-import org.eclipse.jetty.http.MetaData;
-import org.eclipse.jetty.server.HttpChannel;
-import org.eclipse.jetty.server.HttpConnection;
-import org.eclipse.jetty.server.HttpInput;
 import org.eclipse.jetty.server.Request;
 import org.eclipse.jetty.server.Response;
 import org.junit.Test;
@@ -23,8 +18,6 @@ import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
 
 /**
  * @author Oyvind Bakksjo
@@ -33,9 +26,9 @@ import static org.mockito.Mockito.when;
 public class AccessLogRequestLogTest {
     @Test
     public void requireThatQueryWithUnquotedSpecialCharactersIsHandled() {
-        final Request jettyRequest = createRequestMock();
-        when(jettyRequest.getRequestURI()).thenReturn("/search/");
-        when(jettyRequest.getQueryString()).thenReturn("query=year:>2010");
+        Request jettyRequest = createRequestBuilder()
+                .uri("http", "localhost", 12345, "/search/", "query=year:>2010")
+                .build();
 
         InMemoryRequestLog requestLog = new InMemoryRequestLog();
         doAccessLoggingOfRequest(requestLog, jettyRequest);
@@ -47,11 +40,11 @@ public class AccessLogRequestLogTest {
 
     @Test
     public void requireThatDoubleQuotingIsNotPerformed() {
-        final Request jettyRequest = createRequestMock();
-        final String path = "/search/";
-        when(jettyRequest.getRequestURI()).thenReturn(path);
-        final String query = "query=year%252010+%3B&customParameter=something";
-        when(jettyRequest.getQueryString()).thenReturn(query);
+        String path = "/search/";
+        String query = "query=year%252010+%3B&customParameter=something";
+        Request jettyRequest = createRequestBuilder()
+                .uri("http", "localhost", 12345, path, query)
+                .build();
 
         InMemoryRequestLog requestLog = new InMemoryRequestLog();
         doAccessLoggingOfRequest(requestLog, jettyRequest);
@@ -64,11 +57,11 @@ public class AccessLogRequestLogTest {
 
     @Test
     public void raw_path_and_query_are_set_from_request() {
-        Request jettyRequest = createRequestMock();
         String rawPath = "//search/";
-        when(jettyRequest.getRequestURI()).thenReturn(rawPath);
         String rawQuery = "q=%%2";
-        when(jettyRequest.getQueryString()).thenReturn(rawQuery);
+        Request jettyRequest = createRequestBuilder()
+                .uri("http", "localhost", 12345, rawPath, rawQuery)
+                .build();
 
         InMemoryRequestLog requestLog = new InMemoryRequestLog();
         doAccessLoggingOfRequest(requestLog, jettyRequest);
@@ -81,11 +74,11 @@ public class AccessLogRequestLogTest {
 
     @Test
     public void verify_x_forwarded_for_precedence () {
-        Request jettyRequest = createRequestMock();
-        when(jettyRequest.getRequestURI()).thenReturn("//search/");
-        when(jettyRequest.getQueryString()).thenReturn("q=%%2");
-        when(jettyRequest.getHeader("x-forwarded-for")).thenReturn("1.2.3.4");
-        when(jettyRequest.getHeader("y-ra")).thenReturn("2.3.4.5");
+        Request jettyRequest = createRequestBuilder()
+                .uri("http", "localhost", 12345, "//search/", "q=%%2")
+                .header("x-forwarded-for", List.of("1.2.3.4"))
+                .header("y-ra", List.of("2.3.4.5"))
+                .build();
 
         InMemoryRequestLog requestLog = new InMemoryRequestLog();
         doAccessLoggingOfRequest(requestLog, jettyRequest);
@@ -95,11 +88,11 @@ public class AccessLogRequestLogTest {
 
     @Test
     public void verify_x_forwarded_port_precedence () {
-        Request jettyRequest = createRequestMock();
-        when(jettyRequest.getRequestURI()).thenReturn("//search/");
-        when(jettyRequest.getQueryString()).thenReturn("q=%%2");
-        when(jettyRequest.getHeader("X-Forwarded-Port")).thenReturn("80");
-        when(jettyRequest.getHeader("y-rp")).thenReturn("8080");
+        Request jettyRequest = createRequestBuilder()
+                .uri("http", "localhost", 12345, "//search/", "q=%%2")
+                .header("X-Forwarded-Port", List.of("80"))
+                .header("y-rp", List.of("8080"))
+                .build();
 
         InMemoryRequestLog requestLog = new InMemoryRequestLog();
         doAccessLoggingOfRequest(requestLog, jettyRequest);
@@ -109,10 +102,12 @@ public class AccessLogRequestLogTest {
 
     @Test
     public void defaults_to_peer_port_if_remote_port_header_is_invalid() {
-        final Request jettyRequest = createRequestMock();
-        when(jettyRequest.getRequestURI()).thenReturn("/search/");
-        when(jettyRequest.getHeader("X-Forwarded-Port")).thenReturn("8o8o");
-        when(jettyRequest.getRemotePort()).thenReturn(80);
+        Request jettyRequest = createRequestBuilder()
+                .uri("http", "localhost", 12345, "/search/", null)
+                .header("X-Forwarded-Port", List.of("8o8o"))
+                .header("y-rp", List.of("8o8o"))
+                .remote("2.3.4.5", "localhost", 80)
+                .build();
 
         InMemoryRequestLog requestLog = new InMemoryRequestLog();
         doAccessLoggingOfRequest(requestLog, jettyRequest);
@@ -129,32 +124,14 @@ public class AccessLogRequestLogTest {
         new AccessLogRequestLog(requestLog, config).log(jettyRequest, createResponseMock());
     }
 
-    private static Request createRequestMock() {
-        JDiscServerConnector serverConnector = mock(JDiscServerConnector.class);
-        int localPort = 1234;
-        when(serverConnector.connectorConfig()).thenReturn(new ConnectorConfig(new ConnectorConfig.Builder().listenPort(localPort)));
-        when(serverConnector.getLocalPort()).thenReturn(localPort);
-        HttpConnection httpConnection = mock(HttpConnection.class);
-        when(httpConnection.getConnector()).thenReturn(serverConnector);
-        Request request = mock(Request.class);
-        when(request.getMethod()).thenReturn("GET");
-        when(request.getRemoteAddr()).thenReturn("localhost");
-        when(request.getRemotePort()).thenReturn(12345);
-        when(request.getProtocol()).thenReturn("HTTP/1.1");
-        when(request.getScheme()).thenReturn("http");
-        when(request.getTimeStamp()).thenReturn(0L);
-        when(request.getAttribute(JDiscHttpServlet.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY)).thenReturn(new AccessLogEntry());
-        when(request.getAttribute("org.eclipse.jetty.server.HttpConnection")).thenReturn(httpConnection);
-        HttpInput httpInput = mock(HttpInput.class);
-        when(httpInput.getContentReceived()).thenReturn(2345L);
-        when(request.getHttpInput()).thenReturn(httpInput);
-        return request;
+    private static JettyMockRequestBuilder createRequestBuilder() {
+        return JettyMockRequestBuilder.newBuilder()
+                .attribute(JDiscHttpServlet.ATTRIBUTE_NAME_ACCESS_LOG_ENTRY, new AccessLogEntry())
+                .remote("2.3.4.5", "localhost", 12345)
+                .localPort(1234);
     }
 
     private Response createResponseMock() {
-        Response response = mock(Response.class);
-        when(response.getHttpChannel()).thenReturn(mock(HttpChannel.class));
-        when(response.getCommittedMetaData()).thenReturn(mock(MetaData.Response.class));
-        return response;
+        return JettyMockResponseBuilder.newBuilder().build();
     }
 }
