@@ -45,6 +45,7 @@ public class HostCapacity {
         return candidates.stream()
                          .filter(node -> node.type().canRun(NodeType.tenant))
                          .filter(host -> host.state() == Node.State.active)
+                         .filter(host -> host.reservedTo().isEmpty())
                          .filter(host -> freeIps(host) > 0)
                          .sorted(this::compareWithoutInactive)
                          .limit(count)
@@ -55,6 +56,7 @@ public class HostCapacity {
         return candidates.stream()
                 .filter(node -> node.type() == NodeType.host)
                 .filter(host -> host.state() == Node.State.active)
+                .filter(host -> host.reservedTo().isEmpty())
                 .filter(host -> allNodes.childrenOf(host).isEmpty())
                 .collect(Collectors.toSet());
     }
