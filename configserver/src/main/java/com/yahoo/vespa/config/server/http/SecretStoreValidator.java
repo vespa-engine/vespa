@@ -12,6 +12,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.config.server.application.Application;
 import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
 import com.yahoo.yolean.Exceptions;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.entity.ByteArrayEntity;
 import org.apache.http.impl.client.CloseableHttpClient;
