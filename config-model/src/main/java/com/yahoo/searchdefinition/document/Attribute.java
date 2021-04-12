@@ -78,7 +78,7 @@ public final class Attribute implements Cloneable, Serializable {
     /** The aliases for this attribute */
     private final Set<String> aliases = new LinkedHashSet<>();
 
-    private Dictionary dictionary = new Dictionary();
+    private Dictionary dictionary = null;
 
     /**
      * True if this attribute should be returned during first pass of search.

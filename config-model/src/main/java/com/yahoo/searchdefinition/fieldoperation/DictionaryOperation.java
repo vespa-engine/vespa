@@ -11,25 +11,30 @@ import com.yahoo.searchdefinition.document.SDField;
  * @author baldersheim
  */
 public class DictionaryOperation implements FieldOperation {
-    private final Dictionary.Type type;
+    public enum Operation { HASH, BTREE, CASED, UNCASED }
+    private final Operation operation;
 
-    public DictionaryOperation(Dictionary.Type type) {
-        this.type = type;
+    public DictionaryOperation(Operation type) {
+        this.operation = type;
     }
     @Override
     public void apply(SDField field) {
-        Dictionary prev = field.getDictionary();
-        if (prev == null) {
-            field.setDictionary(new Dictionary(type));
-        } else if ((prev.getType() == Dictionary.Type.BTREE && type == Dictionary.Type.HASH) ||
-                   (prev.getType() == Dictionary.Type.HASH && type == Dictionary.Type.BTREE))
-        {
-            field.setDictionary(new Dictionary(Dictionary.Type.BTREE_AND_HASH));
-        } else {
-            if (prev.getType() != type) {
-                throw new IllegalArgumentException("Can not combine previous dictionary setting " + prev.getType() +
-                        " with current " + type);
-            }
+        Dictionary dictionary = field.getOrSetDictionary();
+        switch (operation) {
+            case HASH:
+                dictionary.updateType(Dictionary.Type.HASH);
+                break;
+            case BTREE:
+                dictionary.updateType(Dictionary.Type.BTREE);
+                break;
+            case CASED:
+                dictionary.updateMatch(Dictionary.Match.CASED);
+                break;
+            case UNCASED:
+                dictionary.updateMatch(Dictionary.Match.UNCASED);
+                break;
+            default:
+                throw new IllegalArgumentException("Unhandled operation " + operation);
         }
     }
 }

@@ -255,6 +255,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         Dictionary dictionary = attribute.getDictionary();
         if (dictionary != null) {
             aaB.dictionary.type(convert(dictionary.getType()));
+            aaB.dictionary.match(convert(dictionary.getMatch()));
         }
         return aaB;
     }
@@ -269,6 +270,15 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
                 return AttributesConfig.Attribute.Dictionary.Type.BTREE_AND_HASH;
         }
         return AttributesConfig.Attribute.Dictionary.Type.BTREE;
+    }
+    private static AttributesConfig.Attribute.Dictionary.Match.Enum convert(Dictionary.Match type) {
+        switch (type) {
+            case CASED:
+                return AttributesConfig.Attribute.Dictionary.Match.CASED;
+            case UNCASED:
+                return AttributesConfig.Attribute.Dictionary.Match.UNCASED;
+        }
+        return AttributesConfig.Attribute.Dictionary.Match.UNCASED;
     }
 
     public void getConfig(AttributesConfig.Builder builder, FieldSet fs) {

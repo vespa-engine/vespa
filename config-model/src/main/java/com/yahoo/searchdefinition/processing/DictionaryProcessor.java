@@ -3,6 +3,7 @@ package com.yahoo.searchdefinition.processing;
 
 import com.yahoo.config.application.api.DeployLogger;
 import com.yahoo.document.NumericDataType;
+import com.yahoo.document.PrimitiveDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
@@ -25,16 +26,18 @@ public class DictionaryProcessor extends Processor {
         for (SDField field : search.allConcreteFields()) {
             Dictionary dictionary = field.getDictionary();
             if (dictionary == null) continue;
-
             Attribute attribute = field.getAttribute();
+            if (attribute == null) continue;
             if (attribute.getDataType().getPrimitiveType() instanceof NumericDataType ) {
                 if (attribute.isFastSearch()) {
                     attribute.setDictionary(dictionary);
                 } else {
                     fail(search, field, "You must specify 'attribute:fast-search' to allow dictionary control");
                 }
+            } else if (attribute.getDataType().getPrimitiveType() == PrimitiveDataType.STRING) {
+                attribute.setDictionary(dictionary);
             } else {
-                fail(search, field, "You can only specify 'dictionary:' for numeric fields");
+                fail(search, field, "You can only specify 'dictionary:' for numeric or string fields");
             }
         }
     }

@@ -270,6 +270,8 @@ TOKEN :
 | < NORMALIZING: "normalizing" >
 | < HASH: "hash" >
 | < BTREE: "btree" >
+| < CASED: "cased" >
+| < UNCASED: "uncased" >
 | < BOLDING: "bolding" >
 | < BODY: "body" >
 | < HEADER: "header" >
@@ -1530,24 +1532,25 @@ void bolding(FieldOperationContainer field) :
  */
 void dictionary(FieldOperationContainer field) :
 {
-    Dictionary.Type type;
 }
 {
-    <DICTIONARY> <COLON> type = dictionaryType()
+    <DICTIONARY>
+    ( (<COLON> dictionarySetting(field))
+    | (lbrace() (dictionarySetting(field) (<NL>)*)* <RBRACE>))
     {
-        field.addOperation(new DictionaryOperation(type));
     }
 }
 
-Dictionary.Type dictionaryType() :
+void dictionarySetting(FieldOperationContainer field) :
 {
     Dictionary.Type type;
 }
 {
-    (   <HASH>            { type = Dictionary.Type.HASH; }
-      | <BTREE>           { type = Dictionary.Type.BTREE; } )
+    (   <HASH>            { field.addOperation(new DictionaryOperation(DictionaryOperation.Operation.HASH)); }
+      | <BTREE>           { field.addOperation(new DictionaryOperation(DictionaryOperation.Operation.BTREE)); }
+      | <CASED>           { field.addOperation(new DictionaryOperation(DictionaryOperation.Operation.CASED)); }
+      | <UNCASED>           { field.addOperation(new DictionaryOperation(DictionaryOperation.Operation.UNCASED)); })
     {
-        return type;
     }
 }
 
@@ -2642,6 +2645,7 @@ String identifier() : { }
       | <BODY>
       | <BOLDING>
       | <BTREE>
+      | <CASED>
       | <COMPRESSION>
       | <COMPRESSIONLEVEL>
       | <COMPRESSIONTHRESHOLD>
@@ -2747,6 +2751,7 @@ String identifier() : { }
       | <TRUE>
       | <TYPE>
       | <UCA>
+      | <UNCASED>
       | <URI>
       | <UPPERBOUND>
       | <USEDOCUMENT>

@@ -538,9 +538,12 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
      * Returns Dictionary settings.
      */
     public Dictionary getDictionary() { return dictionary; }
-
-
-    public void setDictionary(Dictionary dictionary) { this.dictionary=dictionary; }
+    public Dictionary getOrSetDictionary() {
+        if (dictionary == null) {
+            dictionary = new Dictionary();
+        }
+        return dictionary;
+    }
 
     /**
      * Set the matching type for this field and all subfields.
