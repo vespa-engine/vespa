@@ -20,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.maintenance.ChangeManagementAssessor;
+import com.yahoo.vespa.hosted.controller.persistence.ChangeRequestSerializer;
 import com.yahoo.yolean.Exceptions;
 
 import javax.ws.rs.BadRequestException;
@@ -63,6 +64,7 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse get(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/changemanagement/v1/assessment/{changeRequestId}")) return changeRequestAssessment(path.get("changeRequestId"));
+        if (path.matches("/changemanagement/v1/vcmr")) return getVCMRs();
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -87,8 +89,7 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
     }
 
     private HttpResponse changeRequestAssessment(String changeRequestId) {
-        var optionalChangeRequest = controller.serviceRegistry().changeRequestClient()
-                .getUpcomingChangeRequests()
+        var optionalChangeRequest = controller.curator().readChangeRequests()
                 .stream()
                 .filter(request -> changeRequestId.equals(request.getChangeRequestSource().getId()))
                 .findFirst();
@@ -168,6 +169,17 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
             hostObject.setLong("numberOfProblematicChildren", assessment.numberOfProblematicChildren);
         });
 
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse getVCMRs() {
+        var changeRequests = controller.curator().readChangeRequests();
+        var slime = new Slime();
+        var cursor = slime.setObject().setArray("vcmrs");
+        changeRequests.forEach(changeRequest -> {
+            var changeCursor = cursor.addObject();
+            ChangeRequestSerializer.writeChangeRequest(changeCursor, changeRequest);
+        });
         return new SlimeJsonResponse(slime);
     }
 

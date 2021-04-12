@@ -16,7 +16,7 @@ public class ChangeRequest {
     private final Approval approval;
     private final Impact impact;
 
-    private ChangeRequest(String id, ChangeRequestSource changeRequestSource, List<String> impactedSwitches, List<String> impactedHosts, Approval approval, Impact impact) {
+    public ChangeRequest(String id, ChangeRequestSource changeRequestSource, List<String> impactedSwitches, List<String> impactedHosts, Approval approval, Impact impact) {
         this.id = Objects.requireNonNull(id);
         this.changeRequestSource = Objects.requireNonNull(changeRequestSource);
         this.impactedSwitches = Objects.requireNonNull(impactedSwitches);
