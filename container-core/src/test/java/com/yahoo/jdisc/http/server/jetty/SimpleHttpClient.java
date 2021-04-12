@@ -1,33 +1,36 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
-import org.apache.http.Header;
-import org.apache.http.HttpEntity;
-import org.apache.http.HttpResponse;
-import org.apache.http.client.entity.GzipCompressingEntity;
-import org.apache.http.client.methods.CloseableHttpResponse;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpUriRequest;
-import org.apache.http.config.Registry;
-import org.apache.http.config.RegistryBuilder;
-import org.apache.http.conn.socket.ConnectionSocketFactory;
-import org.apache.http.conn.ssl.DefaultHostnameVerifier;
-import org.apache.http.conn.ssl.SSLConnectionSocketFactory;
-import org.apache.http.entity.ByteArrayEntity;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.entity.mime.FormBodyPart;
-import org.apache.http.entity.mime.MultipartEntityBuilder;
-import org.apache.http.impl.client.CloseableHttpClient;
-import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.impl.conn.BasicHttpClientConnectionManager;
-import org.apache.http.util.EntityUtils;
+import org.apache.hc.client5.http.SystemDefaultDnsResolver;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequest;
+import org.apache.hc.client5.http.entity.GzipCompressingEntity;
+import org.apache.hc.client5.http.entity.mime.FormBodyPart;
+import org.apache.hc.client5.http.entity.mime.MultipartEntityBuilder;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
+import org.apache.hc.client5.http.impl.classic.CloseableHttpResponse;
+import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManager;
+import org.apache.hc.client5.http.impl.io.PoolingHttpClientConnectionManagerBuilder;
+import org.apache.hc.client5.http.ssl.DefaultHostnameVerifier;
+import org.apache.hc.client5.http.ssl.SSLConnectionSocketFactory;
+import org.apache.hc.core5.http.ContentType;
+import org.apache.hc.core5.http.Header;
+import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpResponse;
+import org.apache.hc.core5.http.ParseException;
+import org.apache.hc.core5.http.io.entity.ByteArrayEntity;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.http.io.entity.StringEntity;
 import org.hamcrest.Matcher;
 import org.hamcrest.MatcherAssert;
 
 import javax.net.ssl.SSLContext;
 import java.io.IOException;
+import java.net.InetAddress;
 import java.net.URI;
+import java.net.UnknownHostException;
 import java.nio.charset.StandardCharsets;
 import java.util.Arrays;
 import java.util.List;
@@ -55,8 +58,9 @@ public class SimpleHttpClient implements AutoCloseable {
 
     public SimpleHttpClient(SSLContext sslContext, List<String> enabledProtocols, List<String> enabledCiphers,
                             int listenPort, boolean useCompression) {
-        HttpClientBuilder builder = HttpClientBuilder.create();
-        builder.disableConnectionState(); // Reuse SSL connection when client authentication is enabled
+        HttpClientBuilder builder = HttpClientBuilder.create()
+                .disableAutomaticRetries()
+                .disableConnectionState(); // Reuse SSL connection when client authentication is enabled
         if (!useCompression) {
             builder.disableContentCompression();
         }
@@ -66,12 +70,17 @@ public class SimpleHttpClient implements AutoCloseable {
                     toArray(enabledProtocols),
                     toArray(enabledCiphers),
                     new DefaultHostnameVerifier());
-            builder.setSSLSocketFactory(sslConnectionFactory);
-
-            Registry<ConnectionSocketFactory> registry = RegistryBuilder.<ConnectionSocketFactory>create()
-                    .register("https", sslConnectionFactory)
+            PoolingHttpClientConnectionManager connManager = PoolingHttpClientConnectionManagerBuilder.create()
+                    .setSSLSocketFactory(sslConnectionFactory)
+                    .setDnsResolver(new SystemDefaultDnsResolver() {
+                        @Override
+                        public InetAddress[] resolve(String host) throws UnknownHostException {
+                            // Returns single address instead of multiple (to avoid multiple connection attempts)
+                            return new InetAddress[] { InetAddress.getByName(host) };
+                        }
+                    })
                     .build();
-            builder.setConnectionManager(new BasicHttpClientConnectionManager(registry));
+            builder.setConnectionManager(connManager);
             scheme = "https";
         } else {
             scheme = "http";
@@ -139,7 +148,7 @@ public class SimpleHttpClient implements AutoCloseable {
         }
 
         public RequestExecutor setBinaryContent(final byte[] content) {
-            this.entity = new ByteArrayEntity(content);
+            this.entity = new ByteArrayEntity(content, ContentType.DEFAULT_BINARY);
             return this;
         }
 
@@ -152,7 +161,7 @@ public class SimpleHttpClient implements AutoCloseable {
 
         public ResponseValidator execute() throws IOException {
             if (entity != null) {
-                ((HttpPost)request).setEntity(entity);
+                request.setEntity(entity);
             }
             try (CloseableHttpResponse response = delegate.execute(request)){
                 return new ResponseValidator(response);
@@ -165,15 +174,19 @@ public class SimpleHttpClient implements AutoCloseable {
         private final HttpResponse response;
         private final String content;
 
-        public ResponseValidator(HttpResponse response) throws IOException {
-            this.response = response;
+        public ResponseValidator(CloseableHttpResponse response) throws IOException {
+            try {
+                this.response = response;
 
-            HttpEntity entity = response.getEntity();
-            this.content = entity == null ? null : EntityUtils.toString(entity, StandardCharsets.UTF_8);
+                HttpEntity entity = response.getEntity();
+                this.content = entity == null ? null : EntityUtils.toString(entity, StandardCharsets.UTF_8);
+            } catch (ParseException e) {
+                throw new IOException(e);
+            }
         }
 
         public ResponseValidator expectStatusCode(Matcher<Integer> matcher) {
-            MatcherAssert.assertThat(response.getStatusLine().getStatusCode(), matcher);
+            MatcherAssert.assertThat(response.getCode(), matcher);
             return this;
         }
 

@@ -55,10 +55,7 @@ public class TestDrivers {
                         newConfigModule(
                                 new ServerConfig.Builder().connectionLog(new ServerConfig.ConnectionLog.Builder().enabled(true)),
                                 new ConnectorConfig.Builder()
-                                        .tlsClientAuthEnforcer(
-                                                new ConnectorConfig.TlsClientAuthEnforcer.Builder()
-                                                        .enable(true)
-                                                        .pathWhitelist("/status.html"))
+                                        .http2Enabled(true)
                                         .ssl(new ConnectorConfig.Ssl.Builder()
                                                 .enabled(true)
                                                 .clientAuth(tlsClientAuth == TlsClientAuth.NEED
