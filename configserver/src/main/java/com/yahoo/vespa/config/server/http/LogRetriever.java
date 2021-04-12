@@ -19,8 +19,8 @@ public class LogRetriever {
 
     public HttpResponse getLogs(String logServerHostname) {
         HttpGet get = new HttpGet(logServerHostname);
-        try (CloseableHttpResponse response = httpClient.execute(get)) {
-            return new ProxyResponse(response);
+        try {
+            return new ProxyResponse(httpClient.execute(get));
         } catch (IOException e) {
             return HttpErrorResponse.internalServerError("Failed to get logs: " + Exceptions.toMessageString(e));
         }

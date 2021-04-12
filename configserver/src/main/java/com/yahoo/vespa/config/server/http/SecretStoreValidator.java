@@ -63,8 +63,8 @@ public class SecretStoreValidator {
         var data = uncheck(() -> SlimeUtils.toJsonBytes(slime));
         var entity = new ByteArrayEntity(data);
         postRequest.setEntity(entity);
-        try (CloseableHttpResponse response = httpClient.execute(postRequest)) {
-            return new ProxyResponse(response);
+        try {
+            return new ProxyResponse(httpClient.execute(postRequest));
         } catch (IOException e) {
             return HttpErrorResponse.internalServerError(
                     String.format("Failed to post request to %s: %s", uri, Exceptions.toMessageString(e))

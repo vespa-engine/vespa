@@ -66,8 +66,8 @@ public class TesterClient {
 
     private HttpResponse execute(HttpUriRequest request, String messageIfRequestFails) {
         logger.log(Level.FINE, "Sending request to tester container " + request.getURI().toString());
-        try (CloseableHttpResponse response = httpClient.execute(request)) {
-            return new ProxyResponse(response);
+        try {
+            return new ProxyResponse(httpClient.execute(request));
         } catch (IOException e) {
             logger.warning(messageIfRequestFails + ": " + Exceptions.toMessageString(e));
             return HttpErrorResponse.internalServerError(Exceptions.toMessageString(e));
