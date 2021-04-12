@@ -1459,6 +1459,25 @@
     ],
     "fields": []
   },
+  "com.yahoo.tensor.TypeResolver": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public static com.yahoo.tensor.TensorType map(com.yahoo.tensor.TensorType)",
+      "public static com.yahoo.tensor.TensorType reduce(com.yahoo.tensor.TensorType, java.util.List)",
+      "public static com.yahoo.tensor.TensorType peek(com.yahoo.tensor.TensorType, java.util.List)",
+      "public static com.yahoo.tensor.TensorType rename(com.yahoo.tensor.TensorType, java.util.List, java.util.List)",
+      "public static com.yahoo.tensor.TensorType cell_cast(com.yahoo.tensor.TensorType, com.yahoo.tensor.TensorType$Value)",
+      "public static com.yahoo.tensor.TensorType join(com.yahoo.tensor.TensorType, com.yahoo.tensor.TensorType)",
+      "public static com.yahoo.tensor.TensorType merge(com.yahoo.tensor.TensorType, com.yahoo.tensor.TensorType)",
+      "public static com.yahoo.tensor.TensorType concat(com.yahoo.tensor.TensorType, com.yahoo.tensor.TensorType, java.lang.String)"
+    ],
+    "fields": []
+  },
   "com.yahoo.tensor.evaluation.EvaluationContext": {
     "superClass": "java.lang.Object",
     "interfaces": [
