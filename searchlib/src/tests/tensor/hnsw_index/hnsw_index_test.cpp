@@ -51,7 +51,6 @@ struct LevelGenerator : public RandomLevelGenerator {
 };
 
 using FloatVectors = MyDocVectorAccess<float>;
-using FloatSqEuclideanDistance = SquaredEuclideanDistance<float>;
 using HnswIndexUP = std::unique_ptr<HnswIndex>;
 
 class HnswIndexTest : public ::testing::Test {
@@ -79,7 +78,7 @@ public:
     void init(bool heuristic_select_neighbors) {
         auto generator = std::make_unique<LevelGenerator>();
         level_generator = generator.get();
-        index = std::make_unique<HnswIndex>(vectors, std::make_unique<FloatSqEuclideanDistance>(),
+        index = std::make_unique<HnswIndex>(vectors, std::make_unique<SquaredEuclideanDistance>(),
                                             std::move(generator),
                                             HnswIndex::Config(5, 2, 10, 0, heuristic_select_neighbors));
     }
