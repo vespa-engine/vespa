@@ -123,7 +123,7 @@ public class Nodes {
     /** Adds a list of newly created reserved nodes to the node repository */
     public List<Node> addReservedNodes(LockedNodeList nodes) {
         for (Node node : nodes) {
-            if ( ! node.flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER))
+            if ( node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
                 illegal("Cannot add " + node + ": This is not a child node");
             if (node.allocation().isEmpty())
                 illegal("Cannot add " + node + ": Child nodes need to be allocated");
@@ -257,7 +257,21 @@ public class Nodes {
      * transaction commits.
      */
     public List<Node> fail(List<Node> nodes, ApplicationTransaction transaction) {
-        return db.writeTo(Node.State.failed, nodes, Agent.application, Optional.of("Failed by application"), transaction.nested());
+        return fail(nodes, Agent.application, "Failed by application", transaction.nested());
+    }
+
+    public List<Node> fail(List<Node> nodes, Agent agent, String reason) {
+        NestedTransaction transaction = new NestedTransaction();
+        nodes = fail(nodes, agent, reason, transaction);
+        transaction.commit();;
+        return nodes;
+    }
+
+    private List<Node> fail(List<Node> nodes, Agent agent, String reason, NestedTransaction transaction) {
+        nodes = nodes.stream()
+                     .map(n -> n.withWantToFail(false, agent, clock.instant()))
+                     .collect(Collectors.toList());
+        return db.writeTo(Node.State.failed, nodes, agent, Optional.of(reason), transaction);
     }
 
     /** Move nodes to the dirty state */
@@ -347,7 +361,7 @@ public class Nodes {
 
     private Node failOrMark(Node node, Agent agent, String reason, Mutex lock) {
         if (node.state() == Node.State.active) {
-            node = node.withWantToFail(true, agent, reason, clock.instant());
+            node = node.withWantToFail(true, agent, clock.instant());
             write(node, lock);
             return node;
         }

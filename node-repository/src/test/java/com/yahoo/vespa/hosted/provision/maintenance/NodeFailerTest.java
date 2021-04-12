@@ -475,6 +475,7 @@ public class NodeFailerTest {
         assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
         assertEquals(10, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
         assertEquals(6, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.host).size());
+        assertEquals(1, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.host).size());
 
 
         // Now lets fail an active tenant node
@@ -513,6 +514,7 @@ public class NodeFailerTest {
         assertEquals(8, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.tenant).size());
         assertEquals(6, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
         assertEquals(5, tester.nodeRepository.nodes().list(Node.State.active).nodeType(NodeType.host).size());
+
 
         // We have only 5 hosts remaining, so if we fail another host, we should only be able to redeploy app1's
         // node, while app2's should remain

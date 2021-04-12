@@ -10,6 +10,7 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -108,6 +109,22 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             }
             String reason = entry.getValue();
             failActive(node, reason);
+        }
+
+        // Active hosts
+        NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
+        for (Node host : activeNodes.hosts().failing()) {
+            if ( ! activeNodes.childrenOf(host).isEmpty()) continue;
+            Optional<NodeMutex> locked = Optional.empty();
+            try {
+                locked = nodeRepository().nodes().lockAndGet(host);
+                if (locked.isEmpty()) continue;
+                nodeRepository().nodes().fail(List.of(locked.get().node()), Agent.NodeFailer,
+                                              "Host should be failed and have no tenant nodes");
+            }
+            finally {
+                locked.ifPresent(NodeMutex::close);
+            }
         }
 
         int throttlingActive = Math.min(1, throttledHostFailures + throttledNodeFailures);
@@ -277,7 +294,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             }
 
             if (! allTenantNodesFailedOutSuccessfully) return false;
-            wantToFail(node, true, reason, lock);
+            wantToFail(node, true, lock);
             try {
                 deployment.get().activate();
                 return true;
@@ -289,7 +306,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             } catch (RuntimeException e) {
                 // Reset want to fail: We'll retry failing unless it heals in the meantime
                 nodeRepository().nodes().node(node.hostname())
-                                        .ifPresent(n -> wantToFail(n, false, "Could not fail", lock));
+                                        .ifPresent(n -> wantToFail(n, false, lock));
                 log.log(Level.WARNING, "Could not fail " + node + " for " + node.allocation().get().owner() +
                                        " for " + reason + ": " + Exceptions.toMessageString(e));
                 return false;
@@ -297,8 +314,8 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         }
     }
 
-    private void wantToFail(Node node, boolean wantToFail, String reason, Mutex lock) {
-        nodeRepository().nodes().write(node.withWantToFail(wantToFail, Agent.NodeFailer, reason, clock().instant()), lock);
+    private void wantToFail(Node node, boolean wantToFail, Mutex lock) {
+        nodeRepository().nodes().write(node.withWantToFail(wantToFail, Agent.NodeFailer, clock().instant()), lock);
     }
 
     /** Returns true if node failing should be throttled */
