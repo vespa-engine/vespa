@@ -10,6 +10,7 @@
 LOG_SETUP("distance_function_test");
 
 using namespace search::tensor;
+using vespalib::eval::Int8Float;
 using vespalib::eval::TypedCells;
 using search::attribute::DistanceMetric;
 
@@ -212,6 +213,11 @@ TEST(DistanceFunctionsTest, hamming_gives_expected_score)
     EXPECT_DOUBLE_EQ(threshold, 0.5);
     threshold = hamming->convert_threshold(1.0);
     EXPECT_DOUBLE_EQ(threshold, 1.0);
+
+    std::vector<Int8Float> bytes_a = { 0, 1, 2, 4, 8, 16, 32, 64, -128,  0, 1, 2, 4, 8, 16, 32, 64, -128, 0, 1, 2 };
+    std::vector<Int8Float> bytes_b = { 1, 2, 2, 4, 8, 16, 32, 65, -128,  0, 1, 0, 4, 8, 16, 32, 64, -128, 0, 1, -1 };
+    // expect diff:                    1  2                    1               1                                7
+    EXPECT_EQ(hamming->calc(TypedCells(bytes_a), TypedCells(bytes_b)), 12.0);
 }
 
 TEST(GeoDegreesTest, gives_expected_score)

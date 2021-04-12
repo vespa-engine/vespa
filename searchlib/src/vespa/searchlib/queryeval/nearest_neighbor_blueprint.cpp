@@ -65,9 +65,12 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
 {
     auto lct = _query_tensor->cells().type;
     auto rct = _attr_tensor.getTensorType().cell_type();
-    using MyTypify = vespalib::eval::TypifyCellType;
-    auto fixup_fun = vespalib::typify_invoke<2,MyTypify,ConvertCellsSelector>(lct, rct);
-    fixup_fun(_query_tensor, _attr_tensor.getTensorType());
+    if (rct == vespalib::eval::CellType::FLOAT || rct == vespalib::eval::CellType::DOUBLE) {
+        // avoid downcasting to bfloat16 etc, that is just extra work
+        using MyTypify = vespalib::eval::TypifyCellType;
+        auto fixup_fun = vespalib::typify_invoke<2,MyTypify,ConvertCellsSelector>(lct, rct);
+        fixup_fun(_query_tensor, _attr_tensor.getTensorType());
+    }
     _fallback_dist_fun = search::tensor::make_distance_function(_attr_tensor.distance_metric(), rct);
     _dist_fun = _fallback_dist_fun.get();
     assert(_dist_fun);
@@ -123,18 +126,13 @@ NearestNeighborBlueprint::perform_top_k()
 {
     auto nns_index = _attr_tensor.nearest_neighbor_index();
     if (_approximate && nns_index) {
-        auto lhs_type = _query_tensor->type();
-        auto rhs_type = _attr_tensor.getTensorType();
-        // different cell types should be converted already
-        if (lhs_type == rhs_type) {
-            auto lhs = _query_tensor->cells();
-            uint32_t k = _target_num_hits;
-            if (_global_filter->has_filter()) {
-                auto filter = _global_filter->filter();
-                _found_hits = nns_index->find_top_k_with_filter(k, lhs, *filter, k + _explore_additional_hits, _distance_threshold);
-            } else {
-                _found_hits = nns_index->find_top_k(k, lhs, k + _explore_additional_hits, _distance_threshold);
-            }
+        auto lhs = _query_tensor->cells();
+        uint32_t k = _target_num_hits;
+        if (_global_filter->has_filter()) {
+            auto filter = _global_filter->filter();
+            _found_hits = nns_index->find_top_k_with_filter(k, lhs, *filter, k + _explore_additional_hits, _distance_threshold);
+        } else {
+            _found_hits = nns_index->find_top_k(k, lhs, k + _explore_additional_hits, _distance_threshold);
         }
     }
 }
