@@ -123,7 +123,7 @@ public class Nodes {
     /** Adds a list of newly created reserved nodes to the node repository */
     public List<Node> addReservedNodes(LockedNodeList nodes) {
         for (Node node : nodes) {
-            if ( ! node.flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER))
+            if ( node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
                 illegal("Cannot add " + node + ": This is not a child node");
             if (node.allocation().isEmpty())
                 illegal("Cannot add " + node + ": Child nodes need to be allocated");
@@ -257,12 +257,26 @@ public class Nodes {
      * transaction commits.
      */
     public List<Node> fail(List<Node> nodes, ApplicationTransaction transaction) {
-        return db.writeTo(Node.State.failed, nodes, Agent.application, Optional.of("Failed by application"), transaction.nested());
+        return fail(nodes, Agent.application, "Failed by application", transaction.nested());
+    }
+
+    public List<Node> fail(List<Node> nodes, Agent agent, String reason) {
+        NestedTransaction transaction = new NestedTransaction();
+        nodes = fail(nodes, agent, reason, transaction);
+        transaction.commit();;
+        return nodes;
+    }
+
+    private List<Node> fail(List<Node> nodes, Agent agent, String reason, NestedTransaction transaction) {
+        nodes = nodes.stream()
+                     .map(n -> n.withWantToFail(false, agent, clock.instant()))
+                     .collect(Collectors.toList());
+        return db.writeTo(Node.State.failed, nodes, agent, Optional.of(reason), transaction);
     }
 
     /** Move nodes to the dirty state */
     public List<Node> deallocate(List<Node> nodes, Agent agent, String reason) {
-        return performOn(NodeListFilter.from(nodes), (node, lock) -> deallocate(node, agent, reason));
+        return performOn(NodeList.copyOf(nodes), (node, lock) -> deallocate(node, agent, reason));
     }
 
     public List<Node> deallocateRecursively(String hostname, Agent agent, String reason) {
@@ -328,11 +342,32 @@ public class Nodes {
 
     /**
      * Fails all the nodes that are children of hostname before finally failing the hostname itself.
+     * Non-active nodes are failed immediately, while active nodes are marked as wantToFail.
+     * The host is failed if it has no active nodes and marked wantToFail if it has.
      *
-     * @return List of all the failed nodes in their new state
+     * @return all the nodes that were changed by this request
      */
-    public List<Node> failRecursively(String hostname, Agent agent, String reason) {
-        return moveRecursively(hostname, Node.State.failed, agent, Optional.of(reason));
+    public List<Node> failOrMarkRecursively(String hostname, Agent agent, String reason) {
+        NodeList children = list().childrenOf(hostname);
+        List<Node> changed = performOn(children, (node, lock) -> failOrMark(node, agent, reason, lock));
+
+        if (children.state(Node.State.active).isEmpty())
+            changed.add(move(hostname, true, Node.State.failed, agent, Optional.of(reason)));
+        else
+            changed.addAll(performOn(NodeList.of(node(hostname).orElseThrow()), (node, lock) -> failOrMark(node, agent, reason, lock)));
+
+        return changed;
+    }
+
+    private Node failOrMark(Node node, Agent agent, String reason, Mutex lock) {
+        if (node.state() == Node.State.active) {
+            node = node.withWantToFail(true, agent, clock.instant());
+            write(node, lock);
+            return node;
+        }
+        else {
+            return move(node, Node.State.failed, agent, Optional.of(reason));
+        }
     }
 
     /**
@@ -615,8 +650,7 @@ public class Nodes {
         try (NodeMutex lock = nodeMutex.get(); Mutex allocationLock = lockUnallocated()) {
             // This takes allocationLock to prevent any further allocation of nodes on this host
             host = lock.node();
-            NodeList children = list(allocationLock).childrenOf(host);
-            result = performOn(NodeListFilter.from(children.asList()),
+            result = performOn(list(allocationLock).childrenOf(host),
                                (node, nodeLock) -> write(node.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant),
                                                          nodeLock));
             result.add(write(host.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant), lock));
@@ -644,20 +678,22 @@ public class Nodes {
         return db.writeTo(nodes, Agent.system, Optional.empty());
     }
 
+    private List<Node> performOn(NodeFilter filter, BiFunction<Node, Mutex, Node> action) {
+        return performOn(list().matching(filter), action);
+    }
+
     /**
      * Performs an operation requiring locking on all nodes matching some filter.
      *
-     * @param filter the filter determining the set of nodes where the operation will be performed
      * @param action the action to perform
      * @return the set of nodes on which the action was performed, as they became as a result of the operation
      */
-    private List<Node> performOn(NodeFilter filter, BiFunction<Node, Mutex, Node> action) {
+    private List<Node> performOn(NodeList nodes, BiFunction<Node, Mutex, Node> action) {
         List<Node> unallocatedNodes = new ArrayList<>();
         ListMap<ApplicationId, Node> allocatedNodes = new ListMap<>();
 
         // Group matching nodes by the lock needed
-        for (Node node : db.readNodes()) {
-            if ( ! filter.matches(node)) continue;
+        for (Node node : nodes) {
             if (node.allocation().isPresent())
                 allocatedNodes.put(node.allocation().get().owner(), node);
             else

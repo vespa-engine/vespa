@@ -3,12 +3,14 @@ package com.yahoo.vespa.hosted.provision.node.filter;
 
 import com.yahoo.vespa.hosted.provision.Node;
 
+import java.util.function.Predicate;
+
 /**
  * A chainable node filter
  *
  * @author bratseth
  */
-public abstract class NodeFilter {
+public abstract class NodeFilter implements Predicate<Node> {
 
     private final NodeFilter next;
 
@@ -19,6 +21,11 @@ public abstract class NodeFilter {
 
     /** Returns whether this node matches this filter */
     public abstract boolean matches(Node node);
+
+    @Override
+    public final boolean test(Node node) {
+        return matches(node);
+    }
 
     /** Returns whether this is a match according to the chained filter */
     protected final boolean nextMatches(Node node) {

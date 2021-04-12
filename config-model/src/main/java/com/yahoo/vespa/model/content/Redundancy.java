@@ -11,8 +11,8 @@ import com.yahoo.vespa.config.search.core.ProtonConfig;
  */
 public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig.Producer {
 
-    // This numbers are all per group as wanted numbers.
-    private final int initialRedundancy ;
+    // These numbers are all per group as wanted numbers.
+    private final int initialRedundancy;
     private final int finalRedundancy;
     private final int readyCopies;
 

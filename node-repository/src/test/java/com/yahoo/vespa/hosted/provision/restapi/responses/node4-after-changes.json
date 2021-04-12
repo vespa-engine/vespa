@@ -1,7 +1,7 @@
 {
   "url": "http://localhost:8080/nodes/v2/node/host4.yahoo.com",
   "id": "host4.yahoo.com",
-  "state": "failed",
+  "state": "active",
   "type": "tenant",
   "hostname": "host4.yahoo.com",
   "parentHostname": "parent.yahoo.com",
@@ -34,7 +34,7 @@
   "currentRebootGeneration": 1,
   "vespaVersion": "6.43.0",
   "currentDockerImage": "docker-registry.domain.tld:8080/dist/vespa:6.45.0",
-  "failCount": 1,
+  "failCount": 0,
   "wantToRetire": true,
   "preferToRetire": false,
   "wantToDeprovision": false,
@@ -61,7 +61,7 @@
       "agent": "application"
     },
     {
-      "event": "failed",
+      "event": "wantToFail",
       "at": 123,
       "agent": "operator"
     },

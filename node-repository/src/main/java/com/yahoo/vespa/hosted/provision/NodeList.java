@@ -9,6 +9,9 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
@@ -286,6 +289,10 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
 
     /** Returns the nodes of this as a stream */
     public Stream<Node> stream() { return asList().stream(); }
+
+    public static NodeList of(Node ... nodes) {
+        return copyOf(List.of(nodes));
+    }
 
     public static NodeList copyOf(List<Node> nodes) {
         return new NodeList(nodes, false);
