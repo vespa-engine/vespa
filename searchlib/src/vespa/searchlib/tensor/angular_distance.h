@@ -14,7 +14,7 @@ namespace search::tensor {
  */
 class AngularDistance : public DistanceFunction {
 public:
-    AngularDistance() {}
+    AngularDistance(vespalib::eval::CellType expected) : DistanceFunction(expected) {}
     double calc(const vespalib::eval::TypedCells& lhs, const vespalib::eval::TypedCells& rhs) const override;
     double convert_threshold(double threshold) const override {
         double cosine_similarity = cos(threshold);
@@ -46,28 +46,26 @@ template <typename FloatType>
 class AngularDistanceHW : public AngularDistance {
 public:
     AngularDistanceHW()
-        : _computer(vespalib::hwaccelrated::IAccelrated::getAccelerator())
+      : AngularDistance(vespalib::eval::get_cell_type<FloatType>()),
+        _computer(vespalib::hwaccelrated::IAccelrated::getAccelerator())
     {}
     double calc(const vespalib::eval::TypedCells& lhs, const vespalib::eval::TypedCells& rhs) const override {
         constexpr vespalib::eval::CellType expected = vespalib::eval::get_cell_type<FloatType>();
-        if (__builtin_expect((lhs.type == expected && rhs.type == expected), true)) {
-            auto lhs_vector = lhs.unsafe_typify<FloatType>();
-            auto rhs_vector = rhs.unsafe_typify<FloatType>();
-            size_t sz = lhs_vector.size();
-            assert(sz == rhs_vector.size());
-            auto a = &lhs_vector[0];
-            auto b = &rhs_vector[0];
-            double a_norm_sq = _computer.dotProduct(a, a, sz);
-            double b_norm_sq = _computer.dotProduct(b, b, sz);
-            double squared_norms = a_norm_sq * b_norm_sq;
-            double dot_product = _computer.dotProduct(a, b, sz);
-            double div = (squared_norms > 0) ? sqrt(squared_norms) : 1.0;
-            double cosine_similarity = dot_product / div;
-            double distance = 1.0 - cosine_similarity; // in range [0,2]
-            return distance;
-        } else {
-            return AngularDistance::calc(lhs, rhs);
-        }
+        assert(lhs.type == expected && rhs.type == expected);
+        auto lhs_vector = lhs.typify<FloatType>();
+        auto rhs_vector = rhs.typify<FloatType>();
+        size_t sz = lhs_vector.size();
+        assert(sz == rhs_vector.size());
+        auto a = &lhs_vector[0];
+        auto b = &rhs_vector[0];
+        double a_norm_sq = _computer.dotProduct(a, a, sz);
+        double b_norm_sq = _computer.dotProduct(b, b, sz);
+        double squared_norms = a_norm_sq * b_norm_sq;
+        double dot_product = _computer.dotProduct(a, b, sz);
+        double div = (squared_norms > 0) ? sqrt(squared_norms) : 1.0;
+        double cosine_similarity = dot_product / div;
+        double distance = 1.0 - cosine_similarity; // in range [0,2]
+        return distance;
     }
 private:
     const vespalib::hwaccelrated::IAccelrated & _computer;

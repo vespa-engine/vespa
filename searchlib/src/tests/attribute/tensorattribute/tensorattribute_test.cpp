@@ -230,7 +230,7 @@ public:
 
     
     const search::tensor::DistanceFunction *distance_function() const override {
-        static search::tensor::SquaredEuclideanDistance my_dist_fun;
+        static search::tensor::SquaredEuclideanDistance my_dist_fun(vespalib::eval::CellType::DOUBLE);
         return &my_dist_fun;
     }
 };

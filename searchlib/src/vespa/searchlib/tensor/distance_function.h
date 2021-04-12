@@ -3,6 +3,7 @@
 #pragma once
 
 #include <memory>
+#include <vespa/eval/eval/cell_type.h>
 
 namespace vespalib::eval { struct TypedCells; }
 
@@ -15,9 +16,19 @@ namespace search::tensor {
  * The actual implementation must know which type the vectors are.
  */
 class DistanceFunction {
+protected:
+    vespalib::eval::CellType expect_cell_type;
 public:
     using UP = std::unique_ptr<DistanceFunction>;
+
+    DistanceFunction(vespalib::eval::CellType expected) : expect_cell_type(expected) {}
+
     virtual ~DistanceFunction() {}
+
+    // input (query) vectors must be converted to this cell type:
+    vespalib::eval::CellType expected_cell_type() const {
+        return expect_cell_type;
+    }
 
     // calculate internal distance (comparable)
     virtual double calc(const vespalib::eval::TypedCells& lhs, const vespalib::eval::TypedCells& rhs) const = 0;

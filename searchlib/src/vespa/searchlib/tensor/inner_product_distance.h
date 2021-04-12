@@ -15,7 +15,7 @@ namespace search::tensor {
  */
 class InnerProductDistance : public DistanceFunction {
 public:
-    InnerProductDistance() {}
+    InnerProductDistance(vespalib::eval::CellType expected) : DistanceFunction(expected) {}
     double calc(const vespalib::eval::TypedCells& lhs, const vespalib::eval::TypedCells& rhs) const override;
     double convert_threshold(double threshold) const override {
         return threshold;
@@ -42,20 +42,18 @@ template <typename FloatType>
 class InnerProductDistanceHW : public InnerProductDistance {
 public:
     InnerProductDistanceHW()
-        : _computer(vespalib::hwaccelrated::IAccelrated::getAccelerator())
+      : InnerProductDistance(vespalib::eval::get_cell_type<FloatType>()),
+        _computer(vespalib::hwaccelrated::IAccelrated::getAccelerator())
     {}
     double calc(const vespalib::eval::TypedCells& lhs, const vespalib::eval::TypedCells& rhs) const override {
         constexpr vespalib::eval::CellType expected = vespalib::eval::get_cell_type<FloatType>();
-        if (__builtin_expect((lhs.type == expected && rhs.type == expected), true)) {
-            auto lhs_vector = lhs.unsafe_typify<FloatType>();
-            auto rhs_vector = rhs.unsafe_typify<FloatType>();
-            size_t sz = lhs_vector.size();
-            assert(sz == rhs_vector.size());
-            double score = 1.0 - _computer.dotProduct(&lhs_vector[0], &rhs_vector[0], sz);
-            return std::max(0.0, score);
-        } else {
-            return InnerProductDistance::calc(lhs, rhs);
-        }
+        assert(lhs.type == expected && rhs.type == expected);
+        auto lhs_vector = lhs.typify<FloatType>();
+        auto rhs_vector = rhs.typify<FloatType>();
+        size_t sz = lhs_vector.size();
+        assert(sz == rhs_vector.size());
+        double score = 1.0 - _computer.dotProduct(&lhs_vector[0], &rhs_vector[0], sz);
+        return std::max(0.0, score);
     }
 private:
     const vespalib::hwaccelrated::IAccelrated & _computer;

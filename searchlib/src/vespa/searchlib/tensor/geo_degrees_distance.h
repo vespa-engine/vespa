@@ -23,7 +23,7 @@ public:
     static constexpr double earth_mean_radius = 6371.0088;
     static constexpr double degrees_to_radians = M_PI / 180.0;
 
-    GeoDegreesDistance() {}
+    GeoDegreesDistance(vespalib::eval::CellType expected) : DistanceFunction(expected) {}
     // haversine function:
     static double hav(double angle) {
         double s = sin(0.5*angle);

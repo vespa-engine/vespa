@@ -14,7 +14,7 @@ namespace search::tensor {
  */
 class SquaredEuclideanDistance : public DistanceFunction {
 public:
-    SquaredEuclideanDistance() {}
+    SquaredEuclideanDistance(vespalib::eval::CellType expected) : DistanceFunction(expected) {}
     double calc(const vespalib::eval::TypedCells& lhs, const vespalib::eval::TypedCells& rhs) const override;
     double calc_with_limit(const vespalib::eval::TypedCells& lhs,
                            const vespalib::eval::TypedCells& rhs,
@@ -38,19 +38,17 @@ template <typename FloatType>
 class SquaredEuclideanDistanceHW : public SquaredEuclideanDistance {
 public:
     SquaredEuclideanDistanceHW()
-        : _computer(vespalib::hwaccelrated::IAccelrated::getAccelerator())
+      : SquaredEuclideanDistance(vespalib::eval::get_cell_type<FloatType>()),
+        _computer(vespalib::hwaccelrated::IAccelrated::getAccelerator())
     {}
     double calc(const vespalib::eval::TypedCells& lhs, const vespalib::eval::TypedCells& rhs) const override {
         constexpr vespalib::eval::CellType expected = vespalib::eval::get_cell_type<FloatType>();
-        if (__builtin_expect((lhs.type == expected && rhs.type == expected), true)) {
-            auto lhs_vector = lhs.unsafe_typify<FloatType>();
-            auto rhs_vector = rhs.unsafe_typify<FloatType>();
-            size_t sz = lhs_vector.size();
-            assert(sz == rhs_vector.size());
-            return _computer.squaredEuclideanDistance(&lhs_vector[0], &rhs_vector[0], sz);
-        } else {
-            return SquaredEuclideanDistance::calc(lhs, rhs);
-        }
+        assert(lhs.type == expected && rhs.type == expected);
+        auto lhs_vector = lhs.typify<FloatType>();
+        auto rhs_vector = rhs.typify<FloatType>();
+        size_t sz = lhs_vector.size();
+        assert(sz == rhs_vector.size());
+        return _computer.squaredEuclideanDistance(&lhs_vector[0], &rhs_vector[0], sz);
     }
 private:
     const vespalib::hwaccelrated::IAccelrated & _computer;

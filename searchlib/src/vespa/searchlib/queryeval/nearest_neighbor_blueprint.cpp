@@ -4,7 +4,7 @@
 #include "nearest_neighbor_blueprint.h"
 #include "nearest_neighbor_iterator.h"
 #include "nns_index_iterator.h"
-#include <vespa/eval/eval/dense_cells_value.h>
+#include <vespa/eval/eval/fast_value.h>
 #include <vespa/searchlib/fef/termfieldmatchdataarray.h>
 #include <vespa/searchlib/tensor/dense_tensor_attribute.h>
 #include <vespa/searchlib/tensor/distance_function_factory.h>
@@ -12,35 +12,36 @@
 
 LOG_SETUP(".searchlib.queryeval.nearest_neighbor_blueprint");
 
-using vespalib::eval::DenseCellsValue;
+using vespalib::eval::CellType;
+using vespalib::eval::FastValueBuilderFactory;
+using vespalib::eval::TypedCells;
 using vespalib::eval::Value;
+using vespalib::eval::ValueType;
 
 namespace search::queryeval {
 
 namespace {
 
 template<typename LCT, typename RCT>
-void
-convert_cells(std::unique_ptr<Value> &original, const vespalib::eval::ValueType &want_type)
+std::unique_ptr<Value>
+convert_cells(const ValueType &new_type, TypedCells cells)
 {
-    if constexpr (std::is_same<LCT,RCT>::value) {
-        return;
-    } else {
-        auto old_cells = original->cells().typify<LCT>();
-        std::vector<RCT> new_cells;
-        new_cells.reserve(old_cells.size());
-        for (LCT value : old_cells) {
-            RCT conv(value);
-            new_cells.push_back(conv);
-        }
-        original = std::make_unique<DenseCellsValue<RCT>>(want_type, std::move(new_cells));
+    auto old_cells = cells.typify<LCT>();
+    auto builder = FastValueBuilderFactory::get().create_value_builder<RCT>(new_type);
+    auto new_cells = builder->add_subspace();
+    assert(old_cells.size() == new_cells.size());
+    auto p = new_cells.begin();
+    for (LCT value : old_cells) {
+        RCT conv(value);
+        *p++ = conv;
     }
+    return builder->build(std::move(builder));
 }
 
 struct ConvertCellsSelector
 {
     template <typename LCT, typename RCT>
-    static auto invoke() { return convert_cells<LCT, RCT>; }
+    static auto invoke(const ValueType &new_type, TypedCells old_cells) { return convert_cells<LCT, RCT>(new_type, old_cells); }
 };
 
 } // namespace <unnamed>
@@ -63,21 +64,22 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
       _found_hits(),
       _global_filter(GlobalFilter::create())
 {
-    auto lct = _query_tensor->cells().type;
-    auto rct = _attr_tensor.getTensorType().cell_type();
-    if (rct == vespalib::eval::CellType::FLOAT || rct == vespalib::eval::CellType::DOUBLE) {
-        // avoid downcasting to bfloat16 etc, that is just extra work
-        using MyTypify = vespalib::eval::TypifyCellType;
-        auto fixup_fun = vespalib::typify_invoke<2,MyTypify,ConvertCellsSelector>(lct, rct);
-        fixup_fun(_query_tensor, _attr_tensor.getTensorType());
-    }
-    _fallback_dist_fun = search::tensor::make_distance_function(_attr_tensor.distance_metric(), rct);
+    CellType attr_ct = _attr_tensor.getTensorType().cell_type();
+    _fallback_dist_fun = search::tensor::make_distance_function(_attr_tensor.distance_metric(), attr_ct);
     _dist_fun = _fallback_dist_fun.get();
     assert(_dist_fun);
     auto nns_index = _attr_tensor.nearest_neighbor_index();
     if (nns_index) {
         _dist_fun = nns_index->distance_function();
         assert(_dist_fun);
+    }
+    auto query_ct = _query_tensor->cells().type;
+    CellType want_ct = _dist_fun->expected_cell_type();
+    if (query_ct != want_ct) {
+        ValueType new_type = ValueType::make_type(want_ct, _query_tensor->type().dimensions());
+        using MyTypify = vespalib::eval::TypifyCellType;
+        TypedCells old_cells = _query_tensor->cells();
+        _query_tensor = vespalib::typify_invoke<2,MyTypify,ConvertCellsSelector>(query_ct, want_ct, new_type, old_cells);
     }
     if (distance_threshold < std::numeric_limits<double>::max()) {
         _distance_threshold = _dist_fun->convert_threshold(distance_threshold);

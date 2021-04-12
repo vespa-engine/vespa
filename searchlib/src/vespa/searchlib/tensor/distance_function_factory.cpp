@@ -21,24 +21,24 @@ make_distance_function(DistanceMetric variant, CellType cell_type)
         switch (cell_type) {
         case CellType::FLOAT:  return std::make_unique<SquaredEuclideanDistanceHW<float>>();
         case CellType::DOUBLE: return std::make_unique<SquaredEuclideanDistanceHW<double>>();
-        default:               return std::make_unique<SquaredEuclideanDistance>();
+        default:               return std::make_unique<SquaredEuclideanDistance>(CellType::FLOAT);
         } 
     case DistanceMetric::Angular:
         switch (cell_type) {
         case CellType::FLOAT:  return std::make_unique<AngularDistanceHW<float>>();
         case CellType::DOUBLE: return std::make_unique<AngularDistanceHW<double>>();
-        default:               return std::make_unique<AngularDistance>();
+        default:               return std::make_unique<AngularDistance>(CellType::FLOAT);
         }
     case DistanceMetric::GeoDegrees:
-        return std::make_unique<GeoDegreesDistance>();
+        return std::make_unique<GeoDegreesDistance>(CellType::DOUBLE);
     case DistanceMetric::InnerProduct:
         switch (cell_type) {
         case CellType::FLOAT:  return std::make_unique<InnerProductDistanceHW<float>>();
         case CellType::DOUBLE: return std::make_unique<InnerProductDistanceHW<double>>();
-        default:               return std::make_unique<InnerProductDistance>();
+        default:               return std::make_unique<InnerProductDistance>(CellType::FLOAT);
         }
     case DistanceMetric::Hamming:
-        return std::make_unique<HammingDistance>();
+        return std::make_unique<HammingDistance>(cell_type);
     }
     // not reached:
     return DistanceFunction::UP();
