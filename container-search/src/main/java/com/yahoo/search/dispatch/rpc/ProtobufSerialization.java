@@ -196,7 +196,7 @@ public class ProtobufSerialization {
         result.getResult().setTotalHitCount(protobuf.getTotalHitCount());
         result.getResult().setCoverage(convertToCoverage(protobuf));
 
-        var haveGrouping = protobuf.getGroupingBlob() != null && !protobuf.getGroupingBlob().isEmpty();
+        var haveGrouping = ! protobuf.getGroupingBlob().isEmpty();
         if (haveGrouping) {
             BufferSerializer buf = new BufferSerializer(new GrowableByteBuffer(protobuf.getGroupingBlob().asReadOnlyByteBuffer()));
             int cnt = buf.getInt(null);
@@ -219,7 +219,7 @@ public class ProtobufSerialization {
         }
 
         var slimeTrace = protobuf.getSlimeTrace();
-        if (slimeTrace != null && !slimeTrace.isEmpty()) {
+        if ( ! slimeTrace.isEmpty()) {
             var traces = new Value.ArrayValue();
             traces.add(new SlimeAdapter(BinaryFormat.decode(slimeTrace.toByteArray()).get()));
             query.trace(traces, query.getTraceLevel());

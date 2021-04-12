@@ -9,5 +9,7 @@ package com.yahoo.search.dispatch;
  * @author ollivir
  */
 public interface ResponseMonitor<T> {
+
     void responseAvailable(T from);
+
 }

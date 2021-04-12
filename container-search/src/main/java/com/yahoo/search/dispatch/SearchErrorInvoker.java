@@ -61,4 +61,5 @@ public class SearchErrorInvoker extends SearchInvoker {
     protected void setMonitor(ResponseMonitor<SearchInvoker> monitor) {
         this.monitor = monitor;
     }
+
 }

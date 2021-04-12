@@ -4,7 +4,11 @@ package com.yahoo.search.dispatch;
 
 import java.util.Arrays;
 
+/**
+ * @author baldersheim
+ */
 public class LeanHit implements Comparable<LeanHit> {
+
     private final byte [] gid;
     private final double relevance;
     private final byte [] sortData;
@@ -21,6 +25,7 @@ public class LeanHit implements Comparable<LeanHit> {
         this.partId = partId;
         this.distributionKey = distributionKey;
     }
+
     public double getRelevance() { return relevance; }
     public byte [] getGid() { return gid; }
     public byte [] getSortData() { return sortData; }
@@ -49,4 +54,5 @@ public class LeanHit implements Comparable<LeanHit> {
         int vr = (int) right[i] & 0xFF;
         return vl - vr;
     }
+
 }
