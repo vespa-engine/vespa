@@ -669,6 +669,11 @@
                 <version>9.2.0</version>
             </dependency>
             <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>2.3.2</version> <!-- 2.3.3 has a BROKEN manifest -->
+            </dependency>
+            <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-all</artifactId>
                 <version>1.3</version>
@@ -759,7 +764,7 @@
         <apache.httpclient5.version>5.0.3</apache.httpclient5.version>
         <asm.version>7.0</asm.version>
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <athenz.version>1.8.49</athenz.version>
+        <athenz.version>1.10.11</athenz.version>
         <aws.sdk.version>1.11.974</aws.sdk.version>
         <!-- WARNING: If you change curator version, you also need to update
                  zkfacade/src/main/java/org/apache/curator/**/package-info.java
