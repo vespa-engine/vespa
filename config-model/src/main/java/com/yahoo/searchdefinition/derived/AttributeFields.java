@@ -6,6 +6,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.Case;
 import com.yahoo.searchdefinition.document.Dictionary;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Ranking;
@@ -255,6 +256,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         Dictionary dictionary = attribute.getDictionary();
         if (dictionary != null) {
             aaB.dictionary.type(convert(dictionary.getType()));
+            aaB.dictionary.match(convert(dictionary.getMatch()));
         }
         return aaB;
     }
@@ -269,6 +271,15 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
                 return AttributesConfig.Attribute.Dictionary.Type.BTREE_AND_HASH;
         }
         return AttributesConfig.Attribute.Dictionary.Type.BTREE;
+    }
+    private static AttributesConfig.Attribute.Dictionary.Match.Enum convert(Case type) {
+        switch (type) {
+            case CASED:
+                return AttributesConfig.Attribute.Dictionary.Match.CASED;
+            case UNCASED:
+                return AttributesConfig.Attribute.Dictionary.Match.UNCASED;
+        }
+        return AttributesConfig.Attribute.Dictionary.Match.UNCASED;
     }
 
     public void getConfig(AttributesConfig.Builder builder, FieldSet fs) {

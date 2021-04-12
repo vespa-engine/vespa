@@ -35,6 +35,7 @@ public class Matching implements Cloneable, Serializable {
     }
 
     private Type type = Type.TEXT;
+    private Case casing = Case.UNCASED;
 
     /** The basic match algorithm */
     private Algorithm algorithm = Algorithm.NORMAL;
@@ -59,11 +60,14 @@ public class Matching implements Cloneable, Serializable {
     }
 
     public Type getType() { return type; }
+    public Case getCase() { return casing; }
 
     public void setType(Type type) {
         this.type = type;
         typeUserSet = true;
     }
+
+    public void setCase(Case casing) { this.casing = casing; }
 
     public Integer maxLength() { return maxLength; }
     public Matching maxLength(int maxLength) { this.maxLength = maxLength; return this; }

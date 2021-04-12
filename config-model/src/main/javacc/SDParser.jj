@@ -270,6 +270,8 @@ TOKEN :
 | < NORMALIZING: "normalizing" >
 | < HASH: "hash" >
 | < BTREE: "btree" >
+| < CASED: "cased" >
+| < UNCASED: "uncased" >
 | < BOLDING: "bolding" >
 | < BODY: "body" >
 | < HEADER: "header" >
@@ -1530,24 +1532,25 @@ void bolding(FieldOperationContainer field) :
  */
 void dictionary(FieldOperationContainer field) :
 {
-    Dictionary.Type type;
 }
 {
-    <DICTIONARY> <COLON> type = dictionaryType()
+    <DICTIONARY>
+    ( (<COLON> dictionarySetting(field))
+    | (lbrace() (dictionarySetting(field) (<NL>)*)* <RBRACE>))
     {
-        field.addOperation(new DictionaryOperation(type));
     }
 }
 
-Dictionary.Type dictionaryType() :
+void dictionarySetting(FieldOperationContainer field) :
 {
     Dictionary.Type type;
 }
 {
-    (   <HASH>            { type = Dictionary.Type.HASH; }
-      | <BTREE>           { type = Dictionary.Type.BTREE; } )
+    (   <HASH>            { field.addOperation(new DictionaryOperation(DictionaryOperation.Operation.HASH)); }
+      | <BTREE>           { field.addOperation(new DictionaryOperation(DictionaryOperation.Operation.BTREE)); }
+      | <CASED>           { field.addOperation(new DictionaryOperation(DictionaryOperation.Operation.CASED)); }
+      | <UNCASED>           { field.addOperation(new DictionaryOperation(DictionaryOperation.Operation.UNCASED)); })
     {
-        return type;
     }
 }
 
@@ -1624,19 +1627,21 @@ Object matchItem(FieldOperationContainer field) : { }
 
 Object matchType(FieldOperationContainer container) :
 {
-    MatchOperation field = new MatchOperation();
+    MatchOperation matchOp = new MatchOperation();
 }
 {
-    (   <MTOKEN>    { field.setMatchingType(Matching.Type.TEXT); } // Deprecated synonym to TEXT
-      | <TEXT>      { field.setMatchingType(Matching.Type.TEXT); }
-      | <WORD>      { field.setMatchingType(Matching.Type.WORD); }
-      | <EXACT>     { field.setMatchingType(Matching.Type.EXACT); }
-      | <GRAM>      { field.setMatchingType(Matching.Type.GRAM); }
-      | <PREFIX>    { field.setMatchingAlgorithm(Matching.Algorithm.PREFIX); }
-      | <SUBSTRING> { field.setMatchingAlgorithm(Matching.Algorithm.SUBSTRING); }
-      | <SUFFIX>    { field.setMatchingAlgorithm(Matching.Algorithm.SUFFIX); } )
+    (   <MTOKEN>    { matchOp.setMatchingType(Matching.Type.TEXT); } // Deprecated synonym to TEXT
+      | <TEXT>      { matchOp.setMatchingType(Matching.Type.TEXT); }
+      | <WORD>      { matchOp.setMatchingType(Matching.Type.WORD); }
+      | <EXACT>     { matchOp.setMatchingType(Matching.Type.EXACT); }
+      | <GRAM>      { matchOp.setMatchingType(Matching.Type.GRAM); }
+      | <CASED>     { matchOp.setCase(Case.CASED); }
+      | <UNCASED>   { matchOp.setCase(Case.UNCASED); }
+      | <PREFIX>    { matchOp.setMatchingAlgorithm(Matching.Algorithm.PREFIX); }
+      | <SUBSTRING> { matchOp.setMatchingAlgorithm(Matching.Algorithm.SUBSTRING); }
+      | <SUFFIX>    { matchOp.setMatchingAlgorithm(Matching.Algorithm.SUFFIX); } )
     {
-        container.addOperation(field);
+        container.addOperation(matchOp);
         return null;
     }
 }
@@ -2642,6 +2647,7 @@ String identifier() : { }
       | <BODY>
       | <BOLDING>
       | <BTREE>
+      | <CASED>
       | <COMPRESSION>
       | <COMPRESSIONLEVEL>
       | <COMPRESSIONTHRESHOLD>
@@ -2747,6 +2753,7 @@ String identifier() : { }
       | <TRUE>
       | <TYPE>
       | <UCA>
+      | <UNCASED>
       | <URI>
       | <UPPERBOUND>
       | <USEDOCUMENT>

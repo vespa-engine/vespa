@@ -9,8 +9,27 @@ package com.yahoo.searchdefinition.document;
  */
 public class Dictionary {
     public enum Type { BTREE, HASH, BTREE_AND_HASH };
-    private final Type type;
-    public Dictionary() { this(Type.BTREE); }
-    public Dictionary(Type type) { this.type = type; }
-    public Type getType() { return type; }
+    private Type type = null;
+    private Case casing= null;
+
+    public void updateType(Type type) {
+        if (this.type == null) {
+            this.type = type;
+        } else if ((this.type == Type.BTREE) && (type == Type.HASH)) {
+            this.type = Type.BTREE_AND_HASH;
+        } else if ((this.type == Type.HASH) && (type == Type.BTREE)) {
+            this.type = Type.BTREE_AND_HASH;
+        } else {
+            throw new IllegalArgumentException("Can not combine previous dictionary setting " + this.type +
+                    " with current " + type);
+        }
+    }
+    public void updateMatch(Case casing) {
+        if (this.casing != null) {
+            throw new IllegalArgumentException("dictionary match mode has already been set to " + this.casing);
+        }
+        this.casing = casing;
+    }
+    public Type getType() { return (type != null) ? type : Type.BTREE; }
+    public Case getMatch() { return (casing != null) ? casing : Case.UNCASED; }
 }
