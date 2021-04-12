@@ -460,7 +460,7 @@ sub http_prepare {
 
   my $url = $source . $pathPrefix . "/$session_id/prepared";
   $url = add_url_property_from_flag($url, $opt_f, "ignoreValidationErrors");
-  $url = add_url_property_from_flag($url, $opt_n, "dryrun");
+  $url = add_url_property_from_flag($url, $opt_n, "dryRun");
   $url = add_url_property_from_flag($url, $opt_v, "verbose");
   $url = add_url_property_from_flag($url, $opt_H, "hostedVespa");
   $url = add_url_property_from_option($url, $opt_a, "applicationName");
