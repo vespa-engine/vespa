@@ -558,6 +558,17 @@ public class SDField extends Field implements TypedKey, FieldOperationContainer,
     }
 
     /**
+     * Set the matching type for this field and all subfields.
+     */
+    // TODO: When this is not the same as getMatching().setthis we have a potential for inconsistency. Find the right
+    //       Matching object for struct fields as lookup time instead.
+    public void setMatchingCase(Case casing) {
+        this.getMatching().setCase(casing);
+        for (SDField structField : getStructFields()) {
+            structField.setMatchingCase(casing);
+        }
+    }
+    /**
      * Set matching algorithm for this field and all subfields.
      */
     // TODO: When this is not the same as getMatching().setthis we have a potential for inconsistency. Find the right

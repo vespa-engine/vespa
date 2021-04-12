@@ -2,6 +2,7 @@
 
 package com.yahoo.searchdefinition.fieldoperation;
 
+import com.yahoo.searchdefinition.document.Case;
 import com.yahoo.searchdefinition.document.Dictionary;
 import com.yahoo.searchdefinition.document.SDField;
 
@@ -28,10 +29,10 @@ public class DictionaryOperation implements FieldOperation {
                 dictionary.updateType(Dictionary.Type.BTREE);
                 break;
             case CASED:
-                dictionary.updateMatch(Dictionary.Match.CASED);
+                dictionary.updateMatch(Case.CASED);
                 break;
             case UNCASED:
-                dictionary.updateMatch(Dictionary.Match.UNCASED);
+                dictionary.updateMatch(Case.UNCASED);
                 break;
             default:
                 throw new IllegalArgumentException("Unhandled operation " + operation);

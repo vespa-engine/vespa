@@ -7,7 +7,9 @@ import com.yahoo.document.PrimitiveDataType;
 import com.yahoo.searchdefinition.RankProfileRegistry;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.Case;
 import com.yahoo.searchdefinition.document.Dictionary;
+import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.document.SDField;
 import com.yahoo.vespa.model.container.search.QueryProfiles;
 
@@ -36,6 +38,19 @@ public class DictionaryProcessor extends Processor {
                 }
             } else if (attribute.getDataType().getPrimitiveType() == PrimitiveDataType.STRING) {
                 attribute.setDictionary(dictionary);
+                Matching matching = field.getMatching();
+                if (dictionary.getType() == Dictionary.Type.HASH) {
+                    if (dictionary.getMatch() != Case.CASED) {
+                        fail(search, field, "hash dictionary require cased match");
+                    }
+                } else {
+                    if (dictionary.getMatch() != Case.UNCASED) {
+                        fail(search, field, "btree dictionary require uncased match");
+                    }
+                }
+                if (! dictionary.getMatch().equals(matching.getCase())) {
+                    fail(search, field, "Dictionary casing '" + dictionary.getMatch() + "' does not match field match casing '" + matching.getCase() + "'");
+                }
             } else {
                 fail(search, field, "You can only specify 'dictionary:' for numeric or string fields");
             }

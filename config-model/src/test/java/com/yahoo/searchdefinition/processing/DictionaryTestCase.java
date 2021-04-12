@@ -6,7 +6,10 @@ import com.yahoo.config.model.test.TestUtil;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.SearchBuilder;
 import com.yahoo.searchdefinition.derived.AttributeFields;
+import com.yahoo.searchdefinition.document.Case;
 import com.yahoo.searchdefinition.document.Dictionary;
+import com.yahoo.searchdefinition.document.ImmutableSDField;
+import com.yahoo.searchdefinition.document.Matching;
 import com.yahoo.searchdefinition.parser.ParseException;
 import com.yahoo.vespa.config.search.AttributesConfig;
 import org.junit.Test;
@@ -57,10 +60,7 @@ public class DictionaryTestCase {
                 getConfig(search).attribute().get(1).dictionary().match());
     }
 
-    Search verifyDictionaryControl(Dictionary.Type expected,
-                                 AttributesConfig.Attribute.Dictionary.Type.Enum expectedConfig,
-                                 String type,
-                                 String ... cfg) throws ParseException
+    Search verifyDictionaryControl(Dictionary.Type expected, String type, String ... cfg) throws ParseException
     {
         String def = TestUtil.joinLines(
                 "search test {",
@@ -73,137 +73,131 @@ public class DictionaryTestCase {
                 "    }",
                 "}");
         Search search = createSearch(def);
+        AttributesConfig.Attribute.Dictionary.Type.Enum expectedConfig = toCfg(expected);
         assertEquals(expected, search.getAttribute("n1").getDictionary().getType());
         assertEquals(expectedConfig, getConfig(search).attribute().get(0).dictionary().type());
         return search;
     }
 
-    void verifyStringDictionaryControl(Dictionary.Type expectedType,Dictionary.Match expectedCase,
-                                       AttributesConfig.Attribute.Dictionary.Type.Enum expectedTypeCfg,
-                                       AttributesConfig.Attribute.Dictionary.Match.Enum expectedCaseCfg,
-                                       String type,
+    AttributesConfig.Attribute.Dictionary.Type.Enum toCfg(Dictionary.Type v) {
+        return (v == Dictionary.Type.HASH)
+                ? AttributesConfig.Attribute.Dictionary.Type.Enum.HASH
+                : (v == Dictionary.Type.BTREE)
+                    ? AttributesConfig.Attribute.Dictionary.Type.Enum.BTREE
+                    : AttributesConfig.Attribute.Dictionary.Type.Enum.BTREE_AND_HASH;
+    }
+    AttributesConfig.Attribute.Dictionary.Match.Enum toCfg(Case v) {
+        return (v == Case.CASED)
+                ? AttributesConfig.Attribute.Dictionary.Match.Enum.CASED
+                : AttributesConfig.Attribute.Dictionary.Match.Enum.UNCASED;
+    }
+
+    void verifyStringDictionaryControl(Dictionary.Type expectedType, Case expectedCase, Case matchCasing,
                                        String ... cfg) throws ParseException
     {
-
-        Search search = verifyDictionaryControl(expectedType, expectedTypeCfg, type, cfg);
+        Search search = verifyDictionaryControl(expectedType, "string", cfg);
+        ImmutableSDField f = search.getField("n1");
+        AttributesConfig.Attribute.Dictionary.Match.Enum expectedCaseCfg = toCfg(expectedCase);
+        assertEquals(matchCasing, f.getMatching().getCase());
         assertEquals(expectedCase, search.getAttribute("n1").getDictionary().getMatch());
         assertEquals(expectedCaseCfg, getConfig(search).attribute().get(0).dictionary().match());
     }
 
     @Test
     public void testCasedBtreeSettings() throws ParseException {
-        verifyDictionaryControl(Dictionary.Type.BTREE,
-                AttributesConfig.Attribute.Dictionary.Type.BTREE,
-                "int",
-                "dictionary:cased");
+        verifyDictionaryControl(Dictionary.Type.BTREE, "int", "dictionary:cased");
     }
 
     @Test
     public void testNumericBtreeSettings() throws ParseException {
-        verifyDictionaryControl(Dictionary.Type.BTREE,
-                AttributesConfig.Attribute.Dictionary.Type.BTREE,
-                "int",
-                "dictionary:btree");
+        verifyDictionaryControl(Dictionary.Type.BTREE, "int", "dictionary:btree");
     }
     @Test
     public void testNumericHashSettings() throws ParseException {
-        verifyDictionaryControl(Dictionary.Type.HASH,
-                AttributesConfig.Attribute.Dictionary.Type.HASH,
-                "int",
-                "dictionary:hash");
+        verifyDictionaryControl(Dictionary.Type.HASH, "int", "dictionary:hash");
     }
     @Test
     public void testNumericBtreeAndHashSettings() throws ParseException {
-        verifyDictionaryControl(Dictionary.Type.BTREE_AND_HASH,
-                AttributesConfig.Attribute.Dictionary.Type.BTREE_AND_HASH,
-                "int",
-                "dictionary:btree", "dictionary:hash");
+        verifyDictionaryControl(Dictionary.Type.BTREE_AND_HASH, "int", "dictionary:btree", "dictionary:hash");
     }
     @Test
     public void testNumericArrayBtreeAndHashSettings() throws ParseException {
-        verifyDictionaryControl(Dictionary.Type.BTREE_AND_HASH,
-                AttributesConfig.Attribute.Dictionary.Type.BTREE_AND_HASH,
-                "array<int>",
-                "dictionary:btree", "dictionary:hash");
+        verifyDictionaryControl(Dictionary.Type.BTREE_AND_HASH, "array<int>", "dictionary:btree", "dictionary:hash");
     }
     @Test
     public void testNumericWSetBtreeAndHashSettings() throws ParseException {
-        verifyDictionaryControl(Dictionary.Type.BTREE_AND_HASH,
-                AttributesConfig.Attribute.Dictionary.Type.BTREE_AND_HASH,
-                "weightedset<int>",
-                "dictionary:btree", "dictionary:hash");
+        verifyDictionaryControl(Dictionary.Type.BTREE_AND_HASH, "weightedset<int>", "dictionary:btree", "dictionary:hash");
     }
     @Test
     public void testStringBtreeSettings() throws ParseException {
-        verifyStringDictionaryControl(Dictionary.Type.BTREE, Dictionary.Match.UNCASED,
-                AttributesConfig.Attribute.Dictionary.Type.BTREE,
-                AttributesConfig.Attribute.Dictionary.Match.UNCASED,
-                "string",
+        verifyStringDictionaryControl(Dictionary.Type.BTREE, Case.UNCASED, Case.UNCASED,
                 "dictionary:btree");
     }
     @Test
     public void testStringBtreeUnCasedSettings() throws ParseException {
-        verifyStringDictionaryControl(Dictionary.Type.BTREE, Dictionary.Match.UNCASED,
-                AttributesConfig.Attribute.Dictionary.Type.BTREE,
-                AttributesConfig.Attribute.Dictionary.Match.UNCASED,
-                "string",
+        verifyStringDictionaryControl(Dictionary.Type.BTREE, Case.UNCASED, Case.UNCASED,
                 "dictionary { btree\nuncased\n}");
     }
     @Test
     public void testStringBtreeCasedSettings() throws ParseException {
-        verifyStringDictionaryControl(Dictionary.Type.BTREE, Dictionary.Match.CASED,
-                AttributesConfig.Attribute.Dictionary.Type.BTREE,
-                AttributesConfig.Attribute.Dictionary.Match.CASED,
-                "string",
-                "dictionary { btree\ncased\n}");
+        try {
+            verifyStringDictionaryControl(Dictionary.Type.BTREE, Case.CASED, Case.CASED,
+                    "dictionary { btree\ncased\n}");
+        } catch (IllegalArgumentException e) {
+            assertEquals("For search 'test', field 'n1': btree dictionary require uncased match", e.getMessage());
+        }
     }
     @Test
     public void testStringHashSettings() throws ParseException {
-        verifyStringDictionaryControl(Dictionary.Type.HASH, Dictionary.Match.UNCASED,
-                AttributesConfig.Attribute.Dictionary.Type.HASH,
-                AttributesConfig.Attribute.Dictionary.Match.UNCASED,
-                "string",
+        try {
+        verifyStringDictionaryControl(Dictionary.Type.HASH, Case.UNCASED, Case.UNCASED,
                 "dictionary:hash");
+        } catch (IllegalArgumentException e) {
+            assertEquals("For search 'test', field 'n1': hash dictionary require cased match", e.getMessage());
+        }
     }
     @Test
     public void testStringHashUnCasedSettings() throws ParseException {
-        verifyStringDictionaryControl(Dictionary.Type.HASH, Dictionary.Match.UNCASED,
-                AttributesConfig.Attribute.Dictionary.Type.HASH,
-                AttributesConfig.Attribute.Dictionary.Match.UNCASED,
-                "string",
-                "dictionary { hash\nuncased\n}");
+        try {
+            verifyStringDictionaryControl(Dictionary.Type.HASH, Case.UNCASED, Case.UNCASED,
+                    "dictionary { hash\nuncased\n}");
+        } catch (IllegalArgumentException e) {
+            assertEquals("For search 'test', field 'n1': hash dictionary require cased match", e.getMessage());
+        }
+    }
+    @Test
+    public void testStringHashBothCasedSettings() throws ParseException {
+        verifyStringDictionaryControl(Dictionary.Type.HASH, Case.CASED, Case.CASED,
+                "dictionary { hash\ncased\n}", "match:cased");
     }
     @Test
     public void testStringHashCasedSettings() throws ParseException {
-        verifyStringDictionaryControl(Dictionary.Type.HASH, Dictionary.Match.CASED,
-                AttributesConfig.Attribute.Dictionary.Type.HASH,
-                AttributesConfig.Attribute.Dictionary.Match.CASED,
-                "string",
-                "dictionary { hash\ncased\n}");
+        try {
+            verifyStringDictionaryControl(Dictionary.Type.HASH, Case.CASED, Case.CASED,
+                    "dictionary { hash\ncased\n}");
+            fail();
+        } catch (IllegalArgumentException e) {
+            assertEquals("For search 'test', field 'n1': Dictionary casing 'CASED' does not match field match casing 'UNCASED'", e.getMessage());
+        }
     }
     @Test
     public void testStringBtreeHashSettings() throws ParseException {
-        verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Dictionary.Match.UNCASED,
-                AttributesConfig.Attribute.Dictionary.Type.BTREE_AND_HASH,
-                AttributesConfig.Attribute.Dictionary.Match.UNCASED,
-                "string",
+        verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.UNCASED, Case.UNCASED,
                 "dictionary{hash\nbtree\n}");
     }
     @Test
     public void testStringBtreeHashUnCasedSettings() throws ParseException {
-        verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Dictionary.Match.UNCASED,
-                AttributesConfig.Attribute.Dictionary.Type.BTREE_AND_HASH,
-                AttributesConfig.Attribute.Dictionary.Match.UNCASED,
-                "string",
+        verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.UNCASED, Case.UNCASED,
                 "dictionary { hash\nbtree\nuncased\n}");
     }
     @Test
     public void testStringBtreeHashCasedSettings() throws ParseException {
-        verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Dictionary.Match.CASED,
-                AttributesConfig.Attribute.Dictionary.Type.BTREE_AND_HASH,
-                AttributesConfig.Attribute.Dictionary.Match.CASED,
-                "string",
-                "dictionary { btree\nhash\ncased\n}");
+        try {
+            verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.CASED, Case.CASED,
+                    "dictionary { btree\nhash\ncased\n}");
+        } catch (IllegalArgumentException e) {
+            assertEquals("For search 'test', field 'n1': btree dictionary require uncased match", e.getMessage());
+        }
     }
     @Test
     public void testNonNumericFieldsFailsDictionaryControl() throws ParseException {

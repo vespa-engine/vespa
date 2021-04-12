@@ -6,6 +6,7 @@ import com.yahoo.document.DataType;
 import com.yahoo.document.PositionDataType;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.Case;
 import com.yahoo.searchdefinition.document.Dictionary;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Ranking;
@@ -271,7 +272,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
         }
         return AttributesConfig.Attribute.Dictionary.Type.BTREE;
     }
-    private static AttributesConfig.Attribute.Dictionary.Match.Enum convert(Dictionary.Match type) {
+    private static AttributesConfig.Attribute.Dictionary.Match.Enum convert(Case type) {
         switch (type) {
             case CASED:
                 return AttributesConfig.Attribute.Dictionary.Match.CASED;

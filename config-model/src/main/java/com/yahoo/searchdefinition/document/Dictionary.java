@@ -9,9 +9,8 @@ package com.yahoo.searchdefinition.document;
  */
 public class Dictionary {
     public enum Type { BTREE, HASH, BTREE_AND_HASH };
-    public enum Match { CASED, UNCASED };
     private Type type = null;
-    private Match match = null;
+    private Case casing= null;
 
     public void updateType(Type type) {
         if (this.type == null) {
@@ -25,12 +24,12 @@ public class Dictionary {
                     " with current " + type);
         }
     }
-    public void updateMatch(Match match) {
-        if (this.match != null) {
-            throw new IllegalArgumentException("dictionary match mode has already been set to " + this.match);
+    public void updateMatch(Case casing) {
+        if (this.casing != null) {
+            throw new IllegalArgumentException("dictionary match mode has already been set to " + this.casing);
         }
-        this.match = match;
+        this.casing = casing;
     }
     public Type getType() { return (type != null) ? type : Type.BTREE; }
-    public Match getMatch() { return (match != null) ? match : Match.UNCASED; }
+    public Case getMatch() { return (casing != null) ? casing : Case.UNCASED; }
 }
