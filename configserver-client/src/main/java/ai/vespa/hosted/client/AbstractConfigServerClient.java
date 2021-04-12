@@ -133,7 +133,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         }
 
         @Override
-        public RequestBuilder at(String... pathSegments) {
+        public RequestBuilder at(List<String> pathSegments) {
             uriBuilder.setPathSegments(requireNonNull(pathSegments));
             return this;
         }
@@ -150,12 +150,12 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         }
 
         @Override
-        public RequestBuilder parameters(String... pairs) {
-            if (pairs.length % 2 != 0)
+        public RequestBuilder parameters(List<String> pairs) {
+            if (pairs.size() % 2 != 0)
                 throw new IllegalArgumentException("Must supply parameter key/values in pairs");
 
-            for (int i = 0; i < pairs.length; )
-                uriBuilder.setParameter(pairs[i++], pairs[i++]);
+            for (int i = 0; i < pairs.size(); )
+                uriBuilder.setParameter(pairs.get(i++), pairs.get(i++));
 
             return this;
         }

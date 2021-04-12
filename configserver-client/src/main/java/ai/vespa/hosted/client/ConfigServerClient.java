@@ -12,6 +12,7 @@ import java.io.UncheckedIOException;
 import java.net.URI;
 import java.time.Duration;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.function.BiFunction;
@@ -33,7 +34,10 @@ public interface ConfigServerClient extends AutoCloseable {
     interface RequestBuilder {
 
         /** Sets the request path. */
-        RequestBuilder at(String... pathSegments);
+        default RequestBuilder at(String... pathSegments) { return at(List.of(pathSegments)); }
+
+        /** Sets the request path. */
+        RequestBuilder at(List<String> pathSegments);
 
         /** Sets the request body as UTF-8 application/json. */
         RequestBuilder body(byte[] json);
@@ -42,7 +46,12 @@ public interface ConfigServerClient extends AutoCloseable {
         RequestBuilder body(HttpEntity entity);
 
         /** Sets the parameter key/values for the request. Number of arguments must be even. */
-        RequestBuilder parameters(String... pairs);
+        default RequestBuilder parameters(String... pairs) {
+            return parameters(Arrays.asList(pairs));
+        }
+
+        /** Sets the parameter key/values for the request. Number of arguments must be even. */
+        RequestBuilder parameters(List<String> pairs);
 
         /** Overrides the default socket read timeout of the request. {@code Duration.ZERO} gives infinite timeout. */
         RequestBuilder timeout(Duration timeout);
