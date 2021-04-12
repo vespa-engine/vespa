@@ -64,8 +64,8 @@ public:
     virtual vespalib::MemoryUsage get_values_memory_usage() const = 0;
     virtual vespalib::MemoryUsage get_dictionary_memory_usage() const = 0;
     virtual vespalib::MemoryUsage update_stat() = 0;
-    virtual std::unique_ptr<EnumIndexRemapper> consider_compact(const CompactionStrategy& compaction_strategy) = 0;
-    virtual std::unique_ptr<EnumIndexRemapper> compact_worst(bool compact_memory, bool compact_address_space) = 0;
+    virtual std::unique_ptr<EnumIndexRemapper> consider_compact_values(const CompactionStrategy& compaction_strategy) = 0;
+    virtual std::unique_ptr<EnumIndexRemapper> compact_worst_values(bool compact_memory, bool compact_address_space) = 0;
     virtual uint64_t get_compaction_count() const = 0;
     // Should only be used by unit tests.
     virtual void inc_compaction_count() = 0;

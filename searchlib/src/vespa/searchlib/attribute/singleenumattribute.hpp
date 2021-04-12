@@ -94,7 +94,7 @@ SingleValueEnumAttribute<B>::onCommit()
     freezeEnumDictionary();
     std::atomic_thread_fence(std::memory_order_release);
     this->removeAllOldGenerations();
-    auto remapper = this->_enumStore.consider_compact(this->getConfig().getCompactionStrategy());
+    auto remapper = this->_enumStore.consider_compact_values(this->getConfig().getCompactionStrategy());
     if (remapper) {
         remap_enum_store_refs(*remapper, *this);
         remapper->done();

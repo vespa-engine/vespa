@@ -177,7 +177,7 @@ ReferenceAttribute::onCommit()
 {
     // Note: Cost can be reduced if unneeded generation increments are dropped
     incGeneration();
-    if (considerCompact(getConfig().getCompactionStrategy())) {
+    if (consider_compact_values(getConfig().getCompactionStrategy())) {
         incGeneration();
         updateStat(true);
     }
@@ -282,20 +282,20 @@ ReferenceAttribute::getReference(DocId doc) const
 }
 
 bool
-ReferenceAttribute::considerCompact(const CompactionStrategy &compactionStrategy)
+ReferenceAttribute::consider_compact_values(const CompactionStrategy &compactionStrategy)
 {
-    size_t usedBytes = _cached_unique_store_values_memory_usage.usedBytes();
-    size_t deadBytes = _cached_unique_store_values_memory_usage.deadBytes();
-    bool compactMemory = compactionStrategy.should_compact_memory(usedBytes, deadBytes);
-    if (compactMemory) {
-        compactWorst();
+    size_t used_bytes = _cached_unique_store_values_memory_usage.usedBytes();
+    size_t dead_bytes = _cached_unique_store_values_memory_usage.deadBytes();
+    bool compact_memory = compactionStrategy.should_compact_memory(used_bytes, dead_bytes);
+    if (compact_memory) {
+        compact_worst_values();
         return true;
     }
     return false;
 }
 
 void
-ReferenceAttribute::compactWorst()
+ReferenceAttribute::compact_worst_values()
 {
     auto remapper(_store.compact_worst(true, true));
     if (remapper) {
