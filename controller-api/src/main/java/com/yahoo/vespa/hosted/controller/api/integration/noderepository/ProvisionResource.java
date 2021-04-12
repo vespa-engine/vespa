@@ -43,7 +43,7 @@ public interface ProvisionResource {
 
     @GET
     @Path("/node/")
-    NodeList listNodes(@QueryParam("recursive") boolean recursive);
+    NodeList listNodes(@QueryParam("recursive") boolean recursive, @QueryParam("includeDeprovisioned") boolean includeDeprovisioned);
 
     @GET
     @Path("/node/")

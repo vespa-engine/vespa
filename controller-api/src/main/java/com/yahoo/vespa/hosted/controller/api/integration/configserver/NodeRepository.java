@@ -44,7 +44,7 @@ public interface NodeRepository {
     NodeList listNodes(ZoneId zone);
 
     /** List all nodes in given zone */
-    List<Node> list(ZoneId zone);
+    List<Node> list(ZoneId zone, boolean includeDeprovisioned);
 
     /** List all nodes in zone having given hostnames */
     List<Node> list(ZoneId zone, List<HostName> hostnames);

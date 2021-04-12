@@ -176,7 +176,7 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     @Override
-    public List<Node> list(ZoneId zone) {
+    public List<Node> list(ZoneId zone, boolean includeDeprovisioned) {
         return List.copyOf(nodeRepository.getOrDefault(zone, Map.of()).values());
     }
 

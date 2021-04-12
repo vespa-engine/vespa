@@ -43,7 +43,7 @@ public class ResourceTagMaintainer extends ControllerMaintainer {
 
     private Map<HostName, Optional<ApplicationId>> getTenantOfParentHosts(ZoneId zoneId) {
         return controller().serviceRegistry().configServer().nodeRepository()
-                .list(zoneId)
+                .list(zoneId, false)
                 .stream()
                 .filter(node -> node.type().isHost())
                 .collect(Collectors.toMap(
