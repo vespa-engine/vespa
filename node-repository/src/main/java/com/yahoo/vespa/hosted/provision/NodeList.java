@@ -281,9 +281,7 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     public Stream<Node> stream() { return asList().stream(); }
 
     public static NodeList of(Node ... nodes) {
-        List<Node> nodeList = new ArrayList<>();
-        Collections.addAll(nodeList, nodes);
-        return copyOf(nodeList);
+        return copyOf(List.of(nodes));
     }
 
     public static NodeList copyOf(List<Node> nodes) {
