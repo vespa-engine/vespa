@@ -50,6 +50,7 @@ public:
     void fail(const Bucket & bucket) override {
         assert(bucket.getBucketId() == _meta.bucketId);
         auto & master = _job->_master;
+        if (_job->_stopped) return;
         master.execute(makeLambdaTask([job=std::move(_job)] { job->_scanItr.reset(); }));
     }
 private:
@@ -78,6 +79,7 @@ void
 CompactionJob::moveDocument(std::shared_ptr<CompactionJob> job, const search::DocumentMetaData & metaThen,
                             std::shared_ptr<IDestructorCallback> context)
 {
+    if (job->_stopped) return; //TODO Remove once lidtracker is no longer in use.
     // The real lid must be sampled in the master thread.
     //TODO remove target lid from createMoveOperation interface
     auto op = job->_handler->createMoveOperation(metaThen, 0);
@@ -86,6 +88,7 @@ CompactionJob::moveDocument(std::shared_ptr<CompactionJob> job, const search::Do
     if (metaThen.gid != op->getDocument()->getId().getGlobalId()) return;
 
     auto & master = job->_master;
+    if (job->_stopped) return;
     master.execute(makeLambdaTask([self=std::move(job), meta=metaThen, moveOp=std::move(op), onDone=std::move(context)]() mutable {
         if (self->_stopped.load(std::memory_order_relaxed)) return;
         self->completeMove(meta, std::move(moveOp), std::move(onDone));

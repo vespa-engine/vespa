@@ -181,6 +181,7 @@ private:
 void
 BucketMoveJobV2::failOperation(std::shared_ptr<BucketMoveJobV2> job, BucketId bucketId) {
     auto & master = job->_master;
+    if (job->_stopped) return;
     master.execute(makeLambdaTask([job=std::move(job), bucketId]() {
         if (job->_stopped.load(std::memory_order_relaxed)) return;
         job->considerBucket(job->_ready.meta_store()->getBucketDB().takeGuard(), bucketId);
@@ -203,8 +204,10 @@ BucketMoveJobV2::startMove(BucketMoverSP mover, size_t maxDocsToMove) {
 void
 BucketMoveJobV2::prepareMove(std::shared_ptr<BucketMoveJobV2> job, BucketMoverSP mover, std::vector<MoveKey> keys, IDestructorCallbackSP onDone)
 {
+    if (job->_stopped) return; //TODO Remove once lidtracker is no longer in use.
     auto moveOps = mover->createMoveOperations(std::move(keys));
     auto & master = job->_master;
+    if (job->_stopped) return;
     master.execute(makeLambdaTask([job=std::move(job), mover=std::move(mover), moveOps=std::move(moveOps), onDone=std::move(onDone)]() mutable {
         if (job->_stopped.load(std::memory_order_relaxed)) return;
         job->completeMove(std::move(mover), std::move(moveOps), std::move(onDone));
