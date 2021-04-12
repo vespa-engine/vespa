@@ -23,30 +23,10 @@ import java.util.Set;
  */
 public class Index {
 
-    public static class Attribute {
-
-        private boolean tokenizedContent = false;
-        public final String name;
-
-        public Attribute(String name) {
-            this.name = name;
-        }
-
-        public boolean isTokenizedContent() {
-            return tokenizedContent;
-        }
-
-        public void setTokenizedContent(boolean tokenizedContent) {
-            this.tokenizedContent = tokenizedContent;
-        }
-    }
-
     /** The null index - don't use this for name lookups */
     public static final Index nullIndex = new Index("(null)");
 
     private final String name;
-
-    private String type; // TODO: Parse to a type object; do not expose this as a string
 
     private final List<String> aliases = new ArrayList<>();
 
