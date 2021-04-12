@@ -4,8 +4,9 @@ package com.yahoo.vespa.config.server.http;
 import ai.vespa.util.http.hc4.VespaHttpClientBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.yolean.Exceptions;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 import java.io.IOException;
 
@@ -14,12 +15,12 @@ import java.io.IOException;
  */
 public class LogRetriever {
 
-    private final HttpClient httpClient = VespaHttpClientBuilder.create().build();
+    private final CloseableHttpClient httpClient = VespaHttpClientBuilder.create().build();
 
     public HttpResponse getLogs(String logServerHostname) {
         HttpGet get = new HttpGet(logServerHostname);
-        try {
-            return new ProxyResponse(httpClient.execute(get));
+        try (CloseableHttpResponse response = httpClient.execute(get)) {
+            return new ProxyResponse(response);
         } catch (IOException e) {
             return HttpErrorResponse.internalServerError("Failed to get logs: " + Exceptions.toMessageString(e));
         }
