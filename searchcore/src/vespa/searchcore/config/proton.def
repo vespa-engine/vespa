@@ -71,8 +71,10 @@ flush.memory.each.maxmemory long default=1073741824
 flush.memory.each.diskbloatfactor double default=0.2
 
 ## Age of unflushed content before forcing age prioritization.
-## Unit is seconds with 1 day being the default.
-flush.memory.maxage.time double default=86400.0
+## Unit is seconds with 31 hours being the default.
+## 31 is selected as it is both a prime and (31-24=7) is a prime and hence it will
+## not be closer to a multiple of a day for a month, and it will be at least one hour away.
+flush.memory.maxage.time double default=111600.0
 
 ## When resource limit for memory is reached we choose a conservative mode for the flush strategy.
 ## In this case this factor is multiplied with 'maxmemory' and 'each.maxmemory' to calculate conservative values to use instead.
