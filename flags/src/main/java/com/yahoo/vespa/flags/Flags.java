@@ -46,7 +46,7 @@ public class Flags {
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
     public static final UnboundStringFlag ALLOCATE_OS_REQUIREMENT = defineStringFlag(
-            "allocate-os-requirement", "rhel7",
+            "allocate-os-requirement", "any",
             List.of("hakonhall"), "2021-01-26", "2021-07-26",
             "Allocations of new nodes are limited to the given host OS.  Must be one of 'rhel7', " +
             "'rhel8', or 'any'",
