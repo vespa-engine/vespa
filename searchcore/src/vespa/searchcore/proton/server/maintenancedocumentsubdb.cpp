@@ -39,6 +39,7 @@ MaintenanceDocumentSubDB::clear()
     _meta_store.reset();
     _retriever.reset();
     _feed_view.reset();
+    _pendingLidsForCommit = nullptr;
 }
 
 bool

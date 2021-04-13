@@ -110,8 +110,33 @@ DocumentDB::masterExecute(FunctionType &&function) {
     _writeService.master().execute(makeLambdaTask(std::forward<FunctionType>(function)));
 }
 
+DocumentDB::SP
+DocumentDB::create(const vespalib::string &baseDir,
+                   DocumentDBConfig::SP currentSnapshot,
+                   const vespalib::string &tlsSpec,
+                   matching::QueryLimiter &queryLimiter,
+                   const vespalib::Clock &clock,
+                   const DocTypeName &docTypeName,
+                   document::BucketSpace bucketSpace,
+                   const ProtonConfig &protonCfg,
+                   IDocumentDBOwner &owner,
+                   vespalib::SyncableThreadExecutor &warmupExecutor,
+                   vespalib::ThreadStackExecutorBase &sharedExecutor,
+                   storage::spi::BucketExecutor &bucketExecutor,
+                   const search::transactionlog::WriterFactory &tlsWriterFactory,
+                   MetricsWireService &metricsWireService,
+                   const search::common::FileHeaderContext &fileHeaderContext,
+                   ConfigStore::UP config_store,
+                   InitializeThreads initializeThreads,
+                   const HwInfo &hwInfo)
+{
+    return DocumentDB::SP(
+            new DocumentDB(baseDir, std::move(currentSnapshot), tlsSpec, queryLimiter, clock, docTypeName, bucketSpace,
+                           protonCfg, owner, warmupExecutor, sharedExecutor, bucketExecutor, tlsWriterFactory,
+                           metricsWireService, fileHeaderContext, std::move(config_store), initializeThreads, hwInfo));
+}
 DocumentDB::DocumentDB(const vespalib::string &baseDir,
-                       const DocumentDBConfig::SP &configSnapshot,
+                       DocumentDBConfig::SP configSnapshot,
                        const vespalib::string &tlsSpec,
                        matching::QueryLimiter &queryLimiter,
                        const vespalib::Clock &clock,
@@ -134,6 +159,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       IDocumentSubDBOwner(),
       IClusterStateChangedHandler(),
       search::transactionlog::SyncProxy(),
+      std::enable_shared_from_this<DocumentDB>(),
       _docTypeName(docTypeName),
       _bucketSpace(bucketSpace),
       _baseDir(baseDir + "/" + _docTypeName.toString()),

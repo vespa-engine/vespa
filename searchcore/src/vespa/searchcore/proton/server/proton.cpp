@@ -615,11 +615,11 @@ Proton::addDocumentDB(const document::DocumentType &docType,
         // 1 thread per document type.
         initializeThreads = std::make_shared<vespalib::ThreadStackExecutor>(1, 128_Ki);
     }
-    auto ret = std::make_shared<DocumentDB>(config.basedir + "/documents", documentDBConfig, config.tlsspec,
-                                            _queryLimiter, _clock, docTypeName, bucketSpace, config, *this,
-                                            *_warmupExecutor, *_sharedExecutor, *_persistenceEngine, *_tls->getTransLogServer(),
-                                            *_metricsEngine, _fileHeaderContext, std::move(config_store),
-                                            initializeThreads, bootstrapConfig->getHwInfo());
+    auto ret = DocumentDB::create(config.basedir + "/documents", documentDBConfig, config.tlsspec,
+                                  _queryLimiter, _clock, docTypeName, bucketSpace, config, *this,
+                                  *_warmupExecutor, *_sharedExecutor, *_persistenceEngine, *_tls->getTransLogServer(),
+                                  *_metricsEngine, _fileHeaderContext, std::move(config_store),
+                                  initializeThreads, bootstrapConfig->getHwInfo());
     try {
         ret->start();
     } catch (vespalib::Exception &e) {
