@@ -91,7 +91,7 @@ public class OsVersionsTest {
     public void max_active_upgrades() {
         int totalNodes = 20;
         int maxActiveUpgrades = 5;
-        var versions = new OsVersions(tester.nodeRepository(), false, maxActiveUpgrades);
+        var versions = new OsVersions(tester.nodeRepository(), false, maxActiveUpgrades, Integer.MAX_VALUE);
         provisionInfraApplication(totalNodes);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().state(Node.State.active).hosts();
 
@@ -156,7 +156,7 @@ public class OsVersionsTest {
 
     @Test
     public void upgrade_by_retiring() {
-        var versions = new OsVersions(tester.nodeRepository(), true, Integer.MAX_VALUE);
+        var versions = new OsVersions(tester.nodeRepository(), true, Integer.MAX_VALUE, Integer.MAX_VALUE);
         var clock = (ManualClock) tester.nodeRepository().clock();
         int hostCount = 10;
         // Provision hosts and children
@@ -221,7 +221,7 @@ public class OsVersionsTest {
 
     @Test
     public void upgrade_by_retiring_everything_at_once() {
-        var versions = new OsVersions(tester.nodeRepository(), true, Integer.MAX_VALUE);
+        var versions = new OsVersions(tester.nodeRepository(), true, Integer.MAX_VALUE, Integer.MAX_VALUE);
         int hostCount = 3;
         provisionInfraApplication(hostCount, NodeType.confighost);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list()
@@ -244,7 +244,7 @@ public class OsVersionsTest {
 
     @Test
     public void upgrade_by_rebuilding() {
-        var versions = new OsVersions(tester.nodeRepository(), false, Integer.MAX_VALUE);
+        var versions = new OsVersions(tester.nodeRepository(), false, Integer.MAX_VALUE, 1);
         var clock = tester.clock();
         int hostCount = 10;
         provisionInfraApplication(hostCount + 1);
@@ -273,14 +273,17 @@ public class OsVersionsTest {
         versions.resumeUpgradeOf(NodeType.host, true);
         assertEquals(1, hostNodes.get().rebuilding().size());
 
-        // Budget has been spent and another host is rebuilt
+        // Time budget has been spent, but we cannot rebuild another host until the current one is done
         clock.advance(nodeBudget);
         versions.resumeUpgradeOf(NodeType.host, true);
         NodeList hostsRebuilding = hostNodes.get().rebuilding();
-        assertEquals(2, hostsRebuilding.size());
-
-        // Hosts are rebuilt
+        assertEquals(1, hostsRebuilding.size());
         completeRebuildOf(hostsRebuilding.asList(), NodeType.host);
+        assertEquals(1, hostNodes.get().onOsVersion(version1).size());
+
+        // Second host is rebuilt
+        versions.resumeUpgradeOf(NodeType.host, true);
+        completeRebuildOf(hostNodes.get().rebuilding().asList(), NodeType.host);
         assertEquals(2, hostNodes.get().onOsVersion(version1).size());
 
         // The remaining hosts complete their upgrade
