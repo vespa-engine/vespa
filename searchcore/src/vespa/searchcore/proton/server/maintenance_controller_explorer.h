@@ -18,8 +18,7 @@ private:
 public:
     MaintenanceControllerExplorer(std::vector<MaintenanceJobRunner::SP> jobs);
 
-    // Implements vespalib::StateExplorer
-    virtual void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
+    void get_state(const vespalib::slime::Inserter &inserter, bool full) const override;
 };
 
 } // namespace proton
