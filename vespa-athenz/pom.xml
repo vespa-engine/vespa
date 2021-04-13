@@ -89,13 +89,11 @@
         <dependency> <!-- needed by auth-core -->
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-impl</artifactId>
-            <version>0.11.2</version>
             <scope>compile</scope>
         </dependency>
         <dependency> <!-- needed by auth-core -->
             <groupId>io.jsonwebtoken</groupId>
             <artifactId>jjwt-jackson</artifactId>
-            <version>0.11.2</version>
             <scope>compile</scope>
             <exclusions>
                 <exclusion>
