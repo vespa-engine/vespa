@@ -24,9 +24,9 @@ namespace {
 
 template<typename LCT, typename RCT>
 std::unique_ptr<Value>
-convert_cells(const ValueType &new_type, TypedCells cells)
+convert_cells(const ValueType &new_type, std::unique_ptr<Value> old_value)
 {
-    auto old_cells = cells.typify<LCT>();
+    auto old_cells = old_value->cells().typify<LCT>();
     auto builder = FastValueBuilderFactory::get().create_value_builder<RCT>(new_type);
     auto new_cells = builder->add_subspace();
     assert(old_cells.size() == new_cells.size());
@@ -41,7 +41,14 @@ convert_cells(const ValueType &new_type, TypedCells cells)
 struct ConvertCellsSelector
 {
     template <typename LCT, typename RCT>
-    static auto invoke(const ValueType &new_type, TypedCells old_cells) { return convert_cells<LCT, RCT>(new_type, old_cells); }
+    static auto invoke(const ValueType &new_type, std::unique_ptr<Value> old_value) {
+        return convert_cells<LCT, RCT>(new_type, std::move(old_value));
+    }
+    auto operator() (CellType from, CellType to, std::unique_ptr<Value> old_value) const {
+        using MyTypify = vespalib::eval::TypifyCellType;
+        ValueType new_type = old_value->type().cell_cast(to);
+        return vespalib::typify_invoke<2,MyTypify,ConvertCellsSelector>(from, to, new_type, std::move(old_value));
+    }
 };
 
 } // namespace <unnamed>
@@ -74,12 +81,10 @@ NearestNeighborBlueprint::NearestNeighborBlueprint(const queryeval::FieldSpec& f
         assert(_dist_fun);
     }
     auto query_ct = _query_tensor->cells().type;
-    CellType want_ct = _dist_fun->expected_cell_type();
-    if (query_ct != want_ct) {
-        ValueType new_type = ValueType::make_type(want_ct, _query_tensor->type().dimensions());
-        using MyTypify = vespalib::eval::TypifyCellType;
-        TypedCells old_cells = _query_tensor->cells();
-        _query_tensor = vespalib::typify_invoke<2,MyTypify,ConvertCellsSelector>(query_ct, want_ct, new_type, old_cells);
+    CellType required_ct = _dist_fun->expected_cell_type();
+    if (query_ct != required_ct) {
+        ConvertCellsSelector converter;
+        _query_tensor = converter(query_ct, required_ct, std::move(_query_tensor));
     }
     if (distance_threshold < std::numeric_limits<double>::max()) {
         _distance_threshold = _dist_fun->convert_threshold(distance_threshold);
