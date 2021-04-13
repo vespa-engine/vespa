@@ -225,7 +225,6 @@ private:
                InitializeThreads initializeThreads,
                const HwInfo &hwInfo);
 public:
-    using UP = std::unique_ptr<DocumentDB>;
     using SP = std::shared_ptr<DocumentDB>;
 
     /**
