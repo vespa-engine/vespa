@@ -17,7 +17,7 @@ public class ChangeRequestSource {
     private final ZonedDateTime plannedEndTime;
 
 
-    private ChangeRequestSource(String system, String id, String url, Status status, ZonedDateTime plannedStartTime, ZonedDateTime plannedEndTime) {
+    public ChangeRequestSource(String system, String id, String url, Status status, ZonedDateTime plannedStartTime, ZonedDateTime plannedEndTime) {
         this.system = Objects.requireNonNull(system);
         this.id = Objects.requireNonNull(id);
         this.url = Objects.requireNonNull(url);
