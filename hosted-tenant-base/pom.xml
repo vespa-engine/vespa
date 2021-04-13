@@ -66,6 +66,11 @@
                 <type>pom</type>
                 <scope>import</scope>
             </dependency>
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>2.3.2</version> <!-- 2.3.3 has BROKEN manifest -->
+            </dependency>
         </dependencies>
     </dependencyManagement>
 
