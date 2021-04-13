@@ -183,6 +183,10 @@ MultiValueEnumAttribute<B, M>::onCommit()
         this->incGeneration();
         this->updateStat(true);
     }
+    if (this->_enumStore.consider_compact_dictionary(this->getConfig().getCompactionStrategy())) {
+        this->incGeneration();
+        this->updateStat(true);
+    }
 }
 
 template <typename B, typename M>

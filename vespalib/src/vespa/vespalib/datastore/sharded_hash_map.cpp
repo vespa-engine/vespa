@@ -194,4 +194,30 @@ ShardedHashMap::normalize_values(std::function<EntryRef(EntryRef)> normalize)
     return changed;
 }
 
+bool
+ShardedHashMap::has_held_buffers() const
+{
+    return _gen_holder.getHeldBytes() != 0;
+}
+
+void
+ShardedHashMap::compact_worst()
+{
+    size_t worst_index = 0u;
+    size_t worst_dead_bytes = 0u;
+    for (size_t i = 0; i < num_shards; ++i) {
+        auto map = _maps[i].load(std::memory_order_relaxed);
+        if (map != nullptr) {
+            auto memory_usage = map->get_memory_usage();
+            if (memory_usage.deadBytes() > worst_dead_bytes) {
+                worst_index = i;
+                worst_dead_bytes = memory_usage.deadBytes();
+            }
+        }
+    }
+    if (worst_dead_bytes > 0u) {
+        alloc_shard(worst_index);
+    }
+}
+
 }

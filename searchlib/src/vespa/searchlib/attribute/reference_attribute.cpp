@@ -43,6 +43,7 @@ ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName,
       _store(),
       _indices(getGenerationHolder()),
       _cached_unique_store_values_memory_usage(),
+      _cached_unique_store_dictionary_memory_usage(),
       _gidToLidMapperFactory(),
       _referenceMappings(getGenerationHolder(), getCommittedDocIdLimitRef())
 {
@@ -181,6 +182,10 @@ ReferenceAttribute::onCommit()
         incGeneration();
         updateStat(true);
     }
+    if (consider_compact_dictionary(getConfig().getCompactionStrategy())) {
+        incGeneration();
+        updateStat(true);
+    }
 }
 
 void
@@ -188,7 +193,9 @@ ReferenceAttribute::onUpdateStat()
 {
     vespalib::MemoryUsage total = _store.get_values_memory_usage();
     _cached_unique_store_values_memory_usage = total;
-    total.merge(_store.get_dictionary_memory_usage());
+    auto& dictionary = _store.get_dictionary();
+    _cached_unique_store_dictionary_memory_usage = dictionary.get_memory_usage();
+    total.merge(_cached_unique_store_dictionary_memory_usage);
     total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
     total.merge(_indices.getMemoryUsage());
     total.merge(_referenceMappings.getMemoryUsage());
@@ -302,6 +309,20 @@ ReferenceAttribute::compact_worst_values()
         remapper->remap(vespalib::ArrayRef<EntryRef>(&_indices[0], _indices.size()));
         remapper->done();
     }
+}
+
+bool
+ReferenceAttribute::consider_compact_dictionary(const CompactionStrategy &compaction_strategy)
+{
+    auto& dictionary = _store.get_dictionary();
+    if (dictionary.has_held_buffers()) {
+        return false;
+    }
+    if (compaction_strategy.should_compact_memory(_cached_unique_store_dictionary_memory_usage.usedBytes(), _cached_unique_store_dictionary_memory_usage.usedBytes())) {
+        dictionary.compact_worst(true, true);
+        return true;
+    }
+    return false;
 }
 
 uint64_t
