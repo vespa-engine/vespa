@@ -57,7 +57,6 @@
         <module>container-dependencies-enforcer</module>
         <module>container-dependency-versions</module>
         <module>container-dev</module>
-        <module>container-di</module>
         <module>container-disc</module>
         <module>container-documentapi</module>
         <module>container-integration-test</module>
