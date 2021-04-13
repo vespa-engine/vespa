@@ -40,11 +40,11 @@ public class RestApiException extends RuntimeException {
     public int statusCode() { return statusCode; }
     public HttpResponse response() { return response; }
 
-    public static class NotFoundException extends RestApiException {
-        public NotFoundException() { this(null, null); }
-        public NotFoundException(Throwable cause) { this(cause.getMessage(), cause); }
-        public NotFoundException(String message) { this(message, null); }
-        public NotFoundException(String message, Throwable cause) { super(ErrorResponse::notFoundError, message, cause); }
+    public static class NotFound extends RestApiException {
+        public NotFound() { this(null, null); }
+        public NotFound(Throwable cause) { this(cause.getMessage(), cause); }
+        public NotFound(String message) { this(message, null); }
+        public NotFound(String message, Throwable cause) { super(ErrorResponse::notFoundError, message, cause); }
     }
 
     public static class MethodNotAllowed extends RestApiException {

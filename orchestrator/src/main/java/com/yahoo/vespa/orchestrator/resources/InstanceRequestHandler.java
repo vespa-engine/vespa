@@ -99,7 +99,7 @@ public class InstanceRequestHandler extends RestApiRequestHandler<InstanceReques
 
         ApplicationInstance applicationInstance
                 = serviceMonitor.getApplication(instanceId)
-                .orElseThrow(RestApiException.NotFoundException::new);
+                .orElseThrow(RestApiException.NotFound::new);
 
         HostInfos hostInfos = statusService.getHostInfosByApplicationResolver().apply(applicationInstance.reference());
         TreeMap<HostName, WireHostInfo> hostStatusMap =

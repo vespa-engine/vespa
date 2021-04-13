@@ -77,11 +77,11 @@ public class ApplicationSuspensionRequestHandler extends RestApiRequestHandler<A
         try {
             status = orchestrator.getApplicationInstanceStatus(appId);
         } catch (ApplicationIdNotFoundException e) {
-            throw new RestApiException.NotFoundException("Application " + applicationIdString + " could not be found", e);
+            throw new RestApiException.NotFound("Application " + applicationIdString + " could not be found", e);
         }
 
         if (status.equals(ApplicationInstanceStatus.NO_REMARKS)) {
-            throw new RestApiException.NotFoundException("Application " + applicationIdString + " is not suspended");
+            throw new RestApiException.NotFound("Application " + applicationIdString + " is not suspended");
         }
         return new EmptyResponse(Status.NO_CONTENT);
     }
@@ -107,7 +107,7 @@ public class ApplicationSuspensionRequestHandler extends RestApiRequestHandler<A
             orchestrator.suspend(applicationId);
         } catch (ApplicationIdNotFoundException e) {
             log.log(Level.INFO, "ApplicationId " + applicationIdString + " not found.", e);
-            throw new RestApiException.NotFoundException(e);
+            throw new RestApiException.NotFound(e);
         } catch (ApplicationStateChangeDeniedException e) {
             log.log(Level.INFO, "Suspend for " + applicationIdString + " failed.", e);
             throw new RestApiException.Conflict();
@@ -136,7 +136,7 @@ public class ApplicationSuspensionRequestHandler extends RestApiRequestHandler<A
             orchestrator.resume(applicationId);
         } catch (ApplicationIdNotFoundException e) {
             log.log(Level.INFO, "ApplicationId " + applicationIdString + " not found.", e);
-            throw new RestApiException.NotFoundException(e);
+            throw new RestApiException.NotFound(e);
         } catch (ApplicationStateChangeDeniedException e) {
             log.log(Level.INFO, "Suspend for " + applicationIdString + " failed.", e);
             throw new RestApiException.Conflict();
