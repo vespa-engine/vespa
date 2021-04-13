@@ -102,13 +102,25 @@ class RestApiImplTest {
         verifyJsonResponse(restApi, Method.POST, "/api", rawJson, 200, rawJson);
     }
 
+    @Test
+    public void uri_builder_creates_valid_uri_prefix() {
+        RestApi restApi = RestApi.builder()
+                .addRoute(route("/test").get(ctx -> new MessageResponse(ctx.uriBuilder().toString())))
+                .build();
+        verifyJsonResponse(restApi, Method.GET, "/test", null, 200, "{\"message\":\"http://localhost\"}");
+    }
+
     private static void verifyJsonResponse(RestApi restApi, Method method, String path, String requestContent, int expectedStatusCode, String expectedJson) {
-        HttpRequest testRequest = requestContent != null ?
-                HttpRequest.createTestRequest(
-                        path, method,
-                        new ByteArrayInputStream(requestContent.getBytes(StandardCharsets.UTF_8)),
-                        Map.of("Content-Type", "application/json")) :
-                HttpRequest.createTestRequest(path, method);
+        HttpRequest testRequest;
+        String uri = "http://localhost" + path;
+        if (requestContent != null) {
+            testRequest = HttpRequest.createTestRequest(
+                    uri, method,
+                    new ByteArrayInputStream(requestContent.getBytes(StandardCharsets.UTF_8)),
+                    Map.of("Content-Type", "application/json"));
+        } else {
+            testRequest = HttpRequest.createTestRequest(uri, method);
+        }
         HttpResponse response = restApi.handleRequest(testRequest);
         assertEquals(expectedStatusCode, response.getStatus());
         if (expectedJson != null) {

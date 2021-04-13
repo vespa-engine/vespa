@@ -12,7 +12,6 @@ import com.yahoo.vespa.orchestrator.BatchInternalErrorException;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.OrchestratorImpl;
 import com.yahoo.vespa.orchestrator.policy.BatchHostStateChangeDeniedException;
-import com.yahoo.vespa.orchestrator.resources.host.HostResourceTest;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
@@ -35,7 +34,7 @@ import static org.mockito.Mockito.when;
  * @author hakonhall
  * @author bjorncs
  */
-class HostSuspensionHandlerTest {
+class HostSuspensionRequestHandlerTest {
 
     private final Clock clock = mock(Clock.class);
 
@@ -46,14 +45,14 @@ class HostSuspensionHandlerTest {
 
     @Test
     void returns_200_on_success_batch() throws IOException {
-        HostSuspensionHandler handler = createHandler(HostResourceTest.createAlwaysAllowOrchestrator(clock));
+        HostSuspensionRequestHandler handler = createHandler(HostRequestHandlerTest.createAlwaysAllowOrchestrator(clock));
         HttpResponse response = executeSuspendAllRequest(handler, "parentHostname", List.of("hostname1", "hostname2"));
         assertSuccess(response);
     }
 
     @Test
     void returns_200_empty_batch() throws IOException {
-        HostSuspensionHandler handler = createHandler(HostResourceTest.createAlwaysAllowOrchestrator(clock));
+        HostSuspensionRequestHandler handler = createHandler(HostRequestHandlerTest.createAlwaysAllowOrchestrator(clock));
         HttpResponse response = executeSuspendAllRequest(handler, "parentHostname", List.of());
         assertSuccess(response);
     }
@@ -63,15 +62,15 @@ class HostSuspensionHandlerTest {
     // hostnames are part of the request body for multi-host.
     @Test
     void returns_400_when_host_unknown_for_batch() {
-        HostSuspensionHandler handler = createHandler(HostResourceTest.createHostNotFoundOrchestrator(clock));
+        HostSuspensionRequestHandler handler = createHandler(HostRequestHandlerTest.createHostNotFoundOrchestrator(clock));
         HttpResponse response = executeSuspendAllRequest(handler, "parentHostname", List.of("hostname1", "hostname2"));
         assertEquals(400, response.getStatus());
     }
 
     @Test
     void returns_409_when_request_rejected_by_policies_for_batch() {
-        OrchestratorImpl alwaysRejectResolver = HostResourceTest.createAlwaysRejectResolver(clock);
-        HostSuspensionHandler handler = createHandler(alwaysRejectResolver);
+        OrchestratorImpl alwaysRejectResolver = HostRequestHandlerTest.createAlwaysRejectResolver(clock);
+        HostSuspensionRequestHandler handler = createHandler(alwaysRejectResolver);
         HttpResponse response = executeSuspendAllRequest(handler, "parentHostname", List.of("hostname1", "hostname2"));
         assertEquals(409, response.getStatus());
     }
@@ -81,18 +80,18 @@ class HostSuspensionHandlerTest {
     void throws_409_on_suspendAll_timeout() throws BatchHostStateChangeDeniedException, BatchHostNameNotFoundException, BatchInternalErrorException {
         Orchestrator orchestrator = mock(Orchestrator.class);
         doThrow(new UncheckedTimeoutException("Timeout Message")).when(orchestrator).suspendAll(any(), any());
-        HostSuspensionHandler handler = createHandler(orchestrator);
+        HostSuspensionRequestHandler handler = createHandler(orchestrator);
         HttpResponse response = executeSuspendAllRequest(handler, "parenthost", List.of("h1", "h2", "h3"));
         assertEquals(409, response.getStatus());
     }
 
-    private static HostSuspensionHandler createHandler(Orchestrator orchestrator) {
-        return new HostSuspensionHandler(
+    private static HostSuspensionRequestHandler createHandler(Orchestrator orchestrator) {
+        return new HostSuspensionRequestHandler(
                 new LoggingRequestHandler.Context(Executors.newSingleThreadExecutor(), new MockMetric()),
                 orchestrator);
     }
 
-    private static HttpResponse executeSuspendAllRequest(HostSuspensionHandler handler, String parentHostname, List<String> hostnames) {
+    private static HttpResponse executeSuspendAllRequest(HostSuspensionRequestHandler handler, String parentHostname, List<String> hostnames) {
         StringBuilder uriBuilder = new StringBuilder("/orchestrator/v1/suspensions/hosts/").append(parentHostname);
         if (!hostnames.isEmpty()) {
             uriBuilder.append(hostnames.stream()

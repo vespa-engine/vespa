@@ -25,19 +25,19 @@ import java.util.stream.Collectors;
  * @author hakonhall
  * @author bjorncs
  */
-public class HostSuspensionHandler extends RestApiRequestHandler<HostSuspensionHandler> {
+public class HostSuspensionRequestHandler extends RestApiRequestHandler<HostSuspensionRequestHandler> {
 
-    private static final Logger log = Logger.getLogger(HostSuspensionHandler.class.getName());
+    private static final Logger log = Logger.getLogger(HostSuspensionRequestHandler.class.getName());
 
     private final Orchestrator orchestrator;
 
     @Inject
-    public HostSuspensionHandler(LoggingRequestHandler.Context context, Orchestrator orchestrator) {
-        super(context, HostSuspensionHandler::createRestApiDefinition);
+    public HostSuspensionRequestHandler(LoggingRequestHandler.Context context, Orchestrator orchestrator) {
+        super(context, HostSuspensionRequestHandler::createRestApiDefinition);
         this.orchestrator = orchestrator;
     }
 
-    private static RestApi createRestApiDefinition(HostSuspensionHandler self) {
+    private static RestApi createRestApiDefinition(HostSuspensionRequestHandler self) {
         return RestApi.builder()
                 .addRoute(RestApi.route("/orchestrator/v1/suspensions/hosts/{hostname}")
                     .put(self::suspendAll))
