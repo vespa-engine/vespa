@@ -14,7 +14,7 @@ void
 convertRunningJobsToSlime(const std::vector<MaintenanceJobRunner::SP> &jobs, Cursor &array)
 {
     for (const auto &jobRunner : jobs) {
-        if (jobRunner->isRunning()) {
+        if (jobRunner->isRunnable()) {
             Cursor &object = array.addObject();
             object.setString("name", jobRunner->getJob().getName());
         }

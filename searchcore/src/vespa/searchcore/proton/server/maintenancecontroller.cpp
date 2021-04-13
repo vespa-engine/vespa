@@ -31,7 +31,7 @@ public:
 }
 
 MaintenanceController::MaintenanceController(IThreadService &masterThread,
-                                             vespalib::SyncableThreadExecutor & defaultExecutor,
+                                             vespalib::Executor & defaultExecutor,
                                              const DocTypeName &docTypeName)
     : IBucketFreezeListener(),
       _masterThread(masterThread),
@@ -93,8 +93,11 @@ MaintenanceController::killJobs()
     for (auto &job : _jobs) {
         job->stop(); // Make sure no more tasks are added to the executor
     }
-    _defaultExecutor.sync();
-    _defaultExecutor.sync();
+    for (auto &job : _jobs) {
+        while (job->isRunning()) {
+            std::this_thread::sleep_for(1ms);
+        }
+    }
     JobList tmpJobs = _jobs;
     {
         Guard guard(_jobsLock);
