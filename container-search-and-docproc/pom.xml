@@ -128,12 +128,6 @@
     </dependency>
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>simplemetrics</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>provided-dependencies</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>

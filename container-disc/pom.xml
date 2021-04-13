@@ -108,12 +108,6 @@
     <!-- WARNING: These are only here to make bundlification work -->
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>simplemetrics</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-bundle</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
