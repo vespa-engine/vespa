@@ -30,8 +30,6 @@ import com.yahoo.vespa.service.manager.UnionMonitorManager;
 import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import com.yahoo.vespa.service.monitor.SlobrokApi;
 
-import javax.ws.rs.WebApplicationException;
-import javax.ws.rs.core.Response;
 import java.time.Instant;
 import java.util.List;
 import java.util.TreeMap;
@@ -101,7 +99,7 @@ public class InstanceRequestHandler extends RestApiRequestHandler<InstanceReques
 
         ApplicationInstance applicationInstance
                 = serviceMonitor.getApplication(instanceId)
-                .orElseThrow(() -> new WebApplicationException(Response.status(Response.Status.NOT_FOUND).build()));
+                .orElseThrow(RestApiException.NotFoundException::new);
 
         HostInfos hostInfos = statusService.getHostInfosByApplicationResolver().apply(applicationInstance.reference());
         TreeMap<HostName, WireHostInfo> hostStatusMap =
