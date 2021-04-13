@@ -40,7 +40,9 @@ public:
     SquaredEuclideanDistanceHW()
       : SquaredEuclideanDistance(vespalib::eval::get_cell_type<FloatType>()),
         _computer(vespalib::hwaccelrated::IAccelrated::getAccelerator())
-    {}
+    {
+        assert(expected_cell_type() == vespalib::eval::get_cell_type<FloatType>());
+    }
     double calc(const vespalib::eval::TypedCells& lhs, const vespalib::eval::TypedCells& rhs) const override {
         constexpr vespalib::eval::CellType expected = vespalib::eval::get_cell_type<FloatType>();
         assert(lhs.type == expected && rhs.type == expected);
