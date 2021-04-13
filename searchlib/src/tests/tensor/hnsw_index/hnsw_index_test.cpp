@@ -78,7 +78,7 @@ public:
     void init(bool heuristic_select_neighbors) {
         auto generator = std::make_unique<LevelGenerator>();
         level_generator = generator.get();
-        index = std::make_unique<HnswIndex>(vectors, std::make_unique<SquaredEuclideanDistance>(vespalib::eval::CellType::DOUBLE),
+        index = std::make_unique<HnswIndex>(vectors, std::make_unique<SquaredEuclideanDistance>(vespalib::eval::CellType::FLOAT),
                                             std::move(generator),
                                             HnswIndex::Config(5, 2, 10, 0, heuristic_select_neighbors));
     }
