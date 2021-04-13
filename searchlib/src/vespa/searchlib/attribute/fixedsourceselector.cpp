@@ -35,7 +35,7 @@ FixedSourceSelector::Iterator::Iterator(const FixedSourceSelector & sourceSelect
 FixedSourceSelector::FixedSourceSelector(queryeval::Source defaultSource,
                                          const vespalib::string & attrBaseFileName,
                                          uint32_t initialNumDocs) :
-    SourceSelector(defaultSource, AttributeVector::SP(new SourceStore(attrBaseFileName, getConfig()))),
+    SourceSelector(defaultSource, std::make_shared<SourceStore>(attrBaseFileName, getConfig())),
     _source(static_cast<SourceStore &>(*_realSource))
 {
     if (initialNumDocs != std::numeric_limits<uint32_t>::max()) {
@@ -44,16 +44,13 @@ FixedSourceSelector::FixedSourceSelector(queryeval::Source defaultSource,
     }
 }
 
-FixedSourceSelector::~FixedSourceSelector()
-{
-}
+FixedSourceSelector::~FixedSourceSelector() = default;
 
 FixedSourceSelector::UP
-FixedSourceSelector::cloneAndSubtract(const vespalib::string & attrBaseFileName,
-                                      uint32_t diff)
+FixedSourceSelector::cloneAndSubtract(const vespalib::string & attrBaseFileName, uint32_t diff)
 {
     queryeval::Source newDefault = getNewSource(getDefaultSource(), diff);
-    FixedSourceSelector::UP selector(new FixedSourceSelector(newDefault, attrBaseFileName, _source.getNumDocs()-1));
+    auto selector = std::make_unique< FixedSourceSelector>(newDefault, attrBaseFileName, _source.getNumDocs()-1);
     for (uint32_t docId = 0; docId < _source.getNumDocs(); ++docId) {
         queryeval::Source src = _source.get(docId);
         src = getNewSource(src, diff);
@@ -78,10 +75,9 @@ FixedSourceSelector::load(const vespalib::string & baseFileName, uint32_t curren
             (uint32_t) info->header()._defaultSource, defaultSource,
             baseFileName.c_str());
     }
-    FixedSourceSelector::UP selector(new FixedSourceSelector(
-                                             defaultSource,
-                                             info->header()._baseFileName,
-                                             std::numeric_limits<uint32_t>::max()));
+    auto selector = std::make_unique<FixedSourceSelector>(defaultSource,
+                                                          info->header()._baseFileName,
+                                                          std::numeric_limits<uint32_t>::max());
     selector->setBaseId(info->header()._baseId);
     selector->_source.load();
     uint32_t cappedSources = capSelector(selector->_source, selector->getDefaultSource());
