@@ -92,6 +92,8 @@ public class GroupPreparer {
                 final Version osVersion;
                 if (allocateOsRequirement.equals("rhel8")) {
                     osVersion = new Version(8, Integer.MAX_VALUE /* always use latest 8 version */, 0);
+                } else if (allocateOsRequirement.equals("rhel7")) {
+                    osVersion = new Version(7, Integer.MAX_VALUE /* always use latest 7 version */, 0);
                 } else {
                     osVersion = nodeRepository.osVersions().targetFor(hostType).orElse(Version.emptyVersion);
                 }
