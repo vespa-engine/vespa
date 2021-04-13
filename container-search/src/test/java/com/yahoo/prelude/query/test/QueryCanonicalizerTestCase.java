@@ -108,6 +108,47 @@ public class QueryCanonicalizerTestCase {
     }
 
     @Test
+    public void testMultilevelWeakAndCollapsing() {
+        CompositeItem root = new WeakAndItem();
+        CompositeItem l1 = new WeakAndItem();
+        CompositeItem l2 = new WeakAndItem();
+        CompositeItem l3 = new WeakAndItem();
+        CompositeItem l4 = new WeakAndItem();
+
+        root.addItem(l1);
+
+        l1.addItem(l2);
+        l1.addItem(new WordItem("l1"));
+
+        l2.addItem(l3);
+        l2.addItem(new WordItem("l2"));
+
+        l3.addItem(l4);
+        l3.addItem(new WordItem("l3"));
+
+        l4.addItem(new WordItem("l4"));
+
+        assertCanonicalized("WAND(100) l4 l3 l2 l1", null, root);
+    }
+
+    @Test
+    public void testWeakAndCollapsingRequireSameNAndIndex() {
+        CompositeItem root = new WeakAndItem(10);
+        CompositeItem l1 = new WeakAndItem(100);
+        CompositeItem l2 = new WeakAndItem(100);
+        l2.setIndexName("other");
+
+        root.addItem(l1);
+
+        l1.addItem(l2);
+        l1.addItem(new WordItem("l1"));
+
+        l2.addItem(new WordItem("l2"));
+
+        assertCanonicalized("WAND(10) (WAND(100) (WAND(100) l2) l1)", null, root);
+    }
+
+    @Test
     public void testNullRoot() {
         assertCanonicalized(null, "No query", new Query());
     }
