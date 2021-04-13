@@ -63,6 +63,7 @@
                     <groupId>org.bouncycastle</groupId>
                     <artifactId>bcpkix-jdk15on</artifactId>
                 </exclusion>
+                <!--Exclude all Jackson bundles provided by JDisc -->
                 <exclusion>
                     <groupId>jakarta.activation</groupId>
                     <artifactId>jakarta.activation-api</artifactId>
@@ -71,7 +72,6 @@
                     <groupId>jakarta.xml.bind</groupId>
                     <artifactId>jakarta.xml.bind-api</artifactId>
                 </exclusion>
-                <!--Exclude all Jackson bundles provided by JDisc -->
                 <exclusion>
                     <groupId>com.fasterxml.jackson.core</groupId>
                     <artifactId>jackson-core</artifactId>
@@ -97,6 +97,12 @@
             <artifactId>jjwt-jackson</artifactId>
             <version>0.11.2</version>
             <scope>compile</scope>
+            <exclusions>
+                <exclusion>
+                    <groupId>com.fasterxml.jackson.core</groupId>
+                    <artifactId>jackson-databind</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.yahoo.athenz</groupId>
