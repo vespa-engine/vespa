@@ -186,7 +186,7 @@ public:
     const std::shared_ptr<const DocumentTypeRepo> _repo;
     TuneFileDocumentDB::SP _tuneFileDocumentDB;
     HwInfo _hwInfo;
-    std::unique_ptr<DocumentDB> _ddb;
+    std::shared_ptr<DocumentDB> _ddb;
     AttributeWriter::UP _aw;
     ISummaryAdapter::SP _sa;
 
@@ -221,11 +221,11 @@ public:
         if (! FastOS_File::MakeDirectory((std::string("tmpdb/") + docTypeName).c_str())) {
             LOG_ABORT("should not be reached");
         }
-        _ddb = std::make_unique<DocumentDB>("tmpdb", _configMgr.getConfig(), "tcp/localhost:9013", _queryLimiter, _clock,
-                                            DocTypeName(docTypeName), makeBucketSpace(), *b->getProtonConfigSP(), *this,
-                                            _summaryExecutor, _summaryExecutor, _bucketExecutor, _tls, _dummy, _fileHeaderContext,
-                                            std::make_unique<MemoryConfigStore>(),
-                                            std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), _hwInfo),
+        _ddb = DocumentDB::create("tmpdb", _configMgr.getConfig(), "tcp/localhost:9013", _queryLimiter, _clock,
+                                  DocTypeName(docTypeName), makeBucketSpace(), *b->getProtonConfigSP(), *this,
+                                  _summaryExecutor, _summaryExecutor, _bucketExecutor, _tls, _dummy, _fileHeaderContext,
+                                  std::make_unique<MemoryConfigStore>(),
+                                  std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), _hwInfo),
         _ddb->start();
         _ddb->waitForOnlineState();
         _aw = std::make_unique<AttributeWriter>(_ddb->getReadySubDB()->getAttributeManager());

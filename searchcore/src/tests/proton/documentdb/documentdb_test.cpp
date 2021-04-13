@@ -108,7 +108,7 @@ Fixture::Fixture()
                               tuneFileDocumentDB, HwInfo());
     mgr.forwardConfig(b);
     mgr.nextGeneration(0ms);
-    _db = std::make_shared<DocumentDB>(".", mgr.getConfig(), "tcp/localhost:9014", _queryLimiter, _clock, DocTypeName("typea"),
+    _db = DocumentDB::create(".", mgr.getConfig(), "tcp/localhost:9014", _queryLimiter, _clock, DocTypeName("typea"),
                              makeBucketSpace(),
                              *b->getProtonConfigSP(), _myDBOwner, _summaryExecutor, _summaryExecutor, _bucketExecutor, _tls, _dummy,
                              _fileHeaderContext, std::make_unique<MemoryConfigStore>(),

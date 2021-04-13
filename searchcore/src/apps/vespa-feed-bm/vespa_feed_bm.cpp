@@ -798,24 +798,12 @@ PersistenceProviderFixture::create_document_db(const BMParams & params)
                                                               tuneFileDocDB, HwInfo());
     mgr.forwardConfig(bootstrap_config);
     mgr.nextGeneration(0ms);
-    _document_db = std::make_shared<DocumentDB>(_base_dir,
-                                                mgr.getConfig(),
-                                                _tls_spec,
-                                                _query_limiter,
-                                                _clock,
-                                                _doc_type_name,
-                                                _bucket_space,
-                                                *bootstrap_config->getProtonConfigSP(),
-                                                _document_db_owner,
-                                                _summary_executor,
-                                                _summary_executor,
-                                                *_persistence_engine,
-                                                _tls,
-                                                _metrics_wire_service,
-                                                _file_header_context,
-                                                _config_stores.getConfigStore(_doc_type_name.toString()),
-                                                std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki),
-                                                HwInfo());
+    _document_db = DocumentDB::create(_base_dir, mgr.getConfig(), _tls_spec, _query_limiter, _clock, _doc_type_name,
+                                      _bucket_space, *bootstrap_config->getProtonConfigSP(), _document_db_owner,
+                                      _summary_executor, _summary_executor, *_persistence_engine, _tls,
+                                      _metrics_wire_service, _file_header_context,
+                                      _config_stores.getConfigStore(_doc_type_name.toString()),
+                                      std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), HwInfo());
     _document_db->start();
     _document_db->waitForOnlineState();
 }

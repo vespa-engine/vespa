@@ -192,34 +192,18 @@ public:
         config::DirSpec spec(inputCfg + "/config-1");
         TuneFileDocumentDB::SP tuneFileDocDB(new TuneFileDocumentDB());
         DocumentDBConfigHelper mgr(spec, docType.getName());
-        BootstrapConfig::SP b(new BootstrapConfig(1,
-                                                  factory.getTypeCfg(),
-                                                  factory.getTypeRepo(),
+        auto b = std::make_shared<BootstrapConfig>(1, factory.getTypeCfg(), factory.getTypeRepo(),
                                                   std::make_shared<ProtonConfig>(),
                                                   std::make_shared<FiledistributorrpcConfig>(),
                                                   std::make_shared<BucketspacesConfig>(),
-                                                  tuneFileDocDB, HwInfo()));
+                                                  tuneFileDocDB, HwInfo());
         mgr.forwardConfig(b);
         mgr.nextGeneration(0ms);
-        return std::make_shared<DocumentDB>(_baseDir,
-                               mgr.getConfig(),
-                               _tlsSpec,
-                               _queryLimiter,
-                               _clock,
-                               docType,
-                               bucketSpace,
-                               *b->getProtonConfigSP(),
-                               const_cast<DocumentDBFactory &>(*this),
-                               _summaryExecutor,
-                               _summaryExecutor,
-                               _bucketExecutor,
-                               _tls,
-                               _metricsWireService,
-                               _fileHeaderContext,
-                               _config_stores.getConfigStore(docType.toString()),
-                               std::make_shared<vespalib::ThreadStackExecutor>
-                               (16, 128_Ki),
-                               HwInfo());
+        return DocumentDB::create(_baseDir, mgr.getConfig(), _tlsSpec, _queryLimiter, _clock, docType, bucketSpace,
+                                  *b->getProtonConfigSP(), const_cast<DocumentDBFactory &>(*this),
+                                  _summaryExecutor, _summaryExecutor, _bucketExecutor, _tls, _metricsWireService,
+                                  _fileHeaderContext, _config_stores.getConfigStore(docType.toString()),
+                                  std::make_shared<vespalib::ThreadStackExecutor>(16, 128_Ki), HwInfo());
     }
 };
 
