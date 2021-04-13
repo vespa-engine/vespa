@@ -164,8 +164,8 @@ WarmupIndexCollection::createBlueprint(const IRequestContext & requestContext,
         needWarmUp = needWarmUp || ! handledBefore(fs.getFieldId(), term);
     }
     if (needWarmUp) {
-        Task::UP task(new WarmupTask(mdl.createMatchData(), *this));
-        static_cast<WarmupTask &>(*task).createBlueprint(fsl, term);
+        auto task = std::make_unique<WarmupTask>(mdl.createMatchData(), *this);
+        task->createBlueprint(fsl, term);
         fireWarmup(std::move(task));
     }
     return _prev->createBlueprint(requestContext, fields, term);
