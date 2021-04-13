@@ -341,6 +341,12 @@ public class EvaluationTestCase {
         tester.assertEvaluates("3.0", "tensor0{bar}", true, "{ {x:foo}:1, {x:bar}:3 }");
         tester.assertEvaluates("3.3", "tensor0[2]", "tensor(values[4]):[1.1, 2.2, 3.3, 4.4]]");
 
+        // concat
+        tester.assertEvaluates("tensor(x[5]):[0, 1, 2, 3, 4]",
+                               "concat(tensor0, tensor1, x)",
+                               "tensor(x[2]):[0, 1]",
+                               "tensor(x[3]):[2, 3, 4])");
+
         // composite functions
         tester.assertEvaluates("{ {x:0}:0.25, {x:1}:0.75 }", "l1_normalize(tensor0, x)", "{ {x:0}:1, {x:1}:3 }");
         tester.assertEvaluates("{ {x:0}:0.31622776601683794, {x:1}:0.9486832980505138 }", "l2_normalize(tensor0, x)", "{ {x:0}:1, {x:1}:3 }");
