@@ -25,12 +25,18 @@ public class AwsCredentials {
     private final AthenzDomain athenzDomain;
     private final AwsRole awsRole;
     private final ZtsClient ztsClient;
+    private final String externalId;
     private volatile AwsTemporaryCredentials credentials;
 
     public AwsCredentials(ZtsClient ztsClient, AthenzDomain athenzDomain, AwsRole awsRole) {
+        this(ztsClient, athenzDomain, awsRole, null);
+    }
+
+    public AwsCredentials(ZtsClient ztsClient, AthenzDomain athenzDomain, AwsRole awsRole, String externalId) {
         this.ztsClient = ztsClient;
         this.athenzDomain = athenzDomain;
         this.awsRole = awsRole;
+        this.externalId = externalId;
         this.credentials = get();
     }
 
@@ -42,12 +48,16 @@ public class AwsCredentials {
         this(new DefaultZtsClient.Builder(ztsUrl).withSslContext(sslContext).build(), athenzDomain, awsRole);
     }
 
+    public AwsCredentials(URI ztsUrl, SSLContext sslContext, AthenzDomain athenzDomain, AwsRole awsRole, String externalId) {
+        this(new DefaultZtsClient.Builder(ztsUrl).withSslContext(sslContext).build(), athenzDomain, awsRole, externalId);
+    }
+
     /**
      * Requests temporary credentials from ZTS or return cached credentials
      */
     public AwsTemporaryCredentials get() {
         if(shouldRefresh(credentials)) {
-            this.credentials = ztsClient.getAwsTemporaryCredentials(athenzDomain, awsRole);
+            this.credentials = ztsClient.getAwsTemporaryCredentials(athenzDomain, awsRole, externalId);
         }
         return credentials;
     }
