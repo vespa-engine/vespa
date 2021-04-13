@@ -260,6 +260,7 @@ public class Flags {
             "Whether to wait for all participating servers to delete application on config servers (with timeout) on",
             "Takes effect on next delete of an application");
 
+
     public static final UnboundBooleanFlag REBUILD_HOST = defineFeatureFlag(
             "rebuild-host", false,
             List.of("mpolden"), "2021-04-09", "2021-06-01",
@@ -272,6 +273,13 @@ public class Flags {
             "Whether jdisc HTTPS connectors should allow HTTP/2",
             "Takes effect at redeployment",
             APPLICATION_ID);
+
+    public static final UnboundBooleanFlag UPGRADE_DELL_SSD_FIRMWARE = defineFeatureFlag(
+            "upgrade_dell_ssd_firmware", false,
+            List.of("andreer"), "2021-04-13", "2021-05-13",
+            "Whether to consider upgrading Dell SSD firmware",
+            "Takes effect on next host-admin tick",
+            HOSTNAME);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
