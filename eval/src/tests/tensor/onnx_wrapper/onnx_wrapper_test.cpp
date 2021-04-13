@@ -347,12 +347,12 @@ TEST(OnnxTest, zero_copy_unstable_types) {
     ASSERT_EQ(cells16.type, CellType::BFLOAT16);
     ASSERT_EQ(cells8.size, 3);
     ASSERT_EQ(cells16.size, 3);
-    EXPECT_EQ(cells8.typify<Int8Float>()[0], 2.0);
-    EXPECT_EQ(cells8.typify<Int8Float>()[1], 4.0);
+    EXPECT_EQ(cells8.typify<Int8Float>()[0], 4.0);
+    EXPECT_EQ(cells8.typify<Int8Float>()[1], 5.0);
     EXPECT_EQ(cells8.typify<Int8Float>()[2], 6.0);
-    EXPECT_EQ(cells16.typify<BFloat16>()[0], 8.0);
-    EXPECT_EQ(cells16.typify<BFloat16>()[1], 10.0);
-    EXPECT_EQ(cells16.typify<BFloat16>()[2], 12.0);
+    EXPECT_EQ(cells16.typify<BFloat16>()[0], 1.0);
+    EXPECT_EQ(cells16.typify<BFloat16>()[1], 2.0);
+    EXPECT_EQ(cells16.typify<BFloat16>()[2], 3.0);
     //-------------------------------------------------------------------------
 }
 
@@ -392,12 +392,12 @@ TEST(OnnxTest, converted_unstable_types) {
     ASSERT_EQ(cells16.type, CellType::BFLOAT16);
     ASSERT_EQ(cells8.size, 3);
     ASSERT_EQ(cells16.size, 3);
-    EXPECT_EQ(cells8.typify<Int8Float>()[0], 2.0);
-    EXPECT_EQ(cells8.typify<Int8Float>()[1], 4.0);
+    EXPECT_EQ(cells8.typify<Int8Float>()[0], 4.0);
+    EXPECT_EQ(cells8.typify<Int8Float>()[1], 5.0);
     EXPECT_EQ(cells8.typify<Int8Float>()[2], 6.0);
-    EXPECT_EQ(cells16.typify<BFloat16>()[0], 8.0);
-    EXPECT_EQ(cells16.typify<BFloat16>()[1], 10.0);
-    EXPECT_EQ(cells16.typify<BFloat16>()[2], 12.0);
+    EXPECT_EQ(cells16.typify<BFloat16>()[0], 1.0);
+    EXPECT_EQ(cells16.typify<BFloat16>()[1], 2.0);
+    EXPECT_EQ(cells16.typify<BFloat16>()[2], 3.0);
     //-------------------------------------------------------------------------
 }
 
