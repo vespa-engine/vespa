@@ -622,6 +622,7 @@ fi
 %dir %{_prefix}
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
+%{_prefix}/lib/jars/asm-*.jar
 %{_prefix}/lib/jars/aopalliance-repackaged-*.jar
 %{_prefix}/lib/jars/bcpkix-jdk15on-*.jar
 %{_prefix}/lib/jars/bcprov-jdk15on-*.jar
@@ -655,6 +656,7 @@ fi
 %{_prefix}/lib/jars/mimepull-*.jar
 %{_prefix}/lib/jars/model-evaluation-jar-with-dependencies.jar
 %{_prefix}/lib/jars/model-integration-jar-with-dependencies.jar
+%{_prefix}/lib/jars/org.apache.aries.spifly.dynamic.bundle-*.jar
 %{_prefix}/lib/jars/osgi-resource-locator-*.jar
 %{_prefix}/lib/jars/security-utils-jar-with-dependencies.jar
 %{_prefix}/lib/jars/simplemetrics-jar-with-dependencies.jar

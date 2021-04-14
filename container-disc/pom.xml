@@ -202,6 +202,13 @@
                 jetty-servlets-${jetty.version}.jar,
                 jetty-util-${jetty.version}.jar,
                 jetty-util-ajax-${jetty.version}.jar,
+                <!-- Spifly (required for OSGi service loader in Jetty)  -->
+                org.apache.aries.spifly.dynamic.bundle-${spifly.version}.jar,
+                asm-${asm.version}.jar,
+                asm-analysis-${asm.version}.jar,
+                asm-commons-${asm.version}.jar,
+                asm-tree-${asm.version}.jar,
+                asm-util-${asm.version}.jar,
                 <!-- Misc 3rd party bundles -->
                 bcpkix-jdk15on-${bouncycastle.version}.jar,
                 bcprov-jdk15on-${bouncycastle.version}.jar,
