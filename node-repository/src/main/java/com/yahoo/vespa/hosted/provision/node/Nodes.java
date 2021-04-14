@@ -508,7 +508,7 @@ public class Nodes {
 
             if (node.type().isHost()) {
                 List<Node> removed = removeChildren(node, force);
-                if (zone.getCloud().dynamicProvisioning() || node.type() != NodeType.host)
+                if (zone.getCloud().dynamicProvisioning())
                     db.removeNodes(List.of(node));
                 else {
                     if (!node.status().wantToRebuild()) { // Keep IP addresses if we're rebuilding
