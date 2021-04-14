@@ -43,6 +43,7 @@ private:
     ReferenceStore _store;
     ReferenceStoreIndices _indices;
     vespalib::MemoryUsage _cached_unique_store_values_memory_usage;
+    vespalib::MemoryUsage _cached_unique_store_dictionary_memory_usage;
     std::shared_ptr<IGidToLidMapperFactory> _gidToLidMapperFactory;
     ReferenceMappings _referenceMappings;
 
@@ -57,6 +58,7 @@ private:
 
     bool consider_compact_values(const CompactionStrategy &compactionStrategy);
     void compact_worst_values();
+    bool consider_compact_dictionary(const CompactionStrategy& compaction_strategy);
     IndicesCopyVector getIndicesCopy(uint32_t size) const;
     void removeReverseMapping(EntryRef oldRef, uint32_t lid);
     void addReverseMapping(EntryRef newRef, uint32_t lid);

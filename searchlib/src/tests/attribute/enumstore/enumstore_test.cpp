@@ -700,6 +700,71 @@ TYPED_TEST(EnumStoreDictionaryTest, normalize_posting_lists_works)
     EXPECT_EQ(EntryRef(), find_result.second);
 }
 
+namespace {
+
+void inc_generation(generation_t &gen, NumericEnumStore &store)
+{
+    store.freeze_dictionary();
+    store.transfer_hold_lists(gen);
+    ++gen;
+    store.trim_hold_lists(gen);
+}
+
+}
+
+TYPED_TEST(EnumStoreDictionaryTest, compact_worst_works)
+{
+    size_t entry_count = (search::CompactionStrategy::DEAD_BYTES_SLACK / 8) + 40;
+    auto updater = this->store.make_batch_updater();
+    for (int32_t i = 0; (size_t) i < entry_count; ++i) {
+        auto idx = updater.insert(i);
+        if (i < 20) {
+            updater.inc_ref_count(idx);
+        }
+    }
+    updater.commit();
+    generation_t gen = 3;
+    inc_generation(gen, this->store);
+    auto& dict = this->store.get_dictionary();
+    if (dict.get_has_btree_dictionary()) {
+        EXPECT_LT(search::CompactionStrategy::DEAD_BYTES_SLACK, dict.get_btree_memory_usage().deadBytes());
+    }
+    if (dict.get_has_hash_dictionary()) {
+        EXPECT_LT(search::CompactionStrategy::DEAD_BYTES_SLACK, dict.get_hash_memory_usage().deadBytes());
+    }
+    int compact_count = 0;
+    search::CompactionStrategy compaction_strategy;
+    for (uint32_t i = 0; i < 15; ++i) {
+        this->store.update_stat();
+        if (this->store.consider_compact_dictionary(compaction_strategy)) {
+            ++compact_count;
+        } else {
+            break;
+        }
+        EXPECT_FALSE(this->store.consider_compact_dictionary(compaction_strategy));
+        inc_generation(gen, this->store);
+    }
+    EXPECT_LT((TypeParam::type == Type::BTREE_AND_HASH) ? 1 : 0, compact_count);
+    EXPECT_GT(15, compact_count);
+    if (dict.get_has_btree_dictionary()) {
+        EXPECT_GT(search::CompactionStrategy::DEAD_BYTES_SLACK, dict.get_btree_memory_usage().deadBytes());
+    }
+    if (dict.get_has_hash_dictionary()) {
+        EXPECT_GT(search::CompactionStrategy::DEAD_BYTES_SLACK, dict.get_hash_memory_usage().deadBytes());
+    }
+    std::vector<int32_t> exp_values;
+    std::vector<int32_t> values;
+    for (int32_t i = 0; i < 20; ++i) {
+        exp_values.push_back(i);
+    }
+    auto read_snapshot = dict.get_read_snapshot();
+    auto& mystore = this->store;
+    read_snapshot->fill();
+    read_snapshot->sort();
+    read_snapshot->foreach_key([&values, &mystore](EntryRef idx) { values.push_back(mystore.get_value(idx)); });
+    EXPECT_EQ(exp_values, values);
+}
+
 #pragma GCC diagnostic pop
 
 }

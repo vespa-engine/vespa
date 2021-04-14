@@ -56,6 +56,8 @@ private:
     IEnumStoreDictionary* _dict;
     vespalib::MemoryUsage _cached_values_memory_usage;
     vespalib::AddressSpace _cached_values_address_space_usage;
+    vespalib::MemoryUsage _cached_dictionary_btree_usage;
+    vespalib::MemoryUsage _cached_dictionary_hash_usage;
 
     EnumStoreT(const EnumStoreT & rhs) = delete;
     EnumStoreT & operator=(const EnumStoreT & rhs) = delete;
@@ -201,6 +203,7 @@ public:
     vespalib::MemoryUsage update_stat() override;
     std::unique_ptr<EnumIndexRemapper> consider_compact_values(const CompactionStrategy& compaction_strategy) override;
     std::unique_ptr<EnumIndexRemapper> compact_worst_values(bool compact_memory, bool compact_address_space) override;
+    bool consider_compact_dictionary(const CompactionStrategy& compaction_strategy) override;
     uint64_t get_compaction_count() const override {
         return _store.get_data_store().get_compaction_count();
     }

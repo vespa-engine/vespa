@@ -39,6 +39,8 @@ public:
     virtual bool get_has_hash_dictionary() const = 0;
     virtual vespalib::MemoryUsage get_btree_memory_usage() const = 0;
     virtual vespalib::MemoryUsage get_hash_memory_usage() const = 0;
+    virtual bool has_held_buffers() const = 0;
+    virtual void compact_worst(bool compact_btree_dictionary, bool compact_hash_dictionary) = 0;
 };
 
 }
