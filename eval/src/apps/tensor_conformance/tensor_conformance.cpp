@@ -154,7 +154,7 @@ class MyTestBuilder : public TestBuilder {
 private:
     TestWriter _writer;
 public:
-    MyTestBuilder(Output &out) : _writer(out) {}
+    MyTestBuilder(bool full_in, Output &out) : TestBuilder(full_in), _writer(out) {}
     void add(const vespalib::string &expression,
              const std::map<vespalib::string,TensorSpec> &inputs_in) override
     {
@@ -168,8 +168,8 @@ public:
     }
 };
 
-void generate(Output &out) {
-    MyTestBuilder my_test_builder(out);
+void generate(Output &out, bool full) {
+    MyTestBuilder my_test_builder(full, out);
     Generator::generate(my_test_builder);
 }
 
@@ -258,6 +258,7 @@ int usage(const char *self) {
     fprintf(stderr, "              that all results are as expected\n");
     fprintf(stderr, "    'display': read tests from stdin and print them to stdout\n");
     fprintf(stderr, "               in human-readable form\n");
+    fprintf(stderr, "    'generate-some': write some test cases to stdout\n");
     return 1;
 }
 
@@ -270,7 +271,9 @@ int main(int argc, char **argv) {
     vespalib::string mode = argv[1];
     TEST_MASTER.init(make_string("vespa-tensor-conformance-%s", mode.c_str()).c_str());
     if (mode == "generate") {
-        generate(std_out);
+        generate(std_out, true);
+    } else if (mode == "generate-some") {
+        generate(std_out, false);
     } else if (mode == "evaluate") {
         evaluate(std_in, std_out);
     } else if (mode == "verify") {

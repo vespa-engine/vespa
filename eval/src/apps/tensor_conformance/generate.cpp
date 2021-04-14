@@ -2,6 +2,7 @@
 
 #include "generate.h"
 #include <vespa/vespalib/testkit/test_kit.h>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/eval/test/tensor_model.h>
 #include <vespa/eval/eval/operation.h>
 #include <vespa/eval/eval/aggr.h>
@@ -9,35 +10,102 @@
 
 using namespace vespalib::eval;
 using namespace vespalib::eval::test;
+using vespalib::make_string_short::fmt;
+
+//-----------------------------------------------------------------------------
+
+namespace {
+
+//-----------------------------------------------------------------------------
+
+const std::vector<vespalib::string> basic_layouts = {
+    "",
+    "a3", "a3c5", "a3c5e7",
+    "b2_1", "b2_1d3_1", "b2_1d3_1f4_1",
+    "a3b2_1c5d3_1", "b2_1c5d3_1e7"
+};
+
+const std::vector<std::pair<vespalib::string,vespalib::string>> join_layouts = {
+    {"", ""},
+    {"", "a3"},
+    {"", "b2_1"},
+    {"", "a3b2_1"},
+    {"a3c5e7", "a3c5e7"},
+    {"c5", "a3e7"},
+    {"a3c5", "c5e7"},
+    {"b4_1d6_1f8_1", "b2_2d3_2f4_2"},
+    {"d3_1", "b2_1f4_1"},
+    {"b2_1d6_1", "d3_2f4_2"},
+    {"a3b4_1c5d6_1", "a3b2_1c5d3_1"},
+    {"a3b2_1", "c5d3_1"},
+    {"a3b4_1c5", "b2_1c5d3_1"}
+};
+
+//-----------------------------------------------------------------------------
+
+const std::vector<CellType> just_double = {CellType::DOUBLE};
+const std::vector<CellType> just_float = {CellType::FLOAT};
+const std::vector<CellType> all_types = CellTypeUtils::list_types();
 
 const double my_nan = std::numeric_limits<double>::quiet_NaN();
+
+Sequence skew(const Sequence &seq) {
+    return [seq](size_t i) { return seq(i + 7); };
+}
+
+Sequence my_seq(double x0, double delta, size_t n) {
+    std::vector<double> values;
+    double x = x0;
+    for (size_t i = 0; i < n; ++i) {
+        values.push_back(x);
+        x += delta;
+    }
+    return Seq(values);
+}
+
+//-----------------------------------------------------------------------------
+
+void generate(const vespalib::string &expr, const GenSpec &a, TestBuilder &dst) {
+    auto a_cell_types = a.dims().empty() ? just_double : dst.full ? all_types : just_float;
+    for (auto a_ct: a_cell_types) {
+        dst.add(expr, {{"a", a.cpy().cells(a_ct)}});
+    }
+}
+
+//-----------------------------------------------------------------------------
+
+void generate(const vespalib::string &expr, const GenSpec &a, const GenSpec &b, TestBuilder &dst) {
+    auto a_cell_types = a.dims().empty() ? just_double : dst.full ? all_types : just_float;
+    auto b_cell_types = b.dims().empty() ? just_double : dst.full ? all_types : just_float;
+    for (auto a_ct: a_cell_types) {
+        for (auto b_ct: b_cell_types) {
+            dst.add(expr, {{"a", a.cpy().cells(a_ct)},{"b", b.cpy().cells(b_ct)}});
+        }
+    }
+}
 
 //-----------------------------------------------------------------------------
 
 void generate_reduce(Aggr aggr, const Sequence &seq, TestBuilder &dst) {
-    std::vector<Layout> layouts = {
-        {x(3)},
-        {x(3),y(5)},
-        {x(3),y(5),z(7)},
-        float_cells({x(3),y(5),z(7)}),
-        {x({"a","b","c"})},
-        {x({"a","b","c"}),y({"foo","bar"})},
-        {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})},
-        float_cells({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}),
-        {x(3),y({"foo", "bar"}),z(7)},
-        {x({"a","b","c"}),y(5),z({"i","j","k","l"})},
-        float_cells({x({"a","b","c"}),y(5),z({"i","j","k","l"})})
-    };
-    for (const Layout &layout: layouts) {
-        TensorSpec input = spec(layout, seq);
-        for (const Domain &domain: layout) {
-            vespalib::string expr = vespalib::make_string("reduce(a,%s,%s)",
-                    AggrNames::name_of(aggr)->c_str(), domain.name().c_str());
-            dst.add(expr, {{"a", input}});
+    for (const auto &layout: basic_layouts) {
+        GenSpec a = GenSpec::from_desc(layout).seq(seq);
+        for (const auto &dim: a.dims()) {
+            vespalib::string expr = fmt("reduce(a,%s,%s)",
+                                        AggrNames::name_of(aggr)->c_str(),
+                                        dim.name().c_str());
+            generate(expr, a, dst);
+        }
+        if (a.dims().size() > 1) {
+            vespalib::string expr = fmt("reduce(a,%s,%s,%s)",
+                                        AggrNames::name_of(aggr)->c_str(),
+                                        a.dims().back().name().c_str(),
+                                        a.dims().front().name().c_str());
+            generate(expr, a, dst);
         }
         {
-            vespalib::string expr = vespalib::make_string("reduce(a,%s)", AggrNames::name_of(aggr)->c_str());
-            dst.add(expr, {{"a", input}});
+            vespalib::string expr = fmt("reduce(a,%s)",
+                                        AggrNames::name_of(aggr)->c_str());
+            generate(expr, a, dst);
         }
     }
 }
@@ -55,28 +123,15 @@ void generate_tensor_reduce(TestBuilder &dst) {
 //-----------------------------------------------------------------------------
 
 void generate_map_expr(const vespalib::string &expr, const Sequence &seq, TestBuilder &dst) {
-    std::vector<Layout> layouts = {
-        {},
-        {x(3)},
-        {x(3),y(5)},
-        {x(3),y(5),z(7)},
-        float_cells({x(3),y(5),z(7)}),
-        {x({"a","b","c"})},
-        {x({"a","b","c"}),y({"foo","bar"})},
-        {x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})},
-        float_cells({x({"a","b","c"}),y({"foo","bar"}),z({"i","j","k","l"})}),
-        {x(3),y({"foo", "bar"}),z(7)},
-        {x({"a","b","c"}),y(5),z({"i","j","k","l"})},
-        float_cells({x({"a","b","c"}),y(5),z({"i","j","k","l"})})
-    };
-    for (const Layout &layout: layouts) {
-        dst.add(expr, {{"a", spec(layout, seq)}});
+    for (const auto &layout: basic_layouts) {
+        GenSpec a = GenSpec::from_desc(layout).seq(seq);
+        generate(expr, a, dst);
     }
 }
 
 void generate_op1_map(const vespalib::string &op1_expr, const Sequence &seq, TestBuilder &dst) {
     generate_map_expr(op1_expr, seq, dst);
-    generate_map_expr(vespalib::make_string("map(a,f(a)(%s))", op1_expr.c_str()), seq, dst);
+    generate_map_expr(fmt("map(a,f(a)(%s))", op1_expr.c_str()), seq, dst);
 }
 
 void generate_tensor_map(TestBuilder &dst) {
@@ -110,46 +165,17 @@ void generate_tensor_map(TestBuilder &dst) {
 //-----------------------------------------------------------------------------
 
 void generate_join_expr(const vespalib::string &expr, const Sequence &seq, TestBuilder &dst) {
-    std::vector<Layout> layouts = {
-        {},                                                 {},
-        {},                                                 {x(5)},
-        {x(5)},                                             {},
-        {},                                                 float_cells({x(5)}),
-        float_cells({x(5)}),                                {},
-        {x(5)},                                             {x(5)},
-        {x(5)},                                             {y(5)},
-        {x(5)},                                             {x(5),y(5)},
-        {y(3)},                                             {x(2),z(3)},
-        {x(3),y(5)},                                        {y(5),z(7)},
-        float_cells({x(3),y(5)}),                           {y(5),z(7)},
-        {x(3),y(5)},                                        float_cells({y(5),z(7)}),
-        float_cells({x(3),y(5)}),                           float_cells({y(5),z(7)}),
-        {x({"a","b","c"})},                                 {x({"a","b","c"})},
-        {x({"a","b","c"})},                                 {x({"a","b"})},
-        {x({"a","b","c"})},                                 {y({"foo","bar","baz"})},
-        {x({"a","b","c"})},                                 {x({"a","b","c"}),y({"foo","bar","baz"})},
-        {x({"a","b"}),y({"foo","bar","baz"})},              {x({"a","b","c"}),y({"foo","bar"})},
-        {x({"a","b"}),y({"foo","bar","baz"})},              {y({"foo","bar"}),z({"i","j","k","l"})},
-        float_cells({x({"a","b"}),y({"foo","bar","baz"})}), {y({"foo","bar"}),z({"i","j","k","l"})},
-        {x({"a","b"}),y({"foo","bar","baz"})},              float_cells({y({"foo","bar"}),z({"i","j","k","l"})}),
-        float_cells({x({"a","b"}),y({"foo","bar","baz"})}), float_cells({y({"foo","bar"}),z({"i","j","k","l"})}),
-        {x(3),y({"foo", "bar"})},                           {y({"foo", "bar"}),z(7)},
-        {x({"a","b","c"}),y(5)},                            {y(5),z({"i","j","k","l"})},
-        float_cells({x({"a","b","c"}),y(5)}),               {y(5),z({"i","j","k","l"})},
-        {x({"a","b","c"}),y(5)},                            float_cells({y(5),z({"i","j","k","l"})}),
-        float_cells({x({"a","b","c"}),y(5)}),               float_cells({y(5),z({"i","j","k","l"})})
-    };
-    ASSERT_TRUE((layouts.size() % 2) == 0);
-    for (size_t i = 0; i < layouts.size(); i += 2) {
-        auto a = spec(layouts[i], seq);
-        auto b = spec(layouts[i + 1], seq);
-        dst.add(expr, {{"a", a}, {"b", b}});
+    for (const auto &layouts: join_layouts) {
+        GenSpec a = GenSpec::from_desc(layouts.first).seq(seq);
+        GenSpec b = GenSpec::from_desc(layouts.second).seq(skew(seq));
+        generate(expr, a, b, dst);
+        generate(expr, b, a, dst);
     }
 }
 
 void generate_op2_join(const vespalib::string &op2_expr, const Sequence &seq, TestBuilder &dst) {
     generate_join_expr(op2_expr, seq, dst);
-    generate_join_expr(vespalib::make_string("join(a,b,f(a,b)(%s))", op2_expr.c_str()), seq, dst);
+    generate_join_expr(fmt("join(a,b,f(a,b)(%s))", op2_expr.c_str()), seq, dst);
 }
 
 void generate_tensor_join(TestBuilder &dst) {
@@ -158,8 +184,8 @@ void generate_tensor_join(TestBuilder &dst) {
     generate_op2_join("a*b", Div16(N()), dst);
     generate_op2_join("a/b", Div16(N()), dst);
     generate_op2_join("a%b", Div16(N()), dst);
-    generate_op2_join("a^b", Div16(N()), dst);
-    generate_op2_join("pow(a,b)", Div16(N()), dst);
+    generate_op2_join("a^b", my_seq(1.0, 1.0, 5), dst);
+    generate_op2_join("pow(a,b)", my_seq(1.0, 1.0, 5), dst);
     generate_op2_join("a==b", Div16(N()), dst);
     generate_op2_join("a!=b", Div16(N()), dst);
     generate_op2_join("a~=b", Div16(N()), dst);
@@ -274,6 +300,10 @@ void generate_tensor_lambda(TestBuilder &dst) {
     dst.add("tensor(x[5],y[4])(x*4+(y+1))", {{}});
     dst.add("tensor(x[5],y[4])(x==y)", {{}});
 }
+
+//-----------------------------------------------------------------------------
+
+} // namespace <unnamed>
 
 //-----------------------------------------------------------------------------
 

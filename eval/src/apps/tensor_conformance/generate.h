@@ -6,6 +6,8 @@
 #include <map>
 
 struct TestBuilder {
+    bool full;
+    TestBuilder(bool full_in) : full(full_in) {}
     using TensorSpec = vespalib::eval::TensorSpec;
     virtual void add(const vespalib::string &expression,
                      const std::map<vespalib::string,TensorSpec> &inputs) = 0;
