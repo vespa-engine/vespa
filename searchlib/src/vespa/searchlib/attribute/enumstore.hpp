@@ -252,11 +252,15 @@ EnumStoreT<EntryT>::consider_compact_dictionary(const CompactionStrategy& compac
     if (_dict->has_held_buffers()) {
         return false;
     }
-    if (compaction_strategy.should_compact_memory(_cached_dictionary_btree_usage.usedBytes(), _cached_dictionary_btree_usage.usedBytes())) {
+    if (compaction_strategy.should_compact_memory(_cached_dictionary_btree_usage.usedBytes(),
+                                                  _cached_dictionary_btree_usage.deadBytes()))
+    {
         _dict->compact_worst(true, false);
         return true;
     }
-    if (compaction_strategy.should_compact_memory(_cached_dictionary_hash_usage.usedBytes(), _cached_dictionary_hash_usage.usedBytes())) {
+    if (compaction_strategy.should_compact_memory(_cached_dictionary_hash_usage.usedBytes(),
+                                                  _cached_dictionary_hash_usage.deadBytes()))
+    {
         _dict->compact_worst(false, true);
         return true;
     }

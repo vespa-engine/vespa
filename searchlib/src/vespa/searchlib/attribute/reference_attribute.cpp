@@ -318,7 +318,9 @@ ReferenceAttribute::consider_compact_dictionary(const CompactionStrategy &compac
     if (dictionary.has_held_buffers()) {
         return false;
     }
-    if (compaction_strategy.should_compact_memory(_cached_unique_store_dictionary_memory_usage.usedBytes(), _cached_unique_store_dictionary_memory_usage.usedBytes())) {
+    if (compaction_strategy.should_compact_memory(_cached_unique_store_dictionary_memory_usage.usedBytes(),
+                                                  _cached_unique_store_dictionary_memory_usage.deadBytes()))
+    {
         dictionary.compact_worst(true, true);
         return true;
     }
