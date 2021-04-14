@@ -1562,14 +1562,10 @@ make_iterators(Tree& t, std::vector<int>& list, std::vector<typename Tree::Const
 class KeyRangeValidator
 {
     std::vector<int> &_list;
-    size_t _start_pos;
-    size_t _end_pos;
     size_t _curr_pos;
 public:
-    KeyRangeValidator(std::vector<int> &list, size_t start_pos, size_t end_pos)
+    KeyRangeValidator(std::vector<int> &list, size_t start_pos)
         : _list(list),
-          _start_pos(start_pos),
-          _end_pos(end_pos),
           _curr_pos(start_pos)
     {
     }
@@ -1619,13 +1615,13 @@ TEST_F(BTreeTest, require_that_compaction_works)
             EXPECT_EQ(before_iterators[i] - after_iterators[j], static_cast<ssize_t>(i - j));
             EXPECT_EQ(after_iterators[j] - before_iterators[i], static_cast<ssize_t>(j - i));
             if (i <= j) {
-                KeyRangeValidator validate_keys(before_list, i, j);
+                KeyRangeValidator validate_keys(before_list, i);
                 EXPECT_EQ(i, validate_keys.curr_pos());
                 before_iterators[i].foreach_key_range(after_iterators[j], [&validate_keys](int key) { validate_keys(key); });
                 EXPECT_EQ(j, validate_keys.curr_pos());
             }
             if (j <= i) {
-                KeyRangeValidator validate_keys(before_list, j, i);
+                KeyRangeValidator validate_keys(before_list, j);
                 EXPECT_EQ(j, validate_keys.curr_pos());
                 after_iterators[j].foreach_key_range(before_iterators[i], [&validate_keys](int key) { validate_keys(key); });
                 EXPECT_EQ(i, validate_keys.curr_pos());
