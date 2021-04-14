@@ -2,7 +2,10 @@
 package com.yahoo.vespa.hosted.controller.api.integration.vcmr;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Objects;
+
+import static com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestSource.Status.*;
 
 /**
  * @author olaa
@@ -78,6 +81,10 @@ public class ChangeRequestSource {
     @Override
     public int hashCode() {
         return Objects.hash(system, id, status, url, plannedStartTime, plannedEndTime);
+    }
+
+    public boolean isClosed() {
+        return List.of(CLOSED, CANCELED, COMPLETE).contains(status);
     }
 
     public enum Status {

@@ -40,12 +40,16 @@ public class VespaChangeRequest extends ChangeRequest {
         return zoneId;
     }
 
+    public VespaChangeRequest withStatus(Status status) {
+        return new VespaChangeRequest(getId(), getChangeRequestSource(), getImpactedSwitches(), getImpactedHosts(), getApproval(), getImpact(), status, hostActionPlan, zoneId);
+    }
+
     public VespaChangeRequest withSource(ChangeRequestSource source) {
         return new VespaChangeRequest(getId(), source, getImpactedSwitches(), getImpactedHosts(), getApproval(), getImpact(), status, hostActionPlan, zoneId);
     }
 
-    public VespaChangeRequest withImpactedHosts(List<String> hosts) {
-        return new VespaChangeRequest(getId(), getChangeRequestSource(), getImpactedSwitches(), new ArrayList<>(hosts), getApproval(), getImpact(), status, hostActionPlan, zoneId);
+    public VespaChangeRequest withActionPlan(List<HostAction> hostActionPlan) {
+        return new VespaChangeRequest(getId(), getChangeRequestSource(), getImpactedSwitches(), getImpactedHosts(), getApproval(), getImpact(), status, hostActionPlan, zoneId);
     }
 
     @Override
@@ -62,6 +66,21 @@ public class VespaChangeRequest extends ChangeRequest {
     @Override
     public int hashCode() {
         return Objects.hash(super.hashCode(), status, hostActionPlan, zoneId);
+    }
+
+    @Override
+    public String toString() {
+        return "VespaChangeRequest{" +
+                "id='" + getId() + '\'' +
+                ", changeRequestSource=" + getChangeRequestSource() +
+                ", impactedSwitches=" + getImpactedSwitches() +
+                ", impactedHosts=" + getImpactedHosts() +
+                ", approval=" + getApproval() +
+                ", impact=" + getImpact() +
+                ", status=" + status +
+                ", zoneId=" + zoneId +
+                ", hostActionPlan=" + hostActionPlan +
+                '}';
     }
 
     public enum Status {
