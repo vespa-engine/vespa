@@ -185,7 +185,7 @@ public class RetiredExpirerTest {
 
         // Set wantToRetire on all 3 config servers
         List<Node> wantToRetireNodes = tester.nodeRepository().nodes()
-                .retire(NodeTypeFilter.from(NodeType.config, null), Agent.operator, Instant.now());
+                .retire(NodeTypeFilter.from(NodeType.config), Agent.operator, Instant.now());
         assertEquals(3, wantToRetireNodes.size());
 
         // Redeploy to retire all 3 config servers

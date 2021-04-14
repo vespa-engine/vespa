@@ -271,7 +271,7 @@ public class ProvisioningTester {
         for (Node node : nodeRepository.nodes().list(Node.State.active).owner(application)) {
             int expectedRestarts = 0;
             for (HostFilter filter : filters)
-                if (NodeHostFilter.from(filter).matches(node))
+                if (NodeHostFilter.from(filter).test(node))
                     expectedRestarts++;
             assertEquals(expectedRestarts, node.allocation().get().restartGeneration().wanted());
         }

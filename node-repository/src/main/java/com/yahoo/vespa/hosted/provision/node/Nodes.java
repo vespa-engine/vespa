@@ -16,7 +16,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
-import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 import com.yahoo.vespa.hosted.provision.restapi.NotFoundException;
@@ -32,6 +31,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -581,8 +581,8 @@ public class Nodes {
      *
      * @return the nodes in their new state
      */
-    public List<Node> restart(NodeFilter filter) {
-        return performOn(StateFilter.from(Node.State.active, filter),
+    public List<Node> restart(Predicate<Node> filter) {
+        return performOn(StateFilter.from(Node.State.active).and(filter),
                          (node, lock) -> write(node.withRestart(node.allocation().get().restartGeneration().withIncreasedWanted()),
                                                lock));
     }
@@ -592,7 +592,7 @@ public class Nodes {
      *
      * @return the nodes in their new state
      */
-    public List<Node> reboot(NodeFilter filter) {
+    public List<Node> reboot(Predicate<Node> filter) {
         return performOn(filter, (node, lock) -> write(node.withReboot(node.status().reboot().withIncreasedWanted()), lock));
     }
 
@@ -601,7 +601,7 @@ public class Nodes {
      *
      * @return the nodes in their new state
      */
-    public List<Node> upgradeOs(NodeFilter filter, Optional<Version> version) {
+    public List<Node> upgradeOs(Predicate<Node> filter, Optional<Version> version) {
         return performOn(filter, (node, lock) -> {
             var newStatus = node.status().withOsVersion(node.status().osVersion().withWanted(version));
             return write(node.with(newStatus), lock);
@@ -609,7 +609,7 @@ public class Nodes {
     }
 
     /** Retire nodes matching given filter */
-    public List<Node> retire(NodeFilter filter, Agent agent, Instant instant) {
+    public List<Node> retire(Predicate<Node> filter, Agent agent, Instant instant) {
         return performOn(filter, (node, lock) -> write(node.withWantToRetire(true, agent, instant), lock));
     }
 
@@ -662,7 +662,7 @@ public class Nodes {
         return db.writeTo(nodes, Agent.system, Optional.empty());
     }
 
-    private List<Node> performOn(NodeFilter filter, BiFunction<Node, Mutex, Node> action) {
+    private List<Node> performOn(Predicate<Node> filter, BiFunction<Node, Mutex, Node> action) {
         return performOn(list().matching(filter), action);
     }
 

@@ -36,7 +36,6 @@ import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.IP;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
-import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeHostFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeOsVersionFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeTypeFilter;
@@ -58,6 +57,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
 
@@ -330,17 +330,16 @@ public class NodesV2ApiHandler extends LoggingRequestHandler {
         return NodeSerializer.typeFrom(object.asString());
     }
 
-    public static NodeFilter toNodeFilter(HttpRequest request) {
-        NodeFilter filter = NodeHostFilter.from(HostFilter.from(request.getProperty("hostname"),
-                                                                request.getProperty("flavor"),
-                                                                request.getProperty("clusterType"),
-                                                                request.getProperty("clusterId")));
-        filter = ApplicationFilter.from(request.getProperty("application"), filter);
-        filter = StateFilter.from(request.getProperty("state"), request.getBooleanProperty("includeDeprovisioned"), filter);
-        filter = NodeTypeFilter.from(request.getProperty("type"), filter);
-        filter = ParentHostFilter.from(request.getProperty("parentHost"), filter);
-        filter = NodeOsVersionFilter.from(request.getProperty("osVersion"), filter);
-        return filter;
+    public static Predicate<Node> toNodeFilter(HttpRequest request) {
+        return NodeHostFilter.from(HostFilter.from(request.getProperty("hostname"),
+                                                   request.getProperty("flavor"),
+                                                   request.getProperty("clusterType"),
+                                                   request.getProperty("clusterId")))
+                .and(ApplicationFilter.from(request.getProperty("application")))
+                .and(StateFilter.from(request.getProperty("state"), request.getBooleanProperty("includeDeprovisioned")))
+                .and(NodeTypeFilter.from(request.getProperty("type")))
+                .and(ParentHostFilter.from(request.getProperty("parentHost")))
+                .and(NodeOsVersionFilter.from(request.getProperty("osVersion")));
     }
 
     private static boolean isPatchOverride(HttpRequest request) {
