@@ -2,6 +2,7 @@
 package com.yahoo.container.handler;
 
 import com.yahoo.container.jdisc.AsyncHttpResponse;
+import com.yahoo.container.jdisc.ContentChannelOutputStream;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.jdisc.handler.ReadableContentChannel;
 import com.yahoo.yolean.Exceptions;
@@ -28,7 +29,7 @@ public class LogHandlerTest {
             String uri = "http://myhost.com:1111/logs?from=1000&to=2000";
             AsyncHttpResponse response = logHandler.handle(HttpRequest.createTestRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.GET));
             ReadableContentChannel out = new ReadableContentChannel();
-            new Thread(() -> Exceptions.uncheck(() -> response.render(null, out, null))).start();
+            new Thread(() -> Exceptions.uncheck(() -> response.render(new ContentChannelOutputStream(out), out, null))).start();
             String expectedResponse = "newer log";
             assertEquals(expectedResponse, new String(out.toStream().readAllBytes(), UTF_8));
         }
@@ -37,7 +38,7 @@ public class LogHandlerTest {
             String uri = "http://myhost.com:1111/logs?from=0&to=1000";
             AsyncHttpResponse response = logHandler.handle(HttpRequest.createTestRequest(uri, com.yahoo.jdisc.http.HttpRequest.Method.GET));
             ReadableContentChannel out = new ReadableContentChannel();
-            new Thread(() -> Exceptions.uncheck(() -> response.render(null, out, null))).start();
+            new Thread(() -> Exceptions.uncheck(() -> response.render(new ContentChannelOutputStream(out), out, null))).start();
             String expectedResponse = "older log";
             assertEquals(expectedResponse, new String(out.toStream().readAllBytes(), UTF_8));
         }

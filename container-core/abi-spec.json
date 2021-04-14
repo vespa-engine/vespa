@@ -606,6 +606,7 @@
     "methods": [
       "public void <init>(int)",
       "public abstract void render(java.io.OutputStream)",
+      "public long maxPendingBytes()",
       "public int getStatus()",
       "public void setStatus(int)",
       "public com.yahoo.jdisc.HeaderFields headers()",
