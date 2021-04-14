@@ -10,7 +10,7 @@ import org.junit.Test;
 /**
  * Functional testing of StemList.
  *
- * @author steinar
+ * @author Steinar Knutsen
  */
 public class StemListTestCase {
 

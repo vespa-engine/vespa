@@ -9,7 +9,7 @@ import static org.junit.Assert.assertEquals;
 /**
  * Check simple token types.
  *
- * @author <a href="mailto:steinar@yahoo-inc.com">Steinar Knutsen</a>
+ * @author Steinar Knutsen
  */
 public class SimpleTokenTypeTestCase {
 

@@ -6,6 +6,7 @@ import org.junit.Test;
 
 import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
 
 import static org.junit.Assert.*;
 
@@ -15,7 +16,7 @@ import static org.junit.Assert.*;
 public class AbstractDetectorTestCase {
 
     private static final Detection DETECTION = new Detection(Language.ARABIC, "encoding", true);
-    private static final Charset UTF8 = Charset.forName("UTF-8");
+    private static final Charset UTF8 = StandardCharsets.UTF_8;
 
     @Test
     public void requireThatDetectStringForwardsUtf8Bytes() {
