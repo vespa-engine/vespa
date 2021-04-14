@@ -520,7 +520,9 @@ public class HttpServerTest {
         Path certificateFile = tmpFolder.newFile().toPath();
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
 
-        TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
+        MetricConsumerMock metricConsumer = new MetricConsumerMock();
+        InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
+        TestDriver driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer, connectionLog);
         try (CloseableHttpAsyncClient client = createHttp2Client(certificateFile, privateKeyFile)) {
             String uri = "https://localhost:" + driver.server().getListenPort() + "/status.html";
             SimpleHttpResponse response = client.execute(SimpleHttpRequests.get(uri), null).get();
@@ -528,6 +530,8 @@ public class HttpServerTest {
             assertEquals(OK, response.getCode());
         }
         assertTrue(driver.close());
+        ConnectionLogEntry entry = connectionLog.logEntries().get(0);
+        assertEquals("HTTP/2.0", entry.httpProtocol().get());
     }
 
     @Test
@@ -806,7 +810,9 @@ public class HttpServerTest {
         assertLogEntryHasRemote(requestLogMock.entries().get(1), proxiedRemoteAddress, proxiedRemotePort);
         Assertions.assertThat(connectionLog.logEntries()).hasSize(2);
         assertLogEntryHasRemote(connectionLog.logEntries().get(0), proxiedRemoteAddress, proxiedRemotePort);
+        assertEquals("v1", connectionLog.logEntries().get(0).proxyProtocolVersion().get());
         assertLogEntryHasRemote(connectionLog.logEntries().get(1), proxiedRemoteAddress, proxiedRemotePort);
+        assertEquals("v2", connectionLog.logEntries().get(1).proxyProtocolVersion().get());
     }
 
     @Test
