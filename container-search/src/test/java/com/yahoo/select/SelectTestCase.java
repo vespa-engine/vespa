@@ -555,12 +555,12 @@ public class SelectTestCase {
     @SuppressWarnings("deprecation")
     public void testWeakAnd() {
         assertParse("{ \"weakAnd\": [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ] }",
-                "WAND(100) a:A b:B");
+                "WEAKAND(100) a:A b:B");
         assertParse("{ \"weakAnd\": { \"children\" : [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ], \"attributes\" : {\"targetHits\": 37} }}",
-                "WAND(37) a:A b:B");
+                "WEAKAND(37) a:A b:B");
 
         QueryTree tree = parseWhere("{ \"weakAnd\": { \"children\" : [{ \"contains\": [\"a\", \"A\"] }, { \"contains\": [\"b\", \"B\"] } ], \"attributes\" : {\"scoreThreshold\": 41}}}");
-        assertEquals("WAND(100) a:A b:B", tree.toString());
+        assertEquals("WEAKAND(100) a:A b:B", tree.toString());
         assertEquals(WeakAndItem.class, tree.getRoot().getClass());
         assertEquals(41, ((WeakAndItem)tree.getRoot()).getScoreThreshold());
     }

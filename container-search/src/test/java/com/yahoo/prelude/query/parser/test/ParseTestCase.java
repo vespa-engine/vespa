@@ -2480,17 +2480,17 @@ public class ParseTestCase {
 
     @Test
     public void testSimpleWandAdvanced() {
-        tester.assertParsed("WAND(100) foo bar baz", "foo wand bar wand baz", Query.Type.ADVANCED);
+        tester.assertParsed("WEAKAND(100) foo bar baz", "foo wand bar wand baz", Query.Type.ADVANCED);
     }
 
     @Test
     public void testSimpleWandAdvancedWithNonDefaultN() {
-        tester.assertParsed("WAND(32) foo bar baz", "foo wand(32) bar wand(32) baz", Query.Type.ADVANCED);
+        tester.assertParsed("WEAKAND(32) foo bar baz", "foo weakand(32) bar weakand(32) baz", Query.Type.ADVANCED);
     }
 
     @Test
     public void testSimpleWandAdvancedWithNonDefaultNAndWeights() {
-        tester.assertParsed("WAND(32) foo!32 bar!64 baz", "foo!32 wand(32) bar!64 wand(32) baz", Query.Type.ADVANCED);
+        tester.assertParsed("WEAKAND(32) foo!32 bar!64 baz", "foo!32 weakand(32) bar!64 weakand(32) baz", Query.Type.ADVANCED);
     }
 
     @Test
