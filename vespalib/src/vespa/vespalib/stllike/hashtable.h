@@ -172,7 +172,7 @@ private:
             }
         }
     }
-    char    _node[sizeof(V)] alignas(V);
+    alignas(V) char    _node[sizeof(V)];
     next_t  _next;
 };
 

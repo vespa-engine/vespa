@@ -582,4 +582,11 @@ TEST("test that hash table clear does not resize hashtable") {
     EXPECT_EQUAL(128u, a.capacity());
 }
 
+TEST("test that hash nodes have expected sizes")
+{
+    EXPECT_EQUAL(8u, sizeof(hash_node<int8_t>));
+    EXPECT_EQUAL(8u, sizeof(hash_node<int32_t>));
+    EXPECT_EQUAL(16u, sizeof(hash_node<int64_t>));
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
