@@ -161,7 +161,7 @@ public:
         Cursor &test = _writer.create();
         test.setString("expression", expression);
         Cursor &inputs = test.setObject("inputs");
-        for (const auto [name, spec]: inputs_in) {
+        for (const auto& [name, spec]: inputs_in) {
             insert_value(inputs, name, spec);
         }
         insert_value(test.setObject("result"), "expect", ref_eval(test));
