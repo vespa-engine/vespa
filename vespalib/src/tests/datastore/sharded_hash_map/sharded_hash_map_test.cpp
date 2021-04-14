@@ -277,4 +277,17 @@ TEST_F(DataStoreShardedHashTest, normalize_values_works)
     }
 }
 
+TEST_F(DataStoreShardedHashTest, compact_worst_shard_works)
+{
+    populate_sample_data();
+    for (uint32_t i = 10; i < 50; ++i) {
+        remove(i);
+    }
+    commit();
+    auto usage_before = _hash_map.get_memory_usage();
+    _hash_map.compact_worst_shard();
+    auto usage_after = _hash_map.get_memory_usage();
+    EXPECT_GT(usage_before.deadBytes(), usage_after.deadBytes());
+}
+
 GTEST_MAIN_RUN_ALL_TESTS()
