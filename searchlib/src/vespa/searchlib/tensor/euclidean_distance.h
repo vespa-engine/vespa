@@ -43,6 +43,7 @@ public:
     {
         assert(expected_cell_type() == vespalib::eval::get_cell_type<FloatType>());
     }
+
     double calc(const vespalib::eval::TypedCells& lhs, const vespalib::eval::TypedCells& rhs) const override {
         constexpr vespalib::eval::CellType expected = vespalib::eval::get_cell_type<FloatType>();
         assert(lhs.type == expected && rhs.type == expected);
@@ -51,6 +52,24 @@ public:
         size_t sz = lhs_vector.size();
         assert(sz == rhs_vector.size());
         return _computer.squaredEuclideanDistance(&lhs_vector[0], &rhs_vector[0], sz);
+    }
+
+    double calc_with_limit(const vespalib::eval::TypedCells& lhs,
+                           const vespalib::eval::TypedCells& rhs,
+                           double limit) const override
+    {
+        constexpr vespalib::eval::CellType expected = vespalib::eval::get_cell_type<FloatType>();
+        assert(lhs.type == expected && rhs.type == expected);
+        auto lhs_vector = lhs.typify<FloatType>();
+        auto rhs_vector = rhs.typify<FloatType>();
+        double sum = 0.0;
+        size_t sz = lhs_vector.size();
+        assert(sz == rhs_vector.size());
+        for (size_t i = 0; i < sz && sum <= limit; ++i) {
+            double diff = lhs_vector[i] - rhs_vector[i];
+            sum += diff*diff;
+        }
+        return sum;
     }
 private:
     const vespalib::hwaccelrated::IAccelrated & _computer;
