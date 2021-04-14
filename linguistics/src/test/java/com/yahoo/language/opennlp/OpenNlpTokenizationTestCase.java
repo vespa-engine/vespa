@@ -24,7 +24,7 @@ import static org.junit.Assert.fail;
 /**
  * Test of tokenization, with stemming and accent removal
  *
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias Mølster Lidal</a>
+ * @author matskin
  */
 public class OpenNlpTokenizationTestCase {
 

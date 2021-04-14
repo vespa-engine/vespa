@@ -33,7 +33,6 @@ public class SimpleLinguistics implements Linguistics {
     private final GramSplitter gramSplitter;
 
     @Inject
-    @SuppressWarnings("deprecation")
     public SimpleLinguistics() {
         this.normalizer = new SimpleNormalizer();
         this.transformer = new SimpleTransformer();
