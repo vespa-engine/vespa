@@ -430,7 +430,12 @@
                 <artifactId>jetty-jmx</artifactId>
                 <version>${jetty.version}</version>
             </dependency>
-
+            <dependency>
+                <!-- Installed in jdisc runtime, but should only be used internally and not leaked as maven dep to users -->
+                <groupId>org.apache.aries.spifly</groupId>
+                <artifactId>org.apache.aries.spifly.dynamic.bundle</artifactId>
+                <version>${spifly.version}</version>
+            </dependency>
             <!-- Please don't add deps here, but instead above the NOTE. -->
 
         </dependencies>
@@ -476,6 +481,7 @@
         <org.lz4.version>1.7.1</org.lz4.version>
         <org.json.version>20090211</org.json.version>
         <slf4j.version>1.7.30</slf4j.version>
+        <spifly.version>1.3.3</spifly.version>
         <xml-apis.version>1.4.01</xml-apis.version>
 
         <!-- These must be kept in sync with version used by current jersey2.version. -->
