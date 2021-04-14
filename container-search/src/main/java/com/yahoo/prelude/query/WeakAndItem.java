@@ -51,7 +51,7 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     public ItemType getItemType() { return ItemType.WEAK_AND; }
 
     @Override
-    public String getName() { return "WAND"; }
+    public String getName() { return "WEAKAND"; }
 
     @Override
     public void setIndexName(String index) {

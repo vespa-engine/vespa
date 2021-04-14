@@ -29,7 +29,7 @@ public class QueryCanonicalizerTestCase {
         CompositeItem root = new WeakAndItem();
 
         root.addItem(new WordItem("word"));
-        assertCanonicalized("WAND(100) word", null, root);
+        assertCanonicalized("WEAKAND(100) word", null, root);
     }
 
     @Test
@@ -128,7 +128,7 @@ public class QueryCanonicalizerTestCase {
 
         l4.addItem(new WordItem("l4"));
 
-        assertCanonicalized("WAND(100) l4 l3 l2 l1", null, root);
+        assertCanonicalized("WEAKAND(100) l4 l3 l2 l1", null, root);
     }
 
     @Test
@@ -145,7 +145,7 @@ public class QueryCanonicalizerTestCase {
 
         l2.addItem(new WordItem("l2"));
 
-        assertCanonicalized("WAND(10) (WAND(100) (WAND(100) l2) l1)", null, root);
+        assertCanonicalized("WEAKAND(10) (WEAKAND(100) (WEAKAND(100) l2) l1)", null, root);
     }
 
     @Test

@@ -192,7 +192,7 @@ public class ItemsCommonStuffTestCase {
         assertEquals("SAND", i.getName());
         i = new WeakAndItem();
         assertEquals(ItemType.WEAK_AND, i.getItemType());
-        assertEquals("WAND", i.getName());
+        assertEquals("WEAKAND", i.getName());
     }
 
     @Test
