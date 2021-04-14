@@ -117,7 +117,7 @@ public:
     }
 };
 
-using FloatSqEuclideanDistance = SquaredEuclideanDistance<float>;
+using FloatSqEuclideanDistance = SquaredEuclideanDistanceHW<float>;
 using HnswIndexUP = std::unique_ptr<HnswIndex>;
 
 class Stressor : public ::testing::Test {
