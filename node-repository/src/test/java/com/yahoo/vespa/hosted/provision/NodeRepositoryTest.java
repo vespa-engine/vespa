@@ -11,6 +11,7 @@ import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -36,14 +37,17 @@ public class NodeRepositoryTest {
         tester.addHost("id1", "host1", "default", NodeType.host);
         tester.addHost("id2", "host2", "default", NodeType.host);
         tester.addHost("id3", "host3", "default", NodeType.host);
+        tester.addHost("id4", "cfghost1", "default", NodeType.confighost);
 
-        assertEquals(3, tester.nodeRepository().nodes().list().size());
-        
-        tester.nodeRepository().nodes().park("host2", true, Agent.system, "Parking to unit test");
-        tester.nodeRepository().nodes().removeRecursively("host2");
+        assertEquals(4, tester.nodeRepository().nodes().list().size());
 
-        assertEquals(3, tester.nodeRepository().nodes().list().size());
-        assertEquals(1, tester.nodeRepository().nodes().list(Node.State.deprovisioned).size());
+        for (var hostname : List.of("host2", "cfghost1")) {
+            tester.nodeRepository().nodes().park(hostname, true, Agent.system, "Parking to unit test");
+            tester.nodeRepository().nodes().removeRecursively(hostname);
+        }
+
+        assertEquals(4, tester.nodeRepository().nodes().list().size());
+        assertEquals(2, tester.nodeRepository().nodes().list(Node.State.deprovisioned).size());
     }
 
     @Test
