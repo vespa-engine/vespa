@@ -94,7 +94,7 @@ public class HostRequestHandler extends RestApiRequestHandler<HostRequestHandler
             throw restApiExceptionFromTimeout("getHost", hostName, e);
         } catch (HostNameNotFoundException e) {
             log.log(Level.FINE, "Host not found: " + hostName);
-            throw new RestApiException.NotFoundException(e);
+            throw new RestApiException.NotFound(e);
         }
     }
 
@@ -117,7 +117,7 @@ public class HostRequestHandler extends RestApiRequestHandler<HostRequestHandler
                 orchestrator.setNodeStatus(hostName, state);
             } catch (HostNameNotFoundException e) {
                 log.log(Level.FINE, "Host not found: " + hostName);
-                throw new RestApiException.NotFoundException(e);
+                throw new RestApiException.NotFound(e);
             } catch (UncheckedTimeoutException e) {
                 log.log(Level.FINE, "Failed to patch " + hostName + ": " + e.getMessage());
                 throw restApiExceptionFromTimeout("patch", hostName, e);
@@ -151,7 +151,7 @@ public class HostRequestHandler extends RestApiRequestHandler<HostRequestHandler
             orchestrator.suspend(hostName);
         } catch (HostNameNotFoundException e) {
             log.log(Level.FINE, "Host not found: " + hostName);
-            throw new RestApiException.NotFoundException(e);
+            throw new RestApiException.NotFound(e);
         } catch (UncheckedTimeoutException e) {
             log.log(Level.FINE, "Failed to suspend " + hostName + ": " + e.getMessage());
             throw restApiExceptionFromTimeout("suspend", hostName, e);
@@ -174,7 +174,7 @@ public class HostRequestHandler extends RestApiRequestHandler<HostRequestHandler
             orchestrator.resume(hostName);
         } catch (HostNameNotFoundException e) {
             log.log(Level.FINE, "Host not found: " + hostName);
-            throw new RestApiException.NotFoundException(e);
+            throw new RestApiException.NotFound(e);
         } catch (UncheckedTimeoutException e) {
             log.log(Level.FINE, "Failed to resume " + hostName + ": " + e.getMessage());
             throw restApiExceptionFromTimeout("resume", hostName, e);
