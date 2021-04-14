@@ -7,6 +7,7 @@
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/scheduledexecutor.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.maintenancecontroller");
