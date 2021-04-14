@@ -70,7 +70,7 @@ public abstract class AbstractResource implements SharedResource {
     }
 
     @Override
-    public void release() {
+    public final void release() {
         initialCreationReference.close();
     }
 
