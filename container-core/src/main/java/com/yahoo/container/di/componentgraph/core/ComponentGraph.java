@@ -15,9 +15,6 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.container.di.componentgraph.Provider;
 import com.yahoo.container.di.componentgraph.cycle.CycleFinder;
 import com.yahoo.container.di.componentgraph.cycle.Graph;
-
-import java.util.Collections;
-import java.util.logging.Level;
 import com.yahoo.vespa.config.ConfigKey;
 
 import java.lang.annotation.Annotation;
@@ -28,12 +25,14 @@ import java.lang.reflect.WildcardType;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -259,7 +258,7 @@ public class ComponentGraph {
         if (component.isEmpty()) {
             Object instance;
             try {
-                log.log(Level.FINE, "Trying the fallback injector to create" + messageForNoGlobalComponent(clazz, node));
+                log.log(Level.INFO, "Trying the fallback injector to create" + messageForNoGlobalComponent(clazz, node));
                 instance = fallbackInjector.getInstance(key);
             } catch (ConfigurationException e) {
                 throw removeStackTrace(new IllegalStateException(
