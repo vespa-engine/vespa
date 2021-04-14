@@ -59,7 +59,7 @@ public:
     void move_keys(std::function<EntryRef(EntryRef)> callback);
     bool normalize_values(std::function<EntryRef(EntryRef)> normalize);
     bool has_held_buffers() const;
-    void compact_worst();
+    void compact_worst_shard();
 };
 
 }

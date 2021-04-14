@@ -348,7 +348,7 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::compact_worst
     }
     if constexpr (has_hash_dictionary) {
         if (compact_hash_dictionary) {
-            this->_hash_dict.compact_worst();
+            this->_hash_dict.compact_worst_shard();
         }
     } else {
         (void) compact_hash_dictionary;

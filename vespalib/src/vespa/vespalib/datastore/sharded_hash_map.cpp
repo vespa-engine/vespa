@@ -201,7 +201,7 @@ ShardedHashMap::has_held_buffers() const
 }
 
 void
-ShardedHashMap::compact_worst()
+ShardedHashMap::compact_worst_shard()
 {
     size_t worst_index = 0u;
     size_t worst_dead_bytes = 0u;
