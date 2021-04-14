@@ -22,5 +22,5 @@ graph_def = helper.make_graph(
     ],
     [OUT],
 )
-model_def = helper.make_model(graph_def, producer_name='guess_batch.py')
+model_def = helper.make_model(graph_def, producer_name='guess_batch.py', opset_imports=[onnx.OperatorSetIdProto(version=12)])
 onnx.save(model_def, 'guess_batch.onnx')
