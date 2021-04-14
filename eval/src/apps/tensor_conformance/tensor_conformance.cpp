@@ -153,39 +153,23 @@ void print_test(const Inspector &test, OutputWriter &dst) {
 class MyTestBuilder : public TestBuilder {
 private:
     TestWriter _writer;
-    void make_test(const vespalib::string &expression,
-                   const std::map<vespalib::string,TensorSpec> &input_map,
-                   const TensorSpec *expect = nullptr)
+public:
+    MyTestBuilder(bool full_in, Output &out) : TestBuilder(full_in), _writer(out) {}
+    void add(const vespalib::string &expression,
+             const std::map<vespalib::string,TensorSpec> &inputs_in) override
     {
         Cursor &test = _writer.create();
         test.setString("expression", expression);
         Cursor &inputs = test.setObject("inputs");
-        for (const auto &input: input_map) {
-            insert_value(inputs, input.first, input.second);
+        for (const auto [name, spec]: inputs_in) {
+            insert_value(inputs, name, spec);
         }
-        if (expect != nullptr) {
-            insert_value(test.setObject("result"), "expect", *expect);
-        } else {
-            insert_value(test.setObject("result"), "expect", ref_eval(test));
-        }
-    }
-public:
-    MyTestBuilder(Output &out) : _writer(out) {}
-    void add(const vespalib::string &expression,
-             const std::map<vespalib::string,TensorSpec> &inputs,
-             const TensorSpec &expect) override
-    {
-        make_test(expression, inputs, &expect);
-    }
-    void add(const vespalib::string &expression,
-             const std::map<vespalib::string,TensorSpec> &inputs) override
-    {
-        make_test(expression, inputs);
+        insert_value(test.setObject("result"), "expect", ref_eval(test));
     }
 };
 
-void generate(Output &out) {
-    MyTestBuilder my_test_builder(out);
+void generate(Output &out, bool full) {
+    MyTestBuilder my_test_builder(full, out);
     Generator::generate(my_test_builder);
 }
 
@@ -245,81 +229,6 @@ void verify(Input &in, Output &out) {
 
 //-----------------------------------------------------------------------------
 
-struct TestList {
-    std::vector<Slime> list;
-    void add_test(Slime &slime) {
-        list.emplace_back();
-        inject(slime.get(), SlimeInserter(list.back()));
-    }
-};
-
-struct TestSpec {
-    vespalib::string expression;
-    std::vector<TensorSpec> inputs;
-    TensorSpec result;
-    TestSpec() : expression(), inputs(), result("error") {}
-    ~TestSpec();
-    void decode(const Inspector &test) {
-        const auto &my_expression = test["expression"];
-        ASSERT_TRUE(my_expression.valid());
-        expression = my_expression.asString().make_string();
-        auto fun = Function::parse(expression);
-        ASSERT_TRUE(!fun->has_error());
-        ASSERT_EQUAL(fun->num_params(), test["inputs"].fields());
-        for (size_t i = 0; i < fun->num_params(); ++i) {
-            TEST_STATE(make_string("input #%zu", i).c_str());
-            const auto &my_input = test["inputs"][fun->param_name(i)];
-            ASSERT_TRUE(my_input.valid());
-            inputs.push_back(extract_value(my_input));
-        }
-        const auto &my_result = test["result"]["expect"];
-        ASSERT_TRUE(my_result.valid());
-        result = extract_value(my_result);
-    }
-};
-TestSpec::~TestSpec() = default;
-
-void compare_test(const Inspector &expect_in, const Inspector &actual_in) {
-    TestSpec expect;
-    TestSpec actual;
-    {
-        TEST_STATE("decoding expected test case");
-        expect.decode(expect_in);
-    }
-    {
-        TEST_STATE("decoding actual test case");
-        actual.decode(actual_in);
-    }
-    {
-        TEST_STATE("comparing test cases");
-        ASSERT_EQUAL(expect.expression, actual.expression);
-        ASSERT_EQUAL(expect.inputs.size(), actual.inputs.size());
-        for (size_t i = 0; i < expect.inputs.size(); ++i) {
-            TEST_STATE(make_string("input #%zu", i).c_str());
-            ASSERT_EQUAL(expect.inputs[i], actual.inputs[i]);
-        }
-        ASSERT_EQUAL(expect.result, actual.result);
-    }
-}
-
-void compare(Input &expect, Input &actual) {
-    TestList expect_tests;
-    TestList actual_tests;
-    for_each_test(expect, std::bind(&TestList::add_test, &expect_tests, _1), [](Slime &) noexcept {});
-    for_each_test(actual, std::bind(&TestList::add_test, &actual_tests, _1), [](Slime &) noexcept {});
-    ASSERT_TRUE(!expect_tests.list.empty());
-    ASSERT_TRUE(!actual_tests.list.empty());
-    ASSERT_EQUAL(expect_tests.list.size(), actual_tests.list.size());
-    size_t num_tests = expect_tests.list.size();
-    fprintf(stderr, "...found %zu test cases to compare...\n", num_tests);
-    for (size_t i = 0; i < num_tests; ++i) {
-        TEST_STATE(make_string("test case #%zu", i).c_str());
-        compare_test(expect_tests.list[i].get(), actual_tests.list[i].get());
-    }
-}
-
-//-----------------------------------------------------------------------------
-
 void display(Input &in, Output &out) {
     size_t test_cnt = 0;
     auto handle_test = [&out,&test_cnt](Slime &slime)
@@ -340,7 +249,6 @@ void display(Input &in, Output &out) {
 
 int usage(const char *self) {
     fprintf(stderr, "usage: %s <mode>\n", self);
-    fprintf(stderr, "usage: %s compare <expect> <actual>\n", self);
     fprintf(stderr, "  <mode>: which mode to activate\n");
     fprintf(stderr, "    'generate': write test cases to stdout\n");
     fprintf(stderr, "    'evaluate': read test cases from stdin, annotate them with\n");
@@ -350,8 +258,7 @@ int usage(const char *self) {
     fprintf(stderr, "              that all results are as expected\n");
     fprintf(stderr, "    'display': read tests from stdin and print them to stdout\n");
     fprintf(stderr, "               in human-readable form\n");
-    fprintf(stderr, "    'compare': read test cases from two separate files and\n");
-    fprintf(stderr, "               compare them to verify equivalence\n");
+    fprintf(stderr, "    'generate-some': write some test cases to stdout\n");
     return 1;
 }
 
@@ -364,30 +271,15 @@ int main(int argc, char **argv) {
     vespalib::string mode = argv[1];
     TEST_MASTER.init(make_string("vespa-tensor-conformance-%s", mode.c_str()).c_str());
     if (mode == "generate") {
-        generate(std_out);
+        generate(std_out, true);
+    } else if (mode == "generate-some") {
+        generate(std_out, false);
     } else if (mode == "evaluate") {
         evaluate(std_in, std_out);
     } else if (mode == "verify") {
         verify(std_in, std_out);
     } else if (mode == "display") {
         display(std_in, std_out);
-    } else if (mode == "compare") {
-        if (argc == 4) {
-            MappedFileInput expect(argv[2]);
-            MappedFileInput actual(argv[3]);
-            if (expect.valid() && actual.valid()) {
-                compare(expect, actual);
-            } else {
-                if (!expect.valid()) {
-                    TEST_ERROR(make_string("could not read file: %s", argv[2]).c_str());
-                }
-                if (!actual.valid()) {
-                    TEST_ERROR(make_string("could not read file: %s", argv[3]).c_str());
-                }
-            }
-        } else {
-            TEST_ERROR("wrong number of parameters for 'compare'\n");
-        }
     } else {
         TEST_ERROR(make_string("unknown mode: %s", mode.c_str()).c_str());
     }

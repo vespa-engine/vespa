@@ -116,7 +116,7 @@ public:
     GenSpec &operator=(GenSpec &&other);
     GenSpec &operator=(const GenSpec &other);
     ~GenSpec();
-    std::vector<DimSpec> dims() const { return _dims; }
+    const std::vector<DimSpec> &dims() const { return _dims; }
     CellType cells() const { return _cells; }
     const seq_t &seq() const { return _seq; }
     GenSpec cpy() const { return *this; }

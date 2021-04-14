@@ -1,41 +1,21 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
 #include <vespa/vespalib/testkit/test_kit.h>
-#include <vespa/eval/eval/test/tensor_conformance.h>
-#include <vespa/eval/eval/simple_value.h>
-#include <vespa/eval/streamed/streamed_value_builder_factory.h>
-#include <vespa/eval/eval/fast_value.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/vespalib/data/slime/slime.h>
 
-using vespalib::eval::SimpleValueBuilderFactory;
-using vespalib::eval::StreamedValueBuilderFactory;
-using vespalib::eval::FastValueBuilderFactory;
-using vespalib::eval::test::TensorConformance;
 using vespalib::make_string_short::fmt;
 using vespalib::Slime;
 using vespalib::slime::JsonFormat;
 using vespalib::MappedFileInput;
 
-vespalib::string module_src_path(TEST_PATH("../../../../"));
 vespalib::string module_build_path("../../../../");
 
-TEST("require that SimpleValue implementation passes all conformance tests") {
-    TEST_DO(TensorConformance::run_tests(module_src_path, SimpleValueBuilderFactory::get()));
-}
-
-TEST("require that StreamedValue implementation passes all conformance tests") {
-    TEST_DO(TensorConformance::run_tests(module_src_path, StreamedValueBuilderFactory::get()));
-}
-
-TEST("require that FastValue implementation passes all conformance tests") {
-    TEST_DO(TensorConformance::run_tests(module_src_path, FastValueBuilderFactory::get()));
-}
-
-TEST("require that cross-language tensor conformance tests pass with C++ expression evaluation") {
+TEST("require that (some) cross-language tensor conformance tests pass with C++ expression evaluation") {
     vespalib::string result_file = "conformance_result.json";
     vespalib::string binary = module_build_path + "src/apps/tensor_conformance/vespa-tensor-conformance";
-    EXPECT_EQUAL(system(fmt("%s generate | %s evaluate | %s verify > %s", binary.c_str(), binary.c_str(), binary.c_str(), result_file.c_str()).c_str()), 0);
+    EXPECT_EQUAL(system(fmt("%s generate-some | %s evaluate | %s verify > %s", binary.c_str(), binary.c_str(), binary.c_str(), result_file.c_str()).c_str()), 0);
     Slime result;
     MappedFileInput input(result_file);
     JsonFormat::decode(input, result);
