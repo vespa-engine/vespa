@@ -199,21 +199,6 @@ public class Nodes {
         return setReady(List.of(nodeToReady), agent, reason).get(0);
     }
 
-    /** Restore a node that has been rebuilt */
-    public Node restore(String hostname, Agent agent, String reason) {
-        // A deprovisioned host has no children so this doesn't need to to be recursive
-        try (NodeMutex lock = lockAndGetRequired(hostname)) {
-            Node node = lock.node();
-            if (node.state() != Node.State.deprovisioned) illegal("Can not move node " + hostname + " to " +
-                                                                  Node.State.provisioned + ". It is not in " +
-                                                                  Node.State.deprovisioned);
-            if (!node.status().wantToRebuild()) illegal("Can not move node " + hostname + " to " +
-                                                        Node.State.provisioned +
-                                                        ". Rebuild has not been requested");
-            return db.writeTo(Node.State.provisioned, node, agent, Optional.of(reason));
-        }
-    }
-
     /** Reserve nodes. This method does <b>not</b> lock the node repository */
     public List<Node> reserve(List<Node> nodes) {
         return db.writeTo(Node.State.reserved, nodes, Agent.application, Optional.empty());
@@ -511,9 +496,7 @@ public class Nodes {
                 if (zone.getCloud().dynamicProvisioning())
                     db.removeNodes(List.of(node));
                 else {
-                    if (!node.status().wantToRebuild()) { // Keep IP addresses if we're rebuilding
-                        node = node.with(IP.Config.EMPTY);
-                    }
+                    node = node.with(IP.Config.EMPTY);
                     move(node, Node.State.deprovisioned, Agent.system, Optional.empty());
                 }
                 removed.add(node);

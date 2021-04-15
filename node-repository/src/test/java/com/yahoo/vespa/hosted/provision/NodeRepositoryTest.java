@@ -18,7 +18,6 @@ import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
@@ -216,47 +215,6 @@ public class NodeRepositoryTest {
         assertTrue("Transferred from deprovisioned host", host1.status().firmwareVerifiedAt().isPresent());
         assertEquals("Transferred from deprovisioned host", 1, host1.status().failCount());
         assertEquals("Transferred from deprovisioned host", 1, host1.reports().getReports().size());
-    }
-
-    @Test
-    public void restore_rebuilt_host() {
-        NodeRepositoryTester tester = new NodeRepositoryTester();
-        assertEquals(0, tester.nodeRepository().nodes().list().size());
-
-        String host1 = "host1";
-        String host2 = "host2";
-        tester.addHost("id1", host1, "default", NodeType.host);
-        tester.addHost("id2", host2, "default", NodeType.host);
-        assertEquals(2, tester.nodeRepository().nodes().list().size());
-
-        // One host is requested to rebuild, two hosts are parked
-        tester.nodeRepository().nodes().rebuild(host2, Agent.system, tester.clock().instant());
-        tester.nodeRepository().nodes().park(host1, false, Agent.system, getClass().getSimpleName());
-        tester.nodeRepository().nodes().park(host2, false, Agent.system, getClass().getSimpleName());
-        IP.Config ipConfigOfHost2 = tester.nodeRepository().nodes().node(host2).get().ipConfig();
-
-        // Two hosts are removed
-        tester.nodeRepository().nodes().removeRecursively(host1);
-        tester.nodeRepository().nodes().removeRecursively(host2);
-        assertEquals(2, tester.nodeRepository().nodes().list(Node.State.deprovisioned).size());
-
-        // Host not rebuilding cannot be restored
-        try {
-            tester.nodeRepository().nodes().restore(host1, Agent.system, getClass().getSimpleName());
-            fail("Expected exception");
-        } catch (IllegalArgumentException ignored) {}
-
-        // Other host is restored
-        Node node = tester.nodeRepository().nodes().restore(host2, Agent.system, getClass().getSimpleName());
-        assertSame(Node.State.provisioned, node.state());
-        assertEquals("IP addresses are preserved", ipConfigOfHost2, node.ipConfig());
-        assertTrue(node.status().wantToRetire());
-        assertTrue(node.status().wantToRebuild());
-
-        // Readying host clears rebuild flag
-        node = tester.nodeRepository().nodes().setReady(host2, Agent.system, getClass().getSimpleName());
-        assertFalse(node.status().wantToRetire());
-        assertFalse(node.status().wantToRebuild());
     }
 
     @Test
