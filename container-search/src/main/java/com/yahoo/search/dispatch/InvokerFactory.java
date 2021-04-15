@@ -79,7 +79,7 @@ public abstract class InvokerFactory {
                     success.add(node);
                 }
             }
-            if ( ! searchCluster.isPartialGroupCoverageSufficient(groupId, success) && !acceptIncompleteCoverage) {
+            if ( ! searchCluster.isPartialGroupCoverageSufficient(success) && !acceptIncompleteCoverage) {
                 return Optional.empty();
             }
             if (invokers.size() == 0) {

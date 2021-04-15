@@ -114,6 +114,7 @@ public class MockSearchCluster extends SearchCluster {
     public static DispatchConfig createDispatchConfig(double minSearchCoverage, Node... nodes) {
         return createDispatchConfig(minSearchCoverage, Arrays.asList(nodes));
     }
+
     public static DispatchConfig createDispatchConfig(double minSearchCoverage, List<Node> nodes) {
         DispatchConfig.Builder builder = new DispatchConfig.Builder();
         builder.minActivedocsPercentage(88.0);

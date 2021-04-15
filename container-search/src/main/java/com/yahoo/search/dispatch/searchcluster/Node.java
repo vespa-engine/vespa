@@ -71,7 +71,7 @@ public class Node {
     }
 
     /** Updates the active documents on this node */
-    void setActiveDocuments(long activeDocuments) { this.activeDocuments.set(activeDocuments); }
+    public void setActiveDocuments(long activeDocuments) { this.activeDocuments.set(activeDocuments); }
 
     /** Returns the active documents on this node. If unknown, 0 is returned. */
     long getActiveDocuments() { return activeDocuments.get(); }

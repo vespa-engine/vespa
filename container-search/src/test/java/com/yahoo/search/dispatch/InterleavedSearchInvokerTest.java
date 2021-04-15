@@ -44,10 +44,11 @@ import static org.junit.Assert.fail;
  * @author ollivir
  */
 public class InterleavedSearchInvokerTest {
-    private ManualClock clock = new ManualClock(Instant.now());
-    private Query query = new TestQuery();
-    private LinkedList<Event> expectedEvents = new LinkedList<>();
-    private List<SearchInvoker> invokers = new ArrayList<>();
+
+    private final ManualClock clock = new ManualClock(Instant.now());
+    private final Query query = new TestQuery();
+    private final LinkedList<Event> expectedEvents = new LinkedList<>();
+    private final List<SearchInvoker> invokers = new ArrayList<>();
 
     @Test
     public void requireThatAdaptiveTimeoutsAreNotUsedWithFullCoverageRequirement() throws IOException {
