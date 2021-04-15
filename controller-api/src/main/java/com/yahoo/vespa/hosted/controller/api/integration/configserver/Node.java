@@ -542,6 +542,7 @@ public class Node {
             this.switchHostname = Optional.ofNullable(switchHostname);
             return this;
         }
+
         public Builder modelName(String modelName) {
             this.modelName = Optional.ofNullable(modelName);
             return this;
