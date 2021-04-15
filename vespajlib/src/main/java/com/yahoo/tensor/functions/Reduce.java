@@ -6,6 +6,7 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
@@ -60,13 +61,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     }
 
     public static TensorType outputType(TensorType inputType, List<String> reduceDimensions) {
-        TensorType.Builder b = new TensorType.Builder(inputType.valueType());
-        if (reduceDimensions.isEmpty()) return b.build(); // means reduce all
-        for (TensorType.Dimension dimension : inputType.dimensions()) {
-            if ( ! reduceDimensions.contains(dimension.name()))
-                b.dimension(dimension);
-        }
-        return b.build();
+        return TypeResolver.reduce(inputType, reduceDimensions);
     }
 
     public TensorFunction<NAMETYPE> argument() { return argument; }
