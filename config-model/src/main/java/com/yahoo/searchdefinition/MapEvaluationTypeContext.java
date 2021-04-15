@@ -39,6 +39,8 @@ import java.util.stream.Collectors;
  */
 public class MapEvaluationTypeContext extends FunctionReferenceContext implements TypeContext<Reference> {
 
+    private final Optional<MapEvaluationTypeContext> parent;
+
     private final Map<Reference, TensorType> featureTypes = new HashMap<>();
 
     private final Map<Reference, TensorType> resolvedTypes = new HashMap<>();
@@ -54,6 +56,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     MapEvaluationTypeContext(Collection<ExpressionFunction> functions, Map<Reference, TensorType> featureTypes) {
         super(functions);
+        this.parent = Optional.empty();
         this.featureTypes.putAll(featureTypes);
         this.currentResolutionCallStack =  new ArrayDeque<>();
         this.queryFeaturesNotDeclared = new TreeSet<>();
@@ -63,12 +66,14 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     private MapEvaluationTypeContext(Map<String, ExpressionFunction> functions,
                                      Map<String, String> bindings,
+                                     Optional<MapEvaluationTypeContext> parent,
                                      Map<Reference, TensorType> featureTypes,
                                      Deque<Reference> currentResolutionCallStack,
                                      SortedSet<Reference> queryFeaturesNotDeclared,
                                      boolean tensorsAreUsed,
                                      Map<Reference, TensorType> globallyResolvedTypes) {
         super(functions, bindings);
+        this.parent = parent;
         this.featureTypes.putAll(featureTypes);
         this.currentResolutionCallStack = currentResolutionCallStack;
         this.queryFeaturesNotDeclared = queryFeaturesNotDeclared;
@@ -136,7 +141,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             try {
                 // This is not pretty, but changing to bind expressions rather
                 // than their string values requires deeper changes
-                return new RankingExpression(binding.get()).type(this);
+                return new RankingExpression(binding.get()).type(parent.orElse(this));
             } catch (ParseException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -323,6 +328,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     public MapEvaluationTypeContext withBindings(Map<String, String> bindings) {
         return new MapEvaluationTypeContext(functions(),
                                             bindings,
+                                            Optional.of(this),
                                             featureTypes,
                                             currentResolutionCallStack,
                                             queryFeaturesNotDeclared,
