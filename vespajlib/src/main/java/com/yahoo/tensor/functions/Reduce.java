@@ -104,16 +104,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
     @Override
     public TensorType type(TypeContext<NAMETYPE> context) {
-        return type(argument.type(context), dimensions);
-    }
-
-    private static TensorType type(TensorType argumentType, List<String> dimensions) {
-        TensorType.Builder builder = new TensorType.Builder(argumentType.valueType());
-        if (dimensions.isEmpty()) return builder.build(); // means reduce all
-        for (TensorType.Dimension dimension : argumentType.dimensions())
-            if ( ! dimensions.contains(dimension.name())) // keep
-                builder.dimension(dimension);
-        return builder.build();
+        return outputType(argument.type(context), dimensions);
     }
 
     @Override
@@ -133,7 +124,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
             else
                 return reduceAllGeneral(argument, aggregator);
 
-        TensorType reducedType = type(argument.type(), dimensions);
+        TensorType reducedType = outputType(argument.type(), dimensions);
 
         // Reduce cells
         Map<TensorAddress, ValueAggregator> aggregatingCells = new HashMap<>();
