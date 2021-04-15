@@ -826,15 +826,18 @@ public class HttpServerTest {
 
         String proxiedRemoteAddress = "192.168.0.100";
         sendJettyClientRequest(driver, certificateFile, null);
+        sendJettyClientRequest(driver, certificateFile, new V1.Tag(proxiedRemoteAddress, 12345));
         sendJettyClientRequest(driver, certificateFile, new V2.Tag(proxiedRemoteAddress, 12345));
         assertTrue(driver.close());
 
-        assertEquals(2, requestLogMock.entries().size());
+        assertEquals(3, requestLogMock.entries().size());
         assertLogEntryHasRemote(requestLogMock.entries().get(0), "127.0.0.1", 0);
         assertLogEntryHasRemote(requestLogMock.entries().get(1), proxiedRemoteAddress, 0);
-        Assertions.assertThat(connectionLog.logEntries()).hasSize(2);
+        assertLogEntryHasRemote(requestLogMock.entries().get(2), proxiedRemoteAddress, 0);
+        Assertions.assertThat(connectionLog.logEntries()).hasSize(3);
         assertLogEntryHasRemote(connectionLog.logEntries().get(0), null, 0);
         assertLogEntryHasRemote(connectionLog.logEntries().get(1), proxiedRemoteAddress, 12345);
+        assertLogEntryHasRemote(connectionLog.logEntries().get(2), proxiedRemoteAddress, 12345);
     }
 
     @Test
@@ -998,6 +1001,7 @@ public class HttpServerTest {
             Path certificateFile, Path privateKeyFile, RequestLog requestLog,
             ConnectionLog connectionLog, boolean mixedMode) {
         ConnectorConfig.Builder connectorConfig = new ConnectorConfig.Builder()
+                .http2Enabled(true)
                 .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder()
                                        .enabled(true)
                                        .mixedMode(mixedMode))
