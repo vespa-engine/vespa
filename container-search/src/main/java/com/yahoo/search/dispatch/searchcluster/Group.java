@@ -92,7 +92,7 @@ public class Group {
     }
 
     @Override
-    public String toString() { return "search group " + id; }
+    public String toString() { return "group " + id; }
 
     @Override
     public int hashCode() { return id; }

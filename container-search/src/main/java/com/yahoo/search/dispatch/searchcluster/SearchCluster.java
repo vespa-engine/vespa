@@ -5,6 +5,7 @@ import com.google.common.collect.ImmutableCollection;
 import com.google.common.collect.ImmutableList;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableMultimap;
+import com.google.common.math.Quantiles;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.net.HostName;
 import com.yahoo.prelude.Pong;
@@ -13,6 +14,8 @@ import com.yahoo.search.cluster.NodeManager;
 import com.yahoo.search.dispatch.TopKEstimator;
 import com.yahoo.vespa.config.search.DispatchConfig;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -311,31 +314,31 @@ public class SearchCluster implements NodeManager<Node> {
         boolean sufficientCoverage = isGroupCoverageSufficient(group.workingNodes(),
                                                                group.getActiveDocuments(),
                                                                group.getActiveDocuments());
-        trackGroupCoverageChanges(0, group, sufficientCoverage, group.getActiveDocuments());
+        trackGroupCoverageChanges(group, sufficientCoverage, group.getActiveDocuments());
     }
 
     private void pingIterationCompletedMultipleGroups() {
-        int numGroups = orderedGroups().size();
-        // Update active documents per group and use it to decide if the group should be active
-        long[] activeDocumentsInGroup = new long[numGroups];
-        long sumOfActiveDocuments = 0;
-        for(int i = 0; i < numGroups; i++) {
-            Group group = orderedGroups().get(i);
-            group.aggregateNodeValues();
-            activeDocumentsInGroup[i] = group.getActiveDocuments();
-            sumOfActiveDocuments += activeDocumentsInGroup[i];
-        }
-
+        aggregateNodeValues();
+        long medianDocuments = medianDocumentsPerGroup();
         boolean anyGroupsSufficientCoverage = false;
-        for (int i = 0; i < numGroups; i++) {
-            Group group = orderedGroups().get(i);
-            long activeDocuments = activeDocumentsInGroup[i];
-            long averageDocumentsInOtherGroups = (sumOfActiveDocuments - activeDocuments) / (numGroups - 1);
-            boolean sufficientCoverage = isGroupCoverageSufficient(group.workingNodes(), activeDocuments, averageDocumentsInOtherGroups);
+        for (Group group : orderedGroups()) {
+            boolean sufficientCoverage = isGroupCoverageSufficient(group.workingNodes(),
+                                                                   group.getActiveDocuments(),
+                                                                   medianDocuments);
             anyGroupsSufficientCoverage = anyGroupsSufficientCoverage || sufficientCoverage;
             updateSufficientCoverage(group, sufficientCoverage);
-            trackGroupCoverageChanges(i, group, sufficientCoverage, averageDocumentsInOtherGroups);
+            trackGroupCoverageChanges(group, sufficientCoverage, medianDocuments);
         }
+    }
+
+    private void aggregateNodeValues() {
+        orderedGroups().forEach(Group::aggregateNodeValues);
+    }
+
+    private long medianDocumentsPerGroup() {
+        if (orderedGroups().isEmpty()) return 0;
+        var activeDocuments = orderedGroups().stream().map(Group::getActiveDocuments).collect(Collectors.toList());
+        return (long)Quantiles.median().compute(activeDocuments);
     }
 
     /**
@@ -353,10 +356,10 @@ public class SearchCluster implements NodeManager<Node> {
         }
     }
 
-    private boolean isGroupCoverageSufficient(int workingNodesInGroup, long activeDocuments, long averageDocumentsInOtherGroups) {
-        double documentCoverage = 100.0 * (double) activeDocuments / averageDocumentsInOtherGroups;
+    private boolean isGroupCoverageSufficient(int workingNodesInGroup, long activeDocuments, long medianDocuments) {
+        double documentCoverage = 100.0 * (double) activeDocuments / medianDocuments;
 
-        if (averageDocumentsInOtherGroups > 0 && documentCoverage < dispatchConfig.minActivedocsPercentage())
+        if (medianDocuments > 0 && documentCoverage < dispatchConfig.minActivedocsPercentage())
             return false;
 
         if ( ! isGroupNodeCoverageSufficient(workingNodesInGroup))
@@ -380,45 +383,22 @@ public class SearchCluster implements NodeManager<Node> {
     /**
      * Calculate whether a subset of nodes in a group has enough coverage
      */
-    public boolean isPartialGroupCoverageSufficient(OptionalInt knownGroupId, List<Node> nodes) {
-        if (orderedGroups().size() == 1) {
-            boolean sufficient = nodes.size() >= wantedGroupSize() - dispatchConfig.maxNodesDownPerGroup();
-            return sufficient;
-        }
-
-        if (knownGroupId.isEmpty()) {
-            return false;
-        }
-        int groupId = knownGroupId.getAsInt();
-        Group group = groups().get(groupId);
-        if (group == null) {
-            return false;
-        }
-        long sumOfActiveDocuments = 0;
-        int otherGroups = 0;
-        for (Group g : orderedGroups()) {
-            if (g.id() != groupId) {
-                sumOfActiveDocuments += g.getActiveDocuments();
-                otherGroups++;
-            }
-        }
-        long activeDocuments = 0;
-        for (Node n : nodes) {
-            activeDocuments += n.getActiveDocuments();
-        }
-        long averageDocumentsInOtherGroups = sumOfActiveDocuments / otherGroups;
-        return isGroupCoverageSufficient(nodes.size(), activeDocuments, averageDocumentsInOtherGroups);
+    public boolean isPartialGroupCoverageSufficient(List<Node> nodes) {
+        if (orderedGroups().size() == 1)
+            return nodes.size() >= wantedGroupSize() - dispatchConfig.maxNodesDownPerGroup();
+        long activeDocuments = nodes.stream().mapToLong(Node::getActiveDocuments).sum();
+        return isGroupCoverageSufficient(nodes.size(), activeDocuments, medianDocumentsPerGroup());
     }
 
-    private void trackGroupCoverageChanges(int index, Group group, boolean fullCoverage, long averageDocuments) {
+    private void trackGroupCoverageChanges(Group group, boolean fullCoverage, long medianDocuments) {
         if ( ! hasInformationAboutAllNodes()) return; // Be silent until we know what we are talking about.
         boolean changed = group.isFullCoverageStatusChanged(fullCoverage);
         if (changed || (!fullCoverage && System.currentTimeMillis() > nextLogTime)) {
             nextLogTime = System.currentTimeMillis() + 30 * 1000;
             int requiredNodes = group.nodes().size() - dispatchConfig.maxNodesDownPerGroup();
             if (fullCoverage) {
-                log.info(() -> String.format("Cluster %s: Group %d is now good again (%d/%d active docs, coverage %d/%d)",
-                                             clusterId, index, group.getActiveDocuments(), averageDocuments,
+                log.info(() -> String.format("Cluster %s: %s is now good again (%d/%d active docs, coverage %d/%d)",
+                                             clusterId, group, group.getActiveDocuments(), medianDocuments,
                                              group.workingNodes(), group.nodes().size()));
             } else {
                 StringBuilder missing = new StringBuilder();
@@ -427,9 +407,9 @@ public class SearchCluster implements NodeManager<Node> {
                         missing.append('\n').append(node);
                     }
                 }
-                log.warning(() -> String.format("Cluster %s: Coverage of group %d is only %d/%d (requires %d) (%d/%d active docs) Failed nodes are:%s",
-                                                clusterId, index, group.workingNodes(), group.nodes().size(), requiredNodes,
-                                                group.getActiveDocuments(), averageDocuments, missing));
+                log.warning(() -> String.format("Cluster %s: Coverage of %s is only %d/%d (requires %d) (%d/%d active docs) Failed nodes are:%s",
+                                                clusterId, group, group.workingNodes(), group.nodes().size(), requiredNodes,
+                                                group.getActiveDocuments(), medianDocuments, missing));
             }
         }
     }
