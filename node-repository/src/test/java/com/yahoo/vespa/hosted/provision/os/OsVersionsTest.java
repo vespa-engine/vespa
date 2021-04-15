@@ -389,7 +389,9 @@ public class OsVersionsTest {
                 tester.nodeRepository().nodes().park(node.hostname(), false, Agent.system,
                                                      getClass().getSimpleName());
                 tester.nodeRepository().nodes().removeRecursively(node.hostname());
-                node = tester.nodeRepository().nodes().restore(node.hostname(), Agent.system, getClass().getSimpleName());
+                Node newNode = Node.create(node.id(), node.ipConfig(), node.hostname(), node.flavor(), node.type())
+                                   .build();
+                node = tester.nodeRepository().nodes().addNodes(List.of(newNode), Agent.system).get(0);
                 node = tester.nodeRepository().nodes().setReady(node.hostname(), Agent.system, getClass().getSimpleName());
                 tester.prepareAndActivateInfraApplication(infraApplication, nodeType);
                 node = tester.nodeRepository().nodes().node(node.hostname()).get();

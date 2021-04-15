@@ -235,19 +235,10 @@ public class NodesV2ApiTest {
 
         assertFile(new Request("http://localhost:8080/nodes/v2/node/host4.yahoo.com"), "node4-after-changes.json");
 
-        // move a host marked as wantToRebuild to deprovisioned
+        // park and remove host
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/parked/dockerhost1.yahoo.com",
                                    new byte[0], Request.Method.PUT),
                        "{\"message\":\"Moved dockerhost1.yahoo.com to parked\"}");
-        assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
-                                   new byte[0], Request.Method.DELETE),
-                       "{\"message\":\"Removed dockerhost1.yahoo.com\"}");
-        // ... and then restore it
-        assertResponse(new Request("http://localhost:8080/nodes/v2/state/provisioned/dockerhost1.yahoo.com",
-                                   new byte[0], Request.Method.PUT),
-                       "{\"message\":\"Moved dockerhost1.yahoo.com to provisioned\"}");
-
-        // move a host to deprovisioned
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/dockerhost1.yahoo.com",
                                    new byte[0], Request.Method.DELETE),
                        "{\"message\":\"Removed dockerhost1.yahoo.com\"}");
