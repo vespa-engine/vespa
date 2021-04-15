@@ -19,8 +19,9 @@ import static org.junit.Assert.assertTrue;
 
 /**
  * @author mpolden
+ * @author bjormel
  */
-public class HostSwitchUpdaterTest {
+public class HostInfoUpdaterTest {
 
     @Test
     public void maintain() {
@@ -29,7 +30,7 @@ public class HostSwitchUpdaterTest {
         addNodeEntities(tester);
 
         // First iteration patches all hosts
-        HostSwitchUpdater maintainer = new HostSwitchUpdater(tester.controller(), Duration.ofDays(1));
+        HostInfoUpdater maintainer = new HostInfoUpdater(tester.controller(), Duration.ofDays(1));
         maintainer.maintain();
         List<Node> nodes = allNodes(tester);
         assertFalse(nodes.isEmpty());
@@ -48,7 +49,7 @@ public class HostSwitchUpdaterTest {
         // One host is moved to a different switch
         Node host = allNodes(tester).stream().filter(node -> node.type().isHost()).findFirst().get();
         String newSwitch = "tor2-" + host.hostname().value();
-        NodeEntity nodeEntity = new NodeEntity(host.hostname().value(), "", "", newSwitch);
+        NodeEntity nodeEntity = new NodeEntity(host.hostname().value(), "Lenovo RD350G", "", newSwitch);
         tester.serviceRegistry().entityService().addNodeEntity(nodeEntity);
 
         // Host is updated
@@ -56,11 +57,27 @@ public class HostSwitchUpdaterTest {
         maintainer.maintain();
         assertEquals(newSwitch, getNode(host.hostname(), tester).switchHostname().get());
 
+        // Host has updated model
+        String newModel = "quanta computer Quanta q801";
+        nodeEntity = new NodeEntity(host.hostname().value(), newModel, "", newSwitch);
+        tester.serviceRegistry().entityService().addNodeEntity(nodeEntity);
+
+        // Host is updated
+        tester.serviceRegistry().configServer().nodeRepository().allowPatching(true);
+        maintainer.maintain();
+        assertEquals(newModel, getNode(host.hostname(), tester).modelName().get());
+
         // Host keeps old switch hostname if removed from the node entity
-        nodeEntity = new NodeEntity(host.hostname().value(), "", "", "");
+        nodeEntity = new NodeEntity(host.hostname().value(), newModel, "", "");
         tester.serviceRegistry().entityService().addNodeEntity(nodeEntity);
         maintainer.maintain();
         assertEquals(newSwitch, getNode(host.hostname(), tester).switchHostname().get());
+
+        // Host keeps old model name if removed from the node entity
+        nodeEntity = new NodeEntity(host.hostname().value(), "", "", newSwitch);
+        tester.serviceRegistry().entityService().addNodeEntity(nodeEntity);
+        maintainer.maintain();
+        assertEquals(newModel, getNode(host.hostname(), tester).modelName().get());
 
         // Updates node registered under a different hostname
         ZoneId zone = tester.zoneRegistry().zones().controllerUpgraded().all().ids().get(0);
@@ -73,7 +90,7 @@ public class HostSwitchUpdaterTest {
                                             .build();
         tester.serviceRegistry().configServer().nodeRepository().putNodes(zone, List.of(configNode, configHost));
         String switchHostname = switchHostname(configHost);
-        NodeEntity configNodeEntity = new NodeEntity("cfg3"  + hostnameSuffix, "", "", switchHostname);
+        NodeEntity configNodeEntity = new NodeEntity("cfg3"  + hostnameSuffix, "Lenovo RD350G", "", switchHostname);
         tester.serviceRegistry().entityService().addNodeEntity(configNodeEntity);
         maintainer.maintain();
         assertEquals(switchHostname, getNode(configHost.hostname(), tester).switchHostname().get());
@@ -102,7 +119,7 @@ public class HostSwitchUpdaterTest {
     private static void addNodeEntities(ControllerTester tester) {
         for (var node : allNodes(tester)) {
             if (!node.type().isHost()) continue;
-            NodeEntity nodeEntity = new NodeEntity(node.hostname().value(), "", "", switchHostname(node));
+            NodeEntity nodeEntity = new NodeEntity(node.hostname().value(), "Lenovo RD350G", "", switchHostname(node));
             tester.serviceRegistry().entityService().addNodeEntity(nodeEntity);
         }
     }

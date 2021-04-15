@@ -61,7 +61,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new SystemRoutingPolicyMaintainer(controller, intervals.systemRoutingPolicyMaintainer));
         maintainers.add(new ApplicationMetaDataGarbageCollector(controller, intervals.applicationMetaDataGarbageCollector));
         maintainers.add(new ContainerImageExpirer(controller, intervals.containerImageExpirer));
-        maintainers.add(new HostSwitchUpdater(controller, intervals.hostSwitchUpdater));
+        maintainers.add(new HostInfoUpdater(controller, intervals.hostSwitchUpdater));
         maintainers.add(new ReindexingTriggerer(controller, intervals.reindexingTriggerer));
         maintainers.add(new EndpointCertificateMaintainer(controller, intervals.endpointCertificateMaintainer));
         maintainers.add(new TrafficShareUpdater(controller, intervals.trafficFractionUpdater));

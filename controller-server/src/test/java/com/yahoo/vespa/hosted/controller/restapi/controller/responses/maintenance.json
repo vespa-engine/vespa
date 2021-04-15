@@ -43,7 +43,7 @@
       "name": "EndpointCertificateMaintainer"
     },
     {
-      "name": "HostSwitchUpdater"
+      "name": "HostInfoUpdater"
     },
     {
       "name": "JobRunner"

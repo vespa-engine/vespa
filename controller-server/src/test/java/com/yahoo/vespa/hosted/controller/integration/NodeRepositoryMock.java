@@ -277,8 +277,9 @@ public class NodeRepositoryMock implements NodeRepository {
         List<Node> existing = list(zoneId, List.of(HostName.from(hostName)));
         if (existing.size() != 1) throw new IllegalArgumentException("Node " + hostName + " not found in " + zoneId);
 
-        // Note: Only supports switchHostname
+        // Note: Only supports switchHostname and modelName
         Node newNode = new Node.Builder(existing.get(0)).switchHostname(node.getSwitchHostname())
+                                                        .modelName(node.getModelName())
                                                         .build();
         putNodes(zoneId, newNode);
     }
