@@ -33,12 +33,32 @@ class JsonConnectionLogWriter implements LogWriter<ConnectionLogEntry> {
             writeOptionalInteger(generator, "peerPort", unwrap(record.peerPort()));
             writeOptionalString(generator, "localAddress", unwrap(record.localAddress()));
             writeOptionalInteger(generator, "localPort", unwrap(record.localPort()));
-            writeOptionalString(generator, "remoteAddress", unwrap(record.remoteAddress()));
-            writeOptionalInteger(generator, "remotePort", unwrap(record.remotePort()));
-            writeOptionalLong(generator, "httpBytesReceived", unwrap(record.httpBytesReceived()));
-            writeOptionalLong(generator, "httpBytesSent", unwrap(record.httpBytesSent()));
-            writeOptionalLong(generator, "requests", unwrap(record.requests()));
-            writeOptionalLong(generator, "responses", unwrap(record.responses()));
+
+            String proxyProtocolVersion = unwrap(record.proxyProtocolVersion());
+            String proxyProtocolRemoteAddress = unwrap(record.remoteAddress());
+            Integer proxyProtocolRemotePort = unwrap(record.remotePort());
+            if (isAnyValuePresent(proxyProtocolVersion, proxyProtocolRemoteAddress, proxyProtocolRemotePort)) {
+                generator.writeObjectFieldStart("proxyProtocol");
+                writeOptionalString(generator, "version", proxyProtocolVersion);
+                writeOptionalString(generator, "remoteAddress", proxyProtocolRemoteAddress);
+                writeOptionalInteger(generator, "remotePort", proxyProtocolRemotePort);
+                generator.writeEndObject();
+            }
+
+            String httpVersion = unwrap(record.httpProtocol());
+            Long httpBytesReceived = unwrap(record.httpBytesReceived());
+            Long httpBytesSent = unwrap(record.httpBytesSent());
+            Long httpRequests = unwrap(record.requests());
+            Long httpResponses = unwrap(record.responses());
+            if (isAnyValuePresent(httpVersion, httpBytesReceived, httpBytesSent, httpRequests, httpResponses)) {
+                generator.writeObjectFieldStart("http");
+                writeOptionalString(generator, "version", httpVersion);
+                writeOptionalLong(generator, "bytesReceived", httpBytesReceived);
+                writeOptionalLong(generator, "responses", httpResponses);
+                writeOptionalLong(generator, "bytesSent", httpBytesSent);
+                writeOptionalLong(generator, "requests", httpRequests);
+                generator.writeEndObject();
+            }
 
             String sslProtocol = unwrap(record.sslProtocol());
             String sslSessionId = unwrap(record.sslSessionId());
