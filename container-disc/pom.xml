@@ -98,12 +98,6 @@
     <!-- WARNING: These are only here to make bundlification work -->
     <dependency>
       <groupId>com.yahoo.vespa</groupId>
-      <artifactId>simplemetrics</artifactId>
-      <version>${project.version}</version>
-      <scope>provided</scope>
-    </dependency>
-    <dependency>
-      <groupId>com.yahoo.vespa</groupId>
       <artifactId>config-bundle</artifactId>
       <version>${project.version}</version>
       <scope>provided</scope>
@@ -181,7 +175,6 @@
                 vespaclient-container-plugin-jar-with-dependencies.jar,
                 vespa-athenz-jar-with-dependencies.jar,
                 security-utils-jar-with-dependencies.jar,
-                simplemetrics-jar-with-dependencies.jar,
                 defaults-jar-with-dependencies.jar,
                 zkfacade-jar-with-dependencies.jar,
                 zookeeper-server-jar-with-dependencies.jar,

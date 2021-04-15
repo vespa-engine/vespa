@@ -118,7 +118,6 @@
         <module>security-utils</module>
         <module>serviceview</module>
         <module>service-monitor</module>
-        <module>simplemetrics</module>
         <module>socket_test</module>
         <module>standalone-container</module>
         <module>statistics</module>

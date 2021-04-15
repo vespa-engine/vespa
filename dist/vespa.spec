@@ -659,7 +659,6 @@ fi
 %{_prefix}/lib/jars/org.apache.aries.spifly.dynamic.bundle-*.jar
 %{_prefix}/lib/jars/osgi-resource-locator-*.jar
 %{_prefix}/lib/jars/security-utils-jar-with-dependencies.jar
-%{_prefix}/lib/jars/simplemetrics-jar-with-dependencies.jar
 %{_prefix}/lib/jars/standalone-container-jar-with-dependencies.jar
 %{_prefix}/lib/jars/validation-api-*.jar
 %{_prefix}/lib/jars/vespa-athenz-jar-with-dependencies.jar

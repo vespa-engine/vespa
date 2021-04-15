@@ -2344,6 +2344,308 @@
     ],
     "fields": []
   },
+  "com.yahoo.metrics.simple.Bucket": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(long, long)",
+      "public java.util.Set entrySet()",
+      "public java.util.Collection getAllMetricNames()",
+      "public java.util.Collection getValuesForMetric(java.lang.String)",
+      "public java.util.Map getMapForMetric(java.lang.String)",
+      "public java.util.Map getValuesByMetricName()",
+      "public java.lang.String toString()",
+      "public long getFromMillis()",
+      "public long getToMillis()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.Counter": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void add()",
+      "public void add(long)",
+      "public void add(com.yahoo.metrics.simple.Point)",
+      "public void add(long, com.yahoo.metrics.simple.Point)",
+      "public com.yahoo.metrics.simple.PointBuilder builder()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.Gauge": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void sample(double)",
+      "public void sample(double, com.yahoo.metrics.simple.Point)",
+      "public com.yahoo.metrics.simple.PointBuilder builder()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.Identifier": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, com.yahoo.metrics.simple.Point)",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "public java.lang.String toString()",
+      "public java.lang.String getName()",
+      "public com.yahoo.metrics.simple.Point getLocation()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.Measurement": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.Number)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.MetricManager": {
+    "superClass": "com.yahoo.component.AbstractComponent",
+    "interfaces": [
+      "com.yahoo.container.di.componentgraph.Provider"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.metrics.ManagerConfig)",
+      "public void deconstruct()",
+      "public com.yahoo.metrics.simple.MetricReceiver get()",
+      "public bridge synthetic java.lang.Object get()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.MetricReceiver$MockReceiver": {
+    "superClass": "com.yahoo.metrics.simple.MetricReceiver",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.metrics.simple.Bucket getSnapshot()",
+      "public com.yahoo.metrics.simple.Point point(java.lang.String, java.lang.String)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.MetricReceiver": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.concurrent.ThreadLocalDirectory, java.util.concurrent.atomic.AtomicReference)",
+      "public void update(com.yahoo.metrics.simple.Sample)",
+      "public com.yahoo.metrics.simple.Counter declareCounter(java.lang.String)",
+      "public com.yahoo.metrics.simple.Counter declareCounter(java.lang.String, com.yahoo.metrics.simple.Point)",
+      "public com.yahoo.metrics.simple.Gauge declareGauge(java.lang.String)",
+      "public com.yahoo.metrics.simple.Gauge declareGauge(java.lang.String, com.yahoo.metrics.simple.Point)",
+      "public com.yahoo.metrics.simple.Gauge declareGauge(java.lang.String, java.util.Optional, com.yahoo.metrics.simple.MetricSettings)",
+      "public com.yahoo.metrics.simple.PointBuilder pointBuilder()",
+      "public com.yahoo.metrics.simple.Bucket getSnapshot()"
+    ],
+    "fields": [
+      "public static final com.yahoo.metrics.simple.MetricReceiver nullImplementation"
+    ]
+  },
+  "com.yahoo.metrics.simple.MetricSettings$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.metrics.simple.MetricSettings$Builder histogram(boolean)",
+      "public com.yahoo.metrics.simple.MetricSettings build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.MetricSettings": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.Point": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.Metric$Context"
+    ],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(java.util.Map)",
+      "public static com.yahoo.metrics.simple.Point emptyPoint()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()",
+      "public java.util.List location()",
+      "public java.util.List dimensions()",
+      "public int dimensionality()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.PointBuilder$Discriminator": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.metrics.simple.PointBuilder$Discriminator[] values()",
+      "public static com.yahoo.metrics.simple.PointBuilder$Discriminator valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.metrics.simple.PointBuilder$Discriminator LONG",
+      "public static final enum com.yahoo.metrics.simple.PointBuilder$Discriminator DOUBLE",
+      "public static final enum com.yahoo.metrics.simple.PointBuilder$Discriminator STRING"
+    ]
+  },
+  "com.yahoo.metrics.simple.PointBuilder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public com.yahoo.metrics.simple.PointBuilder set(java.lang.String, long)",
+      "public com.yahoo.metrics.simple.PointBuilder set(java.lang.String, double)",
+      "public com.yahoo.metrics.simple.PointBuilder set(java.lang.String, java.lang.String)",
+      "public com.yahoo.metrics.simple.Point build()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.Sample": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.metrics.simple.Measurement, com.yahoo.metrics.simple.Identifier, com.yahoo.metrics.simple.UntypedMetric$AssumedType)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.UnitTestSetup": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.metrics.simple.Bucket getUpdatedSnapshot()",
+      "public com.yahoo.metrics.simple.MetricReceiver getReceiver()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.UntypedMetric$AssumedType": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.metrics.simple.UntypedMetric$AssumedType[] values()",
+      "public static com.yahoo.metrics.simple.UntypedMetric$AssumedType valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.metrics.simple.UntypedMetric$AssumedType NONE",
+      "public static final enum com.yahoo.metrics.simple.UntypedMetric$AssumedType GAUGE",
+      "public static final enum com.yahoo.metrics.simple.UntypedMetric$AssumedType COUNTER"
+    ]
+  },
+  "com.yahoo.metrics.simple.UntypedMetric": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public boolean isCounter()",
+      "public long getCount()",
+      "public double getLast()",
+      "public double getMax()",
+      "public double getMin()",
+      "public double getSum()",
+      "public org.HdrHistogram.DoubleHistogram getHistogram()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.Value$Discriminator": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.metrics.simple.Value$Discriminator[] values()",
+      "public static com.yahoo.metrics.simple.Value$Discriminator valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.metrics.simple.Value$Discriminator LONG",
+      "public static final enum com.yahoo.metrics.simple.Value$Discriminator DOUBLE",
+      "public static final enum com.yahoo.metrics.simple.Value$Discriminator STRING"
+    ]
+  },
+  "com.yahoo.metrics.simple.Value": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public long longValue()",
+      "public double doubleValue()",
+      "public java.lang.String stringValue()",
+      "public abstract com.yahoo.metrics.simple.Value$Discriminator getType()",
+      "public static com.yahoo.metrics.simple.Value of(long)",
+      "public static com.yahoo.metrics.simple.Value of(double)",
+      "public static com.yahoo.metrics.simple.Value of(java.lang.String)"
+    ],
+    "fields": []
+  },
   "com.yahoo.processing.IllegalInputException": {
     "superClass": "java.lang.IllegalArgumentException",
     "interfaces": [],
