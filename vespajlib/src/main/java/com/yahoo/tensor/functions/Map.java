@@ -53,14 +53,14 @@ public class Map<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE
 
     @Override
     public TensorType type(TypeContext<NAMETYPE> context) {
-        return argument.type(context);
+        return outputType(argument.type(context));
     }
 
     @Override
     public Tensor evaluate(EvaluationContext<NAMETYPE> context) {
-        Tensor argument = argument().evaluate(context);
-        Tensor.Builder builder = Tensor.Builder.of(argument.type());
-        for (Iterator<Tensor.Cell> i = argument.cellIterator(); i.hasNext(); ) {
+        Tensor input = argument().evaluate(context);
+        Tensor.Builder builder = Tensor.Builder.of(outputType(input.type()));
+        for (Iterator<Tensor.Cell> i = input.cellIterator(); i.hasNext(); ) {
             java.util.Map.Entry<TensorAddress, Double> cell = i.next();
             builder.cell(cell.getKey(), mapper.applyAsDouble(cell.getValue()));
         }
