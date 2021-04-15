@@ -107,11 +107,11 @@ public class ConnectorFactory {
             SslConnectionFactory sslFactory = newSslConnectionFactory(metric, alpnFactory);
             if (proxyProtocolConfig.enabled()) {
                 if (proxyProtocolConfig.mixedMode()) {
-                    ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(alpnFactory);
+                    ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
                     DetectorConnectionFactory detectorFactory = newDetectorConnectionFactory(sslFactory, proxyProtocolFactory);
                     return List.of(detectorFactory, proxyProtocolFactory, sslFactory, alpnFactory, http1Factory, http2Factory);
                 } else {
-                    ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(alpnFactory);
+                    ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
                     return List.of(proxyProtocolFactory, sslFactory, alpnFactory, http1Factory, http2Factory);
                 }
             } else {
