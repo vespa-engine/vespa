@@ -9,6 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import static com.yahoo.tensor.TensorType.Dimension;
 import static com.yahoo.tensor.TensorType.Value;
 
@@ -18,6 +20,8 @@ import static com.yahoo.tensor.TensorType.Value;
  * @author arnej
  */
 public class TypeResolver {
+
+    private static final Logger logger = Logger.getLogger(TypeResolver.class.getName());
 
     static private TensorType scalar() {
         return TensorType.empty;
@@ -44,7 +48,8 @@ public class TypeResolver {
             if (map.containsKey(name)) {
                 map.remove(name);
             } else {
-                throw new IllegalArgumentException("reducing non-existing dimension "+name+" in type "+inputType);
+                logger.log(Level.WARNING, "reducing non-existing dimension "+name+" in type "+inputType);
+                // throw new IllegalArgumentException("reducing non-existing dimension "+name+" in type "+inputType);
             }
         }
         if (map.isEmpty()) {

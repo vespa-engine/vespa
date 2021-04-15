@@ -120,8 +120,15 @@ public class TypeResolverTestCase {
         checkReduce("tensor<float>(x[10],y{},z[30])", mkl("x", "y", "z"), "tensor()");
         checkReduce("tensor<bfloat16>(x[10],y{},z[30])", mkl("x", "y", "z"), "tensor()");
         checkReduce("tensor<int8>(x[10],y{},z[30])", mkl("x", "y", "z"), "tensor()");
-        checkReduceFails("tensor(y{})", "x");
-        checkReduceFails("tensor<float>(y[10])", "x");
+        // for now, these will just log a warning
+        //checkReduceFails("tensor()", "x");
+        //checkReduceFails("tensor(y{})", "x");
+        //checkReduceFails("tensor<float>(y[10])", "x");
+        //checkReduceFails("tensor<int8>(y[10])", "x");
+        checkReduce("tensor()", mkl("x"), "tensor()");
+        checkReduce("tensor(y{})", mkl("x"), "tensor(y{})");
+        checkReduce("tensor<float>(y[10])", mkl("x"), "tensor<float>(y[10])");
+        checkReduce("tensor<int8>(y[10])", mkl("x"), "tensor<float>(y[10])");
     }
 
     @Test
