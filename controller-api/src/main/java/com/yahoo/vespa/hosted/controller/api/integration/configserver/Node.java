@@ -64,6 +64,7 @@ public class Node {
     private final Set<String> additionalIpAddresses;
     private final String openStackId;
     private final Optional<String> switchHostname;
+    private final Optional<String> modelName;
 
     public Node(HostName hostname, Optional<HostName> parentHostname, State state, NodeType type, NodeResources resources, Optional<ApplicationId> owner,
                 Version currentVersion, Version wantedVersion, Version currentOsVersion, Version wantedOsVersion,
@@ -72,7 +73,7 @@ public class Node {
                 int cost, String flavor, String clusterId, ClusterType clusterType, boolean retired, boolean wantToRetire, boolean wantToDeprovision,
                 boolean wantToRebuild, Optional<TenantName> reservedTo, Optional<ApplicationId> exclusiveTo,
                 DockerImage wantedDockerImage, DockerImage currentDockerImage, Map<String, JsonNode> reports, List<NodeHistory> history,
-                Set<String> additionalIpAddresses, String openStackId, Optional<String> switchHostname) {
+                Set<String> additionalIpAddresses, String openStackId, Optional<String> switchHostname, Optional<String> modelName) {
         this.hostname = hostname;
         this.parentHostname = parentHostname;
         this.state = state;
@@ -108,6 +109,7 @@ public class Node {
         this.openStackId = openStackId;
         this.additionalIpAddresses = additionalIpAddresses;
         this.switchHostname = switchHostname;
+        this.modelName = modelName;
     }
 
     public HostName hostname() {
@@ -244,6 +246,8 @@ public class Node {
         return switchHostname;
     }
 
+    public Optional<String> modelName() { return modelName; }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -326,6 +330,7 @@ public class Node {
         private Set<String> additionalIpAddresses = new HashSet<>();
         private String openStackId;
         private Optional<String> switchHostname = Optional.empty();
+        private Optional<String> modelName = Optional.empty();
 
         public Builder() { }
 
@@ -365,6 +370,7 @@ public class Node {
             this.additionalIpAddresses = node.additionalIpAddresses;
             this.openStackId = node.openStackId;
             this.switchHostname = node.switchHostname;
+            this.modelName = node.modelName;
         }
 
         public Builder hostname(HostName hostname) {
@@ -536,13 +542,17 @@ public class Node {
             this.switchHostname = Optional.ofNullable(switchHostname);
             return this;
         }
+        public Builder modelName(String modelName) {
+            this.modelName = Optional.ofNullable(modelName);
+            return this;
+        }
 
         public Node build() {
             return new Node(hostname, parentHostname, state, type, resources, owner, currentVersion, wantedVersion,
                             currentOsVersion, wantedOsVersion, currentFirmwareCheck, wantedFirmwareCheck, serviceState,
                             suspendedSince, restartGeneration, wantedRestartGeneration, rebootGeneration, wantedRebootGeneration,
                             cost, flavor, clusterId, clusterType, retired, wantToRetire, wantToDeprovision, wantToRebuild, reservedTo, exclusiveTo,
-                            wantedDockerImage, currentDockerImage, reports, history, additionalIpAddresses, openStackId, switchHostname);
+                            wantedDockerImage, currentDockerImage, reports, history, additionalIpAddresses, openStackId, switchHostname, modelName);
         }
 
     }

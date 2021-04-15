@@ -19,18 +19,18 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 /**
- * Ensures that the switch information for all hosts is up to date.
+ * Ensures that the OpsDB information for all hosts is up to date.
  *
- * @author mpolden
+ * @author mpolden, bjormel
  */
-public class HostSwitchUpdater extends ControllerMaintainer {
+public class OpsDbInfoUpdater extends ControllerMaintainer {
 
-    private static final Logger LOG = Logger.getLogger(HostSwitchUpdater.class.getName());
+    private static final Logger LOG = Logger.getLogger(OpsDbInfoUpdater.class.getName());
     private static final Pattern HOST_PATTERN = Pattern.compile("^(proxy|cfg|controller)host(.+)$");
 
     private final NodeRepository nodeRepository;
 
-    public HostSwitchUpdater(Controller controller, Duration interval) {
+    public OpsDbInfoUpdater(Controller controller, Duration interval) {
         super(controller, interval, null, EnumSet.of(SystemName.cd, SystemName.main));
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
     }
@@ -50,6 +50,7 @@ public class HostSwitchUpdater extends ControllerMaintainer {
 
                     NodeRepositoryNode updatedNode = new NodeRepositoryNode();
                     updatedNode.setSwitchHostname(nodeEntity.switchHostname().get());
+                    updatedNode.setModelName(nodeEntity.model().get());
                     nodeRepository.patchNode(zone, node.hostname().value(), updatedNode);
                     nodesUpdated++;
                 }
@@ -73,8 +74,8 @@ public class HostSwitchUpdater extends ControllerMaintainer {
 
     private static boolean shouldUpdate(Node node, NodeEntity nodeEntity) {
         if (nodeEntity == null) return false;
-        if (nodeEntity.switchHostname().isEmpty()) return false;
-        return !node.switchHostname().equals(nodeEntity.switchHostname());
+        if (nodeEntity.switchHostname().isEmpty() || nodeEntity.model().isEmpty())  return false;
+        return !node.switchHostname().equals(nodeEntity.switchHostname()) || !node.modelName().equals(nodeEntity.model());
     }
 
 }

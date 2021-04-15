@@ -43,9 +43,6 @@
       "name": "EndpointCertificateMaintainer"
     },
     {
-      "name": "HostSwitchUpdater"
-    },
-    {
       "name": "JobRunner"
     },
     {
@@ -53,6 +50,9 @@
     },
     {
       "name": "NameServiceDispatcher"
+    },
+    {
+      "name": "OpsDbInfoUpdater"
     },
     {
       "name": "OsUpgradeScheduler"

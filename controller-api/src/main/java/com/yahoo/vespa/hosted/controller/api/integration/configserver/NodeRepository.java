@@ -141,7 +141,8 @@ public interface NodeRepository {
                         node.getHistory(),
                         node.getAdditionalIpAddresses(),
                         node.getOpenStackId(),
-                        Optional.ofNullable(node.getSwitchHostname()));
+                        Optional.ofNullable(node.getSwitchHostname()),
+                        Optional.ofNullable(node.getModelName()));
     }
 
     private static String clusterIdOf(NodeMembership nodeMembership) {
