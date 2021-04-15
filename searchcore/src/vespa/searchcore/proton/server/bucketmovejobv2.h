@@ -146,7 +146,7 @@ public:
     void notifyDiskMemUsage(DiskMemUsageState state) override;
     void notifyCreateBucket(const bucketdb::Guard & guard, const BucketId &bucket) override;
     void onStop() override;
-    void updateMetrics(DocumentDBTaggedMetrics & metrics) override;
+    void updateMetrics(DocumentDBTaggedMetrics & metrics) const override;
 };
 
 } // namespace proton

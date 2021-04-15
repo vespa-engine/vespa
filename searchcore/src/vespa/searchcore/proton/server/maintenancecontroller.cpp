@@ -29,6 +29,13 @@ public:
     void run() override { _job->run(); }
 };
 
+bool
+isRunningOrRunnable(const MaintenanceJobRunner & job, const Executor * master) {
+    return (&job.getExecutor() == master)
+           ? job.isRunning()
+           : job.isRunnable();
+}
+
 }
 
 MaintenanceController::MaintenanceController(IThreadService &masterThread,
@@ -79,7 +86,6 @@ MaintenanceController::registerJob(Executor & executor, IMaintenanceJob::UP job)
     _jobs.push_back(std::make_shared<MaintenanceJobRunner>(executor, std::move(job)));
 }
 
-
 void
 MaintenanceController::killJobs()
 {
@@ -95,7 +101,7 @@ MaintenanceController::killJobs()
         job->stop(); // Make sure no more tasks are added to the executor
     }
     for (auto &job : _jobs) {
-        while (job->isRunning()) {
+        while (isRunningOrRunnable(*job, &_masterThread)) {
             std::this_thread::sleep_for(1ms);
         }
     }

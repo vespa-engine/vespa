@@ -434,7 +434,7 @@ BucketMoveJobV2::updatePending() {
 }
 
 void
-BucketMoveJobV2::updateMetrics(DocumentDBTaggedMetrics & metrics) {
+BucketMoveJobV2::updateMetrics(DocumentDBTaggedMetrics & metrics) const {
     // This is an over estimate to ensure we do not count down to zero until everything has been and completed and acked.
     metrics.bucketMove.bucketsPending.set(_bucketsPending.load(std::memory_order_relaxed) +
                                           getLimiter().numPending());
