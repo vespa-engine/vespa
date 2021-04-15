@@ -14,11 +14,14 @@ import com.yahoo.container.handler.threadpool.ContainerThreadPool;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.RequestHandlerSpec;
 import com.yahoo.container.jdisc.VespaHeaders;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
+import com.yahoo.container.jdisc.AclMapping;
+import com.yahoo.container.jdisc.RequestView;
 import com.yahoo.language.Linguistics;
 import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
@@ -102,6 +105,8 @@ public class SearchHandler extends LoggingRequestHandler {
     private final ExecutionFactory executionFactory;
 
     private final AtomicLong numRequestsLeftToTrace;
+
+    private final static RequestHandlerSpec REQUEST_HANDLER_SPEC = RequestHandlerSpec.builder().withAclMapping(SearchHandler::mapRequestToAction).build();
 
     private final class MeanConnections implements Callback {
 
@@ -631,6 +636,26 @@ public class SearchHandler extends LoggingRequestHandler {
         });
     }
 
+    @Override
+    public RequestHandlerSpec requestHandlerSpec() {
+        return REQUEST_HANDLER_SPEC;
+    }
+
+    private static AclMapping.Action mapRequestToAction(RequestView requestMeta) {
+        switch (requestMeta.method()){
+            case GET:
+            case POST:
+            case HEAD:
+            case OPTIONS:
+                return AclMapping.Action.read;
+            case PUT:
+                return AclMapping.Action.update;
+            case DELETE:
+                return AclMapping.Action.delete;
+            default:
+                return AclMapping.Action.create;
+        }
+    }
 }
 
 

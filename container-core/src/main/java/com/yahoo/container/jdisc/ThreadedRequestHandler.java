@@ -35,7 +35,7 @@ import java.util.logging.Logger;
  *
  * @author Simon Thoresen Hult
  */
-public abstract class ThreadedRequestHandler extends AbstractRequestHandler {
+public abstract class ThreadedRequestHandler extends AbstractRequestHandler implements RequestHandlerWithSpec {
 
     private static final Logger log = Logger.getLogger(ThreadedRequestHandler.class.getName());
     private static final Duration TIMEOUT = Duration.ofSeconds(Integer.parseInt(System.getProperty("ThreadedRequestHandler.timeout", "300")));

@@ -4235,7 +4235,8 @@
       "public com.yahoo.search.Result searchAndFill(com.yahoo.search.Query, com.yahoo.component.chain.Chain)",
       "public com.yahoo.processing.rendering.Renderer getRendererCopy(com.yahoo.component.ComponentSpecification)",
       "public com.yahoo.search.searchchain.SearchChainRegistry getSearchChainRegistry()",
-      "public void createRequestMapping(com.yahoo.slime.Inspector, java.util.Map, java.lang.String)"
+      "public void createRequestMapping(com.yahoo.slime.Inspector, java.util.Map, java.lang.String)",
+      "public com.yahoo.container.jdisc.RequestHandlerSpec requestHandlerSpec()"
     ],
     "fields": [
       "public static final java.lang.String defaultSearchChainName"

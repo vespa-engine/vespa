@@ -2,6 +2,8 @@
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.google.common.base.Preconditions;
+import com.yahoo.container.jdisc.RequestHandlerSpec;
+import com.yahoo.container.jdisc.RequestHandlerWithSpec;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
@@ -63,6 +65,11 @@ class FilteringRequestHandler extends AbstractRequestHandler {
 
         if (resolvedRequestHandler == null) {
             throw new BindingNotFoundException(request.getUri());
+        }
+
+        if (resolvedRequestHandler instanceof RequestHandlerWithSpec) {
+            RequestHandlerSpec requestHandlerSpec = ((RequestHandlerWithSpec) resolvedRequestHandler).requestHandlerSpec();
+            request.context().put(RequestHandlerSpec.ATTRIBUTE_NAME, requestHandlerSpec);
         }
 
         RequestHandler requestHandler = new ReferenceCountingRequestHandler(resolvedRequestHandler);
