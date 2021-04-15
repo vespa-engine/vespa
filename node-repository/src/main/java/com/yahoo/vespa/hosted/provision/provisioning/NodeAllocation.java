@@ -360,8 +360,9 @@ class NodeAllocation {
      * @return the final list of nodes
      */
     List<Node> finalNodes() {
+        int wantToRetireCount = (int) nodes.values().stream().filter(NodeCandidate::wantToRetire).count();
         int currentRetiredCount = (int) nodes.values().stream().filter(node -> node.allocation().get().membership().retired()).count();
-        int deltaRetiredCount = requestedNodes.idealRetiredCount(nodes.size(), currentRetiredCount) - currentRetiredCount;
+        int deltaRetiredCount = requestedNodes.idealRetiredCount(nodes.size(), wantToRetireCount, currentRetiredCount);
 
         if (deltaRetiredCount > 0) { // retire until deltaRetiredCount is 0
             for (NodeCandidate candidate : byRetiringPriority(nodes.values())) {

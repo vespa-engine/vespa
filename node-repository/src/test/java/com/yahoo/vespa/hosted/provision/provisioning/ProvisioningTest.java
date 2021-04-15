@@ -798,6 +798,29 @@ public class ProvisioningTest {
     }
 
     @Test
+    public void allow_unretire_nodes_allocated_through_type_spec() {
+        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
+        ApplicationId tenantHostAppId = ProvisioningTester.applicationId();
+        tester.makeReadyHosts(10, defaultResources).prepareAndActivateInfraApplication(tenantHostAppId, NodeType.host);
+
+        NodeList list = tester.nodeRepository().nodes().list();
+        assertEquals(10, list.state(Node.State.active).nodeType(NodeType.host).size());
+
+        // Pick out 5 random nodes and retire those
+        Set<String> retiredHostnames = list.shuffle(new Random()).stream().map(Node::hostname).limit(5).collect(Collectors.toSet());
+        tester.patchNodes(node -> retiredHostnames.contains(node.hostname()), node -> node.withWantToRetire(true, Agent.system, tester.clock().instant()));
+        tester.prepareAndActivateInfraApplication(tenantHostAppId, NodeType.host);
+
+        assertEquals(retiredHostnames, tester.nodeRepository().nodes().list().retired().stream().map(Node::hostname).collect(Collectors.toSet()));
+
+        Set<String> unretiredHostnames = retiredHostnames.stream().limit(2).collect(Collectors.toSet());
+        tester.patchNodes(node -> unretiredHostnames.contains(node.hostname()), node -> node.withWantToRetire(false, Agent.system, tester.clock().instant()));
+        tester.prepareAndActivateInfraApplication(tenantHostAppId, NodeType.host);
+
+        assertEquals(3, tester.nodeRepository().nodes().list().retired().size());
+    }
+
+    @Test
     public void application_deployment_extends_existing_reservations_on_deploy() {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
 
