@@ -18,9 +18,10 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 /**
- * @author mpolden, bjormel
+ * @author mpolden
+ * @author bjormel
  */
-public class OpsDbInfoUpdaterTest {
+public class HostInfoUpdaterTest {
 
     @Test
     public void maintain() {
@@ -29,7 +30,7 @@ public class OpsDbInfoUpdaterTest {
         addNodeEntities(tester);
 
         // First iteration patches all hosts
-        OpsDbInfoUpdater maintainer = new OpsDbInfoUpdater(tester.controller(), Duration.ofDays(1));
+        HostInfoUpdater maintainer = new HostInfoUpdater(tester.controller(), Duration.ofDays(1));
         maintainer.maintain();
         List<Node> nodes = allNodes(tester);
         assertFalse(nodes.isEmpty());
@@ -67,10 +68,16 @@ public class OpsDbInfoUpdaterTest {
         assertEquals(newModel, getNode(host.hostname(), tester).modelName().get());
 
         // Host keeps old switch hostname if removed from the node entity
-        nodeEntity = new NodeEntity(host.hostname().value(), "Lenovo RD350G", "", "");
+        nodeEntity = new NodeEntity(host.hostname().value(), newModel, "", "");
         tester.serviceRegistry().entityService().addNodeEntity(nodeEntity);
         maintainer.maintain();
         assertEquals(newSwitch, getNode(host.hostname(), tester).switchHostname().get());
+
+        // Host keeps old model name if removed from the node entity
+        nodeEntity = new NodeEntity(host.hostname().value(), "", "", newSwitch);
+        tester.serviceRegistry().entityService().addNodeEntity(nodeEntity);
+        maintainer.maintain();
+        assertEquals(newModel, getNode(host.hostname(), tester).modelName().get());
 
         // Updates node registered under a different hostname
         ZoneId zone = tester.zoneRegistry().zones().controllerUpgraded().all().ids().get(0);
