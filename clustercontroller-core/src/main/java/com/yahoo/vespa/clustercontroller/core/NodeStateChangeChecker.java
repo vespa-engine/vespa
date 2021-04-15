@@ -212,10 +212,8 @@ public class NodeStateChangeChecker {
                     oldWantedState.getState() + ": " + oldWantedState.getDescription());
         }
 
-        switch (clusterState.getNodeState(nodeInfo.getNode()).getState()) {
-            case MAINTENANCE:
-            case DOWN:
-                return Result.allowSettingOfWantedState();
+        if (clusterState.getNodeState(nodeInfo.getNode()).getState() == State.DOWN) {
+            return Result.allowSettingOfWantedState();
         }
 
         if (anotherNodeInGroupAlreadyAllowed(nodeInfo, newDescription)) {

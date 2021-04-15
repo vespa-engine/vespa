@@ -215,7 +215,7 @@ public class SetNodeStateTest extends StateRestApiTest {
     @Test
     public void testShouldModifyStorageSafeBlocked() throws Exception {
         // Sets up 2 groups: [0, 2, 4] and [1, 3, 5]
-        setUpMusicGroup(6, false);
+        setUpMusicGroup(6, "");
 
         assertUnitState(1, "user", State.UP, "");
         assertSetUnitState(1, State.MAINTENANCE, null);
@@ -253,10 +253,10 @@ public class SetNodeStateTest extends StateRestApiTest {
     }
 
     @Test
-    public void settingSafeMaintenanceWhenNodeAlreadyInMaintenance() throws Exception {
-        // Sets up 2 groups: [0, 2, 4] and [1, 3, 5], with 1 being in maintenance
-        setUpMusicGroup(6, true);
-        assertUnitState(1, "generated", State.MAINTENANCE, "");
+    public void settingSafeMaintenanceWhenNodeDown() throws Exception {
+        // Sets up 2 groups: [0, 2, 4] and [1, 3, 5], with 1 being down
+        setUpMusicGroup(6, " .1.s:d");
+        assertUnitState(1, "generated", State.DOWN, "");
 
         assertUnitState(1, "user", State.UP, "");
         assertSetUnitState(1, State.MAINTENANCE, null);
@@ -279,7 +279,7 @@ public class SetNodeStateTest extends StateRestApiTest {
         assertSetUnitState(3, State.UP, null);
         // Because 1 is in maintenance, even though user wanted state is UP, trying to set 2 to
         // maintenance will fail.
-        assertSetUnitStateCausesAlreadyInMaintenance(2, State.MAINTENANCE);
+        assertSetUnitStateCausesAnotherNodeHasStateError(2, State.MAINTENANCE);
         assertSetUnitState(5, State.UP, null);
     }
 
@@ -307,14 +307,14 @@ public class SetNodeStateTest extends StateRestApiTest {
     }
 
     private void assertSetUnitStateCausesAlreadyInWantedMaintenance(int index, State state) throws StateRestApiException {
-        assertSetUnitStateCausesAlreadyInMaintenance(index, state, "^Another storage node wants state MAINTENANCE: ([0-9]+)$");
+        assertSetUnitStateFails(index, state, "^Another storage node wants state MAINTENANCE: ([0-9]+)$");
     }
 
-    private void assertSetUnitStateCausesAlreadyInMaintenance(int index, State state) throws StateRestApiException {
-        assertSetUnitStateCausesAlreadyInMaintenance(index, state, "^Another storage node has state MAINTENANCE: ([0-9]+)$");
+    private void assertSetUnitStateCausesAnotherNodeHasStateError(int index, State state) throws StateRestApiException {
+        assertSetUnitStateFails(index, state, "^Another storage node has state DOWN: ([0-9]+)$");
     }
 
-    private void assertSetUnitStateCausesAlreadyInMaintenance(int index, State state, String reasonRegex)
+    private void assertSetUnitStateFails(int index, State state, String reasonRegex)
             throws StateRestApiException {
         SetResponse setResponse = restAPI.setUnitState(new SetUnitStateRequestImpl("music/storage/" + index)
                 .setNewState("user", state.toString().toLowerCase(), "whatever reason.")
