@@ -6,6 +6,7 @@
 #include "i_disk_mem_usage_listener.h"
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vector>
+#include <mutex>
 
 namespace proton {
 
@@ -18,6 +19,7 @@ class DiskMemUsageForwarder : public IDiskMemUsageNotifier,
 {
     searchcorespi::index::IThreadService &_executor;
     std::vector<IDiskMemUsageListener *> _listeners;
+    std::mutex        _lock;
     DiskMemUsageState _state;
     void forward(DiskMemUsageState state);
 public:
