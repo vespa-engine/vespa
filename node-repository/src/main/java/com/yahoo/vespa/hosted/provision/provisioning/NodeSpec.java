@@ -47,7 +47,7 @@ public interface NodeSpec {
     boolean considerRetiring();
 
     /** Returns the ideal number of nodes that should be retired to fulfill this spec */
-    int idealRetiredCount(int acceptedCount, int currentRetiredCount);
+    int idealRetiredCount(int acceptedCount, int wantToRetireCount, int currentRetiredCount);
 
     /** Returns number of additional nodes needed for this spec to be fulfilled given the current node count */
     int fulfilledDeficitCount(int count);
@@ -132,7 +132,9 @@ public interface NodeSpec {
         }
 
         @Override
-        public int idealRetiredCount(int acceptedCount, int currentRetiredCount) { return acceptedCount - this.count; }
+        public int idealRetiredCount(int acceptedCount, int wantToRetireCount, int currentRetiredCount) {
+            return acceptedCount - this.count - currentRetiredCount;
+        }
 
         @Override
         public int fulfilledDeficitCount(int count) {
@@ -207,9 +209,8 @@ public interface NodeSpec {
         public boolean considerRetiring() { return true; }
 
         @Override
-        public int idealRetiredCount(int acceptedCount, int currentRetiredCount) {
-            // All nodes marked with wantToRetire get marked as retired just before this function is called
-            return currentRetiredCount;
+        public int idealRetiredCount(int acceptedCount, int wantToRetireCount, int currentRetiredCount) {
+            return wantToRetireCount - currentRetiredCount;
         }
 
         @Override

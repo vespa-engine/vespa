@@ -122,7 +122,7 @@ public class NodeRepositoryProvisioner implements Provisioner {
 
     @Override
     public void restart(ApplicationId application, HostFilter filter) {
-        nodeRepository.nodes().restart(ApplicationFilter.from(application, NodeHostFilter.from(filter)));
+        nodeRepository.nodes().restart(ApplicationFilter.from(application).and(NodeHostFilter.from(filter)));
     }
 
     @Override

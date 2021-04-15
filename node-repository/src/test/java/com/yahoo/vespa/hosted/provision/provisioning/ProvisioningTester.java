@@ -58,6 +58,7 @@ import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.function.UnaryOperator;
 import java.util.logging.Level;
 import java.util.stream.Collectors;
@@ -152,6 +153,10 @@ public class ProvisioningTester {
 
     public Node patchNode(Node node, UnaryOperator<Node> patcher) {
         return patchNodes(List.of(node), patcher).get(0);
+    }
+
+    public List<Node> patchNodes(Predicate<Node> filter, UnaryOperator<Node> patcher) {
+        return patchNodes(nodeRepository.nodes().list().stream().filter(filter).collect(Collectors.toList()), patcher);
     }
 
     public List<Node> patchNodes(List<Node> nodes, UnaryOperator<Node> patcher) {
@@ -271,7 +276,7 @@ public class ProvisioningTester {
         for (Node node : nodeRepository.nodes().list(Node.State.active).owner(application)) {
             int expectedRestarts = 0;
             for (HostFilter filter : filters)
-                if (NodeHostFilter.from(filter).matches(node))
+                if (NodeHostFilter.from(filter).test(node))
                     expectedRestarts++;
             assertEquals(expectedRestarts, node.allocation().get().restartGeneration().wanted());
         }
