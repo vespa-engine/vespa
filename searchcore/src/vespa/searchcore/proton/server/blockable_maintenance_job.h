@@ -54,7 +54,7 @@ public:
     bool isBlocked() const override;
     void registerRunner(IMaintenanceJobRunner *runner) override { _runner = runner; }
     IMoveOperationLimiter & getLimiter() { return *_moveOpsLimiter; }
-
+    const IMoveOperationLimiter & getLimiter() const { return *_moveOpsLimiter; }
 };
 
 }
