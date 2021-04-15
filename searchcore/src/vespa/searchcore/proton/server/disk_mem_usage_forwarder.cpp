@@ -2,7 +2,6 @@
 
 #include "disk_mem_usage_forwarder.h"
 #include <vespa/vespalib/util/lambdatask.h>
-#include <cassert>
 
 using vespalib::makeLambdaTask;
 
@@ -14,17 +13,14 @@ DiskMemUsageForwarder::DiskMemUsageForwarder(searchcorespi::index::IThreadServic
       _executor(executor),
       _listeners(),
       _state()
-{
-}
+{ }
 
-DiskMemUsageForwarder::~DiskMemUsageForwarder()
-{
-}
+DiskMemUsageForwarder::~DiskMemUsageForwarder() = default;
 
 void
 DiskMemUsageForwarder::addDiskMemUsageListener(IDiskMemUsageListener *listener)
 {
-    assert(_executor.isCurrentThread());
+    std::lock_guard guard(_lock);
     _listeners.push_back(listener);
     listener->notifyDiskMemUsage(_state);
 }
@@ -32,7 +28,7 @@ DiskMemUsageForwarder::addDiskMemUsageListener(IDiskMemUsageListener *listener)
 void
 DiskMemUsageForwarder::removeDiskMemUsageListener(IDiskMemUsageListener *listener)
 {
-    assert(_executor.isCurrentThread());
+    std::lock_guard guard(_lock);
     for (auto itr = _listeners.begin(); itr != _listeners.end(); ++itr) {
         if (*itr == listener) {
             _listeners.erase(itr);
@@ -51,6 +47,7 @@ DiskMemUsageForwarder::notifyDiskMemUsage(DiskMemUsageState state)
 void
 DiskMemUsageForwarder::forward(DiskMemUsageState state)
 {
+    std::lock_guard guard(_lock);
     if (_state != state) {
         _state = state;
         for (const auto &listener : _listeners) {
