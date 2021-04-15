@@ -968,4 +968,38 @@ getAggregated(const EntryRef ref) const
     return a;
 }
 
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
+          typename TraitsT, typename AggrCalcT>
+std::vector<uint32_t>
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
+start_compact_worst_btree_nodes()
+{
+    return _allocator.start_compact_worst();
+}
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
+          typename TraitsT, typename AggrCalcT>
+void
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
+finish_compact_worst_btree_nodes(const std::vector<uint32_t>& to_hold)
+{
+    _allocator.finishCompact(to_hold);
+}
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
+          typename TraitsT, typename AggrCalcT>
+void
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
+move_btree_nodes(EntryRef ref)
+{
+    if (ref.valid()) {
+        RefType iRef(ref);
+        uint32_t clusterSize = getClusterSize(iRef);
+        if (clusterSize == 0) {
+            BTreeType *tree = getWTreeEntry(iRef);
+            tree->move_nodes(_allocator);
+        }
+    }
+}
+
 }

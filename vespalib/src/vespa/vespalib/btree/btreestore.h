@@ -389,6 +389,10 @@ public:
     void
     foreach_frozen(EntryRef ref, FunctionType func) const;
 
+    std::vector<uint32_t> start_compact_worst_btree_nodes();
+    void finish_compact_worst_btree_nodes(const std::vector<uint32_t>& to_hold);
+    void move_btree_nodes(EntryRef ref);
+
 private:
     static constexpr size_t MIN_BUFFER_ARRAYS = 128u;
     template <typename FunctionType, bool Frozen>
