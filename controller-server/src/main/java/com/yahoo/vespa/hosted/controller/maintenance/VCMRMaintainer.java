@@ -41,7 +41,7 @@ public class VCMRMaintainer extends ControllerMaintainer {
     private final NodeRepository nodeRepository;
 
     public VCMRMaintainer(Controller controller, Duration interval) {
-        super(controller, interval, null, EnumSet.of(SystemName.main));
+        super(controller, interval, null, SystemName.allOf(Predicate.not(SystemName::isPublic)));
         this.curator = controller.curator();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
     }

@@ -45,14 +45,9 @@ public class ChangeRequestMaintainer extends ControllerMaintainer {
     protected boolean maintain() {
         var changeRequests = changeRequestClient.getUpcomingChangeRequests();
 
-        if (!changeRequests.isEmpty()) {
-            logger.info(() -> "Found the following upcoming change requests:");
-            changeRequests.forEach(changeRequest -> logger.info(changeRequest::toString));
-        }
-
+        storeChangeRequests(changeRequests);
         if (system.equals(SystemName.main)) {
             approveChanges(changeRequests);
-            storeChangeRequests(changeRequests);
         }
 
         return true;
