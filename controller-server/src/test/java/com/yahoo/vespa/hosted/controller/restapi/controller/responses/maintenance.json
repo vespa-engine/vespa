@@ -91,6 +91,9 @@
       "name": "Upgrader"
     },
     {
+      "name": "VCMRMaintainer"
+    },
+    {
       "name": "VersionStatusUpdater"
     }
   ],

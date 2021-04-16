@@ -69,6 +69,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new ArchiveAccessMaintainer(controller, metric, intervals.archiveAccessMaintainer));
         maintainers.add(new TenantRoleMaintainer(controller, intervals.tenantRoleMaintainer));
         maintainers.add(new ChangeRequestMaintainer(controller, intervals.changeRequestMaintainer));
+        maintainers.add(new VCMRMaintainer(controller, intervals.vcmrMaintainer));
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -123,6 +124,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration archiveAccessMaintainer;
         private final Duration tenantRoleMaintainer;
         private final Duration changeRequestMaintainer;
+        private final Duration vcmrMaintainer;
 
         public Intervals(SystemName system) {
             this.system = Objects.requireNonNull(system);
@@ -154,6 +156,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.archiveAccessMaintainer = duration(10, MINUTES);
             this.tenantRoleMaintainer = duration(5, MINUTES);
             this.changeRequestMaintainer = duration(12, HOURS);
+            this.vcmrMaintainer = duration(4, HOURS);
         }
 
         private Duration duration(long amount, TemporalUnit unit) {

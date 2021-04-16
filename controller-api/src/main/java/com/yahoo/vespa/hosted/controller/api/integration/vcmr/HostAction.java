@@ -7,6 +7,7 @@ import java.util.Objects;
 /**
  * @author olaa
  *
+ * Contains planned/current action for a host impacted by a change request
  */
 public class HostAction {
 
@@ -32,6 +33,10 @@ public class HostAction {
         return lastUpdated;
     }
 
+    public HostAction withState(State state) {
+        return new HostAction(hostname, state, this.state == state ? lastUpdated : Instant.now());
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
@@ -47,9 +52,19 @@ public class HostAction {
         return Objects.hash(hostname, state, lastUpdated);
     }
 
+    @Override
+    public String toString() {
+        return "HostAction{" +
+                "hostname='" + hostname + '\'' +
+                ", state=" + state +
+                ", lastUpdated=" + lastUpdated +
+                '}';
+    }
+
     public enum State {
         REQUIRES_OPERATOR_ACTION,
         PENDING_RETIREMENT,
+        NONE,
         RETIRING,
         RETIRED,
         COMPLETE
