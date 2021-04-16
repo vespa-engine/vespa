@@ -291,6 +291,10 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         assertThat(cfg.index(), is(0));
         assertThat(cfg.fleet_controller_count(), is(1));
         assertThat(cfg.init_progress_time(), is(34567000));
+
+        Service cc = model.getService("admin/cluster-controllers/0").get();
+        assertTrue(cc instanceof ClusterControllerContainer);
+        assertEquals("-Dio.netty.allocator.pageSize=4096 -Dio.netty.allocator.maxOrder=8", cc.getJvmOptions());
     }
 
     private boolean existsHostsWithClusterControllerConfigId(VespaModel model) {
