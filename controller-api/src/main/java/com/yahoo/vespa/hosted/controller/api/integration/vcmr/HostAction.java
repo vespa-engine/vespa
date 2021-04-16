@@ -64,6 +64,7 @@ public class HostAction {
     public enum State {
         REQUIRES_OPERATOR_ACTION,
         PENDING_RETIREMENT,
+        NONE,
         RETIRING,
         RETIRED,
         COMPLETE

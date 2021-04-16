@@ -55,6 +55,7 @@ public class NodeRepositoryMock implements NodeRepository {
     private final Map<ZoneId, List<NodeRepositoryNode>> nodeRepoNodes = new HashMap<>();
 
     private boolean allowPatching = false;
+    private boolean hasSpareCapacity = false;
 
     /** Add or update given nodes in zone */
     public void putNodes(ZoneId zone, List<Node> nodes) {
@@ -161,8 +162,14 @@ public class NodeRepositoryMock implements NodeRepository {
     }
 
     @Override
-    public void setState(ZoneId zone, NodeState nodeState, String hostname) {
-        throw new UnsupportedOperationException();
+    public void setState(ZoneId zone, NodeState nodeState, String hostName) {
+        var existing = list(zone, List.of(HostName.from(hostName)));
+        if (existing.size() != 1) throw new IllegalArgumentException("Node " + hostName + " not found in " + zone);
+
+        var node = new Node.Builder(existing.get(0))
+                .state(Node.State.valueOf(nodeState.name()))
+                .build();
+        putNodes(zone, node);
     }
 
     @Override
@@ -277,11 +284,16 @@ public class NodeRepositoryMock implements NodeRepository {
         List<Node> existing = list(zoneId, List.of(HostName.from(hostName)));
         if (existing.size() != 1) throw new IllegalArgumentException("Node " + hostName + " not found in " + zoneId);
 
-        // Note: Only supports switchHostname and modelName
-        Node newNode = new Node.Builder(existing.get(0)).switchHostname(node.getSwitchHostname())
-                                                        .modelName(node.getModelName())
-                                                        .build();
-        putNodes(zoneId, newNode);
+        // Note: Only supports switchHostname, modelName and wantToRetire
+        Node.Builder newNode = new Node.Builder(existing.get(0));
+        if (node.getSwitchHostname() != null)
+            newNode.switchHostname(node.getSwitchHostname());
+        if (node.getModelName() != null)
+            newNode.modelName(node.getModelName());
+        if (node.getWantToRetire() != null)
+            newNode.wantToRetire(node.getWantToRetire());
+
+        putNodes(zoneId, newNode.build());
     }
 
     @Override
@@ -291,7 +303,7 @@ public class NodeRepositoryMock implements NodeRepository {
 
     @Override
     public boolean isReplaceable(ZoneId zoneId, List<HostName> hostNames) {
-        return false;
+        return hasSpareCapacity;
     }
 
     public Optional<Duration> osUpgradeBudget(ZoneId zone, NodeType type, Version version) {
@@ -339,6 +351,10 @@ public class NodeRepositoryMock implements NodeRepository {
     public NodeRepositoryMock allowPatching(boolean allowPatching) {
         this.allowPatching = allowPatching;
         return this;
+    }
+
+    public void hasSpareCapacity(boolean hasSpareCapacity) {
+        this.hasSpareCapacity = hasSpareCapacity;
     }
 
 }

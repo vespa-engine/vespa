@@ -10,7 +10,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
-import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest;
+import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest.Impact;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.HostAction;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.HostAction.State;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
@@ -32,7 +32,7 @@ import java.util.stream.Collectors;
  * @author olaa
  *
  * Maintains status and execution of VCMRs
- * For now only executes
+ * For now only retires all affected tenant hosts if zone capacity allows it
  */
 public class VCMRMaintainer extends ControllerMaintainer {
 
@@ -45,7 +45,6 @@ public class VCMRMaintainer extends ControllerMaintainer {
         this.curator = controller.curator();
         this.nodeRepository = controller.serviceRegistry().configServer().nodeRepository();
     }
-
 
     @Override
     protected boolean maintain() {
@@ -120,20 +119,18 @@ public class VCMRMaintainer extends ControllerMaintainer {
 
     private HostAction nextAction(Node node, VespaChangeRequest changeRequest, boolean spareCapacity) {
         var hostAction = getPreviousAction(node, changeRequest)
-                .orElse(new HostAction(node.hostname().value(), State.PENDING_RETIREMENT, Instant.now()));
+                .orElse(new HostAction(node.hostname().value(), State.NONE, Instant.now()));
+
+        if (changeRequest.getChangeRequestSource().isClosed()) {
+            recycleNode(changeRequest.getZoneId(), node, hostAction);
+            return hostAction.withState(State.COMPLETE);
+        }
 
         if (node.type() != NodeType.host || !spareCapacity) {
             return hostAction.withState(State.REQUIRES_OPERATOR_ACTION);
         }
 
-        if (changeRequest.getChangeRequestSource().isClosed()) {
-            recycleNode(changeRequest.getZoneId(), node);
-            return hostAction.withState(State.COMPLETE);
-        }
-
         if (shouldRetire(changeRequest, hostAction)) {
-            if (node.state() != Node.State.active)
-                return hostAction.withState(State.RETIRED);
             if (!node.wantToRetire()) {
                 logger.info(String.format("Retiring %s due to %s", node.hostname().value(), changeRequest.getChangeRequestSource().getId()));
                 setWantToRetire(changeRequest.getZoneId(), node, true);
@@ -141,15 +138,25 @@ public class VCMRMaintainer extends ControllerMaintainer {
             return hostAction.withState(State.RETIRING);
         }
 
+        if (hasRetired(node, hostAction)) {
+            return hostAction.withState(State.RETIRED);
+        }
+
+        if (pendingRetirement(node)) {
+            return hostAction.withState(State.PENDING_RETIREMENT);
+        }
+
         return hostAction;
     }
 
-    private void recycleNode(ZoneId zoneId, Node node) {
-        if (node.state() == Node.State.parked) {
+    // Dirty host iff the parked host was retired by this maintainer
+    private void recycleNode(ZoneId zoneId, Node node, HostAction hostAction) {
+        if (hostAction.getState() == State.RETIRED &&
+                node.state() == Node.State.parked) {
             logger.info("Setting " + node.hostname() + " to dirty");
             nodeRepository.setState(zoneId, NodeState.dirty, node.hostname().value());
         }
-        if (node.wantToRetire())
+        if (hostAction.getState() == State.RETIRING && node.wantToRetire())
             setWantToRetire(zoneId, node, false);
     }
 
@@ -158,6 +165,18 @@ public class VCMRMaintainer extends ControllerMaintainer {
                 changeRequest.getChangeRequestSource().getPlannedStartTime()
                         .minus(Duration.ofDays(2))
                         .isBefore(ZonedDateTime.now());
+    }
+
+    private boolean hasRetired(Node node, HostAction hostAction) {
+        return hostAction.getState() == State.RETIRING &&
+                node.state() == Node.State.parked;
+    }
+
+    /**
+     * TODO: For now, we choose to retire any active host
+     */
+    private boolean pendingRetirement(Node node) {
+        return node.state() == Node.State.active;
     }
 
     private Map<ZoneId, List<Node>> nodesByZone() {
@@ -181,7 +200,8 @@ public class VCMRMaintainer extends ControllerMaintainer {
     }
     private Predicate<VespaChangeRequest> shouldUpdate() {
         return changeRequest -> changeRequest.getStatus() != Status.COMPLETED &&
-                 List.of(ChangeRequest.Impact.HIGH, ChangeRequest.Impact.VERY_HIGH).contains(changeRequest.getImpact());
+                 List.of(Impact.HIGH, Impact.VERY_HIGH)
+                         .contains(changeRequest.getImpact());
     }
 
     private boolean hasSpareCapacity(ZoneId zoneId, List<Node> nodes) {
