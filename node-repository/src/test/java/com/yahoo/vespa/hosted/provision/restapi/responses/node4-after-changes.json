@@ -30,7 +30,7 @@
   "allowedToBeDown": true,
   "orchestratorStatus": "ALLOWED_TO_BE_DOWN",
   "suspendedSinceMillis": 0,
-  "rebootGeneration": 3,
+  "rebootGeneration": 2,
   "currentRebootGeneration": 1,
   "vespaVersion": "6.43.0",
   "currentDockerImage": "docker-registry.domain.tld:8080/dist/vespa:6.45.0",

@@ -246,19 +246,7 @@ public class CuratorDatabaseClient {
     private Status newNodeStatus(Node node, Node.State toState) {
         if (node.state() != Node.State.failed && toState == Node.State.failed) return node.status().withIncreasedFailCount();
         if (node.state() == Node.State.failed && toState == Node.State.active) return node.status().withDecreasedFailCount(); // fail undo
-        if (rebootOnTransitionTo(toState, node)) {
-            return node.status().withReboot(node.status().reboot().withIncreasedWanted());
-        }
         return node.status();
-    }
-
-    /** Returns whether to reboot node as part of transition to given state. This is done to get rid of any lingering
-     * unwanted state (e.g. processes) on non-host nodes. */
-    private boolean rebootOnTransitionTo(Node.State state, Node node) {
-        if (node.type().isHost()) return false; // Reboot of host nodes is handled by NodeRebooter
-        if (zone.environment().isTest()) return false; // We want to reuse nodes quickly in test environments
-
-        return node.state() != Node.State.dirty && state == Node.State.dirty;
     }
 
     /**
