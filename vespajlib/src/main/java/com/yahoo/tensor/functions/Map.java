@@ -4,6 +4,7 @@ package com.yahoo.tensor.functions;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
@@ -31,7 +32,9 @@ public class Map<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE
         this.mapper = mapper;
     }
 
-    public static TensorType outputType(TensorType inputType) { return inputType; }
+    public static TensorType outputType(TensorType inputType) {
+        return TypeResolver.map(inputType);
+    }
 
     public TensorFunction<NAMETYPE> argument() { return argument; }
     public DoubleUnaryOperator mapper() { return mapper; }
