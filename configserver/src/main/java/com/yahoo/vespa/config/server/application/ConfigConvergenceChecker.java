@@ -23,6 +23,7 @@ import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.http2.HttpVersionPolicy;
 import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.reactor.IOReactorConfig;
+import org.apache.hc.core5.util.TimeValue;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
@@ -152,7 +153,6 @@ public class ConfigConvergenceChecker extends AbstractComponent {
     /** Get service generation of service at given URL */
     private CompletableFuture<Long> getServiceGeneration(CloseableHttpAsyncClient client, URI serviceUrl, Duration timeout) {
         SimpleHttpRequest request = SimpleHttpRequests.get(createApiUri(serviceUrl));
-        request.setHeader("Connection", "close");
         request.setConfig(createRequestConfig(timeout));
 
         // Ignoring returned Future object as we want to use the more flexible CompletableFuture instead
@@ -240,14 +240,13 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                         PoolingAsyncClientConnectionManagerBuilder.create()
                                 .setMaxConnTotal(100)
                                 .setMaxConnPerRoute(10)
+                                .setConnectionTimeToLive(TimeValue.ofMilliseconds(1))
                                 .setTlsStrategy(tlsStrategy)
                                 .build())
                 .setIOReactorConfig(IOReactorConfig.custom()
                         .setSoTimeout(Timeout.ofSeconds(2))
                         .build())
                 .setUserAgent("config-convergence-checker")
-                .setConnectionReuseStrategy((request, response, context) -> false) // Disable connection reuse
-                .setVersionPolicy(HttpVersionPolicy.FORCE_HTTP_1)
                 .build();
     }
 
