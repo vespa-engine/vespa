@@ -234,6 +234,7 @@ public class EvaluationTestCase {
                                "sum(tensor0, y)", "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
         tester.assertEvaluates("{ {}:16 }",
                                "sum(tensor0, x, y)", "{ {x:0,y:0}:1.0, {x:1,y:0}:3.0, {x:0,y:1}:5.0, {x:1,y:1}:7.0 }");
+        tester.assertEvaluates("{ {}: -1 }", "reduce(tensor0, max)", "tensor(x[2]):[-2,-1]");
 
         // tensor join
         tester.assertEvaluates("{ {x:0,y:0}:15, {x:1,y:0}:35 }", "join(tensor0, tensor1, f(x,y) (x*y))", "{ {x:0}:3, {x:1}:7 }", "{ {y:0}:5 }");
