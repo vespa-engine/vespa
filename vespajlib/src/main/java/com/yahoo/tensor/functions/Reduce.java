@@ -236,7 +236,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
     private static class MaxAggregator extends ValueAggregator {
 
-        private double maxValue = Double.MIN_VALUE;
+        private double maxValue = Double.NEGATIVE_INFINITY;
 
         @Override
         public void aggregate(double value) {
@@ -251,7 +251,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
         @Override
         public void reset() {
-            maxValue = Double.MIN_VALUE;
+            maxValue = Double.NEGATIVE_INFINITY;
         }
     }
 
@@ -290,7 +290,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
     private static class MinAggregator extends ValueAggregator {
 
-        private double minValue = Double.MAX_VALUE;
+        private double minValue = Double.POSITIVE_INFINITY;
 
         @Override
         public void aggregate(double value) {
@@ -305,7 +305,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
         @Override
         public void reset() {
-            minValue = Double.MAX_VALUE;
+            minValue = Double.POSITIVE_INFINITY;
         }
 
     }
