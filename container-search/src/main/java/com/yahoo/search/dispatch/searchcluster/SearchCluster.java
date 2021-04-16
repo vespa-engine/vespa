@@ -358,7 +358,6 @@ public class SearchCluster implements NodeManager<Node> {
 
     private boolean isGroupCoverageSufficient(int workingNodesInGroup, long activeDocuments, long medianDocuments) {
         double documentCoverage = 100.0 * (double) activeDocuments / medianDocuments;
-
         if (medianDocuments > 0 && documentCoverage < dispatchConfig.minActivedocsPercentage())
             return false;
 
@@ -397,19 +396,19 @@ public class SearchCluster implements NodeManager<Node> {
             nextLogTime = System.currentTimeMillis() + 30 * 1000;
             int requiredNodes = group.nodes().size() - dispatchConfig.maxNodesDownPerGroup();
             if (fullCoverage) {
-                log.info(() -> String.format("Cluster %s: %s is now good again (%d/%d active docs, coverage %d/%d)",
-                                             clusterId, group, group.getActiveDocuments(), medianDocuments,
-                                             group.workingNodes(), group.nodes().size()));
+                log.info("Cluster " + clusterId + ": " + group + " has full coverage. " +
+                         "Active documents: " + group.getActiveDocuments() + "/" + medianDocuments + ", " +
+                         "working nodes: " + group.workingNodes() + "/" + group.nodes().size());
             } else {
-                StringBuilder missing = new StringBuilder();
+                StringBuilder unresponsive = new StringBuilder();
                 for (var node : group.nodes()) {
-                    if (node.isWorking() != Boolean.TRUE) {
-                        missing.append('\n').append(node);
-                    }
+                    if (node.isWorking() != Boolean.TRUE)
+                        unresponsive.append('\n').append(node);
                 }
-                log.warning(() -> String.format("Cluster %s: Coverage of %s is only %d/%d (requires %d) (%d/%d active docs) Failed nodes are:%s",
-                                                clusterId, group, group.workingNodes(), group.nodes().size(), requiredNodes,
-                                                group.getActiveDocuments(), medianDocuments, missing));
+                log.warning("Cluster " + clusterId + ": " + group + " has reduced coverage: " +
+                            "Active documents: " + group.getActiveDocuments() + "/" + medianDocuments + ", " +
+                            "working nodes: " + group.workingNodes() + "/" + group.nodes().size() + " required " + requiredNodes +
+                            ", unresponsive nodes: " + (unresponsive.toString().isEmpty() ? " none" : unresponsive));
             }
         }
     }
