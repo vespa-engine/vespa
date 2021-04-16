@@ -4,6 +4,7 @@ package com.yahoo.vespa.clustercontroller.core;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Distribution;
 import com.yahoo.vdslib.distribution.Group;
+import com.yahoo.vdslib.distribution.GroupVisitor;
 import com.yahoo.vdslib.state.ClusterState;
 import com.yahoo.vdslib.state.Node;
 import com.yahoo.vdslib.state.NodeState;
@@ -11,6 +12,7 @@ import com.yahoo.vdslib.state.NodeType;
 import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.clustercontroller.core.hostinfo.HostInfo;
 import com.yahoo.vespa.clustercontroller.utils.staterestapi.requests.SetUnitStateRequest;
+import com.yahoo.vespa.config.content.StorDistributionConfig;
 import org.junit.Test;
 
 import java.text.ParseException;
@@ -40,6 +42,11 @@ public class NodeStateChangeCheckerTest {
     private static final NodeState MAINTENANCE_NODE_STATE = createNodeState(State.MAINTENANCE, "Orchestrator");
     private static final NodeState DOWN_NODE_STATE = createNodeState(State.DOWN, "RetireEarlyExpirer");
 
+    private static final HierarchicalGroupVisiting noopVisiting = new HierarchicalGroupVisiting() {
+        @Override public boolean isHierarchical() { return false; }
+        @Override public void visit(GroupVisitor visitor) { }
+    };
+
     private static NodeState createNodeState(State state, String description) {
         return new NodeState(NodeType.STORAGE, state).setDescription(description);
     }
@@ -57,12 +64,12 @@ public class NodeStateChangeCheckerTest {
     }
 
     private NodeStateChangeChecker createChangeChecker(ContentCluster cluster) {
-        return new NodeStateChangeChecker(requiredRedundancy, visitor -> {}, cluster.clusterInfo(), false);
+        return new NodeStateChangeChecker(requiredRedundancy, noopVisiting, cluster.clusterInfo(), false);
     }
 
     private ContentCluster createCluster(Collection<ConfiguredNode> nodes) {
         Distribution distribution = mock(Distribution.class);
-        Group group = new Group(2, "to");
+        Group group = new Group(2, "two");
         when(distribution.getRootGroup()).thenReturn(group);
         return new ContentCluster("Clustername", nodes, distribution);
     }
@@ -117,7 +124,7 @@ public class NodeStateChangeCheckerTest {
     public void testDeniedInMoratorium() {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
-                requiredRedundancy, visitor -> {}, cluster.clusterInfo(), true);
+                requiredRedundancy, noopVisiting, cluster.clusterInfo(), true);
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 new Node(NodeType.STORAGE, 10), defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);
@@ -130,13 +137,165 @@ public class NodeStateChangeCheckerTest {
     public void testUnknownStorageNode() {
         ContentCluster cluster = createCluster(createNodes(4));
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
-                requiredRedundancy, visitor -> {}, cluster.clusterInfo(), false);
+                requiredRedundancy, noopVisiting, cluster.clusterInfo(), false);
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 new Node(NodeType.STORAGE, 10), defaultAllUpClusterState(), SetUnitStateRequest.Condition.SAFE,
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);
         assertFalse(result.settingWantedStateIsAllowed());
         assertFalse(result.wantedStateAlreadySet());
         assertThat(result.getReason(), is("Unknown node storage.10"));
+    }
+
+    @Test
+    public void testWhenOtherStorageNodeIsSuspended() {
+        // Nodes 0-3, storage node 0 being in maintenance with "Orchestrator" description.
+        ContentCluster cluster = createCluster(createNodes(4));
+        cluster.clusterInfo().getStorageNodeInfo(0).setWantedState(new NodeState(NodeType.STORAGE, State.MAINTENANCE).setDescription("Orchestrator"));
+        NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
+                requiredRedundancy, noopVisiting, cluster.clusterInfo(), false);
+        ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
+                "version:%d distributor:4 storage:4 .0.s:m",
+                currentClusterStateVersion));
+
+        NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
+                new Node(NodeType.STORAGE, 1), clusterStateWith0InMaintenance,
+                SetUnitStateRequest.Condition.SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
+        assertFalse(result.settingWantedStateIsAllowed());
+        assertFalse(result.wantedStateAlreadySet());
+        assertThat(result.getReason(), is("At most one node can have a wanted state when #groups = 1: " +
+                "Other storage node 0 has wanted state Maintenance"));
+    }
+
+    @Test
+    public void testWhenOtherDistributorIsDown() {
+        // Nodes 0-3, storage node 0 being in maintenance with "Orchestrator" description.
+        ContentCluster cluster = createCluster(createNodes(4));
+        cluster.clusterInfo().getDistributorNodeInfo(0)
+                .setWantedState(new NodeState(NodeType.DISTRIBUTOR, State.DOWN).setDescription("Orchestrator"));
+        NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
+                requiredRedundancy, noopVisiting, cluster.clusterInfo(), false);
+        ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
+                "version:%d distributor:4 .0.s:d storage:4",
+                currentClusterStateVersion));
+
+        NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
+                new Node(NodeType.STORAGE, 1), clusterStateWith0InMaintenance,
+                SetUnitStateRequest.Condition.SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
+        assertFalse(result.settingWantedStateIsAllowed());
+        assertFalse(result.wantedStateAlreadySet());
+        assertThat(result.getReason(), is("At most one node can have a wanted state when #groups = 1: " +
+                "Other distributor 0 has wanted state Down"));
+    }
+
+    @Test
+    public void testWhenOtherDistributorInOtherGroupIsDown() {
+        // Nodes 0-3, distributor 0 being in maintenance with "Orchestrator" description.
+        // 2 groups: nodes 0-1 is group 0, 2-3 is group 1.
+        ContentCluster cluster = createCluster(createNodes(4));
+        cluster.clusterInfo().getDistributorNodeInfo(0)
+                .setWantedState(new NodeState(NodeType.STORAGE, State.DOWN).setDescription("Orchestrator"));
+        HierarchicalGroupVisiting visiting = makeHierarchicalGroupVisitingWith2Groups(4);
+        NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
+                requiredRedundancy, visiting, cluster.clusterInfo(), false);
+        ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
+                "version:%d distributor:4 .0.s:d storage:4",
+                currentClusterStateVersion));
+
+        {
+            // Denied for node 2 in group 1, since distributor 0 in group 0 is down
+            NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
+                    new Node(NodeType.STORAGE, 2), clusterStateWith0InMaintenance,
+                    SetUnitStateRequest.Condition.SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
+            assertFalse(result.settingWantedStateIsAllowed());
+            assertFalse(result.wantedStateAlreadySet());
+            assertThat(result.getReason(), is("At most one group can have wanted state: " +
+                    "Other distributor 0 in group 0 has wanted state Down"));
+        }
+
+        {
+            // Even node 1 of group 0 is not permitted, as node 0 is not considered
+            // suspended since only the distributor has been set down.
+            NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
+                    new Node(NodeType.STORAGE, 1), clusterStateWith0InMaintenance,
+                    SetUnitStateRequest.Condition.SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
+            assertFalse(result.getReason(), result.settingWantedStateIsAllowed());
+            assertEquals("Another distributor wants state DOWN: 0", result.getReason());
+        }
+    }
+
+    @Test
+    public void testWhenOtherStorageNodeInOtherGroupIsSuspended() {
+        // Nodes 0-3, storage node 0 being in maintenance with "Orchestrator" description.
+        // 2 groups: nodes 0-1 is group 0, 2-3 is group 1.
+        ContentCluster cluster = createCluster(createNodes(4));
+        cluster.clusterInfo().getStorageNodeInfo(0).setWantedState(new NodeState(NodeType.STORAGE, State.MAINTENANCE).setDescription("Orchestrator"));
+        HierarchicalGroupVisiting visiting = makeHierarchicalGroupVisitingWith2Groups(4);
+        NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
+                requiredRedundancy, visiting, cluster.clusterInfo(), false);
+        ClusterState clusterStateWith0InMaintenance = clusterState(String.format(
+                "version:%d distributor:4 storage:4 .0.s:m",
+                currentClusterStateVersion));
+
+        {
+            // Denied for node 2 in group 1, since node 0 in group 0 is in maintenance
+            NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
+                    new Node(NodeType.STORAGE, 2), clusterStateWith0InMaintenance,
+                    SetUnitStateRequest.Condition.SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
+            assertFalse(result.settingWantedStateIsAllowed());
+            assertFalse(result.wantedStateAlreadySet());
+            assertThat(result.getReason(), is("At most one group can have wanted state: " +
+                    "Other storage node 0 in group 0 has wanted state Maintenance"));
+        }
+
+        {
+            // Permitted for node 1 in group 0, since node 0 is already in maintenance with
+            // description Orchestrator, and it is in the same group
+            NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
+                    new Node(NodeType.STORAGE, 1), clusterStateWith0InMaintenance,
+                    SetUnitStateRequest.Condition.SAFE, UP_NODE_STATE, MAINTENANCE_NODE_STATE);
+            assertTrue(result.getReason(), result.settingWantedStateIsAllowed());
+            assertFalse(result.wantedStateAlreadySet());
+        }
+    }
+
+    /**
+     * Make a HierarchicalGroupVisiting with the given number of nodes, with 2 groups:
+     * Group "0" is nodes 0-1, group "1" is 2-3.
+     */
+    private HierarchicalGroupVisiting makeHierarchicalGroupVisitingWith2Groups(int nodes) {
+        int groups = 2;
+        if (nodes % groups != 0) {
+            throw new IllegalArgumentException("Cannot have 2 groups with an odd number of nodes: " + nodes);
+        }
+        int nodesPerGroup = nodes / groups;
+
+        var configBuilder = new StorDistributionConfig.Builder()
+                .active_per_leaf_group(true)
+                .ready_copies(2)
+                .redundancy(2)
+                .initial_redundancy(2);
+
+        configBuilder.group(new StorDistributionConfig.Group.Builder()
+                .index("invalid")
+                .name("invalid")
+                .capacity(nodes)
+                .partitions("1|*"));
+
+        int nodeIndex = 0;
+        for (int i = 0; i < groups; ++i) {
+            var groupBuilder = new StorDistributionConfig.Group.Builder()
+                    .index(String.valueOf(i))
+                    .name(String.valueOf(i))
+                    .capacity(nodesPerGroup)
+                    .partitions("");
+            for (int j = 0; j < nodesPerGroup; ++j, ++nodeIndex) {
+                groupBuilder.nodes(new StorDistributionConfig.Group.Nodes.Builder()
+                        .index(nodeIndex));
+            }
+            configBuilder.group(groupBuilder);
+        }
+
+        return new HierarchicalGroupVisitingAdapter(new Distribution(configBuilder.build()));
     }
 
     @Test
@@ -162,7 +321,7 @@ public class NodeStateChangeCheckerTest {
 
         // We should then be denied setting storage node 1 safely to maintenance.
         NodeStateChangeChecker nodeStateChangeChecker = new NodeStateChangeChecker(
-                requiredRedundancy, visitor -> {}, cluster.clusterInfo(), false);
+                requiredRedundancy, noopVisiting, cluster.clusterInfo(), false);
         NodeStateChangeChecker.Result result = nodeStateChangeChecker.evaluateTransition(
                 nodeStorage, clusterStateWith3Down, SetUnitStateRequest.Condition.SAFE,
                 UP_NODE_STATE, MAINTENANCE_NODE_STATE);

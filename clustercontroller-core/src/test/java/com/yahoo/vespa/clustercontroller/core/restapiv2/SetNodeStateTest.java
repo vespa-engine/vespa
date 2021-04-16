@@ -223,28 +223,28 @@ public class SetNodeStateTest extends StateRestApiTest {
         assertSetUnitState(1, State.MAINTENANCE, null);  // sanity-check
 
         // Because 2 is in a different group maintenance should be denied
-        assertSetUnitStateCausesAlreadyInWantedMaintenance(2, State.MAINTENANCE);
+        assertSetUnitStateCausesAtMostOneGroupError(2, State.MAINTENANCE);
 
         // Because 3 and 5 are in the same group as 1, these should be OK
         assertSetUnitState(3, State.MAINTENANCE, null);
         assertUnitState(1, "user", State.MAINTENANCE, "whatever reason.");  // sanity-check
         assertUnitState(3, "user", State.MAINTENANCE, "whatever reason.");  // sanity-check
         assertSetUnitState(5, State.MAINTENANCE, null);
-        assertSetUnitStateCausesAlreadyInWantedMaintenance(2, State.MAINTENANCE);  // sanity-check
+        assertSetUnitStateCausesAtMostOneGroupError(2, State.MAINTENANCE);  // sanity-check
 
         // Set all to up
         assertSetUnitState(1, State.UP, null);
         assertSetUnitState(1, State.UP, null); // sanity-check
         assertSetUnitState(3, State.UP, null);
-        assertSetUnitStateCausesAlreadyInWantedMaintenance(2, State.MAINTENANCE);  // sanity-check
+        assertSetUnitStateCausesAtMostOneGroupError(2, State.MAINTENANCE);  // sanity-check
         assertSetUnitState(5, State.UP, null);
 
         // Now we should be allowed to upgrade second group, while the first group will be denied
         assertSetUnitState(2, State.MAINTENANCE, null);
-        assertSetUnitStateCausesAlreadyInWantedMaintenance(1, State.MAINTENANCE);  // sanity-check
+        assertSetUnitStateCausesAtMostOneGroupError(1, State.MAINTENANCE);  // sanity-check
         assertSetUnitState(0, State.MAINTENANCE, null);
         assertSetUnitState(4, State.MAINTENANCE, null);
-        assertSetUnitStateCausesAlreadyInWantedMaintenance(1, State.MAINTENANCE);  // sanity-check
+        assertSetUnitStateCausesAtMostOneGroupError(1, State.MAINTENANCE);  // sanity-check
 
         // And set second group up again
         assertSetUnitState(0, State.MAINTENANCE, null);
@@ -264,14 +264,14 @@ public class SetNodeStateTest extends StateRestApiTest {
         assertSetUnitState(1, State.MAINTENANCE, null);  // sanity-check
 
         // Because 2 is in a different group maintenance should be denied
-        assertSetUnitStateCausesAlreadyInWantedMaintenance(2, State.MAINTENANCE);
+        assertSetUnitStateCausesAtMostOneGroupError(2, State.MAINTENANCE);
 
         // Because 3 and 5 are in the same group as 1, these should be OK
         assertSetUnitState(3, State.MAINTENANCE, null);
         assertUnitState(1, "user", State.MAINTENANCE, "whatever reason.");  // sanity-check
         assertUnitState(3, "user", State.MAINTENANCE, "whatever reason.");  // sanity-check
         assertSetUnitState(5, State.MAINTENANCE, null);
-        assertSetUnitStateCausesAlreadyInWantedMaintenance(2, State.MAINTENANCE);  // sanity-check
+        assertSetUnitStateCausesAtMostOneGroupError(2, State.MAINTENANCE);  // sanity-check
 
         // Set all to up
         assertSetUnitState(1, State.UP, null);
@@ -306,12 +306,14 @@ public class SetNodeStateTest extends StateRestApiTest {
         }
     }
 
-    private void assertSetUnitStateCausesAlreadyInWantedMaintenance(int index, State state) throws StateRestApiException {
-        assertSetUnitStateFails(index, state, "^Another storage node wants state MAINTENANCE: ([0-9]+)$");
+    private void assertSetUnitStateCausesAtMostOneGroupError(int index, State state) throws StateRestApiException {
+        assertSetUnitStateFails(index, state, "^At most one group can have wanted state: " +
+                "Other storage node ([0-9]+) in group ([0-9]+) has wanted state Maintenance$");
     }
 
     private void assertSetUnitStateCausesAnotherNodeHasStateError(int index, State state) throws StateRestApiException {
-        assertSetUnitStateFails(index, state, "^Another storage node has state DOWN: ([0-9]+)$");
+        assertSetUnitStateFails(index, state, "^At most one group can have wanted state: " +
+                "Other storage node ([0-9]+) in group ([0-9]+) has wanted state Maintenance$");
     }
 
     private void assertSetUnitStateFails(int index, State state, String reasonRegex)
