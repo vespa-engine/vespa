@@ -41,7 +41,7 @@ public class HostInfoUpdater extends ControllerMaintainer {
         Map<String, NodeEntity> nodeEntities = controller().serviceRegistry().entityService().listNodes().stream()
                                                            .collect(Collectors.toMap(NodeEntity::hostname,
                                                                                      Function.identity()));
-        int nodesUpdated = 0;
+        int hostsUpdated = 0;
         try {
             for (var zone : controller().zoneRegistry().zones().controllerUpgraded().all().ids()) {
                 for (var node : nodeRepository.list(zone, false)) {
@@ -57,12 +57,12 @@ public class HostInfoUpdater extends ControllerMaintainer {
                         updatedNode.setModelName(nodeEntity.model().get());
                     }
                     nodeRepository.patchNode(zone, node.hostname().value(), updatedNode);
-                    nodesUpdated++;
+                    hostsUpdated++;
                 }
             }
         } finally {
-            if (nodesUpdated > 0) {
-                LOG.info("Updated switch hostname for " + nodesUpdated + " node(s)");
+            if (hostsUpdated > 0) {
+                LOG.info("Updated information for " + hostsUpdated + " hosts(s)");
             }
         }
         return true;
