@@ -171,6 +171,8 @@ public class OsVersionsTest {
 
         // Target is set and upgrade started
         var version1 = Version.fromString("7.1");
+        Duration initialBudget = Duration.ofHours(24);
+        versions.setTarget(NodeType.host, version1, initialBudget, false);
         Duration totalBudget = Duration.ofHours(12);
         Duration nodeBudget = totalBudget.dividedBy(hostCount);
         versions.setTarget(NodeType.host, version1, totalBudget,false);
