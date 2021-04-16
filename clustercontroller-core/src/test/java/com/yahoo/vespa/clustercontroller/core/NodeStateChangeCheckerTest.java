@@ -147,7 +147,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testWhenOtherStorageNodeIsSuspended() {
+    public void testSafeMaintenanceDisallowedWhenOtherStorageNodeInFlatClusterIsSuspended() {
         // Nodes 0-3, storage node 0 being in maintenance with "Orchestrator" description.
         ContentCluster cluster = createCluster(createNodes(4));
         cluster.clusterInfo().getStorageNodeInfo(0).setWantedState(new NodeState(NodeType.STORAGE, State.MAINTENANCE).setDescription("Orchestrator"));
@@ -167,7 +167,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testWhenOtherDistributorIsDown() {
+    public void testSafeMaintenanceDisallowedWhenOtherDistributorInFlatClusterIsSuspended() {
         // Nodes 0-3, storage node 0 being in maintenance with "Orchestrator" description.
         ContentCluster cluster = createCluster(createNodes(4));
         cluster.clusterInfo().getDistributorNodeInfo(0)
@@ -188,7 +188,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testWhenOtherDistributorInOtherGroupIsDown() {
+    public void testSafeMaintenanceDisallowedWhenDistributorInGroupIsDown() {
         // Nodes 0-3, distributor 0 being in maintenance with "Orchestrator" description.
         // 2 groups: nodes 0-1 is group 0, 2-3 is group 1.
         ContentCluster cluster = createCluster(createNodes(4));
@@ -224,7 +224,7 @@ public class NodeStateChangeCheckerTest {
     }
 
     @Test
-    public void testWhenOtherStorageNodeInOtherGroupIsSuspended() {
+    public void testSafeMaintenanceWhenOtherStorageNodeInGroupIsSuspended() {
         // Nodes 0-3, storage node 0 being in maintenance with "Orchestrator" description.
         // 2 groups: nodes 0-1 is group 0, 2-3 is group 1.
         ContentCluster cluster = createCluster(createNodes(4));
