@@ -974,6 +974,7 @@ std::vector<uint32_t>
 BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
 start_compact_worst_btree_nodes()
 {
+    _builder.clear();
     return _allocator.start_compact_worst();
 }
 
@@ -1000,6 +1001,37 @@ move_btree_nodes(EntryRef ref)
             tree->move_nodes(_allocator);
         }
     }
+}
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
+          typename TraitsT, typename AggrCalcT>
+std::vector<uint32_t>
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
+start_compact_worst_buffers()
+{
+    freeze();
+    return _store.startCompactWorstBuffers(true, false);
+}
+
+template <typename KeyT, typename DataT, typename AggrT, typename CompareT,
+          typename TraitsT, typename AggrCalcT>
+typename BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::EntryRef
+BTreeStore<KeyT, DataT, AggrT, CompareT, TraitsT, AggrCalcT>::
+move(EntryRef ref)
+{
+    if (!ref.valid() || !_store.getCompacting(ref)) {
+        return ref;
+    }
+    RefType iRef(ref);
+    uint32_t clusterSize = getClusterSize(iRef);
+    if (clusterSize == 0) {
+        BTreeType *tree = getWTreeEntry(iRef);
+        auto ref_and_ptr = allocBTreeCopy(*tree);
+        tree->prepare_hold();
+        return ref_and_ptr.ref;
+    }
+    const KeyDataType *shortArray = getKeyDataEntry(iRef, clusterSize);
+    return allocKeyDataCopy(shortArray, clusterSize).ref;
 }
 
 }
