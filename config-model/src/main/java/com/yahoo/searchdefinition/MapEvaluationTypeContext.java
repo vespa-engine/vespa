@@ -135,13 +135,16 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                                                currentResolutionCallStack.stream().map(Reference::toString).collect(Collectors.joining(" -> ")) +
                                                " -> " + reference);
 
-        // Bound to a function argument, and not to a same-named identifier (which would lead to a loop)?
+        // Bound to a function argument?
         Optional<String> binding = boundIdentifier(reference);
-        if (binding.isPresent() && ! binding.get().equals(reference.toString())) {
+        if (binding.isPresent()) {
             try {
                 // This is not pretty, but changing to bind expressions rather
                 // than their string values requires deeper changes
-                return new RankingExpression(binding.get()).type(parent.orElse(this));
+                var expr = new RankingExpression(binding.get());
+                var type = expr.type(parent.orElseThrow(
+                                         () -> new IllegalArgumentException("when a binding is present we must have a parent context")));
+                return type;
             } catch (ParseException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -162,7 +165,10 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             // A reference to a function?
             Optional<ExpressionFunction> function = functionInvocation(reference);
             if (function.isPresent()) {
-                return function.get().getBody().type(this.withBindings(bind(function.get().arguments(), reference.arguments())));
+                var body = function.get().getBody();
+                var child = this.withBindings(bind(function.get().arguments(), reference.arguments()));
+                var type = body.type(child);
+                return type;
             }
 
             // A reference to an ONNX model?
@@ -302,8 +308,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         Map<String, String> bindings = new HashMap<>(formalArguments.size());
         for (int i = 0; i < formalArguments.size(); i++) {
             String identifier = invocationArguments.expressions().get(i).toString();
-            String identifierBinding = super.getBinding(identifier);
-            bindings.put(formalArguments.get(i), identifierBinding != null ? identifierBinding : identifier);
+            bindings.put(formalArguments.get(i), identifier);
         }
         return bindings;
     }
