@@ -40,6 +40,9 @@ public class ClusterControllerContainer extends Container implements
     private static final ComponentSpecification CLUSTERCONTROLLER_BUNDLE = new ComponentSpecification("clustercontroller-apps");
     private static final ComponentSpecification ZOOKEEPER_SERVER_BUNDLE = new ComponentSpecification("zookeeper-server");
     private static final ComponentSpecification REINDEXING_CONTROLLER_BUNDLE = new ComponentSpecification("clustercontroller-reindexer");
+    // The below adjumenst to default netty settings reduces default chunkSize from 16M to 1M
+    private static final int DEFAULT_NETTY_PAGE_SIZE = 4096; // Reduced from nettys default of 8192
+    private static final int DEFAULT_NETTY_MAX_ORDER = 8; // Reduced from nettys default of 11
 
     private final Set<String> bundles = new TreeSet<>();
 
@@ -69,6 +72,12 @@ public class ClusterControllerContainer extends Container implements
         addFileBundle("zookeeper-server");
         configureReindexing();
         configureZooKeeperServer(runStandaloneZooKeeper);
+        prependJvmOptions(defaultNettyBufferSize(DEFAULT_NETTY_PAGE_SIZE, DEFAULT_NETTY_MAX_ORDER));
+    }
+
+    private static String defaultNettyBufferSize(int pageSize, int maxOrder) {
+        return new StringBuffer("-Dio.netty.allocator.pageSize=").append(pageSize)
+                .append(" -Dio.netty.allocator.maxOrder=").append(maxOrder).toString();
     }
 
     @Override
