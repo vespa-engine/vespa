@@ -7,6 +7,7 @@
 #include <vespa/vespalib/objects/nbostream.h>
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/size_literals.h>
+#include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/eval/eval/fast_value.h>
 #include <vespa/eval/eval/function.h>
@@ -87,13 +88,41 @@ TensorSpec extract_value(const Inspector &inspector) {
 
 //-----------------------------------------------------------------------------
 
+std::vector<vespalib::string> extract_fields(const Inspector &object) {
+    struct FieldExtractor : slime::ObjectTraverser {
+        std::vector<vespalib::string> result;
+        void field(const Memory &symbol, const Inspector &) override {
+            result.push_back(symbol.make_string());
+        }
+    } extractor;
+    object.traverse(extractor);
+    return std::move(extractor.result);
+};
+
+//-----------------------------------------------------------------------------
+
+void dump_test(const Inspector &test) {
+    fprintf(stderr, "expression: '%s'\n", test["expression"].asString().make_string().c_str());
+    for (const auto &input: extract_fields(test["inputs"])) {
+        auto value = extract_value(test["inputs"][input]);
+        fprintf(stderr, "input '%s': %s\n", input.c_str(), value.to_string().c_str());
+    }
+}
+
+//-----------------------------------------------------------------------------
+
 TensorSpec ref_eval(const Inspector &test) {
     auto fun = Function::parse(test["expression"].asString().make_string());
     std::vector<TensorSpec> params;
     for (size_t i = 0; i < fun->num_params(); ++i) {
         params.push_back(extract_value(test["inputs"][fun->param_name(i)]));
     }
-    return ReferenceEvaluation::eval(*fun, params);
+    auto result = ReferenceEvaluation::eval(*fun, params);
+    if (result.type() == "error") {
+        dump_test(test);
+        REQUIRE(((void)"reference evaluation failed!", false));
+    }
+    return result;
 }
 
 //-----------------------------------------------------------------------------
@@ -119,22 +148,9 @@ TensorSpec eval_expr(const Inspector &test, const ValueBuilderFactory &factory) 
     InterpretedFunction::Context ctx(ifun);
     SimpleObjectParams params(param_refs);
     const Value &result = ifun.eval(ctx, params);
-    ASSERT_EQUAL(result.type(), types.get_type(fun->root()));
+    REQUIRE_EQ(result.type(), types.get_type(fun->root()));
     return spec_from_value(result);
 }
-
-//-----------------------------------------------------------------------------
-
-std::vector<vespalib::string> extract_fields(const Inspector &object) {
-    struct FieldExtractor : slime::ObjectTraverser {
-        std::vector<vespalib::string> result;
-        void field(const Memory &symbol, const Inspector &) override {
-            result.push_back(symbol.make_string());
-        }
-    } extractor;
-    object.traverse(extractor);
-    return std::move(extractor.result);
-};
 
 //-----------------------------------------------------------------------------
 
@@ -194,14 +210,6 @@ void evaluate(Input &in, Output &out) {
 }
 
 //-----------------------------------------------------------------------------
-
-void dump_test(const Inspector &test) {
-    fprintf(stderr, "expression: '%s'\n", test["expression"].asString().make_string().c_str());
-    for (const auto &input: extract_fields(test["inputs"])) {
-        auto value = extract_value(test["inputs"][input]);
-        fprintf(stderr, "input '%s': %s\n", input.c_str(), value.to_string().c_str());
-    }
-}
 
 void verify(Input &in, Output &out) {
     std::map<vespalib::string,size_t> result_map;
