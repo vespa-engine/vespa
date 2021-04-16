@@ -3,7 +3,6 @@
 #include "generate.h"
 #include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/eval/eval/test/gen_spec.h>
-#include <vespa/eval/eval/test/tensor_model.h>
 #include <vespa/eval/eval/value_type_spec.h>
 #include <vespa/eval/eval/aggr.h>
 #include <vespa/vespalib/util/stringfmt.h>
