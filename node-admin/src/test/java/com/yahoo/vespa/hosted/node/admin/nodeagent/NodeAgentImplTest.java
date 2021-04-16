@@ -467,7 +467,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void provisionedNodeIsMarkedAsDirty() {
+    public void provisionedNodeIsMarkedAsReady() {
         final NodeSpec node = nodeBuilder(NodeState.provisioned)
                 .wantedDockerImage(dockerImage)
                 .build();
@@ -477,7 +477,7 @@ public class NodeAgentImplTest {
         when(nodeRepository.getOptionalNode(hostName)).thenReturn(Optional.of(node));
 
         nodeAgent.doConverge(context);
-        verify(nodeRepository, times(1)).setNodeState(eq(hostName), eq(NodeState.dirty));
+        verify(nodeRepository, times(1)).setNodeState(eq(hostName), eq(NodeState.ready));
     }
 
     @Test
