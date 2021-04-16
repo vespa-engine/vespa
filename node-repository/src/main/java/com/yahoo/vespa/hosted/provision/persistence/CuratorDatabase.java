@@ -10,6 +10,7 @@ import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.curator.recipes.CuratorCounter;
 import com.yahoo.vespa.curator.transaction.CuratorTransaction;
+import org.apache.zookeeper.data.Stat;
 
 import java.time.Duration;
 import java.util.Arrays;
@@ -163,6 +164,11 @@ public class CuratorDatabase {
             return get(data, path, () -> curator.getData(path)).map(data -> Arrays.copyOf(data, data.length));
         }
 
+        @Override
+        public Optional<Stat> getStat(Path path) {
+            return curator.getStat(path);
+        }
+
         private <T> T get(Map<Path, T> values, Path path, Supplier<T> loader) {
             return values.compute(path, (key, value) -> {
                 if (value == null) {
@@ -196,15 +202,14 @@ public class CuratorDatabase {
 
     interface Session {
 
-        /**
-         * Returns the children of this path, which may be empty.
-         */
+        /** Returns the children of this path, which may be empty */
         List<String> getChildren(Path path);
 
-        /**
-         * Returns the a copy of the content of this child - which may be empty.
-         */
+        /** Returns the a copy of the content of this child - which may be empty */
         Optional<byte[]> getData(Path path);
+
+        /** Returns the stat data of given path */
+        Optional<Stat> getStat(Path path);
 
     }
 

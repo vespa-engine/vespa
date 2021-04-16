@@ -1,6 +1,9 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
+import com.google.common.cache.Cache;
+import com.google.common.cache.CacheBuilder;
+import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.google.common.util.concurrent.UncheckedTimeoutException;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
@@ -11,7 +14,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeFlavors;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.path.Path;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.transaction.Transaction;
@@ -27,6 +29,7 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancerId;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.os.OsVersionChange;
+import org.apache.zookeeper.data.Stat;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -36,8 +39,11 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.TreeMap;
+import java.util.concurrent.Callable;
+import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
@@ -77,16 +83,19 @@ public class CuratorDatabaseClient {
     private final NodeSerializer nodeSerializer;
     private final CuratorDatabase db;
     private final Clock clock;
-    private final Zone zone;
     private final CuratorCounter provisionIndexCounter;
 
-    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, Zone zone, boolean useCache,
+    // Deserializing a Node from slime is expensive, and happens frequently. Node instances that have already been
+    // deserialized are returned from this cache instead of being deserialized again.
+    private final Cache<Path, CachedNode> nodeCache;
+
+    public CuratorDatabaseClient(NodeFlavors flavors, Curator curator, Clock clock, boolean useCache,
                                  long nodeCacheSize) {
-        this.nodeSerializer = new NodeSerializer(flavors, nodeCacheSize);
-        this.zone = zone;
+        this.nodeSerializer = new NodeSerializer(flavors);
         this.db = new CuratorDatabase(curator, root, useCache);
         this.clock = clock;
         this.provisionIndexCounter = new CuratorCounter(curator, root.append("provisionIndexCounter").getAbsolute());
+        this.nodeCache = CacheBuilder.newBuilder().maximumSize(nodeCacheSize).recordStats().build();;
         initZK();
     }
 
@@ -154,7 +163,7 @@ public class CuratorDatabaseClient {
      * @return the nodes in their persisted state
      */
     public List<Node> writeTo(List<Node> nodes, Agent agent, Optional<String> reason) {
-        if (nodes.isEmpty()) return Collections.emptyList();
+        if (nodes.isEmpty()) return List.of();
 
         List<Node> writtenNodes = new ArrayList<>(nodes.size());
 
@@ -187,7 +196,7 @@ public class CuratorDatabaseClient {
         }
     }
     public Node writeTo(Node.State toState, Node node, Agent agent, Optional<String> reason) {
-        return writeTo(toState, Collections.singletonList(node), agent, reason).get(0);
+        return writeTo(toState, List.of(node), agent, reason).get(0);
     }
 
     /**
@@ -255,7 +264,7 @@ public class CuratorDatabaseClient {
      *
      * @return the nodes in a mutable list owned by the caller
      */
-    public List<Node> readNodes(Node.State ... states) {
+    public List<Node> readNodes(Node.State... states) {
         List<Node> nodes = new ArrayList<>();
         if (states.length == 0)
             states = Node.State.values();
@@ -273,13 +282,29 @@ public class CuratorDatabaseClient {
      * Returns a particular node, or empty if this node is not in any of the given states.
      * If no states are given this returns the node if it is present in any state.
      */
-    public Optional<Node> readNode(CuratorDatabase.Session session, String hostname, Node.State ... states) {
+    private Optional<Node> readNode(CuratorDatabase.Session session, String hostname, Node.State... states) {
         if (states.length == 0)
             states = Node.State.values();
         for (Node.State state : states) {
-            Optional<byte[]> nodeData = session.getData(toPath(state, hostname));
-            if (nodeData.isPresent())
-                return nodeData.map((data) -> nodeSerializer.fromJson(state, data));
+            Path path = toPath(state, hostname);
+            Optional<Stat> stat = session.getStat(path);
+            if (stat.isPresent()) {
+                int currentVersion = stat.get().getVersion();
+                try {
+                    Callable<CachedNode> loader = () -> new CachedNode(session.getData(path)
+                                                                              .map(data -> nodeSerializer.fromJson(state, data))
+                                                                              .get(),
+                                                                       currentVersion);
+                    CachedNode cachedNode = nodeCache.get(path, loader);
+                    if (cachedNode.version != currentVersion) {
+                        nodeCache.invalidate(path);
+                        cachedNode = nodeCache.get(path, loader);
+                    }
+                    return Optional.of(cachedNode.node);
+                } catch (ExecutionException e) {
+                    throw new UncheckedExecutionException(e);
+                }
+            }
         }
         return Optional.empty();
     }
@@ -288,7 +313,7 @@ public class CuratorDatabaseClient {
      * Returns a particular node, or empty if this noe is not in any of the given states.
      * If no states are given this returns the node if it is present in any state.
      */
-    public Optional<Node> readNode(String hostname, Node.State ... states) {
+    public Optional<Node> readNode(String hostname, Node.State... states) {
         return readNode(db.getSession(), hostname, states);
     }
 
@@ -532,12 +557,15 @@ public class CuratorDatabaseClient {
                         .collect(Collectors.toList());
     }
 
+    /** Returns cache statistics for curator cache */
     public CacheStats cacheStats() {
         return db.cacheStats();
     }
 
-    public CacheStats nodeSerializerCacheStats() {
-        return nodeSerializer.cacheStats();
+    /** Returns cache statistics for the node cache */
+    public CacheStats nodeCacheStats() {
+        var stats = nodeCache.stats();
+        return new CacheStats(stats.hitRate(), stats.evictionCount(), nodeCache.size());
     }
 
     private <T> Optional<T> read(Path path, Function<byte[], T> mapper) {
@@ -547,6 +575,23 @@ public class CuratorDatabaseClient {
     private Transaction.Operation createOrSet(Path path, byte[] data) {
         return db.exists(path) ? CuratorOperations.setData(path.getAbsolute(), data)
                                             : CuratorOperations.create(path.getAbsolute(), data);
+    }
+
+    private static class CachedNode {
+
+        private final Node node;
+        private final int version;
+
+        private CachedNode(Node node, int version) {
+            this.node = Objects.requireNonNull(node);
+            this.version = version;
+        }
+
+        @Override
+        public String toString() {
+            return node + " version " + version;
+        }
+
     }
 
 }
