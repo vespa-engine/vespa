@@ -33,6 +33,7 @@ import static org.junit.Assert.assertNotEquals;
  * @author bjorncs
  */
 public class LogFileHandlerTestCase {
+    private static final int BUFFER_SIZE = 0x10000;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -43,7 +44,7 @@ public class LogFileHandlerTestCase {
 
         String pattern = root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S";
         long[] rTimes = {1000, 2000, 10000};
-        LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, pattern, rTimes, null, 2048, "thread-name", new StringLogWriter());
+        LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, BUFFER_SIZE, pattern, rTimes, null, 2048, "thread-name", new StringLogWriter());
         long now = System.currentTimeMillis();
         long millisPerDay = 60*60*24*1000;
         long tomorrowDays = (now / millisPerDay) +1;
@@ -65,7 +66,7 @@ public class LogFileHandlerTestCase {
         File logFile = temporaryFolder.newFile("testLogFileG1.txt");
 
       //create logfilehandler
-      LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, logFile.getAbsolutePath(), "0 5 ...", null, 2048, "thread-name", new StringLogWriter());
+      LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, BUFFER_SIZE, logFile.getAbsolutePath(), "0 5 ...", null, 2048, "thread-name", new StringLogWriter());
 
       //write log
       h.publish("testDeleteFileFirst1");
@@ -78,7 +79,7 @@ public class LogFileHandlerTestCase {
       File logFile = temporaryFolder.newFile("testLogFileG2.txt");
 
       //create logfilehandler
-       LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, logFile.getAbsolutePath(), "0 5 ...", null, 2048, "thread-name", new StringLogWriter());
+       LogFileHandler<String> h = new LogFileHandler<>(Compression.NONE, BUFFER_SIZE, logFile.getAbsolutePath(), "0 5 ...", null, 2048, "thread-name", new StringLogWriter());
 
       //write log
       h.publish("testDeleteFileDuringLogging1");
@@ -104,7 +105,7 @@ public class LogFileHandlerTestCase {
             }
         };
         LogFileHandler<String> handler = new LogFileHandler<>(
-                Compression.NONE, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", 2048, "thread-name", new StringLogWriter());
+                Compression.NONE, BUFFER_SIZE, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", 2048, "thread-name", new StringLogWriter());
 
         String message = formatter.format(new LogRecord(Level.INFO, "test"));
         handler.publishAndWait(message);
@@ -128,7 +129,7 @@ public class LogFileHandlerTestCase {
     public void compresses_previous_log_file() throws InterruptedException, IOException {
         File root = temporaryFolder.newFolder("compressespreviouslogfile");
         LogFileHandler<String> firstHandler = new LogFileHandler<>(
-                Compression.ZSTD, root.getAbsolutePath() + "/compressespreviouslogfile.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", 2048, "thread-name", new StringLogWriter());
+                Compression.ZSTD, BUFFER_SIZE, root.getAbsolutePath() + "/compressespreviouslogfile.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", 2048, "thread-name", new StringLogWriter());
         firstHandler.publishAndWait("test");
         firstHandler.shutdown();
 
@@ -136,7 +137,7 @@ public class LogFileHandlerTestCase {
         assertThat(root.toPath().resolve("symlink").toRealPath().toString()).isEqualTo(firstHandler.getFileName());
 
         LogFileHandler<String> secondHandler = new LogFileHandler<>(
-                Compression.ZSTD, root.getAbsolutePath() + "/compressespreviouslogfile.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", 2048, "thread-name", new StringLogWriter());
+                Compression.ZSTD, BUFFER_SIZE, root.getAbsolutePath() + "/compressespreviouslogfile.%Y%m%d%H%M%S%s", new long[]{0}, "symlink", 2048, "thread-name", new StringLogWriter());
         secondHandler.publishAndWait("test");
         secondHandler.rotateNow();
 
@@ -174,7 +175,7 @@ public class LogFileHandlerTestCase {
         File root = temporaryFolder.newFolder("testcompression" + compression.name());
 
         LogFileHandler<String> h = new LogFileHandler<>(
-                compression, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, null, 2048, "thread-name", new StringLogWriter());
+                compression, BUFFER_SIZE, root.getAbsolutePath() + "/logfilehandlertest.%Y%m%d%H%M%S%s", new long[]{0}, null, 2048, "thread-name", new StringLogWriter());
         int logEntries = 10000;
         for (int i = 0; i < logEntries; i++) {
             h.publish("test");

@@ -8,9 +8,11 @@ package com.yahoo.container.logging;
 class ConnectionLogHandler {
     private final LogFileHandler<ConnectionLogEntry> logFileHandler;
 
-    public ConnectionLogHandler(String logDirectoryName, String clusterName, int queueSize, LogWriter<ConnectionLogEntry> logWriter) {
+    public ConnectionLogHandler(String logDirectoryName, int bufferSize, String clusterName,
+                                int queueSize, LogWriter<ConnectionLogEntry> logWriter) {
         logFileHandler = new LogFileHandler<>(
                 LogFileHandler.Compression.ZSTD,
+                bufferSize,
                 String.format("logs/vespa/%s/ConnectionLog.%s.%s", logDirectoryName, clusterName, "%Y%m%d%H%M%S"),
                 "0 60 ...",
                 String.format("ConnectionLog.%s", clusterName),
