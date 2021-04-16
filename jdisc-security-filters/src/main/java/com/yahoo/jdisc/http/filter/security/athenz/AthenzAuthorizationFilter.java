@@ -83,7 +83,7 @@ public class AthenzAuthorizationFilter extends JsonSecurityRequestFilterBase {
     public Optional<ErrorResponse> filter(DiscFilterRequest request) {
         try {
             Optional<ResourceNameAndAction> resourceMapping =
-                    requestResourceMapper.getResourceNameAndAction(request.getMethod(), request.getRequestURI(), request.getQueryString());
+                    requestResourceMapper.getResourceNameAndAction(request);
             log.log(Level.FINE, () -> String.format("Resource mapping for '%s': %s", request, resourceMapping));
             if (resourceMapping.isEmpty()) {
                 incrementAcceptedMetrics(request, false);

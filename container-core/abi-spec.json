@@ -478,6 +478,37 @@
       "public static final java.lang.String FULL_COVERAGE"
     ]
   },
+  "com.yahoo.container.jdisc.AclMapping$Action": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public static com.yahoo.container.jdisc.AclMapping$Action custom(java.lang.String)",
+      "public java.lang.String name()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields": [
+      "public static final com.yahoo.container.jdisc.AclMapping$Action READ",
+      "public static final com.yahoo.container.jdisc.AclMapping$Action WRITE"
+    ]
+  },
+  "com.yahoo.container.jdisc.AclMapping": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.yahoo.container.jdisc.AclMapping$Action get(com.yahoo.container.jdisc.RequestView)"
+    ],
+    "fields": []
+  },
   "com.yahoo.container.jdisc.AsyncHttpResponse": {
     "superClass": "com.yahoo.container.jdisc.HttpResponse",
     "interfaces": [],
@@ -512,6 +543,20 @@
       "public void send(java.nio.ByteBuffer)",
       "protected void send(java.nio.ByteBuffer, com.yahoo.jdisc.handler.CompletionHandler)",
       "public long written()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.container.jdisc.DefaultAclMapping": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.container.jdisc.AclMapping"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.container.jdisc.AclMapping$Action get(com.yahoo.container.jdisc.RequestView)"
     ],
     "fields": []
   },
@@ -593,6 +638,21 @@
       "public java.lang.String getHost()",
       "public int getPort()",
       "public java.io.InputStream getData()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.container.jdisc.HttpRequestHandler": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.handler.RequestHandler"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public com.yahoo.container.jdisc.RequestHandlerSpec requestHandlerSpec()"
     ],
     "fields": []
   },
@@ -689,6 +749,34 @@
     ],
     "fields": []
   },
+  "com.yahoo.container.jdisc.RequestHandlerSpec$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.container.jdisc.RequestHandlerSpec$Builder withAclMapping(com.yahoo.container.jdisc.AclMapping)",
+      "public com.yahoo.container.jdisc.RequestHandlerSpec build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.container.jdisc.RequestHandlerSpec": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public com.yahoo.container.jdisc.AclMapping aclMapping()",
+      "public static com.yahoo.container.jdisc.RequestHandlerSpec$Builder builder()"
+    ],
+    "fields": [
+      "public static final java.lang.String ATTRIBUTE_NAME",
+      "public static final com.yahoo.container.jdisc.RequestHandlerSpec DEFAULT_INSTANCE"
+    ]
+  },
   "com.yahoo.container.jdisc.RequestHandlerTestDriver$MockResponseHandler": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -734,6 +822,20 @@
     ],
     "fields": []
   },
+  "com.yahoo.container.jdisc.RequestView": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.yahoo.jdisc.http.HttpRequest$Method method()",
+      "public abstract java.net.URI uri()"
+    ],
+    "fields": []
+  },
   "com.yahoo.container.jdisc.ThreadedHttpRequestHandler$LazyContentChannel": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -752,7 +854,9 @@
   },
   "com.yahoo.container.jdisc.ThreadedHttpRequestHandler": {
     "superClass": "com.yahoo.container.jdisc.ThreadedRequestHandler",
-    "interfaces": [],
+    "interfaces": [
+      "com.yahoo.container.jdisc.HttpRequestHandler"
+    ],
     "attributes": [
       "public",
       "abstract"
@@ -2019,6 +2123,7 @@
       "public abstract void setHeaders(java.lang.String, java.lang.String)",
       "public abstract void setHeaders(java.lang.String, java.util.List)",
       "public int getIntHeader(java.lang.String)",
+      "public com.yahoo.container.jdisc.RequestView asRequestView()",
       "public java.util.List getCookies()",
       "public void setCookies(java.util.List)",
       "public long getConnectedAt(java.util.concurrent.TimeUnit)",

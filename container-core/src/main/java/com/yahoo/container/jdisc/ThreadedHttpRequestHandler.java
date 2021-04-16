@@ -32,7 +32,7 @@ import java.util.logging.Logger;
  * @author Steinar Knutsen
  * @author bratseth
  */
-public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler {
+public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler implements HttpRequestHandler  {
 
     public static final String CONTENT_TYPE = "Content-Type";
     private static final String RENDERING_ERRORS = "rendering_errors";

@@ -260,7 +260,6 @@ public class Flags {
             "Whether to wait for all participating servers to delete application on config servers (with timeout) on",
             "Takes effect on next delete of an application");
 
-
     public static final UnboundBooleanFlag REBUILD_HOST = defineFeatureFlag(
             "rebuild-host", false,
             List.of("mpolden"), "2021-04-09", "2021-06-01",
@@ -271,6 +270,13 @@ public class Flags {
             "enable-jdisc-http2", false,
             List.of("bjorncs", "jonmv"), "2021-04-12", "2021-08-01",
             "Whether jdisc HTTPS connectors should allow HTTP/2",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
+    public static final UnboundBooleanFlag ENABLE_CUSTOM_ACL_MAPPING = defineFeatureFlag(
+            "enable-custom-acl-mapping", false,
+            List.of("mortent","bjorncs"), "2021-04-13", "2021-08-01",
+            "Whether access control filters should read acl request mapping from handler or use default",
             "Takes effect at redeployment",
             APPLICATION_ID);
 

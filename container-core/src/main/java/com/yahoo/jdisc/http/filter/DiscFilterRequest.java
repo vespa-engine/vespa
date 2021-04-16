@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter;
 
+import com.yahoo.container.jdisc.RequestView;
 import com.yahoo.jdisc.HeaderFields;
 import com.yahoo.jdisc.http.Cookie;
 import com.yahoo.jdisc.http.HttpHeaders;
@@ -254,6 +255,19 @@ public abstract class DiscFilterRequest {
         }
     }
 
+    public RequestView asRequestView() {
+        return new RequestView() {
+            @Override
+            public HttpRequest.Method method() {
+                return HttpRequest.Method.valueOf(getMethod());
+            }
+
+            @Override
+            public URI uri() {
+                return getUri();
+            }
+        };
+    }
 
     public List<Cookie> getCookies() {
         return parent.decodeCookieHeader();
