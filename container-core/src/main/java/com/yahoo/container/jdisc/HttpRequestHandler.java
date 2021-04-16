@@ -5,14 +5,13 @@ package com.yahoo.container.jdisc;
 import com.yahoo.jdisc.handler.RequestHandler;
 
 /**
- * Extends a request handler with a request handler specification.
+ * Extends a request handler with a http specific
  *
  * @author mortent
  */
-public interface RequestHandlerWithSpec extends RequestHandler {
+public interface HttpRequestHandler extends RequestHandler {
 
     /**
-     *
      * @return handler specification
      */
     default RequestHandlerSpec requestHandlerSpec() {

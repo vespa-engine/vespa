@@ -647,13 +647,15 @@ public class SearchHandler extends LoggingRequestHandler {
             case POST:
             case HEAD:
             case OPTIONS:
-                return AclMapping.Action.read;
+                return AclMapping.Action.READ;
             case PUT:
-                return AclMapping.Action.update;
             case DELETE:
-                return AclMapping.Action.delete;
+            case CONNECT:
+            case TRACE:
+            case PATCH:
+                return AclMapping.Action.WRITE;
             default:
-                return AclMapping.Action.create;
+                throw new IllegalArgumentException("Illegal method " + requestMeta.method());
         }
     }
 }

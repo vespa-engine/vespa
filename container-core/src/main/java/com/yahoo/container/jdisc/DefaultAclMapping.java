@@ -14,16 +14,14 @@ public class DefaultAclMapping implements AclMapping {
             case GET:
             case HEAD:
             case OPTIONS:
-                return Action.read;
+                return Action.READ;
             case POST:
-                return Action.create;
             case DELETE:
-                return Action.delete;
             case PUT:
             case PATCH:
             case CONNECT:
             case TRACE:
-                return Action.update;
+                return Action.WRITE;
             default:
                 throw new IllegalArgumentException("Illegal request method: " + requestMeta.method());
         }

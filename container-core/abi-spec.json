@@ -479,22 +479,21 @@
     ]
   },
   "com.yahoo.container.jdisc.AclMapping$Action": {
-    "superClass": "java.lang.Enum",
+    "superClass": "java.lang.Object",
     "interfaces": [],
     "attributes": [
-      "public",
-      "final",
-      "enum"
+      "public"
     ],
     "methods": [
-      "public static com.yahoo.container.jdisc.AclMapping$Action[] values()",
-      "public static com.yahoo.container.jdisc.AclMapping$Action valueOf(java.lang.String)"
+      "public static com.yahoo.container.jdisc.AclMapping$Action custom(java.lang.String)",
+      "public java.lang.String name()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
     ],
     "fields": [
-      "public static final enum com.yahoo.container.jdisc.AclMapping$Action create",
-      "public static final enum com.yahoo.container.jdisc.AclMapping$Action read",
-      "public static final enum com.yahoo.container.jdisc.AclMapping$Action update",
-      "public static final enum com.yahoo.container.jdisc.AclMapping$Action delete"
+      "public static final com.yahoo.container.jdisc.AclMapping$Action READ",
+      "public static final com.yahoo.container.jdisc.AclMapping$Action WRITE"
     ]
   },
   "com.yahoo.container.jdisc.AclMapping": {
@@ -639,6 +638,21 @@
       "public java.lang.String getHost()",
       "public int getPort()",
       "public java.io.InputStream getData()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.container.jdisc.HttpRequestHandler": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.handler.RequestHandler"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public com.yahoo.container.jdisc.RequestHandlerSpec requestHandlerSpec()"
     ],
     "fields": []
   },
@@ -808,21 +822,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.container.jdisc.RequestHandlerWithSpec": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.jdisc.handler.RequestHandler"
-    ],
-    "attributes": [
-      "public",
-      "interface",
-      "abstract"
-    ],
-    "methods": [
-      "public com.yahoo.container.jdisc.RequestHandlerSpec requestHandlerSpec()"
-    ],
-    "fields": []
-  },
   "com.yahoo.container.jdisc.RequestView": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -855,7 +854,9 @@
   },
   "com.yahoo.container.jdisc.ThreadedHttpRequestHandler": {
     "superClass": "com.yahoo.container.jdisc.ThreadedRequestHandler",
-    "interfaces": [],
+    "interfaces": [
+      "com.yahoo.container.jdisc.HttpRequestHandler"
+    ],
     "attributes": [
       "public",
       "abstract"
@@ -878,9 +879,7 @@
   },
   "com.yahoo.container.jdisc.ThreadedRequestHandler": {
     "superClass": "com.yahoo.jdisc.handler.AbstractRequestHandler",
-    "interfaces": [
-      "com.yahoo.container.jdisc.RequestHandlerWithSpec"
-    ],
+    "interfaces": [],
     "attributes": [
       "public",
       "abstract"
