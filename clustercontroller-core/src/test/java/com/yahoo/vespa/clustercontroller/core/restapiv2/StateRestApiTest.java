@@ -92,15 +92,14 @@ public abstract class StateRestApiTest {
         }, ccSockets);
     }
 
-    protected void setUpMusicGroup(int nodeCount, boolean node1InMaintenance) {
+    protected void setUpMusicGroup(int nodeCount, String node1StateString) {
         books = null;
         Distribution distribution = new Distribution(Distribution.getSimpleGroupConfig(2, nodeCount));
         jsonWriter.setDefaultPathPrefix("/cluster/v2");
         ContentCluster cluster = new ContentCluster("music", distribution.getNodes(), distribution);
         initializeCluster(cluster, distribution.getNodes());
         AnnotatedClusterState baselineState = AnnotatedClusterState
-                .withoutAnnotations(ClusterState.stateFromString("distributor:" + nodeCount + " storage:" + nodeCount +
-                        (node1InMaintenance ? " .1.s:m" : "")));
+                .withoutAnnotations(ClusterState.stateFromString("distributor:" + nodeCount + " storage:" + nodeCount + node1StateString));
         Map<String, AnnotatedClusterState> bucketSpaceStates = new HashMap<>();
         bucketSpaceStates.put("default", AnnotatedClusterState
                 .withoutAnnotations(ClusterState.stateFromString("distributor:" + nodeCount + " storage:" + nodeCount)));
