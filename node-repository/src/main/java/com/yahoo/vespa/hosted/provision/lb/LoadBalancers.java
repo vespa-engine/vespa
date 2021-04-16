@@ -2,20 +2,9 @@
 package com.yahoo.vespa.hosted.provision.lb;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.config.provision.NodeType;
-import com.yahoo.vespa.hosted.provision.Node;
-import com.yahoo.vespa.hosted.provision.NodeList;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.node.NodeAcl;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
-import java.util.Comparator;
-import java.util.LinkedHashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.TreeSet;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 /**
  * The load balancers of this node repo.

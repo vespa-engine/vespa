@@ -1038,6 +1038,7 @@ public class MockCuratorFramework implements CuratorFramework  {
                 MemoryFileSystem.Node node = getNode(path, fileSystem.root());
                 Stat stat = new Stat();
                 stat.setVersion(node.version());
+                stat.setCversion(node.cversion());
                 return stat;
             }
             catch (KeeperException.NoNodeException e) {

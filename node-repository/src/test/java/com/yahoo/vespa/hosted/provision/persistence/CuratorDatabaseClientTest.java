@@ -6,7 +6,6 @@ import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.curator.Curator;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.hosted.provision.Node;
@@ -25,7 +24,7 @@ public class CuratorDatabaseClientTest {
 
     private final Curator curator = new MockCurator();
     private final CuratorDatabaseClient zkClient = new CuratorDatabaseClient(
-            FlavorConfigBuilder.createDummies("default"), curator, Clock.systemUTC(), Zone.defaultZone(), true, 1000);
+            FlavorConfigBuilder.createDummies("default"), curator, Clock.systemUTC(), 1000);
 
     @Test
     public void can_read_stored_host_information() throws Exception {

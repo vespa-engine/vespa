@@ -1,11 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.persistence;
 
-import com.google.common.cache.Cache;
-import com.google.common.cache.CacheBuilder;
 import com.google.common.collect.ImmutableSet;
-import com.google.common.hash.Hashing;
-import com.google.common.util.concurrent.UncheckedExecutionException;
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
@@ -37,13 +33,11 @@ import com.yahoo.vespa.hosted.provision.node.Reports;
 import com.yahoo.vespa.hosted.provision.node.Status;
 
 import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /**
@@ -120,17 +114,10 @@ public class NodeSerializer {
     // Network port fields
     private static final String networkPortsKey = "networkPorts";
 
-    // A cache of deserialized Node objects. The cache is keyed on the hash of serialized node data.
-    //
-    // Deserializing a Node from slime is expensive, and happens frequently. Node instances that have already been
-    // deserialized are returned from this cache instead of being deserialized again.
-    private final Cache<Long, Node> cache;
-
     // ---------------- Serialization ----------------------------------------------------
 
-    public NodeSerializer(NodeFlavors flavors, long cacheSize) {
+    public NodeSerializer(NodeFlavors flavors) {
         this.flavors = flavors;
-        this.cache = CacheBuilder.newBuilder().maximumSize(cacheSize).recordStats().build();
     }
 
     public byte[] toJson(Node node) {
@@ -142,12 +129,6 @@ public class NodeSerializer {
         catch (IOException e) {
             throw new RuntimeException("Serialization of " + node + " to json failed", e);
         }
-    }
-
-    /** Returns cache statistics for this serializer */
-    public CacheStats cacheStats() {
-        var stats = cache.stats();
-        return new CacheStats(stats.hitRate(), stats.evictionCount(), cache.size());
     }
 
     private void toSlime(Node node, Cursor object) {
@@ -236,15 +217,7 @@ public class NodeSerializer {
     // ---------------- Deserialization --------------------------------------------------
 
     public Node fromJson(Node.State state, byte[] data) {
-        var key = Hashing.sipHash24().newHasher()
-                         .putString(state.name(), StandardCharsets.UTF_8)
-                         .putBytes(data).hash()
-                         .asLong();
-        try {
-            return cache.get(key, () -> nodeFromSlime(state, SlimeUtils.jsonToSlime(data).get()));
-        } catch (ExecutionException e) {
-            throw new UncheckedExecutionException(e);
-        }
+        return nodeFromSlime(state, SlimeUtils.jsonToSlime(data).get());
     }
 
     private Node nodeFromSlime(Node.State state, Inspector object) {

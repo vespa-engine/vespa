@@ -118,6 +118,7 @@ class MemoryFileSystem extends FileSystem {
         private byte[] content;
 
         private final AtomicInteger version = new AtomicInteger(0);
+        private final AtomicInteger cversion = new AtomicInteger(0);
 
         private Map<String, Node> children = Collections.synchronizedMap(new LinkedHashMap<>());
 
@@ -141,6 +142,8 @@ class MemoryFileSystem extends FileSystem {
         }
 
         public int version() { return version.get(); }
+
+        public int cversion() { return cversion.get(); }
 
         /**
          * Returns the node given by the path.
@@ -180,6 +183,7 @@ class MemoryFileSystem extends FileSystem {
 
             Node child = new Node(this, name);
             children.put(name, child);
+            cversion.incrementAndGet();
             return child;
         }
 
@@ -189,6 +193,7 @@ class MemoryFileSystem extends FileSystem {
          * @return the node which was replaced by this, or null if none
          */
         public Node add(Node node) {
+            cversion.incrementAndGet();
             return children.put(node.name(), node);
         }
 
@@ -199,6 +204,7 @@ class MemoryFileSystem extends FileSystem {
          * @return the removed node, or null if none
          */
         public Node remove(String name) {
+            cversion.incrementAndGet();
             return children.remove(name);
         }
 
