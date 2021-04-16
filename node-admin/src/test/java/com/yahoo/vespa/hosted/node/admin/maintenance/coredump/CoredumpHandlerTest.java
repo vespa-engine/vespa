@@ -154,7 +154,6 @@ public class CoredumpHandlerTest {
 
         String expectedMetadataStr = "{\"fields\":{" +
                 "\"hostname\":\"host123.yahoo.com\"," +
-                "\"system\":\"main\"," +
                 "\"kernel_version\":\"3.10.0-862.9.1.el7.x86_64\"," +
                 "\"backtrace\":[\"call 1\",\"function 2\",\"something something\"]," +
                 "\"vespa_version\":\"6.48.4\"," +
