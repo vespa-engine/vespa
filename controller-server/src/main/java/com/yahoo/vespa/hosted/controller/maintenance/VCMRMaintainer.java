@@ -20,7 +20,6 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZonedDateTime;
-import java.util.EnumSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -37,6 +36,7 @@ import java.util.stream.Collectors;
 public class VCMRMaintainer extends ControllerMaintainer {
 
     private final Logger logger = Logger.getLogger(VCMRMaintainer.class.getName());
+    private final Duration ALLOWED_RETIREMENT_TIME = Duration.ofHours(60);
     private final CuratorDb curator;
     private final NodeRepository nodeRepository;
 
@@ -92,7 +92,11 @@ public class VCMRMaintainer extends ControllerMaintainer {
             return Status.IN_PROGRESS;
         }
 
-        return Status.PENDING_ACTION;
+        if (byActionState.getOrDefault(State.PENDING_RETIREMENT, 0L) > 0) {
+            return Status.PENDING_ACTION;
+        }
+
+        return Status.NOOP;
     }
 
     private List<HostAction> getNextActions(List<Node> nodes, VespaChangeRequest changeRequest) {
@@ -163,7 +167,7 @@ public class VCMRMaintainer extends ControllerMaintainer {
     private boolean shouldRetire(VespaChangeRequest changeRequest, HostAction action) {
         return action.getState() == State.PENDING_RETIREMENT &&
                 changeRequest.getChangeRequestSource().getPlannedStartTime()
-                        .minus(Duration.ofDays(2))
+                        .minus(ALLOWED_RETIREMENT_TIME)
                         .isBefore(ZonedDateTime.now());
     }
 

@@ -88,6 +88,7 @@ public class VespaChangeRequest extends ChangeRequest {
         IN_PROGRESS,
         PENDING_ACTION,
         PENDING_ASSESSMENT,
-        REQUIRES_OPERATOR_ACTION
+        REQUIRES_OPERATOR_ACTION,
+        NOOP
     }
 }

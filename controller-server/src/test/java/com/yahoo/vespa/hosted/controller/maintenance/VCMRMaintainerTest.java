@@ -58,7 +58,7 @@ public class VCMRMaintainerTest {
         nodeRepo.putNodes(zoneId, List.of(configNode, activeNode));
         nodeRepo.hasSpareCapacity(true);
 
-        tester.curator().writeChangeRequest(openChangeRequest());
+        tester.curator().writeChangeRequest(futureChangeRequest());
         maintainer.maintain();
 
         var writtenChangeRequest = tester.curator().readChangeRequest(changeRequestId).get();
@@ -124,11 +124,26 @@ public class VCMRMaintainerTest {
         assertEquals(Status.IN_PROGRESS, writtenChangeRequest.getStatus());
     }
 
+    @Test
+    public void pending_retirement_when_vcmr_is_far_ahead() {
+        var activeNode = createNode(host2, NodeType.host, Node.State.active, false);
+        nodeRepo.putNodes(zoneId, List.of(activeNode));
+        nodeRepo.hasSpareCapacity(true);
+
+        tester.curator().writeChangeRequest(futureChangeRequest());
+        maintainer.maintain();
+
+        var writtenChangeRequest = tester.curator().readChangeRequest(changeRequestId).get();
+        var tenantHostAction = writtenChangeRequest.getHostActionPlan().get(0);
+        assertEquals(State.PENDING_RETIREMENT, tenantHostAction.getState());
+        assertEquals(Status.PENDING_ACTION, writtenChangeRequest.getStatus());
+    }
+
     private VespaChangeRequest canceledChangeRequest() {
         return newChangeRequest(ChangeRequestSource.Status.CANCELED, State.RETIRED, State.RETIRING, ZonedDateTime.now());
     }
 
-    private VespaChangeRequest openChangeRequest() {
+    private VespaChangeRequest futureChangeRequest() {
         return newChangeRequest(ChangeRequestSource.Status.WAITING_FOR_APPROVAL, State.NONE, State.NONE, ZonedDateTime.now().plus(Duration.ofDays(5L)));
     }
 
