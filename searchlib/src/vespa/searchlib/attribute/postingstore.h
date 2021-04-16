@@ -89,6 +89,8 @@ public:
     using Parent::getKeyDataEntry;
     using Parent::clusterLimit;
     using Parent::allocBTree;
+    using Parent::allocBTreeCopy;
+    using Parent::allocKeyDataCopy;
     using Parent::_builder;
     using Parent::_store;
     using Parent::_allocator;
@@ -111,6 +113,11 @@ public:
     BitVectorRefPair allocBitVector() {
         return _store.template freeListAllocator<BitVectorEntry,
             vespalib::datastore::DefaultReclaimer<BitVectorEntry> >(BUFFERTYPE_BITVECTOR).alloc();
+    }
+
+    BitVectorRefPair allocBitVectorCopy(const BitVectorEntry& bve) {
+        return _store.template freeListAllocator<BitVectorEntry,
+            vespalib::datastore::DefaultReclaimer<BitVectorEntry> >(BUFFERTYPE_BITVECTOR).alloc(bve);
     }
 
     /*
@@ -178,6 +185,8 @@ public:
     static inline DataT bitVectorWeight();
     vespalib::MemoryUsage getMemoryUsage() const;
 
+    void move_btree_nodes(EntryRef ref);
+    EntryRef move(EntryRef ref);
 private:
     size_t internalSize(uint32_t typeId, const RefType & iRef) const;
     size_t internalFrozenSize(uint32_t typeId, const RefType & iRef) const;

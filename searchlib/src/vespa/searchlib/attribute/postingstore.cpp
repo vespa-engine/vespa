@@ -5,6 +5,7 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/status.h>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreerootbase.cpp>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 
@@ -625,6 +626,75 @@ PostingStore<DataT>::getMemoryUsage() const
     usage.incUsedBytes(bvExtraBytes);
     usage.incAllocatedBytes(bvExtraBytes);
     return usage;
+}
+
+template <typename DataT>
+void
+PostingStore<DataT>::move_btree_nodes(EntryRef ref)
+{
+    if (ref.valid()) {
+        RefType iRef(ref);
+        uint32_t typeId = getTypeId(iRef);
+        uint32_t clusterSize = getClusterSize(typeId);
+        if (clusterSize == 0) {
+            if (isBitVector(typeId)) {
+                BitVectorEntry *bve = getWBitVectorEntry(iRef);
+                RefType iRef2(bve->_tree);
+                if (iRef2.valid()) {
+                    assert(isBTree(iRef2));
+                    BTreeType *tree = getWTreeEntry(iRef2);
+                    tree->move_nodes(_allocator);
+                }
+            } else {
+                BTreeType *tree = getWTreeEntry(iRef);
+                tree->move_nodes(_allocator);
+            }
+        }
+    }
+}
+
+template <typename DataT>
+typename PostingStore<DataT>::EntryRef
+PostingStore<DataT>::move(EntryRef ref)
+{
+    if (!ref.valid()) {
+        return EntryRef();
+    }
+    RefType iRef(ref);
+    uint32_t typeId = getTypeId(iRef);
+    uint32_t clusterSize = getClusterSize(typeId);
+    if (clusterSize == 0) {
+        if (isBitVector(typeId)) {
+            BitVectorEntry *bve = getWBitVectorEntry(iRef);
+            RefType iRef2(bve->_tree);
+            if (iRef2.valid()) {
+                assert(isBTree(iRef2));
+                if (_store.getCompacting(iRef2)) {
+                    BTreeType *tree = getWTreeEntry(iRef2);
+                    auto ref_and_ptr = allocBTreeCopy(*tree);
+                    tree->prepare_hold();
+                    bve->_tree = ref_and_ptr.ref;
+                }
+            }
+            if (!_store.getCompacting(ref)) {
+                return ref;
+            }
+            return allocBitVectorCopy(*bve).ref;
+        } else {
+            if (!_store.getCompacting(ref)) {
+                return ref;
+            }
+            BTreeType *tree = getWTreeEntry(iRef);
+            auto ref_and_ptr = allocBTreeCopy(*tree);
+            tree->prepare_hold();
+            return ref_and_ptr.ref;
+        }
+    }
+    if (!_store.getCompacting(ref)) {
+        return ref;
+    }
+    const KeyDataType *shortArray = getKeyDataEntry(iRef, clusterSize);
+    return allocKeyDataCopy(shortArray, clusterSize).ref;
 }
 
 template class PostingStore<BTreeNoLeafData>;
