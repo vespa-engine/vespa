@@ -95,23 +95,27 @@ public class OsVersions {
     }
 
     /** Set the target OS version and upgrade budget for nodes of given type */
-    public void setTarget(NodeType nodeType, Version newTarget, Duration upgradeBudget, boolean force) {
+    public void setTarget(NodeType nodeType, Version version, Duration upgradeBudget, boolean force) {
         require(nodeType);
-        requireNonZero(newTarget);
+        requireNonEmpty(version);
         writeChange((change) -> {
-            var oldTarget = targetFor(nodeType);
-            if (oldTarget.filter(v -> v.equals(newTarget)).isPresent()) {
-                return change; // Old target matches new target, nothing to do
+            Optional<OsVersionTarget> currentTarget = Optional.ofNullable(change.targets().get(nodeType));
+            Optional<Version> currentVersion = currentTarget.map(OsVersionTarget::version);
+            Optional<Duration> currentBudget = currentTarget.map(OsVersionTarget::upgradeBudget);
+
+            if (currentVersion.equals(Optional.of(version)) && currentBudget.equals(Optional.of(upgradeBudget))) {
+                return change; // Version and upgrade budget are unchanged: Nothing to do
             }
 
-            if (!force && oldTarget.filter(v -> v.isAfter(newTarget)).isPresent()) {
-                throw new IllegalArgumentException("Cannot set target OS version to " + newTarget.toFullString() +
+            if (!force && currentVersion.filter(v -> v.isAfter(version)).isPresent()) {
+                throw new IllegalArgumentException("Cannot set target OS version to " + version.toFullString() +
                                                    " without setting 'force', as it's lower than the current version: "
-                                                   + oldTarget.get());
+                                                   + currentTarget.get().version().toFullString());
             }
 
-            log.info("Set OS target version for " + nodeType + " nodes to " + newTarget.toFullString());
-            return change.withTarget(newTarget, nodeType, upgradeBudget);
+            log.info("Set OS target version for " + nodeType + " nodes to " + version.toFullString() +
+                     ", with time budget " + upgradeBudget);
+            return change.withTarget(version, nodeType, upgradeBudget);
         });
     }
 
@@ -147,7 +151,7 @@ public class OsVersions {
         return new DelegatingOsUpgrader(nodeRepository, maxDelegatedUpgrades);
     }
 
-    private static void requireNonZero(Version version) {
+    private static void requireNonEmpty(Version version) {
         if (version.isEmpty()) {
             throw new IllegalArgumentException("Invalid target version: " + version.toFullString());
         }
