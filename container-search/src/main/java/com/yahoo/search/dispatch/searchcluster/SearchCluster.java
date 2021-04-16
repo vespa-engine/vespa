@@ -412,5 +412,5 @@ public class SearchCluster implements NodeManager<Node> {
             }
         }
     }
-    //Coverage of group 0 is only 12/12 (requires 12) (277422382/0 active docs) Failed nodes are:
+
 }
