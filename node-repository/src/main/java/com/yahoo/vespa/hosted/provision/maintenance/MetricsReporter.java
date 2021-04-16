@@ -130,7 +130,7 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
     }
 
     private void updateCacheMetrics() {
-        CacheStats nodeCacheStats = nodeRepository().database().nodeCacheStats();
+        CacheStats nodeCacheStats = nodeRepository().database().nodeSerializerCacheStats();
         metric.set("cache.nodeObject.hitRate", nodeCacheStats.hitRate(), null);
         metric.set("cache.nodeObject.evictionCount", nodeCacheStats.evictionCount(), null);
         metric.set("cache.nodeObject.size", nodeCacheStats.size(), null);

@@ -104,7 +104,7 @@ public class RealDataScenarioTest {
     }
 
     private static void initFromZk(NodeRepository nodeRepository, Path pathToZkSnapshot) {
-        NodeSerializer nodeSerializer = new NodeSerializer(nodeRepository.flavors());
+        NodeSerializer nodeSerializer = new NodeSerializer(nodeRepository.flavors(), 1000);
         AtomicReference<Node.State> state = new AtomicReference<>();
         Pattern zkNodePathPattern = Pattern.compile(".?/provision/v1/([a-z]+)/[a-z0-9.-]+\\.(com|cloud).?");
         Consumer<String> consumer = input -> {
