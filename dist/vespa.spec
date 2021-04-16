@@ -177,6 +177,7 @@ Requires: libicu
 Requires: perf
 Requires: gdb
 Requires: nc
+Requires: nghttp2
 Requires: net-tools
 Requires: unzip
 Requires: zstd
