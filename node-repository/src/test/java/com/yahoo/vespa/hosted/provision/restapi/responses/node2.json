@@ -26,7 +26,7 @@
   "wantedVespaVersion": "6.42.0",
   "requestedResources": { "vcpu":2.0, "memoryGb":8.0, "diskGb":50.0, "bandwidthGbps":1.0, "diskSpeed":"fast", "storageType":"any" },
   "allowedToBeDown": false,
-  "rebootGeneration": 1,
+  "rebootGeneration": 0,
   "currentRebootGeneration": 0,
   "failCount": 0,
   "wantToRetire": false,

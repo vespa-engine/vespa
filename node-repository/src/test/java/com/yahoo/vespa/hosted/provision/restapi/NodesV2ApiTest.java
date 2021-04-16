@@ -88,7 +88,7 @@ public class NodesV2ApiTest {
         assertReboot(19, new Request("http://localhost:8080/nodes/v2/command/reboot",
                         new byte[0], Request.Method.POST));
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/host2.yahoo.com"),
-                                     "\"rebootGeneration\":4");
+                                     "\"rebootGeneration\":3");
 
         // POST new nodes
         assertResponse(new Request("http://localhost:8080/nodes/v2/node",
@@ -420,12 +420,12 @@ public class NodesV2ApiTest {
                         new byte[0], Request.Method.PUT),
                 "{\"message\":\"Moved foo.yahoo.com to dirty\"}");
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/foo.yahoo.com"),
-                                      "\"rebootGeneration\":1");
+                                      "\"rebootGeneration\":0");
         assertResponse(new Request("http://localhost:8080/nodes/v2/node/foo.yahoo.com",
                         Utf8.toBytes("{\"currentRebootGeneration\": 42}"), Request.Method.PATCH),
                 "{\"message\":\"Updated foo.yahoo.com\"}");
         tester.assertResponseContains(new Request("http://localhost:8080/nodes/v2/node/foo.yahoo.com"),
-                                      "\"rebootGeneration\":1");
+                                      "\"rebootGeneration\":0");
     }
 
     @Test
