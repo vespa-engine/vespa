@@ -20,6 +20,7 @@ import org.apache.hc.client5.http.impl.async.CloseableHttpAsyncClient;
 import org.apache.hc.client5.http.impl.nio.PoolingAsyncClientConnectionManagerBuilder;
 import org.apache.hc.core5.concurrent.FutureCallback;
 import org.apache.hc.core5.http.HttpStatus;
+import org.apache.hc.core5.http2.HttpVersionPolicy;
 import org.apache.hc.core5.net.URIBuilder;
 import org.apache.hc.core5.reactor.IOReactorConfig;
 import org.apache.hc.core5.util.Timeout;
@@ -246,6 +247,7 @@ public class ConfigConvergenceChecker extends AbstractComponent {
                         .build())
                 .setUserAgent("config-convergence-checker")
                 .setConnectionReuseStrategy((request, response, context) -> false) // Disable connection reuse
+                .setVersionPolicy(HttpVersionPolicy.FORCE_HTTP_1)
                 .build();
     }
 
