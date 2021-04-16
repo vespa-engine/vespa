@@ -393,6 +393,9 @@ public:
     void finish_compact_worst_btree_nodes(const std::vector<uint32_t>& to_hold);
     void move_btree_nodes(EntryRef ref);
 
+    std::vector<uint32_t> start_compact_worst_buffers();
+    EntryRef move(EntryRef ref);
+
 private:
     static constexpr size_t MIN_BUFFER_ARRAYS = 128u;
     template <typename FunctionType, bool Frozen>
