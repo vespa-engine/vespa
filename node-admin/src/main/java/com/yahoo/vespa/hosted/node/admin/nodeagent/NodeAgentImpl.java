@@ -505,7 +505,7 @@ public class NodeAgentImpl implements NodeAgent {
                 }
                 break;
             case provisioned:
-                nodeRepository.setNodeState(context.hostname().value(), NodeState.dirty);
+                nodeRepository.setNodeState(context.hostname().value(), NodeState.ready);
                 break;
             case dirty:
                 removeContainerIfNeededUpdateContainerState(context, container);
