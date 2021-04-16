@@ -7,7 +7,6 @@ vespa_add_library(eval_eval_test OBJECT
     gen_spec.cpp
     reference_evaluation.cpp
     reference_operations.cpp
-    tensor_model.cpp
     test_io.cpp
     value_compare.cpp
 )
