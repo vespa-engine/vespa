@@ -122,9 +122,9 @@ public class MetricsReporterTest {
         expectedMetrics.put("cache.nodeObject.size", 2L);
 
         nodeRepository.nodes().list();
-        expectedMetrics.put("cache.curator.hitRate", 0.5D);
+        expectedMetrics.put("cache.curator.hitRate", 0.52D);
         expectedMetrics.put("cache.curator.evictionCount", 0L);
-        expectedMetrics.put("cache.curator.size", 11L);
+        expectedMetrics.put("cache.curator.size", 12L);
 
         tester.clock().setInstant(Instant.ofEpochSecond(124));
 
