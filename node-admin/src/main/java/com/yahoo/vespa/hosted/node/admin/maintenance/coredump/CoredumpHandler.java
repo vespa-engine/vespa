@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.node.admin.task.util.process.Terminal;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.time.Clock;
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -53,8 +54,9 @@ public class CoredumpHandler {
     private final Path crashPatchInContainer;
     private final Path doneCoredumpsPath;
     private final String operatorGroupName;
-    private final Supplier<String> coredumpIdSupplier;
     private final Metrics metrics;
+    private final Clock clock;
+    private final Supplier<String> coredumpIdSupplier;
 
     /**
      * @param crashPathInContainer path inside the container where core dump are dumped
@@ -64,11 +66,12 @@ public class CoredumpHandler {
     public CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
                            Path crashPathInContainer, Path doneCoredumpsPath, String operatorGroupName, Metrics metrics) {
         this(terminal, coreCollector, coredumpReporter, crashPathInContainer, doneCoredumpsPath,
-                operatorGroupName, metrics, () -> UUID.randomUUID().toString());
+                operatorGroupName, metrics, Clock.systemUTC(), () -> UUID.randomUUID().toString());
     }
 
     CoredumpHandler(Terminal terminal, CoreCollector coreCollector, CoredumpReporter coredumpReporter,
-                           Path crashPathInContainer, Path doneCoredumpsPath, String operatorGroupName, Metrics metrics, Supplier<String> coredumpIdSupplier) {
+                    Path crashPathInContainer, Path doneCoredumpsPath, String operatorGroupName, Metrics metrics,
+                    Clock clock, Supplier<String> coredumpIdSupplier) {
         this.terminal = terminal;
         this.coreCollector = coreCollector;
         this.coredumpReporter = coredumpReporter;
@@ -76,6 +79,7 @@ public class CoredumpHandler {
         this.doneCoredumpsPath = doneCoredumpsPath;
         this.operatorGroupName = operatorGroupName;
         this.metrics = metrics;
+        this.clock = clock;
         this.coredumpIdSupplier = coredumpIdSupplier;
     }
 
@@ -110,7 +114,7 @@ public class CoredumpHandler {
      */
     Optional<Path> enqueueCoredump(Path containerCrashPathOnHost, Path containerProcessingPathOnHost) {
         List<Path> toProcess = FileFinder.files(containerCrashPathOnHost)
-                .match(nameStartsWith(".").negate()) // Skip core dump files currently being written
+                .match(this::isReadyForProcessing)
                 .maxDepth(1)
                 .stream()
                 .sorted(Comparator.comparing(FileFinder.FileAttributes::lastModifiedTime))
@@ -248,6 +252,12 @@ public class CoredumpHandler {
         node.currentVespaVersion().ifPresent(vespaVersion -> dimensionsBuilder.add("vespaVersion", vespaVersion.toFullString()));
 
         return dimensionsBuilder.build();
+    }
+
+    private boolean isReadyForProcessing(FileFinder.FileAttributes fileAttributes) {
+        // Wait at least a minute until we start processing a core/heap dump to ensure that
+        // kernel/JVM has finished writing it
+        return clock.instant().minusSeconds(60).isAfter(fileAttributes.lastModifiedTime());
     }
 
 }
