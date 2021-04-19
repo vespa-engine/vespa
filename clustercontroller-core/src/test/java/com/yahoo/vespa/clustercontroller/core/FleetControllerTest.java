@@ -93,6 +93,7 @@ public abstract class FleetControllerTest implements Waiter {
         public void reset() { counter = 0; }
         public double get() { ++counter; return 0.01; }
         public boolean shouldWarn(double v) { return ((counter % 1000) == 10); }
+        public boolean shouldInform(double v) { return false; }
     }
 
     protected class CleanupZookeeperLogsOnSuccess extends TestWatcher {
