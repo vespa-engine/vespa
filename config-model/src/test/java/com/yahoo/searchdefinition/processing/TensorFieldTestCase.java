@@ -103,6 +103,25 @@ public class TensorFieldTestCase {
     }
 
     @Test
+    public void tensor_with_hnsw_index_parameters_must_be_an_index() throws ParseException {
+        try {
+            createFromString(getSd(joinLines(
+                    "field t1 type tensor(x[64]) {",
+                    "  indexing: attribute ",
+                    "  index {",
+                    "    hnsw { max-links-per-node: 32 }",
+                    "  }",
+                    "}")));
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException e) {
+            assertEquals("For search 'test', field 't1': " +
+                    "A tensor that specifies hnsw index parameters must also specify 'index' in 'indexing'",
+                    e.getMessage());
+        }
+    }
+
+    @Test
     public void tensors_with_at_least_one_mapped_dimension_can_be_direct() throws ParseException {
         assertTrue(getAttributeFromSd(
                 "field t1 type tensor(x{}) { indexing: attribute \n attribute: fast-search }", "t1").isFastSearch());
