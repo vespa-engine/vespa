@@ -32,8 +32,8 @@ class Connection extends Target {
     private int state = INITIAL;
     private final Queue  queue   = new Queue();
     private final Queue  myQueue = new Queue();
-    private final Buffer input   = new Buffer(READ_SIZE * 2);
-    private final Buffer output  = new Buffer(WRITE_SIZE * 2);
+    private final Buffer input   = new Buffer(0x1000); // Start off with small buffer.
+    private final Buffer output  = new Buffer(0x1000); // Start off with small buffer.
     private int maxInputSize  = 64*1024;
     private int maxOutputSize = 64*1024;
     private final boolean tcpNoDelay;
