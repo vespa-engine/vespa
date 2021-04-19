@@ -29,6 +29,7 @@ public class TensorFieldProcessor extends Processor {
                 if (validate) {
                     validateIndexingScripsForTensorField(field);
                     validateAttributeSettingForTensorField(field);
+                    validateHnswIndexParametersRequiresIndexing(field);
                 }
                 processIndexSettingsForTensorField(field, validate);
             }
@@ -81,6 +82,13 @@ public class TensorFieldProcessor extends Processor {
                     fail(search, field, "An attribute of type 'tensor' cannot be 'fast-search'.");
                 }
             }
+        }
+    }
+
+    private void validateHnswIndexParametersRequiresIndexing(SDField field) {
+        var index = field.getIndex(field.getName());
+        if (index != null && index.getHnswIndexParams().isPresent() && !field.doesIndexing()) {
+            fail(search, field, "A tensor that specifies hnsw index parameters must also specify 'index' in 'indexing'");
         }
     }
 
