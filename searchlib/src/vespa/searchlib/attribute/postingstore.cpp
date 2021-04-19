@@ -697,6 +697,29 @@ PostingStore<DataT>::move(EntryRef ref)
     return allocKeyDataCopy(shortArray, clusterSize).ref;
 }
 
+template <typename DataT>
+void
+PostingStore<DataT>::compact_worst_btree_nodes()
+{
+    auto to_hold = this->start_compact_worst_btree_nodes();
+    _dictionary.normalize_posting_lists([this](EntryRef posting_idx) -> EntryRef
+                                        {
+                                            move_btree_nodes(posting_idx);
+                                            return posting_idx;
+                                        });
+    this->finish_compact_worst_btree_nodes(to_hold);
+}
+
+template <typename DataT>
+void
+PostingStore<DataT>::compact_worst_buffers()
+{
+    auto to_hold = this->start_compact_worst_buffers();
+    _dictionary.normalize_posting_lists([this](EntryRef posting_idx) -> EntryRef
+                                        { return move(posting_idx); });
+    this->finishCompact(to_hold);
+}
+
 template class PostingStore<BTreeNoLeafData>;
 template class PostingStore<int32_t>;
 

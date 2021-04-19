@@ -187,6 +187,9 @@ public:
 
     void move_btree_nodes(EntryRef ref);
     EntryRef move(EntryRef ref);
+
+    void compact_worst_btree_nodes();
+    void compact_worst_buffers();
 private:
     size_t internalSize(uint32_t typeId, const RefType & iRef) const;
     size_t internalFrozenSize(uint32_t typeId, const RefType & iRef) const;
