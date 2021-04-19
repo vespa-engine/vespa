@@ -188,16 +188,14 @@ template <typename EntryT>
 void
 EnumStoreT<EntryT>::free_unused_values()
 {
-    auto cmp = make_comparator();
-    _dict->free_unused_values(cmp);
+    _dict->free_unused_values(make_comparator());
 }
 
 template <typename EntryT>
 void
 EnumStoreT<EntryT>::free_unused_values(const IndexSet& to_remove)
 {
-    auto cmp = make_comparator();
-    _dict->free_unused_values(to_remove, cmp);
+    _dict->free_unused_values(to_remove, make_comparator());
 }
 
 template <typename EntryT>

@@ -102,7 +102,7 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
 template <typename P>
 void
 PostingListAttributeBase<P>::updatePostings(PostingMap &changePost,
-                                            vespalib::datastore::EntryComparator &cmp)
+                                            const vespalib::datastore::EntryComparator &cmp)
 {
     for (auto& elem : changePost) {
         EnumIndex idx = elem.first.getEnumIdx();
@@ -145,7 +145,7 @@ PostingListAttributeBase<P>::
 clearPostings(attribute::IAttributeVector::EnumHandle eidx,
               uint32_t fromLid,
               uint32_t toLid,
-              vespalib::datastore::EntryComparator &cmp)
+              const vespalib::datastore::EntryComparator &cmp)
 {
     PostingChange<P> postings;
 
@@ -267,8 +267,7 @@ void
 PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
 updatePostings(PostingMap &changePost)
 {
-    auto cmp = _es.make_folded_comparator();
-    updatePostings(changePost, cmp);
+    updatePostings(changePost, _es.make_folded_comparator());
 }
 
 
@@ -276,11 +275,9 @@ template <typename P, typename LoadedVector, typename LoadedValueType,
           typename EnumStoreType>
 void
 PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
-clearPostings(attribute::IAttributeVector::EnumHandle eidx,
-              uint32_t fromLid, uint32_t toLid)
+clearPostings(attribute::IAttributeVector::EnumHandle eidx, uint32_t fromLid, uint32_t toLid)
 {
-    auto cmp = _es.make_folded_comparator();
-    clearPostings(eidx, fromLid, toLid, cmp);
+    clearPostings(eidx, fromLid, toLid, _es.make_folded_comparator());
 }
 
 

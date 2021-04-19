@@ -65,11 +65,10 @@ private:
                                 EnumStore & enumStore,
                                 std::map<DocId, EnumIndex> &currEnumIndices);
 
-    void
-    makePostingChange(const vespalib::datastore::EntryComparator *cmp,
-                      IEnumStoreDictionary& dictionary,
-                      const std::map<DocId, EnumIndex> &currEnumIndices,
-                      PostingMap &changePost);
+    void makePostingChange(const vespalib::datastore::EntryComparator &cmp,
+                           IEnumStoreDictionary& dictionary,
+                           const std::map<DocId, EnumIndex> &currEnumIndices,
+                           PostingMap &changePost);
 
     void applyValueChanges(EnumStoreBatchUpdater& updater) override;
 public:

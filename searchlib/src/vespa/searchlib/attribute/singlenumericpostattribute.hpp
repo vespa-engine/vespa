@@ -95,8 +95,7 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
         }
 
         if (change._type == ChangeBase::UPDATE) {
-            applyUpdateValueChange(change, enumStore,
-                                   currEnumIndices);
+            applyUpdateValueChange(change, enumStore, currEnumIndices);
         } else if (change._type >= ChangeBase::ADD && change._type <= ChangeBase::DIV) {
             if (oldIdx.valid()) {
                 T oldValue = enumStore.get_value(oldIdx);
@@ -107,8 +106,7 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
             }
         } else if(change._type == ChangeBase::CLEARDOC) {
             this->_defaultValue._doc = change._doc;
-            applyUpdateValueChange(this->_defaultValue, enumStore,
-                                   currEnumIndices);
+            applyUpdateValueChange(this->_defaultValue, enumStore, currEnumIndices);
         }
     }
 
