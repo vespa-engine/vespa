@@ -621,7 +621,7 @@ public class SessionRepository {
             sessionZKClient.createNewSession(clock.instant());
             CompletionWaiter waiter = sessionZKClient.getUploadWaiter();
             LocalSession session = new LocalSession(tenantName, sessionId, app, sessionZKClient);
-            waiter.awaitCompletion(Duration.ofSeconds(Math.min(60, timeoutBudget.timeLeft().getSeconds())));
+            waiter.awaitCompletion(Duration.ofSeconds(Math.min(120, timeoutBudget.timeLeft().getSeconds())));
             addLocalSession(session);
             return session;
         } catch (Exception e) {
