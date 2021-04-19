@@ -192,7 +192,7 @@ RegisterAPI::handleReconnect()
             // possibly with a warning.
             double delay = _backOff.get();
             Schedule(delay);
-            static const char * const msgfmt = "[RPC @ %s] no location brokers available, retrying: %s (in %.1f seconds)";
+            const char * const msgfmt = "[RPC @ %s] no location brokers available, retrying: %s (in %.1f seconds)";
             vespalib::string cps = _slobrokSpecs.logString();
             if (_backOff.shouldWarn()) {
                 LOG(warning, msgfmt, createSpec(_orb).c_str(), cps.c_str(), delay);

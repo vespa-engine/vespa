@@ -264,7 +264,7 @@ MirrorAPI::handleReconnect()
             double delay = _backOff.get();
             reSched(delay);
             std::string cps = _slobrokSpecs.logString();
-            static const char * const msgfmt = "no location brokers available, retrying: %s (in %.1f seconds)";
+            const char * const msgfmt = "no location brokers available, retrying: %s (in %.1f seconds)";
             if (_backOff.shouldWarn()) {
                 LOG(warning, msgfmt, cps.c_str(), delay);
             } else {
