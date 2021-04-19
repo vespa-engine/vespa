@@ -64,18 +64,10 @@ public class CapacityChecker {
     }
 
     public List<Node> nodesFromHostnames(List<String> hostnames) {
-        List<Node> nodes = hostnames.stream().filter(nodeMap::containsKey)
+        return hostnames.stream().filter(nodeMap::containsKey)
                                     .map(nodeMap::get)
                                     .collect(Collectors.toList());
 
-        if (nodes.size() != hostnames.size()) {
-            Set<String> notFoundNodes = new HashSet<>(hostnames);
-            notFoundNodes.removeAll(nodes.stream().map(Node::hostname).collect(Collectors.toList()));
-            throw new IllegalArgumentException(String.format("Host(s) not found: [ %s ]",
-                                                             String.join(", ", notFoundNodes)));
-        }
-
-        return nodes;
     }
 
     public Optional<HostFailurePath> findHostRemovalFailure(List<Node> hostsToRemove) {
