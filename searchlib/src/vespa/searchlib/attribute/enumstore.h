@@ -188,7 +188,14 @@ public:
         return FoldedComparatorType(_store.get_data_store());
     }
 
-    FoldedComparatorType make_folded_comparator(const EntryType& fallback_value, bool prefix = false) const {
+    FoldedComparatorType
+    make_folded_comparator(const EntryType& fallback_value) const {
+        return FoldedComparatorType(_store.get_data_store(), fallback_value);
+    }
+
+    template<bool prefix=true>
+    FoldedComparatorType
+    make_folded_comparator_prefix(const EntryType& fallback_value) const {
         return FoldedComparatorType(_store.get_data_store(), fallback_value, prefix);
     }
 

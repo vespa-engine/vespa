@@ -18,7 +18,7 @@ public:
     using ParentType = vespalib::datastore::UniqueStoreComparator<EntryT, IEnumStore::InternalIndex>;
     using DataStoreType = typename ParentType::DataStoreType;
 
-    EnumStoreComparator(const DataStoreType& data_store, const EntryT& fallback_value, bool prefix = false);
+    EnumStoreComparator(const DataStoreType& data_store, const EntryT& fallback_value);
     EnumStoreComparator(const DataStoreType& data_store);
 
     static bool equal_helper(const EntryT& lhs, const EntryT& rhs);
@@ -83,7 +83,7 @@ public:
      *
      * @param prefix whether we should perform prefix compare.
      */
-    EnumStoreFoldedStringComparator(const DataStoreType& data_store, bool prefix = false);
+    EnumStoreFoldedStringComparator(const DataStoreType& data_store);
 
     /**
      * Creates a comparator using the given low-level data store and that uses the
@@ -92,7 +92,10 @@ public:
      * @param prefix whether we should perform prefix compare.
      */
     EnumStoreFoldedStringComparator(const DataStoreType& data_store,
-                                    const char* fallback_value, bool prefix = false);
+                                    const char* fallback_value, bool prefix);
+    EnumStoreFoldedStringComparator(const DataStoreType& data_store, const char* fallback_value)
+        : EnumStoreFoldedStringComparator(data_store, fallback_value, false)
+    {}
 
     static bool equal(const char* lhs, const char* rhs) {
         return compare_folded(lhs, rhs) == 0;

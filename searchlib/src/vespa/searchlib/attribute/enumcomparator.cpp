@@ -12,10 +12,9 @@ FoldedStringCompare _strCmp;
 }
 
 template <typename EntryT>
-EnumStoreComparator<EntryT>::EnumStoreComparator(const DataStoreType& data_store, const EntryT& fallback_value, bool prefix)
+EnumStoreComparator<EntryT>::EnumStoreComparator(const DataStoreType& data_store, const EntryT& fallback_value)
     : ParentType(data_store, fallback_value)
 {
-    (void) prefix;
 }
 
 template <typename EntryT>
@@ -41,9 +40,9 @@ EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_s
 {
 }
 
-EnumStoreFoldedStringComparator::EnumStoreFoldedStringComparator(const DataStoreType& data_store, bool prefix)
+EnumStoreFoldedStringComparator::EnumStoreFoldedStringComparator(const DataStoreType& data_store)
     : ParentType(data_store, nullptr),
-      _prefix(prefix),
+      _prefix(false),
       _prefix_len(0u)
 {
 }
@@ -72,9 +71,7 @@ EnumStoreFoldedStringComparator::compare_folded(const char* lhs, const char* rhs
 }
 
 int
-EnumStoreFoldedStringComparator::compare_folded_prefix(const char* lhs,
-                                                       const char* rhs,
-                                                       size_t prefix_len)
+EnumStoreFoldedStringComparator::compare_folded_prefix(const char* lhs, const char* rhs, size_t prefix_len)
 {
     return _strCmp.compareFoldedPrefix(lhs, rhs, prefix_len);
 }
