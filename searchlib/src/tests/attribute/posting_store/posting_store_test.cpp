@@ -64,9 +64,12 @@ protected:
 
     void inc_generation()
     {
+        _value_store.freeze_dictionary();
         _store.freeze();
+        _value_store.transfer_hold_lists(_gen_handler.getCurrentGeneration());
         _store.transferHoldLists(_gen_handler.getCurrentGeneration());
         _gen_handler.incGeneration();
+        _value_store.trim_hold_lists(_gen_handler.getFirstUsedGeneration());
         _store.trimHoldLists(_gen_handler.getFirstUsedGeneration());
     }
 
@@ -97,7 +100,8 @@ protected:
         return sequence;
     }
 
-    std::vector<EntryRef> populate(uint32_t sequence_length);
+    void populate(uint32_t sequence_length);
+    EntryRef get_posting_ref(int key);
     void test_compact_btree_nodes(uint32_t sequence_length);
     void test_compact_sequence(uint32_t sequence_length);
 };
@@ -114,16 +118,18 @@ PostingStoreTest::PostingStoreTest()
 
 PostingStoreTest::~PostingStoreTest()
 {
+    _value_store.get_dictionary().clear_all_posting_lists([this](EntryRef posting_idx) { _store.clear(posting_idx); });
     _store.clearBuilder();
     inc_generation();
 }
 
-std::vector<EntryRef>
+void
 PostingStoreTest::populate(uint32_t sequence_length)
 {
-    auto &store = _store;
-    EntryRef ref1 = add_sequence(4, 4 + sequence_length);
-    EntryRef ref2 = add_sequence(5, 5 + sequence_length);
+    auto& store = _store;
+    auto& dictionary = _value_store.get_dictionary();
+    dictionary.update_posting_list(_value_store.insert(1), _value_store.make_comparator(), [this, sequence_length](EntryRef) { return add_sequence(4, 4 + sequence_length); });
+    dictionary.update_posting_list(_value_store.insert(2), _value_store.make_comparator(), [this, sequence_length](EntryRef) { return add_sequence(5, 5 + sequence_length); });
     std::vector<EntryRef> refs;
     for (int i = 0; i < 1000; ++i) {
         refs.emplace_back(add_sequence(i + 6, i + 6 + sequence_length));
@@ -132,49 +138,54 @@ PostingStoreTest::populate(uint32_t sequence_length)
         store.clear(ref);
     }
     inc_generation();
-    return { ref1, ref2 };
+}
+
+EntryRef
+PostingStoreTest::get_posting_ref(int key)
+{
+    auto &dictionary = _value_store.get_dictionary();
+    auto root = dictionary.get_frozen_root();
+    return dictionary.find_posting_list(_value_store.make_comparator(key), root).second;
 }
 
 void
 PostingStoreTest::test_compact_sequence(uint32_t sequence_length)
 {
-    auto populated_refs = populate(sequence_length);
+    populate(sequence_length);
     auto &store = _store;
-    EntryRef ref1 = populated_refs[0];
-    EntryRef ref2 = populated_refs[1];
+    EntryRef old_ref1 = get_posting_ref(1);
+    EntryRef old_ref2 = get_posting_ref(2);
     auto usage_before = store.getMemoryUsage();
     for (uint32_t pass = 0; pass < 15; ++pass) {
-        auto to_hold = store.start_compact_worst_buffers();
-        ref1 = store.move(ref1);
-        ref2 = store.move(ref2);
-        store.finishCompact(to_hold);
+        store.compact_worst_buffers();
         inc_generation();
     }
-    EXPECT_NE(populated_refs[0], ref1);
-    EXPECT_NE(populated_refs[1], ref2);
+    EntryRef ref1 = get_posting_ref(1);
+    EntryRef ref2 = get_posting_ref(2);
+    EXPECT_NE(old_ref1, ref1);
+    EXPECT_NE(old_ref2, ref2);
     EXPECT_EQ(make_exp_sequence(4, 4 + sequence_length), get_sequence(ref1));
     EXPECT_EQ(make_exp_sequence(5, 5 + sequence_length), get_sequence(ref2));
     auto usage_after = store.getMemoryUsage();
     EXPECT_GT(usage_before.deadBytes(), usage_after.deadBytes());
-    store.clear(ref1);
-    store.clear(ref2);
 }
 
 void
 PostingStoreTest::test_compact_btree_nodes(uint32_t sequence_length)
 {
-    auto populated_refs = populate(sequence_length);
+    populate(sequence_length);
     auto &store = _store;
-    EntryRef ref1 = populated_refs[0];
-    EntryRef ref2 = populated_refs[1];
+    EntryRef old_ref1 = get_posting_ref(1);
+    EntryRef old_ref2 = get_posting_ref(2);
     auto usage_before = store.getMemoryUsage();
     for (uint32_t pass = 0; pass < 15; ++pass) {
-        auto to_hold = store.start_compact_worst_btree_nodes();
-        store.move_btree_nodes(ref1);
-        store.move_btree_nodes(ref2);
-        store.finish_compact_worst_btree_nodes(to_hold);
+        store.compact_worst_btree_nodes();
         inc_generation();
     }
+    EntryRef ref1 = get_posting_ref(1);
+    EntryRef ref2 = get_posting_ref(2);
+    EXPECT_EQ(old_ref1, ref1);
+    EXPECT_EQ(old_ref2, ref2);
     EXPECT_EQ(make_exp_sequence(4, 4 + sequence_length), get_sequence(ref1));
     EXPECT_EQ(make_exp_sequence(5, 5 + sequence_length), get_sequence(ref2));
     auto usage_after = store.getMemoryUsage();
@@ -185,8 +196,6 @@ PostingStoreTest::test_compact_btree_nodes(uint32_t sequence_length)
     } else {
         EXPECT_EQ(usage_before.deadBytes(), usage_after.deadBytes());
     }
-    store.clear(ref1);
-    store.clear(ref2);
 }
 
 VESPA_GTEST_INSTANTIATE_TEST_SUITE_P(PostingStoreMultiTest,
