@@ -53,8 +53,8 @@ public class HostInfoUpdater extends ControllerMaintainer {
                     if (nodeEntity.switchHostname().isPresent()) {
                         updatedNode.setSwitchHostname(nodeEntity.switchHostname().get());
                     }
-                    if (nodeEntity.model().isPresent()) {
-                        updatedNode.setModelName(nodeEntity.model().get());
+                    if (nodeEntity.model().isPresent() && nodeEntity.manufacturer().isPresent()) {
+                        updatedNode.setModelName(nodeEntity.manufacturer().get() + " " + nodeEntity.model().get());
                     }
                     nodeRepository.patchNode(zone, node.hostname().value(), updatedNode);
                     hostsUpdated++;
