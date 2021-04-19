@@ -4,6 +4,7 @@ vespa_add_library(storage_distributor
     activecopy.cpp
     blockingoperationstarter.cpp
     bucket_db_prune_elision.cpp
+    bucket_space_distribution_configs.cpp
     bucket_space_distribution_context.cpp
     bucketdbupdater.cpp
     bucketgctimecalculator.cpp
@@ -23,6 +24,7 @@ vespa_add_library(storage_distributor
     ideal_service_layer_nodes_bundle.cpp
     idealstatemanager.cpp
     idealstatemetricsset.cpp
+    legacy_single_stripe_accessor.cpp
     messagetracker.cpp
     nodeinfo.cpp
     operation_routing_snapshot.cpp
@@ -40,6 +42,7 @@ vespa_add_library(storage_distributor
     statechecker.cpp
     statecheckers.cpp
     statusreporterdelegate.cpp
+    stripe_bucket_db_updater.cpp
     throttlingoperationstarter.cpp
     update_metric_set.cpp
     visitormetricsset.cpp

@@ -80,6 +80,7 @@ public:
     }
 
     void set_pending_cluster_state(std::shared_ptr<const lib::ClusterState> pending_cluster_state);
+    bool has_pending_cluster_state() const noexcept { return static_cast<bool>(_pending_cluster_state); }
     const lib::ClusterState& get_pending_cluster_state() const noexcept { return *_pending_cluster_state; }
 
     /**

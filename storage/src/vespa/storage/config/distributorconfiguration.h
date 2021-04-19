@@ -265,6 +265,8 @@ public:
         return _enable_revert;
     }
 
+    uint32_t num_distributor_stripes() const noexcept { return _num_distributor_stripes; }
+
     bool containsTimeStatement(const std::string& documentSelection) const;
     
 private:
@@ -296,6 +298,8 @@ private:
 
     uint32_t _maxVisitorsPerNodePerClientVisitor;
     uint32_t _minBucketsPerVisitor;
+
+    uint32_t _num_distributor_stripes;
 
     MaintenancePriorities _maintenancePriorities;
     std::chrono::seconds _maxClusterClockSkew;
