@@ -30,10 +30,10 @@ public class OsVersions {
 
     private static final Logger log = Logger.getLogger(OsVersions.class.getName());
 
-    /** The maximum number of concurrent upgrades triggered by {@link DelegatingOsUpgrader} */
+    /** The maximum number of concurrent upgrades per node type triggered by {@link DelegatingOsUpgrader} */
     private static final int MAX_DELEGATED_UPGRADES = 30;
 
-    /** The maximum number of concurrent upgrades (rebuilds) triggered by {@link RebuildingOsUpgrader} */
+    /** The maximum number of concurrent upgrades (rebuilds) per node type triggered by {@link RebuildingOsUpgrader} */
     private static final int MAX_REBUILDS = 3;
 
     private final NodeRepository nodeRepository;

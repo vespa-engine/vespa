@@ -34,7 +34,7 @@ public class RebuildingOsUpgrader extends RetiringOsUpgrader {
 
     @Override
     protected NodeList candidates(Instant instant, OsVersionTarget target, NodeList allNodes) {
-        if (allNodes.rebuilding().size() < maxRebuilds) {
+        if (allNodes.nodeType(target.nodeType()).rebuilding().size() < maxRebuilds) {
             return super.candidates(instant, target, allNodes);
         }
         return NodeList.of();
