@@ -221,7 +221,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
         assertEquals(CollectionMethod.INVOICE, billingController.getCollectionMethod(tenant));
     }
 
-    private Invoice createInvoice() {
+    static Invoice createInvoice() {
         var start = LocalDate.of(2020, 5, 23).atStartOfDay(ZoneId.systemDefault());
         var end = start.plusDays(5);
         var statusHistory = new Invoice.StatusHistory(new TreeMap<>(Map.of(start, "OPEN")));
@@ -235,7 +235,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
         );
     }
 
-    private Invoice.LineItem createLineItem(ZonedDateTime addedAt) {
+    static Invoice.LineItem createLineItem(ZonedDateTime addedAt) {
         return new Invoice.LineItem(
                 "some-id",
                 "description",

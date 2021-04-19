@@ -26,14 +26,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.BillingControll
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.yolean.Exceptions;
-import org.apache.commons.csv.CSVFormat;
 
 import javax.ws.rs.BadRequestException;
 import javax.ws.rs.ForbiddenException;
 import javax.ws.rs.NotFoundException;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.math.BigDecimal;
 import java.security.Principal;
 import java.time.LocalDate;
@@ -482,27 +479,4 @@ public class BillingApiHandler extends LoggingRequestHandler {
                 .count() > 0;
     }
 
-    private static class CsvResponse extends HttpResponse {
-        private final String[] header;
-        private final List<Object[]> rows;
-
-        CsvResponse(String[] header, List<Object[]> rows) {
-            super(200);
-            this.header = header;
-            this.rows = rows;
-        }
-
-        @Override
-        public void render(OutputStream outputStream) throws IOException {
-            var writer = new OutputStreamWriter(outputStream);
-            var printer = CSVFormat.DEFAULT.withRecordSeparator('\n').withHeader(this.header).print(writer);
-            for (var row : this.rows) printer.printRecord(row);
-            printer.flush();
-        }
-
-        @Override
-        public String getContentType() {
-            return "text/csv; encoding=utf-8";
-        }
-    }
 }

@@ -77,6 +77,9 @@ enum PathGroup {
     billingList(Matcher.tenant,
                 "/billing/v1/tenant/{tenant}/billing/{*}"),
 
+    billing(Matcher.tenant,
+            "/billing/v2/tenant/{tenant}/{*}"),
+
     applicationKeys(Matcher.tenant,
                     Matcher.application,
                     "/application/v4/tenant/{tenant}/application/{application}/key/"),
@@ -282,6 +285,7 @@ enum PathGroup {
                 PathGroup.billingInstrument,
                 PathGroup.billingList,
                 PathGroup.billingPlan,
+                PathGroup.billing,
                 PathGroup.hostedAccountant
         );
     }
