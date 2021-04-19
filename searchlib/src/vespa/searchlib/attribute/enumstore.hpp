@@ -74,7 +74,7 @@ EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const search::DictionaryConfig
 {
     _store.set_dictionary(make_enum_store_dictionary(*this, has_postings, dict_cfg,
                                                      std::make_unique<ComparatorType>(_store.get_data_store()),
-                                                     (has_string_type() ?
+                                                     ((has_string_type() && (dict_cfg.getMatch() == DictionaryConfig::Match::UNCASED)) ?
                                                       std::make_unique<FoldedComparatorType>(_store.get_data_store()) :
                                                       std::unique_ptr<vespalib::datastore::EntryComparator>())));
     _dict = static_cast<IEnumStoreDictionary*>(&_store.get_dictionary());
