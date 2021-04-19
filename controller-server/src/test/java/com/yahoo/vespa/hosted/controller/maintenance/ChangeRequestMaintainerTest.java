@@ -26,8 +26,9 @@ public class ChangeRequestMaintainerTest {
 
     @Test
     public void only_approve_requests_pending_approval() {
-        var changeRequest1 = newChangeRequest("id1", ChangeRequest.Approval.APPROVED);
-        var changeRequest2 = newChangeRequest("id2", ChangeRequest.Approval.REQUESTED);
+        var time = ZonedDateTime.now();
+        var changeRequest1 = newChangeRequest("id1", ChangeRequest.Approval.APPROVED, time);
+        var changeRequest2 = newChangeRequest("id2", ChangeRequest.Approval.REQUESTED, time);
         var upcomingChangeRequests = List.of(
                 changeRequest1,
                 changeRequest2
@@ -47,7 +48,24 @@ public class ChangeRequestMaintainerTest {
         assertEquals(expectedChangeRequest, writtenChangeRequests.get(0));
     }
 
-    private ChangeRequest newChangeRequest(String id, ChangeRequest.Approval approval) {
+    @Test
+    public void deletes_old_change_requests() {
+        var now = ZonedDateTime.now();
+        var before = now.minus(Duration.ofDays(8));
+        var newChangeRequest = persistedChangeRequest("new", now);
+        var oldChangeRequest = persistedChangeRequest("old", before);
+
+        tester.curator().writeChangeRequest(newChangeRequest);
+        tester.curator().writeChangeRequest(oldChangeRequest);
+
+        changeRequestMaintainer.maintain();
+
+        var persistedChangeRequests = tester.curator().readChangeRequests();
+        assertEquals(1, persistedChangeRequests.size());
+        assertEquals(newChangeRequest, persistedChangeRequests.get(0));
+    }
+
+    private ChangeRequest newChangeRequest(String id, ChangeRequest.Approval approval, ZonedDateTime time) {
         return new ChangeRequest.Builder()
                 .id(id)
                 .approval(approval)
@@ -55,13 +73,20 @@ public class ChangeRequestMaintainerTest {
                 .impactedSwitches(List.of())
                 .impactedHosts(List.of("node-1-tenant-host-prod.us-east-3"))
                 .changeRequestSource(new ChangeRequestSource.Builder()
-                        .plannedStartTime(ZonedDateTime.now())
-                        .plannedEndTime(ZonedDateTime.now())
+                        .plannedStartTime(time)
+                        .plannedEndTime(time)
                         .id("some-id")
                         .url("some-url")
                         .system("some-system")
                         .status(ChangeRequestSource.Status.CLOSED)
                         .build())
                 .build();
+    }
+
+    private VespaChangeRequest persistedChangeRequest(String id, ZonedDateTime time) {
+        return new VespaChangeRequest(
+                newChangeRequest(id, ChangeRequest.Approval.APPROVED, time),
+                ZoneId.from("prod.us-east-3")
+        );
     }
 }
