@@ -6,6 +6,7 @@ import com.yahoo.container.core.AccessLogConfig.FileHandler.CompressionFormat;
 import com.yahoo.container.logging.JSONAccessLog;
 import com.yahoo.container.logging.VespaAccessLog;
 import com.yahoo.osgi.provider.model.ComponentModel;
+import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
 
 import java.util.OptionalInt;
@@ -27,6 +28,7 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
     private final String symlinkName;
     private final CompressionType compressionType;
     private final int queueSize;
+    private final Integer bufferSize;
 
     public AccessLogComponent(ContainerCluster<?> cluster, AccessLogType logType, CompressionType compressionType, String clusterName, boolean isHostedVespa)
     {
@@ -57,6 +59,9 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         this.symlinkName = symlinkName;
         this.compressionType = compressionType;
         this.queueSize = queueSize(cluster).orElse(-1);
+        bufferSize = (cluster instanceof ApplicationContainerCluster)
+                ? 4*1024*1024
+                : null;
 
         if (fileNamePattern == null)
             throw new RuntimeException("File name pattern required when configuring access log.");
@@ -100,6 +105,9 @@ public final class AccessLogComponent extends SimpleComponent implements AccessL
         }
         if (queueSize >= 0) {
             builder.queueSize(queueSize);
+        }
+        if (bufferSize != null) {
+            builder.bufferSize(bufferSize);
         }
         switch (compressionType) {
             case GZIP:

@@ -21,3 +21,6 @@ fileHandler.compressionFormat enum {GZIP, ZSTD} default=GZIP
 
 # Max queue length of file handler
 fileHandler.queueSize int default=10000
+
+# Buffer size for the output stream has a default of 256k
+fileHandler.bufferSize int default=262144
