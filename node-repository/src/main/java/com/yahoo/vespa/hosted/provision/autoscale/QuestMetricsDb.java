@@ -17,6 +17,7 @@ import io.questdb.cairo.TableWriter;
 import io.questdb.cairo.sql.Record;
 import io.questdb.cairo.sql.RecordCursor;
 import io.questdb.cairo.sql.RecordCursorFactory;
+import io.questdb.griffin.CompiledQuery;
 import io.questdb.griffin.SqlCompiler;
 import io.questdb.griffin.SqlException;
 import io.questdb.griffin.SqlExecutionContext;
@@ -54,6 +55,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     private final Clock clock;
     private final String dataDir;
     private CairoEngine engine;
+    private ThreadLocal<SqlCompiler> sqlCompiler;
 
     private long highestTimestampAdded = 0;
 
@@ -83,6 +85,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
         CairoConfiguration configuration = new DefaultCairoConfiguration(dataDir);
         engine = new CairoEngine(configuration);
+        sqlCompiler = ThreadLocal.withInitial(() -> new SqlCompiler(engine));
         ensureTablesExist();
     }
 
@@ -159,9 +162,8 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     @Override
     public List<NodeTimeseries> getNodeTimeseries(Duration period, Set<String> hostnames) {
-        try (SqlCompiler compiler = new SqlCompiler(engine)) {
-            SqlExecutionContext context = newContext();
-            var snapshots = getNodeSnapshots(clock.instant().minus(period), hostnames, compiler, context);
+        try {
+            var snapshots = getNodeSnapshots(clock.instant().minus(period), hostnames, newContext());
             return snapshots.entrySet().stream()
                             .map(entry -> new NodeTimeseries(entry.getKey(), entry.getValue()))
                             .collect(Collectors.toList());
@@ -173,9 +175,8 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     @Override
     public ClusterTimeseries getClusterTimeseries(ApplicationId applicationId, ClusterSpec.Id clusterId) {
-        try (SqlCompiler compiler = new SqlCompiler(engine)) {
-            SqlExecutionContext context = newContext();
-            return getClusterSnapshots(applicationId, clusterId, compiler, context);
+        try {
+            return getClusterSnapshots(applicationId, clusterId);
         }
         catch (SqlException e) {
             throw new IllegalStateException("Could not read cluster timeseries data in Quest stored in " + dataDir, e);
@@ -193,7 +194,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         Instant oldestToKeep = clock.instant().minus(Duration.ofDays(4));
         SqlExecutionContext context = newContext();
         int partitions = 0;
-        try (SqlCompiler compiler = new SqlCompiler(engine)) {
+        try {
             File tableRoot = new File(dataDir, table);
             List<String> removeList = new ArrayList<>();
             for (String dirEntry : tableRoot.list()) {
@@ -209,9 +210,9 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
             }
             // Remove unless all partitions are old: Removing all partitions "will be supported in the future"
             if ( removeList.size() < partitions && ! removeList.isEmpty()) {
-                compiler.compile("alter table " + table + " drop partition list " +
-                                 removeList.stream().map(dir -> "'" + dir + "'").collect(Collectors.joining(",")),
-                                 context);
+                issue("alter table " + table + " drop partition list " +
+                      removeList.stream().map(dir -> "'" + dir + "'").collect(Collectors.joining(",")),
+                      context);
             }
         }
         catch (SqlException e) {
@@ -257,13 +258,13 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     }
 
     private void createNodeTable(SqlExecutionContext context) {
-        try (SqlCompiler compiler = new SqlCompiler(engine)) {
-            compiler.compile("create table " + nodeTable +
-                             " (hostname string, at timestamp, cpu_util float, mem_total_util float, disk_util float," +
-                             "  application_generation long, inService boolean, stable boolean, queries_rate float)" +
-                             " timestamp(at)" +
-                             "PARTITION BY DAY;",
-                             context);
+        try {
+            issue("create table " + nodeTable +
+                  " (hostname string, at timestamp, cpu_util float, mem_total_util float, disk_util float," +
+                  "  application_generation long, inService boolean, stable boolean, queries_rate float)" +
+                  " timestamp(at)" +
+                  "PARTITION BY DAY;",
+                  context);
             // We should do this if we get a version where selecting on strings work embedded, see below
             // compiler.compile("alter table " + tableName + " alter column hostname add index", context);
         }
@@ -273,12 +274,12 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     }
 
     private void createClusterTable(SqlExecutionContext context) {
-        try (SqlCompiler compiler = new SqlCompiler(engine)) {
-            compiler.compile("create table " + clusterTable +
-                             " (application string, cluster string, at timestamp, queries_rate float, write_rate float)" +
-                             " timestamp(at)" +
-                             "PARTITION BY DAY;",
-                             context);
+        try {
+            issue("create table " + clusterTable +
+                  " (application string, cluster string, at timestamp, queries_rate float, write_rate float)" +
+                  " timestamp(at)" +
+                  "PARTITION BY DAY;",
+                  context);
             // We should do this if we get a version where selecting on strings work embedded, see below
             // compiler.compile("alter table " + tableName + " alter column cluster add index", context);
         }
@@ -288,9 +289,9 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     }
 
     private void ensureNodeTableIsUpdated(SqlExecutionContext context) {
-        try (SqlCompiler compiler = new SqlCompiler(engine)) {
+        try {
             if (0 == engine.getStatus(context.getCairoSecurityContext(), new Path(), nodeTable)) {
-                ensureColumnExists("queries_rate", "float", nodeTable, compiler, context); // TODO: Remove after March 2021
+                ensureColumnExists("queries_rate", "float", nodeTable,context); // TODO: Remove after March 2021
             }
         } catch (SqlException e) {
             repair(e);
@@ -298,9 +299,9 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     }
 
     private void ensureClusterTableIsUpdated(SqlExecutionContext context) {
-        try (SqlCompiler compiler = new SqlCompiler(engine)) {
+        try {
             if (0 == engine.getStatus(context.getCairoSecurityContext(), new Path(), nodeTable)) {
-                ensureColumnExists("write_rate", "float", nodeTable, compiler, context); // TODO: Remove after March 2021
+                ensureColumnExists("write_rate", "float", nodeTable, context); // TODO: Remove after March 2021
             }
         } catch (SqlException e) {
             repair(e);
@@ -308,14 +309,14 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
     }
 
     private void ensureColumnExists(String column, String columnType,
-                                    String table, SqlCompiler compiler, SqlExecutionContext context) throws SqlException {
-        if (columnNamesOf(table, compiler, context).contains(column)) return;
-        compiler.compile("alter table " + table + " add column " + column + " " + columnType, context);
+                                    String table, SqlExecutionContext context) throws SqlException {
+        if (columnNamesOf(table, context).contains(column)) return;
+        issue("alter table " + table + " add column " + column + " " + columnType, context);
     }
 
-    private List<String> columnNamesOf(String tableName, SqlCompiler compiler, SqlExecutionContext context) throws SqlException {
+    private List<String> columnNamesOf(String tableName, SqlExecutionContext context) throws SqlException {
         List<String> columns = new ArrayList<>();
-        try (RecordCursorFactory factory = compiler.compile("show columns from " + tableName, context).getRecordCursorFactory()) {
+        try (RecordCursorFactory factory = issue("show columns from " + tableName, context).getRecordCursorFactory()) {
             try (RecordCursor cursor = factory.getCursor(context)) {
                 Record record = cursor.getRecord();
                 while (cursor.hasNext()) {
@@ -339,7 +340,6 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
 
     private ListMap<String, NodeMetricSnapshot> getNodeSnapshots(Instant startTime,
                                                                  Set<String> hostnames,
-                                                                 SqlCompiler compiler,
                                                                  SqlExecutionContext context) throws SqlException {
         DateTimeFormatter formatter = DateTimeFormatter.ISO_DATE_TIME.withZone(ZoneId.of("UTC"));
         String from = formatter.format(startTime).substring(0, 19) + ".000000Z";
@@ -349,7 +349,7 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         // WHERE clauses does not work:
         // String sql = "select * from " + tableName + " where hostname in('host1', 'host2', 'host3');";
 
-        try (RecordCursorFactory factory = compiler.compile(sql, context).getRecordCursorFactory()) {
+        try (RecordCursorFactory factory = issue(sql, context).getRecordCursorFactory()) {
             ListMap<String, NodeMetricSnapshot> snapshots = new ListMap<>();
             try (RecordCursor cursor = factory.getCursor(context)) {
                 Record record = cursor.getRecord();
@@ -372,12 +372,10 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
         }
     }
 
-    private ClusterTimeseries getClusterSnapshots(ApplicationId application,
-                                                  ClusterSpec.Id cluster,
-                                                  SqlCompiler compiler,
-                                                  SqlExecutionContext context) throws SqlException {
+    private ClusterTimeseries getClusterSnapshots(ApplicationId application, ClusterSpec.Id cluster) throws SqlException {
         String sql = "select * from " + clusterTable;
-        try (RecordCursorFactory factory = compiler.compile(sql, context).getRecordCursorFactory()) {
+        var context = newContext();
+        try (RecordCursorFactory factory = issue(sql, context).getRecordCursorFactory()) {
             List<ClusterMetricSnapshot> snapshots = new ArrayList<>();
             try (RecordCursor cursor = factory.getCursor(context)) {
                 Record record = cursor.getRecord();
@@ -394,6 +392,11 @@ public class QuestMetricsDb extends AbstractComponent implements MetricsDb {
             }
             return new ClusterTimeseries(cluster, snapshots);
         }
+    }
+
+    /** Issues an SQL statement against the QuestDb engine */
+    private CompiledQuery issue(String sql, SqlExecutionContext context) throws SqlException {
+        return sqlCompiler.get().compile(sql, context);
     }
 
     private SqlExecutionContext newContext() {
