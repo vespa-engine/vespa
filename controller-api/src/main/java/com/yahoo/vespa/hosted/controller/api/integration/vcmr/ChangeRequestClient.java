@@ -8,7 +8,8 @@ import java.util.List;
  */
 public interface ChangeRequestClient {
 
-    List<ChangeRequest> getUpcomingChangeRequests();
+    /** Get upcoming change requests and updated status of previously stored requests */
+    List<ChangeRequest> getChangeRequests(List<ChangeRequest> changeRequests);
 
     void approveChangeRequests(List<ChangeRequest> changeRequests);
 

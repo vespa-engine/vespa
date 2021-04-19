@@ -8,10 +8,13 @@ import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestClient;
+import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestSource;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Duration;
+import java.time.ZonedDateTime;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -43,7 +46,8 @@ public class ChangeRequestMaintainer extends ControllerMaintainer {
 
     @Override
     protected boolean maintain() {
-        var changeRequests = changeRequestClient.getUpcomingChangeRequests();
+        var currentChangeRequests = pruneOldChangeRequests();
+        var changeRequests = changeRequestClient.getChangeRequests(currentChangeRequests);
 
         storeChangeRequests(changeRequests);
         if (system.equals(SystemName.main)) {
@@ -82,6 +86,22 @@ public class ChangeRequestMaintainer extends ControllerMaintainer {
         }
     }
 
+    // Deletes closed change requests older than 7 days, returns the current list of requests
+    private List<ChangeRequest> pruneOldChangeRequests() {
+        List<ChangeRequest> currentChangeRequests = new ArrayList<>();
+
+        try (var lock = curator.lockChangeRequests()) {
+            for (var changeRequest : curator.readChangeRequests()) {
+                if (shouldDeleteChangeRequest(changeRequest.getChangeRequestSource())) {
+                    curator.deleteChangeRequest(changeRequest);
+                } else {
+                    currentChangeRequests.add(changeRequest);
+                }
+            }
+        }
+        return currentChangeRequests;
+    }
+
     private Map<ZoneId, List<String>> hostsByZone() {
         return controller().zoneRegistry()
                 .zones()
@@ -103,5 +123,12 @@ public class ChangeRequestMaintainer extends ControllerMaintainer {
                 .filter(entry -> !Collections.disjoint(entry.getValue(), changeRequest.getImpactedHosts()))
                 .map(Map.Entry::getKey)
                 .findFirst();
+    }
+
+    private boolean shouldDeleteChangeRequest(ChangeRequestSource source) {
+        return source.isClosed() &&
+                source.getPlannedStartTime()
+                        .plus(Duration.ofDays(7))
+                        .isBefore(ZonedDateTime.now());
     }
 }

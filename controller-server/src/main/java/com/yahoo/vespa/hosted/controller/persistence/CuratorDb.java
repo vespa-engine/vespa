@@ -585,6 +585,10 @@ public class CuratorDb {
         curator.set(changeRequestPath(changeRequest.getId()), asJson(ChangeRequestSerializer.toSlime(changeRequest)));
     }
 
+    public void deleteChangeRequest(VespaChangeRequest changeRequest) {
+        curator.delete(changeRequestPath(changeRequest.getId()));
+    }
+
     // -------------- Paths ---------------------------------------------------
 
     private Path lockPath(TenantName tenant) {
