@@ -30,7 +30,7 @@ MultiValueNumericPostingAttribute<B, M>::applyValueChanges(const DocIndices& doc
 
     EnumIndexMapper mapper;
     PostingMap changePost(PostingChangeComputer::compute(this->getMultiValueMapping(), docIndices,
-                                                         this->getEnumStore().make_comparator(), mapper));
+                                                         this->getEnumStore().get_comparator(), mapper));
     this->updatePostings(changePost);
     MultiValueNumericEnumAttribute<B, M>::applyValueChanges(docIndices, updater);
 }

@@ -606,7 +606,7 @@ EnumStoreDictionaryTest<EnumStoreTypeAndDictionaryType>::update_posting_idx(Enum
 {
     auto& dict = store.get_dictionary();
     EntryRef old_posting_idx_check;
-    dict.update_posting_list(enum_idx, store.make_comparator(), [&old_posting_idx_check, new_posting_idx](EntryRef posting_idx) noexcept -> EntryRef { old_posting_idx_check = posting_idx; return new_posting_idx; });
+    dict.update_posting_list(enum_idx, store.get_comparator(), [&old_posting_idx_check, new_posting_idx](EntryRef posting_idx) noexcept -> EntryRef { old_posting_idx_check = posting_idx; return new_posting_idx; });
     EXPECT_EQ(old_posting_idx, old_posting_idx_check);
 }
 
