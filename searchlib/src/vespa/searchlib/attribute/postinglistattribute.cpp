@@ -180,6 +180,20 @@ PostingListAttributeBase<P>::getMemoryUsage() const
     return _postingList.getMemoryUsage();
 }
 
+template <typename P>
+bool
+PostingListAttributeBase<P>::consider_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy)
+{
+    return _postingList.consider_compact_worst_btree_nodes(compaction_strategy);
+}
+
+template <typename P>
+bool
+PostingListAttributeBase<P>::consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy)
+{
+    return _postingList.consider_compact_worst_buffers(compaction_strategy);
+}
+
 template <typename P, typename LoadedVector, typename LoadedValueType,
           typename EnumStoreType>
 PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
