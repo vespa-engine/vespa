@@ -1041,20 +1041,41 @@ public class ContentClusterTest extends ContentBaseTest {
         assertZookeeperServerImplementation("com.yahoo.vespa.zookeeper.VespaZooKeeperAdminImpl");
     }
 
-    private int resolveMaxInhibitedGroupsConfigWithFeatureFlag(int maxGroups) {
-        VespaModel model = createEnd2EndOneNode(new TestProperties().maxActivationInhibitedOutOfSyncGroups(maxGroups));
+    private StorDistributormanagerConfig resolveStorDistributormanagerConfig(TestProperties props) {
+        VespaModel model = createEnd2EndOneNode(props);
 
         ContentCluster cc = model.getContentClusters().get("storage");
         var builder = new StorDistributormanagerConfig.Builder();
         cc.getDistributorNodes().getConfig(builder);
 
-        return (new StorDistributormanagerConfig(builder)).max_activation_inhibited_out_of_sync_groups();
+        return (new StorDistributormanagerConfig(builder));
+    }
+
+    private int resolveMaxInhibitedGroupsConfigWithFeatureFlag(int maxGroups) {
+        var cfg = resolveStorDistributormanagerConfig(new TestProperties().maxActivationInhibitedOutOfSyncGroups(maxGroups));
+        return cfg.max_activation_inhibited_out_of_sync_groups();
     }
 
     @Test
     public void default_distributor_max_inhibited_group_activation_config_controlled_by_properties() {
         assertEquals(0, resolveMaxInhibitedGroupsConfigWithFeatureFlag(0));
         assertEquals(2, resolveMaxInhibitedGroupsConfigWithFeatureFlag(2));
+    }
+
+    private int resolveNumDistributorStripesConfigWithFeatureFlag(TestProperties props) {
+        var cfg = resolveStorDistributormanagerConfig(props);
+        return cfg.num_distributor_stripes();
+    }
+
+    private int resolveNumDistributorStripesConfigWithFeatureFlag(int numStripes) {
+        return resolveNumDistributorStripesConfigWithFeatureFlag(new TestProperties().setNumDistributorStripes(numStripes));
+    }
+
+    @Test
+    public void num_distributor_stripes_config_controlled_by_properties() {
+        assertEquals(0, resolveNumDistributorStripesConfigWithFeatureFlag(new TestProperties()));
+        assertEquals(0, resolveNumDistributorStripesConfigWithFeatureFlag(0));
+        assertEquals(1, resolveNumDistributorStripesConfigWithFeatureFlag(1));
     }
 
     @Test

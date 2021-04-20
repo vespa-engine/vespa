@@ -287,6 +287,13 @@ public class Flags {
             "Takes effect on next host-admin tick",
             HOSTNAME);
 
+    public static final UnboundIntFlag NUM_DISTRIBUTOR_STRIPES = defineIntFlag(
+            "num-distributor-stripes", 0,
+            List.of("geirst", "vekterli"), "2021-04-20", "2021-07-01",
+            "Specifies the number of stripes used by the distributor. When 0, legacy single stripe behavior is used.",
+            "Takes effect after distributor restart",
+            ZONE_ID, APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,

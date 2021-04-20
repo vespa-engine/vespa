@@ -61,6 +61,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
     private String jvmOmitStackTraceInFastThrowOption;
+    private int numDistributorStripes = 0;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -102,6 +103,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
     @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
     @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return jvmOmitStackTraceInFastThrowOption; }
+    @Override public int numDistributorStripes() { return numDistributorStripes; }
 
     public TestProperties setFeedConcurrency(double feedConcurrency) {
         this.feedConcurrency = feedConcurrency;
@@ -245,6 +247,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setJvmOmitStackTraceInFastThrowOption(String value) {
         this.jvmOmitStackTraceInFastThrowOption = value;
+        return this;
+    }
+
+    public TestProperties setNumDistributorStripes(int value) {
+        this.numDistributorStripes = value;
         return this;
     }
 
