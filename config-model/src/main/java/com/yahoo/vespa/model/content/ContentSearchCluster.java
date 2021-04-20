@@ -121,7 +121,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
             if (flushOnShutdownElem != null) {
                 return flushOnShutdownElem;
             }
-            return ! stateIsHosted(deployState);
+            return true;
         }
 
         private Double getQueryTimeout(ModelElement clusterElem) {
