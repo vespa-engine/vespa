@@ -53,7 +53,7 @@ SingleValueNumericPostingAttribute<B>::applyUpdateValueChange(const Change & c,
 template <typename B>
 void
 SingleValueNumericPostingAttribute<B>::
-makePostingChange(const vespalib::datastore::EntryComparator *cmpa,
+makePostingChange(const vespalib::datastore::EntryComparator &cmpa,
                   const std::map<DocId, EnumIndex> &currEnumIndices,
                   PostingMap &changePost)
 {
@@ -63,11 +63,11 @@ makePostingChange(const vespalib::datastore::EntryComparator *cmpa,
         EnumIndex newIdx = elem.second;
 
         // add new posting
-        changePost[EnumPostingPair(newIdx, cmpa)].add(docId, 1);
+        changePost[EnumPostingPair(newIdx, &cmpa)].add(docId, 1);
 
         // remove old posting
         if ( oldIdx.valid()) {
-            changePost[EnumPostingPair(oldIdx, cmpa)].remove(docId);
+            changePost[EnumPostingPair(oldIdx, &cmpa)].remove(docId);
         }
     }
 }
@@ -79,7 +79,6 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
 {
     EnumStore & enumStore = this->getEnumStore();
     IEnumStoreDictionary& dictionary = enumStore.get_dictionary();
-    auto cmp = enumStore.make_comparator();
     PostingMap changePost;
 
     // used to make sure several arithmetic operations on the same document in a single commit works
@@ -110,7 +109,7 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
         }
     }
 
-    makePostingChange(&cmp, currEnumIndices, changePost);
+    makePostingChange(enumStore.get_comparator(), currEnumIndices, changePost);
 
     this->updatePostings(changePost);
     SingleValueNumericEnumAttribute<B>::applyValueChanges(updater);

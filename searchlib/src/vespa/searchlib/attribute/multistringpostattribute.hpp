@@ -47,7 +47,7 @@ applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater &updater)
 
     StringEnumIndexMapper mapper(dictionary);
     PostingMap changePost(PostingChangeComputer::compute(this->getMultiValueMapping(), docIndices,
-                                                         enumStore.make_folded_comparator(), mapper));
+                                                         enumStore.get_folded_comparator(), mapper));
     this->updatePostings(changePost);
     MultiValueStringAttributeT<B, T>::applyValueChanges(docIndices, updater);
 }

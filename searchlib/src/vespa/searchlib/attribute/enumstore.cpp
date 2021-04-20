@@ -21,9 +21,7 @@ EnumStoreT<const char*>::write_value(BufferWriter& writer, Index idx) const
 
 template <>
 ssize_t
-EnumStoreT<const char*>::load_unique_value(const void* src,
-                                           size_t available,
-                                           Index& idx)
+EnumStoreT<const char*>::load_unique_value(const void* src, size_t available, Index& idx)
 {
     const char* value = static_cast<const char*>(src);
     size_t slen = strlen(value);
@@ -43,8 +41,8 @@ EnumStoreT<const char*>::load_unique_value(const void* src,
 
 std::unique_ptr<vespalib::datastore::IUniqueStoreDictionary>
 make_enum_store_dictionary(IEnumStore &store, bool has_postings, const search::DictionaryConfig & dict_cfg,
-                           std::unique_ptr<vespalib::datastore::EntryComparator> compare,
-                           std::unique_ptr<vespalib::datastore::EntryComparator> folded_compare)
+                           std::unique_ptr<EntryComparator> compare,
+                           std::unique_ptr<EntryComparator> folded_compare)
 {
     using NoBTreeDictionary = vespalib::datastore::NoBTreeDictionary;
     using ShardedHashMap = vespalib::datastore::ShardedHashMap;

@@ -132,8 +132,8 @@ PostingStoreTest::populate(uint32_t sequence_length)
     for (int i = 0; i < 9000; ++i) {
         refs.emplace_back(add_sequence(i + 6, i + 6 + sequence_length));
     }
-    dictionary.update_posting_list(_value_store.insert(1), _value_store.make_comparator(), [this, sequence_length](EntryRef) { return add_sequence(4, 4 + sequence_length); });
-    dictionary.update_posting_list(_value_store.insert(2), _value_store.make_comparator(), [this, sequence_length](EntryRef) { return add_sequence(5, 5 + sequence_length); });
+    dictionary.update_posting_list(_value_store.insert(1), _value_store.get_comparator(), [this, sequence_length](EntryRef) { return add_sequence(4, 4 + sequence_length); });
+    dictionary.update_posting_list(_value_store.insert(2), _value_store.get_comparator(), [this, sequence_length](EntryRef) { return add_sequence(5, 5 + sequence_length); });
     for (int i = 9000; i < 11000; ++i) {
         refs.emplace_back(add_sequence(i + 6, i + 6 + sequence_length));
     }

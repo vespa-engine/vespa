@@ -101,7 +101,7 @@ SingleValueStringPostingAttributeT<B>::applyValueChanges(EnumStoreBatchUpdater& 
         }
     }
 
-    makePostingChange(enumStore.make_folded_comparator(), dictionary, currEnumIndices, changePost);
+    makePostingChange(enumStore.get_folded_comparator(), dictionary, currEnumIndices, changePost);
 
     this->updatePostings(changePost);
 

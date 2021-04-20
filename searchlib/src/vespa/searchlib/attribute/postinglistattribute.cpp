@@ -281,7 +281,7 @@ void
 PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
 updatePostings(PostingMap &changePost)
 {
-    updatePostings(changePost, _es.make_folded_comparator());
+    updatePostings(changePost, _es.get_folded_comparator());
 }
 
 
@@ -291,7 +291,7 @@ void
 PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
 clearPostings(attribute::IAttributeVector::EnumHandle eidx, uint32_t fromLid, uint32_t toLid)
 {
-    clearPostings(eidx, fromLid, toLid, _es.make_folded_comparator());
+    clearPostings(eidx, fromLid, toLid, _es.get_folded_comparator());
 }
 
 

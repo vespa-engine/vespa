@@ -63,7 +63,7 @@ private:
     void mergeMemoryStats(vespalib::MemoryUsage & total) override;
     void applyUpdateValueChange(const Change & c, EnumStore & enumStore,
                                 std::map<DocId, EnumIndex> & currEnumIndices);
-    void makePostingChange(const vespalib::datastore::EntryComparator *cmp,
+    void makePostingChange(const vespalib::datastore::EntryComparator &cmp,
                            const std::map<DocId, EnumIndex> &currEnumIndices,
                            PostingMap &changePost);
 
