@@ -27,11 +27,10 @@ MultiValueNumericPostingAttribute<B, M>::applyValueChanges(const DocIndices& doc
                                                            EnumStoreBatchUpdater& updater)
 {
     using PostingChangeComputer = PostingChangeComputerT<WeightedIndex, PostingMap>;
-    EnumStore & enumStore = this->getEnumStore();
-    auto comp = enumStore.make_comparator();
 
     EnumIndexMapper mapper;
-    PostingMap changePost(PostingChangeComputer::compute(this->getMultiValueMapping(), docIndices, comp, mapper));
+    PostingMap changePost(PostingChangeComputer::compute(this->getMultiValueMapping(), docIndices,
+                                                         this->getEnumStore().make_comparator(), mapper));
     this->updatePostings(changePost);
     MultiValueNumericEnumAttribute<B, M>::applyValueChanges(docIndices, updater);
 }

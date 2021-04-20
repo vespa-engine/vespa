@@ -52,7 +52,7 @@ SingleValueStringPostingAttributeT<B>::applyUpdateValueChange(const Change & c,
 template <typename B>
 void
 SingleValueStringPostingAttributeT<B>::
-makePostingChange(const vespalib::datastore::EntryComparator *cmpa,
+makePostingChange(const vespalib::datastore::EntryComparator &cmpa,
                   IEnumStoreDictionary& dictionary,
                   const std::map<DocId, EnumIndex> &currEnumIndices,
                   PostingMap &changePost)
@@ -64,12 +64,12 @@ makePostingChange(const vespalib::datastore::EntryComparator *cmpa,
 
         // add new posting
         auto remapped_new_idx = dictionary.remap_index(newIdx);
-        changePost[EnumPostingPair(remapped_new_idx, cmpa)].add(docId, 1);
+        changePost[EnumPostingPair(remapped_new_idx, &cmpa)].add(docId, 1);
 
         // remove old posting
         if ( oldIdx.valid()) {
             auto remapped_old_idx = dictionary.remap_index(oldIdx);
-            changePost[EnumPostingPair(remapped_old_idx, cmpa)].remove(docId);
+            changePost[EnumPostingPair(remapped_old_idx, &cmpa)].remove(docId);
         }
     }
 }
@@ -80,7 +80,6 @@ SingleValueStringPostingAttributeT<B>::applyValueChanges(EnumStoreBatchUpdater& 
 {
     EnumStore & enumStore = this->getEnumStore();
     IEnumStoreDictionary& dictionary = enumStore.get_dictionary();
-    auto cmp = enumStore.make_folded_comparator();
     PostingMap changePost;
 
     // used to make sure several arithmetic operations on the same document in a single commit works
@@ -95,16 +94,14 @@ SingleValueStringPostingAttributeT<B>::applyValueChanges(EnumStoreBatchUpdater& 
             oldIdx = this->_enumIndices[change._doc];
         }
         if (change._type == ChangeBase::UPDATE) {
-            applyUpdateValueChange(change, enumStore,
-                                   currEnumIndices);
+            applyUpdateValueChange(change, enumStore, currEnumIndices);
         } else if (change._type == ChangeBase::CLEARDOC) {
             this->_defaultValue._doc = change._doc;
-            applyUpdateValueChange(this->_defaultValue, enumStore,
-                                   currEnumIndices);
+            applyUpdateValueChange(this->_defaultValue, enumStore, currEnumIndices);
         }
     }
 
-    makePostingChange(&cmp, dictionary, currEnumIndices, changePost);
+    makePostingChange(enumStore.make_folded_comparator(), dictionary, currEnumIndices, changePost);
 
     this->updatePostings(changePost);
 

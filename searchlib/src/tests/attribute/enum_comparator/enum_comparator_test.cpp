@@ -162,8 +162,8 @@ TEST("requireThatFoldedLessIsWorking")
     EXPECT_FALSE(cmp1.less(e2, e1)); // similar folded
     EXPECT_TRUE(cmp1.less(e2, e3)); // folded compare
     EXPECT_FALSE(cmp1.less(e3, e2)); // folded compare
-    auto cmp2 = es.make_folded_comparator("fol", false);
-    auto cmp3 = es.make_folded_comparator("fol", true);
+    auto cmp2 = es.make_folded_comparator("fol");
+    auto cmp3 = es.make_folded_comparator_prefix("fol");
     EXPECT_TRUE(cmp2.less(EnumIndex(), e4));
     EXPECT_FALSE(cmp2.less(e4, EnumIndex()));
     EXPECT_FALSE(cmp3.less(EnumIndex(), e4)); // similar when prefix
@@ -183,8 +183,8 @@ TEST("requireThatFoldedEqualIsWorking")
     EXPECT_TRUE(cmp1.equal(e2, e1));
     EXPECT_FALSE(cmp1.equal(e2, e3)); // folded compare
     EXPECT_FALSE(cmp1.equal(e3, e2)); // folded compare
-    auto cmp2 = es.make_folded_comparator("fol", false);
-    auto cmp3 = es.make_folded_comparator("fol", true);
+    auto cmp2 = es.make_folded_comparator("fol");
+    auto cmp3 = es.make_folded_comparator_prefix("fol");
     EXPECT_FALSE(cmp2.equal(EnumIndex(), e4));
     EXPECT_FALSE(cmp2.equal(e4, EnumIndex()));
     EXPECT_TRUE(cmp2.equal(EnumIndex(), EnumIndex()));

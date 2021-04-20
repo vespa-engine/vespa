@@ -75,7 +75,7 @@ EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const search::DictionaryConfig
     _store.set_dictionary(make_enum_store_dictionary(*this, has_postings, dict_cfg,
                                                      std::make_unique<ComparatorType>(_store.get_data_store()),
                                                      (has_string_type() ?
-                                                      std::make_unique<FoldedComparatorType>(_store.get_data_store()) :
+                                                      std::make_unique<ComparatorType>(_store.get_data_store(), true) :
                                                       std::unique_ptr<vespalib::datastore::EntryComparator>())));
     _dict = static_cast<IEnumStoreDictionary*>(&_store.get_dictionary());
 }
@@ -169,14 +169,6 @@ EnumStoreT<EntryT>::find_enum(EntryType value, IEnumStore::EnumHandle& e) const
 }
 
 template <typename EntryT>
-std::vector<IEnumStore::EnumHandle>
-EnumStoreT<EntryT>::find_folded_enums(EntryType value) const
-{
-    auto cmp = make_folded_comparator(value);
-    return _dict->find_matching_enums(cmp);
-}
-
-template <typename EntryT>
 bool
 EnumStoreT<EntryT>::find_index(EntryType value, Index& idx) const
 {
@@ -188,16 +180,14 @@ template <typename EntryT>
 void
 EnumStoreT<EntryT>::free_unused_values()
 {
-    auto cmp = make_comparator();
-    _dict->free_unused_values(cmp);
+    _dict->free_unused_values(make_comparator());
 }
 
 template <typename EntryT>
 void
 EnumStoreT<EntryT>::free_unused_values(const IndexSet& to_remove)
 {
-    auto cmp = make_comparator();
-    _dict->free_unused_values(to_remove, cmp);
+    _dict->free_unused_values(to_remove, make_comparator());
 }
 
 template <typename EntryT>

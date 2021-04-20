@@ -31,7 +31,7 @@ class StringEnumIndexMapper : public EnumIndexMapper
 public:
     StringEnumIndexMapper(IEnumStoreDictionary & dictionary) : _dictionary(dictionary) { }
     IEnumStore::Index map(IEnumStore::Index original) const override;
-    virtual bool hasFold() const override { return true; }
+    bool hasFold() const override { return true; }
 private:
     IEnumStoreDictionary& _dictionary;
 };
@@ -44,10 +44,10 @@ applyValueChanges(const DocIndices& docIndices, EnumStoreBatchUpdater &updater)
     using PostingChangeComputer = PostingChangeComputerT<WeightedIndex, PostingMap>;
     EnumStore &enumStore(this->getEnumStore());
     IEnumStoreDictionary& dictionary(enumStore.get_dictionary());
-    auto compare = enumStore.make_folded_comparator();
 
     StringEnumIndexMapper mapper(dictionary);
-    PostingMap changePost(PostingChangeComputer::compute(this->getMultiValueMapping(), docIndices, compare, mapper));
+    PostingMap changePost(PostingChangeComputer::compute(this->getMultiValueMapping(), docIndices,
+                                                         enumStore.make_folded_comparator(), mapper));
     this->updatePostings(changePost);
     MultiValueStringAttributeT<B, T>::applyValueChanges(docIndices, updater);
 }
