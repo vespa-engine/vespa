@@ -50,12 +50,12 @@ public:
     using generation_t = vespalib::GenerationHandler::generation_t;
 
 private:
-    UniqueStoreType _store;
-    IEnumStoreDictionary* _dict;
-    vespalib::MemoryUsage _cached_values_memory_usage;
+    UniqueStoreType        _store;
+    IEnumStoreDictionary*  _dict;
+    vespalib::MemoryUsage  _cached_values_memory_usage;
     vespalib::AddressSpace _cached_values_address_space_usage;
-    vespalib::MemoryUsage _cached_dictionary_btree_usage;
-    vespalib::MemoryUsage _cached_dictionary_hash_usage;
+    vespalib::MemoryUsage  _cached_dictionary_btree_usage;
+    vespalib::MemoryUsage  _cached_dictionary_hash_usage;
 
     EnumStoreT(const EnumStoreT & rhs) = delete;
     EnumStoreT & operator=(const EnumStoreT & rhs) = delete;
