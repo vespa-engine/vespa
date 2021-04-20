@@ -3,7 +3,9 @@ package com.yahoo.tensor.functions;
 
 import com.google.common.collect.ImmutableList;
 
+import java.util.Comparator;
 import java.util.List;
+import java.util.PriorityQueue;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.DoubleBinaryOperator;
 import java.util.function.DoubleUnaryOperator;
@@ -332,27 +334,81 @@ public class ScalarFunctions {
     }
 
     public static class Erf implements DoubleUnaryOperator {
+        static final Comparator<Double> byAbs = (x,y) -> Double.compare(Math.abs(x), Math.abs(y));
+
+        static double kummer(double a, double b, double z) {
+            PriorityQueue<Double> terms = new PriorityQueue<>(byAbs);
+            double term = 1.0;
+            long n = 0;
+            while (Math.abs(term) > Double.MIN_NORMAL) {
+                terms.add(term);
+                term *= (a+n);
+                term /= (b+n);
+                ++n;
+                term *= z;
+                term /= n;
+            }
+            double sum = terms.remove();
+            while (! terms.isEmpty()) {
+                sum += terms.remove();
+                terms.add(sum);
+                sum = terms.remove();
+            }
+            return sum;
+        }
+
+        static double approx_erfc(double x) {
+            double sq = x*x;
+            double mult = Math.exp(-sq) / (x * Math.sqrt(Math.PI));
+            double term = 1.0;
+            long n = 1;
+            double sum = 0.0;
+            while ((sum + term) != sum) {
+                double pterm = term;
+                sum += term;
+                term = 0.5 * pterm * n / sq;
+                if (term > pterm) {
+                    sum -= 0.5 * pterm;
+                    return sum*mult;
+                }
+                n += 2;
+                pterm = term;
+                sum -= term;
+                term = 0.5 * pterm * n / sq;
+                if (term > pterm) {
+                    sum += 0.5 * pterm;
+                    return sum*mult;
+                }
+                n += 2;
+            }
+            return sum*mult;
+        }
+
         @Override
         public double applyAsDouble(double operand) { return erf(operand); }
         @Override
         public String toString() { return "f(a)(erf(a))"; }
 
-        // Use Horner's method
-        // From https://introcs.cs.princeton.edu/java/21function/ErrorFunction.java.html
+        static final double nearZeroMultiplier = 2.0 / Math.sqrt(Math.PI);
+
         public static double erf(double v) {
-            double t = 1.0 / (1.0 + 0.5 * Math.abs(v));
-            double ans = 1 - t * Math.exp(-v*v - 1.26551223 +
-                                           t * ( 1.00002368 +
-                                           t * ( 0.37409196 +
-                                           t * ( 0.09678418 +
-                                           t * (-0.18628806 +
-                                           t * ( 0.27886807 +
-                                           t * (-1.13520398 +
-                                           t * ( 1.48851587 +
-                                           t * (-0.82215223 +
-                                           t * ( 0.17087277))))))))));
-            if (v >= 0) return  ans;
-            else        return -ans;
+            if (v < 0) {
+                return -erf(Math.abs(v));
+            }
+            if (v < 1.0e-10) {
+                // Just use the derivate when very near zero:
+                return v * nearZeroMultiplier;
+            }
+            if (v <= 1.0) {
+                // works best when v is small
+                return v * nearZeroMultiplier * kummer(0.5, 1.5, -v*v);
+            }
+            if (v < 4.3) {
+                // slower, but works with bigger v
+                return v * nearZeroMultiplier * Math.exp(-v*v) * kummer(1.0, 1.5, v*v);
+            }
+            // works only with "very big" v
+            return 1.0 - approx_erfc(v);
         }
     }
 
