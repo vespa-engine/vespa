@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepo
 import java.time.Duration;
 import java.util.EnumSet;
 import java.util.Map;
+import java.util.Optional;
 import java.util.function.Function;
 import java.util.logging.Logger;
 import java.util.regex.Matcher;
@@ -50,12 +51,8 @@ public class HostInfoUpdater extends ControllerMaintainer {
                     if (!shouldUpdateSwitch(node, nodeEntity) && !shouldUpdateModel(node, nodeEntity)) continue;
 
                     NodeRepositoryNode updatedNode = new NodeRepositoryNode();
-                    if (nodeEntity.switchHostname().isPresent()) {
-                        updatedNode.setSwitchHostname(nodeEntity.switchHostname().get());
-                    }
-                    if (nodeEntity.model().isPresent()) {
-                        updatedNode.setModelName(nodeEntity.model().get());
-                    }
+                    nodeEntity.switchHostname().ifPresent(updatedNode::setSwitchHostname);
+                    buildModelName(nodeEntity).ifPresent(updatedNode::setModelName);
                     nodeRepository.patchNode(zone, node.hostname().value(), updatedNode);
                     hostsUpdated++;
                 }
@@ -66,6 +63,12 @@ public class HostInfoUpdater extends ControllerMaintainer {
             }
         }
         return true;
+    }
+
+    private static Optional<String> buildModelName(NodeEntity nodeEntity) {
+        if(nodeEntity.manufacturer().isEmpty() || nodeEntity.model().isEmpty())
+            return Optional.empty();
+        return Optional.of(nodeEntity.manufacturer().get() + " " + nodeEntity.model().get());
     }
 
     /** Returns the hostname that given host is registered under in the {@link EntityService} */
@@ -86,7 +89,8 @@ public class HostInfoUpdater extends ControllerMaintainer {
     private static boolean shouldUpdateModel(Node node, NodeEntity nodeEntity) {
         if (nodeEntity == null) return false;
         if (nodeEntity.model().isEmpty())  return false;
-        return !node.modelName().equals(nodeEntity.model());
+        if (nodeEntity.manufacturer().isEmpty()) return false;
+        return !node.modelName().equals(buildModelName(nodeEntity));
     }
 
 }

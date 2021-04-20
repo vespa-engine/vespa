@@ -49,7 +49,7 @@ public class HostInfoUpdaterTest {
         // One host is moved to a different switch
         Node host = allNodes(tester).stream().filter(node -> node.type().isHost()).findFirst().get();
         String newSwitch = "tor2-" + host.hostname().value();
-        NodeEntity nodeEntity = new NodeEntity(host.hostname().value(), "Lenovo RD350G", "", newSwitch);
+        NodeEntity nodeEntity = new NodeEntity(host.hostname().value(), "RD350G", "Lenovo", newSwitch);
         tester.serviceRegistry().entityService().addNodeEntity(nodeEntity);
 
         // Host is updated
@@ -58,17 +58,18 @@ public class HostInfoUpdaterTest {
         assertEquals(newSwitch, getNode(host.hostname(), tester).switchHostname().get());
 
         // Host has updated model
-        String newModel = "quanta computer Quanta q801";
-        nodeEntity = new NodeEntity(host.hostname().value(), newModel, "", newSwitch);
+        String newModel = "Quanta q801";
+        String manufacturer = "quanta computer";
+        nodeEntity = new NodeEntity(host.hostname().value(), newModel, manufacturer, newSwitch);
         tester.serviceRegistry().entityService().addNodeEntity(nodeEntity);
 
         // Host is updated
         tester.serviceRegistry().configServer().nodeRepository().allowPatching(true);
         maintainer.maintain();
-        assertEquals(newModel, getNode(host.hostname(), tester).modelName().get());
+        assertEquals(manufacturer + " " + newModel, getNode(host.hostname(), tester).modelName().get());
 
         // Host keeps old switch hostname if removed from the node entity
-        nodeEntity = new NodeEntity(host.hostname().value(), newModel, "", "");
+        nodeEntity = new NodeEntity(host.hostname().value(), newModel, manufacturer, "");
         tester.serviceRegistry().entityService().addNodeEntity(nodeEntity);
         maintainer.maintain();
         assertEquals(newSwitch, getNode(host.hostname(), tester).switchHostname().get());
@@ -77,7 +78,7 @@ public class HostInfoUpdaterTest {
         nodeEntity = new NodeEntity(host.hostname().value(), "", "", newSwitch);
         tester.serviceRegistry().entityService().addNodeEntity(nodeEntity);
         maintainer.maintain();
-        assertEquals(newModel, getNode(host.hostname(), tester).modelName().get());
+        assertEquals(manufacturer + " " + newModel, getNode(host.hostname(), tester).modelName().get());
 
         // Updates node registered under a different hostname
         ZoneId zone = tester.zoneRegistry().zones().controllerUpgraded().all().ids().get(0);
@@ -90,7 +91,7 @@ public class HostInfoUpdaterTest {
                                             .build();
         tester.serviceRegistry().configServer().nodeRepository().putNodes(zone, List.of(configNode, configHost));
         String switchHostname = switchHostname(configHost);
-        NodeEntity configNodeEntity = new NodeEntity("cfg3"  + hostnameSuffix, "Lenovo RD350G", "", switchHostname);
+        NodeEntity configNodeEntity = new NodeEntity("cfg3"  + hostnameSuffix, "RD350G", "Lenovo", switchHostname);
         tester.serviceRegistry().entityService().addNodeEntity(configNodeEntity);
         maintainer.maintain();
         assertEquals(switchHostname, getNode(configHost.hostname(), tester).switchHostname().get());
@@ -119,7 +120,7 @@ public class HostInfoUpdaterTest {
     private static void addNodeEntities(ControllerTester tester) {
         for (var node : allNodes(tester)) {
             if (!node.type().isHost()) continue;
-            NodeEntity nodeEntity = new NodeEntity(node.hostname().value(), "Lenovo RD350G", "", switchHostname(node));
+            NodeEntity nodeEntity = new NodeEntity(node.hostname().value(), "RD350G", "Lenovo", switchHostname(node));
             tester.serviceRegistry().entityService().addNodeEntity(nodeEntity);
         }
     }
