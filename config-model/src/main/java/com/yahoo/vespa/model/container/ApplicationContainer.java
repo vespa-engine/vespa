@@ -8,11 +8,7 @@ import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeResources;
-import com.yahoo.container.bundle.BundleInstantiationSpecification;
-import com.yahoo.osgi.provider.model.ComponentModel;
-import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.search.config.QrStartConfig;
-import com.yahoo.vespa.model.container.component.Component;
 
 /**
  * A container that is typically used by container clusters set up from the user application.
@@ -34,14 +30,6 @@ public final class ApplicationContainer extends Container implements
     public ApplicationContainer(AbstractConfigProducer<?> parent, String name, boolean retired, int index, DeployState deployState) {
         super(parent, name, retired, index, deployState);
         this.isHostedVespa = deployState.isHosted();
-
-        addComponent(getFS4ResourcePool()); // TODO Remove when FS4 based search protocol is gone
-    }
-
-    private static Component<?, ComponentModel> getFS4ResourcePool() {
-        BundleInstantiationSpecification spec = BundleInstantiationSpecification.
-                getInternalSearcherSpecificationFromStrings(FS4ResourcePool.class.getName(), null);
-        return new Component<>(new ComponentModel(spec));
     }
 
     @Override
