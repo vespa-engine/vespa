@@ -75,7 +75,7 @@ EnumStoreT<EntryT>::EnumStoreT(bool has_postings, const search::DictionaryConfig
     _store.set_dictionary(make_enum_store_dictionary(*this, has_postings, dict_cfg,
                                                      std::make_unique<ComparatorType>(_store.get_data_store()),
                                                      (has_string_type() ?
-                                                      std::make_unique<FoldedComparatorType>(_store.get_data_store()) :
+                                                      std::make_unique<ComparatorType>(_store.get_data_store(), true) :
                                                       std::unique_ptr<vespalib::datastore::EntryComparator>())));
     _dict = static_cast<IEnumStoreDictionary*>(&_store.get_dictionary());
 }
@@ -166,14 +166,6 @@ EnumStoreT<EntryT>::find_enum(EntryType value, IEnumStore::EnumHandle& e) const
         return true;
     }
     return false;
-}
-
-template <typename EntryT>
-std::vector<IEnumStore::EnumHandle>
-EnumStoreT<EntryT>::find_folded_enums(EntryType value) const
-{
-    auto cmp = make_folded_comparator(value);
-    return _dict->find_matching_enums(cmp);
 }
 
 template <typename EntryT>

@@ -84,7 +84,7 @@ public:
     using EntryRef = vespalib::datastore::EntryRef;
     using EnumIndex = IEnumStore::Index;
     using EnumStore = EnumStoreType;
-    using FoldedComparatorType = typename EnumStore::FoldedComparatorType;
+    using ComparatorType = typename EnumStore::ComparatorType;
     using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using PostingList = typename Parent::PostingList;
     using PostingMap = typename Parent::PostingMap;

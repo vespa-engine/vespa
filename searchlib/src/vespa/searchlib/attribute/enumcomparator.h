@@ -34,82 +34,32 @@ class EnumStoreStringComparator : public vespalib::datastore::UniqueStoreStringC
 protected:
     using ParentType = vespalib::datastore::UniqueStoreStringComparator<IEnumStore::InternalIndex>;
     using DataStoreType = ParentType::DataStoreType;
+private:
     using ParentType::get;
 
-    static int compare(const char* lhs, const char* rhs);
-
 public:
-    EnumStoreStringComparator(const DataStoreType& data_store);
-
-    /**
-     * Creates a comparator using the given low-level data store and that uses the
-     * given value during compare if the enum index is invalid.
-     */
-    EnumStoreStringComparator(const DataStoreType& data_store, const char* fallback_value);
-
-    static bool equal(const char* lhs, const char* rhs) {
-        return compare(lhs, rhs) == 0;
-    }
-
-    bool less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override {
-        return compare(get(lhs), get(rhs)) < 0;
-    }
-    bool equal(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override {
-        return compare(get(lhs), get(rhs)) == 0;
-    }
-};
-
-
-/**
- * Less-than comparator used for folded-only comparing strings stored in an enum store.
- *
- * The input string values are first folded, then compared.
- * There is NO fallback if they are equal.
- */
-class EnumStoreFoldedStringComparator : public EnumStoreStringComparator {
-private:
-    using ParentType = EnumStoreStringComparator;
-
-    bool   _prefix;
-    size_t _prefix_len;
-
-    inline bool use_prefix() const { return _prefix; }
-    static int compare_folded(const char* lhs, const char* rhs);
-    static int compare_folded_prefix(const char* lhs, const char* rhs, size_t prefix_len);
-
-public:
-    /**
-     * Creates a comparator using the given low-level data store.
-     *
-     * @param prefix whether we should perform prefix compare.
-     */
-    EnumStoreFoldedStringComparator(const DataStoreType& data_store);
-
-    /**
-     * Creates a comparator using the given low-level data store and that uses the
-     * given value during compare if the enum index is invalid.
-     *
-     * @param prefix whether we should perform prefix compare.
-     */
-    EnumStoreFoldedStringComparator(const DataStoreType& data_store,
-                                    const char* fallback_value, bool prefix);
-    EnumStoreFoldedStringComparator(const DataStoreType& data_store, const char* fallback_value)
-        : EnumStoreFoldedStringComparator(data_store, fallback_value, false)
+    EnumStoreStringComparator(const DataStoreType& data_store)
+        : EnumStoreStringComparator(data_store, false)
     {}
+    EnumStoreStringComparator(const DataStoreType& data_store, bool fold);
 
-    static bool equal(const char* lhs, const char* rhs) {
-        return compare_folded(lhs, rhs) == 0;
-    }
+    /**
+     * Creates a comparator using the given low-level data store and that uses the
+     * given value during compare if the enum index is invalid.
+     */
+    EnumStoreStringComparator(const DataStoreType& data_store, const char* fallback_value)
+        : EnumStoreStringComparator(data_store, false, fallback_value)
+    {}
+    EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* fallback_value);
+    EnumStoreStringComparator(const DataStoreType& data_store, const char* fallback_value, bool prefix);
 
-    bool less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override {
-        if (use_prefix()) {
-            return compare_folded_prefix(get(lhs), get(rhs), _prefix_len) < 0;
-        }
-        return compare_folded(get(lhs), get(rhs)) < 0;
-    }
-    bool equal(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override {
-        return compare_folded(get(lhs), get(rhs)) == 0;
-    }
+    bool less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override;
+    bool equal(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override;
+private:
+    inline bool use_prefix() const { return _prefix; }
+    const bool _fold;
+    const bool _prefix;
+    uint32_t   _prefix_len;
 };
 
 extern template class EnumStoreComparator<int8_t>;
