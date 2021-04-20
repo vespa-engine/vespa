@@ -29,12 +29,16 @@ public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig
         this.totalNodes = totalNodes;
     }
 
+    /** Returns the final redundancy per group */
     public int finalRedundancy() { return effectiveFinalRedundancy()/groups; }
+
     public int readyCopies() { return effectiveReadyCopies()/groups; }
     public int groups() { return groups; }
     public int totalNodes() { return totalNodes; }
 
     public int effectiveInitialRedundancy() { return Math.min(totalNodes, initialRedundancy * groups); }
+
+    /** Returns the final redundancy over all groups */
     public int effectiveFinalRedundancy() { return Math.min(totalNodes, finalRedundancy * groups); }
     public int effectiveReadyCopies() { return Math.min(totalNodes, readyCopies * groups); }
 
