@@ -131,4 +131,11 @@ void handle_require_eq_failure [[noreturn]] (const A& a, const B& b, const char 
                                         VESPA_STRINGIZE(a) " == " VESPA_STRINGIZE(b), \
                                         __FILE__, __LINE__)
 
+/**
+ * Signal the failure of some requirement with a message.
+ * Can be used instead of abort()
+ **/
+#define REQUIRE_FAILED(msg) \
+    vespalib::handle_require_failure(msg, __FILE__, __LINE__)
+
 } // namespace

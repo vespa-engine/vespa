@@ -7,6 +7,8 @@
 #include "value.h"
 #include "value_codec.h"
 #include "value_type.h"
+#include <vespa/vespalib/util/overload.h>
+#include <vespa/vespalib/util/visit_ranges.h>
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/eval/eval/test/reference_evaluation.h>
 #include <vespa/vespalib/data/slime/slime.h>
@@ -32,6 +34,123 @@ TensorSpec::Address extract_address(const slime::Inspector &address) {
     address.traverse(extractor);
     return extractor.address;
 }
+
+vespalib::string addr_to_compact_string(const TensorSpec::Address &addr) {
+    size_t n = 0;
+    vespalib::string str("[");
+    for (const auto &[dim, label]: addr) {
+        if (n++) {
+            str.append(",");
+        }
+        if (label.is_mapped()) {
+            str.append(label.name);
+        } else {
+            str.append(make_string("%zu", label.index));
+        }
+    }
+    str.append("]");
+    return str;
+}
+
+vespalib::string value_to_verbose_string(const TensorSpec::Value &value) {
+    return make_string("%g (%a)", value.value, value.value);
+}
+
+struct DiffTable {
+    struct Entry {
+        vespalib::string tag;
+        vespalib::string lhs;
+        vespalib::string rhs;
+        bool is_separator() const {
+            return (tag.empty() && lhs.empty() && rhs.empty());
+        }
+        static Entry separator() { return {"","",""}; }
+        static Entry header(const vespalib::string &lhs_desc,
+                            const vespalib::string &rhs_desc)
+        {
+            return {"", lhs_desc, rhs_desc};
+        }
+        static Entry only_lhs(const TensorSpec::Address &addr,
+                              const TensorSpec::Value &lhs)
+        {
+            return {addr_to_compact_string(addr),
+                    value_to_verbose_string(lhs),
+                    "<missing>"};
+        }
+        static Entry only_rhs(const TensorSpec::Address &addr,
+                              const TensorSpec::Value &rhs)
+        {
+            return {addr_to_compact_string(addr),
+                    "<missing>",
+                    value_to_verbose_string(rhs)};
+        }
+        static Entry value_mismatch(const TensorSpec::Address &addr,
+                                    const TensorSpec::Value &lhs,
+                                    const TensorSpec::Value &rhs)
+        {
+            return {addr_to_compact_string(addr),
+                    value_to_verbose_string(lhs),
+                    value_to_verbose_string(rhs)};
+        }
+        ~Entry();
+    };
+    struct Result {
+        size_t tag_len;
+        size_t lhs_len;
+        size_t rhs_len;
+        vespalib::string str;
+        Result(size_t tag_len_in, size_t lhs_len_in, size_t rhs_len_in)
+          : tag_len(tag_len_in + 1), lhs_len(lhs_len_in + 1), rhs_len(rhs_len_in + 1),
+            str() {}
+        void add(const vespalib::string &stuff) {
+            str.append(stuff);
+        }
+        void add(const vespalib::string &stuff, size_t width, char pad = ' ') {
+            int n = (width - stuff.size());
+            for (int i = 0; i < n; ++i) {
+                str.push_back(pad);
+            }
+            str.append(stuff);
+        }
+        void add(const Entry &entry) {
+            if (entry.is_separator()) {
+                add("+");
+                add("", tag_len, '-');
+                add("-+");
+                add("", lhs_len, '-');
+                add("-+");
+                add("", rhs_len, '-');
+                add("-+\n");
+            } else {
+                add("|");
+                add(entry.tag, tag_len);
+                add(" |");
+                add(entry.lhs, lhs_len);
+                add(" |");
+                add(entry.rhs, rhs_len);
+                add(" |\n");
+            }
+        }
+    };
+    size_t tag_len = 0;
+    size_t lhs_len = 0;
+    size_t rhs_len = 0;
+    std::vector<Entry> entries;
+    void add(const Entry &entry) {
+        tag_len = std::max(tag_len, entry.tag.size());
+        lhs_len = std::max(lhs_len, entry.lhs.size());
+        rhs_len = std::max(rhs_len, entry.rhs.size());
+        entries.push_back(entry);
+    }
+    vespalib::string to_string() {
+        Result res(tag_len, lhs_len, rhs_len);
+        for (const auto &entry: entries) {
+            res.add(entry);
+        }
+        return std::move(res.str);
+    }
+};
+DiffTable::Entry::~Entry() = default;
 
 struct NormalizeTensorSpec {
     /*
@@ -140,19 +259,7 @@ TensorSpec::to_string() const
 {
     vespalib::string out = make_string("spec(%s) {\n", _type.c_str());
     for (const auto &cell: _cells) {
-        size_t n = 0;
-        out.append("  [");
-        for (const auto &label: cell.first) {
-            if (n++) {
-                out.append(",");
-            }
-            if (label.second.is_mapped()) {
-                out.append(label.second.name);
-            } else {
-                out.append(make_string("%zu", label.second.index));
-            }
-        }
-        out.append(make_string("]: %g\n", cell.second.value));
+        out.append(make_string("  %s: %g\n", addr_to_compact_string(cell.first).c_str(), cell.second.value));
     }
     out.append("}");
     return out;
@@ -230,6 +337,30 @@ TensorSpec::normalize() const
     return typify_invoke<1,TypifyCellType,NormalizeTensorSpec>(my_type.cell_type(), my_type, *this);
 }
 
+vespalib::string
+TensorSpec::diff(const TensorSpec &lhs, const vespalib::string &lhs_desc,
+                 const TensorSpec &rhs, const vespalib::string &rhs_desc)
+{
+    using Entry = DiffTable::Entry;
+    DiffTable table;
+    table.add(Entry::separator());
+    table.add(Entry::header(lhs_desc, rhs_desc));
+    table.add(Entry::header(lhs.type(), rhs.type()));
+    auto visitor = overload {
+        [&](visit_ranges_first, const auto &a) { table.add(Entry::only_lhs(a.first, a.second)); },
+        [&](visit_ranges_second, const auto &b) { table.add(Entry::only_rhs(b.first, b.second)); },
+        [&](visit_ranges_both, const auto &a, const auto &b) {
+            if (!(a.second == b.second)) {
+                table.add(Entry::value_mismatch(a.first, a.second, b.second));
+            }
+        }
+    };
+    table.add(Entry::separator());
+    visit_ranges(visitor, lhs._cells.begin(), lhs._cells.end(), rhs._cells.begin(), rhs._cells.end(),
+                 [](const auto &a, const auto &b){ return (a.first < b.first); });
+    table.add(Entry::separator());
+    return table.to_string();
+}
 
 } // namespace vespalib::eval
 } // namespace vespalib

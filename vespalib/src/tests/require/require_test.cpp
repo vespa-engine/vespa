@@ -156,4 +156,19 @@ TEST(RequireTest, uncomment_to_manually_check_uncompilable_code) {
 
 //-----------------------------------------------------------------------------
 
+TEST(RequireTest, explicit_require_failure) {
+    EXPECT_THROW(
+        {
+            try { REQUIRE_FAILED("this is my message"); }
+            catch(const E &e) {
+                fprintf(stderr, "e.getMessage() is >>>%s<<<\n", e.getMessage().c_str());
+                fprintf(stderr, "e.getLocation() is >>>%s<<<\n", e.getLocation().c_str());
+                fprintf(stderr, "e.what() is >>>%s<<<\n", e.what());
+                throw;
+            }
+        }, E);
+}
+
+//-----------------------------------------------------------------------------
+
 GTEST_MAIN_RUN_ALL_TESTS()
