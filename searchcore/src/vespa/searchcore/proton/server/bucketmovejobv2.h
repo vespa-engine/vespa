@@ -55,7 +55,6 @@ private:
     using BucketMoverSP = std::shared_ptr<BucketMover>;
     using Bucket2Mover = std::map<BucketId, BucketMoverSP>;
     using Movers = std::vector<BucketMoverSP>;
-    using MoveKey = BucketMover::MoveKey;
     using GuardedMoveOps = BucketMover::GuardedMoveOps;
     std::shared_ptr<IBucketStateCalculator>   _calc;
     IDocumentMoveHandler                     &_moveHandler;
@@ -93,10 +92,9 @@ private:
                     const vespalib::string &docTypeName,
                     document::BucketSpace bucketSpace);
 
-    void startMove(BucketMoverSP mover, size_t maxDocsToMove);
-    static void prepareMove(std::shared_ptr<BucketMoveJobV2> job, BucketMoverSP mover,
-                            std::vector<MoveKey> keysToMove, IDestructorCallbackSP context);
-    void completeMove(BucketMoverSP mover, GuardedMoveOps moveOps, IDestructorCallbackSP context);
+    void startMove(BucketMover & mover, size_t maxDocsToMove);
+    static void prepareMove(std::shared_ptr<BucketMoveJobV2> job, BucketMover::MoveKeys keys, IDestructorCallbackSP context);
+    void completeMove(GuardedMoveOps moveOps, IDestructorCallbackSP context);
     bool checkIfMoverComplete(const BucketMover & mover);
     void considerBucket(const bucketdb::Guard & guard, BucketId bucket);
     void reconsiderBucket(const bucketdb::Guard & guard, BucketId bucket);
