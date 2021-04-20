@@ -306,7 +306,6 @@ public class ContainerOperationsImpl implements ContainerOperations {
                 "var/db/vespa",
                 "var/jdisc_container",
                 "var/vespa",
-                "var/yca",
                 "var/zookeeper");
 
         if (context.nodeType() == NodeType.proxy) {
