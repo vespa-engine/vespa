@@ -396,7 +396,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         assertEquals(256, qrStartConfig.jvm().heapsize());
         assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
         assertEquals(2, qrStartConfig.jvm().availableProcessors());
-        assertTrue(qrStartConfig.jvm().verbosegc());
+        assertFalse(qrStartConfig.jvm().verbosegc());
         assertEquals("-XX:+UseG1GC -XX:MaxTenuringThreshold=15", qrStartConfig.jvm().gcopts());
         assertEquals(512, qrStartConfig.jvm().stacksize());
         assertEquals(0, qrStartConfig.jvm().directMemorySizeCache());
@@ -441,7 +441,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         assertEquals(32, qrStartConfig.jvm().minHeapsize());
         // Overridden values from ClusterControllerContainerCluster
         assertEquals(256, qrStartConfig.jvm().heapsize());
-        assertTrue(qrStartConfig.jvm().verbosegc());
+        assertFalse(qrStartConfig.jvm().verbosegc());
     }
 
     @Test
