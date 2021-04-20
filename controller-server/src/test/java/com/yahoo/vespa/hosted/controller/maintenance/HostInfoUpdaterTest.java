@@ -66,7 +66,7 @@ public class HostInfoUpdaterTest {
         // Host is updated
         tester.serviceRegistry().configServer().nodeRepository().allowPatching(true);
         maintainer.maintain();
-        assertEquals(newModel, getNode(host.hostname(), tester).modelName().get());
+        assertEquals(manufacturer + " " + newModel, getNode(host.hostname(), tester).modelName().get());
 
         // Host keeps old switch hostname if removed from the node entity
         nodeEntity = new NodeEntity(host.hostname().value(), newModel, manufacturer, "");
@@ -78,7 +78,7 @@ public class HostInfoUpdaterTest {
         nodeEntity = new NodeEntity(host.hostname().value(), "", "", newSwitch);
         tester.serviceRegistry().entityService().addNodeEntity(nodeEntity);
         maintainer.maintain();
-        assertEquals(newModel, getNode(host.hostname(), tester).modelName().get());
+        assertEquals(manufacturer + " " + newModel, getNode(host.hostname(), tester).modelName().get());
 
         // Updates node registered under a different hostname
         ZoneId zone = tester.zoneRegistry().zones().controllerUpgraded().all().ids().get(0);
