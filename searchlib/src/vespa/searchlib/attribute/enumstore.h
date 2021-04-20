@@ -53,6 +53,7 @@ public:
 private:
     UniqueStoreType        _store;
     IEnumStoreDictionary*  _dict;
+    bool                   _is_folded;
     ComparatorType         _comparator;
     ComparatorType         _foldedComparator;
     vespalib::MemoryUsage  _cached_values_memory_usage;
@@ -91,6 +92,7 @@ public:
     }
 
     uint32_t get_num_uniques() const override { return _dict->get_num_uniques(); }
+    bool is_folded() const { return _is_folded;}
 
     vespalib::MemoryUsage get_values_memory_usage() const override { return _store.get_allocator().get_data_store().getMemoryUsage(); }
     vespalib::MemoryUsage get_dictionary_memory_usage() const override { return _dict->get_memory_usage(); }
@@ -215,12 +217,12 @@ public:
     template <typename Type>
     ComparatorType
     make_folded_comparator(const Type& fallback_value) const {
-        return ComparatorType(_store.get_data_store(), true, fallback_value);
+        return ComparatorType(_store.get_data_store(), is_folded(), fallback_value);
     }
     template<typename Type>
     ComparatorType
     make_folded_comparator_prefix(const Type& fallback_value) const {
-        return ComparatorType(_store.get_data_store(), fallback_value, true);
+        return ComparatorType(_store.get_data_store(), is_folded(), fallback_value, true);
     }
     template<typename Type>
     std::vector<IEnumStore::EnumHandle>
