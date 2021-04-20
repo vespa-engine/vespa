@@ -76,4 +76,4 @@ findhost
 
 LJ=${VESPA_HOME}/lib/jars
 
-exec java -cp ${LJ}/searchlib.jar:${LJ}/vespaclient-java-jar-with-dependencies.jar com.yahoo.searchlib.tensor.EvaluateTensorConformance "$@"
+exec java -cp ${LJ}/vespajlib.jar:${LJ}/searchlib.jar:${LJ}/vespaclient-java-jar-with-dependencies.jar com.yahoo.searchlib.tensor.EvaluateTensorConformance "$@"
