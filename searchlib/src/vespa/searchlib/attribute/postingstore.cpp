@@ -32,7 +32,9 @@ PostingStoreBase2::PostingStoreBase2(IEnumStoreDictionary& dictionary, Status &s
       _bvs(),
       _dictionary(dictionary),
       _status(status),
-      _bvExtraBytes(0)
+      _bvExtraBytes(0),
+      _cached_allocator_memory_usage(), 
+      _cached_store_memory_usage()
 {
 }
 
@@ -629,6 +631,21 @@ PostingStore<DataT>::getMemoryUsage() const
 }
 
 template <typename DataT>
+vespalib::MemoryUsage
+PostingStore<DataT>::update_stat()
+{
+    vespalib::MemoryUsage usage;
+    _cached_allocator_memory_usage = _allocator.getMemoryUsage();
+    _cached_store_memory_usage = _store.getMemoryUsage();
+    usage.merge(_cached_allocator_memory_usage);
+    usage.merge(_cached_store_memory_usage);
+    uint64_t bvExtraBytes = _bvExtraBytes;
+    usage.incUsedBytes(bvExtraBytes);
+    usage.incAllocatedBytes(bvExtraBytes);
+    return usage;
+}
+
+template <typename DataT>
 void
 PostingStore<DataT>::move_btree_nodes(EntryRef ref)
 {
@@ -718,6 +735,34 @@ PostingStore<DataT>::compact_worst_buffers()
     _dictionary.normalize_posting_lists([this](EntryRef posting_idx) -> EntryRef
                                         { return move(posting_idx); });
     this->finishCompact(to_hold);
+}
+
+template <typename DataT>
+bool
+PostingStore<DataT>::consider_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy)
+{
+    if (_allocator.getNodeStore().has_held_buffers()) {
+        return false;
+    }
+    if (compaction_strategy.should_compact_memory(_cached_allocator_memory_usage.usedBytes(), _cached_allocator_memory_usage.deadBytes())) {
+        compact_worst_btree_nodes();
+        return true;
+    }
+    return false;
+}
+
+template <typename DataT>
+bool
+PostingStore<DataT>::consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy)
+{
+    if (_store.has_held_buffers()) {
+        return false;
+    }
+    if (compaction_strategy.should_compact_memory(_cached_store_memory_usage.usedBytes(), _cached_store_memory_usage.deadBytes())) {
+        compact_worst_buffers();
+        return true;
+    }
+    return false;
 }
 
 template class PostingStore<BTreeNoLeafData>;

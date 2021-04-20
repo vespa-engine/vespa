@@ -47,6 +47,8 @@ protected:
     IEnumStoreDictionary& _dictionary;
     Status            &_status;
     uint64_t           _bvExtraBytes;
+    vespalib::MemoryUsage _cached_allocator_memory_usage;
+    vespalib::MemoryUsage _cached_store_memory_usage;
 
     static constexpr uint32_t BUFFERTYPE_BITVECTOR = 9u;
 
@@ -184,12 +186,15 @@ public:
 
     static inline DataT bitVectorWeight();
     vespalib::MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage update_stat();
 
     void move_btree_nodes(EntryRef ref);
     EntryRef move(EntryRef ref);
 
     void compact_worst_btree_nodes();
     void compact_worst_buffers();
+    bool consider_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy);
+    bool consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy);
 private:
     size_t internalSize(uint32_t typeId, const RefType & iRef) const;
     size_t internalFrozenSize(uint32_t typeId, const RefType & iRef) const;

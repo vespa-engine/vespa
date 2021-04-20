@@ -128,10 +128,13 @@ PostingStoreTest::populate(uint32_t sequence_length)
 {
     auto& store = _store;
     auto& dictionary = _value_store.get_dictionary();
+    std::vector<EntryRef> refs;
+    for (int i = 0; i < 9000; ++i) {
+        refs.emplace_back(add_sequence(i + 6, i + 6 + sequence_length));
+    }
     dictionary.update_posting_list(_value_store.insert(1), _value_store.make_comparator(), [this, sequence_length](EntryRef) { return add_sequence(4, 4 + sequence_length); });
     dictionary.update_posting_list(_value_store.insert(2), _value_store.make_comparator(), [this, sequence_length](EntryRef) { return add_sequence(5, 5 + sequence_length); });
-    std::vector<EntryRef> refs;
-    for (int i = 0; i < 1000; ++i) {
+    for (int i = 9000; i < 11000; ++i) {
         refs.emplace_back(add_sequence(i + 6, i + 6 + sequence_length));
     }
     for (auto& ref : refs) {
@@ -156,10 +159,21 @@ PostingStoreTest::test_compact_sequence(uint32_t sequence_length)
     EntryRef old_ref1 = get_posting_ref(1);
     EntryRef old_ref2 = get_posting_ref(2);
     auto usage_before = store.getMemoryUsage();
-    for (uint32_t pass = 0; pass < 15; ++pass) {
-        store.compact_worst_buffers();
+    bool compaction_done = false;
+    search::CompactionStrategy compaction_strategy(0.05, 0.2);
+    for (uint32_t pass = 0; pass < 45; ++pass) {
+        store.update_stat();
+        auto guard = _gen_handler.takeGuard();
+        if (!store.consider_compact_worst_buffers(compaction_strategy)) {
+            compaction_done = true;
+            break;
+        }
+        inc_generation();
+        EXPECT_FALSE(store.consider_compact_worst_buffers(compaction_strategy));
+        guard = GenerationHandler::Guard();
         inc_generation();
     }
+    EXPECT_TRUE(compaction_done);
     EntryRef ref1 = get_posting_ref(1);
     EntryRef ref2 = get_posting_ref(2);
     EXPECT_NE(old_ref1, ref1);
@@ -178,10 +192,21 @@ PostingStoreTest::test_compact_btree_nodes(uint32_t sequence_length)
     EntryRef old_ref1 = get_posting_ref(1);
     EntryRef old_ref2 = get_posting_ref(2);
     auto usage_before = store.getMemoryUsage();
-    for (uint32_t pass = 0; pass < 15; ++pass) {
-        store.compact_worst_btree_nodes();
+    bool compaction_done = false;
+    search::CompactionStrategy compaction_strategy(0.05, 0.2);
+    for (uint32_t pass = 0; pass < 55; ++pass) {
+        store.update_stat();
+        auto guard = _gen_handler.takeGuard();
+        if (!store.consider_compact_worst_btree_nodes(compaction_strategy)) {
+            compaction_done = true;
+            break;
+        }
+        inc_generation();
+        EXPECT_FALSE(store.consider_compact_worst_btree_nodes(compaction_strategy));
+        guard = GenerationHandler::Guard();
         inc_generation();
     }
+    EXPECT_TRUE(compaction_done);
     EntryRef ref1 = get_posting_ref(1);
     EntryRef ref2 = get_posting_ref(2);
     EXPECT_EQ(old_ref1, ref1);

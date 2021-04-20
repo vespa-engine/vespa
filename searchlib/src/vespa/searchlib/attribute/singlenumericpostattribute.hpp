@@ -36,7 +36,7 @@ template <typename B>
 void
 SingleValueNumericPostingAttribute<B>::mergeMemoryStats(vespalib::MemoryUsage & total)
 {
-    total.merge(this->_postingList.getMemoryUsage());
+    total.merge(this->_postingList.update_stat());
 }
 
 template <typename B>
