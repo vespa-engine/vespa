@@ -72,7 +72,6 @@ public class DummyVdsNode {
         public void reset() {}
         public double get() { return 0.01; }
         public boolean shouldWarn(double v) { return false; }
-        public boolean shouldInform(double v) { return false; }
     }
     private final List<Req> waitingRequests = new LinkedList<>();
 

@@ -92,7 +92,6 @@ private:
     bool                     _reqPending;
     bool                     _scheduled;
     bool                     _reqDone;
-    bool                     _logOnSuccess;
     SpecList                 _specs;
     vespalib::GenCnt         _specsGen;
     vespalib::GenCnt         _updates;
