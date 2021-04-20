@@ -106,6 +106,17 @@ SingleValueEnumAttribute<B>::onCommit()
         this->incGeneration();
         this->updateStat(true);
     }
+    auto *pab = this->getIPostingListAttributeBase();
+    if (pab != nullptr) {
+        if (pab->consider_compact_worst_btree_nodes(this->getConfig().getCompactionStrategy())) {
+            this->incGeneration();
+            this->updateStat(true);
+        }
+        if (pab->consider_compact_worst_buffers(this->getConfig().getCompactionStrategy())) {
+            this->incGeneration();
+            this->updateStat(true);
+        }
+    }
 }
 
 template <typename B>

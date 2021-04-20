@@ -68,6 +68,8 @@ protected:
 
     void forwardedShrinkLidSpace(uint32_t newSize) override;
     vespalib::MemoryUsage getMemoryUsage() const override;
+    bool consider_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy) override;
+    bool consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy) override;
 
 public:
     const PostingList & getPostingList() const { return _postingList; }
