@@ -51,7 +51,7 @@ public:
         : EnumStoreStringComparator(data_store, false, fallback_value)
     {}
     EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* fallback_value);
-    EnumStoreStringComparator(const DataStoreType& data_store, const char* fallback_value, bool prefix);
+    EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* fallback_value, bool prefix);
 
     bool less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override;
     bool equal(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const override;

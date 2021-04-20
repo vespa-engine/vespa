@@ -46,9 +46,9 @@ EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_s
 {
 }
 
-EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, const char* fallback_value, bool prefix)
+EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* fallback_value, bool prefix)
     : ParentType(data_store, fallback_value),
-      _fold(true),
+      _fold(fold),
       _prefix(prefix),
       _prefix_len(0)
 {
