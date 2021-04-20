@@ -60,12 +60,12 @@ SlobrokList::logString()
     if (_slobrokSpecs.size() == 0) {
         return "[empty service location broker list]";
     }
-    std::string v = "[";
-    for (size_t i = 0 ; i < _slobrokSpecs.size(); ++i) {
-        if (i > 0) v += ", ";
+    std::string v;
+    v = _slobrokSpecs[0];
+    for (size_t i = 1 ; i < _slobrokSpecs.size(); ++i) {
+        v += " or ";
         v += _slobrokSpecs[i];
     }
-    v += "]";
     return v;
 }
 

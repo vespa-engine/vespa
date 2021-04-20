@@ -181,7 +181,6 @@ public class Register {
             reqDone = false;
 
             boolean logOnSuccess = false;
-            boolean logOnFailure = true;
             synchronized (this) {
                 if (req.methodName().equals(UNREGISTER_METHOD_NAME)) {
                     logOnSuccess = true;
@@ -192,21 +191,16 @@ public class Register {
                     lastRegisterSucceeded.remove(name);
                 } else {
                     final Boolean lastSucceeded = lastRegisterSucceeded.get(name);
-                    if (lastSucceeded == null) {
+                    if (lastSucceeded == null || lastSucceeded != !req.isError()) {
                         logOnSuccess = true;
-                        logOnFailure = false;
-                    } else if (lastSucceeded != !req.isError()) {
-                        logOnSuccess = true;
+                        lastRegisterSucceeded.put(name, !req.isError());
                     }
-                    lastRegisterSucceeded.put(name, !req.isError());
                 }
             }
 
             if (req.isError()) {
                  if (req.errorCode() != ErrorCode.METHOD_FAILED) {
-                     if (logOnFailure) {
-                         log.log(Level.INFO, logMessagePrefix() + " failed, will disconnect: " + req.errorMessage() + " (code " + req.errorCode() + ")");
-                     }
+                    log.log(Level.INFO, logMessagePrefix() + " failed, will disconnect: " + req.errorMessage() + " (code " + req.errorCode() + ")");
                     target.close();
                     target = null;
                 } else {
@@ -216,6 +210,7 @@ public class Register {
                 log.log(logOnSuccess ? Level.INFO : Level.FINE, logMessagePrefix() + " completed successfully");
                 backOff.reset();
             }
+
             req = null;
             name = null;
         }
@@ -224,7 +219,7 @@ public class Register {
             return; // current request still in progress
         }
         if (target != null && ! slobroks.contains(currSlobrok)) {
-            log.log(Level.INFO, "[RPC @ " + mySpec + "] location broker " + currSlobrok + " removed, will disconnect and use one of: "+slobroks);
+            log.log(Level.INFO, "RPC server " + mySpec + ": Slobrok server " + currSlobrok + " removed, will disconnect");
             target.close();
             target = null;
         }
@@ -232,10 +227,9 @@ public class Register {
             currSlobrok = slobroks.nextSlobrokSpec();
             if (currSlobrok == null) {
                 double delay = backOff.get();
-                Level level = Level.FINE;
-                if (backOff.shouldInform(delay)) level = Level.INFO;
-                if (backOff.shouldWarn(delay)) level = Level.WARNING;
-                log.log(level, "[RPC @ " + mySpec + "] no location brokers available, retrying: "+slobroks+" (in " + delay + " seconds)");
+                Level level = backOff.shouldWarn(delay) ? Level.WARNING : Level.FINE;
+                log.log(level, "RPC server " + mySpec + ": All Slobrok servers tried, will retry in " + delay
+                            + " seconds: " + slobroks);
                 updateTask.schedule(delay);
                 return;
             }
@@ -253,8 +247,8 @@ public class Register {
             }
 
             if (logFine) {
-                log.log(Level.FINE, "[RPC @ " + mySpec + "] Connect to location broker " + currSlobrok +
-                        " and reregister all service names: " + namesString);
+                log.log(Level.FINE, "RPC server " + mySpec + ": Connect to Slobrok server " + currSlobrok +
+                        " and reregister all Slobrok names: " + namesString);
             }
         }
 
@@ -267,7 +261,7 @@ public class Register {
                 req = new Request(REGISTER_METHOD_NAME);
             } else {
                 pending.addAll(names);
-                log.log(Level.FINE, "[RPC @ " + mySpec + "] Reregister all service names in 30 seconds: " + names);
+                log.log(Level.FINE, "RPC server " + mySpec + ": Reregister all Slobrok names in 30 seconds: " + names);
                 updateTask.schedule(30.0);
                 return;
             }
@@ -280,9 +274,9 @@ public class Register {
     }
 
     private String logMessagePrefix() {
-        return "[RPC @ " + mySpec + "] "
-                + (req.methodName().equals(UNREGISTER_METHOD_NAME) ? "unregistering " : "registering ")
-                + name + " with location broker " + currSlobrok;
+        return "RPC server " + mySpec
+                + (req.methodName().equals(UNREGISTER_METHOD_NAME) ? " unregistering " : " registering ")
+                + name + " with Slobrok server " + currSlobrok;
     }
 
     private synchronized void handleRpcList(Request req) {

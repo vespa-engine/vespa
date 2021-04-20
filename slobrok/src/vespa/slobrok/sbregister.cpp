@@ -58,7 +58,6 @@ RegisterAPI::RegisterAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config
       _hooks(*this),
       _lock(),
       _reqDone(false),
-      _logOnSuccess(true),
       _busy(false),
       _slobrokSpecs(),
       _configurator(config.create(_slobrokSpecs)),
@@ -147,11 +146,6 @@ RegisterAPI::handleReqDone()
                     _req->GetErrorMessage());
             }
         } else {
-            if (_logOnSuccess && (_pending.size() == 0) && (_names.size() > 0)) {
-                LOG(info, "[RPC @ %s] registering %s with location broker %s completed successfully",
-                    createSpec(_orb).c_str(), _names[0].c_str(), _currSlobrok.c_str());
-                _logOnSuccess = false;
-            }
             // reset backoff strategy on any successful request
             _backOff.reset();
         }
@@ -167,14 +161,13 @@ RegisterAPI::handleReconnect()
     if (_configurator->poll() && _target != 0) {
         if (! _slobrokSpecs.contains(_currSlobrok)) {
             vespalib::string cps = _slobrokSpecs.logString();
-            LOG(warning, "[RPC @ %s] location broker %s removed, will disconnect and use one of: %s",
-                createSpec(_orb).c_str(), _currSlobrok.c_str(), cps.c_str());
+            LOG(warning, "current server %s not in list of location brokers: %s",
+                _currSlobrok.c_str(), cps.c_str());
             _target->SubRef();
             _target = 0;
         }
     }
     if (_target == 0) {
-        _logOnSuccess = true;
         _currSlobrok = _slobrokSpecs.nextSlobrokSpec();
         if (_currSlobrok.size() > 0) {
             // try next possible server.
@@ -192,13 +185,13 @@ RegisterAPI::handleReconnect()
             // possibly with a warning.
             double delay = _backOff.get();
             Schedule(delay);
-            const char * const msgfmt = "[RPC @ %s] no location brokers available, retrying: %s (in %.1f seconds)";
-            vespalib::string cps = _slobrokSpecs.logString();
             if (_backOff.shouldWarn()) {
-                LOG(warning, msgfmt, createSpec(_orb).c_str(), cps.c_str(), delay);
+                vespalib::string cps = _slobrokSpecs.logString();
+                LOG(warning, "cannot connect to location broker at %s "
+                    "(retry in %f seconds)", cps.c_str(), delay);
             } else {
-                LOG(debug, msgfmt, createSpec(_orb).c_str(), cps.c_str(), delay);
-            }
+                LOG(debug, "slobrok retry in %f seconds", delay);
+	    }
             return;
         }
     }

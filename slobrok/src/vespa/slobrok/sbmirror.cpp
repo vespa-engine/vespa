@@ -16,7 +16,6 @@ MirrorAPI::MirrorAPI(FRT_Supervisor &orb, const ConfiguratorFactory & config)
       _reqPending(false),
       _scheduled(false),
       _reqDone(false),
-      _logOnSuccess(true),
       _specs(),
       _specsGen(),
       _updates(),
@@ -235,11 +234,6 @@ MirrorAPI::handleReqDone()
         } else {
             _backOff.reset();
             // req done OK
-            if (_logOnSuccess) {
-                LOG(info, "successfully connected to location broker %s (mirror initialized with %zu service names)",
-                    _currSlobrok.c_str(), _specs.size());
-                _logOnSuccess = false;
-            }
             return true;
         }
     }
@@ -251,7 +245,6 @@ void
 MirrorAPI::handleReconnect()
 {
     if (_target == 0) {
-        _logOnSuccess = true;
         _currSlobrok = _slobrokSpecs.nextSlobrokSpec();
         if (_currSlobrok.size() > 0) {
             _target = _orb.GetTarget(_currSlobrok.c_str());
@@ -263,12 +256,10 @@ MirrorAPI::handleReconnect()
             }
             double delay = _backOff.get();
             reSched(delay);
-            std::string cps = _slobrokSpecs.logString();
-            const char * const msgfmt = "no location brokers available, retrying: %s (in %.1f seconds)";
             if (_backOff.shouldWarn()) {
-                LOG(warning, msgfmt, cps.c_str(), delay);
-            } else {
-                LOG(debug, msgfmt, cps.c_str(), delay);
+                std::string cps = _slobrokSpecs.logString();
+                LOG(warning, "cannot connect to location broker at %s (retry in %f seconds)",
+                    cps.c_str(), delay);
             }
         }
     }

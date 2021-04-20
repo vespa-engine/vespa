@@ -35,12 +35,4 @@ public interface BackOffPolicy
      * @param t current delay value
      **/
     public boolean shouldWarn(double t);
-
-    /**
-     * Check if a certain delay should result in an information message logged.
-     *
-     * @return true if we should log
-     * @param t current delay value
-     **/
-    public boolean shouldInform(double t);
 }
