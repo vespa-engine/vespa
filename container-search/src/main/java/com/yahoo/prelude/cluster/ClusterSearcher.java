@@ -4,12 +4,12 @@ package com.yahoo.prelude.cluster;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.chain.dependencies.After;
 import com.yahoo.component.provider.ComponentRegistry;
+import com.yahoo.container.QrConfig;
 import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.handler.VipStatus;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.fastsearch.ClusterParams;
 import com.yahoo.prelude.fastsearch.DocumentdbInfoConfig;
-import com.yahoo.prelude.fastsearch.FS4ResourcePool;
 import com.yahoo.prelude.fastsearch.FastSearcher;
 import com.yahoo.prelude.fastsearch.SummaryParameters;
 import com.yahoo.prelude.fastsearch.VespaBackEndSearcher;
@@ -66,7 +66,7 @@ public class ClusterSearcher extends Searcher {
                            ClusterConfig clusterConfig,
                            DocumentdbInfoConfig documentDbConfig,
                            ComponentRegistry<Dispatcher> dispatchers,
-                           FS4ResourcePool fs4ResourcePool,
+                           QrConfig qrConfig,
                            VipStatus vipStatus) {
         super(id);
 
@@ -92,12 +92,12 @@ public class ClusterSearcher extends Searcher {
         }
 
         if (searchClusterConfig.indexingmode() == STREAMING) {
-            VdsStreamingSearcher searcher = vdsCluster(fs4ResourcePool.getServerId(), searchClusterIndex,
+            VdsStreamingSearcher searcher = vdsCluster(qrConfig.discriminator(), searchClusterIndex,
                                                        searchClusterConfig, docSumParams, documentDbConfig);
             addBackendSearcher(searcher);
             vipStatus.addToRotation(searcher.getName());
         } else {
-            FastSearcher searcher = searchDispatch(searchClusterIndex, searchClusterName, fs4ResourcePool.getServerId(),
+            FastSearcher searcher = searchDispatch(searchClusterIndex, searchClusterName, qrConfig.discriminator(),
                                                    docSumParams, documentDbConfig, dispatchers);
             addBackendSearcher(searcher);
 
