@@ -106,12 +106,11 @@ public class ConnectorFactory {
             ALPNServerConnectionFactory alpnFactory = newAlpnConnectionFactory(List.of(http1Factory, http2Factory), http1Factory);
             SslConnectionFactory sslFactory = newSslConnectionFactory(metric, alpnFactory);
             if (proxyProtocolConfig.enabled()) {
+                ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
                 if (proxyProtocolConfig.mixedMode()) {
-                    ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
-                    DetectorConnectionFactory detectorFactory = newDetectorConnectionFactory(sslFactory, proxyProtocolFactory);
+                    DetectorConnectionFactory detectorFactory = newDetectorConnectionFactory(sslFactory);
                     return List.of(detectorFactory, proxyProtocolFactory, sslFactory, alpnFactory, http1Factory, http2Factory);
                 } else {
-                    ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
                     return List.of(proxyProtocolFactory, sslFactory, alpnFactory, http1Factory, http2Factory);
                 }
             } else {
@@ -120,12 +119,11 @@ public class ConnectorFactory {
         } else {
             SslConnectionFactory sslFactory = newSslConnectionFactory(metric, http1Factory);
             if (proxyProtocolConfig.enabled()) {
+                ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
                 if (proxyProtocolConfig.mixedMode()) {
-                    ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
-                    DetectorConnectionFactory detectorFactory = newDetectorConnectionFactory(sslFactory, proxyProtocolFactory);
+                    DetectorConnectionFactory detectorFactory = newDetectorConnectionFactory(sslFactory);
                     return List.of(detectorFactory, proxyProtocolFactory, sslFactory, http1Factory);
                 } else {
-                    ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
                     return List.of(proxyProtocolFactory, sslFactory, http1Factory);
                 }
             } else {
@@ -138,8 +136,6 @@ public class ConnectorFactory {
         // No support for proxy-protocol/http2 when using HTTP with TLS mixed mode
         HttpConnectionFactory httpFactory = newHttp1ConnectionFactory();
         SslConnectionFactory sslFactory = newSslConnectionFactory(metric, httpFactory);
-        // Detector connection factory with single alternative will fallback to next protocol in list (httpFactory in this case)
-        // Cannot specify HttpConnectionFactory as alternative it does not implement ConnectionFactory.Detecting
         DetectorConnectionFactory detectorFactory = newDetectorConnectionFactory(sslFactory);
         return List.of(detectorFactory, httpFactory, sslFactory);
     }
@@ -183,6 +179,7 @@ public class ConnectorFactory {
     }
 
     private DetectorConnectionFactory newDetectorConnectionFactory(ConnectionFactory.Detecting... alternatives) {
+        // Note: Detector connection factory with single alternative will fallback to next protocol in connection factory list
         return new DetectorConnectionFactory(alternatives);
     }
 
