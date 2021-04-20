@@ -106,12 +106,11 @@ public class ConnectorFactory {
             ALPNServerConnectionFactory alpnFactory = newAlpnConnectionFactory(List.of(http1Factory, http2Factory), http1Factory);
             SslConnectionFactory sslFactory = newSslConnectionFactory(metric, alpnFactory);
             if (proxyProtocolConfig.enabled()) {
+                ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
                 if (proxyProtocolConfig.mixedMode()) {
-                    ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
                     DetectorConnectionFactory detectorFactory = newDetectorConnectionFactory(sslFactory, proxyProtocolFactory);
                     return List.of(detectorFactory, proxyProtocolFactory, sslFactory, alpnFactory, http1Factory, http2Factory);
                 } else {
-                    ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
                     return List.of(proxyProtocolFactory, sslFactory, alpnFactory, http1Factory, http2Factory);
                 }
             } else {
@@ -120,12 +119,11 @@ public class ConnectorFactory {
         } else {
             SslConnectionFactory sslFactory = newSslConnectionFactory(metric, http1Factory);
             if (proxyProtocolConfig.enabled()) {
+                ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
                 if (proxyProtocolConfig.mixedMode()) {
-                    ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
                     DetectorConnectionFactory detectorFactory = newDetectorConnectionFactory(sslFactory, proxyProtocolFactory);
                     return List.of(detectorFactory, proxyProtocolFactory, sslFactory, http1Factory);
                 } else {
-                    ProxyConnectionFactory proxyProtocolFactory = newProxyProtocolConnectionFactory(sslFactory);
                     return List.of(proxyProtocolFactory, sslFactory, http1Factory);
                 }
             } else {
