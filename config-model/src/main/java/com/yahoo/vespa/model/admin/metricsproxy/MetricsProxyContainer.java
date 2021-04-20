@@ -159,7 +159,6 @@ public class MetricsProxyContainer extends Container implements
         if (clusterMembership.isPresent()) {
             int maxHeapSize = featureFlags.metricsProxyMaxHeapSizeInMb(clusterMembership.get().cluster().type());
             builder.jvm
-                    .verbosegc(true)
                     .gcopts(jvmGCOptions)
                     .heapsize(maxHeapSize);
         }

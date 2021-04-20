@@ -41,7 +41,6 @@ public class ClusterControllerContainerCluster extends ContainerCluster<ClusterC
         super.getConfig(builder);
 
         builder.jvm
-                .verbosegc(true)
                 .heapsize(featureFlags.clusterControllerMaxHeapSizeInMb());
     }
 
