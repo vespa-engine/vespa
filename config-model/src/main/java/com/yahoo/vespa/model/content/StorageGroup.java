@@ -143,10 +143,10 @@ public class StorageGroup {
     }
 
     public int getNumberOfLeafGroups() {
-        int count = subgroups.isEmpty() ? 1 : 0;
-        for (StorageGroup g : subgroups) {
+        if (subgroups.isEmpty()) return 1;
+        int count = 0;
+        for (StorageGroup g : subgroups)
             count += g.getNumberOfLeafGroups();
-        }
         return count;
     }
 
@@ -393,7 +393,8 @@ public class StorageGroup {
                     childAsString(groupElement, VespaDomBuilder.VESPAMALLOC_DEBUG),
                     childAsString(groupElement, VespaDomBuilder.VESPAMALLOC_DEBUG_STACKTRACE));
 
-            List<GroupBuilder> subGroups = groupElement.isPresent() ? collectSubGroups(isHosted, group, groupElement.get()) : Collections.emptyList();
+            List<GroupBuilder> subGroups = groupElement.isPresent() ? collectSubGroups(isHosted, group, groupElement.get())
+                                                                    : List.of();
 
             List<XmlNodeBuilder> explicitNodes = new ArrayList<>();
             explicitNodes.addAll(collectExplicitNodes(groupElement));
@@ -407,7 +408,7 @@ public class StorageGroup {
                 nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get(), context));
             else if (nodesElement.isPresent() && context.getDeployState().isHosted() && context.getDeployState().zone().environment().isManuallyDeployed() ) // default to 1 node
                 nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get(), context));
-            else if (! nodesElement.isPresent() && subGroups.isEmpty() && context.getDeployState().isHosted()) // request one node
+            else if (nodesElement.isEmpty() && subGroups.isEmpty() && context.getDeployState().isHosted()) // request one node
                 nodeRequirement = Optional.of(NodesSpecification.nonDedicated(1, context));
             else // Nodes or groups explicitly listed - resolve in GroupBuilder
                 nodeRequirement = Optional.empty();
