@@ -25,7 +25,7 @@ class BucketDBOwner;
   * to a target sub database. The actual moving is handled by a given instance
   * of IDocumentMoveHandler.
   */
-class BucketMover
+class BucketMover : public std::enable_shared_from_this<BucketMover>
 {
 public:
     using MoveOperationUP = std::unique_ptr<MoveOperation>;
@@ -65,13 +65,48 @@ public:
     };
 
     using GuardedMoveOp = std::pair<MoveOperationUP, MoveGuard>;
-    struct GuardedMoveOps {
-        std::vector<GuardedMoveOp> success;
-        std::vector<MoveGuard> failed;
+    class GuardedMoveOps {
+    public:
+        GuardedMoveOps(std::shared_ptr<BucketMover> mover) noexcept;
+        GuardedMoveOps(GuardedMoveOps &&) = default;
+        GuardedMoveOps & operator =(GuardedMoveOps &&) = default;
+        GuardedMoveOps(const GuardedMoveOps &) = delete;
+        GuardedMoveOps & operator = (const GuardedMoveOps &) = delete;
+        ~GuardedMoveOps();
+        std::vector<GuardedMoveOp> & success() { return _success; }
+        std::vector<MoveGuard> & failed() { return _failed; }
+        BucketMover & mover() { return *_mover; }
+    private:
+        // It is important to keep the order so the mover is destructed last
+        std::shared_ptr<BucketMover> _mover;
+        std::vector<GuardedMoveOp> _success;
+        std::vector<MoveGuard> _failed;
     };
 
-    BucketMover(const document::BucketId &bucket, const MaintenanceDocumentSubDB *source,
-                uint32_t targetSubDbId, IDocumentMoveHandler &handler) noexcept;
+    class MoveKeys {
+    public:
+        MoveKeys(std::shared_ptr<BucketMover> mover) noexcept : _mover(std::move(mover)) {}
+        MoveKeys(MoveKeys &&) noexcept = default;
+        MoveKeys & operator =(MoveKeys &&) noexcept = default;
+        MoveKeys(const MoveKeys &) noexcept = delete;
+        MoveKeys & operator =(const MoveKeys &) noexcept = delete;
+        ~MoveKeys();
+        GuardedMoveOps createMoveOperations();
+        std::shared_ptr<BucketMover> stealMover();
+        std::vector<MoveKey> & keys() { return _keys; }
+        size_t size() const { return _keys.size(); }
+        bool empty() const { return _keys.empty(); }
+        const MoveKey & back() const { return _keys.back(); }
+        const BucketMover & mover() const { return *_mover; }
+    private:
+        // It is important to keep the order so the mover is destructed last
+        std::shared_ptr<BucketMover> _mover;
+        std::vector<MoveKey> _keys;
+    };
+
+    static std::shared_ptr<BucketMover>
+    create(const document::BucketId &bucket, const MaintenanceDocumentSubDB *source,
+           uint32_t targetSubDbId, IDocumentMoveHandler &handler);
     BucketMover(BucketMover &&) noexcept = delete;
     BucketMover & operator=(BucketMover &&) noexcept = delete;
     BucketMover(const BucketMover &) = delete;
@@ -79,9 +114,9 @@ public:
     ~BucketMover();
 
     /// Must be called in master thread
-    std::pair<std::vector<MoveKey>, bool> getKeysToMove(size_t maxDocsToMove);
+    std::pair<MoveKeys, bool> getKeysToMove(size_t maxDocsToMove);
     /// Call from any thread
-    GuardedMoveOps createMoveOperations(std::vector<MoveKey> toMove);
+    GuardedMoveOps createMoveOperations(MoveKeys toMove);
     /// Must be called in master thread
     void moveDocuments(std::vector<GuardedMoveOp> moveOps, IDestructorCallbackSP onDone);
     void moveDocument(MoveOperationUP moveOp, IDestructorCallbackSP onDone);
@@ -102,6 +137,8 @@ public:
         return pending() == 0;
     }
 private:
+    BucketMover(const document::BucketId &bucket, const MaintenanceDocumentSubDB *source,
+                uint32_t targetSubDbId, IDocumentMoveHandler &handler) noexcept;
     const MaintenanceDocumentSubDB *_source;
     IDocumentMoveHandler           *_handler;
     const document::BucketId        _bucket;
@@ -130,7 +167,7 @@ class DocumentBucketMover
 private:
     IMoveOperationLimiter                  &_limiter;
     bucketdb::BucketDBOwner                *_bucketDb;
-    std::unique_ptr<bucketdb::BucketMover>  _impl;
+    std::shared_ptr<bucketdb::BucketMover>  _impl;
 
     bool moveDocuments(size_t maxDocsToMove, IMoveOperationLimiter &limiter);
 public:
