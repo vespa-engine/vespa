@@ -99,7 +99,7 @@ public class AttributeChangeValidatorTest {
         new Fixture("field f1 type string { indexing: attribute\n attribute: fast-search\n dictionary { hash\ncased}\nmatch:cased}",
                 "field f1 type string { indexing: attribute\n attribute: fast-search\n dictionary{ btree} }").
                 assertValidation(newRestartAction(ClusterSpec.Id.from("test"),
-                        "Field 'f1' changed: change property 'dictionary: btree/hash' from 'HASH' to 'BTREE'"));
+                        "Field 'f1' changed: change property 'dictionary: cased/uncased' from 'CASED' to 'UNCASED'"));
     }
 
     @Test

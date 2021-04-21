@@ -100,7 +100,6 @@ public class AttributeChangeValidator {
         for (Attribute nextAttr : nextFields.attributes()) {
             Attribute currAttr = currentFields.getAttribute(nextAttr.getName());
             if (currAttr != null) {
-                // These validations can be removed as there are they are 1-1 with attributes.def which has restart annotations for them.
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::isFastSearch, "fast-search", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::isFastAccess, "fast-access", result);
                 validateAttributeSetting(id, currAttr, nextAttr, AttributeChangeValidator::extractDictionaryType, "dictionary: btree/hash", result);
