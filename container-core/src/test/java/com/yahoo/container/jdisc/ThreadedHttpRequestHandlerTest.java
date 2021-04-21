@@ -21,7 +21,7 @@ public class ThreadedHttpRequestHandlerTest {
         ThreadedHttpRequestHandlerThrowingException handler = new ThreadedHttpRequestHandlerThrowingException(metricMock);
         RequestHandlerTestDriver driver = new RequestHandlerTestDriver(handler);
 
-        driver.sendRequest("http://localhost/myhandler");
+        driver.sendRequest("http://localhost/myhandler").readAll();
         String expectedMetricName = "jdisc.http.handler.unhandled_exceptions";
         assertThat(metricMock.addInvocations)
                 .containsKey(expectedMetricName);
