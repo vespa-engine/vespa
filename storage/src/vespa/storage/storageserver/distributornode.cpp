@@ -107,6 +107,7 @@ DistributorNode::createChain(IStorageChainBuilder &builder)
     builder.add(std::move(stateManager));
 }
 
+// FIXME STRIPE not thread safe!!
 api::Timestamp
 DistributorNode::getUniqueTimestamp()
 {

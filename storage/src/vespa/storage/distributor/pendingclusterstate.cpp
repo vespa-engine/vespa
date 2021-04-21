@@ -84,9 +84,9 @@ PendingClusterState::initializeBucketSpaceTransitions(bool distributionChanged, 
         auto onItr = outdatedNodesMap.find(elem.first);
         const auto &outdatedNodes = (onItr == outdatedNodesMap.end()) ? emptyOutdatedNodes : onItr->second;
         auto pendingTransition =
-            std::make_unique<PendingBucketSpaceDbTransition>
-            (*this, *elem.second, distributionChanged, outdatedNodes,
-             _clusterInfo, *_newClusterStateBundle.getDerivedClusterState(elem.first), _creationTimestamp);
+            std::make_unique<PendingBucketSpaceDbTransition>(
+                    *this, elem.first, *elem.second, distributionChanged, outdatedNodes,
+                    _clusterInfo, *_newClusterStateBundle.getDerivedClusterState(elem.first), _creationTimestamp);
         if (pendingTransition->getBucketOwnershipTransfer()) {
             _bucketOwnershipTransfer = true;
         }
@@ -327,6 +327,14 @@ PendingClusterState::mergeIntoBucketDatabases()
 {
     for (auto &elem : _pendingTransitions) {
         elem.second->mergeIntoBucketDatabase();
+    }
+}
+
+void
+PendingClusterState::merge_into_bucket_databases(StripeAccessGuard& guard)
+{
+    for (auto &elem : _pendingTransitions) {
+        elem.second->merge_into_bucket_databases(guard);
     }
 }
 

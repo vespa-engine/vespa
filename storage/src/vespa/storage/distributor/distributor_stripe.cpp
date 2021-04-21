@@ -478,6 +478,8 @@ DistributorStripe::checkBucketForSplit(document::BucketSpace bucketSpace,
     }
 }
 
+// TODO STRIPE must only be called when operating in legacy single stripe mode!
+//   In other cases, distribution config switching is controlled by top-level distributor, not via framework(tm).
 void
 DistributorStripe::enableNextDistribution()
 {
@@ -485,10 +487,12 @@ DistributorStripe::enableNextDistribution()
         _distribution = _nextDistribution;
         propagateDefaultDistribution(_distribution);
         _nextDistribution = std::shared_ptr<lib::Distribution>();
+        // TODO conditional on whether top-level DB updater is in charge
         _bucketDBUpdater.storageDistributionChanged();
     }
 }
 
+// TODO STRIPE must be invoked by top-level bucket db updater probably
 void
 DistributorStripe::propagateDefaultDistribution(
         std::shared_ptr<const lib::Distribution> distribution)
@@ -496,6 +500,19 @@ DistributorStripe::propagateDefaultDistribution(
     auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
     for (auto* repo : {_bucketSpaceRepo.get(), _readOnlyBucketSpaceRepo.get()}) {
         repo->get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
+        repo->get(document::FixedBucketSpaces::global_space()).setDistribution(global_distr);
+    }
+}
+
+// Only called when stripe is in rendezvous freeze
+void
+DistributorStripe::update_distribution_config(const BucketSpaceDistributionConfigs& new_configs) {
+    auto default_distr = new_configs.get_or_nullptr(document::FixedBucketSpaces::default_space());
+    auto global_distr  = new_configs.get_or_nullptr(document::FixedBucketSpaces::global_space());
+    assert(default_distr && global_distr);
+
+    for (auto* repo : {_bucketSpaceRepo.get(), _readOnlyBucketSpaceRepo.get()}) {
+        repo->get(document::FixedBucketSpaces::default_space()).setDistribution(default_distr);
         repo->get(document::FixedBucketSpaces::global_space()).setDistribution(global_distr);
     }
 }

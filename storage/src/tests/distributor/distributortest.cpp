@@ -239,6 +239,7 @@ DistributorTest::DistributorTest()
 
 DistributorTest::~DistributorTest() = default;
 
+// TODO -> stripe test
 TEST_F(DistributorTest, operation_generation) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
@@ -257,6 +258,7 @@ TEST_F(DistributorTest, operation_generation) {
     EXPECT_EQ("Visitor Create", testOp(cmd));
 }
 
+// TODO -> stripe test
 TEST_F(DistributorTest, operations_generated_and_started_without_duplicates) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
@@ -271,6 +273,8 @@ TEST_F(DistributorTest, operations_generated_and_started_without_duplicates) {
     ASSERT_EQ(6, _sender.commands().size());
 }
 
+// TODO -> stripe test
+// TODO also need to impl/test cross-stripe cluster state changes
 TEST_F(DistributorTest, recovery_mode_on_cluster_state_change) {
     setupDistributor(Redundancy(1), NodeCount(2),
                      "storage:1 .0.s:d distributor:1");
@@ -291,6 +295,8 @@ TEST_F(DistributorTest, recovery_mode_on_cluster_state_change) {
     EXPECT_TRUE(_distributor->isInRecoveryMode());
 }
 
+// TODO -> stripe test
+// TODO how to throttle across stripes?
 TEST_F(DistributorTest, operations_are_throttled) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
     getConfig().setMinPendingMaintenanceOps(1);
@@ -303,6 +309,7 @@ TEST_F(DistributorTest, operations_are_throttled) {
     ASSERT_EQ(1, _sender.commands().size());
 }
 
+// TODO -> stripe test
 TEST_F(DistributorTest, handle_unknown_maintenance_reply) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
@@ -322,6 +329,7 @@ TEST_F(DistributorTest, handle_unknown_maintenance_reply) {
     }
 }
 
+// TODO -> generic, non distr/stripe test
 TEST_F(DistributorTest, contains_time_statement) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
@@ -333,6 +341,7 @@ TEST_F(DistributorTest, contains_time_statement) {
     EXPECT_TRUE(getConfig().containsTimeStatement("testdoctype1.headerfield == now() - 3600"));
 }
 
+// TODO -> stripe test
 TEST_F(DistributorTest, update_bucket_database) {
     enableDistributorClusterState("distributor:1 storage:3");
 
@@ -402,6 +411,8 @@ public:
 
 }
 
+// TODO -> stripe test
+// TODO need to impl/test cross-stripe status requests
 TEST_F(DistributorTest, tick_processes_status_requests) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
 
@@ -430,6 +441,8 @@ TEST_F(DistributorTest, tick_processes_status_requests) {
     EXPECT_THAT(thread.getResult(), HasSubstr("BucketId(0x4000000000000001)"));
 }
 
+// TODO -> distributor test since it owns metric hook
+// TODO need to impl/test cross-stripe metrics aggregation
 TEST_F(DistributorTest, metric_update_hook_updates_pending_maintenance_metrics) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     // To ensure we count all operations, not just those fitting within the
@@ -484,6 +497,7 @@ uint64_t db_sample_interval_sec(const Distributor& d) noexcept {
 
 }
 
+// TODO -> stripe test
 TEST_F(DistributorTest, bucket_db_memory_usage_metrics_only_updated_at_fixed_time_intervals) {
     getClock().setAbsoluteTimeInSeconds(1000);
 
@@ -521,6 +535,8 @@ TEST_F(DistributorTest, bucket_db_memory_usage_metrics_only_updated_at_fixed_tim
     EXPECT_GT(now_used, last_used);
 }
 
+// TODO -> stripe test
+// TODO need to impl/test cross-stripe config propagation
 TEST_F(DistributorTest, priority_config_is_propagated_to_distributor_configuration) {
     using namespace vespa::config::content::core;
 
@@ -557,6 +573,7 @@ TEST_F(DistributorTest, priority_config_is_propagated_to_distributor_configurati
     EXPECT_EQ(12, static_cast<int>(mp.mergeGlobalBuckets));
 }
 
+// TODO -> stripe test
 TEST_F(DistributorTest, no_db_resurrection_for_bucket_not_owned_in_pending_state) {
     setupDistributor(Redundancy(1), NodeCount(10), "storage:2 distributor:2");
     lib::ClusterState newState("storage:10 distributor:10");
@@ -578,6 +595,7 @@ TEST_F(DistributorTest, no_db_resurrection_for_bucket_not_owned_in_pending_state
     EXPECT_EQ("NONEXISTING", dumpBucket(nonOwnedBucket));
 }
 
+// TODO -> stripe test
 TEST_F(DistributorTest, added_db_buckets_without_gc_timestamp_implicitly_get_current_time) {
     setupDistributor(Redundancy(1), NodeCount(10), "storage:2 distributor:2");
     getClock().setAbsoluteTimeInSeconds(101234);
@@ -591,6 +609,7 @@ TEST_F(DistributorTest, added_db_buckets_without_gc_timestamp_implicitly_get_cur
     EXPECT_EQ(101234, e->getLastGarbageCollectionTime());
 }
 
+// TODO -> stripe test
 TEST_F(DistributorTest, merge_stats_are_accumulated_during_database_iteration) {
     setupDistributor(Redundancy(2), NodeCount(3), "storage:3 distributor:1");
     // Copies out of sync. Not possible for distributor to _reliably_ tell
@@ -662,6 +681,7 @@ DistributorTest::assertBucketSpaceStats(size_t expBucketPending, size_t expBucke
  * their state checkers at all, we won't get any statistics from any other
  * operations for the bucket.
  */
+// TODO -> stripe test
 TEST_F(DistributorTest, stats_generated_for_preempted_operations) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     // For this test it suffices to have a single bucket with multiple aspects
@@ -686,6 +706,7 @@ TEST_F(DistributorTest, stats_generated_for_preempted_operations) {
     }
 }
 
+// TODO -> distributor test
 TEST_F(DistributorTest, host_info_reporter_config_is_propagated_to_reporter) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
@@ -699,11 +720,13 @@ TEST_F(DistributorTest, host_info_reporter_config_is_propagated_to_reporter) {
     EXPECT_FALSE(distributor_host_info_reporter().isReportingEnabled());
 }
 
+// TODO -> stripe test (though config is a bit of a special case...)
 TEST_F(DistributorTest, replica_counting_mode_is_configured_to_trusted_by_default) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     EXPECT_EQ(ConfigBuilder::MinimumReplicaCountingMode::TRUSTED, currentReplicaCountingMode());
 }
 
+// TODO -> stripe test
 TEST_F(DistributorTest, replica_counting_mode_config_is_propagated_to_metric_updater) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     ConfigBuilder builder;
@@ -712,6 +735,7 @@ TEST_F(DistributorTest, replica_counting_mode_config_is_propagated_to_metric_upd
     EXPECT_EQ(ConfigBuilder::MinimumReplicaCountingMode::ANY, currentReplicaCountingMode());
 }
 
+// TODO -> stripe test
 TEST_F(DistributorTest, max_consecutively_inhibited_maintenance_ticks_config_is_propagated_to_internal_config) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     ConfigBuilder builder;
@@ -720,11 +744,13 @@ TEST_F(DistributorTest, max_consecutively_inhibited_maintenance_ticks_config_is_
     EXPECT_EQ(getConfig().max_consecutively_inhibited_maintenance_ticks(), 123);
 }
 
+// TODO -> stripe test
 TEST_F(DistributorTest, bucket_activation_is_enabled_by_default) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
     EXPECT_FALSE(getConfig().isBucketActivationDisabled());
 }
 
+// TODO -> stripe test
 TEST_F(DistributorTest, bucket_activation_config_is_propagated_to_distributor_configuration) {
     using namespace vespa::config::content::core;
 
@@ -747,6 +773,7 @@ DistributorTest::configureMaxClusterClockSkew(int seconds) {
     _distributor->enableNextConfig();
 }
 
+// TODO -> stripe test
 TEST_F(DistributorTest, max_clock_skew_config_is_propagated_to_distributor_config) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
@@ -817,6 +844,7 @@ void DistributorTest::assertNoMessageBounced() {
 // TODO refactor this to set proper highest timestamp as part of bucket info
 // reply once we have the "highest timestamp across all owned buckets" feature
 // in place.
+// TODO where does this truly belong?
 TEST_F(DistributorTest, configured_safe_time_point_rejection_works_end_to_end) {
     setupDistributor(Redundancy(2), NodeCount(2),
                      "bits:1 storage:1 distributor:2");
@@ -846,6 +874,7 @@ void DistributorTest::configure_mutation_sequencing(bool enabled) {
     _distributor->enableNextConfig();
 }
 
+// TODO -> stripe test
 TEST_F(DistributorTest, sequencing_config_is_propagated_to_distributor_config) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
@@ -871,6 +900,7 @@ DistributorTest::configure_merge_busy_inhibit_duration(int seconds) {
     _distributor->enableNextConfig();
 }
 
+// TODO -> stripe test
 TEST_F(DistributorTest, merge_busy_inhibit_duration_config_is_propagated_to_distributor_config) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:2 distributor:1");
 
@@ -878,6 +908,7 @@ TEST_F(DistributorTest, merge_busy_inhibit_duration_config_is_propagated_to_dist
     EXPECT_EQ(getConfig().getInhibitMergesOnBusyNodeDuration(), std::chrono::seconds(7));
 }
 
+// TODO -> stripe test
 TEST_F(DistributorTest, merge_busy_inhibit_duration_is_propagated_to_pending_message_tracker) {
     setupDistributor(Redundancy(2), NodeCount(2), "storage:1 distributor:1");
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t");
@@ -903,6 +934,7 @@ TEST_F(DistributorTest, merge_busy_inhibit_duration_is_propagated_to_pending_mes
     EXPECT_FALSE(node_info.isBusy(0));
 }
 
+// TODO -> stripe test
 TEST_F(DistributorTest, external_client_requests_are_handled_individually_in_priority_order) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
     addNodesToBucketDB(document::BucketId(16, 1), "0=1/1/1/t/a");
@@ -931,6 +963,7 @@ TEST_F(DistributorTest, external_client_requests_are_handled_individually_in_pri
     EXPECT_THAT(actual, ContainerEq(expected));
 }
 
+// TODO -> stripe test
 TEST_F(DistributorTest, internal_messages_are_started_in_fifo_order_batch) {
     // To test internal request ordering, we use NotifyBucketChangeCommand
     // for the reason that it explicitly updates the bucket database for
@@ -959,6 +992,8 @@ TEST_F(DistributorTest, internal_messages_are_started_in_fifo_order_batch) {
     EXPECT_EQ(api::BucketInfo(1, 1, 1), e.getBucketInfo().getNode(0)->getBucketInfo());
 }
 
+// TODO -> stripe test
+// TODO also test that closing distributor closes stripes
 TEST_F(DistributorTest, closing_aborts_priority_queued_client_requests) {
     setupDistributor(Redundancy(1), NodeCount(1), "storage:1 distributor:1");
     document::BucketId bucket(16, 1);
@@ -997,6 +1032,9 @@ void assert_invalid_stats_for_all_spaces(
 
 }
 
+// TODO -> stripe test
+// TODO must impl/test cross-stripe bucket space stats
+// TODO cross-stripe recovery mode handling how?
 TEST_F(DistributorTest, entering_recovery_mode_resets_bucket_space_stats) {
     // Set up a cluster state + DB contents which implies merge maintenance ops
     setupDistributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
@@ -1018,6 +1056,7 @@ TEST_F(DistributorTest, entering_recovery_mode_resets_bucket_space_stats) {
     assert_invalid_stats_for_all_spaces(stats, 2);
 }
 
+// TODO figure out interaction between stripes and distributors on this one
 TEST_F(DistributorTest, leaving_recovery_mode_immediately_sends_getnodestate_replies) {
     setupDistributor(Redundancy(2), NodeCount(2), "version:1 distributor:1 storage:2");
     // Should not send explicit replies during init stage
