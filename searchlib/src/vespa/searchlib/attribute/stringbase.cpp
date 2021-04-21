@@ -15,6 +15,57 @@ LOG_SETUP(".searchlib.attribute.stringbase");
 
 namespace search {
 
+StringSearchHelper::StringSearchHelper(QueryTermUCS4 & term, bool cased)
+    : _regex(),
+      _term(),
+      _termLen(),
+      _isPrefix(term.isPrefix()),
+      _isRegex(term.isRegex()),
+      _isCased(cased)
+{
+    if (isRegex()) {
+        if (isCased()) {
+            _regex = vespalib::Regex::from_pattern(term.getTerm(), vespalib::Regex::Options::None);
+        } else {
+            _regex = vespalib::Regex::from_pattern(term.getTerm(), vespalib::Regex::Options::IgnoreCase);
+        }
+    } else if (isCased()) {
+        _term._char = term.getTerm();
+        _termLen = term.getTermLen();
+    } else {
+        term.term(_term._ucs4);
+    }
+}
+
+StringSearchHelper::~StringSearchHelper()
+{
+    if (isRegex()) {
+
+    }
+}
+
+bool
+StringSearchHelper::isMatch(const char *src) const {
+    if (__builtin_expect(isRegex(), false)) {
+        return getRegex().valid() ? getRegex().partial_match(std::string_view(src)) : false;
+    }
+    if (__builtin_expect(isCased(), false)) {
+        int res = strncmp(_term._char, src, _termLen);
+        return (res == 0) && (src[_termLen] == 0 || isPrefix());
+    }
+    vespalib::Utf8ReaderForZTS u8reader(src);
+    uint32_t j = 0;
+    uint32_t val;
+    for (;; ++j) {
+        val = u8reader.getChar();
+        val = vespalib::LowerCase::convert(val);
+        if (_term._ucs4[j] == 0 || _term._ucs4[j] != val) {
+            break;
+        }
+    }
+    return (_term._ucs4[j] == 0 && (val == 0 || isPrefix()));
+}
+
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(StringAttribute, AttributeVector);
 
 using attribute::LoadedEnumAttribute;
@@ -225,16 +276,8 @@ StringAttribute::StringSearchContext::StringSearchContext(QueryTermSimple::UP qT
                                                           const StringAttribute & toBeSearched) :
     SearchContext(toBeSearched),
     _queryTerm(static_cast<QueryTermUCS4 *>(qTerm.release())),
-    _termUCS4(nullptr),
-    _regex(),
-    _isPrefix(_queryTerm->isPrefix()),
-    _isRegex(_queryTerm->isRegex())
+    _helper(*_queryTerm, toBeSearched.getConfig().get_match() == Config::Match::CASED)
 {
-    if (isRegex()) {
-        _regex = vespalib::Regex::from_pattern(_queryTerm->getTerm(), vespalib::Regex::Options::IgnoreCase);
-    } else {
-        _queryTerm->term(_termUCS4);
-    }
 }
 
 StringAttribute::StringSearchContext::~StringSearchContext() = default;

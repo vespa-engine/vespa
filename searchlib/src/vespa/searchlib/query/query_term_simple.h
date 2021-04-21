@@ -63,7 +63,6 @@ public:
     virtual void visitMembers(vespalib::ObjectVisitor &visitor) const;
     vespalib::string getClassName() const;
     bool isValid() const { return _valid; }
-protected:
     const string & getTermString() const { return _term; }
 private:
     bool getRangeInternal(int64_t & low, int64_t & high) const;
