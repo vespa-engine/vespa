@@ -16,6 +16,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.vcmr.HostAction.State;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest.Status;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
+import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
@@ -137,7 +138,16 @@ public class VCMRMaintainer extends ControllerMaintainer {
         if (shouldRetire(changeRequest, hostAction)) {
             if (!node.wantToRetire()) {
                 logger.info(String.format("Retiring %s due to %s", node.hostname().value(), changeRequest.getChangeRequestSource().getId()));
-                setWantToRetire(changeRequest.getZoneId(), node, true);
+                // TODO: Remove try/catch once retirement is stabilized
+                try {
+                    setWantToRetire(changeRequest.getZoneId(), node, true);
+                } catch (Exception e) {
+                    logger.warning("Failed to retire host " + node.hostname() + ": " + Exceptions.toMessageString(e));
+                    // Check if retirement actually failed
+                    if (!nodeRepository.getNode(changeRequest.getZoneId(), node.hostname().value()).getWantToRetire()) {
+                        return hostAction;
+                    }
+                }
             }
             return hostAction.withState(State.RETIRING);
         }
@@ -160,8 +170,11 @@ public class VCMRMaintainer extends ControllerMaintainer {
             logger.info("Setting " + node.hostname() + " to dirty");
             nodeRepository.setState(zoneId, NodeState.dirty, node.hostname().value());
         }
-        if (hostAction.getState() == State.RETIRING && node.wantToRetire())
-            setWantToRetire(zoneId, node, false);
+        if (hostAction.getState() == State.RETIRING && node.wantToRetire()) {
+            try {
+                setWantToRetire(zoneId, node, false);
+            } catch (Exception ignored) {}
+        }
     }
 
     private boolean shouldRetire(VespaChangeRequest changeRequest, HostAction action) {
