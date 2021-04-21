@@ -52,6 +52,7 @@ public class VespaModelTester {
     private final Map<NodeResources, Collection<Host>> hostsByResources = new HashMap<>();
     private ApplicationId applicationId = ApplicationId.defaultId();
     private boolean useDedicatedNodeForLogserver = false;
+    private boolean dedicatedClusterControllerCluster = true;
 
     public VespaModelTester() {
         this(new NullConfigModelRegistry());
@@ -99,6 +100,10 @@ public class VespaModelTester {
 
     public void useDedicatedNodeForLogserver(boolean useDedicatedNodeForLogserver) {
         this.useDedicatedNodeForLogserver = useDedicatedNodeForLogserver;
+    }
+
+    public void dedicatedClusterControllerCluster(boolean dedicatedClusterControllerCluster) {
+        this.dedicatedClusterControllerCluster = dedicatedClusterControllerCluster;
     }
 
     /** Creates a model which uses 0 as start index and fails on out of capacity */
@@ -170,7 +175,8 @@ public class VespaModelTester {
                 .setMultitenant(true)
                 .setHostedVespa(hosted)
                 .setApplicationId(applicationId)
-                .setUseDedicatedNodeForLogserver(useDedicatedNodeForLogserver);
+                .setUseDedicatedNodeForLogserver(useDedicatedNodeForLogserver)
+                .setDedicatedClusterControllerCluster(dedicatedClusterControllerCluster);
 
         DeployState.Builder deployState = deployStatebuilder
                 .applicationPackage(appPkg)
