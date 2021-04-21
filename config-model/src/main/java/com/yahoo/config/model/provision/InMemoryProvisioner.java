@@ -207,7 +207,7 @@ public class InMemoryProvisioner implements HostProvisioner {
         }
 
         int nextIndex = nextIndexInCluster.getOrDefault(new Pair<>(clusterGroup.type(), clusterGroup.id()), startIndex);
-        while (allocation.size() < nodesInGroup) {
+        while (nonRetiredIn(allocation).size() < nodesInGroup) {
             // Find the smallest host that can fit the requested resources
             Optional<NodeResources> hostResources = freeNodes.keySet().stream()
                     .sorted(new MemoryDiskCpu())
@@ -232,10 +232,14 @@ public class InMemoryProvisioner implements HostProvisioner {
         }
         nextIndexInCluster.put(new Pair<>(clusterGroup.type(), clusterGroup.id()), nextIndex);
 
-        while (allocation.size() > nodesInGroup)
+        while (nonRetiredIn(allocation).size() > nodesInGroup)
             allocation.remove(0);
 
         return allocation;
+    }
+
+    private List<HostSpec> nonRetiredIn(List<HostSpec> hosts) {
+        return hosts.stream().filter(host -> ! retiredHostNames.contains(host.hostname())).collect(Collectors.toList());
     }
 
     private int totalAllocatedTo(ClusterSpec cluster) {
