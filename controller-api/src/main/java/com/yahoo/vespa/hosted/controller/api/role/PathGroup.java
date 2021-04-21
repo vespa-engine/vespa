@@ -54,6 +54,7 @@ enum PathGroup {
     tenantInfo(Matcher.tenant,
                "/application/v4/tenant/{tenant}/application/",
                "/application/v4/tenant/{tenant}/info/",
+               "/application/v4/tenant/{tenant}/notifications",
                "/routing/v1/status/tenant/{tenant}/{*}"),
 
     tenantKeys(Matcher.tenant,
