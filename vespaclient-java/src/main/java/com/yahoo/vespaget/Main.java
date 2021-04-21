@@ -1,9 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespaget;
 
-
 import com.yahoo.documentapi.messagebus.loadtypes.LoadTypeSet;
 import com.yahoo.vespaclient.ClusterList;
+
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * The vespa-get tool retrieves documents from a Vespa Document Storage cluster, and prints them to stdout as XML.
@@ -14,6 +16,7 @@ public class Main {
 
     public static void main(String[] args) {
         try {
+            Logger.getLogger("").setLevel(Level.WARNING);
             CommandLineOptions options = new CommandLineOptions();
             ClientParameters params = options.parseCommandLineArguments(args);
 

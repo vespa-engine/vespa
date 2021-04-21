@@ -1,6 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespastat;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * Main application class
  *
@@ -12,6 +15,7 @@ public class Main {
     }
 
     public static void main(String[] args) {
+        Logger.getLogger("").setLevel(Level.WARNING);
         CommandLineOptions options = new CommandLineOptions();
         try {
             ClientParameters params = options.parseCommandLineArguments(args);
