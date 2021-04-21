@@ -11,6 +11,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -57,6 +58,7 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
+import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
@@ -85,6 +87,7 @@ import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
@@ -390,6 +393,16 @@ public class ApplicationController {
 
             // Record the quota usage for this application
             var quotaUsage = deploymentQuotaUsage(zone, job.application());
+
+            // For direct deployments use the full application ID, but otherwise use just the tenant and application as
+            // the source since it's the same application, so it should have the same warnings
+            NotificationSource source = zone.environment().isManuallyDeployed() ?
+                    NotificationSource.from(job.application()) : NotificationSource.from(applicationId);
+            List<String> warnings = Optional.ofNullable(result.prepareResponse().log)
+                    .map(logs -> logs.stream().filter(log -> LogLevel.parse(log.level).intValue() >= Level.WARNING.intValue()).map(log -> log.message).collect(Collectors.toList()))
+                    .orElseGet(List::of);
+            if (warnings.isEmpty()) controller.notificationsDb().removeNotification(source, Notification.Type.APPLICATION_PACKAGE_WARNING);
+            else controller.notificationsDb().addNotification(source, Notification.Type.APPLICATION_PACKAGE_WARNING, warnings);
 
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(job.application().instance(),

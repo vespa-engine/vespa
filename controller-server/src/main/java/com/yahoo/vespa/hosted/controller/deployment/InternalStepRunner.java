@@ -46,6 +46,8 @@ import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateException;
 import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
+import com.yahoo.vespa.hosted.controller.notification.Notification;
+import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.yolean.Exceptions;
 
@@ -67,6 +69,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -671,7 +674,8 @@ public class InternalStepRunner implements StepRunner {
         try {
             controller.jobController().active(id).ifPresent(run -> {
                 if (run.hasFailed())
-                    sendNotification(run, logger);
+                    sendEmailNotification(run, logger);
+                updateConsoleNotification(run);
             });
         }
         catch (IllegalStateException e) {
@@ -682,7 +686,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Sends a mail with a notification of a failed run, if one should be sent. */
-    private void sendNotification(Run run, DualLogger logger) {
+    private void sendEmailNotification(Run run, DualLogger logger) {
         Application application = controller.applications().requireApplication(TenantAndApplicationId.from(run.id().application()));
         Notifications notifications = application.deploymentSpec().requireInstance(run.id().application().instance()).notifications();
         boolean newCommit = application.require(run.id().application().instance()).change().application()
@@ -704,6 +708,38 @@ public class InternalStepRunner implements StepRunner {
         catch (RuntimeException e) {
             logger.log(WARNING, "Exception trying to send mail for " + run.id(), e);
         }
+    }
+
+    private void updateConsoleNotification(Run run) {
+        NotificationSource source = NotificationSource.from(run.id());
+        Consumer<String> updater = msg -> controller.notificationsDb().addNotification(source, Notification.Type.DEPLOYMENT_FAILURE, msg);
+        switch (run.status()) {
+            case running:
+            case aborted:
+                return; // If running, its too early to update. If aborted, let's wait and see how the next run goes.
+            case success:
+                controller.notificationsDb().removeNotification(source, Notification.Type.DEPLOYMENT_FAILURE);
+                return;
+            case outOfCapacity:
+                if (run.id().type().isProduction()) updater.accept("due to lack of capacity. Please contact the Vespa team to request more!");
+                return;
+            case deploymentFailed:
+                updater.accept("due to an invalid application configuration, or timeout of other deployments of the same application");
+                return;
+            case installationFailed:
+                updater.accept("as nodes were not able to start the new Java containers");
+                return;
+            case testFailure:
+                updater.accept("one or more verification tests against the deployment failed");
+                return;
+            case error:
+            case endpointCertificateTimeout:
+                break;
+            default:
+                logger.log(WARNING, "Don't know what to set console notification to for run status '" + run.status() + "'");
+        }
+        updater.accept("something in the framework went wrong. Such errors are " +
+                "usually transient. Please contact the Vespa team if the problem persists!");
     }
 
     private Optional<Mail> mailOf(Run run, List<String> recipients) {
