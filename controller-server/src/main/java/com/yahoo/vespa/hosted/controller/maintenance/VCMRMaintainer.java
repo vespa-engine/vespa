@@ -37,6 +37,7 @@ public class VCMRMaintainer extends ControllerMaintainer {
 
     private final Logger logger = Logger.getLogger(VCMRMaintainer.class.getName());
     private final Duration ALLOWED_RETIREMENT_TIME = Duration.ofHours(60);
+    private final Duration ALLOWED_POSTPONEMENT_TIME = Duration.ofDays(7);
     private final CuratorDb curator;
     private final NodeRepository nodeRepository;
 
@@ -130,6 +131,11 @@ public class VCMRMaintainer extends ControllerMaintainer {
             return hostAction.withState(State.COMPLETE);
         }
 
+        if (isPostponed(changeRequest, hostAction)) {
+            recycleNode(changeRequest.getZoneId(), node, hostAction);
+            return hostAction.withState(State.PENDING_RETIREMENT);
+        }
+
         if (node.type() != NodeType.host || !spareCapacity) {
             return hostAction.withState(State.REQUIRES_OPERATOR_ACTION);
         }
@@ -162,6 +168,13 @@ public class VCMRMaintainer extends ControllerMaintainer {
         }
         if (hostAction.getState() == State.RETIRING && node.wantToRetire())
             setWantToRetire(zoneId, node, false);
+    }
+
+    private boolean isPostponed(VespaChangeRequest changeRequest, HostAction action) {
+        return List.of(State.RETIRED, State.RETIRING).contains(action.getState()) &&
+                changeRequest.getChangeRequestSource().getPlannedStartTime()
+                        .minus(ALLOWED_POSTPONEMENT_TIME)
+                        .isAfter(ZonedDateTime.now());
     }
 
     private boolean shouldRetire(VespaChangeRequest changeRequest, HostAction action) {

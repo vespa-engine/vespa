@@ -139,6 +139,30 @@ public class VCMRMaintainerTest {
         assertEquals(Status.PENDING_ACTION, writtenChangeRequest.getStatus());
     }
 
+    @Test
+    public void recycles_nodes_if_vcmr_is_postponed() {
+        var parkedNode = createNode(host1, NodeType.host, Node.State.parked, false);
+        var retiringNode = createNode(host2, NodeType.host, Node.State.active, true);
+        nodeRepo.putNodes(zoneId, List.of(parkedNode, retiringNode));
+        nodeRepo.allowPatching(true).hasSpareCapacity(true);
+
+        tester.curator().writeChangeRequest(postponedChangeRequest());
+        maintainer.maintain();
+
+        var writtenChangeRequest = tester.curator().readChangeRequest(changeRequestId).get();
+        var hostAction = writtenChangeRequest.getHostActionPlan().get(0);
+        assertEquals(State.PENDING_RETIREMENT, hostAction.getState());
+
+        parkedNode = nodeRepo.list(zoneId, List.of(parkedNode.hostname())).get(0);
+        assertEquals(Node.State.dirty, parkedNode.state());
+        assertFalse(parkedNode.wantToRetire());
+
+        retiringNode = nodeRepo.list(zoneId, List.of(retiringNode.hostname())).get(0);
+        assertEquals(Node.State.active, retiringNode.state());
+        assertFalse(retiringNode.wantToRetire());
+    }
+
+
     private VespaChangeRequest canceledChangeRequest() {
         return newChangeRequest(ChangeRequestSource.Status.CANCELED, State.RETIRED, State.RETIRING, ZonedDateTime.now());
     }
@@ -153,6 +177,10 @@ public class VCMRMaintainerTest {
 
     private VespaChangeRequest inProgressChangeRequest() {
         return newChangeRequest(ChangeRequestSource.Status.STARTED, State.RETIRING, State.RETIRING, ZonedDateTime.now());
+    }
+
+    private VespaChangeRequest postponedChangeRequest() {
+        return newChangeRequest(ChangeRequestSource.Status.STARTED, State.RETIRED, State.RETIRING, ZonedDateTime.now().plus(Duration.ofDays(8)));
     }
 
 
