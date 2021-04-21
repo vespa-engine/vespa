@@ -45,20 +45,21 @@ public interface ContainerOperations {
     CommandResult executeCommandInNetworkNamespace(NodeAgentContext context, String... command);
 
 
-    /** Resume node. Resuming a node means that it is ready to take on traffic. */
-    void resumeNode(NodeAgentContext context);
+    /** Resume node. Resuming a node means that it is ready to take on traffic.
+     * @return*/
+    String resumeNode(NodeAgentContext context);
 
     /**
-     * Suspend node. Suspending a node means the node should be taken temporarly offline,
+     * Suspend node and return output. Suspending a node means the node should be taken temporarly offline,
      * such that maintenance of the node can be done (upgrading, rebooting, etc).
      */
-    void suspendNode(NodeAgentContext context);
+    String suspendNode(NodeAgentContext context);
 
-    void restartVespa(NodeAgentContext context);
+    String restartVespa(NodeAgentContext context);
 
-    void startServices(NodeAgentContext context);
+    String startServices(NodeAgentContext context);
 
-    void stopServices(NodeAgentContext context);
+    String stopServices(NodeAgentContext context);
 
     Optional<ContainerStats> getContainerStats(NodeAgentContext context);
 
