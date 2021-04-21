@@ -272,6 +272,7 @@ DocumentDBTaggedMetrics::DocumentDBTaggedMetrics(const vespalib::string &docType
       bucketMove(this),
       totalMemoryUsage(this),
       totalDiskUsage("disk_usage", {}, "The total disk usage (in bytes) for this document db", this),
+      heart_beat_age("heart_beat_age", {}, "How long ago heart beat maintenace job was run", this),
       maxNumThreads(maxNumThreads_)
 {
 }
