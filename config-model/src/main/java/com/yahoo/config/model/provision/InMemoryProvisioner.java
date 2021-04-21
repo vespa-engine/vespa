@@ -239,14 +239,6 @@ public class InMemoryProvisioner implements HostProvisioner {
         return allocation;
     }
 
-    private void dumpFreeNodes(String description) {
-        System.out.println("  Free nodes " + description + ":");
-        for (var entry : freeNodes.entrySet()) {
-            for (var node : entry.getValue())
-                System.out.println("    " + node.hostname());
-        }
-    }
-
     private int totalAllocatedTo(ClusterSpec cluster) {
         int count = 0;
         for (Map.Entry<ClusterSpec, List<HostSpec>> allocation : allocations.entrySet()) {
