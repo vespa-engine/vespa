@@ -229,7 +229,7 @@ public class InternalStepRunner implements StepRunner {
                 case CERTIFICATE_NOT_READY:
                     logger.log("Waiting for certificate to become ready on config server: New application, or old one has expired");
                     if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
-                        logger.log("Certificate did not become available on config server within (" + timeouts.endpointCertificate() + ")");
+                        logger.log(WARNING, "Certificate did not become available on config server within (" + timeouts.endpointCertificate() + ")");
                         return Optional.of(RunStatus.endpointCertificateTimeout);
                     }
                     return result;
@@ -249,7 +249,7 @@ public class InternalStepRunner implements StepRunner {
                            : Optional.of(outOfCapacity);
                 case INVALID_APPLICATION_PACKAGE:
                 case BAD_REQUEST:
-                    logger.log(e.getMessage());
+                    logger.log(WARNING, e.getMessage());
                     return Optional.of(deploymentFailed);
             }
 
@@ -261,7 +261,7 @@ public class InternalStepRunner implements StepRunner {
                     // Same as CERTIFICATE_NOT_READY above, only from the controller
                     logger.log("Waiting for certificate to become valid: New application, or old one has expired");
                     if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
-                        logger.log("Controller could not validate certificate within " +
+                        logger.log(WARNING, "Controller could not validate certificate within " +
                                    timeouts.endpointCertificate() + ": " + Exceptions.toMessageString(e));
                         return Optional.of(RunStatus.endpointCertificateTimeout);
                     }
@@ -596,7 +596,7 @@ public class InternalStepRunner implements StepRunner {
                 testerCertificate.get().checkValidity(Date.from(controller.clock().instant()));
             }
             catch (CertificateExpiredException | CertificateNotYetValidException e) {
-                logger.log(INFO, "Tester certificate expired before tests could complete.");
+                logger.log(WARNING, "Tester certificate expired before tests could complete.");
                 return Optional.of(aborted);
             }
         }
@@ -702,7 +702,7 @@ public class InternalStepRunner implements StepRunner {
             mailOf(run, recipients).ifPresent(controller.serviceRegistry().mailer()::send);
         }
         catch (RuntimeException e) {
-            logger.log(INFO, "Exception trying to send mail for " + run.id(), e);
+            logger.log(WARNING, "Exception trying to send mail for " + run.id(), e);
         }
     }
 
