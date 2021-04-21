@@ -10,6 +10,7 @@ import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.controller.api.identifiers.TenantId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
+import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
@@ -171,6 +172,7 @@ public class TenantController {
 
             curator.removeTenant(tenant);
             accessControl.deleteTenant(tenant, credentials);
+            controller.notificationsDb().removeNotifications(NotificationSource.from(tenant));
         }
     }
 
