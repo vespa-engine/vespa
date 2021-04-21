@@ -79,7 +79,9 @@ public class TypeResolverTestCase {
         checkJoin("tensor(x{})",                 "tensor<int8>(y{})",                              "tensor(x{},y{})");
         // specific for Java
         checkJoin("tensor(x[])",                 "tensor(x{})",                                    "tensor(x{})");
+        checkJoin("tensor(x[3])",                "tensor(x{})",                                    "tensor(x{})");
         checkJoin("tensor(x{})",                 "tensor(x[])",                                    "tensor(x{})");
+        checkJoin("tensor(x{})",                 "tensor(x[3])",                                   "tensor(x{})");
         // dimension mismatch should fail:
         checkJoinFails("tensor(x[3])",           "tensor(x[5])");
         checkJoinFails("tensor(x[5])",           "tensor(x[3])");
