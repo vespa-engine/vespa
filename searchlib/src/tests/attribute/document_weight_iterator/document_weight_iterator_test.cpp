@@ -161,23 +161,6 @@ TEST_F("require that string iterators are created correctly", StringFixture) {
     verify_posting(*f1.api, "foo");
 }
 
-TEST_F("require that dictionary snapshot works", LongFixture)
-{
-    auto read_guard = f1.attr->makeReadGuard(false);
-    auto dictionary_snapshot = f1.api->get_dictionary_snapshot();
-    auto lookup1 = f1.api->lookup("111", dictionary_snapshot);
-    EXPECT_TRUE(lookup1.enum_idx.valid());
-    f1.attr->clearDoc(1);
-    f1.attr->clearDoc(5);
-    f1.attr->clearDoc(7);
-    f1.attr->commit();
-    auto lookup2 = f1.api->lookup("111", f1.api->get_dictionary_snapshot());
-    EXPECT_FALSE(lookup2.enum_idx.valid());
-    auto lookup3 = f1.api->lookup("111", dictionary_snapshot);
-    EXPECT_TRUE(lookup3.enum_idx.valid());
-    EXPECT_EQUAL(lookup1.enum_idx.ref(), lookup3.enum_idx.ref());
-}
-
 TEST_F("require that collect_folded works for string", StringFixture)
 {
     StringAttribute *attr = static_cast<StringAttribute *>(f1.attr.get());

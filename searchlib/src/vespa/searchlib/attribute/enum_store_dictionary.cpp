@@ -259,7 +259,9 @@ EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::update_posting_list(Inde
         assert(itr.valid() && itr.getKey() == idx);
         EntryRef old_posting_idx(itr.getData());
         EntryRef new_posting_idx = updater(old_posting_idx);
-        dict.thaw(itr);
+        // Note: Needs review when porting to other platforms
+        // Assumes that other CPUs observes stores from this CPU in order
+        std::atomic_thread_fence(std::memory_order_release);
         itr.writeData(new_posting_idx.ref());
         if constexpr (has_hash_dictionary) {
             auto find_result = this->_hash_dict.find(this->_hash_dict.get_default_comparator(), idx);
@@ -295,7 +297,9 @@ EnumStoreDictionary<BTreeDictionaryT, HashDictionaryT>::normalize_posting_lists(
             EntryRef new_posting_idx = normalize(old_posting_idx);
             if (new_posting_idx != old_posting_idx) {
                 changed = true;
-                dict.thaw(itr);
+                // Note: Needs review when porting to other platforms
+                // Assumes that other CPUs observes stores from this CPU in order
+                std::atomic_thread_fence(std::memory_order_release);
                 itr.writeData(new_posting_idx.ref());
                 if constexpr (has_hash_dictionary) {
                     auto find_result = this->_hash_dict.find(this->_hash_dict.get_default_comparator(), itr.getKey());
