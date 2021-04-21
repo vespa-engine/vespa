@@ -15,7 +15,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
@@ -71,13 +70,13 @@ public interface ConfigServerClient extends AutoCloseable {
         <T> T handle(Function<ClassicHttpResponse, T> handler, Function<IOException, T> catcher) throws UncheckedIOException;
 
         /** Sets the response body mapper for this, for successful requests. */
-        <T> T read(Function<byte[], T> mapper) throws UncheckedIOException, ConfigServerException;
+        <T> T read(Function<byte[], T> mapper) throws UncheckedIOException, ResponseException;
 
         /** Discards the response, but throws if the response is unsuccessful. */
-        void discard() throws UncheckedIOException, ConfigServerException;
+        void discard() throws UncheckedIOException, ResponseException;
 
         /** Returns the raw input stream of the response, if successful. The caller must close the returned stream. */
-        InputStream stream() throws UncheckedIOException, ConfigServerException;
+        InputStream stream() throws UncheckedIOException, ResponseException;
 
     }
 
@@ -119,38 +118,21 @@ public interface ConfigServerClient extends AutoCloseable {
 
     }
 
-    /** An exception due to server error, a bad request, or similar. */
-    class ConfigServerException extends RuntimeException {
+    /** An exception due to server error, a bad request, or similar, which resulted in a non-OK HTTP response. */
+    class ResponseException extends RuntimeException {
 
-        private final ErrorCode errorId;
-        private final String message;
+        private final int code;
+        private final String body;
 
-        public ConfigServerException(ErrorCode errorId, String message, String context) {
-            super(context + ": " + message);
-            this.errorId = errorId;
-            this.message = message;
+        public ResponseException(int code, String body, String context) {
+            super(context + ": " + body);
+            this.code = code;
+            this.body = body;
         }
 
-        public ErrorCode errorId() { return errorId; }
+        public int code() { return code; }
 
-        public String message() { return message; }
-
-        public enum ErrorCode {
-            APPLICATION_LOCK_FAILURE,
-            BAD_REQUEST,
-            ACTIVATION_CONFLICT,
-            INTERNAL_SERVER_ERROR,
-            INVALID_APPLICATION_PACKAGE,
-            METHOD_NOT_ALLOWED,
-            NOT_FOUND,
-            OUT_OF_CAPACITY,
-            REQUEST_TIMEOUT,
-            UNKNOWN_VESPA_VERSION,
-            PARENT_HOST_NOT_READY,
-            CERTIFICATE_NOT_READY,
-            LOAD_BALANCER_NOT_READY,
-            INCOMPLETE_RESPONSE
-        }
+        public String body() { return body; }
 
     }
 

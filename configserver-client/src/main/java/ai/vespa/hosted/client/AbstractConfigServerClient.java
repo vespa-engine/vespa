@@ -1,8 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.client;
 
-import com.yahoo.slime.Inspector;
-import com.yahoo.slime.SlimeUtils;
 import org.apache.hc.client5.http.classic.methods.ClassicHttpRequests;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.client5.http.protocol.HttpClientContext;
@@ -25,12 +23,10 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.logging.Logger;
-import java.util.stream.Stream;
 
-import static ai.vespa.hosted.client.ConfigServerClient.ConfigServerException.ErrorCode.INCOMPLETE_RESPONSE;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.WARNING;
@@ -180,7 +176,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         }
 
         @Override
-        public <T> T read(Function<byte[], T> mapper) throws UncheckedIOException, ConfigServerException {
+        public <T> T read(Function<byte[], T> mapper) throws UncheckedIOException, ResponseException {
             return mapIfSuccess(input -> {
                 try (input) {
                     return mapper.apply(input.readAllBytes());
@@ -192,7 +188,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         }
 
         @Override
-        public void discard() throws UncheckedIOException, ConfigServerException {
+        public void discard() throws UncheckedIOException, ResponseException {
             mapIfSuccess(input -> {
                 try (input) {
                     return null;
@@ -204,7 +200,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         }
 
         @Override
-        public InputStream stream() throws UncheckedIOException, ConfigServerException {
+        public InputStream stream() throws UncheckedIOException, ResponseException {
             return mapIfSuccess(input -> input);
         }
 
@@ -215,7 +211,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
                                 InputStream body = response.getEntity() != null ? response.getEntity().getContent()
                                                                                 : InputStream.nullInputStream();
                                 if (response.getCode() >= HttpStatus.SC_REDIRECTION)
-                                    throw readException(body.readAllBytes());
+                                    throw new ResponseException(response.getCode(), new String(body.readAllBytes(), UTF_8), "");
 
                                 return mapper.apply(new ForwardingInputStream(body) {
                                     @Override
@@ -235,7 +231,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
                                 if (e instanceof IOException)
                                     throw new RetryException((IOException) e);
                                 else
-                                    sneakyThrow(e);
+                                    sneakyThrow(e); // e is a runtime exception or an error, so this is fine.
                                 throw new AssertionError("Should not happen");
                             }
                           },
@@ -249,16 +245,6 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
     @SuppressWarnings("unchecked")
     private static <T extends Throwable> void sneakyThrow(Throwable t) throws T {
         throw (T) t;
-    }
-
-    private static ConfigServerException readException(byte[] serialised) {
-        Inspector root = SlimeUtils.jsonToSlime(serialised).get();
-        String codeName = root.field("error-code").asString();
-        ConfigServerException.ErrorCode code = Stream.of(ConfigServerException.ErrorCode.values())
-                                                     .filter(value -> value.name().equals(codeName))
-                                                     .findAny().orElse(INCOMPLETE_RESPONSE);
-        String message = root.field("message").valid() ? root.field("message").asString() : "(no message)";
-        return new ConfigServerException(code, message, "");
     }
 
 }
