@@ -777,7 +777,7 @@ public class ModelProvisioningTest {
                         "  </container>" +
                         "</services>";
 
-        int numberOfHosts = 10;
+        int numberOfHosts = 11;
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, true, "node-1-3-10-09");
@@ -785,9 +785,9 @@ public class ModelProvisioningTest {
 
         // Check slobroks clusters
         assertEquals("Includes retired node", 1+3, model.getAdmin().getSlobroks().size());
-        assertEquals("node-1-3-10-10", model.getAdmin().getSlobroks().get(0).getHostName());
-        assertEquals("node-1-3-10-08", model.getAdmin().getSlobroks().get(1).getHostName());
-        assertEquals("node-1-3-10-07", model.getAdmin().getSlobroks().get(2).getHostName());
+        assertEquals("node-1-3-10-11", model.getAdmin().getSlobroks().get(0).getHostName());
+        assertEquals("node-1-3-10-10", model.getAdmin().getSlobroks().get(1).getHostName());
+        assertEquals("node-1-3-10-08", model.getAdmin().getSlobroks().get(2).getHostName());
         assertEquals("Included in addition because it is retired", "node-1-3-10-09", model.getAdmin().getSlobroks().get(3).getHostName());
     }
 
@@ -802,19 +802,19 @@ public class ModelProvisioningTest {
                         "  </container>" +
                         "</services>";
 
-        int numberOfHosts = 10;
+        int numberOfHosts = 12;
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
-        VespaModel model = tester.createModel(services, true, "node-1-3-10-01", "node-1-3-10-02");
-        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
+        VespaModel model = tester.createModel(services, true, "node-1-3-10-03", "node-1-3-10-04");
+        assertEquals(10+2, model.getRoot().hostSystem().getHosts().size());
 
         // Check slobroks clusters
         assertEquals("Includes retired node", 3+2, model.getAdmin().getSlobroks().size());
-        assertEquals("node-1-3-10-10", model.getAdmin().getSlobroks().get(0).getHostName());
-        assertEquals("node-1-3-10-09", model.getAdmin().getSlobroks().get(1).getHostName());
-        assertEquals("node-1-3-10-08", model.getAdmin().getSlobroks().get(2).getHostName());
-        assertEquals("Included in addition because it is retired", "node-1-3-10-02", model.getAdmin().getSlobroks().get(3).getHostName());
-        assertEquals("Included in addition because it is retired", "node-1-3-10-01", model.getAdmin().getSlobroks().get(4).getHostName());
+        assertEquals("node-1-3-10-12", model.getAdmin().getSlobroks().get(0).getHostName());
+        assertEquals("node-1-3-10-11", model.getAdmin().getSlobroks().get(1).getHostName());
+        assertEquals("node-1-3-10-10", model.getAdmin().getSlobroks().get(2).getHostName());
+        assertEquals("Included in addition because it is retired", "node-1-3-10-04", model.getAdmin().getSlobroks().get(3).getHostName());
+        assertEquals("Included in addition because it is retired", "node-1-3-10-03", model.getAdmin().getSlobroks().get(4).getHostName());
     }
 
     @Test
@@ -831,22 +831,22 @@ public class ModelProvisioningTest {
                         "  </container>" +
                         "</services>";
 
-        int numberOfHosts = 13;
+        int numberOfHosts = 16;
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
-        VespaModel model = tester.createModel(services, true, "node-1-3-10-12", "node-1-3-10-03", "node-1-3-10-02");
+        VespaModel model = tester.createModel(services, true, "node-1-3-10-15", "node-1-3-10-05", "node-1-3-10-04");
         assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
 
         // Check slobroks clusters
         // ... from cluster default
-        assertEquals("Includes retired node", 3+3, model.getAdmin().getSlobroks().size());
-        assertEquals("node-1-3-10-13", model.getAdmin().getSlobroks().get(0).getHostName());
-        assertEquals("node-1-3-10-11", model.getAdmin().getSlobroks().get(1).getHostName());
-        assertEquals("Included in addition because it is retired", "node-1-3-10-12", model.getAdmin().getSlobroks().get(2).getHostName());
+        assertEquals("Includes retired node", 7, model.getAdmin().getSlobroks().size());
+        assertEquals("node-1-3-10-16", model.getAdmin().getSlobroks().get(0).getHostName());
+        assertEquals("node-1-3-10-14", model.getAdmin().getSlobroks().get(1).getHostName());
+        assertEquals("Included in addition because it is retired", "node-1-3-10-15", model.getAdmin().getSlobroks().get(2).getHostName());
         // ... from cluster bar
-        assertEquals("node-1-3-10-01", model.getAdmin().getSlobroks().get(3).getHostName());
-        assertEquals("Included in addition because it is retired", "node-1-3-10-03", model.getAdmin().getSlobroks().get(4).getHostName());
-        assertEquals("Included in addition because it is retired", "node-1-3-10-02", model.getAdmin().getSlobroks().get(5).getHostName());
+        assertEquals("node-1-3-10-03", model.getAdmin().getSlobroks().get(3).getHostName());
+        assertEquals("Included in addition because it is retired", "node-1-3-10-05", model.getAdmin().getSlobroks().get(5).getHostName());
+        assertEquals("Included in addition because it is retired", "node-1-3-10-04", model.getAdmin().getSlobroks().get(6).getHostName());
     }
 
     @Test
@@ -967,7 +967,7 @@ public class ModelProvisioningTest {
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(numberOfHosts);
         VespaModel model = tester.createModel(services, false);
-        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
+        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
 
         ContentCluster cluster = model.getContentClusters().get("bar");
         assertEquals(2*3, cluster.redundancy().effectiveInitialRedundancy()); // Reduced from 3*3
@@ -994,6 +994,39 @@ public class ModelProvisioningTest {
         assertThat(cluster.getRootGroup().getSubgroups().get(2).getNodes().get(0).getConfigId(), is("bar/storage/4"));
         assertThat(cluster.getRootGroup().getSubgroups().get(2).getNodes().get(1).getDistributionKey(), is(5));
         assertThat(cluster.getRootGroup().getSubgroups().get(2).getNodes().get(1).getConfigId(), is("bar/storage/5"));
+    }
+
+    @Test
+    public void testRedundancyWithGroupsAndThreeRetiredNodes() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>1</redundancy>" +
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2' groups='2'/>" +
+                "  </content>" +
+                "</services>";
+
+        int numberOfHosts = 5;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, false, "node-1-3-10-05", "node-1-3-10-04", "node-1-3-10-03");
+        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
+
+        ContentCluster cluster = model.getContentClusters().get("bar");
+        assertEquals(2, cluster.redundancy().effectiveInitialRedundancy());
+        assertEquals(2, cluster.redundancy().effectiveFinalRedundancy());
+        assertEquals(2, cluster.redundancy().effectiveReadyCopies());
+        assertEquals("1|*", cluster.getRootGroup().getPartitions().get());
+        assertEquals(0, cluster.getRootGroup().getNodes().size());
+        assertEquals(2, cluster.getRootGroup().getSubgroups().size());
+        System.out.println("Nodes in group 0: ");
+        cluster.getRootGroup().getSubgroups().get(0).getNodes().forEach(n -> System.out.println("  " + n));
+        System.out.println("Nodes in group 1: ");
+        cluster.getRootGroup().getSubgroups().get(1).getNodes().forEach(n -> System.out.println("  " + n));
     }
 
     @Test
@@ -1841,12 +1874,12 @@ public class ModelProvisioningTest {
                 "<services>" +
                 "  <container version='1.0' id='zk'>" +
                 "     <zookeeper/>" +
-                "     <nodes count='4'/>" + // (3 + 1 retired)
+                "     <nodes count='3'/>" +
                 "  </container>" +
                 "</services>";
         VespaModelTester tester = new VespaModelTester();
         tester.addHosts(4);
-        VespaModel model = tester.createModel(servicesXml, true, "node-1-3-10-01");
+        VespaModel model = tester.createModel(servicesXml, true, "node-1-3-10-04");
         ApplicationContainerCluster cluster = model.getContainerClusters().get("zk");
         assertEquals(1, cluster.getContainers().stream().filter(Container::isRetired).count());
         assertEquals(3, cluster.getContainers().stream().filter(c -> !c.isRetired()).count());
