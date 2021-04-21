@@ -7,6 +7,7 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.SharedResource;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
+import com.yahoo.jdisc.handler.DelegatedRequestHandler;
 import com.yahoo.jdisc.handler.NullContent;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
@@ -26,7 +27,7 @@ import java.util.logging.Logger;
  * @author bakksjo
  */
 @SuppressWarnings("try")
-class ReferenceCountingRequestHandler implements RequestHandler {
+class ReferenceCountingRequestHandler implements DelegatedRequestHandler {
 
     private static final Logger log = Logger.getLogger(ReferenceCountingRequestHandler.class.getName());
 
@@ -77,6 +78,11 @@ class ReferenceCountingRequestHandler implements RequestHandler {
     @Override
     public String toString() {
         return delegate.toString();
+    }
+
+    @Override
+    public RequestHandler getDelegate() {
+        return delegate;
     }
 
     private static class ReferenceCountingResponseHandler implements ResponseHandler {

@@ -9,6 +9,7 @@ import com.yahoo.jdisc.TimeoutManager;
 import com.yahoo.jdisc.Timer;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
+import com.yahoo.jdisc.handler.DelegatedRequestHandler;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
 
@@ -106,7 +107,7 @@ public class TimeoutManagerImpl {
         }
     }
 
-    private class ManagedRequestHandler implements RequestHandler {
+    private class ManagedRequestHandler implements DelegatedRequestHandler {
 
         final RequestHandler delegate;
 
@@ -151,6 +152,11 @@ public class TimeoutManagerImpl {
         @Override
         public String toString() {
             return delegate.toString();
+        }
+
+        @Override
+        public RequestHandler getDelegate() {
+            return delegate;
         }
     }
 
