@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -69,11 +70,35 @@ public class AttributeChangeValidatorTest {
     }
 
     @Test
+    public void changing_btree2hash_require_restart() throws Exception {
+        new Fixture("field f1 type long { indexing: attribute\n attribute: fast-search\n dictionary: btree}",
+                "field f1 type long { indexing: attribute\n attribute: fast-search\n dictionary: hash }").
+                assertValidation(newRestartAction(ClusterSpec.Id.from("test"),
+                        "Field 'f1' changed: change property 'dictionary: btree/hash' from 'BTREE' to 'HASH'"));
+    }
+
+    @Test
+    public void changing_hash2btree_require_restart() throws Exception {
+        new Fixture("field f1 type long { indexing: attribute\n attribute: fast-search\n dictionary: hash}",
+                "field f1 type long { indexing: attribute\n attribute: fast-search\n dictionary: btree }").
+                assertValidation(newRestartAction(ClusterSpec.Id.from("test"),
+                        "Field 'f1' changed: change property 'dictionary: btree/hash' from 'HASH' to 'BTREE'"));
+    }
+
+    @Test
     public void changing_fast_access_require_restart() throws Exception {
         new Fixture("field f1 type string { indexing: attribute \n attribute: fast-access }",
                 "field f1 type string { indexing: attribute }").
                 assertValidation(newRestartAction(ClusterSpec.Id.from("test"),
                                                   "Field 'f1' changed: remove attribute 'fast-access'"));
+    }
+
+    @Ignore  // Not testable until one dictionary supports both casings
+    public void changing_uncased2cased_require_restart() throws Exception {
+        new Fixture("field f1 type string { indexing: attribute\n attribute: fast-search\n dictionary { hash\ncased}\nmatch:cased}",
+                "field f1 type string { indexing: attribute\n attribute: fast-search\n dictionary{ btree} }").
+                assertValidation(newRestartAction(ClusterSpec.Id.from("test"),
+                        "Field 'f1' changed: change property 'dictionary: btree/hash' from 'HASH' to 'BTREE'"));
     }
 
     @Test
