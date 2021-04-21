@@ -92,7 +92,7 @@ public class ContainerEngineMock implements ContainerEngine {
 
     @Override
     public ProcessResult executeInContainerAsUser(ContainerName containerName, String user, OptionalLong timeout, String... args) {
-        return new ProcessResult(0, null, "");
+        return new ProcessResult(0, "", "");
     }
 
     @Override

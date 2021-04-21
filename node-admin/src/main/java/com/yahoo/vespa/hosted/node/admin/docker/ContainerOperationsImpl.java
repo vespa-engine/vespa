@@ -243,28 +243,28 @@ public class ContainerOperationsImpl implements ContainerOperations {
     }
 
     @Override
-    public void resumeNode(NodeAgentContext context) {
-        executeNodeCtlInContainer(context, "resume");
+    public String resumeNode(NodeAgentContext context) {
+        return executeNodeCtlInContainer(context, "resume").getOutput();
     }
 
     @Override
-    public void suspendNode(NodeAgentContext context) {
-        executeNodeCtlInContainer(context, "suspend");
+    public String suspendNode(NodeAgentContext context) {
+        return executeNodeCtlInContainer(context, "suspend").getOutput();
     }
 
     @Override
-    public void restartVespa(NodeAgentContext context) {
-        executeNodeCtlInContainer(context, "restart-vespa");
+    public String restartVespa(NodeAgentContext context) {
+        return executeNodeCtlInContainer(context, "restart-vespa").getOutput();
     }
 
     @Override
-    public void startServices(NodeAgentContext context) {
-        executeNodeCtlInContainer(context, "start");
+    public String startServices(NodeAgentContext context) {
+        return executeNodeCtlInContainer(context, "start").getOutput();
     }
 
     @Override
-    public void stopServices(NodeAgentContext context) {
-        executeNodeCtlInContainer(context, "stop");
+    public String stopServices(NodeAgentContext context) {
+        return executeNodeCtlInContainer(context, "stop").getOutput();
     }
 
     ProcessResult executeNodeCtlInContainer(NodeAgentContext context, String program) {
