@@ -96,7 +96,7 @@ private:
     std::mutex                             _syncLock;
     SerialNum                              _syncedSerialNum; 
     bool                                   _allowSync; // Sanity check
-    std::atomic<uint64_t>                  _heart_beat_time;
+    std::atomic<vespalib::steady_time>     _heart_beat_time;
 
     /**
      * Delayed handling of feed operations, in master write thread.

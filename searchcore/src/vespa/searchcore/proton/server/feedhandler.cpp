@@ -436,7 +436,7 @@ FeedHandler::FeedHandler(IThreadingService &writeService,
       _syncLock(),
       _syncedSerialNum(0),
       _allowSync(false),
-      _heart_beat_time(0u)
+      _heart_beat_time(vespalib::steady_time())
 { }
 
 
@@ -765,7 +765,7 @@ void
 FeedHandler::heartBeat()
 {
     assert(_writeService.master().isCurrentThread());
-    _heart_beat_time.store(vespalib::count_ns(vespalib::steady_clock::now().time_since_epoch()), std::memory_order_relaxed);
+    _heart_beat_time.store(vespalib::steady_clock::now());
     _activeFeedView->heartBeat(_serialNum);
 }
 
@@ -829,7 +829,7 @@ FeedHandler::syncTls(SerialNum syncTo)
 vespalib::steady_time
 FeedHandler::get_heart_beat_time() const
 {
-    return vespalib::steady_time(std::chrono::nanoseconds(_heart_beat_time.load(std::memory_order_relaxed)));
+    return _heart_beat_time.load(std::memory_order_relaxed);
 }
 
 } // namespace proton
