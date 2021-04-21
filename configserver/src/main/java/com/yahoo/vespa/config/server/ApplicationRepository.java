@@ -656,10 +656,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         try {
             Tenant tenant = getTenant(applicationId);
             if (tenant == null) throw new NotFoundException("Tenant '" + applicationId.tenant() + "' not found");
-            long sessionId = getSessionIdForApplication(tenant, applicationId);
-            RemoteSession session = getRemoteSession(tenant, sessionId);
-            SessionRepository sessionRepository = tenant.getSessionRepository();
-            return sessionRepository.ensureApplicationLoaded(session).getForVersionOrLatest(version, clock.instant());
+
+            Optional<ApplicationSet> activeApplicationSet = tenant.getSessionRepository().getActiveApplicationSet(applicationId);
+            if (activeApplicationSet.isPresent())
+                return activeApplicationSet.get().getForVersionOrLatest(version, clock.instant());
+            else
+                throw new NotFoundException("Unknown application id '" + applicationId + "'");
         } catch (NotFoundException e) {
             log.log(Level.WARNING, "Failed getting application for '" + applicationId + "': " + e.getMessage());
             throw e;
