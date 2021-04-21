@@ -9,6 +9,7 @@ import com.yahoo.tensor.PartialAddress;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
@@ -49,7 +50,7 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
     /** Returns the type resulting from applying Join to the two given types */
     public static TensorType outputType(TensorType a, TensorType b) {
         try {
-            return new TensorType.Builder(false, a, b).build();
+            return TypeResolver.join(a, b);
         }
         catch (IllegalArgumentException e) {
             throw new IllegalArgumentException("Can not join " + a + " and " + b, e);

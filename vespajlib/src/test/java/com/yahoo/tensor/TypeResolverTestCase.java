@@ -77,10 +77,12 @@ public class TypeResolverTestCase {
         checkJoin("tensor(x{})",                 "tensor<bfloat16>(y{})",                          "tensor(x{},y{})");
         checkJoin("tensor(x{})",                 "tensor<float>(y{})",                             "tensor(x{},y{})");
         checkJoin("tensor(x{})",                 "tensor<int8>(y{})",                              "tensor(x{},y{})");
+        // specific for Java
+        checkJoin("tensor(x[])",                 "tensor(x{})",                                    "tensor(x{})");
+        checkJoin("tensor(x{})",                 "tensor(x[])",                                    "tensor(x{})");
         // dimension mismatch should fail:
         checkJoinFails("tensor(x[3])",           "tensor(x[5])");
         checkJoinFails("tensor(x[5])",           "tensor(x[3])");
-        checkJoinFails("tensor(x{})",            "tensor(x[5])");
     }
 
     @Test
@@ -156,6 +158,7 @@ public class TypeResolverTestCase {
         checkMerge("tensor(x{},y{})",             "tensor<float>(x{},y{})",                         "tensor(x{},y{})");
         checkMerge("tensor(x{},y{})",             "tensor<int8>(x{},y{})",                          "tensor(x{},y{})");
         checkMerge("tensor(y{})",                 "tensor(y{})",                                    "tensor(y{})");
+        checkMerge("tensor(x{})",                 "tensor(x[5])",                                   "tensor(x{})");
         checkMergeFails("tensor(a[10])",          "tensor()");
         checkMergeFails("tensor(a[10])",          "tensor(x{},y{},z{})");
         checkMergeFails("tensor<bfloat16>(x[5])", "tensor()");
@@ -168,7 +171,6 @@ public class TypeResolverTestCase {
         checkMergeFails("tensor(x[3])",           "tensor(x[5])");
         checkMergeFails("tensor(x[5])",           "tensor(x[3])");
         checkMergeFails("tensor(x{})",            "tensor()");
-        checkMergeFails("tensor(x{})",            "tensor(x[5])");
         checkMergeFails("tensor(x{},y{})",        "tensor(x{},z{})");
         checkMergeFails("tensor(y{})",            "tensor()");
     }

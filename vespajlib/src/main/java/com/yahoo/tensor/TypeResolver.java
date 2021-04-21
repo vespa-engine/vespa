@@ -153,6 +153,10 @@ public class TypeResolver {
                         map.put(dim.name(), dim);
                     } else if (firstIsBoundSecond(other, dim)) {
                         map.put(dim.name(), other);
+                    } else if (dim.isMapped() && other.isIndexed()) {
+                        map.put(dim.name(), dim);  // {} and [] -> {}. Note: this is not allowed in C++
+                    } else if (dim.isIndexed() && other.isMapped()) {
+                        map.put(dim.name(), other);  // {} and [] -> {}. Note: this is not allowed in C++
                     } else {
                         throw new IllegalArgumentException("Unequal dimension " + dim.name() + " in " + lhs+ " and "+rhs);
                     }
