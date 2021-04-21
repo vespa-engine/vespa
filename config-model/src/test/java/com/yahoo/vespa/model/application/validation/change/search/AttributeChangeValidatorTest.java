@@ -93,7 +93,8 @@ public class AttributeChangeValidatorTest {
                                                   "Field 'f1' changed: remove attribute 'fast-access'"));
     }
 
-    @Ignore  // Not testable until one dictionary supports both casings
+    // TODO Not testable until one dictionary type supports both cased/uncased
+    @Ignore
     public void changing_uncased2cased_require_restart() throws Exception {
         new Fixture("field f1 type string { indexing: attribute\n attribute: fast-search\n dictionary { hash\ncased}\nmatch:cased}",
                 "field f1 type string { indexing: attribute\n attribute: fast-search\n dictionary{ btree} }").
