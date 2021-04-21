@@ -203,6 +203,10 @@ public class StorageGroup {
         }
 
         public StorageGroup buildRootGroup(DeployState deployState, RedundancyBuilder redundancyBuilder, ContentCluster owner) {
+            Optional<Integer> maxRedundancy = Optional.empty();
+            if (owner.isHosted())
+                maxRedundancy = validateRedundancyAndGroups();
+
             Optional<ModelElement> group = Optional.ofNullable(clusterElement.child("group"));
             Optional<ModelElement> nodes = getNodes(clusterElement);
 
@@ -215,12 +219,37 @@ public class StorageGroup {
             StorageGroup storageGroup = (owner.isHosted())
                     ? groupBuilder.buildHosted(deployState, owner, Optional.empty())
                     : groupBuilder.buildNonHosted(deployState, owner, Optional.empty());
-            Redundancy redundancy = redundancyBuilder.build(owner.getName(), owner.isHosted(), storageGroup.subgroups.size(), storageGroup.getNumberOfLeafGroups(), storageGroup.countNodes());
+            Redundancy redundancy = redundancyBuilder.build(owner.getName(), owner.isHosted(), storageGroup.subgroups.size(),
+                                                            storageGroup.getNumberOfLeafGroups(), storageGroup.countNodes(),
+                                                            maxRedundancy);
             owner.setRedundancy(redundancy);
             if (storageGroup.partitions.isEmpty() && (redundancy.groups() > 1)) {
                 storageGroup.partitions = Optional.of(computePartitions(redundancy.finalRedundancy(), redundancy.groups()));
             }
             return storageGroup;
+        }
+
+        private Optional<Integer> validateRedundancyAndGroups() {
+            var redundancyElement = clusterElement.child("redundancy");
+            if (redundancyElement == null) return Optional.empty();
+            long redundancy = redundancyElement.asLong();
+
+            var nodesElement = clusterElement.child("nodes");
+            if (nodesElement == null) return Optional.empty();
+            var nodesSpec = NodesSpecification.from(nodesElement, context);
+
+            int minNodesPerGroup = (int)Math.ceil((double)nodesSpec.minResources().nodes() / nodesSpec.minResources().groups());
+
+            if (minNodesPerGroup < redundancy) { // TODO: Fail on this on Vespa 8, and simplify
+                context.getDeployLogger().log(Level.WARNING,
+                                              "Cluster '" + clusterElement.stringAttribute("id") + "' " +
+                                              "specifies redundancy " + redundancy + " but cannot be higher than " +
+                                              "the minimum nodes per group, which is " + minNodesPerGroup);
+                return Optional.of(minNodesPerGroup);
+            }
+            else {
+                return Optional.empty();
+            }
         }
 
         /** This returns a partition string which specifies equal distribution between all groups */

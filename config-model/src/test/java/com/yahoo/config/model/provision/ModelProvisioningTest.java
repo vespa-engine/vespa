@@ -997,6 +997,39 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testRedundancyWithGroupsTooHighRedundancyAndOneRetiredNode() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>" +
+                "<services>" +
+                "  <content version='1.0' id='bar'>" +
+                "     <redundancy>2</redundancy>" + // Should have been illegal since we only have 1 node per group
+                "     <documents>" +
+                "       <document type='type1' mode='index'/>" +
+                "     </documents>" +
+                "     <nodes count='2' groups='2'/>" +
+                "  </content>" +
+                "</services>";
+
+        int numberOfHosts = 3;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, false, "node-1-3-10-03");
+        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
+
+        ContentCluster cluster = model.getContentClusters().get("bar");
+        assertEquals(2, cluster.redundancy().effectiveInitialRedundancy());
+        assertEquals(2, cluster.redundancy().effectiveFinalRedundancy());
+        assertEquals(2, cluster.redundancy().effectiveReadyCopies());
+        assertEquals("1|*", cluster.getRootGroup().getPartitions().get());
+        assertEquals(0, cluster.getRootGroup().getNodes().size());
+        assertEquals(2, cluster.getRootGroup().getSubgroups().size());
+        System.out.println("Nodes in group 0: ");
+        cluster.getRootGroup().getSubgroups().get(0).getNodes().forEach(n -> System.out.println("  " + n));
+        System.out.println("Nodes in group 1: ");
+        cluster.getRootGroup().getSubgroups().get(1).getNodes().forEach(n -> System.out.println("  " + n));
+    }
+
+    @Test
     public void testRedundancyWithGroupsAndThreeRetiredNodes() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>" +
