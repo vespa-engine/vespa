@@ -238,7 +238,7 @@ public class ConvertedModel {
                                           function.returnType().map(TensorType::fromSpec));
         }
         catch (ParseException e) {
-            throw new IllegalArgumentException("Gor an illegal argument from importing " + function.name(), e);
+            throw new IllegalArgumentException("Got an illegal argument from importing " + function.name(), e);
         }
     }
 
@@ -260,8 +260,9 @@ public class ConvertedModel {
             profile.addConstant(constant.getFirst(), asValue(constant.getSecond()));
 
         for (RankingConstant constant : store.readLargeConstants()) {
-            if ( ! profile.rankingConstants().asMap().containsKey(constant.getName()))
+            if ( ! profile.rankingConstants().asMap().containsKey(constant.getName())) {
                 profile.rankingConstants().add(constant);
+            }
         }
 
         for (Pair<String, RankingExpression> function : store.readFunctions()) {
@@ -320,7 +321,8 @@ public class ConvertedModel {
                                                    "\nwant to add " + expression + "\n");
             return;
         }
-        profile.addFunction(new ExpressionFunction(functionName, expression), false);  // TODO: Inline if only used once
+        var fun = new ExpressionFunction(functionName, expression);
+        profile.addFunction(fun, false);  // TODO: Inline if only used once
     }
 
     /**
