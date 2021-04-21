@@ -41,6 +41,15 @@ public class SchemaValidatorTest {
             "  </admin>\n" +
             "</services>\n";
 
+    private static final String emptyConfigElement = "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                                                     "<services>\n" +
+                                                     "  <config name='standard'>\n" +
+                                                     "  </config>\n" +
+                                                     "  <admin version='2.0'>\n" +
+                                                     "    <adminserver hostalias='node1'>\n" +
+                                                     "  </admin>\n" +
+                                                     "</services>\n";
+
     @Rule
     public ExpectedException expectedException = ExpectedException.none();
 
@@ -72,6 +81,14 @@ public class SchemaValidatorTest {
         validator.validate(new StringReader(invalidServices));
     }
 
+    @Test
+    public void testXMLParseErrorEmptyElement() throws IOException {
+        SchemaValidator validator = createValidator();
+        expectedException.expect(IllegalArgumentException.class);
+        expectedException.expectMessage(expectedErrorMessageForEmptyConfigElement("services.xml"));
+        validator.validate(new InputSource(new StringReader(emptyConfigElement)), "services.xml");
+    }
+
     private SchemaValidator createValidator() {
         return new SchemaValidators(new Version(VespaVersion.major)).servicesXmlValidator();
     }
@@ -86,4 +103,16 @@ public class SchemaValidatorTest {
                 "9:    <adminserver hostalias='node1'>\n" +
                 "10:  </admin>\n";
     }
+
+    private String expectedErrorMessageForEmptyConfigElement(String input) {
+        return "Invalid XML according to XML schema, error in " + input + ": element \"config\" incomplete [4:12], input:\n" +
+               "1:<?xml version='1.0' encoding='utf-8' ?>\n" +
+               "2:<services>\n" +
+               "3:  <config name='standard'>\n" +
+               "4:  </config>\n" +
+               "5:  <admin version='2.0'>\n" +
+               "6:    <adminserver hostalias='node1'>\n" +
+               "7:  </admin>\n";
+    }
+
 }
