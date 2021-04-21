@@ -29,9 +29,9 @@ public class NotificationsDb {
         this.curatorDb = curatorDb;
     }
 
-    public List<Notification> listNotifications(NotificationSource source) {
+    public List<Notification> listNotifications(NotificationSource source, boolean productionOnly) {
         return curatorDb.readNotifications(source.tenant()).stream()
-                .filter(notification -> source.contains(notification.source()))
+                .filter(notification -> source.contains(notification.source()) && (!productionOnly || notification.source().isProduction()))
                 .collect(Collectors.toUnmodifiableList());
     }
 
@@ -39,6 +39,10 @@ public class NotificationsDb {
         addNotification(source, type, List.of(message));
     }
 
+    /**
+     * Add a notification with given source and type. If a notification with same source and type
+     * already exists, it'll be replaced by this one instead
+     */
     public void addNotification(NotificationSource source, Notification.Type type, List<String> messages) {
         try (Lock lock = curatorDb.lockNotifications(source.tenant())) {
             List<Notification> notifications = curatorDb.readNotifications(source.tenant()).stream()
@@ -49,6 +53,7 @@ public class NotificationsDb {
         }
     }
 
+    /** Remove the notification with the given source and type */
     public void removeNotification(NotificationSource source, Notification.Type type) {
         try (Lock lock = curatorDb.lockNotifications(source.tenant())) {
             List<Notification> initial = curatorDb.readNotifications(source.tenant());
@@ -60,6 +65,7 @@ public class NotificationsDb {
         }
     }
 
+    /** Remove all notifications for this source or sources contained by this source */
     public void removeNotifications(NotificationSource source) {
         if (source.application().isEmpty()) // Source is tenant
             curatorDb.deleteNotifications(source.tenant());

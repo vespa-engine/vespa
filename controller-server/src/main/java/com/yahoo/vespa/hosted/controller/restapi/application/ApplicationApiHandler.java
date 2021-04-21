@@ -489,7 +489,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
         Slime slime = new Slime();
         Cursor notificationsArray = slime.setObject().setArray("notifications");
-        controller.notificationsDb().listNotifications(notificationSource)
+        controller.notificationsDb().listNotifications(notificationSource, showOnlyProductionInstances(request))
                 .forEach(notification -> toSlime(notificationsArray.addObject(), notification));
         return new SlimeJsonResponse(slime);
     }

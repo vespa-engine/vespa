@@ -4,6 +4,7 @@ package com.yahoo.vespa.hosted.controller.notification;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
@@ -65,7 +66,7 @@ public class NotificationSource {
     public OptionalLong runNumber() { return runNumber; }
 
     /**
-     * Returns true iff this source contains the give source. A source contains the other source if
+     * Returns true iff this source contains the given source. A source contains the other source if
      * all the set fields in this source are equal to the given source, while the fields not set
      * in this source are ignored.
      */
@@ -76,6 +77,18 @@ public class NotificationSource {
                 (zoneId.isEmpty() || zoneId.equals(other.zoneId)) &&
                 (clusterId.isEmpty() || clusterId.equals(other.clusterId)) &&
                 (jobType.isEmpty() || jobType.equals(other.jobType)); // Do not consider run number (it's unique!)
+    }
+
+    /**
+     * Returns whether this source from a production deployment or deployment related to prod deployment (e.g. to
+     * staging zone), or if this is at tenant or application level
+     */
+    public boolean isProduction() {
+        if (instance.isEmpty()) return true;
+        return ! zoneId.map(ZoneId::environment)
+                .or(() -> jobType.map(JobType::environment))
+                .map(Environment::isManuallyDeployed)
+                .orElse(true); // Assume that notification with full application ID concern dev deployments
     }
 
     @Override
