@@ -5,7 +5,6 @@
 #include <vespa/vespalib/data/slime/slime.h>
 #include <vespa/vespalib/io/mapped_file_input.h>
 #include <vespa/vespalib/objects/nbostream.h>
-#include <vespa/vespalib/testkit/test_kit.h>
 #include <vespa/vespalib/util/size_literals.h>
 #include <vespa/vespalib/util/require.h>
 #include <vespa/vespalib/util/stringfmt.h>
@@ -16,6 +15,7 @@
 #include <vespa/eval/eval/tensor_spec.h>
 #include <vespa/eval/eval/test/reference_evaluation.h>
 #include <vespa/eval/eval/test/test_io.h>
+#include <vespa/eval/eval/test/gen_spec.h>
 #include <vespa/eval/eval/value.h>
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/eval/eval/value_type.h>
@@ -36,6 +36,10 @@ using namespace std::placeholders;
 
 //-----------------------------------------------------------------------------
 
+size_t fail_cnt = 0;
+
+//-----------------------------------------------------------------------------
+
 const ValueBuilderFactory &prod_factory = FastValueBuilderFactory::get();
 const ValueBuilderFactory &simple_factory = SimpleValueBuilderFactory::get();
 const ValueBuilderFactory &streamed_factory = StreamedValueBuilderFactory::get();
@@ -49,7 +53,7 @@ uint8_t unhex(char c) {
     if (c >= 'A' && c <= 'F') {
         return ((c - 'A') + 10);
     }
-    TEST_ERROR("bad hex char");
+    REQUIRE_FAILED("bad hex char");
     return 0;
 }
 
@@ -120,7 +124,7 @@ TensorSpec ref_eval(const Inspector &test) {
     auto result = ReferenceEvaluation::eval(*fun, params);
     if (result.type() == "error") {
         dump_test(test);
-        REQUIRE(((void)"reference evaluation failed!", false));
+        REQUIRE_FAILED("reference evaluation failed!");
     }
     return result;
 }
@@ -182,30 +186,35 @@ public:
         }
         insert_value(test.setObject("result"), "expect", ref_eval(test));
     }
+    void add_failing_test() {
+        Cursor &test = _writer.create();
+        test.setString("expression", "a");
+        insert_value(test.setObject("inputs"), "a", GenSpec(1).idx("x", 3));
+        insert_value(test.setObject("result"), "dummy", GenSpec(2).idx("x", 3));
+    }
 };
 
 void generate(Output &out, bool full) {
     MyTestBuilder my_test_builder(full, out);
     Generator::generate(my_test_builder);
+    // my_test_builder.add_failing_test();
 }
 
 //-----------------------------------------------------------------------------
 
 void evaluate(Input &in, Output &out) {
-    auto handle_test = [&out](Slime &slime)
-                       {
-                           insert_value(slime["result"], "cpp_prod",
-                                   eval_expr(slime.get(), prod_factory));
-                           insert_value(slime["result"], "cpp_simple_value",
-                                   eval_expr(slime.get(), simple_factory));
-                           insert_value(slime["result"], "cpp_streamed_value",
-                                   eval_expr(slime.get(), streamed_factory));
-                           write_compact(slime, out);
-                       };
-    auto handle_summary = [&out](Slime &slime)
-                          {
-                              write_compact(slime, out);
-                          };
+    auto handle_test = [&out](Slime &slime) {
+        insert_value(slime["result"], "cpp_prod",
+                     eval_expr(slime.get(), prod_factory));
+        insert_value(slime["result"], "cpp_simple_value",
+                     eval_expr(slime.get(), simple_factory));
+        insert_value(slime["result"], "cpp_streamed_value",
+                     eval_expr(slime.get(), streamed_factory));
+        write_compact(slime, out);
+    };
+    auto handle_summary = [&out](Slime &slime) {
+        write_compact(slime, out);
+    };
     for_each_test(in, handle_test, handle_summary);
 }
 
@@ -213,25 +222,27 @@ void evaluate(Input &in, Output &out) {
 
 void verify(Input &in, Output &out) {
     std::map<vespalib::string,size_t> result_map;
-    auto handle_test = [&result_map](Slime &slime)
-                       {
-                           TensorSpec reference_result = ref_eval(slime.get());
-                           for (const auto &result: extract_fields(slime["result"])) {
-                               ++result_map[result];
-                               TEST_STATE(make_string("verifying result: '%s'", result.c_str()).c_str());
-                               if (!EXPECT_EQUAL(reference_result, extract_value(slime["result"][result]))) {
-                                   dump_test(slime.get());
-                               }
-                           }
-                       };
-    auto handle_summary = [&out,&result_map](Slime &slime)
-                          {
-                              Cursor &stats = slime.get().setObject("stats");
-                              for (const auto &entry: result_map) {
-                                  stats.setLong(entry.first, entry.second);
-                              }
-                              JsonFormat::encode(slime, out, false);
-                          };
+    auto handle_test = [&result_map](Slime &slime) {
+        TensorSpec reference_result = ref_eval(slime.get());
+        for (const auto &result: extract_fields(slime["result"])) {
+            ++result_map[result];
+            auto actual_result = extract_value(slime["result"][result]);
+            if (!require_impl::eq(actual_result, reference_result)) {
+                ++fail_cnt;
+                fprintf(stderr, "expression failed('%s'): '%s'\n", result.c_str(),
+                        slime["expression"].asString().make_string().c_str());
+                fprintf(stderr, "%s", TensorSpec::diff(actual_result, "actual", reference_result, "expected").c_str());
+                dump_test(slime.get());
+            }
+        }
+    };
+    auto handle_summary = [&out,&result_map](Slime &slime) {
+        Cursor &stats = slime.get().setObject("stats");
+        for (const auto &entry: result_map) {
+            stats.setLong(entry.first, entry.second);
+        }
+        JsonFormat::encode(slime, out, false);
+    };
     for_each_test(in, handle_test, handle_summary);
 }
 
@@ -239,17 +250,15 @@ void verify(Input &in, Output &out) {
 
 void display(Input &in, Output &out) {
     size_t test_cnt = 0;
-    auto handle_test = [&out,&test_cnt](Slime &slime)
-                       {
-                           OutputWriter dst(out, 4_Ki);
-                           dst.printf("\n------- TEST #%zu -------\n\n", test_cnt++);
-                           print_test(slime.get(), dst);
-                       };
-    auto handle_summary = [&out,&test_cnt](Slime &)
-                          {
-                              OutputWriter dst(out, 1024);
-                              dst.printf("%zu tests displayed\n", test_cnt);
-                          };
+    auto handle_test = [&out,&test_cnt](Slime &slime) {
+        OutputWriter dst(out, 4_Ki);
+        dst.printf("\n------- TEST #%zu -------\n\n", test_cnt++);
+        print_test(slime.get(), dst);
+    };
+    auto handle_summary = [&out,&test_cnt](Slime &) {
+        OutputWriter dst(out, 1024);
+        dst.printf("%zu tests displayed\n", test_cnt);
+    };
     for_each_test(in, handle_test, handle_summary);
 }
 
@@ -277,7 +286,6 @@ int main(int argc, char **argv) {
         return usage(argv[0]);
     }
     vespalib::string mode = argv[1];
-    TEST_MASTER.init(make_string("vespa-tensor-conformance-%s", mode.c_str()).c_str());
     if (mode == "generate") {
         generate(std_out, true);
     } else if (mode == "generate-some") {
@@ -289,7 +297,13 @@ int main(int argc, char **argv) {
     } else if (mode == "display") {
         display(std_in, std_out);
     } else {
-        TEST_ERROR(make_string("unknown mode: %s", mode.c_str()).c_str());
+        REQUIRE_FAILED(make_string("unknown mode: %s", mode.c_str()).c_str());
     }
-    return (TEST_MASTER.fini() ? 0 : 1);
+    if (fail_cnt == 0) {
+        fprintf(stderr, "(mode=%s) DONE (no failures detected)\n", mode.c_str());
+        return 0;
+    } else {
+        fprintf(stderr, "(mode=%s) ERROR: detected %zu failure(s)\n", mode.c_str(), fail_cnt);
+        return 1;
+    }
 }

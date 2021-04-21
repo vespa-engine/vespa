@@ -19,4 +19,17 @@ TEST("require that a tensor spec can be converted to and from slime") {
     EXPECT_EQUAL(TensorSpec::from_slime(slime.get()), spec);
 }
 
+TEST("require that tensor specs can be diffed") {
+    TensorSpec expect("tensor(x[2],y{})");
+    expect.add({{"x", 0}, {"y", "xxx"}}, 1.5)
+        .add({{"x", 0}, {"y", "yyy"}}, 2.0)
+        .add({{"x", 1}, {"y", "yyy"}}, 4.0);
+    TensorSpec actual("tensor<float>(x[2],y{})");
+    actual.add({{"x", 0}, {"y", "xxx"}}, 1.0)
+        .add({{"x", 0}, {"y", "yyy"}}, 2.0)
+        .add({{"x", 1}, {"y", "xxx"}}, 3.0);
+    EXPECT_TRUE(!(expect == actual));
+    fprintf(stderr, "tensor spec diff:\n%s", TensorSpec::diff(expect, "expect", actual, "actual").c_str());
+}
+
 TEST_MAIN() { TEST_RUN_ALL(); }
