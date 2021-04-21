@@ -4,7 +4,6 @@ package com.yahoo.vespa.zookeeper;
 import com.yahoo.cloud.config.ZookeeperServerConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
 import com.yahoo.protect.Process;
-import com.yahoo.security.tls.TransportSecurityUtils;
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
@@ -39,7 +38,7 @@ public class ZooKeeperRunner implements Runnable {
     public ZooKeeperRunner(ZookeeperServerConfig zookeeperServerConfig, VespaZooKeeperServer server) {
         this.zookeeperServerConfig = zookeeperServerConfig;
         this.server = server;
-        new Configurator(zookeeperServerConfig).writeConfigToDisk(TransportSecurityUtils.getSystemTlsContext());
+        new Configurator(zookeeperServerConfig).writeConfigToDisk();
         executorService = Executors.newSingleThreadExecutor(new DaemonThreadFactory("zookeeper server"));
         executorService.submit(this);
     }
