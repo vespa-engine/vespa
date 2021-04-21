@@ -7,6 +7,7 @@ import com.yahoo.jdisc.ResourceReference;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
+import com.yahoo.jdisc.handler.DelegatedRequestHandler;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest;
@@ -38,7 +39,7 @@ import static com.yahoo.jdisc.http.server.jetty.CompletionHandlerUtils.NOOP_COMP
  * @author bakksjo
  * $Id$
  */
-class FormPostRequestHandler extends AbstractRequestHandler implements ContentChannel {
+class FormPostRequestHandler extends AbstractRequestHandler implements ContentChannel, DelegatedRequestHandler {
 
     private final ByteArrayOutputStream accumulatedRequestContent = new ByteArrayOutputStream();
     private final RequestHandler delegateHandler;
@@ -184,5 +185,10 @@ class FormPostRequestHandler extends AbstractRequestHandler implements ContentCh
                 destination.put(entry.getKey(), entry.getValue());
             }
         }
+    }
+
+    @Override
+    public RequestHandler getDelegate() {
+        return delegateHandler;
     }
 }

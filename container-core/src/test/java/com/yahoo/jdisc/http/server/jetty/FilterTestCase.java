@@ -3,6 +3,8 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.util.Modules;
+import com.yahoo.container.jdisc.HttpRequestHandler;
+import com.yahoo.container.jdisc.RequestHandlerSpec;
 import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.container.logging.RequestLog;
 import com.yahoo.jdisc.AbstractResource;
@@ -12,6 +14,8 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
+import com.yahoo.jdisc.handler.DelegatedRequestHandler;
+import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.ConnectorConfig;
@@ -25,6 +29,8 @@ import com.yahoo.jdisc.http.filter.ResponseHeaderFilter;
 import com.yahoo.jdisc.http.filter.chain.RequestFilterChain;
 import com.yahoo.jdisc.http.filter.chain.ResponseFilterChain;
 import com.yahoo.jdisc.http.guiceModules.ConnectorFactoryRegistryModule;
+import org.assertj.core.api.Assertions;
+import org.bouncycastle.cert.ocsp.Req;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -530,6 +536,36 @@ public class FilterTestCase {
         assertThat(testDriver.close(), is(true));
     }
 
+    @Test
+    public void requireThatRequestHandlerSpecIsAvailableThroughDelegate() throws IOException, InterruptedException {
+        MyRequestHandler requestHandler = new MyHttpRequestHandler();
+        MyDelegatedHandler delegateHandler1 = new MyDelegatedHandler(requestHandler);
+        MyDelegatedHandler delegateHandler2 = new MyDelegatedHandler(delegateHandler1);
+        requestHandlerSpecTest(delegateHandler2);
+    }
+
+    @Test
+    public void requireThatRequestHandlerSpecIsAvailable() throws IOException, InterruptedException {
+        MyRequestHandler requestHandler = new MyHttpRequestHandler();
+        requestHandlerSpecTest(requestHandler);
+    }
+
+    private void requestHandlerSpecTest(MyRequestHandler requestHandler) throws IOException, InterruptedException {
+        RequestFilter filter = mock(RequestFilter.class);
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addRequestFilter("my-request-filter", filter)
+                .addRequestFilterBinding("my-request-filter", "http://*/filtered/*")
+                .build();
+
+        TestDriver testDriver = newDriver(requestHandler, filterBindings, new MetricConsumerMock(), true);
+
+        testDriver.client().get("/filtered/")
+                .expectStatusCode(is(Response.Status.OK));
+        ArgumentCaptor<HttpRequest> requestArgumentCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(filter).filter(requestArgumentCaptor.capture(), any(ResponseHandler.class));
+        Assertions.assertThat(requestArgumentCaptor.getValue().context()).containsKey(RequestHandlerSpec.ATTRIBUTE_NAME);
+    }
+
     private static TestDriver newDriver(MyRequestHandler requestHandler, FilterBindings filterBindings) {
         return newDriver(requestHandler, filterBindings, new MetricConsumerMock(), false);
     }
@@ -662,6 +698,35 @@ public class FilterTestCase {
             final CompletionHandler completionHandler = null;
             channel.write(ByteBuffer.wrap(responseMessage.getBytes()), completionHandler);
             channel.close(null);
+        }
+    }
+
+    private static class MyDelegatedHandler extends MyRequestHandler implements DelegatedRequestHandler {
+
+        private final RequestHandler delegate;
+
+        public MyDelegatedHandler(RequestHandler delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public RequestHandler getDelegate() {
+            return delegate;
+        }
+        @Override
+        public ContentChannel handleRequest(Request request, ResponseHandler handler) {
+            return delegate.handleRequest(request, handler);
+        }
+        @Override
+        public void handleTimeout(Request request, ResponseHandler handler) {
+            delegate.handleTimeout(request, handler);
+        }
+    }
+
+    private static class MyHttpRequestHandler extends MyRequestHandler implements HttpRequestHandler {
+        @Override
+        public RequestHandlerSpec requestHandlerSpec() {
+            return RequestHandlerSpec.DEFAULT_INSTANCE;
         }
     }
 }
