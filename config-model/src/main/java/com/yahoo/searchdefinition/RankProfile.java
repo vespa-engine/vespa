@@ -103,6 +103,8 @@ public class RankProfile implements Cloneable {
 
     private Map<String, RankingExpressionFunction> functions = new LinkedHashMap<>();
 
+    private Map<Reference, TensorType> inputParameters = new LinkedHashMap<>();
+
     private Set<String> filterFields = new HashSet<>();
 
     private final RankProfileRegistry rankProfileRegistry;
@@ -578,6 +580,23 @@ public class RankProfile implements Cloneable {
         return rankingExpressionFunction;
     }
 
+    /**
+     * Use for rank profiles representing a model evaluation; it will assume
+     * that a input is provided with the declared type (for the purpose of
+     * type resolving).
+     **/
+    public void addInputParameter(String name, TensorType declaredType) {
+        Reference ref = Reference.fromIdentifier(name);
+        if (inputParameters.containsKey(ref)) {
+            TensorType hadType = inputParameters.get(ref);
+            if (! declaredType.equals(hadType)) {
+                throw new IllegalArgumentException("Tried to replace input parameter "+name+" with different type: "+
+                                                   hadType+" -> "+declaredType);
+            }
+        }
+        inputParameters.put(ref, declaredType);
+    }
+
     public RankingExpressionFunction findFunction(String name) {
         RankingExpressionFunction function = functions.get(name);
         return ((function == null) && (getInherited() != null))
@@ -677,6 +696,7 @@ public class RankProfile implements Cloneable {
             clone.summaryFeatures = summaryFeatures != null ? new LinkedHashSet<>(this.summaryFeatures) : null;
             clone.rankFeatures = rankFeatures != null ? new LinkedHashSet<>(this.rankFeatures) : null;
             clone.rankProperties = new LinkedHashMap<>(this.rankProperties);
+            clone.inputParameters = new LinkedHashMap<>(this.inputParameters);
             clone.functions = new LinkedHashMap<>(this.functions);
             clone.filterFields = new HashSet<>(this.filterFields);
             clone.constants = new HashMap<>(this.constants);
@@ -790,8 +810,12 @@ public class RankProfile implements Cloneable {
         return typeContext(queryProfiles, collectFeatureTypes());
     }
 
+    public MapEvaluationTypeContext typeContext() { return typeContext(new QueryProfileRegistry()); }
+
     private Map<Reference, TensorType> collectFeatureTypes() {
         Map<Reference, TensorType> featureTypes = new HashMap<>();
+        // Add input parameters
+        inputParameters.forEach((k, v) -> featureTypes.put(k, v));
         // Add attributes
         allFields().forEach(field -> addAttributeFeatureTypes(field, featureTypes));
         allImportedFields().forEach(field -> addAttributeFeatureTypes(field, featureTypes));
