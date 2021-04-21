@@ -54,9 +54,9 @@ public class DictionaryTestCase {
                 getConfig(search).attribute().get(0).dictionary().type());
         assertEquals(AttributesConfig.Attribute.Dictionary.Type.BTREE,
                 getConfig(search).attribute().get(1).dictionary().type());
-        assertEquals(AttributesConfig.Attribute.Dictionary.Match.CASE_INSENSITIVE,
+        assertEquals(AttributesConfig.Attribute.Dictionary.Match.UNCASED,
                 getConfig(search).attribute().get(0).dictionary().match());
-        assertEquals(AttributesConfig.Attribute.Dictionary.Match.CASE_INSENSITIVE,
+        assertEquals(AttributesConfig.Attribute.Dictionary.Match.UNCASED,
                 getConfig(search).attribute().get(1).dictionary().match());
     }
 
@@ -130,19 +130,16 @@ public class DictionaryTestCase {
     }
     @Test
     public void testStringBtreeSettings() throws ParseException {
-        verifyStringDictionaryControl(Dictionary.Type.BTREE, Case.UNCASED, Case.UNCASED,
-                "dictionary:btree");
+        verifyStringDictionaryControl(Dictionary.Type.BTREE, Case.UNCASED, Case.UNCASED, "dictionary:btree");
     }
     @Test
     public void testStringBtreeUnCasedSettings() throws ParseException {
-        verifyStringDictionaryControl(Dictionary.Type.BTREE, Case.UNCASED, Case.UNCASED,
-                "dictionary { btree\nuncased\n}");
+        verifyStringDictionaryControl(Dictionary.Type.BTREE, Case.UNCASED, Case.UNCASED, "dictionary { btree\nuncased\n}");
     }
     @Test
     public void testStringBtreeCasedSettings() throws ParseException {
         try {
-            verifyStringDictionaryControl(Dictionary.Type.BTREE, Case.CASED, Case.CASED,
-                    "dictionary { btree\ncased\n}");
+            verifyStringDictionaryControl(Dictionary.Type.BTREE, Case.CASED, Case.CASED, "dictionary { btree\ncased\n}");
         } catch (IllegalArgumentException e) {
             assertEquals("For search 'test', field 'n1': btree dictionary require uncased match", e.getMessage());
         }
@@ -150,8 +147,7 @@ public class DictionaryTestCase {
     @Test
     public void testStringHashSettings() throws ParseException {
         try {
-        verifyStringDictionaryControl(Dictionary.Type.HASH, Case.UNCASED, Case.UNCASED,
-                "dictionary:hash");
+            verifyStringDictionaryControl(Dictionary.Type.HASH, Case.UNCASED, Case.UNCASED, "dictionary:hash");
         } catch (IllegalArgumentException e) {
             assertEquals("For search 'test', field 'n1': hash dictionary require cased match", e.getMessage());
         }
@@ -159,22 +155,19 @@ public class DictionaryTestCase {
     @Test
     public void testStringHashUnCasedSettings() throws ParseException {
         try {
-            verifyStringDictionaryControl(Dictionary.Type.HASH, Case.UNCASED, Case.UNCASED,
-                    "dictionary { hash\nuncased\n}");
+            verifyStringDictionaryControl(Dictionary.Type.HASH, Case.UNCASED, Case.UNCASED, "dictionary { hash\nuncased\n}");
         } catch (IllegalArgumentException e) {
             assertEquals("For search 'test', field 'n1': hash dictionary require cased match", e.getMessage());
         }
     }
     @Test
     public void testStringHashBothCasedSettings() throws ParseException {
-        verifyStringDictionaryControl(Dictionary.Type.HASH, Case.CASED, Case.CASED,
-                "dictionary { hash\ncased\n}", "match:cased");
+        verifyStringDictionaryControl(Dictionary.Type.HASH, Case.CASED, Case.CASED, "dictionary { hash\ncased\n}", "match:cased");
     }
     @Test
     public void testStringHashCasedSettings() throws ParseException {
         try {
-            verifyStringDictionaryControl(Dictionary.Type.HASH, Case.CASED, Case.CASED,
-                    "dictionary { hash\ncased\n}");
+            verifyStringDictionaryControl(Dictionary.Type.HASH, Case.CASED, Case.CASED, "dictionary { hash\ncased\n}");
             fail();
         } catch (IllegalArgumentException e) {
             assertEquals("For search 'test', field 'n1': Dictionary casing 'CASED' does not match field match casing 'UNCASED'", e.getMessage());
@@ -182,19 +175,16 @@ public class DictionaryTestCase {
     }
     @Test
     public void testStringBtreeHashSettings() throws ParseException {
-        verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.UNCASED, Case.UNCASED,
-                "dictionary{hash\nbtree\n}");
+        verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.UNCASED, Case.UNCASED, "dictionary{hash\nbtree\n}");
     }
     @Test
     public void testStringBtreeHashUnCasedSettings() throws ParseException {
-        verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.UNCASED, Case.UNCASED,
-                "dictionary { hash\nbtree\nuncased\n}");
+        verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.UNCASED, Case.UNCASED, "dictionary { hash\nbtree\nuncased\n}");
     }
     @Test
     public void testStringBtreeHashCasedSettings() throws ParseException {
         try {
-            verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.CASED, Case.CASED,
-                    "dictionary { btree\nhash\ncased\n}");
+            verifyStringDictionaryControl(Dictionary.Type.BTREE_AND_HASH, Case.CASED, Case.CASED, "dictionary { btree\nhash\ncased\n}");
         } catch (IllegalArgumentException e) {
             assertEquals("For search 'test', field 'n1': btree dictionary require uncased match", e.getMessage());
         }

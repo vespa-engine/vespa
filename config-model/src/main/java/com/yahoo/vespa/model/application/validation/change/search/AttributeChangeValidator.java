@@ -88,13 +88,15 @@ public class AttributeChangeValidator {
         for (Attribute nextAttr : nextFields.attributes()) {
             Attribute currAttr = currentFields.getAttribute(nextAttr.getName());
             if (currAttr != null) {
+                // These validations can be removed as there are they are 1-1 with attributes.def which has restart annotations for them.
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::isFastSearch, "fast-search", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::isFastAccess, "fast-access", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::isHuge, "huge", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::densePostingListThreshold, "dense-posting-list-threshold", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::isEnabledOnlyBitVector, "rank: filter", result);
-                validateAttributeSetting(id, currAttr, nextAttr, AttributeChangeValidator::hasHnswIndex, "indexing: index", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::distanceMetric, "distance-metric", result);
+
+                validateAttributeSetting(id, currAttr, nextAttr, AttributeChangeValidator::hasHnswIndex, "indexing: index", result);
                 if (hasHnswIndex(currAttr) && hasHnswIndex(nextAttr)) {
                     validateAttributeHnswIndexSetting(id, currAttr, nextAttr, HnswIndexParams::maxLinksPerNode, "max-links-per-node", result);
                     validateAttributeHnswIndexSetting(id, currAttr, nextAttr, HnswIndexParams::neighborsToExploreAtInsert, "neighbors-to-explore-at-insert", result);
