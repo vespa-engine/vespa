@@ -79,6 +79,7 @@ public final class Attribute implements Cloneable, Serializable {
     private final Set<String> aliases = new LinkedHashSet<>();
 
     private Dictionary dictionary = null;
+    private Case casing = Case.UNCASED;
 
     /**
      * True if this attribute should be returned during first pass of search.
@@ -104,7 +105,7 @@ public final class Attribute implements Cloneable, Serializable {
         private final String myName;  // different from what name() returns.
         private final String exportAttributeTypeName;
 
-        private Type(String name, String exportAttributeTypeName) {
+        Type(String name, String exportAttributeTypeName) {
             this.myName=name;
             this.exportAttributeTypeName = exportAttributeTypeName;
         }
@@ -126,7 +127,7 @@ public final class Attribute implements Cloneable, Serializable {
 
         private final String name;
 
-        private CollectionType(String name) {
+        CollectionType(String name) {
             this.name=name;
         }
 
@@ -211,6 +212,7 @@ public final class Attribute implements Cloneable, Serializable {
 
     public Sorting getSorting() { return sorting; }
     public Dictionary getDictionary() { return dictionary; }
+    public Case getCase() { return casing; }
 
     public void setRemoveIfZero(boolean remove)                  { this.removeIfZero = remove; }
     public void setCreateIfNonExistent(boolean create)           { this.createIfNonExistent = create; }
@@ -235,6 +237,7 @@ public final class Attribute implements Cloneable, Serializable {
     public void setDistanceMetric(DistanceMetric metric)         { this.distanceMetric = Optional.of(metric); }
     public void setHnswIndexParams(HnswIndexParams params)       { this.hnswIndexParams = Optional.of(params); }
     public void setDictionary(Dictionary dictionary)             { this.dictionary = dictionary; }
+    public void setCase(Case casing)                             { this.casing = casing; }
 
     public String         getName()                     { return name; }
     public Type           getType()                     { return type; }

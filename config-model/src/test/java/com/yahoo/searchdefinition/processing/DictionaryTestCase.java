@@ -225,4 +225,31 @@ public class DictionaryTestCase {
             assertEquals("For search 'test', field 'n1': You must specify 'attribute:fast-search' to allow dictionary control", e.getMessage());
         }
     }
+
+    @Test
+    public void testCasingForNonFastSearch() throws ParseException {
+        String def = TestUtil.joinLines(
+                "search test {",
+                "    document test {",
+                "        field s1 type string {",
+                "            indexing: attribute | summary",
+                "        }",
+                "        field s2 type string {",
+                "            indexing: attribute | summary",
+                "            match:uncased",
+                "        }",
+                "        field s3 type string {",
+                "            indexing: attribute | summary",
+                "            match:cased",
+                "        }",
+                "    }",
+                "}");
+        Search search = createSearch(def);
+        assertEquals(Case.UNCASED, search.getAttribute("s1").getCase());
+        assertEquals(Case.UNCASED, search.getAttribute("s2").getCase());
+        assertEquals(Case.CASED, search.getAttribute("s3").getCase());
+        assertEquals(AttributesConfig.Attribute.Match.UNCASED, getConfig(search).attribute().get(0).match());
+        assertEquals(AttributesConfig.Attribute.Match.UNCASED, getConfig(search).attribute().get(1).match());
+        assertEquals(AttributesConfig.Attribute.Match.CASED, getConfig(search).attribute().get(2).match());
+    }
 }

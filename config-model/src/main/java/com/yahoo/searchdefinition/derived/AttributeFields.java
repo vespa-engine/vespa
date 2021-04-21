@@ -258,6 +258,7 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
             aaB.dictionary.type(convert(dictionary.getType()));
             aaB.dictionary.match(convert(dictionary.getMatch()));
         }
+        aaB.match(convertMatch(attribute.getCase()));
         return aaB;
     }
 
@@ -280,6 +281,15 @@ public class AttributeFields extends Derived implements AttributesConfig.Produce
                 return AttributesConfig.Attribute.Dictionary.Match.UNCASED;
         }
         return AttributesConfig.Attribute.Dictionary.Match.UNCASED;
+    }
+    private static AttributesConfig.Attribute.Match.Enum convertMatch(Case type) {
+        switch (type) {
+            case CASED:
+                return AttributesConfig.Attribute.Match.CASED;
+            case UNCASED:
+                return AttributesConfig.Attribute.Match.UNCASED;
+        }
+        return AttributesConfig.Attribute.Match.UNCASED;
     }
 
     public void getConfig(AttributesConfig.Builder builder, FieldSet fs) {
