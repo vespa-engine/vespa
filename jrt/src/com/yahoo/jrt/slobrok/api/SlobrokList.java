@@ -48,7 +48,7 @@ public class SlobrokList {
     public boolean contains(String slobrok) {
         checkUpdate();
         for (String s : slobroks) {
-            if (s == slobrok) return true;
+            if (s.equals(slobrok)) return true;
         }
         return false;
     }
