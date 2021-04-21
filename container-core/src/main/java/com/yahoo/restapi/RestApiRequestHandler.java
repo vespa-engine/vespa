@@ -4,6 +4,9 @@ package com.yahoo.restapi;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.jdisc.Metric;
+
+import java.util.concurrent.Executor;
 
 /**
  * @author bjorncs
@@ -25,8 +28,22 @@ public abstract class RestApiRequestHandler<T extends RestApiRequestHandler<T>> 
         this.restApi = provider.createRestApi((T)this);
     }
 
+    /**
+     * @see #RestApiRequestHandler(Context, RestApiProvider)
+     */
+    @SuppressWarnings("unchecked")
+    protected RestApiRequestHandler(Executor executor, Metric metric, RestApiProvider<T> provider) {
+        super(executor, metric);
+        this.restApi = provider.createRestApi((T)this);
+    }
+
     protected RestApiRequestHandler(LoggingRequestHandler.Context context, RestApi restApi) {
         super(context);
+        this.restApi = restApi;
+    }
+
+    protected RestApiRequestHandler(Executor executor, Metric metric, RestApi restApi) {
+        super(executor, metric);
         this.restApi = restApi;
     }
 
