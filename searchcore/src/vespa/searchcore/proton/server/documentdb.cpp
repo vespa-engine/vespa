@@ -1077,6 +1077,13 @@ DocumentDB::updateMetrics(const metrics::MetricLockGuard & guard)
     }
     _metricsUpdater.updateMetrics(guard, _metrics);
     _maintenanceController.updateMetrics(_metrics);
+    auto heart_beat_time = _feedHandler->get_heart_beat_time();
+    if (heart_beat_time != vespalib::steady_time()) {
+        vespalib::steady_time now = vespalib::steady_clock::now();
+        _metrics.heart_beat_age.set(vespalib::to_s(now - heart_beat_time));
+    } else {
+        _metrics.heart_beat_age.set(0.0);
+    }
 }
 
 void

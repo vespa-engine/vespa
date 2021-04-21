@@ -96,6 +96,7 @@ private:
     std::mutex                             _syncLock;
     SerialNum                              _syncedSerialNum; 
     bool                                   _allowSync; // Sanity check
+    std::atomic<vespalib::steady_time>     _heart_beat_time;
 
     /**
      * Delayed handling of feed operations, in master write thread.
@@ -245,6 +246,7 @@ public:
     [[nodiscard]] CommitResult startCommit(DoneCallback onDone) override;
     [[nodiscard]] CommitResult storeOperationSync(const FeedOperation & op);
     void considerDelayedPrune();
+    vespalib::steady_time get_heart_beat_time() const;
 };
 
 } // namespace proton
