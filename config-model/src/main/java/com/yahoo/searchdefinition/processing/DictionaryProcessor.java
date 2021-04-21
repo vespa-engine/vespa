@@ -26,10 +26,11 @@ public class DictionaryProcessor extends Processor {
     @Override
     public void process(boolean validate, boolean documentsOnly) {
         for (SDField field : search.allConcreteFields()) {
-            Dictionary dictionary = field.getDictionary();
-            if (dictionary == null) continue;
             Attribute attribute = field.getAttribute();
             if (attribute == null) continue;
+            attribute.setCase(field.getMatching().getCase());
+            Dictionary dictionary = field.getDictionary();
+            if (dictionary == null) continue;
             if (attribute.getDataType().getPrimitiveType() instanceof NumericDataType ) {
                 if (attribute.isFastSearch()) {
                     attribute.setDictionary(dictionary);
@@ -38,7 +39,6 @@ public class DictionaryProcessor extends Processor {
                 }
             } else if (attribute.getDataType().getPrimitiveType() == PrimitiveDataType.STRING) {
                 attribute.setDictionary(dictionary);
-                Matching matching = field.getMatching();
                 if (dictionary.getType() == Dictionary.Type.HASH) {
                     if (dictionary.getMatch() != Case.CASED) {
                         fail(search, field, "hash dictionary require cased match");
@@ -48,8 +48,8 @@ public class DictionaryProcessor extends Processor {
                         fail(search, field, "btree dictionary require uncased match");
                     }
                 }
-                if (! dictionary.getMatch().equals(matching.getCase())) {
-                    fail(search, field, "Dictionary casing '" + dictionary.getMatch() + "' does not match field match casing '" + matching.getCase() + "'");
+                if (! dictionary.getMatch().equals(attribute.getCase())) {
+                    fail(search, field, "Dictionary casing '" + dictionary.getMatch() + "' does not match field match casing '" + attribute.getCase() + "'");
                 }
             } else {
                 fail(search, field, "You can only specify 'dictionary:' for numeric or string fields");
