@@ -6,7 +6,6 @@ import com.yahoo.config.model.api.ServiceInfo;
 import com.yahoo.config.provision.ClusterSpec;
 
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Represents an action to restart services in order to handle a config change.
