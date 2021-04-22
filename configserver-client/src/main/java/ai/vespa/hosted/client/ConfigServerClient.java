@@ -2,9 +2,14 @@
 package ai.vespa.hosted.client;
 
 import org.apache.hc.client5.http.config.RequestConfig;
+import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.HttpEntity;
+import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.http.Method;
+import org.apache.hc.core5.http.ParseException;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
+import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -15,6 +20,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiConsumer;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
@@ -25,6 +32,38 @@ import static java.util.stream.Collectors.toUnmodifiableList;
  * @author jonmv
  */
 public interface ConfigServerClient extends AutoCloseable {
+
+    RequestConfig defaultRequestConfig = RequestConfig.custom()
+                                                      .setConnectionRequestTimeout(Timeout.ofSeconds(5))
+                                                      .setConnectTimeout(Timeout.ofSeconds(5))
+                                                      .setRedirectsEnabled(false)
+                                                      .build();
+
+    /** Wraps with a {@link RetryException} and rethrows. */
+    static void retryAll(IOException e) {
+        throw new RetryException(e);
+    }
+
+    /** Throws a a {@link RetryException} if {@code statusCode == 503}, or a {@link ResponseException} unless {@code 200 <= statusCode < 300}. */
+    static void throwOnError(ClassicHttpResponse response, ClassicHttpRequest request) {
+        if (response.getCode() < HttpStatus.SC_OK || response.getCode() >= HttpStatus.SC_REDIRECTION) {
+            ResponseException e = ResponseException.of(response, request);
+            if (response.getCode() == HttpStatus.SC_SERVICE_UNAVAILABLE)
+                throw new RetryException(e);
+
+            throw e;
+        }
+    }
+
+    /** Reads the response body, throwing an {@link UncheckedIOException} if this fails, or {@code null} if there is none. */
+    static byte[] getBytes(ClassicHttpResponse response) {
+        try {
+            return response.getEntity() == null ? null : EntityUtils.toByteArray(response.getEntity());
+        }
+        catch (IOException e) {
+            throw new UncheckedIOException(e);
+        }
+    }
 
     /** Creates a builder for sending the given method, using the specified host strategy. */
     RequestBuilder send(HostStrategy hosts, Method method);
@@ -59,37 +98,27 @@ public interface ConfigServerClient extends AutoCloseable {
         RequestBuilder config(RequestConfig config);
 
         /**
-         * Sets custom retry/failure logic for this.
-         * <p>
-         * Exactly one of the callbacks will be invoked, with a non-null argument.
-         * Return a value to have that returned to the caller;
-         * throw a {@link RetryException} to have the request retried; or
-         * throw any other unchecked exception to have this propagate out to the caller.
-         * The caller must close the provided response, if any.
+         * Sets the catch clause for {@link IOException}s during execution of this.
+         * The default is to wrap the IOException in a {@link RetryException} and rethrow this;
+         * this makes the client retry the request, as long as there are remaining entries in the {@link HostStrategy}.
+         * If the catcher returns normally, the {@link IOException} is unchecked and thrown instead.
          */
-        <T> T handle(Function<ClassicHttpResponse, T> handler, Function<IOException, T> catcher) throws UncheckedIOException;
+         RequestBuilder catching(Consumer<IOException> catcher);
 
-        /** Sets the response body mapper for this, for successful requests. */
-        <T> T read(Function<byte[], T> mapper) throws UncheckedIOException, ResponseException;
+        /**
+         * Sets the (error) response handler for this request. The default is {@link #throwOnError}.
+         * When the handler returns normally, the response is treated as a success, and passed on to a response mapper.
+         */
+         RequestBuilder handling(BiConsumer<ClassicHttpResponse, ClassicHttpRequest> handler);
 
-        /** Discards the response, but throws if the response is unsuccessful. */
-        void discard() throws UncheckedIOException, ResponseException;
+        /** Reads and maps the response, or throws if unsuccessful. */
+        <T> T read(Function<byte[], T> mapper);
 
-        /** Returns the raw input stream of the response, if successful. The caller must close the returned stream. */
-        InputStream stream() throws UncheckedIOException, ResponseException;
+        /** Discards the response, but throws if unsuccessful. */
+        void discard();
 
-    }
-
-    /** Exception wrapper that signals retries should be attempted. */
-    final class RetryException extends RuntimeException {
-
-        public RetryException(IOException cause) {
-            super(requireNonNull(cause));
-        }
-
-        public RetryException(RuntimeException cause) {
-            super(requireNonNull(cause));
-        }
+        /** Returns the raw response input stream, or throws if unsuccessful. The caller must close the returned stream. */
+        InputStream stream();
 
     }
 
@@ -118,21 +147,39 @@ public interface ConfigServerClient extends AutoCloseable {
 
     }
 
+    /** Exception wrapper that signals retries should be attempted. */
+    final class RetryException extends RuntimeException {
+
+        public RetryException(IOException cause) {
+            super(requireNonNull(cause));
+        }
+
+        public RetryException(RuntimeException cause) {
+            super(requireNonNull(cause));
+        }
+
+    }
+
     /** An exception due to server error, a bad request, or similar, which resulted in a non-OK HTTP response. */
     class ResponseException extends RuntimeException {
 
-        private final int code;
-        private final String body;
-
-        public ResponseException(int code, String body, String context) {
-            super(context + ": " + body);
-            this.code = code;
-            this.body = body;
+        public ResponseException(String message, Throwable cause) {
+            super(message, cause);
         }
 
-        public int code() { return code; }
-
-        public String body() { return body; }
+        public static ResponseException of(ClassicHttpResponse response, ClassicHttpRequest request) {
+            String detail;
+            Throwable thrown = null;
+            try {
+                detail = request.getEntity() == null ? " and no body"
+                                                     : " and body '" + EntityUtils.toString(request.getEntity()) + "'";
+            }
+            catch (IOException | ParseException e) {
+                detail = ". Reading body failed";
+                thrown = e;
+            }
+            return new ResponseException(request + " failed with status " + response.getCode() + detail, thrown);
+        }
 
     }
 

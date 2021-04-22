@@ -8,11 +8,9 @@ import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
-import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.http.Method;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
 import org.apache.hc.core5.net.URIBuilder;
-import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,10 +21,12 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
+import java.util.function.BiFunction;
+import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.logging.Level.FINE;
 import static java.util.logging.Level.WARNING;
@@ -36,19 +36,15 @@ import static java.util.logging.Level.WARNING;
  */
 public abstract class AbstractConfigServerClient implements ConfigServerClient {
 
-    static final RequestConfig defaultRequestConfig = RequestConfig.custom()
-                                                                   .setConnectionRequestTimeout(Timeout.ofSeconds(5))
-                                                                   .setConnectTimeout(Timeout.ofSeconds(5))
-                                                                   .setRedirectsEnabled(false)
-                                                                   .build();
-
     private static final Logger log = Logger.getLogger(AbstractConfigServerClient.class.getName());
 
     /** Executes the request with the given context. The caller must close the response. */
-    protected abstract ClassicHttpResponse execute(ClassicHttpRequest request, HttpClientContext context) throws IOException;
+    abstract ClassicHttpResponse execute(ClassicHttpRequest request, HttpClientContext context) throws IOException;
 
     /** Executes the given request with response/error handling and retries. */
-    private <T> T execute(RequestBuilder builder, Function<ClassicHttpResponse, T> handler, Function<IOException, T> catcher) {
+    private <T> T execute(RequestBuilder builder,
+                          BiFunction<ClassicHttpResponse, ClassicHttpRequest, T> handler,
+                          Consumer<IOException> catcher) {
         HttpClientContext context = HttpClientContext.create();
         context.setRequestConfig(builder.config);
 
@@ -58,10 +54,11 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
             request.setEntity(builder.entity);
             try {
                 try {
-                    return handler.apply(execute(request, context));
+                    return handler.apply(execute(request, context), request);
                 }
                 catch (IOException e) {
-                    return catcher.apply(e);
+                    catcher.accept(e);
+                    throw new UncheckedIOException(e); // Throw unchecked if catcher doesn't throw.
                 }
             }
             catch (RetryException e) {
@@ -86,7 +83,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
                 throw new IllegalStateException("Illegal retry cause: " + thrown.getClass(), thrown);
         }
 
-        throw new IllegalArgumentException("No hosts to perform the request against");
+        throw new IllegalStateException("No hosts to perform the request against");
     }
 
     /** Append path to the given host, which may already contain a root path. */
@@ -98,8 +95,8 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         pathSegments.addAll(pathAndQuery.getPathSegments());
         try {
             return builder.setPathSegments(pathSegments)
-                    .setParameters(pathAndQuery.getQueryParams())
-                    .build();
+                          .setParameters(pathAndQuery.getQueryParams())
+                          .build();
         }
         catch (URISyntaxException e) {
             throw new IllegalArgumentException("URISyntaxException should not be possible here", e);
@@ -118,7 +115,9 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         private final HostStrategy hosts;
         private final URIBuilder uriBuilder = new URIBuilder();
         private HttpEntity entity;
-        private RequestConfig config = defaultRequestConfig;
+        private RequestConfig config = ConfigServerClient.defaultRequestConfig;
+        private BiConsumer<ClassicHttpResponse, ClassicHttpRequest> handler = ConfigServerClient::throwOnError;
+        private Consumer<IOException> catcher = ConfigServerClient::retryAll;
 
         private RequestBuilder(HostStrategy hosts, Method method) {
             if ( ! hosts.iterator().hasNext())
@@ -166,17 +165,23 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         @Override
         public RequestBuilder config(RequestConfig config) {
             this.config = requireNonNull(config);
-
             return this;
         }
 
         @Override
-        public <T> T handle(Function<ClassicHttpResponse, T> handler, Function<IOException, T> catcher) throws UncheckedIOException {
-            return execute(this, requireNonNull(handler), requireNonNull(catcher));
+        public RequestBuilder catching(Consumer<IOException> catcher) {
+            this.catcher = requireNonNull(catcher);
+            return this;
         }
 
         @Override
-        public <T> T read(Function<byte[], T> mapper) throws UncheckedIOException, ResponseException {
+        public RequestBuilder handling(BiConsumer<ClassicHttpResponse, ClassicHttpRequest> handler) {
+            this.handler = requireNonNull(handler);
+            return this;
+        }
+
+        @Override
+        public <T> T read(Function<byte[], T> mapper) {
             return mapIfSuccess(input -> {
                 try (input) {
                     return mapper.apply(input.readAllBytes());
@@ -206,38 +211,38 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
 
         /** Returns the mapped body, if successful, retrying any IOException. The caller must close the body stream. */
         private <T> T mapIfSuccess(Function<InputStream, T> mapper) {
-            return handle(response -> {
-                            try {
-                                InputStream body = response.getEntity() != null ? response.getEntity().getContent()
-                                                                                : InputStream.nullInputStream();
-                                if (response.getCode() >= HttpStatus.SC_REDIRECTION)
-                                    throw new ResponseException(response.getCode(), new String(body.readAllBytes(), UTF_8), "");
+            return execute(this,
+                           (response, request) -> {
+                               try {
+                                   handler.accept(response, request); // This throws on unacceptable responses.
 
-                                return mapper.apply(new ForwardingInputStream(body) {
-                                    @Override
-                                    public void close() throws IOException {
-                                        super.close();
-                                        response.close();
-                                    }
-                                });
-                            }
-                            catch (IOException | RuntimeException | Error e) {
-                                try {
-                                    response.close();
-                                }
-                                catch (IOException f) {
-                                    e.addSuppressed(f);
-                                }
-                                if (e instanceof IOException)
-                                    throw new RetryException((IOException) e);
-                                else
-                                    sneakyThrow(e); // e is a runtime exception or an error, so this is fine.
-                                throw new AssertionError("Should not happen");
-                            }
-                          },
-                          ioException -> {
-                              throw new RetryException(ioException);
-                          });
+                                   InputStream body = response.getEntity() != null ? response.getEntity().getContent()
+                                                                                   : InputStream.nullInputStream();
+                                   return mapper.apply(new ForwardingInputStream(body) {
+                                       @Override
+                                       public void close() throws IOException {
+                                           super.close();
+                                           response.close();
+                                       }
+                                   });
+                               }
+                               catch (IOException | RuntimeException | Error e) {
+                                   try {
+                                       response.close();
+                                   }
+                                   catch (IOException f) {
+                                       e.addSuppressed(f);
+                                   }
+                                   if (e instanceof IOException) {
+                                       catcher.accept((IOException) e);
+                                       throw new UncheckedIOException((IOException) e);
+                                   }
+                                   else
+                                       sneakyThrow(e); // e is a runtime exception or an error, so this is fine.
+                                   throw new AssertionError("Should not happen");
+                               }
+                           },
+                           catcher);
         }
 
     }

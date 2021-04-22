@@ -35,7 +35,7 @@ class HttpConfigServerClientTest {
     @RegisterExtension
     final WireMockExtension server = new WireMockExtension();
 
-    final HttpConfigServerClient client = new HttpConfigServerClient(List.of(new AthenzService("mydomain", "yourservice")), "user");
+    final ConfigServerClient client = new HttpConfigServerClient(List.of(new AthenzService("mydomain", "yourservice")), "user");
 
     @Test
     void testRetries() {
@@ -88,8 +88,7 @@ class HttpConfigServerClientTest {
                                                 () -> client.send(HostStrategy.repeating(URI.create("http://localhost:" + server.port()), 10),
                                                                   Method.GET)
                                                             .read(String::new));
-        assertEquals(409, thrown.code());
-        assertEquals("hi", thrown.body());
+        assertEquals("GET / failed with status 409 and no body", thrown.getMessage());
         server.verify(1, getRequestedFor(urlEqualTo("/")));
         server.verify(1, anyRequestedFor(anyUrl()));
 
