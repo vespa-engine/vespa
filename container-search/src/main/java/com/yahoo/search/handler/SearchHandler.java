@@ -11,6 +11,7 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.ContainerHttpConfig;
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
+import com.yahoo.container.jdisc.HttpMethodAclMapping;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
@@ -106,7 +107,8 @@ public class SearchHandler extends LoggingRequestHandler {
 
     private final AtomicLong numRequestsLeftToTrace;
 
-    private final static RequestHandlerSpec REQUEST_HANDLER_SPEC = RequestHandlerSpec.builder().withAclMapping(SearchHandler::mapRequestToAction).build();
+    private final static RequestHandlerSpec REQUEST_HANDLER_SPEC = RequestHandlerSpec.builder()
+            .withAclMapping(SearchHandler.aclRequestMapper()).build();
 
     private final class MeanConnections implements Callback {
 
@@ -641,22 +643,10 @@ public class SearchHandler extends LoggingRequestHandler {
         return REQUEST_HANDLER_SPEC;
     }
 
-    private static AclMapping.Action mapRequestToAction(RequestView requestMeta) {
-        switch (requestMeta.method()){
-            case GET:
-            case POST:
-            case HEAD:
-            case OPTIONS:
-                return AclMapping.Action.READ;
-            case PUT:
-            case DELETE:
-            case CONNECT:
-            case TRACE:
-            case PATCH:
-                return AclMapping.Action.WRITE;
-            default:
-                throw new IllegalArgumentException("Illegal method " + requestMeta.method());
-        }
+    private static AclMapping aclRequestMapper() {
+        return HttpMethodAclMapping.standard()
+                .override(com.yahoo.jdisc.http.HttpRequest.Method.POST, AclMapping.Action.READ)
+                .build();
     }
 }
 
