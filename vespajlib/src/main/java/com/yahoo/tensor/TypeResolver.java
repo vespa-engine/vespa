@@ -126,6 +126,14 @@ public class TypeResolver {
                 first.name().equals(second.name()));
     }
 
+    private static boolean firstIsSmaller(Dimension first, Dimension second) {
+        return (first.type() == Dimension.Type.indexedBound &&
+                second.type() == Dimension.Type.indexedBound &&
+                first.name().equals(second.name()) &&
+                first.size().isPresent() && second.size().isPresent() &&
+                first.size().get() < second.size().get());
+    }
+
     static public TensorType join(TensorType lhs, TensorType rhs) {
         Value cellType = Value.DOUBLE;
         if (lhs.rank() > 0 && rhs.rank() > 0) {
@@ -219,9 +227,13 @@ public class TypeResolver {
                 Dimension other = map.get(dim.name());
                 if (! other.equals(dim)) {
                     if (firstIsBoundSecond(dim, other)) {
-                        map.put(dim.name(), dim);
+                        map.put(dim.name(), other);  // [N] and [] -> []
                     } else if (firstIsBoundSecond(other, dim)) {
-                        map.put(dim.name(), other);
+                        map.put(dim.name(), dim);  // [N] and [] -> []
+                    } else if (firstIsSmaller(dim, other)) {
+                        map.put(dim.name(), dim); // [N] and [M] -> [ min(N,M] ].
+                    } else if (firstIsSmaller(other, dim)) {
+                        map.put(dim.name(), other); // [N] and [M] -> [ min(N,M] ].
                     } else {
                         throw new IllegalArgumentException("Unequal dimension " + dim.name() + " in " + lhs+ " and "+rhs);
                     }

@@ -7,6 +7,7 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
@@ -60,30 +61,7 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
     @Override
     public TensorType type(TypeContext<NAMETYPE> context) {
-        return type(argumentA.type(context), argumentB.type(context));
-    }
-
-    /** Returns the type resulting from concatenating a and b */
-    private TensorType type(TensorType a, TensorType b) {
-        // TODO: Fail if concat dimension is present but not indexed in a or b
-        TensorType.Builder builder = new TensorType.Builder(a, b);
-        if ( ! unboundIn(a, dimension) && ! unboundIn(b, dimension)) {
-            builder.set(TensorType.Dimension.indexed(dimension, a.sizeOfDimension(dimension).orElse(1L) +
-                                                                b.sizeOfDimension(dimension).orElse(1L)));
-            /*
-            MutableLong concatSize = new MutableLong(0);
-            a.sizeOfDimension(dimension).ifPresent(concatSize::add);
-            b.sizeOfDimension(dimension).ifPresent(concatSize::add);
-            builder.set(TensorType.Dimension.indexed(dimension, concatSize.get()));
-            */
-        }
-        return builder.build();
-    }
-
-    /** Returns true if this dimension is present and unbound */
-    private boolean unboundIn(TensorType type, String dimensionName) {
-        Optional<TensorType.Dimension> dimension = type.dimension(dimensionName);
-        return dimension.isPresent() && ! dimension.get().size().isPresent();
+        return TypeResolver.concat(argumentA.type(context), argumentB.type(context), dimension);
     }
 
     @Override
@@ -97,7 +75,7 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
         IndexedTensor aIndexed = (IndexedTensor) a; // If you get an exception here you have implemented a mixed tensor
         IndexedTensor bIndexed = (IndexedTensor) b;
 
-        TensorType concatType = type(a.type(), b.type());
+        TensorType concatType = TypeResolver.concat(a.type(), b.type(), dimension);
         DimensionSizes concatSize = concatSize(concatType, aIndexed, bIndexed, dimension);
 
         Tensor.Builder builder = Tensor.Builder.of(concatType, concatSize);

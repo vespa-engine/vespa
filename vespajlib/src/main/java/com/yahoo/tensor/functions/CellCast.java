@@ -3,6 +3,7 @@ package com.yahoo.tensor.functions;
 
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
@@ -47,7 +48,7 @@ public class CellCast<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAM
 
     @Override
     public TensorType type(TypeContext<NAMETYPE> context) {
-        return new TensorType(valueType, argument.type(context).dimensions());
+        return TypeResolver.cell_cast(argument.type(context), valueType);
     }
 
     @Override
@@ -56,12 +57,11 @@ public class CellCast<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAM
         if (tensor.type().valueType() == valueType) {
             return tensor;
         }
-        TensorType type = new TensorType(valueType, tensor.type().dimensions());
+        TensorType type = TypeResolver.cell_cast(tensor.type(), valueType);
         return cast(tensor, type);
     }
 
     private Tensor cast(Tensor tensor, TensorType type) {
-        Tensor.Builder builder = Tensor.Builder.of(type);
         TensorType.Value fromValueType = tensor.type().valueType();
         switch (fromValueType) {
             case DOUBLE:
