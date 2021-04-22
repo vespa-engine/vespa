@@ -366,17 +366,6 @@ BucketDBUpdater::onMergeBucketReply(
 }
 
 void
-BucketDBUpdater::enqueue_recheck_until_pending_state_enabled(
-        uint16_t node,
-        const document::Bucket& bucket)
-{
-    LOG(spam, "DB updater has a pending cluster state, enqueuing recheck "
-              "of bucket %s on node %u until state is done processing",
-        bucket.toString().c_str(), node);
-    _enqueued_rechecks.insert(EnqueuedBucketRecheck(node, bucket));
-}
-
-void
 BucketDBUpdater::send_all_queued_bucket_rechecks()
 {
     LOG(spam, "Sending %zu queued bucket rechecks previously received "

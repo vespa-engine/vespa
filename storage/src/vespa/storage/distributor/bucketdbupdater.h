@@ -178,7 +178,6 @@ private:
 
     void enable_current_cluster_state_bundle_in_distributor_and_stripes(StripeAccessGuard& guard);
     void add_current_state_to_cluster_state_history();
-    void enqueue_recheck_until_pending_state_enabled(uint16_t node, const document::Bucket& bucket);
     void send_all_queued_bucket_rechecks();
 
     void propagate_active_state_bundle_internally();
