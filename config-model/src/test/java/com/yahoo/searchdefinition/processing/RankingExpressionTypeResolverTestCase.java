@@ -232,10 +232,6 @@ public class RankingExpressionTypeResolverTestCase {
                                  "}"));
         builder.build();
         RankProfile profile = builder.getRankProfileRegistry().get(builder.getSearch(), "eurank");
-        // assertEquals(TensorType.fromSpec("tensor(x[10],y[1])"),
-        //              summaryFeatures(profile).get("return_a").type(profile.typeContext(builder.getQueryProfileRegistry())));
-        // assertEquals(TensorType.fromSpec("tensor(z[10])"),
-        //              summaryFeatures(profile).get("return_b").type(profile.typeContext(builder.getQueryProfileRegistry())));
     }
 
     @Test

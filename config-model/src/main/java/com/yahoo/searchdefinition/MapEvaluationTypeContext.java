@@ -129,6 +129,19 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         return resolvedType;
     }
 
+    MapEvaluationTypeContext getParent(String forArgument, String boundTo) {
+        return parent.orElseThrow(
+            () -> new IllegalArgumentException("argument "+forArgument+" is bound to "+boundTo+" but there is no parent context"));
+    }
+
+    String resolveBinding(String argument) {
+        String bound = getBinding(argument);
+        if (bound == null) {
+            return argument;
+        }
+        return getParent(argument, bound).resolveBinding(bound);
+    }
+
     private TensorType resolveType(Reference reference) {
         if (currentResolutionCallStack.contains(reference))
             throw new IllegalArgumentException("Invocation loop: " +
@@ -142,8 +155,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                 // This is not pretty, but changing to bind expressions rather
                 // than their string values requires deeper changes
                 var expr = new RankingExpression(binding.get());
-                var type = expr.type(parent.orElseThrow(
-                                         () -> new IllegalArgumentException("when a binding is present we must have a parent context")));
+                var type = expr.type(getParent(reference.name(), binding.get()));
                 return type;
             } catch (ParseException e) {
                 throw new IllegalArgumentException(e);
@@ -157,8 +169,8 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             if (FeatureNames.isSimpleFeature(reference)) {
                 // The argument may be a local identifier bound to the actual value
                 String argument = reference.simpleArgument().get();
-                String argumentBinding = getBinding(argument);
-                reference = Reference.simple(reference.name(), argumentBinding != null ? argumentBinding : argument);
+                String argumentBinding = resolveBinding(argument);
+                reference = Reference.simple(reference.name(), argumentBinding);
                 return featureTypes.get(reference);
             }
 
