@@ -15,8 +15,7 @@ import com.yahoo.jdisc.http.filter.ResponseFilter;
 import com.yahoo.jdisc.http.server.jetty.FilterBindings;
 import com.yahoo.jdisc.http.server.jetty.FilterInvoker;
 import com.yahoo.jdisc.http.server.jetty.SimpleHttpClient.ResponseValidator;
-import com.yahoo.jdisc.http.server.jetty.TestDriver;
-import com.yahoo.jdisc.http.server.jetty.TestDrivers;
+import com.yahoo.jdisc.http.server.jetty.JettyTestDriver;
 import org.junit.Test;
 
 import javax.servlet.http.HttpServletRequest;
@@ -36,7 +35,7 @@ import static org.hamcrest.CoreMatchers.is;
 public class JDiscFilterForServletTest extends ServletTestBase {
     @Test
     public void request_filter_can_return_response() throws IOException, InterruptedException {
-        TestDriver testDriver = requestFilterTestDriver();
+        JettyTestDriver testDriver = requestFilterTestDriver();
         ResponseValidator response = httpGet(testDriver, TestServlet.PATH).execute();
 
         response.expectContent(containsString(TestRequestFilter.responseContent));
@@ -44,7 +43,7 @@ public class JDiscFilterForServletTest extends ServletTestBase {
 
     @Test
     public void request_can_be_forwarded_through_request_filter_to_servlet() throws IOException {
-        TestDriver testDriver = requestFilterTestDriver();
+        JettyTestDriver testDriver = requestFilterTestDriver();
         ResponseValidator response = httpGet(testDriver, TestServlet.PATH).
                 addHeader(TestRequestFilter.BYPASS_FILTER_HEADER, Boolean.TRUE.toString()).
                 execute();
@@ -54,7 +53,7 @@ public class JDiscFilterForServletTest extends ServletTestBase {
 
     @Test
     public void response_filter_can_modify_response() throws IOException {
-        TestDriver testDriver = responseFilterTestDriver();
+        JettyTestDriver testDriver = responseFilterTestDriver();
         ResponseValidator response = httpGet(testDriver, TestServlet.PATH).execute();
 
         response.expectHeader(TestResponseFilter.INVOKED_HEADER, is(Boolean.TRUE.toString()));
@@ -62,7 +61,7 @@ public class JDiscFilterForServletTest extends ServletTestBase {
 
     @Test
     public void response_filter_is_run_on_empty_sync_response() throws IOException {
-        TestDriver testDriver = responseFilterTestDriver();
+        JettyTestDriver testDriver = responseFilterTestDriver();
         ResponseValidator response = httpGet(testDriver, NoContentTestServlet.PATH).execute();
 
         response.expectHeader(TestResponseFilter.INVOKED_HEADER, is(Boolean.TRUE.toString()));
@@ -70,7 +69,7 @@ public class JDiscFilterForServletTest extends ServletTestBase {
 
     @Test
     public void response_filter_is_run_on_empty_async_response() throws IOException {
-        TestDriver testDriver = responseFilterTestDriver();
+        JettyTestDriver testDriver = responseFilterTestDriver();
         ResponseValidator response = httpGet(testDriver, NoContentTestServlet.PATH).
                 addHeader(NoContentTestServlet.HEADER_ASYNC, Boolean.TRUE.toString()).
                 execute();
@@ -78,20 +77,20 @@ public class JDiscFilterForServletTest extends ServletTestBase {
         response.expectHeader(TestResponseFilter.INVOKED_HEADER, is(Boolean.TRUE.toString()));
     }
 
-    private TestDriver requestFilterTestDriver() throws IOException {
+    private JettyTestDriver requestFilterTestDriver() throws IOException {
         FilterBindings filterBindings = new FilterBindings.Builder()
                 .addRequestFilter("my-request-filter", new TestRequestFilter())
                 .addRequestFilterBinding("my-request-filter", "http://*/*")
                 .build();
-        return TestDrivers.newInstance(dummyRequestHandler, bindings(filterBindings));
+        return JettyTestDriver.newInstance(dummyRequestHandler, bindings(filterBindings));
     }
 
-    private TestDriver responseFilterTestDriver() throws IOException {
+    private JettyTestDriver responseFilterTestDriver() throws IOException {
         FilterBindings filterBindings = new FilterBindings.Builder()
                 .addResponseFilter("my-response-filter", new TestResponseFilter())
                 .addResponseFilterBinding("my-response-filter", "http://*/*")
                 .build();
-        return TestDrivers.newInstance(dummyRequestHandler, bindings(filterBindings));
+        return JettyTestDriver.newInstance(dummyRequestHandler, bindings(filterBindings));
     }
 
 

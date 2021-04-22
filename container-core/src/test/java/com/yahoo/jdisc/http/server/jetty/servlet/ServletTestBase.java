@@ -14,7 +14,7 @@ import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.ServletPathsConfig;
 import com.yahoo.jdisc.http.ServletPathsConfig.Servlets.Builder;
 import com.yahoo.jdisc.http.server.jetty.SimpleHttpClient.RequestExecutor;
-import com.yahoo.jdisc.http.server.jetty.TestDriver;
+import com.yahoo.jdisc.http.server.jetty.JettyTestDriver;
 import org.eclipse.jetty.servlet.ServletHolder;
 
 import javax.servlet.ServletException;
@@ -46,7 +46,7 @@ public class ServletTestBase {
             new ServletInstance(TestServlet.ID, TestServlet.PATH, new TestServlet()),
             new ServletInstance(NoContentTestServlet.ID, NoContentTestServlet.PATH, new NoContentTestServlet()));
 
-    protected RequestExecutor httpGet(TestDriver testDriver, String path) {
+    protected RequestExecutor httpGet(JettyTestDriver testDriver, String path) {
         return testDriver.client().newGet("/" + path);
     }
 

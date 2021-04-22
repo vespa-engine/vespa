@@ -26,7 +26,7 @@ import com.yahoo.jdisc.http.Cookie;
 import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.HttpResponse;
 import com.yahoo.jdisc.http.ServerConfig;
-import com.yahoo.jdisc.http.server.jetty.TestDrivers.TlsClientAuth;
+import com.yahoo.jdisc.http.server.jetty.JettyTestDriver.TlsClientAuth;
 import com.yahoo.jdisc.service.BindingSetNotFoundException;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.Pkcs10Csr;
@@ -139,16 +139,16 @@ public class HttpServerTest {
 
     @Test
     public void requireThatServerCanListenToRandomPort() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(mockRequestHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(mockRequestHandler());
         assertNotEquals(0, driver.server().getListenPort());
         assertTrue(driver.close());
     }
 
     @Test
     public void requireThatServerCanNotListenToBoundPort() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(mockRequestHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(mockRequestHandler());
         try {
-            TestDrivers.newConfiguredInstance(
+            JettyTestDriver.newConfiguredInstance(
                     mockRequestHandler(),
                     new ServerConfig.Builder(),
                     new ConnectorConfig.Builder()
@@ -162,7 +162,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatBindingSetNotFoundReturns404() throws Exception {
-        final TestDriver driver = TestDrivers.newConfiguredInstance(
+        final JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
                 mockRequestHandler(),
                 new ServerConfig.Builder()
                         .developerMode(true),
@@ -179,7 +179,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatTooLongInitLineReturns414() throws Exception {
-        final TestDriver driver = TestDrivers.newConfiguredInstance(
+        final JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
                 mockRequestHandler(),
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder()
@@ -192,7 +192,7 @@ public class HttpServerTest {
     @Test
     public void requireThatAccessLogIsCalledForRequestRejectedByJetty() throws Exception {
         BlockingQueueRequestLog requestLogMock = new BlockingQueueRequestLog();
-        final TestDriver driver = TestDrivers.newConfiguredInstance(
+        final JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
                 mockRequestHandler(),
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder().requestHeaderSize(1),
@@ -206,7 +206,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatServerCanEcho() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new EchoRequestHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new EchoRequestHandler());
         driver.client().get("/status.html")
               .expectStatusCode(is(OK));
         assertTrue(driver.close());
@@ -214,7 +214,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatServerCanEchoCompressed() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new EchoRequestHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new EchoRequestHandler());
         SimpleHttpClient client = driver.newClient(true);
         client.get("/status.html")
                 .expectStatusCode(is(OK));
@@ -223,7 +223,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatServerCanHandleMultipleRequests() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new EchoRequestHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new EchoRequestHandler());
         driver.client().get("/status.html")
               .expectStatusCode(is(OK));
         driver.client().get("/status.html")
@@ -233,7 +233,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatFormPostWorks() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new ParameterPrinterRequestHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
         final String requestContent = generateContent('a', 30);
         final ResponseValidator response =
                 driver.client().newPost("/status.html")
@@ -247,7 +247,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatFormPostDoesNotRemoveContentByDefault() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new ParameterPrinterRequestHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
         final ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
@@ -260,7 +260,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatFormPostKeepsContentWhenConfiguredTo() throws Exception {
-        final TestDriver driver = newDriverWithFormPostContentRemoved(new ParameterPrinterRequestHandler(), false);
+        final JettyTestDriver driver = newDriverWithFormPostContentRemoved(new ParameterPrinterRequestHandler(), false);
         final ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
@@ -273,7 +273,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatFormPostRemovesContentWhenConfiguredTo() throws Exception {
-        final TestDriver driver = newDriverWithFormPostContentRemoved(new ParameterPrinterRequestHandler(), true);
+        final JettyTestDriver driver = newDriverWithFormPostContentRemoved(new ParameterPrinterRequestHandler(), true);
         final ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
@@ -286,7 +286,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatFormPostWithCharsetSpecifiedWorks() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new ParameterPrinterRequestHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
         final String requestContent = generateContent('a', 30);
         final ResponseValidator response =
                 driver.client().newPost("/status.html")
@@ -301,7 +301,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatEmptyFormPostWorks() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new ParameterPrinterRequestHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
         final ResponseValidator response =
                 driver.client().newPost("/status.html")
                       .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
@@ -313,7 +313,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatFormParametersAreParsed() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new ParameterPrinterRequestHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
         final ResponseValidator response =
                 driver.client().newPost("/status.html")
                       .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
@@ -326,7 +326,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatUriParametersAreParsed() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new ParameterPrinterRequestHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
         final ResponseValidator response =
                 driver.client().newPost("/status.html?a=b&c=d")
                       .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
@@ -338,7 +338,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatFormAndUriParametersAreMerged() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new ParameterPrinterRequestHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
         final ResponseValidator response =
                 driver.client().newPost("/status.html?a=b&c=d1")
                       .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
@@ -351,7 +351,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatFormCharsetIsHonored() throws Exception {
-        final TestDriver driver = newDriverWithFormPostContentRemoved(new ParameterPrinterRequestHandler(), true);
+        final JettyTestDriver driver = newDriverWithFormPostContentRemoved(new ParameterPrinterRequestHandler(), true);
         final ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED + ";charset=ISO-8859-1")
@@ -364,7 +364,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatUnknownFormCharsetIsTreatedAsBadRequest() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new ParameterPrinterRequestHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
         final ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED + ";charset=FLARBA-GARBA-7")
@@ -376,7 +376,7 @@ public class HttpServerTest {
     
     @Test
     public void requireThatFormPostWithPercentEncodedContentIsDecoded() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new ParameterPrinterRequestHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
         final ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
@@ -389,7 +389,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatFormPostWithThrowingHandlerIsExceptionSafe() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new ThrowingHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new ThrowingHandler());
         final ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
@@ -406,7 +406,7 @@ public class HttpServerTest {
         final String updaterConfContent
                 = "identifier                      = updater\n"
                 + "server_type                     = gds\n";
-        final TestDriver driver = TestDrivers.newInstance(new EchoRequestHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new EchoRequestHandler());
         final ResponseValidator response =
                 driver.client().newPost("/status.html")
                         .setMultipartContent(
@@ -420,7 +420,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatRequestCookiesAreReceived() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new CookiePrinterRequestHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new CookiePrinterRequestHandler());
         final ResponseValidator response =
                 driver.client().newPost("/status.html")
                       .addHeader(COOKIE, "foo=bar")
@@ -432,7 +432,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatSetCookieHeaderIsCorrect() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new CookieSetterRequestHandler(
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new CookieSetterRequestHandler(
                 new Cookie("foo", "bar")
                         .setDomain(".localhost")
                         .setHttpOnly(true)
@@ -448,7 +448,7 @@ public class HttpServerTest {
     @Test
     public void requireThatTimeoutWorks() throws Exception {
         final UnresponsiveHandler requestHandler = new UnresponsiveHandler();
-        final TestDriver driver = TestDrivers.newInstance(requestHandler);
+        final JettyTestDriver driver = JettyTestDriver.newInstance(requestHandler);
         driver.client().get("/status.html")
               .expectStatusCode(is(GATEWAY_TIMEOUT));
         ResponseDispatch.newInstance(OK).dispatch(requestHandler.responseHandler);
@@ -459,7 +459,7 @@ public class HttpServerTest {
     // Details in https://github.com/eclipse/jetty.project/issues/1116
     @Test
     public void requireThatHeaderWithNullValueIsOmitted() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new EchoWithHeaderRequestHandler("X-Foo", null));
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new EchoWithHeaderRequestHandler("X-Foo", null));
         driver.client().get("/status.html")
               .expectStatusCode(is(OK))
               .expectNoHeader("X-Foo");
@@ -470,7 +470,7 @@ public class HttpServerTest {
     // Details in https://github.com/eclipse/jetty.project/issues/1116
     @Test
     public void requireThatHeaderWithEmptyValueIsAllowed() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new EchoWithHeaderRequestHandler("X-Foo", ""));
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new EchoWithHeaderRequestHandler("X-Foo", ""));
         driver.client().get("/status.html")
                 .expectStatusCode(is(OK))
                 .expectHeader("X-Foo", is(""));
@@ -479,7 +479,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatNoConnectionHeaderMeansKeepAliveInHttp11KeepAliveDisabled() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new EchoWithHeaderRequestHandler(CONNECTION, CLOSE));
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new EchoWithHeaderRequestHandler(CONNECTION, CLOSE));
         driver.client().get("/status.html")
               .expectHeader(CONNECTION, is(CLOSE));
         assertThat(driver.close(), is(true));
@@ -488,7 +488,7 @@ public class HttpServerTest {
     @Test
     public void requireThatConnectionIsClosedAfterXRequests() throws Exception {
         final int MAX_KEEPALIVE_REQUESTS = 100;
-        final TestDriver driver = TestDrivers.newConfiguredInstance(new EchoRequestHandler(),
+        final JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(new EchoRequestHandler(),
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder().maxRequestsPerConnection(MAX_KEEPALIVE_REQUESTS));
         for (int i = 0; i < MAX_KEEPALIVE_REQUESTS - 1; i++) {
@@ -508,7 +508,7 @@ public class HttpServerTest {
         Path certificateFile = tmpFolder.newFile().toPath();
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
 
-        final TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
+        final JettyTestDriver driver = JettyTestDriver.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
         driver.client().get("/status.html")
               .expectStatusCode(is(OK));
         assertTrue(driver.close());
@@ -522,7 +522,7 @@ public class HttpServerTest {
 
         MetricConsumerMock metricConsumer = new MetricConsumerMock();
         InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
-        TestDriver driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer, connectionLog);
+        JettyTestDriver driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer, connectionLog);
         try (CloseableHttpAsyncClient client = createHttp2Client(certificateFile, privateKeyFile)) {
             String uri = "https://localhost:" + driver.server().getListenPort() + "/status.html";
             SimpleHttpResponse response = client.execute(SimpleHttpRequests.get(uri), null).get();
@@ -539,7 +539,7 @@ public class HttpServerTest {
         Path privateKeyFile = tmpFolder.newFile().toPath();
         Path certificateFile = tmpFolder.newFile().toPath();
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
-        TestDriver driver = createSslWithTlsClientAuthenticationEnforcer(certificateFile, privateKeyFile);
+        JettyTestDriver driver = createSslWithTlsClientAuthenticationEnforcer(certificateFile, privateKeyFile);
 
         SSLContext trustStoreOnlyCtx = new SslContextBuilder()
                 .withTrustStore(certificateFile)
@@ -557,7 +557,7 @@ public class HttpServerTest {
         Path privateKeyFile = tmpFolder.newFile().toPath();
         Path certificateFile = tmpFolder.newFile().toPath();
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
-        TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
+        JettyTestDriver driver = JettyTestDriver.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
 
         SSLContext trustStoreOnlyCtx = new SslContextBuilder()
                 .withTrustStore(certificateFile)
@@ -572,7 +572,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatConnectedAtReturnsNonZero() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(new ConnectedAtRequestHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(new ConnectedAtRequestHandler());
         driver.client().get("/status.html")
               .expectStatusCode(is(OK))
               .expectContent(matchesPattern("\\d{13,}"));
@@ -581,7 +581,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatGzipEncodingRequestsAreAutomaticallyDecompressed() throws Exception {
-        TestDriver driver = TestDrivers.newInstance(new ParameterPrinterRequestHandler());
+        JettyTestDriver driver = JettyTestDriver.newInstance(new ParameterPrinterRequestHandler());
         String requestContent = generateContent('a', 30);
         ResponseValidator response = driver.client().newPost("/status.html")
                                            .addHeader(CONTENT_TYPE, APPLICATION_X_WWW_FORM_URLENCODED)
@@ -595,7 +595,7 @@ public class HttpServerTest {
     @Test
     public void requireThatResponseStatsAreCollected() throws Exception {
         RequestTypeHandler handler = new RequestTypeHandler();
-        TestDriver driver = TestDrivers.newInstance(handler);
+        JettyTestDriver driver = JettyTestDriver.newInstance(handler);
         HttpResponseStatisticsCollector statisticsCollector = ((AbstractHandlerContainer) driver.server().server().getHandler())
                                                                       .getChildHandlerByClass(HttpResponseStatisticsCollector.class);
 
@@ -650,7 +650,7 @@ public class HttpServerTest {
 
     @Test
     public void requireThatConnectionThrottleDoesNotBlockConnectionsBelowThreshold() throws Exception {
-        TestDriver driver = TestDrivers.newConfiguredInstance(
+        JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
                 new EchoRequestHandler(),
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder()
@@ -671,7 +671,7 @@ public class HttpServerTest {
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
         var metricConsumer = new MetricConsumerMock();
         InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
-        TestDriver driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer, connectionLog);
+        JettyTestDriver driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer, connectionLog);
 
         SSLContext clientCtx = new SslContextBuilder()
                 .withTrustStore(certificateFile)
@@ -693,7 +693,7 @@ public class HttpServerTest {
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
         var metricConsumer = new MetricConsumerMock();
         InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
-        TestDriver driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer, connectionLog);
+        JettyTestDriver driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer, connectionLog);
 
         SSLContext clientCtx = new SslContextBuilder()
                 .withTrustStore(certificateFile)
@@ -719,7 +719,7 @@ public class HttpServerTest {
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
         var metricConsumer = new MetricConsumerMock();
         InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
-        TestDriver driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer, connectionLog);
+        JettyTestDriver driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer, connectionLog);
 
         SSLContext clientCtx = new SslContextBuilder()
                 .withTrustStore(certificateFile)
@@ -743,7 +743,7 @@ public class HttpServerTest {
         generatePrivateKeyAndCertificate(serverPrivateKeyFile, serverCertificateFile);
         var metricConsumer = new MetricConsumerMock();
         InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
-        TestDriver driver = createSslTestDriver(serverCertificateFile, serverPrivateKeyFile, metricConsumer, connectionLog);
+        JettyTestDriver driver = createSslTestDriver(serverCertificateFile, serverPrivateKeyFile, metricConsumer, connectionLog);
 
         Path clientPrivateKeyFile = tmpFolder.newFile().toPath();
         Path clientCertificateFile = tmpFolder.newFile().toPath();
@@ -774,7 +774,7 @@ public class HttpServerTest {
         generatePrivateKeyAndCertificate(rootPrivateKeyFile, rootCertificateFile, privateKeyFile, certificateFile, notAfter);
         var metricConsumer = new MetricConsumerMock();
         InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
-        TestDriver driver = createSslTestDriver(rootCertificateFile, rootPrivateKeyFile, metricConsumer, connectionLog);
+        JettyTestDriver driver = createSslTestDriver(rootCertificateFile, rootPrivateKeyFile, metricConsumer, connectionLog);
 
         SSLContext clientCtx = new SslContextBuilder()
                 .withTrustStore(rootCertificateFile)
@@ -797,7 +797,7 @@ public class HttpServerTest {
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
         InMemoryRequestLog requestLogMock = new InMemoryRequestLog();
         InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
-        TestDriver driver = createSslWithProxyProtocolTestDriver(certificateFile, privateKeyFile, requestLogMock, /*mixedMode*/connectionLog, false);
+        JettyTestDriver driver = createSslWithProxyProtocolTestDriver(certificateFile, privateKeyFile, requestLogMock, /*mixedMode*/connectionLog, false);
 
         String proxiedRemoteAddress = "192.168.0.100";
         int proxiedRemotePort = 12345;
@@ -822,7 +822,7 @@ public class HttpServerTest {
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
         InMemoryRequestLog requestLogMock = new InMemoryRequestLog();
         InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
-        TestDriver driver = createSslWithProxyProtocolTestDriver(certificateFile, privateKeyFile, requestLogMock, /*mixedMode*/connectionLog, true);
+        JettyTestDriver driver = createSslWithProxyProtocolTestDriver(certificateFile, privateKeyFile, requestLogMock, /*mixedMode*/connectionLog, true);
 
         String proxiedRemoteAddress = "192.168.0.100";
         sendJettyClientRequest(driver, certificateFile, null);
@@ -847,7 +847,7 @@ public class HttpServerTest {
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
         InMemoryRequestLog requestLogMock = new InMemoryRequestLog();
         InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
-        TestDriver driver = createSslWithProxyProtocolTestDriver(certificateFile, privateKeyFile, requestLogMock, connectionLog, /*mixedMode*/false);
+        JettyTestDriver driver = createSslWithProxyProtocolTestDriver(certificateFile, privateKeyFile, requestLogMock, connectionLog, /*mixedMode*/false);
 
         String proxiedRemoteAddress = "192.168.0.100";
         int proxiedRemotePort = 12345;
@@ -870,7 +870,7 @@ public class HttpServerTest {
         generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
         InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
         Module overrideModule = binder -> binder.bind(ConnectionLog.class).toInstance(connectionLog);
-        TestDriver driver = TestDrivers.newInstanceWithSsl(new OkRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.NEED, overrideModule);
+        JettyTestDriver driver = JettyTestDriver.newInstanceWithSsl(new OkRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.NEED, overrideModule);
         int listenPort = driver.server().getListenPort();
         StringBuilder builder = new StringBuilder();
         for (int i = 0; i < 1000; i++) {
@@ -905,7 +905,7 @@ public class HttpServerTest {
     @Test
     public void requireThatRequestIsTrackedInAccessLog() throws IOException, InterruptedException {
         BlockingQueueRequestLog requestLogMock = new BlockingQueueRequestLog();
-        TestDriver driver = TestDrivers.newConfiguredInstance(
+        JettyTestDriver driver = JettyTestDriver.newConfiguredInstance(
                 new EchoRequestHandler(),
                 new ServerConfig.Builder(),
                 new ConnectorConfig.Builder(),
@@ -917,7 +917,7 @@ public class HttpServerTest {
         assertThat(driver.close(), is(true));
     }
 
-    private ContentResponse sendJettyClientRequest(TestDriver testDriver, Path certificateFile, Object tag)
+    private ContentResponse sendJettyClientRequest(JettyTestDriver testDriver, Path certificateFile, Object tag)
             throws Exception {
         HttpClient client = createJettyHttpClient(certificateFile);
         try {
@@ -954,9 +954,9 @@ public class HttpServerTest {
     }
 
     private static CloseableHttpAsyncClient createHttp2Client(Path certificateFile, Path privateKeyFile) {
-        TestDriver driver = TestDrivers.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
+        JettyTestDriver driver = JettyTestDriver.newInstanceWithSsl(new EchoRequestHandler(), certificateFile, privateKeyFile, TlsClientAuth.WANT);
         TlsStrategy tlsStrategy = ClientTlsStrategyBuilder.create()
-                .setSslContext(driver.newSslContext())
+                .setSslContext(driver.sslContext())
                 .build();
         var client = HttpAsyncClientBuilder.create()
                 .setVersionPolicy(HttpVersionPolicy.FORCE_HTTP_2)
@@ -997,7 +997,7 @@ public class HttpServerTest {
         assertEquals(expectedException.getName(), exceptionEntry.name());
     }
 
-    private static TestDriver createSslWithProxyProtocolTestDriver(
+    private static JettyTestDriver createSslWithProxyProtocolTestDriver(
             Path certificateFile, Path privateKeyFile, RequestLog requestLog,
             ConnectionLog connectionLog, boolean mixedMode) {
         ConnectorConfig.Builder connectorConfig = new ConnectorConfig.Builder()
@@ -1010,7 +1010,7 @@ public class HttpServerTest {
                              .privateKeyFile(privateKeyFile.toString())
                              .certificateFile(certificateFile.toString())
                              .caCertificateFile(certificateFile.toString()));
-        return TestDrivers.newConfiguredInstance(
+        return JettyTestDriver.newConfiguredInstance(
                 new EchoRequestHandler(),
                 new ServerConfig.Builder().connectionLog(new ServerConfig.ConnectionLog.Builder().enabled(true)),
                 connectorConfig,
@@ -1020,7 +1020,7 @@ public class HttpServerTest {
                 });
     }
 
-    private static TestDriver createSslWithTlsClientAuthenticationEnforcer(Path certificateFile, Path privateKeyFile) {
+    private static JettyTestDriver createSslWithTlsClientAuthenticationEnforcer(Path certificateFile, Path privateKeyFile) {
         ConnectorConfig.Builder connectorConfig = new ConnectorConfig.Builder()
                 .tlsClientAuthEnforcer(
                         new ConnectorConfig.TlsClientAuthEnforcer.Builder()
@@ -1032,25 +1032,25 @@ public class HttpServerTest {
                         .privateKeyFile(privateKeyFile.toString())
                         .certificateFile(certificateFile.toString())
                         .caCertificateFile(certificateFile.toString()));
-        return TestDrivers.newConfiguredInstance(
+        return JettyTestDriver.newConfiguredInstance(
                 new EchoRequestHandler(),
                 new ServerConfig.Builder().connectionLog(new ServerConfig.ConnectionLog.Builder().enabled(true)),
                 connectorConfig,
                 binder -> {});
     }
 
-    private static TestDriver createSslTestDriver(
+    private static JettyTestDriver createSslTestDriver(
             Path serverCertificateFile, Path serverPrivateKeyFile, MetricConsumerMock metricConsumer, InMemoryConnectionLog connectionLog) throws IOException {
         Module extraModule = binder -> {
             binder.bind(MetricConsumer.class).toInstance(metricConsumer.mockitoMock());
             binder.bind(ConnectionLog.class).toInstance(connectionLog);
         };
-        return TestDrivers.newInstanceWithSsl(
+        return JettyTestDriver.newInstanceWithSsl(
                 new EchoRequestHandler(), serverCertificateFile, serverPrivateKeyFile, TlsClientAuth.NEED, extraModule);
     }
 
     private static void assertHttpsRequestTriggersSslHandshakeException(
-            TestDriver testDriver,
+            JettyTestDriver testDriver,
             SSLContext sslContext,
             String protocolOverride,
             String cipherOverride,
@@ -1110,9 +1110,9 @@ public class HttpServerTest {
         return ret.toString();
     }
 
-    private static TestDriver newDriverWithFormPostContentRemoved(RequestHandler requestHandler,
-                                                                  boolean removeFormPostBody) throws Exception {
-        return TestDrivers.newConfiguredInstance(
+    private static JettyTestDriver newDriverWithFormPostContentRemoved(RequestHandler requestHandler,
+                                                                       boolean removeFormPostBody) throws Exception {
+        return JettyTestDriver.newConfiguredInstance(
                 requestHandler,
                 new ServerConfig.Builder()
                         .removeRawPostBodyForWwwUrlEncodedPost(removeFormPostBody),
