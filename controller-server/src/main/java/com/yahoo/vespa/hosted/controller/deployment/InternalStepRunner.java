@@ -721,7 +721,7 @@ public class InternalStepRunner implements StepRunner {
                 controller.notificationsDb().removeNotification(source, Notification.Type.DEPLOYMENT_FAILURE);
                 return;
             case outOfCapacity:
-                if (run.id().type().isProduction()) updater.accept("due to lack of capacity. Please contact the Vespa team to request more!");
+                if ( ! run.id().type().environment().isTest()) updater.accept("due to lack of capacity. Please contact the Vespa team to request more!");
                 return;
             case deploymentFailed:
                 updater.accept("due to an invalid application configuration, or timeout of other deployments of the same application");
