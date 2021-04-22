@@ -708,6 +708,24 @@ TEST("require that we do not break the stack on bad query") {
     EXPECT_FALSE(term.isValid());
 }
 
+TEST("a unhandled sameElement stack") {
+    const char * stack = "\022\002\026xyz_abcdefghij_xyzxyzxQ\001\vxxxxxx_name\034xxxxxx_xxxx_xxxxxxx_xxxxxxxxE\002\005delta\b<0.00393";
+    vespalib::stringref stackDump(stack);
+    EXPECT_EQUAL(85u, stackDump.size());
+    AllowRewrite empty;
+    const Query q(empty, stackDump);
+    EXPECT_TRUE(q.valid());
+    const QueryNode & root = q.getRoot();
+    auto sameElement = dynamic_cast<const SameElementQueryNode *>(&root);
+    EXPECT_TRUE(sameElement != nullptr);
+    EXPECT_EQUAL(2u, sameElement->size());
+    EXPECT_EQUAL("xyz_abcdefghij_xyzxyzx", sameElement->getIndex());
+    auto term0 = dynamic_cast<const QueryTerm *>((*sameElement)[0].get());
+    EXPECT_TRUE(term0 != nullptr);
+    auto term1 = dynamic_cast<const QueryTerm *>((*sameElement)[1].get());
+    EXPECT_TRUE(term1 != nullptr);
+}
+
 namespace {
     void verifyQueryTermNode(const vespalib::string & index, const QueryNode *node) {
         EXPECT_TRUE(dynamic_cast<const QueryTerm *>(node) != nullptr);

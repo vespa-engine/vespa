@@ -2,6 +2,7 @@
 #include "query.h"
 #include <vespa/searchlib/parsequery/stackdumpiterator.h>
 #include <vespa/vespalib/objects/visit.hpp>
+#include <cassert>
 
 namespace search::streaming {
 
@@ -155,6 +156,11 @@ bool SameElementQueryNode::evaluate() const {
 const HitList &
 SameElementQueryNode::evaluateHits(HitList & hl) const
 {
+    // TODO This should have been done in a different way, but there are currently no way for that.
+    //  Sanity check should be cheap enough that it does not matter.
+    for (const auto & child : *this) {
+        assert(dynamic_cast<const QueryTerm *>(child.get()) != nullptr);
+    }
     hl.clear();
     if ( !AndQueryNode::evaluate()) return hl;
 
