@@ -225,11 +225,14 @@ public class TypeResolverTestCase {
         checkConcat("tensor<float>(x[3])",    "tensor()", "x", "tensor<float>(x[4])");
         checkConcat("tensor<bfloat16>(x[3])", "tensor()", "x", "tensor<bfloat16>(x[4])");
         checkConcat("tensor<int8>(x[3])",     "tensor()", "x", "tensor<int8>(x[4])");
+        // specific for Java
+        checkConcat("tensor(x[])",            "tensor(x[2])", "x", "tensor(x[])");
+        checkConcat("tensor(x[])",            "tensor(x[2])", "y", "tensor(x[],y[2])");
+        checkConcat("tensor(x[3])",           "tensor(x[2])", "y", "tensor(x[2],y[2])");
         // invalid combinations must fail
         checkConcatFails("tensor(x{})",       "tensor(x[2])", "x");
         checkConcatFails("tensor(x{})",       "tensor(x{})",  "x");
         checkConcatFails("tensor(x{})",       "tensor()",     "x");
-        checkConcatFails("tensor(x[3])",      "tensor(x[2])", "y");
     }
 
     @Test

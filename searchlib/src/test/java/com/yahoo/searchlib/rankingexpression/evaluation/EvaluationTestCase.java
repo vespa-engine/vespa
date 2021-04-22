@@ -409,8 +409,8 @@ public class EvaluationTestCase {
         tester.assertEvaluates("tensor<float>(x[3]):[1.0, 2.0, 3.0]",
                                "cell_cast(tensor0, float)",
                                "tensor<double>(x[3]):[1, 2, 3]");
-        tester.assertEvaluates("tensor<float>():{1}",
-                               "cell_cast(tensor0{x:1}, float)",
+        tester.assertEvaluates("tensor<float>(x[2]):[1.0, 2.0]",
+                               "cell_cast(tensor(x[2]):[tensor0{x:1}, tensor0{x:2}], float)",
                                "tensor<double>(x{}):{1:1, 2:2, 3:3}");
         tester.assertEvaluates("tensor<float>(x[2]):[3,8]",
                                "cell_cast(tensor0 * tensor1, float)",
