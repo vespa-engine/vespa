@@ -11,85 +11,47 @@ TEST_SETUP(Test);
 
 //-----------------------------------------------------------------------------
 
-static double expectWait[21] = {
-	0.5, 1.0, 1.5, 2.0, 2.5,
-        3.0, 3.5, 4.0, 4.5,
-	5.0, 6.0, 7.0, 8.0, 9.0,
-        10, 15, 20, 25, 30, 30, 30
-};
-
 int
 Test::Main()
 {
     TEST_INIT("backoff_test");
 
     BackOff one;
-    EXPECT_FALSE(one.shouldWarn());
+    EXPECT_TRUE(one.shouldWarn());
     EXPECT_EQUAL(0.500, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(1.000, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(1.500, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(2.000, one.get());
-    EXPECT_TRUE(one.shouldWarn());
-
-    EXPECT_EQUAL(2.500, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(3.000, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(3.500, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(4.000, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(4.500, one.get());
-    EXPECT_TRUE(one.shouldWarn());
-
-    EXPECT_EQUAL(5.000, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(6.000, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(7.000, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(8.000, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(9.000, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(10.00, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(15.00, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(20.00, one.get());
-    EXPECT_TRUE(one.shouldWarn());
-
-    EXPECT_EQUAL(25.00, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(30.00, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(30.00, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(30.00, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(30.00, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-    EXPECT_EQUAL(30.00, one.get());
-    EXPECT_FALSE(one.shouldWarn());
-
+    for (int i = 2; i < 41; i++) {
+        EXPECT_EQUAL(0.5 * i, one.get());
+    }
+    for (int i = 1; i < 1000; i++) {
+        EXPECT_EQUAL(20.0, one.get());
+    }
     TEST_FLUSH();
 
     BackOff two;
-    for (int i = 0; i < 21; i++) {
-        EXPECT_EQUAL(expectWait[i], two.get());
-        if (i == 3 || i == 8 || i == 16) {
+    for (int i = 1; i < 50; i++) {
+        double expect = 0.5 * i;
+        if (expect > 20.0) expect = 20.0;
+        EXPECT_EQUAL(expect, two.get());
+        if (i == 1 || i == 7 || i == 18) {
             EXPECT_TRUE(two.shouldWarn());
         } else {
             EXPECT_FALSE(two.shouldWarn());
         }
     }
     two.reset();
-    for (int i = 0; i < 21; i++) {
-        EXPECT_EQUAL(expectWait[i], two.get());
-        if (i == 7 || i == 15) {
+    for (int i = 1; i < 50; i++) {
+        double expect = 0.5 * i;
+        if (expect > 20.0) expect = 20.0;
+        EXPECT_EQUAL(expect, two.get());
+        if (i == 1 || i == 7 || i == 18) {
+            EXPECT_TRUE(two.shouldWarn());
+        } else {
+            EXPECT_FALSE(two.shouldWarn());
+        }
+    }
+    for (int i = 0; i < 50000; i++) {
+        EXPECT_EQUAL(20.0, two.get());
+        if ((i % 180) == 5) {
             EXPECT_TRUE(two.shouldWarn());
         } else {
             EXPECT_FALSE(two.shouldWarn());
