@@ -39,6 +39,8 @@ import java.util.stream.Collectors;
  */
 public class MapEvaluationTypeContext extends FunctionReferenceContext implements TypeContext<Reference> {
 
+    private final Optional<MapEvaluationTypeContext> parent;
+
     private final Map<Reference, TensorType> featureTypes = new HashMap<>();
 
     private final Map<Reference, TensorType> resolvedTypes = new HashMap<>();
@@ -54,6 +56,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     MapEvaluationTypeContext(Collection<ExpressionFunction> functions, Map<Reference, TensorType> featureTypes) {
         super(functions);
+        this.parent = Optional.empty();
         this.featureTypes.putAll(featureTypes);
         this.currentResolutionCallStack =  new ArrayDeque<>();
         this.queryFeaturesNotDeclared = new TreeSet<>();
@@ -63,12 +66,14 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
 
     private MapEvaluationTypeContext(Map<String, ExpressionFunction> functions,
                                      Map<String, String> bindings,
+                                     Optional<MapEvaluationTypeContext> parent,
                                      Map<Reference, TensorType> featureTypes,
                                      Deque<Reference> currentResolutionCallStack,
                                      SortedSet<Reference> queryFeaturesNotDeclared,
                                      boolean tensorsAreUsed,
                                      Map<Reference, TensorType> globallyResolvedTypes) {
         super(functions, bindings);
+        this.parent = parent;
         this.featureTypes.putAll(featureTypes);
         this.currentResolutionCallStack = currentResolutionCallStack;
         this.queryFeaturesNotDeclared = queryFeaturesNotDeclared;
@@ -124,19 +129,34 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         return resolvedType;
     }
 
+    MapEvaluationTypeContext getParent(String forArgument, String boundTo) {
+        return parent.orElseThrow(
+            () -> new IllegalArgumentException("argument "+forArgument+" is bound to "+boundTo+" but there is no parent context"));
+    }
+
+    String resolveBinding(String argument) {
+        String bound = getBinding(argument);
+        if (bound == null) {
+            return argument;
+        }
+        return getParent(argument, bound).resolveBinding(bound);
+    }
+
     private TensorType resolveType(Reference reference) {
         if (currentResolutionCallStack.contains(reference))
             throw new IllegalArgumentException("Invocation loop: " +
                                                currentResolutionCallStack.stream().map(Reference::toString).collect(Collectors.joining(" -> ")) +
                                                " -> " + reference);
 
-        // Bound to a function argument, and not to a same-named identifier (which would lead to a loop)?
+        // Bound to a function argument?
         Optional<String> binding = boundIdentifier(reference);
-        if (binding.isPresent() && ! binding.get().equals(reference.toString())) {
+        if (binding.isPresent()) {
             try {
                 // This is not pretty, but changing to bind expressions rather
                 // than their string values requires deeper changes
-                return new RankingExpression(binding.get()).type(this);
+                var expr = new RankingExpression(binding.get());
+                var type = expr.type(getParent(reference.name(), binding.get()));
+                return type;
             } catch (ParseException e) {
                 throw new IllegalArgumentException(e);
             }
@@ -149,15 +169,18 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
             if (FeatureNames.isSimpleFeature(reference)) {
                 // The argument may be a local identifier bound to the actual value
                 String argument = reference.simpleArgument().get();
-                String argumentBinding = getBinding(argument);
-                reference = Reference.simple(reference.name(), argumentBinding != null ? argumentBinding : argument);
+                String argumentBinding = resolveBinding(argument);
+                reference = Reference.simple(reference.name(), argumentBinding);
                 return featureTypes.get(reference);
             }
 
             // A reference to a function?
             Optional<ExpressionFunction> function = functionInvocation(reference);
             if (function.isPresent()) {
-                return function.get().getBody().type(this.withBindings(bind(function.get().arguments(), reference.arguments())));
+                var body = function.get().getBody();
+                var child = this.withBindings(bind(function.get().arguments(), reference.arguments()));
+                var type = body.type(child);
+                return type;
             }
 
             // A reference to an ONNX model?
@@ -297,8 +320,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
         Map<String, String> bindings = new HashMap<>(formalArguments.size());
         for (int i = 0; i < formalArguments.size(); i++) {
             String identifier = invocationArguments.expressions().get(i).toString();
-            String identifierBinding = super.getBinding(identifier);
-            bindings.put(formalArguments.get(i), identifierBinding != null ? identifierBinding : identifier);
+            bindings.put(formalArguments.get(i), identifier);
         }
         return bindings;
     }
@@ -323,6 +345,7 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
     public MapEvaluationTypeContext withBindings(Map<String, String> bindings) {
         return new MapEvaluationTypeContext(functions(),
                                             bindings,
+                                            Optional.of(this),
                                             featureTypes,
                                             currentResolutionCallStack,
                                             queryFeaturesNotDeclared,
