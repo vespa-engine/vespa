@@ -9,6 +9,7 @@ import com.yahoo.tensor.PartialAddress;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
@@ -48,9 +49,7 @@ public class Merge<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
 
     /** Returns the type resulting from applying Merge to the two given types */
     public static TensorType outputType(TensorType a, TensorType b) {
-        Optional<TensorType> outputType = a.dimensionwiseGeneralizationWith(b);
-        if (outputType.isPresent()) return outputType.get();
-        throw new IllegalArgumentException("Cannot merge " + a + " and " + b + ": Arguments must have compatible types");
+        return TypeResolver.merge(a, b);
     }
 
     public DoubleBinaryOperator merger() { return merger; }
