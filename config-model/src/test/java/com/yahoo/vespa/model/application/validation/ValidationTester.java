@@ -34,9 +34,9 @@ public class ValidationTester {
     private final TestProperties properties;
     private final InMemoryProvisioner hostProvisioner;
 
-    /** Creates a validation tester with 1 node available */
+    /** Creates a validation tester with 1 node available (in addition to cluster controllers) */
     public ValidationTester() {
-        this(1);
+        this(4);
     }
 
     /** Creates a validation tester with number of nodes available and the given test properties */

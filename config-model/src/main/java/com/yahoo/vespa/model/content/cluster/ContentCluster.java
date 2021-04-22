@@ -291,9 +291,8 @@ public class ContentCluster extends AbstractConfigProducer implements
                                            DeployState deployState) {
             if (admin == null) return; // only in tests
             if (contentCluster.getPersistence() == null) return;
-
             ClusterControllerContainerCluster clusterControllers;
-            if (admin.multitenant()) {
+            if (context.properties().hostedVespa()) {
                 clusterControllers = getDedicatedSharedControllers(contentElement, admin, context, deployState);
             }
             else {
@@ -304,7 +303,8 @@ public class ContentCluster extends AbstractConfigProducer implements
                         context.getDeployState().getDeployLogger().log(Level.INFO,
                                                                        "When having content cluster(s) and more than 1 config server it is recommended to configure cluster controllers explicitly.");
                     }
-                    clusterControllers = createClusterControllers(admin, hosts, "cluster-controllers", false, context.getDeployState());
+                    boolean runStandaloneZooKeeper = admin.multitenant(); // When multitenant we'll not run on config servers so we need to add a Zk instance
+                    clusterControllers = createClusterControllers(admin, hosts, "cluster-controllers", runStandaloneZooKeeper, context.getDeployState());
                     admin.setClusterControllers(clusterControllers);
                 }
             }
@@ -345,7 +345,7 @@ public class ContentCluster extends AbstractConfigProducer implements
         private ClusterControllerContainerCluster createClusterControllers(AbstractConfigProducer<?> parent,
                                                                            Collection<HostResource> hosts,
                                                                            String name,
-                                                                           boolean multitenant,
+                                                                           boolean runStandaloneZooKeeper,
                                                                            DeployState deployState) {
             var clusterControllers = new ClusterControllerContainerCluster(parent, name, name, deployState);
             List<ClusterControllerContainer> containers = new ArrayList<>();
@@ -354,7 +354,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                 for (HostResource host : hosts) {
                     int ccIndex = host.spec().membership().map(ClusterMembership::index).orElse(index);
                     boolean retired = host.spec().membership().map(ClusterMembership::retired).orElse(false);
-                    var clusterControllerContainer = new ClusterControllerContainer(clusterControllers, ccIndex, multitenant, deployState, retired);
+                    var clusterControllerContainer = new ClusterControllerContainer(clusterControllers, ccIndex, runStandaloneZooKeeper, deployState, retired);
                     clusterControllerContainer.setHostResource(host);
                     clusterControllerContainer.initService(deployState.getDeployLogger());
                     clusterControllerContainer.setProp("clustertype", "admin");

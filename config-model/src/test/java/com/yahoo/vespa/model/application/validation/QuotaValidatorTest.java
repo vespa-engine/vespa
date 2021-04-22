@@ -25,13 +25,13 @@ public class QuotaValidatorTest {
 
     @Test
     public void test_deploy_under_quota() {
-        var tester = new ValidationTester(5, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
+        var tester = new ValidationTester(8, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
         tester.deploy(null, getServices("testCluster", 5), Environment.prod, null);
     }
 
     @Test
     public void test_deploy_above_quota_clustersize() {
-        var tester = new ValidationTester(11, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
+        var tester = new ValidationTester(14, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
         try {
             tester.deploy(null, getServices("testCluster", 11), Environment.prod, null);
             fail();
@@ -42,32 +42,32 @@ public class QuotaValidatorTest {
 
     @Test
     public void test_deploy_above_quota_budget() {
-        var tester = new ValidationTester(10, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
+        var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
         try {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
             assertEquals("Please free up some capacity! This deployment's quota use ($-.--) exceeds reserved quota ($-.--)!",
-                    ValidationTester.censorNumbers(e.getMessage()));
+                         ValidationTester.censorNumbers(e.getMessage()));
         }
     }
 
     @Test
     public void test_deploy_above_quota_budget_in_publiccd() {
-        var tester = new ValidationTester(10, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicCdZone));
+        var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicCdZone));
         try {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
         } catch (RuntimeException e) {
             assertEquals("publiccd: Please free up some capacity! This deployment's quota use ($-.--) exceeds reserved quota ($-.--)!",
-                    ValidationTester.censorNumbers(e.getMessage()));
+                         ValidationTester.censorNumbers(e.getMessage()));
         }
     }
 
     @Test
     public void test_deploy_with_negative_budget() {
         var quota = Quota.unlimited().withBudget(BigDecimal.valueOf(-1));
-        var tester = new ValidationTester(10, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
+        var tester = new ValidationTester(13, false, new TestProperties().setHostedVespa(true).setQuota(quota).setZone(publicZone));
         try {
             tester.deploy(null, getServices("testCluster", 10), Environment.prod, null);
             fail();
