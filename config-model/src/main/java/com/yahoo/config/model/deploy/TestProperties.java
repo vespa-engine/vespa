@@ -37,6 +37,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Zone zone;
     private final Set<ContainerEndpoint> endpoints = Collections.emptySet();
     private boolean useDedicatedNodeForLogserver = false;
+    private boolean dedicatedClusterControllerCluster = true;
     private boolean useThreePhaseUpdates = false;
     private double defaultTermwiseLimit = 1.0;
     private String jvmGCOptions = null;
@@ -77,6 +78,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean isBootstrap() { return false; }
     @Override public boolean isFirstTimeDeployment() { return false; }
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
+    @Override public boolean dedicatedClusterControllerCluster() { return hostedVespa && dedicatedClusterControllerCluster; }
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
@@ -165,6 +167,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setUseDedicatedNodeForLogserver(boolean useDedicatedNodeForLogserver) {
         this.useDedicatedNodeForLogserver = useDedicatedNodeForLogserver;
+        return this;
+    }
+
+    public TestProperties setDedicatedClusterControllerCluster(boolean dedicatedClusterControllerCluster) {
+        this.dedicatedClusterControllerCluster = dedicatedClusterControllerCluster;
         return this;
     }
 
