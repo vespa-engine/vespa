@@ -67,10 +67,12 @@ public class NotificationsDb {
 
     /** Remove all notifications for this source or sources contained by this source */
     public void removeNotifications(NotificationSource source) {
-        if (source.application().isEmpty()) // Source is tenant
-            curatorDb.deleteNotifications(source.tenant());
-
         try (Lock lock = curatorDb.lockNotifications(source.tenant())) {
+            if (source.application().isEmpty()) { // Source is tenant
+                curatorDb.deleteNotifications(source.tenant());
+                return;
+            }
+
             List<Notification> initial = curatorDb.readNotifications(source.tenant());
             List<Notification> filtered = initial.stream()
                     .filter(notification -> !source.contains(notification.source()))
