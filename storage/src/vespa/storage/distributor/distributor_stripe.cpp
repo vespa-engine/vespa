@@ -40,8 +40,7 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
                                      DoneInitializeHandler& doneInitHandler,
                                      bool manageActiveBucketCopies,
                                      ChainedMessageSender& messageSender)
-    : StorageLink("distributor"),
-      DistributorStripeInterface(),
+    : DistributorStripeInterface(),
       framework::StatusReporter("distributor", "Distributor"),
       _clusterStateBundle(lib::ClusterState()),
       _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
@@ -114,36 +113,23 @@ DistributorStripe::sendCommand(const std::shared_ptr<api::StorageCommand>& cmd)
         api::MergeBucketCommand& merge(static_cast<api::MergeBucketCommand&>(*cmd));
         _idealStateManager.getMetrics().nodesPerMerge.addValue(merge.getNodes().size());
     }
-    sendUp(cmd);
+    send_up_with_tracking(cmd);
 }
 
 void
 DistributorStripe::sendReply(const std::shared_ptr<api::StorageReply>& reply)
 {
-    sendUp(reply);
-}
-
-void
-DistributorStripe::onOpen()
-{
-    LOG(debug, "DistributorStripe::onOpen invoked");
-    if (_component.getDistributorConfig().startDistributorThread) {
-        // TODO STRIPE own thread per stripe!
-    } else {
-        LOG(warning, "Not starting distributor stripe thread as it's not configured to "
-                     "run. Unless you are just running a test tool, this is a "
-                     "fatal error.");
-    }
+    send_up_with_tracking(reply);
 }
 
 void DistributorStripe::send_shutdown_abort_reply(const std::shared_ptr<api::StorageMessage>& msg) {
     api::StorageReply::UP reply(
             std::dynamic_pointer_cast<api::StorageCommand>(msg)->makeReply());
     reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Distributor is shutting down"));
-    sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
+    send_up_with_tracking(std::shared_ptr<api::StorageMessage>(reply.release()));
 }
 
-void DistributorStripe::onClose() {
+void DistributorStripe::flush_and_close() {
     for (auto& msg : _messageQueue) {
         if (!msg->getType().isReply()) {
             send_shutdown_abort_reply(msg);
@@ -168,14 +154,14 @@ void DistributorStripe::send_up_without_tracking(const std::shared_ptr<api::Stor
 }
 
 void
-DistributorStripe::sendUp(const std::shared_ptr<api::StorageMessage>& msg)
+DistributorStripe::send_up_with_tracking(const std::shared_ptr<api::StorageMessage>& msg)
 {
     _pendingMessageTracker.insert(msg);
     send_up_without_tracking(msg);
 }
 
 bool
-DistributorStripe::onDown(const std::shared_ptr<api::StorageMessage>& msg)
+DistributorStripe::handle_or_enqueue_message(const std::shared_ptr<api::StorageMessage>& msg)
 {
     if (_externalOperationHandler.try_handle_message_outside_main_thread(msg)) {
         return true;
@@ -400,7 +386,7 @@ void DistributorStripe::invalidate_bucket_spaces_stats() {
 }
 
 void
-DistributorStripe::storageDistributionChanged()
+DistributorStripe::storage_distribution_changed()
 {
     if (!_distribution.get()
         || *_component.getDistribution() != *_distribution)

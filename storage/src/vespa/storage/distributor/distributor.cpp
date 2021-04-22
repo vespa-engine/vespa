@@ -179,7 +179,6 @@ void
 Distributor::onOpen()
 {
     LOG(debug, "Distributor::onOpen invoked");
-    _stripe->open();
     setNodeStateUp();
     framework::MilliSecTime maxProcessingTime(60 * 1000);
     framework::MilliSecTime waitTime(1000);
@@ -195,7 +194,7 @@ Distributor::onOpen()
 
 void Distributor::onClose() {
     LOG(debug, "Distributor::onClose invoked");
-    _stripe->close();
+    _stripe->flush_and_close();
     if (_bucket_db_updater) {
         _bucket_db_updater->flush();
     }
@@ -249,7 +248,7 @@ Distributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     }
     // TODO STRIPE can we route both requests and responses that are BucketCommand|Reply based on their bucket alone?
     //   that covers most operations already...
-    return _stripe->onDown(msg);
+    return _stripe->handle_or_enqueue_message(msg);
 }
 
 bool
@@ -297,7 +296,7 @@ Distributor::storageDistributionChanged()
         }
     } else {
         // May happen from any thread.
-        _stripe->storageDistributionChanged();
+        _stripe->storage_distribution_changed();
     }
 }
 
