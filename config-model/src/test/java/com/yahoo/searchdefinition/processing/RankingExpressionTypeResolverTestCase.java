@@ -195,6 +195,48 @@ public class RankingExpressionTypeResolverTestCase {
                      summaryFeatures(profile).get("return_b").type(profile.typeContext(builder.getQueryProfileRegistry())));
     }
 
+    @Test
+    public void testAttributeInvocationViaBoundIdentifier() throws Exception {
+        SearchBuilder builder = new SearchBuilder();
+        builder.importString(joinLines(
+                                 "search newsarticle {",
+                                 "    document newsarticle {",
+                                 "        field title type string {",
+                                 "            indexing {",
+                                 "                input title | index",
+                                 "            }",
+                                 "            weight: 30",
+                                 "        }",
+                                 "        field usstaticrank type int {",
+                                 "            indexing: summary | attribute",
+                                 "        }",
+                                 "        field eustaticrank type int {",
+                                 "            indexing: summary | attribute",
+                                 "        }",
+                                 "    }",
+                                 "    rank-profile default {",
+                                 "        macro newsboost() { ",
+                                 "            expression: 200 * matches(title)",
+                                 "        }",
+                                 "        macro commonboost(mystaticrank) { ",
+                                 "            expression: attribute(mystaticrank) + newsboost",
+                                 "        }",
+                                 "        macro commonfirstphase(mystaticrank) { ",
+                                 "            expression: nativeFieldMatch(title) + commonboost(mystaticrank) ",
+                                 "        }",
+                                 "        first-phase { expression: commonfirstphase(usstaticrank) }",
+                                 "    }",
+                                 "    rank-profile eurank inherits default {",
+                                 "        first-phase { expression: commonfirstphase(eustaticrank) }",
+                                 "    }",
+                                 "}"));
+        builder.build();
+        RankProfile profile = builder.getRankProfileRegistry().get(builder.getSearch(), "eurank");
+        // assertEquals(TensorType.fromSpec("tensor(x[10],y[1])"),
+        //              summaryFeatures(profile).get("return_a").type(profile.typeContext(builder.getQueryProfileRegistry())));
+        // assertEquals(TensorType.fromSpec("tensor(z[10])"),
+        //              summaryFeatures(profile).get("return_b").type(profile.typeContext(builder.getQueryProfileRegistry())));
+    }
 
     @Test
     public void testTensorFunctionInvocationTypes_NestedSameName() throws Exception {
