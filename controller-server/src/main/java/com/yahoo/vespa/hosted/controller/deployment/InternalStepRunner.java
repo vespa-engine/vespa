@@ -25,9 +25,9 @@ import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
-import com.yahoo.vespa.hosted.controller.application.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
@@ -39,11 +39,11 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentFailureMails;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
+import com.yahoo.vespa.hosted.controller.application.ActivateResult;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateException;
 import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
 import com.yahoo.vespa.hosted.controller.notification.Notification;
@@ -721,13 +721,13 @@ public class InternalStepRunner implements StepRunner {
                 controller.notificationsDb().removeNotification(source, Notification.Type.DEPLOYMENT_FAILURE);
                 return;
             case outOfCapacity:
-                if ( ! run.id().type().environment().isTest()) updater.accept("due to lack of capacity. Please contact the Vespa team to request more!");
+                if ( ! run.id().type().environment().isTest()) updater.accept("lack of capacity. Please contact the Vespa team to request more!");
                 return;
             case deploymentFailed:
-                updater.accept("due to an invalid application configuration, or timeout of other deployments of the same application");
+                updater.accept("invalid application configuration, or timeout of other deployments of the same application");
                 return;
             case installationFailed:
-                updater.accept("as nodes were not able to start the new Java containers");
+                updater.accept("nodes were not able to start the new Java containers");
                 return;
             case testFailure:
                 updater.accept("one or more verification tests against the deployment failed");
