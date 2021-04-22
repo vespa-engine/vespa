@@ -25,6 +25,7 @@ import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.Step;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceQueue;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
+import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicy;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
@@ -89,6 +90,7 @@ public class CuratorDb {
     private static final Path endpointCertificateRoot = root.append("applicationCertificates");
     private static final Path archiveBucketsRoot = root.append("archiveBuckets");
     private static final Path changeRequestsRoot = root.append("changeRequests");
+    private static final Path notificationsRoot = root.append("notifications");
 
     private final NodeVersionSerializer nodeVersionSerializer = new NodeVersionSerializer();
     private final VersionStatusSerializer versionStatusSerializer = new VersionStatusSerializer(nodeVersionSerializer);
@@ -206,6 +208,10 @@ public class CuratorDb {
 
     public Lock lockChangeRequests() {
         return curator.lock(lockRoot.append("changeRequests"), defaultLockTimeout);
+    }
+
+    public Lock lockNotifications(TenantName tenantName) {
+        return curator.lock(lockRoot.append("notifications").append(tenantName.value()), defaultLockTimeout);
     }
 
     // -------------- Helpers ------------------------------------------
@@ -589,6 +595,21 @@ public class CuratorDb {
         curator.delete(changeRequestPath(changeRequest.getId()));
     }
 
+    // -------------- Notifications ---------------------------------------------------
+
+    public List<Notification> readNotifications(TenantName tenantName) {
+        return readSlime(notificationsPath(tenantName))
+                .map(slime -> NotificationsSerializer.fromSlime(tenantName, slime)).orElseGet(List::of);
+    }
+
+    public void writeNotifications(TenantName tenantName, List<Notification> notifications) {
+        curator.set(notificationsPath(tenantName), asJson(NotificationsSerializer.toSlime(notifications)));
+    }
+
+    public void deleteNotifications(TenantName tenantName) {
+        curator.delete(notificationsPath(tenantName));
+    }
+
     // -------------- Paths ---------------------------------------------------
 
     private Path lockPath(TenantName tenant) {
@@ -716,6 +737,10 @@ public class CuratorDb {
 
     private static Path changeRequestPath(String id) {
         return changeRequestsRoot.append(id);
+    }
+
+    private static Path notificationsPath(TenantName tenantName) {
+        return notificationsRoot.append(tenantName.value());
     }
 
 }

@@ -11,6 +11,7 @@ import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.log.LogLevel;
 import com.yahoo.vespa.athenz.api.AthenzDomain;
 import com.yahoo.vespa.athenz.api.AthenzIdentity;
 import com.yahoo.vespa.athenz.api.AthenzPrincipal;
@@ -21,7 +22,6 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
-import com.yahoo.vespa.hosted.controller.application.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
@@ -35,7 +35,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServ
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerEndpoint;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationStore;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ArtifactRepository;
@@ -43,6 +42,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
+import com.yahoo.vespa.hosted.controller.application.ActivateResult;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackageValidator;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -58,6 +58,8 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.RunStatus;
+import com.yahoo.vespa.hosted.controller.notification.Notification;
+import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
 import com.yahoo.vespa.hosted.controller.security.Credentials;
@@ -85,6 +87,7 @@ import java.util.TreeMap;
 import java.util.function.Consumer;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.active;
 import static com.yahoo.vespa.hosted.controller.api.integration.configserver.Node.State.reserved;
@@ -391,6 +394,16 @@ public class ApplicationController {
             // Record the quota usage for this application
             var quotaUsage = deploymentQuotaUsage(zone, job.application());
 
+            // For direct deployments use the full application ID, but otherwise use just the tenant and application as
+            // the source since it's the same application, so it should have the same warnings
+            NotificationSource source = zone.environment().isManuallyDeployed() ?
+                    NotificationSource.from(job.application()) : NotificationSource.from(applicationId);
+            List<String> warnings = Optional.ofNullable(result.prepareResponse().log)
+                    .map(logs -> logs.stream().filter(log -> LogLevel.parse(log.level).intValue() >= Level.WARNING.intValue()).map(log -> log.message).collect(Collectors.toList()))
+                    .orElseGet(List::of);
+            if (warnings.isEmpty()) controller.notificationsDb().removeNotification(source, Notification.Type.APPLICATION_PACKAGE_WARNING);
+            else controller.notificationsDb().setNotification(source, Notification.Type.APPLICATION_PACKAGE_WARNING, warnings);
+
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(job.application().instance(),
                                            instance -> instance.withNewDeployment(zone, revision, platform,
@@ -561,6 +574,7 @@ public class ApplicationController {
             curator.removeApplication(id);
 
             controller.jobController().collectGarbage();
+            controller.notificationsDb().removeNotifications(NotificationSource.from(id));
             log.info("Deleted " + id);
         });
     }
@@ -588,6 +602,7 @@ public class ApplicationController {
             controller.routing().removeEndpointsInDns(application.get(), instanceId.instance());
             curator.writeApplication(application.without(instanceId.instance()).get());
             controller.jobController().collectGarbage();
+            controller.notificationsDb().removeNotifications(NotificationSource.from(instanceId));
             log.info("Deleted " + instanceId);
         });
     }

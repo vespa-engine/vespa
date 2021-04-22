@@ -23,6 +23,7 @@ import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceForwarder;
 import com.yahoo.vespa.hosted.controller.metric.ConfigServerMetrics;
+import com.yahoo.vespa.hosted.controller.notification.NotificationsDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.JobControlFlags;
 import com.yahoo.vespa.hosted.controller.security.AccessControl;
@@ -82,6 +83,7 @@ public class Controller extends AbstractComponent {
     private final ControllerConfig controllerConfig;
     private final SecretStore secretStore;
     private final CuratorArchiveBucketDb archiveBucketDb;
+    private final NotificationsDb notificationsDb;
 
     /**
      * Creates a controller 
@@ -118,6 +120,7 @@ public class Controller extends AbstractComponent {
         auditLogger = new AuditLogger(curator, clock);
         jobControl = new JobControl(new JobControlFlags(curator, flagSource));
         archiveBucketDb = new CuratorArchiveBucketDb(this);
+        notificationsDb = new NotificationsDb(this);
         this.controllerConfig = controllerConfig;
         this.secretStore = secretStore;
 
@@ -305,5 +308,9 @@ public class Controller extends AbstractComponent {
 
     public CuratorArchiveBucketDb archiveBucketDb() {
         return archiveBucketDb;
+    }
+
+    public NotificationsDb notificationsDb() {
+        return notificationsDb;
     }
 }

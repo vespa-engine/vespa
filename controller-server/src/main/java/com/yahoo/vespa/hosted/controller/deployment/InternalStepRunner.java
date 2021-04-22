@@ -25,9 +25,9 @@ import com.yahoo.security.X509CertificateUtils;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
-import com.yahoo.vespa.hosted.controller.application.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.LogEntry;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
@@ -39,13 +39,15 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterCloud;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.DeploymentFailureMails;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Mail;
+import com.yahoo.vespa.hosted.controller.application.ActivateResult;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateException;
 import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
 import com.yahoo.vespa.hosted.controller.maintenance.JobRunner;
+import com.yahoo.vespa.hosted.controller.notification.Notification;
+import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.routing.RoutingPolicyId;
 import com.yahoo.yolean.Exceptions;
 
@@ -67,6 +69,7 @@ import java.util.Locale;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -229,7 +232,7 @@ public class InternalStepRunner implements StepRunner {
                 case CERTIFICATE_NOT_READY:
                     logger.log("Waiting for certificate to become ready on config server: New application, or old one has expired");
                     if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
-                        logger.log("Certificate did not become available on config server within (" + timeouts.endpointCertificate() + ")");
+                        logger.log(WARNING, "Certificate did not become available on config server within (" + timeouts.endpointCertificate() + ")");
                         return Optional.of(RunStatus.endpointCertificateTimeout);
                     }
                     return result;
@@ -249,7 +252,7 @@ public class InternalStepRunner implements StepRunner {
                            : Optional.of(outOfCapacity);
                 case INVALID_APPLICATION_PACKAGE:
                 case BAD_REQUEST:
-                    logger.log(e.getMessage());
+                    logger.log(WARNING, e.getMessage());
                     return Optional.of(deploymentFailed);
             }
 
@@ -261,7 +264,7 @@ public class InternalStepRunner implements StepRunner {
                     // Same as CERTIFICATE_NOT_READY above, only from the controller
                     logger.log("Waiting for certificate to become valid: New application, or old one has expired");
                     if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
-                        logger.log("Controller could not validate certificate within " +
+                        logger.log(WARNING, "Controller could not validate certificate within " +
                                    timeouts.endpointCertificate() + ": " + Exceptions.toMessageString(e));
                         return Optional.of(RunStatus.endpointCertificateTimeout);
                     }
@@ -596,7 +599,7 @@ public class InternalStepRunner implements StepRunner {
                 testerCertificate.get().checkValidity(Date.from(controller.clock().instant()));
             }
             catch (CertificateExpiredException | CertificateNotYetValidException e) {
-                logger.log(INFO, "Tester certificate expired before tests could complete.");
+                logger.log(WARNING, "Tester certificate expired before tests could complete.");
                 return Optional.of(aborted);
             }
         }
@@ -671,7 +674,8 @@ public class InternalStepRunner implements StepRunner {
         try {
             controller.jobController().active(id).ifPresent(run -> {
                 if (run.hasFailed())
-                    sendNotification(run, logger);
+                    sendEmailNotification(run, logger);
+                updateConsoleNotification(run);
             });
         }
         catch (IllegalStateException e) {
@@ -682,7 +686,7 @@ public class InternalStepRunner implements StepRunner {
     }
 
     /** Sends a mail with a notification of a failed run, if one should be sent. */
-    private void sendNotification(Run run, DualLogger logger) {
+    private void sendEmailNotification(Run run, DualLogger logger) {
         Application application = controller.applications().requireApplication(TenantAndApplicationId.from(run.id().application()));
         Notifications notifications = application.deploymentSpec().requireInstance(run.id().application().instance()).notifications();
         boolean newCommit = application.require(run.id().application().instance()).change().application()
@@ -702,8 +706,40 @@ public class InternalStepRunner implements StepRunner {
             mailOf(run, recipients).ifPresent(controller.serviceRegistry().mailer()::send);
         }
         catch (RuntimeException e) {
-            logger.log(INFO, "Exception trying to send mail for " + run.id(), e);
+            logger.log(WARNING, "Exception trying to send mail for " + run.id(), e);
         }
+    }
+
+    private void updateConsoleNotification(Run run) {
+        NotificationSource source = NotificationSource.from(run.id());
+        Consumer<String> updater = msg -> controller.notificationsDb().setNotification(source, Notification.Type.DEPLOYMENT_FAILURE, msg);
+        switch (run.status()) {
+            case running:
+            case aborted:
+                return; // If running, its too early to update. If aborted, let's wait and see how the next run goes.
+            case success:
+                controller.notificationsDb().removeNotification(source, Notification.Type.DEPLOYMENT_FAILURE);
+                return;
+            case outOfCapacity:
+                if ( ! run.id().type().environment().isTest()) updater.accept("lack of capacity. Please contact the Vespa team to request more!");
+                return;
+            case deploymentFailed:
+                updater.accept("invalid application configuration, or timeout of other deployments of the same application");
+                return;
+            case installationFailed:
+                updater.accept("nodes were not able to start the new Java containers");
+                return;
+            case testFailure:
+                updater.accept("one or more verification tests against the deployment failed");
+                return;
+            case error:
+            case endpointCertificateTimeout:
+                break;
+            default:
+                logger.log(WARNING, "Don't know what to set console notification to for run status '" + run.status() + "'");
+        }
+        updater.accept("something in the framework went wrong. Such errors are " +
+                "usually transient. Please contact the Vespa team if the problem persists!");
     }
 
     private Optional<Mail> mailOf(Run run, List<String> recipients) {

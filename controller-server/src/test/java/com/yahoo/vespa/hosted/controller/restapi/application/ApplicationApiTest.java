@@ -39,6 +39,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.athenz.AthenzDbMock;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ConfigServerException;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
+import com.yahoo.vespa.hosted.controller.api.integration.deployment.RunId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.IssueId;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.User;
@@ -58,6 +59,8 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.metric.ApplicationMetrics;
+import com.yahoo.vespa.hosted.controller.notification.Notification;
+import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import com.yahoo.vespa.hosted.controller.routing.GlobalRouting;
@@ -800,6 +803,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
         tester.assertResponse(request("/application/v4/", Request.Method.OPTIONS)
                                       .userIdentity(USER_ID),
                               "");
+
+        addNotifications(TenantName.from("tenant1"));
+        tester.assertResponse(request("/application/v4/tenant/tenant1/notifications", GET).userIdentity(USER_ID),
+                new File("notifications-tenant1.json"));
+        tester.assertResponse(request("/application/v4/tenant/tenant1/notifications", GET)
+                        .properties(Map.of("application", "app2")).userIdentity(USER_ID),
+                new File("notifications-tenant1-app2.json"));
 
         // DELETE the application which no longer has any deployments
         tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1", DELETE)
@@ -1626,6 +1636,17 @@ public class ApplicationApiTest extends ControllerContainerTest {
                         .addMetric(ProtonMetrics.RESOURCE_DISK_USAGE_AVERAGE, 0.23912)
                         .addMetric(ProtonMetrics.RESOURCE_MEMORY_USAGE_AVERAGE, 0.00912)
         ));
+    }
+
+    private void addNotifications(TenantName tenantName) {
+        tester.controller().notificationsDb().setNotification(
+                NotificationSource.from(TenantAndApplicationId.from(tenantName.value(), "app1")),
+                Notification.Type.APPLICATION_PACKAGE_WARNING,
+                "Something something deprecated...");
+        tester.controller().notificationsDb().setNotification(
+                NotificationSource.from(new RunId(ApplicationId.from(tenantName.value(), "app2", "instance1"), JobType.systemTest, 12)),
+                Notification.Type.DEPLOYMENT_FAILURE,
+                "Failed to deploy: Out of capacity");
     }
 
     private void assertGlobalRouting(DeploymentId deployment, GlobalRouting.Status status, GlobalRouting.Agent agent) {

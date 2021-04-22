@@ -87,6 +87,8 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToC
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.TestConfigSerializer;
+import com.yahoo.vespa.hosted.controller.notification.Notification;
+import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
@@ -136,8 +138,6 @@ import java.util.stream.Stream;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.CONFLICT;
-import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
-import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static java.util.Map.Entry.comparingByKey;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -223,6 +223,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return tenantInfo(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/notifications")) return notifications(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
@@ -478,6 +479,44 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .withEmail(getString(insp.field("email"), oldContact.email()))
                 .withPhone(getString(insp.field("phone"), oldContact.phone()))
                 .withAddress(updateTenantInfoAddress(insp.field("address"), oldContact.address()));
+    }
+
+    private HttpResponse notifications(String tenantName, HttpRequest request) {
+        NotificationSource notificationSource = new NotificationSource(TenantName.from(tenantName),
+                Optional.ofNullable(request.getProperty("application")).map(ApplicationName::from),
+                Optional.ofNullable(request.getProperty("instance")).map(InstanceName::from),
+                Optional.empty(), Optional.empty(), Optional.empty(), OptionalLong.empty());
+
+        Slime slime = new Slime();
+        Cursor notificationsArray = slime.setObject().setArray("notifications");
+        controller.notificationsDb().listNotifications(notificationSource, showOnlyProductionInstances(request))
+                .forEach(notification -> toSlime(notificationsArray.addObject(), notification));
+        return new SlimeJsonResponse(slime);
+    }
+
+    private static void toSlime(Cursor cursor, Notification notification) {
+        cursor.setLong("at", notification.at().toEpochMilli());
+        cursor.setString("type", notificationTypeAsString(notification.type()));
+        Cursor messagesArray = cursor.setArray("messages");
+        notification.messages().forEach(messagesArray::addString);
+
+        notification.source().application().ifPresent(application -> cursor.setString("application", application.value()));
+        notification.source().instance().ifPresent(instance -> cursor.setString("instance", instance.value()));
+        notification.source().zoneId().ifPresent(zoneId -> {
+            cursor.setString("environment", zoneId.environment().value());
+            cursor.setString("region", zoneId.region().value());
+        });
+        notification.source().clusterId().ifPresent(clusterId -> cursor.setString("clusterId", clusterId.value()));
+        notification.source().jobType().ifPresent(jobType -> cursor.setString("jobType", jobType.jobName()));
+        notification.source().runNumber().ifPresent(runNumber -> cursor.setLong("runNumber", runNumber));
+    }
+
+    private static String notificationTypeAsString(Notification.Type type) {
+        switch (type) {
+            case APPLICATION_PACKAGE_WARNING: return "APPLICATION_PACKAGE_WARNING";
+            case DEPLOYMENT_FAILURE: return "DEPLOYMENT_FAILURE";
+            default: throw new IllegalArgumentException("No serialization defined for notification type " + type);
+        }
     }
 
     private HttpResponse applications(String tenantName, Optional<String> applicationName, HttpRequest request) {
