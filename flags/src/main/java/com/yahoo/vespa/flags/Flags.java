@@ -279,6 +279,13 @@ public class Flags {
             "Takes effect after distributor restart",
             ZONE_ID, APPLICATION_ID);
 
+    public static final UnboundBooleanFlag ENABLE_ROUTING_CORE_DUMP = defineFeatureFlag(
+            "enable-routing-core-dumps", false,
+            List.of("tokle"), "2021-04-16", "2021-08-01",
+            "Whether to enable core dumps for routing layer",
+            "Takes effect on next host-admin tick",
+            HOSTNAME);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
