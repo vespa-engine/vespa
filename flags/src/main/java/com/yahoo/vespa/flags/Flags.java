@@ -16,7 +16,6 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
@@ -109,20 +108,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundStringFlag TLS_FOR_ZOOKEEPER_CLIENT_SERVER_COMMUNICATION = defineStringFlag(
-            "tls-for-zookeeper-client-server-communication", "TLS_WITH_PORT_UNIFICATION",
-            List.of("hmusum"), "2020-12-02", "2021-06-01",
-            "How to setup TLS for ZooKeeper client/server communication. Valid values are OFF, PORT_UNIFICATION, TLS_WITH_PORT_UNIFICATION, TLS_ONLY",
-            "Takes effect on restart of config server",
-            NODE_TYPE, HOSTNAME);
-
-    public static final UnboundBooleanFlag USE_TLS_FOR_ZOOKEEPER_CLIENT = defineFeatureFlag(
-            "use-tls-for-zookeeper-client", true,
-            List.of("hmusum"), "2020-12-02", "2021-05-01",
-            "Whether to use TLS for ZooKeeper clients",
-            "Takes effect on restart of process",
-            NODE_TYPE, HOSTNAME);
-    
     public static final UnboundBooleanFlag PROVISION_TENANT_ROLES = defineFeatureFlag(
             "provision-tenant-roles", false,
             List.of("tokle"), "2020-12-02", "2021-06-01",
