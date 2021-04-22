@@ -293,26 +293,8 @@ public class ContentCluster extends AbstractConfigProducer implements
             if (contentCluster.getPersistence() == null) return;
 
             ClusterControllerContainerCluster clusterControllers;
-
-            ContentCluster overlappingCluster = findOverlappingCluster(context.getParentProducer().getRoot(), contentCluster);
-
-            if (overlappingCluster != null && overlappingCluster.getClusterControllers() != null) {
-                // Borrow the cluster controllers of the other cluster in this case.
-                // This condition only occurs on non-hosted systems with a shared config server,
-                // a combination which only exists in system tests.
-                clusterControllers = overlappingCluster.getClusterControllers();
-            }
-            else if (admin.multitenant()) {
-                if (context.properties().dedicatedClusterControllerCluster())
-                    clusterControllers = getDedicatedSharedControllers(contentElement, admin, context, deployState);
-                else {
-                    clusterControllers = createClusterControllers(new ClusterControllerCluster(contentCluster, "standalone", deployState),
-                                                                  drawControllerHosts(3, rootGroup),
-                                                                  contentClusterName + "-controllers",
-                                                                  true,
-                                                                  context.getDeployState());
-                    contentCluster.clusterControllers = clusterControllers;
-                }
+            if (admin.multitenant()) {
+                clusterControllers = getDedicatedSharedControllers(contentElement, admin, context, deployState);
             }
             else {
                 clusterControllers = admin.getClusterControllers();
@@ -332,21 +314,6 @@ public class ContentCluster extends AbstractConfigProducer implements
             for (NewDocumentType type : contentCluster.documentDefinitions.values()) {
                 reindexingContext.addDocumentType(contentCluster.clusterId, type);
             }
-        }
-
-        /** Returns any other content cluster which shares nodes with this, or null if none are built */
-        private ContentCluster findOverlappingCluster(AbstractConfigProducerRoot root, ContentCluster contentCluster) {
-            for (ContentCluster otherContentCluster : root.getChildrenByTypeRecursive(ContentCluster.class)) {
-                if (otherContentCluster != contentCluster && overlaps(contentCluster, otherContentCluster))
-                    return otherContentCluster;
-            }
-            return null;
-        }
-
-        private boolean overlaps(ContentCluster c1, ContentCluster c2) {
-            Set<HostResource> c1Hosts = c1.getRootGroup().recursiveGetNodes().stream().map(StorageNode::getHostResource).collect(Collectors.toSet());
-            Set<HostResource> c2Hosts = c2.getRootGroup().recursiveGetNodes().stream().map(StorageNode::getHostResource).collect(Collectors.toSet());
-            return ! Sets.intersection(c1Hosts, c2Hosts).isEmpty();
         }
 
         public static final NodeResources clusterControllerResources = new NodeResources(0.5, 2, 10, 0.3, NodeResources.DiskSpeed.any, NodeResources.StorageType.any);
@@ -375,49 +342,6 @@ public class ContentCluster extends AbstractConfigProducer implements
             return admin.getClusterControllers();
         }
 
-        private List<HostResource> drawControllerHosts(int count, StorageGroup rootGroup) {
-            List<HostResource> hosts = drawControllerHosts(count, false, rootGroup);
-            List<HostResource> retiredHosts = drawControllerHosts(count, true, rootGroup);
-
-            // preserve the cluster state in case all pre-existing controllers are on retired nodes
-            List<HostResource> all = new ArrayList<>(hosts);
-            all.addAll(retiredHosts);
-            return all;
-        }
-
-        private List<HostResource> drawControllerHosts(int count, boolean retired, StorageGroup rootGroup) {
-            List<HostResource> hosts = drawContentHostsRecursively(count, retired, rootGroup);
-            if (hosts.size() % 2 == 0 && ! hosts.isEmpty()) // ZK clusters of even sizes are less available (even in the size=2 case)
-                hosts = hosts.subList(0, hosts.size()-1);
-            return hosts;
-        }
-
-        /**
-         * Draw <code>count</code> nodes from as many different content groups below this as possible.
-         * This will only achieve maximum spread in the case where the groups are balanced and never on the same
-         * physical node. It will not achieve maximum spread over all levels in a multilevel group hierarchy.
-         */
-        // Note: This method cannot be changed to draw different nodes without ensuring that it will draw nodes
-        //       which overlaps with previously drawn nodes as that will prevent rolling upgrade
-        private List<HostResource> drawContentHostsRecursively(int count, boolean retired, StorageGroup group) {
-            Set<HostResource> hosts = new HashSet<>();
-            if (group.getNodes().isEmpty()) {
-                int hostsPerSubgroup = (int)Math.ceil((double)count / group.getSubgroups().size());
-                for (StorageGroup subgroup : group.getSubgroups())
-                    hosts.addAll(drawContentHostsRecursively(hostsPerSubgroup, retired, subgroup));
-            }
-            else {
-                hosts.addAll(group.getNodes().stream()
-                     .filter(node -> node.isRetired() == retired)
-                     .map(StorageNode::getHostResource).collect(toList()));
-            }
-
-            List<HostResource> sortedHosts = new ArrayList<>(hosts);
-            sortedHosts.sort(HostResource::comparePrimarilyByIndexTo);
-            sortedHosts = sortedHosts.subList(0, Math.min(count, hosts.size()));
-            return sortedHosts;
-        }
-
         private ClusterControllerContainerCluster createClusterControllers(AbstractConfigProducer<?> parent,
                                                                            Collection<HostResource> hosts,
                                                                            String name,
@@ -425,13 +349,10 @@ public class ContentCluster extends AbstractConfigProducer implements
                                                                            DeployState deployState) {
             var clusterControllers = new ClusterControllerContainerCluster(parent, name, name, deployState);
             List<ClusterControllerContainer> containers = new ArrayList<>();
-            // Add a cluster controller on each config server (there is always at least one).
             if (clusterControllers.getContainers().isEmpty()) {
                 int index = 0;
                 for (HostResource host : hosts) {
-                    int ccIndex = deployState.getProperties().dedicatedClusterControllerCluster()
-                                  ? host.spec().membership().map(ClusterMembership::index).orElse(index)
-                                  : index;
+                    int ccIndex = host.spec().membership().map(ClusterMembership::index).orElse(index);
                     boolean retired = host.spec().membership().map(ClusterMembership::retired).orElse(false);
                     var clusterControllerContainer = new ClusterControllerContainer(clusterControllers, ccIndex, multitenant, deployState, retired);
                     clusterControllerContainer.setHostResource(host);
@@ -511,11 +432,7 @@ public class ContentCluster extends AbstractConfigProducer implements
 
     public PersistenceEngine.PersistenceFactory getPersistence() { return persistenceFactory; }
 
-    /**
-     * The list of documentdefinitions declared at the cluster level.
-     *
-     * @return the set of documenttype names
-     */
+    /** Returns a list of th document types declared at the cluster level. */
     public Map<String, NewDocumentType> getDocumentDefinitions() { return documentDefinitions; }
 
     public boolean isGloballyDistributed(NewDocumentType docType) {
@@ -753,6 +670,7 @@ public class ContentCluster extends AbstractConfigProducer implements
      * a previous generation of it only by restarting the consuming processes.
      */
     public void setDeferChangesUntilRestart(boolean deferChangesUntilRestart) {
+        // TODO
     }
 
 }
