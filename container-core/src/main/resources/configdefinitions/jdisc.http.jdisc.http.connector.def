@@ -26,7 +26,7 @@ acceptQueueSize                     int      default=0
 reuseAddress                        bool     default=true
 
 # The maximum idle time for a connection, which roughly translates to the Socket.setSoTimeout(int).
-idleTimeout                         double   default=30.0
+idleTimeout                         double   default=180.0
 
 # DEPRECATED - Ignored, no longer in use
 stopTimeout                           double default = 30.0
