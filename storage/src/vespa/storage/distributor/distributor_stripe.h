@@ -45,8 +45,7 @@ class ThrottlingOperationStarter;
  * TODO STRIPE add class comment.
  */
 class DistributorStripe final
-    : public StorageLink, // TODO decouple
-      public DistributorStripeInterface,
+    : public DistributorStripeInterface,
       public StatusDelegator,
       public framework::StatusReporter,
       public framework::TickingThread,
@@ -68,10 +67,9 @@ public:
     const ClusterContext& cluster_context() const override {
         return _component.cluster_context();
     }
-    void onOpen() override;
-    void onClose() override;
-    bool onDown(const std::shared_ptr<api::StorageMessage>&) override;
-    void sendUp(const std::shared_ptr<api::StorageMessage>&) override;
+    void flush_and_close();
+    bool handle_or_enqueue_message(const std::shared_ptr<api::StorageMessage>&);
+    void send_up_with_tracking(const std::shared_ptr<api::StorageMessage>&);
     // Bypasses message tracker component. Thread safe.
     void send_up_without_tracking(const std::shared_ptr<api::StorageMessage>&) override;
 
@@ -105,7 +103,7 @@ public:
      */
     void notifyDistributionChangeEnabled() override;
 
-    void storageDistributionChanged() override;
+    void storage_distribution_changed();
 
     void recheckBucketInfo(uint16_t nodeIdx, const document::Bucket &bucket) override;
 
