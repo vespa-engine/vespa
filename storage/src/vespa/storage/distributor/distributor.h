@@ -57,7 +57,7 @@ public:
                 const NodeIdentity& node_identity,
                 framework::TickingThreadPool&,
                 DoneInitializeHandler&,
-                bool manageActiveBucketCopies,
+                uint32_t num_distributor_stripes,
                 HostInfo& hostInfoReporterRegistrar,
                 ChainedMessageSender* = nullptr);
 

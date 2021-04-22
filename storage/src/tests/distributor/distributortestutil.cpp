@@ -32,7 +32,7 @@ DistributorTestUtil::createLinks()
             _node->node_identity(),
             *_threadPool,
             *this,
-            true,
+            0,
             _hostInfo,
             &_messageSender));
     _component.reset(new storage::DistributorComponent(_node->getComponentRegister(), "distrtestutil"));

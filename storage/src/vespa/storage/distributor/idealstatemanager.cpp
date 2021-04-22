@@ -28,8 +28,7 @@ IdealStateManager::IdealStateManager(
         DistributorStripeInterface& owner,
         DistributorBucketSpaceRepo& bucketSpaceRepo,
         DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
-        DistributorComponentRegister& compReg,
-        bool manageActiveBucketCopies)
+        DistributorComponentRegister& compReg)
     : HtmlStatusReporter("idealstateman", "Ideal state manager"),
       _metrics(new IdealStateMetricSet),
       _distributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Ideal state manager"),
@@ -39,11 +38,8 @@ IdealStateManager::IdealStateManager(
     _distributorComponent.registerStatusPage(*this);
     _distributorComponent.registerMetric(*_metrics);
 
-    if (manageActiveBucketCopies) {
-        LOG(debug, "Adding BucketStateStateChecker to state checkers");
-        _stateCheckers.push_back(
-                StateChecker::SP(new BucketStateStateChecker()));
-    }
+    LOG(debug, "Adding BucketStateStateChecker to state checkers");
+    _stateCheckers.push_back(StateChecker::SP(new BucketStateStateChecker()));
 
     _splitBucketStateChecker = new SplitBucketStateChecker();
     _stateCheckers.push_back(StateChecker::SP(_splitBucketStateChecker));

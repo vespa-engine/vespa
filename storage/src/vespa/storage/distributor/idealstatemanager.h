@@ -37,8 +37,7 @@ public:
     IdealStateManager(DistributorStripeInterface& owner,
                       DistributorBucketSpaceRepo& bucketSpaceRepo,
                       DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
-                      DistributorComponentRegister& compReg,
-                      bool manageActiveBucketCopies);
+                      DistributorComponentRegister& compReg);
 
     ~IdealStateManager() override;
 

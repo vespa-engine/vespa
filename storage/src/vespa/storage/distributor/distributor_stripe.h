@@ -59,7 +59,6 @@ public:
                       const NodeIdentity& node_identity,
                       framework::TickingThreadPool&,
                       DoneInitializeHandler&,
-                      bool manageActiveBucketCopies,
                       ChainedMessageSender& messageSender);
 
     ~DistributorStripe() override;
