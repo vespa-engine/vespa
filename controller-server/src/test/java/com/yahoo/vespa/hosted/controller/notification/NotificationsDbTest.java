@@ -36,7 +36,7 @@ public class NotificationsDbTest {
             notification(1101, Notification.Type.DEPLOYMENT_FAILURE, NotificationSource.from(TenantAndApplicationId.from(tenant.value(), "app1")), "app msg"),
             notification(1201, Notification.Type.DEPLOYMENT_FAILURE, NotificationSource.from(ApplicationId.from(tenant.value(), "app2", "instance2")), "instance msg"),
             notification(1301, Notification.Type.DEPLOYMENT_FAILURE, NotificationSource.from(new DeploymentId(ApplicationId.from(tenant.value(), "app2", "instance2"), ZoneId.from("prod", "us-north-2"))), "deployment msg"),
-            notification(1401, Notification.Type.DEPLOYMENT_FAILURE, NotificationSource.from(new DeploymentId(ApplicationId.from(tenant.value(), "app1", "instance1"), ZoneId.from("dev", "us-south-1")), ClusterSpec.Id.from("cluster1")), "clusterMsg msg"),
+            notification(1401, Notification.Type.DEPLOYMENT_FAILURE, NotificationSource.from(new DeploymentId(ApplicationId.from(tenant.value(), "app1", "instance1"), ZoneId.from("dev", "us-south-1")), ClusterSpec.Id.from("cluster1")), "cluster msg"),
             notification(1501, Notification.Type.DEPLOYMENT_FAILURE, NotificationSource.from(new RunId(ApplicationId.from(tenant.value(), "app1", "instance1"), JobType.devUsEast1, 4)), "run id msg"));
 
     private final ManualClock clock = new ManualClock(Instant.ofEpochSecond(12345));
