@@ -44,6 +44,8 @@ public interface NodeAgentContext extends TaskContext {
 
     String vespaUser();
 
+    String vespaGroup();
+
     String vespaUserOnHost();
 
     default boolean isDisabled(NodeAgentTask task) {
