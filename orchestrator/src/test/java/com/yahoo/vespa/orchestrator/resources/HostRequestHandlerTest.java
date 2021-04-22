@@ -2,13 +2,12 @@
 package com.yahoo.vespa.orchestrator.resources;
 
 import com.google.common.util.concurrent.UncheckedTimeoutException;
-import com.yahoo.container.jdisc.HttpRequest;
+import com.yahoo.container.jdisc.HttpRequestBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.http.HttpRequest.Method;
-import com.yahoo.jdisc.test.MockMetric;
 import com.yahoo.jdisc.test.TestTimer;
+import com.yahoo.restapi.RestApiTestDriver;
 import com.yahoo.test.json.JsonTestHelper;
 import com.yahoo.vespa.applicationmodel.ApplicationInstance;
 import com.yahoo.vespa.applicationmodel.ApplicationInstanceId;
@@ -50,7 +49,6 @@ import com.yahoo.vespa.service.monitor.ServiceMonitor;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
-import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.Clock;
@@ -59,7 +57,6 @@ import java.util.Collections;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.concurrent.Executors;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
@@ -171,18 +168,18 @@ class HostRequestHandlerTest {
 
     @Test
     void returns_200_on_success() throws IOException {
-        HostRequestHandler handler = createHandler(alwaysAllowOrchestrator);
+        RestApiTestDriver testDriver = createTestDriver(alwaysAllowOrchestrator);
 
-        HttpResponse response = executeRequest(handler, Method.PUT, "/orchestrator/v1/hosts/hostname/suspended", null);
-        UpdateHostResponse updateHostResponse = parseResponseContent(handler, response, UpdateHostResponse.class);
+        HttpResponse response = executeRequest(testDriver, Method.PUT, "/orchestrator/v1/hosts/hostname/suspended", null);
+        UpdateHostResponse updateHostResponse = parseResponseContent(testDriver, response, UpdateHostResponse.class);
         assertEquals("hostname", updateHostResponse.hostname());
     }
 
     @Test
     void throws_404_when_host_unknown() throws IOException {
-        HostRequestHandler handler = createHandler(hostNotFoundOrchestrator);
+        RestApiTestDriver testDriver = createTestDriver(hostNotFoundOrchestrator);
 
-        HttpResponse response = executeRequest(handler, Method.PUT, "/orchestrator/v1/hosts/hostname/suspended", null);
+        HttpResponse response = executeRequest(testDriver, Method.PUT, "/orchestrator/v1/hosts/hostname/suspended", null);
         assertEquals(404, response.getStatus());
     }
 
@@ -220,35 +217,35 @@ class HostRequestHandlerTest {
 
     @Test
     void throws_409_when_request_rejected_by_policies() throws IOException {
-        HostRequestHandler handler = createHandler(alwaysRejectOrchestrator);
+        RestApiTestDriver testDriver = createTestDriver(alwaysRejectOrchestrator);
 
-        HttpResponse response = executeRequest(handler, Method.PUT, "/orchestrator/v1/hosts/hostname/suspended", null);
+        HttpResponse response = executeRequest(testDriver, Method.PUT, "/orchestrator/v1/hosts/hostname/suspended", null);
         assertEquals(409, response.getStatus());
     }
 
     @Test
     void patch_state_may_throw_bad_request() throws IOException {
         Orchestrator orchestrator = mock(Orchestrator.class);
-        HostRequestHandler handler = createHandler(orchestrator);
+        RestApiTestDriver testDriver = createTestDriver(orchestrator);
 
         PatchHostRequest request = new PatchHostRequest();
         request.state = "bad state";
 
-        HttpResponse response = executeRequest(handler, Method.PATCH, "/orchestrator/v1/hosts/hostname", request);
+        HttpResponse response = executeRequest(testDriver, Method.PATCH, "/orchestrator/v1/hosts/hostname", request);
         assertEquals(400, response.getStatus());
     }
 
     @Test
     void patch_works() throws OrchestrationException, IOException {
         Orchestrator orchestrator = mock(Orchestrator.class);
-        HostRequestHandler handler = createHandler(orchestrator);
+        RestApiTestDriver testDriver = createTestDriver(orchestrator);
 
         String hostNameString = "hostname";
         PatchHostRequest request = new PatchHostRequest();
         request.state = "NO_REMARKS";
 
-        HttpResponse httpResponse = executeRequest(handler, Method.PATCH, "/orchestrator/v1/hosts/hostname", request);
-        PatchHostResponse response = parseResponseContent(handler, httpResponse, PatchHostResponse.class);
+        HttpResponse httpResponse = executeRequest(testDriver, Method.PATCH, "/orchestrator/v1/hosts/hostname", request);
+        PatchHostResponse response = parseResponseContent(testDriver, httpResponse, PatchHostResponse.class);
         assertEquals(response.description, "ok");
         verify(orchestrator, times(1)).setNodeStatus(new HostName(hostNameString), HostStatus.NO_REMARKS);
     }
@@ -256,21 +253,21 @@ class HostRequestHandlerTest {
     @Test
     void patch_handles_exception_in_orchestrator() throws OrchestrationException, IOException {
         Orchestrator orchestrator = mock(Orchestrator.class);
-        HostRequestHandler handler = createHandler(orchestrator);
+        RestApiTestDriver testDriver = createTestDriver(orchestrator);
 
         String hostNameString = "hostname";
         PatchHostRequest request = new PatchHostRequest();
         request.state = "NO_REMARKS";
 
         doThrow(new OrchestrationException("error")).when(orchestrator).setNodeStatus(new HostName(hostNameString), HostStatus.NO_REMARKS);
-        HttpResponse httpResponse = executeRequest(handler, Method.PATCH, "/orchestrator/v1/hosts/hostname", request);
+        HttpResponse httpResponse = executeRequest(testDriver, Method.PATCH, "/orchestrator/v1/hosts/hostname", request);
         assertEquals(500, httpResponse.getStatus());
     }
 
     @Test
     void getHost_works() throws Exception {
         Orchestrator orchestrator = mock(Orchestrator.class);
-        HostRequestHandler handler = createHandler(orchestrator);
+        RestApiTestDriver testDriver = createTestDriver(orchestrator);
 
         HostName hostName = new HostName("hostname");
 
@@ -293,8 +290,8 @@ class HostRequestHandlerTest {
                 Collections.singletonList(serviceInstance));
         when(orchestrator.getHost(hostName)).thenReturn(host);
 
-        HttpResponse httpResponse = executeRequest(handler, Method.GET, "/orchestrator/v1/hosts/hostname", null);
-        GetHostResponse response = parseResponseContent(handler, httpResponse, GetHostResponse.class);
+        HttpResponse httpResponse = executeRequest(testDriver, Method.GET, "/orchestrator/v1/hosts/hostname", null);
+        GetHostResponse response = parseResponseContent(testDriver, httpResponse, GetHostResponse.class);
 
         assertEquals("http://localhost/orchestrator/v1/instances/tenantId:applicationId", response.applicationUrl());
         assertEquals("hostname", response.hostname());
@@ -312,8 +309,8 @@ class HostRequestHandlerTest {
         Orchestrator orchestrator = mock(Orchestrator.class);
         doThrow(new UncheckedTimeoutException("Timeout Message")).when(orchestrator).resume(any(HostName.class));
 
-        HostRequestHandler handler = createHandler(orchestrator);
-        HttpResponse httpResponse = executeRequest(handler, Method.DELETE, "/orchestrator/v1/hosts/hostname/suspended", null);
+        RestApiTestDriver testDriver = createTestDriver(orchestrator);
+        HttpResponse httpResponse = executeRequest(testDriver, Method.DELETE, "/orchestrator/v1/hosts/hostname/suspended", null);
         assertEquals(409, httpResponse.getStatus());
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         httpResponse.render(out);
@@ -327,29 +324,22 @@ class HostRequestHandlerTest {
                 out.toString());
     }
 
-    private HostRequestHandler createHandler(Orchestrator orchestrator) {
-        var handlerContext = new LoggingRequestHandler.Context(Executors.newSingleThreadExecutor(), new MockMetric());
-        return new HostRequestHandler(handlerContext, orchestrator);
+    private RestApiTestDriver createTestDriver(Orchestrator orchestrator) {
+        return RestApiTestDriver.newBuilder(handlerContext -> new HostRequestHandler(handlerContext, orchestrator))
+                .build();
     }
 
-    private HttpResponse executeRequest(HostRequestHandler handler, Method method, String path, Object requestEntity) throws IOException {
-        String uri = "http://localhost" + path;
-        HttpRequest request;
+    private HttpResponse executeRequest(RestApiTestDriver testDriver, Method method, String path, Object requestEntity) {
+        var builder = HttpRequestBuilder.create(method, path);
         if (requestEntity != null) {
-            ByteArrayOutputStream out = new ByteArrayOutputStream();
-            handler.restApi().jacksonJsonMapper().writeValue(out, requestEntity);
-            request = HttpRequest.createTestRequest(uri, method, new ByteArrayInputStream(out.toByteArray()));
-        } else {
-            request = HttpRequest.createTestRequest(uri, method);
+            builder.withRequestContent(testDriver.requestContentOf(requestEntity));
         }
-        return handler.handle(request);
+        return testDriver.executeRequest(builder.build());
     }
 
-    private <T> T parseResponseContent(HostRequestHandler handler, HttpResponse response, Class<T> responseEntityType) throws IOException {
+    private <T> T parseResponseContent(RestApiTestDriver testDriver, HttpResponse response, Class<T> responseEntityType) {
         assertEquals(200, response.getStatus());
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        response.render(out);
-        return handler.restApi().jacksonJsonMapper().readValue(out.toByteArray(), responseEntityType);
+        return testDriver.parseJacksonResponseContent(response, responseEntityType);
     }
 
 }

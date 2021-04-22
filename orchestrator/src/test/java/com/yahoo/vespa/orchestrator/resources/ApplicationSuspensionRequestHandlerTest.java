@@ -2,10 +2,11 @@ package com.yahoo.vespa.orchestrator.resources;// Copyright Verizon Media. Licen
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.container.jdisc.HttpRequestBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.jdisc.core.SystemTimer;
 import com.yahoo.jdisc.test.MockMetric;
+import com.yahoo.restapi.RestApiTestDriver;
 import com.yahoo.vespa.curator.mock.MockCurator;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.orchestrator.DummyServiceMonitor;
@@ -18,11 +19,9 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
-import java.util.concurrent.Executors;
 
 import static com.yahoo.jdisc.http.HttpRequest.Method;
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -38,7 +37,7 @@ class ApplicationSuspensionRequestHandlerTest {
     private static final String RESOURCE_2 = "test-tenant-id:application:instance";
     private static final String INVALID_RESOURCE_NAME = "something_without_colons";
 
-    ApplicationSuspensionRequestHandler handler;
+    private RestApiTestDriver testDriver;
 
     @BeforeEach
     void createHandler() {
@@ -50,8 +49,8 @@ class ApplicationSuspensionRequestHandlerTest {
                 serviceMonitor,
                 new ConfigserverConfig(new ConfigserverConfig.Builder()),
                 new InMemoryFlagSource());
-        var handlerContext = new LoggingRequestHandler.Context(Executors.newSingleThreadExecutor(), new MockMetric());
-        this.handler = new ApplicationSuspensionRequestHandler(handlerContext, orchestrator);
+        var handler = new ApplicationSuspensionRequestHandler(RestApiTestDriver.createHandlerTestContext(), orchestrator);
+        testDriver = RestApiTestDriver.newBuilder(handler).build();
     }
 
 
@@ -136,22 +135,17 @@ class ApplicationSuspensionRequestHandlerTest {
         assertEquals(RESOURCE_2, set.iterator().next());
     }
 
-    private HttpResponse executeRequest(Method method, String path, String applicationId) throws IOException {
-        String uri = "http://localhost/orchestrator/v1/suspensions/applications" + path;
-        com.yahoo.container.jdisc.HttpRequest request;
+    private HttpResponse executeRequest(Method method, String relativePath, String applicationId) {
+        String fullPath = "/orchestrator/v1/suspensions/applications" + relativePath;
+        var builder = HttpRequestBuilder.create(method, fullPath);
         if (applicationId != null) {
-            ByteArrayInputStream requestData = new ByteArrayInputStream(applicationId.getBytes(StandardCharsets.UTF_8));
-            request = com.yahoo.container.jdisc.HttpRequest.createTestRequest(uri, method, requestData);
-        } else {
-            request = com.yahoo.container.jdisc.HttpRequest.createTestRequest(uri, method);
+            builder.withRequestContent(new ByteArrayInputStream(applicationId.getBytes(StandardCharsets.UTF_8)));
         }
-        return handler.handle(request);
+        return testDriver.executeRequest(builder.build());
     }
 
-    private <T> T parseResponseContent(HttpResponse response, TypeReference<T> responseEntityType) throws IOException {
+    private <T> T parseResponseContent(HttpResponse response, TypeReference<T> type) {
         assertEquals(200, response.getStatus());
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        response.render(out);
-        return handler.restApi().jacksonJsonMapper().readValue(out.toByteArray(), responseEntityType);
+        return testDriver.parseJacksonResponseContent(response, type);
     }
 }
