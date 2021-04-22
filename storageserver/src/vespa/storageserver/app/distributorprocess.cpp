@@ -12,7 +12,11 @@ namespace storage {
 
 DistributorProcess::DistributorProcess(const config::ConfigUri & configUri)
     : Process(configUri),
-      _activeFlag(DistributorNode::NO_NEED_FOR_ACTIVE_STATES),
+      _context(),
+      _num_distributor_stripes(0), // TODO STRIPE: change default when legacy single stripe mode is removed
+      _node(),
+      _distributorConfigHandler(),
+      _visitDispatcherConfigHandler(),
       _storage_chain_builder()
 {
 }
@@ -31,15 +35,12 @@ DistributorProcess::shutdown()
 void
 DistributorProcess::setupConfig(milliseconds subscribeTimeout)
 {
-    using vespa::config::content::core::StorServerConfig;
     using vespa::config::content::core::StorDistributormanagerConfig;
     using vespa::config::content::core::StorVisitordispatcherConfig;
 
-    auto stor_config = config::ConfigGetter<StorServerConfig>::getConfig(
+    auto distr_cfg = config::ConfigGetter<StorDistributormanagerConfig>::getConfig(
             _configUri.getConfigId(), _configUri.getContext(), subscribeTimeout);
-    if (stor_config->persistenceProvider.type != StorServerConfig::PersistenceProvider::Type::STORAGE) {
-        _activeFlag = DistributorNode::NEED_ACTIVE_BUCKET_STATES_SET;
-    }
+    _num_distributor_stripes = distr_cfg->numDistributorStripes;
     _distributorConfigHandler = _configSubscriber.subscribe<StorDistributormanagerConfig>(_configUri.getConfigId(), subscribeTimeout);
     _visitDispatcherConfigHandler = _configSubscriber.subscribe<StorVisitordispatcherConfig>(_configUri.getConfigId(), subscribeTimeout);
     Process::setupConfig(subscribeTimeout);
@@ -75,7 +76,7 @@ DistributorProcess::configUpdated()
 void
 DistributorProcess::createNode()
 {
-    _node = std::make_unique<DistributorNode>(_configUri, _context, *this, _activeFlag, StorageLink::UP(), std::move(_storage_chain_builder));
+    _node = std::make_unique<DistributorNode>(_configUri, _context, *this, _num_distributor_stripes, StorageLink::UP(), std::move(_storage_chain_builder));
     _node->handleConfigChange(*_distributorConfigHandler->getConfig());
     _node->handleConfigChange(*_visitDispatcherConfigHandler->getConfig());
 }

@@ -25,21 +25,16 @@ class DistributorNode
     DistributorNodeContext& _context;
     uint64_t _lastUniqueTimestampRequested;
     uint32_t _uniqueTimestampCounter;
-    bool _manageActiveBucketCopies;
+    uint32_t _num_distributor_stripes;
     std::unique_ptr<StorageLink> _retrievedCommunicationManager;
 
 public:
     typedef std::unique_ptr<DistributorNode> UP;
-    enum NeedActiveState
-    {
-        NEED_ACTIVE_BUCKET_STATES_SET,
-        NO_NEED_FOR_ACTIVE_STATES
-    };
 
     DistributorNode(const config::ConfigUri & configUri,
                     DistributorNodeContext&,
                     ApplicationGenerationFetcher& generationFetcher,
-                    NeedActiveState,
+                    uint32_t num_distributor_stripes,
                     std::unique_ptr<StorageLink> communicationManager,
                     std::unique_ptr<IStorageChainBuilder> storage_chain_builder);
     ~DistributorNode() override;

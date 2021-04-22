@@ -45,7 +45,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
                          const NodeIdentity& node_identity,
                          framework::TickingThreadPool& threadPool,
                          DoneInitializeHandler& doneInitHandler,
-                         bool manageActiveBucketCopies,
+                         uint32_t num_distributor_stripes,
                          HostInfo& hostInfoReporterRegistrar,
                          ChainedMessageSender* messageSender)
     : StorageLink("distributor"),
@@ -53,8 +53,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _comp_reg(compReg),
       _metrics(std::make_shared<DistributorMetricSet>()),
       _messageSender(messageSender),
-      _stripe(std::make_unique<DistributorStripe>(compReg, *_metrics, node_identity, threadPool, doneInitHandler,
-                                                  manageActiveBucketCopies, *this)),
+      _stripe(std::make_unique<DistributorStripe>(compReg, *_metrics, node_identity, threadPool, doneInitHandler, *this)),
       _stripe_accessor(std::make_unique<LegacySingleStripeAccessor>(*_stripe)),
       _component(compReg, "distributor"),
       _bucket_db_updater(),
@@ -68,6 +67,10 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
 {
     _component.registerMetric(*_metrics);
     _component.registerMetricUpdateHook(_metricUpdateHook, framework::SecondTime(0));
+    if (num_distributor_stripes > 0) {
+        // FIXME STRIPE using the singular stripe here is a temporary Hack McHack Deluxe 3000!
+        _bucket_db_updater = std::make_unique<BucketDBUpdater>(*_stripe, *_stripe, _comp_reg, *_stripe_accessor);
+    }
     _distributorStatusDelegate.registerStatusPage();
     hostInfoReporterRegistrar.registerReporter(&_hostInfoReporter);
     propagateDefaultDistribution(_component.getDistribution());
@@ -384,11 +387,6 @@ Distributor::doNonCriticalTick(framework::ThreadIndex idx)
 void
 Distributor::enableNextConfig()
 {
-    // FIXME STRIPE enforce this cannot happen live, only valid for startup config edge
-    if (getConfig().num_distributor_stripes() > 0 && !_bucket_db_updater) {
-        // FIXME STRIPE using the singular stripe here is a temporary Hack McHack Deluxe 3000!
-        _bucket_db_updater = std::make_unique<BucketDBUpdater>(*_stripe, *_stripe, _comp_reg, *_stripe_accessor);
-    }
     _hostInfoReporter.enableReporting(getConfig().getEnableHostInfoReporting());
     _stripe->enableNextConfig(); // TODO STRIPE avoid redundant call
 }

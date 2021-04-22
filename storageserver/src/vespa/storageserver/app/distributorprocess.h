@@ -16,7 +16,7 @@ class IStorageChainBuilder;
 
 class DistributorProcess final : public Process {
     DistributorNodeContext _context;
-    DistributorNode::NeedActiveState _activeFlag;
+    uint32_t _num_distributor_stripes;
     DistributorNode::UP _node;
     config::ConfigHandle<vespa::config::content::core::StorDistributormanagerConfig>::UP
             _distributorConfigHandler;
