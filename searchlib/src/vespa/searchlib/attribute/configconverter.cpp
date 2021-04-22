@@ -3,13 +3,11 @@
 #include "configconverter.h"
 
 using namespace vespa::config::search;
-using namespace search;
 
+namespace search::attribute {
 
 namespace {
 
-using search::attribute::CollectionType;
-using search::attribute::BasicType;
 using vespalib::eval::ValueType;
 using vespalib::eval::CellType;
 
@@ -81,9 +79,18 @@ convert_dictionary(const AttributesConfig::Attribute::Dictionary & dictionary) {
     return DictionaryConfig(convert(dictionary.type), convert(dictionary.match));
 }
 
+Config::Match
+convertMatch(AttributesConfig::Attribute::Match match_cfg) {
+    switch (match_cfg) {
+        case AttributesConfig::Attribute::Match::CASED:
+            return Config::Match::CASED;
+        case AttributesConfig::Attribute::Match::UNCASED:
+            return Config::Match::UNCASED;
+    }
+    assert(false);
 }
 
-namespace search::attribute {
+}
 
 Config
 ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
@@ -106,6 +113,7 @@ ConfigConverter::convert(const AttributesConfig::Attribute & cfg)
     predicateParams.setDensePostingListThreshold(cfg.densepostinglistthreshold);
     retval.setPredicateParams(predicateParams);
     retval.set_dictionary_config(convert_dictionary(cfg.dictionary));
+    retval.set_match(convertMatch(cfg.match));
     using CfgDm = AttributesConfig::Attribute::Distancemetric;
     DistanceMetric dm(DistanceMetric::Euclidean);
     switch (cfg.distancemetric) {

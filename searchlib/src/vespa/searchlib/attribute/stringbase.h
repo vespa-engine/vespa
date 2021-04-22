@@ -16,6 +16,27 @@
 
 namespace search {
 
+class StringSearchHelper {
+public:
+    StringSearchHelper(QueryTermUCS4 & qTerm, bool cased);
+    ~StringSearchHelper();
+    bool isMatch(const char *src) const;
+    bool isPrefix() const { return _isPrefix; }
+    bool isRegex() const { return _isRegex; }
+    bool isCased() const { return _isCased; }
+    const vespalib::Regex & getRegex() const { return _regex; }
+private:
+    vespalib::Regex                _regex;
+    union {
+        const ucs4_t *_ucs4;
+        const char   *_char;
+    }                              _term;
+    uint32_t                       _termLen;
+    bool                           _isPrefix;
+    bool                           _isRegex;
+    bool                           _isCased;
+};
+
 class ReaderBase;
 
 class StringAttribute : public AttributeVector
@@ -97,24 +118,13 @@ protected:
         ~StringSearchContext() override;
     protected:
         bool valid() const override;
-
         const QueryTermUCS4 * queryTerm() const override;
-        bool isMatch(const char *src) const {
-            if (__builtin_expect(isRegex(), false)) {
-                return _regex.valid() ? _regex.partial_match(std::string_view(src)) : false;
-            }
-            vespalib::Utf8ReaderForZTS u8reader(src);
-            uint32_t j = 0;
-            uint32_t val;
-            for (;; ++j) {
-                val = u8reader.getChar();
-                val = vespalib::LowerCase::convert(val);
-                if (_termUCS4[j] == 0 || _termUCS4[j] != val) {
-                    break;
-                }
-            }
-            return (_termUCS4[j] == 0 && (val == 0 || isPrefix()));
-        }
+        bool isMatch(const char *src) const { return _helper.isMatch(src); }
+        bool isPrefix() const { return _helper.isPrefix(); }
+        bool isRegex() const { return _helper.isRegex(); }
+        bool isCased() const { return _helper.isCased(); }
+        const vespalib::Regex & getRegex() const { return _helper.getRegex(); }
+
         class CollectHitCount {
         public:
             CollectHitCount() : _hitCount(0) { }
@@ -151,16 +161,9 @@ protected:
             }
             return -1;
         }
-
-        bool isPrefix() const { return _isPrefix; }
-        bool  isRegex() const { return _isRegex; }
-        const vespalib::Regex & getRegex() const { return _regex; }
     private:
         std::unique_ptr<QueryTermUCS4> _queryTerm;
-        const ucs4_t                  *_termUCS4;
-        vespalib::Regex                _regex;
-        bool                           _isPrefix;
-        bool                           _isRegex;
+        StringSearchHelper             _helper;
     };
 };
 
