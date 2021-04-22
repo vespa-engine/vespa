@@ -48,6 +48,10 @@ public class VespaChangeRequest extends ChangeRequest {
         return new VespaChangeRequest(getId(), source, getImpactedSwitches(), getImpactedHosts(), getApproval(), getImpact(), status, hostActionPlan, zoneId);
     }
 
+    public VespaChangeRequest withApproval(Approval approval) {
+        return new VespaChangeRequest(getId(), getChangeRequestSource(), getImpactedSwitches(), getImpactedHosts(), approval, getImpact(), status, hostActionPlan, zoneId);
+    }
+
     public VespaChangeRequest withActionPlan(List<HostAction> hostActionPlan) {
         return new VespaChangeRequest(getId(), getChangeRequestSource(), getImpactedSwitches(), getImpactedHosts(), getApproval(), getImpact(), status, hostActionPlan, zoneId);
     }

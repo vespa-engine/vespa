@@ -49,6 +49,7 @@ public class ChangeRequestMaintainer extends ControllerMaintainer {
         var currentChangeRequests = pruneOldChangeRequests();
         var changeRequests = changeRequestClient.getChangeRequests(currentChangeRequests);
 
+        logger.fine(() -> "Found requests: " + changeRequests);
         storeChangeRequests(changeRequests);
         if (system.equals(SystemName.main)) {
             approveChanges(changeRequests);
@@ -63,6 +64,7 @@ public class ChangeRequestMaintainer extends ControllerMaintainer {
                 .filter(changeRequest -> changeRequest.getApproval() == ChangeRequest.Approval.REQUESTED)
                 .collect(Collectors.toList());
 
+        logger.fine(() -> "Approving " + unapprovedRequests);
         changeRequestClient.approveChangeRequests(unapprovedRequests);
     }
 
@@ -79,7 +81,9 @@ public class ChangeRequestMaintainer extends ControllerMaintainer {
                 optionalZone.ifPresent(zone -> {
                     var vcmr = existingChangeRequests
                             .getOrDefault(changeRequest.getId(), new VespaChangeRequest(changeRequest, zone))
-                            .withSource(changeRequest.getChangeRequestSource());
+                            .withSource(changeRequest.getChangeRequestSource())
+                            .withApproval(changeRequest.getApproval());
+                    logger.fine(() -> "Storing " + vcmr);
                     curator.writeChangeRequest(vcmr);
                 });
             });
