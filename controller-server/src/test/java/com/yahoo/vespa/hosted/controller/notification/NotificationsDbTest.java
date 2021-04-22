@@ -59,10 +59,10 @@ public class NotificationsDbTest {
         Notification notification2 = notification(12345, Notification.Type.DEPLOYMENT_FAILURE, NotificationSource.from(ApplicationId.from(tenant.value(), "app3", "instance2")), "instance msg #3");
 
         // Replace the 3rd notification
-        notificationsDb.addNotification(notification1.source(), notification1.type(), notification1.messages());
+        notificationsDb.setNotification(notification1.source(), notification1.type(), notification1.messages());
 
         // Notification for a new app, add without replacement
-        notificationsDb.addNotification(notification2.source(), notification2.type(), notification2.messages());
+        notificationsDb.setNotification(notification2.source(), notification2.type(), notification2.messages());
 
         List<Notification> expected = notificationIndices(0, 1, 3, 4, 5);
         expected.addAll(List.of(notification1, notification2));

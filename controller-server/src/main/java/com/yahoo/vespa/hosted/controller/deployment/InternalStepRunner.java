@@ -712,7 +712,7 @@ public class InternalStepRunner implements StepRunner {
 
     private void updateConsoleNotification(Run run) {
         NotificationSource source = NotificationSource.from(run.id());
-        Consumer<String> updater = msg -> controller.notificationsDb().addNotification(source, Notification.Type.DEPLOYMENT_FAILURE, msg);
+        Consumer<String> updater = msg -> controller.notificationsDb().setNotification(source, Notification.Type.DEPLOYMENT_FAILURE, msg);
         switch (run.status()) {
             case running:
             case aborted:

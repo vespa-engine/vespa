@@ -22,7 +22,6 @@ import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.flags.StringFlag;
-import com.yahoo.vespa.hosted.controller.application.ActivateResult;
 import com.yahoo.vespa.hosted.controller.api.application.v4.model.DeploymentData;
 import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.identifiers.InstanceId;
@@ -43,6 +42,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.TesterId;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.RestartFilter;
 import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretStore;
+import com.yahoo.vespa.hosted.controller.application.ActivateResult;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackageValidator;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -402,7 +402,7 @@ public class ApplicationController {
                     .map(logs -> logs.stream().filter(log -> LogLevel.parse(log.level).intValue() >= Level.WARNING.intValue()).map(log -> log.message).collect(Collectors.toList()))
                     .orElseGet(List::of);
             if (warnings.isEmpty()) controller.notificationsDb().removeNotification(source, Notification.Type.APPLICATION_PACKAGE_WARNING);
-            else controller.notificationsDb().addNotification(source, Notification.Type.APPLICATION_PACKAGE_WARNING, warnings);
+            else controller.notificationsDb().setNotification(source, Notification.Type.APPLICATION_PACKAGE_WARNING, warnings);
 
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(job.application().instance(),

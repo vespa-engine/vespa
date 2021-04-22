@@ -35,15 +35,15 @@ public class NotificationsDb {
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    public void addNotification(NotificationSource source, Notification.Type type, String message) {
-        addNotification(source, type, List.of(message));
+    public void setNotification(NotificationSource source, Notification.Type type, String message) {
+        setNotification(source, type, List.of(message));
     }
 
     /**
      * Add a notification with given source and type. If a notification with same source and type
      * already exists, it'll be replaced by this one instead
      */
-    public void addNotification(NotificationSource source, Notification.Type type, List<String> messages) {
+    public void setNotification(NotificationSource source, Notification.Type type, List<String> messages) {
         try (Lock lock = curatorDb.lockNotifications(source.tenant())) {
             List<Notification> notifications = curatorDb.readNotifications(source.tenant()).stream()
                     .filter(notification -> !source.equals(notification.source()) || type != notification.type())
