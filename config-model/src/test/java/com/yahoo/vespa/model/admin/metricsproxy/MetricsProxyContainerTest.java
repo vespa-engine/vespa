@@ -144,7 +144,7 @@ public class MetricsProxyContainerTest {
     @Test
     public void vespa_services_config_has_all_services() {
         VespaServicesConfig vespaServicesConfig = getVespaServicesConfig(servicesWithContent());
-        assertEquals(6, vespaServicesConfig.service().size());
+        assertEquals(7, vespaServicesConfig.service().size());
 
         for (var service : vespaServicesConfig.service()) {
             if (service.configId().equals("admin/cluster-controllers/0")) {
@@ -185,7 +185,7 @@ public class MetricsProxyContainerTest {
     private static String servicesWithContent() {
         return String.join("\n",
                            "<services>",
-                           "    <admin version='4.0'>",
+                           "    <admin version='2.0'>",
                            "        <adminserver hostalias='node1'/>",
                            "    </admin>",
                            "    <content version='1.0' id='my-content'>",

@@ -78,7 +78,7 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     private final FileDistributionConfigProducer fileDistribution;
     private final boolean multitenant;
 
-    public Admin(AbstractConfigProducer parent,
+    public Admin(AbstractConfigProducer<?> parent,
                  Monitoring monitoring,
                  Metrics metrics,
                  boolean multitenant,
