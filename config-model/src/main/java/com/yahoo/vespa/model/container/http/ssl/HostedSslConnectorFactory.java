@@ -90,7 +90,7 @@ public class HostedSslConnectorFactory extends ConnectorFactory {
 
         connectorBuilder
                 .proxyProtocol(new ConnectorConfig.ProxyProtocol.Builder().enabled(true).mixedMode(true))
-                .idleTimeout(Duration.ofMinutes(3).toSeconds())
+                .idleTimeout(Duration.ofSeconds(30).toSeconds())
                 .maxConnectionLife(Duration.ofMinutes(10).toSeconds());
     }
 }
