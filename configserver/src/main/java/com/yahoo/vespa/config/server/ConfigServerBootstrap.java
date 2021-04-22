@@ -228,8 +228,8 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     // Returns the set of applications that failed to redeploy
     private List<ApplicationId> redeployApplications(List<ApplicationId> applicationIds) throws InterruptedException {
-        ExecutorService executor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
-                                                                new DaemonThreadFactory("redeploy apps"));
+        ExecutorService executor = Executors.newFixedThreadPool(configserverConfig.numRedeploymentThreads(),
+                                                                new DaemonThreadFactory("redeploy-apps-"));
         // Keep track of deployment per application
         Map<ApplicationId, Future<?>> deployments = new HashMap<>();
         log.log(Level.INFO, () -> "Redeploying " + applicationIds);
