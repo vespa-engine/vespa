@@ -46,7 +46,7 @@ UniqueStoreEnumerator<RefT>::allocate_enum_values()
     for (uint32_t bufferId = 0; bufferId < RefType::numBuffers(); ++bufferId) {
         const BufferState &state = _store.getBufferState(bufferId);
         if (state.isActive()) {
-            _enumValues[bufferId].resize(state.size() / state.getArraySize());
+            _enumValues[bufferId].resize(state.get_used_arrays());
         }
     }
 }

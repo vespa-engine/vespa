@@ -107,7 +107,7 @@ private:
         for (const auto bufferId : _bufferIdsToCompact) {
             BufferState &state = _dataStore.getBufferState(bufferId);
             _compacting_buffer[bufferId] = true;
-            _mapping[bufferId].resize(state.size());
+            _mapping[bufferId].resize(state.get_used_arrays());
         }
     }
 
@@ -116,8 +116,9 @@ private:
         assert(iRef.valid());
         uint32_t buffer_id = iRef.bufferId();
         if (_compacting_buffer[buffer_id]) {
-            assert(iRef.offset() < _mapping[buffer_id].size());
-            EntryRef &mappedRef = _mapping[buffer_id][iRef.offset()];
+            auto &inner_mapping = _mapping[buffer_id];
+            assert(iRef.unscaled_offset() < inner_mapping.size());
+            EntryRef &mappedRef = inner_mapping[iRef.unscaled_offset()];
             assert(!mappedRef.valid());
             EntryRef newRef = _store.move(oldRef);
             mappedRef = newRef;
