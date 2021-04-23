@@ -14,8 +14,9 @@ class ClusterStateBundle;
 class Distribution;
 }
 
-namespace storage::distributor {
+namespace storage { class DistributorConfiguration; }
 
+namespace storage::distributor {
 
 /**
  * A stripe access guard guarantees that the holder of a guard can access underlying
@@ -26,6 +27,8 @@ namespace storage::distributor {
 class StripeAccessGuard {
 public:
     virtual ~StripeAccessGuard() = default;
+
+    virtual void update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config) = 0;
 
     virtual void update_distribution_config(const BucketSpaceDistributionConfigs& new_configs) = 0;
     virtual void set_pending_cluster_state_bundle(const lib::ClusterStateBundle& pending_state) = 0;

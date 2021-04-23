@@ -14,6 +14,10 @@ LegacySingleStripeAccessGuard::~LegacySingleStripeAccessGuard() {
     _accessor.mark_guard_released();
 }
 
+void LegacySingleStripeAccessGuard::update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config) {
+    _stripe.update_total_distributor_config(std::move(config));
+}
+
 void LegacySingleStripeAccessGuard::update_distribution_config(const BucketSpaceDistributionConfigs& new_configs) {
     _stripe.update_distribution_config(new_configs);
 }

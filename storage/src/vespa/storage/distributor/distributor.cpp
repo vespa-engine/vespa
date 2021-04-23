@@ -64,14 +64,17 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _metricUpdateHook(*this),
       _hostInfoReporter(*this, *this),
       _distribution(),
-      _next_distribution()
+      _next_distribution(),
+      _current_internal_config_generation(_component.internal_config_generation())
 {
     _component.registerMetric(*_metrics);
     _component.registerMetricUpdateHook(_metricUpdateHook, framework::SecondTime(0));
     if (num_distributor_stripes > 0) {
+        LOG(info, "Setting up distributor with %u stripes", num_distributor_stripes); // TODO STRIPE remove once legacy gone
         // FIXME STRIPE using the singular stripe here is a temporary Hack McHack Deluxe 3000!
         _bucket_db_updater = std::make_unique<BucketDBUpdater>(*_stripe, *_stripe, _comp_reg, *_stripe_accessor);
     }
+    _hostInfoReporter.enableReporting(getConfig().getEnableHostInfoReporting());
     _distributorStatusDelegate.registerStatusPage();
     hostInfoReporterRegistrar.registerReporter(&_hostInfoReporter);
     propagateDefaultDistribution(_component.getDistribution());
@@ -390,8 +393,22 @@ Distributor::doNonCriticalTick(framework::ThreadIndex idx)
 void
 Distributor::enableNextConfig()
 {
-    _hostInfoReporter.enableReporting(getConfig().getEnableHostInfoReporting());
-    _stripe->enableNextConfig(); // TODO STRIPE avoid redundant call
+    // Only lazily trigger a config propagation and internal update if something has _actually changed_.
+    if (_component.internal_config_generation() != _current_internal_config_generation) {
+        if (_bucket_db_updater) {
+            auto guard = _stripe_accessor->rendezvous_and_hold_all();
+            guard->update_total_distributor_config(_component.total_distributor_config_sp());
+        } else {
+            _stripe->update_total_distributor_config(_component.total_distributor_config_sp());
+        }
+        _hostInfoReporter.enableReporting(getConfig().getEnableHostInfoReporting());
+        _current_internal_config_generation = _component.internal_config_generation();
+    }
+    if (!_bucket_db_updater) {
+        // TODO STRIPE remove these once tests are fixed to trigger reconfig properly
+        _hostInfoReporter.enableReporting(getConfig().getEnableHostInfoReporting());
+        _stripe->enableNextConfig(); // TODO STRIPE avoid redundant call
+    }
 }
 
 vespalib::string

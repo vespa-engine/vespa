@@ -48,7 +48,6 @@ class DistributorStripe final
     : public DistributorStripeInterface,
       public StatusDelegator,
       public framework::StatusReporter,
-      public framework::TickingThread,
       public MinReplicaProvider,
       public BucketSpacesStatsProvider,
       public NonTrackingMessageSender
@@ -118,8 +117,8 @@ public:
     std::string getActiveIdealStateOperations() const;
     std::string getActiveOperations() const;
 
-    virtual framework::ThreadWaitInfo doCriticalTick(framework::ThreadIndex) override;
-    virtual framework::ThreadWaitInfo doNonCriticalTick(framework::ThreadIndex) override;
+    framework::ThreadWaitInfo doCriticalTick(framework::ThreadIndex);
+    framework::ThreadWaitInfo doNonCriticalTick(framework::ThreadIndex);
 
     /**
      * Checks whether a bucket needs to be split, and sends a split
@@ -151,7 +150,7 @@ public:
     }
 
     const DistributorConfiguration& getConfig() const override {
-        return _component.getTotalDistributorConfig();
+        return *_total_config;
     }
 
     bool isInRecoveryMode() const noexcept {
@@ -255,21 +254,23 @@ private:
     void propagateDefaultDistribution(std::shared_ptr<const lib::Distribution>); // TODO STRIPE remove once legacy is gone
     void propagateClusterStates();
     void update_distribution_config(const BucketSpaceDistributionConfigs& new_configs);
+    void update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config);
 
     BucketSpacesStatsProvider::BucketSpacesStats make_invalid_stats_per_configured_space() const;
     template <typename NodeFunctor>
     void for_each_available_content_node_in(const lib::ClusterState&, NodeFunctor&&);
     void invalidate_bucket_spaces_stats();
     void send_updated_host_info_if_required();
+    void propagate_config_snapshot_to_internal_components();
 
     lib::ClusterStateBundle _clusterStateBundle;
-
     std::unique_ptr<DistributorBucketSpaceRepo> _bucketSpaceRepo;
     // Read-only bucket space repo with DBs that only contain buckets transiently
     // during cluster state transitions. Bucket set does not overlap that of _bucketSpaceRepo
     // and the DBs are empty during non-transition phases.
     std::unique_ptr<DistributorBucketSpaceRepo> _readOnlyBucketSpaceRepo;
     storage::distributor::DistributorStripeComponent _component;
+    std::shared_ptr<const DistributorConfiguration> _total_config;
     DistributorMetricSet& _metrics;
 
     OperationOwner _operationOwner;

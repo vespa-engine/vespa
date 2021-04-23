@@ -46,6 +46,7 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
       _readOnlyBucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
       _component(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, compReg, "distributor"),
+      _total_config(_component.total_distributor_config_sp()),
       _metrics(metrics),
       _operationOwner(*this, _component.getClock()),
       _maintenanceOperationOwner(*this, _component.getClock()),
@@ -167,6 +168,8 @@ DistributorStripe::handle_or_enqueue_message(const std::shared_ptr<api::StorageM
     if (_externalOperationHandler.try_handle_message_outside_main_thread(msg)) {
         return true;
     }
+    // TODO STRIPE redesign how message queue guarding and wakeup is performed.
+    //   Currently involves a _thread pool global_ lock transitively via tick guard!
     framework::TickingLockGuard guard(_threadPool.freezeCriticalTicks());
     MBUS_TRACE(msg->getTrace(), 9,
                "Distributor: Added to message queue. Thread state: "
@@ -737,14 +740,15 @@ DistributorStripe::startNextMaintenanceOperation()
     _scheduler->tick(_schedulingMode);
 }
 
+// TODO STRIPE begone with this!
 framework::ThreadWaitInfo
 DistributorStripe::doCriticalTick(framework::ThreadIndex)
 {
     _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     if (_use_legacy_mode) {
         enableNextDistribution();
+        enableNextConfig();
     }
-    enableNextConfig();
     fetchStatusRequests();
     fetchExternalMessages();
     return _tickResult;
@@ -791,6 +795,21 @@ void DistributorStripe::mark_maintenance_tick_as_no_longer_inhibited() noexcept 
 
 void
 DistributorStripe::enableNextConfig()
+{
+    assert(_use_legacy_mode);
+    propagate_config_snapshot_to_internal_components();
+
+}
+
+void
+DistributorStripe::update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config)
+{
+    _total_config = std::move(config);
+    propagate_config_snapshot_to_internal_components();
+}
+
+void
+DistributorStripe::propagate_config_snapshot_to_internal_components()
 {
     _bucketDBMetricUpdater.setMinimumReplicaCountingMode(getConfig().getMinimumReplicaCountingMode());
     _ownershipSafeTimeCalc->setMaxClusterClockSkew(getConfig().getMaxClusterClockSkew());
