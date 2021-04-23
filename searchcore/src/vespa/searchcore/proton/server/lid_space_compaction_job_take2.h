@@ -65,12 +65,7 @@ public:
            const BlockableMaintenanceJobConfig &blockableConfig,
            IClusterStateChangedNotifier &clusterStateChangedNotifier,
            bool nodeRetired,
-           document::BucketSpace bucketSpace)
-    {
-        return std::shared_ptr<CompactionJob>(
-                new CompactionJob(config, std::move(dbRetainer), std::move(handler), opStorer, master, bucketExecutor,
-                                  diskMemUsageNotifier, blockableConfig, clusterStateChangedNotifier, nodeRetired, bucketSpace));
-    }
+           document::BucketSpace bucketSpace);
     ~CompactionJob() override;
 };
 

@@ -136,6 +136,28 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
 
 CompactionJob::~CompactionJob() = default;
 
+std::shared_ptr<CompactionJob>
+CompactionJob::create(const DocumentDBLidSpaceCompactionConfig &config,
+                      RetainGuard dbRetainer,
+                      std::shared_ptr<ILidSpaceCompactionHandler> handler,
+                      IOperationStorer &opStorer,
+                      IThreadService & master,
+                      BucketExecutor & bucketExecutor,
+                      IDiskMemUsageNotifier &diskMemUsageNotifier,
+                      const BlockableMaintenanceJobConfig &blockableConfig,
+                      IClusterStateChangedNotifier &clusterStateChangedNotifier,
+                      bool nodeRetired,
+                      document::BucketSpace bucketSpace)
+{
+    return std::shared_ptr<CompactionJob>(
+            new CompactionJob(config, std::move(dbRetainer), std::move(handler), opStorer, master, bucketExecutor,
+                              diskMemUsageNotifier, blockableConfig, clusterStateChangedNotifier, nodeRetired, bucketSpace),
+            [&master](auto job) {
+                auto failed = master.execute(makeLambdaTask([job]() { delete job; }));
+                assert(!failed);
+            });
+}
+
 void
 CompactionJob::onStop() {
     _stopped = true;
