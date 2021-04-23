@@ -418,6 +418,57 @@ void generate_products(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
+void generate_expanding_reduce(TestBuilder &dst) {
+    auto spec = GenSpec::from_desc("x5y0_0");
+    for (Aggr aggr: Aggregator::list()) {
+        // end up with more cells than you started with
+        auto expr1 = fmt("reduce(a,%s,y)", AggrNames::name_of(aggr)->c_str());
+        auto expr2 = fmt("reduce(a,%s)", AggrNames::name_of(aggr)->c_str());
+        dst.add(expr1, {{"a", spec}});
+        dst.add(expr2, {{"a", spec}});
+    }
+}
+
+//-----------------------------------------------------------------------------
+
+void generate_converting_lambda(TestBuilder &dst) {
+    auto spec = GenSpec::from_desc("x3y5_2");
+    // change cell type and dimension types
+    dst.add("tensor<bfloat16>(x[5],y[10])(a{x:(x),y:(y)})", {{"a", spec}});
+}
+
+//-----------------------------------------------------------------------------
+
+void generate_shadowing_lambda(TestBuilder &dst) {
+    auto a = GenSpec::from_desc("a3");
+    auto b = GenSpec::from_desc("b3");
+    // index 'a' shadows external parameter 'a'
+    dst.add("tensor(a[5])(reduce(a,sum)+reduce(b,sum))", {{"a", a}, {"b", b}});
+}
+
+//-----------------------------------------------------------------------------
+
+void generate_strict_verbatim_peek(TestBuilder &dst) {
+    auto a = GenSpec(3);
+    auto b = GenSpec().map("x", {"3", "a"});
+    // 'a' without () is verbatim even if 'a' is a known value
+    dst.add("b{x:a}", {{"a", a}, {"b", b}});
+}
+
+//-----------------------------------------------------------------------------
+
+void generate_nested_tensor_lambda(TestBuilder &dst) {
+    auto a = GenSpec(2);
+    auto b = GenSpec::from_desc("x3").seq(Seq({3,5,7}));
+    // constant nested tensor lambda
+    dst.add("tensor(x[2],y[3],z[5])(tensor(x[5],y[3],z[2])(x*6+y*2+z){x:(z),y:(y),z:(x)})", {});
+    // dynamic nested tensor lambda
+    dst.add("tensor(x[2],y[3],z[5])(tensor(x[5],y[3],z[2])(20*(a+x)+2*(b{x:(a)}+y)+z){x:(z),y:(y),z:(x)})",
+            {{"a", a}, {"b", b}});
+}
+
+//-----------------------------------------------------------------------------
+
 } // namespace <unnamed>
 
 //-----------------------------------------------------------------------------
@@ -440,4 +491,9 @@ Generator::generate(TestBuilder &dst)
     generate_if(dst);
     //--------------------
     generate_products(dst);
+    generate_expanding_reduce(dst);
+    generate_converting_lambda(dst);
+    generate_shadowing_lambda(dst);
+    generate_strict_verbatim_peek(dst);
+    generate_nested_tensor_lambda(dst);
 }
