@@ -679,7 +679,8 @@
       "public static void ensureSmaller(java.lang.String, java.lang.Comparable, java.lang.String, java.lang.Comparable)",
       "public static void ensure(java.lang.String, boolean)",
       "public static varargs void ensure(boolean, java.lang.Object[])",
-      "public static void ensureInstanceOf(java.lang.String, java.lang.Object, java.lang.Class)"
+      "public static void ensureInstanceOf(java.lang.String, java.lang.Object, java.lang.Class)",
+      "public static void ensureNotInstanceOf(java.lang.String, java.lang.Object, java.lang.Class)"
     ],
     "fields": []
   },
