@@ -68,14 +68,10 @@ public abstract class Validator {
      * Throws an IllegalArgumentException if the first argument is not strictly
      * smaller than the second argument
      *
-     * @param smallDescription
-     *            description of the smallest argument
-     * @param small
-     *            the smallest argument
-     * @param largeDescription
-     *            description of the largest argument
-     * @param large
-     *            the largest argument
+     * @param smallDescription description of the smallest argument
+     * @param small the smallest argument
+     * @param largeDescription description of the largest argument
+     * @param large the largest argument
      */
     @SuppressWarnings({ "rawtypes", "unchecked" })
     public static void ensureSmaller(String smallDescription, Comparable small, String largeDescription, Comparable large) {
@@ -115,19 +111,30 @@ public abstract class Validator {
     /**
      * Ensures that an item is of a particular class
      *
-     * @param description
-     *            a description of the item to be checked
-     * @param item
-     *            the item to check the type of
-     * @param type
-     *            the type the given item should be instanceof
-     * @throws IllegalArgumentException
-     *             if the given item is not of the correct type
+     * @param description a description of the item to be checked
+     * @param item the item to check the type of
+     * @param type the type the given item should be instanceof
+     * @throws IllegalArgumentException if the given item is not of the correct type
      */
     public static void ensureInstanceOf(String description, Object item, Class<?> type) {
         if ( ! type.isAssignableFrom(item.getClass())) {
             throw new IllegalArgumentException(description + " " + item + " should be an instance of " + type +
                                                " but is " + item.getClass());
+        }
+    }
+
+    /**
+     * Ensures that an item is not of a particular class
+     *
+     * @param description a description of the item to be checked
+     * @param item the item to check the type of
+     * @param type the type the given item should NOT be instanceof
+     * @throws IllegalArgumentException if the given item is of the wrong type
+     */
+    public static void ensureNotInstanceOf(String description, Object item, Class<?> type) {
+        if ( type.isAssignableFrom(item.getClass())) {
+            throw new IllegalArgumentException(description + " " + item + " should NOT be an instance of " + type +
+                    " but is " + item.getClass());
         }
     }
 

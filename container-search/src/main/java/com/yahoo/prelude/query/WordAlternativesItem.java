@@ -19,7 +19,6 @@ import com.yahoo.compress.IntegerCompressor;
 public class WordAlternativesItem extends TermItem {
 
     private List<Alternative> alternatives;
-    private int maxIndex;
 
     public static final class Alternative {
 
@@ -48,7 +47,6 @@ public class WordAlternativesItem extends TermItem {
 
     public void setAlternatives(Collection<Alternative> terms) {
         this.alternatives = uniqueAlternatives(terms);
-        setMaxIndex();
     }
 
     private static ImmutableList<Alternative> uniqueAlternatives(Collection<Alternative> terms) {
@@ -65,27 +63,6 @@ public class WordAlternativesItem extends TermItem {
             }
         }
         return ImmutableList.copyOf(uniqueTerms);
-    }
-
-    private void setMaxIndex() {
-        int maxIndex = 0;
-        int currentIndex = 0;
-        double maxScore = 0.0d;
-        boolean first = true;
-        for (Alternative val : this.alternatives) {
-            if (first) {
-                first = false;
-                maxIndex = 0;
-                maxScore = val.exactness;
-            } else {
-                if (val.exactness > maxScore) {
-                    maxScore = val.exactness;
-                    maxIndex = currentIndex;
-                }
-            }
-            ++currentIndex;
-        }
-        this.maxIndex = maxIndex;
     }
 
     @Override
