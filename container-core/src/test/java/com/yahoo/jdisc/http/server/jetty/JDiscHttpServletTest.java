@@ -33,7 +33,7 @@ public class JDiscHttpServletTest {
 
     @Test
     public void requireThatServerRespondsToAllMethods() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(newEchoHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(newEchoHandler());
         final URI uri = driver.client().newUri("/status.html");
         driver.client().execute(new HttpGet(uri))
               .expectStatusCode(is(OK));
@@ -56,7 +56,7 @@ public class JDiscHttpServletTest {
 
     @Test
     public void requireThatServerResponds405ToUnknownMethods() throws IOException {
-        TestDriver driver = TestDrivers.newInstance(newEchoHandler());
+        JettyTestDriver driver = JettyTestDriver.newInstance(newEchoHandler());
         final URI uri = driver.client().newUri("/status.html");
         driver.client().execute(new UnknownMethodHttpRequest(uri))
                 .expectStatusCode(is(METHOD_NOT_ALLOWED));

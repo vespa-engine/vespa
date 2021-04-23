@@ -654,6 +654,23 @@
     ],
     "fields": []
   },
+  "com.yahoo.container.jdisc.HttpRequestBuilder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public static com.yahoo.container.jdisc.HttpRequestBuilder create(com.yahoo.jdisc.http.HttpRequest$Method, java.lang.String)",
+      "public com.yahoo.container.jdisc.HttpRequestBuilder withQueryParameter(java.lang.String, java.lang.String)",
+      "public com.yahoo.container.jdisc.HttpRequestBuilder withHeader(java.lang.String, java.lang.String)",
+      "public com.yahoo.container.jdisc.HttpRequestBuilder withRequestContent(java.io.InputStream)",
+      "public com.yahoo.container.jdisc.HttpRequestBuilder withScheme(java.lang.String)",
+      "public com.yahoo.container.jdisc.HttpRequestBuilder withHostname(java.lang.String)",
+      "public com.yahoo.container.jdisc.HttpRequest build()"
+    ],
+    "fields": []
+  },
   "com.yahoo.container.jdisc.HttpRequestHandler": {
     "superClass": "java.lang.Object",
     "interfaces": [
