@@ -181,6 +181,8 @@ private:
 
     std::shared_ptr<lib::Distribution>   _distribution;
     std::shared_ptr<lib::Distribution>   _next_distribution;
+
+    uint64_t                             _current_internal_config_generation;
 };
 
 }

@@ -96,18 +96,18 @@ DistributorConfiguration::configureMaintenancePriorities(
         const vespa::config::content::core::StorDistributormanagerConfig& cfg)
 {
     MaintenancePriorities& mp(_maintenancePriorities);
-    mp.mergeMoveToIdealNode = cfg.priorityMergeMoveToIdealNode;
-    mp.mergeOutOfSyncCopies = cfg.priorityMergeOutOfSyncCopies;
-    mp.mergeTooFewCopies = cfg.priorityMergeTooFewCopies;
-    mp.mergeGlobalBuckets = cfg.priorityMergeGlobalBuckets;
-    mp.activateNoExistingActive = cfg.priorityActivateNoExistingActive;
+    mp.mergeMoveToIdealNode       = cfg.priorityMergeMoveToIdealNode;
+    mp.mergeOutOfSyncCopies       = cfg.priorityMergeOutOfSyncCopies;
+    mp.mergeTooFewCopies          = cfg.priorityMergeTooFewCopies;
+    mp.mergeGlobalBuckets         = cfg.priorityMergeGlobalBuckets;
+    mp.activateNoExistingActive   = cfg.priorityActivateNoExistingActive;
     mp.activateWithExistingActive = cfg.priorityActivateWithExistingActive;
-    mp.deleteBucketCopy = cfg.priorityDeleteBucketCopy;
-    mp.joinBuckets = cfg.priorityJoinBuckets;
-    mp.splitDistributionBits = cfg.prioritySplitDistributionBits;
-    mp.splitLargeBucket = cfg.prioritySplitLargeBucket;
-    mp.splitInconsistentBucket = cfg.prioritySplitInconsistentBucket;
-    mp.garbageCollection = cfg.priorityGarbageCollection;
+    mp.deleteBucketCopy           = cfg.priorityDeleteBucketCopy;
+    mp.joinBuckets                = cfg.priorityJoinBuckets;
+    mp.splitDistributionBits      = cfg.prioritySplitDistributionBits;
+    mp.splitLargeBucket           = cfg.prioritySplitLargeBucket;
+    mp.splitInconsistentBucket    = cfg.prioritySplitInconsistentBucket;
+    mp.garbageCollection          = cfg.priorityGarbageCollection;
 }
 
 void 
