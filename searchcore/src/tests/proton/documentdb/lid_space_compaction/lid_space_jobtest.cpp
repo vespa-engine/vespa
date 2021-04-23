@@ -28,11 +28,12 @@ struct MyCountJobRunner : public IMaintenanceJobRunner {
 };
 
 JobTestBase::JobTestBase()
-    : _handler(),
+    : _refCount(),
+      _clusterStateHandler(),
+      _handler(),
       _storer(),
       _frozenHandler(),
       _diskMemUsageNotifier(),
-      _clusterStateHandler(),
       _job()
 {
     init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, RESOURCE_LIMIT_FACTOR, JOB_DELAY, false, MAX_OUTSTANDING_MOVE_OPS);

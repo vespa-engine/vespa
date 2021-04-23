@@ -129,13 +129,7 @@ public:
            IDiskMemUsageNotifier &diskMemUsageNotifier,
            const BlockableMaintenanceJobConfig &blockableConfig,
            const vespalib::string &docTypeName,
-           document::BucketSpace bucketSpace)
-    {
-        return std::shared_ptr<BucketMoveJobV2>(
-                new BucketMoveJobV2(calc, std::move(dbRetainer), moveHandler, modifiedHandler, master, bucketExecutor, ready, notReady,
-                                    bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
-                                    diskMemUsageNotifier, blockableConfig, docTypeName, bucketSpace));
-    }
+           document::BucketSpace bucketSpace);
 
     ~BucketMoveJobV2() override;
 

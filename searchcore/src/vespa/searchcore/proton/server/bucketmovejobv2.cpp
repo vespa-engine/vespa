@@ -114,6 +114,33 @@ BucketMoveJobV2::~BucketMoveJobV2()
     _diskMemUsageNotifier.removeDiskMemUsageListener(this);
 }
 
+std::shared_ptr<BucketMoveJobV2>
+BucketMoveJobV2::create(const std::shared_ptr<IBucketStateCalculator> &calc,
+                        RetainGuard dbRetainer,
+                        IDocumentMoveHandler &moveHandler,
+                        IBucketModifiedHandler &modifiedHandler,
+                        IThreadService & master,
+                        BucketExecutor & bucketExecutor,
+                        const MaintenanceDocumentSubDB &ready,
+                        const MaintenanceDocumentSubDB &notReady,
+                        bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
+                        IClusterStateChangedNotifier &clusterStateChangedNotifier,
+                        IBucketStateChangedNotifier &bucketStateChangedNotifier,
+                        IDiskMemUsageNotifier &diskMemUsageNotifier,
+                        const BlockableMaintenanceJobConfig &blockableConfig,
+                        const vespalib::string &docTypeName,
+                        document::BucketSpace bucketSpace)
+{
+    return std::shared_ptr<BucketMoveJobV2>(
+            new BucketMoveJobV2(calc, std::move(dbRetainer), moveHandler, modifiedHandler, master, bucketExecutor, ready, notReady,
+                                bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
+                                diskMemUsageNotifier, blockableConfig, docTypeName, bucketSpace),
+            [&master](auto job) {
+                auto failed = master.execute(makeLambdaTask([job]() { delete job; }));
+                assert(!failed);
+            });
+}
+
 BucketMoveJobV2::NeedResult
 BucketMoveJobV2::needMove(const ScanIterator &itr) const {
     NeedResult noMove(false, false);
