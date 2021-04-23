@@ -469,6 +469,14 @@ void generate_nested_tensor_lambda(TestBuilder &dst) {
 
 //-----------------------------------------------------------------------------
 
+void generate_erf_value_test(TestBuilder &dst) {
+    auto a = GenSpec().idx("x", 16 * 16 * 6).seq(Div16(Div16(N())));
+    dst.add("erf(a)", {{"a", a}});
+    dst.add("erf(-a)", {{"a", a}});
+}
+
+//-----------------------------------------------------------------------------
+
 } // namespace <unnamed>
 
 //-----------------------------------------------------------------------------
@@ -496,4 +504,5 @@ Generator::generate(TestBuilder &dst)
     generate_shadowing_lambda(dst);
     generate_strict_verbatim_peek(dst);
     generate_nested_tensor_lambda(dst);
+    generate_erf_value_test(dst);
 }
