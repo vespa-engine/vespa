@@ -72,6 +72,7 @@ public:
     const MaintenanceDocumentSubDB &      getRemSubDB() const { return _remSubDB; }
     const MaintenanceDocumentSubDB & getNotReadySubDB() const { return _notReadySubDB; }
     IThreadService & masterThread() { return _masterThread; }
+    const DocTypeName & getDocTypeName() const { return _docTypeName; }
 private:
     using Mutex = std::mutex;
     using Guard = std::lock_guard<Mutex>;
