@@ -155,7 +155,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.archiveUriUpdater = duration(5, MINUTES);
             this.archiveAccessMaintainer = duration(10, MINUTES);
             this.tenantRoleMaintainer = duration(5, MINUTES);
-            this.changeRequestMaintainer = duration(12, HOURS);
+            this.changeRequestMaintainer = duration(1, HOURS);
             this.vcmrMaintainer = duration(1, HOURS);
         }
 

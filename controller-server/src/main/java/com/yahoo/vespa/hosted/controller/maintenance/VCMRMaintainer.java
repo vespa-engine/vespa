@@ -63,10 +63,10 @@ public class VCMRMaintainer extends ControllerMaintainer {
             var status = getStatus(nextActions, changeRequest);
 
             try (var lock = curator.lockChangeRequests()) {
-                curator.writeChangeRequest(
-                        changeRequest
-                                .withActionPlan(nextActions)
-                                .withStatus(status));
+                // Read the vcmr again, in case the source status has been updated
+                curator.readChangeRequest(changeRequest.getId())
+                        .ifPresent(vcmr -> curator.writeChangeRequest(vcmr.withActionPlan(nextActions)
+                                                                            .withStatus(status)));
             }
         });
 
@@ -128,11 +128,13 @@ public class VCMRMaintainer extends ControllerMaintainer {
                 .orElse(new HostAction(node.hostname().value(), State.NONE, Instant.now()));
 
         if (changeRequest.getChangeRequestSource().isClosed()) {
+            logger.fine(() -> changeRequest.getChangeRequestSource().getId() + " is closed, recycling " + node.hostname());
             recycleNode(changeRequest.getZoneId(), node, hostAction);
             return hostAction.withState(State.COMPLETE);
         }
 
         if (isPostponed(changeRequest, hostAction)) {
+            logger.fine(() -> changeRequest.getChangeRequestSource().getId() + " is postponed, recycling " + node.hostname());
             recycleNode(changeRequest.getZoneId(), node, hostAction);
             return hostAction.withState(State.PENDING_RETIREMENT);
         }
@@ -159,10 +161,12 @@ public class VCMRMaintainer extends ControllerMaintainer {
         }
 
         if (hasRetired(node, hostAction)) {
+            logger.fine(() -> node.hostname() + " has retired");
             return hostAction.withState(State.RETIRED);
         }
 
-        if (pendingRetirement(node)) {
+        if (pendingRetirement(node, hostAction)) {
+            logger.fine(() -> node.hostname() + " is pending retirement");
             return hostAction.withState(State.PENDING_RETIREMENT);
         }
 
@@ -205,8 +209,8 @@ public class VCMRMaintainer extends ControllerMaintainer {
     /**
      * TODO: For now, we choose to retire any active host
      */
-    private boolean pendingRetirement(Node node) {
-        return node.state() == Node.State.active;
+    private boolean pendingRetirement(Node node, HostAction action) {
+        return action.getState() == State.NONE && node.state() == Node.State.active;
     }
 
     private Map<ZoneId, List<Node>> nodesByZone() {
