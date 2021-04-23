@@ -16,6 +16,10 @@
 
 namespace search {
 
+/**
+ * helper class for searchcontext when doing scanning of string fields
+ * It handles differend search settings like prefix and cased/uncased and regex.
+ */
 class StringSearchHelper {
 public:
     StringSearchHelper(QueryTermUCS4 & qTerm, bool cased);
@@ -39,6 +43,9 @@ private:
 
 class ReaderBase;
 
+/**
+ * Base class for all string attributes.
+ */
 class StringAttribute : public AttributeVector
 {
 public:
