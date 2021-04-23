@@ -296,7 +296,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<TenantSecretStore> tenantSecretStores;
         private final SecretStore secretStore;
         private final StringFlag jvmGCOptionsFlag;
-        private final BooleanFlag allowDisableMtls;
+        private final boolean allowDisableMtls;
 
         public Properties(ApplicationId applicationId,
                           ConfigserverConfig configserverConfig,
@@ -332,7 +332,7 @@ public class ModelContextImpl implements ModelContext {
             this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
                                                                  .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm());
             this.allowDisableMtls = PermanentFlags.ALLOW_DISABLE_MTLS.bindTo(flagSource)
-                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm());
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -398,7 +398,7 @@ public class ModelContextImpl implements ModelContext {
 
         @Override
         public boolean allowDisableMtls() {
-            return allowDisableMtls.value();
+            return allowDisableMtls;
         }
 
         public String flagValueForClusterType(StringFlag flag, Optional<ClusterSpec.Type> clusterType) {
