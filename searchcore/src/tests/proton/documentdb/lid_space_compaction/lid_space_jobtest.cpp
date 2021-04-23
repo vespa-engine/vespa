@@ -30,10 +30,10 @@ struct MyCountJobRunner : public IMaintenanceJobRunner {
 JobTestBase::JobTestBase()
     : _refCount(),
       _clusterStateHandler(),
+      _diskMemUsageNotifier(),
       _handler(),
       _storer(),
       _frozenHandler(),
-      _diskMemUsageNotifier(),
       _job()
 {
     init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, RESOURCE_LIMIT_FACTOR, JOB_DELAY, false, MAX_OUTSTANDING_MOVE_OPS);
