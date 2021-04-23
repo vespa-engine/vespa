@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.model;
 
 import com.google.common.io.Files;
@@ -197,13 +197,21 @@ public class ApplicationDeployTest {
 
     @Test
     public void testThatAppWithInvalidParallelDeploymentFails() throws IOException {
+        String expectedMessage = "4:  <staging/>\n" +
+        "5:  <prod global-service-id=\"query\">\n" +
+        "6:    <parallel>\n" +
+        "7:      <instance id=\"hello\" />\n" +
+        "8:    </parallel>\n" +
+        "9:  </prod>\n" +
+        "10:</deployment>\n";
         File tmpDir = tmpFolder.getRoot();
         IOUtils.copyDirectory(new File(TESTDIR, "invalid_parallel_deployment_xml"), tmpDir);
         try {
             ApplicationPackageTester.create(tmpDir.getAbsolutePath());
             fail("Expected exception");
         } catch (IllegalArgumentException e) {
-            assertEquals("Invalid XML according to XML schema, error in deployment.xml: element \"instance\" not allowed here; expected the element end-tag or element \"delay\", \"region\", \"steps\" or \"test\" [7:30], input:\n", e.getMessage());
+            assertEquals("Invalid XML according to XML schema, error in deployment.xml: element \"instance\" not allowed here; expected the element end-tag or element \"delay\", \"region\", \"steps\" or \"test\" [7:30], input:\n" + expectedMessage,
+                         e.getMessage());
         }
     }
 
