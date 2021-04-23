@@ -11,7 +11,7 @@ namespace search::streaming {
    Base class for all N-ary query operators.
    Implements the width, depth, print, and collect all leafs operators(terms).
 */
-class QueryConnector : public QueryNode, public QueryNodeList
+class QueryConnector : public QueryNode
 {
 public:
     QueryConnector(const char * opName);
@@ -29,9 +29,14 @@ public:
     const vespalib::string & getIndex() const override { return _index; }
     static std::unique_ptr<QueryConnector> create(ParseItem::ItemType type);
     virtual bool isFlattenable(ParseItem::ItemType type) const { (void) type; return false; }
+    const QueryNodeList & getChildren() const { return _children; }
+    virtual void addChild(QueryNode::UP child);
+    size_t size() const { return _children.size(); }
+    const QueryNode::UP & operator [](size_t index) const { return _children[index]; }
 private:
     vespalib::string _opName;
     vespalib::string _index;
+    QueryNodeList _children;
 };
 
 /**
@@ -113,6 +118,7 @@ public:
     const QueryTerm::FieldInfo & getFieldInfo(size_t fid) const { return _fieldInfo[fid]; }
     size_t getFieldInfoSize() const { return _fieldInfo.size(); }
     bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_NOT; }
+    void addChild(QueryNode::UP child) override;
 private:
     mutable std::vector<QueryTerm::FieldInfo> _fieldInfo;
     void updateFieldInfo(size_t fid, size_t offset, size_t fieldLength) const;
@@ -129,16 +135,7 @@ public:
     bool evaluate() const override;
     const HitList & evaluateHits(HitList & hl) const override;
     bool isFlattenable(ParseItem::ItemType type) const override { return type == ParseItem::ITEM_NOT; }
-};
-
-/**
-   Unary Not operator. Just inverts the nodes result.
-*/
-class NotQueryNode : public QueryConnector
-{
-public:
-    NotQueryNode() : QueryConnector("NOT") { }
-    bool evaluate() const override;
+    void addChild(QueryNode::UP child) override;
 };
 
 /**
