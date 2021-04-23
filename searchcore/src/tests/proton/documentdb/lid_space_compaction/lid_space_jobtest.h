@@ -11,13 +11,13 @@ namespace storage::spi::dummy { class DummyBucketExecutor; }
 struct JobTestBase : public ::testing::TestWithParam<bool> {
     MonitoredRefCount _refCount;
     test::ClusterStateHandler _clusterStateHandler;
+    test::DiskMemUsageNotifier _diskMemUsageNotifier;
     std::unique_ptr<storage::spi::dummy::DummyBucketExecutor> _bucketExecutor;
     std::unique_ptr<vespalib::SyncableThreadExecutor> _singleExecutor;
     std::unique_ptr<searchcorespi::index::IThreadService> _master;
     std::shared_ptr<MyHandler> _handler;
     MyStorer _storer;
     MyFrozenBucketHandler _frozenHandler;
-    test::DiskMemUsageNotifier _diskMemUsageNotifier;
     std::shared_ptr<BlockableMaintenanceJob> _job;
     JobTestBase();
     ~JobTestBase() override;
