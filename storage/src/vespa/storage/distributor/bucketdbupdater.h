@@ -26,7 +26,7 @@ class XmlAttribute;
 
 namespace storage::distributor {
 
-class BucketSpaceDistributionConfigs;
+struct BucketSpaceDistributionConfigs;
 class BucketSpaceDistributionContext;
 class DistributorStripeInterface;
 class StripeAccessor;
