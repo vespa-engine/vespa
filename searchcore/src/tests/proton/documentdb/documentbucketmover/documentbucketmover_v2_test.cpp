@@ -42,6 +42,7 @@ struct ControllerFixtureBase : public ::testing::Test
     DummyBucketExecutor         _bucketExecutor;
     MyMoveHandler               _moveHandler;
     DocumentDBTaggedMetrics     _metrics;
+    MonitoredRefCount           _refCount;
     std::shared_ptr<BucketMoveJobV2>  _bmj;
     MyCountJobRunner            _runner;
     ControllerFixtureBase(const BlockableMaintenanceJobConfig &blockableConfig, bool storeMoveDoneContexts);
@@ -123,7 +124,7 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
       _bucketExecutor(4),
       _moveHandler(*_bucketDB, storeMoveDoneContexts),
       _metrics("test", 1),
-      _bmj(BucketMoveJobV2::create(_calc, _moveHandler, _modifiedHandler, _master, _bucketExecutor, _ready._subDb,
+      _bmj(BucketMoveJobV2::create(_calc, RetainGuard(_refCount), _moveHandler, _modifiedHandler, _master, _bucketExecutor, _ready._subDb,
                                    _notReady._subDb, _bucketCreateNotifier,_clusterStateHandler, _bucketHandler,
                                    _diskMemUsageNotifier, blockableConfig, "test", makeBucketSpace())),
       _runner(*_bmj)

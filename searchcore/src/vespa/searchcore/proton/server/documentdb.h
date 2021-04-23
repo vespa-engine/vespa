@@ -385,8 +385,7 @@ public:
     /**
      * Reference counting
      */
-    void retain() { _refCount.retain(); }
-    void release() { _refCount.release(); }
+    RetainGuard retain() { return RetainGuard(_refCount); }
 
     bool getDelayedConfig() const { return _state.getDelayedConfig(); }
     void replayConfig(SerialNum serialNum) override;

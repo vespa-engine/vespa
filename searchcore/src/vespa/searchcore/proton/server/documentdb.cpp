@@ -198,7 +198,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
               metricsWireService, getMetrics(), queryLimiter, clock, _configMutex, _baseDir,
               DocumentSubDBCollection::Config(protonCfg.numsearcherthreads),
               hwInfo),
-      _maintenanceController(_writeService.master(), sharedExecutor, _docTypeName),
+      _maintenanceController(_writeService.master(), sharedExecutor, _refCount, _docTypeName),
       _jobTrackers(),
       _calc(),
       _metricsUpdater(_subDBs, _writeService, _jobTrackers, *_sessionManager, _writeFilter)
@@ -408,8 +408,8 @@ DocumentDB::applySubDBConfig(const DocumentDBConfig &newConfigSnapshot,
     auto newRepo = newConfigSnapshot.getDocumentTypeRepoSP();
     auto newDocType = newRepo->getDocumentType(_docTypeName.getName());
     assert(newDocType != nullptr);
-    DocumentDBReferenceResolver resolver(*registry, *newDocType, newConfigSnapshot.getImportedFieldsConfig(),
-                                         *oldDocType, _refCount, _writeService.attributeFieldWriter(), _state.getAllowReconfig());
+    DocumentDBReferenceResolver resolver(*registry, *newDocType, newConfigSnapshot.getImportedFieldsConfig(), *oldDocType,
+                                         _refCount, _writeService.attributeFieldWriter(), _state.getAllowReconfig());
     _subDBs.applyConfig(newConfigSnapshot, *_activeConfigSnapshot, serialNum, params, resolver);
 }
 
@@ -551,13 +551,8 @@ DocumentDB::tearDownReferences()
     auto repo = activeConfig->getDocumentTypeRepoSP();
     auto docType = repo->getDocumentType(_docTypeName.getName());
     assert(docType != nullptr);
-    DocumentDBReferenceResolver resolver(*registry,
-                                         *docType,
-                                         activeConfig->getImportedFieldsConfig(),
-                                         *docType,
-                                         _refCount,
-                                         _writeService.attributeFieldWriter(),
-                                         false);
+    DocumentDBReferenceResolver resolver(*registry, *docType, activeConfig->getImportedFieldsConfig(), *docType,
+                                         _refCount, _writeService.attributeFieldWriter(), false);
     _subDBs.tearDownReferences(resolver);
     registry->remove(_docTypeName.getName());
 }

@@ -114,6 +114,7 @@ CompactionJob::completeMove(const search::DocumentMetaData & metaThen, std::uniq
 }
 
 CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
+                             RetainGuard dbRetainer,
                              std::shared_ptr<ILidSpaceCompactionHandler> handler,
                              IOperationStorer &opStorer,
                              IThreadService & master,
@@ -128,6 +129,7 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
       std::enable_shared_from_this<CompactionJob>(),
       _master(master),
       _bucketExecutor(bucketExecutor),
+      _dbRetainer(std::move(dbRetainer)),
       _bucketSpace(bucketSpace),
       _stopped(false)
 { }

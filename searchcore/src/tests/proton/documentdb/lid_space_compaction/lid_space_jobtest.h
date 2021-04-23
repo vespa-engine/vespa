@@ -2,6 +2,7 @@
 
 #include "lid_space_common.h"
 #include <vespa/searchcore/proton/server/blockable_maintenance_job.h>
+#include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/persistence/spi/bucketexecutor.h>
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/vespalib/gtest/gtest.h>
@@ -16,6 +17,7 @@ struct JobTestBase : public ::testing::TestWithParam<bool> {
     MyFrozenBucketHandler _frozenHandler;
     test::DiskMemUsageNotifier _diskMemUsageNotifier;
     test::ClusterStateHandler _clusterStateHandler;
+    MonitoredRefCount _refCount;
     std::shared_ptr<BlockableMaintenanceJob> _job;
     JobTestBase();
     ~JobTestBase() override;

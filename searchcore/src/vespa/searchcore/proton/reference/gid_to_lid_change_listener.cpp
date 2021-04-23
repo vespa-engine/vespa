@@ -7,22 +7,20 @@ namespace proton {
 
 GidToLidChangeListener::GidToLidChangeListener(vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                                                std::shared_ptr<search::attribute::ReferenceAttribute> attr,
-                                               MonitoredRefCount &refCount,
+                                               RetainGuard retainGuard,
                                                const vespalib::string &name,
                                                const vespalib::string &docTypeName)
     : _attributeFieldWriter(attributeFieldWriter),
       _executorId(_attributeFieldWriter.getExecutorIdFromName(attr->getNamePrefix())),
       _attr(std::move(attr)),
-      _refCount(refCount),
+      _retainGuard(std::move(retainGuard)),
       _name(name),
       _docTypeName(docTypeName)
-{
-    _refCount.retain();
-}
+{ }
+
 GidToLidChangeListener::~GidToLidChangeListener()
 {
     _attributeFieldWriter.sync();
-    _refCount.release();
 }
 
 void

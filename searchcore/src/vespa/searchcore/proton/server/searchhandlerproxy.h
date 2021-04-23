@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/summaryengine/isearchhandler.h>
+#include <vespa/searchcore/proton/common/monitored_refcount.h>
 
 namespace proton {
 
@@ -12,6 +13,7 @@ class SearchHandlerProxy : public ISearchHandler
 {
 private:
     std::shared_ptr<DocumentDB> _documentDB;
+    RetainGuard                 _retainGuard;
 public:
     SearchHandlerProxy(std::shared_ptr<DocumentDB> documentDB);
 
