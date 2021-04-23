@@ -21,9 +21,9 @@ import static com.yahoo.jdisc.http.HttpRequest.Method.TRACE;
 
 /**
  * Acl Mapping based on http method.
- * Defaults to:
- * {GET, HEAD, OPTIONS} -> READ
- * {POST, DELETE, PUT, PATCH, CONNECT, TRACE} -> WRITE
+ * Defaults to:<br>
+ * {GET, HEAD, OPTIONS} -&gt; READ<br>
+ * {POST, DELETE, PUT, PATCH, CONNECT, TRACE} -&gt; WRITE
  * @author mortent
  */
 public class HttpMethodAclMapping implements AclMapping {
