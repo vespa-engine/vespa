@@ -17,8 +17,8 @@
 namespace search {
 
 /**
- * helper class for searchcontext when doing scanning of string fields
- * It handles differend search settings like prefix and cased/uncased and regex.
+ * Helper class for search context when scanning string fields
+ * It handles different search settings like prefix, regex and cased/uncased.
  */
 class StringSearchHelper {
 public:
