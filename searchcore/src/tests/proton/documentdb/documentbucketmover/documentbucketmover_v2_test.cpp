@@ -37,12 +37,12 @@ struct ControllerFixtureBase : public ::testing::Test
     MySubDb                     _notReady;
     BucketCreateNotifier        _bucketCreateNotifier;
     test::DiskMemUsageNotifier  _diskMemUsageNotifier;
+    MonitoredRefCount           _refCount;
     ThreadStackExecutor         _singleExecutor;
     ExecutorThreadService       _master;
     DummyBucketExecutor         _bucketExecutor;
     MyMoveHandler               _moveHandler;
     DocumentDBTaggedMetrics     _metrics;
-    MonitoredRefCount           _refCount;
     std::shared_ptr<BucketMoveJobV2>  _bmj;
     MyCountJobRunner            _runner;
     ControllerFixtureBase(const BlockableMaintenanceJobConfig &blockableConfig, bool storeMoveDoneContexts);
@@ -119,6 +119,7 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
       _notReady(_builder.getRepo(), _bucketDB, 2, SubDbType::NOTREADY),
       _bucketCreateNotifier(),
       _diskMemUsageNotifier(),
+      _refCount(),
       _singleExecutor(1, 0x10000),
       _master(_singleExecutor),
       _bucketExecutor(4),
