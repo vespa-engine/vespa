@@ -40,7 +40,8 @@ public:
                           DistributorBucketSpaceRepo& bucketSpaceRepo,
                           DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                           DistributorMessageSender& sender,
-                          DistributorComponentRegister& compReg);
+                          DistributorComponentRegister& compReg,
+                          bool use_legacy_mode);
     ~StripeBucketDBUpdater() override;
 
     void flush();
@@ -279,6 +280,7 @@ private:
                                         document::BucketSpace::hash>;
     DbGuards _explicit_transition_read_guard;
     mutable std::mutex _distribution_context_mutex;
+    bool _use_legacy_mode;
 };
 
 }
