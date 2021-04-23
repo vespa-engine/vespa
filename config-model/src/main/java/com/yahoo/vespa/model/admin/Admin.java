@@ -186,19 +186,6 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
         return fileDistribution;
     }
 
-    public List<HostResource> getClusterControllerHosts() {
-        List<HostResource> hosts = new ArrayList<>();
-        if (multitenant) {
-            if (logserver != null)
-                hosts.add(logserver.getHostResource());
-        } else {
-            for (Configserver configserver : getConfigservers()) {
-                hosts.add(configserver.getHostResource());
-            }
-        }
-        return hosts;
-    }
-
     /**
      * Adds services to all hosts in the system.
      */

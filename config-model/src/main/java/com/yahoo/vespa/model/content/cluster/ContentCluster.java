@@ -25,6 +25,7 @@ import com.yahoo.vespa.config.content.core.BucketspacesConfig;
 import com.yahoo.vespa.config.content.core.StorDistributormanagerConfig;
 import com.yahoo.vespa.model.HostResource;
 import com.yahoo.vespa.model.admin.Admin;
+import com.yahoo.vespa.model.admin.Configserver;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerCluster;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerComponent;
 import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerConfigurer;
@@ -170,7 +171,7 @@ public class ContentCluster extends AbstractConfigProducer implements
 
             if (context.getParentProducer().getRoot() == null) return c;
 
-            addClusterControllers(context, c.rootGroup, contentElement, c.clusterId, c, deployState);
+            addClusterControllers(context, contentElement, c, deployState);
             return c;
         }
 
@@ -284,9 +285,7 @@ public class ContentCluster extends AbstractConfigProducer implements
         }
 
         private void addClusterControllers(ConfigModelContext context,
-                                           StorageGroup rootGroup,
                                            ModelElement contentElement,
-                                           String contentClusterName,
                                            ContentCluster contentCluster,
                                            DeployState deployState) {
             if (admin == null) return; // only in tests
@@ -295,18 +294,33 @@ public class ContentCluster extends AbstractConfigProducer implements
             if (context.properties().hostedVespa()) {
                 clusterControllers = getDedicatedSharedControllers(contentElement, admin, context, deployState);
             }
-            else {
-                clusterControllers = admin.getClusterControllers();
-                if (clusterControllers == null) {
-                    List<HostResource> hosts = admin.getClusterControllerHosts();
-                    if (hosts.size() > 1) {
-                        context.getDeployState().getDeployLogger().log(Level.INFO,
-                                                                       "When having content cluster(s) and more than 1 config server it is recommended to configure cluster controllers explicitly.");
-                    }
-                    boolean runStandaloneZooKeeper = admin.multitenant(); // When multitenant we'll not run on config servers so we need to add a Zk instance
-                    clusterControllers = createClusterControllers(admin, hosts, "cluster-controllers", runStandaloneZooKeeper, context.getDeployState());
-                    admin.setClusterControllers(clusterControllers);
+            else if (admin.multitenant()) { // system tests: Put on logserver
+                if (admin.getClusterControllers() == null) {
+                    // TODO: logserver== null only obtains in unit tests, disallow it
+                    List<HostResource> host = admin.getLogserver() == null ? List.of() : List.of(admin.getLogserver().getHostResource());
+                    admin.setClusterControllers(createClusterControllers(new ClusterControllerCluster(admin, "standalone", deployState),
+                                                                         host,
+                                                                         "cluster-controllers",
+                                                                         true,
+                                                                         deployState));
                 }
+                clusterControllers = admin.getClusterControllers();
+            }
+            else { // self hosted: Put on config servers or explicit cluster controllers
+                if (admin.getClusterControllers() == null) {
+                    var hosts = admin.getConfigservers().stream().map(s -> s.getHostResource()).collect(toList());
+                    if (hosts.size() > 1) {
+                        var message = "When having content clusters and more than 1 config server " +
+                                      "it is recommended to configure cluster controllers explicitly.";
+                        deployState.getDeployLogger().log(Level.INFO, message);
+                    }
+                    admin.setClusterControllers(createClusterControllers(admin,
+                                                                         hosts,
+                                                                         "cluster-controllers",
+                                                                         false,
+                                                                         deployState));
+                }
+                clusterControllers = admin.getClusterControllers();
             }
 
             addClusterControllerComponentsForThisCluster(clusterControllers, contentCluster);

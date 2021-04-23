@@ -122,12 +122,10 @@ public class DomAdminV2BuilderTest extends DomBuilderTest {
         Admin admin = buildAdmin(servicesMultitenantAdminOnly(), true, configServerSpecs);
         assertThat(admin.getConfigservers().size(), is(3));
         assertThat(admin.getSlobroks().size(), is(1));
-        assertThat(admin.getClusterControllerHosts().size(), is(1));
         assertNotNull(admin.hostSystem().getHostByHostname("test1"));
         for (Configserver configserver : admin.getConfigservers()) {
-            assertThat(configserver.getHostName(), is(not(admin.getClusterControllerHosts().get(0).getHost().getHostname())));
             for (Slobrok slobrok : admin.getSlobroks()) {
-                    assertThat(slobrok.getHostName(), is(not(configserver.getHostName())));
+                assertThat(slobrok.getHostName(), is(not(configserver.getHostName())));
             }
         }
     }
