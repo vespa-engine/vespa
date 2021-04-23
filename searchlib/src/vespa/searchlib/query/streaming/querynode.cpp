@@ -58,8 +58,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
                 if (qc->isFlattenable(queryRep.getType())) {
                     arity += queryRep.getArity();
                 } else {
-                    UP child = Build(qc, factory, queryRep, allowRewrite && !disableRewrite(qn.get()));
-                    qc->push_back(std::move(child));
+                    qc->addChild(Build(qc, factory, queryRep, allowRewrite && !disableRewrite(qn.get())));
                 }
             }
         }
@@ -139,11 +138,11 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
                 qn = std::move(qt);
             } else {
                 auto phrase = std::make_unique<PhraseQueryNode>();
-                phrase->push_back(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(0, ssTerm.find('.')), ssIndex, TermType::WORD));
-                phrase->push_back(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(ssTerm.find('.') + 1), ssIndex, TermType::WORD));
+                phrase->addChild(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(0, ssTerm.find('.')), ssIndex, TermType::WORD));
+                phrase->addChild(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(ssTerm.find('.') + 1), ssIndex, TermType::WORD));
                 auto orqn = std::make_unique<EquivQueryNode>();
-                orqn->push_back(std::move(qt));
-                orqn->push_back(std::move(phrase));
+                orqn->addChild(std::move(qt));
+                orqn->addChild(std::move(phrase));
                 qn = std::move(orqn);
             }
         }

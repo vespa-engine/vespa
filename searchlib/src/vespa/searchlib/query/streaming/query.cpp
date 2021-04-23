@@ -6,21 +6,29 @@
 
 namespace search::streaming {
 
-void QueryConnector::visitMembers(vespalib::ObjectVisitor &visitor) const
+void
+QueryConnector::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     visit(visitor, "Operator", _opName);
 }
 
-QueryConnector::QueryConnector(const char * opName) :
-  QueryNode(),
-  _opName(opName),
-  _index()
+QueryConnector::QueryConnector(const char * opName)
+    : QueryNode(),
+      _opName(opName),
+      _index(),
+      _children()
 {
+}
+
+void
+QueryConnector::addChild(QueryNode::UP child) {
+    _children.push_back(std::move(child));
 }
 
 QueryConnector::~QueryConnector() = default;
 
-const HitList & QueryConnector::evaluateHits(HitList & hl) const
+const HitList &
+QueryConnector::evaluateHits(HitList & hl) const
 {
     if (evaluate()) {
         hl.push_back(Hit(1, 0, 0, 1));
@@ -28,45 +36,51 @@ const HitList & QueryConnector::evaluateHits(HitList & hl) const
     return hl;
 }
 
-void QueryConnector::reset()
+void
+QueryConnector::reset()
 {
-    for(const auto & node : *this) {
+    for (const auto & node : _children) {
         node->reset();
     }
 }
 
-void QueryConnector::getLeafs(QueryTermList & tl)
+void
+QueryConnector::getLeafs(QueryTermList & tl)
 {
-    for(const auto & node : *this) {
+    for (const auto & node : _children) {
         node->getLeafs(tl);
     }
 }
 
-void QueryConnector::getLeafs(ConstQueryTermList & tl) const
+void
+QueryConnector::getLeafs(ConstQueryTermList & tl) const
 {
-    for(const auto & node : *this) {
+    for (const auto & node : _children) {
         node->getLeafs(tl);
     }
 }
 
-void QueryConnector::getPhrases(QueryNodeRefList & tl)
+void
+QueryConnector::getPhrases(QueryNodeRefList & tl)
 {
-    for(const auto & node : *this) {
+    for (const auto & node : _children) {
         node->getPhrases(tl);
     }
 }
 
-void QueryConnector::getPhrases(ConstQueryNodeRefList & tl) const
+void
+QueryConnector::getPhrases(ConstQueryNodeRefList & tl) const
 {
-    for(const auto & node : *this) {
+    for (const auto & node : _children) {
         node->getPhrases(tl);
     }
 }
 
-size_t QueryConnector::depth() const
+size_t
+QueryConnector::depth() const
 {
     size_t d(0);
-    for(const auto & node : *this) {
+    for (const auto & node : _children) {
         size_t t = node->depth();
         if (t > d) {
             d = t;
@@ -75,10 +89,11 @@ size_t QueryConnector::depth() const
     return d+1;
 }
 
-size_t QueryConnector::width() const
+size_t
+QueryConnector::width() const
 {
   size_t w(0);
-  for(const auto & node : *this) {
+  for (const auto & node : _children) {
     w += node->width();
   }
 
@@ -105,73 +120,77 @@ QueryConnector::create(ParseItem::ItemType type)
     }
 }
 
-bool TrueNode::evaluate() const
+bool
+TrueNode::evaluate() const
 {
     return true;
 }
 
-bool AndQueryNode::evaluate() const
+bool
+AndQueryNode::evaluate() const
 {
-  bool ok(true);
-  for (const_iterator it=begin(), mt=end(); ok && (it!=mt); it++) {
-    const QueryNode & qn = **it;
-    ok = ok && qn.evaluate();
-  }
-  return ok;
-}
-
-bool AndNotQueryNode::evaluate() const
-{
-  bool ok(empty() ? true : front()->evaluate());
-  if (!empty()) {
-    for (const_iterator it=begin()+1, mt=end(); ok && (it!=mt); it++) {
-      const QueryNode & qn = **it;
-      ok = ok && ! qn.evaluate();
+    for (const auto & qn : getChildren()) {
+        if ( ! qn->evaluate() ) return false;
     }
-  }
-  return ok;
+    return true;
 }
 
-bool OrQueryNode::evaluate() const
-{
-  bool ok(false);
-  for (const_iterator it=begin(), mt=end(); !ok && (it!=mt); it++) {
-    const QueryNode & qn = **it;
-    ok = qn.evaluate();
-  }
-  return ok;
+bool
+AndNotQueryNode::evaluate() const {
+    if (getChildren().empty()) return true;
+    auto it = getChildren().begin();
+    auto mt = getChildren().end();
+    if ((*it)->evaluate()) {
+        for (++it; it != mt; it++) {
+            if ((*it)->evaluate()) return false;
+        }
+        return true;
+    }
+    return false;
+}
+
+bool
+OrQueryNode::evaluate() const {
+    for (const auto & qn : getChildren()) {
+        if (qn->evaluate()) return true;
+    }
+    return false;
 }
 
 
-bool EquivQueryNode::evaluate() const
+bool
+EquivQueryNode::evaluate() const
 {
     return OrQueryNode::evaluate();
 }
 
-bool SameElementQueryNode::evaluate() const {
+bool
+SameElementQueryNode::evaluate() const {
     HitList hl;
     return ! evaluateHits(hl).empty();
+}
+
+void
+SameElementQueryNode::addChild(QueryNode::UP child) {
+    assert(dynamic_cast<const QueryTerm *>(child.get()) != nullptr);
+    AndQueryNode::addChild(std::move(child));
 }
 
 const HitList &
 SameElementQueryNode::evaluateHits(HitList & hl) const
 {
-    // TODO This should have been done in a different way, but there are currently no way for that.
-    //  Sanity check should be cheap enough that it does not matter.
-    for (const auto & child : *this) {
-        assert(dynamic_cast<const QueryTerm *>(child.get()) != nullptr);
-    }
     hl.clear();
     if ( !AndQueryNode::evaluate()) return hl;
 
     HitList tmpHL;
-    unsigned int numFields = size();
+    const auto & children = getChildren();
+    unsigned int numFields = children.size();
     unsigned int currMatchCount = 0;
     std::vector<unsigned int> indexVector(numFields, 0);
-    auto curr = static_cast<const QueryTerm *> ((*this)[currMatchCount].get());
+    auto curr = static_cast<const QueryTerm *> (children[currMatchCount].get());
     bool exhausted( curr->evaluateHits(tmpHL).empty());
     for (; !exhausted; ) {
-        auto next = static_cast<const QueryTerm *>((*this)[currMatchCount+1].get());
+        auto next = static_cast<const QueryTerm *>(children[currMatchCount+1].get());
         unsigned int & currIndex = indexVector[currMatchCount];
         unsigned int & nextIndex = indexVector[currMatchCount+1];
 
@@ -196,13 +215,14 @@ SameElementQueryNode::evaluateHits(HitList & hl) const
             currMatchCount = 0;
             indexVector[currMatchCount]++;
         }
-        curr = static_cast<const QueryTerm *>((*this)[currMatchCount].get());
+        curr = static_cast<const QueryTerm *>(children[currMatchCount].get());
         exhausted = (nextIndex >= nextIndexMax) || (indexVector[currMatchCount] >= curr->evaluateHits(tmpHL).size());
     }
     return hl;
 }
 
-bool PhraseQueryNode::evaluate() const
+bool
+PhraseQueryNode::evaluate() const
 {
   HitList hl;
   return ! evaluateHits(hl).empty();
@@ -210,6 +230,12 @@ bool PhraseQueryNode::evaluate() const
 
 void PhraseQueryNode::getPhrases(QueryNodeRefList & tl)            { tl.push_back(this); }
 void PhraseQueryNode::getPhrases(ConstQueryNodeRefList & tl) const { tl.push_back(this); }
+
+void
+PhraseQueryNode::addChild(QueryNode::UP child) {
+    assert(dynamic_cast<const QueryTerm *>(child.get()) != nullptr);
+    AndQueryNode::addChild(std::move(child));
+}
 
 const HitList &
 PhraseQueryNode::evaluateHits(HitList & hl) const
@@ -219,13 +245,14 @@ PhraseQueryNode::evaluateHits(HitList & hl) const
     if ( ! AndQueryNode::evaluate()) return hl;
 
     HitList tmpHL;
-    unsigned int fullPhraseLen = size();
+    const auto & children = getChildren();
+    unsigned int fullPhraseLen = children.size();
     unsigned int currPhraseLen = 0;
     std::vector<unsigned int> indexVector(fullPhraseLen, 0);
-    auto curr = static_cast<const QueryTerm *> ((*this)[currPhraseLen].get());
+    auto curr = static_cast<const QueryTerm *> (children[currPhraseLen].get());
     bool exhausted( curr->evaluateHits(tmpHL).empty());
     for (; !exhausted; ) {
-        auto next = static_cast<const QueryTerm *>((*this)[currPhraseLen+1].get());
+        auto next = static_cast<const QueryTerm *>(children[currPhraseLen+1].get());
         unsigned int & currIndex = indexVector[currPhraseLen];
         unsigned int & nextIndex = indexVector[currPhraseLen+1];
 
@@ -259,7 +286,7 @@ PhraseQueryNode::evaluateHits(HitList & hl) const
             currPhraseLen = 0;
             indexVector[currPhraseLen]++;
         }
-        curr = static_cast<const QueryTerm *>((*this)[currPhraseLen].get());
+        curr = static_cast<const QueryTerm *>(children[currPhraseLen].get());
         exhausted = (nextIndex >= nextIndexMax) || (indexVector[currPhraseLen] >= curr->evaluateHits(tmpHL).size());
     }
     return hl;
@@ -279,29 +306,22 @@ PhraseQueryNode::updateFieldInfo(size_t fid, size_t offset, size_t fieldLength) 
     fi.setHitCount(fi.getHitCount() + 1);
 }
 
-bool NotQueryNode::evaluate() const
+bool
+NearQueryNode::evaluate() const
 {
-  bool ok(false);
-  for (const auto & node : *this) {
-    ok |= ! node->evaluate();
-  }
-  return ok;
+    return AndQueryNode::evaluate();
 }
 
-bool NearQueryNode::evaluate() const
-{
-  bool ok(AndQueryNode::evaluate());
-  return ok;
-}
-
-void NearQueryNode::visitMembers(vespalib::ObjectVisitor &visitor) const
+void
+NearQueryNode::visitMembers(vespalib::ObjectVisitor &visitor) const
 {
     AndQueryNode::visitMembers(visitor);
     visit(visitor, "distance", static_cast<uint64_t>(_distance));
 }
 
 
-bool ONearQueryNode::evaluate() const
+bool
+ONearQueryNode::evaluate() const
 {
   bool ok(NearQueryNode::evaluate());
   return ok;
@@ -309,19 +329,19 @@ bool ONearQueryNode::evaluate() const
 
 Query::Query() = default;
 
-Query::Query(const QueryNodeResultFactory & factory, const QueryPacketT & queryRep) :
-  _root()
+Query::Query(const QueryNodeResultFactory & factory, const QueryPacketT & queryRep)
+    : _root()
 {
-  build(factory, queryRep);
+    build(factory, queryRep);
 }
 
-bool Query::evaluate() const
-{
-  bool ok = valid() ? _root->evaluate() : false;
-  return ok;
+bool
+Query::evaluate() const {
+    return valid() ? _root->evaluate() : false;
 }
 
-bool Query::build(const QueryNodeResultFactory & factory, const QueryPacketT & queryRep)
+bool
+Query::build(const QueryNodeResultFactory & factory, const QueryPacketT & queryRep)
 {
     search::SimpleQueryStackDumpIterator stack(queryRep);
     if (stack.next()) {
@@ -330,49 +350,49 @@ bool Query::build(const QueryNodeResultFactory & factory, const QueryPacketT & q
     return valid();
 }
 
-void Query::getLeafs(QueryTermList & tl)
-{
-  if (valid()) {
-    _root->getLeafs(tl);
-  }
+void
+Query::getLeafs(QueryTermList & tl) {
+    if (valid()) {
+        _root->getLeafs(tl);
+    }
 }
 
-void Query::getLeafs(ConstQueryTermList & tl) const
-{
-  if (valid()) {
-    _root->getLeafs(tl);
-  }
+void
+Query::getLeafs(ConstQueryTermList & tl) const {
+    if (valid()) {
+        _root->getLeafs(tl);
+    }
 }
 
-void Query::getPhrases(QueryNodeRefList & tl)
-{
-  if (valid()) {
-    _root->getPhrases(tl);
-  }
+void
+Query::getPhrases(QueryNodeRefList & tl) {
+    if (valid()) {
+        _root->getPhrases(tl);
+    }
 }
 
-void Query::getPhrases(ConstQueryNodeRefList & tl) const
-{
-  if (valid()) {
-    _root->getPhrases(tl);
-  }
+void
+Query::getPhrases(ConstQueryNodeRefList & tl) const {
+    if (valid()) {
+        _root->getPhrases(tl);
+    }
 }
 
-void Query::reset()
-{
-  if (valid()) {
-    _root->reset();
-  }
+void
+Query::reset() {
+    if (valid()) {
+        _root->reset();
+    }
 }
 
-size_t Query::depth() const
-{
-  return valid() ? _root->depth() : 0;
+size_t
+Query::depth() const {
+    return valid() ? _root->depth() : 0;
 }
 
-size_t Query::width() const
-{
-  return valid() ? _root->width() : 0;
+size_t
+Query::width() const {
+    return valid() ? _root->width() : 0;
 }
 
 }
