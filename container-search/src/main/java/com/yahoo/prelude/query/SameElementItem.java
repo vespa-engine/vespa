@@ -50,6 +50,7 @@ public class SameElementItem extends NonReducibleCompositeItem {
         super.adding(item);
         //TODO See if we can require only SimpleIndexedItem instead of TermItem
         Validator.ensureInstanceOf("Child item", item, TermItem.class);
+        Validator.ensureNotInstanceOf("Child item", item, WordAlternativesItem.class);
         TermItem asTerm = (TermItem) item;
         Validator.ensureNonEmpty("Struct fieldname", asTerm.getIndexName());
         Validator.ensureNonEmpty("Query term", asTerm.getIndexedString());
