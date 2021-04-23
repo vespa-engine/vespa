@@ -131,6 +131,8 @@ public interface ModelContext {
 
         default boolean dedicatedClusterControllerCluster() { return hostedVespa(); }
 
+        // Allow disabling mTLS for now, harden later
+        default boolean allowDisableMtls() { return true; }
     }
 
     @Retention(RetentionPolicy.RUNTIME)

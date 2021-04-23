@@ -62,6 +62,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
     private String jvmOmitStackTraceInFastThrowOption;
     private int numDistributorStripes = 0;
+    private boolean allowDisableMtls = true;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -104,6 +105,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
     @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return jvmOmitStackTraceInFastThrowOption; }
     @Override public int numDistributorStripes() { return numDistributorStripes; }
+    @Override public boolean allowDisableMtls() { return allowDisableMtls; }
 
     public TestProperties setFeedConcurrency(double feedConcurrency) {
         this.feedConcurrency = feedConcurrency;
@@ -252,6 +254,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setNumDistributorStripes(int value) {
         this.numDistributorStripes = value;
+        return this;
+    }
+
+    public TestProperties allowDisableMtls(boolean value) {
+        this.allowDisableMtls = value;
         return this;
     }
 
