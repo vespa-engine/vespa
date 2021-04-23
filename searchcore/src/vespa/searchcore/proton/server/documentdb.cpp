@@ -571,14 +571,14 @@ DocumentDB::close()
         _state.enterShutdownState();
         _configCV.notify_all();
     }
+    // Abort any ongoing maintenance
+    stopMaintenance();
     _writeService.master().sync(); // Complete all tasks that didn't observe shutdown
     masterExecute([this]() { tearDownReferences(); });
     _writeService.master().sync();
     // Wait until inflight feed operations to this document db has left.
     // Caller should have removed document DB from feed router.
     _refCount.waitForZeroRefCount();
-    // Abort any ongoing maintenance
-    stopMaintenance();
 
     _writeService.sync();
 
@@ -959,7 +959,6 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config, std
             *_feedHandler, // IOperationStorer
             _maintenanceController, // IFrozenBucketHandler
             _subDBs.getBucketCreateNotifier(),
-            _docTypeName.getName(),
             _bucketSpace,
             *_feedHandler, // IPruneRemovedDocumentsHandler
             *_feedHandler, // IDocumentMoveHandler

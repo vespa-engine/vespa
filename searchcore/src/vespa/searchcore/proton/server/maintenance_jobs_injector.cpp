@@ -108,7 +108,6 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     IOperationStorer &opStorer,
                                     IFrozenBucketHandler &fbHandler,
                                     bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
-                                    const vespalib::string &docTypeName,
                                     document::BucketSpace bucketSpace,
                                     IPruneRemovedDocumentsHandler &prdHandler,
                                     IDocumentMoveHandler &moveHandler,
@@ -127,6 +126,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
     controller.registerJobInMasterThread(std::make_unique<HeartBeatJob>(hbHandler, config.getHeartBeatConfig()));
     controller.registerJobInDefaultPool(std::make_unique<PruneSessionCacheJob>(scPruner, config.getSessionCachePruneInterval()));
 
+    const auto & docTypeName = controller.getDocTypeName().getName();
     const MaintenanceDocumentSubDB &mRemSubDB(controller.getRemSubDB());
     auto pruneRDjob = std::make_unique<PruneRemovedDocumentsJob>(config.getPruneRemovedDocumentsConfig(), *mRemSubDB.meta_store(),
                                                                  mRemSubDB.sub_db_id(), docTypeName, prdHandler, fbHandler);
