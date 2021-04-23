@@ -4,7 +4,7 @@ package com.yahoo.prelude.query;
 import java.nio.ByteBuffer;
 
 /**
- * A query item which never matches. This is sometimes an useful output of query rewriting.
+ * A query item which never matches. This is sometimes a useful output of query rewriting.
  *
  * @author bratseth
  */

@@ -78,7 +78,7 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     private final FileDistributionConfigProducer fileDistribution;
     private final boolean multitenant;
 
-    public Admin(AbstractConfigProducer parent,
+    public Admin(AbstractConfigProducer<?> parent,
                  Monitoring monitoring,
                  Metrics metrics,
                  boolean multitenant,
@@ -184,19 +184,6 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
 
     public FileDistributionConfigProducer getFileDistributionConfigProducer() {
         return fileDistribution;
-    }
-
-    public List<HostResource> getClusterControllerHosts() {
-        List<HostResource> hosts = new ArrayList<>();
-        if (multitenant) {
-            if (logserver != null)
-                hosts.add(logserver.getHostResource());
-        } else {
-            for (Configserver configserver : getConfigservers()) {
-                hosts.add(configserver.getHostResource());
-            }
-        }
-        return hosts;
     }
 
     /**
