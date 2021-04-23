@@ -137,9 +137,10 @@ AndQueryNode::evaluate() const
 
 bool
 AndNotQueryNode::evaluate() const {
+    if (getChildren().empty()) return true;
     auto it = getChildren().begin();
     auto mt = getChildren().end();
-    if ((it != getChildren().end()) && (*it)->evaluate()) {
+    if ((*it)->evaluate()) {
         for (++it; it != mt; it++) {
             if ((*it)->evaluate()) return false;
         }
@@ -182,7 +183,7 @@ SameElementQueryNode::evaluateHits(HitList & hl) const
     if ( !AndQueryNode::evaluate()) return hl;
 
     HitList tmpHL;
-    const QueryNodeList & children = getChildren();
+    const auto & children = getChildren();
     unsigned int numFields = children.size();
     unsigned int currMatchCount = 0;
     std::vector<unsigned int> indexVector(numFields, 0);
@@ -244,7 +245,7 @@ PhraseQueryNode::evaluateHits(HitList & hl) const
     if ( ! AndQueryNode::evaluate()) return hl;
 
     HitList tmpHL;
-    const QueryNodeList & children = getChildren();
+    const auto & children = getChildren();
     unsigned int fullPhraseLen = children.size();
     unsigned int currPhraseLen = 0;
     std::vector<unsigned int> indexVector(fullPhraseLen, 0);
