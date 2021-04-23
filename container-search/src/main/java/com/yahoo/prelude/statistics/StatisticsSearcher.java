@@ -5,9 +5,9 @@ import com.yahoo.component.chain.dependencies.Before;
 import com.yahoo.concurrent.CopyOnWriteHashMap;
 import com.yahoo.container.protect.Error;
 import com.yahoo.jdisc.Metric;
-import java.util.logging.Level;
-import com.yahoo.metrics.simple.MetricSettings;
+import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.metrics.simple.MetricReceiver;
+import com.yahoo.metrics.simple.MetricSettings;
 import com.yahoo.processing.request.CompoundName;
 import com.yahoo.search.Query;
 import com.yahoo.search.Result;
@@ -29,7 +29,18 @@ import java.util.PriorityQueue;
 import java.util.Queue;
 import java.util.logging.Level;
 
-import static com.yahoo.container.protect.Error.*;
+import static com.yahoo.container.protect.Error.BACKEND_COMMUNICATION_ERROR;
+import static com.yahoo.container.protect.Error.EMPTY_DOCUMENTS;
+import static com.yahoo.container.protect.Error.ERROR_IN_PLUGIN;
+import static com.yahoo.container.protect.Error.ILLEGAL_QUERY;
+import static com.yahoo.container.protect.Error.INTERNAL_SERVER_ERROR;
+import static com.yahoo.container.protect.Error.INVALID_QUERY_PARAMETER;
+import static com.yahoo.container.protect.Error.INVALID_QUERY_TRANSFORMATION;
+import static com.yahoo.container.protect.Error.NO_BACKENDS_IN_SERVICE;
+import static com.yahoo.container.protect.Error.RESULT_HAS_ERRORS;
+import static com.yahoo.container.protect.Error.SERVER_IS_MISCONFIGURED;
+import static com.yahoo.container.protect.Error.TIMEOUT;
+import static com.yahoo.container.protect.Error.UNSPECIFIED;
 
 
 /**
@@ -236,7 +247,7 @@ public class StatisticsSearcher extends Searcher {
 
         incrQueryCount(metricContext);
         logQuery(query);
-        long start_ns = System.nanoTime(); // Start time, in nanoseconds.
+        long start_ns = getStartNanoTime(query);
         qps(metricContext);
         Result result;
         //handle exceptions thrown below in searchers
@@ -426,6 +437,16 @@ public class StatisticsSearcher extends Searcher {
         if (minQueue.size() == pos) {
             metric.set(name, minQueue.poll(), context);
         }
+    }
+
+    /**
+     * Returns the relative start time from request was received by jdisc
+     */
+    private static long getStartNanoTime(Query query) {
+        return Optional.ofNullable(query.getHttpRequest())
+                .flatMap(httpRequest -> Optional.ofNullable(httpRequest.getJDiscRequest()))
+                .map(HttpRequest::relativeCreatedAtNanoTime)
+                .orElseGet(System::nanoTime);
     }
 
 }

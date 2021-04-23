@@ -1636,6 +1636,7 @@
       "public boolean isChunked()",
       "public boolean hasChunkedResponse()",
       "public boolean isKeepAlive()",
+      "public long relativeCreatedAtNanoTime()",
       "public java.security.Principal getUserPrincipal()",
       "public void setUserPrincipal(java.security.Principal)",
       "public static com.yahoo.jdisc.http.HttpRequest newServerRequest(com.yahoo.jdisc.service.CurrentContainer, java.net.URI)",
