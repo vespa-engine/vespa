@@ -419,6 +419,7 @@ TEST("test uncased match") {
     EXPECT_FALSE(helper.isMatch("xyza"));
     EXPECT_TRUE(helper.isMatch("xyz"));
     EXPECT_TRUE(helper.isMatch("XyZ"));
+    EXPECT_FALSE(helper.isMatch("Xy"));
 }
 
 TEST("test uncased prefix match") {
@@ -432,6 +433,7 @@ TEST("test uncased prefix match") {
     EXPECT_TRUE(helper.isMatch("xYza"));
     EXPECT_TRUE(helper.isMatch("xyz"));
     EXPECT_TRUE(helper.isMatch("XyZ"));
+    EXPECT_FALSE(helper.isMatch("Xy"));
 }
 
 TEST("test cased match") {
@@ -445,6 +447,7 @@ TEST("test cased match") {
     EXPECT_FALSE(helper.isMatch("xyz"));
     EXPECT_FALSE(helper.isMatch("Xyz"));
     EXPECT_TRUE(helper.isMatch("XyZ"));
+    EXPECT_FALSE(helper.isMatch("Xy"));
 }
 
 TEST("test cased prefix match") {
@@ -459,6 +462,7 @@ TEST("test cased prefix match") {
     EXPECT_FALSE(helper.isMatch("xyz"));
     EXPECT_FALSE(helper.isMatch("Xyz"));
     EXPECT_TRUE(helper.isMatch("XyZ"));
+    EXPECT_FALSE(helper.isMatch("Xy"));
 }
 
 TEST("test uncased regex match") {
@@ -472,6 +476,7 @@ TEST("test uncased regex match") {
     EXPECT_TRUE(helper.isMatch("xyZ"));
     EXPECT_TRUE(helper.isMatch("xyz"));
     EXPECT_FALSE(helper.isMatch("xyaZ"));
+    EXPECT_FALSE(helper.isMatch("xy"));
 }
 
 TEST("test cased regex match") {
@@ -486,6 +491,7 @@ TEST("test cased regex match") {
     EXPECT_TRUE(helper.isMatch("xYZ"));
     EXPECT_FALSE(helper.isMatch("xYz"));
     EXPECT_FALSE(helper.isMatch("xaYZ"));
+    EXPECT_FALSE(helper.isMatch("xY"));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
