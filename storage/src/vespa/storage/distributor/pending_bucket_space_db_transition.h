@@ -36,7 +36,6 @@ private:
 
     document::BucketSpace                     _bucket_space;
     EntryList                                 _entries;
-    uint32_t                                  _iter;
     std::vector<document::BucketId>           _removedBuckets;
     std::vector<Range>                        _missingEntries;
     std::shared_ptr<const ClusterInformation> _clusterInfo;
@@ -51,7 +50,6 @@ private:
     const lib::ClusterState&                  _prevClusterState;
     const lib::ClusterState&                  _newClusterState;
     const api::Timestamp                      _creationTimestamp;
-    const PendingClusterState&                _pendingClusterState;
     DistributorBucketSpace&                   _distributorBucketSpace;
     uint16_t                                  _distributorIndex;
     bool                                      _bucketOwnershipTransfer;
@@ -127,8 +125,7 @@ public:
         }
     };
 
-    PendingBucketSpaceDbTransition(const PendingClusterState &pendingClusterState,
-                                   document::BucketSpace bucket_space,
+    PendingBucketSpaceDbTransition(document::BucketSpace bucket_space,
                                    DistributorBucketSpace &distributorBucketSpace,
                                    bool distributionChanged,
                                    const OutdatedNodes &outdatedNodes,

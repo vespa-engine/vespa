@@ -18,8 +18,7 @@ using lib::Node;
 using lib::NodeType;
 using lib::NodeState;
 
-PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(const PendingClusterState &pendingClusterState,
-                                                               document::BucketSpace bucket_space,
+PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(document::BucketSpace bucket_space,
                                                                DistributorBucketSpace &distributorBucketSpace,
                                                                bool distributionChanged,
                                                                const OutdatedNodes &outdatedNodes,
@@ -28,7 +27,6 @@ PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(const PendingClus
                                                                api::Timestamp creationTimestamp)
     : _bucket_space(bucket_space),
       _entries(),
-      _iter(0),
       _removedBuckets(),
       _missingEntries(),
       _clusterInfo(std::move(clusterInfo)),
@@ -36,7 +34,6 @@ PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(const PendingClus
       _prevClusterState(distributorBucketSpace.getClusterState()),
       _newClusterState(newClusterState),
       _creationTimestamp(creationTimestamp),
-      _pendingClusterState(pendingClusterState),
       _distributorBucketSpace(distributorBucketSpace),
       _distributorIndex(_clusterInfo->getDistributorIndex()),
       _bucketOwnershipTransfer(distributionChanged),
