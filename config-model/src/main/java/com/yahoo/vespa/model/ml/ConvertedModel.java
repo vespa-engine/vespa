@@ -210,6 +210,9 @@ public class ConvertedModel {
         Map<String, ExpressionFunction> expressions = new HashMap<>();
         for (ImportedMlFunction outputFunction : model.outputExpressions()) {
             ExpressionFunction expression = asExpressionFunction(outputFunction);
+            for (Map.Entry<String, TensorType> input : expression.argumentTypes().entrySet()) {
+                profile.addInputFeature(input.getKey(), input.getValue());
+            }
             addExpression(expression, expression.getName(),
                           constantsReplacedByFunctions,
                           model, store, profile, queryProfiles,
@@ -251,13 +254,20 @@ public class ConvertedModel {
                                       QueryProfileRegistry queryProfiles,
                                       Map<String, ExpressionFunction> expressions) {
         expression = expression.withBody(replaceConstantsByFunctions(expression.getBody(), constantsReplacedByFunctions));
+        if (expression.returnType().isEmpty()) {
+            TensorType type = expression.getBody().type(profile.typeContext(queryProfiles));
+            if (type != null) {
+                expression = expression.withReturnType(type);
+            }
+        }
         store.writeExpression(expressionName, expression);
         expressions.put(expressionName, expression);
     }
 
     private static Map<String, ExpressionFunction> convertStored(ModelStore store, RankProfile profile) {
-        for (Pair<String, Tensor> constant : store.readSmallConstants())
+        for (Pair<String, Tensor> constant : store.readSmallConstants()) {
             profile.addConstant(constant.getFirst(), asValue(constant.getSecond()));
+        }
 
         for (RankingConstant constant : store.readLargeConstants()) {
             if ( ! profile.rankingConstants().asMap().containsKey(constant.getName())) {
@@ -269,7 +279,20 @@ public class ConvertedModel {
             addGeneratedFunctionToProfile(profile, function.getFirst(), function.getSecond());
         }
 
-        return store.readExpressions();
+        Map<String, ExpressionFunction> expressions = new HashMap<>();
+        for (Pair<String, ExpressionFunction> output : store.readExpressions()) {
+            String name = output.getFirst();
+            ExpressionFunction expression = output.getSecond();
+            for (Map.Entry<String, TensorType> input : expression.argumentTypes().entrySet()) {
+                profile.addInputFeature(input.getKey(), input.getValue());
+            }
+            TensorType type = expression.getBody().type(profile.typeContext());
+            if (type != null) {
+                expression = expression.withReturnType(type);
+            }
+            expressions.put(name, expression);
+        }
+        return expressions;
     }
 
     private static void transformSmallConstant(ModelStore store, RankProfile profile, String constantName,
@@ -321,8 +344,9 @@ public class ConvertedModel {
                                                    "\nwant to add " + expression + "\n");
             return;
         }
-        var fun = new ExpressionFunction(functionName, expression);
-        profile.addFunction(fun, false);  // TODO: Inline if only used once
+        ExpressionFunction function = new ExpressionFunction(functionName, expression);
+        // XXX should we resolve type here?
+        profile.addFunction(function, false);  // TODO: Inline if only used once
     }
 
     /**
@@ -465,14 +489,14 @@ public class ConvertedModel {
             application.getFile(modelFiles.expressionPath(name)).writeFile(new StringReader(b.toString()));
         }
 
-        Map<String, ExpressionFunction> readExpressions() {
-            Map<String, ExpressionFunction> expressions = new HashMap<>();
+        List<Pair<String, ExpressionFunction>> readExpressions() {
+            List<Pair<String, ExpressionFunction>> expressions = new ArrayList<>();
             ApplicationFile expressionPath = application.getFile(modelFiles.expressionsPath());
-            if ( ! expressionPath.exists() || ! expressionPath.isDirectory()) return Collections.emptyMap();
+            if ( ! expressionPath.exists() || ! expressionPath.isDirectory()) return Collections.emptyList();
             for (ApplicationFile expressionFile : expressionPath.listFiles()) {
-                try (BufferedReader reader = new BufferedReader(expressionFile.createReader())){
+                try (BufferedReader reader = new BufferedReader(expressionFile.createReader())) {
                     String name = expressionFile.getPath().getName();
-                    expressions.put(name, readExpression(name, reader));
+                    expressions.add(new Pair<>(name, readExpression(name, reader)));
                 }
                 catch (IOException e) {
                     throw new UncheckedIOException("Failed reading " + expressionFile.getPath(), e);
