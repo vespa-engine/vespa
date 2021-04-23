@@ -31,7 +31,7 @@ public class RequestHandlerSpec {
 
     public static class Builder {
 
-        private AclMapping aclMapping = new DefaultAclMapping();
+        private AclMapping aclMapping = HttpMethodAclMapping.standard().build();
 
         public Builder withAclMapping(AclMapping aclMapping) {
             this.aclMapping = Objects.requireNonNull(aclMapping);

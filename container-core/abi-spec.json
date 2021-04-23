@@ -546,20 +546,6 @@
     ],
     "fields": []
   },
-  "com.yahoo.container.jdisc.DefaultAclMapping": {
-    "superClass": "java.lang.Object",
-    "interfaces": [
-      "com.yahoo.container.jdisc.AclMapping"
-    ],
-    "attributes": [
-      "public"
-    ],
-    "methods": [
-      "public void <init>()",
-      "public com.yahoo.container.jdisc.AclMapping$Action get(com.yahoo.container.jdisc.RequestView)"
-    ],
-    "fields": []
-  },
   "com.yahoo.container.jdisc.EmptyResponse": {
     "superClass": "com.yahoo.container.jdisc.HttpResponse",
     "interfaces": [],
@@ -587,6 +573,33 @@
       "public com.yahoo.container.handler.Timing getTiming()",
       "public com.yahoo.container.handler.Coverage getCoverage()",
       "public com.yahoo.container.logging.HitCounts getHitCounts()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.container.jdisc.HttpMethodAclMapping$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.container.jdisc.HttpMethodAclMapping$Builder override(com.yahoo.jdisc.http.HttpRequest$Method, com.yahoo.container.jdisc.AclMapping$Action)",
+      "public com.yahoo.container.jdisc.HttpMethodAclMapping build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.container.jdisc.HttpMethodAclMapping": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.container.jdisc.AclMapping"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public com.yahoo.container.jdisc.AclMapping$Action get(com.yahoo.container.jdisc.RequestView)",
+      "public static com.yahoo.container.jdisc.HttpMethodAclMapping$Builder standard()"
     ],
     "fields": []
   },
