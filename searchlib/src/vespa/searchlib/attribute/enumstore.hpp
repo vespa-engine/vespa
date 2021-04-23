@@ -287,7 +287,7 @@ EnumStoreT<EntryT>::allocate_optionally_folded_comparator(bool folded) const
 }
 
 template <typename EntryT>
-EnumStoreT<EntryT>::ComparatorType
+typename EnumStoreT<EntryT>::ComparatorType
 EnumStoreT<EntryT>::make_optionally_folded_comparator(bool folded) const
 {
     return (has_string_type() && folded)
