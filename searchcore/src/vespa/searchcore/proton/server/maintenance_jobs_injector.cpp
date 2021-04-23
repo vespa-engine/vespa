@@ -41,10 +41,10 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
     for (auto &lidHandler : lscHandlers) {
         std::shared_ptr<IMaintenanceJob> job;
         if (config.getLidSpaceCompactionConfig().useBucketExecutor()) {
-            job = lidspace::CompactionJob::create(config.getLidSpaceCompactionConfig(), std::move(lidHandler), opStorer,
-                                                  controller.masterThread(), bucketExecutor, diskMemUsageNotifier,
-                                                  config.getBlockableJobConfig(), clusterStateChangedNotifier,
-                                                  (calc ? calc->nodeRetired() : false), bucketSpace);
+            job = lidspace::CompactionJob::create(config.getLidSpaceCompactionConfig(), controller.retainDB(),
+                                                  std::move(lidHandler), opStorer, controller.masterThread(),
+                                                  bucketExecutor, diskMemUsageNotifier,config.getBlockableJobConfig(),
+                                                  clusterStateChangedNotifier, (calc ? calc->nodeRetired() : false), bucketSpace);
         } else {
             job = std::make_shared<LidSpaceCompactionJob>(
                     config.getLidSpaceCompactionConfig(),
@@ -76,7 +76,7 @@ injectBucketMoveJob(MaintenanceController &controller,
 {
     std::shared_ptr<IMaintenanceJob> bmj;
     if (config.getBucketMoveConfig().useBucketExecutor()) {
-        bmj = BucketMoveJobV2::create(calc, moveHandler, bucketModifiedHandler, controller.masterThread(),
+        bmj = BucketMoveJobV2::create(calc, controller.retainDB(), moveHandler, bucketModifiedHandler, controller.masterThread(),
                                       bucketExecutor, controller.getReadySubDB(), controller.getNotReadySubDB(),
                                       bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
                                       diskMemUsageNotifier, config.getBlockableJobConfig(), docTypeName, bucketSpace);

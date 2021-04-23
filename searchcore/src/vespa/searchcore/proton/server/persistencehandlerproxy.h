@@ -3,6 +3,7 @@
 #pragma once
 
 #include <vespa/searchcore/proton/persistenceengine/ipersistencehandler.h>
+#include <vespa/searchcore/proton/common/monitored_refcount.h>
 
 namespace proton {
 
@@ -13,10 +14,11 @@ class ClusterStateHandler;
 class PersistenceHandlerProxy : public IPersistenceHandler
 {
 private:
-    std::shared_ptr<DocumentDB>       _documentDB;
-    FeedHandler         &_feedHandler;
-    BucketHandler       &_bucketHandler;
-    ClusterStateHandler &_clusterStateHandler;
+    std::shared_ptr<DocumentDB>  _documentDB;
+    FeedHandler                 &_feedHandler;
+    BucketHandler               &_bucketHandler;
+    ClusterStateHandler         &_clusterStateHandler;
+    RetainGuard                  _retainGuard;
 public:
     explicit PersistenceHandlerProxy(std::shared_ptr<DocumentDB> documentDB);
 

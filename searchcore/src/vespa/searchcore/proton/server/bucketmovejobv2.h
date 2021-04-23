@@ -10,6 +10,8 @@
 #include "maintenancedocumentsubdb.h"
 #include <vespa/searchcore/proton/bucketdb/bucketscaniterator.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
+#include <vespa/searchcore/proton/common/monitored_refcount.h>
+
 
 namespace storage::spi { struct BucketExecutor; }
 namespace searchcorespi::index { struct IThreadService; }
@@ -57,6 +59,7 @@ private:
     using Movers = std::vector<BucketMoverSP>;
     using GuardedMoveOps = BucketMover::GuardedMoveOps;
     std::shared_ptr<IBucketStateCalculator>   _calc;
+    RetainGuard                               _dbRetainer;
     IDocumentMoveHandler                     &_moveHandler;
     IBucketModifiedHandler                   &_modifiedHandler;
     IThreadService                           &_master;
@@ -78,6 +81,7 @@ private:
     IDiskMemUsageNotifier             &_diskMemUsageNotifier;
 
     BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &calc,
+                    RetainGuard dbRetainer,
                     IDocumentMoveHandler &moveHandler,
                     IBucketModifiedHandler &modifiedHandler,
                     IThreadService & master,
@@ -112,6 +116,7 @@ private:
 public:
     static std::shared_ptr<BucketMoveJobV2>
     create(const std::shared_ptr<IBucketStateCalculator> &calc,
+           RetainGuard dbRetainer,
            IDocumentMoveHandler &moveHandler,
            IBucketModifiedHandler &modifiedHandler,
            IThreadService & master,
@@ -127,7 +132,7 @@ public:
            document::BucketSpace bucketSpace)
     {
         return std::shared_ptr<BucketMoveJobV2>(
-                new BucketMoveJobV2(calc, moveHandler, modifiedHandler, master, bucketExecutor, ready, notReady,
+                new BucketMoveJobV2(calc, std::move(dbRetainer), moveHandler, modifiedHandler, master, bucketExecutor, ready, notReady,
                                     bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
                                     diskMemUsageNotifier, blockableConfig, docTypeName, bucketSpace));
     }

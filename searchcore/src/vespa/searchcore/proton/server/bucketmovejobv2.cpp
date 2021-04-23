@@ -54,6 +54,7 @@ blockedDueToClusterState(const std::shared_ptr<IBucketStateCalculator> &calc)
 }
 
 BucketMoveJobV2::BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &calc,
+                                 RetainGuard dbRetainer,
                                  IDocumentMoveHandler &moveHandler,
                                  IBucketModifiedHandler &modifiedHandler,
                                  IThreadService & master,
@@ -74,6 +75,7 @@ BucketMoveJobV2::BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &
       IDiskMemUsageListener(),
       std::enable_shared_from_this<BucketMoveJobV2>(),
       _calc(calc),
+      _dbRetainer(std::move(dbRetainer)),
       _moveHandler(moveHandler),
       _modifiedHandler(modifiedHandler),
       _master(master),

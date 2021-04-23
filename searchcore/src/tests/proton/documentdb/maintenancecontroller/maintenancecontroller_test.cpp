@@ -6,6 +6,7 @@
 #include <vespa/searchcore/proton/attribute/i_attribute_manager.h>
 #include <vespa/searchcore/proton/bucketdb/bucket_create_notifier.h>
 #include <vespa/searchcore/proton/common/doctypename.h>
+#include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/searchcore/proton/common/transient_resource_usage_provider.h>
 #include <vespa/searchcore/proton/documentmetastore/operation_listener.h>
 #include <vespa/searchcore/proton/documentmetastore/documentmetastore.h>
@@ -376,6 +377,7 @@ public:
     AttributeUsageFilter               _attributeUsageFilter;
     test::DiskMemUsageNotifier         _diskMemUsageNotifier;
     BucketCreateNotifier               _bucketCreateNotifier;
+    MonitoredRefCount                  _refCount;
     MaintenanceController              _mc;
 
     MaintenanceControllerFixture();
@@ -794,7 +796,8 @@ MaintenanceControllerFixture::MaintenanceControllerFixture()
       _notReadyAttributeManager(std::make_shared<MyAttributeManager>()),
       _attributeUsageFilter(),
       _bucketCreateNotifier(),
-      _mc(_threadService, _genericExecutor, _docTypeName)
+      _refCount(),
+      _mc(_threadService, _genericExecutor, _refCount, _docTypeName)
 {
     std::vector<MyDocumentSubDB *> subDBs;
     subDBs.push_back(&_ready);

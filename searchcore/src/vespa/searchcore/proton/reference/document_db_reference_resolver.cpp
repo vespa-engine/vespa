@@ -125,11 +125,9 @@ DocumentDBReferenceResolver::listenToGidToLidChanges(const IAttributeManager &at
         auto &attr = *attrSP;
         vespalib::string docTypeName = getTargetDocTypeName(attr.getName(), _thisDocType);
         GidToLidChangeRegistrator &registrator = getRegistrator(docTypeName);
-        auto listener = std::make_unique<GidToLidChangeListener>(_attributeFieldWriter,
-                                                                 attrSP,
-                                                                 _refCount,
-                                                                 attr.getName(),
-                                                                 _thisDocType.getName());
+        auto listener = std::make_unique<GidToLidChangeListener>(_attributeFieldWriter, attrSP,
+                                                                 RetainGuard(_refCount),
+                                                                 attr.getName(), _thisDocType.getName());
         registrator.addListener(std::move(listener));
     }
 }
@@ -159,7 +157,6 @@ DocumentDBReferenceResolver::DocumentDBReferenceResolver(const IDocumentDBRefere
                                                          const DocumentType &thisDocType,
                                                          const ImportedFieldsConfig &importedFieldsCfg,
                                                          const document::DocumentType &prevThisDocType,
-
                                                          MonitoredRefCount &refCount,
                                                          ISequencedTaskExecutor &attributeFieldWriter,
                                                          bool useReferences)

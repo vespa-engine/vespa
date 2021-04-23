@@ -7,8 +7,10 @@
 #include "frozenbuckets.h"
 #include "ibucketfreezelistener.h"
 #include <vespa/searchcore/proton/common/doctypename.h>
-#include <mutex>
+#include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/vespalib/util/scheduledexecutor.h>
+#include <mutex>
+
 
 namespace vespalib {
     class Timer;
@@ -20,6 +22,7 @@ namespace proton {
 
 class MaintenanceJobRunner;
 class DocumentDBMaintenanceConfig;
+class MonitoredRefCount;
 
 /**
  * Class that controls the bucket moving between ready and notready sub databases
@@ -35,7 +38,7 @@ public:
     using UP = std::unique_ptr<MaintenanceController>;
     enum class State {INITIALIZING, STARTED, PAUSED, STOPPING};
 
-    MaintenanceController(IThreadService &masterThread, vespalib::Executor & defaultExecutor, const DocTypeName &docTypeName);
+    MaintenanceController(IThreadService &masterThread, vespalib::Executor & defaultExecutor, MonitoredRefCount & refCount, const DocTypeName &docTypeName);
 
     ~MaintenanceController() override;
     void registerJobInMasterThread(IMaintenanceJob::UP job);
@@ -73,12 +76,14 @@ public:
     const MaintenanceDocumentSubDB & getNotReadySubDB() const { return _notReadySubDB; }
     IThreadService & masterThread() { return _masterThread; }
     const DocTypeName & getDocTypeName() const { return _docTypeName; }
+    RetainGuard retainDB() { return RetainGuard(_refCount); }
 private:
     using Mutex = std::mutex;
     using Guard = std::lock_guard<Mutex>;
 
     IThreadService                   &_masterThread;
     vespalib::Executor               &_defaultExecutor;
+    MonitoredRefCount                &_refCount;
     MaintenanceDocumentSubDB          _readySubDB;
     MaintenanceDocumentSubDB          _remSubDB;
     MaintenanceDocumentSubDB          _notReadySubDB;

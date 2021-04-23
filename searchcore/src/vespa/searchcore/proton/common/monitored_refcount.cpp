@@ -18,14 +18,14 @@ MonitoredRefCount::~MonitoredRefCount()
 }
 
 void
-MonitoredRefCount::retain()
+MonitoredRefCount::retain() noexcept
 {
     std::lock_guard<std::mutex> guard(_lock);
     ++_refCount;
 }
 
 void
-MonitoredRefCount::release()
+MonitoredRefCount::release() noexcept
 {
     std::lock_guard<std::mutex> guard(_lock);
     --_refCount;

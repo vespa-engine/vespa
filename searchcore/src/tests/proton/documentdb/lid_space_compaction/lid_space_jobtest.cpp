@@ -56,7 +56,7 @@ JobTestBase::init(uint32_t allowedLidBloat,
         _singleExecutor = std::make_unique<vespalib::ThreadStackExecutor>(1, 0x10000);
         _master = std::make_unique<proton::ExecutorThreadService> (*_singleExecutor);
         _bucketExecutor = std::make_unique<storage::spi::dummy::DummyBucketExecutor>(4);
-        _job = lidspace::CompactionJob::create(compactCfg, _handler, _storer, *_master, *_bucketExecutor,
+        _job = lidspace::CompactionJob::create(compactCfg, RetainGuard(_refCount), _handler, _storer, *_master, *_bucketExecutor,
                                                _diskMemUsageNotifier, blockableCfg, _clusterStateHandler, nodeRetired,
                                                document::BucketSpace::placeHolder());
     } else {

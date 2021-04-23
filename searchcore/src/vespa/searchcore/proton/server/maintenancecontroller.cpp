@@ -40,10 +40,12 @@ isRunningOrRunnable(const MaintenanceJobRunner & job, const Executor * master) {
 
 MaintenanceController::MaintenanceController(IThreadService &masterThread,
                                              vespalib::Executor & defaultExecutor,
+                                             MonitoredRefCount & refCount,
                                              const DocTypeName &docTypeName)
     : IBucketFreezeListener(),
       _masterThread(masterThread),
       _defaultExecutor(defaultExecutor),
+      _refCount(refCount),
       _readySubDB(),
       _remSubDB(),
       _notReadySubDB(),
