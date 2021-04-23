@@ -53,7 +53,8 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _comp_reg(compReg),
       _metrics(std::make_shared<DistributorMetricSet>()),
       _messageSender(messageSender),
-      _stripe(std::make_unique<DistributorStripe>(compReg, *_metrics, node_identity, threadPool, doneInitHandler, *this)),
+      _stripe(std::make_unique<DistributorStripe>(compReg, *_metrics, node_identity, threadPool,
+                                                  doneInitHandler, *this, (num_distributor_stripes == 0))),
       _stripe_accessor(std::make_unique<LegacySingleStripeAccessor>(*_stripe)),
       _component(compReg, "distributor"),
       _bucket_db_updater(),
@@ -306,11 +307,13 @@ Distributor::storageDistributionChanged()
 void
 Distributor::enableNextDistribution()
 {
-    if (_next_distribution && _bucket_db_updater) {
-        _distribution = _next_distribution;
-        _next_distribution = std::shared_ptr<lib::Distribution>();
-        auto new_configs = BucketSpaceDistributionConfigs::from_default_distribution(_distribution);
-        _bucket_db_updater->storage_distribution_changed(new_configs);
+    if (_bucket_db_updater) {
+        if (_next_distribution) {
+            _distribution = _next_distribution;
+            _next_distribution = std::shared_ptr<lib::Distribution>();
+            auto new_configs = BucketSpaceDistributionConfigs::from_default_distribution(_distribution);
+            _bucket_db_updater->storage_distribution_changed(new_configs);
+        }
     } else {
         _stripe->enableNextDistribution();
     }

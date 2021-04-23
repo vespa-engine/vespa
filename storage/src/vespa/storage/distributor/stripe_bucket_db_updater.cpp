@@ -31,7 +31,8 @@ StripeBucketDBUpdater::StripeBucketDBUpdater(DistributorStripeInterface& owner,
                                              DistributorBucketSpaceRepo& bucketSpaceRepo,
                                              DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
                                              DistributorMessageSender& sender,
-                                             DistributorComponentRegister& compReg)
+                                             DistributorComponentRegister& compReg,
+                                             bool use_legacy_mode)
     : framework::StatusReporter("bucketdb", "Bucket DB Updater"),
       _distributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Bucket DB Updater"),
       _node_ctx(_distributorComponent),
@@ -48,7 +49,8 @@ StripeBucketDBUpdater::StripeBucketDBUpdater(DistributorStripeInterface& owner,
       _stale_reads_enabled(false),
       _active_distribution_contexts(),
       _explicit_transition_read_guard(),
-      _distribution_context_mutex()
+      _distribution_context_mutex(),
+      _use_legacy_mode(use_legacy_mode)
 {
     for (auto& elem : _op_ctx.bucket_space_repo()) {
         _active_distribution_contexts.emplace(
@@ -221,6 +223,7 @@ StripeBucketDBUpdater::removeSuperfluousBuckets(
         const lib::ClusterStateBundle& newState,
         bool is_distribution_config_change)
 {
+    assert(_use_legacy_mode);
     const bool move_to_read_only_db = shouldDeferStateEnabling();
     const char* up_states = _op_ctx.storage_node_up_states();
     for (auto& elem : _op_ctx.bucket_space_repo()) {
@@ -267,6 +270,7 @@ StripeBucketDBUpdater::remove_superfluous_buckets(
             const lib::ClusterState& new_state,
             bool is_distribution_change)
 {
+    assert(!_use_legacy_mode);
     (void)is_distribution_change; // TODO remove if not needed
     const bool move_to_read_only_db = shouldDeferStateEnabling();
     const char* up_states = _op_ctx.storage_node_up_states();
@@ -308,6 +312,7 @@ StripeBucketDBUpdater::merge_entries_into_db(document::BucketSpace bucket_space,
                                              const std::unordered_set<uint16_t>& outdated_nodes,
                                              const std::vector<dbtransition::Entry>& entries)
 {
+    assert(!_use_legacy_mode);
     auto& s = _op_ctx.bucket_space_repo().get(bucket_space);
     auto& bucket_db = s.getBucketDatabase();
 
@@ -461,6 +466,7 @@ bool
 StripeBucketDBUpdater::onSetSystemState(
         const std::shared_ptr<api::SetSystemStateCommand>& cmd)
 {
+    assert(_use_legacy_mode);
     LOG(debug,
         "Received new cluster state %s",
         cmd->getSystemState().toString().c_str());
@@ -507,6 +513,7 @@ StripeBucketDBUpdater::onSetSystemState(
 bool
 StripeBucketDBUpdater::onActivateClusterStateVersion(const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd)
 {
+    assert(_use_legacy_mode);
     if (hasPendingClusterState() && _pendingClusterState->isVersionedTransition()) {
         const auto pending_version = _pendingClusterState->clusterStateVersion();
         if (pending_version == cmd->version()) {

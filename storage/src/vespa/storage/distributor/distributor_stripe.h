@@ -59,7 +59,8 @@ public:
                       const NodeIdentity& node_identity,
                       framework::TickingThreadPool&,
                       DoneInitializeHandler&,
-                      ChainedMessageSender& messageSender);
+                      ChainedMessageSender& messageSender,
+                      bool use_legacy_mode);
 
     ~DistributorStripe() override;
 
@@ -333,6 +334,7 @@ private:
     std::chrono::steady_clock::time_point _last_db_memory_sample_time_point;
     size_t _inhibited_maintenance_tick_count;
     bool _must_send_updated_host_info;
+    bool _use_legacy_mode;
 };
 
 }

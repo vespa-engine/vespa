@@ -38,7 +38,8 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
                                      const NodeIdentity& node_identity,
                                      framework::TickingThreadPool& threadPool,
                                      DoneInitializeHandler& doneInitHandler,
-                                     ChainedMessageSender& messageSender)
+                                     ChainedMessageSender& messageSender,
+                                     bool use_legacy_mode)
     : DistributorStripeInterface(),
       framework::StatusReporter("distributor", "Distributor"),
       _clusterStateBundle(lib::ClusterState()),
@@ -50,7 +51,7 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _maintenanceOperationOwner(*this, _component.getClock()),
       _operation_sequencer(std::make_unique<OperationSequencer>()),
       _pendingMessageTracker(compReg),
-      _bucketDBUpdater(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, *this, compReg),
+      _bucketDBUpdater(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, *this, compReg, use_legacy_mode),
       _distributorStatusDelegate(compReg, *this, *this),
       _bucketDBStatusDelegate(compReg, *this, _bucketDBUpdater),
       _idealStateManager(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, compReg),
@@ -79,7 +80,8 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _db_memory_sample_interval(30s),
       _last_db_memory_sample_time_point(),
       _inhibited_maintenance_tick_count(0),
-      _must_send_updated_host_info(false)
+      _must_send_updated_host_info(false),
+      _use_legacy_mode(use_legacy_mode)
 {
     _bucketDBStatusDelegate.registerStatusPage();
     propagateDefaultDistribution(_component.getDistribution());
@@ -387,6 +389,7 @@ void DistributorStripe::invalidate_bucket_spaces_stats() {
 void
 DistributorStripe::storage_distribution_changed()
 {
+    assert(_use_legacy_mode);
     if (!_distribution.get()
         || *_component.getDistribution() != *_distribution)
     {
@@ -468,6 +471,7 @@ DistributorStripe::checkBucketForSplit(document::BucketSpace bucketSpace,
 void
 DistributorStripe::enableNextDistribution()
 {
+    assert(_use_legacy_mode);
     if (_nextDistribution.get()) {
         _distribution = _nextDistribution;
         propagateDefaultDistribution(_distribution);
@@ -492,6 +496,7 @@ DistributorStripe::propagateDefaultDistribution(
 // Only called when stripe is in rendezvous freeze
 void
 DistributorStripe::update_distribution_config(const BucketSpaceDistributionConfigs& new_configs) {
+    assert(!_use_legacy_mode);
     auto default_distr = new_configs.get_or_nullptr(document::FixedBucketSpaces::default_space());
     auto global_distr  = new_configs.get_or_nullptr(document::FixedBucketSpaces::global_space());
     assert(default_distr && global_distr);
@@ -736,7 +741,9 @@ framework::ThreadWaitInfo
 DistributorStripe::doCriticalTick(framework::ThreadIndex)
 {
     _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
-    enableNextDistribution();
+    if (_use_legacy_mode) {
+        enableNextDistribution();
+    }
     enableNextConfig();
     fetchStatusRequests();
     fetchExternalMessages();
