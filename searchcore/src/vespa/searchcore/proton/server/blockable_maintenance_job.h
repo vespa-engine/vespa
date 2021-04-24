@@ -49,6 +49,7 @@ public:
     bool isBlocked(BlockedReason reason);
     void considerRun();
 
+    void onStop() override;
     void setBlocked(BlockedReason reason) override;
     void unBlock(BlockedReason reason) override;
     bool isBlocked() const override;

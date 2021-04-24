@@ -28,7 +28,6 @@ public:
                           IClusterStateChangedNotifier &clusterStateChangedNotifier,
                           bool nodeRetired);
     ~LidSpaceCompactionJob() override;
-    void onStop() override { }
 };
 
 } // namespace proton
