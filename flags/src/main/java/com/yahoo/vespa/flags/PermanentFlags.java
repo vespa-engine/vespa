@@ -151,12 +151,6 @@ public class PermanentFlags {
             "Takes effect immediately"
     );
 
-    public static final UnboundBooleanFlag ALLOW_DISABLE_MTLS = defineFeatureFlag(
-            "allow-disable-mtls", false,
-            "Allow application to disable client authentication",
-            "Takes effect on redeployment",
-            APPLICATION_ID);
-
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(
