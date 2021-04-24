@@ -160,6 +160,7 @@ CompactionJob::create(const DocumentDBLidSpaceCompactionConfig &config,
 
 void
 CompactionJob::onStop() {
+    BlockableMaintenanceJob::onStop();
     _stopped = true;
 }
 

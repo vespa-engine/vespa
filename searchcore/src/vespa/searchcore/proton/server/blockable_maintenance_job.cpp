@@ -91,6 +91,13 @@ BlockableMaintenanceJob::unBlock(BlockedReason reason)
     }
 }
 
+void
+BlockableMaintenanceJob::onStop()
+{
+    LockGuard guard(_mutex);
+    _runner = nullptr;
+}
+
 bool
 BlockableMaintenanceJob::isBlocked() const
 {

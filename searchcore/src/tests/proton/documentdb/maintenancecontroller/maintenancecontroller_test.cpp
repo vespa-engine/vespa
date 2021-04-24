@@ -308,7 +308,10 @@ struct MySimpleJob : public BlockableMaintenanceJob
         ++_runCnt;
         return true;
     }
-    void onStop() override { _stopped = true; }
+    void onStop() override {
+        BlockableMaintenanceJob::onStop();
+        _stopped = true;
+    }
 };
 
 struct MySplitJob : public MySimpleJob
@@ -345,7 +348,10 @@ struct MyLongRunningJob : public BlockableMaintenanceJob
         usleep(10000);
         return false;
     }
-    void onStop() override { _stopped = true; }
+    void onStop() override {
+        BlockableMaintenanceJob::onStop();
+        _stopped = true;
+    }
 };
 
 using MyAttributeManager = test::MockAttributeManager;

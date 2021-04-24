@@ -451,6 +451,7 @@ BucketMoveJobV2::notifyDiskMemUsage(DiskMemUsageState state)
 void
 BucketMoveJobV2::onStop() {
     // Called by master write thread
+    BlockableMaintenanceJob::onStop();
     _stopped = true;
 }
 
