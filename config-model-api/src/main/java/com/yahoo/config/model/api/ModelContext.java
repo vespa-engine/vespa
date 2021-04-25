@@ -132,8 +132,6 @@ public interface ModelContext {
         // TODO: Remove after May 2021
         default boolean dedicatedClusterControllerCluster() { return hostedVespa(); }
 
-        // Allow disabling mTLS for now, harden later
-        default boolean allowDisableMtls() { return true; }
     }
 
     @Retention(RetentionPolicy.RUNTIME)
