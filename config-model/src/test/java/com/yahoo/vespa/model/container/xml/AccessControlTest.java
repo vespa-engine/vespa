@@ -33,6 +33,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertThat;
 import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 /**
  * @author gjoranv
@@ -290,14 +291,44 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
 
     @Test
     public void access_control_client_auth_can_be_overridden() {
-        Http http = createModelAndGetHttp(
-                "  <http>",
-                "    <filtering>",
-                "      <access-control tls-handshake-client-auth=\"want\"/>",
-                "    </filtering>",
-                "  </http>");
+        AthenzDomain tenantDomain = AthenzDomain.from("my-tenant-domain");
+        DeployState state = new DeployState.Builder().properties(
+                new TestProperties()
+                        .setAthenzDomain(tenantDomain)
+                        .setHostedVespa(true)
+                        .allowDisableMtls(true))
+                .build();
+        Http http = createModelAndGetHttp(state,
+                                          "  <http>",
+                                          "    <filtering>",
+                                          "      <access-control tls-handshake-client-auth=\"want\"/>",
+                                          "    </filtering>",
+                                          "  </http>");
         assertTrue(http.getAccessControl().isPresent());
         assertEquals(AccessControl.ClientAuthentication.want, http.getAccessControl().get().clientAuthentication);
+    }
+
+    @Test
+    public void access_control_client_auth_cannot_be_overridden_when_disabled() {
+        AthenzDomain tenantDomain = AthenzDomain.from("my-tenant-domain");
+        DeployState state = new DeployState.Builder().properties(
+                new TestProperties()
+                        .setAthenzDomain(tenantDomain)
+                        .setHostedVespa(true)
+                        .allowDisableMtls(false))
+                .build();
+
+        try {
+            Http http = createModelAndGetHttp(state,
+                                              "  <http>",
+                                              "    <filtering>",
+                                              "      <access-control tls-handshake-client-auth=\"want\"/>",
+                                              "    </filtering>",
+                                              "  </http>");
+            fail("Overriding tls-handshake-client-auth allowed, but should have failed");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Overriding 'tls-handshake-client-auth' for application is not allowed.", e.getMessage());
+        }
     }
 
     @Test
@@ -323,17 +354,20 @@ public class AccessControlTest extends ContainerModelBuilderTestBase {
     }
 
     private Http createModelAndGetHttp(String... httpElement) {
-        List<String> servicesXml = new ArrayList<>();
-        servicesXml.add("<container version='1.0'>");
-        servicesXml.addAll(List.of(httpElement));
-        servicesXml.add("</container>");
-
         AthenzDomain tenantDomain = AthenzDomain.from("my-tenant-domain");
         DeployState state = new DeployState.Builder().properties(
                 new TestProperties()
                         .setAthenzDomain(tenantDomain)
                         .setHostedVespa(true))
                 .build();
+        return createModelAndGetHttp(state, httpElement);
+    }
+    private Http createModelAndGetHttp(DeployState state, String... httpElement) {
+        List<String> servicesXml = new ArrayList<>();
+        servicesXml.add("<container version='1.0'>");
+        servicesXml.addAll(List.of(httpElement));
+        servicesXml.add("</container>");
+
         createModel(root, state, null, DomBuilderTest.parse(servicesXml.toArray(String[]::new)));
         return  ((ApplicationContainer) root.getProducer("container/container.0")).getHttp();
     }

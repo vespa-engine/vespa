@@ -28,6 +28,7 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
+import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -295,6 +296,7 @@ public class ModelContextImpl implements ModelContext {
         private final List<TenantSecretStore> tenantSecretStores;
         private final SecretStore secretStore;
         private final StringFlag jvmGCOptionsFlag;
+        private final boolean allowDisableMtls;
 
         public Properties(ApplicationId applicationId,
                           ConfigserverConfig configserverConfig,
@@ -329,6 +331,8 @@ public class ModelContextImpl implements ModelContext {
             this.secretStore = secretStore;
             this.jvmGCOptionsFlag = PermanentFlags.JVM_GC_OPTIONS.bindTo(flagSource)
                                                                  .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm());
+            this.allowDisableMtls = PermanentFlags.ALLOW_DISABLE_MTLS.bindTo(flagSource)
+                    .with(FetchVector.Dimension.APPLICATION_ID, applicationId.serializedForm()).value();
         }
 
         @Override public ModelContext.FeatureFlags featureFlags() { return featureFlags; }
@@ -392,6 +396,10 @@ public class ModelContextImpl implements ModelContext {
             return flagValueForClusterType(jvmGCOptionsFlag, clusterType);
         }
 
+        @Override
+        public boolean allowDisableMtls() {
+            return allowDisableMtls;
+        }
 
         public String flagValueForClusterType(StringFlag flag, Optional<ClusterSpec.Type> clusterType) {
             return clusterType.map(type -> flag.with(CLUSTER_TYPE, type.name()))
