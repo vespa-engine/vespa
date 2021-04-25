@@ -43,10 +43,6 @@ public class DictionaryProcessor extends Processor {
                     if (dictionary.getMatch() != Case.CASED) {
                         fail(search, field, "hash dictionary require cased match");
                     }
-                } else {
-                    if (dictionary.getMatch() != Case.UNCASED) {
-                        fail(search, field, "btree dictionary require uncased match");
-                    }
                 }
                 if (! dictionary.getMatch().equals(attribute.getCase())) {
                     fail(search, field, "Dictionary casing '" + dictionary.getMatch() + "' does not match field match casing '" + attribute.getCase() + "'");
