@@ -78,16 +78,13 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
                 readAttr -> builder.readEnabled(Boolean.valueOf(readAttr)));
         XmlHelper.getOptionalAttribute(accessControlElem, "write").ifPresent(
                 writeAttr -> builder.writeEnabled(Boolean.valueOf(writeAttr)));
-
-        AccessControl.ClientAuthentication clientAuth =
+        builder.clientAuthentication(
                 XmlHelper.getOptionalAttribute(accessControlElem, "tls-handshake-client-auth")
-                        .filter("want"::equals)
-                        .map(value -> AccessControl.ClientAuthentication.want)
-                        .orElse(AccessControl.ClientAuthentication.need);
-        if (! deployState.getProperties().allowDisableMtls() && clientAuth == AccessControl.ClientAuthentication.want) {
-            throw new IllegalArgumentException("Overriding 'tls-handshake-client-auth' for application is not allowed.");
-        }
-        builder.clientAuthentication(clientAuth);
+                        .map(value -> "want".equals(value)
+                                ? AccessControl.ClientAuthentication.want
+                                : AccessControl.ClientAuthentication.need)
+                        .orElse(AccessControl.ClientAuthentication.need)
+        );
 
         Element excludeElem = XML.getChild(accessControlElem, "exclude");
         if (excludeElem != null) {
