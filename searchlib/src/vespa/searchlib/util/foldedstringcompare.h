@@ -9,15 +9,13 @@ namespace search {
 class FoldedStringCompare
 {
 public:
-    FoldedStringCompare() {}
-
     /**
      * count number of UCS-4 characters in utf8 string
      *
      * @param key       NUL terminated utf8 string
      * @return integer  number of symbols in utf8 string before NUL
      */
-    size_t size(const char *key) const;
+    static size_t size(const char *key);
 
     /**
      * Compare utf8 key with utf8 other key after folding both
@@ -26,7 +24,7 @@ public:
      * @param okey      NUL terminated utf8 string
      * @return integer   -1 if key < okey, 0 if key == okey, 1 if key > okey
      **/
-    int compareFolded(const char *key, const char *okey) const;
+    static int compareFolded(const char *key, const char *okey);
 
     /**
      * Compare utf8 key with utf8 other key after folding both.
@@ -38,9 +36,7 @@ public:
      *
      * @return integer   -1 if key < okey, 0 if key == okey, 1 if key > okey
      */
-    int compareFoldedPrefix(const char *key,
-                            const char *okey,
-                            size_t prefixLen) const;
+    static int compareFoldedPrefix(const char *key, const char *okey, size_t prefixLen);
 
     /*
      * Compare utf8 key with utf8 other key after folding both, if
@@ -50,7 +46,17 @@ public:
      * @param okey      NUL terminated utf8 string
      * @return integer   -1 if key < okey, 0 if key == okey, 1 if key > okey
      */
-    int compare(const char *key, const char *okey) const;
+    static int compare(const char *key, const char *okey);
+
+    /*
+     * Compare utf8 key with utf8 other key after folding both for prefix, if
+     * they seem equal then fall back to comparing without folding.
+     *
+     * @param key       NUL terminated utf8 string
+     * @param okey      NUL terminated utf8 string
+     * @return integer   -1 if key < okey, 0 if key == okey, 1 if key > okey
+     */
+    static int comparePrefix(const char *key, const char *okey, size_t prefixLen);
 };
 
 } // namespace search

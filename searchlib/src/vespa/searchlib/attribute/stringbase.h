@@ -8,7 +8,6 @@
 #include <vespa/searchlib/attribute/changevector.h>
 #include <vespa/searchlib/attribute/i_enum_store.h>
 #include <vespa/searchlib/attribute/loadedenumvalue.h>
-#include <vespa/searchlib/util/foldedstringcompare.h>
 #include <vespa/vespalib/regex/regex.h>
 #include <vespa/vespalib/text/lowercase.h>
 #include <vespa/vespalib/text/utf8.h>

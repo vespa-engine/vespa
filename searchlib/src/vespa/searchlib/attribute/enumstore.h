@@ -8,7 +8,6 @@
 #include "i_enum_store.h"
 #include "loadedenumvalue.h"
 #include <vespa/searchcommon/common/dictionary_config.h>
-#include <vespa/searchlib/util/foldedstringcompare.h>
 #include <vespa/vespalib/btree/btreenode.h>
 #include <vespa/vespalib/btree/btreenodeallocator.h>
 #include <vespa/vespalib/btree/btree.h>
