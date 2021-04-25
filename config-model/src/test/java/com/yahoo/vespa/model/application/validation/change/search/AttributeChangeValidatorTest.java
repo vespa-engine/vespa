@@ -3,7 +3,6 @@ package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.util.List;
@@ -93,11 +92,10 @@ public class AttributeChangeValidatorTest {
                                                   "Field 'f1' changed: remove attribute 'fast-access'"));
     }
 
-    // TODO Not testable until one dictionary type supports both cased/uncased
-    @Ignore
+    @Test
     public void changing_uncased2cased_require_restart() throws Exception {
-        new Fixture("field f1 type string { indexing: attribute\n attribute: fast-search\n dictionary { hash\ncased}\nmatch:cased}",
-                "field f1 type string { indexing: attribute\n attribute: fast-search\n dictionary{ btree} }").
+        new Fixture("field f1 type string { indexing: attribute\n attribute: fast-search\n dictionary { btree\ncased}\nmatch:cased}",
+                "field f1 type string { indexing: attribute\n attribute: fast-search\n dictionary{ btree\nuncased}\nmatch:uncased }").
                 assertValidation(newRestartAction(ClusterSpec.Id.from("test"),
                         "Field 'f1' changed: change property 'dictionary: cased/uncased' from 'CASED' to 'UNCASED'"));
     }
