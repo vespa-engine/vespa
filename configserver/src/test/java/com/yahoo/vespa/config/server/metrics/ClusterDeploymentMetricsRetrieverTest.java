@@ -60,7 +60,7 @@ public class ClusterDeploymentMetricsRetrieverTest {
         Map<ClusterInfo, DeploymentMetricsAggregator> aggregatorMap = new ClusterDeploymentMetricsRetriever().requestMetricsGroupedByCluster(hosts);
 
         compareAggregators(
-                new DeploymentMetricsAggregator().addDocumentCount(6000.0),
+                new DeploymentMetricsAggregator().addDocumentCount(6000.0).addFeedingBlocked(0),
                 aggregatorMap.get(expectedContentCluster)
         );
 
@@ -95,6 +95,7 @@ public class ClusterDeploymentMetricsRetrieverTest {
         compareOptionals(expected.aggregateFeedRate(), actual.aggregateFeedRate(), assertDoubles);
         compareOptionals(expected.aggregateQueryLatency(), actual.aggregateQueryLatency(), assertDoubles);
         compareOptionals(expected.aggregateFeedLatency(), actual.aggregateFeedLatency(), assertDoubles);
+        assertEquals(expected.feedingBlocked(), actual.feedingBlocked());
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")

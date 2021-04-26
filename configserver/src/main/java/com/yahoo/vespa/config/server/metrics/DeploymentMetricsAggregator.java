@@ -13,6 +13,7 @@ public class DeploymentMetricsAggregator {
     private LatencyMetrics qr;
     private LatencyMetrics container;
     private Double documentCount;
+    private Integer feedingBlocked;
 
     public synchronized DeploymentMetricsAggregator addFeedLatency(double sum, double count) {
         this.feed = combineLatency(this.feed, sum, count);
@@ -34,9 +35,13 @@ public class DeploymentMetricsAggregator {
         return this;
     }
 
+    public synchronized DeploymentMetricsAggregator addFeedingBlocked(int feedingBlocked) {
+        this.feedingBlocked = Math.max(Optional.ofNullable(this.feedingBlocked).orElse(0), feedingBlocked);
+        return this;
+    }
+
     public Optional<Double> aggregateFeedLatency() {
         return Optional.ofNullable(feed).map(m -> m.latencySum / m.latencyCount).filter(num -> !num.isNaN());
-
     }
 
     public Optional<Double> aggregateFeedRate() {
@@ -59,6 +64,10 @@ public class DeploymentMetricsAggregator {
 
     public Optional<Double> aggregateDocumentCount() {
         return Optional.ofNullable(documentCount);
+    }
+
+    public Optional<Integer> feedingBlocked() {
+        return Optional.ofNullable(feedingBlocked);
     }
 
     private LatencyMetrics combineLatency(LatencyMetrics metricsOrNull, double sum, double count) {

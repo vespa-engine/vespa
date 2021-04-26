@@ -46,7 +46,8 @@ public class ClusterDeploymentMetricsRetriever {
     private static final String VESPA_CONTAINER = "vespa.container";
     private static final String VESPA_QRSERVER = "vespa.qrserver";
     private static final String VESPA_DISTRIBUTOR = "vespa.distributor";
-    private static final List<String> WANTED_METRIC_SERVICES = List.of(VESPA_CONTAINER, VESPA_QRSERVER, VESPA_DISTRIBUTOR);
+    private static final String VESPA_SEARCHNODE = "vespa.searchnode";
+    private static final List<String> WANTED_METRIC_SERVICES = List.of(VESPA_CONTAINER, VESPA_QRSERVER, VESPA_DISTRIBUTOR, VESPA_SEARCHNODE);
 
 
     private static final ExecutorService executor = Executors.newFixedThreadPool(10, new DaemonThreadFactory("cluster-deployment-metrics-retriever-"));
@@ -121,7 +122,7 @@ public class ClusterDeploymentMetricsRetriever {
         DeploymentMetricsAggregator deploymentMetricsAggregator = clusterMetricsMap.computeIfAbsent(clusterInfo, c -> new DeploymentMetricsAggregator());
 
         switch (serviceName) {
-            case "vespa.container":
+            case VESPA_CONTAINER:
                 deploymentMetricsAggregator.addContainerLatency(
                         values.field("query_latency.sum").asDouble(),
                         values.field("query_latency.count").asDouble());
@@ -129,13 +130,16 @@ public class ClusterDeploymentMetricsRetriever {
                         values.field("feed.latency.sum").asDouble(),
                         values.field("feed.latency.count").asDouble());
                 break;
-            case "vespa.qrserver":
+            case VESPA_QRSERVER:
                 deploymentMetricsAggregator.addQrLatency(
                         values.field("query_latency.sum").asDouble(),
                         values.field("query_latency.count").asDouble());
                 break;
-            case "vespa.distributor":
+            case VESPA_DISTRIBUTOR:
                 deploymentMetricsAggregator.addDocumentCount(values.field("vds.distributor.docsstored.average").asDouble());
+                break;
+            case VESPA_SEARCHNODE:
+                deploymentMetricsAggregator.addFeedingBlocked((int) values.field("content.proton.resource_usage.feeding_blocked.last").asLong());
                 break;
         }
     }
