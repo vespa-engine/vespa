@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import com.yahoo.config.subscription.ConfigSourceSet;
@@ -10,6 +10,7 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static java.util.logging.Level.FINE;
@@ -76,7 +77,7 @@ public class JRTConnectionPool implements ConnectionPool {
     public synchronized JRTConnection setNewCurrentConnection() {
         List<JRTConnection> sources = getSources();
         currentConnection = sources.get(ThreadLocalRandom.current().nextInt(0, sources.size()));
-        log.log(FINE, () -> "Choosing new connection: " + currentConnection);
+        log.log(Level.INFO, () -> "Choosing new connection: " + currentConnection);
         return currentConnection;
     }
 
