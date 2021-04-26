@@ -37,16 +37,15 @@ public class DeployHandlerLogger implements DeployLogger {
 
     @Override
     public void log(Level level, String message) {
-        if ((level == Level.FINE || level == LogLevel.DEBUG || level == LogLevel.SPAM) && !verbose)
+        if (level.intValue() <= LogLevel.DEBUG.intValue() && !verbose)
             return;
 
-        String fullMsg = prefix + message;
         Cursor entry = logroot.addObject();
         entry.setLong("time", System.currentTimeMillis());
         entry.setString("level", level.getName());
-        entry.setString("message", fullMsg);
+        entry.setString("message", message);
         // Also tee to a normal log, Vespa log for example, but use level fine 
-        log.log(Level.FINE, fullMsg);
+        log.log(Level.FINE, () -> prefix + message);
     }
 
     public Slime slime() {
