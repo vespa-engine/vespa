@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Cluster;
 
 import java.time.Instant;
+import java.util.Optional;
 
 /**
  * @author bratseth
@@ -24,8 +25,17 @@ public class ScalingEventData {
     @JsonProperty("at")
     public Long at;
 
+    @JsonProperty("completion")
+    public Long completion;
+
     public Cluster.ScalingEvent toScalingEvent() {
-        return new Cluster.ScalingEvent(from.toClusterResources(), to.toClusterResources(), Instant.ofEpochMilli(at));
+        return new Cluster.ScalingEvent(from.toClusterResources(), to.toClusterResources(), Instant.ofEpochMilli(at),
+                                        toOptionalInstant(completion));
+    }
+
+    private Optional<Instant> toOptionalInstant(Long epochMillis) {
+        if (epochMillis == null) return Optional.empty();
+        return Optional.of(Instant.ofEpochMilli(epochMillis));
     }
 
 }
