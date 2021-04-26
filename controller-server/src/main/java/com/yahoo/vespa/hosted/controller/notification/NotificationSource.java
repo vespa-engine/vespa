@@ -97,8 +97,7 @@ public class NotificationSource {
         if (o == null || getClass() != o.getClass()) return false;
         NotificationSource that = (NotificationSource) o;
         return tenant.equals(that.tenant) && application.equals(that.application) && instance.equals(that.instance) &&
-                zoneId.equals(that.zoneId) && clusterId.equals(that.clusterId) && jobType.equals(that.jobType) &&
-                runNumber.equals(that.runNumber);
+                zoneId.equals(that.zoneId) && clusterId.equals(that.clusterId) && jobType.equals(that.jobType); // Do not consider run number (it's unique!)
     }
 
     @Override
