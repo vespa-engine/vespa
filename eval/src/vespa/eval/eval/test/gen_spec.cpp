@@ -24,6 +24,10 @@ Sequence Div16(const Sequence &seq) {
     return [seq](size_t i) { return (seq(i) / 16.0); };
 }
 
+Sequence Div17(const Sequence &seq) {
+    return [seq](size_t i) { return (seq(i) / 17.0); };
+}
+
 Sequence Sub2(const Sequence &seq) {
     return [seq](size_t i) { return (seq(i) - 2.0); };
 }
