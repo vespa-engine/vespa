@@ -470,7 +470,7 @@ void generate_nested_tensor_lambda(TestBuilder &dst) {
 //-----------------------------------------------------------------------------
 
 void generate_erf_value_test(TestBuilder &dst) {
-    auto a = GenSpec().idx("x", 16 * 16 * 6).seq(Div16(Div16(N())));
+    auto a = GenSpec().idx("x", 16 * 17 * 6).seq(Div17(Div16(N(0))));
     dst.add("erf(a)", {{"a", a}});
     dst.add("erf(-a)", {{"a", a}});
 }

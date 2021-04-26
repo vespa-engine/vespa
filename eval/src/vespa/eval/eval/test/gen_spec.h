@@ -25,6 +25,9 @@ Sequence AX_B(double a, double b);
 // Sequence of another sequence divided by 16
 Sequence Div16(const Sequence &seq);
 
+// Sequence of another sequence divided by 17
+Sequence Div17(const Sequence &seq);
+
 // Sequence of another sequence minus 2
 Sequence Sub2(const Sequence &seq);
 
