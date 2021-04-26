@@ -5,6 +5,7 @@ import com.yahoo.vespa.hosted.provision.maintenance.LoadBalancerExpirer;
 
 import java.time.Instant;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Represents a load balancer for an application's cluster. This is immutable.
@@ -14,15 +15,18 @@ import java.util.Objects;
 public class LoadBalancer {
 
     private final LoadBalancerId id;
-    private final LoadBalancerInstance instance;
+    private final Optional<LoadBalancerInstance> instance;
     private final State state;
     private final Instant changedAt;
 
-    public LoadBalancer(LoadBalancerId id, LoadBalancerInstance instance, State state, Instant changedAt) {
+    public LoadBalancer(LoadBalancerId id, Optional<LoadBalancerInstance> instance, State state, Instant changedAt) {
         this.id = Objects.requireNonNull(id, "id must be non-null");
         this.instance = Objects.requireNonNull(instance, "instance must be non-null");
         this.state = Objects.requireNonNull(state, "state must be non-null");
         this.changedAt = Objects.requireNonNull(changedAt, "changedAt must be non-null");
+        if (state == State.active && instance.isEmpty()) {
+            throw new IllegalArgumentException("Load balancer instance is required in state " + state);
+        }
     }
 
     /** An identifier for this load balancer. The ID is unique inside the zone */
@@ -31,7 +35,7 @@ public class LoadBalancer {
     }
 
     /** The instance associated with this */
-    public LoadBalancerInstance instance() {
+    public Optional<LoadBalancerInstance> instance() {
         return instance;
     }
 
@@ -58,7 +62,7 @@ public class LoadBalancer {
     }
 
     /** Returns a copy of this with instance set to given instance */
-    public LoadBalancer with(LoadBalancerInstance instance) {
+    public LoadBalancer with(Optional<LoadBalancerInstance> instance) {
         return new LoadBalancer(id, instance, state, changedAt);
     }
 

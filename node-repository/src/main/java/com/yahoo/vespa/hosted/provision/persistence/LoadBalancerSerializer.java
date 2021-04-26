@@ -18,6 +18,7 @@ import java.io.UncheckedIOException;
 import java.time.Instant;
 import java.util.LinkedHashSet;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Function;
 
 /**
@@ -50,21 +51,22 @@ public class LoadBalancerSerializer {
         Cursor root = slime.setObject();
 
         root.setString(idField, loadBalancer.id().serializedForm());
-        root.setString(hostnameField, loadBalancer.instance().hostname().toString());
+        // TODO(mpolden): Stop writing this field for empty instance after 2021-06-01
+        root.setString(hostnameField, loadBalancer.instance().map(instance -> instance.hostname().value()).orElse(""));
         root.setString(stateField, asString(loadBalancer.state()));
         root.setLong(changedAtField, loadBalancer.changedAt().toEpochMilli());
-        loadBalancer.instance().dnsZone().ifPresent(dnsZone -> root.setString(dnsZoneField, dnsZone.id()));
+        loadBalancer.instance().flatMap(LoadBalancerInstance::dnsZone).ifPresent(dnsZone -> root.setString(dnsZoneField, dnsZone.id()));
         Cursor portArray = root.setArray(portsField);
-        loadBalancer.instance().ports().forEach(portArray::addLong);
+        loadBalancer.instance().ifPresent(instance -> instance.ports().forEach(portArray::addLong));
         Cursor networkArray = root.setArray(networksField);
-        loadBalancer.instance().networks().forEach(networkArray::addString);
+        loadBalancer.instance().ifPresent(instance -> instance.networks().forEach(networkArray::addString));
         Cursor realArray = root.setArray(realsField);
-        loadBalancer.instance().reals().forEach(real -> {
+        loadBalancer.instance().ifPresent(instance -> instance.reals().forEach(real -> {
             Cursor realObject = realArray.addObject();
             realObject.setString(hostnameField, real.hostname().value());
             realObject.setString(ipAddressField, real.ipAddress());
             realObject.setLong(portField, real.port());
-        });
+        }));
         try {
             return SlimeUtils.toJsonBytes(slime);
         } catch (IOException e) {
@@ -75,7 +77,7 @@ public class LoadBalancerSerializer {
     public static LoadBalancer fromJson(byte[] data) {
         Cursor object = SlimeUtils.jsonToSlime(data).get();
 
-        var reals = new LinkedHashSet<Real>();
+        Set<Real> reals = new LinkedHashSet<>();
         object.field(realsField).traverse((ArrayTraverser) (i, realObject) -> {
             reals.add(new Real(HostName.from(realObject.field(hostnameField).asString()),
                                realObject.field(ipAddressField).asString(),
@@ -83,20 +85,19 @@ public class LoadBalancerSerializer {
 
         });
 
-        var ports = new LinkedHashSet<Integer>();
+        Set<Integer> ports = new LinkedHashSet<>();
         object.field(portsField).traverse((ArrayTraverser) (i, port) -> ports.add((int) port.asLong()));
 
-        var networks = new LinkedHashSet<String>();
+        Set<String> networks = new LinkedHashSet<>();
         object.field(networksField).traverse((ArrayTraverser) (i, network) -> networks.add(network.asString()));
 
+        Optional<HostName> hostname = optionalString(object.field(hostnameField), Function.identity()).filter(s -> !s.isEmpty()).map(HostName::from);
+        Optional<DnsZone> dnsZone = optionalString(object.field(dnsZoneField), DnsZone::new);
+        Optional<LoadBalancerInstance> instance = hostname.map(h -> new LoadBalancerInstance(h, dnsZone, ports,
+                                                                                             networks, reals));
+
         return new LoadBalancer(LoadBalancerId.fromSerializedForm(object.field(idField).asString()),
-                                new LoadBalancerInstance(
-                                        HostName.from(object.field(hostnameField).asString()),
-                                        optionalString(object.field(dnsZoneField), DnsZone::new),
-                                        ports,
-                                        networks,
-                                        reals
-                                ),
+                                instance,
                                 stateFromString(object.field(stateField).asString()),
                                 Instant.ofEpochMilli(object.field(changedAtField).asLong()));
     }

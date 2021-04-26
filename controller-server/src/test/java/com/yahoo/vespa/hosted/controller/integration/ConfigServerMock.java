@@ -30,7 +30,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerE
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ProxyResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.QuotaUsage;
@@ -390,7 +389,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
             putLoadBalancers(id.zoneId(), List.of(new LoadBalancer(UUID.randomUUID().toString(),
                                                                    id.applicationId(),
                                                                    cluster,
-                                                                   HostName.from("lb-0--" + id.applicationId().serializedForm() + "--" + id.zoneId().toString()),
+                                                                   Optional.of(HostName.from("lb-0--" + id.applicationId().serializedForm() + "--" + id.zoneId().toString())),
                                                                    LoadBalancer.State.active,
                                                                    Optional.of("dns-zone-1"))));
         }
