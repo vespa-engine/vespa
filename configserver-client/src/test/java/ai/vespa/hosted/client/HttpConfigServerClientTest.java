@@ -70,14 +70,15 @@ class HttpConfigServerClientTest {
         server.resetRequests();
 
         // Successful attempt returns.
-        server.stubFor(get("/root/boot"))
+        server.stubFor(get("/root/boot/toot"))
               .setResponse(okJson("{}").build());
         assertEquals("{}",
                      client.send(HostStrategy.repeating(URI.create("http://localhost:" + server.port()), 10),
                                  Method.GET)
                            .at("root", "boot")
+                           .at("toot")
                            .read(String::new));
-        server.verify(1, getRequestedFor(urlEqualTo("/root/boot")));
+        server.verify(1, getRequestedFor(urlEqualTo("/root/boot/toot")));
         server.verify(1, anyRequestedFor(anyUrl()));
         server.resetRequests();
 
@@ -88,10 +89,9 @@ class HttpConfigServerClientTest {
                                                 () -> client.send(HostStrategy.repeating(URI.create("http://localhost:" + server.port()), 10),
                                                                   Method.GET)
                                                             .read(String::new));
-        assertEquals("GET / failed with status 409 and no body", thrown.getMessage());
+        assertEquals("GET / failed with status 409 and body 'hi'", thrown.getMessage());
         server.verify(1, getRequestedFor(urlEqualTo("/")));
         server.verify(1, anyRequestedFor(anyUrl()));
-
     }
 
 }

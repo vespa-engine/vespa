@@ -9,11 +9,12 @@ import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.Method;
+import org.apache.hc.core5.http.ParseException;
+import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.http.io.entity.HttpEntities;
 import org.apache.hc.core5.net.URIBuilder;
 
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -21,7 +22,6 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.function.BiConsumer;
 import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -104,7 +104,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
     }
 
     @Override
-    public RequestBuilder send(HostStrategy hosts, Method method) {
+    public ConfigServerClient.RequestBuilder send(HostStrategy hosts, Method method) {
         return new RequestBuilder(hosts, method);
     }
 
@@ -114,10 +114,11 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         private final Method method;
         private final HostStrategy hosts;
         private final URIBuilder uriBuilder = new URIBuilder();
+        private final List<String> pathSegments = new ArrayList<>();
         private HttpEntity entity;
         private RequestConfig config = ConfigServerClient.defaultRequestConfig;
-        private BiConsumer<ClassicHttpResponse, ClassicHttpRequest> handler = ConfigServerClient::throwOnError;
-        private Consumer<IOException> catcher = ConfigServerClient::retryAll;
+        private ResponseVerifier verifier = ConfigServerClient.throwOnError;
+        private Consumer<IOException> catcher = ConfigServerClient.retryAll;
 
         private RequestBuilder(HostStrategy hosts, Method method) {
             if ( ! hosts.iterator().hasNext())
@@ -129,7 +130,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
 
         @Override
         public RequestBuilder at(List<String> pathSegments) {
-            uriBuilder.setPathSegments(requireNonNull(pathSegments));
+            this.pathSegments.addAll(pathSegments);
             return this;
         }
 
@@ -145,12 +146,23 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         }
 
         @Override
+        public ConfigServerClient.RequestBuilder emptyParameters(List<String> keys) {
+            for (String key : keys)
+                uriBuilder.setParameter(key, null);
+
+            return this;
+        }
+
+        @Override
         public RequestBuilder parameters(List<String> pairs) {
             if (pairs.size() % 2 != 0)
                 throw new IllegalArgumentException("Must supply parameter key/values in pairs");
 
-            for (int i = 0; i < pairs.size(); )
-                uriBuilder.setParameter(pairs.get(i++), pairs.get(i++));
+            for (int i = 0; i < pairs.size(); ) {
+                String key = pairs.get(i++), value = pairs.get(i++);
+                if (value != null)
+                    uriBuilder.setParameter(key, value);
+            }
 
             return this;
         }
@@ -175,56 +187,54 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         }
 
         @Override
-        public RequestBuilder handling(BiConsumer<ClassicHttpResponse, ClassicHttpRequest> handler) {
-            this.handler = requireNonNull(handler);
+        public RequestBuilder throwing(ResponseVerifier verifier) {
+            this.verifier = requireNonNull(verifier);
             return this;
         }
 
         @Override
-        public <T> T read(Function<byte[], T> mapper) {
-            return mapIfSuccess(input -> {
-                try (input) {
-                    return mapper.apply(input.readAllBytes());
+        public String read() {
+            return handle((response, __) -> {
+                try (response) {
+                    return response.getEntity() == null ? "" : EntityUtils.toString(response.getEntity());
                 }
-                catch (IOException e) {
-                    throw new RetryException(e);
+                catch (ParseException e) {
+                    throw new IllegalStateException(e); // This isn't actually thrown by apache >_<
+                }
+            });
+        }
+
+        @Override
+        public <T> T read(Function<byte[], T> mapper) {
+            return handle((response, __) -> {
+                try (response) {
+                    return mapper.apply(response.getEntity() == null ? new byte[0] : EntityUtils.toByteArray(response.getEntity()));
                 }
             });
         }
 
         @Override
         public void discard() throws UncheckedIOException, ResponseException {
-            mapIfSuccess(input -> {
-                try (input) {
+            handle((response, __) -> {
+                try (response) {
                     return null;
-                }
-                catch (IOException e) {
-                    throw new RetryException(e);
                 }
             });
         }
 
         @Override
-        public InputStream stream() throws UncheckedIOException, ResponseException {
-            return mapIfSuccess(input -> input);
+        public HttpInputStream stream() throws UncheckedIOException, ResponseException {
+            return handle((response, __) -> new HttpInputStream(response));
         }
 
-        /** Returns the mapped body, if successful, retrying any IOException. The caller must close the body stream. */
-        private <T> T mapIfSuccess(Function<InputStream, T> mapper) {
+        @Override
+        public <T> T handle(ResponseHandler<T> handler) {
+            uriBuilder.setPathSegments(pathSegments);
             return execute(this,
                            (response, request) -> {
                                try {
-                                   handler.accept(response, request); // This throws on unacceptable responses.
-
-                                   InputStream body = response.getEntity() != null ? response.getEntity().getContent()
-                                                                                   : InputStream.nullInputStream();
-                                   return mapper.apply(new ForwardingInputStream(body) {
-                                       @Override
-                                       public void close() throws IOException {
-                                           super.close();
-                                           response.close();
-                                       }
-                                   });
+                                   verifier.verify(response, request); // This throws on unacceptable responses.
+                                   return handler.handle(response, request);
                                }
                                catch (IOException | RuntimeException | Error e) {
                                    try {
@@ -246,6 +256,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         }
 
     }
+
 
     @SuppressWarnings("unchecked")
     private static <T extends Throwable> void sneakyThrow(Throwable t) throws T {
