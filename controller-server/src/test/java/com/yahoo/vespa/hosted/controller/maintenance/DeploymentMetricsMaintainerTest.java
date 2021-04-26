@@ -114,10 +114,7 @@ public class DeploymentMetricsMaintainerTest {
     }
 
     private void setMetrics(ApplicationId application, Map<String, Double> metrics) {
-        var clusterMetrics = new ClusterMetrics("default", "container");
-        for (var kv : metrics.entrySet()) {
-            clusterMetrics = clusterMetrics.addMetric(kv.getKey(), kv.getValue());
-        }
+        var clusterMetrics = new ClusterMetrics("default", "container", metrics);
         tester.controllerTester().serviceRegistry().configServerMock().setMetrics(new DeploymentId(application, ZoneId.from("dev", "us-east-1")), clusterMetrics);
     }
 
