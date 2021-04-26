@@ -143,7 +143,7 @@ public abstract class Processor {
     }
 
     protected void info(Search search, Field field, String message) {
-        warn(search.getName(), field.getName(), message);
+        info(search.getName(), field.getName(), message);
     }
 
 }
