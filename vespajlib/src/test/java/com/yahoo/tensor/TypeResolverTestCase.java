@@ -193,8 +193,13 @@ public class TypeResolverTestCase {
         checkRenameFails("tensor()", mkl(), mkl());
         checkRenameFails("tensor(x{},y{})", mkl("x"), mkl("y","z"));
         checkRenameFails("tensor(x{},y{})", mkl("x","y"), mkl("z"));
-        checkRenameFails("tensor()", mkl("a"), mkl("b"));
         checkRenameFails("tensor(x[10],y[20],z[30])", mkl("y","z"), mkl("a", "x"));
+
+        // allowed (with warning) for now:
+        checkRename("tensor()", mkl("a"), mkl("b"), "tensor()");
+        checkRename("tensor(x{},y[10])", mkl("a"), mkl("b"), "tensor(x{},y[10])");
+        //checkRenameFails("tensor()", mkl("a"), mkl("b"));
+
     }
 
     @Test

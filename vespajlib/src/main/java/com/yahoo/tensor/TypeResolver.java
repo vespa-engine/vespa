@@ -100,7 +100,8 @@ public class TypeResolver {
                 var dim = oldDims.remove(oldName);
                 newDims.put(newName, dim.withName(newName));
             } else {
-                throw new IllegalArgumentException("bad rename, dimension  "+oldName+" not found");
+                logger.log(Level.WARNING, "renaming non-existing dimension "+oldName+" in type "+inputType);
+                // throw new IllegalArgumentException("bad rename, dimension  "+oldName+" not found");
             }
         }
         for (var keep : oldDims.values()) {
