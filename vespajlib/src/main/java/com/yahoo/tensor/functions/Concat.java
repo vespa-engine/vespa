@@ -13,8 +13,12 @@ import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
 
 import java.util.Arrays;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -26,6 +30,233 @@ import java.util.stream.Collectors;
  * @author bratseth
  */
 public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYPE> {
+
+    static class CellInfo {
+        ArrayList<Double> values = new ArrayList<>();
+        void valueAt(int ccDimIndex, double value) {
+            while (values.size() <= ccDimIndex) {
+                values.add(0.0);
+            }
+            values.set(ccDimIndex, value);
+        }
+    }
+
+    static class CellsInfo {
+        Map<TensorAddress, CellInfo> map = new HashMap<>();
+
+        CellInfo expand(TensorAddress addr) {
+            if (map.containsKey(addr)) {
+                return map.get(addr);
+            } else {
+                CellInfo result = new CellInfo();
+                map.put(addr, result);
+                return result;
+            }
+        }
+    }
+
+    static class SideInfo {
+        Map<TensorAddress, CellsInfo> map = new HashMap<>();
+
+        CellsInfo match(TensorAddress addr) {
+            if (map.containsKey(addr)) {
+                return map.get(addr);
+            } else {
+                CellsInfo result = new CellsInfo();
+                map.put(addr, result);
+                return result;
+            }
+        }
+
+        int concatDimensionSize() {
+            Set<Integer> sizes = new HashSet<>();
+            map.forEach((m, cells) ->
+                        cells.map.forEach((e, cell) ->
+                                          sizes.add(cell.values.size())));
+            if (sizes.isEmpty()) {
+                return 1;
+            }
+            if (sizes.size() == 1) {
+                return sizes.iterator().next();
+            }
+            throw new IllegalArgumentException("inconsistent size of concat dimension, had "+sizes.size()+" different values");
+        }
+    }
+
+    static class Helper {
+        final TensorType resultType;
+        final String concatDimension;
+
+        SideHow aHow = new SideHow();
+        SideHow bHow = new SideHow();
+
+        enum CombineHow { left, right, both, concat }
+
+        List<CombineHow> combineHow = new ArrayList<>();
+        
+        TensorAddress combine(TensorAddress match, TensorAddress leftOnly, TensorAddress rightOnly, int concatDimIdx) {
+            String[] labels = new String[resultType.rank()];
+            int out = 0;
+            int m = 0;
+            int a = 0;
+            int b = 0;
+            for (var how : combineHow) {
+                switch (how) {
+                    case left:
+                        labels[out++] = leftOnly.label(a++);
+                        break;
+                    case right:
+                        labels[out++] = rightOnly.label(b++);
+                        break;
+                    case both:
+                        labels[out++] = match.label(m++);
+                        break;
+                    case concat:
+                        labels[out++] = String.valueOf(concatDimIdx);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("cannot handle: "+how);
+                }
+            }
+            return TensorAddress.of(labels);
+        }
+
+        void aOnly(String dimName) {
+            if (dimName.equals(concatDimension)) {
+                aHow.handleDims.add(DimHow.concat);
+                combineHow.add(CombineHow.concat);
+            } else {
+                aHow.handleDims.add(DimHow.expand);
+                aHow.numExpand++;
+                combineHow.add(CombineHow.left);
+            }
+        }
+
+        void bOnly(String dimName) {
+            if (dimName.equals(concatDimension)) {
+                bHow.handleDims.add(DimHow.concat);
+                combineHow.add(CombineHow.concat);
+            } else {
+                bHow.handleDims.add(DimHow.expand);
+                bHow.numExpand++;
+                combineHow.add(CombineHow.right);
+            }
+        }
+
+        void bothAandB(String dimName) {
+            if (dimName.equals(concatDimension)) {
+                aHow.handleDims.add(DimHow.concat);
+                bHow.handleDims.add(DimHow.concat);
+                combineHow.add(CombineHow.concat);
+            } else {
+                aHow.handleDims.add(DimHow.match);
+                bHow.handleDims.add(DimHow.match);
+                aHow.numMatch++;
+                bHow.numMatch++;
+                combineHow.add(CombineHow.both);
+            }
+        }
+
+        Helper(TensorType aType, TensorType bType, String concatDimension) {
+            this.resultType = TypeResolver.concat(aType, bType, concatDimension);
+            this.concatDimension = concatDimension;
+            var aDims = aType.dimensions();
+            var bDims = bType.dimensions();
+            int i = 0;
+            int j = 0;
+            while (i < aDims.size() && j < bDims.size()) {
+                String aName = aDims.get(i).name();
+                String bName = bDims.get(j).name();
+                int cmp = aName.compareTo(bName);
+                if (cmp == 0) {
+                    bothAandB(aName);
+                    ++i;
+                    ++j;
+                } else if (cmp < 0) {
+                    aOnly(aName);
+                    ++i;
+                } else {
+                    bOnly(bName);
+                    ++j;
+                }
+            }
+            while (i < aDims.size()) {
+                aOnly(aDims.get(i++).name());
+            }
+            while (j < bDims.size()) {
+                bOnly(bDims.get(j++).name());
+            }
+            if (combineHow.size() < resultType.rank()) {
+                var idx = resultType.indexOfDimension(concatDimension);
+                combineHow.add(idx.get(), CombineHow.concat);
+            }
+        }
+
+        Tensor mergeSides(SideInfo a, SideInfo b) {
+            var builder = Tensor.Builder.of(resultType);
+            int aConcatSize = a.concatDimensionSize();
+            for (var entry : a.map.entrySet()) {
+                TensorAddress match = entry.getKey();
+                if (b.map.containsKey(match)) {
+                    var lhs = entry.getValue();
+                    var rhs = b.map.get(match);
+                    lhs.map.forEach((leftExpand, leftCells) -> {
+                            rhs.map.forEach((rightExpand, rightCells) -> {
+                                    for (int i = 0; i < leftCells.values.size(); i++) {
+                                        TensorAddress addr = combine(match, leftExpand, rightExpand, i);
+                                        builder.cell(addr, leftCells.values.get(i));
+                                    }
+                                    for (int i = 0; i < rightCells.values.size(); i++) {
+                                        TensorAddress addr = combine(match, leftExpand, rightExpand, i + aConcatSize);
+                                        builder.cell(addr, rightCells.values.get(i));
+                                    }
+                                });
+                        });
+                }
+            }
+            return builder.build();
+        }
+    }
+
+    enum DimHow { match, expand, concat }
+
+    static class SideHow {
+        List<DimHow> handleDims = new ArrayList<>();
+        int numMatch = 0;
+        int numExpand = 0;
+    }
+
+    SideInfo analyse(Tensor side, SideHow how) {
+        var iter = side.cellIterator();
+        String[] matchLabels = new String[how.numMatch];
+        String[] expandLabels = new String[how.numExpand];
+        SideInfo result = new SideInfo();
+        while (iter.hasNext()) {
+            var cell = iter.next();
+            var addr = cell.getKey();
+            long ccDimIndex = 0;
+            int matchIdx = 0;
+            int expandIdx = 0;
+            for (int i = 0; i < how.handleDims.size(); i++) {
+                switch (how.handleDims.get(i)) {
+                    case match:
+                        matchLabels[matchIdx++] = addr.label(i);
+                        break;
+                    case expand:
+                        expandLabels[expandIdx++] = addr.label(i);  
+                        break;
+                    case concat:
+                        ccDimIndex = addr.numericLabel(i);
+                        break;
+                    default: throw new IllegalArgumentException("cannot handle: "+how.handleDims.get(i));
+                }
+            }
+            TensorAddress matchAddr = TensorAddress.of(matchLabels);
+            TensorAddress expandAddr = TensorAddress.of(expandLabels);
+            result.match(matchAddr).expand(expandAddr).valueAt((int)ccDimIndex, cell.getValue());
+        }
+        return result;
+    }
 
     private final TensorFunction<NAMETYPE> argumentA, argumentB;
     private final String dimension;
@@ -68,6 +299,16 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     public Tensor evaluate(EvaluationContext<NAMETYPE> context) {
         Tensor a = argumentA.evaluate(context);
         Tensor b = argumentB.evaluate(context);
+     // if (a instanceof IndexedTensor && b instanceof IndexedTensor) {
+     //     return oldEvaluate(a, b);
+     // }
+        Helper helper = new Helper(a.type(), b.type(), dimension);
+        SideInfo aInfo = analyse(a, helper.aHow);
+        SideInfo bInfo = analyse(b, helper.bHow);
+        return helper.mergeSides(aInfo, bInfo);
+    }
+
+    private Tensor oldEvaluate(Tensor a, Tensor b) {
         TensorType concatType = TypeResolver.concat(a.type(), b.type(), dimension);
 
         a = ensureIndexedDimension(dimension, a, concatType.valueType());
