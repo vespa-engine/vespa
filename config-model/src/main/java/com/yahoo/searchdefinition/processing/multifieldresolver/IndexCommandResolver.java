@@ -49,11 +49,11 @@ public class IndexCommandResolver extends MultiFieldResolver {
         for (SDField field : fields) {
             if (!field.hasQueryCommand(command)) {
                 if (harmonizedCommands.contains(command)) {
-                    deployLogger.log(Level.WARNING, command + " must be added to all fields going to the same index (" + indexName + ")" +
+                    deployLogger.logApplicationPackage(Level.WARNING, command + " must be added to all fields going to the same index (" + indexName + ")" +
                             ", adding to field " + field.getName());
                     field.addQueryCommand(command);
                 } else {
-                    deployLogger.log(Level.WARNING, "All fields going to the same index should have the same query-commands. Field \'" + field.getName() +
+                    deployLogger.logApplicationPackage(Level.WARNING, "All fields going to the same index should have the same query-commands. Field \'" + field.getName() +
                             "\' doesn't contain command \'" + command+"\'");
                 }
             }

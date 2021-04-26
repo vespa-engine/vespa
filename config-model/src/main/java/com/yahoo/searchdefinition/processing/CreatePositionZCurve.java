@@ -123,7 +123,7 @@ public class CreatePositionZCurve extends Processor {
             summary.addDestination("default");
             summary.addDestinations(summaryTo);
         } else if (summary.getTransform() != summaryTransform) {
-            deployLogger.log(Level.WARNING, "Summary field " + summaryName + " has wrong transform: " + summary.getTransform());
+            deployLogger.logApplicationPackage(Level.WARNING, "Summary field " + summaryName + " has wrong transform: " + summary.getTransform());
             return;
         }
         SummaryField.Source source = new SummaryField.Source(sourceName);

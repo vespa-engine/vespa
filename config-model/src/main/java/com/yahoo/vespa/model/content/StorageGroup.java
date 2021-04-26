@@ -213,7 +213,7 @@ public class StorageGroup {
             if (group.isPresent() && nodes.isPresent())
                 throw new IllegalStateException("Both group and nodes exists, only one of these tags is legal");
             if (group.isPresent() && (group.get().stringAttribute("name") != null || group.get().integerAttribute("distribution-key") != null))
-                    deployState.getDeployLogger().log(Level.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
+                    deployState.getDeployLogger().logApplicationPackage(Level.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
 
             GroupBuilder groupBuilder = collectGroup(owner.isHosted(), group, nodes, null, null);
             StorageGroup storageGroup = (owner.isHosted())
@@ -241,7 +241,7 @@ public class StorageGroup {
             int minNodesPerGroup = (int)Math.ceil((double)nodesSpec.minResources().nodes() / nodesSpec.minResources().groups());
 
             if (minNodesPerGroup < redundancy) { // TODO: Fail on this on Vespa 8, and simplify
-                context.getDeployLogger().log(Level.WARNING,
+                context.getDeployLogger().logApplicationPackage(Level.WARNING,
                                               "Cluster '" + clusterElement.stringAttribute("id") + "' " +
                                               "specifies redundancy " + redundancy + " but cannot be higher than " +
                                               "the minimum nodes per group, which is " + minNodesPerGroup);

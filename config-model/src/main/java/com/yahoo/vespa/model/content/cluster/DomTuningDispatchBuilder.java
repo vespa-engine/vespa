@@ -29,7 +29,7 @@ public class DomTuningDispatchBuilder {
         builder.setMinActiveDocsCoverage(dispatchElement.childAsDouble("min-active-docs-coverage"));
 
         if (dispatchElement.child("use-local-node") != null)
-            logger.log(Level.WARNING, "Attribute 'use-local-node' is deprecated and ignored: " +
+            logger.logApplicationPackage(Level.WARNING, "Attribute 'use-local-node' is deprecated and ignored: " +
                                       "The local node will automatically be preferred when appropriate.");
         return builder.build();
     }

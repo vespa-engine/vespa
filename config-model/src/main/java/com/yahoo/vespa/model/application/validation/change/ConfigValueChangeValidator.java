@@ -119,7 +119,7 @@ public class ConfigValueChangeValidator implements ChangeValidator {
             AbstractConfigProducerRoot currentModel, AbstractConfigProducerRoot nextModel) {
 
         if (!hasConfigFieldsFlaggedWithRestart(configClass, service.getClass())) {
-            logger.log(Level.FINE, String.format("%s is listed in the annotation for %s, " +
+            logger.logApplicationPackage(Level.FINE, String.format("%s is listed in the annotation for %s, " +
                             "but does not have any restart flags in its config definition.",
                     configClass.getSimpleName(), service.getClass().getSimpleName()));
             return Optional.empty();
@@ -127,7 +127,7 @@ public class ConfigValueChangeValidator implements ChangeValidator {
 
         Optional<ConfigInstance> nextConfig = getConfigFromModel(nextModel, configClass, service.getConfigId());
         if (!nextConfig.isPresent()) {
-            logger.log(Level.FINE, String.format(
+            logger.logApplicationPackage(Level.FINE, String.format(
                     "%s is listed as restart config for %s, but the config does not exist in the new model.",
                     configClass.getSimpleName(), service.getClass().getSimpleName()));
             return Optional.empty();
