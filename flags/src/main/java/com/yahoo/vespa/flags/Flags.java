@@ -245,12 +245,6 @@ public class Flags {
             "Whether to wait for all participating servers to delete application on config servers (with timeout) on",
             "Takes effect on next delete of an application");
 
-    public static final UnboundBooleanFlag REBUILD_HOST = defineFeatureFlag(
-            "rebuild-host", false,
-            List.of("mpolden"), "2021-04-09", "2021-06-01",
-            "Whether HostRebuilder should rebuild hosts marked wantToRebuild",
-            "Takes effect on next HostRebuilder maintenance run");
-
     public static final UnboundBooleanFlag ENABLE_JDISC_HTTP2 = defineFeatureFlag(
             "enable-jdisc-http2", false,
             List.of("bjorncs", "jonmv"), "2021-04-12", "2021-08-01",
