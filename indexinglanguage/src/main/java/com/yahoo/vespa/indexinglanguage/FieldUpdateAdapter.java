@@ -3,6 +3,7 @@ package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
+import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.Field;
 import com.yahoo.document.FieldPath;
@@ -93,6 +94,9 @@ public class FieldUpdateAdapter implements UpdateAdapter {
     public FieldValueAdapter setOutputValue(Expression exp, String fieldName, FieldValue fieldValue) {
         return adapter.setOutputValue(exp, fieldName, fieldValue);
     }
+
+    @Override
+    public DocumentType getDocumentType() { return adapter.getDocumentType(); }
 
     public static FieldUpdateAdapter fromPartialUpdate(DocumentAdapter documentAdapter, ValueUpdate valueUpdate) {
         return new FieldUpdateAdapter(null, documentAdapter, new PartialBuilder(valueUpdate));

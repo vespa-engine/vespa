@@ -3,6 +3,7 @@ package com.yahoo.language.opennlp;
 
 import com.yahoo.language.Language;
 import com.yahoo.language.LinguisticsCase;
+import com.yahoo.language.process.LinguisticsContext;
 import com.yahoo.language.process.Normalizer;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
@@ -44,10 +45,11 @@ public class OpenNlpTokenizer implements Tokenizer {
     }
 
     @Override
-    public Iterable<Token> tokenize(String input, Language language, StemMode stemMode, boolean removeAccents) {
+    public Iterable<Token> tokenize(String input, Language language, StemMode stemMode, boolean removeAccents,
+                                    LinguisticsContext context) {
         if (input.isEmpty()) return Collections.emptyList();
         Stemmer stemmer = stemmerFor(language, stemMode);
-        if (stemmer == null) return simpleTokenizer.tokenize(input, language, stemMode, removeAccents);
+        if (stemmer == null) return simpleTokenizer.tokenize(input, language, stemMode, removeAccents, context);
 
         List<Token> tokens = new ArrayList<>();
         int nextCode = input.codePointAt(0);

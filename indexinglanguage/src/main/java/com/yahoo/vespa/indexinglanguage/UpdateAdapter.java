@@ -10,6 +10,7 @@ import com.yahoo.vespa.indexinglanguage.expressions.FieldValueAdapter;
  */
 public interface UpdateAdapter extends FieldValueAdapter {
 
-    public DocumentUpdate getOutput();
-    public Expression getExpression(Expression expression);
+    DocumentUpdate getOutput();
+    Expression getExpression(Expression expression);
+
 }

@@ -3,6 +3,7 @@ package com.yahoo.vespa.indexinglanguage;
 
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
+import com.yahoo.document.DocumentType;
 import com.yahoo.document.DocumentUpdate;
 import com.yahoo.document.FieldPath;
 import com.yahoo.document.datatypes.FieldValue;
@@ -65,4 +66,8 @@ public class IdentityFieldPathUpdateAdapter implements UpdateAdapter {
     public void tryOutputType(Expression exp, String fieldName, DataType valueType) {
         fwdAdapter.tryOutputType(exp, fieldName, valueType);
     }
+
+    @Override
+    public DocumentType getDocumentType() { return fwdAdapter.getDocumentType(); }
+
 }

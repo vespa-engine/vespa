@@ -497,9 +497,9 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
      */
     public static class IndexCommand {
 
-        private String index;
+        private final String index;
 
-        private String command;
+        private final String command;
 
         public IndexCommand(String index, String command) {
             this.index = index;

@@ -43,7 +43,7 @@ public final class TokenizeExpression extends Expression {
             cfg.setLanguage(lang);
         }
         LinguisticsAnnotator annotator = new LinguisticsAnnotator(linguistics, cfg);
-        annotator.annotate(output);
+        annotator.annotate(output, context);
     }
 
     @Override

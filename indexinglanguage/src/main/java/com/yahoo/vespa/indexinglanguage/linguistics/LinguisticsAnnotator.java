@@ -9,9 +9,11 @@ import com.yahoo.document.annotation.SpanTree;
 import com.yahoo.document.annotation.SpanTrees;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.language.Linguistics;
+import com.yahoo.language.process.LinguisticsContext;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.process.Tokenizer;
+import com.yahoo.vespa.indexinglanguage.expressions.ExecutionContext;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -65,15 +67,18 @@ public class LinguisticsAnnotator {
      * @param text the text to annotate
      * @return whether or not anything was annotated
      */
-    public boolean annotate(StringFieldValue text) {
+    public boolean annotate(StringFieldValue text, ExecutionContext context) {
         if (text.getSpanTree(SpanTrees.LINGUISTICS) != null) return true;  // Already annotated with LINGUISTICS.
 
         Tokenizer tokenizer = factory.getTokenizer();
         String input = (text.getString().length() <=  config.getMaxTokenizeLength())
                 ? text.getString()
                 : text.getString().substring(0, config.getMaxTokenizeLength());
-        Iterable<Token> tokens = tokenizer.tokenize(input, config.getLanguage(), config.getStemMode(),
-                                                    config.getRemoveAccents());
+        Iterable<Token> tokens = tokenizer.tokenize(input,
+                                                    config.getLanguage(),
+                                                    config.getStemMode(),
+                                                    config.getRemoveAccents(),
+                                                    new LinguisticsContext(context.getDocumentType().getName()));
         TermOccurrences termOccurrences = new TermOccurrences(config.getMaxTermOccurrences());
         SpanTree tree = new SpanTree(SpanTrees.LINGUISTICS);
         for (Token token : tokens) {

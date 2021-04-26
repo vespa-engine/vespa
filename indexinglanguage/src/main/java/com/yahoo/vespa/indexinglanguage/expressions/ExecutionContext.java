@@ -2,6 +2,7 @@
 package com.yahoo.vespa.indexinglanguage.expressions;
 
 import com.yahoo.document.DataType;
+import com.yahoo.document.DocumentType;
 import com.yahoo.document.FieldPath;
 import com.yahoo.document.datatypes.FieldValue;
 import com.yahoo.language.Language;
@@ -21,6 +22,7 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter, Cl
     private FieldValue value;
     private Language language;
 
+    /** For testing only. */
     public ExecutionContext() {
         this(null);
     }
@@ -70,6 +72,12 @@ public class ExecutionContext implements FieldTypeAdapter, FieldValueAdapter, Cl
         }
         adapter.setOutputValue(exp, fieldName, fieldValue);
         return this;
+    }
+
+    @Override
+    public DocumentType getDocumentType() {
+        if (adapter == null) return null; // Only happens in tests
+        return adapter.getDocumentType();
     }
 
     public FieldValueAdapter getAdapter() {
