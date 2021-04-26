@@ -159,8 +159,8 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
         static int concatDimensionSize(CellVectorMapMap data) {
             Set<Integer> sizes = new HashSet<>();
-            data.map.forEach((m, cells) ->
-                             cells.map.forEach((e, vector) ->
+            data.map.forEach((m, cvmap) ->
+                             cvmap.map.forEach((e, vector) ->
                                                sizes.add(vector.values.size())));
             if (sizes.isEmpty()) {
                 return 1;

@@ -217,6 +217,31 @@ public class ConcatTestCase {
                      a, b, "d");
     }
 
+    @Test
+    public void testWithEmptyMixed() {
+        Tensor a = Tensor.from("tensor(a[2],c{},d[2]):{"+
+                               "{a:0,c:17,d:0}:1.0,"+
+                               "{a:0,c:17,d:1}:2.0,"+
+                               "{a:1,c:17,d:0}:3.0,"+
+                               "{a:1,c:17,d:1}:4.0}");
+        Tensor b = Tensor.from("tensor(b{}):{}");
+        Tensor c = Tensor.from("tensor(c{}):{}");
+        Tensor d = Tensor.from("tensor(c{},d[3]):{}");
+        
+        assertConcat("tensor(a[3],b{},c{},d[2])", "tensor(a[3],b{},c{},d[2]):{}",
+                     a, b, "a");
+        assertConcat("tensor(a[2],b{},c{},d[2],x[2])", "tensor(a[2],b{},c{},d[2],x[2]):{}",
+                     a, b, "x");
+
+        assertConcat("tensor(a[3],c{},d[2])", "tensor(a[3],c{},d[2]):{}",
+                     a, c, "a");
+        assertConcat("tensor(a[2],c{},d[2],x[2])", "tensor(a[2],c{},d[2],x[2]):{}",
+                     a, c, "x");
+
+        assertConcat("tensor(a[2],c{},d[5])", "tensor(a[2],c{},d[5]):{}",
+                     a, d, "d");
+    }
+
     private void assertConcat(String expected, Tensor a, Tensor b, String dimension) {
         assertConcat(null, expected, a, b, dimension);
     }
