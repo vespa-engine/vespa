@@ -44,14 +44,14 @@ public class ConfigServerException extends RuntimeException {
         INCOMPLETE_RESPONSE
     }
 
-    public static ConfigServerException readException(int statusCode, byte[] body, ClassicHttpRequest request) {
+    public static ConfigServerException readException(byte[] body, String context) {
         Inspector root = SlimeUtils.jsonToSlime(body).get();
         String codeName = root.field("error-code").asString();
         ErrorCode code = Stream.of(ErrorCode.values())
                                .filter(value -> value.name().equals(codeName))
                                .findAny().orElse(ErrorCode.INCOMPLETE_RESPONSE);
         String message = root.field("message").valid() ? root.field("message").asString() : "(no message)";
-        return new ConfigServerException(code, message, request + " failed with status " + statusCode);
+        return new ConfigServerException(code, message, context);
     }
 
 }
