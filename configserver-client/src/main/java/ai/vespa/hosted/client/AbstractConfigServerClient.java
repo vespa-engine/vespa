@@ -114,6 +114,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         private final Method method;
         private final HostStrategy hosts;
         private final URIBuilder uriBuilder = new URIBuilder();
+        private final List<String> pathSegments = new ArrayList<>();
         private HttpEntity entity;
         private RequestConfig config = ConfigServerClient.defaultRequestConfig;
         private BiConsumer<ClassicHttpResponse, ClassicHttpRequest> handler = ConfigServerClient::throwOnError;
@@ -129,7 +130,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
 
         @Override
         public RequestBuilder at(List<String> pathSegments) {
-            uriBuilder.setPathSegments(requireNonNull(pathSegments));
+            this.pathSegments.addAll(pathSegments);
             return this;
         }
 
