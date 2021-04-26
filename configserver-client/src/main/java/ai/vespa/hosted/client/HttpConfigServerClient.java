@@ -13,6 +13,8 @@ import org.apache.hc.core5.http.io.SocketConfig;
 import org.apache.hc.core5.util.TimeValue;
 import org.apache.hc.core5.util.Timeout;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
@@ -50,7 +52,11 @@ public class HttpConfigServerClient extends AbstractConfigServerClient {
                                                  manager.setValidateAfterInactivity(TimeValue.ofSeconds(10));
                                                  return manager;
                                              },
-                                             new AthenzIdentityVerifier(Set.copyOf(serverIdentities)),
+                                             new AthenzIdentityVerifier(Set.copyOf(serverIdentities)) {
+                                                 @Override public boolean verify(String hostname, SSLSession session) {
+                                                     return super.verify(hostname, session) || "localhost".equals(hostname);
+                                                 }
+                                             },
                                              false)
                                      .disableAutomaticRetries()
                                      .setUserAgent(userAgent)
