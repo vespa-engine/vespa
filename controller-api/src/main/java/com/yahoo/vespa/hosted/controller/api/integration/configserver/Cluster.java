@@ -107,16 +107,19 @@ public class Cluster {
 
         private final ClusterResources from, to;
         private final Instant at;
+        private final Optional<Instant> completion;
 
-        public ScalingEvent(ClusterResources from, ClusterResources to, Instant at) {
+        public ScalingEvent(ClusterResources from, ClusterResources to, Instant at, Optional<Instant> completion) {
             this.from = from;
             this.to = to;
             this.at = at;
+            this.completion = completion;
         }
 
         public ClusterResources from() { return from; }
         public ClusterResources to() { return to; }
         public Instant at() { return at; }
+        public Optional<Instant> completion() { return completion; }
 
     }
 

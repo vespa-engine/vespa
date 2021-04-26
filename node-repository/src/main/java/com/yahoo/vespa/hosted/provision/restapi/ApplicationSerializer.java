@@ -99,6 +99,7 @@ public class ApplicationSerializer {
             toSlime(scalingEvent.from(), scalingEventObject.setObject("from"));
             toSlime(scalingEvent.to(), scalingEventObject.setObject("to"));
             scalingEventObject.setLong("at", scalingEvent.at().toEpochMilli());
+            scalingEvent.completion().ifPresent(completion -> scalingEventObject.setLong("completion", completion.toEpochMilli()));
         }
     }
 

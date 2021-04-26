@@ -90,7 +90,8 @@
             },
             "cost": "(ignore)"
           },
-          "at": 1234
+          "at": 1234,
+          "completion": 2234
         }
       ],
       "autoscalingStatus": "the autoscaling status",
