@@ -12,7 +12,6 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancerSpec;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 
 import java.time.Duration;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -57,10 +56,10 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
 
     /** Move reserved load balancer that have expired to inactive */
     private void expireReserved() {
-        Instant now = nodeRepository().clock().instant();
-        Instant expiry = now.minus(reservedExpiry);
-        patchLoadBalancers(lb -> lb.state() == State.reserved && lb.changedAt().isBefore(expiry),
-                           lb -> db.writeLoadBalancer(lb.with(State.inactive, now)));
+        var expiry = nodeRepository().clock().instant().minus(reservedExpiry);
+        patchLoadBalancers(lb -> lb.state() == State.reserved &&
+                                 lb.changedAt().isBefore(expiry),
+                           lb -> db.writeLoadBalancer(lb.with(State.inactive, nodeRepository().clock().instant())));
     }
 
     /** Deprovision inactive load balancers that have expired */
@@ -96,14 +95,13 @@ public class LoadBalancerExpirer extends NodeRepositoryMaintainer {
         var failed = new ArrayList<LoadBalancerId>();
         var lastException = new AtomicReference<Exception>();
         patchLoadBalancers(lb -> lb.state() == State.inactive, lb -> {
-            if (lb.instance().isEmpty()) return;
             var allocatedNodes = allocatedNodes(lb.id()).stream().map(Node::hostname).collect(Collectors.toSet());
-            var reals = new LinkedHashSet<>(lb.instance().get().reals());
+            var reals = new LinkedHashSet<>(lb.instance().reals());
             // Remove any real no longer allocated to this application
             reals.removeIf(real -> !allocatedNodes.contains(real.hostname().value()));
             try {
                 service.create(new LoadBalancerSpec(lb.id().application(), lb.id().cluster(), reals), true);
-                db.writeLoadBalancer(lb.with(lb.instance().map(instance -> instance.withReals(reals))));
+                db.writeLoadBalancer(lb.with(lb.instance().withReals(reals)));
             } catch (Exception e) {
                 failed.add(lb.id());
                 lastException.set(e);

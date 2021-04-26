@@ -416,7 +416,7 @@ public class RoutingPoliciesTest {
         var loadBalancer = new LoadBalancer("LB-0-Z-" + zone1.value(),
                                             context.instanceId(),
                                             ClusterSpec.Id.from("c0"),
-                                            Optional.of(newHostname),
+                                            newHostname,
                                             LoadBalancer.State.active,
                                             Optional.of("dns-zone-1"));
         tester.controllerTester().configServer().putLoadBalancers(zone1, List.of(loadBalancer));
@@ -705,7 +705,7 @@ public class RoutingPoliciesTest {
                     new LoadBalancer("LB-" + i + "-Z-" + zone.value(),
                                      application,
                                      ClusterSpec.Id.from("c" + i),
-                                     Optional.of(lbHostname),
+                                     lbHostname,
                                      LoadBalancer.State.active,
                                      Optional.of("dns-zone-1")));
         }

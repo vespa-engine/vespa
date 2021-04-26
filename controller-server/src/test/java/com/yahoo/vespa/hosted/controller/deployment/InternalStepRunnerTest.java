@@ -99,9 +99,11 @@ public class InternalStepRunnerTest {
 
     @Test
     public void retriesDeploymentForOneHour() {
-        RuntimeException exception = new ConfigServerException(ConfigServerException.ErrorCode.APPLICATION_LOCK_FAILURE,
+        RuntimeException exception = new ConfigServerException(URI.create("https://server"),
+                                                               "test failure",
                                                                "Exception to retry",
-                                                               "test failure");
+                                                               ConfigServerException.ErrorCode.APPLICATION_LOCK_FAILURE,
+                                                               new RuntimeException("Retry me"));
         tester.configServer().throwOnNextPrepare(exception);
         tester.jobs().deploy(app.instanceId(), JobType.devUsEast1, Optional.empty(), applicationPackage());
         assertEquals(unfinished, tester.jobs().last(app.instanceId(), JobType.devUsEast1).get().stepStatuses().get(Step.deployReal));

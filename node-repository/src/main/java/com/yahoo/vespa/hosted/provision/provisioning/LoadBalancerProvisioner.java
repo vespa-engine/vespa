@@ -170,35 +170,18 @@ public class LoadBalancerProvisioner {
         Instant now = nodeRepository.clock().instant();
         Optional<LoadBalancer> loadBalancer = db.readLoadBalancer(id);
         if (loadBalancer.isEmpty() && activate) return; // Nothing to activate as this load balancer was never prepared
-
-        Set<Real> reals = realsOf(nodes);
-        Optional<LoadBalancerInstance> instance = provisionInstance(id, reals, loadBalancer);
+        LoadBalancerInstance instance = provisionInstance(id, realsOf(nodes), loadBalancer);
         LoadBalancer newLoadBalancer;
         if (loadBalancer.isEmpty()) {
             newLoadBalancer = new LoadBalancer(id, instance, LoadBalancer.State.reserved, now);
         } else {
-            LoadBalancer.State state = activate && instance.isPresent()
-                    ? LoadBalancer.State.active
-                    : loadBalancer.get().state();
-            newLoadBalancer = loadBalancer.get().with(instance).with(state, now);
+            var newState = activate ? LoadBalancer.State.active : loadBalancer.get().state();
+            newLoadBalancer = loadBalancer.get().with(instance).with(newState, now);
             if (loadBalancer.get().state() != newLoadBalancer.state()) {
                 log.log(Level.FINE, "Moving " + newLoadBalancer.id() + " to state " + newLoadBalancer.state());
             }
         }
-
-        if (activate) {
-            db.writeLoadBalancers(List.of(newLoadBalancer), transaction.nested());
-        } else {
-            // Always store load balancer so that LoadBalancerExpirer can expire partially provisioned load balancers
-            db.writeLoadBalancer(newLoadBalancer);
-        }
-
-        // Signal that load balancer is not ready yet
-        if (instance.isEmpty()) {
-            throw new LoadBalancerServiceException("Could not (re)configure " + id + ", targeting: " +
-                                                   reals + ". The operation will be retried on next deployment",
-                                                   null);
-        }
+        db.writeLoadBalancers(List.of(newLoadBalancer), transaction.nested());
     }
 
     private void provision(ApplicationTransaction transaction, ClusterSpec.Id clusterId, NodeList nodes) {
@@ -206,18 +189,17 @@ public class LoadBalancerProvisioner {
     }
 
     /** Provision or reconfigure a load balancer instance, if necessary */
-    private Optional<LoadBalancerInstance> provisionInstance(LoadBalancerId id, Set<Real> reals,
-                                                             Optional<LoadBalancer> currentLoadBalancer) {
+    private LoadBalancerInstance provisionInstance(LoadBalancerId id, Set<Real> reals,
+                                                   Optional<LoadBalancer> currentLoadBalancer) {
         if (hasReals(currentLoadBalancer, reals)) return currentLoadBalancer.get().instance();
         log.log(Level.FINE, "Creating " + id + ", targeting: " + reals);
         try {
-            return Optional.of(service.create(new LoadBalancerSpec(id.application(), id.cluster(), reals),
-                                              allowEmptyReals(currentLoadBalancer)));
+            return service.create(new LoadBalancerSpec(id.application(), id.cluster(), reals),
+                                  allowEmptyReals(currentLoadBalancer));
         } catch (Exception e) {
-            log.log(Level.WARNING, "Could not (re)configure " + id + ", targeting: " +
-                                   reals + ". The operation will be retried on next deployment", e);
+            throw new LoadBalancerServiceException("Failed to (re)configure " + id + ", targeting: " +
+                                                   reals + ". The operation will be retried on next deployment", e);
         }
-        return Optional.empty();
     }
 
     /** Returns the nodes allocated to the given load balanced cluster */
@@ -264,8 +246,7 @@ public class LoadBalancerProvisioner {
     /** Returns whether load balancer has given reals */
     private static boolean hasReals(Optional<LoadBalancer> loadBalancer, Set<Real> reals) {
         if (loadBalancer.isEmpty()) return false;
-        if (loadBalancer.get().instance().isEmpty()) return false;
-        return loadBalancer.get().instance().get().reals().equals(reals);
+        return loadBalancer.get().instance().reals().equals(reals);
     }
 
     /** Returns whether to allow given load balancer to have no reals */
@@ -291,5 +272,6 @@ public class LoadBalancerProvisioner {
     private static ClusterSpec.Id effectiveId(ClusterSpec cluster) {
         return cluster.combinedId().orElse(cluster.id());
     }
+
 
 }

@@ -188,10 +188,9 @@ public class RoutingPolicies {
     private void storePoliciesOf(LoadBalancerAllocation allocation, @SuppressWarnings("unused") Lock lock) {
         var policies = new LinkedHashMap<>(get(allocation.deployment.applicationId()));
         for (LoadBalancer loadBalancer : allocation.loadBalancers) {
-            if (loadBalancer.hostname().isEmpty()) continue;
             var policyId = new RoutingPolicyId(loadBalancer.application(), loadBalancer.cluster(), allocation.deployment.zoneId());
             var existingPolicy = policies.get(policyId);
-            var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname().get(), loadBalancer.dnsZone(),
+            var newPolicy = new RoutingPolicy(policyId, loadBalancer.hostname(), loadBalancer.dnsZone(),
                                               allocation.endpointIdsOf(loadBalancer),
                                               new Status(isActive(loadBalancer), GlobalRouting.DEFAULT_STATUS));
             // Preserve global routing status for existing policy
