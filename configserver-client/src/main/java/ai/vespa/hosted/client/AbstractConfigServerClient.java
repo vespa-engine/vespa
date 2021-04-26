@@ -104,7 +104,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
     }
 
     @Override
-    public RequestBuilder send(HostStrategy hosts, Method method) {
+    public ConfigServerClient.RequestBuilder send(HostStrategy hosts, Method method) {
         return new RequestBuilder(hosts, method);
     }
 
