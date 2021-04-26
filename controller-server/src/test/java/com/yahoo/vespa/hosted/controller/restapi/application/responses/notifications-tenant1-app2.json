@@ -2,13 +2,14 @@
   "notifications": [
     {
       "at": "(ignore)",
+      "level": "error",
       "type": "DEPLOYMENT_FAILURE",
       "messages": [
         "Failed to deploy: Out of capacity"
       ],
       "application": "app2",
       "instance": "instance1",
-      "jobType": "system-test",
+      "jobName": "system-test",
       "runNumber": 12
     }
   ]

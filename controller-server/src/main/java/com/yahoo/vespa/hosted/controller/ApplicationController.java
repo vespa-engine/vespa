@@ -403,6 +403,8 @@ public class ApplicationController {
                             .filter(log -> log.applicationPackage)
                             .filter(log -> LogLevel.parse(log.level).intValue() >= Level.WARNING.intValue())
                             .map(log -> log.message)
+                            .sorted()
+                            .distinct()
                             .collect(Collectors.toList()))
                     .orElseGet(List::of);
             if (warnings.isEmpty()) controller.notificationsDb().removeNotification(source, Notification.Type.APPLICATION_PACKAGE_WARNING);

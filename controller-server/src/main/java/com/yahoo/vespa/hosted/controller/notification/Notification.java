@@ -50,12 +50,25 @@ public class Notification {
                 '}';
     }
 
+    public enum Level {
+        warning, error;
+    }
+
     public enum Type {
         /** Warnings about usage of deprecated features in application package */
-        APPLICATION_PACKAGE_WARNING,
+        APPLICATION_PACKAGE_WARNING(Level.warning),
 
         /** Failure to deploy application package */
-        DEPLOYMENT_FAILURE
+        DEPLOYMENT_FAILURE(Level.error);
+
+        private final Level level;
+        Type(Level level) {
+            this.level = level;
+        }
+
+        public Level level() {
+            return level;
+        }
     }
 
 }
