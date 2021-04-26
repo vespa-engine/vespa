@@ -89,10 +89,9 @@ class HttpConfigServerClientTest {
                                                 () -> client.send(HostStrategy.repeating(URI.create("http://localhost:" + server.port()), 10),
                                                                   Method.GET)
                                                             .read(String::new));
-        assertEquals("GET / failed with status 409 and no body", thrown.getMessage());
+        assertEquals("GET / failed with status 409 and body 'hi'", thrown.getMessage());
         server.verify(1, getRequestedFor(urlEqualTo("/")));
         server.verify(1, anyRequestedFor(anyUrl()));
-
     }
 
 }
