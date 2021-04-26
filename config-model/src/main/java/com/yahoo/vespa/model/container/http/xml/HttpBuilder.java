@@ -108,14 +108,14 @@ public class HttpBuilder extends VespaDomBuilder.DomConfigProducerBuilder<Http> 
             if (explicitDomain == null) {
                 throw new IllegalStateException("No Athenz domain provided for 'access-control'");
             }
-            deployState.getDeployLogger().log(Level.WARNING, "Athenz tenant is not provided by deploy call. This will soon be handled as failure.");
+            deployState.getDeployLogger().logApplicationPackage(Level.WARNING, "Athenz tenant is not provided by deploy call. This will soon be handled as failure.");
         }
         if (explicitDomain != null) {
             if (tenantDomain != null && !explicitDomain.equals(tenantDomain)) {
                 throw new IllegalArgumentException(
                         String.format("Domain in access-control ('%s') does not match tenant domain ('%s')", explicitDomain.value(), tenantDomain.value()));
             }
-            deployState.getDeployLogger().log(Level.WARNING, "Domain in 'access-control' is deprecated and will be removed soon");
+            deployState.getDeployLogger().logApplicationPackage(Level.WARNING, "Domain in 'access-control' is deprecated and will be removed soon");
         }
         return tenantDomain != null ? tenantDomain : explicitDomain;
     }

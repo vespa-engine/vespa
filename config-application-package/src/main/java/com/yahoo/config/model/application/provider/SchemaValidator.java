@@ -107,7 +107,7 @@ public class SchemaValidator {
         volatile Reader reader;
 
         public void warning(SAXParseException e) {
-            deployLogger.log(Level.WARNING, message(e));
+            deployLogger.logApplicationPackage(Level.WARNING, message(e));
         }
 
         public void error(SAXParseException e) {

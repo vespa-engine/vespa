@@ -589,7 +589,7 @@ void bodycfg(SDDocumentType document) : { }
  */
 void compression(SDDocumentType document, String name) :
 {
-    deployLogger.log(Level.WARNING, "'compression' for a document is deprecated and ignored");
+    deployLogger.logApplicationPackage(Level.WARNING, "'compression' for a document is deprecated and ignored");
     CompressionConfig cfg = new CompressionConfig(CompressionType.LZ4);
 }
 {
@@ -877,7 +877,7 @@ DataType dataType() :
         }
 
         if (isArrayOldStyle) {
-            deployLogger.log(Level.WARNING, "Data type syntax '" + typeName + "[]' is deprecated, use 'array<" + typeName + ">' instead.");
+            deployLogger.logApplicationPackage(Level.WARNING, "Data type syntax '" + typeName + "[]' is deprecated, use 'array<" + typeName + ">' instead.");
             type = DataType.getArray(type);
         }
         if ("tag".equalsIgnoreCase(typeName) && type instanceof WeightedSetDataType) ((WeightedSetDataType)type).setTag(true);
@@ -1259,7 +1259,7 @@ Object attributeTensorType(AttributeOperation attribute) :
     tensorType = tensorType("For attribute field '" + attribute.getName() + "'")
     {
         // TODO: Remove on Vespa 8
-        deployLogger.log(Level.WARNING, "In field '" + attribute.getName() + "': Specifying tensor type on the attribute is deprecated and has no effect.");
+        deployLogger.logApplicationPackage(Level.WARNING, "In field '" + attribute.getName() + "': Specifying tensor type on the attribute is deprecated and has no effect.");
     }
     { return null; }
 }
@@ -1563,7 +1563,7 @@ void body(SDField field) : { }
 {
     <BODY>
     {
-        deployLogger.log(Level.WARNING, field + ": 'header/body' is deprecated and has no effect.");
+        deployLogger.logApplicationPackage(Level.WARNING, field + ": 'header/body' is deprecated and has no effect.");
     }
 }
 
@@ -1576,7 +1576,7 @@ void header(SDField field) : { }
 {
     <HEADER>
     {
-        deployLogger.log(Level.WARNING, field + ": 'header/body' is deprecated and has no effect.");
+        deployLogger.logApplicationPackage(Level.WARNING, field + ": 'header/body' is deprecated and has no effect.");
     }
 }
 
@@ -2432,7 +2432,7 @@ void rankDegradationBinSize() :
 }
 {
     <RPBINSIZE> <COLON> freq = consumeFloat()
-    { deployLogger.log(Level.WARNING, "Specifying 'doc-frequency' in 'rank-degradation' is deprecated and has no effect."); }
+    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'doc-frequency' in 'rank-degradation' is deprecated and has no effect."); }
 }
 
 
@@ -2445,7 +2445,7 @@ void rankDegradationBinLow() :
 }
 {
     <RPBINLOW> <COLON> n = integer()
-    { deployLogger.log(Level.WARNING, "Specifying 'min-fullrank-docs' in 'rank-degradation' is deprecated and has no effect."); }
+    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'min-fullrank-docs' in 'rank-degradation' is deprecated and has no effect."); }
 }
 
 
@@ -2458,7 +2458,7 @@ void rankDegradationPosbinSize() :
 }
 {
     <RPPOSBINSIZE> <COLON> avgOcc = consumeFloat()
-    { deployLogger.log(Level.WARNING, "Specifying 'occurrences-per-doc' in 'rank-degradation' is deprecated and has no effect."); }
+    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'occurrences-per-doc' in 'rank-degradation' is deprecated and has no effect."); }
 }
 
 
@@ -2486,7 +2486,7 @@ Object rankDegradation(RankProfile profile) :
 }
 {
     ( <RANKDEGRADATIONFREQ> <COLON> freq = consumeFloat()
-    { deployLogger.log(Level.WARNING, "Specifying 'rank-degradation-frequency' in 'rank-profile' is deprecated and has no effect."); }
+    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'rank-degradation-frequency' in 'rank-profile' is deprecated and has no effect."); }
       | <RANKDEGRADATION> lbrace() ( rankDegradationItem() (<NL>)*)+ <RBRACE>
     )
     {

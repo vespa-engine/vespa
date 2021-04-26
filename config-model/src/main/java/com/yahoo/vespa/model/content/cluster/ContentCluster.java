@@ -312,7 +312,7 @@ public class ContentCluster extends AbstractConfigProducer implements
                     if (hosts.size() > 1) {
                         var message = "When having content clusters and more than 1 config server " +
                                       "it is recommended to configure cluster controllers explicitly.";
-                        deployState.getDeployLogger().log(Level.INFO, message);
+                        deployState.getDeployLogger().logApplicationPackage(Level.INFO, message);
                     }
                     admin.setClusterControllers(createClusterControllers(admin,
                                                                          hosts,

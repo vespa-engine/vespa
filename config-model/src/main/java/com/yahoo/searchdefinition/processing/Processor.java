@@ -72,7 +72,7 @@ public abstract class Processor {
     protected SDField addField(Search search, SDField field, String suffix, String indexing, String queryCommand) {
         SDField implementationField = search.getConcreteField(field.getName() + "_" + suffix);
         if (implementationField != null) {
-            deployLogger.log(Level.WARNING, "Implementation field " + implementationField + " added twice");
+            deployLogger.logApplicationPackage(Level.WARNING, "Implementation field " + implementationField + " added twice");
         } else {
             implementationField = new SDField(search.getDocument(), field.getName() + "_" + suffix, DataType.STRING);
         }
@@ -130,7 +130,7 @@ public abstract class Processor {
 
     protected void warn(String searchName, String fieldName, String message) {
         String fullMsg = formatError(searchName, fieldName, message);
-        deployLogger.log(Level.WARNING, fullMsg);
+        deployLogger.logApplicationPackage(Level.WARNING, fullMsg);
     }
 
     protected void warn(Search search, Field field, String message) {
@@ -139,11 +139,11 @@ public abstract class Processor {
 
     protected void info(String searchName, String fieldName, String message) {
         String fullMsg = formatError(searchName, fieldName, message);
-        deployLogger.log(Level.INFO, fullMsg);
+        deployLogger.logApplicationPackage(Level.INFO, fullMsg);
     }
 
     protected void info(Search search, Field field, String message) {
-        warn(search.getName(), field.getName(), message);
+        info(search.getName(), field.getName(), message);
     }
 
 }

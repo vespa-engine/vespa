@@ -180,7 +180,8 @@
       "abstract"
     ],
     "methods": [
-      "public abstract void log(java.util.logging.Level, java.lang.String)"
+      "public abstract void log(java.util.logging.Level, java.lang.String)",
+      "public void logApplicationPackage(java.util.logging.Level, java.lang.String)"
     ],
     "fields": []
   },

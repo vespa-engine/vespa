@@ -64,7 +64,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
         }
 
         if ( registry.getTypeRegistry().hasApplicationTypes() && registry.allComponents().isEmpty()) {
-            logger.log(Level.WARNING, "This application define query profile types, but has " +
+            logger.logApplicationPackage(Level.WARNING, "This application define query profile types, but has " +
                                       "no query profiles referencing them so they have no effect. "  +
                                       (tensorFields.isEmpty()
                                        ? ""

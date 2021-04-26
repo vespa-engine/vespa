@@ -37,16 +37,31 @@ public class DeployHandlerLogger implements DeployLogger {
 
     @Override
     public void log(Level level, String message) {
-        if ((level == Level.FINE || level == LogLevel.DEBUG || level == LogLevel.SPAM) && !verbose)
+        if (level.intValue() <= LogLevel.DEBUG.intValue() && !verbose)
             return;
 
-        String fullMsg = prefix + message;
+        logJson(level, message);
+        // Also tee to a normal log, Vespa log for example, but use level fine 
+        log.log(Level.FINE, () -> prefix + message);
+    }
+
+    @Override
+    public void logApplicationPackage(Level level, String message) {
+        if (level.intValue() <= LogLevel.DEBUG.intValue() && !verbose)
+            return;
+
+        Cursor entry = logJson(level, message);
+        entry.setBool("applicationPackage", true);
+        // Also tee to a normal log, Vespa log for example, but use level fine
+        log.log(Level.FINE, () -> prefix + message);
+    }
+
+    private Cursor logJson(Level level, String message) {
         Cursor entry = logroot.addObject();
         entry.setLong("time", System.currentTimeMillis());
         entry.setString("level", level.getName());
-        entry.setString("message", fullMsg);
-        // Also tee to a normal log, Vespa log for example, but use level fine 
-        log.log(Level.FINE, fullMsg);
+        entry.setString("message", message);
+        return entry;
     }
 
     public Slime slime() {

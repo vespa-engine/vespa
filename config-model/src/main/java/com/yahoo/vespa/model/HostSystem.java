@@ -50,10 +50,10 @@ public class HostSystem extends AbstractConfigProducer<Host> {
             @SuppressWarnings("unused")
             Object ignore = java.net.InetAddress.getByName(hostname);
         } catch (UnknownHostException e) {
-            deployLogger.log(Level.WARNING, "Unable to lookup IP address of host: " + hostname);
+            deployLogger.logApplicationPackage(Level.WARNING, "Unable to lookup IP address of host: " + hostname);
         }
         if (! hostname.contains(".")) {
-            deployLogger.log(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
+            deployLogger.logApplicationPackage(Level.WARNING, "Host named '" + hostname + "' may not receive any config " +
                                             "since it is not a canonical hostname. " +
                                             "Disregard this warning when testing in a Docker container.");
         }
