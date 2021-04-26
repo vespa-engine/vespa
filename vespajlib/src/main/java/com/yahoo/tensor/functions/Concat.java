@@ -191,7 +191,8 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
                     case concat:
                         labels[out++] = String.valueOf(concatDimIdx);
                         break;
-                        //default:                         throw new IllegalArgumentException("cannot handle: "+how);
+                    default:
+                        throw new IllegalArgumentException("cannot handle: "+how);
                 }
             }
             return TensorAddress.of(labels);
@@ -244,7 +245,8 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
                         case concat:
                             ccDimIndex = addr.numericLabel(i);
                             break;
-                            // default: throw new IllegalArgumentException("cannot handle: "+how.handleDims.get(i));
+                        default:
+                            throw new IllegalArgumentException("cannot handle: "+how.handleDims.get(i));
                     }
                 }
                 TensorAddress commonAddr = TensorAddress.of(commonLabels);
@@ -296,9 +298,9 @@ public class Concat<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     public Tensor evaluate(EvaluationContext<NAMETYPE> context) {
         Tensor a = argumentA.evaluate(context);
         Tensor b = argumentB.evaluate(context);
-     // if (a instanceof IndexedTensor && b instanceof IndexedTensor) {
-     //     return oldEvaluate(a, b);
-     // }
+        if (a instanceof IndexedTensor && b instanceof IndexedTensor) {
+            return oldEvaluate(a, b);
+        }
         var helper = new Helper(a, b, dimension);
         return helper.result;
     }
