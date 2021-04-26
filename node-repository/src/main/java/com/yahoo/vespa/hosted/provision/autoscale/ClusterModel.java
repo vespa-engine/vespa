@@ -150,7 +150,8 @@ public class ClusterModel {
         for (ScalingEvent event : cluster.scalingEvents()) {
             if (event.duration().isEmpty()) continue;
             completedEventCount++;
-            totalDuration = totalDuration.plus(event.duration().get());
+            // Assume we have missed timely recording completion if it is longer than 4 days
+            totalDuration = totalDuration.plus(maximum(Duration.ofDays(4), event.duration().get()));
         }
 
         if (completedEventCount == 0) { // Use defaults
@@ -160,13 +161,25 @@ public class ClusterModel {
         else {
             Duration predictedDuration = totalDuration.dividedBy(completedEventCount);
 
-            // TODO: Remove when we have reliable completion for content clusters
-            if (clusterSpec.isStateful() && predictedDuration.minus(Duration.ofHours(12)).isNegative())
-                return Duration.ofHours(12);
+            if ( clusterSpec.isStateful() ) // TODO: Remove when we have reliable completion for content clusters
+                predictedDuration = minimum(Duration.ofHours(12), predictedDuration);
 
-            if (predictedDuration.minus(Duration.ofMinutes(5)).isNegative()) return Duration.ofMinutes(5); // minimum
+            predictedDuration = minimum(Duration.ofMinutes(5), predictedDuration);
+
             return predictedDuration;
         }
+    }
+
+    private static Duration minimum(Duration smallestAllowed, Duration duration) {
+        if (duration.minus(smallestAllowed).isNegative())
+            return smallestAllowed;
+        return duration;
+    }
+
+    private static Duration maximum(Duration largestAllowed, Duration duration) {
+        if ( ! duration.minus(largestAllowed).isNegative())
+            return largestAllowed;
+        return duration;
     }
 
 }

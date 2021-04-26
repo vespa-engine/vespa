@@ -111,15 +111,14 @@ public class AutoscalingMaintainer extends NodeRepositoryMaintainer {
         if (clusterNodes.retired().stream()
                         .anyMatch(node -> node.history().hasEventAt(History.Event.Type.retired, event.at())))
             return cluster;
-        // - 2. all nodes have switched to the right config generation
+        // - 2. all nodes have switched to the right config generation (currently only measured on containers)
         for (var nodeTimeseries : nodeRepository().metricsDb().getNodeTimeseries(Duration.between(event.at(), clock().instant()),
                                                                                  clusterNodes)) {
-            Optional<NodeMetricSnapshot> firstOnNewGeneration =
+            Optional<NodeMetricSnapshot> onNewGeneration =
                     nodeTimeseries.asList().stream()
-                                           .filter(snapshot -> snapshot.generation() >= event.generation()).findFirst();
-            if (firstOnNewGeneration.isEmpty()) return cluster; // Not completed
+                                  .filter(snapshot -> snapshot.generation() >= event.generation()).findAny();
+            if (onNewGeneration.isEmpty()) return cluster; // Not completed
         }
-
 
         // Set the completion time to the instant we notice completion.
         Instant completionTime = nodeRepository().clock().instant();
