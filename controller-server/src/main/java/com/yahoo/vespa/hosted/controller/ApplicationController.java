@@ -399,7 +399,11 @@ public class ApplicationController {
             NotificationSource source = zone.environment().isManuallyDeployed() ?
                     NotificationSource.from(job.application()) : NotificationSource.from(applicationId);
             List<String> warnings = Optional.ofNullable(result.prepareResponse().log)
-                    .map(logs -> logs.stream().filter(log -> LogLevel.parse(log.level).intValue() >= Level.WARNING.intValue()).map(log -> log.message).collect(Collectors.toList()))
+                    .map(logs -> logs.stream()
+                            .filter(log -> log.applicationPackage)
+                            .filter(log -> LogLevel.parse(log.level).intValue() >= Level.WARNING.intValue())
+                            .map(log -> log.message)
+                            .collect(Collectors.toList()))
                     .orElseGet(List::of);
             if (warnings.isEmpty()) controller.notificationsDb().removeNotification(source, Notification.Type.APPLICATION_PACKAGE_WARNING);
             else controller.notificationsDb().setNotification(source, Notification.Type.APPLICATION_PACKAGE_WARNING, warnings);
