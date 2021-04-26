@@ -54,7 +54,6 @@ public class HttpConfigServerClient extends AbstractConfigServerClient {
                                              false)
                                      .disableAutomaticRetries()
                                      .setUserAgent(userAgent)
-                                     .setDefaultRequestConfig(defaultRequestConfig)
                                      .build();
     }
 

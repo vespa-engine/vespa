@@ -30,7 +30,7 @@ public class LoadBalancerSerializerTest {
                                                                                   "application1",
                                                                                   "default"),
                                                                ClusterSpec.Id.from("qrs")),
-                                            new LoadBalancerInstance(
+                                            Optional.of(new LoadBalancerInstance(
                                                     HostName.from("lb-host"),
                                                     Optional.of(new DnsZone("zone-id-1")),
                                                     ImmutableSet.of(4080, 4443),
@@ -40,19 +40,19 @@ public class LoadBalancerSerializerTest {
                                                                              4080),
                                                                     new Real(HostName.from("real-2"),
                                                                              "127.0.0.2",
-                                                                             4080))),
+                                                                             4080)))),
                                             LoadBalancer.State.active,
                                             now);
 
         var serialized = LoadBalancerSerializer.fromJson(LoadBalancerSerializer.toJson(loadBalancer));
         assertEquals(loadBalancer.id(), serialized.id());
-        assertEquals(loadBalancer.instance().hostname(), serialized.instance().hostname());
-        assertEquals(loadBalancer.instance().dnsZone(), serialized.instance().dnsZone());
-        assertEquals(loadBalancer.instance().ports(), serialized.instance().ports());
-        assertEquals(loadBalancer.instance().networks(), serialized.instance().networks());
+        assertEquals(loadBalancer.instance().get().hostname(), serialized.instance().get().hostname());
+        assertEquals(loadBalancer.instance().get().dnsZone(), serialized.instance().get().dnsZone());
+        assertEquals(loadBalancer.instance().get().ports(), serialized.instance().get().ports());
+        assertEquals(loadBalancer.instance().get().networks(), serialized.instance().get().networks());
         assertEquals(loadBalancer.state(), serialized.state());
         assertEquals(loadBalancer.changedAt().truncatedTo(MILLIS), serialized.changedAt());
-        assertEquals(loadBalancer.instance().reals(), serialized.instance().reals());
+        assertEquals(loadBalancer.instance().get().reals(), serialized.instance().get().reals());
     }
 
 }

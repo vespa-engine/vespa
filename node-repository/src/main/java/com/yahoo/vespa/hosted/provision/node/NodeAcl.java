@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.provision.lb.LoadBalancers;
 import java.util.Comparator;
 import java.util.LinkedHashSet;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.Set;
 import java.util.TreeSet;
 
@@ -70,6 +71,7 @@ public class NodeAcl {
             loadBalancers.list(allocation.owner()).asList()
                          .stream()
                          .map(LoadBalancer::instance)
+                         .flatMap(Optional::stream)
                          .map(LoadBalancerInstance::networks)
                          .forEach(trustedNetworks::addAll);
         });
