@@ -77,11 +77,11 @@ public class ClusterDeploymentMetricsRetrieverTest {
     }
 
     private String containerMetrics() throws IOException {
-        return Files.readString(Path.of("src/test/resources/metrics/container_metrics"));
+        return Files.readString(Path.of("src/test/resources/metrics/container_metrics.json"));
     }
 
     private String contentMetrics() throws IOException {
-        return Files.readString(Path.of("src/test/resources/metrics/content_metrics"));
+        return Files.readString(Path.of("src/test/resources/metrics/content_metrics.json"));
     }
 
     // Same tolerance value as used internally in MetricsAggregator.isZero

@@ -1,0 +1,51 @@
+{
+  "services": [
+    {
+      "name": "vespa.container",
+      "timestamp": 1557306075,
+      "metrics": [
+        {
+          "values": {
+            "queries.rate": 23.0,
+            "query_latency.sum": 2000,
+            "document.count": 300000,
+            "feed.rate": 23.0,
+            "write_latency.sum": 2000
+          },
+          "dimensions": {
+            "clustertype": "container",
+            "clusterid": "container_cluster_id"
+          }
+        },
+        {
+          "values": {
+            "query_latency.count": 43.0,
+            "query_latency.sum": 3000,
+            "feed.latency.count": 43.0,
+            "feed.latency.sum": 3000
+          },
+          "dimensions": {
+            "clustertype": "container",
+            "clusterid": "container_cluster_id"
+          }
+        }
+      ]
+    },
+    {
+      "name": "vespa.qrserver",
+      "timestamp": 1557306075,
+      "metrics": [
+        {
+          "values": {
+            "query_latency.count": 43.0,
+            "query_latency.sum": 3000
+          },
+          "dimensions": {
+            "clustertype": "container",
+            "clusterid": "container_cluster_id"
+          }
+        }
+      ]
+    }
+  ]
+}

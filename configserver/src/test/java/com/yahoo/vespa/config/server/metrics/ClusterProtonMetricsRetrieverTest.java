@@ -72,7 +72,7 @@ public class ClusterProtonMetricsRetrieverTest {
     }
 
     private String nodeMetrics(String extension) throws IOException {
-        return Files.readString(Path.of("src/test/resources/metrics/node_metrics" + extension));
+        return Files.readString(Path.of("src/test/resources/metrics/node_metrics" + extension + ".json"));
     }
 
     // Same tolerance value as used internally in MetricsAggregator.isZero
