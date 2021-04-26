@@ -1,32 +1,38 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.integration.configserver;
 
-import com.yahoo.slime.Inspector;
-import com.yahoo.slime.SlimeUtils;
-import org.apache.hc.core5.http.ClassicHttpRequest;
-
-import java.util.stream.Stream;
+import java.net.URI;
+import java.util.Objects;
 
 /**
- * An exception due to server error, a bad request, or similar.
- *
- * @author jonmv
+ * @author Tony Vaagenes
  */
 public class ConfigServerException extends RuntimeException {
 
-    private final ErrorCode code;
-    private final String message;
+    private final URI serverUri;
+    private final ErrorCode errorCode;
+    private final String serverMessage;
 
-    public ConfigServerException(ErrorCode code, String message, String context) {
-        super(context + ": " + message);
-        this.code = code;
-        this.message = message;
+    public ConfigServerException(URI serverUri, String context, String serverMessage, ErrorCode errorCode, Throwable cause) {
+        super(context + ": " + serverMessage, cause);
+        this.serverUri = Objects.requireNonNull(serverUri);
+        this.errorCode = Objects.requireNonNull(errorCode);
+        this.serverMessage = Objects.requireNonNull(serverMessage);
     }
 
-    public ErrorCode code() { return code; }
+    public ErrorCode getErrorCode() {
+        return errorCode;
+    }
 
-    public String message() { return message; }
+    public URI getServerUri() {
+        return serverUri;
+    }
 
+    public String getServerMessage() {
+        return serverMessage;
+    }
+
+    // TODO: Copied from Vespa. Expose these in Vespa and use them here
     public enum ErrorCode {
         APPLICATION_LOCK_FAILURE,
         BAD_REQUEST,
@@ -40,18 +46,7 @@ public class ConfigServerException extends RuntimeException {
         UNKNOWN_VESPA_VERSION,
         PARENT_HOST_NOT_READY,
         CERTIFICATE_NOT_READY,
-        LOAD_BALANCER_NOT_READY,
-        INCOMPLETE_RESPONSE
-    }
-
-    public static ConfigServerException readException(int statusCode, byte[] body, ClassicHttpRequest request) {
-        Inspector root = SlimeUtils.jsonToSlime(body).get();
-        String codeName = root.field("error-code").asString();
-        ErrorCode code = Stream.of(ErrorCode.values())
-                               .filter(value -> value.name().equals(codeName))
-                               .findAny().orElse(ErrorCode.INCOMPLETE_RESPONSE);
-        String message = root.field("message").valid() ? root.field("message").asString() : "(no message)";
-        return new ConfigServerException(code, message, request + " failed with status " + statusCode);
+        LOAD_BALANCER_NOT_READY
     }
 
 }

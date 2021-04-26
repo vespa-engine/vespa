@@ -7,10 +7,10 @@ import org.apache.hc.core5.http.ClassicHttpResponse;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.http.Method;
+import org.apache.hc.core5.http.ParseException;
 import org.apache.hc.core5.http.io.entity.EntityUtils;
 import org.apache.hc.core5.util.Timeout;
 
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UncheckedIOException;
@@ -20,18 +20,18 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.BiConsumer;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
 
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toUnmodifiableList;
 
 /**
  * @author jonmv
  */
-public interface ConfigServerClient extends Closeable {
+public interface ConfigServerClient extends AutoCloseable {
 
     RequestConfig defaultRequestConfig = RequestConfig.custom()
                                                       .setConnectionRequestTimeout(Timeout.ofSeconds(5))
@@ -40,12 +40,20 @@ public interface ConfigServerClient extends Closeable {
                                                       .build();
 
     /** Wraps with a {@link RetryException} and rethrows. */
-    Consumer<IOException> retryAll = (e) -> {
+    static void retryAll(IOException e) {
         throw new RetryException(e);
-    };
+    }
 
     /** Throws a a {@link RetryException} if {@code statusCode == 503}, or a {@link ResponseException} unless {@code 200 <= statusCode < 300}. */
-    ResponseVerifier throwOnError = new DefaultResponseVerifier() { };
+    static void throwOnError(ClassicHttpResponse response, ClassicHttpRequest request) {
+        if (response.getCode() < HttpStatus.SC_OK || response.getCode() >= HttpStatus.SC_REDIRECTION) {
+            ResponseException e = ResponseException.of(response, request);
+            if (response.getCode() == HttpStatus.SC_SERVICE_UNAVAILABLE)
+                throw new RetryException(e);
+
+            throw e;
+        }
+    }
 
     /** Reads the response body, throwing an {@link UncheckedIOException} if this fails, or {@code null} if there is none. */
     static byte[] getBytes(ClassicHttpResponse response) {
@@ -63,10 +71,10 @@ public interface ConfigServerClient extends Closeable {
     /** Builder for a request against a given set of hosts, using this config server client. */
     interface RequestBuilder {
 
-        /** Appends to the request path. */
+        /** Sets the request path. */
         default RequestBuilder at(String... pathSegments) { return at(List.of(pathSegments)); }
 
-        /** Appends to the request path. */
+        /** Sets the request path. */
         RequestBuilder at(List<String> pathSegments);
 
         /** Sets the request body as UTF-8 application/json. */
@@ -75,20 +83,12 @@ public interface ConfigServerClient extends Closeable {
         /** Sets the request body. */
         RequestBuilder body(HttpEntity entity);
 
-        /** Sets query parameters without a value, like {@code ?debug&recursive}. */
-        default RequestBuilder emptyParameters(String... keys) {
-            return emptyParameters(Arrays.asList(keys));
-        }
-
-        /** Sets query parameters without a value, like {@code ?debug&recursive}. */
-        RequestBuilder emptyParameters(List<String> keys);
-
-        /** Sets the parameter key/values for the request. Number of arguments must be even. Null values are omitted. */
+        /** Sets the parameter key/values for the request. Number of arguments must be even. */
         default RequestBuilder parameters(String... pairs) {
             return parameters(Arrays.asList(pairs));
         }
 
-        /** Sets the parameter key/values for the request. Number of arguments must be even. Null values are omitted. */
+        /** Sets the parameter key/values for the request. Number of arguments must be even. */
         RequestBuilder parameters(List<String> pairs);
 
         /** Overrides the default socket read timeout of the request. {@code Duration.ZERO} gives infinite timeout. */
@@ -109,10 +109,7 @@ public interface ConfigServerClient extends Closeable {
          * Sets the (error) response handler for this request. The default is {@link #throwOnError}.
          * When the handler returns normally, the response is treated as a success, and passed on to a response mapper.
          */
-         RequestBuilder throwing(ResponseVerifier handler);
-
-        /** Reads the response as a {@link String}, or throws if unsuccessful. */
-        String read();
+         RequestBuilder handling(BiConsumer<ClassicHttpResponse, ClassicHttpRequest> handler);
 
         /** Reads and maps the response, or throws if unsuccessful. */
         <T> T read(Function<byte[], T> mapper);
@@ -121,87 +118,9 @@ public interface ConfigServerClient extends Closeable {
         void discard();
 
         /** Returns the raw response input stream, or throws if unsuccessful. The caller must close the returned stream. */
-        HttpInputStream stream();
-
-        /** Uses the response and request, if successful, to generate a mapped response. */
-        <T> T handle(ResponseHandler<T> handler);
+        InputStream stream();
 
     }
-
-
-    class HttpInputStream extends ForwardingInputStream {
-
-        private final ClassicHttpResponse response;
-
-        protected HttpInputStream(ClassicHttpResponse response) throws IOException {
-            super(response.getEntity() != null ? response.getEntity().getContent()
-                                               : InputStream.nullInputStream());
-            this.response = response;
-        }
-
-        public int statusCode() { return response.getCode(); }
-
-        public String contentType() { return response.getEntity().getContentType(); }
-
-        @Override
-        public void close() throws IOException {
-            super.close();
-            response.close();
-        }
-
-    }
-
-
-    /** Reads a successful response and request to compute a result. */
-    @FunctionalInterface
-    interface ResponseHandler<T> {
-
-        /** Called with successful responses, as per {@link ResponseVerifier}. The caller must close the response. */
-        T handle(ClassicHttpResponse response, ClassicHttpRequest request) throws IOException;
-
-    }
-
-
-    /** Verifies a response, throwing on error responses, possibly indicating retries. */
-    @FunctionalInterface
-    interface ResponseVerifier {
-
-        /** Whether this status code means the response is an error response. */
-        default boolean isError(int statusCode) {
-            return statusCode < HttpStatus.SC_OK || HttpStatus.SC_REDIRECTION <= statusCode;
-        }
-
-        /** Whether this status code means we should retry. Has no effect if this is not also an error. */
-        default boolean shouldRetry(int statusCode) {
-            return statusCode == HttpStatus.SC_SERVICE_UNAVAILABLE;
-        }
-
-        /** Verifies the given response, consuming it and throwing if it is an error; or leaving it otherwise. */
-        default void verify(ClassicHttpResponse response, ClassicHttpRequest request) throws IOException {
-            if (isError(response.getCode())) {
-                try (response) {
-                    byte[] body = response.getEntity() == null ? new byte[0] : EntityUtils.toByteArray(response.getEntity());
-                    RuntimeException exception = toException(response.getCode(), body, request);
-                    throw shouldRetry(response.getCode()) ? new RetryException(exception) : exception;
-                }
-            }
-        }
-
-        /** Throws the appropriate exception, for the given status code and body. */
-        RuntimeException toException(int statusCode, byte[] body, ClassicHttpRequest request);
-
-    }
-
-
-    interface DefaultResponseVerifier extends ResponseVerifier {
-
-        @Override
-        default RuntimeException toException(int statusCode, byte[] body, ClassicHttpRequest request) {
-            return new ResponseException(request + " failed with status " + statusCode + " and body '" + new String(body, UTF_8) + "'");
-        }
-
-    }
-
 
     /** What host(s) to try for a request, in what order. A host may be specified multiple times, for retries.  */
     @FunctionalInterface
@@ -228,7 +147,6 @@ public interface ConfigServerClient extends Closeable {
 
     }
 
-
     /** Exception wrapper that signals retries should be attempted. */
     final class RetryException extends RuntimeException {
 
@@ -242,12 +160,25 @@ public interface ConfigServerClient extends Closeable {
 
     }
 
-
     /** An exception due to server error, a bad request, or similar, which resulted in a non-OK HTTP response. */
     class ResponseException extends RuntimeException {
 
-        public ResponseException(String message) {
-            super(message);
+        public ResponseException(String message, Throwable cause) {
+            super(message, cause);
+        }
+
+        public static ResponseException of(ClassicHttpResponse response, ClassicHttpRequest request) {
+            String detail;
+            Throwable thrown = null;
+            try {
+                detail = request.getEntity() == null ? " and no body"
+                                                     : " and body '" + EntityUtils.toString(request.getEntity()) + "'";
+            }
+            catch (IOException | ParseException e) {
+                detail = ". Reading body failed";
+                thrown = e;
+            }
+            return new ResponseException(request + " failed with status " + response.getCode() + detail, thrown);
         }
 
     }

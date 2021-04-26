@@ -228,7 +228,7 @@ public class InternalStepRunner implements StepRunner {
             // Retry certain failures for up to one hour.
             Optional<RunStatus> result = startTime.isBefore(controller.clock().instant().minus(Duration.ofHours(1)))
                                          ? Optional.of(deploymentFailed) : Optional.empty();
-            switch (e.code()) {
+            switch (e.getErrorCode()) {
                 case CERTIFICATE_NOT_READY:
                     logger.log("Waiting for certificate to become ready on config server: New application, or old one has expired");
                     if (startTime.plus(timeouts.endpointCertificate()).isBefore(controller.clock().instant())) {
@@ -238,15 +238,15 @@ public class InternalStepRunner implements StepRunner {
                     return result;
                 case ACTIVATION_CONFLICT:
                 case APPLICATION_LOCK_FAILURE:
-                    logger.log("Deployment failed with possibly transient error " + e.code() +
+                    logger.log("Deployment failed with possibly transient error " + e.getErrorCode() +
                             ", will retry: " + e.getMessage());
                     return result;
                 case LOAD_BALANCER_NOT_READY:
                 case PARENT_HOST_NOT_READY:
-                    logger.log(e.message());
+                    logger.log(e.getServerMessage());
                     return result;
                 case OUT_OF_CAPACITY:
-                    logger.log(e.message());
+                    logger.log(e.getServerMessage());
                     return controller.system().isCd() && startTime.plus(timeouts.capacity()).isAfter(controller.clock().instant())
                            ? Optional.empty()
                            : Optional.of(outOfCapacity);
