@@ -24,11 +24,6 @@ public class ConfigServerMetrics {
         this.configServer = configServer;
     }
 
-    public ApplicationMetrics getApplicationMetrics(ApplicationId application) {
-        // TODO(ogronnesby): How to produce these values in Public context?
-        return new ApplicationMetrics(0.0, 0.0);
-    }
-
     public DeploymentMetrics getDeploymentMetrics(ApplicationId application, ZoneId zone) {
         var deploymentId = new DeploymentId(application, zone);
         var metrics = configServer.getDeploymentMetrics(deploymentId);

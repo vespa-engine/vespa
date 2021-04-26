@@ -65,11 +65,4 @@ public class ConfigServerMetricsTest {
         assertEquals(0.0, deploymentMetrics.writesPerSecond(), 0.001);
     }
 
-    @Test
-    public void test_not_implemented_application_metrics() {
-        var applicationMetrics = service.getApplicationMetrics(applicationId);
-        assertEquals(0.0, applicationMetrics.queryServiceQuality(), 0.001);
-        assertEquals(0.0, applicationMetrics.writeServiceQuality(), 0.001);
-    }
-
 }
