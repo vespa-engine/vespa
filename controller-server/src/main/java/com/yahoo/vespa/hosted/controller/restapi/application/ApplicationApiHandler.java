@@ -496,6 +496,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     private static void toSlime(Cursor cursor, Notification notification) {
         cursor.setLong("at", notification.at().toEpochMilli());
+        cursor.setString("level", notificatioLevelAsString(notification.type().level()));
         cursor.setString("type", notificationTypeAsString(notification.type()));
         Cursor messagesArray = cursor.setArray("messages");
         notification.messages().forEach(messagesArray::addString);
@@ -507,7 +508,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             cursor.setString("region", zoneId.region().value());
         });
         notification.source().clusterId().ifPresent(clusterId -> cursor.setString("clusterId", clusterId.value()));
-        notification.source().jobType().ifPresent(jobType -> cursor.setString("jobType", jobType.jobName()));
+        notification.source().jobType().ifPresent(jobType -> cursor.setString("jobName", jobType.jobName()));
         notification.source().runNumber().ifPresent(runNumber -> cursor.setLong("runNumber", runNumber));
     }
 
@@ -516,6 +517,14 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             case APPLICATION_PACKAGE_WARNING: return "APPLICATION_PACKAGE_WARNING";
             case DEPLOYMENT_FAILURE: return "DEPLOYMENT_FAILURE";
             default: throw new IllegalArgumentException("No serialization defined for notification type " + type);
+        }
+    }
+
+    private static String notificatioLevelAsString(Notification.Level level) {
+        switch (level) {
+            case warning: return "warning";
+            case error: return "error";
+            default: throw new IllegalArgumentException("No serialization defined for notification level " + level);
         }
     }
 
