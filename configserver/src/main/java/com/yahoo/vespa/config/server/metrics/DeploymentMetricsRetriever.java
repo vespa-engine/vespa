@@ -32,7 +32,7 @@ public class DeploymentMetricsRetriever {
     public DeploymentMetricsResponse getMetrics(Application application) {
         var hosts = getHostsOfApplication(application);
         var clusterMetrics = metricsRetriever.requestMetricsGroupedByCluster(hosts);
-        return new DeploymentMetricsResponse(200, application.getId(), clusterMetrics);
+        return new DeploymentMetricsResponse(application.getId(), clusterMetrics);
     }
 
     private static Collection<URI> getHostsOfApplication(Application application) {
