@@ -5,8 +5,6 @@ import com.yahoo.vespa.hosted.node.admin.configserver.ConfigServerApi;
 import com.yahoo.vespa.hosted.node.admin.configserver.ConnectionException;
 import com.yahoo.vespa.hosted.node.admin.configserver.HttpException;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
-import com.yahoo.vespa.orchestrator.restapi.HostApi;
-import com.yahoo.vespa.orchestrator.restapi.HostSuspensionApi;
 import com.yahoo.vespa.orchestrator.restapi.wire.BatchOperationResult;
 import com.yahoo.vespa.orchestrator.restapi.wire.UpdateHostResponse;
 
@@ -32,9 +30,9 @@ public class OrchestratorImpl implements Orchestrator {
     // TODO: Find a way to avoid duplicating this (present in orchestrator's services.xml also).
     private static final String ORCHESTRATOR_PATH_PREFIX = "/orchestrator";
     static final String ORCHESTRATOR_PATH_PREFIX_HOST_API
-            = ORCHESTRATOR_PATH_PREFIX + HostApi.PATH_PREFIX;
+            = ORCHESTRATOR_PATH_PREFIX + "/v1/hosts";
     static final String ORCHESTRATOR_PATH_PREFIX_HOST_SUSPENSION_API
-            = ORCHESTRATOR_PATH_PREFIX + HostSuspensionApi.PATH_PREFIX;
+            = ORCHESTRATOR_PATH_PREFIX + "/v1/suspensions/hosts";
 
     private final ConfigServerApi configServerApi;
 
