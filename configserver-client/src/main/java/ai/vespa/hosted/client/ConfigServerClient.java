@@ -4,7 +4,6 @@ package ai.vespa.hosted.client;
 import org.apache.hc.client5.http.config.RequestConfig;
 import org.apache.hc.core5.http.ClassicHttpRequest;
 import org.apache.hc.core5.http.ClassicHttpResponse;
-import org.apache.hc.core5.http.ContentType;
 import org.apache.hc.core5.http.HttpEntity;
 import org.apache.hc.core5.http.HttpStatus;
 import org.apache.hc.core5.http.Method;
@@ -21,7 +20,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.IntStream;
@@ -77,12 +75,20 @@ public interface ConfigServerClient extends Closeable {
         /** Sets the request body. */
         RequestBuilder body(HttpEntity entity);
 
-        /** Sets the parameter key/values for the request. Number of arguments must be even. */
+        /** Sets query parameters without a value, like {@code ?debug&recursive}. */
+        default RequestBuilder emptyParameters(String... keys) {
+            return emptyParameters(Arrays.asList(keys));
+        }
+
+        /** Sets query parameters without a value, like {@code ?debug&recursive}. */
+        RequestBuilder emptyParameters(List<String> keys);
+
+        /** Sets the parameter key/values for the request. Number of arguments must be even. Null values are omitted. */
         default RequestBuilder parameters(String... pairs) {
             return parameters(Arrays.asList(pairs));
         }
 
-        /** Sets the parameter key/values for the request. Number of arguments must be even. */
+        /** Sets the parameter key/values for the request. Number of arguments must be even. Null values are omitted. */
         RequestBuilder parameters(List<String> pairs);
 
         /** Overrides the default socket read timeout of the request. {@code Duration.ZERO} gives infinite timeout. */

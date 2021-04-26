@@ -146,12 +146,23 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         }
 
         @Override
+        public ConfigServerClient.RequestBuilder emptyParameters(List<String> keys) {
+            for (String key : keys)
+                uriBuilder.setParameter(key, null);
+
+            return this;
+        }
+
+        @Override
         public RequestBuilder parameters(List<String> pairs) {
             if (pairs.size() % 2 != 0)
                 throw new IllegalArgumentException("Must supply parameter key/values in pairs");
 
-            for (int i = 0; i < pairs.size(); )
-                uriBuilder.setParameter(pairs.get(i++), pairs.get(i++));
+            for (int i = 0; i < pairs.size(); ) {
+                String key = pairs.get(i++), value = pairs.get(i++);
+                if (value != null)
+                    uriBuilder.setParameter(key, value);
+            }
 
             return this;
         }
