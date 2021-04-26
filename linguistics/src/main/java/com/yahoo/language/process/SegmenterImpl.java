@@ -12,15 +12,14 @@ import java.util.List;
 public class SegmenterImpl implements Segmenter {
 
     private final Tokenizer tokenizer;
-
     public SegmenterImpl(Tokenizer tokenizer) {
         this.tokenizer = tokenizer;
     }
 
     @Override
-    public List<String> segment(String input, Language language) {
+    public List<String> segment(String input, Language language, LinguisticsContext context) {
         List<String> segments = new ArrayList<>();
-        for (Token token : tokenizer.tokenize(input, language, StemMode.NONE, false)) {
+        for (Token token : tokenizer.tokenize(input, language, StemMode.NONE, false, context)) {
             findSegments(token, segments);
         }
         if (segments.isEmpty()) {

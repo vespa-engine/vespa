@@ -19,11 +19,33 @@ public interface Segmenter {
      * and stemmed if applicable, see @link{StemMode} for list of stemming options). It is assumed that the input only
      * contains word-characters, any punctuation and spacing tokens will be removed.
      *
+     * This default implementation does nothing and returns no segments.
+     *
+     * @param input the text to segment.
+     * @param language language of input text.
+     * @return the list of segments.
+     * @throws ProcessingException if an exception is encountered during processing
+     * @deprecated use the method with a context
+     */
+    @Deprecated // TODO: Remove on Vespa 8
+    default List<String> segment(String input, Language language) {
+        return List.of();
+    }
+
+    /**
+     * Split input-string into tokens, and returned a list of tokens in unprocessed form (i.e. lowercased, normalized
+     * and stemmed if applicable, see @link{StemMode} for list of stemming options). It is assumed that the input only
+     * contains word-characters, any punctuation and spacing tokens will be removed.
+     *
+     * This default implementation calls the method without a context.
+     *
      * @param input the text to segment.
      * @param language language of input text.
      * @return the list of segments.
      * @throws ProcessingException if an exception is encountered during processing
      */
-    List<String> segment(String input, Language language);
+    default List<String> segment(String input, Language language, LinguisticsContext context) {
+        return segment(input, language);
+    }
 
 }

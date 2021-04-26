@@ -66,6 +66,9 @@ public class FieldPathUpdateAdapter implements UpdateAdapter {
         return adapter.setOutputValue(exp, fieldName, fieldValue);
     }
 
+    @Override
+    public DocumentType getDocumentType() { return adapter.getDocumentType(); }
+
     @SuppressWarnings({ "unchecked", "rawtypes" })
     private void createUpdatesAt(List<FieldPathEntry> path, FieldValue value, int idx, DocumentUpdate out) {
         FieldPath updatePath = update.getFieldPath();
