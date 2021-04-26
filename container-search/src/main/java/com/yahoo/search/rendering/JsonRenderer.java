@@ -65,6 +65,8 @@ import java.util.Set;
 import java.util.concurrent.Executor;
 import java.util.function.LongSupplier;
 
+import static com.fasterxml.jackson.databind.SerializationFeature.FLUSH_AFTER_WRITE_VALUE;
+
 /**
  * JSON renderer for search results.
  *
@@ -147,7 +149,7 @@ public class JsonRenderer extends AsynchronousSectionedRenderer<Result> {
      * @return an object mapper for the internal JsonFactory
      */
     protected static ObjectMapper createJsonCodec() {
-        return new ObjectMapper();
+        return new ObjectMapper().disable(FLUSH_AFTER_WRITE_VALUE);
     }
 
     @Override
