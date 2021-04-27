@@ -24,7 +24,7 @@ class PutOperation : public SequencedOperation
 {
 public:
     PutOperation(DistributorNodeContext& node_ctx,
-                 DistributorOperationContext& op_ctx,
+                 DistributorStripeOperationContext& op_ctx,
                  DistributorBucketSpace &bucketSpace,
                  std::shared_ptr<api::PutCommand> msg,
                  PersistenceOperationMetricSet& metric,
@@ -54,7 +54,7 @@ private:
     bool has_unavailable_targets_in_pending_state(const OperationTargetList& targets) const;
 
     std::shared_ptr<api::PutCommand> _msg;
-    DistributorOperationContext& _op_ctx;
+    DistributorStripeOperationContext& _op_ctx;
     DistributorBucketSpace &_bucketSpace;
 };
 

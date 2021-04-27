@@ -63,7 +63,7 @@ public:
 };
 
 ExternalOperationHandler::ExternalOperationHandler(DistributorNodeContext& node_ctx,
-                                                   DistributorOperationContext& op_ctx,
+                                                   DistributorStripeOperationContext& op_ctx,
                                                    DistributorMetricSet& metrics,
                                                    ChainedMessageSender& msg_sender,
                                                    OperationSequencer& operation_sequencer,

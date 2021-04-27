@@ -64,7 +64,7 @@ matches_visitor_library(vespalib::stringref input, vespalib::stringref expected)
 
 VisitorOperation::VisitorOperation(
         DistributorNodeContext& node_ctx,
-        DistributorOperationContext& op_ctx,
+        DistributorStripeOperationContext& op_ctx,
         DistributorBucketSpace &bucketSpace,
         const api::CreateVisitorCommand::SP& m,
         const Config& config,

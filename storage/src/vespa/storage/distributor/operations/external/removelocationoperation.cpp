@@ -19,7 +19,7 @@ using document::BucketSpace;
 
 RemoveLocationOperation::RemoveLocationOperation(
         DistributorNodeContext& node_ctx,
-        DistributorOperationContext& op_ctx,
+        DistributorStripeOperationContext& op_ctx,
         DocumentSelectionParser& parser,
         DistributorBucketSpace &bucketSpace,
         std::shared_ptr<api::RemoveLocationCommand> msg,

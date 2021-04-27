@@ -20,7 +20,7 @@ namespace storage::distributor {
 
 class DistributorBucketSpace;
 class DistributorNodeContext;
-class DistributorOperationContext;
+class DistributorStripeOperationContext;
 
 class VisitorOperation  : public Operation
 {
@@ -36,7 +36,7 @@ public:
     };
 
     VisitorOperation(DistributorNodeContext& node_ctx,
-                     DistributorOperationContext& op_ctx,
+                     DistributorStripeOperationContext& op_ctx,
                      DistributorBucketSpace &bucketSpace,
                      const std::shared_ptr<api::CreateVisitorCommand>& msg,
                      const Config& config,
@@ -153,7 +153,7 @@ private:
     vespalib::duration timeLeft() const noexcept;
 
     DistributorNodeContext& _node_ctx;
-    DistributorOperationContext& _op_ctx;
+    DistributorStripeOperationContext& _op_ctx;
     DistributorBucketSpace &_bucketSpace;
     SentMessagesMap _sentMessages;
 

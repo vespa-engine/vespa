@@ -21,7 +21,7 @@ class StripeBucketDBUpdater;
 class Distributor;
 class DistributorBucketSpace;
 class DistributorBucketSpaceRepo;
-class DistributorOperationContext;
+class DistributorStripeOperationContext;
 class DistributorStripe;
 class DistributorStripeComponent;
 class ExternalOperationHandler;
@@ -116,7 +116,7 @@ public:
     IdealStateManager& getIdealStateManager();
     ExternalOperationHandler& getExternalOperationHandler();
     storage::distributor::DistributorStripeComponent& distributor_component();
-    storage::distributor::DistributorOperationContext& operation_context();
+    storage::distributor::DistributorStripeOperationContext& operation_context();
 
     Distributor& getDistributor() {
         return *_distributor;

@@ -177,7 +177,7 @@ DistributorStripeComponent::node_address(uint16_t node_index) const noexcept
 }
 
 
-// Implements DistributorOperationContext
+// Implements DistributorStripeOperationContext
 void
 DistributorStripeComponent::remove_nodes_from_bucket_database(const document::Bucket& bucket,
                                                               const std::vector<uint16_t>& nodes)

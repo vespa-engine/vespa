@@ -61,7 +61,7 @@ public:
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
     void print(std::ostream& out, bool verbose, const std::string& indent) const;
     const DistributorNodeContext& node_context() const { return _node_ctx; }
-    DistributorOperationContext& operation_context() { return _op_ctx; }
+    DistributorStripeOperationContext& operation_context() { return _op_ctx; }
 
     /**
      * Returns whether the current PendingClusterState indicates that there has
@@ -260,7 +260,7 @@ private:
 
     DistributorStripeComponent _distributorComponent;
     const DistributorNodeContext& _node_ctx;
-    DistributorOperationContext& _op_ctx;
+    DistributorStripeOperationContext& _op_ctx;
     DistributorStripeInterface& _distributor_interface;
     std::deque<std::pair<framework::MilliSecTime, BucketRequest> > _delayedRequests;
     std::map<uint64_t, BucketRequest> _sentMessages;

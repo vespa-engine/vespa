@@ -61,7 +61,7 @@ public:
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const;
     const DistributorNodeContext& node_context() const { return _node_ctx; }
-    DistributorOperationContext& operation_context() { return _op_ctx; }
+    DistributorStripeOperationContext& operation_context() { return _op_ctx; }
 
     void set_stale_reads_enabled(bool enabled) noexcept {
         _stale_reads_enabled.store(enabled, std::memory_order_relaxed);
@@ -170,7 +170,7 @@ private:
 
     DistributorStripeComponent _distributor_component;
     const DistributorNodeContext& _node_ctx;
-    DistributorOperationContext& _op_ctx;
+    DistributorStripeOperationContext& _op_ctx;
     DistributorStripeInterface& _distributor_interface;
     std::deque<std::pair<framework::MilliSecTime, BucketRequest>> _delayed_requests;
     std::map<uint64_t, BucketRequest> _sent_messages;

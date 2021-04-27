@@ -40,7 +40,7 @@ public:
     bool onGetBucketList(const std::shared_ptr<api::GetBucketListCommand>&) override;
 
     ExternalOperationHandler(DistributorNodeContext& node_ctx,
-                             DistributorOperationContext& op_ctx,
+                             DistributorStripeOperationContext& op_ctx,
                              DistributorMetricSet& metrics,
                              ChainedMessageSender& msg_sender,
                              OperationSequencer& operation_sequencer,
@@ -86,7 +86,7 @@ public:
 
 private:
     DistributorNodeContext& _node_ctx;
-    DistributorOperationContext& _op_ctx;
+    DistributorStripeOperationContext& _op_ctx;
     DistributorMetricSet& _metrics;
     ChainedMessageSender& _msg_sender;
     OperationSequencer& _operation_sequencer;
