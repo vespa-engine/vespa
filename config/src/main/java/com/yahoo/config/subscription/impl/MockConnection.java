@@ -1,4 +1,4 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
 import com.yahoo.jrt.Request;
@@ -16,7 +16,7 @@ import com.yahoo.vespa.config.util.ConfigUtils;
  *
  * @author hmusum
  */
-public class MockConnection implements ConnectionPool, Connection {
+public class MockConnection implements ConnectionPool, com.yahoo.vespa.config.Connection {
 
     private Request lastRequest;
     private final ResponseHandler responseHandler;
@@ -87,7 +87,9 @@ public class MockConnection implements ConnectionPool, Connection {
     }
 
     @Override
-    public Connection switchConnection() { return this; }
+    public Connection setNewCurrentConnection() {
+        return this;
+    }
 
     @Override
     public int getSize() {

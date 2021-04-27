@@ -341,7 +341,7 @@ public class FileDownloaderTest {
         }
 
         @Override
-        public Connection switchConnection() {
+        public Connection setNewCurrentConnection() {
             return this;
         }
 

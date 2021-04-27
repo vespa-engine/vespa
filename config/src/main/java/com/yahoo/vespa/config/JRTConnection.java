@@ -1,33 +1,36 @@
-// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
-import com.yahoo.jrt.Request;
-import com.yahoo.jrt.RequestWaiter;
-import com.yahoo.jrt.Spec;
-import com.yahoo.jrt.Supervisor;
-import com.yahoo.jrt.Target;
+import com.yahoo.jrt.*;
 
-import java.time.Duration;
-import java.time.Instant;
-import java.util.logging.Level;
+import java.text.SimpleDateFormat;
+import java.util.TimeZone;
 import java.util.logging.Logger;
 
 /**
  * A JRT connection to a config server or config proxy.
  *
  * @author Gunnar Gauslaa Bergem
- * @author hmusum
  */
 public class JRTConnection implements Connection {
-    private final static Logger logger = Logger.getLogger(JRTConnection.class.getPackage().getName());
+    public final static Logger logger = Logger.getLogger(JRTConnection.class.getPackage().getName());
 
     private final String address;
     private final Supervisor supervisor;
     private Target target;
 
-    private Instant lastConnected = Instant.EPOCH.plus(Duration.ofSeconds(1)); // to be healthy initially, see isHealthy()
-    private Instant lastSuccess = Instant.EPOCH;
-    private Instant lastFailure = Instant.EPOCH;
+    private long lastConnectionAttempt = 0;  // Timestamp for last connection attempt
+    private long lastSuccess = 0;
+    private long lastFailure = 0;
+
+    private static final long delayBetweenConnectionMessage = 30000; //ms
+
+    private static SimpleDateFormat yyyyMMddz;
+    static {
+        yyyyMMddz = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z");
+        yyyyMMddz.setTimeZone(TimeZone.getTimeZone("GMT"));
+    }
+
 
     public JRTConnection(String address, Supervisor supervisor) {
         this.address = address;
@@ -56,40 +59,39 @@ public class JRTConnection implements Connection {
      */
     public synchronized Target getTarget() {
         if (target == null || !target.isValid()) {
-            logger.log(Level.INFO, "Connecting to " + address);
+            if ((System.currentTimeMillis() - lastConnectionAttempt) > delayBetweenConnectionMessage) {
+                logger.fine("Connecting to " + address);
+            }
+            lastConnectionAttempt = System.currentTimeMillis();
             target = supervisor.connect(new Spec(address));
-            lastConnected = Instant.now();
         }
         return target;
     }
 
     @Override
     public synchronized void setError(int errorCode) {
-        lastFailure = Instant.now();
+        lastFailure = System.currentTimeMillis();
     }
 
     @Override
     public synchronized void setSuccess() {
-        lastSuccess = Instant.now();
-    }
-
-    public synchronized boolean isHealthy() {
-        return lastSuccess.isAfter(lastFailure) || lastConnected.isAfter(lastFailure);
+        lastSuccess = System.currentTimeMillis();
     }
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
+        sb.append("Address: ");
         sb.append(address);
-        sb.append(", ").append(isHealthy() ? "healthy" : "unhealthy");
-        if (lastSuccess.isAfter(Instant.EPOCH)) {
-            sb.append(", last success: ");
-            sb.append(lastSuccess);
+        if (lastSuccess > 0) {
+            sb.append("\n");
+            sb.append("Last success: ");
+            sb.append(yyyyMMddz.format(lastSuccess));
         }
-        if (lastFailure.isAfter(Instant.EPOCH)) {
-            sb.append(", last failure: ");
-            sb.append(lastFailure);
+        if (lastFailure > 0) {
+            sb.append("\n");
+            sb.append("Last failure: ");
+            sb.append(yyyyMMddz.format(lastFailure));
         }
         return sb.toString();
     }
-
 }
