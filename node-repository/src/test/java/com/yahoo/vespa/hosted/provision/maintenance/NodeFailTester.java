@@ -114,7 +114,7 @@ public class NodeFailTester {
         return tester;
     }
 
-    public static NodeFailTester withTwoApplicationsOnDocker(int numberOfHosts) {
+    public static NodeFailTester withTwoApplications(int numberOfHosts) {
         NodeFailTester tester = new NodeFailTester();
 
         int nodesPerHost = 3;

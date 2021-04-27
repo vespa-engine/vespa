@@ -47,7 +47,7 @@ public class NodeFailerTest {
 
     @Test
     public void fail_nodes_with_severe_reports_if_allowed_to_be_down() {
-        NodeFailTester tester = NodeFailTester.withTwoApplicationsOnDocker(6);
+        NodeFailTester tester = NodeFailTester.withTwoApplications(6);
         String hostWithFailureReports = selectFirstParentHostWithNActiveNodesExcept(tester.nodeRepository, 2);
 
         // Set failure report to the parent and all its children.
@@ -106,7 +106,7 @@ public class NodeFailerTest {
 
     @Test
     public void hw_fail_only_if_whole_host_is_suspended() {
-        NodeFailTester tester = NodeFailTester.withTwoApplicationsOnDocker(6);
+        NodeFailTester tester = NodeFailTester.withTwoApplications(6);
         String hostWithFailureReports = selectFirstParentHostWithNActiveNodesExcept(tester.nodeRepository, 2);
         assertEquals(Node.State.active, tester.nodeRepository.nodes().node(hostWithFailureReports).get().state());
 
@@ -380,7 +380,7 @@ public class NodeFailerTest {
     public void failing_ready_nodes() {
         NodeFailTester tester = NodeFailTester.withTwoApplications();
 
-        // Add ready docker node
+        // Add ready node
         NodeResources newNodeResources = new NodeResources(3, 4, 5, 1);
         tester.createReadyNodes(1, 16, newNodeResources);
 
@@ -394,20 +394,20 @@ public class NodeFailerTest {
         
         NodeList ready = tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant);
 
-        // Two ready nodes and a ready docker node die, but only 2 of those are failed out
+        // Two ready hosts and a ready node die, but only 2 of those are failed out
         tester.clock.advance(Duration.ofMinutes(180));
-        Node dockerNode = ready.stream().filter(node -> node.resources().equals(newNodeResources)).findFirst().get();
+        Node failingNode = ready.stream().filter(node -> node.resources().equals(newNodeResources)).findFirst().get();
         List<Node> otherNodes = ready.stream()
-                               .filter(node -> ! node.resources().equals(newNodeResources))
-                               .collect(Collectors.toList());
-        tester.allNodesMakeAConfigRequestExcept(otherNodes.get(0), otherNodes.get(2), dockerNode);
+                                     .filter(node -> !node.resources().equals(newNodeResources))
+                                     .collect(Collectors.toList());
+        tester.allNodesMakeAConfigRequestExcept(otherNodes.get(0), otherNodes.get(2), failingNode);
         tester.runMaintainers();
         assertEquals( 3, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
         assertEquals( 2, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.tenant).size());
 
         // Another ready node dies and the node that died earlier, are allowed to fail
         tester.clock.advance(Duration.ofDays(1));
-        tester.allNodesMakeAConfigRequestExcept(otherNodes.get(0), otherNodes.get(2), dockerNode, otherNodes.get(3));
+        tester.allNodesMakeAConfigRequestExcept(otherNodes.get(0), otherNodes.get(2), failingNode, otherNodes.get(3));
         tester.runMaintainers();
         assertEquals( 1, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).size());
         assertEquals(otherNodes.get(1), tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.tenant).first().get());
@@ -415,7 +415,7 @@ public class NodeFailerTest {
     }
 
     @Test
-    public void docker_host_not_failed_without_config_requests() {
+    public void host_not_failed_without_config_requests() {
         NodeFailTester tester = NodeFailTester.withTwoApplications();
 
         // For a day all nodes work so nothing happens
@@ -427,18 +427,17 @@ public class NodeFailerTest {
             assertEquals( 0, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.host).size());
         }
 
-        // Two ready nodes and a ready docker node die, but only 2 of those are failed out
         tester.clock.advance(Duration.ofMinutes(180));
-        Node dockerHost = tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.host).iterator().next();
-        tester.allNodesMakeAConfigRequestExcept(dockerHost);
+        Node host = tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.host).first().get();
+        tester.allNodesMakeAConfigRequestExcept(host);
         tester.runMaintainers();
         assertEquals( 3, tester.nodeRepository.nodes().list(Node.State.ready).nodeType(NodeType.host).size());
         assertEquals( 0, tester.nodeRepository.nodes().list(Node.State.failed).nodeType(NodeType.host).size());
     }
 
     @Test
-    public void failing_docker_hosts() {
-        NodeFailTester tester = NodeFailTester.withTwoApplicationsOnDocker(7);
+    public void failing_hosts() {
+        NodeFailTester tester = NodeFailTester.withTwoApplications(7);
 
         // For a day all nodes work so nothing happens
         for (int minutes = 0, interval = 30; minutes < 24 * 60; minutes += interval) {
@@ -603,7 +602,7 @@ public class NodeFailerTest {
         // Throttles based on a absolute number in small zone
         {
             // 50 regular tenant nodes, 10 hosts with each 3 tenant nodes, total 90 nodes
-            NodeFailTester tester = NodeFailTester.withTwoApplicationsOnDocker(10);
+            NodeFailTester tester = NodeFailTester.withTwoApplications(10);
             List<Node> readyNodes = tester.createReadyNodes(50, 30);
             NodeList hosts = tester.nodeRepository.nodes().list().nodeType(NodeType.host);
             List<Node> deadNodes = readyNodes.subList(0, 4);
