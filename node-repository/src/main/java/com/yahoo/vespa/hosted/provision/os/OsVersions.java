@@ -34,7 +34,7 @@ public class OsVersions {
     private static final int MAX_DELEGATED_UPGRADES = 30;
 
     /** The maximum number of concurrent upgrades (rebuilds) per node type triggered by {@link RebuildingOsUpgrader} */
-    private static final int MAX_REBUILDS = 3;
+    private static final int MAX_REBUILDS = 10;
 
     private final NodeRepository nodeRepository;
     private final CuratorDatabaseClient db;
