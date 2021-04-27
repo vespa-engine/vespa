@@ -2,28 +2,19 @@
 package com.yahoo.vespa.config.server.http.v2;
 
 import com.yahoo.config.provision.ApplicationId;
-import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
-import com.yahoo.slime.JsonFormat;
-import com.yahoo.slime.Slime;
-import com.yahoo.vespa.config.server.http.HttpConfigResponse;
 import com.yahoo.vespa.config.server.metrics.ClusterInfo;
 import com.yahoo.vespa.config.server.metrics.DeploymentMetricsAggregator;
 
-import java.io.IOException;
-import java.io.OutputStream;
 import java.util.Map;
 
 /**
  * @author olaa
  */
-public class DeploymentMetricsResponse extends HttpResponse {
+public class DeploymentMetricsResponse extends SlimeJsonResponse {
 
-    private final Slime slime = new Slime();
-
-    public DeploymentMetricsResponse(int status, ApplicationId applicationId, Map<ClusterInfo, DeploymentMetricsAggregator> aggregatedMetrics) {
-        super(status);
-
+    public DeploymentMetricsResponse(ApplicationId applicationId, Map<ClusterInfo, DeploymentMetricsAggregator> aggregatedMetrics) {
         Cursor application = slime.setObject();
         application.setString("applicationId", applicationId.serializedForm());
 
@@ -41,16 +32,7 @@ public class DeploymentMetricsResponse extends HttpResponse {
             aggregator.aggregateDocumentCount().ifPresent(documentCount -> metrics.setDouble("documentCount", documentCount));
             aggregator.aggregateQueryLatency().ifPresent(queryLatency -> metrics.setDouble("queryLatency",queryLatency));
             aggregator.aggregateFeedLatency().ifPresent(feedLatency -> metrics.setDouble("feedLatency", feedLatency));
+            aggregator.feedingBlocked().ifPresent(feedingBlocked -> metrics.setDouble("feedingBlocked", feedingBlocked));
         }
-    }
-
-    @Override
-    public void render(OutputStream outputStream) throws IOException {
-        new JsonFormat(false).encode(outputStream, slime);
-    }
-
-    @Override
-    public String getContentType() {
-        return HttpConfigResponse.JSON_CONTENT_TYPE;
     }
 }

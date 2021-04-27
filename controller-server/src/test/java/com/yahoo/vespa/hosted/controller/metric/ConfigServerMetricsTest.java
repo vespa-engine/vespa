@@ -12,6 +12,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 
@@ -44,15 +45,9 @@ public class ConfigServerMetricsTest {
         //
         var deploymentId = new DeploymentId(applicationId, zoneId);
 
-        var clusterMetrics1 = new ClusterMetrics("niceCluster", "container") {{
-            addMetric("queriesPerSecond", 23.0);
-            addMetric("queryLatency", 1337.0);
-        }};
+        var clusterMetrics1 = new ClusterMetrics("niceCluster", "container", Map.of("queriesPerSecond", 23.0, "queryLatency", 1337.0));
 
-        var clusterMetrics2 = new ClusterMetrics("alsoNiceCluster", "container") {{
-            addMetric("queriesPerSecond", 11.0);
-            addMetric("queryLatency", 12.0);
-        }};
+        var clusterMetrics2 = new ClusterMetrics("alsoNiceCluster", "container", Map.of("queriesPerSecond", 11.0, "queryLatency", 12.0));
 
         var response = List.of(clusterMetrics1, clusterMetrics2);
 

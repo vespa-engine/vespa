@@ -24,7 +24,7 @@ public class ProtonMetricsRetriever {
     public ProtonMetricsResponse getMetrics(Application application) {
         var hosts = getHostsOfApplication(application);
         var clusterMetrics = metricsRetriever.requestMetricsGroupedByCluster(hosts);
-        return new ProtonMetricsResponse(200, application.getId(), clusterMetrics);
+        return new ProtonMetricsResponse(application.getId(), clusterMetrics);
     }
 
     private static Collection<URI> getHostsOfApplication(Application application) {
