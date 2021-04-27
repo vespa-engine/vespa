@@ -645,6 +645,12 @@ public class TenantRepository {
             return executorService.shutdownNow();
         }
 
+        @Override
+        public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
+            if ( ! super.awaitTermination(timeout, unit)) return false;
+            return executorService.awaitTermination(timeout, unit);
+        }
+
     }
 
 }
