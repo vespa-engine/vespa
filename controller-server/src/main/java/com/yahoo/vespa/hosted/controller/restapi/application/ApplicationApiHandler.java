@@ -80,6 +80,7 @@ import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
@@ -151,7 +152,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
  * @author mpolden
  */
 @SuppressWarnings("unused") // created by injection
-public class ApplicationApiHandler extends LoggingRequestHandler {
+public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
@@ -163,7 +164,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     public ApplicationApiHandler(LoggingRequestHandler.Context parentCtx,
                                  Controller controller,
                                  AccessControlRequests accessControlRequests) {
-        super(parentCtx);
+        super(parentCtx, controller.auditLogger());
         this.controller = controller;
         this.accessControlRequests = accessControlRequests;
         this.testConfigSerializer = new TestConfigSerializer(controller.system());
@@ -175,7 +176,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     @Override
-    public HttpResponse handle(HttpRequest request) {
+    public HttpResponse auditAndHandle(HttpRequest request) {
         try {
             Path path = new Path(request.getUri());
             switch (request.getMethod()) {
@@ -733,10 +734,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         var tenantSecretStore = new TenantSecretStore(name, awsId, role);
 
         if (!tenantSecretStore.isValid()) {
-            return ErrorResponse.badRequest(String.format("Secret store " + tenantSecretStore + " is invalid"));
+            return ErrorResponse.badRequest("Secret store " + tenantSecretStore + " is invalid");
         }
         if (tenant.tenantSecretStores().contains(tenantSecretStore)) {
-            return ErrorResponse.badRequest(String.format("Secret store " + tenantSecretStore + " is already configured"));
+            return ErrorResponse.badRequest("Secret store " + tenantSecretStore + " is already configured");
         }
 
         controller.serviceRegistry().roleService().createTenantPolicy(TenantName.from(tenantName), name, awsId, role);
@@ -1679,7 +1680,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     /** Trigger deployment of the given Vespa version if a valid one is given, e.g., "7.8.9". */
     private HttpResponse deployPlatform(String tenantName, String applicationName, String instanceName, boolean pin, HttpRequest request) {
-        request = controller.auditLogger().log(request);
         String versionString = readToString(request.getData());
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         StringBuilder response = new StringBuilder();
@@ -1708,7 +1708,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     /** Trigger deployment to the last known application package for the given application. */
     private HttpResponse deployApplication(String tenantName, String applicationName, String instanceName, HttpRequest request) {
-        controller.auditLogger().log(request);
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         StringBuilder response = new StringBuilder();
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
