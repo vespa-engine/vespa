@@ -275,11 +275,9 @@ public class DeploymentContext {
     /** Fail current deployment in given job */
     public DeploymentContext outOfCapacity(JobType type) {
         return failDeployment(type,
-                              new ConfigServerException(URI.create("https://config.server"),
-                                                        "Failed to deploy application",
+                              new ConfigServerException(ConfigServerException.ErrorCode.OUT_OF_CAPACITY,
                                                         "Out of capacity",
-                                                        ConfigServerException.ErrorCode.OUT_OF_CAPACITY,
-                                                        new RuntimeException("Out of capacity from test code")));
+                                                        "Failed to deploy application"));
     }
 
     /** Fail current deployment in given job */

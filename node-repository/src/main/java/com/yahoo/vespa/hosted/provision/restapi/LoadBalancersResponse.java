@@ -9,6 +9,7 @@ import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancer;
+import com.yahoo.vespa.hosted.provision.lb.LoadBalancerInstance;
 import com.yahoo.vespa.hosted.provision.lb.LoadBalancerList;
 import com.yahoo.vespa.hosted.provision.node.filter.ApplicationFilter;
 
@@ -65,21 +66,23 @@ public class LoadBalancersResponse extends HttpResponse {
             lbObject.setString("tenant", lb.id().application().tenant().value());
             lbObject.setString("instance", lb.id().application().instance().value());
             lbObject.setString("cluster", lb.id().cluster().value());
-            lbObject.setString("hostname", lb.instance().hostname().value());
-            lb.instance().dnsZone().ifPresent(dnsZone -> lbObject.setString("dnsZone", dnsZone.id()));
+            lb.instance().ifPresent(instance -> lbObject.setString("hostname", instance.hostname().value()));
+            lb.instance().flatMap(LoadBalancerInstance::dnsZone).ifPresent(dnsZone -> lbObject.setString("dnsZone", dnsZone.id()));
 
             Cursor networkArray = lbObject.setArray("networks");
-            lb.instance().networks().forEach(networkArray::addString);
+            lb.instance().ifPresent(instance -> instance.networks().forEach(networkArray::addString));
 
             Cursor portArray = lbObject.setArray("ports");
-            lb.instance().ports().forEach(portArray::addLong);
+            lb.instance().ifPresent(instance -> instance.ports().forEach(portArray::addLong));
 
             Cursor realArray = lbObject.setArray("reals");
-            lb.instance().reals().forEach(real -> {
-                Cursor realObject = realArray.addObject();
-                realObject.setString("hostname", real.hostname().value());
-                realObject.setString("ipAddress", real.ipAddress());
-                realObject.setLong("port", real.port());
+            lb.instance().ifPresent(instance -> {
+                instance.reals().forEach(real -> {
+                    Cursor realObject = realArray.addObject();
+                    realObject.setString("hostname", real.hostname().value());
+                    realObject.setString("ipAddress", real.ipAddress());
+                    realObject.setLong("port", real.port());
+                });
             });
         });
 

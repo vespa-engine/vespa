@@ -63,7 +63,7 @@ public class LoadBalancerExpirerTest {
         tester.nodeRepository().nodes().setReady(tester.nodeRepository().nodes().list(Node.State.dirty).asList(), Agent.system, getClass().getSimpleName());
         expirer.maintain();
         assertEquals(Set.of(), tester.loadBalancerService().instances().get(lb1).reals());
-        assertEquals(Set.of(), loadBalancers.get().get(lb1).instance().reals());
+        assertEquals(Set.of(), loadBalancers.get().get(lb1).instance().get().reals());
 
         // Expirer defers removal of load balancer until expiration time passes
         expirer.maintain();

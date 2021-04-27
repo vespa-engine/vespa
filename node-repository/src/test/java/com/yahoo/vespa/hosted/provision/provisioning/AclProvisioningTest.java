@@ -180,7 +180,7 @@ public class AclProvisioningTest {
         // Load balancer is allocated to application
         var loadBalancers = tester.nodeRepository().loadBalancers().list(application);
         assertEquals(1, loadBalancers.asList().size());
-        var lbNetworks = loadBalancers.asList().get(0).instance().networks();
+        var lbNetworks = loadBalancers.asList().get(0).instance().get().networks();
         assertEquals(2, lbNetworks.size());
 
         // ACL for nodes with allocation trust their respective load balancer networks, if any

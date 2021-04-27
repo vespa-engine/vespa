@@ -202,15 +202,15 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         }
         catch (ConfigServerException e) {
-            switch (e.getErrorCode()) {
+            switch (e.code()) {
                 case NOT_FOUND:
                     return ErrorResponse.notFoundError(Exceptions.toMessageString(e));
                 case ACTIVATION_CONFLICT:
-                    return new ErrorResponse(CONFLICT, e.getErrorCode().name(), Exceptions.toMessageString(e));
+                    return new ErrorResponse(CONFLICT, e.code().name(), Exceptions.toMessageString(e));
                 case INTERNAL_SERVER_ERROR:
                     return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
                 default:
-                    return new ErrorResponse(BAD_REQUEST, e.getErrorCode().name(), Exceptions.toMessageString(e));
+                    return new ErrorResponse(BAD_REQUEST, e.code().name(), Exceptions.toMessageString(e));
             }
         }
         catch (RuntimeException e) {
