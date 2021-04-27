@@ -391,7 +391,7 @@
         <guice.version>3.0</guice.version>
         <javax.inject.version>1</javax.inject.version>
         <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
-        <jaxb.version>2.3.0</jaxb.version>
+        <jaxb.version>2.3.2</jaxb.version> <!-- NOTE must in sync with 'jakarta-xml-bind-api.version' -->
         <jetty.version>9.4.40.v20210413</jetty.version>
         <jetty-alpn.version>1.1.3.v20160715</jetty-alpn.version>
         <org.lz4.version>1.7.1</org.lz4.version>
@@ -408,7 +408,7 @@
         <jackson2.version>2.12.1</jackson2.version>
         <jackson-databind.version>${jackson2.version}</jackson-databind.version>
         <jakarta-activation-api.version>1.2.1</jakarta-activation-api.version>
-        <jakarta-xml-bind-api.version>2.3.2</jakarta-xml-bind-api.version>
+        <jakarta-xml-bind-api.version>2.3.2</jakarta-xml-bind-api.version> <!-- NOTE must in sync with 'jaxb.version' -->
         <javassist.version>3.20.0-GA</javassist.version>
         <javax.annotation-api.version>1.2</javax.annotation-api.version>
         <javax.validation-api.version>1.1.0.Final</javax.validation-api.version>
