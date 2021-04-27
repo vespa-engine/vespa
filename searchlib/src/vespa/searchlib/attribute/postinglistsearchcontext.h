@@ -293,12 +293,12 @@ StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const Att
 template <typename BaseSC, typename AttrT, typename DataT>
 bool
 StringPostingSearchContext<BaseSC, AttrT, DataT>::useThis(const PostingListSearchContext::DictionaryConstIterator & it) const {
-    if ( this->isCased() ) {
-        return this->isMatch(_enumStore.get_value(it.getKey()));
-    } else if ( this->isRegex() ) {
+    if ( this->isRegex() ) {
         return this->getRegex().valid()
             ? this->getRegex().partial_match(_enumStore.get_value(it.getKey()))
             : false;
+    } else if ( this->isCased() ) {
+        return this->isMatch(_enumStore.get_value(it.getKey()));
     }
     return true;
 }
