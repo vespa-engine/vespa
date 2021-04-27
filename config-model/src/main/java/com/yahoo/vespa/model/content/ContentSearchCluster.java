@@ -44,7 +44,7 @@ import static java.util.stream.Collectors.toList;
 public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> implements ProtonConfig.Producer, DispatchConfig.Producer {
 
     private final boolean flushOnShutdown;
-    private final boolean syncTransactionLog;
+    private final Boolean syncTransactionLog;
 
     /** If this is set up for streaming search, it is modelled as one search cluster per search definition */
     private final Map<String, AbstractSearchCluster> clusters = new TreeMap<>();
@@ -106,7 +106,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
                                                                    documentDefinitions,
                                                                    globallyDistributedDocuments,
                                                                    getFlushOnShutdown(flushOnShutdownElem),
-                                                                   getSyncTransactionLog(syncTransactionLog, deployState),
+                                                                   syncTransactionLog,
                                                                    combined);
 
             ModelElement tuning = clusterElem.childByPath("engine.proton.tuning");
@@ -123,12 +123,6 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         private boolean getFlushOnShutdown(Boolean flushOnShutdownElem) {
             if (flushOnShutdownElem != null) {
                 return flushOnShutdownElem;
-            }
-            return true;
-        }
-        private boolean getSyncTransactionLog(Boolean syncTransactionLogElem, DeployState deployState) {
-            if (syncTransactionLogElem != null) {
-                return syncTransactionLogElem;
             }
             return true;
         }
@@ -206,7 +200,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
                                  Map<String, NewDocumentType> documentDefinitions,
                                  Set<NewDocumentType> globallyDistributedDocuments,
                                  boolean flushOnShutdown,
-                                 boolean syncTransactionLog,
+                                 Boolean syncTransactionLog,
                                  boolean combined)
     {
         super(parent, "search");

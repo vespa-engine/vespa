@@ -38,7 +38,7 @@ public class SearchNodeTest {
         assertEquals(expected, cfg.basedir());
     }
 
-    private void prepare(MockRoot root, SearchNode node, boolean useFsync) {
+    private void prepare(MockRoot root, SearchNode node, Boolean useFsync) {
         Host host = new Host(root, "mockhost");
         TransactionLogServer tls = new TransactionLogServer(root, "mycluster", useFsync);
         tls.setHostResource(new HostResource(host));
@@ -62,6 +62,7 @@ public class SearchNodeTest {
 
     @Test
     public void requireThatSyncIsHonoured() {
+        assertTrue(getTlsConfig(new TestProperties(), null).usefsync());
         assertTrue(getTlsConfig(new TestProperties(), true).usefsync());
         assertFalse(getTlsConfig(new TestProperties(), false).usefsync());
     }
@@ -98,7 +99,7 @@ public class SearchNodeTest {
         return new MockRoot("", new DeployState.Builder().properties(properties).build());
     }
 
-    private TranslogserverConfig getTlsConfig(ModelContext.Properties properties, boolean useFsync) {
+    private TranslogserverConfig getTlsConfig(ModelContext.Properties properties, Boolean useFsync) {
         MockRoot root = createRoot(properties);
         SearchNode node = createSearchNode(root);
         prepare(root, node, useFsync);

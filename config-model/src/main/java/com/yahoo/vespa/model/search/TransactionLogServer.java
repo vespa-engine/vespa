@@ -25,8 +25,8 @@ public class TransactionLogServer extends AbstractService  {
         }
     }
 
-    private final boolean useFsync;
-    public TransactionLogServer(AbstractConfigProducer searchNode, String clusterName, boolean useFsync) {
+    private final Boolean useFsync;
+    public TransactionLogServer(AbstractConfigProducer searchNode, String clusterName, Boolean useFsync) {
         super(searchNode, "transactionlogserver");
         portsMeta.on(0).tag("tls");
         this.useFsync = useFsync;
@@ -37,8 +37,8 @@ public class TransactionLogServer extends AbstractService  {
     public static class Builder extends VespaDomBuilder.DomConfigProducerBuilder<TransactionLogServer> {
 
         private final String clusterName;
-        private final boolean useFsync;
-        public Builder(String clusterName, boolean useFsync) {
+        private final Boolean useFsync;
+        public Builder(String clusterName, Boolean useFsync) {
             this.clusterName = clusterName;
             this.useFsync = useFsync;
         }
@@ -79,11 +79,11 @@ public class TransactionLogServer extends AbstractService  {
     }
 
     public void getConfig(TranslogserverConfig.Builder builder) {
-        builder
-                .listenport(getTlsPort())
-                .basedir(getTlsDir())
-                .usefsync(useFsync);
-
+        builder.listenport(getTlsPort())
+                .basedir(getTlsDir());
+        if (useFsync != null) {
+            builder.usefsync(useFsync);
+        }
     }
 
 }
