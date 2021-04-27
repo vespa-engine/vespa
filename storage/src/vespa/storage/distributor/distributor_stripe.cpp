@@ -780,6 +780,12 @@ DistributorStripe::doNonCriticalTick(framework::ThreadIndex)
     return _tickResult;
 }
 
+bool DistributorStripe::tick() {
+    assert(!_use_legacy_mode);
+    auto wait_info = doNonCriticalTick(framework::ThreadIndex(0));
+    return !wait_info.waitWanted(); // If we don't want to wait, we presumably did some useful stuff.
+}
+
 bool DistributorStripe::should_inhibit_current_maintenance_scan_tick() const noexcept {
     return (workWasDone() && (_inhibited_maintenance_tick_count
                               < getConfig().max_consecutively_inhibited_maintenance_ticks()));

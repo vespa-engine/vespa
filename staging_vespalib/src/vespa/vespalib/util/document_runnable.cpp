@@ -26,7 +26,7 @@ bool Runnable::start(FastOS_ThreadPool& pool)
     if (_state != NOT_RUNNING) return false;
     _state = STARTING;
     if (pool.NewThread(this) == nullptr) {
-        throw vespalib::IllegalStateException("Faled starting a new thread", VESPA_STRLOC);
+        throw vespalib::IllegalStateException("Failed starting a new thread", VESPA_STRLOC);
     }
     return true;
 }
