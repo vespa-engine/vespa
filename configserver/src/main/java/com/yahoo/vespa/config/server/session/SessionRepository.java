@@ -5,7 +5,6 @@ import com.google.common.collect.HashMultiset;
 import com.google.common.collect.Multiset;
 import com.yahoo.cloud.config.ConfigserverConfig;
 import com.yahoo.concurrent.DaemonThreadFactory;
-import com.yahoo.concurrent.StripedExecutor;
 import com.yahoo.config.FileReference;
 import com.yahoo.config.application.api.ApplicationPackage;
 import com.yahoo.config.application.api.DeployLogger;
@@ -128,7 +127,7 @@ public class SessionRepository {
                              SessionPreparer sessionPreparer,
                              ConfigCurator configCurator,
                              Metrics metrics,
-                             StripedExecutor<TenantName> zkWatcherExecutor,
+                             ExecutorService zkWatcherExecutor,
                              PermanentApplicationPackage permanentApplicationPackage,
                              FlagSource flagSource,
                              ExecutorService zkCacheExecutor,
@@ -148,7 +147,7 @@ public class SessionRepository {
         this.clock = clock;
         this.curator = configCurator.curator();
         this.sessionLifetime = Duration.ofSeconds(configserverConfig.sessionLifetime());
-        this.zkWatcherExecutor = command -> zkWatcherExecutor.execute(tenantName, command);
+        this.zkWatcherExecutor = zkWatcherExecutor;
         this.permanentApplicationPackage = permanentApplicationPackage;
         this.flagSource = flagSource;
         this.tenantFileSystemDirs = new TenantFileSystemDirs(configServerDB, tenantName);

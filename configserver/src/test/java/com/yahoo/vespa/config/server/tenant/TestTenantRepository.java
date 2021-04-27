@@ -50,7 +50,7 @@ public class TestTenantRepository extends TenantRepository {
               ConfigCurator.create(curator),
               metrics,
               new StripedExecutor<>(new InThreadExecutorService()),
-              new StripedExecutor<>(new InThreadExecutorService()),
+              new InThreadExecutorService(),
               fileDistributionFactory,
               flagSource,
               new InThreadExecutorService(),

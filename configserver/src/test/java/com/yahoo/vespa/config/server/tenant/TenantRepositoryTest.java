@@ -172,8 +172,8 @@ public class TenantRepositoryTest {
         try {
             tenantRepository.addTenant(newTenant);
             // Poll for the watcher to pick up the tenant from zk, and add it
-            int tries=0;
-            while(true) {
+            int tries = 0;
+            while (true) {
                 if (tries > 5000) fail("Didn't react on watch");
                 if (tenantRepository.getAllTenantNames().containsAll(expectedTenants)) {
                     break;
@@ -212,7 +212,7 @@ public class TenantRepositoryTest {
                   ConfigCurator.create(new MockCurator()),
                   Metrics.createTestMetrics(),
                   new StripedExecutor<>(new InThreadExecutorService()),
-                  new StripedExecutor<>(new InThreadExecutorService()),
+                  new InThreadExecutorService(),
                   new FileDistributionFactory(new ConfigserverConfig.Builder().build()),
                   new InMemoryFlagSource(),
                   new InThreadExecutorService(),
