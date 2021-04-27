@@ -246,12 +246,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag WAIT_FOR_ALL_CONFIG_SERVERS_WHEN_DELETING_APPLICATION = defineFeatureFlag(
-            "wait-for-all-config-servers-when-deleting-application", false,
-            List.of("hmusum"), "2021-03-24", "2021-06-24",
-            "Whether to wait for all participating servers to delete application on config servers (with timeout) on",
-            "Takes effect on next delete of an application");
-
     public static final UnboundBooleanFlag ENABLE_JDISC_HTTP2 = defineFeatureFlag(
             "enable-jdisc-http2", false,
             List.of("bjorncs", "jonmv"), "2021-04-12", "2021-08-01",
