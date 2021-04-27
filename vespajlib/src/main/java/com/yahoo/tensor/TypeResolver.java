@@ -211,19 +211,19 @@ public class TypeResolver {
         } else if (rhs.rank() > 0) {
             cellType = rhs.valueType();
         }
-        Optional<Dimension> first = Optional.empty();
-        Optional<Dimension> second = Optional.empty();
+        Dimension first = Dimension.indexed(concatDimension, 1);
+        Dimension second = Dimension.indexed(concatDimension, 1);
         Map<String, Dimension> map = new HashMap<>();
         for (Dimension dim : lhs.dimensions()) {
             if (dim.name().equals(concatDimension)) {
-                first = Optional.of(dim);
+                first = dim;
             } else {
                 map.put(dim.name(), dim);
             }
         }
         for (Dimension dim : rhs.dimensions()) {
             if (dim.name().equals(concatDimension)) {
-                second = Optional.of(dim);
+                second = dim;
             } else if (map.containsKey(dim.name())) {
                 Dimension other = map.get(dim.name());
                 if (! other.equals(dim)) {
@@ -243,28 +243,18 @@ public class TypeResolver {
                 map.put(dim.name(), dim);
             }
         }
-        if (first.isPresent() && first.get().type() == Dimension.Type.mapped) {
+        if (first.type() == Dimension.Type.mapped) {
             throw new IllegalArgumentException("Bad concat dimension "+concatDimension+" in lhs: "+lhs);
         }
-        if (second.isPresent() && second.get().type() == Dimension.Type.mapped) {
+        if (second.type() == Dimension.Type.mapped) {
             throw new IllegalArgumentException("Bad concat dimension "+concatDimension+" in rhs: "+rhs);
         }
-        if (first.isPresent() && first.get().type() == Dimension.Type.indexedUnbound) {
-            map.put(concatDimension, first.get());
-        } else if (second.isPresent() && second.get().type() == Dimension.Type.indexedUnbound) {
-            map.put(concatDimension, second.get());
+        if (first.type() == Dimension.Type.indexedUnbound) {
+            map.put(concatDimension, first);
+        } else if (second.type() == Dimension.Type.indexedUnbound) {
+            map.put(concatDimension, second);
         } else {
-            long concatSize = 0;
-            if (first.isPresent()) {
-                concatSize += first.get().size().get();
-            } else {
-                concatSize += 1;
-            }
-            if (second.isPresent()) {
-                concatSize += second.get().size().get();
-            } else {
-                concatSize += 1;
-            }
+            long concatSize = first.size().get() + second.size().get();
             map.put(concatDimension, Dimension.indexed(concatDimension, concatSize));
         }
         return new TensorType(cellType, map.values());
