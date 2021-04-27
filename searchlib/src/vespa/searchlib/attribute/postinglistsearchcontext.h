@@ -180,18 +180,11 @@ class StringPostingSearchContext
     : public PostingSearchContext<BaseSC, PostingListFoldedSearchContextT<DataT>, AttrT>
 {
 private:
-    using AggregationTraits = PostingListTraits<DataT>;
-    using PostingList = typename AggregationTraits::PostingList;
     using Parent = PostingSearchContext<BaseSC, PostingListFoldedSearchContextT<DataT>, AttrT>;
     using RegexpUtil = vespalib::RegexpUtil;
     using QueryTermSimpleUP = typename Parent::QueryTermSimpleUP;
-    using Parent::_toBeSearched;
     using Parent::_enumStore;
-    using Parent::isRegex;
-    using Parent::getRegex;
-    bool useThis(const PostingListSearchContext::DictionaryConstIterator & it) const override {
-        return isRegex() ? (getRegex().valid() ? getRegex().partial_match(_enumStore.get_value(it.getKey())) : false ) : true;
-    }
+    bool useThis(const PostingListSearchContext::DictionaryConstIterator & it) const override;
 public:
     StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const AttrT &toBeSearched);
 };
@@ -201,10 +194,7 @@ class NumericPostingSearchContext
     : public PostingSearchContext<BaseSC, PostingListSearchContextT<DataT>, AttrT>
 {
 private:
-    typedef PostingSearchContext<BaseSC, PostingListSearchContextT<DataT>, AttrT> Parent;
-    typedef PostingListTraits<DataT> AggregationTraits;
-    typedef typename AggregationTraits::PostingList PostingList;
-    typedef typename Parent::EnumStore::ComparatorType ComparatorType;
+    using Parent = PostingSearchContext<BaseSC, PostingListSearchContextT<DataT>, AttrT>;
     typedef typename AttrT::T BaseType;
     using Params = attribute::SearchContextParams;
     using QueryTermSimpleUP = typename Parent::QueryTermSimpleUP;
@@ -300,6 +290,18 @@ StringPostingSearchContext(QueryTermSimpleUP qTerm, bool useBitVector, const Att
     }
 }
 
+template <typename BaseSC, typename AttrT, typename DataT>
+bool
+StringPostingSearchContext<BaseSC, AttrT, DataT>::useThis(const PostingListSearchContext::DictionaryConstIterator & it) const {
+    if ( this->isRegex() ) {
+        return this->getRegex().valid()
+            ? this->getRegex().partial_match(_enumStore.get_value(it.getKey()))
+            : false;
+    } else if ( this->isCased() ) {
+        return this->isMatch(_enumStore.get_value(it.getKey()));
+    }
+    return true;
+}
 
 template <typename BaseSC, typename AttrT, typename DataT>
 NumericPostingSearchContext<BaseSC, AttrT, DataT>::
