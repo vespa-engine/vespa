@@ -46,8 +46,8 @@ public class HttpConfigServerClient extends AbstractConfigServerClient {
     private static CloseableHttpClient createClient(Collection<AthenzIdentity> serverIdentities, String userAgent) {
         return VespaHttpClientBuilder.create(socketFactories -> {
                                                  var manager = new PoolingHttpClientConnectionManager(socketFactories);
-                                                 manager.setMaxTotal(256);
-                                                 manager.setDefaultMaxPerRoute(8);
+                                                 manager.setMaxTotal(1024);
+                                                 manager.setDefaultMaxPerRoute(128);
                                                  manager.setDefaultSocketConfig(SocketConfig.custom().setSoTimeout(Timeout.ofSeconds(5)).build());
                                                  manager.setValidateAfterInactivity(TimeValue.ofSeconds(10));
                                                  return manager;
