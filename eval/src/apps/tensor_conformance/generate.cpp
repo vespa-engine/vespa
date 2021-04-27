@@ -342,7 +342,7 @@ void generate_lambda(TestBuilder &dst) {
 
 void generate_cell_cast(TestBuilder &dst) {
     for (const auto &layout: basic_layouts) {
-        GenSpec a = GenSpec::from_desc(layout).seq(N());
+        GenSpec a = GenSpec::from_desc(layout).seq(N(-100));
         auto from_cell_types = a.dims().empty() ? just_double : dst.full ? all_types : just_float;
         auto to_cell_types = a.dims().empty() ? just_double : all_types;
         for (auto a_ct: from_cell_types) {

@@ -26,6 +26,7 @@ std::string dynamic_model = source_dir + "/dynamic.onnx";
 std::string int_types_model = source_dir + "/int_types.onnx";
 std::string guess_batch_model = source_dir + "/guess_batch.onnx";
 std::string unstable_types_model = source_dir + "/unstable_types.onnx";
+std::string float_to_int8_model = source_dir + "/float_to_int8.onnx";
 
 void dump_info(const char *ctx, const std::vector<TensorInfo> &info) {
     fprintf(stderr, "%s:\n", ctx);
@@ -398,6 +399,40 @@ TEST(OnnxTest, converted_unstable_types) {
     EXPECT_EQ(cells16.typify<BFloat16>()[0], 1.0);
     EXPECT_EQ(cells16.typify<BFloat16>()[1], 2.0);
     EXPECT_EQ(cells16.typify<BFloat16>()[2], 3.0);
+    //-------------------------------------------------------------------------
+}
+
+TEST(OnnxTest, inspect_float_to_int8_conversion) {
+    Onnx model(float_to_int8_model, Onnx::Optimize::ENABLE);
+    ASSERT_EQ(model.inputs().size(), 1);
+    ASSERT_EQ(model.outputs().size(), 1);
+
+    ValueType in_type = ValueType::from_spec("tensor<float>(a[7])");
+    const float my_nan = std::numeric_limits<float>::quiet_NaN();
+    const float my_inf = std::numeric_limits<float>::infinity();
+    std::vector<float> in_values({-my_inf, -142, -42, my_nan, 42, 142, my_inf});
+    DenseValueView in(in_type, TypedCells(in_values));
+
+    Onnx::WirePlanner planner;
+    EXPECT_TRUE(planner.bind_input_type(in_type, model.inputs()[0]));
+    EXPECT_EQ(planner.make_output_type(model.outputs()[0]).to_spec(), "tensor<int8>(d0[7])");
+
+    auto wire_info = planner.get_wire_info(model);
+    Onnx::EvalContext ctx(model, wire_info);
+
+    const Value &out = ctx.get_result(0);
+    EXPECT_EQ(out.type().to_spec(), "tensor<int8>(d0[7])");
+    //-------------------------------------------------------------------------
+    ctx.bind_param(0, in);
+    ctx.eval();
+    auto cells = out.cells();
+    ASSERT_EQ(cells.type, CellType::INT8);
+    ASSERT_EQ(cells.size, 7);
+    auto out_values = cells.typify<Int8Float>();
+    for (size_t i = 0; i < 7; ++i) {
+        fprintf(stderr, "convert(float->int8): '%g' -> '%d'\n",
+                in_values[i], out_values[i].get_bits());
+    }
     //-------------------------------------------------------------------------
 }
 
