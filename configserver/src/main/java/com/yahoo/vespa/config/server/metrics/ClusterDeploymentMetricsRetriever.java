@@ -46,8 +46,8 @@ public class ClusterDeploymentMetricsRetriever {
     private static final String VESPA_CONTAINER = "vespa.container";
     private static final String VESPA_QRSERVER = "vespa.qrserver";
     private static final String VESPA_DISTRIBUTOR = "vespa.distributor";
-    private static final String VESPA_SEARCHNODE = "vespa.searchnode";
-    private static final List<String> WANTED_METRIC_SERVICES = List.of(VESPA_CONTAINER, VESPA_QRSERVER, VESPA_DISTRIBUTOR, VESPA_SEARCHNODE);
+    private static final String VESPA_CONTAINER_CLUSTERCONTROLLER = "vespa.container-clustercontroller";
+    private static final List<String> WANTED_METRIC_SERVICES = List.of(VESPA_CONTAINER, VESPA_QRSERVER, VESPA_DISTRIBUTOR, VESPA_CONTAINER_CLUSTERCONTROLLER);
 
 
     private static final ExecutorService executor = Executors.newFixedThreadPool(10, new DaemonThreadFactory("cluster-deployment-metrics-retriever-"));
@@ -138,8 +138,12 @@ public class ClusterDeploymentMetricsRetriever {
             case VESPA_DISTRIBUTOR:
                 deploymentMetricsAggregator.addDocumentCount(values.field("vds.distributor.docsstored.average").asDouble());
                 break;
-            case VESPA_SEARCHNODE:
-                deploymentMetricsAggregator.addFeedingBlocked((int) values.field("content.proton.resource_usage.feeding_blocked.last").asLong());
+            case VESPA_CONTAINER_CLUSTERCONTROLLER:
+                deploymentMetricsAggregator
+                        .addMemoryUsage(values.field("cluster-controller.resource_usage.max_memory_utilization.last").asDouble(),
+                                values.field("cluster-controller.resource_usage.memory_limit.last").asDouble())
+                        .addDiskUsage(values.field("cluster-controller.resource_usage.max_disk_utilization.last").asDouble(),
+                                values.field("cluster-controller.resource_usage.disk_limit.last").asDouble());
                 break;
         }
     }

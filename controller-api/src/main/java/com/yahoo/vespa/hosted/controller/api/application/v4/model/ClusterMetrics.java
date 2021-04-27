@@ -15,7 +15,10 @@ public class ClusterMetrics {
     public static final String DOCUMENT_COUNT = "documentCount";
     public static final String FEED_LATENCY = "feedLatency";
     public static final String QUERY_LATENCY  = "queryLatency";
-    public static final String FEEDING_BLOCKED  = "feedingBlocked";
+    public static final String MEMORY_UTIL = "memoryUtil";
+    public static final String MEMORY_FEED_BLOCK_LIMIT = "memoryFeedBlockLimit";
+    public static final String DISK_UTIL = "diskUtil";
+    public static final String DISK_FEED_BLOCK_LIMIT = "diskFeedBlockLimit";
 
     private final String clusterId;
     private final String clusterType;
@@ -55,8 +58,20 @@ public class ClusterMetrics {
         return Optional.ofNullable(metrics.get(QUERY_LATENCY));
     }
 
-    public Optional<Double> feedingBlocked() {
-        return Optional.ofNullable(metrics.get(FEEDING_BLOCKED));
+    public Optional<Double> memoryUtil() {
+        return Optional.ofNullable(metrics.get(MEMORY_UTIL));
+    }
+
+    public Optional<Double> memoryFeedBlockLimit() {
+        return Optional.ofNullable(metrics.get(MEMORY_FEED_BLOCK_LIMIT));
+    }
+
+    public Optional<Double> diskUtil() {
+        return Optional.ofNullable(metrics.get(DISK_UTIL));
+    }
+
+    public Optional<Double> diskFeedBlockLimit() {
+        return Optional.ofNullable(metrics.get(DISK_FEED_BLOCK_LIMIT));
     }
 
 }
