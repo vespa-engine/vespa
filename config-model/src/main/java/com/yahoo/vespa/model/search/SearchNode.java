@@ -2,9 +2,9 @@
 package com.yahoo.vespa.model.search;
 
 import com.yahoo.cloud.config.filedistribution.FiledistributorrpcConfig;
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.metrics.MetricsmanagerConfig;
 import com.yahoo.searchlib.TranslogserverConfig;
 import com.yahoo.vespa.config.content.LoadTypeConfig;
@@ -213,6 +213,12 @@ public class SearchNode extends AbstractService implements
 
     @Override
     public void getConfig(TranslogserverConfig.Builder builder) {
+        Optional<NodeResources> nodeResources = getSpecifiedNodeResources();
+        if (nodeResources.isPresent()) {
+            if (nodeResources.get().storageType() == NodeResources.StorageType.remote) {
+                builder.usefsync(false);
+            }
+        }
         tls.getConfig(builder);
     }
 
@@ -272,8 +278,9 @@ public class SearchNode extends AbstractService implements
             // to make sure the node failer has done its work
             builder.pruneremoveddocumentsage(4 * 24 * 3600 + 3600 + 60);
         }
-        if (getHostResource() != null && ! getHostResource().realResources().isUnspecified()) {
-            var nodeResourcesTuning = new NodeResourcesTuning(getHostResource().realResources(),
+        Optional<NodeResources> nodeResources = getSpecifiedNodeResources();
+        if (nodeResources.isPresent()) {
+            var nodeResourcesTuning = new NodeResourcesTuning(nodeResources.get(),
                                                               tuning.map(Tuning::threadsPerSearch).orElse(1),
                                                               combined);
             nodeResourcesTuning.getConfig(builder);
@@ -281,6 +288,10 @@ public class SearchNode extends AbstractService implements
             tuning.ifPresent(t -> t.getConfig(builder));
             resourceLimits.ifPresent(l -> l.getConfig(builder));
         }
+    }
+
+    private Optional<NodeResources> getSpecifiedNodeResources() {
+        return (getHostResource() != null) ? getHostResource().realResources().asOptional() : Optional.empty();
     }
 
     @Override
