@@ -79,17 +79,14 @@ public class JRTConnection implements Connection {
 
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        sb.append("Address: ");
         sb.append(address);
-        sb.append("\n").append("Healthy: ").append(isHealthy());
+        sb.append(", ").append(isHealthy() ? "healthy" : "unhealthy");
         if (lastSuccess.isAfter(Instant.EPOCH)) {
-            sb.append("\n");
-            sb.append("Last success: ");
+            sb.append(", last success: ");
             sb.append(lastSuccess);
         }
         if (lastFailure.isAfter(Instant.EPOCH)) {
-            sb.append("\n");
-            sb.append("Last failure: ");
+            sb.append(", last failure: ");
             sb.append(lastFailure);
         }
         return sb.toString();

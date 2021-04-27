@@ -4,12 +4,21 @@ package com.yahoo.vespa.config;
 import com.yahoo.config.subscription.ConfigSourceSet;
 import org.junit.Test;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 /**
  * Tests for the JRTConnectionPool class.
@@ -68,6 +77,7 @@ public class JRTConnectionPoolTest {
             }
         }
         assertConnectionDistributionIsFair(timesUsed);
+        sourcePool.close();
     }
 
     // Tests that the number of times each connection is used is close to equal
@@ -122,5 +132,42 @@ public class JRTConnectionPoolTest {
         assertThat(newSourceSet2.getSources().size(), is(1));
         assertThat(newSourceSet2, is(not(newSourceSet)));
         assertTrue(newSourceSet2.getSources().contains("host4"));
+
+        sourcePool.close();
     }
+
+    @Test
+    public void testFailingSources() {
+        List<String> sources = new ArrayList<>();
+
+        sources.add("host0");
+        sources.add("host1");
+        sources.add("host2");
+        JRTConnectionPool sourcePool = new JRTConnectionPool(sources);
+
+        Connection firstConnection = sourcePool.getCurrent();
+
+        // Should change connection away from first connection
+        sourcePool.setError(firstConnection, 123);
+        JRTConnection secondConnection = sourcePool.getCurrent();
+        assertNotEquals(secondConnection, firstConnection);
+
+        // Should change connection away from first AND second connection
+        sourcePool.setError(secondConnection, 123);
+        JRTConnection thirdConnection = sourcePool.getCurrent();
+        assertNotEquals(sourcePool.getCurrent(), firstConnection);
+        assertNotEquals(sourcePool.getCurrent(), secondConnection);
+
+        // Should change connection away from third connection
+        sourcePool.setError(thirdConnection, 123);
+        JRTConnection currentConnection = sourcePool.getCurrent();
+        assertNotEquals(sourcePool.getCurrent(), thirdConnection);
+
+        // Should change connection from current connection
+        sourcePool.setError(thirdConnection, 123);
+        assertNotEquals(sourcePool.getCurrent(), currentConnection);
+
+        sourcePool.close();
+    }
+
 }

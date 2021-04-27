@@ -19,7 +19,7 @@ import java.util.stream.Collectors;
  * The current connection is chosen randomly when calling {#link {@link #switchConnection()}}
  * (it will continue to use the same connection if there is only one source).
  * The current connection is available with {@link #getCurrent()}.
- * When calling {@link #setError(Connection, int)}, {#link {@link #switchConnection()}} will always be called.
+ * When calling {@link #setError(Connection, int)}, {@link #switchConnection()} will always be called.
  *
  * @author Gunnar Gauslaa Bergem
  * @author hmusum
@@ -53,7 +53,7 @@ public class JRTConnectionPool implements ConnectionPool {
                 connections.put(address, new JRTConnection(address, supervisor));
             }
         }
-        initialize();
+        currentConnection = initialize();
     }
 
     /**
@@ -70,23 +70,21 @@ public class JRTConnectionPool implements ConnectionPool {
         List<JRTConnection> sources = getSources();
         if (sources.size() <= 1) return currentConnection;
 
-        List<JRTConnection> healthySources = sources.stream()
+        List<JRTConnection> sourceCandidates = sources.stream()
                                                     .filter(JRTConnection::isHealthy)
                                                     .collect(Collectors.toList());
-        if (healthySources.size() == 0) {
-            log.log(Level.INFO, "No healthy sources, keep using " + currentConnection);
-            return currentConnection;
+        JRTConnection newConnection;
+        if (sourceCandidates.size() == 0) {
+            sourceCandidates = getSources();
+            sourceCandidates.remove(currentConnection);
         }
-        JRTConnection newConnection = pickNewConnectionRandomly(healthySources);
+        newConnection = pickNewConnectionRandomly(sourceCandidates);
         log.log(Level.INFO, () -> "Switching from " + currentConnection + " to " + newConnection);
         return currentConnection = newConnection;
     }
 
     public synchronized JRTConnection initialize() {
-        List<JRTConnection> sources = getSources();
-        currentConnection = pickNewConnectionRandomly(sources);
-        log.log(Level.INFO, () -> "Choosing new connection: " + currentConnection);
-        return currentConnection;
+        return pickNewConnectionRandomly(getSources());
     }
 
     private JRTConnection pickNewConnectionRandomly(List<JRTConnection> sources) {
