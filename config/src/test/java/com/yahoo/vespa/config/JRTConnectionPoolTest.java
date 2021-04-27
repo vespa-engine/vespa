@@ -1,10 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import com.yahoo.config.subscription.ConfigSourceSet;
 import org.junit.Test;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
@@ -25,11 +26,12 @@ public class JRTConnectionPoolTest {
     @Test
     public void test_random_selection_of_sourceBasicHashBasedSelection() {
         JRTConnectionPool sourcePool = new JRTConnectionPool(sources);
-        assertThat(sourcePool.toString(), is("Address: host0\nAddress: host1\nAddress: host2\n"));
+        assertEquals("host0,host1,host2",
+                     sourcePool.getSources().stream().map(JRTConnection::getAddress).collect(Collectors.joining(",")));
 
         Map<String, Integer> sourceOccurrences = new HashMap<>();
         for (int i = 0; i < 1000; i++) {
-            final String address = sourcePool.setNewCurrentConnection().getAddress();
+            final String address = sourcePool.switchConnection().getAddress();
             if (sourceOccurrences.containsKey(address)) {
                 sourceOccurrences.put(address, sourceOccurrences.get(address) + 1);
             } else {
@@ -57,7 +59,7 @@ public class JRTConnectionPoolTest {
 
         int count = 1000;
         for (int i = 0; i < count; i++) {
-            String address = sourcePool.setNewCurrentConnection().getAddress();
+            String address = sourcePool.switchConnection().getAddress();
             if (timesUsed.containsKey(address)) {
                 int times = timesUsed.get(address);
                 timesUsed.put(address, times + 1);
