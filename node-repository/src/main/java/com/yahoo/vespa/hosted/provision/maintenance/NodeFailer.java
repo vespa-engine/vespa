@@ -30,8 +30,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static java.util.stream.Collectors.collectingAndThen;
-
 /**
  * Maintains information in the node repo about when this node last responded to ping
  * and fails nodes which have not responded within the given time limit.
@@ -85,8 +83,10 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             for (Map.Entry<Node, String> entry : getReadyNodesByFailureReason().entrySet()) {
                 Node node = entry.getKey();
                 if (throttle(node)) {
-                    if (node.type().isHost()) throttledHostFailures++;
-                    else throttledNodeFailures++;
+                    if (node.type().isHost())
+                        throttledHostFailures++;
+                    else
+                        throttledNodeFailures++;
                     continue;
                 }
                 String reason = entry.getValue();
@@ -104,7 +104,6 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                     throttledHostFailures++;
                 else
                     throttledNodeFailures++;
-
                 continue;
             }
             String reason = entry.getValue();
@@ -322,21 +321,23 @@ public class NodeFailer extends NodeRepositoryMaintainer {
     private boolean throttle(Node node) {
         if (throttlePolicy == ThrottlePolicy.disabled) return false;
         Instant startOfThrottleWindow = clock().instant().minus(throttlePolicy.throttleWindow);
-        NodeList nodes = nodeRepository().nodes().list();
-        NodeList recentlyFailedNodes = nodes.stream()
-                                            .filter(n -> n.state() == Node.State.failed)
-                                            .filter(n -> n.history().hasEventAfter(History.Event.Type.failed, startOfThrottleWindow))
-                                            .collect(collectingAndThen(Collectors.toList(), NodeList::copyOf));
+        NodeList allNodes = nodeRepository().nodes().list();
+        NodeList recentlyFailedNodes = allNodes.state(Node.State.failed)
+                                               .matching(n -> n.history().hasEventAfter(History.Event.Type.failed,
+                                                                                        startOfThrottleWindow));
 
-        // Allow failing nodes within policy
-        if (recentlyFailedNodes.size() < throttlePolicy.allowedToFailOf(nodes.size())) return false;
+        // Allow failing any node within policy
+        if (recentlyFailedNodes.size() < throttlePolicy.allowedToFailOf(allNodes.size())) return false;
 
-        // Always allow failing physical nodes up to minimum limit
+        // Always allow failing a minimum number of hosts
         if (node.parentHostname().isEmpty() &&
             recentlyFailedNodes.parents().size() < throttlePolicy.minimumAllowedToFail) return false;
 
+        // Always allow failing children of a failed host
+        if (recentlyFailedNodes.parentOf(node).isPresent()) return false;
+
         log.info(String.format("Want to fail node %s, but throttling is in effect: %s", node.hostname(),
-                               throttlePolicy.toHumanReadableString(nodes.size())));
+                               throttlePolicy.toHumanReadableString(allNodes.size())));
 
         return true;
     }
