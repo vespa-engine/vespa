@@ -58,10 +58,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
-import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -105,7 +103,7 @@ public class TenantRepository {
     private final Metrics metrics;
     private final MetricUpdater metricUpdater;
     private final ExecutorService zkCacheExecutor;
-    private final ExecutorService zkSessionWatcherExecutor;
+    private final StripedExecutor<TenantName> zkSessionWatcherExecutor;
     private final StripedExecutor<TenantName> zkApplicationWatcherExecutor;
     private final FileDistributionFactory fileDistributionFactory;
     private final FlagSource flagSource;
@@ -144,7 +142,7 @@ public class TenantRepository {
              configCurator,
              metrics,
              new StripedExecutor<>(),
-             new ZkWatcherExecutorService(),
+             new StripedExecutor<>(),
              new FileDistributionFactory(configserverConfig),
              flagSource,
              Executors.newFixedThreadPool(1, ThreadFactoryFactory.getThreadFactory(TenantRepository.class.getName())),
@@ -164,7 +162,7 @@ public class TenantRepository {
                             ConfigCurator configCurator,
                             Metrics metrics,
                             StripedExecutor<TenantName> zkApplicationWatcherExecutor ,
-                            ExecutorService zkSessionWatcherExecutor,
+                            StripedExecutor<TenantName> zkSessionWatcherExecutor,
                             FileDistributionFactory fileDistributionFactory,
                             FlagSource flagSource,
                             ExecutorService zkCacheExecutor,
@@ -544,10 +542,9 @@ public class TenantRepository {
             zkCacheExecutor.shutdown();
             checkForRemovedApplicationsService.shutdown();
             zkApplicationWatcherExecutor.shutdownAndWait();
-            zkSessionWatcherExecutor.shutdown();
+            zkSessionWatcherExecutor.shutdownAndWait();
             zkCacheExecutor.awaitTermination(50, TimeUnit.SECONDS);
             checkForRemovedApplicationsService.awaitTermination(50, TimeUnit.SECONDS);
-            zkSessionWatcherExecutor.awaitTermination(50, TimeUnit.SECONDS);
         }
         catch (InterruptedException e) {
             log.log(Level.WARNING, "Interrupted while shutting down.", e);
@@ -614,43 +611,5 @@ public class TenantRepository {
     }
 
     public Curator getCurator() { return curator; }
-
-    /**
-     * Single-threaded executor (to make sure that getting data for a ZooKeeper watcher event is done serially) that
-     * delegates to another executor (that uses a cached thread pool)
-     */
-    private static class ZkWatcherExecutorService extends ThreadPoolExecutor {
-
-        private final ExecutorService executorService =
-                Executors.newCachedThreadPool(new DaemonThreadFactory("zk-session-watcher-"));
-
-        public ZkWatcherExecutorService() {
-            super(1, 1, 0L, TimeUnit.MILLISECONDS, new LinkedBlockingQueue<>());
-        }
-
-        @Override
-        public void execute(Runnable command) {
-            super.execute(() -> executorService.execute(command));
-        }
-
-        @Override
-        public void shutdown() {
-            super.shutdown();
-            executorService.shutdown();
-        }
-
-        @Override
-        public List<Runnable> shutdownNow() {
-            super.shutdownNow();
-            return executorService.shutdownNow();
-        }
-
-        @Override
-        public boolean awaitTermination(long timeout, TimeUnit unit) throws InterruptedException {
-            if ( ! super.awaitTermination(timeout, unit)) return false;
-            return executorService.awaitTermination(timeout, unit);
-        }
-
-    }
 
 }
