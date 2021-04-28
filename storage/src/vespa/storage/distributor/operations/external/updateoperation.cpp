@@ -19,7 +19,7 @@ using document::BucketSpace;
 namespace storage::distributor {
 
 UpdateOperation::UpdateOperation(DistributorNodeContext& node_ctx,
-                                 DistributorOperationContext& op_ctx,
+                                 DistributorStripeOperationContext& op_ctx,
                                  DistributorBucketSpace& bucketSpace,
                                  const std::shared_ptr<api::UpdateCommand>& msg,
                                  std::vector<BucketDatabase::Entry> entries,

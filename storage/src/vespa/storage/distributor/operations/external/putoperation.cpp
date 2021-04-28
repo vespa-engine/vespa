@@ -22,7 +22,7 @@ using namespace storage;
 using document::BucketSpace;
 
 PutOperation::PutOperation(DistributorNodeContext& node_ctx,
-                           DistributorOperationContext& op_ctx,
+                           DistributorStripeOperationContext& op_ctx,
                            DistributorBucketSpace &bucketSpace,
                            std::shared_ptr<api::PutCommand> msg,
                            PersistenceOperationMetricSet& metric, SequencingHandle sequencingHandle)

@@ -20,11 +20,11 @@ class DistributorBucketSpaceRepo;
 class PendingMessageTracker;
 
 /**
- * Interface with functionality that is used when handling distributor operations.
+ * Interface with functionality that is used when handling distributor stripe operations.
  */
-class DistributorOperationContext {
+class DistributorStripeOperationContext {
 public:
-    virtual ~DistributorOperationContext() {}
+    virtual ~DistributorStripeOperationContext() {}
     virtual api::Timestamp generate_unique_timestamp() = 0;
     virtual void update_bucket_database(const document::Bucket& bucket,
                                         const BucketCopy& changed_node,

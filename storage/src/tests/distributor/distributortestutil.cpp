@@ -357,7 +357,7 @@ DistributorTestUtil::distributor_component() {
     return _distributor->distributor_component();
 }
 
-storage::distributor::DistributorOperationContext&
+storage::distributor::DistributorStripeOperationContext&
 DistributorTestUtil::operation_context() {
     return _distributor->distributor_component();
 }
