@@ -314,14 +314,6 @@ public class FileDownloaderTest {
         }
 
         @Override
-        public void setError(int errorCode) {
-        }
-
-        @Override
-        public void setSuccess() {
-        }
-
-        @Override
         public String getAddress() {
             return null;
         }
@@ -331,9 +323,7 @@ public class FileDownloaderTest {
         }
 
         @Override
-        public void setError(Connection connection, int errorCode) {
-            connection.setError(errorCode);
-        }
+        public void setError(Connection connection, int errorCode) { }
 
         @Override
         public Connection getCurrent() {
