@@ -87,7 +87,7 @@ public class MockConnection implements ConnectionPool, Connection {
     }
 
     @Override
-    public Connection switchConnection() { return this; }
+    public Connection switchConnection(Connection connection) { return this; }
 
     @Override
     public int getSize() {

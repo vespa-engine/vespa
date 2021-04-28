@@ -66,19 +66,31 @@ public class JRTConnectionPool implements ConnectionPool {
     }
 
     @Override
-    public synchronized JRTConnection switchConnection() {
+    public synchronized JRTConnection switchConnection(Connection failingConnection) {
         List<JRTConnection> sources = getSources();
         if (sources.size() <= 1) return currentConnection;
 
-        List<JRTConnection> sourceCandidates = sources.stream()
-                                                    .filter(JRTConnection::isHealthy)
-                                                    .collect(Collectors.toList());
-        JRTConnection newConnection;
+        if ( ! currentConnection.equals(failingConnection)) return currentConnection;
+
+        return switchConnection();
+    }
+
+    /**
+     * Preconditions:
+     * 1. the current connection is unhealthy and should not be selected when switching
+     * 2. There is more than 1 source.
+     */
+    public synchronized JRTConnection switchConnection() {
+        if (getSources().size() <= 1) throw new IllegalStateException("Cannot switch connection, not enough sources");
+
+        List<JRTConnection> sourceCandidates = getSources().stream()
+                                                           .filter(JRTConnection::isHealthy)
+                                                           .collect(Collectors.toList());
         if (sourceCandidates.size() == 0) {
             sourceCandidates = getSources();
             sourceCandidates.remove(currentConnection);
         }
-        newConnection = pickNewConnectionRandomly(sourceCandidates);
+        JRTConnection newConnection = pickNewConnectionRandomly(sourceCandidates);
         log.log(Level.INFO, () -> "Switching from " + currentConnection + " to " + newConnection);
         return currentConnection = newConnection;
     }
@@ -106,7 +118,7 @@ public class JRTConnectionPool implements ConnectionPool {
     @Override
     public void setError(Connection connection, int errorCode) {
         connection.setError(errorCode);
-        switchConnection();
+        switchConnection(connection);
     }
 
     public JRTConnectionPool updateSources(List<String> addresses) {
