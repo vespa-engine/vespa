@@ -143,7 +143,6 @@ public class TensorFieldTestCase {
 
     private void assertHnswIndexParams(String indexSpec, int maxLinksPerNode, int neighborsToExploreAtInsert) throws ParseException {
         var sd = getSdWithIndexSpec(indexSpec);
-        System.out.println(sd);
         var search = createFromString(sd).getSearch();
         var attr = search.getAttribute("t1");
         var params = attr.hnswIndexParams();

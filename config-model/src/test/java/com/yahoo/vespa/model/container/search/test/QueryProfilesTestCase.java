@@ -6,7 +6,9 @@ import com.yahoo.search.Query;
 import com.yahoo.search.query.profile.DimensionValues;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.search.query.profile.QueryProfileVariant;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
+import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.config.QueryProfileConfigurer;
 import com.yahoo.search.query.profile.config.QueryProfileXMLReader;
 import com.yahoo.search.query.profile.types.FieldDescription;
@@ -36,6 +38,39 @@ public class QueryProfilesTestCase {
     private final static String root="src/test/java/com/yahoo/vespa/model/container/search/test/";
 
     @Test
+    public void testVariantReference() {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+
+        QueryProfile parent = new QueryProfile("parent");
+        parent.set("b", 48, registry);
+        registry.register(parent);
+
+        QueryProfile referenced = new QueryProfile("referenced");
+        referenced.addInherited(parent);
+        referenced.setDimensions(new String[] { "d2", "d3" });
+        registry.register(referenced);
+
+        QueryProfile base = new QueryProfile("base");
+        base.setDimensions(new String[] { "d1", "d2", "d3" });
+        base.set("a", referenced, new String[] {  null, null, "d3-val" }, registry);
+        base.set("a.b", 1, new String[] {  null, null, "d3-val" }, registry);
+        QueryProfileVariant aVariants = base.getVariants().getVariants().get(0);
+        QueryProfile a = (QueryProfile)aVariants.values().get("a");
+        assertEquals("[d1, d2, d3]", a.getDimensions().toString());
+        registry.register(base);
+
+        QueryProfiles profiles = new QueryProfiles(registry, new TestableDeployLogger());
+        QueryProfileRegistry registryFromConfig = QueryProfileConfigurer.createFromConfig(profiles.getConfig());
+        var directValue = registry.findQueryProfile("base")
+                                  .get("a.b",
+                                       new String[] { "default", null, "d3-val"});
+        var throughConfigValue = registryFromConfig.findQueryProfile("base")
+                                                   .get("a.b",
+                                                        new String[] { "default", null, "d3-val"});
+        assertEquals(directValue.toString(), throughConfigValue.toString());
+    }
+
+    @Test
     public void testVariants() {
         QueryProfileRegistry registry = new QueryProfileXMLReader().read(root + "variants");
         QueryProfiles profiles = new QueryProfiles(registry, new TestableDeployLogger());
@@ -57,40 +92,40 @@ public class QueryProfilesTestCase {
 
     @Test
     public void testQueryProfiles() throws IOException {
-        final boolean mandatory=true;
-        final boolean overridable=true;
-        QueryProfileRegistry registry=new QueryProfileRegistry();
-        QueryProfileTypeRegistry typeRegistry=registry.getTypeRegistry();
+        final boolean mandatory = true;
+        final boolean overridable = true;
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+        QueryProfileTypeRegistry typeRegistry = registry.getTypeRegistry();
 
-        QueryProfileType userType=new QueryProfileType("user");
+        QueryProfileType userType = new QueryProfileType("user");
         userType.setStrict(true);
-        userType.addField(new FieldDescription("robot", FieldType.fromString("boolean",typeRegistry), "machine automaton", mandatory, !overridable));
-        userType.addField(new FieldDescription("ads", FieldType.fromString("string",typeRegistry), mandatory, overridable));
-        userType.addField(new FieldDescription("age", FieldType.fromString("integer",typeRegistry), !mandatory, overridable));
+        userType.addField(new FieldDescription("robot", FieldType.fromString("boolean", typeRegistry), "machine automaton", mandatory, !overridable));
+        userType.addField(new FieldDescription("ads", FieldType.fromString("string", typeRegistry), mandatory, overridable));
+        userType.addField(new FieldDescription("age", FieldType.fromString("integer", typeRegistry), !mandatory, overridable));
         typeRegistry.register(userType);
 
-        QueryProfileType rootType=new QueryProfileType("root");
-        QueryProfileType nativeProfile=typeRegistry.getComponent("native");
+        QueryProfileType rootType = new QueryProfileType("root");
+        QueryProfileType nativeProfile = typeRegistry.getComponent("native");
         assertNotNull(nativeProfile);
         assertTrue(nativeProfile.isBuiltin());
         rootType.inherited().add(nativeProfile);
         rootType.setMatchAsPath(true);
-        rootType.addField(new FieldDescription("user", FieldType.fromString("query-profile:user",typeRegistry), mandatory, overridable));
+        rootType.addField(new FieldDescription("user", FieldType.fromString("query-profile:user", typeRegistry), mandatory, overridable));
         typeRegistry.register(rootType);
 
-        QueryProfileType marketType=new QueryProfileType("market");
+        QueryProfileType marketType = new QueryProfileType("market");
         marketType.inherited().add(rootType);
-        marketType.addField(new FieldDescription("market", FieldType.fromString("string",typeRegistry), !mandatory, !overridable));
+        marketType.addField(new FieldDescription("market", FieldType.fromString("string", typeRegistry), !mandatory, !overridable));
         typeRegistry.register(marketType);
 
-        QueryProfile defaultProfile=new QueryProfile("default");
+        QueryProfile defaultProfile = new QueryProfile("default");
         defaultProfile.set("ranking","production23", registry);
         defaultProfile.set("representation.defaultIndex", "title", registry);
         defaultProfile.setOverridable("representation.defaultIndex", false, DimensionValues.empty);
         registry.register(defaultProfile);
 
-        QueryProfile test=new QueryProfile("test");
-        test.set("tracelevel",2,registry);
+        QueryProfile test = new QueryProfile("test");
+        test.set("tracelevel",2, registry);
         registry.register(test);
 
         QueryProfile genericUser = new QueryProfile("genericUser");
@@ -110,11 +145,11 @@ public class QueryProfilesTestCase {
         root.set("defaultage", "7d", registry);
         registry.register(root);
 
-        QueryProfile marketUser=new QueryProfile("marketUser");
+        QueryProfile marketUser = new QueryProfile("marketUser");
         marketUser.setType(userType);
         marketUser.addInherited(genericUser);
-        marketUser.set("ads","none",registry);
-        marketUser.set("age",25,registry);
+        marketUser.set("ads","none", registry);
+        marketUser.set("age",25, registry);
         registry.register(marketUser);
 
         QueryProfile market = new QueryProfile("root/market");

@@ -954,10 +954,6 @@ public class ModelProvisioningTest {
         assertEquals("1|*", cluster.getRootGroup().getPartitions().get());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(2, cluster.getRootGroup().getSubgroups().size());
-        System.out.println("Nodes in group 0: ");
-        cluster.getRootGroup().getSubgroups().get(0).getNodes().forEach(n -> System.out.println("  " + n));
-        System.out.println("Nodes in group 1: ");
-        cluster.getRootGroup().getSubgroups().get(1).getNodes().forEach(n -> System.out.println("  " + n));
     }
 
     @Test
@@ -987,10 +983,6 @@ public class ModelProvisioningTest {
         assertEquals("1|*", cluster.getRootGroup().getPartitions().get());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(2, cluster.getRootGroup().getSubgroups().size());
-        System.out.println("Nodes in group 0: ");
-        cluster.getRootGroup().getSubgroups().get(0).getNodes().forEach(n -> System.out.println("  " + n));
-        System.out.println("Nodes in group 1: ");
-        cluster.getRootGroup().getSubgroups().get(1).getNodes().forEach(n -> System.out.println("  " + n));
     }
 
     @Test

@@ -15,7 +15,7 @@ import java.util.*;
  */
 public class DeclaredQueryProfileVariants {
 
-    private final Map<String, VariantQueryProfile> variantQueryProfiles =new LinkedHashMap<>();
+    private final Map<String, VariantQueryProfile> variantQueryProfiles = new LinkedHashMap<>();
 
     public DeclaredQueryProfileVariants(QueryProfile profile) {
         // Recreates the declared view (settings per set of dimensions)
@@ -67,26 +67,26 @@ public class DeclaredQueryProfileVariants {
         // having the variants
         for (Map.Entry<String,Object> entry : profile.declaredContent().entrySet()) {
             if ( ! (entry.getValue() instanceof QueryProfile)) continue;
-            QueryProfile subProfile=(QueryProfile)entry.getValue();
+            QueryProfile subProfile = (QueryProfile)entry.getValue();
             // Export if defined implicitly in this, or if this contains overrides
             if (!subProfile.isExplicit() || subProfile instanceof OverridableQueryProfile) {
-                String entryPrefix=prefix + entry.getKey() + ".";
-                dereferenceCompoundedVariants(subProfile.getVariants(),entryPrefix);
-                dereferenceCompoundedVariants(subProfile,entryPrefix);
+                String entryPrefix = prefix + entry.getKey() + ".";
+                dereferenceCompoundedVariants(subProfile.getVariants(), entryPrefix);
+                dereferenceCompoundedVariants(subProfile, entryPrefix);
             }
         }
 
-        if (profile.getVariants()==null) return;
+        if (profile.getVariants() == null) return;
         // We need to do the same dereferencing to overridables pointed to by variants of this
         for (Map.Entry<String,QueryProfileVariants.FieldValues> fieldValueEntry : profile.getVariants().getFieldValues().entrySet()) {
             for (QueryProfileVariants.FieldValue fieldValue : fieldValueEntry.getValue().asList()) {
                 if ( ! (fieldValue.getValue() instanceof QueryProfile)) continue;
-                QueryProfile subProfile=(QueryProfile)fieldValue.getValue();
+                QueryProfile subProfile = (QueryProfile)fieldValue.getValue();
                 // Export if defined implicitly in this, or if this contains overrides
                 if (!subProfile.isExplicit() || subProfile instanceof OverridableQueryProfile) {
-                    String entryPrefix=prefix + fieldValueEntry.getKey() + ".";
-                    dereferenceCompoundedVariants(subProfile.getVariants(),entryPrefix);
-                    dereferenceCompoundedVariants(subProfile,entryPrefix);
+                    String entryPrefix = prefix + fieldValueEntry.getKey() + ".";
+                    dereferenceCompoundedVariants(subProfile.getVariants(), entryPrefix);
+                    dereferenceCompoundedVariants(subProfile, entryPrefix);
                 }
             }
         }

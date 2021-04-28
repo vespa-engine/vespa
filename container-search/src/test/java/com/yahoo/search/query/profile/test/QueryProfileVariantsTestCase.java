@@ -10,6 +10,7 @@ import com.yahoo.search.query.profile.BackedOverridableQueryProfile;
 import com.yahoo.search.query.profile.QueryProfile;
 import com.yahoo.search.query.profile.QueryProfileProperties;
 import com.yahoo.search.query.profile.QueryProfileRegistry;
+import com.yahoo.search.query.profile.QueryProfileVariant;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfile;
 import com.yahoo.search.query.profile.compiled.CompiledQueryProfileRegistry;
 import com.yahoo.search.query.profile.compiled.ValueWithSource;
@@ -101,6 +102,36 @@ public class QueryProfileVariantsTestCase {
         var cRegistry = registry.compile();
         assertEquals("test-value",
                      cRegistry.getComponent("test").get("a.b", Map.of("d1", "d1v")));
+    }
+
+    /**
+     * Tests referencing a variant which modifies the dimension set,
+     * and also setting a value within that variants subspace.
+     */
+    @Test
+    public void testVariantReference() {
+        QueryProfileRegistry registry = new QueryProfileRegistry();
+
+        QueryProfile parent = new QueryProfile("parent");
+        parent.set("b", 48, registry);
+        registry.register(parent);
+
+        QueryProfile referenced = new QueryProfile("referenced");
+        referenced.addInherited(parent);
+        referenced.setDimensions(new String[] {"d2", "d3"});
+        registry.register(referenced);
+
+        QueryProfile base = new QueryProfile("base");
+        base.setDimensions(new String[]{"d1", "d2", "d3"});
+        base.set("a", referenced, new String[] {null, null, "d3-val"}, registry);
+        assertEquals("Variant dimensions are not overridden by the referenced dimensions",
+                     "[d1, d2, d3]",
+                     ((QueryProfile)base.getVariants().getVariants().get(0).values().get("a")).getDimensions().toString());
+        base.set("a.b", 1, new String[] {null, null, "d3-val"}, registry);
+        QueryProfileVariant aVariants = base.getVariants().getVariants().get(0);
+        assertEquals("Variant dimensions are not overridden by the referenced dimensions",
+                     "[d1, d2, d3]",
+                     ((QueryProfile)base.getVariants().getVariants().get(0).values().get("a")).getDimensions().toString());
     }
 
     @Test
