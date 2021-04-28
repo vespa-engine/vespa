@@ -114,7 +114,9 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
         // Special case: Reduce all
         if (dimensions.isEmpty() || dimensions.size() == argument.type().dimensions().size())
-            if (argument.type().dimensions().size() == 1 && argument instanceof IndexedTensor)
+            if (argument.isEmpty())
+                return Tensor.from(0.0);
+            else if (argument.type().dimensions().size() == 1 && argument instanceof IndexedTensor)
                 return reduceIndexedVector((IndexedTensor)argument, aggregator);
             else
                 return reduceAllGeneral(argument, aggregator);
