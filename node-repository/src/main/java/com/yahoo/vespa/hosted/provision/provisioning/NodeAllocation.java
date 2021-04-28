@@ -322,8 +322,8 @@ class NodeAllocation {
 
         // Infrastructure hosts have fixed indices, starting at 1
         Set<Integer> currentIndices = allNodes.nodeType(hostType)
+                                              .hostnames()
                                               .stream()
-                                              .map(Node::hostname)
                                               // TODO(mpolden): Use cluster index instead of parsing hostname, once all
                                               //                config servers have been replaced once and have switched
                                               //                to compact indices

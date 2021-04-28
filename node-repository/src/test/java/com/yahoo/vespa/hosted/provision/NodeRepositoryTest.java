@@ -14,7 +14,6 @@ import java.time.Instant;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Predicate;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -281,9 +280,7 @@ public class NodeRepositoryTest {
     }
 
     private static Set<String> filterNodes(NodeRepositoryTester tester, Predicate<Node> filter) {
-        return tester.nodeRepository().nodes().list().matching(filter).stream()
-                .map(Node::hostname)
-                .collect(Collectors.toSet());
+        return tester.nodeRepository().nodes().list().matching(filter).hostnames();
     }
 
 }

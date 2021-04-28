@@ -106,14 +106,14 @@ public class ProvisioningTest {
         NodeList previouslyActive = tester.getNodes(application1, Node.State.active);
         NodeList previouslyInactive = tester.getNodes(application1, Node.State.inactive);
         tester.remove(application1);
-        assertEquals(tester.toHostNames(previouslyActive.not().container()),
-                     tester.toHostNames(tester.nodeRepository().nodes().list(Node.State.inactive).owner(application1)));
+        assertEquals(previouslyActive.not().container().hostnames(),
+                     tester.nodeRepository().nodes().list(Node.State.inactive).owner(application1).hostnames());
         assertTrue(tester.nodeRepository().nodes().list(Node.State.dirty).asList().containsAll(previouslyActive.container().asList()));
         assertEquals(0, tester.getNodes(application1, Node.State.active).size());
         assertTrue(tester.nodeRepository().applications().get(application1).isEmpty());
 
         // other application is unaffected
-        assertEquals(state1App2.hostNames(), tester.toHostNames(tester.nodeRepository().nodes().list(Node.State.active).owner(application2)));
+        assertEquals(state1App2.hostNames(), tester.nodeRepository().nodes().list(Node.State.active).owner(application2).hostnames());
 
         // fail a node from app2 and make sure it does not get inactive nodes from first
         HostSpec failed = tester.removeOne(state1App2.allHosts);
@@ -706,7 +706,7 @@ public class ProvisioningTest {
         tester.activate(application, tester.prepare(application, cluster, capacityCanFail));
         assertEquals(0, tester.nodeRepository().nodes().list(Node.State.active).owner(application).retired().size());
 
-        tester.patchNode(tester.nodeRepository().nodes().list().owner(application).stream().findAny().orElseThrow(), n -> n.withWantToRetire(true, Agent.system, tester.clock().instant()));
+        tester.patchNode(tester.nodeRepository().nodes().list().owner(application).first().orElseThrow(), n -> n.withWantToRetire(true, Agent.system, tester.clock().instant()));
         tester.activate(application, tester.prepare(application, cluster, capacityCanFail));
         assertEquals(1, tester.nodeRepository().nodes().list(Node.State.active).owner(application).retired().size());
         assertEquals(6, tester.nodeRepository().nodes().list(Node.State.active).owner(application).size());
@@ -807,11 +807,11 @@ public class ProvisioningTest {
         assertEquals(10, list.state(Node.State.active).nodeType(NodeType.host).size());
 
         // Pick out 5 random nodes and retire those
-        Set<String> retiredHostnames = list.shuffle(new Random()).stream().map(Node::hostname).limit(5).collect(Collectors.toSet());
+        Set<String> retiredHostnames = list.shuffle(new Random()).first(5).hostnames();
         tester.patchNodes(node -> retiredHostnames.contains(node.hostname()), node -> node.withWantToRetire(true, Agent.system, tester.clock().instant()));
         tester.prepareAndActivateInfraApplication(tenantHostAppId, NodeType.host);
 
-        assertEquals(retiredHostnames, tester.nodeRepository().nodes().list().retired().stream().map(Node::hostname).collect(Collectors.toSet()));
+        assertEquals(retiredHostnames, tester.nodeRepository().nodes().list().retired().hostnames());
 
         Set<String> unretiredHostnames = retiredHostnames.stream().limit(2).collect(Collectors.toSet());
         tester.patchNodes(node -> unretiredHostnames.contains(node.hostname()), node -> node.withWantToRetire(false, Agent.system, tester.clock().instant()));

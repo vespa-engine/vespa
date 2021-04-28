@@ -35,7 +35,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -524,10 +523,9 @@ public class DynamicDockerAllocationTest {
 
     private List<Node> findSpareCapacity(ProvisioningTester tester) {
         NodeList nodes = tester.nodeRepository().nodes().list(State.values());
-        return nodes.stream()
-                    .filter(n -> n.type() == NodeType.host)
-                    .filter(n -> nodes.childrenOf(n).size() == 0) // Nodes without children
-                    .collect(Collectors.toList());
+        return nodes.nodeType(NodeType.host)
+                    .matching(host -> nodes.childrenOf(host).size() == 0) // Hosts without children
+                    .asList();
     }
 
     private FlavorsConfig flavorsConfig() {

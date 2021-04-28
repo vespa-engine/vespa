@@ -156,7 +156,7 @@ public class ProvisioningTester {
     }
 
     public List<Node> patchNodes(Predicate<Node> filter, UnaryOperator<Node> patcher) {
-        return patchNodes(nodeRepository.nodes().list().stream().filter(filter).collect(Collectors.toList()), patcher);
+        return patchNodes(nodeRepository.nodes().list().matching(filter).asList(), patcher);
     }
 
     public List<Node> patchNodes(List<Node> nodes, UnaryOperator<Node> patcher) {
@@ -180,14 +180,9 @@ public class ProvisioningTester {
     }
 
     public List<HostSpec> prepare(ApplicationId application, ClusterSpec cluster, Capacity capacity) {
-        Set<String> reservedBefore = toHostNames(nodeRepository.nodes().list(Node.State.reserved).owner(application));
-        Set<String> inactiveBefore = toHostNames(nodeRepository.nodes().list(Node.State.inactive).owner(application));
         List<HostSpec> hosts1 = provisioner.prepare(application, cluster, capacity, provisionLogger);
         List<HostSpec> hosts2 = provisioner.prepare(application, cluster, capacity, provisionLogger);
         assertEquals("Prepare is idempotent", hosts1, hosts2);
-        Set<String> newlyActivated = toHostNames(nodeRepository.nodes().list(Node.State.reserved).owner(application));
-        newlyActivated.removeAll(reservedBefore);
-        newlyActivated.removeAll(inactiveBefore);
         return hosts1;
     }
 
@@ -223,7 +218,7 @@ public class ProvisioningTester {
             provisioner.activate(hosts, new ActivationContext(0), new ApplicationTransaction(lock, transaction));
             transaction.commit();
         }
-        assertEquals(toHostNames(hosts), toHostNames(nodeRepository.nodes().list(Node.State.active).owner(application)));
+        assertEquals(toHostNames(hosts), nodeRepository.nodes().list(Node.State.active).owner(application).hostnames());
         return hosts;
     }
 
@@ -262,10 +257,6 @@ public class ProvisioningTester {
 
     public Collection<String> toHostNames(Collection<HostSpec> hosts) {
         return hosts.stream().map(HostSpec::hostname).collect(Collectors.toSet());
-    }
-
-    public Set<String> toHostNames(NodeList nodes) {
-        return nodes.stream().map(Node::hostname).collect(Collectors.toSet());
     }
 
     /**

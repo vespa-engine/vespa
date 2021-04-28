@@ -149,7 +149,7 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         return matching(node -> node.allocation().isPresent() && node.allocation().get().owner().instance().isTester());
     }
 
-    /** Returns the subset of nodes matching the given node type(s) */
+    /** Returns the subset of nodes matching any of the given node type(s) */
     public NodeList nodeType(NodeType first, NodeType... rest) {
         if (rest.length == 0) {
             return matching(node -> node.type() == first);
@@ -218,6 +218,11 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
         return child.parentHostname()
                     .flatMap(parentHostname -> stream().filter(node -> node.hostname().equals(parentHostname))
                                                        .findFirst());
+    }
+
+    /** Returns the hostnames of nodes in this */
+    public Set<String> hostnames() {
+        return stream().map(Node::hostname).collect(Collectors.toUnmodifiableSet());
     }
 
     /**

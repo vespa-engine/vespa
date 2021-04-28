@@ -19,7 +19,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Supplier;
-import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
@@ -134,10 +133,10 @@ public class LoadBalancerExpirerTest {
     }
 
     private void removeNodesOf(ApplicationId application, ClusterSpec.Id cluster) {
-        var nodes = tester.nodeRepository().nodes().list().owner(application).stream()
-                .filter(node -> node.allocation().isPresent())
-                .filter(node -> node.allocation().get().membership().cluster().id().equals(cluster))
-                .collect(Collectors.toList());
+        var nodes = tester.nodeRepository().nodes().list()
+                          .owner(application)
+                          .cluster(cluster)
+                          .asList();
         nodes = tester.nodeRepository().nodes().deallocate(nodes, Agent.system, getClass().getSimpleName());
         tester.nodeRepository().nodes().setReady(nodes, Agent.system, getClass().getSimpleName());
     }

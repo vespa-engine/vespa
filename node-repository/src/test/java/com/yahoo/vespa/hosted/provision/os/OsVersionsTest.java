@@ -310,8 +310,8 @@ public class OsVersionsTest {
         versions.setTarget(NodeType.host, version2, totalBudget, false);
         versions.resumeUpgradeOf(NodeType.host, true);
         NodeList nonFailingHosts = hostNodes.get().except(failedHost);
-        assertTrue("Wanted version is set", nonFailingHosts.except(failedHost).stream()
-                                                    .allMatch(node -> node.status().osVersion().wanted().isPresent()));
+        assertTrue("Wanted version is set", nonFailingHosts.stream()
+                                                           .allMatch(node -> node.status().osVersion().wanted().isPresent()));
         setCurrentVersion(nonFailingHosts.asList(), version2);
         assertEquals(10, hostNodes.get().except(failedHost).onOsVersion(version2).size());
 

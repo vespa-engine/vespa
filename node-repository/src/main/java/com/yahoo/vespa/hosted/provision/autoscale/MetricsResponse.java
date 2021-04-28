@@ -59,7 +59,7 @@ public class MetricsResponse {
 
     private void consumeNode(Inspector nodeObject, NodeList applicationNodes, NodeRepository nodeRepository) {
         String hostname = nodeObject.field("hostname").asString();
-        Optional<Node> node = applicationNodes.stream().filter(n -> n.hostname().equals(hostname)).findAny();
+        Optional<Node> node = applicationNodes.node(hostname);
         if (node.isEmpty()) return; // Node is not part of this cluster any more
 
         ListMap<String, Double> nodeValues = new ListMap<>();

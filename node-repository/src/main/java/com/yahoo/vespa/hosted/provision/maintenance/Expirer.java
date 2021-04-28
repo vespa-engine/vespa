@@ -3,13 +3,13 @@ package com.yahoo.vespa.hosted.provision.maintenance;
 
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.History;
 
 import java.time.Duration;
 import java.util.List;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * Superclass of expiry tasks which moves nodes from some state to the dirty state.
@@ -41,13 +41,11 @@ public abstract class Expirer extends NodeRepositoryMaintainer {
 
     @Override
     protected boolean maintain() {
-        List<Node> expired = nodeRepository().nodes().list(fromState).stream()
-                .filter(this::isExpired)
-                .collect(Collectors.toList());
+        NodeList expired = nodeRepository().nodes().list(fromState).matching(this::isExpired);
 
         if ( ! expired.isEmpty()) {
             log.info(fromState + " expirer found " + expired.size() + " expired nodes: " + expired);
-            expire(expired);
+            expire(expired.asList());
         }
 
         metric.add("expired." + fromState, expired.size(), null);

@@ -55,8 +55,7 @@ public class MetricsV2MetricsFetcher extends AbstractComponent implements Metric
 
         Optional<Node> metricsV2Container = applicationNodes.container()
                                                             .matching(node -> expectedUp(node))
-                                                            .stream()
-                                                            .findFirst();
+                                                            .first();
         if (metricsV2Container.isEmpty()) {
             return CompletableFuture.completedFuture(MetricsResponse.empty());
         }
