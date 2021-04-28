@@ -458,7 +458,7 @@ public class NodesV2ApiTest {
         // Attempt to fail and ready an allocated node without going through dirty
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/node-does-not-exist",
                                           new byte[0], Request.Method.PUT),
-                       404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"Could not move node-does-not-exist to failed: Node not found\"}");
+                       404, "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node with hostname 'node-does-not-exist'\"}");
 
         // Attempt to fail and ready an allocated node without going through dirty
         assertResponse(new Request("http://localhost:8080/nodes/v2/state/failed/host1.yahoo.com",
@@ -515,7 +515,7 @@ public class NodesV2ApiTest {
         // Attempt to set nonexisting node to active
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/state/active/host2.yahoo.com",
                                           new byte[0], Request.Method.PUT), 404,
-                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"Could not move host2.yahoo.com to active: Node not found\"}");
+                              "{\"error-code\":\"NOT_FOUND\",\"message\":\"No node with hostname 'host2.yahoo.com'\"}");
 
         // Attempt to POST duplicate nodes
         tester.assertResponse(new Request("http://localhost:8080/nodes/v2/node",
