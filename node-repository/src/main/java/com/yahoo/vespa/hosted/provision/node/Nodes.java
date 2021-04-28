@@ -320,7 +320,7 @@ public class Nodes {
     }
 
     public Node fail(String hostname, boolean keepAllocation, Agent agent, String reason) {
-        return move(hostname, keepAllocation, Node.State.failed, agent, Optional.of(reason));
+        return move(hostname, Node.State.failed, agent, keepAllocation, Optional.of(reason));
     }
 
     /**
@@ -335,7 +335,7 @@ public class Nodes {
         List<Node> changed = performOn(children, (node, lock) -> failOrMark(node, agent, reason, lock));
 
         if (children.state(Node.State.active).isEmpty())
-            changed.add(move(hostname, true, Node.State.failed, agent, Optional.of(reason)));
+            changed.add(move(hostname, Node.State.failed, agent, true, Optional.of(reason)));
         else
             changed.addAll(performOn(NodeList.of(node(hostname).orElseThrow()), (node, lock) -> failOrMark(node, agent, reason, lock)));
 
@@ -347,9 +347,8 @@ public class Nodes {
             node = node.withWantToFail(true, agent, clock.instant());
             write(node, lock);
             return node;
-        }
-        else {
-            return move(node, Node.State.failed, agent, Optional.of(reason));
+        } else {
+            return move(node.hostname(), Node.State.failed, agent, true, Optional.of(reason));
         }
     }
 
@@ -367,7 +366,7 @@ public class Nodes {
     }
 
     public Node park(String hostname, boolean keepAllocation, Agent agent, String reason, NestedTransaction transaction) {
-        return move(hostname, keepAllocation, Node.State.parked, agent, Optional.of(reason), transaction);
+        return move(hostname, Node.State.parked, agent, keepAllocation, Optional.of(reason), transaction);
     }
 
     /**
@@ -386,7 +385,7 @@ public class Nodes {
      * @throws NoSuchNodeException if the node is not found
      */
     public Node reactivate(String hostname, Agent agent, String reason) {
-        return move(hostname, true, Node.State.active, agent, Optional.of(reason));
+        return move(hostname, Node.State.active, agent, true, Optional.of(reason));
     }
 
     /**
@@ -398,7 +397,7 @@ public class Nodes {
             requireBreakfixable(node);
             NestedTransaction transaction = new NestedTransaction();
             List<Node> removed = removeChildren(node, false, transaction);
-            removed.add(move(node, Node.State.breakfixed, agent, Optional.of(reason), transaction));
+            removed.add(move(node.hostname(), Node.State.breakfixed, agent, true, Optional.of(reason), transaction));
             transaction.commit();
             return removed;
         }
@@ -407,50 +406,41 @@ public class Nodes {
     private List<Node> moveRecursively(String hostname, Node.State toState, Agent agent, Optional<String> reason) {
         NestedTransaction transaction = new NestedTransaction();
         List<Node> moved = list().childrenOf(hostname).asList().stream()
-                                 .map(child -> move(child, toState, agent, reason, transaction))
+                                 .map(child -> move(child.hostname(), toState, agent, true, reason, transaction))
                                  .collect(Collectors.toList());
-
-        moved.add(move(hostname, true, toState, agent, reason, transaction));
+        moved.add(move(hostname, toState, agent, true, reason, transaction));
         transaction.commit();
         return moved;
     }
 
-    private Node move(String hostname, boolean keepAllocation, Node.State toState, Agent agent, Optional<String> reason) {
+    /** Move a node to given state */
+    private Node move(String hostname, Node.State toState, Agent agent, boolean keepAllocation, Optional<String> reason) {
         NestedTransaction transaction = new NestedTransaction();
-        Node moved = move(hostname, keepAllocation, toState, agent, reason, transaction);
+        Node moved = move(hostname, toState, agent, keepAllocation, reason, transaction);
         transaction.commit();
         return moved;
     }
 
-    private Node move(String hostname, boolean keepAllocation, Node.State toState, Agent agent, Optional<String> reason,
-                      NestedTransaction transaction) {
-        Node node = requireNode(hostname);
-        if (!keepAllocation && node.allocation().isPresent()) {
-            node = node.withoutAllocation();
-        }
-
-        return move(node, toState, agent, reason, transaction);
-    }
-
-    private Node move(Node node, Node.State toState, Agent agent, Optional<String> reason) {
-        NestedTransaction transaction = new NestedTransaction();
-        Node moved = move(node, toState, agent, reason, transaction);
-        transaction.commit();
-        return moved;
-    }
-
-    private Node move(Node node, Node.State toState, Agent agent, Optional<String> reason, NestedTransaction transaction) {
-        if (toState == Node.State.active && node.allocation().isEmpty())
-            illegal("Could not set " + node + " active. It has no allocation.");
-
-        // TODO: Work out a safe lock acquisition strategy for moves, e.g. migrate to lockNode.
-        try (Mutex lock = lock(node)) {
+    /** Move a node to given state as part of a transaction */
+    private Node move(String hostname, Node.State toState, Agent agent, boolean keepAllocation, Optional<String> reason, NestedTransaction transaction) {
+        // TODO: Work out a safe lock acquisition strategy for moves. Lock is only held while adding operations to
+        //       transaction, but lock must also be held while committing
+        try (NodeMutex lock = lockAndGetRequired(hostname)) {
+            Node node = lock.node();
             if (toState == Node.State.active) {
+                if (node.allocation().isEmpty()) illegal("Could not set " + node + " active: It has no allocation");
+                if (!keepAllocation) illegal("Could not set " + node + " active: Requested to discard allocation");
                 for (Node currentActive : list(Node.State.active).owner(node.allocation().get().owner())) {
                     if (node.allocation().get().membership().cluster().equals(currentActive.allocation().get().membership().cluster())
                         && node.allocation().get().membership().index() == currentActive.allocation().get().membership().index())
                         illegal("Could not set " + node + " active: Same cluster and index as " + currentActive);
                 }
+            }
+            if (!keepAllocation && node.allocation().isPresent()) {
+                node = node.withoutAllocation();
+            }
+            if (toState == Node.State.deprovisioned) {
+                node = node.with(IP.Config.EMPTY);
             }
             return db.writeTo(toState, List.of(node), agent, reason, transaction).get(0);
         }
@@ -498,11 +488,10 @@ public class Nodes {
             }
             NestedTransaction transaction = new NestedTransaction();
             List<Node> removed = removeChildren(node, force, transaction);
-            if (zone.getCloud().dynamicProvisioning())
+            if (zone.getCloud().dynamicProvisioning()) {
                 db.removeNodes(List.of(node), transaction);
-            else {
-                node = node.with(IP.Config.EMPTY);
-                move(node, Node.State.deprovisioned, Agent.system, Optional.empty(), transaction);
+            } else {
+                move(node.hostname(), Node.State.deprovisioned, Agent.system, false, Optional.empty(), transaction);
             }
             removed.add(node);
             transaction.commit();
