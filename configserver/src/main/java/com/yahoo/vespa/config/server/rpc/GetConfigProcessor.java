@@ -49,7 +49,7 @@ class GetConfigProcessor implements Runnable {
         Request req = request.getRequest();
         if (req.isError()) {
             Level logLevel = (req.errorCode() == ErrorCode.APPLICATION_NOT_LOADED) ? Level.FINE : Level.INFO;
-            log.log(logLevel, logPre + req.errorMessage());
+            log.log(logLevel, () -> logPre + req.errorMessage());
         }
         rpcServer.respond(request);
     }
@@ -177,7 +177,7 @@ class GetConfigProcessor implements Runnable {
 
     private void debugLog(Trace trace, String message) {
         if (logDebug(trace)) {
-            log.log(Level.FINE, logPre + message);
+            log.log(Level.FINE, () -> logPre + message);
             trace.trace(RpcServer.TRACELEVEL_DEBUG, logPre + message);
         }
     }

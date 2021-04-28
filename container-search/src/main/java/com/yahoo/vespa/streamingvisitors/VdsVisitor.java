@@ -331,8 +331,8 @@ class VdsVisitor extends VisitorDataHandler implements Visitor {
     public void doSearch() throws InterruptedException, ParseException, TimeoutException {
         VisitorSession session = visitorSessionFactory.createVisitorSession(params);
         try {
-            if ( !session.waitUntilDone(query.getTimeout())) {
-                log.log(Level.FINE, "Visitor returned from waitUntilDone without being completed for " + query + " with selection " + params.getDocumentSelection());
+            if ( ! session.waitUntilDone(query.getTimeout())) {
+                log.log(Level.FINE, () -> "Visitor returned from waitUntilDone without being completed for " + query + " with selection " + params.getDocumentSelection());
                 session.abort();
                 throw new TimeoutException("Query timed out in " + VdsStreamingSearcher.class.getName());
             }

@@ -171,7 +171,7 @@ public class DelayedConfigResponses {
      */
     final void delayResponse(JRTServerConfigRequest request, GetConfigContext context) {
         if (request.isDelayedResponse()) {
-            log.log(Level.FINE, context.logPre()+"Request already delayed");
+            log.log(Level.FINE, () -> context.logPre()+"Request already delayed");
         } else {            
             createQueueIfNotExists(context);
             BlockingQueue<DelayedConfigResponse> delayedResponsesQueue = delayedResponses.get(context.applicationId());

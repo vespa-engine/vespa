@@ -184,7 +184,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
                     /* A new application is added when a session is added, @see
                     {@link com.yahoo.vespa.config.server.session.SessionRepository#childEvent(CuratorFramework, PathChildrenCacheEvent)} */
                     ApplicationId applicationId = ApplicationId.fromSerializedForm(Path.fromString(event.getData().getPath()).getName());
-                    log.log(Level.FINE, TenantRepository.logPre(applicationId) + "Application added: " + applicationId);
+                    log.log(Level.FINE, () -> TenantRepository.logPre(applicationId) + "Application added: " + applicationId);
                     break;
                 // Event CHILD_REMOVED will be triggered on all config servers if deleteApplication() above is called on one of them
                 case CHILD_REMOVED:
@@ -241,7 +241,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
     // (when getting event from zookeeper to remove application,
     // the lock should be held by the thread that causes the event to happen)
     public void removeApplication(ApplicationId applicationId) {
-        log.log(Level.FINE, "Removing application " + applicationId);
+        log.log(Level.FINE, () -> "Removing application " + applicationId);
         if (exists(applicationId)) {
             log.log(Level.INFO, "Tried removing application " + applicationId + ", but it seems to have been deployed again");
             return;
@@ -491,7 +491,7 @@ public class TenantApplications implements RequestHandler, HostValidator<Applica
         private void logBarrierCompleted(List<String> respondents, Instant startTime) {
             Duration duration = Duration.between(startTime, Instant.now());
             Level level = (duration.minus(Duration.ofSeconds(5))).isNegative() ? Level.FINE : Level.INFO;
-            log.log(level, barrierCompletedMessage(respondents, duration));
+            log.log(level, () -> barrierCompletedMessage(respondents, duration));
         }
 
         private String barrierCompletedMessage(List<String> respondents, Duration duration) {

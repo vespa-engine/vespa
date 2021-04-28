@@ -41,7 +41,7 @@ public class FilesApplicationFile extends ApplicationFile {
 
     @Override
     public ApplicationFile delete() {
-        log.log(Level.FINE, "Delete " + file);
+        log.log(Level.FINE, () -> "Delete " + file);
         if (file.isDirectory() && !listFiles().isEmpty()) {
             throw new RuntimeException("files. Can't delete, directory not empty: " + this  + "(" + listFiles() + ")." + listFiles().size());
         }
@@ -154,7 +154,7 @@ public class FilesApplicationFile extends ApplicationFile {
 
     private void writeMetaFile(String data, String status) throws IOException {
         File metaDir = createMetaDir();
-        log.log(Level.FINE, "meta dir=" + metaDir);
+        log.log(Level.FINE, () -> "meta dir=" + metaDir);
         File metaFile = new File(metaDir + "/" + getPath().getName());
         if (status == null) {
             status = ApplicationFile.ContentStatusNew;
@@ -174,7 +174,7 @@ public class FilesApplicationFile extends ApplicationFile {
     private File createMetaDir() {
         File metaDir = getMetaDir();
         if (!metaDir.exists()) {
-            log.log(Level.FINE, "Creating meta dir " + metaDir);
+            log.log(Level.FINE, () -> "Creating meta dir " + metaDir);
             metaDir.mkdirs();
         }
         return metaDir;
@@ -188,7 +188,7 @@ public class FilesApplicationFile extends ApplicationFile {
     public MetaData getMetaData() {
         File metaDir = getMetaDir();
         File metaFile = new File(metaDir + "/" + getPath().getName());
-        log.log(Level.FINE, "Getting metadata for " + metaFile);
+        log.log(Level.FINE, () -> "Getting metadata for " + metaFile);
         if (metaFile.exists()) {
             try {
                 return mapper.readValue(metaFile, MetaData.class);

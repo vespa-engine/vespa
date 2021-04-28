@@ -96,7 +96,7 @@ public class IndexingProcessor extends DocumentProcessor {
         log.log(Level.FINE, "Processing document '%s'.", prev.getId());
         Document next = script.execute(adapterFactory, prev.getDocument());
         if (next == null) {
-            log.log(Level.FINE, "Document '" + prev.getId() + "' produced no output.");
+            log.log(Level.FINE, "Document '%s' produced no output.", prev.getId());
             return;
         }
 
@@ -113,7 +113,7 @@ public class IndexingProcessor extends DocumentProcessor {
         log.log(Level.FINE, "Processing update '%s'.", prev.getId());
         DocumentUpdate next = script.execute(adapterFactory, prev);
         if (next == null) {
-            log.log(Level.FINE, "Update '" + prev.getId() + "' produced no output.");
+            log.log(Level.FINE, "Update '%s' produced no output.", prev.getId());
             return;
         }
         next.setCondition(prev.getCondition());

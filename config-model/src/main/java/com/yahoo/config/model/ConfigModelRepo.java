@@ -266,7 +266,7 @@ public class ConfigModelRepo implements ConfigModelRepoAdder, Serializable, Iter
     // TODO: Doctoring on the XML is the wrong level for this. We should be able to mark a model as default instead   -Jon
     private static Element getImplicitAdmin(DeployState deployState) throws IOException, SAXException {
         String defaultAdminElement = deployState.isHosted() ? getImplicitAdminV4() : getImplicitAdminV2();
-        log.log(Level.FINE, "No <admin> defined, using " + defaultAdminElement);
+        log.log(Level.FINE, () -> "No <admin> defined, using " + defaultAdminElement);
         return XmlHelper.getDocumentBuilder().parse(new InputSource(new StringReader(defaultAdminElement))).getDocumentElement();
     }
 

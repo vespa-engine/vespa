@@ -41,7 +41,7 @@ public class HttpGetConfigHandler extends HttpHandler {
     }
 
     private ConfigResponse resolveConfig(HttpConfigRequest request, RequestHandler requestHandler) {
-        log.log(Level.FINE, "nocache=" + request.noCache());
+        log.log(Level.FINE, () -> "nocache=" + request.noCache());
         ConfigResponse config = requestHandler.resolveConfig(request.getApplicationId(), request, Optional.empty());
         if (config == null) HttpConfigRequest.throwModelNotReady();
         return config;

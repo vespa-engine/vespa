@@ -35,7 +35,7 @@ public class MasterElectionHandler implements MasterInterface {
         this.nextInLineCount = Integer.MAX_VALUE;
         // Only a given set of nodes can ever become master
         if (index > (totalCount - 1) / 2) {
-            log.log(Level.FINE, "Cluster controller " + index + ": We can never become master and will always stay a follower.");
+            log.log(Level.FINE, () -> "Cluster controller " + index + ": We can never become master and will always stay a follower.");
         }
             // Tag current time as when we have not seen any other master. Make sure we're not taking over at once for master that is on the way down
         masterGoneFromZooKeeperTime = timer.getCurrentTimeInMillis();
@@ -125,7 +125,7 @@ public class MasterElectionHandler implements MasterInterface {
         }
         if (nextMasterData == null) {
             if (masterCandidate == null) {
-                log.log(Level.FINEST, "Cluster controller " + index + ": No current master candidate. Waiting for data to do master election.");
+                log.log(Level.FINEST, () -> "Cluster controller " + index + ": No current master candidate. Waiting for data to do master election.");
             }
             return false; // Nothing have happened since last time.
         }
@@ -195,7 +195,7 @@ public class MasterElectionHandler implements MasterInterface {
             if (nextInLineCount != ourPosition) {
                 nextInLineCount = ourPosition;
                 if (ourPosition > 0) {
-                    log.log(Level.FINE, "Cluster controller " + index + ": We are now " + getPosition(nextInLineCount) + " in queue to take over being master.");
+                    log.log(Level.FINE, () -> "Cluster controller " + index + ": We are now " + getPosition(nextInLineCount) + " in queue to take over being master.");
                 }
             }
         }

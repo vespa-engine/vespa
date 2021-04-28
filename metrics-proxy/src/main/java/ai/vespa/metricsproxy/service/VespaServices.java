@@ -48,12 +48,12 @@ public class VespaServices {
     private List<VespaService> createServices(VespaServicesConfig servicesConfig, String monitoringSystemName) {
         List<VespaService> services = new ArrayList<>();
         for (Service s : servicesConfig.service()) {
-            log.log(FINE, "Creating service " + s.name());
+            log.log(FINE, () -> "Creating service " + s.name());
             VespaService vespaService = VespaService.create(s.name(), s.configId(), s.port(), monitoringSystemName,
                                                             createServiceDimensions(s));
             services.add(vespaService);
         }
-        log.log(FINE, "Created new services: " + services.size());
+        log.log(FINE, () -> "Created new services: " + services.size());
         return services;
     }
 

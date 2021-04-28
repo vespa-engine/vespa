@@ -60,7 +60,7 @@ class FileAcquirerImpl implements FileAcquirer {
                     logWarning();
                     target.close();
                 } else {
-                    log.log(Level.FINE, "Successfully connected to '" + spec + "', this = " + System.identityHashCode(this));
+                    log.log(Level.FINE, () -> "Successfully connected to '" + spec + "', this = " + System.identityHashCode(this));
                     pauseTime = 0;
                     logCount = 0;
                     return;
@@ -152,7 +152,7 @@ class FileAcquirerImpl implements FileAcquirer {
             request.parameters().add(new StringValue(fileReference.value()));
 
             double rpcTimeout = Math.min(timer.timeLeft(TimeUnit.SECONDS), 60.0);
-            log.log(Level.FINE, "InvokeSync waitFor " + fileReference + " with " + rpcTimeout + " seconds timeout");
+            log.log(Level.FINE, () -> "InvokeSync waitFor " + fileReference + " with " + rpcTimeout + " seconds timeout");
             target.invokeSync(request, rpcTimeout);
 
             if (request.checkReturnTypes("s")) {

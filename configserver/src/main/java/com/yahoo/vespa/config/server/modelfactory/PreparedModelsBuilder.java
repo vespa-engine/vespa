@@ -91,7 +91,7 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
                                                     Version wantedNodeVespaVersion,
                                                     Optional<AllocatedHosts> allocatedHosts) {
         Version modelVersion = modelFactory.version();
-        log.log(Level.FINE, "Building model " + modelVersion + " for " + applicationId);
+        log.log(Level.FINE, () -> "Building model " + modelVersion + " for " + applicationId);
 
         // Use empty on non-hosted systems, use already allocated hosts if available, create connection to a host provisioner otherwise
         Provisioned provisioned = new Provisioned();
@@ -117,13 +117,13 @@ public class PreparedModelsBuilder extends ModelsBuilder<PreparedModelsBuilder.P
 
     private ModelCreateResult createAndValidateModel(ModelFactory modelFactory, ApplicationId applicationId, Version modelVersion, ModelContext modelContext) {
         log.log(properties.zone().system().isCd() ? Level.INFO : Level.FINE,
-                "Create and validate model " + modelVersion + " for " + applicationId + ", previous model is " +
+                () -> "Create and validate model " + modelVersion + " for " + applicationId + ", previous model is " +
                 modelOf(modelVersion).map(Model::version).map(Version::toFullString).orElse("non-existing"));
         ValidationParameters validationParameters =
                 new ValidationParameters(params.ignoreValidationErrors() ? IgnoreValidationErrors.TRUE : IgnoreValidationErrors.FALSE);
         ModelCreateResult result = modelFactory.createAndValidateModel(modelContext, validationParameters);
         validateModelHosts(hostValidator, applicationId, result.getModel());
-        log.log(Level.FINE, "Done building model " + modelVersion + " for " + applicationId);
+        log.log(Level.FINE, () -> "Done building model " + modelVersion + " for " + applicationId);
         params.getTimeoutBudget().assertNotTimedOut(() -> "prepare timed out after building model " + modelVersion +
                                                           " (timeout " + params.getTimeoutBudget().timeout() + "): " + applicationId);
         return result;

@@ -462,12 +462,12 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     static void checkIfActiveHasChanged(Session session, Session activeSession, boolean ignoreStaleSessionFailure) {
         long activeSessionAtCreate = session.getActiveSessionAtCreate();
-        log.log(Level.FINE, activeSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
+        log.log(Level.FINE, () -> activeSession.logPre() + "active session id at create time=" + activeSessionAtCreate);
         if (activeSessionAtCreate == 0) return; // No active session at create time
 
         long sessionId = session.getSessionId();
         long activeSessionSessionId = activeSession.getSessionId();
-        log.log(Level.FINE, activeSession.logPre() + "sessionId=" + sessionId +
+        log.log(Level.FINE, () -> activeSession.logPre() + "sessionId=" + sessionId +
                             ", current active session=" + activeSessionSessionId);
         if (activeSession.isNewerThan(activeSessionAtCreate) &&
             activeSessionSessionId != sessionId) {
@@ -579,17 +579,17 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
     }
 
     public List<String> deleteUnusedFiledistributionReferences(File fileReferencesPath, Duration keepFileReferences) {
-        log.log(Level.FINE, "Keep unused file references for " + keepFileReferences);
+        log.log(Level.FINE, () -> "Keep unused file references for " + keepFileReferences);
         if (!fileReferencesPath.isDirectory()) throw new RuntimeException(fileReferencesPath + " is not a directory");
 
         Set<String> fileReferencesInUse = getFileReferencesInUse();
-        log.log(Level.FINE, "File references in use : " + fileReferencesInUse);
+        log.log(Level.FINE, () -> "File references in use : " + fileReferencesInUse);
 
         List<String> candidates = sortedUnusedFileReferences(fileReferencesPath, fileReferencesInUse, keepFileReferences);
         // Do not delete the newest ones
         List<String> fileReferencesToDelete = candidates.subList(0, Math.max(0, candidates.size() - 5));
         if (fileReferencesToDelete.size() > 0) {
-            log.log(Level.FINE, "Will delete file references not in use: " + fileReferencesToDelete);
+            log.log(Level.FINE, () -> "Will delete file references not in use: " + fileReferencesToDelete);
             fileReferencesToDelete.forEach(fileReference -> {
                 File file = new File(fileReferencesPath, fileReference);
                 if ( ! IOUtils.recursiveDeleteDir(file))
@@ -619,7 +619,7 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
 
     private List<String> sortedUnusedFileReferences(File fileReferencesPath, Set<String> fileReferencesInUse, Duration keepFileReferences) {
         Set<String> fileReferencesOnDisk = getFileReferencesOnDisk(fileReferencesPath);
-        log.log(Level.FINE, "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
+        log.log(Level.FINE, () -> "File references on disk (in " + fileReferencesPath + "): " + fileReferencesOnDisk);
         Instant instant = Instant.now().minus(keepFileReferences);
         return fileReferencesOnDisk
                 .stream()

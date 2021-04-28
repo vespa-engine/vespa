@@ -39,13 +39,13 @@ public class ContactInformationMaintainer extends ControllerMaintainer {
         TenantController tenants = controller().tenants();
         boolean success = true;
         for (Tenant tenant : tenants.asList()) {
-            log.log(FINE, "Updating contact information for " + tenant);
+            log.log(FINE, () -> "Updating contact information for " + tenant);
             try {
                 switch (tenant.type()) {
                     case athenz:
                         tenants.lockIfPresent(tenant.name(), LockedTenant.Athenz.class, lockedTenant -> {
                             Contact contact = contactRetriever.getContact(lockedTenant.get().propertyId());
-                            log.log(FINE, "Contact found for " + tenant + " was " +
+                            log.log(FINE, () -> "Contact found for " + tenant + " was " +
                                           (Optional.of(contact).equals(tenant.contact()) ? "un" : "") + "changed");
                             tenants.store(lockedTenant.with(contact));
                         });

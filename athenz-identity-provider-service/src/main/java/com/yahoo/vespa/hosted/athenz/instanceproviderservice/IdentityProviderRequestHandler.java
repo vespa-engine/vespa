@@ -67,7 +67,7 @@ public class IdentityProviderRequestHandler extends RestApiRequestHandler<Identi
     }
 
     private InstanceConfirmation confirmInstance(RestApi.RequestContext context, InstanceConfirmation instanceConfirmation) {
-        log.log(Level.FINE, instanceConfirmation.toString());
+        log.log(Level.FINE, () -> instanceConfirmation.toString());
         if (!instanceValidator.isValidInstance(instanceConfirmation)) {
             log.log(Level.SEVERE, "Invalid instance: " + instanceConfirmation);
             throw new RestApiException.Forbidden("Instance is invalid");
@@ -76,7 +76,7 @@ public class IdentityProviderRequestHandler extends RestApiRequestHandler<Identi
     }
 
     private InstanceConfirmation confirmInstanceRefresh(RestApi.RequestContext context, InstanceConfirmation instanceConfirmation) {
-        log.log(Level.FINE, instanceConfirmation.toString());
+        log.log(Level.FINE, () -> instanceConfirmation.toString());
         if (!instanceValidator.isValidRefresh(instanceConfirmation)) {
             log.log(Level.SEVERE, "Invalid instance refresh: " + instanceConfirmation);
             throw new RestApiException.Forbidden("Instance is invalid");

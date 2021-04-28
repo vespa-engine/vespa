@@ -100,7 +100,7 @@ public class FileServer {
         try {
             return root.getFile(reference).exists();
         } catch (IllegalArgumentException e) {
-            log.log(Level.FINE, "Failed locating file reference '" + reference + "' with error " + e.toString());
+            log.log(Level.FINE, () -> "Failed locating file reference '" + reference + "' with error " + e.toString());
         }
         return false;
     }
@@ -130,7 +130,7 @@ public class FileServer {
 
         try {
             target.receive(fileData, new ReplayStatus(success ? 0 : 1, success ? "OK" : errorDescription));
-            log.log(Level.FINE, "Done serving file reference '" + reference.value() + "' with file '" + file.getAbsolutePath() + "'");
+            log.log(Level.FINE, () -> "Done serving file reference '" + reference.value() + "' with file '" + file.getAbsolutePath() + "'");
         } catch (Exception e) {
             log.log(Level.WARNING, "Failed serving file reference '" + reference.value() + "': " + Exceptions.toMessageString(e));
         } finally {

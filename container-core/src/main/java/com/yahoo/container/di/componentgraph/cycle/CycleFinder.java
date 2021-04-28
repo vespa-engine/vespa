@@ -58,7 +58,7 @@ public class CycleFinder<T> {
                 if (visitDepthFirst(vertex, new ArrayList<>(singletonList(vertex)))) {
                     if (cycle == null) throw new IllegalStateException("Null cycle - this should never happen");
                     if (cycle.isEmpty()) throw new IllegalStateException("Empty cycle - this should never happen");
-                    log.log(FINE, "Cycle detected: " + cycle);
+                    log.log(FINE, () -> "Cycle detected: " + cycle);
                     return cycle;
                 }
             }
@@ -68,7 +68,7 @@ public class CycleFinder<T> {
 
     private boolean visitDepthFirst(T vertex, List<T> path) {
         colors.put(vertex, GRAY);
-        log.log(FINE, "Vertex start " + vertex + " - colors: " + colors + " - path: " + path);
+        log.log(FINE, () -> "Vertex start " + vertex + " - colors: " + colors + " - path: " + path);
         for (T adjacent : graph.getAdjacent(vertex)) {
             path.add(adjacent);
             if (colors.get(adjacent) == GRAY) {
@@ -81,7 +81,7 @@ public class CycleFinder<T> {
             path.remove(adjacent);
         }
         colors.put(vertex, BLACK);
-        log.log(FINE, "Vertex end " + vertex + " - colors: " + colors + " - path: " + path);
+        log.log(FINE, () -> "Vertex end " + vertex + " - colors: " + colors + " - path: " + path);
         return false;
     }
 

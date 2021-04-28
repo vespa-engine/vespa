@@ -213,7 +213,7 @@ public class Register {
                     log.log(Level.WARNING, logMessagePrefix() + " failed: " + req.errorMessage());
                 }
             } else {
-                log.log(logOnSuccess ? Level.INFO : Level.FINE, logMessagePrefix() + " completed successfully");
+                log.log(logOnSuccess ? Level.INFO : Level.FINE, () -> logMessagePrefix() + " completed successfully");
                 backOff.reset();
             }
             req = null;

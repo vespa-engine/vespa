@@ -99,7 +99,7 @@ public class SystemPoller {
             return;
         }
 
-        log.log(Level.FINE, "Monitoring system metrics for " + services.size() + " services");
+        log.log(Level.FINE, () -> "Monitoring system metrics for " + services.size() + " services");
 
         long sysJiffies = getNormalizedSystemJiffies();
         for (VespaService s : services) {
@@ -110,10 +110,10 @@ public class SystemPoller {
             }
 
             Metrics metrics = new Metrics();
-            log.log(Level.FINE, "Current size of system metrics for service  " + s + " is " + metrics.size());
+            log.log(Level.FINE, () -> "Current size of system metrics for service  " + s + " is " + metrics.size());
 
             long[] size = getMemoryUsage(s);
-            log.log(Level.FINE, "Updating memory metric for service " + s);
+            log.log(Level.FINE, () -> "Updating memory metric for service " + s);
 
             metrics.add(new Metric("memory_virt", size[memoryTypeVirtual], startTime / 1000));
             metrics.add(new Metric("memory_rss", size[memoryTypeResident], startTime / 1000));
@@ -150,7 +150,7 @@ public class SystemPoller {
         try {
             in = new BufferedReader(new FileReader("/proc/" + pid + "/stat"));
         } catch (FileNotFoundException ex) {
-            log.log(Level.FINE, "Unable to find pid " + pid + " in proc directory, for service " + service.getInstanceName());
+            log.log(Level.FINE, () -> "Unable to find pid " + pid + " in proc directory, for service " + service.getInstanceName());
             service.setAlive(false);
             return 0;
         }

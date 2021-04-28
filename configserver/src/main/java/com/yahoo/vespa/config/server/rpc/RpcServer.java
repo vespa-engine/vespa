@@ -280,7 +280,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
                     responsesSent++;
                 }
             } else {
-                log.log(Level.FINE, logPre + "Timer already cancelled or finished or never scheduled");
+                log.log(Level.FINE, () -> logPre + "Timer already cancelled or finished or never scheduled");
             }
         }
 
@@ -292,7 +292,8 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             }
         }
 
-        log.log(Level.FINE, logPre + "Finished reloading " + responsesSent + " requests");
+        if (log.isLoggable(Level.FINE))
+            log.log(Level.FINE, logPre + "Finished reloading " + responsesSent + " requests");
     }
 
     private void logRequestDebug(Level level, String message, JRTServerConfigRequest request) {
@@ -303,7 +304,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     @Override
     public void hostsUpdated(ApplicationId applicationId, Collection<String> newHosts) {
-        log.log(Level.FINE, "Updating hosts in tenant host registry '" + hostRegistry + "' with " + newHosts);
+        log.log(Level.FINE, () -> "Updating hosts in tenant host registry '" + hostRegistry + "' with " + newHosts);
         hostRegistry.update(applicationId, newHosts);
     }
 
@@ -338,7 +339,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
             if (GetConfigProcessor.logDebug(trace)) {
                 String message = "Did not find tenant for host '" + hostname + "', using " + TenantName.defaultName();
                 log.log(Level.FINE, message);
-                log.log(Level.FINE, "hosts in host registry: " + hostRegistry.getAllHosts());
+                log.log(Level.FINE, () -> "hosts in host registry: " + hostRegistry.getAllHosts());
                 trace.trace(6, message);
             }
             return Optional.empty();
@@ -424,7 +425,7 @@ public class RpcServer implements Runnable, ReloadListener, TenantListener {
 
     @Override
     public void onTenantDelete(TenantName tenant) {
-        log.log(Level.FINE, TenantRepository.logPre(tenant) +
+        log.log(Level.FINE, () -> TenantRepository.logPre(tenant) +
                             "Tenant deleted, removing request handler and cleaning host registry");
         tenants.remove(tenant);
         hostRegistry.removeHostsForKey(tenant);

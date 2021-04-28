@@ -162,7 +162,7 @@ public class DeploymentTrigger {
 
     /** Attempts to trigger the given job. */
     public void trigger(Job job) {
-        log.log(Level.FINE, "Triggering " + job);
+        log.log(Level.FINE, () -> "Triggering " + job);
         applications().lockApplicationOrThrow(TenantAndApplicationId.from(job.applicationId()), application -> {
             jobs.start(job.applicationId(), job.jobType, job.versions);
             applications().store(application.with(job.applicationId().instance(), instance ->
