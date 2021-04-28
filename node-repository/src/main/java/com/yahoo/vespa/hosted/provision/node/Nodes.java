@@ -166,8 +166,10 @@ public class Nodes {
 
                 nodesToAdd.add(node);
             }
-            List<Node> resultingNodes = db.addNodesInState(IP.Config.verify(nodesToAdd, list(lock)), Node.State.provisioned, agent);
-            db.removeNodes(nodesToRemove);
+            NestedTransaction transaction = new NestedTransaction();
+            List<Node> resultingNodes = db.addNodesInState(IP.Config.verify(nodesToAdd, list(lock)), Node.State.provisioned, agent, transaction);
+            db.removeNodes(nodesToRemove, transaction);
+            transaction.commit();
             return resultingNodes;
         }
     }
@@ -481,19 +483,20 @@ public class Nodes {
     public List<Node> removeRecursively(Node node, boolean force) {
         try (Mutex lock = lockUnallocated()) {
             requireRemovable(node, false, force);
-            if (!node.type().isHost()) {
-                List<Node> removed = List.of(node);
-                db.removeNodes(removed);
-                return removed;
-            }
             NestedTransaction transaction = new NestedTransaction();
-            List<Node> removed = removeChildren(node, force, transaction);
-            if (zone.getCloud().dynamicProvisioning()) {
-                db.removeNodes(List.of(node), transaction);
+            final List<Node> removed;
+            if (!node.type().isHost()) {
+                removed = List.of(node);
+                db.removeNodes(removed, transaction);
             } else {
-                move(node.hostname(), Node.State.deprovisioned, Agent.system, false, Optional.empty(), transaction);
+                removed = removeChildren(node, force, transaction);
+                if (zone.getCloud().dynamicProvisioning()) {
+                    db.removeNodes(List.of(node), transaction);
+                } else {
+                    move(node.hostname(), Node.State.deprovisioned, Agent.system, false, Optional.empty(), transaction);
+                }
+                removed.add(node);
             }
-            removed.add(node);
             transaction.commit();
             return removed;
         }
@@ -503,7 +506,9 @@ public class Nodes {
     public void forget(Node node) {
         if (node.state() != Node.State.deprovisioned)
             throw new IllegalArgumentException(node + " must be deprovisioned before it can be forgotten");
-        db.removeNodes(List.of(node));
+        NestedTransaction transaction = new NestedTransaction();
+        db.removeNodes(List.of(node), transaction);
+        transaction.commit();
     }
 
     private List<Node> removeChildren(Node node, boolean force, NestedTransaction transaction) {
