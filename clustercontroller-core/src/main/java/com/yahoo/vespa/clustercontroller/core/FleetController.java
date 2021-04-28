@@ -579,7 +579,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             responseCode = StatusPageResponse.ResponseCode.INTERNAL_SERVER_ERROR;
             message = "Internal Server Error";
             hiddenMessage = ExceptionUtils.getStackTraceAsString(e);
-            log.log(Level.FINE, "Unknown exception thrown for request " + httpRequest.getRequest() + ": " + hiddenMessage);
+            if (log.isLoggable(Level.FINE))
+                log.log(Level.FINE, "Unknown exception thrown for request " + httpRequest.getRequest() + ": " + hiddenMessage);
         }
 
         TimeZone tz = TimeZone.getTimeZone("UTC");
