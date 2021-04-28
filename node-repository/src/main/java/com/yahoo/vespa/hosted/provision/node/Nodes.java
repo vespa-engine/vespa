@@ -399,18 +399,22 @@ public class Nodes {
         Node node = node(hostname).orElseThrow(() -> new NoSuchNodeException("Could not breakfix " + hostname + ": Node not found"));
         try (Mutex lock = lockUnallocated()) {
             requireBreakfixable(node);
-            List<Node> removed = removeChildren(node, false);
-            removed.add(move(node, Node.State.breakfixed, agent, Optional.of(reason)));
+            NestedTransaction transaction = new NestedTransaction();
+            List<Node> removed = removeChildren(node, false, transaction);
+            removed.add(move(node, Node.State.breakfixed, agent, Optional.of(reason), transaction));
+            transaction.commit();
             return removed;
         }
     }
 
     private List<Node> moveRecursively(String hostname, Node.State toState, Agent agent, Optional<String> reason) {
+        NestedTransaction transaction = new NestedTransaction();
         List<Node> moved = list().childrenOf(hostname).asList().stream()
-                                 .map(child -> move(child, toState, agent, reason))
+                                 .map(child -> move(child, toState, agent, reason, transaction))
                                  .collect(Collectors.toList());
 
-        moved.add(move(hostname, true, toState, agent, reason));
+        moved.add(move(hostname, true, toState, agent, reason, transaction));
+        transaction.commit();
         return moved;
     }
 
@@ -490,23 +494,22 @@ public class Nodes {
     public List<Node> removeRecursively(Node node, boolean force) {
         try (Mutex lock = lockUnallocated()) {
             requireRemovable(node, false, force);
-
-            if (node.type().isHost()) {
-                List<Node> removed = removeChildren(node, force);
-                if (zone.getCloud().dynamicProvisioning())
-                    db.removeNodes(List.of(node));
-                else {
-                    node = node.with(IP.Config.EMPTY);
-                    move(node, Node.State.deprovisioned, Agent.system, Optional.empty());
-                }
-                removed.add(node);
-                return removed;
-            }
-            else {
+            if (!node.type().isHost()) {
                 List<Node> removed = List.of(node);
                 db.removeNodes(removed);
                 return removed;
             }
+            NestedTransaction transaction = new NestedTransaction();
+            List<Node> removed = removeChildren(node, force, transaction);
+            if (zone.getCloud().dynamicProvisioning())
+                db.removeNodes(List.of(node), transaction);
+            else {
+                node = node.with(IP.Config.EMPTY);
+                move(node, Node.State.deprovisioned, Agent.system, Optional.empty(), transaction);
+            }
+            removed.add(node);
+            transaction.commit();
+            return removed;
         }
     }
 
@@ -517,10 +520,10 @@ public class Nodes {
         db.removeNodes(List.of(node));
     }
 
-    private List<Node> removeChildren(Node node, boolean force) {
+    private List<Node> removeChildren(Node node, boolean force, NestedTransaction transaction) {
         List<Node> children = list().childrenOf(node).asList();
         children.forEach(child -> requireRemovable(child, true, force));
-        db.removeNodes(children);
+        db.removeNodes(children, transaction);
         return new ArrayList<>(children);
     }
 

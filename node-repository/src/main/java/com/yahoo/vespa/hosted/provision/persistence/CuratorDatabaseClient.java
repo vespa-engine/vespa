@@ -135,14 +135,16 @@ public class CuratorDatabaseClient {
      */
     public void removeNodes(List<Node> nodes) {
         NestedTransaction transaction = new NestedTransaction();
+        removeNodes(nodes, transaction);
+        transaction.commit();
+    }
 
+    public void removeNodes(List<Node> nodes, NestedTransaction transaction) {
         for (Node node : nodes) {
             Path path = toPath(node.state(), node.hostname());
             CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
             curatorTransaction.add(CuratorOperations.delete(path.getAbsolute()));
         }
-
-        transaction.commit();
         nodes.forEach(node -> log.log(Level.INFO, "Removed node " + node.hostname() + " in state " + node.state()));
     }
 
