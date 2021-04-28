@@ -194,7 +194,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
 
         private LaterTimerTask(DocumentProcessingTask processingTask, long delay) {
             this.delay = delay;
-            log.log(Level.FINE, "Enqueueing in " + delay + " ms due to Progress.LATER: " + processingTask);
+            log.log(Level.FINE, () -> "Enqueueing in " + delay + " ms due to Progress.LATER: " + processingTask);
             this.processingTask = processingTask;
         }
 
