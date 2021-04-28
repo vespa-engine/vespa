@@ -2,9 +2,6 @@
 
 #include "time.h"
 #include <thread>
-#ifdef __x86_64__
-#include <immintrin.h>
-#endif
 
 namespace vespalib {
 
@@ -45,13 +42,7 @@ Timer::waitAtLeast(duration dur, bool busyWait) {
         steady_clock::time_point deadline = steady_clock::now() + dur;
         while (steady_clock::now() < deadline) {
             for (int i = 0; i < 1000; i++) {
-#if defined(__x86_64__)
-                _mm_pause();
-#elif defined(__aarch64__)
-                __asm__ __volatile__ ("yield");
-#else
-#warning "Missing yield"
-#endif
+                std::this_thread::yield();
             }
         }
     } else {
