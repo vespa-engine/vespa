@@ -34,6 +34,8 @@ public class ReduceTestCase {
         assertEquals(0.0, Tensor.from("tensor(x[3],y{})", "{}").median().asDouble(), delta);
         assertEquals(0.0, Tensor.from("tensor(x[3],y{})", "{}").min().asDouble(), delta);
         assertEquals(0.0, Tensor.from("tensor(x[3],y{})", "{}").prod().asDouble(), delta);
+        assertEquals(0.0, Tensor.from("tensor(x[3],y{})", "{}").sum().asDouble(), delta);
+        assertEquals(0.0, Tensor.from("tensor(x[3],y{})", "{}").count().asDouble(), delta);
     }
 
     private void assertNan(Tensor tensor) {
