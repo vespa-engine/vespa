@@ -265,13 +265,6 @@ public class Flags {
             "Takes effect at redeployment",
             APPLICATION_ID);
 
-    public static final UnboundBooleanFlag UPGRADE_DELL_SSD_FIRMWARE = defineFeatureFlag(
-            "upgrade_dell_ssd_firmware", false,
-            List.of("andreer"), "2021-04-13", "2021-05-13",
-            "Whether to consider upgrading Dell SSD firmware",
-            "Takes effect on next host-admin tick",
-            HOSTNAME);
-
     public static final UnboundIntFlag NUM_DISTRIBUTOR_STRIPES = defineIntFlag(
             "num-distributor-stripes", 0,
             List.of("geirst", "vekterli"), "2021-04-20", "2021-07-01",
