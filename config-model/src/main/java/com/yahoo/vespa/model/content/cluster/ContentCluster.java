@@ -302,7 +302,8 @@ public class ContentCluster extends AbstractConfigProducer implements
                                                                          host,
                                                                          "cluster-controllers",
                                                                          true,
-                                                                         deployState));
+                                                                         deployState),
+                                                deployState.getDeployLogger());
                 }
                 clusterControllers = admin.getClusterControllers();
             }
@@ -318,7 +319,8 @@ public class ContentCluster extends AbstractConfigProducer implements
                                                                          hosts,
                                                                          "cluster-controllers",
                                                                          false,
-                                                                         deployState));
+                                                                         deployState),
+                                                deployState.getDeployLogger());
                 }
                 clusterControllers = admin.getClusterControllers();
             }
@@ -351,7 +353,8 @@ public class ContentCluster extends AbstractConfigProducer implements
                                                                      hosts,
                                                                      "cluster-controllers",
                                                                      true,
-                                                                     context.getDeployState()));
+                                                                     context.getDeployState()),
+                                            deployState.getDeployLogger());
             }
             return admin.getClusterControllers();
         }
