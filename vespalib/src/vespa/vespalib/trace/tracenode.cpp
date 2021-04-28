@@ -37,6 +37,12 @@ struct Cmp {
     }
 };
 
+void sortChildren(std::vector<TraceNode> & children) __attribute((noinline));
+void
+sortChildren(std::vector<TraceNode> & children) {
+    std::sort(children.begin(), children.end(), Cmp());
+}
+
 } // namespace <unnamed>
 
 
@@ -121,7 +127,7 @@ TraceNode::sort()
             child.sort();
         }
         if (!isStrict()) {
-            std::sort(_children.begin(), _children.end(), Cmp());
+            sortChildren(_children);
         }
     }
     return *this;

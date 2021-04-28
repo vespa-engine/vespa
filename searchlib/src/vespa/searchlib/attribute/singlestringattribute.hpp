@@ -56,11 +56,11 @@ SingleValueStringAttributeT<B>::StringTemplSearchContext::StringTemplSearchConte
     this->_plsc = static_cast<attribute::IPostingListSearchContext *>(this);
     if (this->valid()) {
         if (this->isPrefix()) {
-            auto comp = enumStore.make_folded_comparator(queryTerm()->getTerm(), true);
+            auto comp = enumStore.make_folded_comparator_prefix(queryTerm()->getTerm());
             lookupRange(comp, comp);
         } else if (this->isRegex()) {
             vespalib::string prefix(vespalib::RegexpUtil::get_prefix(this->queryTerm()->getTerm()));
-            auto comp = enumStore.make_folded_comparator(prefix.c_str(), true);
+            auto comp = enumStore.make_folded_comparator_prefix(prefix.c_str());
             lookupRange(comp, comp);
         } else {
             auto comp = enumStore.make_folded_comparator(queryTerm()->getTerm());

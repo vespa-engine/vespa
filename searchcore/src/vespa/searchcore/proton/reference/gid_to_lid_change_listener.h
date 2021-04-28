@@ -18,14 +18,14 @@ class GidToLidChangeListener : public IGidToLidChangeListener
     vespalib::ISequencedTaskExecutor                      &_attributeFieldWriter;
     vespalib::ISequencedTaskExecutor::ExecutorId           _executorId;
     std::shared_ptr<search::attribute::ReferenceAttribute> _attr;
-    MonitoredRefCount                                     &_refCount;
+    RetainGuard                                            _retainGuard;
     vespalib::string                                       _name;
     vespalib::string                                       _docTypeName;
 
 public:
     GidToLidChangeListener(vespalib::ISequencedTaskExecutor &attributeFieldWriter,
                            std::shared_ptr<search::attribute::ReferenceAttribute> attr,
-                           MonitoredRefCount &refCount,
+                           RetainGuard refCount,
                            const vespalib::string &name,
                            const vespalib::string &docTypeName);
     ~GidToLidChangeListener() override;

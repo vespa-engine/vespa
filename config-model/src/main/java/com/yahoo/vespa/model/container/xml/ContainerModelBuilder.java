@@ -431,6 +431,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
         // If the deployment contains certificate/private key reference, setup TLS port
         HostedSslConnectorFactory connectorFactory;
+        boolean enableHttp2 = deployState.featureFlags().enableJdiscHttp2();
         if (deployState.endpointCertificateSecrets().isPresent()) {
             boolean authorizeClient = deployState.zone().system().isPublic();
             if (authorizeClient && deployState.tlsClientAuthority().isEmpty()) {
@@ -444,10 +445,10 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
                     .orElse(false);
 
             connectorFactory = authorizeClient
-                    ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(serverName, endpointCertificateSecrets, deployState.tlsClientAuthority().get())
-                    : HostedSslConnectorFactory.withProvidedCertificate(serverName, endpointCertificateSecrets, enforceHandshakeClientAuth);
+                    ? HostedSslConnectorFactory.withProvidedCertificateAndTruststore(serverName, endpointCertificateSecrets, deployState.tlsClientAuthority().get(), enableHttp2)
+                    : HostedSslConnectorFactory.withProvidedCertificate(serverName, endpointCertificateSecrets, enforceHandshakeClientAuth, enableHttp2);
         } else {
-            connectorFactory = HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName);
+            connectorFactory = HostedSslConnectorFactory.withDefaultCertificateAndTruststore(serverName, enableHttp2);
         }
         cluster.getHttp().getAccessControl().ifPresent(accessControl -> accessControl.configureHostedConnector(connectorFactory));
         server.addConnector(connectorFactory);
@@ -593,7 +594,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
 
     private void checkTagName(Element spec, DeployLogger logger) {
         if (spec.getTagName().equals(DEPRECATED_CONTAINER_TAG)) {
-            logger.log(WARNING, "'" + DEPRECATED_CONTAINER_TAG + "' is deprecated as tag name. Use '" + CONTAINER_TAG + "' instead.");
+            logger.logApplicationPackage(WARNING, "'" + DEPRECATED_CONTAINER_TAG + "' is deprecated as tag name. Use '" + CONTAINER_TAG + "' instead.");
         }
     }
 
@@ -636,7 +637,7 @@ public class ContainerModelBuilder extends ConfigModelBuilder<ContainerModel> {
         } else {
             jvmOptions = nodesElement.getAttribute(VespaDomBuilder.JVMARGS_ATTRIB_NAME);
             if (incompatibleGCOptions(jvmOptions)) {
-                deployLogger.log(WARNING, "You need to move out your GC related options from 'jvmargs' to 'jvm-gc-options'");
+                deployLogger.logApplicationPackage(WARNING, "You need to move out your GC related options from 'jvmargs' to 'jvm-gc-options'");
                 cluster.setJvmGCOptions(ContainerCluster.G1GC);
             }
         }

@@ -33,6 +33,8 @@ public class ConnectionLogEntry {
     private final Instant sslPeerNotAfter;
     private final String sslSniServerName;
     private final SslHandshakeFailure sslHandshakeFailure;
+    private final String httpProtocol;
+    private final String proxyProtocolVersion;
 
 
     private ConnectionLogEntry(Builder builder) {
@@ -57,6 +59,8 @@ public class ConnectionLogEntry {
         this.sslPeerNotAfter = builder.sslPeerNotAfter;
         this.sslSniServerName = builder.sslSniServerName;
         this.sslHandshakeFailure = builder.sslHandshakeFailure;
+        this.httpProtocol = builder.httpProtocol;
+        this.proxyProtocolVersion = builder.proxyProtocolVersion;
     }
 
     public static Builder builder(UUID id, Instant timestamp) {
@@ -84,6 +88,8 @@ public class ConnectionLogEntry {
     public Optional<Instant> sslPeerNotAfter() { return Optional.ofNullable(sslPeerNotAfter); }
     public Optional<String> sslSniServerName() { return Optional.ofNullable(sslSniServerName); }
     public Optional<SslHandshakeFailure> sslHandshakeFailure() { return Optional.ofNullable(sslHandshakeFailure); }
+    public Optional<String> httpProtocol() { return Optional.ofNullable(httpProtocol); }
+    public Optional<String> proxyProtocolVersion() { return Optional.ofNullable(proxyProtocolVersion); }
 
     public static class SslHandshakeFailure {
         private final String type;
@@ -133,6 +139,8 @@ public class ConnectionLogEntry {
         private Instant sslPeerNotAfter;
         private String sslSniServerName;
         private SslHandshakeFailure sslHandshakeFailure;
+        private String httpProtocol;
+        private String proxyProtocolVersion;
 
 
         Builder(UUID id, Instant timestamp) {
@@ -217,9 +225,18 @@ public class ConnectionLogEntry {
             this.sslHandshakeFailure = sslHandshakeFailure;
             return this;
         }
+        public Builder withHttpProtocol(String protocol) {
+            this.httpProtocol = protocol;
+            return this;
+        }
+        public Builder withProxyProtocolVersion(String version) {
+            this.proxyProtocolVersion = version;
+            return this;
+        }
 
         public ConnectionLogEntry build(){
             return new ConnectionLogEntry(this);
         }
+
     }
 }

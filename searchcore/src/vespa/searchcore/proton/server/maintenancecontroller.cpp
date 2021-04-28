@@ -7,6 +7,7 @@
 #include <vespa/searchcorespi/index/i_thread_service.h>
 #include <vespa/vespalib/util/lambdatask.h>
 #include <vespa/vespalib/util/scheduledexecutor.h>
+#include <thread>
 
 #include <vespa/log/log.h>
 LOG_SETUP(".proton.server.maintenancecontroller");
@@ -28,14 +29,23 @@ public:
     void run() override { _job->run(); }
 };
 
+bool
+isRunningOrRunnable(const MaintenanceJobRunner & job, const Executor * master) {
+    return (&job.getExecutor() == master)
+           ? job.isRunning()
+           : job.isRunnable();
+}
+
 }
 
 MaintenanceController::MaintenanceController(IThreadService &masterThread,
-                                             vespalib::SyncableThreadExecutor & defaultExecutor,
+                                             vespalib::Executor & defaultExecutor,
+                                             MonitoredRefCount & refCount,
                                              const DocTypeName &docTypeName)
     : IBucketFreezeListener(),
       _masterThread(masterThread),
       _defaultExecutor(defaultExecutor),
+      _refCount(refCount),
       _readySubDB(),
       _remSubDB(),
       _notReadySubDB(),
@@ -78,7 +88,6 @@ MaintenanceController::registerJob(Executor & executor, IMaintenanceJob::UP job)
     _jobs.push_back(std::make_shared<MaintenanceJobRunner>(executor, std::move(job)));
 }
 
-
 void
 MaintenanceController::killJobs()
 {
@@ -93,8 +102,11 @@ MaintenanceController::killJobs()
     for (auto &job : _jobs) {
         job->stop(); // Make sure no more tasks are added to the executor
     }
-    _defaultExecutor.sync();
-    _defaultExecutor.sync();
+    for (auto &job : _jobs) {
+        while (isRunningOrRunnable(*job, &_masterThread)) {
+            std::this_thread::sleep_for(1ms);
+        }
+    }
     JobList tmpJobs = _jobs;
     {
         Guard guard(_jobsLock);

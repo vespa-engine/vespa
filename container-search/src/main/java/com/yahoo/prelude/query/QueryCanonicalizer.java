@@ -94,7 +94,7 @@ public class QueryCanonicalizer {
         if (composite instanceof RankItem || composite instanceof NotItem) {
             collapseLevels(composite, composite.getItemIterator()); // collapse the first item only
         }
-        else if (composite instanceof AndItem || composite instanceof OrItem) {
+        else if (composite instanceof AndItem || composite instanceof OrItem || composite instanceof WeakAndItem) {
             for (ListIterator<Item> i = composite.getItemIterator(); i.hasNext(); )
                 collapseLevels(composite, i);
         }
@@ -106,10 +106,17 @@ public class QueryCanonicalizer {
         Item child = i.next();
         if (child == null) return;
         if (child.getClass() != composite.getClass()) return;
+        if (child instanceof WeakAndItem && !equalWeakAndSettings((WeakAndItem)child, (WeakAndItem)composite)) return;
         i.remove();
         moveChildren((CompositeItem) child, i);
     }
-    
+
+    private static boolean equalWeakAndSettings(WeakAndItem a, WeakAndItem b) {
+        if ( ! a.getIndexName().equals(b.getIndexName())) return false;
+        if (a.getN() != b.getN()) return false;
+        return true;
+    }
+
     private static void moveChildren(CompositeItem from, ListIterator<Item> toIterator) {
         for (ListIterator<Item> i = from.getItemIterator(); i.hasNext(); )
             toIterator.add(i.next());

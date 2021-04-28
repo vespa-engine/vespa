@@ -5,7 +5,8 @@ attribute[].name                string
 attribute[].datatype            enum { STRING, BOOL, UINT2, UINT4, INT8, INT16, INT32, INT64, FLOAT16, FLOAT, DOUBLE, PREDICATE, TENSOR, REFERENCE, NONE } default=NONE
 attribute[].collectiontype      enum { SINGLE, ARRAY, WEIGHTEDSET } default=SINGLE
 attribute[].dictionary.type     enum { BTREE, HASH, BTREE_AND_HASH } default = BTREE
-attribute[].dictionary.match    enum { CASE_SENSITIVE, CASE_INSENSITIVE, CASED, UNCASED } default=CASE_INSENSITIVE
+attribute[].dictionary.match    enum { CASE_SENSITIVE, CASE_INSENSITIVE, CASED, UNCASED } default=UNCASED
+attribute[].match               enum { CASED, UNCASED } default=UNCASED
 attribute[].removeifzero        bool default=false
 attribute[].createifnonexistent bool default=false
 attribute[].fastsearch          bool default=false

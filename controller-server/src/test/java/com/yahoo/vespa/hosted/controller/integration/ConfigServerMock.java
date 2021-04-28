@@ -30,7 +30,6 @@ import com.yahoo.vespa.hosted.controller.api.integration.configserver.ContainerE
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.LoadBalancer;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Log;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
-import com.yahoo.vespa.hosted.controller.api.integration.configserver.NotFoundException;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.PrepareResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.ProxyResponse;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.QuotaUsage;
@@ -121,7 +120,8 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
                                       new Cluster.Utilization(0.1, 0.2, 0.3, 0.4, 0.5, 0.6),
                                       List.of(new Cluster.ScalingEvent(new ClusterResources(0, 0, NodeResources.unspecified()),
                                                                        current,
-                                                                       Instant.ofEpochMilli(1234))),
+                                                                       Instant.ofEpochMilli(1234),
+                                                                       Optional.of(Instant.ofEpochMilli(2234)))),
                                       "the autoscaling status",
                                       Duration.ofMinutes(6),
                                       0.7,
@@ -390,7 +390,7 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
             putLoadBalancers(id.zoneId(), List.of(new LoadBalancer(UUID.randomUUID().toString(),
                                                                    id.applicationId(),
                                                                    cluster,
-                                                                   HostName.from("lb-0--" + id.applicationId().serializedForm() + "--" + id.zoneId().toString()),
+                                                                   Optional.of(HostName.from("lb-0--" + id.applicationId().serializedForm() + "--" + id.zoneId().toString())),
                                                                    LoadBalancer.State.active,
                                                                    Optional.of("dns-zone-1"))));
         }
@@ -432,20 +432,17 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     public void reindex(DeploymentId deployment, List<String> clusterNames, List<String> documentTypes, boolean indexedOnly) { }
 
     @Override
-    public Optional<ApplicationReindexing> getReindexing(DeploymentId deployment) {
-        return Optional.of(new ApplicationReindexing(true,
-                                                     Map.of("cluster",
-                                                            new ApplicationReindexing.Cluster(Map.of("type", 100L),
-                                                                                              Map.of("type", new Status(Instant.ofEpochMilli(345),
-                                                                                                                        Instant.ofEpochMilli(456),
-                                                                                                                        Instant.ofEpochMilli(567),
-                                                                                                                        ApplicationReindexing.State.FAILED,
-                                                                                                                        "(＃｀д´)ﾉ",
-                                                                                                                        0.1))))));
-
-
+    public ApplicationReindexing getReindexing(DeploymentId deployment) {
+        return new ApplicationReindexing(true,
+                                         Map.of("cluster",
+                                                new ApplicationReindexing.Cluster(Map.of("type", 100L),
+                                                                                  Map.of("type", new Status(Instant.ofEpochMilli(345),
+                                                                                                            Instant.ofEpochMilli(456),
+                                                                                                            Instant.ofEpochMilli(567),
+                                                                                                            ApplicationReindexing.State.FAILED,
+                                                                                                            "(＃｀д´)ﾉ",
+                                                                                                            0.1)))));
     }
-
 
     @Override
     public void disableReindexing(DeploymentId deployment) { }
@@ -464,12 +461,13 @@ public class ConfigServerMock extends AbstractComponent implements ConfigServer 
     }
 
     @Override
-    public void deactivate(DeploymentId deployment) throws NotFoundException {
+    public void deactivate(DeploymentId deployment) {
         ApplicationId applicationId = deployment.applicationId();
         nodeRepository().removeNodes(deployment.zoneId(),
                                      nodeRepository().list(deployment.zoneId(), applicationId));
         if ( ! applications.containsKey(deployment))
-            throw new NotFoundException("No application with id " + applicationId + " exists, cannot deactivate");
+            return;
+
         applications.remove(deployment);
         serviceStatus.remove(deployment);
         removeLoadBalancers(deployment.applicationId(), deployment.zoneId());

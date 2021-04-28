@@ -166,16 +166,22 @@ public class NodeAgentImpl implements NodeAgent {
 
     void startServicesIfNeeded(NodeAgentContext context) {
         if (!hasStartedServices) {
-            context.log(logger, "Starting services");
-            containerOperations.startServices(context);
+            context.log(logger, "Invoking vespa-nodectl to start services");
+            String output = containerOperations.startServices(context);
+            if (!output.isBlank()) {
+                context.log(logger, "Start services output: " + output);
+            }
             hasStartedServices = true;
         }
     }
 
     void resumeNodeIfNeeded(NodeAgentContext context) {
         if (!hasResumedNode) {
-            context.log(logger, Level.FINE, "Starting optional node program resume command");
-            containerOperations.resumeNode(context);
+            context.log(logger, "Invoking vespa-nodectl to resume services");
+            String output = containerOperations.resumeNode(context);
+            if (!output.isBlank()) {
+                context.log(logger, "Resume services output: " + output);
+            }
             hasResumedNode = true;
         }
     }
@@ -243,10 +249,13 @@ public class NodeAgentImpl implements NodeAgent {
             }
 
             shouldRestartServices(context, existingContainer.get()).ifPresent(restartReason -> {
-                context.log(logger, "Will restart services: " + restartReason);
+                context.log(logger, "Invoking vespa-nodectl to restart services: " + restartReason);
                 orchestratorSuspendNode(context);
 
-                containerOperations.restartVespa(context);
+                String output = containerOperations.restartVespa(context);
+                if (!output.isBlank()) {
+                    context.log(logger, "Restart services output: " + output);
+                }
                 currentRestartGeneration = context.node().wantedRestartGeneration();
             });
         }
@@ -290,11 +299,14 @@ public class NodeAgentImpl implements NodeAgent {
     }
 
     public void suspend(NodeAgentContext context) {
-        context.log(logger, "Suspending services on node");
         if (containerState == ABSENT) return;
         try {
             hasResumedNode = false;
-            containerOperations.suspendNode(context);
+            context.log(logger, "Invoking vespa-nodectl to suspend services");
+            String output = containerOperations.suspendNode(context);
+            if (!output.isBlank()) {
+                context.log(logger, "Suspend services output: " + output);
+            }
         } catch (ContainerNotFoundException e) {
             containerState = ABSENT;
         } catch (RuntimeException e) {
@@ -505,7 +517,7 @@ public class NodeAgentImpl implements NodeAgent {
                 }
                 break;
             case provisioned:
-                nodeRepository.setNodeState(context.hostname().value(), NodeState.dirty);
+                nodeRepository.setNodeState(context.hostname().value(), NodeState.ready);
                 break;
             case dirty:
                 removeContainerIfNeededUpdateContainerState(context, container);

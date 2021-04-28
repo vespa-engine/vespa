@@ -35,7 +35,7 @@ public abstract class InvokerFactory {
     public abstract FillInvoker createFillInvoker(VespaBackEndSearcher searcher, Result result);
 
     /**
-     * Create a {@link SearchInvoker} for a list of content nodes.
+     * Creates a {@link SearchInvoker} for a list of content nodes.
      *
      * @param searcher the searcher processing the query
      * @param query the search query being processed
@@ -79,7 +79,7 @@ public abstract class InvokerFactory {
                     success.add(node);
                 }
             }
-            if ( ! searchCluster.isPartialGroupCoverageSufficient(groupId, success) && !acceptIncompleteCoverage) {
+            if ( ! searchCluster.isPartialGroupCoverageSufficient(success) && !acceptIncompleteCoverage) {
                 return Optional.empty();
             }
             if (invokers.size() == 0) {

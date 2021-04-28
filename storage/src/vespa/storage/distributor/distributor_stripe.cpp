@@ -38,24 +38,24 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
                                      const NodeIdentity& node_identity,
                                      framework::TickingThreadPool& threadPool,
                                      DoneInitializeHandler& doneInitHandler,
-                                     bool manageActiveBucketCopies,
-                                     ChainedMessageSender& messageSender)
-    : StorageLink("distributor"),
-      DistributorStripeInterface(),
+                                     ChainedMessageSender& messageSender,
+                                     bool use_legacy_mode)
+    : DistributorStripeInterface(),
       framework::StatusReporter("distributor", "Distributor"),
       _clusterStateBundle(lib::ClusterState()),
       _bucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
       _readOnlyBucketSpaceRepo(std::make_unique<DistributorBucketSpaceRepo>(node_identity.node_index())),
       _component(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, compReg, "distributor"),
+      _total_config(_component.total_distributor_config_sp()),
       _metrics(metrics),
       _operationOwner(*this, _component.getClock()),
       _maintenanceOperationOwner(*this, _component.getClock()),
       _operation_sequencer(std::make_unique<OperationSequencer>()),
       _pendingMessageTracker(compReg),
-      _bucketDBUpdater(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, *this, compReg),
+      _bucketDBUpdater(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, *this, compReg, use_legacy_mode),
       _distributorStatusDelegate(compReg, *this, *this),
       _bucketDBStatusDelegate(compReg, *this, _bucketDBUpdater),
-      _idealStateManager(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, compReg, manageActiveBucketCopies),
+      _idealStateManager(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, compReg),
       _messageSender(messageSender),
       _externalOperationHandler(_component, _component, getMetrics(), getMessageSender(),
                                 *_operation_sequencer, *this, _component,
@@ -81,7 +81,8 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _db_memory_sample_interval(30s),
       _last_db_memory_sample_time_point(),
       _inhibited_maintenance_tick_count(0),
-      _must_send_updated_host_info(false)
+      _must_send_updated_host_info(false),
+      _use_legacy_mode(use_legacy_mode)
 {
     _bucketDBStatusDelegate.registerStatusPage();
     propagateDefaultDistribution(_component.getDistribution());
@@ -114,36 +115,23 @@ DistributorStripe::sendCommand(const std::shared_ptr<api::StorageCommand>& cmd)
         api::MergeBucketCommand& merge(static_cast<api::MergeBucketCommand&>(*cmd));
         _idealStateManager.getMetrics().nodesPerMerge.addValue(merge.getNodes().size());
     }
-    sendUp(cmd);
+    send_up_with_tracking(cmd);
 }
 
 void
 DistributorStripe::sendReply(const std::shared_ptr<api::StorageReply>& reply)
 {
-    sendUp(reply);
-}
-
-void
-DistributorStripe::onOpen()
-{
-    LOG(debug, "DistributorStripe::onOpen invoked");
-    if (_component.getDistributorConfig().startDistributorThread) {
-        // TODO STRIPE own thread per stripe!
-    } else {
-        LOG(warning, "Not starting distributor stripe thread as it's not configured to "
-                     "run. Unless you are just running a test tool, this is a "
-                     "fatal error.");
-    }
+    send_up_with_tracking(reply);
 }
 
 void DistributorStripe::send_shutdown_abort_reply(const std::shared_ptr<api::StorageMessage>& msg) {
     api::StorageReply::UP reply(
             std::dynamic_pointer_cast<api::StorageCommand>(msg)->makeReply());
     reply->setResult(api::ReturnCode(api::ReturnCode::ABORTED, "Distributor is shutting down"));
-    sendUp(std::shared_ptr<api::StorageMessage>(reply.release()));
+    send_up_with_tracking(std::shared_ptr<api::StorageMessage>(reply.release()));
 }
 
-void DistributorStripe::onClose() {
+void DistributorStripe::flush_and_close() {
     for (auto& msg : _messageQueue) {
         if (!msg->getType().isReply()) {
             send_shutdown_abort_reply(msg);
@@ -168,18 +156,20 @@ void DistributorStripe::send_up_without_tracking(const std::shared_ptr<api::Stor
 }
 
 void
-DistributorStripe::sendUp(const std::shared_ptr<api::StorageMessage>& msg)
+DistributorStripe::send_up_with_tracking(const std::shared_ptr<api::StorageMessage>& msg)
 {
     _pendingMessageTracker.insert(msg);
     send_up_without_tracking(msg);
 }
 
 bool
-DistributorStripe::onDown(const std::shared_ptr<api::StorageMessage>& msg)
+DistributorStripe::handle_or_enqueue_message(const std::shared_ptr<api::StorageMessage>& msg)
 {
     if (_externalOperationHandler.try_handle_message_outside_main_thread(msg)) {
         return true;
     }
+    // TODO STRIPE redesign how message queue guarding and wakeup is performed.
+    //   Currently involves a _thread pool global_ lock transitively via tick guard!
     framework::TickingLockGuard guard(_threadPool.freezeCriticalTicks());
     MBUS_TRACE(msg->getTrace(), 9,
                "Distributor: Added to message queue. Thread state: "
@@ -400,8 +390,9 @@ void DistributorStripe::invalidate_bucket_spaces_stats() {
 }
 
 void
-DistributorStripe::storageDistributionChanged()
+DistributorStripe::storage_distribution_changed()
 {
+    assert(_use_legacy_mode);
     if (!_distribution.get()
         || *_component.getDistribution() != *_distribution)
     {
@@ -478,17 +469,22 @@ DistributorStripe::checkBucketForSplit(document::BucketSpace bucketSpace,
     }
 }
 
+// TODO STRIPE must only be called when operating in legacy single stripe mode!
+//   In other cases, distribution config switching is controlled by top-level distributor, not via framework(tm).
 void
 DistributorStripe::enableNextDistribution()
 {
+    assert(_use_legacy_mode);
     if (_nextDistribution.get()) {
         _distribution = _nextDistribution;
         propagateDefaultDistribution(_distribution);
         _nextDistribution = std::shared_ptr<lib::Distribution>();
+        // TODO conditional on whether top-level DB updater is in charge
         _bucketDBUpdater.storageDistributionChanged();
     }
 }
 
+// TODO STRIPE must be invoked by top-level bucket db updater probably
 void
 DistributorStripe::propagateDefaultDistribution(
         std::shared_ptr<const lib::Distribution> distribution)
@@ -496,6 +492,20 @@ DistributorStripe::propagateDefaultDistribution(
     auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
     for (auto* repo : {_bucketSpaceRepo.get(), _readOnlyBucketSpaceRepo.get()}) {
         repo->get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
+        repo->get(document::FixedBucketSpaces::global_space()).setDistribution(global_distr);
+    }
+}
+
+// Only called when stripe is in rendezvous freeze
+void
+DistributorStripe::update_distribution_config(const BucketSpaceDistributionConfigs& new_configs) {
+    assert(!_use_legacy_mode);
+    auto default_distr = new_configs.get_or_nullptr(document::FixedBucketSpaces::default_space());
+    auto global_distr  = new_configs.get_or_nullptr(document::FixedBucketSpaces::global_space());
+    assert(default_distr && global_distr);
+
+    for (auto* repo : {_bucketSpaceRepo.get(), _readOnlyBucketSpaceRepo.get()}) {
+        repo->get(document::FixedBucketSpaces::default_space()).setDistribution(default_distr);
         repo->get(document::FixedBucketSpaces::global_space()).setDistribution(global_distr);
     }
 }
@@ -730,12 +740,15 @@ DistributorStripe::startNextMaintenanceOperation()
     _scheduler->tick(_schedulingMode);
 }
 
+// TODO STRIPE begone with this!
 framework::ThreadWaitInfo
 DistributorStripe::doCriticalTick(framework::ThreadIndex)
 {
     _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
-    enableNextDistribution();
-    enableNextConfig();
+    if (_use_legacy_mode) {
+        enableNextDistribution();
+        enableNextConfig();
+    }
     fetchStatusRequests();
     fetchExternalMessages();
     return _tickResult;
@@ -782,6 +795,21 @@ void DistributorStripe::mark_maintenance_tick_as_no_longer_inhibited() noexcept 
 
 void
 DistributorStripe::enableNextConfig()
+{
+    assert(_use_legacy_mode);
+    propagate_config_snapshot_to_internal_components();
+
+}
+
+void
+DistributorStripe::update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config)
+{
+    _total_config = std::move(config);
+    propagate_config_snapshot_to_internal_components();
+}
+
+void
+DistributorStripe::propagate_config_snapshot_to_internal_components()
 {
     _bucketDBMetricUpdater.setMinimumReplicaCountingMode(getConfig().getMinimumReplicaCountingMode());
     _ownershipSafeTimeCalc->setMaxClusterClockSkew(getConfig().getMaxClusterClockSkew());

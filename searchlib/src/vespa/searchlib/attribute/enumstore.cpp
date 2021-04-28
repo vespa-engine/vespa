@@ -21,9 +21,7 @@ EnumStoreT<const char*>::write_value(BufferWriter& writer, Index idx) const
 
 template <>
 ssize_t
-EnumStoreT<const char*>::load_unique_value(const void* src,
-                                           size_t available,
-                                           Index& idx)
+EnumStoreT<const char*>::load_unique_value(const void* src, size_t available, Index& idx)
 {
     const char* value = static_cast<const char*>(src);
     size_t slen = strlen(value);
@@ -42,9 +40,9 @@ EnumStoreT<const char*>::load_unique_value(const void* src,
 }
 
 std::unique_ptr<vespalib::datastore::IUniqueStoreDictionary>
-make_enum_store_dictionary(IEnumStore &store, bool has_postings, const search::DictionaryConfig & dict_cfg,
-                           std::unique_ptr<vespalib::datastore::EntryComparator> compare,
-                           std::unique_ptr<vespalib::datastore::EntryComparator> folded_compare)
+make_enum_store_dictionary(IEnumStore &store, bool has_postings, const DictionaryConfig & dict_cfg,
+                           std::unique_ptr<EntryComparator> compare,
+                           std::unique_ptr<EntryComparator> folded_compare)
 {
     using NoBTreeDictionary = vespalib::datastore::NoBTreeDictionary;
     using ShardedHashMap = vespalib::datastore::ShardedHashMap;
@@ -53,9 +51,9 @@ make_enum_store_dictionary(IEnumStore &store, bool has_postings, const search::D
             return std::make_unique<EnumStoreFoldedDictionary>(store, std::move(compare), std::move(folded_compare));
         } else {
             switch (dict_cfg.getType()) {
-            case search::DictionaryConfig::Type::HASH:
+            case DictionaryConfig::Type::HASH:
                 return std::make_unique<EnumStoreDictionary<NoBTreeDictionary, ShardedHashMap>>(store, std::move(compare));
-            case search::DictionaryConfig::Type::BTREE_AND_HASH:
+            case DictionaryConfig::Type::BTREE_AND_HASH:
                 return std::make_unique<EnumStoreDictionary<EnumPostingTree, ShardedHashMap>>(store, std::move(compare));
             default:
                 return std::make_unique<EnumStoreDictionary<EnumPostingTree>>(store, std::move(compare));

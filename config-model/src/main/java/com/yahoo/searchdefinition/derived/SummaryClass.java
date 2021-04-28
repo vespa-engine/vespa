@@ -75,7 +75,7 @@ public class SummaryClass extends Derived {
         if (fields.containsKey(name)) {
             SummaryClassField sf = fields.get(name);
             if (!SummaryClassField.convertDataType(type, transform).equals(sf.getType())) {
-                deployLogger.log(Level.WARNING, "Conflicting definition of field " + name + ". " +
+                deployLogger.logApplicationPackage(Level.WARNING, "Conflicting definition of field " + name + ". " +
                                "Declared as type " + sf.getType() + " and " + type);
             }
         } else {

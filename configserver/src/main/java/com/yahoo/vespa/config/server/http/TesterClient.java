@@ -4,12 +4,13 @@ package com.yahoo.vespa.config.server.http;
 import ai.vespa.util.http.hc4.VespaHttpClientBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.yolean.Exceptions;
-import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.CloseableHttpResponse;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpUriRequest;
 import org.apache.http.client.utils.URIBuilder;
 import org.apache.http.entity.ByteArrayEntity;
+import org.apache.http.impl.client.CloseableHttpClient;
 
 import java.io.IOException;
 import java.net.URI;
@@ -22,7 +23,7 @@ import java.util.logging.Logger;
  */
 public class TesterClient {
 
-    private final HttpClient httpClient = VespaHttpClientBuilder.create().build();
+    private final CloseableHttpClient httpClient = VespaHttpClientBuilder.create().build();
     private static final Logger logger = Logger.getLogger(TesterClient.class.getName());
 
     public HttpResponse getStatus(String testerHostname, int port) {

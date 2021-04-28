@@ -2,6 +2,7 @@
 package com.yahoo.vespa.clustercontroller.core;
 
 import com.yahoo.lang.MutableBoolean;
+import com.yahoo.lang.SettableOptional;
 import com.yahoo.vdslib.distribution.ConfiguredNode;
 import com.yahoo.vdslib.distribution.Group;
 import com.yahoo.vdslib.state.ClusterState;
@@ -212,10 +213,13 @@ public class NodeStateChangeChecker {
                     oldWantedState.getState() + ": " + oldWantedState.getDescription());
         }
 
-        switch (clusterState.getNodeState(nodeInfo.getNode()).getState()) {
-            case MAINTENANCE:
-            case DOWN:
-                return Result.allowSettingOfWantedState();
+        Result otherGroupCheck = anotherNodeInAnotherGroupHasWantedState(nodeInfo);
+        if (!otherGroupCheck.settingWantedStateIsAllowed()) {
+            return otherGroupCheck;
+        }
+
+        if (clusterState.getNodeState(nodeInfo.getNode()).getState() == State.DOWN) {
+            return Result.allowSettingOfWantedState();
         }
 
         if (anotherNodeInGroupAlreadyAllowed(nodeInfo, newDescription)) {
@@ -230,6 +234,85 @@ public class NodeStateChangeChecker {
         Result checkDistributorsResult = checkDistributors(nodeInfo.getNode(), clusterState.getVersion());
         if (!checkDistributorsResult.settingWantedStateIsAllowed()) {
             return checkDistributorsResult;
+        }
+
+        return Result.allowSettingOfWantedState();
+    }
+
+    /**
+     * Returns a disallow-result if there is another node (in another group, if hierarchical)
+     * that has a wanted state != UP.  We disallow more than 1 suspended node/group at a time.
+     */
+    private Result anotherNodeInAnotherGroupHasWantedState(StorageNodeInfo nodeInfo) {
+        if (groupVisiting.isHierarchical()) {
+            SettableOptional<Result> anotherNodeHasWantedState = new SettableOptional<>();
+
+            groupVisiting.visit(group -> {
+                if (!groupContainsNode(group, nodeInfo.getNode())) {
+                    Result result = otherNodeInGroupHasWantedState(group);
+                    if (!result.settingWantedStateIsAllowed()) {
+                        anotherNodeHasWantedState.set(result);
+                        // Have found a node that is suspended, halt the visiting
+                        return false;
+                    }
+                }
+
+                return true;
+            });
+
+            return anotherNodeHasWantedState.asOptional().orElseGet(Result::allowSettingOfWantedState);
+        } else {
+            // Return a disallow-result if there is another node with a wanted state
+            return otherNodeHasWantedState(nodeInfo);
+        }
+    }
+
+    /** Returns a disallow-result, if there is a node in the group with wanted state != UP. */
+    private Result otherNodeInGroupHasWantedState(Group group) {
+        for (var configuredNode : group.getNodes()) {
+            StorageNodeInfo storageNodeInfo = clusterInfo.getStorageNodeInfo(configuredNode.index());
+            if (storageNodeInfo == null) continue;  // needed for tests only
+            State storageNodeWantedState = storageNodeInfo
+                    .getUserWantedState().getState();
+            if (storageNodeWantedState != State.UP) {
+                return Result.createDisallowed(
+                        "At most one group can have wanted state: Other storage node " + configuredNode.index() +
+                        " in group " + group.getIndex() + " has wanted state " + storageNodeWantedState);
+            }
+
+            State distributorWantedState = clusterInfo.getDistributorNodeInfo(configuredNode.index())
+                    .getUserWantedState().getState();
+            if (distributorWantedState != State.UP) {
+                return Result.createDisallowed(
+                        "At most one group can have wanted state: Other distributor " + configuredNode.index() +
+                        " in group " + group.getIndex() + " has wanted state " + distributorWantedState);
+            }
+        }
+
+        return Result.allowSettingOfWantedState();
+    }
+
+    private Result otherNodeHasWantedState(StorageNodeInfo nodeInfo) {
+        for (var configuredNode : clusterInfo.getConfiguredNodes().values()) {
+            if (configuredNode.index() == nodeInfo.getNodeIndex()) {
+                continue;
+            }
+
+            State storageNodeWantedState = clusterInfo.getStorageNodeInfo(configuredNode.index())
+                    .getUserWantedState().getState();
+            if (storageNodeWantedState != State.UP) {
+                return Result.createDisallowed(
+                        "At most one node can have a wanted state when #groups = 1: Other storage node " +
+                                configuredNode.index() + " has wanted state " + storageNodeWantedState);
+            }
+
+            State distributorWantedState = clusterInfo.getDistributorNodeInfo(configuredNode.index())
+                    .getUserWantedState().getState();
+            if (distributorWantedState != State.UP) {
+                return Result.createDisallowed(
+                        "At most one node can have a wanted state when #groups = 1: Other distributor " +
+                                configuredNode.index() + " has wanted state " + distributorWantedState);
+            }
         }
 
         return Result.allowSettingOfWantedState();

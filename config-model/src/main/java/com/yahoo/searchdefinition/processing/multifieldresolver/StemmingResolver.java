@@ -32,7 +32,7 @@ public class StemmingResolver extends MultiFieldResolver {
                 stemming = field.getStemming(search);
                 stemmingField = field;
             } else if (stemming != field.getStemming(search)) {
-                deployLogger.log(Level.WARNING, "Field '" + field.getName() + "' has " + field.getStemming(search) +
+                deployLogger.logApplicationPackage(Level.WARNING, "Field '" + field.getName() + "' has " + field.getStemming(search) +
                         ", whereas field '" + stemmingField.getName() + "' has " + stemming +
                         ". All fields indexing to the index '" + indexName  + "' must have the same stemming." +
                         " This should be corrected as it will make indexing fail in a few cases.");

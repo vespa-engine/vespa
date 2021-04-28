@@ -19,7 +19,7 @@ DistributorNode::DistributorNode(
         const config::ConfigUri& configUri,
         DistributorNodeContext& context,
         ApplicationGenerationFetcher& generationFetcher,
-        NeedActiveState activeState,
+        uint32_t num_distributor_stripes,
         StorageLink::UP communicationManager,
         std::unique_ptr<IStorageChainBuilder> storage_chain_builder)
     : StorageNode(configUri, context, generationFetcher,
@@ -29,7 +29,7 @@ DistributorNode::DistributorNode(
       _context(context),
       _lastUniqueTimestampRequested(0),
       _uniqueTimestampCounter(0),
-      _manageActiveBucketCopies(activeState == NEED_ACTIVE_BUCKET_STATES_SET),
+      _num_distributor_stripes(num_distributor_stripes),
       _retrievedCommunicationManager(std::move(communicationManager))
 {
     if (storage_chain_builder) {
@@ -101,12 +101,13 @@ DistributorNode::createChain(IStorageChainBuilder &builder)
     // extends to the end of the process.
     builder.add(std::make_unique<storage::distributor::Distributor>
                 (dcr, *_node_identity, *_threadPool, getDoneInitializeHandler(),
-                 _manageActiveBucketCopies,
+                 _num_distributor_stripes,
                  stateManager->getHostInfo()));
 
     builder.add(std::move(stateManager));
 }
 
+// FIXME STRIPE not thread safe!!
 api::Timestamp
 DistributorNode::getUniqueTimestamp()
 {

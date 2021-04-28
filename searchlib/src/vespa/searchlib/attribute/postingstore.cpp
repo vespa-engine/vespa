@@ -5,6 +5,7 @@
 #include <vespa/searchcommon/attribute/config.h>
 #include <vespa/searchcommon/attribute/status.h>
 #include <vespa/vespalib/btree/btreeiterator.hpp>
+#include <vespa/vespalib/btree/btreerootbase.cpp>
 #include <vespa/vespalib/datastore/datastore.hpp>
 #include <vespa/vespalib/datastore/buffer_type.hpp>
 
@@ -31,7 +32,9 @@ PostingStoreBase2::PostingStoreBase2(IEnumStoreDictionary& dictionary, Status &s
       _bvs(),
       _dictionary(dictionary),
       _status(status),
-      _bvExtraBytes(0)
+      _bvExtraBytes(0),
+      _cached_allocator_memory_usage(), 
+      _cached_store_memory_usage()
 {
 }
 
@@ -625,6 +628,141 @@ PostingStore<DataT>::getMemoryUsage() const
     usage.incUsedBytes(bvExtraBytes);
     usage.incAllocatedBytes(bvExtraBytes);
     return usage;
+}
+
+template <typename DataT>
+vespalib::MemoryUsage
+PostingStore<DataT>::update_stat()
+{
+    vespalib::MemoryUsage usage;
+    _cached_allocator_memory_usage = _allocator.getMemoryUsage();
+    _cached_store_memory_usage = _store.getMemoryUsage();
+    usage.merge(_cached_allocator_memory_usage);
+    usage.merge(_cached_store_memory_usage);
+    uint64_t bvExtraBytes = _bvExtraBytes;
+    usage.incUsedBytes(bvExtraBytes);
+    usage.incAllocatedBytes(bvExtraBytes);
+    return usage;
+}
+
+template <typename DataT>
+void
+PostingStore<DataT>::move_btree_nodes(EntryRef ref)
+{
+    if (ref.valid()) {
+        RefType iRef(ref);
+        uint32_t typeId = getTypeId(iRef);
+        uint32_t clusterSize = getClusterSize(typeId);
+        if (clusterSize == 0) {
+            if (isBitVector(typeId)) {
+                BitVectorEntry *bve = getWBitVectorEntry(iRef);
+                RefType iRef2(bve->_tree);
+                if (iRef2.valid()) {
+                    assert(isBTree(iRef2));
+                    BTreeType *tree = getWTreeEntry(iRef2);
+                    tree->move_nodes(_allocator);
+                }
+            } else {
+                BTreeType *tree = getWTreeEntry(iRef);
+                tree->move_nodes(_allocator);
+            }
+        }
+    }
+}
+
+template <typename DataT>
+typename PostingStore<DataT>::EntryRef
+PostingStore<DataT>::move(EntryRef ref)
+{
+    if (!ref.valid()) {
+        return EntryRef();
+    }
+    RefType iRef(ref);
+    uint32_t typeId = getTypeId(iRef);
+    uint32_t clusterSize = getClusterSize(typeId);
+    if (clusterSize == 0) {
+        if (isBitVector(typeId)) {
+            BitVectorEntry *bve = getWBitVectorEntry(iRef);
+            RefType iRef2(bve->_tree);
+            if (iRef2.valid()) {
+                assert(isBTree(iRef2));
+                if (_store.getCompacting(iRef2)) {
+                    BTreeType *tree = getWTreeEntry(iRef2);
+                    auto ref_and_ptr = allocBTreeCopy(*tree);
+                    tree->prepare_hold();
+                    bve->_tree = ref_and_ptr.ref;
+                }
+            }
+            if (!_store.getCompacting(ref)) {
+                return ref;
+            }
+            return allocBitVectorCopy(*bve).ref;
+        } else {
+            if (!_store.getCompacting(ref)) {
+                return ref;
+            }
+            BTreeType *tree = getWTreeEntry(iRef);
+            auto ref_and_ptr = allocBTreeCopy(*tree);
+            tree->prepare_hold();
+            return ref_and_ptr.ref;
+        }
+    }
+    if (!_store.getCompacting(ref)) {
+        return ref;
+    }
+    const KeyDataType *shortArray = getKeyDataEntry(iRef, clusterSize);
+    return allocKeyDataCopy(shortArray, clusterSize).ref;
+}
+
+template <typename DataT>
+void
+PostingStore<DataT>::compact_worst_btree_nodes()
+{
+    auto to_hold = this->start_compact_worst_btree_nodes();
+    _dictionary.normalize_posting_lists([this](EntryRef posting_idx) -> EntryRef
+                                        {
+                                            move_btree_nodes(posting_idx);
+                                            return posting_idx;
+                                        });
+    this->finish_compact_worst_btree_nodes(to_hold);
+}
+
+template <typename DataT>
+void
+PostingStore<DataT>::compact_worst_buffers()
+{
+    auto to_hold = this->start_compact_worst_buffers();
+    _dictionary.normalize_posting_lists([this](EntryRef posting_idx) -> EntryRef
+                                        { return move(posting_idx); });
+    this->finishCompact(to_hold);
+}
+
+template <typename DataT>
+bool
+PostingStore<DataT>::consider_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy)
+{
+    if (_allocator.getNodeStore().has_held_buffers()) {
+        return false;
+    }
+    if (compaction_strategy.should_compact_memory(_cached_allocator_memory_usage.usedBytes(), _cached_allocator_memory_usage.deadBytes())) {
+        compact_worst_btree_nodes();
+        return true;
+    }
+    return false;
+}
+
+template <typename DataT>
+bool
+PostingStore<DataT>::consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy)
+{
+    if (_store.has_held_buffers()) {
+        return false;
+    }
+    if (compaction_strategy.should_compact_memory(_cached_store_memory_usage.usedBytes(), _cached_store_memory_usage.deadBytes())) {
+        compact_worst_buffers();
+        return true;
+    }
+    return false;
 }
 
 template class PostingStore<BTreeNoLeafData>;

@@ -54,6 +54,8 @@ import java.util.concurrent.ThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Simon Thoresen Hult
@@ -118,6 +120,7 @@ public class SimpleFeeder implements ReplyHandler {
 
 
     public static void main(String[] args) throws Throwable {
+        Logger.getLogger("").setLevel(Level.WARNING);
         new SimpleFeeder(new FeederParams().parseArgs(args)).run().close();
     }
 

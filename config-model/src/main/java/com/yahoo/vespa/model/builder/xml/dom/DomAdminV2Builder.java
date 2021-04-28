@@ -52,7 +52,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         addLogForwarders(adminElement.child("logforwarding"), admin);
 
         if (adminElement.child("filedistribution") != null) {
-            deployState.getDeployLogger().log(Level.WARNING, "'filedistribution' element is deprecated and ignored");
+            deployState.getDeployLogger().logApplicationPackage(Level.WARNING, "'filedistribution' element is deprecated and ignored");
         }
     }
 
@@ -65,7 +65,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
         }
         int count = configservers.size();
         if (count % 2 == 0) {
-            deployState.getDeployLogger().log(Level.WARNING, "An even number (" + count + ") of config servers have been configured. " +
+            deployState.getDeployLogger().logApplicationPackage(Level.WARNING, "An even number (" + count + ") of config servers have been configured. " +
                     "This is discouraged, see doc for configuration server ");
         }
         return configservers;
@@ -116,7 +116,7 @@ public class DomAdminV2Builder extends DomAdminBuilderBase {
             if (configserverE == null) {
                 configserverE = XML.getChild(adminE, "adminserver");
             } else {
-                deployState.getDeployLogger().log(Level.INFO, "Specifying configserver without parent element configservers in services.xml is deprecated");
+                deployState.getDeployLogger().logApplicationPackage(Level.INFO, "Specifying configserver without parent element configservers in services.xml is deprecated");
             }
             Configserver cfgs0 = new ConfigserverBuilder(0, configServerSpecs).build(deployState, configServers, configserverE);
             cfgs0.setProp("index", 0);

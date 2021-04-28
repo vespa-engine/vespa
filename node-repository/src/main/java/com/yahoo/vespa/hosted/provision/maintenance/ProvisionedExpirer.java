@@ -12,7 +12,7 @@ import java.time.Duration;
 import java.util.List;
 
 /**
- * This moves nodes of type {@link NodeType#host} from preovisioned to parked if they have been in provisioned too long.
+ * This moves nodes of type {@link NodeType#host} from provisioned to parked if they have been in provisioned too long.
  *
  * Only {@link NodeType#host} is moved because any number of nodes of that type can exist. Other node types such as
  * {@link NodeType#confighost} have a fixed number and thus cannot be replaced while the fixed number of nodes exist in

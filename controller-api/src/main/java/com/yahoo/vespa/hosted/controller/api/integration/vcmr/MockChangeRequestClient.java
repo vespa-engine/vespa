@@ -13,7 +13,7 @@ public class MockChangeRequestClient implements ChangeRequestClient {
     private List<ChangeRequest> approvedChangeRequests = new ArrayList<>();
 
     @Override
-    public List<ChangeRequest> getUpcomingChangeRequests() {
+    public List<ChangeRequest> getChangeRequests(List<ChangeRequest> changeRequests) {
         return upcomingChangeRequests;
     }
 

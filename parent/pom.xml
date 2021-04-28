@@ -28,29 +28,11 @@
             <url>https://github.com/vespa-engine</url>
         </developer>
     </developers>
-    <distributionManagement>
-        <repository>
-            <id>bintray-vespa-repo</id>
-            <url>https://api.bintray.com/maven/yahoo/maven/vespa;publish=1</url>
-        </repository>
-    </distributionManagement>
     <scm>
         <connection>scm:git:git@github.com:vespa-engine/vespa.git</connection>
         <developerConnection>scm:git:git@github.com:vespa-engine/vespa.git</developerConnection>
         <url>git@github.com:vespa-engine/vespa.git</url>
     </scm>
-
-    <repositories>
-        <!-- Required for Athenz libraries -->
-        <repository>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-            <id>bintray-yahoo-maven</id>
-            <name>bintray</name>
-            <url>https://yahoo.bintray.com/maven</url>
-        </repository>
-    </repositories>
 
     <build>
         <finalName>${project.artifactId}</finalName>
@@ -431,6 +413,16 @@
                 <version>3.10.0</version>
             </dependency>
             <dependency>
+                <groupId>com.fasterxml.jackson.jaxrs</groupId>
+                <artifactId>jackson-jaxrs-xml-provider</artifactId>
+                <version>${jackson2.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-xml</artifactId>
+                <version>${jackson2.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.github.cverges.expect4j</groupId>
                 <artifactId>expect4j</artifactId>
                 <version>1.6</version>
@@ -447,6 +439,11 @@
                 <groupId>com.github.tomakehurst</groupId>
                 <artifactId>wiremock-standalone</artifactId>
                 <version>2.6.0</version>
+            </dependency>
+            <dependency>
+                <groupId>com.google.guava</groupId>
+                <artifactId>guava-testlib</artifactId>
+                <version>${guava.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.jimfs</groupId>
@@ -488,6 +485,21 @@
                 <groupId>com.yahoo.athenz</groupId>
                 <artifactId>athenz-zts-java-client</artifactId>
                 <version>${athenz.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-api</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-impl</artifactId>
+                <version>${jjwt.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>io.jsonwebtoken</groupId>
+                <artifactId>jjwt-jackson</artifactId>
+                <version>${jjwt.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -548,6 +560,11 @@
                 <groupId>org.antlr</groupId>
                 <artifactId>antlr4-runtime</artifactId>
                 <version>${antlr4.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.aries.spifly</groupId>
+                <artifactId>org.apache.aries.spifly.dynamic.bundle</artifactId>
+                <version>${spifly.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.commons</groupId>
@@ -687,6 +704,51 @@
                 <version>9.2.0</version>
             </dependency>
             <dependency>
+                <groupId>org.eclipse.jetty.alpn</groupId>
+                <artifactId>alpn-api</artifactId>
+                <version>${jetty-alpn.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty.http2</groupId>
+                <artifactId>http2-server</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-alpn-java-server</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-continuation</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-server</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlet</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-servlets</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.eclipse.jetty</groupId>
+                <artifactId>jetty-jmx</artifactId>
+                <version>${jetty.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.glassfish.jaxb</groupId>
+                <artifactId>jaxb-runtime</artifactId>
+                <version>2.3.2</version> <!-- 2.3.3 has a BROKEN manifest -->
+            </dependency>
+            <dependency>
                 <groupId>org.hamcrest</groupId>
                 <artifactId>hamcrest-all</artifactId>
                 <version>1.3</version>
@@ -736,11 +798,6 @@
                 <version>${asm.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.springframework</groupId>
-                <artifactId>spring-test</artifactId>
-                <version>4.0.6.RELEASE</version>
-            </dependency>
-            <dependency>
                 <groupId>org.tensorflow</groupId>
                 <artifactId>proto</artifactId>
                 <version>${tensorflow.version}</version>
@@ -780,9 +837,10 @@
         <apache.httpclient.version>4.5.12</apache.httpclient.version>
         <apache.httpcore.version>4.4.13</apache.httpcore.version>
         <apache.httpclient5.version>5.0.3</apache.httpclient5.version>
-        <asm.version>7.0</asm.version>
+        <asm.version>9.1</asm.version>
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <athenz.version>1.8.49</athenz.version>
+        <athenz.version>1.10.11</athenz.version>
+        <jjwt.version>0.11.2</jjwt.version>
         <aws.sdk.version>1.11.974</aws.sdk.version>
         <!-- WARNING: If you change curator version, you also need to update
                  zkfacade/src/main/java/org/apache/curator/**/package-info.java
@@ -811,6 +869,7 @@
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
         <prometheus.client.version>0.6.0</prometheus.client.version>
         <protobuf.version>3.7.0</protobuf.version>
+        <spifly.version>1.3.3</spifly.version>
         <surefire.version>2.22.0</surefire.version>
         <tensorflow.version>1.12.0</tensorflow.version>
         <zookeeper.client.version>3.6.2</zookeeper.client.version>

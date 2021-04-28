@@ -1642,13 +1642,13 @@
       "final"
     ],
     "methods": [
+      "public void <init>()",
+      "public void <init>(int)",
+      "public void <init>(java.lang.String, int)",
       "public com.yahoo.prelude.query.Item$ItemType getItemType()",
       "public java.lang.String getName()",
-      "public void <init>(java.lang.String, int)",
-      "public void <init>(int)",
       "public void setIndexName(java.lang.String)",
       "public java.lang.String getIndexName()",
-      "public void <init>()",
       "public int getN()",
       "public void setN(int)",
       "public int getScoreThreshold()",
@@ -4235,7 +4235,8 @@
       "public com.yahoo.search.Result searchAndFill(com.yahoo.search.Query, com.yahoo.component.chain.Chain)",
       "public com.yahoo.processing.rendering.Renderer getRendererCopy(com.yahoo.component.ComponentSpecification)",
       "public com.yahoo.search.searchchain.SearchChainRegistry getSearchChainRegistry()",
-      "public void createRequestMapping(com.yahoo.slime.Inspector, java.util.Map, java.lang.String)"
+      "public void createRequestMapping(com.yahoo.slime.Inspector, java.util.Map, java.lang.String)",
+      "public com.yahoo.container.jdisc.RequestHandlerSpec requestHandlerSpec()"
     ],
     "fields": [
       "public static final java.lang.String defaultSearchChainName"

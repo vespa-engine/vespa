@@ -102,7 +102,7 @@ PostingListAttributeBase<P>::handle_load_posting_lists_and_update_enum_store(enu
 template <typename P>
 void
 PostingListAttributeBase<P>::updatePostings(PostingMap &changePost,
-                                            vespalib::datastore::EntryComparator &cmp)
+                                            const vespalib::datastore::EntryComparator &cmp)
 {
     for (auto& elem : changePost) {
         EnumIndex idx = elem.first.getEnumIdx();
@@ -145,7 +145,7 @@ PostingListAttributeBase<P>::
 clearPostings(attribute::IAttributeVector::EnumHandle eidx,
               uint32_t fromLid,
               uint32_t toLid,
-              vespalib::datastore::EntryComparator &cmp)
+              const vespalib::datastore::EntryComparator &cmp)
 {
     PostingChange<P> postings;
 
@@ -178,6 +178,20 @@ vespalib::MemoryUsage
 PostingListAttributeBase<P>::getMemoryUsage() const
 {
     return _postingList.getMemoryUsage();
+}
+
+template <typename P>
+bool
+PostingListAttributeBase<P>::consider_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy)
+{
+    return _postingList.consider_compact_worst_btree_nodes(compaction_strategy);
+}
+
+template <typename P>
+bool
+PostingListAttributeBase<P>::consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy)
+{
+    return _postingList.consider_compact_worst_buffers(compaction_strategy);
 }
 
 template <typename P, typename LoadedVector, typename LoadedValueType,
@@ -213,7 +227,7 @@ handle_load_posting_lists(LoadedVector& loaded)
             LoadedValueType prev = value.getValue();
             for (size_t i(0), m(loaded.size()); i < m; i++, loaded.next()) {
                 value = loaded.read();
-                if (FoldedComparatorType::equal_helper(prev, value.getValue())) {
+                if (ComparatorType::equal_helper(prev, value.getValue())) {
                     // for single value attributes loaded[numDocs] is used
                     // for default value but we don't want to add an
                     // invalid docId to the posting list.
@@ -267,8 +281,7 @@ void
 PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
 updatePostings(PostingMap &changePost)
 {
-    auto cmp = _es.make_folded_comparator();
-    updatePostings(changePost, cmp);
+    updatePostings(changePost, _es.get_folded_comparator());
 }
 
 
@@ -276,11 +289,9 @@ template <typename P, typename LoadedVector, typename LoadedValueType,
           typename EnumStoreType>
 void
 PostingListAttributeSubBase<P, LoadedVector, LoadedValueType, EnumStoreType>::
-clearPostings(attribute::IAttributeVector::EnumHandle eidx,
-              uint32_t fromLid, uint32_t toLid)
+clearPostings(attribute::IAttributeVector::EnumHandle eidx, uint32_t fromLid, uint32_t toLid)
 {
-    auto cmp = _es.make_folded_comparator();
-    clearPostings(eidx, fromLid, toLid, cmp);
+    clearPostings(eidx, fromLid, toLid, _es.get_folded_comparator());
 }
 
 

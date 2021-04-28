@@ -18,16 +18,20 @@ import java.nio.ByteBuffer;
  */
 public final class WeakAndItem extends NonReducibleCompositeItem {
 
+    /** The default N used if none is specified: 100 */
+    public static final int defaultN = 100;
+
     private int n;
     private String index;
     private int scoreThreshold = 0;
 
-    public ItemType getItemType() {
-        return ItemType.WEAK_AND;
+    /** Creates a WAND item with default N */
+    public WeakAndItem() {
+        this(defaultN);
     }
 
-    public String getName() {
-        return "WAND";
+    public WeakAndItem(int N) {
+        this("", N);
     }
 
     /**
@@ -42,50 +46,37 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
         this.n = n;
         this.index = (index == null) ? "" : index;
     }
-    public WeakAndItem(int N) {
-        this("", N);
-    }
 
-    /** Sets the index name of all subitems of this */
+    @Override
+    public ItemType getItemType() { return ItemType.WEAK_AND; }
+
+    @Override
+    public String getName() { return "WEAKAND"; }
+
+    @Override
     public void setIndexName(String index) {
         String toSet = (index == null) ? "" : index;
         super.setIndexName(toSet);
         this.index = toSet;
     }
 
-    public String getIndexName() {
-        return index;
-    }
+    public String getIndexName() { return index; }
 
     /** Appends the heading of this string - <code>[getName()]([limit]) </code> */
+    @Override
     protected void appendHeadingString(StringBuilder buffer) {
         buffer.append(getName());
         buffer.append("(");
         buffer.append(n);
-        buffer.append(")");
-        buffer.append(" ");
+        buffer.append(") ");
     }
 
-    /** The default N used if none is specified: 100 */
-    public static final int defaultN = 100;
+    public int getN() { return n; }
 
-    /** Creates a WAND item with default N */
-    public WeakAndItem() {
-        this(defaultN);
-    }
-
-    public int getN() {
-        return n;
-    }
-
-    public void setN(int N) {
-        this.n = N;
-    }
+    public void setN(int N) { this.n = N; }
 
     @Deprecated // TODO: Remove on Vespa 8
-    public int getScoreThreshold() {
-        return scoreThreshold;
-    }
+    public int getScoreThreshold() { return scoreThreshold; }
 
     /**
      * Noop.
@@ -93,9 +84,7 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
      * @deprecated has no effect
      */
     @Deprecated // TODO: Remove on Vespa 8
-    public void setScoreThreshold(int scoreThreshold) {
-        this.scoreThreshold = scoreThreshold;
-    }
+    public void setScoreThreshold(int scoreThreshold) { this.scoreThreshold = scoreThreshold; }
 
     @Override
     protected void encodeThis(ByteBuffer buffer) {
@@ -111,9 +100,7 @@ public final class WeakAndItem extends NonReducibleCompositeItem {
     }
 
     @Override
-    public int hashCode() {
-        return super.hashCode() + 31 * n;
-    }
+    public int hashCode() { return super.hashCode() + 31 * n; }
 
     /** Returns whether this item is of the same class and contains the same state as the given item. */
     @Override

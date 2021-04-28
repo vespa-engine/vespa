@@ -12,6 +12,10 @@ import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeOwne
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeRepositoryNode;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeState;
 import com.yahoo.vespa.hosted.controller.api.integration.noderepository.NodeType;
+import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest;
+import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestSource;
+import com.yahoo.vespa.hosted.controller.api.integration.vcmr.HostAction;
+import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerTest;
 import org.intellij.lang.annotations.Language;
@@ -19,6 +23,8 @@ import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.time.Instant;
+import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,11 +41,14 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
         addUserToHostedOperatorRole(operator);
         tester.serviceRegistry().configServer().nodeRepository().addNodes(ZoneId.from("prod.us-east-3"), createNodes());
         tester.serviceRegistry().configServer().nodeRepository().putNodes(ZoneId.from("prod.us-east-3"), createNode());
+        tester.controller().curator().writeChangeRequest(createChangeRequest());
+
     }
 
     @Test
     public void test_api() {
         assertFile(new Request("http://localhost:8080/changemanagement/v1/assessment", "{\"zone\":\"prod.us-east-3\", \"hosts\": [\"host1\"]}", Request.Method.POST), "initial.json");
+        assertFile(new Request("http://localhost:8080/changemanagement/v1/vcmr"), "vcmrs.json");
     }
 
     private void assertResponse(Request request, @Language("JSON") String body, int statusCode) {
@@ -56,6 +65,28 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
         return new Node.Builder()
                 .hostname(HostName.from("host1"))
                 .build();
+    }
+
+    private VespaChangeRequest createChangeRequest() {
+        var instant = Instant.ofEpochMilli(9001);
+        var date = ZonedDateTime.ofInstant(instant, java.time.ZoneId.of("UTC"));
+        var source = new ChangeRequestSource("aws", "id321", "url", ChangeRequestSource.Status.STARTED, date, date);
+        var actionPlan = List.of(
+                new HostAction("host1", HostAction.State.RETIRING, instant),
+                new HostAction("host2", HostAction.State.RETIRED, instant)
+        );
+
+        return new VespaChangeRequest(
+                "id123",
+                source,
+                List.of("switch1"),
+                List.of("host1", "host2"),
+                ChangeRequest.Approval.APPROVED,
+                ChangeRequest.Impact.VERY_HIGH,
+                VespaChangeRequest.Status.IN_PROGRESS,
+                actionPlan,
+                ZoneId.defaultId()
+        );
     }
 
     private List<NodeRepositoryNode> createNodes() {

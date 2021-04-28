@@ -5,6 +5,7 @@ import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.handler.OverloadException;
 import com.yahoo.jdisc.http.HttpRequest.Method;
+import org.eclipse.jetty.server.Request;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
@@ -20,7 +21,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
-import static com.yahoo.jdisc.http.server.jetty.HttpServletRequestUtils.getConnection;
+import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnector;
 
 /**
  * @author Simon Thoresen Hult
@@ -85,7 +86,7 @@ class JDiscHttpServlet extends HttpServlet {
     @Override
     protected void service(HttpServletRequest request, HttpServletResponse response) 
             throws ServletException, IOException {
-        request.setAttribute(JDiscServerConnector.REQUEST_ATTRIBUTE, getConnector(request));
+        request.setAttribute(JDiscServerConnector.REQUEST_ATTRIBUTE, getConnector((Request) request));
 
         Metric.Context metricContext = getMetricContext(request);
         context.metric.add(MetricDefinitions.NUM_REQUESTS, 1, metricContext);
@@ -101,10 +102,6 @@ class JDiscHttpServlet extends HttpServlet {
             // Divergence from HTTP / Servlet spec: JDisc returns 405 for both unknown and known (but unsupported) methods.
             response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED);
         }
-    }
-
-    static JDiscServerConnector getConnector(HttpServletRequest request) {
-        return (JDiscServerConnector)getConnection(request).getConnector();
     }
 
     private void dispatchHttpRequest(HttpServletRequest request, HttpServletResponse response) throws IOException {

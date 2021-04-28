@@ -4,11 +4,7 @@
 
 #include "indexsearchable.h"
 
-namespace search {
-    namespace queryeval {
-        class ISourceSelector;
-    }
-}
+namespace search::queryeval { class ISourceSelector; }
 namespace searchcorespi {
 
 /**

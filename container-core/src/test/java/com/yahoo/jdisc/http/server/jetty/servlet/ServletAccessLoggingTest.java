@@ -7,8 +7,7 @@ import com.google.inject.util.Modules;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.RequestLog;
 import com.yahoo.container.logging.RequestLogEntry;
-import com.yahoo.jdisc.http.server.jetty.TestDriver;
-import com.yahoo.jdisc.http.server.jetty.TestDrivers;
+import com.yahoo.jdisc.http.server.jetty.JettyTestDriver;
 import org.junit.Test;
 import org.mockito.verification.VerificationMode;
 
@@ -30,7 +29,7 @@ public class ServletAccessLoggingTest extends ServletTestBase {
     @Test
     public void accessLogIsInvokedForNonJDiscServlet() throws Exception {
         final AccessLog accessLog = mock(AccessLog.class);
-        final TestDriver testDriver = newTestDriver(accessLog);
+        final JettyTestDriver testDriver = newTestDriver(accessLog);
         httpGet(testDriver, TestServlet.PATH).execute();
         verifyCallsLog(accessLog, timeout(MAX_LOG_WAIT_TIME_MILLIS).times(1));
     }
@@ -38,7 +37,7 @@ public class ServletAccessLoggingTest extends ServletTestBase {
     @Test
     public void accessLogIsInvokedForJDiscServlet() throws Exception {
         final AccessLog accessLog = mock(AccessLog.class);
-        final TestDriver testDriver = newTestDriver(accessLog);
+        final JettyTestDriver testDriver = newTestDriver(accessLog);
         testDriver.client().newGet("/status.html").execute();
         verifyCallsLog(accessLog, timeout(MAX_LOG_WAIT_TIME_MILLIS).times(1));
     }
@@ -47,8 +46,8 @@ public class ServletAccessLoggingTest extends ServletTestBase {
         verify(requestLog, verificationMode).log(any(RequestLogEntry.class));
     }
 
-    private TestDriver newTestDriver(RequestLog requestLog) throws IOException {
-        return TestDrivers.newInstance(dummyRequestHandler, bindings(requestLog));
+    private JettyTestDriver newTestDriver(RequestLog requestLog) throws IOException {
+        return JettyTestDriver.newInstance(dummyRequestHandler, bindings(requestLog));
     }
 
     private Module bindings(RequestLog requestLog) {

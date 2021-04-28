@@ -45,7 +45,7 @@ GenericConfig = element config {
     attribute name { text },
     attribute namespace { text }?, # TODO: Remove in Vespa 8
     attribute version { text }?,
-    anyElement +
+    anyElement*
 }
 
 ComponentSpec =

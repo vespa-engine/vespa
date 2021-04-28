@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.config.subscription.impl;
 
 import com.yahoo.config.ConfigInstance;
@@ -47,7 +47,6 @@ public class JRTConfigRequester implements RequestWaiter {
     private int fatalFailures = 0; // independent of transientFailures
     private int transientFailures = 0;  // independent of fatalFailures
     private final ScheduledThreadPoolExecutor scheduler;
-    private Instant suspendWarningLogged = Instant.MIN;
     private Instant noApplicationWarningLogged = Instant.MIN;
     private static final Duration delayBetweenWarnings = Duration.ofSeconds(60);
     private final ConnectionPool connectionPool;
@@ -196,11 +195,8 @@ public class JRTConfigRequester implements RequestWaiter {
                                          long delay,
                                          Connection connection) {
         transientFailures++;
-        if (suspendWarningLogged.isBefore(Instant.now().minus(delayBetweenWarnings))) {
-            log.log(INFO, "Connection to " + connection.getAddress() +
-                    " failed or timed out, clients will keep existing config, will keep trying.");
-            suspendWarningLogged = Instant.now();
-        }
+        log.log(INFO, "Connection to " + connection.getAddress() +
+                      " failed or timed out, clients will keep existing config, will keep trying.");
         if (sub.getState() != ConfigSubscription.State.OPEN) return;
         scheduleNextRequest(jrtReq, sub, delay, calculateErrorTimeout());
     }
@@ -237,7 +233,6 @@ public class JRTConfigRequester implements RequestWaiter {
         // Reset counters pertaining to error handling here
         fatalFailures = 0;
         transientFailures = 0;
-        suspendWarningLogged = Instant.MIN;
         noApplicationWarningLogged = Instant.MIN;
         connection.setSuccess();
         sub.setLastCallBackOKTS(Instant.now());
@@ -289,7 +284,6 @@ public class JRTConfigRequester implements RequestWaiter {
 
     public void close() {
         // Fake that we have logged to avoid printing warnings after this
-        suspendWarningLogged = Instant.now();
         noApplicationWarningLogged = Instant.now();
         if (configSourceSet != null) {
             managedPool.release(configSourceSet);

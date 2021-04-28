@@ -49,7 +49,7 @@ class UriBindingsValidator extends Validator {
         if (binding.scheme().equals("https")) {
             String message = createErrorMessage(
                     binding, "'https' bindings are deprecated, use 'http' instead to bind to both http and https traffic.");
-            deployState.getDeployLogger().log(Level.WARNING, message);
+            deployState.getDeployLogger().logApplicationPackage(Level.WARNING, message);
         }
     }
 

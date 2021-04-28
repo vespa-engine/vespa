@@ -40,6 +40,9 @@ public abstract class HttpResponse {
     /** Marshals this response to the network layer. The caller is responsible for flushing and closing outputStream. */
     public abstract void render(OutputStream outputStream) throws IOException;
 
+    /** The amount of content bytes this response may have in-flight (if positive) before response rendering blocks. */
+    public long maxPendingBytes() { return -1; }
+
     /**
      * Returns the numeric HTTP status code, e.g. 200, 404 and so on.
      *

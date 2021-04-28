@@ -82,7 +82,7 @@ public class DomHandlerBuilder extends VespaDomBuilder.DomConfigProducerBuilder<
             for (BindingPattern serverBinding : handler.getServerBindings()) {
                 if (serverBinding.hasSamePattern(binding)) {
                     handler.removeServerBinding(serverBinding);
-                    log.log(INFO, "Binding '" + binding.patternString() + "' was already in use by handler '" +
+                    log.logApplicationPackage(INFO, "Binding '" + binding.patternString() + "' was already in use by handler '" +
                             handler.getComponentId() + "', but will now be taken over by handler: " + newHandler.getComponentId());
 
                 }

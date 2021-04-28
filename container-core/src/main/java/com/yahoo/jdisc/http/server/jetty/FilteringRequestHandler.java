@@ -2,12 +2,15 @@
 package com.yahoo.jdisc.http.server.jetty;
 
 import com.google.common.base.Preconditions;
+import com.yahoo.container.jdisc.RequestHandlerSpec;
+import com.yahoo.container.jdisc.HttpRequestHandler;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.BindingNotFoundException;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
+import com.yahoo.jdisc.handler.DelegatedRequestHandler;
 import com.yahoo.jdisc.handler.RequestDeniedException;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
@@ -15,9 +18,9 @@ import com.yahoo.jdisc.http.HttpRequest;
 import com.yahoo.jdisc.http.filter.RequestFilter;
 import com.yahoo.jdisc.http.filter.ResponseFilter;
 
-import javax.servlet.http.HttpServletRequest;
 import java.nio.ByteBuffer;
 import java.util.Objects;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -42,11 +45,11 @@ class FilteringRequestHandler extends AbstractRequestHandler {
     };
 
     private final FilterResolver filterResolver;
-    private final HttpServletRequest servletRequest;
+    private final org.eclipse.jetty.server.Request jettyRequest;
 
-    public FilteringRequestHandler(FilterResolver filterResolver, HttpServletRequest servletRequest) {
+    public FilteringRequestHandler(FilterResolver filterResolver, org.eclipse.jetty.server.Request jettyRequest) {
         this.filterResolver = filterResolver;
-        this.servletRequest = servletRequest;
+        this.jettyRequest = jettyRequest;
     }
 
     @Override
@@ -54,9 +57,9 @@ class FilteringRequestHandler extends AbstractRequestHandler {
         Preconditions.checkArgument(request instanceof HttpRequest, "Expected HttpRequest, got " + request);
         Objects.requireNonNull(originalResponseHandler, "responseHandler");
 
-        RequestFilter requestFilter = filterResolver.resolveRequestFilter(servletRequest, request.getUri())
+        RequestFilter requestFilter = filterResolver.resolveRequestFilter(jettyRequest, request.getUri())
                 .orElse(null);
-        ResponseFilter responseFilter = filterResolver.resolveResponseFilter(servletRequest, request.getUri())
+        ResponseFilter responseFilter = filterResolver.resolveResponseFilter(jettyRequest, request.getUri())
                 .orElse(null);
 
         // Not using request.connect() here - it adds logic for error handling that we'd rather leave to the framework.
@@ -65,6 +68,9 @@ class FilteringRequestHandler extends AbstractRequestHandler {
         if (resolvedRequestHandler == null) {
             throw new BindingNotFoundException(request.getUri());
         }
+
+        getRequestHandlerSpec(resolvedRequestHandler)
+                .ifPresent(requestHandlerSpec -> request.context().put(RequestHandlerSpec.ATTRIBUTE_NAME, requestHandlerSpec));
 
         RequestHandler requestHandler = new ReferenceCountingRequestHandler(resolvedRequestHandler);
 
@@ -88,6 +94,18 @@ class FilteringRequestHandler extends AbstractRequestHandler {
             throw new RequestDeniedException(request);
         }
         return contentChannel;
+    }
+
+    private Optional<RequestHandlerSpec> getRequestHandlerSpec(RequestHandler resolvedRequestHandler) {
+        RequestHandler delegate = resolvedRequestHandler;
+        if (delegate instanceof DelegatedRequestHandler) {
+            delegate = ((DelegatedRequestHandler) delegate).getDelegateRecursive();
+        }
+        if(delegate instanceof HttpRequestHandler) {
+            return Optional.ofNullable(((HttpRequestHandler) delegate).requestHandlerSpec());
+        } else {
+            return Optional.empty();
+        }
     }
 
     private static class FilteringResponseHandler implements ResponseHandler {

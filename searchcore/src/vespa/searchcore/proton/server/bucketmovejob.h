@@ -125,7 +125,6 @@ public:
 
     // IMaintenanceJob API
     bool run() override;
-    void onStop() override { }
 
     // IClusterStateChangedHandler API
     void notifyClusterStateChanged(const std::shared_ptr<IBucketStateCalculator> &newCalc) override;

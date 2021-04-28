@@ -5,31 +5,25 @@ import com.yahoo.component.Version;
 import com.yahoo.vespa.hosted.provision.Node;
 
 import java.util.Objects;
+import java.util.function.Predicate;
 
 /**
  * Filter nodes by their OS version.
  *
  * @author mpolden
  */
-public class NodeOsVersionFilter extends NodeFilter {
+public class NodeOsVersionFilter {
 
-    private final Version version;
+    private NodeOsVersionFilter() {}
 
-    private NodeOsVersionFilter(Version version, NodeFilter next) {
-        super(next);
-        this.version = Objects.requireNonNull(version, "version cannot be null");
+    private static Predicate<Node> makePredicate(Version version) {
+        Objects.requireNonNull(version, "version cannot be null");
+        if (version.isEmpty()) return node -> true;
+        return node -> node.status().osVersion().matches(version);
     }
 
-    @Override
-    public boolean matches(Node node) {
-        if (!version.isEmpty() && !node.status().osVersion().matches(version)) {
-            return false;
-        }
-        return nextMatches(node);
-    }
-
-    public static NodeOsVersionFilter from(String version, NodeFilter filter) {
-        return new NodeOsVersionFilter(Version.fromString(version), filter);
+    public static Predicate<Node> from(String version) {
+        return makePredicate(Version.fromString(version));
     }
 
 }

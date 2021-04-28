@@ -4,6 +4,7 @@
 #include "clusterinformation.h"
 #include "pendingclusterstate.h"
 #include "distributor_bucket_space.h"
+#include "stripe_access_guard.h"
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
 #include <algorithm>
@@ -17,15 +18,15 @@ using lib::Node;
 using lib::NodeType;
 using lib::NodeState;
 
-PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(const PendingClusterState &pendingClusterState,
+PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(document::BucketSpace bucket_space,
                                                                DistributorBucketSpace &distributorBucketSpace,
                                                                bool distributionChanged,
                                                                const OutdatedNodes &outdatedNodes,
                                                                std::shared_ptr<const ClusterInformation> clusterInfo,
                                                                const lib::ClusterState &newClusterState,
                                                                api::Timestamp creationTimestamp)
-    : _entries(),
-      _iter(0),
+    : _bucket_space(bucket_space),
+      _entries(),
       _removedBuckets(),
       _missingEntries(),
       _clusterInfo(std::move(clusterInfo)),
@@ -33,7 +34,6 @@ PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(const PendingClus
       _prevClusterState(distributorBucketSpace.getClusterState()),
       _newClusterState(newClusterState),
       _creationTimestamp(creationTimestamp),
-      _pendingClusterState(pendingClusterState),
       _distributorBucketSpace(distributorBucketSpace),
       _distributorIndex(_clusterInfo->getDistributorIndex()),
       _bucketOwnershipTransfer(distributionChanged),
@@ -53,7 +53,7 @@ PendingBucketSpaceDbTransition::PendingBucketSpaceDbTransition(const PendingClus
 PendingBucketSpaceDbTransition::~PendingBucketSpaceDbTransition() = default;
 
 PendingBucketSpaceDbTransition::Range
-PendingBucketSpaceDbTransition::skipAllForSameBucket()
+PendingBucketSpaceDbTransition::DbMerger::skipAllForSameBucket()
 {
     Range r(_iter, _iter);
 
@@ -68,7 +68,7 @@ PendingBucketSpaceDbTransition::skipAllForSameBucket()
 }
 
 std::vector<BucketCopy>
-PendingBucketSpaceDbTransition::getCopiesThatAreNewOrAltered(BucketDatabase::Entry& info, const Range& range)
+PendingBucketSpaceDbTransition::DbMerger::getCopiesThatAreNewOrAltered(BucketDatabase::Entry& info, const Range& range)
 {
     std::vector<BucketCopy> copiesToAdd;
     for (uint32_t i = range.first; i < range.second; ++i) {
@@ -83,28 +83,21 @@ PendingBucketSpaceDbTransition::getCopiesThatAreNewOrAltered(BucketDatabase::Ent
 }
 
 void
-PendingBucketSpaceDbTransition::insertInfo(BucketDatabase::Entry& info, const Range& range)
+PendingBucketSpaceDbTransition::DbMerger::insertInfo(BucketDatabase::Entry& info, const Range& range)
 {
     std::vector<BucketCopy> copiesToAddOrUpdate(
             getCopiesThatAreNewOrAltered(info, range));
 
-    const auto &dist(_distributorBucketSpace.getDistribution());
     std::vector<uint16_t> order(
-            dist.getIdealStorageNodes(
-                    _newClusterState,
+            _distribution.getIdealStorageNodes(
+                    _new_state,
                     _entries[range.first].bucket_id(),
-                    _clusterInfo->getStorageUpStates()));
+                    _storage_up_states));
     info->addNodes(copiesToAddOrUpdate, order, TrustedUpdate::DEFER);
 }
 
-std::string
-PendingBucketSpaceDbTransition::requestNodesToString()
-{
-    return _pendingClusterState.requestNodesToString();
-}
-
 bool
-PendingBucketSpaceDbTransition::removeCopiesFromNodesThatWereRequested(BucketDatabase::Entry& e, const document::BucketId& bucketId)
+PendingBucketSpaceDbTransition::DbMerger::removeCopiesFromNodesThatWereRequested(BucketDatabase::Entry& e, const document::BucketId& bucketId)
 {
     bool updated = false;
     for (uint32_t i = 0; i < e->getNodeCount();) {
@@ -116,7 +109,7 @@ PendingBucketSpaceDbTransition::removeCopiesFromNodesThatWereRequested(BucketDat
         // mark a single remaining replica as trusted even though there might
         // be one or more additional replicas pending merge into the database.
         if (nodeIsOutdated(entryNode)
-            && (info.getTimestamp() < _creationTimestamp)
+            && (info.getTimestamp() < _creation_timestamp)
             && e->removeNode(entryNode, TrustedUpdate::DEFER))
         {
             LOG(spam,
@@ -133,21 +126,21 @@ PendingBucketSpaceDbTransition::removeCopiesFromNodesThatWereRequested(BucketDat
 }
 
 bool
-PendingBucketSpaceDbTransition::databaseIteratorHasPassedBucketInfoIterator(uint64_t bucket_key) const
+PendingBucketSpaceDbTransition::DbMerger::databaseIteratorHasPassedBucketInfoIterator(uint64_t bucket_key) const
 {
     return ((_iter < _entries.size())
             && (_entries[_iter].bucket_key < bucket_key));
 }
 
 bool
-PendingBucketSpaceDbTransition::bucketInfoIteratorPointsToBucket(uint64_t bucket_key) const
+PendingBucketSpaceDbTransition::DbMerger::bucketInfoIteratorPointsToBucket(uint64_t bucket_key) const
 {
     return _iter < _entries.size() && _entries[_iter].bucket_key == bucket_key;
 }
 
 using MergeResult = BucketDatabase::MergingProcessor::Result;
 
-MergeResult PendingBucketSpaceDbTransition::merge(BucketDatabase::Merger& merger) {
+MergeResult PendingBucketSpaceDbTransition::DbMerger::merge(BucketDatabase::Merger& merger) {
     const uint64_t bucket_key = merger.bucket_key();
 
     while (databaseIteratorHasPassedBucketInfoIterator(bucket_key)) {
@@ -158,9 +151,7 @@ MergeResult PendingBucketSpaceDbTransition::merge(BucketDatabase::Merger& merger
     auto& e = merger.current_entry();
     document::BucketId bucketId(e.getBucketId());
 
-    LOG(spam,
-        "Before merging info from nodes [%s], bucket %s had info %s",
-        requestNodesToString().c_str(),
+    LOG(spam, "Before merging info, bucket %s had info %s",
         bucketId.toString().c_str(),
         e.getBucketInfo().toString().c_str());
 
@@ -185,14 +176,14 @@ MergeResult PendingBucketSpaceDbTransition::merge(BucketDatabase::Merger& merger
     return MergeResult::KeepUnchanged;
 }
 
-void PendingBucketSpaceDbTransition::insert_remaining_at_end(BucketDatabase::TrailingInserter& inserter) {
+void PendingBucketSpaceDbTransition::DbMerger::insert_remaining_at_end(BucketDatabase::TrailingInserter& inserter) {
     while (_iter < _entries.size()) {
         addToInserter(inserter, skipAllForSameBucket());
     }
 }
 
 void
-PendingBucketSpaceDbTransition::addToMerger(BucketDatabase::Merger& merger, const Range& range)
+PendingBucketSpaceDbTransition::DbMerger::addToMerger(BucketDatabase::Merger& merger, const Range& range)
 {
     const auto bucket_id = _entries[range.first].bucket_id();
     LOG(spam, "Adding new bucket %s with %d copies",
@@ -202,16 +193,14 @@ PendingBucketSpaceDbTransition::addToMerger(BucketDatabase::Merger& merger, cons
     BucketDatabase::Entry e(bucket_id, BucketInfo());
     insertInfo(e, range);
     if (e->getLastGarbageCollectionTime() == 0) {
-        e->setLastGarbageCollectionTime(
-                framework::MicroSecTime(_creationTimestamp)
-                        .getSeconds().getTime());
+        e->setLastGarbageCollectionTime(framework::MicroSecTime(_creation_timestamp).getSeconds().getTime());
     }
     e.getBucketInfo().updateTrusted();
     merger.insert_before_current(bucket_id, e);
 }
 
 void
-PendingBucketSpaceDbTransition::addToInserter(BucketDatabase::TrailingInserter& inserter, const Range& range)
+PendingBucketSpaceDbTransition::DbMerger::addToInserter(BucketDatabase::TrailingInserter& inserter, const Range& range)
 {
     // TODO dedupe
     const auto bucket_id = _entries[range.first].bucket_id();
@@ -222,20 +211,32 @@ PendingBucketSpaceDbTransition::addToInserter(BucketDatabase::TrailingInserter& 
     BucketDatabase::Entry e(bucket_id, BucketInfo());
     insertInfo(e, range);
     if (e->getLastGarbageCollectionTime() == 0) {
-        e->setLastGarbageCollectionTime(
-                framework::MicroSecTime(_creationTimestamp)
-                        .getSeconds().getTime());
+        e->setLastGarbageCollectionTime(framework::MicroSecTime(_creation_timestamp).getSeconds().getTime());
     }
     e.getBucketInfo().updateTrusted();
     inserter.insert_at_end(bucket_id, e);
 }
 
+// TODO STRIPE remove legacy single stripe stuff
 void
 PendingBucketSpaceDbTransition::mergeIntoBucketDatabase()
 {
     BucketDatabase &db(_distributorBucketSpace.getBucketDatabase());
     std::sort(_entries.begin(), _entries.end());
-    db.merge(*this);
+
+    const auto& dist = _distributorBucketSpace.getDistribution();
+    DbMerger merger(_creationTimestamp, dist, _newClusterState, _clusterInfo->getStorageUpStates(), _outdatedNodes, _entries);
+
+    db.merge(merger);
+}
+
+void
+PendingBucketSpaceDbTransition::merge_into_bucket_databases(StripeAccessGuard& guard)
+{
+    std::sort(_entries.begin(), _entries.end());
+    const auto& dist = _distributorBucketSpace.getDistribution();
+    guard.merge_entries_into_db(_bucket_space, _creationTimestamp, dist, _newClusterState,
+                                _clusterInfo->getStorageUpStates(), _outdatedNodes, _entries);
 }
 
 void

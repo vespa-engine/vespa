@@ -1,7 +1,6 @@
 // Copyright 2019 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller.api.application.v4.model;
 
-import java.util.HashMap;
 import java.util.Map;
 import java.util.Optional;
 
@@ -16,15 +15,16 @@ public class ClusterMetrics {
     public static final String DOCUMENT_COUNT = "documentCount";
     public static final String FEED_LATENCY = "feedLatency";
     public static final String QUERY_LATENCY  = "queryLatency";
+    public static final String FEEDING_BLOCKED  = "feedingBlocked";
 
     private final String clusterId;
     private final String clusterType;
     private final Map<String, Double> metrics;
 
-    public ClusterMetrics(String clusterId, String clusterType) {
+    public ClusterMetrics(String clusterId, String clusterType, Map<String, Double> metrics) {
         this.clusterId = clusterId;
         this.clusterType = clusterType;
-        this.metrics = new HashMap<>();
+        this.metrics = Map.copyOf(metrics);
     }
 
     public String getClusterId() {
@@ -55,9 +55,8 @@ public class ClusterMetrics {
         return Optional.ofNullable(metrics.get(QUERY_LATENCY));
     }
 
-    public ClusterMetrics addMetric(String name, double value) {
-        metrics.put(name, value);
-        return this;
+    public Optional<Double> feedingBlocked() {
+        return Optional.ofNullable(metrics.get(FEEDING_BLOCKED));
     }
 
 }

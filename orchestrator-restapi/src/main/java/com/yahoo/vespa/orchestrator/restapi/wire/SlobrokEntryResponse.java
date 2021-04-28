@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.restapi.wire;
 
+import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
@@ -17,7 +18,8 @@ public class SlobrokEntryResponse {
     @JsonProperty("spec")
     public final String spec;
 
-    public SlobrokEntryResponse(String name, String spec) {
+    @JsonCreator
+    public SlobrokEntryResponse(@JsonProperty("name") String name, @JsonProperty("spec") String spec) {
         this.name = name;
         this.spec = spec;
     }

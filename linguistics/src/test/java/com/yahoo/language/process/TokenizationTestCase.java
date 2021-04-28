@@ -22,7 +22,7 @@ import static org.junit.Assert.fail;
 /**
  * Test of tokenization, with stemming and accent removal
  *
- * @author <a href="mailto:mathiasm@yahoo-inc.com">Mathias Mølster Lidal</a>
+ * @author Mathias Mølster Lidal
  */
 public class TokenizationTestCase {
 
@@ -54,26 +54,24 @@ public class TokenizationTestCase {
     public void testDoubleWidthTokenization() {
         // "sony"
         assertTokenize("\uFF53\uFF4F\uFF4E\uFF59", Language.ENGLISH, StemMode.NONE, false,
-                       Arrays.asList("sony"), null);
+                       List.of("sony"), null);
         assertTokenize("\uFF53\uFF4F\uFF4E\uFF59", Language.ENGLISH, StemMode.SHORTEST, false,
-                       Arrays.asList("sony"), null);
+                       List.of("sony"), null);
         // "SONY"
         assertTokenize("\uFF33\uFF2F\uFF2E\uFF39", Language.ENGLISH, StemMode.NONE, false,
-                       Arrays.asList("sony"), null);
+                       List.of("sony"), null);
         assertTokenize("\uFF33\uFF2F\uFF2E\uFF39", Language.ENGLISH, StemMode.SHORTEST, false,
-                       Arrays.asList("sony"), null);
+                       List.of("sony"), null);
         // "on"
         assertTokenize("\uFF4F\uFF4E", Language.ENGLISH, StemMode.NONE, false,
-                       Arrays.asList("on"), null);
+                       List.of("on"), null);
         assertTokenize("\uFF4F\uFF4E", Language.ENGLISH, StemMode.SHORTEST, false,
-                       Arrays.asList("on"), null);
+                       List.of("on"), null);
         // "ON"
         assertTokenize("\uFF2F\uFF2E", Language.ENGLISH, StemMode.NONE, false,
-                       Arrays.asList("on"), null);
+                       List.of("on"), null);
         assertTokenize("\uFF2F\uFF2E", Language.ENGLISH, StemMode.SHORTEST, false,
-                       Arrays.asList("on"), null);
-
-
+                       List.of("on"), null);
     }
 
     @Test

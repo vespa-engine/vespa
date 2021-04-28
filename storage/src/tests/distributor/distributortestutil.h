@@ -17,7 +17,7 @@ namespace framework { struct TickingThreadPool; }
 
 namespace distributor {
 
-class BucketDBUpdater;
+class StripeBucketDBUpdater;
 class Distributor;
 class DistributorBucketSpace;
 class DistributorBucketSpaceRepo;
@@ -112,7 +112,7 @@ public:
                    int idx = -1,
                    api::ReturnCode::Result result = api::ReturnCode::OK);
 
-    BucketDBUpdater& getBucketDBUpdater();
+    StripeBucketDBUpdater& getBucketDBUpdater();
     IdealStateManager& getIdealStateManager();
     ExternalOperationHandler& getExternalOperationHandler();
     storage::distributor::DistributorStripeComponent& distributor_component();

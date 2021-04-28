@@ -40,8 +40,11 @@ public class RestApiException extends RuntimeException {
     public int statusCode() { return statusCode; }
     public HttpResponse response() { return response; }
 
-    public static class NotFoundException extends RestApiException {
-        public NotFoundException() { super(ErrorResponse::notFoundError, "Not Found", null); }
+    public static class NotFound extends RestApiException {
+        public NotFound() { this(null, null); }
+        public NotFound(Throwable cause) { this(cause.getMessage(), cause); }
+        public NotFound(String message) { this(message, null); }
+        public NotFound(String message, Throwable cause) { super(ErrorResponse::notFoundError, message, cause); }
     }
 
     public static class MethodNotAllowed extends RestApiException {
@@ -52,17 +55,25 @@ public class RestApiException extends RuntimeException {
     }
 
     public static class BadRequest extends RestApiException {
-        public BadRequest(String message) { super(ErrorResponse::badRequest, message, null); }
+        public BadRequest(String message) { this(message, null); }
+        public BadRequest(Throwable cause) { this(cause.getMessage(), cause); }
         public BadRequest(String message, Throwable cause) { super(ErrorResponse::badRequest, message, cause); }
     }
 
     public static class InternalServerError extends RestApiException {
-        public InternalServerError(String message) { super(ErrorResponse::internalServerError, message, null); }
+        public InternalServerError(String message) { this(message, null); }
+        public InternalServerError(Throwable cause) { this(cause.getMessage(), cause); }
         public InternalServerError(String message, Throwable cause) { super(ErrorResponse::internalServerError, message, cause); }
     }
 
     public static class Forbidden extends RestApiException {
         public Forbidden(String message) { super(ErrorResponse::forbidden, message, null); }
         public Forbidden(String message, Throwable cause) { super(ErrorResponse::forbidden, message, cause); }
+    }
+
+    public static class Conflict extends RestApiException {
+        public Conflict() { this("Conflict", null); }
+        public Conflict(String message) { this(message, null); }
+        public Conflict(String message, Throwable cause) { super(ErrorResponse::conflict, message, cause); }
     }
 }

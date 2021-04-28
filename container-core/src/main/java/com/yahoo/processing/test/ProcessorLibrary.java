@@ -169,7 +169,6 @@ public class ProcessorLibrary {
 
             List<FutureResponse> futureResponses = new ArrayList<>(chains.size());
             for (Chain<? extends Processor> chain : chains) {
-
                 futureResponses.add(new AsyncExecution(chain, execution).process(request.clone()));
             }
             AsyncExecution.waitForAll(futureResponses, 1000);

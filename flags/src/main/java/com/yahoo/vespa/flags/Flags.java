@@ -16,7 +16,6 @@ import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.NODE_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.VESPA_VERSION;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.ZONE_ID;
@@ -46,7 +45,7 @@ public class Flags {
     private static volatile TreeMap<FlagId, FlagDefinition> flags = new TreeMap<>();
 
     public static final UnboundStringFlag ALLOCATE_OS_REQUIREMENT = defineStringFlag(
-            "allocate-os-requirement", "rhel7",
+            "allocate-os-requirement", "any",
             List.of("hakonhall"), "2021-01-26", "2021-07-26",
             "Allocations of new nodes are limited to the given host OS.  Must be one of 'rhel7', " +
             "'rhel8', or 'any'",
@@ -109,20 +108,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundStringFlag TLS_FOR_ZOOKEEPER_CLIENT_SERVER_COMMUNICATION = defineStringFlag(
-            "tls-for-zookeeper-client-server-communication", "TLS_WITH_PORT_UNIFICATION",
-            List.of("hmusum"), "2020-12-02", "2021-06-01",
-            "How to setup TLS for ZooKeeper client/server communication. Valid values are OFF, PORT_UNIFICATION, TLS_WITH_PORT_UNIFICATION, TLS_ONLY",
-            "Takes effect on restart of config server",
-            NODE_TYPE, HOSTNAME);
-
-    public static final UnboundBooleanFlag USE_TLS_FOR_ZOOKEEPER_CLIENT = defineFeatureFlag(
-            "use-tls-for-zookeeper-client", true,
-            List.of("hmusum"), "2020-12-02", "2021-05-01",
-            "Whether to use TLS for ZooKeeper clients",
-            "Takes effect on restart of process",
-            NODE_TYPE, HOSTNAME);
-    
     public static final UnboundBooleanFlag PROVISION_TENANT_ROLES = defineFeatureFlag(
             "provision-tenant-roles", false,
             List.of("tokle"), "2020-12-02", "2021-06-01",
@@ -182,7 +167,7 @@ public class Flags {
 
     public static final UnboundBooleanFlag GROUP_SUSPENSION = defineFeatureFlag(
             "group-suspension", true,
-            List.of("hakon"), "2021-01-22", "2021-04-22",
+            List.of("hakon"), "2021-01-22", "2021-05-22",
             "Allow all content nodes in a hierarchical group to suspend at the same time",
             "Takes effect on the next suspension request to the Orchestrator.",
             APPLICATION_ID);
@@ -207,15 +192,22 @@ public class Flags {
             "Takes effect on next run of S3 log sync task in host-admin",
             TENANT_ID, ZONE_ID);
 
+    public static final UnboundBooleanFlag CACHE_ACL = defineFeatureFlag(
+            "cache-acl", true,
+            List.of("hakon"), "2021-04-26", "2021-05-26",
+            "Whether host-admin should cache the ACL responses w/TTL 115s, or always ask config server.",
+            "Takes effect on next host-admin tick.",
+            ZONE_ID);
+
     public static final UnboundIntFlag CLUSTER_CONTROLLER_MAX_HEAP_SIZE_IN_MB = defineIntFlag(
             "cluster-controller-max-heap-size-in-mb", 128,
-            List.of("hmusum"), "2021-02-10", "2021-04-10",
+            List.of("hmusum"), "2021-02-10", "2021-05-15",
             "JVM max heap size for cluster controller in Mb",
             "Takes effect when restarting cluster controller");
 
     public static final UnboundIntFlag METRICS_PROXY_MAX_HEAP_SIZE_IN_MB = defineIntFlag(
             "metrics-proxy-max-heap-size-in-mb", 256,
-            List.of("hmusum"), "2021-03-01", "2021-05-01",
+            List.of("hmusum"), "2021-03-01", "2021-05-15",
             "JVM max heap size for metrics proxy in Mb",
             "Takes effect when restarting metrics proxy",
             CLUSTER_TYPE);
@@ -228,7 +220,7 @@ public class Flags {
             CLUSTER_TYPE, CLUSTER_ID);
 
     public static final UnboundStringFlag DEDICATED_CLUSTER_CONTROLLER_FLAVOR = defineStringFlag(
-            "dedicated-cluster-controller-flavor", "", List.of("jonmv"), "2021-02-25", "2021-04-25",
+            "dedicated-cluster-controller-flavor", "", List.of("jonmv"), "2021-02-25", "2021-05-25",
             "Flavor as <vpu>-<memgb>-<diskgb> to use for dedicated cluster controller nodes",
             "Takes effect immediately, for subsequent provisioning",
             APPLICATION_ID);
@@ -254,17 +246,40 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundBooleanFlag WAIT_FOR_ALL_CONFIG_SERVERS_WHEN_DELETING_APPLICATION = defineFeatureFlag(
-            "wait-for-all-config-servers-when-deleting-application", false,
-            List.of("hmusum"), "2021-03-24", "2021-06-24",
-            "Whether to wait for all participating servers to delete application on config servers (with timeout) on",
-            "Takes effect on next delete of an application");
+    public static final UnboundBooleanFlag ENABLE_JDISC_HTTP2 = defineFeatureFlag(
+            "enable-jdisc-http2", false,
+            List.of("bjorncs", "jonmv"), "2021-04-12", "2021-08-01",
+            "Whether jdisc HTTPS connectors should allow HTTP/2",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
 
-    public static final UnboundBooleanFlag REBUILD_HOST = defineFeatureFlag(
-            "rebuild-host", false,
-            List.of("mpolden"), "2021-04-09", "2021-06-01",
-            "Whether HostRebuilder should rebuild hosts marked wantToRebuild",
-            "Takes effect on next HostRebuilder maintenance run");
+    public static final UnboundBooleanFlag ENABLE_CUSTOM_ACL_MAPPING = defineFeatureFlag(
+            "enable-custom-acl-mapping", false,
+            List.of("mortent","bjorncs"), "2021-04-13", "2021-08-01",
+            "Whether access control filters should read acl request mapping from handler or use default",
+            "Takes effect at redeployment",
+            APPLICATION_ID);
+
+    public static final UnboundBooleanFlag UPGRADE_DELL_SSD_FIRMWARE = defineFeatureFlag(
+            "upgrade_dell_ssd_firmware", false,
+            List.of("andreer"), "2021-04-13", "2021-05-13",
+            "Whether to consider upgrading Dell SSD firmware",
+            "Takes effect on next host-admin tick",
+            HOSTNAME);
+
+    public static final UnboundIntFlag NUM_DISTRIBUTOR_STRIPES = defineIntFlag(
+            "num-distributor-stripes", 0,
+            List.of("geirst", "vekterli"), "2021-04-20", "2021-07-01",
+            "Specifies the number of stripes used by the distributor. When 0, legacy single stripe behavior is used.",
+            "Takes effect after distributor restart",
+            ZONE_ID, APPLICATION_ID);
+
+    public static final UnboundBooleanFlag ENABLE_ROUTING_CORE_DUMP = defineFeatureFlag(
+            "enable-routing-core-dumps", false,
+            List.of("tokle"), "2021-04-16", "2021-08-01",
+            "Whether to enable core dumps for routing layer",
+            "Takes effect on next host-admin tick",
+            HOSTNAME);
 
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,

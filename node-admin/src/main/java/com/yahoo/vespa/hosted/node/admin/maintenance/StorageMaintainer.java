@@ -173,6 +173,7 @@ public class StorageMaintainer {
     private Map<String, Object> getCoredumpNodeAttributes(NodeAgentContext context, Optional<Container> container) {
         Map<String, String> attributes = new HashMap<>();
         attributes.put("hostname", context.node().hostname());
+        attributes.put("system", context.zone().getSystemName().value());
         attributes.put("region", context.zone().getRegionName().value());
         attributes.put("environment", context.zone().getEnvironment().value());
         attributes.put("flavor", context.node().flavor());

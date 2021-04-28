@@ -9,3 +9,6 @@ logDirectoryName string default="qrs"
 
 # Max queue length of file handler
 queueSize int default=10000
+
+# Buffer size for the output stream has a default of 256k
+bufferSize int default=262144

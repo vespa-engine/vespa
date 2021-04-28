@@ -270,6 +270,8 @@ TOKEN :
 | < NORMALIZING: "normalizing" >
 | < HASH: "hash" >
 | < BTREE: "btree" >
+| < CASED: "cased" >
+| < UNCASED: "uncased" >
 | < BOLDING: "bolding" >
 | < BODY: "body" >
 | < HEADER: "header" >
@@ -587,7 +589,7 @@ void bodycfg(SDDocumentType document) : { }
  */
 void compression(SDDocumentType document, String name) :
 {
-    deployLogger.log(Level.WARNING, "'compression' for a document is deprecated and ignored");
+    deployLogger.logApplicationPackage(Level.WARNING, "'compression' for a document is deprecated and ignored");
     CompressionConfig cfg = new CompressionConfig(CompressionType.LZ4);
 }
 {
@@ -875,7 +877,7 @@ DataType dataType() :
         }
 
         if (isArrayOldStyle) {
-            deployLogger.log(Level.WARNING, "Data type syntax '" + typeName + "[]' is deprecated, use 'array<" + typeName + ">' instead.");
+            deployLogger.logApplicationPackage(Level.WARNING, "Data type syntax '" + typeName + "[]' is deprecated, use 'array<" + typeName + ">' instead.");
             type = DataType.getArray(type);
         }
         if ("tag".equalsIgnoreCase(typeName) && type instanceof WeightedSetDataType) ((WeightedSetDataType)type).setTag(true);
@@ -1257,7 +1259,7 @@ Object attributeTensorType(AttributeOperation attribute) :
     tensorType = tensorType("For attribute field '" + attribute.getName() + "'")
     {
         // TODO: Remove on Vespa 8
-        deployLogger.log(Level.WARNING, "In field '" + attribute.getName() + "': Specifying tensor type on the attribute is deprecated and has no effect.");
+        deployLogger.logApplicationPackage(Level.WARNING, "In field '" + attribute.getName() + "': Specifying tensor type on the attribute is deprecated and has no effect.");
     }
     { return null; }
 }
@@ -1530,24 +1532,25 @@ void bolding(FieldOperationContainer field) :
  */
 void dictionary(FieldOperationContainer field) :
 {
-    Dictionary.Type type;
 }
 {
-    <DICTIONARY> <COLON> type = dictionaryType()
+    <DICTIONARY>
+    ( (<COLON> dictionarySetting(field))
+    | (lbrace() (dictionarySetting(field) (<NL>)*)* <RBRACE>))
     {
-        field.addOperation(new DictionaryOperation(type));
     }
 }
 
-Dictionary.Type dictionaryType() :
+void dictionarySetting(FieldOperationContainer field) :
 {
     Dictionary.Type type;
 }
 {
-    (   <HASH>            { type = Dictionary.Type.HASH; }
-      | <BTREE>           { type = Dictionary.Type.BTREE; } )
+    (   <HASH>            { field.addOperation(new DictionaryOperation(DictionaryOperation.Operation.HASH)); }
+      | <BTREE>           { field.addOperation(new DictionaryOperation(DictionaryOperation.Operation.BTREE)); }
+      | <CASED>           { field.addOperation(new DictionaryOperation(DictionaryOperation.Operation.CASED)); }
+      | <UNCASED>           { field.addOperation(new DictionaryOperation(DictionaryOperation.Operation.UNCASED)); })
     {
-        return type;
     }
 }
 
@@ -1560,7 +1563,7 @@ void body(SDField field) : { }
 {
     <BODY>
     {
-        deployLogger.log(Level.WARNING, field + ": 'header/body' is deprecated and has no effect.");
+        deployLogger.logApplicationPackage(Level.WARNING, field + ": 'header/body' is deprecated and has no effect.");
     }
 }
 
@@ -1573,7 +1576,7 @@ void header(SDField field) : { }
 {
     <HEADER>
     {
-        deployLogger.log(Level.WARNING, field + ": 'header/body' is deprecated and has no effect.");
+        deployLogger.logApplicationPackage(Level.WARNING, field + ": 'header/body' is deprecated and has no effect.");
     }
 }
 
@@ -1624,19 +1627,21 @@ Object matchItem(FieldOperationContainer field) : { }
 
 Object matchType(FieldOperationContainer container) :
 {
-    MatchOperation field = new MatchOperation();
+    MatchOperation matchOp = new MatchOperation();
 }
 {
-    (   <MTOKEN>    { field.setMatchingType(Matching.Type.TEXT); } // Deprecated synonym to TEXT
-      | <TEXT>      { field.setMatchingType(Matching.Type.TEXT); }
-      | <WORD>      { field.setMatchingType(Matching.Type.WORD); }
-      | <EXACT>     { field.setMatchingType(Matching.Type.EXACT); }
-      | <GRAM>      { field.setMatchingType(Matching.Type.GRAM); }
-      | <PREFIX>    { field.setMatchingAlgorithm(Matching.Algorithm.PREFIX); }
-      | <SUBSTRING> { field.setMatchingAlgorithm(Matching.Algorithm.SUBSTRING); }
-      | <SUFFIX>    { field.setMatchingAlgorithm(Matching.Algorithm.SUFFIX); } )
+    (   <MTOKEN>    { matchOp.setMatchingType(Matching.Type.TEXT); } // Deprecated synonym to TEXT
+      | <TEXT>      { matchOp.setMatchingType(Matching.Type.TEXT); }
+      | <WORD>      { matchOp.setMatchingType(Matching.Type.WORD); }
+      | <EXACT>     { matchOp.setMatchingType(Matching.Type.EXACT); }
+      | <GRAM>      { matchOp.setMatchingType(Matching.Type.GRAM); }
+      | <CASED>     { matchOp.setCase(Case.CASED); }
+      | <UNCASED>   { matchOp.setCase(Case.UNCASED); }
+      | <PREFIX>    { matchOp.setMatchingAlgorithm(Matching.Algorithm.PREFIX); }
+      | <SUBSTRING> { matchOp.setMatchingAlgorithm(Matching.Algorithm.SUBSTRING); }
+      | <SUFFIX>    { matchOp.setMatchingAlgorithm(Matching.Algorithm.SUFFIX); } )
     {
-        container.addOperation(field);
+        container.addOperation(matchOp);
         return null;
     }
 }
@@ -2427,7 +2432,7 @@ void rankDegradationBinSize() :
 }
 {
     <RPBINSIZE> <COLON> freq = consumeFloat()
-    { deployLogger.log(Level.WARNING, "Specifying 'doc-frequency' in 'rank-degradation' is deprecated and has no effect."); }
+    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'doc-frequency' in 'rank-degradation' is deprecated and has no effect."); }
 }
 
 
@@ -2440,7 +2445,7 @@ void rankDegradationBinLow() :
 }
 {
     <RPBINLOW> <COLON> n = integer()
-    { deployLogger.log(Level.WARNING, "Specifying 'min-fullrank-docs' in 'rank-degradation' is deprecated and has no effect."); }
+    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'min-fullrank-docs' in 'rank-degradation' is deprecated and has no effect."); }
 }
 
 
@@ -2453,7 +2458,7 @@ void rankDegradationPosbinSize() :
 }
 {
     <RPPOSBINSIZE> <COLON> avgOcc = consumeFloat()
-    { deployLogger.log(Level.WARNING, "Specifying 'occurrences-per-doc' in 'rank-degradation' is deprecated and has no effect."); }
+    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'occurrences-per-doc' in 'rank-degradation' is deprecated and has no effect."); }
 }
 
 
@@ -2481,7 +2486,7 @@ Object rankDegradation(RankProfile profile) :
 }
 {
     ( <RANKDEGRADATIONFREQ> <COLON> freq = consumeFloat()
-    { deployLogger.log(Level.WARNING, "Specifying 'rank-degradation-frequency' in 'rank-profile' is deprecated and has no effect."); }
+    { deployLogger.logApplicationPackage(Level.WARNING, "Specifying 'rank-degradation-frequency' in 'rank-profile' is deprecated and has no effect."); }
       | <RANKDEGRADATION> lbrace() ( rankDegradationItem() (<NL>)*)+ <RBRACE>
     )
     {
@@ -2642,6 +2647,7 @@ String identifier() : { }
       | <BODY>
       | <BOLDING>
       | <BTREE>
+      | <CASED>
       | <COMPRESSION>
       | <COMPRESSIONLEVEL>
       | <COMPRESSIONTHRESHOLD>
@@ -2747,6 +2753,7 @@ String identifier() : { }
       | <TRUE>
       | <TYPE>
       | <UCA>
+      | <UNCASED>
       | <URI>
       | <UPPERBOUND>
       | <USEDOCUMENT>

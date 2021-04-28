@@ -20,7 +20,7 @@
          Copied here because vz-tenant-base does not have a parent. -->
     <properties>
         <aopalliance.version>1.0</aopalliance.version>
-        <athenz.version>1.8.49</athenz.version>
+        <athenz.version>1.10.11</athenz.version>
         <bouncycastle.version>1.65</bouncycastle.version>
         <felix.version>6.0.3</felix.version>
         <felix.log.version>1.0.1</felix.log.version>
@@ -30,7 +30,8 @@
         <javax.inject.version>1</javax.inject.version>
         <javax.servlet-api.version>3.1.0</javax.servlet-api.version>
         <jaxb.version>2.3.0</jaxb.version>
-        <jetty.version>9.4.38.v20210224</jetty.version>
+        <jetty.version>9.4.40.v20210413</jetty.version>
+        <jetty-alpn.version>1.1.3.v20160715</jetty-alpn.version>
         <junit5.version>5.7.0</junit5.version>
         <junit5.platform.version>1.7.0</junit5.platform.version>
         <org.lz4.version>1.7.1</org.lz4.version>
@@ -150,7 +151,6 @@
                                         <include>com.yahoo.vespa:configgen:*:jar:provided</include>
                                         <include>com.yahoo.vespa:container-core:*:jar:provided</include>
                                         <include>com.yahoo.vespa:container-dev:*:jar:provided</include>
-                                        <include>com.yahoo.vespa:container-di:*:jar:provided</include>
                                         <include>com.yahoo.vespa:container-disc:*:jar:provided</include>
                                         <include>com.yahoo.vespa:container-documentapi:*:jar:provided</include>
                                         <include>com.yahoo.vespa:container-jersey2:*:jar:provided</include>
@@ -177,7 +177,6 @@
                                         <include>com.yahoo.vespa:searchcore:*:jar:provided</include>
                                         <include>com.yahoo.vespa:searchlib:*:jar:provided</include>
                                         <include>com.yahoo.vespa:security-utils:*:jar:provided</include>
-                                        <include>com.yahoo.vespa:simplemetrics:*:jar:provided</include>
                                         <include>com.yahoo.vespa:statistics:*:jar:provided</include>
                                         <include>com.yahoo.vespa:vdslib:*:jar:provided</include>
                                         <include>com.yahoo.vespa:vespa-http-client:*:jar:provided</include>
@@ -236,7 +235,6 @@
                                         <include>commons-digester:commons-digester:1.8:jar:test</include>
                                         <include>io.airlift:aircompressor:0.17:jar:test</include>
                                         <include>io.airlift:airline:0.7:jar:test</include>
-                                        <include>io.jsonwebtoken:jjwt:0.9.1:jar:test</include>
                                         <include>io.prometheus:simpleclient:0.6.0:jar:test</include>
                                         <include>io.prometheus:simpleclient_common:0.6.0:jar:test</include>
                                         <include>joda-time:joda-time:2.8.1:jar:test</include>
@@ -253,6 +251,12 @@
                                         <include>org.apache.opennlp:opennlp-tools:1.8.4:jar:test</include>
                                         <include>org.apiguardian:apiguardian-api:1.1.0:jar:test</include>
                                         <include>org.codehaus.woodstox:stax2-api:3.1.4:jar:test</include>
+                                        <include>org.eclipse.jetty.alpn:alpn-api:[${jetty-alpn.version}]:jar:test</include>
+                                        <include>org.eclipse.jetty.http2:http2-common:[${jetty.version}]:jar:test</include>
+                                        <include>org.eclipse.jetty.http2:http2-hpack:[${jetty.version}]:jar:test</include>
+                                        <include>org.eclipse.jetty.http2:http2-server:[${jetty.version}]:jar:test</include>
+                                        <include>org.eclipse.jetty:jetty-alpn-server:[${jetty.version}]:jar:test</include>
+                                        <include>org.eclipse.jetty:jetty-alpn-java-server:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-continuation:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-jmx:[${jetty.version}]:jar:test</include>
                                         <include>org.eclipse.jetty:jetty-security:[${jetty.version}]:jar:test</include>

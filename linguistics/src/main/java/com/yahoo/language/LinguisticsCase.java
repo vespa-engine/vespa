@@ -14,13 +14,14 @@ import java.util.Locale;
 public class LinguisticsCase {
 
     /**
-     * <p>The lower casing method to use in Vespa when doing language independent processing of natural language data.
-     * It is placed in a single place to ensure symmetry between e.g. query processing and indexing.</p>
-     * <p>Return a lowercased version of the given string. Since this is language independent, this is more of a case
-     * normalization operation than lowercasing.</p>
+     * The lower casing method to use in Vespa when doing language independent processing of natural language data.
+     * It is placed in a single place to ensure symmetry between e.g. query processing and indexing.
      *
-     * @param in The string to lowercase.
-     * @return A string containing only lowercase character.
+     * Return a lowercased version of the given string. Since this is language independent, this is more of a case
+     * normalization operation than lowercasing.
+     *
+     * @param in the string to lowercase
+     * @return a string containing only lowercase characters
      */
     public static String toLowerCase(String in) {
         // def is picked from http://docs.oracle.com/javase/6/docs/api/java/lang/String.html#toLowerCase%28%29

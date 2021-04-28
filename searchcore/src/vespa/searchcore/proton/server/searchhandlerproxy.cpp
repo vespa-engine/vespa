@@ -8,15 +8,11 @@
 namespace proton {
 
 SearchHandlerProxy::SearchHandlerProxy(DocumentDB::SP documentDB)
-    : _documentDB(std::move(documentDB))
-{
-    _documentDB->retain();
-}
+    : _documentDB(std::move(documentDB)),
+      _retainGuard(_documentDB->retain())
+{ }
 
-SearchHandlerProxy::~SearchHandlerProxy()
-{
-    _documentDB->release();
-}
+SearchHandlerProxy::~SearchHandlerProxy() = default;
 
 std::unique_ptr<search::engine::DocsumReply>
 SearchHandlerProxy::getDocsums(const DocsumRequest & request)

@@ -28,6 +28,7 @@ public class ContentClusterBuilder {
     private Optional<Double> protonMemoryLimit = Optional.empty();
     private Optional<Double> clusterControllerDiskLimit = Optional.empty();
     private Optional<Double> clusterControllerMemoryLimit = Optional.empty();
+    private Optional<Boolean> syncTransactionLog = Optional.empty();
 
     public ContentClusterBuilder() {
     }
@@ -39,6 +40,11 @@ public class ContentClusterBuilder {
 
     public ContentClusterBuilder redundancy(int redundancy) {
         this.redundancy = redundancy;
+        return this;
+    }
+
+    public ContentClusterBuilder syncTransactionLog(boolean syncTransactionLog) {
+        this.syncTransactionLog = Optional.of(syncTransactionLog);
         return this;
     }
 
@@ -101,6 +107,7 @@ public class ContentClusterBuilder {
                "    <proton>",
                "      <searchable-copies>" + searchableCopies + "</searchable-copies>",
                getProtonResourceLimitsXml("      "),
+               getTransactionLogSyncXml("      "),
                "    </proton>",
                "  </engine>");
         if (dispatchXml.isPresent()) {
@@ -138,7 +145,11 @@ public class ContentClusterBuilder {
         return "";
     }
 
-    private static String getXmlLine(String tag, Optional<Double> value, String indent) {
+    private String getTransactionLogSyncXml(String indent) {
+        return getXmlLine("sync-transactionlog", syncTransactionLog, indent);
+    }
+
+    private static <T> String getXmlLine(String tag, Optional<T> value, String indent) {
         if (value.isPresent()) {
             return indent + "<" + tag + ">" + value.get() + "</" + tag + ">\n";
         }

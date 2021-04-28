@@ -38,9 +38,9 @@ public class SearchNodeTest {
         assertEquals(expected, cfg.basedir());
     }
 
-    private void prepare(MockRoot root, SearchNode node) {
+    private void prepare(MockRoot root, SearchNode node, Boolean useFsync) {
         Host host = new Host(root, "mockhost");
-        TransactionLogServer tls = new TransactionLogServer(root, "mycluster");
+        TransactionLogServer tls = new TransactionLogServer(root, "mycluster", useFsync);
         tls.setHostResource(new HostResource(host));
         tls.setBasePort(100);
         tls.initService(root.deployLogger());
@@ -61,10 +61,17 @@ public class SearchNodeTest {
     }
 
     @Test
+    public void requireThatSyncIsHonoured() {
+        assertTrue(getTlsConfig(new TestProperties(), null).usefsync());
+        assertTrue(getTlsConfig(new TestProperties(), true).usefsync());
+        assertFalse(getTlsConfig(new TestProperties(), false).usefsync());
+    }
+
+    @Test
     public void requireThatBasedirIsCorrectForElasticMode() {
         MockRoot root = new MockRoot("");
         SearchNode node = createSearchNode(root, "mynode", 3, new NodeSpec(7, 5), false, root.getDeployState().isHosted(), false);
-        prepare(root, node);
+        prepare(root, node, true);
         assertBaseDir(Defaults.getDefaults().underVespaHome("var/db/vespa/search/cluster.mycluster/n3"), node);
     }
 
@@ -92,10 +99,10 @@ public class SearchNodeTest {
         return new MockRoot("", new DeployState.Builder().properties(properties).build());
     }
 
-    private TranslogserverConfig getTlsConfig(ModelContext.Properties properties) {
+    private TranslogserverConfig getTlsConfig(ModelContext.Properties properties, Boolean useFsync) {
         MockRoot root = createRoot(properties);
         SearchNode node = createSearchNode(root);
-        prepare(root, node);
+        prepare(root, node, useFsync);
         TranslogserverConfig.Builder tlsBuilder = new TranslogserverConfig.Builder();
         node.getConfig(tlsBuilder);
         return tlsBuilder.build();

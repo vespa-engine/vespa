@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
 import org.junit.Test;
 
 import java.time.Duration;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
@@ -81,8 +82,7 @@ public class TrafficShareUpdaterTest {
     }
 
     private void setQpsMetric(double qps, ApplicationId application, ZoneId zone, DeploymentTester tester) {
-        var clusterMetrics = new ClusterMetrics("default", "container");
-        clusterMetrics = clusterMetrics.addMetric(ClusterMetrics.QUERIES_PER_SECOND, qps);
+        var clusterMetrics = new ClusterMetrics("default", "container", Map.of(ClusterMetrics.QUERIES_PER_SECOND, qps));
         tester.controllerTester().serviceRegistry().configServerMock().setMetrics(new DeploymentId(application, zone), clusterMetrics);
     }
 

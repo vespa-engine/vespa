@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.server;
 
 import com.google.inject.Inject;
@@ -228,14 +228,17 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     // Returns the set of applications that failed to redeploy
     private List<ApplicationId> redeployApplications(List<ApplicationId> applicationIds) throws InterruptedException {
-        ExecutorService executor = Executors.newFixedThreadPool(configserverConfig.numParallelTenantLoaders(),
-                                                                new DaemonThreadFactory("redeploy apps"));
+        ExecutorService executor = Executors.newFixedThreadPool(configserverConfig.numRedeploymentThreads(),
+                                                                new DaemonThreadFactory("redeploy-apps-"));
         // Keep track of deployment per application
         Map<ApplicationId, Future<?>> deployments = new HashMap<>();
         log.log(Level.INFO, () -> "Redeploying " + applicationIds);
-        applicationIds.forEach(appId -> deployments.put(appId,
-                                                    executor.submit(() -> applicationRepository.deployFromLocalActive(appId, true /* bootstrap */)
-                                .ifPresent(Deployment::activate))));
+        applicationIds.forEach(appId -> deployments.put(appId, executor.submit(() -> {
+            log.log(Level.INFO, () -> "Starting redeployment of " + appId);
+            applicationRepository.deployFromLocalActive(appId, true /* bootstrap */)
+                                 .ifPresent(Deployment::activate);
+            log.log(Level.INFO, () -> appId + " redeployed");
+        })));
 
         List<ApplicationId> failedDeployments =
                 deployments.entrySet().stream()
@@ -253,7 +256,6 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private Optional<ApplicationId> checkDeployment(ApplicationId applicationId, Future<?> future) {
         try {
             future.get();
-            log.log(Level.INFO, () -> applicationId + " redeployed");
         } catch (ExecutionException | InterruptedException e) {
             if (e.getCause() instanceof TransientException) {
                 log.log(Level.INFO, "Redeploying " + applicationId +

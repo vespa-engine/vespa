@@ -18,6 +18,7 @@ namespace storage::distributor {
 class DistributorMessageSender;
 class PendingBucketSpaceDbTransition;
 class DistributorBucketSpaceRepo;
+class StripeAccessGuard;
 
 /**
  * Class used by BucketDBUpdater to track request bucket info
@@ -146,6 +147,8 @@ public:
      * Merges all the results with the corresponding bucket databases.
      */
     void mergeIntoBucketDatabases();
+    void merge_into_bucket_databases(StripeAccessGuard& guard);
+
     // Get pending transition for a specific bucket space. Only used by unit test.
     PendingBucketSpaceDbTransition &getPendingBucketSpaceDbTransition(document::BucketSpace bucketSpace);
 

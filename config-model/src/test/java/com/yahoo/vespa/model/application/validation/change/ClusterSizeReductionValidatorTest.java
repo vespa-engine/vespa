@@ -19,7 +19,7 @@ public class ClusterSizeReductionValidatorTest {
 
     @Test
     public void testSizeReductionValidation() {
-        ValidationTester tester = new ValidationTester(30);
+        ValidationTester tester = new ValidationTester(33);
 
         VespaModel previous = tester.deploy(null, getServices(30), Environment.prod, null).getFirst();
         try {
@@ -45,7 +45,7 @@ public class ClusterSizeReductionValidatorTest {
 
     @Test
     public void testOverridingSizereductionValidation() {
-        ValidationTester tester = new ValidationTester(30);
+        ValidationTester tester = new ValidationTester(33);
 
         VespaModel previous = tester.deploy(null, getServices(30), Environment.prod, null).getFirst();
         tester.deploy(previous, getServices(14), Environment.prod, sizeReductionOverride); // Allowed due to override

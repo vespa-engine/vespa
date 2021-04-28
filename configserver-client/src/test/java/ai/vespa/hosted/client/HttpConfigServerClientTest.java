@@ -1,7 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.hosted.client;
 
-import ai.vespa.hosted.client.ConfigServerClient.ConfigServerException;
+import ai.vespa.hosted.client.ConfigServerClient.ResponseException;
 import ai.vespa.hosted.client.ConfigServerClient.HostStrategy;
 import com.github.tomakehurst.wiremock.http.Fault;
 import com.yahoo.vespa.athenz.api.AthenzService;
@@ -35,7 +35,7 @@ class HttpConfigServerClientTest {
     @RegisterExtension
     final WireMockExtension server = new WireMockExtension();
 
-    final HttpConfigServerClient client = new HttpConfigServerClient(List.of(new AthenzService("mydomain", "yourservice")), "user");
+    final ConfigServerClient client = new HttpConfigServerClient(List.of(new AthenzService("mydomain", "yourservice")), "user");
 
     @Test
     void testRetries() {
@@ -70,29 +70,28 @@ class HttpConfigServerClientTest {
         server.resetRequests();
 
         // Successful attempt returns.
-        server.stubFor(get("/root/boot"))
+        server.stubFor(get("/root/boot/toot"))
               .setResponse(okJson("{}").build());
         assertEquals("{}",
                      client.send(HostStrategy.repeating(URI.create("http://localhost:" + server.port()), 10),
                                  Method.GET)
                            .at("root", "boot")
+                           .at("toot")
                            .read(String::new));
-        server.verify(1, getRequestedFor(urlEqualTo("/root/boot")));
+        server.verify(1, getRequestedFor(urlEqualTo("/root/boot/toot")));
         server.verify(1, anyRequestedFor(anyUrl()));
         server.resetRequests();
 
-        // ConfigServerException is not retried.
+        // ResponseException is not retried.
         server.stubFor(get("/"))
-              .setResponse(aResponse().withStatus(409).withBody("{\"error-code\":\"ACTIVATION_CONFLICT\",\"message\":\"hi\"}").build());
-        ConfigServerException thrown = assertThrows(ConfigServerException.class,
-                                                    () -> client.send(HostStrategy.repeating(URI.create("http://localhost:" + server.port()), 10),
-                                                                      Method.GET)
-                                                                .read(String::new));
-        assertEquals(ConfigServerException.ErrorCode.ACTIVATION_CONFLICT, thrown.errorId());
-        assertEquals("hi", thrown.message());
+              .setResponse(aResponse().withStatus(409).withBody("hi").build());
+        ResponseException thrown = assertThrows(ResponseException.class,
+                                                () -> client.send(HostStrategy.repeating(URI.create("http://localhost:" + server.port()), 10),
+                                                                  Method.GET)
+                                                            .read(String::new));
+        assertEquals("GET / failed with status 409 and body 'hi'", thrown.getMessage());
         server.verify(1, getRequestedFor(urlEqualTo("/")));
         server.verify(1, anyRequestedFor(anyUrl()));
-
     }
 
 }

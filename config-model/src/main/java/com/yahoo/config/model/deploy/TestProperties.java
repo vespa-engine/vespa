@@ -37,7 +37,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private Zone zone;
     private final Set<ContainerEndpoint> endpoints = Collections.emptySet();
     private boolean useDedicatedNodeForLogserver = false;
-    private boolean dedicatedClusterControllerCluster = true;
     private boolean useThreePhaseUpdates = false;
     private double defaultTermwiseLimit = 1.0;
     private String jvmGCOptions = null;
@@ -61,6 +60,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
     private String jvmOmitStackTraceInFastThrowOption;
+    private int numDistributorStripes = 0;
+    private boolean allowDisableMtls = true;
 
     @Override public ModelContext.FeatureFlags featureFlags() { return this; }
     @Override public boolean multitenant() { return multitenant; }
@@ -77,7 +78,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public boolean isBootstrap() { return false; }
     @Override public boolean isFirstTimeDeployment() { return false; }
     @Override public boolean useDedicatedNodeForLogserver() { return useDedicatedNodeForLogserver; }
-    @Override public boolean dedicatedClusterControllerCluster() { return hostedVespa && dedicatedClusterControllerCluster; }
     @Override public Optional<EndpointCertificateSecrets> endpointCertificateSecrets() { return endpointCertificateSecrets; }
     @Override public double defaultTermwiseLimit() { return defaultTermwiseLimit; }
     @Override public boolean useThreePhaseUpdates() { return useThreePhaseUpdates; }
@@ -102,6 +102,8 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
     @Override public List<TenantSecretStore> tenantSecretStores() { return tenantSecretStores; }
     @Override public String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return jvmOmitStackTraceInFastThrowOption; }
+    @Override public int numDistributorStripes() { return numDistributorStripes; }
+    @Override public boolean allowDisableMtls() { return allowDisableMtls; }
 
     public TestProperties setFeedConcurrency(double feedConcurrency) {
         this.feedConcurrency = feedConcurrency;
@@ -165,11 +167,6 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setUseDedicatedNodeForLogserver(boolean useDedicatedNodeForLogserver) {
         this.useDedicatedNodeForLogserver = useDedicatedNodeForLogserver;
-        return this;
-    }
-
-    public TestProperties setDedicatedClusterControllerCluster(boolean dedicatedClusterControllerCluster) {
-        this.dedicatedClusterControllerCluster = dedicatedClusterControllerCluster;
         return this;
     }
 
@@ -245,6 +242,16 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties setJvmOmitStackTraceInFastThrowOption(String value) {
         this.jvmOmitStackTraceInFastThrowOption = value;
+        return this;
+    }
+
+    public TestProperties setNumDistributorStripes(int value) {
+        this.numDistributorStripes = value;
+        return this;
+    }
+
+    public TestProperties allowDisableMtls(boolean value) {
+        this.allowDisableMtls = value;
         return this;
     }
 

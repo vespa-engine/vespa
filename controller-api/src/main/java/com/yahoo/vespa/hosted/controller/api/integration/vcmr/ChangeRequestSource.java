@@ -2,7 +2,10 @@
 package com.yahoo.vespa.hosted.controller.api.integration.vcmr;
 
 import java.time.ZonedDateTime;
+import java.util.List;
 import java.util.Objects;
+
+import static com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestSource.Status.*;
 
 /**
  * @author olaa
@@ -17,7 +20,7 @@ public class ChangeRequestSource {
     private final ZonedDateTime plannedEndTime;
 
 
-    private ChangeRequestSource(String system, String id, String url, Status status, ZonedDateTime plannedStartTime, ZonedDateTime plannedEndTime) {
+    public ChangeRequestSource(String system, String id, String url, Status status, ZonedDateTime plannedStartTime, ZonedDateTime plannedEndTime) {
         this.system = Objects.requireNonNull(system);
         this.id = Objects.requireNonNull(id);
         this.url = Objects.requireNonNull(url);
@@ -78,6 +81,10 @@ public class ChangeRequestSource {
     @Override
     public int hashCode() {
         return Objects.hash(system, id, status, url, plannedStartTime, plannedEndTime);
+    }
+
+    public boolean isClosed() {
+        return List.of(CLOSED, CANCELED, COMPLETE).contains(status);
     }
 
     public enum Status {

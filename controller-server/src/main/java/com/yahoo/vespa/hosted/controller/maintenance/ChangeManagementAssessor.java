@@ -104,7 +104,7 @@ public class ChangeManagementAssessor {
 
     private List<String> toParentHosts(List<String> impactedHostnames, List<NodeRepositoryNode> allNodes) {
         return impactedHostnames.stream()
-                .map(hostname ->
+                .flatMap(hostname ->
                     allNodes.stream()
                             .filter(node -> List.of(NodeType.config, NodeType.proxy, NodeType.host).contains(node.getType()))
                             .filter(node -> hostname.equals(node.getHostname()) || hostname.equals(node.getParentHostname()))
@@ -112,7 +112,7 @@ public class ChangeManagementAssessor {
                                 if (node.getType() == NodeType.host)
                                     return node.getHostname();
                                 return node.getParentHostname();
-                            }).findFirst().orElseThrow()
+                            }).findFirst().stream()
                 )
                 .collect(Collectors.toList());
     }

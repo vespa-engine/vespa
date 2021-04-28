@@ -7,6 +7,7 @@
 #include "multienumattributesaver.h"
 #include "load_utils.h"
 #include "enum_store_loaders.h"
+#include "ipostinglistattributebase.h"
 #include <vespa/vespalib/stllike/hashtable.hpp>
 #include <vespa/vespalib/datastore/unique_store_remapper.h>
 
@@ -175,13 +176,28 @@ MultiValueEnumAttribute<B, M>::onCommit()
         this->incGeneration();
         this->updateStat(true);
     }
-    auto remapper = this->_enumStore.consider_compact(this->getConfig().getCompactionStrategy());
+    auto remapper = this->_enumStore.consider_compact_values(this->getConfig().getCompactionStrategy());
     if (remapper) {
         multienumattribute::remap_enum_store_refs(*remapper, *this, this->_mvMapping);
         remapper->done();
         remapper.reset();
         this->incGeneration();
         this->updateStat(true);
+    }
+    if (this->_enumStore.consider_compact_dictionary(this->getConfig().getCompactionStrategy())) {
+        this->incGeneration();
+        this->updateStat(true);
+    }
+    auto *pab = this->getIPostingListAttributeBase();
+    if (pab != nullptr) {
+        if (pab->consider_compact_worst_btree_nodes(this->getConfig().getCompactionStrategy())) {
+            this->incGeneration();
+            this->updateStat(true);
+        }
+        if (pab->consider_compact_worst_buffers(this->getConfig().getCompactionStrategy())) {
+            this->incGeneration();
+            this->updateStat(true);
+        }
     }
 }
 

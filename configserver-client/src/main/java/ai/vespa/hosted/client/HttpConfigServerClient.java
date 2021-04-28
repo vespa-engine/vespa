@@ -13,6 +13,8 @@ import org.apache.hc.core5.http.io.SocketConfig;
 import org.apache.hc.core5.util.TimeValue;
 import org.apache.hc.core5.util.Timeout;
 
+import javax.net.ssl.HostnameVerifier;
+import javax.net.ssl.SSLSession;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Set;
@@ -44,17 +46,20 @@ public class HttpConfigServerClient extends AbstractConfigServerClient {
     private static CloseableHttpClient createClient(Collection<AthenzIdentity> serverIdentities, String userAgent) {
         return VespaHttpClientBuilder.create(socketFactories -> {
                                                  var manager = new PoolingHttpClientConnectionManager(socketFactories);
-                                                 manager.setMaxTotal(256);
-                                                 manager.setDefaultMaxPerRoute(8);
+                                                 manager.setMaxTotal(1024);
+                                                 manager.setDefaultMaxPerRoute(128);
                                                  manager.setDefaultSocketConfig(SocketConfig.custom().setSoTimeout(Timeout.ofSeconds(5)).build());
                                                  manager.setValidateAfterInactivity(TimeValue.ofSeconds(10));
                                                  return manager;
                                              },
-                                             new AthenzIdentityVerifier(Set.copyOf(serverIdentities)),
+                                             new AthenzIdentityVerifier(Set.copyOf(serverIdentities)) {
+                                                 @Override public boolean verify(String hostname, SSLSession session) {
+                                                     return super.verify(hostname, session) || "localhost".equals(hostname);
+                                                 }
+                                             },
                                              false)
                                      .disableAutomaticRetries()
                                      .setUserAgent(userAgent)
-                                     .setDefaultRequestConfig(defaultRequestConfig)
                                      .build();
     }
 

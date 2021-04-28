@@ -30,7 +30,7 @@ TEST("requireThatNumericLessIsWorking")
     NumericEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert(10);
     EnumIndex e2 = es.insert(30);
-    auto cmp1 = es.make_comparator();
+    const auto & cmp1 = es.get_comparator();
     EXPECT_TRUE(cmp1.less(e1, e2));
     EXPECT_FALSE(cmp1.less(e2, e1));
     EXPECT_FALSE(cmp1.less(e1, e1));
@@ -44,7 +44,7 @@ TEST("requireThatNumericEqualIsWorking")
     NumericEnumStore es(false, DictionaryConfig::Type::BTREE);
     EnumIndex e1 = es.insert(10);
     EnumIndex e2 = es.insert(30);
-    auto cmp1 = es.make_comparator();
+    const auto & cmp1 = es.get_comparator();
     EXPECT_FALSE(cmp1.equal(e1, e2));
     EXPECT_FALSE(cmp1.equal(e2, e1));
     EXPECT_TRUE(cmp1.equal(e1, e1));
@@ -60,7 +60,7 @@ TEST("requireThatFloatLessIsWorking")
     EnumIndex e1 = es.insert(10.5);
     EnumIndex e2 = es.insert(30.5);
     EnumIndex e3 = es.insert(std::numeric_limits<float>::quiet_NaN());
-    auto cmp1 = es.make_comparator();
+    const auto & cmp1 = es.get_comparator();
     EXPECT_TRUE(cmp1.less(e1, e2));
     EXPECT_FALSE(cmp1.less(e2, e1));
     EXPECT_FALSE(cmp1.less(e1, e1));
@@ -78,7 +78,7 @@ TEST("requireThatFloatEqualIsWorking")
     EnumIndex e1 = es.insert(10.5);
     EnumIndex e2 = es.insert(30.5);
     EnumIndex e3 = es.insert(std::numeric_limits<float>::quiet_NaN());
-    auto cmp1 = es.make_comparator();
+    const auto & cmp1 = es.get_comparator();
     EXPECT_FALSE(cmp1.equal(e1, e2));
     EXPECT_FALSE(cmp1.equal(e2, e1));
     EXPECT_TRUE(cmp1.equal(e1, e1));
@@ -97,7 +97,7 @@ TEST("requireThatStringLessIsWorking")
     EnumIndex e1 = es.insert("Aa");
     EnumIndex e2 = es.insert("aa");
     EnumIndex e3 = es.insert("aB");
-    auto cmp1 = es.make_comparator();
+    const auto & cmp1 = es.get_comparator();
     EXPECT_TRUE(cmp1.less(e1, e2)); // similar folded, fallback to regular
     EXPECT_FALSE(cmp1.less(e2, e1));
     EXPECT_FALSE(cmp1.less(e1, e1));
@@ -114,7 +114,7 @@ TEST("requireThatStringEqualIsWorking")
     EnumIndex e1 = es.insert("Aa");
     EnumIndex e2 = es.insert("aa");
     EnumIndex e3 = es.insert("aB");
-    auto cmp1 = es.make_comparator();
+    const auto & cmp1 = es.get_comparator();
     EXPECT_FALSE(cmp1.equal(e1, e2)); // similar folded, fallback to regular
     EXPECT_FALSE(cmp1.equal(e2, e1));
     EXPECT_TRUE(cmp1.equal(e1, e1));
@@ -157,13 +157,13 @@ TEST("requireThatFoldedLessIsWorking")
     EnumIndex e2 = es.insert("aa");
     EnumIndex e3 = es.insert("aB");
     EnumIndex e4 = es.insert("Folded");
-    auto cmp1 = es.make_folded_comparator();
+    const auto & cmp1 = es.get_folded_comparator();
     EXPECT_FALSE(cmp1.less(e1, e2)); // similar folded
     EXPECT_FALSE(cmp1.less(e2, e1)); // similar folded
     EXPECT_TRUE(cmp1.less(e2, e3)); // folded compare
     EXPECT_FALSE(cmp1.less(e3, e2)); // folded compare
-    auto cmp2 = es.make_folded_comparator("fol", false);
-    auto cmp3 = es.make_folded_comparator("fol", true);
+    auto cmp2 = es.make_folded_comparator("fol");
+    auto cmp3 = es.make_folded_comparator_prefix("fol");
     EXPECT_TRUE(cmp2.less(EnumIndex(), e4));
     EXPECT_FALSE(cmp2.less(e4, EnumIndex()));
     EXPECT_FALSE(cmp3.less(EnumIndex(), e4)); // similar when prefix
@@ -177,21 +177,20 @@ TEST("requireThatFoldedEqualIsWorking")
     EnumIndex e2 = es.insert("aa");
     EnumIndex e3 = es.insert("aB");
     EnumIndex e4 = es.insert("Folded");
-    auto cmp1 = es.make_folded_comparator();
+    const auto & cmp1 = es.get_folded_comparator();
     EXPECT_TRUE(cmp1.equal(e1, e1)); // similar folded
     EXPECT_TRUE(cmp1.equal(e2, e1)); // similar folded
     EXPECT_TRUE(cmp1.equal(e2, e1));
     EXPECT_FALSE(cmp1.equal(e2, e3)); // folded compare
     EXPECT_FALSE(cmp1.equal(e3, e2)); // folded compare
-    auto cmp2 = es.make_folded_comparator("fol", false);
-    auto cmp3 = es.make_folded_comparator("fol", true);
+    auto cmp2 = es.make_folded_comparator("fol");
+    auto cmp3 = es.make_folded_comparator_prefix("fol");
     EXPECT_FALSE(cmp2.equal(EnumIndex(), e4));
     EXPECT_FALSE(cmp2.equal(e4, EnumIndex()));
     EXPECT_TRUE(cmp2.equal(EnumIndex(), EnumIndex()));
     EXPECT_FALSE(cmp3.equal(EnumIndex(), e4)); // similar when prefix
     EXPECT_FALSE(cmp3.equal(e4, EnumIndex())); // similar when prefix
     EXPECT_TRUE(cmp3.equal(EnumIndex(), EnumIndex())); // similar when prefix
-
 }
 
 }

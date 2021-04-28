@@ -21,15 +21,11 @@ PersistenceHandlerProxy::PersistenceHandlerProxy(DocumentDB::SP documentDB)
     : _documentDB(std::move(documentDB)),
       _feedHandler(_documentDB->getFeedHandler()),
       _bucketHandler(_documentDB->getBucketHandler()),
-      _clusterStateHandler(_documentDB->getClusterStateHandler())
-{
-    _documentDB->retain();
-}
+      _clusterStateHandler(_documentDB->getClusterStateHandler()),
+      _retainGuard(_documentDB->retain())
+{ }
 
-PersistenceHandlerProxy::~PersistenceHandlerProxy()
-{
-    _documentDB->release();
-}
+PersistenceHandlerProxy::~PersistenceHandlerProxy() = default;
 
 void
 PersistenceHandlerProxy::initialize()

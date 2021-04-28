@@ -94,7 +94,7 @@ public class ResourceMeterMaintainer extends ControllerMaintainer {
                 .ofCloud(CloudName.from("aws"))
                 .reachable().zones().stream()
                 .map(ZoneApi::getId)
-                .map(zoneId -> createResourceSnapshotsFromNodes(zoneId, nodeRepository.list(zoneId)))
+                .map(zoneId -> createResourceSnapshotsFromNodes(zoneId, nodeRepository.list(zoneId, false)))
                 .flatMap(Collection::stream)
                 .collect(Collectors.toList());
     }

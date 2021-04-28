@@ -509,7 +509,8 @@ std::ostream& operator<<(std::ostream& out, const RequestBucketInfoReply::Entry&
 
 RequestBucketInfoReply::RequestBucketInfoReply(const RequestBucketInfoCommand& cmd)
     : StorageReply(cmd),
-      _buckets()
+      _buckets(),
+      _full_bucket_fetch(cmd.hasSystemState())
 { }
 
 RequestBucketInfoReply::~RequestBucketInfoReply() = default;
@@ -519,6 +520,9 @@ RequestBucketInfoReply::print(std::ostream& out, bool verbose,
                               const std::string& indent) const
 {
     out << "RequestBucketInfoReply(" << _buckets.size();
+    if (_full_bucket_fetch) {
+        out << ", full fetch";
+    }
     if (verbose) {
         out << "\n" << indent << "  ";
         std::copy(_buckets.begin(), _buckets.end(),

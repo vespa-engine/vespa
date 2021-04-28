@@ -12,6 +12,8 @@ import java.util.logging.Level;
 /**
  * Returns a linguistics implementation based on OpenNlp,
  * and (optionally, default on) Optimaize for language detection.
+ *
+ * @author bratseth
  */
 public class OpenNlpLinguistics extends SimpleLinguistics {
 

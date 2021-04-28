@@ -6,6 +6,7 @@ import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.Request;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
+import com.yahoo.jdisc.handler.DelegatedRequestHandler;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.HttpRequest;
@@ -23,7 +24,7 @@ import java.util.Optional;
  *
  * @author bakksjo
  */
-public class AccessLoggingRequestHandler extends AbstractRequestHandler {
+public class AccessLoggingRequestHandler extends AbstractRequestHandler implements DelegatedRequestHandler {
     public static final String CONTEXT_KEY_ACCESS_LOG_ENTRY
             = AccessLoggingRequestHandler.class.getName() + "_access-log-entry";
 
@@ -56,4 +57,8 @@ public class AccessLoggingRequestHandler extends AbstractRequestHandler {
     }
 
 
+    @Override
+    public RequestHandler getDelegate() {
+        return delegate;
+    }
 }

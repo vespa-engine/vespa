@@ -18,22 +18,9 @@ options {
     protected Stack<expression_scope> expression_stack = new Stack();    
 }
 
-// tokens for command syntax
-  CREATE : 'create';
+// tokens
+
   SELECT : 'select';
-  INSERT : 'insert';
-  UPDATE : 'update';
-  SET : 'set';
-  VIEW : 'view';
-  TABLE  : 'table';
-  DELETE : 'delete';
-  INTO   : 'into';
-  VALUES : 'values';
-  IMPORT : 'import';
-  NEXT : 'next';
-  PAGED : 'paged';
-  FALLBACK : 'fallback';
-  IMPORT_FROM :;
 
   LIMIT : 'limit';
   OFFSET : 'offset';
@@ -44,36 +31,11 @@ options {
   FROM : 'from';
   SOURCES : 'sources';
   AS : 'as';
-  MERGE : 'merge';
-  LEFT : 'left';
-  JOIN : 'join';
-  
-  ON : 'on';
+
   COMMA : ',';
   OUTPUT : 'output';
   COUNT : 'count';
-  RETURNING : 'returning';
-  APPLY : 'apply';
-  CAST : 'cast';
 
-  BEGIN : 'begin';
-  END : 'end';
-
-  // type-related
-  TYPE_BYTE : 'byte';
-  TYPE_INT16 : 'int16';
-  TYPE_INT32 : 'int32';
-  TYPE_INT64 : 'int64';
-  TYPE_STRING : 'string';
-  TYPE_DOUBLE : 'double';
-  TYPE_TIMESTAMP : 'timestamp';
-  TYPE_BOOLEAN : 'boolean';
-  TYPE_ARRAY : 'array';
-  TYPE_MAP : 'map';
-
-  // READ_FIELD;
-
-  // token literals
   TRUE : 'true';
   FALSE : 'false';
 
@@ -123,7 +85,6 @@ options {
   // statement delimiter
   SEMI : ';';
 
-  PROGRAM : 'program';
   TIMEOUT : 'timeout';
 
 
@@ -149,7 +110,6 @@ FLOAT
 fragment
 EXPONENT : ('e'|'E') ('+'|'-')? ('0'..'9')+ ;
 
-
 fragment
 DIGIT : '0'..'9'
     ;
@@ -163,7 +123,6 @@ STRING  :  '"' ( ESC_SEQ | ~('\\'| '"') )* '"'
         |  '\'' ( ESC_SEQ | ~('\\' | '\'') )* '\''
 	;
 
-/////////////////////////////
 fragment
 HEX_DIGIT : ('0'..'9'|'a'..'f'|'A'..'F') ;
 	
@@ -183,13 +142,11 @@ WS  :   ( ' '
         | '\t'
         | '\r'
         | '\n'
-  //      ) {$channel=HIDDEN;}
   	) -> channel(HIDDEN)
     ;
 
 COMMENT
     :  ( ('//') ~('\n'|'\r')* '\r'? '\n'? 
-  //  |   '/*' ( options {greedy=false;} : . )* '*/' 
     | '/*' .*? '*/'
     )
     -> channel(HIDDEN)
@@ -208,38 +165,19 @@ VESPA_GROUPING_ARG
         (')' | ']' | '>')
     ;
 
-/*------------------------------------------------------------------
- * PARSER RULES
- *------------------------------------------------------------------*/
+// --------- parser rules ------------
 
 ident
    : keyword_as_ident //{addChild(new TerminalNodeImpl(keyword_as_ident.getText()));}
-   		//{return ID<IDNode>[$keyword_as_ident.text];}
    | ID
    ;
 
 keyword_as_ident
-   : SELECT | TABLE | DELETE | INTO | VALUES | LIMIT | OFFSET | WHERE | 'order' | 'by' | DESC | MERGE | LEFT | JOIN
-   | ON | OUTPUT | COUNT | BEGIN | END | APPLY | TYPE_BYTE | TYPE_INT16 | TYPE_INT32 | TYPE_INT64 | TYPE_BOOLEAN | TYPE_TIMESTAMP | TYPE_DOUBLE | TYPE_STRING | TYPE_ARRAY | TYPE_MAP
-   | VIEW | CREATE | IMPORT | PROGRAM | NEXT | PAGED | SOURCES | SET | MATCHES | LIKE | CAST
+   : SELECT | LIMIT | OFFSET | WHERE | 'order' | 'by' | DESC | OUTPUT | COUNT | SOURCES | MATCHES | LIKE
    ;
 
-program : params? (import_statement SEMI)* (ddl SEMI)* (statement SEMI)* EOF
+program : (statement SEMI)* EOF
 	;
-
-params
-     : PROGRAM LPAREN program_arglist? RPAREN SEMI
-     ;
-
-import_statement
-      : IMPORT moduleName AS moduleId
-      | IMPORT moduleId               
-      | FROM moduleName IMPORT import_list
-      ;
-
-import_list
-      : moduleId (',' moduleId)*
-      ;
 
 moduleId
     :  ID
@@ -250,45 +188,17 @@ moduleName
 	| namespaced_name
 	;
 
-ddl
-      : view
-      ;
-
-view  : CREATE VIEW ID AS source_statement
-      ;
-
-program_arglist
-      : procedure_argument (',' procedure_argument)*
-      ;
-
-procedure_argument
-      :
-      	AT (ident TYPE_ARRAY LT typename GTEQ (expression[false])? ) {registerParameter($ident.start.getText(), $typename.start.getText());}
-      | AT (ident typename ('=' expression[false])? ) {registerParameter($ident.start.getText(), $typename.start.getText());}
-      ;
-
 statement
       : output_statement
-	  | selectvar_statement
-	  | next_statement
 	  ;
 
 output_statement
-      : source_statement paged_clause? output_spec?
+      : source_statement output_spec?
       ;
-
-paged_clause
-      : PAGED fixed_or_parameter
-      ;
-
-next_statement
-	  : NEXT literalString OUTPUT AS ident
-	  ;
 
 source_statement
       : query_statement (PIPE pipeline_step)*
       ;
-
 
 pipeline_step
       : namespaced_name arguments[false]?
@@ -300,50 +210,17 @@ vespa_grouping
       | annotation VESPA_GROUPING
       ;
 
-selectvar_statement
-      : CREATE ('temp' | 'temporary') TABLE ident AS LPAREN source_statement RPAREN
-      ;
-
-typename
-      : TYPE_BYTE | TYPE_INT16 | TYPE_INT32 | TYPE_INT64 | TYPE_STRING | TYPE_BOOLEAN | TYPE_TIMESTAMP
-      | arrayType | mapType | TYPE_DOUBLE
-      ;
-
-arrayType
-      : TYPE_ARRAY LT typename GT
-      ;
-
-mapType
-      : TYPE_MAP LT typename GT
-      ;
-
 output_spec
       : (OUTPUT AS ident)
       | (OUTPUT COUNT AS ident)
       ;
 
 query_statement
-    : merge_statement
-    | select_statement
-    | insert_statement
-    | delete_statement
-    | update_statement
+    : select_statement
     ;
 
-// This does not use the UNION / UNION ALL from SQL because the semantics are different than SQL UNION
-//   - no set operation is implied (no DISTINCT)
-//   - CQL resultsets may be heterogeneous (rows may have heterogenous types)
-merge_statement
-	:	merge_component (MERGE merge_component)+
-	;
-
-merge_component
-	: select_statement
-	| LPAREN source_statement RPAREN
-	;
-
 select_statement
-	:	SELECT select_field_spec select_source? where? orderby? limit? offset? timeout? fallback?
+	:	SELECT select_field_spec select_source? where? orderby? limit? offset? timeout?
     ;
 
 select_field_spec
@@ -355,10 +232,6 @@ project_spec
 	: field_def (COMMA  field_def)*
 	;
 
-fallback
-    : FALLBACK select_statement
-    ;
-
 timeout
 	:  TIMEOUT fixed_or_parameter
 	;
@@ -366,7 +239,7 @@ timeout
 select_source
     :   select_source_all
     |   select_source_multi
-	|	select_source_join
+	|	select_source_from
 	;
 
 select_source_all
@@ -377,22 +250,13 @@ select_source_multi
  	: 	FROM SOURCES source_list
  	;
  	
-select_source_join
-	:	FROM source_spec join_expr*
+select_source_from
+	:	FROM source_spec
 	;
 
 source_list
     : namespaced_name (COMMA namespaced_name )*
     ;
-
-join_expr
-    : (join_spec source_spec ON joinExpression)
-    ;
-
-join_spec
-	: LEFT JOIN
-	| 'inner'? JOIN
-	;
 
 source_spec
 	:	( data_source (alias_def { ($data_source.ctx).addChild($alias_def.ctx); })? )
@@ -465,21 +329,6 @@ arguments[boolean in_select]
 argument[boolean in_select]
     : expression[$in_select]
     ;
-
-// -------- join expressions ------------
-
-// Limit expression syntax for joins: A single equality test and one field from each source.
-// This means it can always turn the join into a query to one source, collecting all of the
-// keys from the results, and then a query to the other source (or querying the other source inline).
-// Does not support map or index references.
-
-joinExpression
-    : joinDereferencedExpression EQ joinDereferencedExpression
-	;
-
-joinDereferencedExpression
-	:	 namespaced_name
-	;
 
 // --------- expressions ------------
 
@@ -587,15 +436,6 @@ indexref[boolean in_select]
 propertyref
 	: 	DOT nm=ID
 	;
-operatorCall
-@init{
-	boolean	in_select = expression_stack.peek().in_select;	
-}
-    : multOp arguments[in_select]
-    | additiveOp arguments[in_select]
-    | AND arguments[in_select]
-    | OR arguments[in_select]
-    ;
 
 primaryExpression
 @init {
@@ -671,7 +511,7 @@ array_parameter
     ;
     
 literal_list
-	: LPAREN literal_element (COMMA literal_element)* RPAREN //{return ^(ARRAY_LITERAL literal_element+);}
+	: LPAREN literal_element (COMMA literal_element)* RPAREN
 	;
 	
 literal_element
@@ -683,63 +523,3 @@ fixed_or_parameter
     : INT
 	| parameter
 	;
-
-// INSERT
-
-insert_statement
-    : INSERT insert_source insert_values returning_spec?
-    ;
-
-insert_source
-    : INTO write_data_source
-    ;
-
-write_data_source
-    :	namespaced_name
-    ;
-
-insert_values
-    : field_names_spec VALUES field_values_group_spec (COMMA field_values_group_spec)*
-    | query_statement
-    ;
-
-field_names_spec
-    : LPAREN field_def (COMMA field_def)* RPAREN
-    ;
-
-field_values_spec
-    : LPAREN expression[true] (COMMA expression[true])* RPAREN
-    ;
-
-field_values_group_spec
-    : LPAREN expression[true] (COMMA expression[true])* RPAREN
-    ;
-    
-returning_spec
-    : RETURNING select_field_spec
-    ;
-
-// DELETE
-
-delete_statement
-    : DELETE delete_source where? returning_spec?
-    ;
-
-delete_source
-    : FROM write_data_source
-    ;
-
-// UPDATE
-
-update_statement
-    : UPDATE update_source SET update_values where? returning_spec?
-    ;
-
-update_source
-    : write_data_source
-    ;
-
-update_values
-    : field_names_spec EQ field_values_spec
-    | field_def (COMMA field_def)*
-    ;

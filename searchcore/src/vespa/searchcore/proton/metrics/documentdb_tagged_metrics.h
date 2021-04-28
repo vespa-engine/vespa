@@ -205,6 +205,7 @@ struct DocumentDBTaggedMetrics : metrics::MetricSet
     BucketMoveMetrics bucketMove;
     MemoryUsageMetrics totalMemoryUsage;
     metrics::LongValueMetric totalDiskUsage;
+    metrics::DoubleValueMetric heart_beat_age;
     size_t maxNumThreads;
 
     DocumentDBTaggedMetrics(const vespalib::string &docTypeName, size_t maxNumThreads_);

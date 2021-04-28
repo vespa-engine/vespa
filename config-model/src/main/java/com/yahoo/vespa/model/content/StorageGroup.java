@@ -143,10 +143,10 @@ public class StorageGroup {
     }
 
     public int getNumberOfLeafGroups() {
-        int count = subgroups.isEmpty() ? 1 : 0;
-        for (StorageGroup g : subgroups) {
+        if (subgroups.isEmpty()) return 1;
+        int count = 0;
+        for (StorageGroup g : subgroups)
             count += g.getNumberOfLeafGroups();
-        }
         return count;
     }
 
@@ -203,24 +203,53 @@ public class StorageGroup {
         }
 
         public StorageGroup buildRootGroup(DeployState deployState, RedundancyBuilder redundancyBuilder, ContentCluster owner) {
+            Optional<Integer> maxRedundancy = Optional.empty();
+            if (owner.isHosted())
+                maxRedundancy = validateRedundancyAndGroups();
+
             Optional<ModelElement> group = Optional.ofNullable(clusterElement.child("group"));
             Optional<ModelElement> nodes = getNodes(clusterElement);
 
             if (group.isPresent() && nodes.isPresent())
                 throw new IllegalStateException("Both group and nodes exists, only one of these tags is legal");
             if (group.isPresent() && (group.get().stringAttribute("name") != null || group.get().integerAttribute("distribution-key") != null))
-                    deployState.getDeployLogger().log(Level.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
+                    deployState.getDeployLogger().logApplicationPackage(Level.INFO, "'distribution-key' attribute on a content cluster's root group is ignored");
 
             GroupBuilder groupBuilder = collectGroup(owner.isHosted(), group, nodes, null, null);
             StorageGroup storageGroup = (owner.isHosted())
                     ? groupBuilder.buildHosted(deployState, owner, Optional.empty())
                     : groupBuilder.buildNonHosted(deployState, owner, Optional.empty());
-            Redundancy redundancy = redundancyBuilder.build(owner.getName(), owner.isHosted(), storageGroup.subgroups.size(), storageGroup.getNumberOfLeafGroups(), storageGroup.countNodes());
+            Redundancy redundancy = redundancyBuilder.build(owner.getName(), owner.isHosted(), storageGroup.subgroups.size(),
+                                                            storageGroup.getNumberOfLeafGroups(), storageGroup.countNodes(),
+                                                            maxRedundancy);
             owner.setRedundancy(redundancy);
             if (storageGroup.partitions.isEmpty() && (redundancy.groups() > 1)) {
                 storageGroup.partitions = Optional.of(computePartitions(redundancy.finalRedundancy(), redundancy.groups()));
             }
             return storageGroup;
+        }
+
+        private Optional<Integer> validateRedundancyAndGroups() {
+            var redundancyElement = clusterElement.child("redundancy");
+            if (redundancyElement == null) return Optional.empty();
+            long redundancy = redundancyElement.asLong();
+
+            var nodesElement = clusterElement.child("nodes");
+            if (nodesElement == null) return Optional.empty();
+            var nodesSpec = NodesSpecification.from(nodesElement, context);
+
+            int minNodesPerGroup = (int)Math.ceil((double)nodesSpec.minResources().nodes() / nodesSpec.minResources().groups());
+
+            if (minNodesPerGroup < redundancy) { // TODO: Fail on this on Vespa 8, and simplify
+                context.getDeployLogger().logApplicationPackage(Level.WARNING,
+                                              "Cluster '" + clusterElement.stringAttribute("id") + "' " +
+                                              "specifies redundancy " + redundancy + " but cannot be higher than " +
+                                              "the minimum nodes per group, which is " + minNodesPerGroup);
+                return Optional.of(minNodesPerGroup);
+            }
+            else {
+                return Optional.empty();
+            }
         }
 
         /** This returns a partition string which specifies equal distribution between all groups */
@@ -393,7 +422,8 @@ public class StorageGroup {
                     childAsString(groupElement, VespaDomBuilder.VESPAMALLOC_DEBUG),
                     childAsString(groupElement, VespaDomBuilder.VESPAMALLOC_DEBUG_STACKTRACE));
 
-            List<GroupBuilder> subGroups = groupElement.isPresent() ? collectSubGroups(isHosted, group, groupElement.get()) : Collections.emptyList();
+            List<GroupBuilder> subGroups = groupElement.isPresent() ? collectSubGroups(isHosted, group, groupElement.get())
+                                                                    : List.of();
 
             List<XmlNodeBuilder> explicitNodes = new ArrayList<>();
             explicitNodes.addAll(collectExplicitNodes(groupElement));
@@ -407,7 +437,7 @@ public class StorageGroup {
                 nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get(), context));
             else if (nodesElement.isPresent() && context.getDeployState().isHosted() && context.getDeployState().zone().environment().isManuallyDeployed() ) // default to 1 node
                 nodeRequirement = Optional.of(NodesSpecification.from(nodesElement.get(), context));
-            else if (! nodesElement.isPresent() && subGroups.isEmpty() && context.getDeployState().isHosted()) // request one node
+            else if (nodesElement.isEmpty() && subGroups.isEmpty() && context.getDeployState().isHosted()) // request one node
                 nodeRequirement = Optional.of(NodesSpecification.nonDedicated(1, context));
             else // Nodes or groups explicitly listed - resolve in GroupBuilder
                 nodeRequirement = Optional.empty();

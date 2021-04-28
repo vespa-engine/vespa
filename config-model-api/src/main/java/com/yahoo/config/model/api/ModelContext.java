@@ -90,6 +90,9 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"tokle"}) default boolean tenantIamRole() { return false; }
         @ModelFeatureFlag(owners = {"vekterli"}) default int maxActivationInhibitedOutOfSyncGroups() { return 0; }
         @ModelFeatureFlag(owners = {"hmusum"}) default String jvmOmitStackTraceInFastThrowOption(ClusterSpec.Type type) { return ""; }
+        @ModelFeatureFlag(owners = {"bjorncs", "jonmv"}) default boolean enableJdiscHttp2() { return false; }
+        @ModelFeatureFlag(owners = {"tokle", "bjorncs"}) default boolean enableCustomAclMapping() { return false; }
+        @ModelFeatureFlag(owners = {"geirst", "vekterli"}) default int numDistributorStripes() { return 0; }
     }
 
     /** Warning: As elsewhere in this package, do not make backwards incompatible changes that will break old config models! */
@@ -126,8 +129,11 @@ public interface ModelContext {
         // Note: Used in unit tests (set to false in TestProperties) to avoid needing to deal with implicitly created node for logserver
         default boolean useDedicatedNodeForLogserver() { return true; }
 
+        // TODO: Remove after May 2021
         default boolean dedicatedClusterControllerCluster() { return hostedVespa(); }
 
+        // Allow disabling mTLS for now, harden later
+        default boolean allowDisableMtls() { return true; }
     }
 
     @Retention(RetentionPolicy.RUNTIME)

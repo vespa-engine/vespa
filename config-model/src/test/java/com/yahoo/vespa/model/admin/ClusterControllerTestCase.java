@@ -291,6 +291,10 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         assertThat(cfg.index(), is(0));
         assertThat(cfg.fleet_controller_count(), is(1));
         assertThat(cfg.init_progress_time(), is(34567000));
+
+        Service cc = model.getService("admin/cluster-controllers/0").get();
+        assertTrue(cc instanceof ClusterControllerContainer);
+        assertEquals("-Dio.netty.allocator.pageSize=4096 -Dio.netty.allocator.maxOrder=8", cc.getJvmOptions());
     }
 
     private boolean existsHostsWithClusterControllerConfigId(VespaModel model) {
@@ -392,7 +396,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         assertEquals(256, qrStartConfig.jvm().heapsize());
         assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
         assertEquals(2, qrStartConfig.jvm().availableProcessors());
-        assertTrue(qrStartConfig.jvm().verbosegc());
+        assertFalse(qrStartConfig.jvm().verbosegc());
         assertEquals("-XX:+UseG1GC -XX:MaxTenuringThreshold=15", qrStartConfig.jvm().gcopts());
         assertEquals(512, qrStartConfig.jvm().stacksize());
         assertEquals(0, qrStartConfig.jvm().directMemorySizeCache());
@@ -437,7 +441,7 @@ public class ClusterControllerTestCase extends DomBuilderTest {
         assertEquals(32, qrStartConfig.jvm().minHeapsize());
         // Overridden values from ClusterControllerContainerCluster
         assertEquals(256, qrStartConfig.jvm().heapsize());
-        assertTrue(qrStartConfig.jvm().verbosegc());
+        assertFalse(qrStartConfig.jvm().verbosegc());
     }
 
     @Test

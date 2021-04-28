@@ -61,7 +61,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new SystemRoutingPolicyMaintainer(controller, intervals.systemRoutingPolicyMaintainer));
         maintainers.add(new ApplicationMetaDataGarbageCollector(controller, intervals.applicationMetaDataGarbageCollector));
         maintainers.add(new ContainerImageExpirer(controller, intervals.containerImageExpirer));
-        maintainers.add(new HostSwitchUpdater(controller, intervals.hostSwitchUpdater));
+        maintainers.add(new HostInfoUpdater(controller, intervals.hostSwitchUpdater));
         maintainers.add(new ReindexingTriggerer(controller, intervals.reindexingTriggerer));
         maintainers.add(new EndpointCertificateMaintainer(controller, intervals.endpointCertificateMaintainer));
         maintainers.add(new TrafficShareUpdater(controller, intervals.trafficFractionUpdater));
@@ -69,6 +69,7 @@ public class ControllerMaintenance extends AbstractComponent {
         maintainers.add(new ArchiveAccessMaintainer(controller, metric, intervals.archiveAccessMaintainer));
         maintainers.add(new TenantRoleMaintainer(controller, intervals.tenantRoleMaintainer));
         maintainers.add(new ChangeRequestMaintainer(controller, intervals.changeRequestMaintainer));
+        maintainers.add(new VCMRMaintainer(controller, intervals.vcmrMaintainer));
     }
 
     public Upgrader upgrader() { return upgrader; }
@@ -123,6 +124,7 @@ public class ControllerMaintenance extends AbstractComponent {
         private final Duration archiveAccessMaintainer;
         private final Duration tenantRoleMaintainer;
         private final Duration changeRequestMaintainer;
+        private final Duration vcmrMaintainer;
 
         public Intervals(SystemName system) {
             this.system = Objects.requireNonNull(system);
@@ -153,7 +155,8 @@ public class ControllerMaintenance extends AbstractComponent {
             this.archiveUriUpdater = duration(5, MINUTES);
             this.archiveAccessMaintainer = duration(10, MINUTES);
             this.tenantRoleMaintainer = duration(5, MINUTES);
-            this.changeRequestMaintainer = duration(12, HOURS);
+            this.changeRequestMaintainer = duration(1, HOURS);
+            this.vcmrMaintainer = duration(1, HOURS);
         }
 
         private Duration duration(long amount, TemporalUnit unit) {

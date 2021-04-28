@@ -631,14 +631,14 @@ public class YqlParserTestCase {
     @SuppressWarnings("deprecation")
     public void testWeakAnd() {
         assertParse("select foo from bar where weakAnd(a contains \"A\", b contains \"B\");",
-                    "WAND(100) a:A b:B");
+                    "WEAKAND(100) a:A b:B");
         assertParse("select foo from bar where [{\"targetHits\": 37}]weakAnd(a contains \"A\", " +
                     "b contains \"B\");",
-                    "WAND(37) a:A b:B");
+                    "WEAKAND(37) a:A b:B");
 
         QueryTree tree = parse("select foo from bar where [{\"scoreThreshold\": 41}]weakAnd(a " +
                                "contains \"A\", b contains \"B\");");
-        assertEquals("WAND(100) a:A b:B", tree.toString());
+        assertEquals("WEAKAND(100) a:A b:B", tree.toString());
         assertEquals(WeakAndItem.class, tree.getRoot().getClass());
         assertEquals(41, ((WeakAndItem)tree.getRoot()).getScoreThreshold());
     }

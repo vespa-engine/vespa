@@ -28,11 +28,12 @@ struct MyCountJobRunner : public IMaintenanceJobRunner {
 };
 
 JobTestBase::JobTestBase()
-    : _handler(),
+    : _refCount(),
+      _clusterStateHandler(),
+      _diskMemUsageNotifier(),
+      _handler(),
       _storer(),
       _frozenHandler(),
-      _diskMemUsageNotifier(),
-      _clusterStateHandler(),
       _job()
 {
     init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, RESOURCE_LIMIT_FACTOR, JOB_DELAY, false, MAX_OUTSTANDING_MOVE_OPS);
@@ -56,7 +57,7 @@ JobTestBase::init(uint32_t allowedLidBloat,
         _singleExecutor = std::make_unique<vespalib::ThreadStackExecutor>(1, 0x10000);
         _master = std::make_unique<proton::ExecutorThreadService> (*_singleExecutor);
         _bucketExecutor = std::make_unique<storage::spi::dummy::DummyBucketExecutor>(4);
-        _job = lidspace::CompactionJob::create(compactCfg, _handler, _storer, *_master, *_bucketExecutor,
+        _job = lidspace::CompactionJob::create(compactCfg, RetainGuard(_refCount), _handler, _storer, *_master, *_bucketExecutor,
                                                _diskMemUsageNotifier, blockableCfg, _clusterStateHandler, nodeRetired,
                                                document::BucketSpace::placeHolder());
     } else {

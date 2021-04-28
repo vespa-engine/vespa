@@ -80,6 +80,7 @@ import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
+import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentSteps;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
@@ -87,6 +88,8 @@ import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger.ChangesToC
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
 import com.yahoo.vespa.hosted.controller.deployment.Run;
 import com.yahoo.vespa.hosted.controller.deployment.TestConfigSerializer;
+import com.yahoo.vespa.hosted.controller.notification.Notification;
+import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 import com.yahoo.vespa.hosted.controller.rotation.RotationId;
 import com.yahoo.vespa.hosted.controller.rotation.RotationState;
 import com.yahoo.vespa.hosted.controller.rotation.RotationStatus;
@@ -136,8 +139,6 @@ import java.util.stream.Stream;
 
 import static com.yahoo.jdisc.Response.Status.BAD_REQUEST;
 import static com.yahoo.jdisc.Response.Status.CONFLICT;
-import static com.yahoo.jdisc.Response.Status.INTERNAL_SERVER_ERROR;
-import static com.yahoo.jdisc.Response.Status.NOT_FOUND;
 import static java.util.Map.Entry.comparingByKey;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
@@ -151,7 +152,7 @@ import static java.util.stream.Collectors.toUnmodifiableList;
  * @author mpolden
  */
 @SuppressWarnings("unused") // created by injection
-public class ApplicationApiHandler extends LoggingRequestHandler {
+public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private static final ObjectMapper jsonMapper = new ObjectMapper();
 
@@ -163,7 +164,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     public ApplicationApiHandler(LoggingRequestHandler.Context parentCtx,
                                  Controller controller,
                                  AccessControlRequests accessControlRequests) {
-        super(parentCtx);
+        super(parentCtx, controller.auditLogger());
         this.controller = controller;
         this.accessControlRequests = accessControlRequests;
         this.testConfigSerializer = new TestConfigSerializer(controller.system());
@@ -175,7 +176,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
     }
 
     @Override
-    public HttpResponse handle(HttpRequest request) {
+    public HttpResponse auditAndHandle(HttpRequest request) {
         try {
             Path path = new Path(request.getUri());
             switch (request.getMethod()) {
@@ -201,15 +202,15 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             return ErrorResponse.badRequest(Exceptions.toMessageString(e));
         }
         catch (ConfigServerException e) {
-            switch (e.getErrorCode()) {
+            switch (e.code()) {
                 case NOT_FOUND:
-                    return new ErrorResponse(NOT_FOUND, e.getErrorCode().name(), Exceptions.toMessageString(e));
+                    return ErrorResponse.notFoundError(Exceptions.toMessageString(e));
                 case ACTIVATION_CONFLICT:
-                    return new ErrorResponse(CONFLICT, e.getErrorCode().name(), Exceptions.toMessageString(e));
+                    return new ErrorResponse(CONFLICT, e.code().name(), Exceptions.toMessageString(e));
                 case INTERNAL_SERVER_ERROR:
-                    return new ErrorResponse(INTERNAL_SERVER_ERROR, e.getErrorCode().name(), Exceptions.toMessageString(e));
+                    return ErrorResponse.internalServerError(Exceptions.toMessageString(e));
                 default:
-                    return new ErrorResponse(BAD_REQUEST, e.getErrorCode().name(), Exceptions.toMessageString(e));
+                    return new ErrorResponse(BAD_REQUEST, e.code().name(), Exceptions.toMessageString(e));
             }
         }
         catch (RuntimeException e) {
@@ -223,6 +224,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         if (path.matches("/application/v4/tenant")) return tenants(request);
         if (path.matches("/application/v4/tenant/{tenant}")) return tenant(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/info")) return tenantInfo(path.get("tenant"), request);
+        if (path.matches("/application/v4/tenant/{tenant}/notifications")) return notifications(path.get("tenant"), request);
         if (path.matches("/application/v4/tenant/{tenant}/secret-store/{name}/validate")) return validateSecretStore(path.get("tenant"), path.get("name"), request);
         if (path.matches("/application/v4/tenant/{tenant}/application")) return applications(path.get("tenant"), Optional.empty(), request);
         if (path.matches("/application/v4/tenant/{tenant}/application/{application}")) return application(path.get("tenant"), path.get("application"), request);
@@ -480,6 +482,53 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
                 .withAddress(updateTenantInfoAddress(insp.field("address"), oldContact.address()));
     }
 
+    private HttpResponse notifications(String tenantName, HttpRequest request) {
+        NotificationSource notificationSource = new NotificationSource(TenantName.from(tenantName),
+                Optional.ofNullable(request.getProperty("application")).map(ApplicationName::from),
+                Optional.ofNullable(request.getProperty("instance")).map(InstanceName::from),
+                Optional.empty(), Optional.empty(), Optional.empty(), OptionalLong.empty());
+
+        Slime slime = new Slime();
+        Cursor notificationsArray = slime.setObject().setArray("notifications");
+        controller.notificationsDb().listNotifications(notificationSource, showOnlyProductionInstances(request))
+                .forEach(notification -> toSlime(notificationsArray.addObject(), notification));
+        return new SlimeJsonResponse(slime);
+    }
+
+    private static void toSlime(Cursor cursor, Notification notification) {
+        cursor.setLong("at", notification.at().toEpochMilli());
+        cursor.setString("level", notificatioLevelAsString(notification.type().level()));
+        cursor.setString("type", notificationTypeAsString(notification.type()));
+        Cursor messagesArray = cursor.setArray("messages");
+        notification.messages().forEach(messagesArray::addString);
+
+        notification.source().application().ifPresent(application -> cursor.setString("application", application.value()));
+        notification.source().instance().ifPresent(instance -> cursor.setString("instance", instance.value()));
+        notification.source().zoneId().ifPresent(zoneId -> {
+            cursor.setString("environment", zoneId.environment().value());
+            cursor.setString("region", zoneId.region().value());
+        });
+        notification.source().clusterId().ifPresent(clusterId -> cursor.setString("clusterId", clusterId.value()));
+        notification.source().jobType().ifPresent(jobType -> cursor.setString("jobName", jobType.jobName()));
+        notification.source().runNumber().ifPresent(runNumber -> cursor.setLong("runNumber", runNumber));
+    }
+
+    private static String notificationTypeAsString(Notification.Type type) {
+        switch (type) {
+            case APPLICATION_PACKAGE_WARNING: return "APPLICATION_PACKAGE_WARNING";
+            case DEPLOYMENT_FAILURE: return "DEPLOYMENT_FAILURE";
+            default: throw new IllegalArgumentException("No serialization defined for notification type " + type);
+        }
+    }
+
+    private static String notificatioLevelAsString(Notification.Level level) {
+        switch (level) {
+            case warning: return "warning";
+            case error: return "error";
+            default: throw new IllegalArgumentException("No serialization defined for notification level " + level);
+        }
+    }
+
     private HttpResponse applications(String tenantName, Optional<String> applicationName, HttpRequest request) {
         TenantName tenant = TenantName.from(tenantName);
         if (controller.tenants().get(tenantName).isEmpty())
@@ -685,10 +734,10 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
         var tenantSecretStore = new TenantSecretStore(name, awsId, role);
 
         if (!tenantSecretStore.isValid()) {
-            return ErrorResponse.badRequest(String.format("Secret store " + tenantSecretStore + " is invalid"));
+            return ErrorResponse.badRequest("Secret store " + tenantSecretStore + " is invalid");
         }
         if (tenant.tenantSecretStores().contains(tenantSecretStore)) {
-            return ErrorResponse.badRequest(String.format("Secret store " + tenantSecretStore + " is already configured"));
+            return ErrorResponse.badRequest("Secret store " + tenantSecretStore + " is already configured");
         }
 
         controller.serviceRegistry().roleService().createTenantPolicy(TenantName.from(tenantName), name, awsId, role);
@@ -1631,7 +1680,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     /** Trigger deployment of the given Vespa version if a valid one is given, e.g., "7.8.9". */
     private HttpResponse deployPlatform(String tenantName, String applicationName, String instanceName, boolean pin, HttpRequest request) {
-        request = controller.auditLogger().log(request);
         String versionString = readToString(request.getData());
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         StringBuilder response = new StringBuilder();
@@ -1660,7 +1708,6 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
 
     /** Trigger deployment to the last known application package for the given application. */
     private HttpResponse deployApplication(String tenantName, String applicationName, String instanceName, HttpRequest request) {
-        controller.auditLogger().log(request);
         ApplicationId id = ApplicationId.from(tenantName, applicationName, instanceName);
         StringBuilder response = new StringBuilder();
         controller.applications().lockApplicationOrThrow(TenantAndApplicationId.from(id), application -> {
@@ -2050,6 +2097,7 @@ public class ApplicationApiHandler extends LoggingRequestHandler {
             toSlime(scalingEvent.from(), scalingEventObject.setObject("from"));
             toSlime(scalingEvent.to(), scalingEventObject.setObject("to"));
             scalingEventObject.setLong("at", scalingEvent.at().toEpochMilli());
+            scalingEvent.completion().ifPresent(completion -> scalingEventObject.setLong("completion", completion.toEpochMilli()));
         }
     }
 

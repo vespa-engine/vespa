@@ -28,7 +28,7 @@ import static org.junit.Assert.assertTrue;
  */
 public class SearchClusterTest {
 
-    static class State implements AutoCloseable{
+    static class State implements AutoCloseable {
 
         final String clusterId;
         final int nodesPerGroup;

@@ -280,12 +280,16 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
 
         ClusterSpec firstNodeSpec = first().get().allocation().get().membership().cluster().with(Optional.empty());
         if (stream().map(node -> node.allocation().get().membership().cluster().with(Optional.empty()))
-                    .anyMatch(clusterSpec -> ! clusterSpec.equals(firstNodeSpec)))
+                    .anyMatch(clusterSpec -> ! clusterSpec.id().equals(firstNodeSpec.id())))
             throw new IllegalStateException("Nodes belong to multiple clusters");
     }
 
     /** Returns the nodes of this as a stream */
     public Stream<Node> stream() { return asList().stream(); }
+
+    public static NodeList of(Node ... nodes) {
+        return copyOf(List.of(nodes));
+    }
 
     public static NodeList copyOf(List<Node> nodes) {
         return new NodeList(nodes, false);

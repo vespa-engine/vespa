@@ -91,7 +91,7 @@ public class OsVersionsTest {
     public void max_active_upgrades() {
         int totalNodes = 20;
         int maxActiveUpgrades = 5;
-        var versions = new OsVersions(tester.nodeRepository(), false, maxActiveUpgrades);
+        var versions = new OsVersions(tester.nodeRepository(), false, maxActiveUpgrades, Integer.MAX_VALUE);
         provisionInfraApplication(totalNodes);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().state(Node.State.active).hosts();
 
@@ -156,7 +156,7 @@ public class OsVersionsTest {
 
     @Test
     public void upgrade_by_retiring() {
-        var versions = new OsVersions(tester.nodeRepository(), true, Integer.MAX_VALUE);
+        var versions = new OsVersions(tester.nodeRepository(), true, Integer.MAX_VALUE, Integer.MAX_VALUE);
         var clock = (ManualClock) tester.nodeRepository().clock();
         int hostCount = 10;
         // Provision hosts and children
@@ -171,6 +171,8 @@ public class OsVersionsTest {
 
         // Target is set and upgrade started
         var version1 = Version.fromString("7.1");
+        Duration initialBudget = Duration.ofHours(24);
+        versions.setTarget(NodeType.host, version1, initialBudget, false);
         Duration totalBudget = Duration.ofHours(12);
         Duration nodeBudget = totalBudget.dividedBy(hostCount);
         versions.setTarget(NodeType.host, version1, totalBudget,false);
@@ -221,9 +223,9 @@ public class OsVersionsTest {
 
     @Test
     public void upgrade_by_retiring_everything_at_once() {
-        var versions = new OsVersions(tester.nodeRepository(), true, Integer.MAX_VALUE);
+        var versions = new OsVersions(tester.nodeRepository(), true, Integer.MAX_VALUE, Integer.MAX_VALUE);
         int hostCount = 3;
-        provisionInfraApplication(hostCount, NodeType.confighost);
+        provisionInfraApplication(hostCount, infraApplication, NodeType.confighost);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list()
                                                    .nodeType(NodeType.confighost)
                                                    .not().state(Node.State.deprovisioned);
@@ -244,7 +246,7 @@ public class OsVersionsTest {
 
     @Test
     public void upgrade_by_rebuilding() {
-        var versions = new OsVersions(tester.nodeRepository(), false, Integer.MAX_VALUE);
+        var versions = new OsVersions(tester.nodeRepository(), false, Integer.MAX_VALUE, 1);
         var clock = tester.clock();
         int hostCount = 10;
         provisionInfraApplication(hostCount + 1);
@@ -273,14 +275,17 @@ public class OsVersionsTest {
         versions.resumeUpgradeOf(NodeType.host, true);
         assertEquals(1, hostNodes.get().rebuilding().size());
 
-        // Budget has been spent and another host is rebuilt
+        // Time budget has been spent, but we cannot rebuild another host until the current one is done
         clock.advance(nodeBudget);
         versions.resumeUpgradeOf(NodeType.host, true);
         NodeList hostsRebuilding = hostNodes.get().rebuilding();
-        assertEquals(2, hostsRebuilding.size());
-
-        // Hosts are rebuilt
+        assertEquals(1, hostsRebuilding.size());
         completeRebuildOf(hostsRebuilding.asList(), NodeType.host);
+        assertEquals(1, hostNodes.get().onOsVersion(version1).size());
+
+        // Second host is rebuilt
+        versions.resumeUpgradeOf(NodeType.host, true);
+        completeRebuildOf(hostNodes.get().rebuilding().asList(), NodeType.host);
         assertEquals(2, hostNodes.get().onOsVersion(version1).size());
 
         // The remaining hosts complete their upgrade
@@ -322,6 +327,42 @@ public class OsVersionsTest {
         completeRebuildOf(hostsRebuilding.asList(), NodeType.host);
     }
 
+    @Test
+    public void upgrade_by_rebuilding_multiple_host_types() {
+        var versions = new OsVersions(tester.nodeRepository(), false, Integer.MAX_VALUE, 1);
+        var clock = tester.clock();
+        int hostCount = 3;
+        provisionInfraApplication(hostCount, infraApplication, NodeType.host);
+        provisionInfraApplication(hostCount, ApplicationId.from("hosted-vespa", "confighost", "default"), NodeType.confighost);
+        Supplier<NodeList> hosts = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host,
+                                                                                         NodeType.confighost);
+
+        // All hosts upgrade to first version. Upgrades are delegated
+        var version0 = Version.fromString("7.0");
+        versions.setTarget(NodeType.host, version0, Duration.ZERO, false);
+        versions.setTarget(NodeType.confighost, version0, Duration.ZERO, false);
+        setCurrentVersion(hosts.get().asList(), version0);
+
+        // Target is set for new major version
+        var version1 = Version.fromString("8.0");
+        Duration totalBudget = Duration.ofHours(12);
+        Duration nodeBudget = totalBudget.dividedBy(hostCount);
+        versions.setTarget(NodeType.host, version1, totalBudget, false);
+        versions.setTarget(NodeType.confighost, version1, totalBudget, false);
+
+        // One  host of each type is upgraded
+        for (int i = 0; i < hostCount; i++) {
+            clock.advance(nodeBudget);
+            versions.resumeUpgradeOf(NodeType.host, true);
+            versions.resumeUpgradeOf(NodeType.confighost, true);
+            NodeList hostsRebuilding = hosts.get().rebuilding();
+            assertEquals(2, hostsRebuilding.size());
+            completeRebuildOf(hostsRebuilding.nodeType(NodeType.host).asList(), NodeType.host);
+            completeRebuildOf(hostsRebuilding.nodeType(NodeType.confighost).asList(), NodeType.confighost);
+        }
+        assertEquals("All hosts upgraded", hostCount * 2, hosts.get().onOsVersion(version1).size());
+    }
+
     private NodeList deprovisioningChildrenOf(Node parent) {
         return tester.nodeRepository().nodes().list()
                      .childrenOf(parent)
@@ -329,12 +370,12 @@ public class OsVersionsTest {
     }
 
     private List<Node> provisionInfraApplication(int nodeCount) {
-        return provisionInfraApplication(nodeCount, NodeType.host);
+        return provisionInfraApplication(nodeCount, infraApplication, NodeType.host);
     }
 
-    private List<Node> provisionInfraApplication(int nodeCount, NodeType nodeType) {
+    private List<Node> provisionInfraApplication(int nodeCount, ApplicationId application, NodeType nodeType) {
         var nodes = tester.makeReadyNodes(nodeCount, "default", nodeType, 1);
-        tester.prepareAndActivateInfraApplication(infraApplication, nodeType);
+        tester.prepareAndActivateInfraApplication(application, nodeType);
         return nodes.stream()
                     .map(Node::hostname)
                     .flatMap(hostname -> tester.nodeRepository().nodes().node(hostname).stream())
@@ -369,10 +410,11 @@ public class OsVersionsTest {
         tester.patchNodes(nodes, (node) -> {
             Optional<Version> wantedOsVersion = node.status().osVersion().wanted();
             if (node.status().wantToDeprovision()) {
+                ApplicationId application = node.allocation().get().owner();
                 tester.nodeRepository().nodes().park(node.hostname(), false, Agent.system,
                                                      getClass().getSimpleName());
                 tester.nodeRepository().nodes().removeRecursively(node.hostname());
-                node = provisionInfraApplication(1, nodeType).get(0);
+                node = provisionInfraApplication(1, application, nodeType).get(0);
             }
             return node.with(node.status().withOsVersion(node.status().osVersion().withCurrent(wantedOsVersion)));
         });
@@ -383,12 +425,15 @@ public class OsVersionsTest {
         tester.patchNodes(nodes, (node) -> {
             Optional<Version> wantedOsVersion = node.status().osVersion().wanted();
             if (node.status().wantToRebuild()) {
+                ApplicationId application = node.allocation().get().owner();
                 tester.nodeRepository().nodes().park(node.hostname(), false, Agent.system,
                                                      getClass().getSimpleName());
                 tester.nodeRepository().nodes().removeRecursively(node.hostname());
-                node = tester.nodeRepository().nodes().restore(node.hostname(), Agent.system, getClass().getSimpleName());
+                Node newNode = Node.create(node.id(), node.ipConfig(), node.hostname(), node.flavor(), node.type())
+                                   .build();
+                node = tester.nodeRepository().nodes().addNodes(List.of(newNode), Agent.system).get(0);
                 node = tester.nodeRepository().nodes().setReady(node.hostname(), Agent.system, getClass().getSimpleName());
-                tester.prepareAndActivateInfraApplication(infraApplication, nodeType);
+                tester.prepareAndActivateInfraApplication(application, nodeType);
                 node = tester.nodeRepository().nodes().node(node.hostname()).get();
             }
             return node.with(node.status().withOsVersion(node.status().osVersion().withCurrent(wantedOsVersion)));

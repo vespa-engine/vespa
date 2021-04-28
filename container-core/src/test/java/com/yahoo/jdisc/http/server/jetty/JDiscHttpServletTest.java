@@ -7,15 +7,15 @@ import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseHandler;
-import org.apache.http.client.methods.HttpDelete;
-import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.methods.HttpHead;
-import org.apache.http.client.methods.HttpOptions;
-import org.apache.http.client.methods.HttpPatch;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.client.methods.HttpPut;
-import org.apache.http.client.methods.HttpRequestBase;
-import org.apache.http.client.methods.HttpTrace;
+import org.apache.hc.client5.http.classic.methods.HttpDelete;
+import org.apache.hc.client5.http.classic.methods.HttpGet;
+import org.apache.hc.client5.http.classic.methods.HttpHead;
+import org.apache.hc.client5.http.classic.methods.HttpOptions;
+import org.apache.hc.client5.http.classic.methods.HttpPatch;
+import org.apache.hc.client5.http.classic.methods.HttpPost;
+import org.apache.hc.client5.http.classic.methods.HttpPut;
+import org.apache.hc.client5.http.classic.methods.HttpTrace;
+import org.apache.hc.client5.http.classic.methods.HttpUriRequestBase;
 import org.junit.Test;
 
 import java.io.IOException;
@@ -33,7 +33,7 @@ public class JDiscHttpServletTest {
 
     @Test
     public void requireThatServerRespondsToAllMethods() throws Exception {
-        final TestDriver driver = TestDrivers.newInstance(newEchoHandler());
+        final JettyTestDriver driver = JettyTestDriver.newInstance(newEchoHandler());
         final URI uri = driver.client().newUri("/status.html");
         driver.client().execute(new HttpGet(uri))
               .expectStatusCode(is(OK));
@@ -56,7 +56,7 @@ public class JDiscHttpServletTest {
 
     @Test
     public void requireThatServerResponds405ToUnknownMethods() throws IOException {
-        TestDriver driver = TestDrivers.newInstance(newEchoHandler());
+        JettyTestDriver driver = JettyTestDriver.newInstance(newEchoHandler());
         final URI uri = driver.client().newUri("/status.html");
         driver.client().execute(new UnknownMethodHttpRequest(uri))
                 .expectStatusCode(is(METHOD_NOT_ALLOWED));
@@ -73,8 +73,7 @@ public class JDiscHttpServletTest {
         };
     }
 
-    private static class UnknownMethodHttpRequest extends HttpRequestBase {
-        UnknownMethodHttpRequest(URI uri) { setURI(uri); }
-        @Override public String getMethod() { return "UNKNOWN_METHOD"; }
+    private static class UnknownMethodHttpRequest extends HttpUriRequestBase {
+        UnknownMethodHttpRequest(URI uri) { super("UNKNOWN_METHOD", uri); }
     }
 }

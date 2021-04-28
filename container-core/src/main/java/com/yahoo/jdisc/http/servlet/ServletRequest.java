@@ -6,6 +6,7 @@ import com.yahoo.jdisc.HeaderFields;
 import com.yahoo.jdisc.http.Cookie;
 import com.yahoo.jdisc.http.HttpHeaders;
 import com.yahoo.jdisc.http.HttpRequest;
+import org.eclipse.jetty.server.Request;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletRequestWrapper;
@@ -24,7 +25,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
-import static com.yahoo.jdisc.http.server.jetty.HttpServletRequestUtils.getConnection;
+import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnection;
 
 /**
  * Mutable wrapper to use a {@link javax.servlet.http.HttpServletRequest}
@@ -68,7 +69,7 @@ public class ServletRequest extends HttpServletRequestWrapper implements Servlet
         remoteHostAddress = request.getRemoteAddr();
         remoteHostName = request.getRemoteHost();
         remotePort = request.getRemotePort();
-        connectedAt = getConnection(request).getCreatedTimeStamp();
+        connectedAt = getConnection((Request) request).getCreatedTimeStamp();
 
         headerFields = new HeaderFields();
         Enumeration<String> parentHeaders = request.getHeaderNames();

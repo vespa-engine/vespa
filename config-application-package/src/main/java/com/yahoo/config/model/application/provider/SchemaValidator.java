@@ -7,6 +7,7 @@ import com.thaiopensource.validate.ValidateProperty;
 import com.thaiopensource.validate.ValidationDriver;
 import com.thaiopensource.validate.rng.CompactSchemaReader;
 import com.yahoo.config.application.api.DeployLogger;
+import com.yahoo.io.IOUtils;
 import com.yahoo.io.reader.NamedReader;
 import com.yahoo.yolean.Exceptions;
 import org.xml.sax.ErrorHandler;
@@ -52,18 +53,20 @@ public class SchemaValidator {
     }
 
     public void validate(File file, String fileName) throws IOException {
-        validate(ValidationDriver.fileInputSource(file), fileName);
+        validate(IOUtils.createReader(file.getAbsolutePath()), fileName);
     }
 
     public void validate(Reader reader) throws IOException {
-        validate(new InputSource(reader), null);
+        validate(reader, null);
     }
 
     public void validate(NamedReader reader) throws IOException {
-        validate(new InputSource(reader), reader.getName());
+        validate(reader, reader.getName());
     }
 
-    public void validate(InputSource inputSource, String fileName)  throws IOException {
+    @Deprecated
+    /*  @deprecated Will not give proper context from errors, use another validate method instead */
+    public void validate(InputSource inputSource, String fileName) throws IOException {
         errorHandler.fileName = (fileName == null ? "input" : fileName);
         errorHandler.reader = inputSource.getCharacterStream();
         try {
@@ -72,8 +75,23 @@ public class SchemaValidator {
                 throw new RuntimeException("Aborting due to earlier XML errors.");
             }
         } catch (SAXException e) {
-            // This should never happen, as it is handled by the ErrorHandler
-            // installed for the driver.
+            // Shouldn't happen, error handler should have thrown
+            throw new IllegalArgumentException("XML error in " + errorHandler.fileName + ": " + Exceptions.toMessageString(e));
+        }
+    }
+
+    private void validate(Reader reader, String fileName) throws IOException {
+        errorHandler.fileName = (fileName == null ? "input" : fileName);
+        // We need to read from a reader in error handler, so need to read all content into a new one
+        Reader newReader = new StringReader(IOUtils.readAll(reader));
+        errorHandler.reader = newReader;
+        try {
+            if ( ! driver.validate(new InputSource(newReader))) {
+                // Shouldn't happen, error handler should have thrown
+                throw new RuntimeException("Aborting due to earlier XML errors.");
+            }
+        } catch (SAXException e) {
+            // Shouldn't happen, error handler should have thrown
             throw new IllegalArgumentException("XML error in " + errorHandler.fileName + ": " + Exceptions.toMessageString(e));
         }
     }
@@ -89,7 +107,7 @@ public class SchemaValidator {
         volatile Reader reader;
 
         public void warning(SAXParseException e) {
-            deployLogger.log(Level.WARNING, message(e));
+            deployLogger.logApplicationPackage(Level.WARNING, message(e));
         }
 
         public void error(SAXParseException e) {

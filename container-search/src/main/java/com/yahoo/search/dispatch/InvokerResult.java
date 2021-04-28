@@ -12,14 +12,19 @@ import java.util.List;
 
 /**
  * Wraps a Result and a flat, skinny hit list
+ *
+ * @author baldersheim
  */
 public class InvokerResult {
+
     private final Result result;
     private final List<LeanHit> leanHits;
+
     public InvokerResult(Result result) {
         this.result = result;
         this.leanHits = Collections.emptyList();
     }
+
     public InvokerResult(Query query, int expectedHits) {
         result = new Result(query);
         leanHits = new ArrayList<>(expectedHits);
@@ -32,6 +37,7 @@ public class InvokerResult {
     public List<LeanHit> getLeanHits() {
         return leanHits;
     }
+
     void complete() {
         Query query = result.getQuery();
         Sorting sorting = query.getRanking().getSorting();
@@ -47,4 +53,5 @@ public class InvokerResult {
         }
         leanHits.clear();
     }
+
 }

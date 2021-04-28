@@ -128,7 +128,7 @@ public class CloudEventReporterTest {
     }
 
     private Set<String> getHostnames(ZoneId zoneId) {
-        return tester.configServer().nodeRepository().list(zoneId)
+        return tester.configServer().nodeRepository().list(zoneId, false)
                 .stream()
                 .map(node -> node.hostname().value())
                 .collect(Collectors.toSet());

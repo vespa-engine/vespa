@@ -130,7 +130,7 @@ public class DynamicDockerAllocationTest {
 
         // App 2 and 3 should have been allocated to the same nodes - fail one of the parent hosts from there
         String parent = "host-1.yahoo.com";
-        tester.nodeRepository().nodes().failRecursively(parent, Agent.system, "Testing");
+        tester.nodeRepository().nodes().failOrMarkRecursively(parent, Agent.system, "Testing");
 
         // Redeploy all applications
         deployApp(application1, clusterSpec1, resources, tester, 3);

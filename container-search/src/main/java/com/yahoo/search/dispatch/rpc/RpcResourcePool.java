@@ -26,6 +26,7 @@ import java.util.Random;
  * @author ollivir
  */
 public class RpcResourcePool extends AbstractComponent {
+
     /** The compression method which will be used with rpc dispatch. "lz4" (default) and "none" is supported. */
     public final static CompoundName dispatchCompression = new CompoundName("dispatch.compression");
 

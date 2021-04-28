@@ -47,7 +47,8 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
 
     public enum Version {
         HTTP_1_0("HTTP/1.0"),
-        HTTP_1_1("HTTP/1.1");
+        HTTP_1_1("HTTP/1.1"),
+        HTTP_2_0("HTTP/2.0");
 
         private final String str;
 
@@ -70,6 +71,7 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
         }
     }
 
+    private final long jvmRelativeCreatedAt = System.nanoTime();
     private final HeaderFields trailers = new HeaderFields();
     private final Map<String, List<String>> parameters = new HashMap<>();
     private Principal principal;
@@ -295,6 +297,11 @@ public class HttpRequest extends Request implements ServletOrJdiscHttpRequest {
         }
         return version == Version.HTTP_1_1;
     }
+
+    /**
+     * @return the relative created timestamp (using {@link System#nanoTime()}
+     */
+    public long relativeCreatedAtNanoTime() { return jvmRelativeCreatedAt; }
 
     public Principal getUserPrincipal() {
         return principal;

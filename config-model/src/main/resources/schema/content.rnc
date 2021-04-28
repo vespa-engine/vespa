@@ -167,6 +167,7 @@ Engine = element engine {
 
 Proton = element proton {
     element flush-on-shutdown { xsd:string }? &
+    element sync-transactionlog { xsd:string }? &
     element visibility-delay { xsd:double { minInclusive = "0.0" } }? &
     element query-timeout { xsd:double { minInclusive = "0.0" } }? &
     element searchable-copies { xsd:integer { minInclusive = "0" } }? &

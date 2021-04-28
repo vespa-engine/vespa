@@ -22,6 +22,7 @@ namespace search::attribute {
  */
 class Config {
 public:
+    enum class Match { CASED, UNCASED };
     Config() noexcept;
     Config(BasicType bt) noexcept : Config(bt, CollectionType::SINGLE) { }
     Config(BasicType bt, CollectionType ct) noexcept : Config(bt, ct, false) { }
@@ -68,6 +69,7 @@ public:
     const GrowStrategy & getGrowStrategy() const { return _growStrategy; }
     const CompactionStrategy &getCompactionStrategy() const { return _compactionStrategy; }
     const DictionaryConfig & get_dictionary_config() const { return _dictionary; }
+    Match get_match() const { return _match; }
     Config & setHuge(bool v)                         { _huge = v; return *this;}
     Config & setFastSearch(bool v)                   { _fastSearch = v; return *this; }
     Config & setPredicateParams(const PredicateParams &v) { _predicateParams = v; return *this; }
@@ -121,6 +123,7 @@ public:
         return *this;
     }
     Config & set_dictionary_config(const DictionaryConfig & cfg) { _dictionary = cfg; return *this; }
+    Config & set_match(Match match) { _match = match; return *this; }
     bool operator!=(const Config &b) const { return !(operator==(b)); }
     bool operator==(const Config &b) const;
 
@@ -134,6 +137,7 @@ private:
     bool           _isFilter;
     bool           _fastAccess;
     bool           _mutable;
+    Match                          _match;
     DictionaryConfig               _dictionary;
     GrowStrategy                   _growStrategy;
     CompactionStrategy             _compactionStrategy;

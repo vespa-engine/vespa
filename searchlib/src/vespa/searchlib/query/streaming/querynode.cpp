@@ -10,8 +10,10 @@ namespace search::streaming {
 
 namespace {
     vespalib::stringref DEFAULT("default");
-    bool isPhraseOrNear(const QueryNode * qn) {
-        return dynamic_cast<const NearQueryNode *> (qn) || dynamic_cast<const PhraseQueryNode *> (qn);
+    bool disableRewrite(const QueryNode * qn) {
+        return dynamic_cast<const NearQueryNode *> (qn) ||
+               dynamic_cast<const PhraseQueryNode *> (qn) ||
+               dynamic_cast<const SameElementQueryNode *>(qn);
     }
 }
 
@@ -56,8 +58,7 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
                 if (qc->isFlattenable(queryRep.getType())) {
                     arity += queryRep.getArity();
                 } else {
-                    UP child = Build(qc, factory, queryRep, allowRewrite && !isPhraseOrNear(qn.get()));
-                    qc->push_back(std::move(child));
+                    qc->addChild(Build(qc, factory, queryRep, allowRewrite && !disableRewrite(qn.get())));
                 }
             }
         }
@@ -128,15 +129,20 @@ QueryNode::Build(const QueryNode * parent, const QueryNodeResultFactory & factor
             auto qt = std::make_unique<QueryTerm>(factory.create(), ssTerm, ssIndex, sTerm);
             qt->setWeight(queryRep.GetWeight());
             qt->setUniqueId(queryRep.getUniqueId());
-            if ( qt->encoding().isBase10Integer() || ! qt->encoding().isFloat() || ! factory.getRewriteFloatTerms() || !allowRewrite || (ssTerm.find('.') == vespalib::string::npos)) {
+            if (qt->encoding().isBase10Integer() ||
+                ! qt->encoding().isFloat() ||
+                ! factory.getRewriteFloatTerms() ||
+                ! allowRewrite ||
+                (ssTerm.find('.') == vespalib::string::npos))
+            {
                 qn = std::move(qt);
             } else {
                 auto phrase = std::make_unique<PhraseQueryNode>();
-                phrase->push_back(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(0, ssTerm.find('.')), ssIndex, TermType::WORD));
-                phrase->push_back(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(ssTerm.find('.') + 1), ssIndex, TermType::WORD));
+                phrase->addChild(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(0, ssTerm.find('.')), ssIndex, TermType::WORD));
+                phrase->addChild(std::make_unique<QueryTerm>(factory.create(), ssTerm.substr(ssTerm.find('.') + 1), ssIndex, TermType::WORD));
                 auto orqn = std::make_unique<EquivQueryNode>();
-                orqn->push_back(std::move(qt));
-                orqn->push_back(std::move(phrase));
+                orqn->addChild(std::move(qt));
+                orqn->addChild(std::move(phrase));
                 qn = std::move(orqn);
             }
         }

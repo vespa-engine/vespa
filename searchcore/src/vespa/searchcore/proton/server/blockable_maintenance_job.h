@@ -49,12 +49,13 @@ public:
     bool isBlocked(BlockedReason reason);
     void considerRun();
 
+    void onStop() override;
     void setBlocked(BlockedReason reason) override;
     void unBlock(BlockedReason reason) override;
     bool isBlocked() const override;
     void registerRunner(IMaintenanceJobRunner *runner) override { _runner = runner; }
     IMoveOperationLimiter & getLimiter() { return *_moveOpsLimiter; }
-
+    const IMoveOperationLimiter & getLimiter() const { return *_moveOpsLimiter; }
 };
 
 }

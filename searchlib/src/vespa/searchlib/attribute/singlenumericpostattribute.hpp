@@ -36,7 +36,7 @@ template <typename B>
 void
 SingleValueNumericPostingAttribute<B>::mergeMemoryStats(vespalib::MemoryUsage & total)
 {
-    total.merge(this->_postingList.getMemoryUsage());
+    total.merge(this->_postingList.update_stat());
 }
 
 template <typename B>
@@ -53,7 +53,7 @@ SingleValueNumericPostingAttribute<B>::applyUpdateValueChange(const Change & c,
 template <typename B>
 void
 SingleValueNumericPostingAttribute<B>::
-makePostingChange(const vespalib::datastore::EntryComparator *cmpa,
+makePostingChange(const vespalib::datastore::EntryComparator &cmpa,
                   const std::map<DocId, EnumIndex> &currEnumIndices,
                   PostingMap &changePost)
 {
@@ -63,11 +63,11 @@ makePostingChange(const vespalib::datastore::EntryComparator *cmpa,
         EnumIndex newIdx = elem.second;
 
         // add new posting
-        changePost[EnumPostingPair(newIdx, cmpa)].add(docId, 1);
+        changePost[EnumPostingPair(newIdx, &cmpa)].add(docId, 1);
 
         // remove old posting
         if ( oldIdx.valid()) {
-            changePost[EnumPostingPair(oldIdx, cmpa)].remove(docId);
+            changePost[EnumPostingPair(oldIdx, &cmpa)].remove(docId);
         }
     }
 }
@@ -79,7 +79,6 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
 {
     EnumStore & enumStore = this->getEnumStore();
     IEnumStoreDictionary& dictionary = enumStore.get_dictionary();
-    auto cmp = enumStore.make_comparator();
     PostingMap changePost;
 
     // used to make sure several arithmetic operations on the same document in a single commit works
@@ -95,8 +94,7 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
         }
 
         if (change._type == ChangeBase::UPDATE) {
-            applyUpdateValueChange(change, enumStore,
-                                   currEnumIndices);
+            applyUpdateValueChange(change, enumStore, currEnumIndices);
         } else if (change._type >= ChangeBase::ADD && change._type <= ChangeBase::DIV) {
             if (oldIdx.valid()) {
                 T oldValue = enumStore.get_value(oldIdx);
@@ -107,12 +105,11 @@ SingleValueNumericPostingAttribute<B>::applyValueChanges(EnumStoreBatchUpdater& 
             }
         } else if(change._type == ChangeBase::CLEARDOC) {
             this->_defaultValue._doc = change._doc;
-            applyUpdateValueChange(this->_defaultValue, enumStore,
-                                   currEnumIndices);
+            applyUpdateValueChange(this->_defaultValue, enumStore, currEnumIndices);
         }
     }
 
-    makePostingChange(&cmp, currEnumIndices, changePost);
+    makePostingChange(enumStore.get_comparator(), currEnumIndices, changePost);
 
     this->updatePostings(changePost);
     SingleValueNumericEnumAttribute<B>::applyValueChanges(updater);

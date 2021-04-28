@@ -790,8 +790,8 @@ public class ContentClusterTest extends ContentBaseTest {
     }
 
     @Test
-    public void flush_on_shutdown_is_default_off_for_hosted() throws Exception {
-        assertNoPreShutdownCommand(createOneNodeCluster(true));
+    public void flush_on_shutdown_is_default_on_for_hosted() throws Exception {
+        assertPrepareRestartCommand(createOneNodeCluster(true));
     }
 
     @Test
@@ -1021,40 +1021,52 @@ public class ContentClusterTest extends ContentBaseTest {
         assertEquals(0.1, resolveMaxDeadBytesRatio(0.1), 1e-5);
     }
 
-    void assertZookeeperServerImplementation(String expectedClassName) {
-        VespaModel model = createEnd2EndOneNode(new TestProperties().setMultitenant(true));
-
-        ContentCluster cc = model.getContentClusters().get("storage");
-        for (ClusterControllerContainer c : cc.getClusterControllers().getContainers()) {
+    void assertZookeeperServerImplementation(String expectedClassName,
+                                             ClusterControllerContainerCluster clusterControllerCluster) {
+        for (ClusterControllerContainer c : clusterControllerCluster.getContainers()) {
             var builder = new ComponentsConfig.Builder();
             c.getConfig(builder);
             assertEquals(1, new ComponentsConfig(builder).components().stream()
-                    .filter(component -> component.classId().equals(expectedClassName))
-                    .count());
+                                                         .filter(component -> component.classId().equals(expectedClassName))
+                                                         .count());
         }
     }
 
-    @Test
-    public void reconfigurableZookeeperServerComponentsForClusterController() {
-        assertZookeeperServerImplementation("com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer");
-        assertZookeeperServerImplementation("com.yahoo.vespa.zookeeper.Reconfigurer");
-        assertZookeeperServerImplementation("com.yahoo.vespa.zookeeper.VespaZooKeeperAdminImpl");
-    }
-
-    private int resolveMaxInhibitedGroupsConfigWithFeatureFlag(int maxGroups) {
-        VespaModel model = createEnd2EndOneNode(new TestProperties().maxActivationInhibitedOutOfSyncGroups(maxGroups));
+    private StorDistributormanagerConfig resolveStorDistributormanagerConfig(TestProperties props) {
+        VespaModel model = createEnd2EndOneNode(props);
 
         ContentCluster cc = model.getContentClusters().get("storage");
         var builder = new StorDistributormanagerConfig.Builder();
         cc.getDistributorNodes().getConfig(builder);
 
-        return (new StorDistributormanagerConfig(builder)).max_activation_inhibited_out_of_sync_groups();
+        return (new StorDistributormanagerConfig(builder));
+    }
+
+    private int resolveMaxInhibitedGroupsConfigWithFeatureFlag(int maxGroups) {
+        var cfg = resolveStorDistributormanagerConfig(new TestProperties().maxActivationInhibitedOutOfSyncGroups(maxGroups));
+        return cfg.max_activation_inhibited_out_of_sync_groups();
     }
 
     @Test
     public void default_distributor_max_inhibited_group_activation_config_controlled_by_properties() {
         assertEquals(0, resolveMaxInhibitedGroupsConfigWithFeatureFlag(0));
         assertEquals(2, resolveMaxInhibitedGroupsConfigWithFeatureFlag(2));
+    }
+
+    private int resolveNumDistributorStripesConfigWithFeatureFlag(TestProperties props) {
+        var cfg = resolveStorDistributormanagerConfig(props);
+        return cfg.num_distributor_stripes();
+    }
+
+    private int resolveNumDistributorStripesConfigWithFeatureFlag(int numStripes) {
+        return resolveNumDistributorStripesConfigWithFeatureFlag(new TestProperties().setNumDistributorStripes(numStripes));
+    }
+
+    @Test
+    public void num_distributor_stripes_config_controlled_by_properties() {
+        assertEquals(0, resolveNumDistributorStripesConfigWithFeatureFlag(new TestProperties()));
+        assertEquals(0, resolveNumDistributorStripesConfigWithFeatureFlag(0));
+        assertEquals(1, resolveNumDistributorStripesConfigWithFeatureFlag(1));
     }
 
     @Test
@@ -1116,17 +1128,7 @@ public class ContentClusterTest extends ContentBaseTest {
         assertNull("No own cluster controller for content", twoContentModel.getContentClusters().get("dev-null").getClusterControllers());
         assertNotNull("Shared cluster controller with content", twoContentModel.getAdmin().getClusterControllers());
 
-        Map<String, ContentCluster> clustersWithOwnCCC = createEnd2EndOneNode(new TestProperties().setMultitenant(true), twoContentServices).getContentClusters();
         ClusterControllerContainerCluster clusterControllers = twoContentModel.getAdmin().getClusterControllers();
-        assertEquals("Union of components in own clusters is equal to those in shared cluster",
-                     clusterControllers.getAllComponents().stream()
-                                    .map(Component::getComponentId)
-                                    .collect(toList()),
-                     clustersWithOwnCCC.values().stream()
-                                       .flatMap(cluster -> Optional.ofNullable(cluster.getClusterControllers()).stream()
-                                                                   .flatMap(c -> c.getAllComponents().stream()))
-                                       .map(Component::getComponentId)
-                                       .collect(toList()));
 
         assertEquals(1, clusterControllers.reindexingContext().documentTypesForCluster("storage").size());
         assertEquals(1, clusterControllers.reindexingContext().documentTypesForCluster("dev-null").size());
@@ -1136,6 +1138,13 @@ public class ContentClusterTest extends ContentBaseTest {
         twoContentModel.getConfig(devNullBuilder, "admin/standalone/cluster-controllers/0/components/clustercontroller-dev-null-configurer");
         assertEquals(0.618, storageBuilder.build().min_distributor_up_ratio(), 1e-9);
         assertEquals(0.418, devNullBuilder.build().min_distributor_up_ratio(), 1e-9);
+
+        assertZookeeperServerImplementation("com.yahoo.vespa.zookeeper.ReconfigurableVespaZooKeeperServer",
+                                            clusterControllers);
+        assertZookeeperServerImplementation("com.yahoo.vespa.zookeeper.Reconfigurer",
+                                            clusterControllers);
+        assertZookeeperServerImplementation("com.yahoo.vespa.zookeeper.VespaZooKeeperAdminImpl",
+                                            clusterControllers);
     }
 
 }

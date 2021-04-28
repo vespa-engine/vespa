@@ -12,7 +12,7 @@ class AccessLogHandler {
 
     AccessLogHandler(AccessLogConfig.FileHandler config, LogWriter<RequestLogEntry> logWriter) {
         logFileHandler = new LogFileHandler<>(
-                toCompression(config), config.pattern(), config.rotation(),
+                toCompression(config), config.bufferSize(), config.pattern(), config.rotation(),
                 config.symlink(), config.queueSize(), "request-logger", logWriter);
     }
 

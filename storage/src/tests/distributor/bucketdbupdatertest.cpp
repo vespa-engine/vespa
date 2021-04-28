@@ -1116,7 +1116,7 @@ TEST_F(BucketDBUpdaterTest, notify_bucket_change_from_node_down) {
         getBucketDBUpdater().onNotifyBucketChange(cmd);
     }
     // Enable here to avoid having request bucket info be silently swallowed
-    // (sendRequestBucketInfo drops message if node is down).
+    // (send_request_bucket_info drops message if node is down).
     enableDistributorClusterState("distributor:1 storage:2 .0.s:d");
 
     ASSERT_EQ(std::string("BucketId(0x4000000000000001) : "

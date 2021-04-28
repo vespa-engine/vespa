@@ -3,7 +3,9 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.concurrent.ThreadFactoryFactory;
 import com.yahoo.config.provision.HostName;
-import java.util.logging.Level;
+import com.yahoo.vespa.flags.BooleanFlag;
+import com.yahoo.vespa.flags.FlagSource;
+import com.yahoo.vespa.flags.Flags;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -27,6 +29,7 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import java.util.function.Supplier;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -53,6 +56,7 @@ public class NodeAdminStateUpdater {
     private final Orchestrator orchestrator;
     private final NodeAdmin nodeAdmin;
     private final String hostHostname;
+    private final BooleanFlag cacheAclFlag;
 
     public enum State { TRANSITIONING, RESUMED, SUSPENDED_NODE_ADMIN, SUSPENDED }
 
@@ -64,13 +68,15 @@ public class NodeAdminStateUpdater {
             Orchestrator orchestrator,
             NodeAdmin nodeAdmin,
             HostName hostHostname,
-            Clock clock) {
+            Clock clock,
+            FlagSource flagSource) {
         this.nodeAgentContextFactory = nodeAgentContextFactory;
         this.nodeRepository = nodeRepository;
         this.orchestrator = orchestrator;
         this.nodeAdmin = nodeAdmin;
         this.hostHostname = hostHostname.value();
         this.cachedAclSupplier = new CachedSupplier<>(clock, Duration.ofSeconds(115), () -> nodeRepository.getAcls(this.hostHostname));
+        this.cacheAclFlag = Flags.CACHE_ACL.bindTo(flagSource);
     }
 
     public void start() {
@@ -168,9 +174,11 @@ public class NodeAdminStateUpdater {
         try {
             Map<String, NodeSpec> nodeSpecByHostname = nodeRepository.getNodes(hostHostname).stream()
                     .collect(Collectors.toMap(NodeSpec::hostname, Function.identity()));
-            Map<String, Acl> aclByHostname = Optional.of(cachedAclSupplier.get())
-                    .filter(acls -> acls.keySet().containsAll(nodeSpecByHostname.keySet()))
-                    .orElseGet(cachedAclSupplier::invalidateAndGet);
+            Map<String, Acl> aclByHostname = cacheAclFlag.value() ?
+                    Optional.of(cachedAclSupplier.get())
+                            .filter(acls -> acls.keySet().containsAll(nodeSpecByHostname.keySet()))
+                            .orElseGet(cachedAclSupplier::invalidateAndGet) :
+                    cachedAclSupplier.invalidateAndGet();
 
             Set<NodeAgentContext> nodeAgentContexts = nodeSpecByHostname.keySet().stream()
                     .map(hostname -> nodeAgentContextFactory.create(

@@ -9,6 +9,10 @@ import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.UnsafeContentInputStream;
 import com.yahoo.jdisc.handler.ResponseHandler;
+
+import java.io.InterruptedIOException;
+import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 
 import java.io.IOException;
@@ -28,7 +32,7 @@ import java.util.logging.Logger;
  * @author Steinar Knutsen
  * @author bratseth
  */
-public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler {
+public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler implements HttpRequestHandler  {
 
     public static final String CONTENT_TYPE = "Content-Type";
     private static final String RENDERING_ERRORS = "rendering_errors";
@@ -97,7 +101,8 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
         LoggingCompletionHandler logOnCompletion = null;
         ContentChannelOutputStream output = null;
         try {
-            output = new ContentChannelOutputStream(channel);
+            output = httpResponse.maxPendingBytes() > 0 ? new MaxPendingContentChannelOutputStream(channel, httpResponse.maxPendingBytes())
+                                                        : new ContentChannelOutputStream(channel);
             logOnCompletion = createLoggingCompletionHandler(startTime, System.currentTimeMillis(),
                                                              httpResponse, request, output);
 
@@ -245,6 +250,84 @@ public abstract class ThreadedHttpRequestHandler extends ThreadedRequestHandler 
                                                ", got " + request.getClass().getName());
         }
         return (com.yahoo.jdisc.http.HttpRequest) request;
+    }
+
+
+    /**
+     * @author baldersheim
+     */
+    static class MaxPendingContentChannelOutputStream extends ContentChannelOutputStream {
+        private final long maxPending;
+        private final AtomicLong sent = new AtomicLong(0);
+        private final AtomicLong acked = new AtomicLong(0);
+
+        public MaxPendingContentChannelOutputStream(ContentChannel endpoint, long maxPending) {
+            super(endpoint);
+            this.maxPending = maxPending;
+        }
+
+        private long pendingBytes() {
+            return sent.get() - acked.get();
+        }
+
+        private class TrackCompletion implements CompletionHandler {
+
+            private final long written;
+            private final AtomicBoolean replied = new AtomicBoolean(false);
+
+            TrackCompletion(long written) {
+                this.written = written;
+                sent.addAndGet(written);
+            }
+
+            @Override
+            public void completed() {
+                if ( ! replied.getAndSet(true)) {
+                    acked.addAndGet(written);
+                }
+            }
+
+            @Override
+            public void failed(Throwable t) {
+                if ( ! replied.getAndSet(true)) {
+                    acked.addAndGet(written);
+                }
+            }
+        }
+
+        @Override
+        public void send(ByteBuffer src) throws IOException {
+            try {
+                stallWhilePendingAbove(maxPending);
+            } catch (InterruptedException ignored) {
+                throw new InterruptedIOException("Interrupted waiting for IO");
+            }
+            CompletionHandler pendingTracker = new TrackCompletion(src.remaining());
+            try {
+                send(src, pendingTracker);
+            } catch (Throwable throwable) {
+                pendingTracker.failed(throwable);
+                throw throwable;
+            }
+        }
+
+        private void stallWhilePendingAbove(long pending) throws InterruptedException {
+            while (pendingBytes() > pending) {
+                Thread.sleep(1);
+            }
+        }
+
+        @Override
+        public void flush() throws IOException {
+            super.flush();
+            try {
+                stallWhilePendingAbove(0);
+            }
+            catch (InterruptedException e) {
+                throw new InterruptedIOException("Interrupted waiting for IO");
+            }
+        }
+
     }
 
 }

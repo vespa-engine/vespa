@@ -4,6 +4,7 @@
 
 #include "entryref.h"
 #include <vector>
+#include <vespa/vespalib/stllike/allocator.h>
 
 namespace vespalib::datastore {
 
@@ -18,7 +19,7 @@ public:
 
 protected:
     std::vector<bool> _compacting_buffer;
-    std::vector<std::vector<EntryRef>> _mapping;
+    std::vector<std::vector<EntryRef, allocator_large<EntryRef>>> _mapping;
 public:
     UniqueStoreRemapper()
         : _compacting_buffer(),

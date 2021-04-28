@@ -318,4 +318,41 @@ UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::get_hash_memo
     return {};
 }
 
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
+bool
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::has_held_buffers() const
+{
+    if constexpr (has_btree_dictionary) {
+        if (this->_btree_dict.getAllocator().getNodeStore().has_held_buffers()) {
+            return true;
+        }
+    }
+    if constexpr (has_hash_dictionary) {
+        if (this->_hash_dict.has_held_buffers()) {
+            return true;
+        }
+    }
+    return false;
+}
+
+template <typename BTreeDictionaryT, typename ParentT, typename HashDictionaryT>
+void
+UniqueStoreDictionary<BTreeDictionaryT, ParentT, HashDictionaryT>::compact_worst(bool compact_btree_dictionary, bool compact_hash_dictionary)
+{
+    if constexpr (has_btree_dictionary) {
+        if (compact_btree_dictionary) {
+            this->_btree_dict.compact_worst();
+        }
+    } else {
+        (void) compact_btree_dictionary;
+    }
+    if constexpr (has_hash_dictionary) {
+        if (compact_hash_dictionary) {
+            this->_hash_dict.compact_worst_shard();
+        }
+    } else {
+        (void) compact_hash_dictionary;
+    }
+}
+
 }

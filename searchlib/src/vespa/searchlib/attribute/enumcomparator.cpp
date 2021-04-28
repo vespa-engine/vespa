@@ -5,17 +5,10 @@
 
 namespace search {
 
-namespace {
-
-FoldedStringCompare _strCmp;
-
-}
-
 template <typename EntryT>
-EnumStoreComparator<EntryT>::EnumStoreComparator(const DataStoreType& data_store, const EntryT& fallback_value, bool prefix)
+EnumStoreComparator<EntryT>::EnumStoreComparator(const DataStoreType& data_store, const EntryT& fallback_value)
     : ParentType(data_store, fallback_value)
 {
-    (void) prefix;
 }
 
 template <typename EntryT>
@@ -31,52 +24,50 @@ EnumStoreComparator<EntryT>::equal_helper(const EntryT& lhs, const EntryT& rhs)
     return vespalib::datastore::UniqueStoreComparatorHelper<EntryT>::equal(lhs, rhs);
 }
 
-EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store)
-    : ParentType(data_store, nullptr)
-{
-}
-
-EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, const char* fallback_value)
-    : ParentType(data_store, fallback_value)
-{
-}
-
-EnumStoreFoldedStringComparator::EnumStoreFoldedStringComparator(const DataStoreType& data_store, bool prefix)
+EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, bool fold)
     : ParentType(data_store, nullptr),
-      _prefix(prefix),
-      _prefix_len(0u)
+      _fold(fold),
+      _prefix(false),
+      _prefix_len(0)
 {
 }
 
-EnumStoreFoldedStringComparator::EnumStoreFoldedStringComparator(const DataStoreType& data_store,
-                                                                 const char* fallback_value, bool prefix)
+EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* fallback_value)
     : ParentType(data_store, fallback_value),
+      _fold(fold),
+      _prefix(false),
+      _prefix_len(0)
+{
+}
+
+EnumStoreStringComparator::EnumStoreStringComparator(const DataStoreType& data_store, bool fold, const char* fallback_value, bool prefix)
+    : ParentType(data_store, fallback_value),
+      _fold(fold),
       _prefix(prefix),
-      _prefix_len(0u)
+      _prefix_len(0)
 {
     if (use_prefix()) {
-        _prefix_len = _strCmp.size(fallback_value);
+        _prefix_len = FoldedStringCompare::size(fallback_value);
     }
 }
 
-int
-EnumStoreStringComparator::compare(const char* lhs, const char* rhs)
-{
-    return _strCmp.compare(lhs, rhs);
+bool
+EnumStoreStringComparator::less(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const {
+    return _fold
+        ? (use_prefix()
+            ? (FoldedStringCompare::compareFoldedPrefix(get(lhs), get(rhs), _prefix_len) < 0)
+            : (FoldedStringCompare::compareFolded(get(lhs), get(rhs)) < 0))
+        : (use_prefix()
+           ? (FoldedStringCompare::comparePrefix(get(lhs), get(rhs), _prefix_len) < 0)
+           : (FoldedStringCompare::compare(get(lhs), get(rhs)) < 0));
+
 }
 
-int
-EnumStoreFoldedStringComparator::compare_folded(const char* lhs, const char* rhs)
-{
-    return _strCmp.compareFolded(lhs, rhs);
-}
-
-int
-EnumStoreFoldedStringComparator::compare_folded_prefix(const char* lhs,
-                                                       const char* rhs,
-                                                       size_t prefix_len)
-{
-    return _strCmp.compareFoldedPrefix(lhs, rhs, prefix_len);
+bool
+EnumStoreStringComparator::equal(const vespalib::datastore::EntryRef lhs, const vespalib::datastore::EntryRef rhs) const {
+    return _fold
+        ? (FoldedStringCompare::compareFolded(get(lhs), get(rhs)) == 0)
+        : (FoldedStringCompare::compare(get(lhs), get(rhs)) == 0);
 }
 
 template class EnumStoreComparator<int8_t>;

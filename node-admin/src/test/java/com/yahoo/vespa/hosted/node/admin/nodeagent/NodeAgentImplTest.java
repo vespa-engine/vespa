@@ -27,6 +27,7 @@ import com.yahoo.vespa.hosted.node.admin.maintenance.StorageMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.acl.AclMaintainer;
 import com.yahoo.vespa.hosted.node.admin.maintenance.identity.CredentialsMaintainer;
 import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
+import org.junit.Before;
 import org.junit.Test;
 import org.mockito.InOrder;
 
@@ -71,6 +72,14 @@ public class NodeAgentImplTest {
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
     private final ManualClock clock = new ManualClock(Instant.now());
 
+    @Before
+    public void setUp() {
+        when(containerOperations.suspendNode(any())).thenReturn("");
+        when(containerOperations.resumeNode(any())).thenReturn("");
+        when(containerOperations.restartVespa(any())).thenReturn("");
+        when(containerOperations.startServices(any())).thenReturn("");
+        when(containerOperations.stopServices(any())).thenReturn("");
+    }
 
     @Test
     public void upToDateContainerIsUntouched() {
@@ -467,7 +476,7 @@ public class NodeAgentImplTest {
     }
 
     @Test
-    public void provisionedNodeIsMarkedAsDirty() {
+    public void provisionedNodeIsMarkedAsReady() {
         final NodeSpec node = nodeBuilder(NodeState.provisioned)
                 .wantedDockerImage(dockerImage)
                 .build();
@@ -477,7 +486,7 @@ public class NodeAgentImplTest {
         when(nodeRepository.getOptionalNode(hostName)).thenReturn(Optional.of(node));
 
         nodeAgent.doConverge(context);
-        verify(nodeRepository, times(1)).setNodeState(eq(hostName), eq(NodeState.dirty));
+        verify(nodeRepository, times(1)).setNodeState(eq(hostName), eq(NodeState.ready));
     }
 
     @Test
@@ -515,7 +524,7 @@ public class NodeAgentImplTest {
 
         final InOrder inOrder = inOrder(orchestrator, containerOperations, nodeRepository);
         doThrow(new RuntimeException("Failed 1st time"))
-                .doNothing()
+                .doReturn("")
                 .when(containerOperations).resumeNode(eq(context));
 
         // 1st try

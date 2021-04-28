@@ -125,7 +125,7 @@ public class SDDocumentTypeOrderer {
         } else if (type instanceof ReferenceDataType) {
             //do nothing
         } else {
-            deployLogger.log(Level.WARNING, "Unknown type : " + type);
+            deployLogger.logApplicationPackage(Level.WARNING, "Unknown type : " + type);
         }
     }
 }

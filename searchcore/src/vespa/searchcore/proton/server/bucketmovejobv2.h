@@ -10,6 +10,8 @@
 #include "maintenancedocumentsubdb.h"
 #include <vespa/searchcore/proton/bucketdb/bucketscaniterator.h>
 #include <vespa/searchcore/proton/bucketdb/i_bucket_create_listener.h>
+#include <vespa/searchcore/proton/common/monitored_refcount.h>
+
 
 namespace storage::spi { struct BucketExecutor; }
 namespace searchcorespi::index { struct IThreadService; }
@@ -55,9 +57,9 @@ private:
     using BucketMoverSP = std::shared_ptr<BucketMover>;
     using Bucket2Mover = std::map<BucketId, BucketMoverSP>;
     using Movers = std::vector<BucketMoverSP>;
-    using MoveKey = BucketMover::MoveKey;
     using GuardedMoveOps = BucketMover::GuardedMoveOps;
     std::shared_ptr<IBucketStateCalculator>   _calc;
+    RetainGuard                               _dbRetainer;
     IDocumentMoveHandler                     &_moveHandler;
     IBucketModifiedHandler                   &_modifiedHandler;
     IThreadService                           &_master;
@@ -79,6 +81,7 @@ private:
     IDiskMemUsageNotifier             &_diskMemUsageNotifier;
 
     BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &calc,
+                    RetainGuard dbRetainer,
                     IDocumentMoveHandler &moveHandler,
                     IBucketModifiedHandler &modifiedHandler,
                     IThreadService & master,
@@ -93,10 +96,9 @@ private:
                     const vespalib::string &docTypeName,
                     document::BucketSpace bucketSpace);
 
-    void startMove(BucketMoverSP mover, size_t maxDocsToMove);
-    static void prepareMove(std::shared_ptr<BucketMoveJobV2> job, BucketMoverSP mover,
-                            std::vector<MoveKey> keysToMove, IDestructorCallbackSP context);
-    void completeMove(BucketMoverSP mover, GuardedMoveOps moveOps, IDestructorCallbackSP context);
+    void startMove(BucketMover & mover, size_t maxDocsToMove);
+    static void prepareMove(std::shared_ptr<BucketMoveJobV2> job, BucketMover::MoveKeys keys, IDestructorCallbackSP context);
+    void completeMove(GuardedMoveOps moveOps, IDestructorCallbackSP context);
     bool checkIfMoverComplete(const BucketMover & mover);
     void considerBucket(const bucketdb::Guard & guard, BucketId bucket);
     void reconsiderBucket(const bucketdb::Guard & guard, BucketId bucket);
@@ -114,6 +116,7 @@ private:
 public:
     static std::shared_ptr<BucketMoveJobV2>
     create(const std::shared_ptr<IBucketStateCalculator> &calc,
+           RetainGuard dbRetainer,
            IDocumentMoveHandler &moveHandler,
            IBucketModifiedHandler &modifiedHandler,
            IThreadService & master,
@@ -126,13 +129,7 @@ public:
            IDiskMemUsageNotifier &diskMemUsageNotifier,
            const BlockableMaintenanceJobConfig &blockableConfig,
            const vespalib::string &docTypeName,
-           document::BucketSpace bucketSpace)
-    {
-        return std::shared_ptr<BucketMoveJobV2>(
-                new BucketMoveJobV2(calc, moveHandler, modifiedHandler, master, bucketExecutor, ready, notReady,
-                                    bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
-                                    diskMemUsageNotifier, blockableConfig, docTypeName, bucketSpace));
-    }
+           document::BucketSpace bucketSpace);
 
     ~BucketMoveJobV2() override;
 
@@ -146,7 +143,7 @@ public:
     void notifyDiskMemUsage(DiskMemUsageState state) override;
     void notifyCreateBucket(const bucketdb::Guard & guard, const BucketId &bucket) override;
     void onStop() override;
-    void updateMetrics(DocumentDBTaggedMetrics & metrics) override;
+    void updateMetrics(DocumentDBTaggedMetrics & metrics) const override;
 };
 
 } // namespace proton

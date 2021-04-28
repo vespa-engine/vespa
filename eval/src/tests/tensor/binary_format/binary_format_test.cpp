@@ -128,7 +128,7 @@ TEST(TensorBinaryFormatTest, tensor_binary_format_test_spec) {
     path.append("src/apps/make_tensor_binary_format_test_spec/test_spec.json");
     MappedFileInput file(path);
     EXPECT_TRUE(file.valid());
-    auto handle_test = [this](Slime &slime)
+    auto handle_test = [](Slime &slime)
                        {
                            test_binary_format_spec(slime.get());
                        };

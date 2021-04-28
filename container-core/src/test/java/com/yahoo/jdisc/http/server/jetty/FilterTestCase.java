@@ -3,6 +3,8 @@ package com.yahoo.jdisc.http.server.jetty;
 
 import com.google.inject.AbstractModule;
 import com.google.inject.util.Modules;
+import com.yahoo.container.jdisc.HttpRequestHandler;
+import com.yahoo.container.jdisc.RequestHandlerSpec;
 import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.container.logging.RequestLog;
 import com.yahoo.jdisc.AbstractResource;
@@ -12,6 +14,8 @@ import com.yahoo.jdisc.Response;
 import com.yahoo.jdisc.handler.AbstractRequestHandler;
 import com.yahoo.jdisc.handler.CompletionHandler;
 import com.yahoo.jdisc.handler.ContentChannel;
+import com.yahoo.jdisc.handler.DelegatedRequestHandler;
+import com.yahoo.jdisc.handler.RequestHandler;
 import com.yahoo.jdisc.handler.ResponseDispatch;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.ConnectorConfig;
@@ -24,7 +28,8 @@ import com.yahoo.jdisc.http.filter.ResponseFilter;
 import com.yahoo.jdisc.http.filter.ResponseHeaderFilter;
 import com.yahoo.jdisc.http.filter.chain.RequestFilterChain;
 import com.yahoo.jdisc.http.filter.chain.ResponseFilterChain;
-import com.yahoo.jdisc.http.guiceModules.ConnectorFactoryRegistryModule;
+import com.yahoo.jdisc.http.server.jetty.testutils.ConnectorFactoryRegistryModule;
+import org.assertj.core.api.Assertions;
 import org.junit.Test;
 import org.mockito.ArgumentCaptor;
 
@@ -61,7 +66,7 @@ public class FilterTestCase {
                 .addRequestFilterBinding("my-request-filter", "http://*/filtered/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
+        final JettyTestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html");
 
@@ -79,7 +84,7 @@ public class FilterTestCase {
                 .addRequestFilterBinding("my-request-filter", "http://*/filtered/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
+        final JettyTestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/filtered/status.html");
 
@@ -97,9 +102,9 @@ public class FilterTestCase {
                 .addRequestFilterBinding("my-request-filter", "http://*/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
+        final JettyTestDriver testDriver = newDriver(requestHandler, filterBindings);
 
-        testDriver.client().get("status.html");
+        testDriver.client().get("/status.html");
 
         assertThat(requestHandler.awaitInvocation(), is(true));
         assertThat(requestHandler.getHeaderMap().get("foo").get(0), is("bar"));
@@ -114,7 +119,7 @@ public class FilterTestCase {
                 .addRequestFilterBinding("my-request-filter", "http://*/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
+        final JettyTestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html").expectStatusCode(is(Response.Status.FORBIDDEN));
 
@@ -132,7 +137,7 @@ public class FilterTestCase {
                 .addRequestFilterBinding("my-request-filter", "http://*/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
+        final JettyTestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html")
                 .expectStatusCode(is(responseStatus))
@@ -150,7 +155,7 @@ public class FilterTestCase {
                 .addRequestFilterBinding("my-request-filter", "http://*/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
+        final JettyTestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html").expectStatusCode(is(Response.Status.INTERNAL_SERVER_ERROR));
 
@@ -167,7 +172,7 @@ public class FilterTestCase {
                 .addResponseFilterBinding("my-response-filter", "http://*/filtered/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
+        final JettyTestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html");
 
@@ -185,7 +190,7 @@ public class FilterTestCase {
                 .addResponseFilterBinding("my-response-filter", "http://*/filtered/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
+        final JettyTestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/filtered/status.html");
 
@@ -202,7 +207,7 @@ public class FilterTestCase {
                 .addResponseFilterBinding("my-response-filter", "http://*/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
+        final JettyTestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html")
                 .expectHeader("foo", is("bar"));
@@ -219,7 +224,7 @@ public class FilterTestCase {
                 .addResponseFilterBinding("my-response-filter", "http://*/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
+        final JettyTestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html").expectStatusCode(is(Response.Status.INTERNAL_SERVER_ERROR));
 
@@ -240,7 +245,7 @@ public class FilterTestCase {
                 .addResponseFilterBinding("my-response-filter", uriPattern)
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
+        final JettyTestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html");
 
@@ -260,7 +265,7 @@ public class FilterTestCase {
                 .addResponseFilterBinding("my-response-filter", "http://*/*")
                 .build();
         final MyRequestHandler requestHandler = new MyRequestHandler();
-        final TestDriver testDriver = newDriver(requestHandler, filterBindings);
+        final JettyTestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html")
                 .expectStatusCode(is(Response.Status.FORBIDDEN))
@@ -410,7 +415,7 @@ public class FilterTestCase {
                 .setRequestFilterDefaultForPort(defaultFilterId, 0)
                 .build();
         MyRequestHandler requestHandler = new MyRequestHandler();
-        TestDriver testDriver = newDriver(requestHandler, filterBindings);
+        JettyTestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html");
 
@@ -433,7 +438,7 @@ public class FilterTestCase {
                 .setResponseFilterDefaultForPort(defaultFilterId, 0)
                 .build();
         MyRequestHandler requestHandler = new MyRequestHandler();
-        TestDriver testDriver = newDriver(requestHandler, filterBindings);
+        JettyTestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/status.html");
 
@@ -456,7 +461,7 @@ public class FilterTestCase {
                 .setRequestFilterDefaultForPort(defaultFilterId, 0)
                 .build();
         MyRequestHandler requestHandler = new MyRequestHandler();
-        TestDriver testDriver = newDriver(requestHandler, filterBindings);
+        JettyTestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/filtered/status.html");
 
@@ -479,7 +484,7 @@ public class FilterTestCase {
                 .setResponseFilterDefaultForPort(defaultFilterId, 0)
                 .build();
         MyRequestHandler requestHandler = new MyRequestHandler();
-        TestDriver testDriver = newDriver(requestHandler, filterBindings);
+        JettyTestDriver testDriver = newDriver(requestHandler, filterBindings);
 
         testDriver.client().get("/filtered/status.html");
 
@@ -498,7 +503,7 @@ public class FilterTestCase {
                 .build();
         MetricConsumerMock metricConsumerMock = new MetricConsumerMock();
         MyRequestHandler requestHandler = new MyRequestHandler();
-        TestDriver testDriver = newDriver(requestHandler, filterBindings, metricConsumerMock, false);
+        JettyTestDriver testDriver = newDriver(requestHandler, filterBindings, metricConsumerMock, false);
 
         testDriver.client().get("/status.html");
         assertThat(requestHandler.awaitInvocation(), is(true));
@@ -521,7 +526,7 @@ public class FilterTestCase {
                 .addRequestFilterBinding("my-request-filter", "http://*/filtered/*")
                 .build();
         MyRequestHandler requestHandler = new MyRequestHandler();
-        TestDriver testDriver = newDriver(requestHandler, filterBindings, new MetricConsumerMock(), true);
+        JettyTestDriver testDriver = newDriver(requestHandler, filterBindings, new MetricConsumerMock(), true);
 
         testDriver.client().get("/unfiltered/")
                 .expectStatusCode(is(Response.Status.FORBIDDEN))
@@ -530,17 +535,46 @@ public class FilterTestCase {
         assertThat(testDriver.close(), is(true));
     }
 
-    private static TestDriver newDriver(MyRequestHandler requestHandler, FilterBindings filterBindings) {
+    @Test
+    public void requireThatRequestHandlerSpecIsAvailableThroughDelegate() throws IOException, InterruptedException {
+        MyRequestHandler requestHandler = new MyHttpRequestHandler();
+        MyDelegatedHandler delegateHandler1 = new MyDelegatedHandler(requestHandler);
+        MyDelegatedHandler delegateHandler2 = new MyDelegatedHandler(delegateHandler1);
+        requestHandlerSpecTest(delegateHandler2);
+    }
+
+    @Test
+    public void requireThatRequestHandlerSpecIsAvailable() throws IOException, InterruptedException {
+        MyRequestHandler requestHandler = new MyHttpRequestHandler();
+        requestHandlerSpecTest(requestHandler);
+    }
+
+    private void requestHandlerSpecTest(MyRequestHandler requestHandler) throws IOException, InterruptedException {
+        RequestFilter filter = mock(RequestFilter.class);
+        FilterBindings filterBindings = new FilterBindings.Builder()
+                .addRequestFilter("my-request-filter", filter)
+                .addRequestFilterBinding("my-request-filter", "http://*/filtered/*")
+                .build();
+
+        JettyTestDriver testDriver = newDriver(requestHandler, filterBindings, new MetricConsumerMock(), true);
+
+        testDriver.client().get("/filtered/")
+                .expectStatusCode(is(Response.Status.OK));
+        ArgumentCaptor<HttpRequest> requestArgumentCaptor = ArgumentCaptor.forClass(HttpRequest.class);
+        verify(filter).filter(requestArgumentCaptor.capture(), any(ResponseHandler.class));
+        Assertions.assertThat(requestArgumentCaptor.getValue().context()).containsKey(RequestHandlerSpec.ATTRIBUTE_NAME);
+    }
+
+    private static JettyTestDriver newDriver(MyRequestHandler requestHandler, FilterBindings filterBindings) {
         return newDriver(requestHandler, filterBindings, new MetricConsumerMock(), false);
     }
 
-    private static TestDriver newDriver(
+    private static JettyTestDriver newDriver(
             MyRequestHandler requestHandler,
             FilterBindings filterBindings,
             MetricConsumerMock metricConsumer,
             boolean strictFiltering) {
-        return TestDriver.newInstance(
-                JettyHttpServer.class,
+        return JettyTestDriver.newInstance(
                 requestHandler,
                 newFilterModule(filterBindings, metricConsumer, strictFiltering));
     }
@@ -662,6 +696,35 @@ public class FilterTestCase {
             final CompletionHandler completionHandler = null;
             channel.write(ByteBuffer.wrap(responseMessage.getBytes()), completionHandler);
             channel.close(null);
+        }
+    }
+
+    private static class MyDelegatedHandler extends MyRequestHandler implements DelegatedRequestHandler {
+
+        private final RequestHandler delegate;
+
+        public MyDelegatedHandler(RequestHandler delegate) {
+            this.delegate = delegate;
+        }
+
+        @Override
+        public RequestHandler getDelegate() {
+            return delegate;
+        }
+        @Override
+        public ContentChannel handleRequest(Request request, ResponseHandler handler) {
+            return delegate.handleRequest(request, handler);
+        }
+        @Override
+        public void handleTimeout(Request request, ResponseHandler handler) {
+            delegate.handleTimeout(request, handler);
+        }
+    }
+
+    private static class MyHttpRequestHandler extends MyRequestHandler implements HttpRequestHandler {
+        @Override
+        public RequestHandlerSpec requestHandlerSpec() {
+            return RequestHandlerSpec.DEFAULT_INSTANCE;
         }
     }
 }

@@ -42,7 +42,7 @@ public:
     virtual bool isBlocked() const { return false; }
     virtual IBlockableMaintenanceJob *asBlockable() { return nullptr; }
     virtual void onStop() = 0;
-    virtual void updateMetrics(DocumentDBTaggedMetrics &) {}
+    virtual void updateMetrics(DocumentDBTaggedMetrics &) const {}
 
     /**
      * Register maintenance job runner, in case event passed to the

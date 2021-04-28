@@ -69,20 +69,23 @@ class DistributorComponent : public StorageComponent,
     mutable UniqueTimeCalculator* _timeCalculator;
     DistributorConfig             _distributorConfig;
     VisitorConfig                 _visitorConfig;
-    DistributorConfiguration      _totalConfig;
+    uint64_t                      _internal_config_generation; // Note: NOT related to config system generations
+    std::shared_ptr<const DistributorConfiguration> _config_snapshot;
 
     void setTimeCalculator(UniqueTimeCalculator& utc) override { _timeCalculator = &utc; }
     void setDistributorConfig(const DistributorConfig& c) override {
         _distributorConfig = c;
-        _totalConfig.configure(c);
+        update_config_snapshot();
     }
     void setVisitorConfig(const VisitorConfig& c) override {
         _visitorConfig = c;
-        _totalConfig.configure(c);
+        update_config_snapshot();
     }
 
+    void update_config_snapshot();
+
 public:
-    typedef std::unique_ptr<DistributorComponent> UP;
+    using UP = std::unique_ptr<DistributorComponent>;
 
     DistributorComponent(DistributorComponentRegister& compReg, vespalib::stringref name);
     ~DistributorComponent() override;
@@ -96,9 +99,11 @@ public:
     const VisitorConfig& getVisitorConfig() const {
         return _visitorConfig;
     }
-    const DistributorConfiguration&
-    getTotalDistributorConfig() const {
-        return _totalConfig;
+    uint64_t internal_config_generation() const noexcept {
+        return _internal_config_generation;
+    }
+    std::shared_ptr<const DistributorConfiguration> total_distributor_config_sp() const noexcept {
+        return _config_snapshot;
     }
 };
 

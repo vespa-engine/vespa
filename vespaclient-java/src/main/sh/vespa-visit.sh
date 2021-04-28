@@ -74,6 +74,10 @@ findhost
 
 # END environment bootstrap section
 
+if [ "${VESPA_LOG_LEVEL}" = "" ]; then
+    export VESPA_LOG_LEVEL=error,warning
+fi
+
 export MALLOC_ARENA_MAX=1 #Does not need fast allocation
 exec java \
 -server -enableassertions \

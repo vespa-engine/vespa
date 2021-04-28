@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Address;
 import com.yahoo.vespa.hosted.provision.node.History;
-import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
 import com.yahoo.vespa.orchestrator.Orchestrator;
 import com.yahoo.vespa.orchestrator.status.HostInfo;
 import com.yahoo.vespa.orchestrator.status.HostStatus;
@@ -25,6 +24,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.Function;
+import java.util.function.Predicate;
 
 /**
 * @author bratseth
@@ -40,7 +40,7 @@ class NodesResponse extends SlimeJsonResponse {
     /** The parent url of nodes */
     private final String nodeParentUrl;
 
-    private final NodeFilter filter;
+    private final Predicate<Node> filter;
     private final boolean recursive;
     private final Function<HostName, Optional<HostInfo>> orchestrator;
     private final NodeRepository nodeRepository;
@@ -104,7 +104,7 @@ class NodesResponse extends SlimeJsonResponse {
 
     private void toSlime(List<Node> nodes, Cursor array) {
         for (Node node : nodes) {
-            if ( ! filter.matches(node)) continue;
+            if ( ! filter.test(node)) continue;
             toSlime(node, recursive, array.addObject());
         }
     }

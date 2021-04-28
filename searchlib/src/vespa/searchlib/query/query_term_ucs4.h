@@ -12,7 +12,6 @@ namespace search {
  */
 class QueryTermUCS4 : public QueryTermSimple {
 public:
-    typedef std::unique_ptr<QueryTermUCS4> UP;
     QueryTermUCS4(const QueryTermUCS4 &) = delete;
     QueryTermUCS4 & operator = (const QueryTermUCS4 &) = delete;
     QueryTermUCS4(QueryTermUCS4 &&) = delete;

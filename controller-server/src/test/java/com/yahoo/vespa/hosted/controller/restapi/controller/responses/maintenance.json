@@ -43,7 +43,7 @@
       "name": "EndpointCertificateMaintainer"
     },
     {
-      "name": "HostSwitchUpdater"
+      "name": "HostInfoUpdater"
     },
     {
       "name": "JobRunner"
@@ -89,6 +89,9 @@
     },
     {
       "name": "Upgrader"
+    },
+    {
+      "name": "VCMRMaintainer"
     },
     {
       "name": "VersionStatusUpdater"

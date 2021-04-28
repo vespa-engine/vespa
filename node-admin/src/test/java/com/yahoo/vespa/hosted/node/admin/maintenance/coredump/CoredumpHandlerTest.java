@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.dockerapi.metrics.DimensionMetrics;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
@@ -19,7 +20,6 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.attribute.FileTime;
 import java.time.Duration;
-import java.time.Instant;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -54,10 +54,11 @@ public class CoredumpHandlerTest {
     private final CoreCollector coreCollector = mock(CoreCollector.class);
     private final CoredumpReporter coredumpReporter = mock(CoredumpReporter.class);
     private final Metrics metrics = new Metrics();
+    private final ManualClock clock = new ManualClock();
     @SuppressWarnings("unchecked")
     private final Supplier<String> coredumpIdSupplier = mock(Supplier.class);
     private final CoredumpHandler coredumpHandler = new CoredumpHandler(terminal, coreCollector, coredumpReporter,
-            crashPathInContainer, doneCoredumpsPath, "users", metrics, coredumpIdSupplier);
+            crashPathInContainer, doneCoredumpsPath, "users", metrics, clock, coredumpIdSupplier);
 
 
     @Test
@@ -66,14 +67,14 @@ public class CoredumpHandlerTest {
         final Path processingDir = fileSystem.getPath("/home/docker/container-1/some/other/processing");
 
         Files.createDirectories(crashPathOnHost);
-        createFileAged(crashPathOnHost.resolve(".bash.core.431"), Duration.ZERO);
+        createFileAged(crashPathOnHost.resolve("bash.core.431"), Duration.ZERO);
 
-        assertFolderContents(crashPathOnHost, ".bash.core.431");
+        assertFolderContents(crashPathOnHost, "bash.core.431");
         Optional<Path> enqueuedPath = coredumpHandler.enqueueCoredump(crashPathOnHost, processingDir);
         assertEquals(Optional.empty(), enqueuedPath);
 
         // bash.core.431 finished writing... and 2 more have since been written
-        Files.move(crashPathOnHost.resolve(".bash.core.431"), crashPathOnHost.resolve("bash.core.431"));
+        clock.advance(Duration.ofMinutes(3));
         createFileAged(crashPathOnHost.resolve("vespa-proton.core.119"), Duration.ofMinutes(10));
         createFileAged(crashPathOnHost.resolve("vespa-slobrok.core.673"), Duration.ofMinutes(5));
 
@@ -100,12 +101,12 @@ public class CoredumpHandlerTest {
         final Path processingDir = fileSystem.getPath("/home/docker/container-1/some/other/processing");
         Files.createDirectories(crashPathOnHost);
 
-        createFileAged(crashPathOnHost.resolve("java.core.69"), Duration.ofSeconds(15));
-        createFileAged(crashPathOnHost.resolve("hs_err_pid69.log"), Duration.ofSeconds(20));
+        createFileAged(crashPathOnHost.resolve("java.core.69"), Duration.ofSeconds(515));
+        createFileAged(crashPathOnHost.resolve("hs_err_pid69.log"), Duration.ofSeconds(520));
 
-        createFileAged(crashPathOnHost.resolve("java.core.2420"), Duration.ofSeconds(40));
-        createFileAged(crashPathOnHost.resolve("hs_err_pid2420.log"), Duration.ofSeconds(49));
-        createFileAged(crashPathOnHost.resolve("hs_err_pid2421.log"), Duration.ofSeconds(50));
+        createFileAged(crashPathOnHost.resolve("java.core.2420"), Duration.ofSeconds(540));
+        createFileAged(crashPathOnHost.resolve("hs_err_pid2420.log"), Duration.ofSeconds(549));
+        createFileAged(crashPathOnHost.resolve("hs_err_pid2421.log"), Duration.ofSeconds(550));
 
         when(coredumpIdSupplier.get()).thenReturn("id-123").thenReturn("id-321");
         Optional<Path> enqueuedPath = coredumpHandler.enqueueCoredump(crashPathOnHost, processingDir);
@@ -154,7 +155,6 @@ public class CoredumpHandlerTest {
 
         String expectedMetadataStr = "{\"fields\":{" +
                 "\"hostname\":\"host123.yahoo.com\"," +
-                "\"system\":\"main\"," +
                 "\"kernel_version\":\"3.10.0-862.9.1.el7.x86_64\"," +
                 "\"backtrace\":[\"call 1\",\"function 2\",\"something something\"]," +
                 "\"vespa_version\":\"6.48.4\"," +
@@ -256,9 +256,9 @@ public class CoredumpHandlerTest {
         assertEquals(expectedContentsOfFolder, actualContentsOfFolder);
     }
 
-    private static Path createFileAged(Path path, Duration age) {
+    private Path createFileAged(Path path, Duration age) {
         return uncheck(() -> Files.setLastModifiedTime(
                 Files.createFile(path),
-                FileTime.from(Instant.now().minus(age))));
+                FileTime.from(clock.instant().minus(age))));
     }
 }

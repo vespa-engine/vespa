@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config;
 
 import com.yahoo.config.subscription.ConfigSourceSet;
@@ -10,17 +10,16 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
+import java.util.logging.Level;
 import java.util.logging.Logger;
-
-import static java.util.logging.Level.FINE;
+import java.util.stream.Collectors;
 
 /**
  * A pool of JRT connections to a config source (either a config server or a config proxy).
- * The current connection is chosen randomly when calling {#link #setNewCurrentConnection}
- * (since the connection is chosen randomly, it might end up using the same connection again,
- * and it will always do so if there is only one source).
+ * The current connection is chosen randomly when calling {#link {@link #switchConnection()}}
+ * (it will continue to use the same connection if there is only one source).
  * The current connection is available with {@link #getCurrent()}.
- * When calling {@link #setError(Connection, int)}, {#link #setNewCurrentConnection} will always be called.
+ * When calling {@link #setError(Connection, int)}, {@link #switchConnection()} will always be called.
  *
  * @author Gunnar Gauslaa Bergem
  * @author hmusum
@@ -54,7 +53,7 @@ public class JRTConnectionPool implements ConnectionPool {
                 connections.put(address, new JRTConnection(address, supervisor));
             }
         }
-        setNewCurrentConnection();
+        currentConnection = initialize();
     }
 
     /**
@@ -66,18 +65,30 @@ public class JRTConnectionPool implements ConnectionPool {
         return currentConnection;
     }
 
-    /**
-     * Returns and set the current JRTConnection instance by randomly choosing
-     * from the available sources (this means that you might end up using
-     * the same connection).
-     *
-     * @return a JRTConnection
-     */
-    public synchronized JRTConnection setNewCurrentConnection() {
+    @Override
+    public synchronized JRTConnection switchConnection() {
         List<JRTConnection> sources = getSources();
-        currentConnection = sources.get(ThreadLocalRandom.current().nextInt(0, sources.size()));
-        log.log(FINE, () -> "Choosing new connection: " + currentConnection);
-        return currentConnection;
+        if (sources.size() <= 1) return currentConnection;
+
+        List<JRTConnection> sourceCandidates = sources.stream()
+                                                    .filter(JRTConnection::isHealthy)
+                                                    .collect(Collectors.toList());
+        JRTConnection newConnection;
+        if (sourceCandidates.size() == 0) {
+            sourceCandidates = getSources();
+            sourceCandidates.remove(currentConnection);
+        }
+        newConnection = pickNewConnectionRandomly(sourceCandidates);
+        log.log(Level.INFO, () -> "Switching from " + currentConnection + " to " + newConnection);
+        return currentConnection = newConnection;
+    }
+
+    public synchronized JRTConnection initialize() {
+        return pickNewConnectionRandomly(getSources());
+    }
+
+    private JRTConnection pickNewConnectionRandomly(List<JRTConnection> sources) {
+        return sources.get(ThreadLocalRandom.current().nextInt(0, sources.size()));
     }
 
     List<JRTConnection> getSources() {
@@ -95,7 +106,7 @@ public class JRTConnectionPool implements ConnectionPool {
     @Override
     public void setError(Connection connection, int errorCode) {
         connection.setError(errorCode);
-        setNewCurrentConnection();
+        switchConnection();
     }
 
     public JRTConnectionPool updateSources(List<String> addresses) {

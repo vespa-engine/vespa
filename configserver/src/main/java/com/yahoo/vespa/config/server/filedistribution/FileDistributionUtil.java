@@ -79,7 +79,7 @@ public class FileDistributionUtil {
         public Connection getCurrent() { return null; }
 
         @Override
-        public Connection setNewCurrentConnection() { return null; }
+        public Connection switchConnection() { return null; }
 
         @Override
         public int getSize() { return 0; }

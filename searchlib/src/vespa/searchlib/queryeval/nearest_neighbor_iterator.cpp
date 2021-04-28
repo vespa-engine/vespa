@@ -16,7 +16,7 @@ bool
 is_compatible(const vespalib::eval::ValueType& lhs,
               const vespalib::eval::ValueType& rhs)
 {
-    return (lhs == rhs);
+    return (lhs.dimensions() == rhs.dimensions());
 }
 
 }
@@ -90,9 +90,6 @@ template <bool has_filter>
 std::unique_ptr<NearestNeighborIterator>
 resolve_strict(bool strict, const NearestNeighborIterator::Params &params)
 {
-    CellType lct = params.queryTensor.type().cell_type();
-    CellType rct = params.tensorAttribute.getTensorType().cell_type();
-    if (lct != rct) abort();
     if (strict) {
         using NNI = NearestNeighborImpl<true, has_filter>;
         return std::make_unique<NNI>(params);

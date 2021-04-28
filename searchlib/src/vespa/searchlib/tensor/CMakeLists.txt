@@ -1,6 +1,7 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 vespa_add_library(searchlib_tensor OBJECT
     SOURCES
+    angular_distance.cpp
     default_nearest_neighbor_index_factory.cpp
     dense_tensor_attribute.cpp
     dense_tensor_attribute_saver.cpp
@@ -9,13 +10,16 @@ vespa_add_library(searchlib_tensor OBJECT
     direct_tensor_saver.cpp
     direct_tensor_store.cpp
     distance_function_factory.cpp
-    distance_functions.cpp
+    euclidean_distance.cpp
+    geo_degrees_distance.cpp
+    hamming_distance.cpp
     hnsw_graph.cpp
     hnsw_index.cpp
     hnsw_index_loader.cpp
     hnsw_index_saver.cpp
     imported_tensor_attribute_vector.cpp
     imported_tensor_attribute_vector_read_guard.cpp
+    inner_product_distance.cpp
     inv_log_level_generator.cpp
     nearest_neighbor_index.cpp
     nearest_neighbor_index_saver.cpp

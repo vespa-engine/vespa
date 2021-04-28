@@ -4,6 +4,7 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.yahoo.container.logging.AccessLogEntry;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.filter.RequestFilter;
+import org.eclipse.jetty.server.Request;
 
 import javax.servlet.AsyncContext;
 import javax.servlet.AsyncListener;
@@ -26,7 +27,7 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicReference;
 
-import static com.yahoo.jdisc.http.server.jetty.JDiscHttpServlet.getConnector;
+import static com.yahoo.jdisc.http.server.jetty.RequestUtils.getConnector;
 import static com.yahoo.yolean.Exceptions.throwUnchecked;
 
 /**
@@ -77,7 +78,7 @@ class JDiscFilterInvokerFilter implements Filter {
 
     private void runChainAndResponseFilters(URI uri, HttpServletRequest request, HttpServletResponse response, FilterChain chain) throws IOException, ServletException {
         Optional<OneTimeRunnable> responseFilterInvoker =
-                jDiscContext.filterResolver.resolveResponseFilter(request, uri)
+                jDiscContext.filterResolver.resolveResponseFilter(toJettyRequest(request), uri)
                         .map(responseFilter ->
                                 new OneTimeRunnable(() ->
                                         filterInvoker.invokeResponseFilterChain(responseFilter, uri, request, response)));
@@ -107,7 +108,7 @@ class JDiscFilterInvokerFilter implements Filter {
 
     private HttpServletRequest runRequestFilterWithMatchingBinding(AtomicReference<Boolean> responseReturned, URI uri, HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
-            RequestFilter requestFilter = jDiscContext.filterResolver.resolveRequestFilter(request, uri).orElse(null);
+            RequestFilter requestFilter = jDiscContext.filterResolver.resolveRequestFilter(toJettyRequest(request), uri).orElse(null);
             if (requestFilter == null)
                 return request;
 
@@ -134,11 +135,18 @@ class JDiscFilterInvokerFilter implements Filter {
             final AccessLogEntry accessLogEntry = null; // Not used in this context.
             return new HttpRequestDispatch(jDiscContext,
                                            accessLogEntry,
-                                           getConnector(request).createRequestMetricContext(request, Map.of()),
+                                           getConnector(toJettyRequest(request)).createRequestMetricContext(request, Map.of()),
                                            request, response);
         } catch (IOException e) {
             throw throwUnchecked(e);
         }
+    }
+
+    private static Request toJettyRequest(HttpServletRequest request) {
+        if (request instanceof com.yahoo.jdisc.http.servlet.ServletRequest) {
+            return (Request) ((com.yahoo.jdisc.http.servlet.ServletRequest)request).getRequest();
+        }
+        return (Request) request;
     }
 
     @Override

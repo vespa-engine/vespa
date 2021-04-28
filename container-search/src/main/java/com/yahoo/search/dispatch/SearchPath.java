@@ -28,15 +28,11 @@ import java.util.stream.IntStream;
 public class SearchPath {
 
     /**
-     * Parse the search path and select nodes from the given cluster based on it.
+     * Parses the search path and select nodes from the given cluster based on it.
      *
-     * @param searchPath
-     *            unparsed search path expression (see: model.searchPath in Search
-     *            API reference)
-     * @param cluster
-     *            the search cluster from which nodes are selected
-     * @throws InvalidSearchPathException
-     *             if the searchPath is malformed
+     * @param searchPath unparsed search path expression (see: model.searchPath in Search API reference)
+     * @param cluster the search cluster from which nodes are selected
+     * @throws InvalidSearchPathException if the searchPath is malformed
      * @return list of nodes chosen with the search path, or an empty list in which
      *         case some other node selection logic should be used
      */

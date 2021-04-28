@@ -47,6 +47,8 @@ protected:
     IEnumStoreDictionary& _dictionary;
     Status            &_status;
     uint64_t           _bvExtraBytes;
+    vespalib::MemoryUsage _cached_allocator_memory_usage;
+    vespalib::MemoryUsage _cached_store_memory_usage;
 
     static constexpr uint32_t BUFFERTYPE_BITVECTOR = 9u;
 
@@ -89,6 +91,8 @@ public:
     using Parent::getKeyDataEntry;
     using Parent::clusterLimit;
     using Parent::allocBTree;
+    using Parent::allocBTreeCopy;
+    using Parent::allocKeyDataCopy;
     using Parent::_builder;
     using Parent::_store;
     using Parent::_allocator;
@@ -111,6 +115,11 @@ public:
     BitVectorRefPair allocBitVector() {
         return _store.template freeListAllocator<BitVectorEntry,
             vespalib::datastore::DefaultReclaimer<BitVectorEntry> >(BUFFERTYPE_BITVECTOR).alloc();
+    }
+
+    BitVectorRefPair allocBitVectorCopy(const BitVectorEntry& bve) {
+        return _store.template freeListAllocator<BitVectorEntry,
+            vespalib::datastore::DefaultReclaimer<BitVectorEntry> >(BUFFERTYPE_BITVECTOR).alloc(bve);
     }
 
     /*
@@ -177,7 +186,15 @@ public:
 
     static inline DataT bitVectorWeight();
     vespalib::MemoryUsage getMemoryUsage() const;
+    vespalib::MemoryUsage update_stat();
 
+    void move_btree_nodes(EntryRef ref);
+    EntryRef move(EntryRef ref);
+
+    void compact_worst_btree_nodes();
+    void compact_worst_buffers();
+    bool consider_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy);
+    bool consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy);
 private:
     size_t internalSize(uint32_t typeId, const RefType & iRef) const;
     size_t internalFrozenSize(uint32_t typeId, const RefType & iRef) const;

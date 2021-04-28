@@ -78,6 +78,8 @@ public:
     static TensorSpec from_slime(const slime::Inspector &tensor);
     static TensorSpec from_value(const eval::Value &value);
     static TensorSpec from_expr(const vespalib::string &expr);
+    static vespalib::string diff(const TensorSpec &lhs, const vespalib::string &lhs_desc,
+                                 const TensorSpec &rhs, const vespalib::string &rhs_desc);
 };
 
 bool operator==(const TensorSpec &lhs, const TensorSpec &rhs);

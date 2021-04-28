@@ -110,8 +110,33 @@ DocumentDB::masterExecute(FunctionType &&function) {
     _writeService.master().execute(makeLambdaTask(std::forward<FunctionType>(function)));
 }
 
+DocumentDB::SP
+DocumentDB::create(const vespalib::string &baseDir,
+                   DocumentDBConfig::SP currentSnapshot,
+                   const vespalib::string &tlsSpec,
+                   matching::QueryLimiter &queryLimiter,
+                   const vespalib::Clock &clock,
+                   const DocTypeName &docTypeName,
+                   document::BucketSpace bucketSpace,
+                   const ProtonConfig &protonCfg,
+                   IDocumentDBOwner &owner,
+                   vespalib::SyncableThreadExecutor &warmupExecutor,
+                   vespalib::ThreadExecutor &sharedExecutor,
+                   storage::spi::BucketExecutor &bucketExecutor,
+                   const search::transactionlog::WriterFactory &tlsWriterFactory,
+                   MetricsWireService &metricsWireService,
+                   const search::common::FileHeaderContext &fileHeaderContext,
+                   ConfigStore::UP config_store,
+                   InitializeThreads initializeThreads,
+                   const HwInfo &hwInfo)
+{
+    return DocumentDB::SP(
+            new DocumentDB(baseDir, std::move(currentSnapshot), tlsSpec, queryLimiter, clock, docTypeName, bucketSpace,
+                           protonCfg, owner, warmupExecutor, sharedExecutor, bucketExecutor, tlsWriterFactory,
+                           metricsWireService, fileHeaderContext, std::move(config_store), initializeThreads, hwInfo));
+}
 DocumentDB::DocumentDB(const vespalib::string &baseDir,
-                       const DocumentDBConfig::SP &configSnapshot,
+                       DocumentDBConfig::SP configSnapshot,
                        const vespalib::string &tlsSpec,
                        matching::QueryLimiter &queryLimiter,
                        const vespalib::Clock &clock,
@@ -120,7 +145,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
                        const ProtonConfig &protonCfg,
                        IDocumentDBOwner &owner,
                        vespalib::SyncableThreadExecutor &warmupExecutor,
-                       vespalib::ThreadStackExecutorBase &sharedExecutor,
+                       vespalib::ThreadExecutor &sharedExecutor,
                        storage::spi::BucketExecutor & bucketExecutor,
                        const search::transactionlog::WriterFactory &tlsWriterFactory,
                        MetricsWireService &metricsWireService,
@@ -134,6 +159,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
       IDocumentSubDBOwner(),
       IClusterStateChangedHandler(),
       search::transactionlog::SyncProxy(),
+      std::enable_shared_from_this<DocumentDB>(),
       _docTypeName(docTypeName),
       _bucketSpace(bucketSpace),
       _baseDir(baseDir + "/" + _docTypeName.toString()),
@@ -172,7 +198,7 @@ DocumentDB::DocumentDB(const vespalib::string &baseDir,
               metricsWireService, getMetrics(), queryLimiter, clock, _configMutex, _baseDir,
               DocumentSubDBCollection::Config(protonCfg.numsearcherthreads),
               hwInfo),
-      _maintenanceController(_writeService.master(), sharedExecutor, _docTypeName),
+      _maintenanceController(_writeService.master(), sharedExecutor, _refCount, _docTypeName),
       _jobTrackers(),
       _calc(),
       _metricsUpdater(_subDBs, _writeService, _jobTrackers, *_sessionManager, _writeFilter)
@@ -382,8 +408,8 @@ DocumentDB::applySubDBConfig(const DocumentDBConfig &newConfigSnapshot,
     auto newRepo = newConfigSnapshot.getDocumentTypeRepoSP();
     auto newDocType = newRepo->getDocumentType(_docTypeName.getName());
     assert(newDocType != nullptr);
-    DocumentDBReferenceResolver resolver(*registry, *newDocType, newConfigSnapshot.getImportedFieldsConfig(),
-                                         *oldDocType, _refCount, _writeService.attributeFieldWriter(), _state.getAllowReconfig());
+    DocumentDBReferenceResolver resolver(*registry, *newDocType, newConfigSnapshot.getImportedFieldsConfig(), *oldDocType,
+                                         _refCount, _writeService.attributeFieldWriter(), _state.getAllowReconfig());
     _subDBs.applyConfig(newConfigSnapshot, *_activeConfigSnapshot, serialNum, params, resolver);
 }
 
@@ -525,13 +551,8 @@ DocumentDB::tearDownReferences()
     auto repo = activeConfig->getDocumentTypeRepoSP();
     auto docType = repo->getDocumentType(_docTypeName.getName());
     assert(docType != nullptr);
-    DocumentDBReferenceResolver resolver(*registry,
-                                         *docType,
-                                         activeConfig->getImportedFieldsConfig(),
-                                         *docType,
-                                         _refCount,
-                                         _writeService.attributeFieldWriter(),
-                                         false);
+    DocumentDBReferenceResolver resolver(*registry, *docType, activeConfig->getImportedFieldsConfig(), *docType,
+                                         _refCount, _writeService.attributeFieldWriter(), false);
     _subDBs.tearDownReferences(resolver);
     registry->remove(_docTypeName.getName());
 }
@@ -545,14 +566,14 @@ DocumentDB::close()
         _state.enterShutdownState();
         _configCV.notify_all();
     }
+    // Abort any ongoing maintenance
+    stopMaintenance();
     _writeService.master().sync(); // Complete all tasks that didn't observe shutdown
     masterExecute([this]() { tearDownReferences(); });
     _writeService.master().sync();
     // Wait until inflight feed operations to this document db has left.
     // Caller should have removed document DB from feed router.
     _refCount.waitForZeroRefCount();
-    // Abort any ongoing maintenance
-    stopMaintenance();
 
     _writeService.sync();
 
@@ -933,7 +954,6 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config, std
             *_feedHandler, // IOperationStorer
             _maintenanceController, // IFrozenBucketHandler
             _subDBs.getBucketCreateNotifier(),
-            _docTypeName.getName(),
             _bucketSpace,
             *_feedHandler, // IPruneRemovedDocumentsHandler
             *_feedHandler, // IDocumentMoveHandler
@@ -1051,6 +1071,13 @@ DocumentDB::updateMetrics(const metrics::MetricLockGuard & guard)
     }
     _metricsUpdater.updateMetrics(guard, _metrics);
     _maintenanceController.updateMetrics(_metrics);
+    auto heart_beat_time = _feedHandler->get_heart_beat_time();
+    if (heart_beat_time != vespalib::steady_time()) {
+        vespalib::steady_time now = vespalib::steady_clock::now();
+        _metrics.heart_beat_age.set(vespalib::to_s(now - heart_beat_time));
+    } else {
+        _metrics.heart_beat_age.set(0.0);
+    }
 }
 
 void

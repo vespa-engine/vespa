@@ -43,6 +43,7 @@ ReferenceAttribute::ReferenceAttribute(const vespalib::stringref baseFileName,
       _store(),
       _indices(getGenerationHolder()),
       _cached_unique_store_values_memory_usage(),
+      _cached_unique_store_dictionary_memory_usage(),
       _gidToLidMapperFactory(),
       _referenceMappings(getGenerationHolder(), getCommittedDocIdLimitRef())
 {
@@ -177,7 +178,11 @@ ReferenceAttribute::onCommit()
 {
     // Note: Cost can be reduced if unneeded generation increments are dropped
     incGeneration();
-    if (considerCompact(getConfig().getCompactionStrategy())) {
+    if (consider_compact_values(getConfig().getCompactionStrategy())) {
+        incGeneration();
+        updateStat(true);
+    }
+    if (consider_compact_dictionary(getConfig().getCompactionStrategy())) {
         incGeneration();
         updateStat(true);
     }
@@ -188,7 +193,9 @@ ReferenceAttribute::onUpdateStat()
 {
     vespalib::MemoryUsage total = _store.get_values_memory_usage();
     _cached_unique_store_values_memory_usage = total;
-    total.merge(_store.get_dictionary_memory_usage());
+    auto& dictionary = _store.get_dictionary();
+    _cached_unique_store_dictionary_memory_usage = dictionary.get_memory_usage();
+    total.merge(_cached_unique_store_dictionary_memory_usage);
     total.mergeGenerationHeldBytes(getGenerationHolder().getHeldBytes());
     total.merge(_indices.getMemoryUsage());
     total.merge(_referenceMappings.getMemoryUsage());
@@ -282,26 +289,42 @@ ReferenceAttribute::getReference(DocId doc) const
 }
 
 bool
-ReferenceAttribute::considerCompact(const CompactionStrategy &compactionStrategy)
+ReferenceAttribute::consider_compact_values(const CompactionStrategy &compactionStrategy)
 {
-    size_t usedBytes = _cached_unique_store_values_memory_usage.usedBytes();
-    size_t deadBytes = _cached_unique_store_values_memory_usage.deadBytes();
-    bool compactMemory = compactionStrategy.should_compact_memory(usedBytes, deadBytes);
-    if (compactMemory) {
-        compactWorst();
+    size_t used_bytes = _cached_unique_store_values_memory_usage.usedBytes();
+    size_t dead_bytes = _cached_unique_store_values_memory_usage.deadBytes();
+    bool compact_memory = compactionStrategy.should_compact_memory(used_bytes, dead_bytes);
+    if (compact_memory) {
+        compact_worst_values();
         return true;
     }
     return false;
 }
 
 void
-ReferenceAttribute::compactWorst()
+ReferenceAttribute::compact_worst_values()
 {
     auto remapper(_store.compact_worst(true, true));
     if (remapper) {
         remapper->remap(vespalib::ArrayRef<EntryRef>(&_indices[0], _indices.size()));
         remapper->done();
     }
+}
+
+bool
+ReferenceAttribute::consider_compact_dictionary(const CompactionStrategy &compaction_strategy)
+{
+    auto& dictionary = _store.get_dictionary();
+    if (dictionary.has_held_buffers()) {
+        return false;
+    }
+    if (compaction_strategy.should_compact_memory(_cached_unique_store_dictionary_memory_usage.usedBytes(),
+                                                  _cached_unique_store_dictionary_memory_usage.deadBytes()))
+    {
+        dictionary.compact_worst(true, true);
+        return true;
+    }
+    return false;
 }
 
 uint64_t

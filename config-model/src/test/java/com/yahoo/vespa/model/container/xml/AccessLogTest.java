@@ -86,6 +86,7 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
             assertEquals("pattern", fileHandlerConfig.pattern());
             assertEquals("interval", fileHandlerConfig.rotation());
             assertEquals(10000, fileHandlerConfig.queueSize());
+            assertEquals(4*1024*1024, fileHandlerConfig.bufferSize());
         }
 
         { // json
@@ -97,6 +98,7 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
             assertEquals("pattern", fileHandlerConfig.pattern());
             assertEquals("interval", fileHandlerConfig.rotation());
             assertEquals(10000, fileHandlerConfig.queueSize());
+            assertEquals(4*1024*1024, fileHandlerConfig.bufferSize());
         }
     }
 
@@ -116,6 +118,7 @@ public class AccessLogTest extends ContainerModelBuilderTestBase {
         ConnectionLogConfig config = root.getConfig(ConnectionLogConfig.class, "default/component/com.yahoo.container.logging.FileConnectionLog");
         assertEquals("default", config.cluster());
         assertEquals(10000, config.queueSize());
+        assertEquals(256*1024, config.bufferSize());
     }
 
     @Test

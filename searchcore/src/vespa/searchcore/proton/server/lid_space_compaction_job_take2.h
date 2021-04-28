@@ -3,6 +3,7 @@
 #pragma once
 
 #include "lid_space_compaction_job_base.h"
+#include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/document/bucket/bucketspace.h>
 #include <atomic>
 
@@ -27,8 +28,9 @@ private:
     using BucketExecutor = storage::spi::BucketExecutor;
     using IDestructorCallback = vespalib::IDestructorCallback;
     using IThreadService = searchcorespi::index::IThreadService;
-    IThreadService          & _master;
+    IThreadService          &_master;
     BucketExecutor          &_bucketExecutor;
+    RetainGuard              _dbRetainer;
     document::BucketSpace    _bucketSpace;
     std::atomic<bool>        _stopped;
 
@@ -41,6 +43,7 @@ private:
     class MoveTask;
 
     CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
+                  RetainGuard dbRetainer,
                   std::shared_ptr<ILidSpaceCompactionHandler> handler,
                   IOperationStorer &opStorer,
                   IThreadService & master,
@@ -53,6 +56,7 @@ private:
 public:
     static std::shared_ptr<CompactionJob>
     create(const DocumentDBLidSpaceCompactionConfig &config,
+           RetainGuard dbRetainer,
            std::shared_ptr<ILidSpaceCompactionHandler> handler,
            IOperationStorer &opStorer,
            IThreadService & master,
@@ -61,12 +65,7 @@ public:
            const BlockableMaintenanceJobConfig &blockableConfig,
            IClusterStateChangedNotifier &clusterStateChangedNotifier,
            bool nodeRetired,
-           document::BucketSpace bucketSpace)
-    {
-        return std::shared_ptr<CompactionJob>(
-                new CompactionJob(config, std::move(handler), opStorer, master, bucketExecutor, diskMemUsageNotifier,
-                                  blockableConfig, clusterStateChangedNotifier, nodeRetired, bucketSpace));
-    }
+           document::BucketSpace bucketSpace);
     ~CompactionJob() override;
 };
 

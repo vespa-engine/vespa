@@ -103,10 +103,7 @@ public class EvaluateTensorConformance {
 
     private Tensor evaluate(String expression, MapContext context) throws ParseException {
         Value value = new RankingExpression(expression).evaluate(context);
-        if (!(value instanceof TensorValue)) {
-            throw new IllegalArgumentException("Result is not a tensor");
-        }
-        return ((TensorValue)value).asTensor();
+        return value.asTensor();
     }
 
     private MapContext getInput(Inspector inputs) {

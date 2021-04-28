@@ -11,8 +11,8 @@ import com.yahoo.vespa.config.search.core.ProtonConfig;
  */
 public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig.Producer {
 
-    // This numbers are all per group as wanted numbers.
-    private final int initialRedundancy ;
+    // These numbers are all per group as wanted numbers.
+    private final int initialRedundancy;
     private final int finalRedundancy;
     private final int readyCopies;
 
@@ -29,12 +29,16 @@ public class Redundancy implements StorDistributionConfig.Producer, ProtonConfig
         this.totalNodes = totalNodes;
     }
 
+    /** Returns the final redundancy per group */
     public int finalRedundancy() { return effectiveFinalRedundancy()/groups; }
+
     public int readyCopies() { return effectiveReadyCopies()/groups; }
     public int groups() { return groups; }
     public int totalNodes() { return totalNodes; }
 
     public int effectiveInitialRedundancy() { return Math.min(totalNodes, initialRedundancy * groups); }
+
+    /** Returns the final redundancy over all groups */
     public int effectiveFinalRedundancy() { return Math.min(totalNodes, finalRedundancy * groups); }
     public int effectiveReadyCopies() { return Math.min(totalNodes, readyCopies * groups); }
 

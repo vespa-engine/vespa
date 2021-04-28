@@ -418,7 +418,7 @@ public class DeploymentSpecXmlReader {
         if ("true".equals(activeValue)) return true;
         if ("false".equals(activeValue)) return false;
         throw new IllegalArgumentException("Region tags must have an 'active' attribute set to 'true' or 'false' " +
-                                           "to control whether the region should receive production traffic");
+                                           "to control whether this region should receive traffic from the global endpoint of this application");
     }
 
     private static boolean isEmptySpec(Element root) {

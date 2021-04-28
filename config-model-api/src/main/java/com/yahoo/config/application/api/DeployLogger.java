@@ -10,6 +10,14 @@ import java.util.logging.Level;
  */
 public interface DeployLogger {
 
+    /** Log a message unrelated to the application package, e.g. internal error/status. */
     void log(Level level, String message);
 
+    /**
+     * Log a message related to the application package. These messages should be actionable by the user, f.ex. to
+     * signal usage of invalid/deprecated syntax
+     */
+    default void logApplicationPackage(Level level, String message) {
+        log(level, message);
+    }
 }

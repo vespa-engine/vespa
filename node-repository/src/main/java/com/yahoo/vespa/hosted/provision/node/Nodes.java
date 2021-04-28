@@ -16,8 +16,6 @@ import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
-import com.yahoo.vespa.hosted.provision.node.filter.NodeFilter;
-import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
 import com.yahoo.vespa.hosted.provision.restapi.NotFoundException;
@@ -33,6 +31,7 @@ import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
 import java.util.function.BiFunction;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -123,7 +122,7 @@ public class Nodes {
     /** Adds a list of newly created reserved nodes to the node repository */
     public List<Node> addReservedNodes(LockedNodeList nodes) {
         for (Node node : nodes) {
-            if ( ! node.flavor().getType().equals(Flavor.Type.DOCKER_CONTAINER))
+            if ( node.flavor().getType() != Flavor.Type.DOCKER_CONTAINER)
                 illegal("Cannot add " + node + ": This is not a child node");
             if (node.allocation().isEmpty())
                 illegal("Cannot add " + node + ": Child nodes need to be allocated");
@@ -181,10 +180,13 @@ public class Nodes {
                                                    .map(node -> {
                                                        if (node.state() != Node.State.provisioned && node.state() != Node.State.dirty)
                                                            illegal("Can not set " + node + " ready. It is not provisioned or dirty.");
-                                                       return node.withWantToRetire(false, false, Agent.system, clock.instant());
+                                                       return node.withWantToRetire(false,
+                                                                                    false,
+                                                                                    false,
+                                                                                    Agent.system,
+                                                                                    clock.instant());
                                                    })
                                                    .collect(Collectors.toList());
-
             return db.writeTo(Node.State.ready, nodesWithResetFields, agent, Optional.of(reason));
         }
     }
@@ -195,22 +197,6 @@ public class Nodes {
 
         if (nodeToReady.state() == Node.State.ready) return nodeToReady;
         return setReady(List.of(nodeToReady), agent, reason).get(0);
-    }
-
-    /** Restore a node that has been rebuilt */
-    public Node restore(String hostname, Agent agent, String reason) {
-        // A deprovisioned host has no children so this doesn't need to to be recursive
-        try (NodeMutex lock = lockAndGetRequired(hostname)) {
-            Node existing = lock.node();
-            if (existing.state() != Node.State.deprovisioned) illegal("Can not move node " + hostname + " to " +
-                                                                      Node.State.provisioned + ". It is not in " +
-                                                                      Node.State.deprovisioned);
-            if (!existing.status().wantToRebuild()) illegal("Can not move node " + hostname + " to " +
-                                                            Node.State.provisioned +
-                                                            ". Rebuild has not been requested");
-            Node nodeWithResetFields = existing.withWantToRetire(false, false, false, agent, clock.instant());
-            return db.writeTo(Node.State.provisioned, nodeWithResetFields, agent, Optional.of(reason));
-        }
     }
 
     /** Reserve nodes. This method does <b>not</b> lock the node repository */
@@ -257,12 +243,26 @@ public class Nodes {
      * transaction commits.
      */
     public List<Node> fail(List<Node> nodes, ApplicationTransaction transaction) {
-        return db.writeTo(Node.State.failed, nodes, Agent.application, Optional.of("Failed by application"), transaction.nested());
+        return fail(nodes, Agent.application, "Failed by application", transaction.nested());
+    }
+
+    public List<Node> fail(List<Node> nodes, Agent agent, String reason) {
+        NestedTransaction transaction = new NestedTransaction();
+        nodes = fail(nodes, agent, reason, transaction);
+        transaction.commit();;
+        return nodes;
+    }
+
+    private List<Node> fail(List<Node> nodes, Agent agent, String reason, NestedTransaction transaction) {
+        nodes = nodes.stream()
+                     .map(n -> n.withWantToFail(false, agent, clock.instant()))
+                     .collect(Collectors.toList());
+        return db.writeTo(Node.State.failed, nodes, agent, Optional.of(reason), transaction);
     }
 
     /** Move nodes to the dirty state */
     public List<Node> deallocate(List<Node> nodes, Agent agent, String reason) {
-        return performOn(NodeListFilter.from(nodes), (node, lock) -> deallocate(node, agent, reason));
+        return performOn(NodeList.copyOf(nodes), (node, lock) -> deallocate(node, agent, reason));
     }
 
     public List<Node> deallocateRecursively(String hostname, Agent agent, String reason) {
@@ -328,11 +328,32 @@ public class Nodes {
 
     /**
      * Fails all the nodes that are children of hostname before finally failing the hostname itself.
+     * Non-active nodes are failed immediately, while active nodes are marked as wantToFail.
+     * The host is failed if it has no active nodes and marked wantToFail if it has.
      *
-     * @return List of all the failed nodes in their new state
+     * @return all the nodes that were changed by this request
      */
-    public List<Node> failRecursively(String hostname, Agent agent, String reason) {
-        return moveRecursively(hostname, Node.State.failed, agent, Optional.of(reason));
+    public List<Node> failOrMarkRecursively(String hostname, Agent agent, String reason) {
+        NodeList children = list().childrenOf(hostname);
+        List<Node> changed = performOn(children, (node, lock) -> failOrMark(node, agent, reason, lock));
+
+        if (children.state(Node.State.active).isEmpty())
+            changed.add(move(hostname, true, Node.State.failed, agent, Optional.of(reason)));
+        else
+            changed.addAll(performOn(NodeList.of(node(hostname).orElseThrow()), (node, lock) -> failOrMark(node, agent, reason, lock)));
+
+        return changed;
+    }
+
+    private Node failOrMark(Node node, Agent agent, String reason, Mutex lock) {
+        if (node.state() == Node.State.active) {
+            node = node.withWantToFail(true, agent, clock.instant());
+            write(node, lock);
+            return node;
+        }
+        else {
+            return move(node, Node.State.failed, agent, Optional.of(reason));
+        }
     }
 
     /**
@@ -472,12 +493,10 @@ public class Nodes {
 
             if (node.type().isHost()) {
                 List<Node> removed = removeChildren(node, force);
-                if (zone.getCloud().dynamicProvisioning() || node.type() != NodeType.host)
+                if (zone.getCloud().dynamicProvisioning())
                     db.removeNodes(List.of(node));
                 else {
-                    if (!node.status().wantToRebuild()) { // Keep IP addresses if we're rebuilding
-                        node = node.with(IP.Config.EMPTY);
-                    }
+                    node = node.with(IP.Config.EMPTY);
                     move(node, Node.State.deprovisioned, Agent.system, Optional.empty());
                 }
                 removed.add(node);
@@ -562,8 +581,8 @@ public class Nodes {
      *
      * @return the nodes in their new state
      */
-    public List<Node> restart(NodeFilter filter) {
-        return performOn(StateFilter.from(Node.State.active, filter),
+    public List<Node> restart(Predicate<Node> filter) {
+        return performOn(StateFilter.from(Node.State.active).and(filter),
                          (node, lock) -> write(node.withRestart(node.allocation().get().restartGeneration().withIncreasedWanted()),
                                                lock));
     }
@@ -573,7 +592,7 @@ public class Nodes {
      *
      * @return the nodes in their new state
      */
-    public List<Node> reboot(NodeFilter filter) {
+    public List<Node> reboot(Predicate<Node> filter) {
         return performOn(filter, (node, lock) -> write(node.withReboot(node.status().reboot().withIncreasedWanted()), lock));
     }
 
@@ -582,7 +601,7 @@ public class Nodes {
      *
      * @return the nodes in their new state
      */
-    public List<Node> upgradeOs(NodeFilter filter, Optional<Version> version) {
+    public List<Node> upgradeOs(Predicate<Node> filter, Optional<Version> version) {
         return performOn(filter, (node, lock) -> {
             var newStatus = node.status().withOsVersion(node.status().osVersion().withWanted(version));
             return write(node.with(newStatus), lock);
@@ -590,7 +609,7 @@ public class Nodes {
     }
 
     /** Retire nodes matching given filter */
-    public List<Node> retire(NodeFilter filter, Agent agent, Instant instant) {
+    public List<Node> retire(Predicate<Node> filter, Agent agent, Instant instant) {
         return performOn(filter, (node, lock) -> write(node.withWantToRetire(true, agent, instant), lock));
     }
 
@@ -615,8 +634,7 @@ public class Nodes {
         try (NodeMutex lock = nodeMutex.get(); Mutex allocationLock = lockUnallocated()) {
             // This takes allocationLock to prevent any further allocation of nodes on this host
             host = lock.node();
-            NodeList children = list(allocationLock).childrenOf(host);
-            result = performOn(NodeListFilter.from(children.asList()),
+            result = performOn(list(allocationLock).childrenOf(host),
                                (node, nodeLock) -> write(node.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant),
                                                          nodeLock));
             result.add(write(host.withWantToRetire(true, wantToDeprovision, wantToRebuild, agent, instant), lock));
@@ -644,20 +662,22 @@ public class Nodes {
         return db.writeTo(nodes, Agent.system, Optional.empty());
     }
 
+    private List<Node> performOn(Predicate<Node> filter, BiFunction<Node, Mutex, Node> action) {
+        return performOn(list().matching(filter), action);
+    }
+
     /**
      * Performs an operation requiring locking on all nodes matching some filter.
      *
-     * @param filter the filter determining the set of nodes where the operation will be performed
      * @param action the action to perform
      * @return the set of nodes on which the action was performed, as they became as a result of the operation
      */
-    private List<Node> performOn(NodeFilter filter, BiFunction<Node, Mutex, Node> action) {
+    private List<Node> performOn(NodeList nodes, BiFunction<Node, Mutex, Node> action) {
         List<Node> unallocatedNodes = new ArrayList<>();
         ListMap<ApplicationId, Node> allocatedNodes = new ListMap<>();
 
         // Group matching nodes by the lock needed
-        for (Node node : db.readNodes()) {
-            if ( ! filter.matches(node)) continue;
+        for (Node node : nodes) {
             if (node.allocation().isPresent())
                 allocatedNodes.put(node.allocation().get().owner(), node);
             else

@@ -9,7 +9,7 @@
   "flavor": "[vcpu: 1.0, memory: 8.0 Gb, disk 100.0 Gb, bandwidth: 1.0 Gbps, disk speed: slow, storage type: remote]",
   "resources":{"vcpu":1.0,"memoryGb":8.0,"diskGb":100.0,"bandwidthGbps":1.0,"diskSpeed":"slow","storageType":"remote"},
   "environment": "DOCKER_CONTAINER",
-  "rebootGeneration": 1,
+  "rebootGeneration": 0,
   "currentRebootGeneration": 0,
   "failCount": 1,
   "wantToRetire": false,

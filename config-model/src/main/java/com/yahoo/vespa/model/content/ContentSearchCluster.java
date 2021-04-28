@@ -44,6 +44,7 @@ import static java.util.stream.Collectors.toList;
 public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> implements ProtonConfig.Producer, DispatchConfig.Producer {
 
     private final boolean flushOnShutdown;
+    private final Boolean syncTransactionLog;
 
     /** If this is set up for streaming search, it is modelled as one search cluster per search definition */
     private final Map<String, AbstractSearchCluster> clusters = new TreeMap<>();
@@ -97,13 +98,15 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
             ModelElement clusterElem = new ModelElement(producerSpec);
             String clusterName = ContentCluster.getClusterId(clusterElem);
             Boolean flushOnShutdownElem = clusterElem.childAsBoolean("engine.proton.flush-on-shutdown");
+            Boolean syncTransactionLog = clusterElem.childAsBoolean("engine.proton.sync-transactionlog");
 
             ContentSearchCluster search = new ContentSearchCluster(ancestor,
                                                                    clusterName,
                                                                    deployState.getProperties().featureFlags(),
                                                                    documentDefinitions,
                                                                    globallyDistributedDocuments,
-                                                                   getFlushOnShutdown(flushOnShutdownElem, deployState),
+                                                                   getFlushOnShutdown(flushOnShutdownElem),
+                                                                   syncTransactionLog,
                                                                    combined);
 
             ModelElement tuning = clusterElem.childByPath("engine.proton.tuning");
@@ -117,11 +120,11 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
             return search;
         }
 
-        private boolean getFlushOnShutdown(Boolean flushOnShutdownElem, DeployState deployState) {
+        private boolean getFlushOnShutdown(Boolean flushOnShutdownElem) {
             if (flushOnShutdownElem != null) {
                 return flushOnShutdownElem;
             }
-            return ! stateIsHosted(deployState);
+            return true;
         }
 
         private Double getQueryTimeout(ModelElement clusterElem) {
@@ -197,6 +200,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
                                  Map<String, NewDocumentType> documentDefinitions,
                                  Set<NewDocumentType> globallyDistributedDocuments,
                                  boolean flushOnShutdown,
+                                 Boolean syncTransactionLog,
                                  boolean combined)
     {
         super(parent, "search");
@@ -204,6 +208,8 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         this.documentDefinitions = documentDefinitions;
         this.globallyDistributedDocuments = globallyDistributedDocuments;
         this.flushOnShutdown = flushOnShutdown;
+        this.syncTransactionLog = syncTransactionLog;
+
         this.combined = combined;
         maxPendingMoveOps = featureFlags.maxPendingMoveOps();
         feedSequencerType = convertFeedSequencerType(featureFlags.feedSequencerType());
@@ -278,12 +284,12 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
             searchNode.setHostResource(node.getHostResource());
             searchNode.initService(deployState.getDeployLogger());
 
-            tls = new TransactionLogServer(searchNode, clusterName);
+            tls = new TransactionLogServer(searchNode, clusterName, syncTransactionLog);
             tls.setHostResource(searchNode.getHostResource());
             tls.initService(deployState.getDeployLogger());
         } else {
             searchNode = new SearchNode.Builder(""+node.getDistributionKey(), spec, clusterName, node, flushOnShutdown, tuning, resourceLimits, combined).build(deployState, parent, element.getXml());
-            tls = new TransactionLogServer.Builder(clusterName).build(deployState, searchNode, element.getXml());
+            tls = new TransactionLogServer.Builder(clusterName, syncTransactionLog).build(deployState, searchNode, element.getXml());
         }
         searchNode.setTls(tls);
         if (hasIndexedCluster()) {

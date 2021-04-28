@@ -90,35 +90,6 @@ public class InactiveAndFailedExpirerTest {
     }
 
     @Test
-    public void reboot_generation_is_increased_when_node_moves_to_dirty() {
-        ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
-        tester.makeReadyNodes(2, nodeResources);
-
-        // Allocate and deallocate a single node
-        ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();
-        List<HostSpec> preparedNodes = tester.prepare(applicationId, cluster, Capacity.from(new ClusterResources(2, 1, nodeResources)));
-        tester.activate(applicationId, new HashSet<>(preparedNodes));
-        assertEquals(2, tester.getNodes(applicationId, Node.State.active).size());
-        tester.deactivate(applicationId);
-        List<Node> inactiveNodes = tester.getNodes(applicationId, Node.State.inactive).asList();
-        assertEquals(2, inactiveNodes.size());
-
-        // Check reboot generation before node is moved. New nodes transition from provisioned to dirty, so their
-        // wanted reboot generation will always be 1.
-        long wantedRebootGeneration = inactiveNodes.get(0).status().reboot().wanted();
-        assertEquals(1, wantedRebootGeneration);
-
-        // Inactive times out and node is moved to dirty
-        tester.advanceTime(Duration.ofMinutes(14));
-        new InactiveExpirer(tester.nodeRepository(), Duration.ofMinutes(10), Map.of(), new TestMetric()).run();
-        NodeList dirty = tester.nodeRepository().nodes().list(Node.State.dirty);
-        assertEquals(2, dirty.size());
-
-        // Reboot generation is increased
-        assertEquals(wantedRebootGeneration + 1, dirty.first().get().status().reboot().wanted());
-    }
-
-    @Test
     public void node_that_wants_to_retire_is_moved_to_parked() throws OrchestrationException {
         ProvisioningTester tester = new ProvisioningTester.Builder().zone(new Zone(Environment.prod, RegionName.from("us-east"))).build();
         ClusterSpec cluster = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("test")).vespaVersion("6.42").build();

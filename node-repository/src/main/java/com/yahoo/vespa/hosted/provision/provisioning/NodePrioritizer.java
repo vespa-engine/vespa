@@ -206,7 +206,7 @@ public class NodePrioritizer {
 
     /** Returns whether we are allocating to replace a failed node */
     private boolean isReplacement(NodeList nodesInCluster) {
-        int failedNodesInCluster = nodesInCluster.failing().size();
+        int failedNodesInCluster = nodesInCluster.failing().size() + nodesInCluster.state(Node.State.failed).size();
         if (failedNodesInCluster == 0) return false;
         return ! requestedNodes.fulfilledBy(nodesInCluster.size() - failedNodesInCluster);
     }

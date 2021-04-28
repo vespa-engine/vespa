@@ -357,7 +357,7 @@ public class MetricsReporterTest {
         tester.configServer().setOsVersion(version0, SystemApplication.tenantHost.id(), zone);
         tester.configServer().setOsVersion(version0, SystemApplication.configServerHost.id(), zone);
         runAll(statusUpdater, reporter);
-        List<Node> hosts = tester.configServer().nodeRepository().list(zone);
+        List<Node> hosts = tester.configServer().nodeRepository().list(zone, false);
         assertOsChangeDuration(Duration.ZERO, hosts);
 
         var targets = List.of(Version.fromString("8.1"), Version.fromString("8.2"));
@@ -381,7 +381,7 @@ public class MetricsReporterTest {
                          tester.configServer().nodeRepository().list(zone, SystemApplication.tenantHost.id()).stream()
                                .map(Node::wantedOsVersion).min(Comparator.naturalOrder()).get());
             assertTrue("No nodes are suspended", tester.controller().serviceRegistry().configServer()
-                                                       .nodeRepository().list(zone).stream()
+                                                       .nodeRepository().list(zone, false).stream()
                                                        .noneMatch(node -> node.serviceState() == Node.ServiceState.allowedDown));
 
             // Another 30 minutes pass

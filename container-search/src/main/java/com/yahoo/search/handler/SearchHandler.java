@@ -11,14 +11,18 @@ import com.yahoo.container.QrSearchersConfig;
 import com.yahoo.container.core.ChainsConfig;
 import com.yahoo.container.core.ContainerHttpConfig;
 import com.yahoo.container.handler.threadpool.ContainerThreadPool;
+import com.yahoo.container.jdisc.HttpMethodAclMapping;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.container.jdisc.RequestHandlerSpec;
 import com.yahoo.container.jdisc.VespaHeaders;
 import com.yahoo.container.logging.AccessLog;
 import com.yahoo.io.IOUtils;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.Request;
+import com.yahoo.container.jdisc.AclMapping;
+import com.yahoo.container.jdisc.RequestView;
 import com.yahoo.language.Linguistics;
 import com.yahoo.net.HostName;
 import com.yahoo.net.UriTools;
@@ -102,6 +106,9 @@ public class SearchHandler extends LoggingRequestHandler {
     private final ExecutionFactory executionFactory;
 
     private final AtomicLong numRequestsLeftToTrace;
+
+    private final static RequestHandlerSpec REQUEST_HANDLER_SPEC = RequestHandlerSpec.builder()
+            .withAclMapping(SearchHandler.aclRequestMapper()).build();
 
     private final class MeanConnections implements Callback {
 
@@ -631,6 +638,16 @@ public class SearchHandler extends LoggingRequestHandler {
         });
     }
 
+    @Override
+    public RequestHandlerSpec requestHandlerSpec() {
+        return REQUEST_HANDLER_SPEC;
+    }
+
+    private static AclMapping aclRequestMapper() {
+        return HttpMethodAclMapping.standard()
+                .override(com.yahoo.jdisc.http.HttpRequest.Method.POST, AclMapping.Action.READ)
+                .build();
+    }
 }
 
 

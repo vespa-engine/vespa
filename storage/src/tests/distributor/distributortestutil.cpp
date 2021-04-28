@@ -32,7 +32,7 @@ DistributorTestUtil::createLinks()
             _node->node_identity(),
             *_threadPool,
             *this,
-            true,
+            0,
             _hostInfo,
             &_messageSender));
     _component.reset(new storage::DistributorComponent(_node->getComponentRegister(), "distrtestutil"));
@@ -66,7 +66,7 @@ DistributorTestUtil::setup_distributor(int redundancy,
     // This is for all intents and purposes a hack to avoid having the
     // distributor treat setting the distribution explicitly as a signal that
     // it should send RequestBucketInfo to all configured nodes.
-    // If we called storageDistributionChanged followed by enableDistribution
+    // If we called storage_distribution_changed followed by enableDistribution
     // explicitly (which is what happens in "real life"), that is what would
     // take place.
     // The inverse case of this can be explicitly accomplished by calling
@@ -338,7 +338,7 @@ DistributorTestUtil::disableBucketActivationInConfig(bool disable)
     getConfig().configure(config);
 }
 
-BucketDBUpdater&
+StripeBucketDBUpdater&
 DistributorTestUtil::getBucketDBUpdater() {
     return _distributor->bucket_db_updater();
 }

@@ -3,12 +3,17 @@ package com.yahoo.searchdefinition.derived;
 
 import com.yahoo.document.CollectionDataType;
 import com.yahoo.document.DataType;
+import com.yahoo.document.Field;
+import com.yahoo.document.MapDataType;
 import com.yahoo.document.NumericDataType;
 import com.yahoo.document.PositionDataType;
+import com.yahoo.document.PrimitiveDataType;
+import com.yahoo.document.StructuredDataType;
 import com.yahoo.searchdefinition.Index;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.Attribute;
 import com.yahoo.searchdefinition.document.BooleanIndexDefinition;
+import com.yahoo.searchdefinition.document.Case;
 import com.yahoo.searchdefinition.document.FieldSet;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
 import com.yahoo.searchdefinition.document.Matching;
@@ -47,9 +52,9 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
     private static final String CMD_PREDICATE_BOUNDS = "predicate-bounds";
     private static final String CMD_NUMERICAL = "numerical";
     private static final String CMD_PHRASE_SEGMENTING = "phrase-segmenting";
-    private Set<IndexCommand> commands = new java.util.LinkedHashSet<>();
-    private Map<String, String> aliases = new java.util.LinkedHashMap<>();
-    private Map<String, FieldSet> fieldSets;
+    private final Set<IndexCommand> commands = new java.util.LinkedHashSet<>();
+    private final Map<String, String> aliases = new java.util.LinkedHashMap<>();
+    private final Map<String, FieldSet> fieldSets;
     private Search search;
 
     public IndexInfo(Search search) {
@@ -132,7 +137,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
 
         addIndexCommand(field, CMD_INDEX); // List the indices
 
-        if (field.doesIndexing() || field.doesLowerCasing()) {
+        if (needLowerCase(field)) {
             addIndexCommand(field, CMD_LOWERCASE);
         }
 
@@ -170,6 +175,30 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             addIndexCommand(field, command);
         }
 
+    }
+
+    private static boolean isAnyChildString(DataType dataType) {
+        PrimitiveDataType primitive = dataType.getPrimitiveType();
+        if (primitive == PrimitiveDataType.STRING) return true;
+        if (primitive != null) return false;
+        if (dataType instanceof StructuredDataType) {
+            StructuredDataType structured = (StructuredDataType) dataType;
+            for (Field field : structured.getFields()) {
+                if (isAnyChildString(field.getDataType())) return true;
+            }
+        } else if (dataType instanceof MapDataType) {
+            MapDataType mapType = (MapDataType) dataType;
+            return isAnyChildString(mapType.getKeyType()) || isAnyChildString(mapType.getValueType());
+        }
+        return false;
+    }
+
+    private static boolean needLowerCase(ImmutableSDField field) {
+        return field.doesIndexing()
+                || field.doesLowerCasing()
+                || ((field.doesAttributing() || (field.getAttribute() != null))
+                    && isAnyChildString(field.getDataType())
+                    && field.getMatching().getCase().equals(Case.UNCASED));
     }
 
     static String stemCmd(ImmutableSDField field, Search search) {
@@ -316,7 +345,7 @@ public class IndexInfo extends Derived implements IndexInfoConfig.Producer {
             if (field.doesAttributing()) {
                 anyAttributing = true;
             }
-            if (field.doesIndexing() || field.doesLowerCasing()) {
+            if (needLowerCase(field)) {
                 anyLowerCasing = true;
             }
             if (stemming(field)) {

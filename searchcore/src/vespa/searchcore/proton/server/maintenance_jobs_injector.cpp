@@ -41,10 +41,10 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
     for (auto &lidHandler : lscHandlers) {
         std::shared_ptr<IMaintenanceJob> job;
         if (config.getLidSpaceCompactionConfig().useBucketExecutor()) {
-            job = lidspace::CompactionJob::create(config.getLidSpaceCompactionConfig(), std::move(lidHandler), opStorer,
-                                                  controller.masterThread(), bucketExecutor, diskMemUsageNotifier,
-                                                  config.getBlockableJobConfig(), clusterStateChangedNotifier,
-                                                  (calc ? calc->nodeRetired() : false), bucketSpace);
+            job = lidspace::CompactionJob::create(config.getLidSpaceCompactionConfig(), controller.retainDB(),
+                                                  std::move(lidHandler), opStorer, controller.masterThread(),
+                                                  bucketExecutor, diskMemUsageNotifier,config.getBlockableJobConfig(),
+                                                  clusterStateChangedNotifier, (calc ? calc->nodeRetired() : false), bucketSpace);
         } else {
             job = std::make_shared<LidSpaceCompactionJob>(
                     config.getLidSpaceCompactionConfig(),
@@ -76,7 +76,7 @@ injectBucketMoveJob(MaintenanceController &controller,
 {
     std::shared_ptr<IMaintenanceJob> bmj;
     if (config.getBucketMoveConfig().useBucketExecutor()) {
-        bmj = BucketMoveJobV2::create(calc, moveHandler, bucketModifiedHandler, controller.masterThread(),
+        bmj = BucketMoveJobV2::create(calc, controller.retainDB(), moveHandler, bucketModifiedHandler, controller.masterThread(),
                                       bucketExecutor, controller.getReadySubDB(), controller.getNotReadySubDB(),
                                       bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
                                       diskMemUsageNotifier, config.getBlockableJobConfig(), docTypeName, bucketSpace);
@@ -108,7 +108,6 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     IOperationStorer &opStorer,
                                     IFrozenBucketHandler &fbHandler,
                                     bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
-                                    const vespalib::string &docTypeName,
                                     document::BucketSpace bucketSpace,
                                     IPruneRemovedDocumentsHandler &prdHandler,
                                     IDocumentMoveHandler &moveHandler,
@@ -127,6 +126,7 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
     controller.registerJobInMasterThread(std::make_unique<HeartBeatJob>(hbHandler, config.getHeartBeatConfig()));
     controller.registerJobInDefaultPool(std::make_unique<PruneSessionCacheJob>(scPruner, config.getSessionCachePruneInterval()));
 
+    const auto & docTypeName = controller.getDocTypeName().getName();
     const MaintenanceDocumentSubDB &mRemSubDB(controller.getRemSubDB());
     auto pruneRDjob = std::make_unique<PruneRemovedDocumentsJob>(config.getPruneRemovedDocumentsConfig(), *mRemSubDB.meta_store(),
                                                                  mRemSubDB.sub_db_id(), docTypeName, prdHandler, fbHandler);

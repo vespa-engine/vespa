@@ -34,24 +34,36 @@ public:
         return resolve(lhs).ref() == resolve(rhs).ref();
     }
     size_t hash(const EntryRef rhs) const override {
-        return rhs.ref();
+        return rhs.valid() ? rhs.ref() : _to_find.ref();
     }
 };
 
 template <typename UniqueStoreDictionaryType>
-struct DictionaryReadTest : public ::testing::Test {
+struct UniqueStoreDictionaryTest : public ::testing::Test {
     UniqueStoreDictionaryType dict;
     std::unique_ptr<IUniqueStoreDictionaryReadSnapshot> snapshot;
+    vespalib::GenerationHandler gen_handler;
 
-    DictionaryReadTest()
+    UniqueStoreDictionaryTest()
         : dict(std::make_unique<Comparator>(0)),
-          snapshot()
+          snapshot(),
+          gen_handler()
     {
     }
-    DictionaryReadTest& add(uint32_t value) {
+    UniqueStoreDictionaryTest& add(uint32_t value) {
         auto result = dict.add(Comparator(value), [=]() noexcept { return EntryRef(value); });
         assert(result.inserted());
         return *this;
+    }
+    UniqueStoreDictionaryTest& remove(uint32_t value) {
+        dict.remove(Comparator(value), EntryRef(value));
+        return *this;
+    }
+    void inc_generation() {
+        dict.freeze();
+        dict.transfer_hold_lists(gen_handler.getCurrentGeneration());
+        gen_handler.incGeneration();
+        dict.trim_hold_lists(gen_handler.getFirstUsedGeneration());
     }
     void take_snapshot() {
         dict.freeze();
@@ -61,8 +73,8 @@ struct DictionaryReadTest : public ::testing::Test {
     }
 };
 
-using DictionaryReadTestTypes = ::testing::Types<DefaultUniqueStoreDictionary, UniqueStoreDictionary<DefaultDictionary, IUniqueStoreDictionary, ShardedHashMap>, UniqueStoreDictionary<NoBTreeDictionary, IUniqueStoreDictionary, ShardedHashMap>>;
-VESPA_GTEST_TYPED_TEST_SUITE(DictionaryReadTest, DictionaryReadTestTypes);
+using UniqueStoreDictionaryTestTypes = ::testing::Types<DefaultUniqueStoreDictionary, UniqueStoreDictionary<DefaultDictionary, IUniqueStoreDictionary, ShardedHashMap>, UniqueStoreDictionary<NoBTreeDictionary, IUniqueStoreDictionary, ShardedHashMap>>;
+VESPA_GTEST_TYPED_TEST_SUITE(UniqueStoreDictionaryTest, UniqueStoreDictionaryTestTypes);
 
 // Disable warnings emitted by gtest generated files when using typed tests
 #pragma GCC diagnostic push
@@ -70,7 +82,7 @@ VESPA_GTEST_TYPED_TEST_SUITE(DictionaryReadTest, DictionaryReadTestTypes);
 #pragma GCC diagnostic ignored "-Wsuggest-override"
 #endif
 
-TYPED_TEST(DictionaryReadTest, can_count_occurrences_of_a_key)
+TYPED_TEST(UniqueStoreDictionaryTest, can_count_occurrences_of_a_key)
 {
     this->add(3).add(5).take_snapshot();
     EXPECT_EQ(0, this->snapshot->count(Comparator(2)));
@@ -79,7 +91,7 @@ TYPED_TEST(DictionaryReadTest, can_count_occurrences_of_a_key)
     EXPECT_EQ(1, this->snapshot->count(Comparator(5)));
 }
 
-TYPED_TEST(DictionaryReadTest, can_count_occurrences_of_keys_in_a_range)
+TYPED_TEST(UniqueStoreDictionaryTest, can_count_occurrences_of_keys_in_a_range)
 {
     if (!this->dict.get_has_btree_dictionary()) {
         return;
@@ -95,7 +107,7 @@ TYPED_TEST(DictionaryReadTest, can_count_occurrences_of_keys_in_a_range)
     EXPECT_EQ(0, this->snapshot->count_in_range(Comparator(5), Comparator(3)));
 }
 
-TYPED_TEST(DictionaryReadTest, can_iterate_all_keys)
+TYPED_TEST(UniqueStoreDictionaryTest, can_iterate_all_keys)
 {
     using EntryRefVector = std::vector<EntryRef>;
     this->add(3).add(5).add(7).take_snapshot();
@@ -104,7 +116,7 @@ TYPED_TEST(DictionaryReadTest, can_iterate_all_keys)
     EXPECT_EQ(EntryRefVector({EntryRef(3), EntryRef(5), EntryRef(7)}), refs);
 }
 
-TYPED_TEST(DictionaryReadTest, memory_usage_is_reported)
+TYPED_TEST(UniqueStoreDictionaryTest, memory_usage_is_reported)
 {
     auto initial_usage = this->dict.get_memory_usage();
     this->add(10);
@@ -112,6 +124,43 @@ TYPED_TEST(DictionaryReadTest, memory_usage_is_reported)
     EXPECT_LT(initial_usage.usedBytes(), usage.usedBytes());
     EXPECT_EQ(initial_usage.deadBytes(), usage.deadBytes());
     EXPECT_EQ(0, usage.allocatedBytesOnHold());
+}
+
+TYPED_TEST(UniqueStoreDictionaryTest, compaction_works)
+{
+    for (uint32_t i = 1; i < 100; ++i) {
+        this->add(i);
+    }
+    for (uint32_t i = 10; i < 100; ++i) {
+        this->remove(i);
+    }
+    this->inc_generation();
+    auto btree_memory_usage_before = this->dict.get_btree_memory_usage();
+    auto hash_memory_usage_before = this->dict.get_hash_memory_usage();
+    for (uint32_t i = 0; i < 15; ++i) {
+        this->dict.compact_worst(true, true);
+    }
+    this->inc_generation();
+    auto btree_memory_usage_after = this->dict.get_btree_memory_usage();
+    auto hash_memory_usage_after = this->dict.get_hash_memory_usage();
+    if (this->dict.get_has_btree_dictionary()) {
+        EXPECT_LT(btree_memory_usage_after.deadBytes(), btree_memory_usage_before.deadBytes());
+    } else {
+        EXPECT_EQ(btree_memory_usage_after.deadBytes(), btree_memory_usage_before.deadBytes());
+    }
+    if (this->dict.get_has_hash_dictionary()) {
+        EXPECT_LT(hash_memory_usage_after.deadBytes(), hash_memory_usage_before.deadBytes());
+    } else {
+        EXPECT_EQ(hash_memory_usage_after.deadBytes(), hash_memory_usage_before.deadBytes());
+    }
+    std::vector<EntryRef> exp_refs;
+    for (uint32_t i = 1; i < 10; ++i) {
+        exp_refs.emplace_back(EntryRef(i));
+    }
+    this->take_snapshot();
+    std::vector<EntryRef> refs;
+    this->snapshot->foreach_key([&](EntryRef ref){ refs.emplace_back(ref); });
+    EXPECT_EQ(exp_refs, refs);
 }
 
 #pragma GCC diagnostic pop

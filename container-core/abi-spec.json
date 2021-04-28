@@ -478,6 +478,37 @@
       "public static final java.lang.String FULL_COVERAGE"
     ]
   },
+  "com.yahoo.container.jdisc.AclMapping$Action": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public static com.yahoo.container.jdisc.AclMapping$Action custom(java.lang.String)",
+      "public java.lang.String name()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()"
+    ],
+    "fields": [
+      "public static final com.yahoo.container.jdisc.AclMapping$Action READ",
+      "public static final com.yahoo.container.jdisc.AclMapping$Action WRITE"
+    ]
+  },
+  "com.yahoo.container.jdisc.AclMapping": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.yahoo.container.jdisc.AclMapping$Action get(com.yahoo.container.jdisc.RequestView)"
+    ],
+    "fields": []
+  },
   "com.yahoo.container.jdisc.AsyncHttpResponse": {
     "superClass": "com.yahoo.container.jdisc.HttpResponse",
     "interfaces": [],
@@ -545,6 +576,33 @@
     ],
     "fields": []
   },
+  "com.yahoo.container.jdisc.HttpMethodAclMapping$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.container.jdisc.HttpMethodAclMapping$Builder override(com.yahoo.jdisc.http.HttpRequest$Method, com.yahoo.container.jdisc.AclMapping$Action)",
+      "public com.yahoo.container.jdisc.HttpMethodAclMapping build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.container.jdisc.HttpMethodAclMapping": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.container.jdisc.AclMapping"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public com.yahoo.container.jdisc.AclMapping$Action get(com.yahoo.container.jdisc.RequestView)",
+      "public static com.yahoo.container.jdisc.HttpMethodAclMapping$Builder standard()"
+    ],
+    "fields": []
+  },
   "com.yahoo.container.jdisc.HttpRequest$Builder": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -596,6 +654,38 @@
     ],
     "fields": []
   },
+  "com.yahoo.container.jdisc.HttpRequestBuilder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public static com.yahoo.container.jdisc.HttpRequestBuilder create(com.yahoo.jdisc.http.HttpRequest$Method, java.lang.String)",
+      "public com.yahoo.container.jdisc.HttpRequestBuilder withQueryParameter(java.lang.String, java.lang.String)",
+      "public com.yahoo.container.jdisc.HttpRequestBuilder withHeader(java.lang.String, java.lang.String)",
+      "public com.yahoo.container.jdisc.HttpRequestBuilder withRequestContent(java.io.InputStream)",
+      "public com.yahoo.container.jdisc.HttpRequestBuilder withScheme(java.lang.String)",
+      "public com.yahoo.container.jdisc.HttpRequestBuilder withHostname(java.lang.String)",
+      "public com.yahoo.container.jdisc.HttpRequest build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.container.jdisc.HttpRequestHandler": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.handler.RequestHandler"
+    ],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public com.yahoo.container.jdisc.RequestHandlerSpec requestHandlerSpec()"
+    ],
+    "fields": []
+  },
   "com.yahoo.container.jdisc.HttpResponse": {
     "superClass": "java.lang.Object",
     "interfaces": [],
@@ -606,6 +696,7 @@
     "methods": [
       "public void <init>(int)",
       "public abstract void render(java.io.OutputStream)",
+      "public long maxPendingBytes()",
       "public int getStatus()",
       "public void setStatus(int)",
       "public com.yahoo.jdisc.HeaderFields headers()",
@@ -688,6 +779,34 @@
     ],
     "fields": []
   },
+  "com.yahoo.container.jdisc.RequestHandlerSpec$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.container.jdisc.RequestHandlerSpec$Builder withAclMapping(com.yahoo.container.jdisc.AclMapping)",
+      "public com.yahoo.container.jdisc.RequestHandlerSpec build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.container.jdisc.RequestHandlerSpec": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public com.yahoo.container.jdisc.AclMapping aclMapping()",
+      "public static com.yahoo.container.jdisc.RequestHandlerSpec$Builder builder()"
+    ],
+    "fields": [
+      "public static final java.lang.String ATTRIBUTE_NAME",
+      "public static final com.yahoo.container.jdisc.RequestHandlerSpec DEFAULT_INSTANCE"
+    ]
+  },
   "com.yahoo.container.jdisc.RequestHandlerTestDriver$MockResponseHandler": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -733,6 +852,20 @@
     ],
     "fields": []
   },
+  "com.yahoo.container.jdisc.RequestView": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "interface",
+      "abstract"
+    ],
+    "methods": [
+      "public abstract com.yahoo.jdisc.http.HttpRequest$Method method()",
+      "public abstract java.net.URI uri()"
+    ],
+    "fields": []
+  },
   "com.yahoo.container.jdisc.ThreadedHttpRequestHandler$LazyContentChannel": {
     "superClass": "java.lang.Object",
     "interfaces": [
@@ -751,7 +884,9 @@
   },
   "com.yahoo.container.jdisc.ThreadedHttpRequestHandler": {
     "superClass": "com.yahoo.container.jdisc.ThreadedRequestHandler",
-    "interfaces": [],
+    "interfaces": [
+      "com.yahoo.container.jdisc.HttpRequestHandler"
+    ],
     "attributes": [
       "public",
       "abstract"
@@ -907,6 +1042,7 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder secureRedirect(com.yahoo.jdisc.http.ConnectorConfig$SecureRedirect$Builder)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder maxRequestsPerConnection(int)",
       "public com.yahoo.jdisc.http.ConnectorConfig$Builder maxConnectionLife(double)",
+      "public com.yahoo.jdisc.http.ConnectorConfig$Builder http2Enabled(boolean)",
       "public final boolean dispatchGetConfig(com.yahoo.config.ConfigInstance$Producer)",
       "public final java.lang.String getDefMd5()",
       "public final java.lang.String getDefName()",
@@ -1228,7 +1364,8 @@
       "public com.yahoo.jdisc.http.ConnectorConfig$ProxyProtocol proxyProtocol()",
       "public com.yahoo.jdisc.http.ConnectorConfig$SecureRedirect secureRedirect()",
       "public int maxRequestsPerConnection()",
-      "public double maxConnectionLife()"
+      "public double maxConnectionLife()",
+      "public boolean http2Enabled()"
     ],
     "fields": [
       "public static final java.lang.String CONFIG_DEF_MD5",
@@ -1463,7 +1600,8 @@
     ],
     "fields": [
       "public static final enum com.yahoo.jdisc.http.HttpRequest$Version HTTP_1_0",
-      "public static final enum com.yahoo.jdisc.http.HttpRequest$Version HTTP_1_1"
+      "public static final enum com.yahoo.jdisc.http.HttpRequest$Version HTTP_1_1",
+      "public static final enum com.yahoo.jdisc.http.HttpRequest$Version HTTP_2_0"
     ]
   },
   "com.yahoo.jdisc.http.HttpRequest": {
@@ -1498,6 +1636,7 @@
       "public boolean isChunked()",
       "public boolean hasChunkedResponse()",
       "public boolean isKeepAlive()",
+      "public long relativeCreatedAtNanoTime()",
       "public java.security.Principal getUserPrincipal()",
       "public void setUserPrincipal(java.security.Principal)",
       "public static com.yahoo.jdisc.http.HttpRequest newServerRequest(com.yahoo.jdisc.service.CurrentContainer, java.net.URI)",
@@ -2015,6 +2154,7 @@
       "public abstract void setHeaders(java.lang.String, java.lang.String)",
       "public abstract void setHeaders(java.lang.String, java.util.List)",
       "public int getIntHeader(java.lang.String)",
+      "public com.yahoo.container.jdisc.RequestView asRequestView()",
       "public java.util.List getCookies()",
       "public void setCookies(java.util.List)",
       "public long getConnectedAt(java.util.concurrent.TimeUnit)",
@@ -2337,6 +2477,308 @@
     "methods": [
       "public abstract org.eclipse.jetty.util.ssl.SslContextFactory getInstance(java.lang.String, int)",
       "public void close()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.Bucket": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(long, long)",
+      "public java.util.Set entrySet()",
+      "public java.util.Collection getAllMetricNames()",
+      "public java.util.Collection getValuesForMetric(java.lang.String)",
+      "public java.util.Map getMapForMetric(java.lang.String)",
+      "public java.util.Map getValuesByMetricName()",
+      "public java.lang.String toString()",
+      "public long getFromMillis()",
+      "public long getToMillis()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.Counter": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void add()",
+      "public void add(long)",
+      "public void add(com.yahoo.metrics.simple.Point)",
+      "public void add(long, com.yahoo.metrics.simple.Point)",
+      "public com.yahoo.metrics.simple.PointBuilder builder()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.Gauge": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void sample(double)",
+      "public void sample(double, com.yahoo.metrics.simple.Point)",
+      "public com.yahoo.metrics.simple.PointBuilder builder()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.Identifier": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, com.yahoo.metrics.simple.Point)",
+      "public int hashCode()",
+      "public boolean equals(java.lang.Object)",
+      "public java.lang.String toString()",
+      "public java.lang.String getName()",
+      "public com.yahoo.metrics.simple.Point getLocation()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.Measurement": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.Number)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.MetricManager": {
+    "superClass": "com.yahoo.component.AbstractComponent",
+    "interfaces": [
+      "com.yahoo.container.di.componentgraph.Provider"
+    ],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.metrics.ManagerConfig)",
+      "public void deconstruct()",
+      "public com.yahoo.metrics.simple.MetricReceiver get()",
+      "public bridge synthetic java.lang.Object get()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.MetricReceiver$MockReceiver": {
+    "superClass": "com.yahoo.metrics.simple.MetricReceiver",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.metrics.simple.Bucket getSnapshot()",
+      "public com.yahoo.metrics.simple.Point point(java.lang.String, java.lang.String)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.MetricReceiver": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.concurrent.ThreadLocalDirectory, java.util.concurrent.atomic.AtomicReference)",
+      "public void update(com.yahoo.metrics.simple.Sample)",
+      "public com.yahoo.metrics.simple.Counter declareCounter(java.lang.String)",
+      "public com.yahoo.metrics.simple.Counter declareCounter(java.lang.String, com.yahoo.metrics.simple.Point)",
+      "public com.yahoo.metrics.simple.Gauge declareGauge(java.lang.String)",
+      "public com.yahoo.metrics.simple.Gauge declareGauge(java.lang.String, com.yahoo.metrics.simple.Point)",
+      "public com.yahoo.metrics.simple.Gauge declareGauge(java.lang.String, java.util.Optional, com.yahoo.metrics.simple.MetricSettings)",
+      "public com.yahoo.metrics.simple.PointBuilder pointBuilder()",
+      "public com.yahoo.metrics.simple.Bucket getSnapshot()"
+    ],
+    "fields": [
+      "public static final com.yahoo.metrics.simple.MetricReceiver nullImplementation"
+    ]
+  },
+  "com.yahoo.metrics.simple.MetricSettings$Builder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.metrics.simple.MetricSettings$Builder histogram(boolean)",
+      "public com.yahoo.metrics.simple.MetricSettings build()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.MetricSettings": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.Point": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "com.yahoo.jdisc.Metric$Context"
+    ],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(java.util.Map)",
+      "public static com.yahoo.metrics.simple.Point emptyPoint()",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()",
+      "public java.util.List location()",
+      "public java.util.List dimensions()",
+      "public int dimensionality()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.PointBuilder$Discriminator": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.metrics.simple.PointBuilder$Discriminator[] values()",
+      "public static com.yahoo.metrics.simple.PointBuilder$Discriminator valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.metrics.simple.PointBuilder$Discriminator LONG",
+      "public static final enum com.yahoo.metrics.simple.PointBuilder$Discriminator DOUBLE",
+      "public static final enum com.yahoo.metrics.simple.PointBuilder$Discriminator STRING"
+    ]
+  },
+  "com.yahoo.metrics.simple.PointBuilder": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public com.yahoo.metrics.simple.PointBuilder set(java.lang.String, long)",
+      "public com.yahoo.metrics.simple.PointBuilder set(java.lang.String, double)",
+      "public com.yahoo.metrics.simple.PointBuilder set(java.lang.String, java.lang.String)",
+      "public com.yahoo.metrics.simple.Point build()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.Sample": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(com.yahoo.metrics.simple.Measurement, com.yahoo.metrics.simple.Identifier, com.yahoo.metrics.simple.UntypedMetric$AssumedType)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.UnitTestSetup": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public com.yahoo.metrics.simple.Bucket getUpdatedSnapshot()",
+      "public com.yahoo.metrics.simple.MetricReceiver getReceiver()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.UntypedMetric$AssumedType": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.metrics.simple.UntypedMetric$AssumedType[] values()",
+      "public static com.yahoo.metrics.simple.UntypedMetric$AssumedType valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.metrics.simple.UntypedMetric$AssumedType NONE",
+      "public static final enum com.yahoo.metrics.simple.UntypedMetric$AssumedType GAUGE",
+      "public static final enum com.yahoo.metrics.simple.UntypedMetric$AssumedType COUNTER"
+    ]
+  },
+  "com.yahoo.metrics.simple.UntypedMetric": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public boolean isCounter()",
+      "public long getCount()",
+      "public double getLast()",
+      "public double getMax()",
+      "public double getMin()",
+      "public double getSum()",
+      "public org.HdrHistogram.DoubleHistogram getHistogram()",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
+  "com.yahoo.metrics.simple.Value$Discriminator": {
+    "superClass": "java.lang.Enum",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "final",
+      "enum"
+    ],
+    "methods": [
+      "public static com.yahoo.metrics.simple.Value$Discriminator[] values()",
+      "public static com.yahoo.metrics.simple.Value$Discriminator valueOf(java.lang.String)"
+    ],
+    "fields": [
+      "public static final enum com.yahoo.metrics.simple.Value$Discriminator LONG",
+      "public static final enum com.yahoo.metrics.simple.Value$Discriminator DOUBLE",
+      "public static final enum com.yahoo.metrics.simple.Value$Discriminator STRING"
+    ]
+  },
+  "com.yahoo.metrics.simple.Value": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public",
+      "abstract"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public long longValue()",
+      "public double doubleValue()",
+      "public java.lang.String stringValue()",
+      "public abstract com.yahoo.metrics.simple.Value$Discriminator getType()",
+      "public static com.yahoo.metrics.simple.Value of(long)",
+      "public static com.yahoo.metrics.simple.Value of(double)",
+      "public static com.yahoo.metrics.simple.Value of(java.lang.String)"
     ],
     "fields": []
   },

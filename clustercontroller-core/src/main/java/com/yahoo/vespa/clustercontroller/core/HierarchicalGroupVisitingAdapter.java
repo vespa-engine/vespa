@@ -18,18 +18,20 @@ public class HierarchicalGroupVisitingAdapter implements HierarchicalGroupVisiti
     }
 
     @Override
+    public boolean isHierarchical() {
+        return !distribution.getRootGroup().isLeafGroup();
+    }
+
+    @Override
     public void visit(GroupVisitor visitor) {
-        if (distribution.getRootGroup().isLeafGroup()) {
-            // A flat non-hierarchical cluster
-            return;
+        if (isHierarchical()) {
+            distribution.visitGroups(group -> {
+                if (group.isLeafGroup()) {
+                    return visitor.visitGroup(group);
+                }
+
+                return true;
+            });
         }
-
-        distribution.visitGroups(group -> {
-            if (group.isLeafGroup()) {
-                return visitor.visitGroup(group);
-            }
-
-            return true;
-        });
     }
 }

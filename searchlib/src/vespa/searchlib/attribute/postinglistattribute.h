@@ -52,11 +52,11 @@ protected:
     IEnumStoreDictionary& _dictionary;
 
     PostingListAttributeBase(AttributeVector &attr, IEnumStore &enumStore);
-    virtual ~PostingListAttributeBase();
+    ~PostingListAttributeBase() override;
 
     virtual void updatePostings(PostingMap & changePost) = 0;
 
-    void updatePostings(PostingMap &changePost, vespalib::datastore::EntryComparator &cmp);
+    void updatePostings(PostingMap &changePost, const vespalib::datastore::EntryComparator &cmp);
     void clearAllPostings();
     void disableFreeLists() { _postingList.disableFreeLists(); }
     void disableElemHoldList() { _postingList.disableElemHoldList(); }
@@ -64,10 +64,12 @@ protected:
     bool forwardedOnAddDoc(DocId doc, size_t wantSize, size_t wantCapacity);
 
     void clearPostings(attribute::IAttributeVector::EnumHandle eidx, uint32_t fromLid,
-                       uint32_t toLid, vespalib::datastore::EntryComparator &cmp);
+                       uint32_t toLid, const vespalib::datastore::EntryComparator &cmp);
 
     void forwardedShrinkLidSpace(uint32_t newSize) override;
-    virtual vespalib::MemoryUsage getMemoryUsage() const override;
+    vespalib::MemoryUsage getMemoryUsage() const override;
+    bool consider_compact_worst_btree_nodes(const CompactionStrategy& compaction_strategy) override;
+    bool consider_compact_worst_buffers(const CompactionStrategy& compaction_strategy) override;
 
 public:
     const PostingList & getPostingList() const { return _postingList; }
@@ -84,7 +86,7 @@ public:
     using EntryRef = vespalib::datastore::EntryRef;
     using EnumIndex = IEnumStore::Index;
     using EnumStore = EnumStoreType;
-    using FoldedComparatorType = typename EnumStore::FoldedComparatorType;
+    using ComparatorType = typename EnumStore::ComparatorType;
     using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using PostingList = typename Parent::PostingList;
     using PostingMap = typename Parent::PostingMap;
@@ -102,7 +104,7 @@ private:
 
 public:
     PostingListAttributeSubBase(AttributeVector &attr, EnumStore &enumStore);
-    virtual ~PostingListAttributeSubBase();
+    ~PostingListAttributeSubBase() override;
 
     void handle_load_posting_lists(LoadedVector &loaded);
     void updatePostings(PostingMap &changePost) override;

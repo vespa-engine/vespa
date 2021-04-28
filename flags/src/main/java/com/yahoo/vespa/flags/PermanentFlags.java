@@ -143,13 +143,19 @@ public class PermanentFlags {
             "jvm-omit-stack-trace-in-fast-throw", true,
             "Controls JVM option OmitStackTraceInFastThrow (default feature flag value is true, which is the default JVM option value as well)",
             "takes effect on JVM restart",
-            NODE_TYPE, APPLICATION_ID);
+            CLUSTER_TYPE, APPLICATION_ID);
 
     public static final UnboundIntFlag MAX_TRIAL_TENANTS = defineIntFlag(
             "max-trial-tenants", -1,
             "The maximum nr. of tenants with trial plan, -1 is unlimited",
             "Takes effect immediately"
     );
+
+    public static final UnboundBooleanFlag ALLOW_DISABLE_MTLS = defineFeatureFlag(
+            "allow-disable-mtls", true,
+            "Allow application to disable client authentication",
+            "Takes effect on redeployment",
+            APPLICATION_ID);
 
     private PermanentFlags() {}
 

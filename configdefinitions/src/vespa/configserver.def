@@ -28,6 +28,7 @@ numDelayedResponseThreads int default=1
 serverId string default="localhost"
 hostedVespa bool default=false
 numParallelTenantLoaders int default=4
+numRedeploymentThreads int default=4
 
 # Configserver app
 applicationDirectory string default="conf/configserver-app"

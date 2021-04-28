@@ -47,21 +47,15 @@ class LogFileHandler <LOGTYPE> {
 
     @FunctionalInterface private interface Pollable<T> { Operation<T> poll() throws InterruptedException; }
 
-    LogFileHandler(Compression compression, String filePattern, String rotationTimes, String symlinkName, int queueSize,
-                   String threadName, LogWriter<LOGTYPE> logWriter) {
-        this(compression, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, threadName, logWriter);
+    LogFileHandler(Compression compression, int bufferSize, String filePattern, String rotationTimes, String symlinkName,
+                   int queueSize, String threadName, LogWriter<LOGTYPE> logWriter) {
+        this(compression, bufferSize, filePattern, calcTimesMinutes(rotationTimes), symlinkName, queueSize, threadName, logWriter);
     }
 
-    LogFileHandler(
-            Compression compression,
-            String filePattern,
-            long[] rotationTimes,
-            String symlinkName,
-            int queueSize,
-            String threadName,
-            LogWriter<LOGTYPE> logWriter) {
+    LogFileHandler(Compression compression, int bufferSize, String filePattern, long[] rotationTimes, String symlinkName,
+                   int queueSize, String threadName, LogWriter<LOGTYPE> logWriter) {
         this.logQueue = new LinkedBlockingQueue<>(queueSize);
-        this.logThread = new LogThread<>(logWriter, filePattern, compression, rotationTimes, symlinkName, threadName, this::poll);
+        this.logThread = new LogThread<>(logWriter, filePattern, compression, bufferSize, rotationTimes, symlinkName, threadName, this::poll);
         this.logThread.start();
     }
 
@@ -197,6 +191,7 @@ class LogFileHandler <LOGTYPE> {
         private volatile String fileName;
         private final LogWriter<LOGTYPE> logWriter;
         private final Compression compression;
+        private final int bufferSize;
         private final long[] rotationTimes;
         private final String symlinkName;
         private final ExecutorService executor = createCompressionTaskExecutor();
@@ -206,6 +201,7 @@ class LogFileHandler <LOGTYPE> {
         LogThread(LogWriter<LOGTYPE> logWriter,
                   String filePattern,
                   Compression compression,
+                  int bufferSize,
                   long[] rotationTimes,
                   String symlinkName,
                   String threadName,
@@ -215,6 +211,7 @@ class LogFileHandler <LOGTYPE> {
             this.logWriter = logWriter;
             this.filePattern = filePattern;
             this.compression = compression;
+            this.bufferSize = bufferSize;
             this.rotationTimes = rotationTimes;
             this.symlinkName = (symlinkName != null && !symlinkName.isBlank()) ? symlinkName : null;
             this.operationProvider = operationProvider;
@@ -360,7 +357,7 @@ class LogFileHandler <LOGTYPE> {
             internalClose();
             try {
                 checkAndCreateDir(fileName);
-                fileOutput = new PageCacheFriendlyFileOutputStream(nativeIO, Paths.get(fileName), 4 * 1024 * 1024);
+                fileOutput = new PageCacheFriendlyFileOutputStream(nativeIO, Paths.get(fileName), bufferSize);
                 LogFileDb.nowLoggingTo(fileName);
             } catch (IOException e) {
                 throw new RuntimeException("Couldn't open log file '" + fileName + "'", e);

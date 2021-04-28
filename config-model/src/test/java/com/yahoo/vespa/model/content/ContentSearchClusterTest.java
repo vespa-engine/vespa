@@ -3,6 +3,7 @@ package com.yahoo.vespa.model.content;
 
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.deploy.TestProperties;
+import com.yahoo.searchlib.TranslogserverConfig;
 import com.yahoo.vespa.config.content.FleetcontrollerConfig;
 import com.yahoo.vespa.config.content.AllClustersBucketSpacesConfig;
 import com.yahoo.vespa.config.content.core.BucketspacesConfig;
@@ -246,4 +247,16 @@ public class ContentSearchClusterTest {
         assertFalse(getFleetcontrollerConfig(cluster).cluster_has_global_document_types());
     }
 
+    TranslogserverConfig getTlsConfig(ContentCluster cluster) {
+        TranslogserverConfig.Builder tlsBuilder = new TranslogserverConfig.Builder();
+        cluster.getSearch().getSearchNodes().get(0).getConfig(tlsBuilder);
+        return tlsBuilder.build();
+    }
+
+    @Test
+    public void fsync_is_controllable() throws Exception {
+        assertTrue(getTlsConfig(createCluster(new ContentClusterBuilder().getXml())).usefsync());
+        assertTrue(getTlsConfig(createCluster(new ContentClusterBuilder().syncTransactionLog(true).getXml())).usefsync());
+        assertFalse(getTlsConfig(createCluster(new ContentClusterBuilder().syncTransactionLog(false).getXml())).usefsync());
+    }
 }

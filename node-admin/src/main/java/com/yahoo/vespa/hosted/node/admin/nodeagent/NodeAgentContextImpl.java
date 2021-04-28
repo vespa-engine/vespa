@@ -1,4 +1,4 @@
-// Copyright 2020 Oath Inc. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.node.admin.nodeagent;
 
 import com.yahoo.config.provision.ApplicationId;
@@ -44,6 +44,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     private final Path pathToNodeRootOnHost;
     private final Path pathToVespaHome;
     private final String vespaUser;
+    private final String vespaGroup;
     private final String vespaUserOnHost;
     private final double cpuSpeedup;
     private final Set<NodeAgentTask> disabledNodeAgentTasks;
@@ -53,7 +54,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                                 ContainerNetworkMode containerNetworkMode, ZoneApi zone,
                                 FileSystem fileSystem, FlagSource flagSource,
                                 Path pathToContainerStorage, Path pathToVespaHome,
-                                String vespaUser, String vespaUserOnHost, double cpuSpeedup,
+                                String vespaUser, String vespaGroup, String vespaUserOnHost, double cpuSpeedup,
                                 Optional<ApplicationId> hostExclusiveTo) {
         if (cpuSpeedup <= 0)
             throw new IllegalArgumentException("cpuSpeedUp must be positive, was: " + cpuSpeedup);
@@ -69,6 +70,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         this.pathToVespaHome = requireValidPath(pathToVespaHome);
         this.logPrefix = containerName.asString() + ": ";
         this.vespaUser = vespaUser;
+        this.vespaGroup = vespaGroup;
         this.vespaUserOnHost = vespaUserOnHost;
         this.cpuSpeedup = cpuSpeedup;
         this.disabledNodeAgentTasks = NodeAgentTask.fromString(
@@ -109,6 +111,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
     @Override
     public String vespaUser() {
         return vespaUser;
+    }
+
+    @Override
+    public String vespaGroup() {
+        return vespaGroup;
     }
 
     @Override
@@ -196,6 +203,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                ", pathToNodeRootOnHost=" + pathToNodeRootOnHost +
                ", pathToVespaHome=" + pathToVespaHome +
                ", vespaUser='" + vespaUser + '\'' +
+               ", vespaGroup='" + vespaGroup + '\'' +
                ", vespaUserOnHost='" + vespaUserOnHost + '\'' +
                ", hostExclusiveTo='" + hostExclusiveTo + '\'' +
                '}';
@@ -221,6 +229,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
         private ContainerNetworkMode containerNetworkMode;
         private ZoneApi zone;
         private String vespaUser;
+        private String vespaGroup;
         private String vespaUserOnHost;
         private FileSystem fileSystem = FileSystems.getDefault();
         private FlagSource flagSource;
@@ -268,6 +277,11 @@ public class NodeAgentContextImpl implements NodeAgentContext {
 
         public Builder vespaUser(String vespaUser) {
             this.vespaUser = vespaUser;
+            return this;
+        }
+
+        public Builder vespaGroup(String vespaGroup) {
+            this.vespaGroup = vespaGroup;
             return this;
         }
 
@@ -334,6 +348,7 @@ public class NodeAgentContextImpl implements NodeAgentContext {
                     Optional.ofNullable(containerStorage).orElseGet(() -> fileSystem.getPath("/home/docker/container-storage")),
                     fileSystem.getPath("/opt/vespa"),
                     Optional.ofNullable(vespaUser).orElse("vespa"),
+                    Optional.ofNullable(vespaGroup).orElse("vespa"),
                     Optional.ofNullable(vespaUserOnHost).orElse("container_vespa"),
                     cpuSpeedUp, hostExclusiveTo);
         }

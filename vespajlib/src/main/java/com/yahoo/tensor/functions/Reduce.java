@@ -6,6 +6,7 @@ import com.yahoo.tensor.IndexedTensor;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorAddress;
 import com.yahoo.tensor.TensorType;
+import com.yahoo.tensor.TypeResolver;
 import com.yahoo.tensor.evaluation.EvaluationContext;
 import com.yahoo.tensor.evaluation.Name;
 import com.yahoo.tensor.evaluation.TypeContext;
@@ -60,13 +61,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
     }
 
     public static TensorType outputType(TensorType inputType, List<String> reduceDimensions) {
-        TensorType.Builder b = new TensorType.Builder(inputType.valueType());
-        if (reduceDimensions.isEmpty()) return b.build(); // means reduce all
-        for (TensorType.Dimension dimension : inputType.dimensions()) {
-            if ( ! reduceDimensions.contains(dimension.name()))
-                b.dimension(dimension);
-        }
-        return b.build();
+        return TypeResolver.reduce(inputType, reduceDimensions);
     }
 
     public TensorFunction<NAMETYPE> argument() { return argument; }
@@ -104,16 +99,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
     @Override
     public TensorType type(TypeContext<NAMETYPE> context) {
-        return type(argument.type(context), dimensions);
-    }
-
-    private static TensorType type(TensorType argumentType, List<String> dimensions) {
-        TensorType.Builder builder = new TensorType.Builder(argumentType.valueType());
-        if (dimensions.isEmpty()) return builder.build(); // means reduce all
-        for (TensorType.Dimension dimension : argumentType.dimensions())
-            if ( ! dimensions.contains(dimension.name())) // keep
-                builder.dimension(dimension);
-        return builder.build();
+        return outputType(argument.type(context), dimensions);
     }
 
     @Override
@@ -133,7 +119,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
             else
                 return reduceAllGeneral(argument, aggregator);
 
-        TensorType reducedType = type(argument.type(), dimensions);
+        TensorType reducedType = outputType(argument.type(), dimensions);
 
         // Reduce cells
         Map<TensorAddress, ValueAggregator> aggregatingCells = new HashMap<>();
@@ -250,7 +236,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
     private static class MaxAggregator extends ValueAggregator {
 
-        private double maxValue = Double.MIN_VALUE;
+        private double maxValue = Double.NEGATIVE_INFINITY;
 
         @Override
         public void aggregate(double value) {
@@ -265,7 +251,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
         @Override
         public void reset() {
-            maxValue = Double.MIN_VALUE;
+            maxValue = Double.NEGATIVE_INFINITY;
         }
     }
 
@@ -304,7 +290,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
     private static class MinAggregator extends ValueAggregator {
 
-        private double minValue = Double.MAX_VALUE;
+        private double minValue = Double.POSITIVE_INFINITY;
 
         @Override
         public void aggregate(double value) {
@@ -319,7 +305,7 @@ public class Reduce<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMET
 
         @Override
         public void reset() {
-            minValue = Double.MAX_VALUE;
+            minValue = Double.POSITIVE_INFINITY;
         }
 
     }

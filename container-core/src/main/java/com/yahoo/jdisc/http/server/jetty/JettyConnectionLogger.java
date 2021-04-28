@@ -6,6 +6,7 @@ import com.yahoo.container.logging.ConnectionLogEntry;
 import com.yahoo.container.logging.ConnectionLogEntry.SslHandshakeFailure.ExceptionEntry;
 import com.yahoo.io.HexDump;
 import com.yahoo.jdisc.http.ServerConfig;
+import org.eclipse.jetty.http2.server.HTTP2ServerConnection;
 import org.eclipse.jetty.io.Connection;
 import org.eclipse.jetty.io.EndPoint;
 import org.eclipse.jetty.io.SocketChannelEndPoint;
@@ -94,9 +95,18 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
                 info = ConnectionInfo.from(endpoint);
                 connectionInfo.put(IdentityKey.of(endpoint), info);
             }
+            String connectionClassName = connection.getClass().getSimpleName(); // For hidden implementations of Connection
             if (connection instanceof SslConnection) {
                 SSLEngine sslEngine = ((SslConnection) connection).getSSLEngine();
                 sslToConnectionInfo.put(IdentityKey.of(sslEngine), info);
+            } else if (connection instanceof HttpConnection) {
+                info.setHttpProtocol("HTTP/1.1");
+            } else if (connection instanceof HTTP2ServerConnection) {
+                info.setHttpProtocol("HTTP/2.0");
+            } else if (connectionClassName.endsWith("ProxyProtocolV1Connection")) {
+                info.setProxyProtocolVersion("v1");
+            } else if (connectionClassName.endsWith("ProxyProtocolV2Connection")) {
+                info.setProxyProtocolVersion("v2");
             }
             if (connection.getEndPoint() instanceof ProxyConnectionFactory.ProxyEndPoint) {
                 InetSocketAddress remoteAddress = connection.getEndPoint().getRemoteAddress();
@@ -227,6 +237,8 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         private Date sslPeerNotAfter;
         private List<SNIServerName> sslSniServerNames;
         private SSLHandshakeException sslHandshakeException;
+        private String proxyProtocolVersion;
+        private String httpProtocol;
 
         private ConnectionInfo(UUID uuid, long createdAt, InetSocketAddress localAddress, InetSocketAddress peerAddress) {
             this.uuid = uuid;
@@ -290,6 +302,10 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
             return this;
         }
 
+        synchronized ConnectionInfo setHttpProtocol(String protocol) { this.httpProtocol = protocol; return this; }
+
+        synchronized ConnectionInfo setProxyProtocolVersion(String version) { this.proxyProtocolVersion = version; return this; }
+
         synchronized ConnectionLogEntry toLogEntry() {
             ConnectionLogEntry.Builder builder = ConnectionLogEntry.builder(uuid, Instant.ofEpochMilli(createdAt));
             if (closedAt > 0) {
@@ -347,6 +363,12 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
                         .map(SslHandshakeFailure::failureType)
                         .orElse("UNKNOWN");
                 builder.withSslHandshakeFailure(new ConnectionLogEntry.SslHandshakeFailure(type, exceptionChain));
+            }
+            if (httpProtocol != null) {
+                builder.withHttpProtocol(httpProtocol);
+            }
+            if (proxyProtocolVersion != null) {
+                builder.withProxyProtocolVersion(proxyProtocolVersion);
             }
             return builder.build();
         }

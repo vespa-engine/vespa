@@ -214,7 +214,7 @@ public class DeployState implements ConfigDefinitionStore {
         File importFrom = applicationPackage.getFileReference(ApplicationPackage.MODELS_DIR);
         ImportedMlModels importedModels = new ImportedMlModels(importFrom, modelImporters);
         for (var entry : importedModels.getSkippedModels().entrySet()) {
-            deployLogger.log(Level.WARNING, "Skipping import of model " + entry.getKey() + " as an exception " +
+            deployLogger.logApplicationPackage(Level.WARNING, "Skipping import of model " + entry.getKey() + " as an exception " +
                     "occurred during import. Error: " + entry.getValue());
         }
         return importedModels;

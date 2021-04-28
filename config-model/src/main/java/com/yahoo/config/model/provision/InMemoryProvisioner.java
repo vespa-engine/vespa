@@ -142,7 +142,6 @@ public class InMemoryProvisioner implements HostProvisioner {
     public List<HostSpec> prepare(ClusterSpec cluster, ClusterResources requested, boolean required, boolean canFail) {
         if (cluster.group().isPresent() && requested.groups() > 1)
             throw new IllegalArgumentException("Cannot both be specifying a group and ask for groups to be created");
-
         int capacity = failOnOutOfCapacity || required
                        ? requested.nodes()
                        : Math.min(requested.nodes(), freeNodes.get(defaultResources).size() + totalAllocatedTo(cluster));
@@ -200,14 +199,16 @@ public class InMemoryProvisioner implements HostProvisioner {
         for (int i = allocation.size() - 1; i >= 0; i--) {
             NodeResources currentResources = allocation.get(0).advertisedResources();
             if (currentResources.isUnspecified() || requestedResources.isUnspecified()) continue;
-            if ( ! currentResources.compatibleWith(requestedResources)) {
+            if ( (! sharedHosts && ! currentResources.satisfies(requestedResources))
+                 ||
+                 (sharedHosts && ! currentResources.compatibleWith(requestedResources))) {
                 HostSpec removed = allocation.remove(i);
                 freeNodes.put(currentResources, new Host(removed.hostname())); // Return the node back to free pool
             }
         }
 
         int nextIndex = nextIndexInCluster.getOrDefault(new Pair<>(clusterGroup.type(), clusterGroup.id()), startIndex);
-        while (allocation.size() < nodesInGroup) {
+        while (nonRetiredIn(allocation).size() < nodesInGroup) {
             // Find the smallest host that can fit the requested resources
             Optional<NodeResources> hostResources = freeNodes.keySet().stream()
                     .sorted(new MemoryDiskCpu())
@@ -232,10 +233,14 @@ public class InMemoryProvisioner implements HostProvisioner {
         }
         nextIndexInCluster.put(new Pair<>(clusterGroup.type(), clusterGroup.id()), nextIndex);
 
-        while (allocation.size() > nodesInGroup)
+        while (nonRetiredIn(allocation).size() > nodesInGroup)
             allocation.remove(0);
 
         return allocation;
+    }
+
+    private List<HostSpec> nonRetiredIn(List<HostSpec> hosts) {
+        return hosts.stream().filter(host -> ! retiredHostNames.contains(host.hostname())).collect(Collectors.toList());
     }
 
     private int totalAllocatedTo(ClusterSpec cluster) {

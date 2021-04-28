@@ -338,9 +338,8 @@ class RequestBucketInfoCommand : public StorageCommand {
     vespalib::string _distributionHash;
 
 public:
-    explicit RequestBucketInfoCommand(
-            document::BucketSpace bucketSpace,
-            const std::vector<document::BucketId>& buckets);
+    RequestBucketInfoCommand(document::BucketSpace bucketSpace,
+                             const std::vector<document::BucketId>& buckets);
     RequestBucketInfoCommand(document::BucketSpace bucketSpace,
                              uint16_t distributor,
                              const lib::ClusterState& state,
@@ -388,6 +387,7 @@ public:
     typedef vespalib::Array<Entry> EntryVector;
 private:
     EntryVector _buckets;
+    bool _full_bucket_fetch;
 
 public:
 
@@ -395,6 +395,7 @@ public:
     ~RequestBucketInfoReply();
     const EntryVector & getBucketInfo() const { return _buckets; }
     EntryVector & getBucketInfo() { return _buckets; }
+    [[nodiscard]] bool full_bucket_fetch() const noexcept { return _full_bucket_fetch; }
     void print(std::ostream& out, bool verbose, const std::string& indent) const override;
     DECLARE_STORAGEREPLY(RequestBucketInfoReply, onRequestBucketInfoReply)
 };

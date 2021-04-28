@@ -10,6 +10,7 @@ import com.yahoo.transaction.Mutex;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
+import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.History;
@@ -28,8 +29,6 @@ import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.collectingAndThen;
 
 /**
  * Maintains information in the node repo about when this node last responded to ping
@@ -84,8 +83,10 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             for (Map.Entry<Node, String> entry : getReadyNodesByFailureReason().entrySet()) {
                 Node node = entry.getKey();
                 if (throttle(node)) {
-                    if (node.type().isHost()) throttledHostFailures++;
-                    else throttledNodeFailures++;
+                    if (node.type().isHost())
+                        throttledHostFailures++;
+                    else
+                        throttledNodeFailures++;
                     continue;
                 }
                 String reason = entry.getValue();
@@ -103,11 +104,26 @@ public class NodeFailer extends NodeRepositoryMaintainer {
                     throttledHostFailures++;
                 else
                     throttledNodeFailures++;
-
                 continue;
             }
             String reason = entry.getValue();
             failActive(node, reason);
+        }
+
+        // Active hosts
+        NodeList activeNodes = nodeRepository().nodes().list(Node.State.active);
+        for (Node host : activeNodes.hosts().failing()) {
+            if ( ! activeNodes.childrenOf(host).isEmpty()) continue;
+            Optional<NodeMutex> locked = Optional.empty();
+            try {
+                locked = nodeRepository().nodes().lockAndGet(host);
+                if (locked.isEmpty()) continue;
+                nodeRepository().nodes().fail(List.of(locked.get().node()), Agent.NodeFailer,
+                                              "Host should be failed and have no tenant nodes");
+            }
+            finally {
+                locked.ifPresent(NodeMutex::close);
+            }
         }
 
         int throttlingActive = Math.min(1, throttledHostFailures + throttledNodeFailures);
@@ -277,7 +293,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             }
 
             if (! allTenantNodesFailedOutSuccessfully) return false;
-            wantToFail(node, true, reason, lock);
+            wantToFail(node, true, lock);
             try {
                 deployment.get().activate();
                 return true;
@@ -289,7 +305,7 @@ public class NodeFailer extends NodeRepositoryMaintainer {
             } catch (RuntimeException e) {
                 // Reset want to fail: We'll retry failing unless it heals in the meantime
                 nodeRepository().nodes().node(node.hostname())
-                                        .ifPresent(n -> wantToFail(n, false, "Could not fail", lock));
+                                        .ifPresent(n -> wantToFail(n, false, lock));
                 log.log(Level.WARNING, "Could not fail " + node + " for " + node.allocation().get().owner() +
                                        " for " + reason + ": " + Exceptions.toMessageString(e));
                 return false;
@@ -297,29 +313,31 @@ public class NodeFailer extends NodeRepositoryMaintainer {
         }
     }
 
-    private void wantToFail(Node node, boolean wantToFail, String reason, Mutex lock) {
-        nodeRepository().nodes().write(node.withWantToFail(wantToFail, Agent.NodeFailer, reason, clock().instant()), lock);
+    private void wantToFail(Node node, boolean wantToFail, Mutex lock) {
+        nodeRepository().nodes().write(node.withWantToFail(wantToFail, Agent.NodeFailer, clock().instant()), lock);
     }
 
     /** Returns true if node failing should be throttled */
     private boolean throttle(Node node) {
         if (throttlePolicy == ThrottlePolicy.disabled) return false;
         Instant startOfThrottleWindow = clock().instant().minus(throttlePolicy.throttleWindow);
-        NodeList nodes = nodeRepository().nodes().list();
-        NodeList recentlyFailedNodes = nodes.stream()
-                                            .filter(n -> n.state() == Node.State.failed)
-                                            .filter(n -> n.history().hasEventAfter(History.Event.Type.failed, startOfThrottleWindow))
-                                            .collect(collectingAndThen(Collectors.toList(), NodeList::copyOf));
+        NodeList allNodes = nodeRepository().nodes().list();
+        NodeList recentlyFailedNodes = allNodes.state(Node.State.failed)
+                                               .matching(n -> n.history().hasEventAfter(History.Event.Type.failed,
+                                                                                        startOfThrottleWindow));
 
-        // Allow failing nodes within policy
-        if (recentlyFailedNodes.size() < throttlePolicy.allowedToFailOf(nodes.size())) return false;
+        // Allow failing any node within policy
+        if (recentlyFailedNodes.size() < throttlePolicy.allowedToFailOf(allNodes.size())) return false;
 
-        // Always allow failing physical nodes up to minimum limit
+        // Always allow failing a minimum number of hosts
         if (node.parentHostname().isEmpty() &&
             recentlyFailedNodes.parents().size() < throttlePolicy.minimumAllowedToFail) return false;
 
+        // Always allow failing children of a failed host
+        if (recentlyFailedNodes.parentOf(node).isPresent()) return false;
+
         log.info(String.format("Want to fail node %s, but throttling is in effect: %s", node.hostname(),
-                               throttlePolicy.toHumanReadableString(nodes.size())));
+                               throttlePolicy.toHumanReadableString(allNodes.size())));
 
         return true;
     }

@@ -386,6 +386,7 @@ testSingleValue(Attribute & svsa, Config &cfg)
 TEST("testSingleValue")
 {
     EXPECT_EQUAL(24u, sizeof(AttributeVector::SearchContext));
+    EXPECT_EQUAL(24u, sizeof(StringSearchHelper));
     EXPECT_EQUAL(56u, sizeof(SingleValueStringAttribute::StringSingleImplSearchContext));
     {
         Config cfg(BasicType::STRING, CollectionType::SINGLE);
@@ -406,6 +407,91 @@ TEST("testSingleValue")
         SingleValueStringPostingAttribute svsb("svspb", cfg);
         testDefaultValueOnAddDoc(svsb);
     }
+}
+
+TEST("test uncased match") {
+    QueryTermUCS4 xyz("xyz", QueryTermSimple::Type::WORD);
+    StringSearchHelper helper(xyz, false);
+    EXPECT_FALSE(helper.isCased());
+    EXPECT_FALSE(helper.isPrefix());
+    EXPECT_FALSE(helper.isRegex());
+    EXPECT_FALSE(helper.isMatch("axyz"));
+    EXPECT_FALSE(helper.isMatch("xyza"));
+    EXPECT_TRUE(helper.isMatch("xyz"));
+    EXPECT_TRUE(helper.isMatch("XyZ"));
+    EXPECT_FALSE(helper.isMatch("Xy"));
+}
+
+TEST("test uncased prefix match") {
+    QueryTermUCS4 xyz("xyz", QueryTermSimple::Type::PREFIXTERM);
+    StringSearchHelper helper(xyz, false);
+    EXPECT_FALSE(helper.isCased());
+    EXPECT_TRUE(helper.isPrefix());
+    EXPECT_FALSE(helper.isRegex());
+    EXPECT_FALSE(helper.isMatch("axyz"));
+    EXPECT_TRUE(helper.isMatch("xyza"));
+    EXPECT_TRUE(helper.isMatch("xYza"));
+    EXPECT_TRUE(helper.isMatch("xyz"));
+    EXPECT_TRUE(helper.isMatch("XyZ"));
+    EXPECT_FALSE(helper.isMatch("Xy"));
+}
+
+TEST("test cased match") {
+    QueryTermUCS4 xyz("XyZ", QueryTermSimple::Type::WORD);
+    StringSearchHelper helper(xyz, true);
+    EXPECT_TRUE(helper.isCased());
+    EXPECT_FALSE(helper.isPrefix());
+    EXPECT_FALSE(helper.isRegex());
+    EXPECT_FALSE(helper.isMatch("aXyZ"));
+    EXPECT_FALSE(helper.isMatch("XyZa"));
+    EXPECT_FALSE(helper.isMatch("xyz"));
+    EXPECT_FALSE(helper.isMatch("Xyz"));
+    EXPECT_TRUE(helper.isMatch("XyZ"));
+    EXPECT_FALSE(helper.isMatch("Xy"));
+}
+
+TEST("test cased prefix match") {
+    QueryTermUCS4 xyz("XyZ", QueryTermSimple::Type::PREFIXTERM);
+    StringSearchHelper helper(xyz, true);
+    EXPECT_TRUE(helper.isCased());
+    EXPECT_TRUE(helper.isPrefix());
+    EXPECT_FALSE(helper.isRegex());
+    EXPECT_FALSE(helper.isMatch("aXyZ"));
+    EXPECT_TRUE(helper.isMatch("XyZa"));
+    EXPECT_FALSE(helper.isMatch("xyZa"));
+    EXPECT_FALSE(helper.isMatch("xyz"));
+    EXPECT_FALSE(helper.isMatch("Xyz"));
+    EXPECT_TRUE(helper.isMatch("XyZ"));
+    EXPECT_FALSE(helper.isMatch("Xy"));
+}
+
+TEST("test uncased regex match") {
+    QueryTermUCS4 xyz("x[yY]+Z", QueryTermSimple::Type::REGEXP);
+    StringSearchHelper helper(xyz, false);
+    EXPECT_FALSE(helper.isCased());
+    EXPECT_FALSE(helper.isPrefix());
+    EXPECT_TRUE(helper.isRegex());
+    EXPECT_TRUE(helper.isMatch("axyZ"));
+    EXPECT_TRUE(helper.isMatch("xyZa"));
+    EXPECT_TRUE(helper.isMatch("xyZ"));
+    EXPECT_TRUE(helper.isMatch("xyz"));
+    EXPECT_FALSE(helper.isMatch("xyaZ"));
+    EXPECT_FALSE(helper.isMatch("xy"));
+}
+
+TEST("test cased regex match") {
+    QueryTermUCS4 xyz("x[Y]+Z", QueryTermSimple::Type::REGEXP);
+    StringSearchHelper helper(xyz, true);
+    EXPECT_TRUE(helper.isCased());
+    EXPECT_FALSE(helper.isPrefix());
+    EXPECT_TRUE(helper.isRegex());
+    EXPECT_TRUE(helper.isMatch("axYZ"));
+    EXPECT_TRUE(helper.isMatch("xYZa"));
+    EXPECT_FALSE(helper.isMatch("xyZ"));
+    EXPECT_TRUE(helper.isMatch("xYZ"));
+    EXPECT_FALSE(helper.isMatch("xYz"));
+    EXPECT_FALSE(helper.isMatch("xaYZ"));
+    EXPECT_FALSE(helper.isMatch("xY"));
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }

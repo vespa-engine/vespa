@@ -166,6 +166,7 @@ public:
     size_t getExtraHoldBytes() const { return _extraHoldBytes; }
     bool getCompacting() const { return _compacting; }
     void setCompacting() { _compacting = true; }
+    uint32_t get_used_arrays() const noexcept { return _usedElems / _arraySize; }
     void fallbackResize(uint32_t bufferId, size_t elementsNeeded, void *&buffer, Alloc &holdBuffer);
 
     bool isActive(uint32_t typeId) const {

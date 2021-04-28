@@ -26,6 +26,7 @@ vespa_define_module(
     src/tests/benchmark_timer
     src/tests/box
     src/tests/btree
+    src/tests/btree/btree_store
     src/tests/child_process
     src/tests/component
     src/tests/compress

@@ -6,6 +6,8 @@ import com.yahoo.documentmodel.NewDocumentType;
 import com.yahoo.searchdefinition.derived.AttributeFields;
 import com.yahoo.searchdefinition.derived.IndexSchema;
 import com.yahoo.searchdefinition.document.Attribute;
+import com.yahoo.searchdefinition.document.Case;
+import com.yahoo.searchdefinition.document.Dictionary;
 import com.yahoo.searchdefinition.document.HnswIndexParams;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaRestartAction;
@@ -83,6 +85,16 @@ public class AttributeChangeValidator {
         return attribute.hnswIndexParams().isPresent();
     }
 
+    private static Dictionary.Type extractDictionaryType(Attribute attr) {
+        Dictionary dict = attr.getDictionary();
+        return dict != null ? dict.getType() : Dictionary.Type.BTREE;
+    }
+
+    private static Case extractDictionaryCase(Attribute attr) {
+        Dictionary dict = attr.getDictionary();
+        return dict != null ? dict.getMatch() : Case.UNCASED;
+    }
+
     private List<VespaConfigChangeAction> validateAttributeSettings() {
         List<VespaConfigChangeAction> result = new ArrayList<>();
         for (Attribute nextAttr : nextFields.attributes()) {
@@ -90,11 +102,14 @@ public class AttributeChangeValidator {
             if (currAttr != null) {
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::isFastSearch, "fast-search", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::isFastAccess, "fast-access", result);
+                validateAttributeSetting(id, currAttr, nextAttr, AttributeChangeValidator::extractDictionaryType, "dictionary: btree/hash", result);
+                validateAttributeSetting(id, currAttr, nextAttr, AttributeChangeValidator::extractDictionaryCase, "dictionary: cased/uncased", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::isHuge, "huge", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::densePostingListThreshold, "dense-posting-list-threshold", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::isEnabledOnlyBitVector, "rank: filter", result);
-                validateAttributeSetting(id, currAttr, nextAttr, AttributeChangeValidator::hasHnswIndex, "indexing: index", result);
                 validateAttributeSetting(id, currAttr, nextAttr, Attribute::distanceMetric, "distance-metric", result);
+
+                validateAttributeSetting(id, currAttr, nextAttr, AttributeChangeValidator::hasHnswIndex, "indexing: index", result);
                 if (hasHnswIndex(currAttr) && hasHnswIndex(nextAttr)) {
                     validateAttributeHnswIndexSetting(id, currAttr, nextAttr, HnswIndexParams::maxLinksPerNode, "max-links-per-node", result);
                     validateAttributeHnswIndexSetting(id, currAttr, nextAttr, HnswIndexParams::neighborsToExploreAtInsert, "neighbors-to-explore-at-insert", result);

@@ -70,6 +70,8 @@ class RestApiImpl implements RestApi {
         }
     }
 
+    @Override public ObjectMapper jacksonJsonMapper() { return jacksonJsonMapper; }
+
     private HttpResponse dispatchToRoute(Route route, RequestContextImpl context) {
         HandlerHolder<?> resolvedHandler = resolveHandler(context, route);
         RequestMapperHolder<?> resolvedRequestMapper = resolveRequestMapper(resolvedHandler);
@@ -142,7 +144,7 @@ class RestApiImpl implements RestApi {
     private static Route createDefaultRoute() {
         RouteBuilder routeBuilder = new RouteBuilderImpl("{*}")
                 .defaultHandler(context -> {
-                    throw new RestApiException.NotFoundException();
+                    throw new RestApiException.NotFound();
                 });
         return ((RouteBuilderImpl)routeBuilder).build();
     }
@@ -347,7 +349,10 @@ class RestApiImpl implements RestApi {
         @Override public ObjectMapper jacksonJsonMapper() { return jacksonJsonMapper; }
         @Override public UriBuilder uriBuilder() {
             URI uri = request.getUri();
-            return new UriBuilder(uri.getScheme() + "://" + uri.getHost() + ':' + uri.getPort());
+            int uriPort = uri.getPort();
+            return uriPort != -1
+                    ? new UriBuilder(uri.getScheme() + "://" + uri.getHost() + ':' + uriPort)
+                    : new UriBuilder(uri.getScheme() + "://" + uri.getHost());
         }
 
         private class PathParametersImpl implements RestApi.RequestContext.PathParameters {

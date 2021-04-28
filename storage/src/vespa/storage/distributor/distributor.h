@@ -11,6 +11,7 @@
 #include "min_replica_provider.h"
 #include "pendingmessagetracker.h"
 #include "statusreporterdelegate.h"
+#include "stripe_bucket_db_updater.h" // TODO this is temporary
 #include <vespa/config/config.h>
 #include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storage/common/doneinitializehandler.h>
@@ -33,10 +34,12 @@ namespace storage::distributor {
 
 class BlockingOperationStarter;
 class BucketPriorityDatabase;
+class BucketDBUpdater;
 class DistributorBucketSpaceRepo;
 class DistributorStatus;
 class DistributorStripe;
 class OperationSequencer;
+class LegacySingleStripeAccessor;
 class OwnershipTransferSafeTimePointCalculator;
 class SimpleMaintenanceScanner;
 class ThrottlingOperationStarter;
@@ -54,7 +57,7 @@ public:
                 const NodeIdentity& node_identity,
                 framework::TickingThreadPool&,
                 DoneInitializeHandler&,
-                bool manageActiveBucketCopies,
+                uint32_t num_distributor_stripes,
                 HostInfo& hostInfoReporterRegistrar,
                 ChainedMessageSender* = nullptr);
 
@@ -135,8 +138,8 @@ private:
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);
 
     // Accessors used by tests
-    BucketDBUpdater& bucket_db_updater();
-    const BucketDBUpdater& bucket_db_updater() const;
+    StripeBucketDBUpdater& bucket_db_updater();
+    const StripeBucketDBUpdater& bucket_db_updater() const;
     IdealStateManager& ideal_state_manager();
     const IdealStateManager& ideal_state_manager() const;
     ExternalOperationHandler& external_operation_handler();
@@ -162,16 +165,24 @@ private:
     void enableNextDistribution();
     void propagateDefaultDistribution(std::shared_ptr<const lib::Distribution>);
 
+    DistributorComponentRegister&         _comp_reg;
     std::shared_ptr<DistributorMetricSet> _metrics;
     ChainedMessageSender*                 _messageSender;
     // TODO STRIPE multiple stripes...! This is for proof of concept of wiring.
     std::unique_ptr<DistributorStripe>   _stripe;
+    std::unique_ptr<LegacySingleStripeAccessor> _stripe_accessor;
     storage::DistributorComponent        _component;
+    std::unique_ptr<BucketDBUpdater>     _bucket_db_updater;
     StatusReporterDelegate               _distributorStatusDelegate;
     framework::TickingThreadPool&        _threadPool;
     framework::ThreadWaitInfo            _tickResult;
     MetricUpdateHook                     _metricUpdateHook;
     DistributorHostInfoReporter          _hostInfoReporter;
+
+    std::shared_ptr<lib::Distribution>   _distribution;
+    std::shared_ptr<lib::Distribution>   _next_distribution;
+
+    uint64_t                             _current_internal_config_generation;
 };
 
 }

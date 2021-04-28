@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.node.admin.nodeadmin;
 
 import com.yahoo.config.provision.HostName;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.flags.Flags;
+import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.Acl;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeRepository;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
@@ -49,9 +51,10 @@ public class NodeAdminStateUpdaterTest {
     private final NodeAdmin nodeAdmin = mock(NodeAdmin.class);
     private final HostName hostHostname = HostName.from("basehost1.test.yahoo.com");
     private final ManualClock clock = new ManualClock();
+    private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
 
     private final NodeAdminStateUpdater updater = spy(new NodeAdminStateUpdater(
-            nodeAgentContextFactory, nodeRepository, orchestrator, nodeAdmin, hostHostname, clock));
+            nodeAgentContextFactory, nodeRepository, orchestrator, nodeAdmin, hostHostname, clock, flagSource));
 
 
     @Test
@@ -210,6 +213,25 @@ public class NodeAdminStateUpdaterTest {
         verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.hostname().equals("host3.yahoo.com")), eq(acl));
         verify(nodeRepository, times(3)).getNodes(eq(hostHostname.value()));
         verify(nodeRepository, times(1)).getAcls(eq(hostHostname.value()));
+    }
+
+    @Test
+    public void node_spec_and_acl_aligned_with_acl_cache_disabled() {
+        flagSource.withBooleanFlag(Flags.CACHE_ACL.id(), false);
+
+        Acl acl = new Acl.Builder().withTrustedPorts(22).build();
+        mockNodeRepo(NodeState.active, 3);
+        mockAcl(acl, 1, 2, 3);
+
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+        updater.adjustNodeAgentsToRunFromNodeRepository();
+
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.hostname().equals("host1.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.hostname().equals("host2.yahoo.com")), eq(acl));
+        verify(nodeAgentContextFactory, times(3)).create(argThat(spec -> spec.hostname().equals("host3.yahoo.com")), eq(acl));
+        verify(nodeRepository, times(3)).getNodes(eq(hostHostname.value()));
+        verify(nodeRepository, times(3)).getAcls(eq(hostHostname.value()));
     }
 
     @Test

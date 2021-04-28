@@ -99,13 +99,10 @@ public class WandItem extends WeightedSetItem {
     protected void appendHeadingString(StringBuilder buffer) {
         buffer.append(getName());
         buffer.append("(");
-        buffer.append(targetNumHits);
-        buffer.append(",");
-        buffer.append(scoreThreshold);
-        buffer.append(",");
+        buffer.append(targetNumHits).append(",");
+        buffer.append(scoreThreshold).append(",");
         buffer.append(thresholdBoostFactor);
-        buffer.append(")");
-        buffer.append(" ");
+        buffer.append(") ");
     }
 
     @Override

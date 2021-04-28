@@ -91,6 +91,7 @@ vespa_define_module(
     src/tests/attribute/posting_list_merger
     src/tests/attribute/postinglist
     src/tests/attribute/postinglistattribute
+    src/tests/attribute/posting_store
     src/tests/attribute/reference_attribute
     src/tests/attribute/save_target
     src/tests/attribute/searchable

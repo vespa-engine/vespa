@@ -22,6 +22,7 @@ public interface RestApi {
     static RouteBuilder route(String pathPattern) { return new RestApiImpl.RouteBuilderImpl(pathPattern); }
 
     HttpResponse handleRequest(HttpRequest request);
+    ObjectMapper jacksonJsonMapper();
 
     interface Builder {
         Builder setObjectMapper(ObjectMapper mapper);

@@ -2,12 +2,15 @@
 
 #include "bucketdbupdater.h"
 #include "bucket_db_prune_elision.h"
+#include "bucket_space_distribution_configs.h"
 #include "bucket_space_distribution_context.h"
 #include "distributor.h"
 #include "distributor_bucket_space.h"
 #include "distributormetricsset.h"
 #include "simpleclusterinformation.h"
+#include "stripe_access_guard.h"
 #include <vespa/document/bucket/fixed_bucket_spaces.h>
+#include <vespa/storage/common/global_bucket_space_distribution_converter.h>
 #include <vespa/storageapi/message/persistence.h>
 #include <vespa/storageapi/message/removelocation.h>
 #include <vespa/vdslib/distribution/distribution.h>
@@ -24,74 +27,71 @@ using document::BucketSpace;
 
 namespace storage::distributor {
 
-BucketDBUpdater::BucketDBUpdater(DistributorStripeInterface& owner,
-                                 DistributorBucketSpaceRepo& bucketSpaceRepo,
-                                 DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
+BucketDBUpdater::BucketDBUpdater(DistributorStripeInterface& owner, // FIXME STRIPE!
                                  DistributorMessageSender& sender,
-                                 DistributorComponentRegister& compReg)
-    : framework::StatusReporter("bucketdb", "Bucket DB Updater"),
-      _distributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Bucket DB Updater"),
-      _node_ctx(_distributorComponent),
-      _op_ctx(_distributorComponent),
-      _distributor_interface(_distributorComponent.getDistributor()),
-      _delayedRequests(),
-      _sentMessages(),
-      _pendingClusterState(),
+                                 DistributorComponentRegister& comp_reg,
+                                 StripeAccessor& stripe_accessor)
+    : framework::StatusReporter("temp_bucketdb", "Bucket DB Updater"), // TODO STRIPE rename once duplication is removed
+      _stripe_accessor(stripe_accessor),
+      _active_state_bundle(lib::ClusterState()),
+      _dummy_mutable_bucket_space_repo(std::make_unique<DistributorBucketSpaceRepo>(owner.getDistributorIndex())),
+      _dummy_read_only_bucket_space_repo(std::make_unique<DistributorBucketSpaceRepo>(owner.getDistributorIndex())),
+      _distributor_component(owner, *_dummy_mutable_bucket_space_repo, *_dummy_read_only_bucket_space_repo, comp_reg, "Bucket DB Updater"),
+      _node_ctx(_distributor_component),
+      _op_ctx(_distributor_component),
+      _distributor_interface(_distributor_component.getDistributor()),
+      _delayed_requests(),
+      _sent_messages(),
+      _pending_cluster_state(),
       _history(),
       _sender(sender),
-      _enqueuedRechecks(),
-      _outdatedNodesMap(),
-      _transitionTimer(_node_ctx.clock()),
-      _stale_reads_enabled(false),
-      _active_distribution_contexts(),
-      _explicit_transition_read_guard(),
-      _distribution_context_mutex()
+      _enqueued_rechecks(),
+      _outdated_nodes_map(),
+      _transition_timer(_node_ctx.clock()),
+      _stale_reads_enabled(false)
 {
-    for (auto& elem : _op_ctx.bucket_space_repo()) {
-        _active_distribution_contexts.emplace(
-                elem.first,
-                BucketSpaceDistributionContext::make_not_yet_initialized(_node_ctx.node_index()));
-        _explicit_transition_read_guard.emplace(elem.first, std::shared_ptr<BucketDatabase::ReadGuard>());
-    }
+    // FIXME STRIPE top-level Distributor needs a proper way to track the current cluster state bundle!
+    propagate_active_state_bundle_internally();
+    bootstrap_distribution_config(_distributor_component.getDistribution());
 }
 
 BucketDBUpdater::~BucketDBUpdater() = default;
 
-OperationRoutingSnapshot BucketDBUpdater::read_snapshot_for_bucket(const document::Bucket& bucket) const {
-    const auto bucket_space = bucket.getBucketSpace();
-    std::lock_guard lock(_distribution_context_mutex);
-    auto active_state_iter = _active_distribution_contexts.find(bucket_space);
-    assert(active_state_iter != _active_distribution_contexts.cend());
-    auto& state = *active_state_iter->second;
-    if (!state.bucket_owned_in_active_state(bucket.getBucketId())) {
-        return OperationRoutingSnapshot::make_not_routable_in_state(active_state_iter->second);
+void
+BucketDBUpdater::propagate_active_state_bundle_internally() {
+    for (auto* repo : {_dummy_mutable_bucket_space_repo.get(), _dummy_read_only_bucket_space_repo.get()}) {
+        for (auto& iter : *repo) {
+            iter.second->setClusterState(_active_state_bundle.getDerivedClusterState(iter.first));
+        }
     }
-    const bool bucket_present_in_mutable_db = state.bucket_owned_in_pending_state(bucket.getBucketId());
-    if (!bucket_present_in_mutable_db && !stale_reads_enabled()) {
-        return OperationRoutingSnapshot::make_not_routable_in_state(active_state_iter->second);
-    }
-    const auto& space_repo = bucket_present_in_mutable_db
-            ? _op_ctx.bucket_space_repo()
-            : _op_ctx.read_only_bucket_space_repo();
-    auto existing_guard_iter = _explicit_transition_read_guard.find(bucket_space);
-    assert(existing_guard_iter != _explicit_transition_read_guard.cend());
-    auto db_guard = existing_guard_iter->second
-            ? existing_guard_iter-> second
-            : space_repo.get(bucket_space).getBucketDatabase().acquire_read_guard();
-    return OperationRoutingSnapshot::make_routable_with_guard(active_state_iter->second, std::move(db_guard), space_repo);
 }
 
 void
+BucketDBUpdater::bootstrap_distribution_config(std::shared_ptr<const lib::Distribution> distribution) {
+    auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
+    for (auto* repo : {_dummy_mutable_bucket_space_repo.get(), _dummy_read_only_bucket_space_repo.get()}) {
+        repo->get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
+        repo->get(document::FixedBucketSpaces::global_space()).setDistribution(global_distr);
+    }
+    // TODO STRIPE do we need to bootstrap the stripes as well here? Or do they do this on their own volition?
+    //   ... need to take a guard if so, so can probably not be done at ctor time..?
+}
+
+// TODO STRIPE what to do with merge guards...
+// FIXME what about bucket DB replica update timestamp allocations?! Replace with u64 counter..?
+//   Must at the very least ensure we use stripe-local TS generation for DB inserts...! i.e. no global TS
+//   Or do we have to touch these at all here? Just defer all this via stripe interface?
+void
 BucketDBUpdater::flush()
 {
-    for (auto & entry : _sentMessages) {
+    for (auto & entry : _sent_messages) {
         // Cannot sendDown MergeBucketReplies during flushing, since
         // all lower links have been closed
         if (entry.second._mergeReplyGuard) {
             entry.second._mergeReplyGuard->resetReply();
         }
     }
-    _sentMessages.clear();
+    _sent_messages.clear();
 }
 
 void
@@ -102,26 +102,19 @@ BucketDBUpdater::print(std::ostream& out, bool verbose, const std::string& inden
 }
 
 bool
-BucketDBUpdater::shouldDeferStateEnabling() const noexcept
+BucketDBUpdater::should_defer_state_enabling() const noexcept
 {
     return stale_reads_enabled();
 }
 
 bool
-BucketDBUpdater::hasPendingClusterState() const
+BucketDBUpdater::has_pending_cluster_state() const
 {
-    return static_cast<bool>(_pendingClusterState);
-}
-
-const lib::ClusterState*
-BucketDBUpdater::pendingClusterStateOrNull(const document::BucketSpace& space) const {
-    return (hasPendingClusterState()
-            ? _pendingClusterState->getNewClusterStateBundle().getDerivedClusterState(space).get()
-            : nullptr);
+    return static_cast<bool>(_pending_cluster_state);
 }
 
 void
-BucketDBUpdater::sendRequestBucketInfo(
+BucketDBUpdater::send_request_bucket_info(
         uint16_t node,
         const document::Bucket& bucket,
         const std::shared_ptr<MergeReplyGuard>& mergeReplyGuard)
@@ -135,116 +128,50 @@ BucketDBUpdater::sendRequestBucketInfo(
 
     auto msg = std::make_shared<api::RequestBucketInfoCommand>(bucket.getBucketSpace(), buckets);
 
-    LOG(debug,
-        "Sending request bucket info command %" PRIu64 " for "
-        "bucket %s to node %u",
-        msg->getMsgId(),
-        bucket.toString().c_str(),
-        node);
+    LOG(debug, "Sending request bucket info command %" PRIu64 " for bucket %s to node %u",
+        msg->getMsgId(), bucket.toString().c_str(), node);
 
     msg->setPriority(50);
     msg->setAddress(_node_ctx.node_address(node));
 
-    _sentMessages[msg->getMsgId()] =
+    _sent_messages[msg->getMsgId()] =
         BucketRequest(node, _op_ctx.generate_unique_timestamp(),
                       bucket, mergeReplyGuard);
     _sender.sendCommand(msg);
 }
 
 void
-BucketDBUpdater::recheckBucketInfo(uint32_t nodeIdx,
-                                   const document::Bucket& bucket)
-{
-    sendRequestBucketInfo(nodeIdx, bucket, std::shared_ptr<MergeReplyGuard>());
-}
-
-namespace {
-
-class ReadOnlyDbMergingInserter : public BucketDatabase::MergingProcessor {
-    using NewEntries = std::vector<BucketDatabase::Entry>;
-    NewEntries::const_iterator _current;
-    const NewEntries::const_iterator _last;
-public:
-    explicit ReadOnlyDbMergingInserter(const NewEntries& new_entries)
-        : _current(new_entries.cbegin()),
-          _last(new_entries.cend())
-    {}
-
-    Result merge(BucketDatabase::Merger& m) override {
-        const uint64_t key_to_insert = m.bucket_key();
-        uint64_t key_at_cursor = 0;
-        while (_current != _last) {
-            key_at_cursor = _current->getBucketId().toKey();
-            if (key_at_cursor >= key_to_insert) {
-                break;
-            }
-            m.insert_before_current(_current->getBucketId(), *_current);
-            ++_current;
-        }
-        if ((_current != _last) && (key_at_cursor == key_to_insert)) {
-            // If we encounter a bucket that already exists, replace value wholesale.
-            // Don't try to cleverly merge replicas, as the values we currently hold
-            // in the read-only DB may be stale.
-            // Note that this case shouldn't really happen, since we only add previously
-            // owned buckets to the read-only DB, and subsequent adds to a non-empty DB
-            // can only happen for state preemptions. Since ownership is not regained
-            // before a state is stable, a bucket is only added once. But we handle it
-            // anyway in case this changes at some point in the future.
-            m.current_entry() = *_current;
-            return Result::Update;
-        }
-        return Result::KeepUnchanged;
-    }
-
-    void insert_remaining_at_end(BucketDatabase::TrailingInserter& inserter) override {
-        for (; _current != _last; ++_current) {
-            inserter.insert_at_end(_current->getBucketId(), *_current);
-        }
-    }
-};
-
-}
-
-void
-BucketDBUpdater::removeSuperfluousBuckets(
-        const lib::ClusterStateBundle& newState,
+BucketDBUpdater::remove_superfluous_buckets(
+        StripeAccessGuard& guard,
+        const lib::ClusterStateBundle& new_state,
         bool is_distribution_config_change)
 {
-    const bool move_to_read_only_db = shouldDeferStateEnabling();
     const char* up_states = _op_ctx.storage_node_up_states();
+    // TODO STRIPE explicit space -> config mapping, don't get via repo
+    //   ... but we need to get the current cluster state per space..!
     for (auto& elem : _op_ctx.bucket_space_repo()) {
-        const auto& newDistribution(elem.second->getDistribution());
-        const auto& oldClusterState(elem.second->getClusterState());
-        const auto& new_cluster_state = newState.getDerivedClusterState(elem.first);
+        const auto& old_cluster_state(elem.second->getClusterState());
+        const auto& new_cluster_state = new_state.getDerivedClusterState(elem.first);
 
         // Running a full DB sweep is expensive, so if the cluster state transition does
         // not actually indicate that buckets should possibly be removed, we elide it entirely.
         if (!is_distribution_config_change
-            && db_pruning_may_be_elided(oldClusterState, *new_cluster_state, up_states))
+            && db_pruning_may_be_elided(old_cluster_state, *new_cluster_state, up_states))
         {
             LOG(debug, "[bucket space '%s']: eliding DB pruning for state transition '%s' -> '%s'",
                 document::FixedBucketSpaces::to_string(elem.first).data(),
-                oldClusterState.toString().c_str(), new_cluster_state->toString().c_str());
+                old_cluster_state.toString().c_str(), new_cluster_state->toString().c_str());
             continue;
         }
-
-        auto& bucketDb(elem.second->getBucketDatabase());
-        auto& readOnlyDb(_op_ctx.read_only_bucket_space_repo().get(elem.first).getBucketDatabase());
-
-        // Remove all buckets not belonging to this distributor, or
-        // being on storage nodes that are no longer up.
-        MergingNodeRemover proc(
-                oldClusterState,
-                *new_cluster_state,
-                _node_ctx.node_index(),
-                newDistribution,
-                up_states,
-                move_to_read_only_db);
-
-        bucketDb.merge(proc);
-        if (move_to_read_only_db) {
-            ReadOnlyDbMergingInserter read_only_merger(proc.getNonOwnedEntries());
-            readOnlyDb.merge(read_only_merger);
+        // TODO STRIPE should we also pass old state and distr config? Must ensure we're in sync with stripe...
+        //   .. but config is set synchronously via the guard upon pending state creation edge
+        auto maybe_lost = guard.remove_superfluous_buckets(elem.first, *new_cluster_state, is_distribution_config_change);
+        if (maybe_lost.buckets != 0) {
+            LOGBM(info, "After cluster state change %s, %zu buckets no longer "
+                        "have available replicas. %zu documents in these buckets will "
+                        "be unavailable until nodes come back up",
+                  old_cluster_state.getTextualDifference(*new_cluster_state).c_str(),
+                  maybe_lost.buckets, maybe_lost.documents);
         }
         maybe_inject_simulated_db_pruning_delay();
     }
@@ -271,63 +198,58 @@ BucketDBUpdater::maybe_inject_simulated_db_merging_delay() {
 }
 
 void
-BucketDBUpdater::ensureTransitionTimerStarted()
+BucketDBUpdater::ensure_transition_timer_started()
 {
     // Don't overwrite start time if we're already processing a state, as
     // that will make transition times appear artificially low.
-    if (!hasPendingClusterState()) {
-        _transitionTimer = framework::MilliSecTimer(
-                _node_ctx.clock());
+    if (!has_pending_cluster_state()) {
+        _transition_timer = framework::MilliSecTimer(_node_ctx.clock());
     }
 }
 
 void
-BucketDBUpdater::completeTransitionTimer()
+BucketDBUpdater::complete_transition_timer()
 {
     _distributor_interface.getMetrics()
-            .stateTransitionTime.addValue(_transitionTimer.getElapsedTimeAsDouble());
+            .stateTransitionTime.addValue(_transition_timer.getElapsedTimeAsDouble());
 }
 
 void
-BucketDBUpdater::clearReadOnlyBucketRepoDatabases()
+BucketDBUpdater::storage_distribution_changed(const BucketSpaceDistributionConfigs& configs)
 {
-    for (auto& space : _op_ctx.read_only_bucket_space_repo()) {
-        space.second->getBucketDatabase().clear();
-    }
-}
+    ensure_transition_timer_started();
 
-void
-BucketDBUpdater::storageDistributionChanged()
-{
-    ensureTransitionTimerStarted();
-
-    removeSuperfluousBuckets(_op_ctx.cluster_state_bundle(), true);
+    auto guard = _stripe_accessor.rendezvous_and_hold_all();
+    // FIXME STRIPE might this cause a mismatch with the component stuff's own distribution config..?!
+    guard->update_distribution_config(configs);
+    remove_superfluous_buckets(*guard, _op_ctx.cluster_state_bundle(), true);
 
     auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
             _node_ctx.node_index(),
             _op_ctx.cluster_state_bundle(),
             _op_ctx.storage_node_up_states());
-    _pendingClusterState = PendingClusterState::createForDistributionChange(
+    _pending_cluster_state = PendingClusterState::createForDistributionChange(
             _node_ctx.clock(),
             std::move(clusterInfo),
             _sender,
-            _op_ctx.bucket_space_repo(),
-            _op_ctx.generate_unique_timestamp());
-    _outdatedNodesMap = _pendingClusterState->getOutdatedNodesMap();
-    _op_ctx.bucket_space_repo().set_pending_cluster_state_bundle(_pendingClusterState->getNewClusterStateBundle());
+            _op_ctx.bucket_space_repo(), // TODO STRIPE cannot use!
+            _op_ctx.generate_unique_timestamp()); // TODO STRIPE must ensure no stripes can generate < this
+    _outdated_nodes_map = _pending_cluster_state->getOutdatedNodesMap();
+
+    guard->set_pending_cluster_state_bundle(_pending_cluster_state->getNewClusterStateBundle());
 }
 
 void
-BucketDBUpdater::replyToPreviousPendingClusterStateIfAny()
+BucketDBUpdater::reply_to_previous_pending_cluster_state_if_any()
 {
-    if (_pendingClusterState.get() && _pendingClusterState->hasCommand()) {
+    if (_pending_cluster_state.get() && _pending_cluster_state->hasCommand()) {
         _distributor_interface.getMessageSender().sendUp(
-                std::make_shared<api::SetSystemStateReply>(*_pendingClusterState->getCommand()));
+                std::make_shared<api::SetSystemStateReply>(*_pending_cluster_state->getCommand()));
     }
 }
 
 void
-BucketDBUpdater::replyToActivationWithActualVersion(
+BucketDBUpdater::reply_to_activation_with_actual_version(
         const api::ActivateClusterStateVersionCommand& cmd,
         uint32_t actualVersion)
 {
@@ -336,104 +258,49 @@ BucketDBUpdater::replyToActivationWithActualVersion(
     _distributor_interface.getMessageSender().sendUp(reply); // TODO let API accept rvalues
 }
 
-void BucketDBUpdater::update_read_snapshot_before_db_pruning() {
-    std::lock_guard lock(_distribution_context_mutex);
-    for (auto& elem : _op_ctx.bucket_space_repo()) {
-        // At this point, we're still operating with a distribution context _without_ a
-        // pending state, i.e. anyone using the context will expect to find buckets
-        // in the DB that correspond to how the database looked like prior to pruning
-        // buckets from the DB. To ensure this is not violated, take a snapshot of the
-        // _mutable_ DB and expose this. This snapshot only lives until we atomically
-        // flip to expose a distribution context that includes the new, pending state.
-        // At that point, the read-only DB is known to contain the buckets that have
-        // been pruned away, so we can release the mutable DB snapshot safely.
-        // TODO test for, and handle, state preemption case!
-        _explicit_transition_read_guard[elem.first] = elem.second->getBucketDatabase().acquire_read_guard();
-    }
-}
-
-
-void BucketDBUpdater::update_read_snapshot_after_db_pruning(const lib::ClusterStateBundle& new_state) {
-    std::lock_guard lock(_distribution_context_mutex);
-    const auto old_default_state = _op_ctx.bucket_space_repo().get(
-            document::FixedBucketSpaces::default_space()).cluster_state_sp();
-    for (auto& elem : _op_ctx.bucket_space_repo()) {
-        auto new_distribution  = elem.second->distribution_sp();
-        auto old_cluster_state = elem.second->cluster_state_sp();
-        auto new_cluster_state = new_state.getDerivedClusterState(elem.first);
-        _active_distribution_contexts.insert_or_assign(
-                elem.first,
-                BucketSpaceDistributionContext::make_state_transition(
-                        std::move(old_cluster_state),
-                        old_default_state,
-                        std::move(new_cluster_state),
-                        std::move(new_distribution),
-                        _node_ctx.node_index()));
-        // We can now remove the explicit mutable DB snapshot, as the buckets that have been
-        // pruned away are visible in the read-only DB.
-        _explicit_transition_read_guard[elem.first] = std::shared_ptr<BucketDatabase::ReadGuard>();
-    }
-}
-
-void BucketDBUpdater::update_read_snapshot_after_activation(const lib::ClusterStateBundle& activated_state) {
-    std::lock_guard lock(_distribution_context_mutex);
-    const auto& default_cluster_state = activated_state.getDerivedClusterState(document::FixedBucketSpaces::default_space());
-    for (auto& elem : _op_ctx.bucket_space_repo()) {
-        auto new_distribution  = elem.second->distribution_sp();
-        auto new_cluster_state = activated_state.getDerivedClusterState(elem.first);
-        _active_distribution_contexts.insert_or_assign(
-                elem.first,
-                BucketSpaceDistributionContext::make_stable_state(
-                        std::move(new_cluster_state),
-                        default_cluster_state,
-                        std::move(new_distribution),
-                        _node_ctx.node_index()));
-    }
-}
-
 bool
 BucketDBUpdater::onSetSystemState(
         const std::shared_ptr<api::SetSystemStateCommand>& cmd)
 {
-    LOG(debug,
-        "Received new cluster state %s",
+    LOG(debug, "Received new cluster state %s",
         cmd->getSystemState().toString().c_str());
 
-    const lib::ClusterStateBundle oldState = _op_ctx.cluster_state_bundle();
     const lib::ClusterStateBundle& state = cmd->getClusterStateBundle();
 
-    if (state == oldState) {
+    if (state == _active_state_bundle) {
         return false;
     }
-    ensureTransitionTimerStarted();
-    // Separate timer since _transitionTimer might span multiple pending states.
+    ensure_transition_timer_started();
+    // Separate timer since _transition_timer might span multiple pending states.
     framework::MilliSecTimer process_timer(_node_ctx.clock());
-    update_read_snapshot_before_db_pruning();
+
+    auto guard = _stripe_accessor.rendezvous_and_hold_all();
+    guard->update_read_snapshot_before_db_pruning();
     const auto& bundle = cmd->getClusterStateBundle();
-    removeSuperfluousBuckets(bundle, false);
-    update_read_snapshot_after_db_pruning(bundle);
-    replyToPreviousPendingClusterStateIfAny();
+    remove_superfluous_buckets(*guard, bundle, false);
+    guard->update_read_snapshot_after_db_pruning(bundle);
+    reply_to_previous_pending_cluster_state_if_any();
 
     auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
                 _node_ctx.node_index(),
                 _op_ctx.cluster_state_bundle(),
                 _op_ctx.storage_node_up_states());
-    _pendingClusterState = PendingClusterState::createForClusterStateChange(
+    _pending_cluster_state = PendingClusterState::createForClusterStateChange(
             _node_ctx.clock(),
             std::move(clusterInfo),
             _sender,
-            _op_ctx.bucket_space_repo(),
+            _op_ctx.bucket_space_repo(), // TODO STRIPE remove
             cmd,
-            _outdatedNodesMap,
-            _op_ctx.generate_unique_timestamp());
-    _outdatedNodesMap = _pendingClusterState->getOutdatedNodesMap();
+            _outdated_nodes_map,
+            _op_ctx.generate_unique_timestamp()); // FIXME STRIPE must be atomic across all threads
+    _outdated_nodes_map = _pending_cluster_state->getOutdatedNodesMap();
 
     _distributor_interface.getMetrics().set_cluster_state_processing_time.addValue(
             process_timer.getElapsedTimeAsDouble());
 
-    _op_ctx.bucket_space_repo().set_pending_cluster_state_bundle(_pendingClusterState->getNewClusterStateBundle());
-    if (isPendingClusterStateCompleted()) {
-        processCompletedPendingClusterState();
+    guard->set_pending_cluster_state_bundle(_pending_cluster_state->getNewClusterStateBundle());
+    if (is_pending_cluster_state_completed()) {
+        process_completed_pending_cluster_state(*guard);
     }
     return true;
 }
@@ -441,25 +308,26 @@ BucketDBUpdater::onSetSystemState(
 bool
 BucketDBUpdater::onActivateClusterStateVersion(const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd)
 {
-    if (hasPendingClusterState() && _pendingClusterState->isVersionedTransition()) {
-        const auto pending_version = _pendingClusterState->clusterStateVersion();
+    if (has_pending_cluster_state() && _pending_cluster_state->isVersionedTransition()) {
+        const auto pending_version = _pending_cluster_state->clusterStateVersion();
         if (pending_version == cmd->version()) {
-            if (isPendingClusterStateCompleted()) {
-                assert(_pendingClusterState->isDeferred());
-                activatePendingClusterState();
+            if (is_pending_cluster_state_completed()) {
+                assert(_pending_cluster_state->isDeferred());
+                auto guard = _stripe_accessor.rendezvous_and_hold_all();
+                activate_pending_cluster_state(*guard);
             } else {
                 LOG(error, "Received cluster state activation for pending version %u "
                            "without pending state being complete yet. This is not expected, "
                            "as no activation should be sent before all distributors have "
                            "reported that state processing is complete.", pending_version);
-                replyToActivationWithActualVersion(*cmd, 0);  // Invalid version, will cause re-send (hopefully when completed).
+                reply_to_activation_with_actual_version(*cmd, 0);  // Invalid version, will cause re-send (hopefully when completed).
                 return true;
             }
         } else {
-            replyToActivationWithActualVersion(*cmd, pending_version);
+            reply_to_activation_with_actual_version(*cmd, pending_version);
             return true;
         }
-    } else if (shouldDeferStateEnabling()) {
+    } else if (should_defer_state_enabling()) {
         // Likely just a resend, but log warn for now to get a feel of how common it is.
         LOG(warning, "Received cluster state activation command for version %u, which "
                      "has no corresponding pending state. Likely resent operation.", cmd->version());
@@ -471,6 +339,7 @@ BucketDBUpdater::onActivateClusterStateVersion(const std::shared_ptr<api::Activa
     return false;
 }
 
+// TODO remove entirely from this abstraction level?
 BucketDBUpdater::MergeReplyGuard::~MergeReplyGuard()
 {
     if (_reply) {
@@ -488,71 +357,25 @@ BucketDBUpdater::onMergeBucketReply(
    // actually merged (source-only nodes?) we request the bucket info of the
    // bucket again to make sure it's ok.
    for (uint32_t i = 0; i < reply->getNodes().size(); i++) {
-       sendRequestBucketInfo(reply->getNodes()[i].index,
-                             reply->getBucket(),
-                             replyGuard);
+       send_request_bucket_info(reply->getNodes()[i].index,
+                                reply->getBucket(),
+                                replyGuard);
    }
 
    return true;
 }
 
 void
-BucketDBUpdater::enqueueRecheckUntilPendingStateEnabled(
-        uint16_t node,
-        const document::Bucket& bucket)
+BucketDBUpdater::send_all_queued_bucket_rechecks()
 {
-    LOG(spam,
-        "DB updater has a pending cluster state, enqueuing recheck "
-        "of bucket %s on node %u until state is done processing",
-        bucket.toString().c_str(),
-        node);
-    _enqueuedRechecks.insert(EnqueuedBucketRecheck(node, bucket));
-}
+    LOG(spam, "Sending %zu queued bucket rechecks previously received "
+              "via NotifyBucketChange commands",
+        _enqueued_rechecks.size());
 
-void
-BucketDBUpdater::sendAllQueuedBucketRechecks()
-{
-    LOG(spam,
-        "Sending %zu queued bucket rechecks previously received "
-        "via NotifyBucketChange commands",
-        _enqueuedRechecks.size());
-
-    for (const auto & entry :_enqueuedRechecks) {
-        sendRequestBucketInfo(entry.node, entry.bucket, std::shared_ptr<MergeReplyGuard>());
+    for (const auto & entry :_enqueued_rechecks) {
+        send_request_bucket_info(entry.node, entry.bucket, std::shared_ptr<MergeReplyGuard>());
     }
-    _enqueuedRechecks.clear();
-}
-
-bool
-BucketDBUpdater::onNotifyBucketChange(
-        const std::shared_ptr<api::NotifyBucketChangeCommand>& cmd)
-{
-    // Immediately schedule reply to ensure it is sent.
-    _sender.sendReply(std::make_shared<api::NotifyBucketChangeReply>(*cmd));
-
-    if (!cmd->getBucketInfo().valid()) {
-        LOG(error,
-            "Received invalid bucket info for bucket %s from notify bucket "
-            "change! Not updating bucket.",
-            cmd->getBucketId().toString().c_str());
-        return true;
-    }
-    LOG(debug,
-        "Received notify bucket change from node %u for bucket %s with %s.",
-        cmd->getSourceIndex(),
-        cmd->getBucketId().toString().c_str(),
-        cmd->getBucketInfo().toString().c_str());
-
-    if (hasPendingClusterState()) {
-        enqueueRecheckUntilPendingStateEnabled(cmd->getSourceIndex(),
-                                               cmd->getBucket());
-    } else {
-        sendRequestBucketInfo(cmd->getSourceIndex(),
-                              cmd->getBucket(),
-                              std::shared_ptr<MergeReplyGuard>());
-    }
-
-    return true;
+    _enqueued_rechecks.clear();
 }
 
 bool sort_pred(const BucketListMerger::BucketEntry& left,
@@ -563,178 +386,64 @@ bool sort_pred(const BucketListMerger::BucketEntry& left,
 
 bool
 BucketDBUpdater::onRequestBucketInfoReply(
-        const std::shared_ptr<api::RequestBucketInfoReply> & repl)
+        const std::shared_ptr<api::RequestBucketInfoReply>& repl)
 {
-    if (pendingClusterStateAccepted(repl)) {
+    if (pending_cluster_state_accepted(repl)) {
         return true;
     }
-    return processSingleBucketInfoReply(repl);
+    return false;
 }
 
 bool
-BucketDBUpdater::pendingClusterStateAccepted(
-        const std::shared_ptr<api::RequestBucketInfoReply> & repl)
+BucketDBUpdater::pending_cluster_state_accepted(
+        const std::shared_ptr<api::RequestBucketInfoReply>& repl)
 {
-    if (_pendingClusterState.get()
-        && _pendingClusterState->onRequestBucketInfoReply(repl))
+    if (_pending_cluster_state.get()
+        && _pending_cluster_state->onRequestBucketInfoReply(repl))
     {
-        if (isPendingClusterStateCompleted()) {
-            processCompletedPendingClusterState();
+        if (is_pending_cluster_state_completed()) {
+            auto guard = _stripe_accessor.rendezvous_and_hold_all();
+            process_completed_pending_cluster_state(*guard);
         }
         return true;
     }
-    LOG(spam,
-        "Reply %s was not accepted by pending cluster state",
+    LOG(spam, "Reply %s was not accepted by pending cluster state",
         repl->toString().c_str());
     return false;
 }
 
 void
-BucketDBUpdater::handleSingleBucketInfoFailure(
-        const std::shared_ptr<api::RequestBucketInfoReply>& repl,
-        const BucketRequest& req)
+BucketDBUpdater::resend_delayed_messages()
 {
-    LOG(debug, "Request bucket info failed towards node %d: error was %s",
-        req.targetNode, repl->getResult().toString().c_str());
-
-    if (req.bucket.getBucketId() != document::BucketId(0)) {
-        framework::MilliSecTime sendTime(_node_ctx.clock());
-        sendTime += framework::MilliSecTime(100);
-        _delayedRequests.emplace_back(sendTime, req);
+    if (_pending_cluster_state) {
+        _pending_cluster_state->resendDelayedMessages();
     }
-}
-
-void
-BucketDBUpdater::resendDelayedMessages()
-{
-    if (_pendingClusterState) {
-        _pendingClusterState->resendDelayedMessages();
-    }
-    if (_delayedRequests.empty()) {
+    if (_delayed_requests.empty()) {
         return; // Don't fetch time if not needed
     }
     framework::MilliSecTime currentTime(_node_ctx.clock());
-    while (!_delayedRequests.empty()
-           && currentTime >= _delayedRequests.front().first)
+    while (!_delayed_requests.empty()
+           && currentTime >= _delayed_requests.front().first)
     {
-        BucketRequest& req(_delayedRequests.front().second);
-        sendRequestBucketInfo(req.targetNode, req.bucket, std::shared_ptr<MergeReplyGuard>());
-        _delayedRequests.pop_front();
-    }
-}
-
-void
-BucketDBUpdater::convertBucketInfoToBucketList(
-        const std::shared_ptr<api::RequestBucketInfoReply>& repl,
-        uint16_t targetNode, BucketListMerger::BucketList& newList)
-{
-    for (const auto & entry : repl->getBucketInfo()) {
-        LOG(debug, "Received bucket information from node %u for bucket %s: %s", targetNode,
-            entry._bucketId.toString().c_str(), entry._info.toString().c_str());
-
-        newList.emplace_back(entry._bucketId, entry._info);
-    }
-}
-
-void
-BucketDBUpdater::mergeBucketInfoWithDatabase(
-        const std::shared_ptr<api::RequestBucketInfoReply>& repl,
-        const BucketRequest& req)
-{
-    BucketListMerger::BucketList existing;
-    BucketListMerger::BucketList newList;
-
-    findRelatedBucketsInDatabase(req.targetNode, req.bucket, existing);
-    convertBucketInfoToBucketList(repl, req.targetNode, newList);
-
-    std::sort(existing.begin(), existing.end(), sort_pred);
-    std::sort(newList.begin(), newList.end(), sort_pred);
-
-    BucketListMerger merger(newList, existing, req.timestamp);
-    updateDatabase(req.bucket.getBucketSpace(), req.targetNode, merger);
-}
-
-bool
-BucketDBUpdater::processSingleBucketInfoReply(
-        const std::shared_ptr<api::RequestBucketInfoReply> & repl)
-{
-    auto iter = _sentMessages.find(repl->getMsgId());
-
-    // Has probably been deleted for some reason earlier.
-    if (iter == _sentMessages.end()) {
-        return true;
-    }
-
-    BucketRequest req = iter->second;
-    _sentMessages.erase(iter);
-
-    if (!_op_ctx.storage_node_is_up(req.bucket.getBucketSpace(), req.targetNode)) {
-        // Ignore replies from nodes that are down.
-        return true;
-    }
-    if (repl->getResult().getResult() != api::ReturnCode::OK) {
-        handleSingleBucketInfoFailure(repl, req);
-        return true;
-    }
-    mergeBucketInfoWithDatabase(repl, req);
-    return true;
-}
-
-void
-BucketDBUpdater::addBucketInfoForNode(
-        const BucketDatabase::Entry& e,
-        uint16_t node,
-        BucketListMerger::BucketList& existing) const
-{
-    const BucketCopy* copy(e->getNode(node));
-    if (copy) {
-        existing.emplace_back(e.getBucketId(), copy->getBucketInfo());
-    }
-}
-
-void
-BucketDBUpdater::findRelatedBucketsInDatabase(uint16_t node, const document::Bucket& bucket,
-                                              BucketListMerger::BucketList& existing)
-{
-    auto &distributorBucketSpace(_op_ctx.bucket_space_repo().get(bucket.getBucketSpace()));
-    std::vector<BucketDatabase::Entry> entries;
-    distributorBucketSpace.getBucketDatabase().getAll(bucket.getBucketId(), entries);
-
-    for (const BucketDatabase::Entry & entry : entries) {
-        addBucketInfoForNode(entry, node, existing);
-    }
-}
-
-void
-BucketDBUpdater::updateDatabase(document::BucketSpace bucketSpace, uint16_t node, BucketListMerger& merger)
-{
-    for (const document::BucketId & bucketId : merger.getRemovedEntries()) {
-        document::Bucket bucket(bucketSpace, bucketId);
-        _op_ctx.remove_node_from_bucket_database(bucket, node);
-    }
-
-    for (const BucketListMerger::BucketEntry& entry : merger.getAddedEntries()) {
-        document::Bucket bucket(bucketSpace, entry.first);
-        _op_ctx.update_bucket_database(
-                bucket,
-                BucketCopy(merger.getTimestamp(), node, entry.second),
-                DatabaseUpdate::CREATE_IF_NONEXISTING);
+        BucketRequest& req(_delayed_requests.front().second);
+        send_request_bucket_info(req.targetNode, req.bucket, std::shared_ptr<MergeReplyGuard>());
+        _delayed_requests.pop_front();
     }
 }
 
 bool
-BucketDBUpdater::isPendingClusterStateCompleted() const
+BucketDBUpdater::is_pending_cluster_state_completed() const
 {
-    return _pendingClusterState.get() && _pendingClusterState->done();
+    return _pending_cluster_state.get() && _pending_cluster_state->done();
 }
 
 void
-BucketDBUpdater::processCompletedPendingClusterState()
+BucketDBUpdater::process_completed_pending_cluster_state(StripeAccessGuard& guard)
 {
-    if (_pendingClusterState->isDeferred()) {
+    if (_pending_cluster_state->isDeferred()) {
         LOG(debug, "Deferring completion of pending cluster state version %u until explicitly activated",
-                   _pendingClusterState->clusterStateVersion());
-        assert(_pendingClusterState->hasCommand()); // Deferred transitions should only ever be created by state commands.
+            _pending_cluster_state->clusterStateVersion());
+        assert(_pending_cluster_state->hasCommand()); // Deferred transitions should only ever be created by state commands.
         // Sending down SetSystemState command will reach the state manager and a reply
         // will be auto-sent back to the cluster controller in charge. Once this happens,
         // it will send an explicit activation command once all distributors have reported
@@ -743,73 +452,81 @@ BucketDBUpdater::processCompletedPendingClusterState()
         // taken effect via activation. External operation handler will keep operations from
         // actually being scheduled until state has been activated. The external operation handler
         // needs to be explicitly aware of the case where no state has yet to be activated.
-        _distributor_interface.getMessageSender().sendDown(
-                _pendingClusterState->getCommand());
-        _pendingClusterState->clearCommand();
+        _distributor_interface.getMessageSender().sendDown(_pending_cluster_state->getCommand());
+        _pending_cluster_state->clearCommand();
         return;
     }
     // Distribution config change or non-deferred cluster state. Immediately activate
     // the pending state without being told to do so explicitly.
-    activatePendingClusterState();
+    activate_pending_cluster_state(guard);
 }
 
 void
-BucketDBUpdater::activatePendingClusterState()
+BucketDBUpdater::activate_pending_cluster_state(StripeAccessGuard& guard)
 {
     framework::MilliSecTimer process_timer(_node_ctx.clock());
 
-    _pendingClusterState->mergeIntoBucketDatabases();
+    _pending_cluster_state->merge_into_bucket_databases(guard);
     maybe_inject_simulated_db_merging_delay();
 
-    if (_pendingClusterState->isVersionedTransition()) {
-        LOG(debug, "Activating pending cluster state version %u", _pendingClusterState->clusterStateVersion());
-        enableCurrentClusterStateBundleInDistributor();
-        if (_pendingClusterState->hasCommand()) {
-            _distributor_interface.getMessageSender().sendDown(
-                    _pendingClusterState->getCommand());
+    if (_pending_cluster_state->isVersionedTransition()) {
+        LOG(debug, "Activating pending cluster state version %u", _pending_cluster_state->clusterStateVersion());
+        enable_current_cluster_state_bundle_in_distributor_and_stripes(guard);
+        if (_pending_cluster_state->hasCommand()) {
+            _distributor_interface.getMessageSender().sendDown(_pending_cluster_state->getCommand());
         }
-        addCurrentStateToClusterStateHistory();
+        add_current_state_to_cluster_state_history();
     } else {
         LOG(debug, "Activating pending distribution config");
         // TODO distribution changes cannot currently be deferred as they are not
         // initiated by the cluster controller!
-        _distributor_interface.notifyDistributionChangeEnabled();
+        _distributor_interface.notifyDistributionChangeEnabled(); // TODO factor these two out into one func?
+        guard.notify_distribution_change_enabled();
     }
 
-    update_read_snapshot_after_activation(_pendingClusterState->getNewClusterStateBundle());
-    _pendingClusterState.reset();
-    _outdatedNodesMap.clear();
-    _op_ctx.bucket_space_repo().clear_pending_cluster_state_bundle();
-    sendAllQueuedBucketRechecks();
-    completeTransitionTimer();
-    clearReadOnlyBucketRepoDatabases();
+    guard.update_read_snapshot_after_activation(_pending_cluster_state->getNewClusterStateBundle());
+    _pending_cluster_state.reset();
+    _outdated_nodes_map.clear();
+    guard.clear_pending_cluster_state_bundle();
+    send_all_queued_bucket_rechecks();
+    complete_transition_timer();
+    guard.clear_read_only_bucket_repo_databases();
 
     _distributor_interface.getMetrics().activate_cluster_state_processing_time.addValue(
             process_timer.getElapsedTimeAsDouble());
 }
 
 void
-BucketDBUpdater::enableCurrentClusterStateBundleInDistributor()
+BucketDBUpdater::enable_current_cluster_state_bundle_in_distributor_and_stripes(StripeAccessGuard& guard)
 {
-    const lib::ClusterStateBundle& state(
-            _pendingClusterState->getNewClusterStateBundle());
+    const lib::ClusterStateBundle& state = _pending_cluster_state->getNewClusterStateBundle();
 
-    LOG(debug,
-        "BucketDBUpdater finished processing state %s",
+    _active_state_bundle = _pending_cluster_state->getNewClusterStateBundle();
+    propagate_active_state_bundle_internally();
+
+    LOG(debug, "BucketDBUpdater finished processing state %s",
         state.getBaselineClusterState()->toString().c_str());
 
+    // First enable the cluster state for the _top-level_ distributor component.
     _distributor_interface.enableClusterStateBundle(state);
+    // And then subsequently for all underlying stripes. Technically the order doesn't matter
+    // since all threads are blocked at this point.
+    guard.enable_cluster_state_bundle(state);
 }
 
 void BucketDBUpdater::simulate_cluster_state_bundle_activation(const lib::ClusterStateBundle& activated_state) {
-    update_read_snapshot_after_activation(activated_state);
+    auto guard = _stripe_accessor.rendezvous_and_hold_all();
     _distributor_interface.enableClusterStateBundle(activated_state);
+    guard->enable_cluster_state_bundle(activated_state);
+
+    _active_state_bundle = activated_state;
+    propagate_active_state_bundle_internally();
 }
 
 void
-BucketDBUpdater::addCurrentStateToClusterStateHistory()
+BucketDBUpdater::add_current_state_to_cluster_state_history()
 {
-    _history.push_back(_pendingClusterState->getSummary());
+    _history.push_back(_pending_cluster_state->getSummary());
 
     if (_history.size() > 50) {
         _history.pop_front();
@@ -857,22 +574,22 @@ BucketDBUpdater::reportStatus(std::ostream& out,
     xos << XmlTag("status")
         << XmlAttribute("id", BUCKETDB)
         << XmlAttribute("name", BUCKETDB_UPDATER);
-    reportXmlStatus(xos, path);
+    report_xml_status(xos, path);
     xos << XmlEndTag();
     return true;
 }
 
 vespalib::string
-BucketDBUpdater::reportXmlStatus(vespalib::xml::XmlOutputStream& xos,
-                                 const framework::HttpUrlPath&) const
+BucketDBUpdater::report_xml_status(vespalib::xml::XmlOutputStream& xos,
+                                   const framework::HttpUrlPath&) const
 {
     using namespace vespalib::xml;
     xos << XmlTag("bucketdb")
         << XmlTag("systemstate_active")
         << XmlContent(_op_ctx.cluster_state_bundle().getBaselineClusterState()->toString())
         << XmlEndTag();
-    if (_pendingClusterState) {
-        xos << *_pendingClusterState;
+    if (_pending_cluster_state) {
+        xos << *_pending_cluster_state;
     }
     xos << XmlTag("systemstate_history");
     for (auto i(_history.rbegin()), e(_history.rend()); i != e; ++i) {
@@ -884,180 +601,18 @@ BucketDBUpdater::reportXmlStatus(vespalib::xml::XmlOutputStream& xos,
     }
     xos << XmlEndTag()
         << XmlTag("single_bucket_requests");
-    for (const auto & entry : _sentMessages)
+    for (const auto & entry : _sent_messages)
     {
         entry.second.print_xml_tag(xos, XmlAttribute("sendtimestamp", entry.second.timestamp));
     }
     xos << XmlEndTag()
         << XmlTag("delayed_single_bucket_requests");
-    for (const auto & entry : _delayedRequests)
+    for (const auto & entry : _delayed_requests)
     {
         entry.second.print_xml_tag(xos, XmlAttribute("resendtimestamp", entry.first.getTime()));
     }
     xos << XmlEndTag() << XmlEndTag();
     return "";
-}
-
-BucketDBUpdater::MergingNodeRemover::MergingNodeRemover(
-        const lib::ClusterState& oldState,
-        const lib::ClusterState& s,
-        uint16_t localIndex,
-        const lib::Distribution& distribution,
-        const char* upStates,
-        bool track_non_owned_entries)
-    : _oldState(oldState),
-      _state(s),
-      _available_nodes(),
-      _nonOwnedBuckets(),
-      _removed_buckets(0),
-      _removed_documents(0),
-      _localIndex(localIndex),
-      _distribution(distribution),
-      _upStates(upStates),
-      _track_non_owned_entries(track_non_owned_entries),
-      _cachedDecisionSuperbucket(UINT64_MAX),
-      _cachedOwned(false)
-{
-    // TODO intersection of cluster state and distribution config
-    const uint16_t storage_count = s.getNodeCount(lib::NodeType::STORAGE);
-    _available_nodes.resize(storage_count);
-    for (uint16_t i = 0; i < storage_count; ++i) {
-        if (s.getNodeState(lib::Node(lib::NodeType::STORAGE, i)).getState().oneOf(_upStates)) {
-            _available_nodes[i] = true;
-        }
-    }
-}
-
-void
-BucketDBUpdater::MergingNodeRemover::logRemove(const document::BucketId& bucketId, const char* msg) const
-{
-    LOG(spam, "Removing bucket %s: %s", bucketId.toString().c_str(), msg);
-}
-
-namespace {
-
-uint64_t superbucket_from_id(const document::BucketId& id, uint16_t distribution_bits) noexcept {
-    // The n LSBs of the bucket ID contain the superbucket number. Mask off the rest.
-    return id.getRawId() & ~(UINT64_MAX << distribution_bits);
-}
-
-}
-
-bool
-BucketDBUpdater::MergingNodeRemover::distributorOwnsBucket(
-        const document::BucketId& bucketId) const
-{
-    // TODO "no distributors available" case is the same for _all_ buckets; cache once in constructor.
-    // TODO "too few bits used" case can be cheaply checked without needing exception
-    try {
-        const auto bits = _state.getDistributionBitCount();
-        const auto this_superbucket = superbucket_from_id(bucketId, bits);
-        if (_cachedDecisionSuperbucket == this_superbucket) {
-            if (!_cachedOwned) {
-                logRemove(bucketId, "bucket now owned by another distributor (cached)");
-            }
-            return _cachedOwned;
-        }
-
-        uint16_t distributor = _distribution.getIdealDistributorNode(_state, bucketId, "uim");
-        _cachedDecisionSuperbucket = this_superbucket;
-        _cachedOwned = (distributor == _localIndex);
-        if (!_cachedOwned) {
-            logRemove(bucketId, "bucket now owned by another distributor");
-            return false;
-        }
-        return true;
-    } catch (lib::TooFewBucketBitsInUseException& exc) {
-        logRemove(bucketId, "using too few distribution bits now");
-    } catch (lib::NoDistributorsAvailableException& exc) {
-        logRemove(bucketId, "no distributors are available");
-    }
-    return false;
-}
-
-void
-BucketDBUpdater::MergingNodeRemover::setCopiesInEntry(
-        BucketDatabase::Entry& e,
-        const std::vector<BucketCopy>& copies) const
-{
-    e->clear();
-
-    std::vector<uint16_t> order =
-            _distribution.getIdealStorageNodes(_state, e.getBucketId(), _upStates);
-
-    e->addNodes(copies, order);
-
-    LOG(spam, "Changed %s", e->toString().c_str());
-}
-
-bool
-BucketDBUpdater::MergingNodeRemover::has_unavailable_nodes(const storage::BucketDatabase::Entry& e) const
-{
-    const uint16_t n_nodes = e->getNodeCount();
-    for (uint16_t i = 0; i < n_nodes; i++) {
-        const uint16_t node_idx = e->getNodeRef(i).getNode();
-        if (!storage_node_is_available(node_idx)) {
-            return true;
-        }
-    }
-    return false;
-}
-
-BucketDatabase::MergingProcessor::Result
-BucketDBUpdater::MergingNodeRemover::merge(storage::BucketDatabase::Merger& merger)
-{
-    document::BucketId bucketId(merger.bucket_id());
-    LOG(spam, "Check for remove: bucket %s", bucketId.toString().c_str());
-    if (!distributorOwnsBucket(bucketId)) {
-        // TODO remove in favor of DB snapshotting
-        if (_track_non_owned_entries) {
-            _nonOwnedBuckets.emplace_back(merger.current_entry());
-        }
-        return Result::Skip;
-    }
-    auto& e = merger.current_entry();
-
-    if (e->getNodeCount() == 0) { // TODO when should this edge ever trigger?
-        return Result::Skip;
-    }
-
-    if (!has_unavailable_nodes(e)) {
-        return Result::KeepUnchanged;
-    }
-
-    std::vector<BucketCopy> remainingCopies;
-    for (uint16_t i = 0; i < e->getNodeCount(); i++) {
-        const uint16_t node_idx = e->getNodeRef(i).getNode();
-        if (storage_node_is_available(node_idx)) {
-            remainingCopies.push_back(e->getNodeRef(i));
-        }
-    }
-
-    if (remainingCopies.empty()) {
-        ++_removed_buckets;
-        _removed_documents += e->getHighestDocumentCount();
-        return Result::Skip;
-    } else {
-        setCopiesInEntry(e, remainingCopies);
-        return Result::Update;
-    }
-}
-
-bool
-BucketDBUpdater::MergingNodeRemover::storage_node_is_available(uint16_t index) const noexcept
-{
-    return ((index < _available_nodes.size()) && _available_nodes[index]);
-}
-
-BucketDBUpdater::MergingNodeRemover::~MergingNodeRemover()
-{
-    if (_removed_buckets != 0) {
-        LOGBM(info, "After cluster state change %s, %zu buckets no longer "
-                    "have available replicas. %zu documents in these buckets will "
-                    "be unavailable until nodes come back up",
-                    _oldState.getTextualDifference(_state).c_str(),
-                    _removed_buckets, _removed_documents);
-    }
 }
 
 } // distributor

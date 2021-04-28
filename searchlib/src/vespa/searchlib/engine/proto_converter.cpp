@@ -99,7 +99,7 @@ ProtoConverter::search_reply_to_proto(const SearchReply &reply, ProtoSearchReply
         uint32_t asked_hits = reply.request->maxhits;
         size_t got_hits = reply.hits.size();
         if (got_hits < asked_hits && asked_offset + got_hits < reply.totalHitCount) {
-            LOG(warning, "asked for %u hits [at offset %u] but only returning %zu hits from %zu available",
+            LOG(warning, "asked for %u hits [at offset %u] but only returning %zu hits from %" PRIu64 " available",
                 asked_hits, asked_offset, got_hits, reply.totalHitCount);
         }
     }

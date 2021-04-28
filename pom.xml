@@ -57,7 +57,6 @@
         <module>container-dependencies-enforcer</module>
         <module>container-dependency-versions</module>
         <module>container-dev</module>
-        <module>container-di</module>
         <module>container-disc</module>
         <module>container-documentapi</module>
         <module>container-integration-test</module>
@@ -119,7 +118,6 @@
         <module>security-utils</module>
         <module>serviceview</module>
         <module>service-monitor</module>
-        <module>simplemetrics</module>
         <module>socket_test</module>
         <module>standalone-container</module>
         <module>statistics</module>

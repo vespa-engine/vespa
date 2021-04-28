@@ -110,7 +110,7 @@ public class DynamicProvisioningMaintainer extends NodeRepositoryMaintainer {
                 log.log(Level.SEVERE, "Failed to provision " + host.hostname() + " with " + children.size()  +
                                       " children, failing out the host recursively", e);
                 // Fail out as operator to force a quick redeployment
-                nodeRepository().nodes().failRecursively(
+                nodeRepository().nodes().failOrMarkRecursively(
                         host.hostname(), Agent.operator, "Failed by HostProvisioner due to provisioning failure");
             } catch (RuntimeException e) {
                 if (e.getCause() instanceof NameNotFoundException)

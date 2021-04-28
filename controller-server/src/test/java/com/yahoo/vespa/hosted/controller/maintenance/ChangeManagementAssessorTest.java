@@ -69,7 +69,7 @@ public class ChangeManagementAssessorTest {
     @Test
     public void one_of_two_groups_in_one_of_two_clusters() {
         ZoneId zone = ZoneId.from("prod", "eu-trd");
-        List<String> hostNames = Arrays.asList("host1", "host2");
+        List<String> hostNames = Arrays.asList("host1", "host2", "host5");
         List<NodeRepositoryNode> allNodesInZone = new ArrayList<>();
 
         // Two impacted nodes on host1

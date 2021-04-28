@@ -31,6 +31,7 @@ DistributorConfiguration::DistributorConfiguration(StorageComponent& component)
       _maxPendingMaintenanceOps(1000),
       _maxVisitorsPerNodePerClientVisitor(4),
       _minBucketsPerVisitor(5),
+      _num_distributor_stripes(0),
       _maxClusterClockSkew(0),
       _inhibitMergeSendingOnBusyNodeDuration(60s),
       _simulated_db_pruning_latency(0),
@@ -95,18 +96,18 @@ DistributorConfiguration::configureMaintenancePriorities(
         const vespa::config::content::core::StorDistributormanagerConfig& cfg)
 {
     MaintenancePriorities& mp(_maintenancePriorities);
-    mp.mergeMoveToIdealNode = cfg.priorityMergeMoveToIdealNode;
-    mp.mergeOutOfSyncCopies = cfg.priorityMergeOutOfSyncCopies;
-    mp.mergeTooFewCopies = cfg.priorityMergeTooFewCopies;
-    mp.mergeGlobalBuckets = cfg.priorityMergeGlobalBuckets;
-    mp.activateNoExistingActive = cfg.priorityActivateNoExistingActive;
+    mp.mergeMoveToIdealNode       = cfg.priorityMergeMoveToIdealNode;
+    mp.mergeOutOfSyncCopies       = cfg.priorityMergeOutOfSyncCopies;
+    mp.mergeTooFewCopies          = cfg.priorityMergeTooFewCopies;
+    mp.mergeGlobalBuckets         = cfg.priorityMergeGlobalBuckets;
+    mp.activateNoExistingActive   = cfg.priorityActivateNoExistingActive;
     mp.activateWithExistingActive = cfg.priorityActivateWithExistingActive;
-    mp.deleteBucketCopy = cfg.priorityDeleteBucketCopy;
-    mp.joinBuckets = cfg.priorityJoinBuckets;
-    mp.splitDistributionBits = cfg.prioritySplitDistributionBits;
-    mp.splitLargeBucket = cfg.prioritySplitLargeBucket;
-    mp.splitInconsistentBucket = cfg.prioritySplitInconsistentBucket;
-    mp.garbageCollection = cfg.priorityGarbageCollection;
+    mp.deleteBucketCopy           = cfg.priorityDeleteBucketCopy;
+    mp.joinBuckets                = cfg.priorityJoinBuckets;
+    mp.splitDistributionBits      = cfg.prioritySplitDistributionBits;
+    mp.splitLargeBucket           = cfg.prioritySplitLargeBucket;
+    mp.splitInconsistentBucket    = cfg.prioritySplitInconsistentBucket;
+    mp.garbageCollection          = cfg.priorityGarbageCollection;
 }
 
 void 
@@ -181,6 +182,8 @@ DistributorConfiguration::configure(const vespa::config::content::core::StorDist
     }
     _simulated_db_pruning_latency = std::chrono::milliseconds(std::max(0, config.simulatedDbPruningLatencyMsec));
     _simulated_db_merging_latency = std::chrono::milliseconds(std::max(0, config.simulatedDbMergingLatencyMsec));
+
+    _num_distributor_stripes = std::max(0, config.numDistributorStripes); // TODO STRIPE test
     
     LOG(debug,
         "Distributor now using new configuration parameters. Split limits: %d docs/%d bytes. "

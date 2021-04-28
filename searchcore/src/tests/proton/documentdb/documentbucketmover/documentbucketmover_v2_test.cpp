@@ -37,6 +37,7 @@ struct ControllerFixtureBase : public ::testing::Test
     MySubDb                     _notReady;
     BucketCreateNotifier        _bucketCreateNotifier;
     test::DiskMemUsageNotifier  _diskMemUsageNotifier;
+    MonitoredRefCount           _refCount;
     ThreadStackExecutor         _singleExecutor;
     ExecutorThreadService       _master;
     DummyBucketExecutor         _bucketExecutor;
@@ -118,12 +119,13 @@ ControllerFixtureBase::ControllerFixtureBase(const BlockableMaintenanceJobConfig
       _notReady(_builder.getRepo(), _bucketDB, 2, SubDbType::NOTREADY),
       _bucketCreateNotifier(),
       _diskMemUsageNotifier(),
+      _refCount(),
       _singleExecutor(1, 0x10000),
       _master(_singleExecutor),
       _bucketExecutor(4),
       _moveHandler(*_bucketDB, storeMoveDoneContexts),
       _metrics("test", 1),
-      _bmj(BucketMoveJobV2::create(_calc, _moveHandler, _modifiedHandler, _master, _bucketExecutor, _ready._subDb,
+      _bmj(BucketMoveJobV2::create(_calc, RetainGuard(_refCount), _moveHandler, _modifiedHandler, _master, _bucketExecutor, _ready._subDb,
                                    _notReady._subDb, _bucketCreateNotifier,_clusterStateHandler, _bucketHandler,
                                    _diskMemUsageNotifier, blockableConfig, "test", makeBucketSpace())),
       _runner(*_bmj)
