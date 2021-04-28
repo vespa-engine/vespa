@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 #include "backtrace.h"
 
-#if defined(__i386__) || defined(__clang__)
+#if defined(__i386__) || defined(__clang__) || defined(__aarch64__)
 // use GLIBC version, hope it works
 extern int backtrace(void **buffer, int size);
 #define HAVE_BACKTRACE
