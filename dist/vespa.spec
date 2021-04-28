@@ -88,7 +88,7 @@ BuildRequires: openssl-devel
 BuildRequires: vespa-gtest >= 1.8.1-1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.7.1
-BuildRequires: vespa-protobuf-devel = 3.7.0-4
+BuildRequires: vespa-protobuf-devel = 3.7.0-5
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
 %if 0%{?fedora}
@@ -214,7 +214,7 @@ Requires: llvm-libs >= 10.0.1
 Requires: openssl-libs
 Requires: vespa-lz4 >= 1.9.2-2
 Requires: vespa-onnxruntime = 1.7.1
-Requires: vespa-protobuf = 3.7.0-4
+Requires: vespa-protobuf = 3.7.0-5
 Requires: vespa-zstd >= 1.4.5-2
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
