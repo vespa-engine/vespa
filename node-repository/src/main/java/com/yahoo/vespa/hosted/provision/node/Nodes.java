@@ -18,7 +18,6 @@ import com.yahoo.vespa.hosted.provision.NodeMutex;
 import com.yahoo.vespa.hosted.provision.maintenance.NodeFailer;
 import com.yahoo.vespa.hosted.provision.node.filter.StateFilter;
 import com.yahoo.vespa.hosted.provision.persistence.CuratorDatabaseClient;
-import com.yahoo.vespa.hosted.provision.restapi.NotFoundException;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -192,9 +191,7 @@ public class Nodes {
     }
 
     public Node setReady(String hostname, Agent agent, String reason) {
-        Node nodeToReady = node(hostname).orElseThrow(() ->
-                                                                 new NoSuchNodeException("Could not move " + hostname + " to ready: Node not found"));
-
+        Node nodeToReady = requireNode(hostname);
         if (nodeToReady.state() == Node.State.ready) return nodeToReady;
         return setReady(List.of(nodeToReady), agent, reason).get(0);
     }
@@ -396,7 +393,7 @@ public class Nodes {
      * Moves a host to breakfixed state, removing any children.
      */
     public List<Node> breakfixRecursively(String hostname, Agent agent, String reason) {
-        Node node = node(hostname).orElseThrow(() -> new NoSuchNodeException("Could not breakfix " + hostname + ": Node not found"));
+        Node node = requireNode(hostname);
         try (Mutex lock = lockUnallocated()) {
             requireBreakfixable(node);
             NestedTransaction transaction = new NestedTransaction();
@@ -427,7 +424,7 @@ public class Nodes {
 
     private Node move(String hostname, boolean keepAllocation, Node.State toState, Agent agent, Optional<String> reason,
                       NestedTransaction transaction) {
-        Node node = node(hostname).orElseThrow(() -> new NoSuchNodeException("Could not move " + hostname + " to " + toState + ": Node not found"));
+        Node node = requireNode(hostname);
         if (!keepAllocation && node.allocation().isPresent()) {
             node = node.withoutAllocation();
         }
@@ -464,7 +461,7 @@ public class Nodes {
      * containers this will remove the node from node repository, otherwise the node will be moved to state ready.
      */
     public Node markNodeAvailableForNewAllocation(String hostname, Agent agent, String reason) {
-        Node node = node(hostname).orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
+        Node node = requireNode(hostname);
         if (node.flavor().getType() == Flavor.Type.DOCKER_CONTAINER && node.type() == NodeType.tenant) {
             if (node.state() != Node.State.dirty)
                 illegal("Cannot make " + node  + " available for new allocation as it is not in state [dirty]");
@@ -487,7 +484,7 @@ public class Nodes {
      * @return a List of all the nodes that have been removed or (for hosts) deprovisioned
      */
     public List<Node> removeRecursively(String hostname) {
-        Node node = node(hostname).orElseThrow(() -> new NotFoundException("No node with hostname '" + hostname + "'"));
+        Node node = requireNode(hostname);
         return removeRecursively(node, false);
     }
 
@@ -779,16 +776,20 @@ public class Nodes {
 
     /** Returns the unallocated/application lock, and the node acquired under that lock. */
     public NodeMutex lockAndGetRequired(Node node) {
-        return lockAndGet(node).orElseThrow(() -> new IllegalArgumentException("No such node: " + node.hostname()));
+        return lockAndGet(node).orElseThrow(() -> new NoSuchNodeException("No node with hostname '" + node.hostname() + "'"));
     }
 
     /** Returns the unallocated/application lock, and the node acquired under that lock. */
     public NodeMutex lockAndGetRequired(String hostname) {
-        return lockAndGet(hostname).orElseThrow(() -> new IllegalArgumentException("No such node: " + hostname));
+        return lockAndGet(hostname).orElseThrow(() -> new NoSuchNodeException("No node with hostname '" + hostname + "'"));
     }
 
     private Mutex lock(Node node) {
         return node.allocation().isPresent() ? lock(node.allocation().get().owner()) : lockUnallocated();
+    }
+
+    private Node requireNode(String hostname) {
+        return node(hostname).orElseThrow(() -> new NoSuchNodeException("No node with hostname '" + hostname + "'"));
     }
 
     private void illegal(String message) {

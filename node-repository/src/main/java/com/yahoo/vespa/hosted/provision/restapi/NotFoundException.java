@@ -6,7 +6,7 @@ package com.yahoo.vespa.hosted.provision.restapi;
  *
  * @author bratseth
  */
-public class NotFoundException extends RuntimeException {
+class NotFoundException extends RuntimeException {
 
     public NotFoundException(String message) { super(message); }
 
