@@ -40,12 +40,9 @@ BucketDBUpdater::BucketDBUpdater(DistributorStripeInterface& owner, // FIXME STR
       _node_ctx(_distributor_component),
       _op_ctx(_distributor_component),
       _distributor_interface(_distributor_component.getDistributor()),
-      _delayed_requests(),
-      _sent_messages(),
       _pending_cluster_state(),
       _history(),
       _sender(sender),
-      _enqueued_rechecks(),
       _outdated_nodes_map(),
       _transition_timer(_node_ctx.clock()),
       _stale_reads_enabled(false)
@@ -77,21 +74,13 @@ BucketDBUpdater::bootstrap_distribution_config(std::shared_ptr<const lib::Distri
     //   ... need to take a guard if so, so can probably not be done at ctor time..?
 }
 
-// TODO STRIPE what to do with merge guards...
 // FIXME what about bucket DB replica update timestamp allocations?! Replace with u64 counter..?
 //   Must at the very least ensure we use stripe-local TS generation for DB inserts...! i.e. no global TS
 //   Or do we have to touch these at all here? Just defer all this via stripe interface?
 void
 BucketDBUpdater::flush()
 {
-    for (auto & entry : _sent_messages) {
-        // Cannot sendDown MergeBucketReplies during flushing, since
-        // all lower links have been closed
-        if (entry.second._mergeReplyGuard) {
-            entry.second._mergeReplyGuard->resetReply();
-        }
-    }
-    _sent_messages.clear();
+    // TODO STRIPE: Consider if this must flush_and_close() all stripes
 }
 
 void
@@ -111,33 +100,6 @@ bool
 BucketDBUpdater::has_pending_cluster_state() const
 {
     return static_cast<bool>(_pending_cluster_state);
-}
-
-void
-BucketDBUpdater::send_request_bucket_info(
-        uint16_t node,
-        const document::Bucket& bucket,
-        const std::shared_ptr<MergeReplyGuard>& mergeReplyGuard)
-{
-    if (!_op_ctx.storage_node_is_up(bucket.getBucketSpace(), node)) {
-        return;
-    }
-
-    std::vector<document::BucketId> buckets;
-    buckets.push_back(bucket.getBucketId());
-
-    auto msg = std::make_shared<api::RequestBucketInfoCommand>(bucket.getBucketSpace(), buckets);
-
-    LOG(debug, "Sending request bucket info command %" PRIu64 " for bucket %s to node %u",
-        msg->getMsgId(), bucket.toString().c_str(), node);
-
-    msg->setPriority(50);
-    msg->setAddress(_node_ctx.node_address(node));
-
-    _sent_messages[msg->getMsgId()] =
-        BucketRequest(node, _op_ctx.generate_unique_timestamp(),
-                      bucket, mergeReplyGuard);
-    _sender.sendCommand(msg);
 }
 
 void
@@ -339,51 +301,6 @@ BucketDBUpdater::onActivateClusterStateVersion(const std::shared_ptr<api::Activa
     return false;
 }
 
-// TODO remove entirely from this abstraction level?
-BucketDBUpdater::MergeReplyGuard::~MergeReplyGuard()
-{
-    if (_reply) {
-        _distributor_interface.handleCompletedMerge(_reply);
-    }
-}
-
-bool
-BucketDBUpdater::onMergeBucketReply(
-        const std::shared_ptr<api::MergeBucketReply>& reply)
-{
-   auto replyGuard = std::make_shared<MergeReplyGuard>(_distributor_interface, reply);
-
-   // In case the merge was unsuccessful somehow, or some nodes weren't
-   // actually merged (source-only nodes?) we request the bucket info of the
-   // bucket again to make sure it's ok.
-   for (uint32_t i = 0; i < reply->getNodes().size(); i++) {
-       send_request_bucket_info(reply->getNodes()[i].index,
-                                reply->getBucket(),
-                                replyGuard);
-   }
-
-   return true;
-}
-
-void
-BucketDBUpdater::send_all_queued_bucket_rechecks()
-{
-    LOG(spam, "Sending %zu queued bucket rechecks previously received "
-              "via NotifyBucketChange commands",
-        _enqueued_rechecks.size());
-
-    for (const auto & entry :_enqueued_rechecks) {
-        send_request_bucket_info(entry.node, entry.bucket, std::shared_ptr<MergeReplyGuard>());
-    }
-    _enqueued_rechecks.clear();
-}
-
-bool sort_pred(const BucketListMerger::BucketEntry& left,
-               const BucketListMerger::BucketEntry& right)
-{
-    return left.first < right.first;
-}
-
 bool
 BucketDBUpdater::onRequestBucketInfoReply(
         const std::shared_ptr<api::RequestBucketInfoReply>& repl)
@@ -417,17 +334,6 @@ BucketDBUpdater::resend_delayed_messages()
 {
     if (_pending_cluster_state) {
         _pending_cluster_state->resendDelayedMessages();
-    }
-    if (_delayed_requests.empty()) {
-        return; // Don't fetch time if not needed
-    }
-    framework::MilliSecTime currentTime(_node_ctx.clock());
-    while (!_delayed_requests.empty()
-           && currentTime >= _delayed_requests.front().first)
-    {
-        BucketRequest& req(_delayed_requests.front().second);
-        send_request_bucket_info(req.targetNode, req.bucket, std::shared_ptr<MergeReplyGuard>());
-        _delayed_requests.pop_front();
     }
 }
 
@@ -488,7 +394,6 @@ BucketDBUpdater::activate_pending_cluster_state(StripeAccessGuard& guard)
     _pending_cluster_state.reset();
     _outdated_nodes_map.clear();
     guard.clear_pending_cluster_state_bundle();
-    send_all_queued_bucket_rechecks();
     complete_transition_timer();
     guard.clear_read_only_bucket_repo_databases();
 
@@ -547,21 +452,6 @@ const vespalib::string BUCKETDB_UPDATER = "Bucket Database Updater";
 
 }
 
-void
-BucketDBUpdater::BucketRequest::print_xml_tag(vespalib::xml::XmlOutputStream &xos, const vespalib::xml::XmlAttribute &timestampAttribute) const
-{
-    using namespace vespalib::xml;
-    xos << XmlTag("storagenode")
-        << XmlAttribute("index", targetNode);
-    xos << XmlAttribute("bucketspace", bucket.getBucketSpace().getId(), XmlAttribute::HEX);
-    if (bucket.getBucketId().getRawId() == 0) {
-        xos << XmlAttribute("bucket", ALL);
-    } else {
-        xos << XmlAttribute("bucket", bucket.getBucketId().getId(), XmlAttribute::HEX);
-    }
-    xos << timestampAttribute << XmlEndTag();
-}
-
 bool
 BucketDBUpdater::reportStatus(std::ostream& out,
                               const framework::HttpUrlPath& path) const
@@ -598,18 +488,6 @@ BucketDBUpdater::report_xml_status(vespalib::xml::XmlOutputStream& xos,
             << XmlAttribute("to", i->_newClusterState)
             << XmlAttribute("processingtime", i->_processingTime)
             << XmlEndTag();
-    }
-    xos << XmlEndTag()
-        << XmlTag("single_bucket_requests");
-    for (const auto & entry : _sent_messages)
-    {
-        entry.second.print_xml_tag(xos, XmlAttribute("sendtimestamp", entry.second.timestamp));
-    }
-    xos << XmlEndTag()
-        << XmlTag("delayed_single_bucket_requests");
-    for (const auto & entry : _delayed_requests)
-    {
-        entry.second.print_xml_tag(xos, XmlAttribute("resendtimestamp", entry.first.getTime()));
     }
     xos << XmlEndTag() << XmlEndTag();
     return "";
