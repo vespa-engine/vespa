@@ -604,7 +604,7 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
     }
 
     /** Sets the value of a node in <i>this</i> profile - the local name given must not be nested (contain dots) */
-    protected QueryProfile setLocalNode(String localName, Object value,QueryProfileType parentType,
+    protected QueryProfile setLocalNode(String localName, Object value, QueryProfileType parentType,
                                         DimensionBinding dimensionBinding, QueryProfileRegistry registry) {
         if (parentType != null && type == null && ! isFrozen())
             type = parentType;
@@ -622,9 +622,10 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
     static Object combineValues(Object newValue, Object existingValue) {
         if (newValue instanceof QueryProfile) {
             QueryProfile newProfile = (QueryProfile)newValue;
-            if ( existingValue == null || ! (existingValue instanceof QueryProfile)) {
-                if (!isModifiable(newProfile))
+            if ( ! (existingValue instanceof QueryProfile)) {
+                if ( ! isModifiable(newProfile)) {
                     newProfile = new BackedOverridableQueryProfile(newProfile); // Make the query profile reference overridable
+                }
                 newProfile.value = existingValue;
                 return newProfile;
             }
@@ -829,7 +830,6 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
         validateName(localName);
         value = convertToSubstitutionString(value);
 
-
         if (dimensionBinding.isNull()) {
             Object combinedValue = value instanceof QueryProfile
                                    ? combineValues(value, content == null ? null : content.get(localName))
@@ -838,9 +838,8 @@ public class QueryProfile extends FreezableSimpleComponent implements Cloneable 
                 content.put(localName, combinedValue);
         }
         else {
-            if (variants == null) {
+            if (variants == null)
                 variants = new QueryProfileVariants(dimensionBinding.getDimensions(), this);
-            }
             variants.set(localName, dimensionBinding.getValues(), value);
         }
     }

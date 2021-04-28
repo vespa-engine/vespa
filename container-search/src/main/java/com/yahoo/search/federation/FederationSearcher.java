@@ -303,7 +303,6 @@ public class FederationSearcher extends ForkingSearcher {
                 Object value = getSourceOrProviderProperty(original, key, sourceName, providerName, window.get(key));
                 if (value != null)
                     outgoing.properties().set(key, value);
-                if (value != null) System.out.println("Setting " + key + " = " + value);
             }
         }
     }
