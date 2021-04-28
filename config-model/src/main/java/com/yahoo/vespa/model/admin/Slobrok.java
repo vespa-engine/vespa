@@ -22,7 +22,7 @@ public class Slobrok extends AbstractService implements StateserverConfig.Produc
     }
 
     /**
-     * @param parent The parent ConfigProducer.
+     * @param parent the parent ConfigProducer.
      * @param index  unique index for all slobroks
      */
     public Slobrok(AbstractConfigProducer parent, int index) {
