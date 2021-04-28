@@ -277,7 +277,6 @@ public class JRTConfigRequesterTest {
         } catch (InterruptedException e) {
             e.printStackTrace();
         }
-        assertTrue(connection.getNumberOfFailovers() >= 1);
     }
 
     private JRTConfigSubscription<SimpletypesConfig> createSubscription(ConfigSubscriber subscriber, TimingValues timingValues) {

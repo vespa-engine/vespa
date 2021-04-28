@@ -12,7 +12,7 @@ public interface ConnectionPool extends AutoCloseable {
 
     /**
      * Sets the supplied Connection to have an error, implementations are expected to call
-     * {@link #switchConnection()} after setting state for the supplied Connection.
+     * {@link #switchConnection(Connection)} after setting state for the supplied Connection.
      *
      */
     void setError(Connection connection, int i);
@@ -25,16 +25,7 @@ public interface ConnectionPool extends AutoCloseable {
      *
      * @return a Connection
      */
-    Connection switchConnection();
-
-    /**
-     * Sets the current JRTConnection instance by randomly choosing
-     * from the available sources and returns the result.
-     *
-     * @return a Connection
-     */
-    @Deprecated
-    default Connection setNewCurrentConnection() { return switchConnection(); };
+    Connection switchConnection(Connection failingConnection);
 
     int getSize();
 

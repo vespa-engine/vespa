@@ -22,11 +22,6 @@ public class MockConnection implements ConnectionPool, Connection {
     private final ResponseHandler responseHandler;
     private int numberOfRequests = 0;
 
-    public int getNumberOfFailovers() {
-        return numberOfFailovers;
-    }
-
-    private int numberOfFailovers = 0;
     private final int numSpecs;
 
     public MockConnection() {
@@ -59,16 +54,6 @@ public class MockConnection implements ConnectionPool, Connection {
     }
 
     @Override
-    public void setError(int errorCode) {
-        numberOfFailovers++;
-    }
-
-    @Override
-    public void setSuccess() {
-        numberOfFailovers = 0;
-    }
-
-    @Override
     public String getAddress() {
         return null;
     }
@@ -77,9 +62,7 @@ public class MockConnection implements ConnectionPool, Connection {
     public void close() {}
 
     @Override
-    public void setError(Connection connection, int errorCode) {
-        connection.setError(errorCode);
-    }
+    public void setError(Connection connection, int errorCode) { }
 
     @Override
     public Connection getCurrent() {
@@ -87,7 +70,7 @@ public class MockConnection implements ConnectionPool, Connection {
     }
 
     @Override
-    public Connection switchConnection() { return this; }
+    public Connection switchConnection(Connection connection) { return this; }
 
     @Override
     public int getSize() {
