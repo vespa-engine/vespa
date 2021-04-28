@@ -139,14 +139,13 @@ public class JRTConnectionPoolTest {
         JRTConnection secondConnection = failAndGetNewConnection(connectionPool, firstConnection);
         assertNotEquals(firstConnection, secondConnection);
 
-        // Should change connection, , not getting first or seconds connection as new
+        // Should change connection, not getting second connection as new
         JRTConnection thirdConnection = failAndGetNewConnection(connectionPool, secondConnection);
         // Fail a few more times with old connection, as will happen when there are multiple subscribers
         // Connection should not change
         assertEquals(thirdConnection, failAndGetNewConnection(connectionPool, secondConnection));
         assertEquals(thirdConnection, failAndGetNewConnection(connectionPool, secondConnection));
         assertEquals(thirdConnection, failAndGetNewConnection(connectionPool, secondConnection));
-        assertNotEquals(firstConnection, thirdConnection);
         assertNotEquals(secondConnection, thirdConnection);
 
         // Should change connection, not getting third connection as new

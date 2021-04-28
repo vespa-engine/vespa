@@ -12,7 +12,6 @@ import java.util.Map;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * A pool of JRT connections to a config source (either a config server or a config proxy).
@@ -83,13 +82,8 @@ public class JRTConnectionPool implements ConnectionPool {
     synchronized JRTConnection switchConnection() {
         if (getSources().size() <= 1) throw new IllegalStateException("Cannot switch connection, not enough sources");
 
-        List<JRTConnection> sourceCandidates = getSources().stream()
-                                                           .filter(JRTConnection::isHealthy)
-                                                           .collect(Collectors.toList());
-        if (sourceCandidates.size() == 0) {
-            sourceCandidates = getSources();
-            sourceCandidates.remove(currentConnection);
-        }
+        List<JRTConnection> sourceCandidates = getSources();
+        sourceCandidates.remove(currentConnection);
         JRTConnection newConnection = pickNewConnectionRandomly(sourceCandidates);
         log.log(Level.INFO, () -> "Switching from " + currentConnection + " to " + newConnection);
         return currentConnection = newConnection;
@@ -117,7 +111,6 @@ public class JRTConnectionPool implements ConnectionPool {
 
     @Override
     public void setError(Connection connection, int errorCode) {
-        connection.setError(errorCode);
         switchConnection(connection);
     }
 
