@@ -136,7 +136,7 @@ int
 IterateSpeed::Main()
 {
     int argi;
-    char c;
+    int c;
     const char *optArg;
     argi = 1;
     int loops = 1;
