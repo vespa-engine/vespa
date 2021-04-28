@@ -80,7 +80,7 @@ public class JRTConnectionPool implements ConnectionPool {
      * 1. the current connection is unhealthy and should not be selected when switching
      * 2. There is more than 1 source.
      */
-    public synchronized JRTConnection switchConnection() {
+    synchronized JRTConnection switchConnection() {
         if (getSources().size() <= 1) throw new IllegalStateException("Cannot switch connection, not enough sources");
 
         List<JRTConnection> sourceCandidates = getSources().stream()
