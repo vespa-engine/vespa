@@ -294,7 +294,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
         String dir = include.getAttribute(IncludeDirs.DIR);
         validateIncludeDir(dir);
         IncludeDirs.validateFilesInIncludedDir(dir, include.getParentNode(), this);
-        log.log(Level.FINE, "Adding user include dir '" + dir + "'");
+        log.log(Level.FINE, () -> "Adding user include dir '" + dir + "'");
         userIncludeDirs.add(dir);
     }
 
@@ -368,7 +368,7 @@ public class FilesApplicationPackage implements ApplicationPackage {
     private void addAllDefsFromConfigDir(Map<ConfigDefinitionKey, UnparsedConfigDefinition> defs, File configDefsDir) {
         if (! configDefsDir.isDirectory()) return;
 
-        log.log(Level.FINE, "Getting all config definitions from '" + configDefsDir + "'");
+        log.log(Level.FINE, () -> "Getting all config definitions from '" + configDefsDir + "'");
         for (File def : configDefsDir.listFiles((File dir, String name) -> name.matches(".*\\.def"))) {
             String[] nv = def.getName().split("\\.def");
             ConfigDefinitionKey key;

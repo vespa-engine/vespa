@@ -51,11 +51,11 @@ public abstract class HttpMetricFetcher {
 
         String u = "http://localhost:" + port + path;
         this.url = URI.create(u);
-        log.log(Level.FINE, "Fetching metrics from " + u + " with timeout " + CONNECTION_TIMEOUT);
+        log.log(Level.FINE, () -> "Fetching metrics from " + u + " with timeout " + CONNECTION_TIMEOUT);
     }
 
     InputStream getJson() throws IOException,InterruptedException, ExecutionException {
-        log.log(Level.FINE, "Connecting to url " + url + " for service '" + service + "'");
+        log.log(Level.FINE, () -> "Connecting to url " + url + " for service '" + service + "'");
         Future<Message<HttpResponse, InputStream>> response = httpClient.execute(
                 new BasicRequestProducer(Method.GET, url),
                 new BasicResponseConsumer<>(new AbstractClassicEntityConsumer<>(BUFFER_SIZE, Runnable::run) {

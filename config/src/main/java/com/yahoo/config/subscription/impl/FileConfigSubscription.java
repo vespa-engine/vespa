@@ -38,12 +38,12 @@ public class FileConfigSubscription<T extends ConfigInstance> extends ConfigSubs
     public boolean nextConfig(long timeout) {
         if (!file.exists() && !file.isFile()) throw new IllegalArgumentException("Not a file: "+file);
         if (checkReloaded()) {
-            log.log(FINE, "User forced config reload at " + System.currentTimeMillis());
+            log.log(FINE, () -> "User forced config reload at " + System.currentTimeMillis());
             // User forced reload
             setConfigIfChanged(updateConfig());
             ConfigState<T> configState = getConfigState();
-            log.log(FINE, "Config updated at " + System.currentTimeMillis() + ", changed: " + configState.isConfigChanged());
-            log.log(FINE, "Config: " + configState.getConfig().toString());
+            log.log(FINE, () -> "Config updated at " + System.currentTimeMillis() + ", changed: " + configState.isConfigChanged());
+            log.log(FINE, () -> "Config: " + configState.getConfig().toString());
             return true;
         }
         if (file.lastModified()!=ts) {

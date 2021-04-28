@@ -64,12 +64,12 @@ public class NodeStateGatherer {
             if (info.getTimeForNextStateRequestAttempt() > currentTime) continue; // too early
 
             if (info.getRpcAddress() == null || info.isRpcAddressOutdated()) { // Cannot query state of node without RPC address
-                log.log(Level.FINE, "Not sending getNodeState request to node " + info.getNode() + ": Not in slobrok");
+                log.log(Level.FINE, () -> "Not sending getNodeState request to node " + info.getNode() + ": Not in slobrok");
                 NodeState reportedState = info.getReportedState().clone();
                 if (( ! reportedState.getState().equals(State.DOWN) && currentTime - info.getRpcAddressOutdatedTimestamp() > maxSlobrokDisconnectGracePeriod)
                     || reportedState.getState().equals(State.STOPPING)) // Don't wait for grace period if we expect node to be stopping
                 {
-                    log.log(Level.FINE, "Setting reported state to DOWN "
+                    log.log(Level.FINE, () -> "Setting reported state to DOWN "
                             + (reportedState.getState().equals(State.STOPPING)
                                 ? "as node completed stopping."
                                 : "as node has been out of slobrok longer than " + maxSlobrokDisconnectGracePeriod + "."));
@@ -102,7 +102,7 @@ public class NodeStateGatherer {
                 NodeInfo info = req.getNodeInfo();
 
                 if (!info.isPendingGetNodeStateRequest(req)) {
-                    log.log(Level.FINE, "Ignoring getnodestate response from " + info.getNode()
+                    log.log(Level.FINE, () -> "Ignoring getnodestate response from " + info.getNode()
                             + " as request replied to is not the most recent pending request.");
                     continue;
                 }
@@ -118,10 +118,10 @@ public class NodeStateGatherer {
                             listener.handleNewNodeState(info, newState.clone());
                             info.setReportedState(newState, currentTime);
                         } else {
-                            log.log(Level.FINE, "Ignoring get node state error. Need to resend");
+                            log.log(Level.FINE, () -> "Ignoring get node state error. Need to resend");
                         }
                     } else {
-                        log.log(Level.FINE, "Ignoring getnodestate response from " + info.getNode() + " as it was aborted by client");
+                        log.log(Level.FINE, () -> "Ignoring getnodestate response from " + info.getNode() + " as it was aborted by client");
                     }
 
                     continue;
@@ -159,7 +159,7 @@ public class NodeStateGatherer {
             if (info.getReportedState().getState().oneOf("ui")) {
                 eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + "RPC timeout talking to node.", NodeEvent.Type.REPORTED, currentTime), Level.INFO);
             } else if (!info.getReportedState().hasDescription() || !info.getReportedState().getDescription().equals(msg)) {
-                log.log(Level.FINE, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
+                log.log(Level.FINE, () -> "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
             }
             newState.setDescription(msg);
         } else if (req.getReply().getReturnCode() == ErrorCode.CONNECTION) {
@@ -174,8 +174,9 @@ public class NodeStateGatherer {
                     if (info.getReportedState().getState().oneOf("ui")) {
                         eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), Level.INFO);
                     } else if (!info.getReportedState().hasDescription() || !info.getReportedState().getDescription().equals(msg)) {
-                        log.log(Level.FINE, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode()
-                                + " " + req.getReply().getReturnMessage() + ": " + msg);
+                        if (log.isLoggable(Level.FINE))
+                            log.log(Level.FINE, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode()
+                                                + " " + req.getReply().getReturnMessage() + ": " + msg);
                     }
                     newState.setState(State.DOWN);
                 } else if (msg.equals("jrt: Connection closed by peer") || msg.equals("Connection reset by peer")) {
@@ -186,7 +187,8 @@ public class NodeStateGatherer {
                     if (info.getReportedState().getState().oneOf("ui")) {
                         eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), Level.INFO);
                     } else if (!info.getReportedState().hasDescription() || !info.getReportedState().getDescription().equals(msg)) {
-                        log.log(Level.FINE, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
+                        if (log.isLoggable(Level.FINE))
+                            log.log(Level.FINE, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
                     }
                     newState.setState(State.DOWN).setDescription(msg);
                 } else if (msg.equals("Connection timed out")) {
@@ -194,14 +196,16 @@ public class NodeStateGatherer {
                         msg = "Connection error: Timeout";
                         eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), Level.INFO);
                     } else {
-                        log.log(Level.FINE, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
+                        if (log.isLoggable(Level.FINE))
+                            log.log(Level.FINE, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
                     }
                 } else {
                     msg = "Connection error: " + reason;
                     if (info.getReportedState().getState().oneOf("ui")) {
                         eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), Level.WARNING);
                     } else if (!info.getReportedState().hasDescription() || !info.getReportedState().getDescription().equals(msg)) {
-                        log.log(Level.FINE, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
+                        if (log.isLoggable(Level.FINE))
+                            log.log(Level.FINE, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
                     }
                     newState.setDescription(msg);
                 }
@@ -212,7 +216,7 @@ public class NodeStateGatherer {
                 if (info.getReportedState().getState().oneOf("ui")) {
                     eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), Level.WARNING);
                 } else if (!info.getReportedState().hasDescription() || !info.getReportedState().getDescription().equals(msg)) {
-                    log.log(Level.FINE, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
+                    log.log(Level.FINE, () -> "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
                 }
                 newState.setDescription(msg);
             }
@@ -223,19 +227,19 @@ public class NodeStateGatherer {
             if (info.getReportedState().getState().oneOf("ui")) {
                 eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), Level.WARNING);
             } else if (!info.getReportedState().hasDescription() || !info.getReportedState().getDescription().equals(msg)) {
-                log.log(Level.FINE, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
+                log.log(Level.FINE, () -> "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
             }
             newState.setState(State.DOWN).setDescription(msg + ": get node state");
         } else if (req.getReply().getReturnCode() == 75004) {
             String msg = "Node refused to answer RPC request and is likely stopping: " + req.getReply().getReturnMessage();
                 // The node is shutting down and is not accepting requests from anyone
             if (info.getReportedState().getState().equals(State.STOPPING)) {
-                log.log(Level.FINE, "Failed to get node state from " + info + " because it is still shutting down.");
+                log.log(Level.FINE, () -> "Failed to get node state from " + info + " because it is still shutting down.");
             } else {
                 if (info.getReportedState().getState().oneOf("ui")) {
                     eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), Level.INFO);
                 } else if (!info.getReportedState().hasDescription() || !info.getReportedState().getDescription().equals(msg)) {
-                    log.log(Level.FINE, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
+                    log.log(Level.FINE, () -> "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
                 }
             }
             newState.setState(State.STOPPING).setDescription(msg);
@@ -244,7 +248,7 @@ public class NodeStateGatherer {
             if (info.getReportedState().getState().oneOf("ui")) {
                 eventLog.addNodeOnlyEvent(NodeEvent.forBaseline(info, prefix + msg, NodeEvent.Type.REPORTED, currentTime), Level.WARNING);
             } else if (!info.getReportedState().hasDescription() || !info.getReportedState().getDescription().equals(msg)) {
-                log.log(Level.FINE, "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
+                log.log(Level.FINE, () -> "Failed to talk to node " + info + ": " + req.getReply().getReturnCode() + " " + req.getReply().getReturnMessage() + ": " + msg);
             }
             newState.setState(State.DOWN).setDescription(msg);
         }

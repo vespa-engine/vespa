@@ -200,7 +200,7 @@ public class DocumentProcessingHandler extends AbstractRequestHandler {
 
         @Override
         public void run() {
-            log.log(Level.FINE, "Submitting after having waited " + delay + " ms in LATER queue: " + processingTask);
+            log.log(Level.FINE, () -> "Submitting after having waited " + delay + " ms in LATER queue: " + processingTask);
             processingTask.submit();
         }
     }

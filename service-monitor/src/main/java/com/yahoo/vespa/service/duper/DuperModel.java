@@ -95,7 +95,7 @@ public class DuperModel {
         } else {
             logPrefix = isComplete ? "Reactivated application " : "Rebootstrapped application ";
         }
-        logger.log(Level.FINE, logPrefix + id.toFullString());
+        logger.log(Level.FINE, () -> logPrefix + id.toFullString());
 
         updateHostnameVsIdMaps(applicationInfo, id);
 
@@ -110,7 +110,7 @@ public class DuperModel {
 
         ApplicationInfo application = applicationsById.remove(applicationId);
         if (application != null) {
-            logger.log(Level.FINE, "Removed application " + applicationId.toFullString());
+            logger.log(Level.FINE, () -> "Removed application " + applicationId.toFullString());
             listeners.forEach(listener -> listener.applicationRemoved(applicationId));
         }
     }

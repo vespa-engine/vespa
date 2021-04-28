@@ -65,7 +65,7 @@ public class TesterClient {
     }
 
     private HttpResponse execute(HttpUriRequest request, String messageIfRequestFails) {
-        logger.log(Level.FINE, "Sending request to tester container " + request.getURI().toString());
+        logger.log(Level.FINE, () -> "Sending request to tester container " + request.getURI().toString());
         try {
             return new ProxyResponse(httpClient.execute(request));
         } catch (IOException e) {

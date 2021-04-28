@@ -52,7 +52,7 @@ public class StateChangeHandler {
                                             final DatabaseHandler database,
                                             final DatabaseHandler.Context dbContext) throws InterruptedException {
         int startTimestampsReset = 0;
-        log.log(Level.FINE, String.format("handleAllDistributorsInSync invoked for state version %d", currentState.getVersion()));
+        log.log(Level.FINE, "handleAllDistributorsInSync invoked for state version %d", currentState.getVersion());
         for (NodeType nodeType : NodeType.getTypes()) {
             for (ConfiguredNode configuredNode : nodes) {
                 final Node node = new Node(nodeType, configuredNode.index());
@@ -60,16 +60,11 @@ public class StateChangeHandler {
                 final NodeState nodeState = currentState.getNodeState(node);
                 if (nodeInfo != null && nodeState != null) {
                     if (nodeState.getStartTimestamp() > nodeInfo.getStartTimestamp()) {
-                        if (log.isLoggable(Level.FINE)) {
-                            log.log(Level.FINE, String.format("Storing away new start timestamp for node %s (%d)",
-                                    node, nodeState.getStartTimestamp()));
-                        }
+                        log.log(Level.FINE, () -> String.format("Storing away new start timestamp for node %s (%d)", node, nodeState.getStartTimestamp()));
                         nodeInfo.setStartTimestamp(nodeState.getStartTimestamp());
                     }
                     if (nodeState.getStartTimestamp() > 0) {
-                        if (log.isLoggable(Level.FINE)) {
-                            log.log(Level.FINE, String.format("Resetting timestamp in cluster state for node %s", node));
-                        }
+                        log.log(Level.FINE, "Resetting timestamp in cluster state for node %s", node);
                         ++startTimestampsReset;
                     }
                 } else if (log.isLoggable(Level.FINE)) {
@@ -149,12 +144,11 @@ public class StateChangeHandler {
             final int oldCount = currentState.getMinUsedBits();
             final int newCount = reportedState.getMinUsedBits();
             log.log(Level.FINE,
-                    String.format("Altering node state to reflect that min distribution bit count has changed from %d to %d",
-                            oldCount, newCount));
+                    () -> String.format("Altering node state to reflect that min distribution bit count has changed from %d to %d", oldCount, newCount));
             eventLog.add(NodeEvent.forBaseline(node, String.format("Altered min distribution bit count from %d to %d", oldCount, newCount),
                          NodeEvent.Type.CURRENT, currentTime), isMaster);
-        } else if (log.isLoggable(Level.FINE)) {
-            log.log(Level.FINE, String.format("Not altering state of %s in cluster state because new state is too similar: %s",
+        } else {
+            log.log(Level.FINE, () -> String.format("Not altering state of %s in cluster state because new state is too similar: %s",
                     node, currentState.getTextualDifference(reportedState)));
         }
 
@@ -178,12 +172,12 @@ public class StateChangeHandler {
         }
 
         if (node.getReportedState().getState().equals(State.STOPPING)) {
-            log.log(Level.FINE, "Node " + node.getNode() + " is no longer in slobrok. Was in stopping state, so assuming it has shut down normally. Setting node down");
+            log.log(Level.FINE, () -> "Node " + node.getNode() + " is no longer in slobrok. Was in stopping state, so assuming it has shut down normally. Setting node down");
             NodeState ns = node.getReportedState().clone();
             ns.setState(State.DOWN);
             handleNewReportedNodeState(currentClusterState, node, ns.clone(), nodeListener);
         } else {
-            log.log(Level.FINE, "Node " + node.getNode() + " no longer in slobrok was in state " + node.getReportedState() + ". Waiting to see if it reappears in slobrok");
+            log.log(Level.FINE, () -> "Node " + node.getNode() + " no longer in slobrok was in state " + node.getReportedState() + ". Waiting to see if it reappears in slobrok");
         }
 
         stateMayHaveChanged = true;
@@ -205,9 +199,7 @@ public class StateChangeHandler {
         }
         stateMayHaveChanged = true;
 
-        if (log.isLoggable(Level.FINE)) {
-            log.log(Level.FINE, String.format("Got new wanted nodestate for %s: %s", node, currentState.getTextualDifference(proposedState)));
-        }
+        log.log(Level.FINE, () -> String.format("Got new wanted nodestate for %s: %s", node, currentState.getTextualDifference(proposedState)));
         // Should be checked earlier before state was set in cluster
         assert(proposedState.getState().validWantedNodeState(node.getNode().getType()));
         long timeNow = timer.getCurrentTimeInMillis();
@@ -293,11 +285,11 @@ public class StateChangeHandler {
 
         if (mayResetCrashCounterOnStableUpNode(currentTime, node, lastReportedState)) {
             node.setPrematureCrashCount(0);
-            log.log(Level.FINE, "Resetting premature crash count on node " + node + " as it has been up for a long time.");
+            log.log(Level.FINE, () -> "Resetting premature crash count on node " + node + " as it has been up for a long time.");
             triggeredAnyTimers = true;
         } else if (mayResetCrashCounterOnStableDownNode(currentTime, node, lastReportedState)) {
             node.setPrematureCrashCount(0);
-            log.log(Level.FINE, "Resetting premature crash count on node " + node + " as it has been down for a long time.");
+            log.log(Level.FINE, () -> "Resetting premature crash count on node " + node + " as it has been down for a long time.");
             triggeredAnyTimers = true;
         }
 
@@ -387,19 +379,14 @@ public class StateChangeHandler {
                                                  final NodeState reportedState,
                                                  final NodeStateOrHostInfoChangeHandler nodeListener) {
         final long timeNow = timer.getCurrentTimeInMillis();
-        if (log.isLoggable(Level.FINE)) {
-            log.log(Level.FINE, String.format("Finding new cluster state entry for %s switching state %s",
-                    node, currentState.getTextualDifference(reportedState)));
-        }
+        log.log(Level.FINE, () -> String.format("Finding new cluster state entry for %s switching state %s", node, currentState.getTextualDifference(reportedState)));
 
         if (handleReportedNodeCrashEdge(node, currentState, reportedState, nodeListener, timeNow)) {
             return;
         }
         if (initializationProgressHasIncreased(currentState, reportedState)) {
             node.setInitProgressTime(timeNow);
-            if (log.isLoggable(Level.FINEST)) {
-                log.log(Level.FINEST, "Reset initialize timer on " + node + " to " + node.getInitProgressTime());
-            }
+            log.log(Level.FINEST, () -> "Reset initialize timer on " + node + " to " + node.getInitProgressTime());
         }
         if (handleImplicitCrashEdgeFromReverseInitProgress(node, currentState, reportedState, nodeListener, timeNow)) {
             return;
@@ -454,7 +441,7 @@ public class StateChangeHandler {
         if (nodeUpToDownEdge(node, currentState, reportedState)) {
             node.setTransitionTime(timeNow);
             if (node.getUpStableStateTime() + stableStateTimePeriod > timeNow && !isControlledShutdown(reportedState)) {
-                log.log(Level.FINE, "Stable state: " + node.getUpStableStateTime() + " + " + stableStateTimePeriod + " > " + timeNow);
+                log.log(Level.FINE, () -> "Stable state: " + node.getUpStableStateTime() + " + " + stableStateTimePeriod + " > " + timeNow);
                 eventLog.add(NodeEvent.forBaseline(node,
                         String.format("Stopped or possibly crashed after %d ms, which is before " +
                                       "stable state time period. Premature crash count is now %d.",

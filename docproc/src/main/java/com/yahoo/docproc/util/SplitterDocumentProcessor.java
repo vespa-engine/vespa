@@ -42,8 +42,8 @@ public class SplitterDocumentProcessor extends DocumentProcessor {
     public Progress process(Processing processing) {
         if (processing.getDocumentOperations().size() != 1) {
             //we were given more than one document, return
-            log.log(Level.FINE, "More than one document given, returning. (Was given "
-                                    + processing.getDocumentOperations().size() + " documents).");
+            log.log(Level.FINE, () -> "More than one document given, returning. (Was given "
+                                          + processing.getDocumentOperations().size() + " documents).");
             return Progress.DONE;
         }
 
@@ -57,15 +57,15 @@ public class SplitterDocumentProcessor extends DocumentProcessor {
         Array<Document> innerDocuments = (Array<Document>) outerDoc.getFieldValue(arrayFieldName);
         if (innerDocuments == null) {
             //the document does not have the field, return
-            log.log(Level.FINE, "The given Document does not have a field value for field "
-                                    + arrayFieldName + ", returning. (Was given " + outerDoc + ").");
+            log.log(Level.FINE, () -> "The given Document does not have a field value for field "
+                                          + arrayFieldName + ", returning. (Was given " + outerDoc + ").");
             return Progress.DONE;
         }
 
         if (innerDocuments.size() == 0) {
             //the array is empty, return
-            log.log(Level.FINE, "The given Document does not have any elements in array field "
-                                    + arrayFieldName + ", returning. (Was given " + outerDoc + ").");
+            log.log(Level.FINE, () -> "The given Document does not have any elements in array field "
+                                          + arrayFieldName + ", returning. (Was given " + outerDoc + ").");
             return Progress.DONE;
         }
 

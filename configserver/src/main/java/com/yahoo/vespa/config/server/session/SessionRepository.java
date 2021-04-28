@@ -457,9 +457,9 @@ public class SessionRepository {
     void confirmUpload(Session session) {
         CompletionWaiter waiter = session.getSessionZooKeeperClient().getUploadWaiter();
         long sessionId = session.getSessionId();
-        log.log(Level.FINE, "Notifying upload waiter for session " + sessionId);
+        log.log(Level.FINE, () -> "Notifying upload waiter for session " + sessionId);
         notifyCompletion(waiter);
-        log.log(Level.FINE, "Done notifying upload for session " + sessionId);
+        log.log(Level.FINE, () -> "Done notifying upload for session " + sessionId);
     }
 
     void notifyCompletion(CompletionWaiter completionWaiter) {
@@ -476,7 +476,7 @@ public class SessionRepository {
                                                                               KeeperException.NodeExistsException.class);
             Class<? extends Throwable> exceptionClass = e.getCause().getClass();
             if (acceptedExceptions.contains(exceptionClass))
-                log.log(Level.FINE, "Not able to notify completion for session (" + completionWaiter + ")," +
+                log.log(Level.FINE, () -> "Not able to notify completion for session (" + completionWaiter + ")," +
                                     " node " + (exceptionClass.equals(KeeperException.NoNodeException.class)
                         ? "has been deleted"
                         : "already exists"));
@@ -726,7 +726,7 @@ public class SessionRepository {
             } catch (IllegalArgumentException e) {
                 // We cannot be guaranteed that the file reference exists (it could be that it has not
                 // been downloaded yet), and e.g when bootstrapping we cannot throw an exception in that case
-                log.log(Level.FINE, "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
+                log.log(Level.FINE, () -> "File reference for session id " + sessionId + ": " + fileReference + " not found in " + fileDirectory);
                 return;
             }
             ApplicationId applicationId = sessionZKClient.readApplicationId()

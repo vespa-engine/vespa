@@ -407,7 +407,7 @@ public final class VespaModel extends AbstractConfigProducerRoot implements Seri
      */
     protected void checkId(String configId) {
         if ( ! id2producer.containsKey(configId)) {
-            log.log(Level.FINE, "Invalid config id: " + configId);
+            log.log(Level.FINE, () -> "Invalid config id: " + configId);
         }
     }
 

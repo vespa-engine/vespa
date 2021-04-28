@@ -71,7 +71,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
                     log.log(WARNING, "Cannot retry " + request + " as entity is not repeatable");
                     break;
                 }
-                log.log(FINE, request + " failed; will retry", e.getCause());
+                log.log(FINE, e.getCause(), () -> request + " failed; will retry");
             }
         }
         if (thrown != null) {

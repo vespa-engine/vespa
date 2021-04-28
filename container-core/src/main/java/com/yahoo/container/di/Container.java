@@ -95,8 +95,9 @@ public class Container {
         while (true) {
             snapshot = configurer.getConfigs(graph.configKeys(), leastGeneration, isInitializing);
 
-            log.log(FINE, String.format("createNewGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
-                                        graph.configKeys(), graph.generation(), snapshot));
+            if (log.isLoggable(FINE))
+                log.log(FINE, String.format("createNewGraph:\n" + "graph.configKeys = %s\n" + "graph.generation = %s\n" + "snapshot = %s\n",
+                                            graph.configKeys(), graph.generation(), snapshot));
 
             if (snapshot instanceof BootstrapConfigs) {
                 if (getBootstrapGeneration() <= previousConfigGeneration) {
@@ -104,7 +105,7 @@ public class Container {
                             "Got bootstrap configs out of sequence for old config generation %d.\n" + "Previous config generation is %d",
                             getBootstrapGeneration(), previousConfigGeneration));
                 }
-                log.log(FINE, "Got new bootstrap generation\n" + configGenerationsString());
+                log.log(FINE, () -> "Got new bootstrap generation\n" + configGenerationsString());
 
                 if (graph.generation() == 0) {
                     platformBundles = getConfig(platformBundlesConfigKey, snapshot.configs()).bundlePaths();
@@ -123,7 +124,7 @@ public class Container {
                 break;
             }
         }
-        log.log(FINE, "Got components configs,\n" + configGenerationsString());
+        log.log(FINE, () -> "Got components configs,\n" + configGenerationsString());
         return createAndConfigureComponentsGraph(snapshot.configs(), fallbackInjector);
     }
 

@@ -190,7 +190,7 @@ public class SearchHandler extends LoggingRequestHandler {
                          long numQueriesToTraceOnDebugAfterStartup,
                          Optional<String> hostResponseHeaderKey) {
         super(executor, metric, true);
-        log.log(Level.FINE, "SearchHandler.init " + System.identityHashCode(this));
+        log.log(Level.FINE, () -> "SearchHandler.init " + System.identityHashCode(this));
         this.queryProfileRegistry = queryProfileRegistry;
         this.executionFactory = executionFactory;
 

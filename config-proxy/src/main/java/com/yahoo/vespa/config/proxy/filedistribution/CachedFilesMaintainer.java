@@ -63,7 +63,7 @@ class CachedFilesMaintainer implements Runnable {
         File[] files = directory.listFiles();
         if (files != null)
             filesOnDisk.addAll(Arrays.stream(files).map(File::getName).collect(Collectors.toSet()));
-        log.log(Level.FINE, "Files on disk (in " + directory + "): " + filesOnDisk);
+        log.log(Level.FINE, () -> "Files on disk (in " + directory + "): " + filesOnDisk);
 
         Set<String> filesToDelete = filesOnDisk
                 .stream()

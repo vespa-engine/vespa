@@ -66,7 +66,7 @@ public class RemoteHealthMetricFetcher extends HttpMetricFetcher {
             return HealthMetric.get(code, message);
 
         } catch (IOException e) {
-            log.log(Level.FINE, "Failed to parse json response from metrics page:" + e + ":" + data);
+            log.log(Level.FINE, () -> "Failed to parse json response from metrics page:" + e + ":" + data);
             return HealthMetric.getUnknown("Not able to parse json from status page");
         }
     }

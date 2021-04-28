@@ -66,7 +66,7 @@ public class LogWriter {
 
             // if file does not exist we have a winner
             if (! f.exists()) {
-                log.log(Level.FINE, "nextWriter, new file: " + name);
+                log.log(Level.FINE, () -> "nextWriter, new file: " + name);
                 currentFile = f;
                 bytesWritten = 0;
                 return new FileWriter(f, true);

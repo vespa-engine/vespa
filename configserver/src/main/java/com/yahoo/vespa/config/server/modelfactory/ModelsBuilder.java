@@ -81,7 +81,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                                          SettableOptional<AllocatedHosts> allocatedHosts,
                                          Instant now) {
         Instant start = Instant.now();
-        log.log(Level.FINE, "Will build models for " + applicationId);
+        log.log(Level.FINE, () -> "Will build models for " + applicationId);
         Set<Version> versions = modelFactoryRegistry.allVersions();
 
         // If the application specifies a major, skip models on a newer major
@@ -133,7 +133,7 @@ public abstract class ModelsBuilder<MODELRESULT extends ModelResult> {
                 }
             }
         }
-        log.log(Level.FINE, "Done building models for " + applicationId + ". Built models for versions " +
+        log.log(Level.FINE, () -> "Done building models for " + applicationId + ". Built models for versions " +
                             allApplicationModels.stream()
                                                 .map(result -> result.getModel().version())
                                                 .map(Version::toFullString)

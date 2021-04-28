@@ -136,7 +136,7 @@ public class VespaDomBuilder extends VespaModelBuilder {
             UserConfigRepo userConfigs = UserConfigBuilder.build(producerSpec, deployState, deployState.getDeployLogger());
             // TODO: must be made to work:
             //userConfigs.applyWarnings(child);
-            log.log(Level.FINE, "Adding user configs " + userConfigs + " for " + producerSpec);
+            log.log(Level.FINE, () -> "Adding user configs " + userConfigs + " for " + producerSpec);
             child.mergeUserConfigs(userConfigs);
         }
 

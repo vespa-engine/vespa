@@ -64,7 +64,7 @@ public class EventLog implements EventLogInterface {
         if (e instanceof NodeEvent) {
             addNodeOnlyEvent((NodeEvent)e, logInfo ? Level.INFO: Level.FINE);
         } else {
-            log.log(logInfo ? Level.INFO : Level.FINE, e.toString());
+            log.log(logInfo ? Level.INFO : Level.FINE, e::toString);
         }
     }
 

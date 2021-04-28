@@ -113,7 +113,7 @@ public class ZooKeeperDatabase extends Database {
         try{
             this.listener = zksl;
             setupRoot();
-            log.log(Level.FINEST, "Fleetcontroller " + nodeIndex + ": Asking for initial data on master election");
+            log.log(Level.FINEST, () -> "Fleetcontroller " + nodeIndex + ": Asking for initial data on master election");
             masterDataGatherer = new MasterDataGatherer(session, zooKeeperRoot, listener, nodeIndex);
             completedOk = true;
         } finally {
@@ -124,13 +124,13 @@ public class ZooKeeperDatabase extends Database {
     private void createNode(String prefix, String nodename, byte[] value) throws KeeperException, InterruptedException {
         try{
             if (session.exists(prefix + nodename, false) != null) {
-                log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Zookeeper node '" + prefix + nodename + "' already exists. Not creating it");
+                log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Zookeeper node '" + prefix + nodename + "' already exists. Not creating it");
                 return;
             }
             session.create(prefix + nodename, value, acl, CreateMode.PERSISTENT);
-            log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Created zookeeper node '" + prefix + nodename + "'");
+            log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Created zookeeper node '" + prefix + nodename + "'");
         } catch (KeeperException.NodeExistsException e) {
-            log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Node to create existed, "
+            log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Node to create existed, "
                                   + "but this is normal as other nodes may create them at the same time.");
         }
     }
@@ -172,7 +172,7 @@ public class ZooKeeperDatabase extends Database {
     public void close() {
         sessionOpen = false;
         try{
-            log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Trying to close ZooKeeper session 0x"
+            log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Trying to close ZooKeeper session 0x"
                     + Long.toHexString(session.getSessionId()));
             session.close();
         } catch (InterruptedException e) {
@@ -262,7 +262,7 @@ public class ZooKeeperDatabase extends Database {
         }
         byte[] val = sb.toString().getBytes(utf8);
         try{
-            log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Storing wanted states at '" + zooKeeperRoot + "wantedstates'");
+            log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Storing wanted states at '" + zooKeeperRoot + "wantedstates'");
             session.setData(zooKeeperRoot + "wantedstates", val, -1);
             return true;
         } catch (InterruptedException e) {
@@ -275,7 +275,7 @@ public class ZooKeeperDatabase extends Database {
 
     public Map<Node, NodeState> retrieveWantedStates() throws InterruptedException {
         try{
-            log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Fetching wanted states at '" + zooKeeperRoot + "wantedstates'");
+            log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Fetching wanted states at '" + zooKeeperRoot + "wantedstates'");
             Stat stat = new Stat();
             byte[] data = session.getData(zooKeeperRoot + "wantedstates", false, stat);
             Map<Node, NodeState> wanted = new TreeMap<>();
@@ -313,7 +313,7 @@ public class ZooKeeperDatabase extends Database {
         }
         byte val[] = sb.toString().getBytes(utf8);
         try{
-            log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Storing start timestamps at '" + zooKeeperRoot + "starttimestamps");
+            log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Storing start timestamps at '" + zooKeeperRoot + "starttimestamps");
             session.setData(zooKeeperRoot + "starttimestamps", val, -1);
             return true;
         } catch (InterruptedException e) {
@@ -327,7 +327,7 @@ public class ZooKeeperDatabase extends Database {
     @Override
     public Map<Node, Long> retrieveStartTimestamps() throws InterruptedException {
         try{
-            log.log(Level.FINE, "Fleetcontroller " + nodeIndex + ": Fetching start timestamps at '" + zooKeeperRoot + "starttimestamps'");
+            log.log(Level.FINE, () -> "Fleetcontroller " + nodeIndex + ": Fetching start timestamps at '" + zooKeeperRoot + "starttimestamps'");
             Stat stat = new Stat();
             byte[] data = session.getData(zooKeeperRoot + "starttimestamps", false, stat);
             Map<Node, Long> wanted = new TreeMap<Node, Long>();

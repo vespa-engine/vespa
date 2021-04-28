@@ -91,8 +91,9 @@ public class SessionStateWatcher {
                 ChildData node = fileCache.getCurrentData();
                 if (node != null) {
                     newStatus = Status.parse(Utf8.toString(node.getData()));
-                    log.log(Level.FINE, session.logPre() + "Session change: Session "
-                                        + session.getSessionId() + " changed status to " + newStatus.name());
+                    if (log.isLoggable(Level.FINE))
+                        log.log(Level.FINE, session.logPre() + "Session change: Session "
+                                            + session.getSessionId() + " changed status to " + newStatus.name());
                     sessionStatusChanged(newStatus);
                 }
             } catch (Exception e) {

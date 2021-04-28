@@ -56,7 +56,7 @@ public class MessageBusVisitorDestinationSession implements VisitorDestinationSe
 
     public void ack(AckToken token) {
         try {
-            log.log(Level.FINE, "Sending ack " + token.ackObject);
+            log.log(Level.FINE, () -> "Sending ack " + token.ackObject);
             session.reply((Reply) token.ackObject);
         } catch (Exception e) {
             e.printStackTrace();

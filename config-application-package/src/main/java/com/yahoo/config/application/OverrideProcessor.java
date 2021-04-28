@@ -54,7 +54,7 @@ class OverrideProcessor implements PreProcessor {
     }
 
     public Document process(Document input) throws TransformerException {
-        log.log(Level.FINE, "Preprocessing overrides with " + environment + "." + region);
+        log.log(Level.FINE, () -> "Preprocessing overrides with " + environment + "." + region);
         Document ret = Xml.copyDocument(input);
         Element root = ret.getDocumentElement();
         applyOverrides(root, Context.empty());
