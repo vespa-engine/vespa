@@ -5,7 +5,7 @@ cache:
        main: [/main_job_cache]
 
 jobs:
-  main:
+  build-vespa:
     requires: [~pr, ~commit]
     image: vespaengine/vespa-build-centos7:current
     annotations:
