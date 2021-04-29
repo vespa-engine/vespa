@@ -193,7 +193,7 @@ public class Flags {
             TENANT_ID, ZONE_ID);
 
     public static final UnboundBooleanFlag CACHE_ACL = defineFeatureFlag(
-            "cache-acl", true,
+            "cache-acl", false,
             List.of("hakon"), "2021-04-26", "2021-05-26",
             "Whether host-admin should cache the ACL responses w/TTL 115s, or always ask config server.",
             "Takes effect on next host-admin tick.",
