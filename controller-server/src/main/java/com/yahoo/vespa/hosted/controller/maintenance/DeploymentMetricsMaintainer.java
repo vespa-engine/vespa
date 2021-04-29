@@ -51,7 +51,6 @@ public class DeploymentMetricsMaintainer extends ControllerMaintainer {
                     for (Deployment deployment : instance.deployments().values()) {
                         attempts.incrementAndGet();
                         try {
-                            if (deployment.version().getMajor() < 7) continue;
                             var collectedMetrics = controller().metrics().getDeploymentMetrics(instance.id(), deployment.zone());
                             var now = controller().clock().instant();
                             applications.lockApplicationIfPresent(application.id(), locked -> {
