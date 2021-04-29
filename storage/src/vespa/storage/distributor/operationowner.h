@@ -18,10 +18,10 @@ class Operation;
 class OperationOwner : public OperationStarter {
 public:
 
-    class Sender : public DistributorMessageSender {
+    class Sender : public DistributorStripeMessageSender {
     public:
         Sender(OperationOwner& owner,
-               DistributorMessageSender& sender,
+               DistributorStripeMessageSender& sender,
                const std::shared_ptr<Operation>& cb)
             : _owner(owner),
               _sender(sender),
@@ -53,11 +53,11 @@ public:
 
     private:
         OperationOwner& _owner;
-        DistributorMessageSender& _sender;
+        DistributorStripeMessageSender& _sender;
         std::shared_ptr<Operation> _cb;
     };
 
-    OperationOwner(DistributorMessageSender& sender,
+    OperationOwner(DistributorStripeMessageSender& sender,
                    const framework::Clock& clock)
     : _sender(sender),
       _clock(clock) {
@@ -85,7 +85,7 @@ public:
      */
     void erase(api::StorageMessage::Id msgId);
 
-    [[nodiscard]] DistributorMessageSender& sender() noexcept { return _sender; }
+    [[nodiscard]] DistributorStripeMessageSender& sender() noexcept { return _sender; }
 
     void onClose();
     uint32_t size() const { return _sentMessageMap.size(); }
@@ -93,7 +93,7 @@ public:
 
 private:
     SentMessageMap _sentMessageMap;
-    DistributorMessageSender& _sender;
+    DistributorStripeMessageSender& _sender;
     const framework::Clock& _clock;
 };
 

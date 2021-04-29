@@ -22,9 +22,9 @@ public:
 
     ~JoinOperation() override;
 
-    void onStart(DistributorMessageSender& sender) override;
+    void onStart(DistributorStripeMessageSender& sender) override;
 
-    void onReceive(DistributorMessageSender& sender,
+    void onReceive(DistributorStripeMessageSender& sender,
                    const std::shared_ptr<api::StorageReply>&) override;
 
     const char* getName() const override {

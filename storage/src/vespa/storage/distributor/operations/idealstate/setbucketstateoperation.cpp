@@ -43,7 +43,7 @@ SetBucketStateOperation::shouldBeActive(uint16_t node) const
 }
 
 void
-SetBucketStateOperation::activateNode(DistributorMessageSender& sender) {
+SetBucketStateOperation::activateNode(DistributorStripeMessageSender& sender) {
     for (uint32_t i=0; i<_wantedActiveNodes.size(); ++i) {
         enqueueSetBucketStateCommand(_wantedActiveNodes[i], true);
     }
@@ -53,7 +53,7 @@ SetBucketStateOperation::activateNode(DistributorMessageSender& sender) {
 
 
 void
-SetBucketStateOperation::deactivateNodes(DistributorMessageSender& sender) {
+SetBucketStateOperation::deactivateNodes(DistributorStripeMessageSender& sender) {
     const std::vector<uint16_t>& nodes(getNodes());
     for (size_t i = 0; i < nodes.size(); ++i) {
         if (!shouldBeActive(nodes[i])) {
@@ -64,13 +64,13 @@ SetBucketStateOperation::deactivateNodes(DistributorMessageSender& sender) {
 }
 
 void
-SetBucketStateOperation::onStart(DistributorMessageSender& sender)
+SetBucketStateOperation::onStart(DistributorStripeMessageSender& sender)
 {
     activateNode(sender);
 }
 
 void
-SetBucketStateOperation::onReceive(DistributorMessageSender& sender,
+SetBucketStateOperation::onReceive(DistributorStripeMessageSender& sender,
                                    const std::shared_ptr<api::StorageReply>& reply)
 {
     api::SetBucketStateReply& rep(

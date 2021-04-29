@@ -29,11 +29,11 @@ ReadForWriteVisitorOperationStarter::ReadForWriteVisitorOperationStarter(
 
 ReadForWriteVisitorOperationStarter::~ReadForWriteVisitorOperationStarter() = default;
 
-void ReadForWriteVisitorOperationStarter::onClose(DistributorMessageSender& sender) {
+void ReadForWriteVisitorOperationStarter::onClose(DistributorStripeMessageSender& sender) {
     _visitor_op->onClose(sender);
 }
 
-void ReadForWriteVisitorOperationStarter::onStart(DistributorMessageSender& sender) {
+void ReadForWriteVisitorOperationStarter::onStart(DistributorStripeMessageSender& sender) {
     if (_visitor_op->verify_command_and_expand_buckets(sender)) {
         assert(!_visitor_op->has_sent_reply());
         auto maybe_bucket = _visitor_op->first_bucket_to_visit();
@@ -78,7 +78,7 @@ void ReadForWriteVisitorOperationStarter::onStart(DistributorMessageSender& send
     }
 }
 
-void ReadForWriteVisitorOperationStarter::onReceive(DistributorMessageSender& sender,
+void ReadForWriteVisitorOperationStarter::onReceive(DistributorStripeMessageSender& sender,
                                                     const std::shared_ptr<api::StorageReply> & msg) {
     _visitor_op->onReceive(sender, msg);
 }

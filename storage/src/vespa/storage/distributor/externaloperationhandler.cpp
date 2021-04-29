@@ -31,7 +31,7 @@ LOG_SETUP(".distributor.manager");
 
 namespace storage::distributor {
 
-class DirectDispatchSender : public DistributorMessageSender {
+class DirectDispatchSender : public DistributorStripeMessageSender {
     DistributorNodeContext& _node_ctx;
     NonTrackingMessageSender& _msg_sender;
 public:

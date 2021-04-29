@@ -42,9 +42,9 @@ public:
     ~ReadForWriteVisitorOperationStarter() override;
 
     const char* getName() const override { return "ReadForWriteVisitorOperationStarter"; }
-    void onClose(DistributorMessageSender& sender) override;
-    void onStart(DistributorMessageSender& sender) override;
-    void onReceive(DistributorMessageSender& sender,
+    void onClose(DistributorStripeMessageSender& sender) override;
+    void onStart(DistributorStripeMessageSender& sender) override;
+    void onReceive(DistributorStripeMessageSender& sender,
                    const std::shared_ptr<api::StorageReply> & msg) override;
 private:
     bool bucket_has_pending_merge(const document::Bucket&, const PendingMessageTracker& tracker) const;

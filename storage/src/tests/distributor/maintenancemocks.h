@@ -44,13 +44,13 @@ public:
         return _bucket.toString();
     }
 
-    void onClose(DistributorMessageSender&) override {}
+    void onClose(DistributorStripeMessageSender&) override {}
     const char* getName() const override { return "MockOperation"; }
     const std::string& getDetailedReason() const override {
         return _reason;
     }
-    void onStart(DistributorMessageSender&) override {}
-    void onReceive(DistributorMessageSender&, const std::shared_ptr<api::StorageReply>&) override {}
+    void onStart(DistributorStripeMessageSender&) override {}
+    void onReceive(DistributorStripeMessageSender&, const std::shared_ptr<api::StorageReply>&) override {}
     bool isBlocked(const PendingMessageTracker&, const OperationSequencer&) const override {
         return _shouldBlock;
     }

@@ -257,7 +257,7 @@ DistributorStripeComponent::has_pending_message(uint16_t node_index,
                                                 const document::Bucket& bucket,
                                                 uint32_t message_type) const
 {
-    const auto& sender = static_cast<const DistributorMessageSender&>(getDistributor());
+    const auto& sender = static_cast<const DistributorStripeMessageSender&>(getDistributor());
     return sender.getPendingMessageTracker().hasPendingMessage(node_index, bucket, message_type);
 }
 
