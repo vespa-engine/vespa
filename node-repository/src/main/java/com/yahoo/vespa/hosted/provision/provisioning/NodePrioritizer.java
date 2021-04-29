@@ -1,7 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
-import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.NodeType;
@@ -32,7 +31,6 @@ public class NodePrioritizer {
 
     private final List<NodeCandidate> nodes = new ArrayList<>();
     private final LockedNodeList allNodes;
-    private final String allocateOsRequirement;
     private final HostCapacity capacity;
     private final NodeSpec requestedNodes;
     private final ApplicationId application;
@@ -48,9 +46,8 @@ public class NodePrioritizer {
 
     public NodePrioritizer(LockedNodeList allNodes, ApplicationId application, ClusterSpec clusterSpec, NodeSpec nodeSpec,
                            int wantedGroups, boolean dynamicProvisioning, NameResolver nameResolver,
-                           HostResourcesCalculator hostResourcesCalculator, int spareCount, String allocateOsRequirement) {
+                           HostResourcesCalculator hostResourcesCalculator, int spareCount) {
         this.allNodes = allNodes;
-        this.allocateOsRequirement = allocateOsRequirement;
         this.capacity = new HostCapacity(allNodes, hostResourcesCalculator);
         this.requestedNodes = nodeSpec;
         this.clusterSpec = clusterSpec;
@@ -140,13 +137,6 @@ public class NodePrioritizer {
             if (host.reservedTo().isPresent() && !host.reservedTo().get().equals(application.tenant())) continue;
             if (host.reservedTo().isPresent() && application.instance().isTester()) continue;
             if (host.exclusiveTo().isPresent()) continue; // Never allocate new nodes to exclusive hosts
-
-            if (host.status().osVersion().isBefore(new Version(8))) {
-                if (allocateOsRequirement.equals("rhel8")) continue;
-            } else {
-                if (allocateOsRequirement.equals("rhel7")) continue;
-            }
-
             if (spareHosts.contains(host) && !canAllocateToSpareHosts) continue;
             if ( ! capacity.hasCapacity(host, requestedNodes.resources().get())) continue;
             if ( ! allNodes.childrenOf(host).owner(application).cluster(clusterSpec.id()).isEmpty()) continue;
