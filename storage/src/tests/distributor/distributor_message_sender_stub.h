@@ -10,7 +10,7 @@
 
 namespace storage {
 
-class DistributorMessageSenderStub : public distributor::DistributorMessageSender {
+class DistributorMessageSenderStub : public distributor::DistributorStripeMessageSender {
     MessageSenderStub _stub_impl;
     distributor::PendingMessageTracker* _pending_message_tracker;
     distributor::OperationSequencer* _operation_sequencer;

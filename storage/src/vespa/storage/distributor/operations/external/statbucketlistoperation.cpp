@@ -40,7 +40,7 @@ StatBucketListOperation::getBucketStatus(const BucketDatabase::Entry& entry,
 }
 
 void
-StatBucketListOperation::onStart(DistributorMessageSender& sender)
+StatBucketListOperation::onStart(DistributorStripeMessageSender& sender)
 {
     api::GetBucketListReply::SP reply(new api::GetBucketListReply(*_command));
 

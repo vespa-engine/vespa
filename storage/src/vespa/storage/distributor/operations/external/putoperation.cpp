@@ -163,7 +163,7 @@ bool PutOperation::has_unavailable_targets_in_pending_state(const OperationTarge
 }
 
 void
-PutOperation::onStart(DistributorMessageSender& sender)
+PutOperation::onStart(DistributorStripeMessageSender& sender)
 {
     document::BucketIdFactory bucketIdFactory;
     document::BucketId bid = bucketIdFactory.getBucketId(_msg->getDocumentId());
@@ -268,14 +268,14 @@ PutOperation::shouldImplicitlyActivateReplica(const OperationTargetList& targets
 }
 
 void
-PutOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
+PutOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
 {
     LOG(debug, "Received %s", msg->toString(true).c_str());
     _tracker.receiveReply(sender, static_cast<api::BucketInfoReply&>(*msg));
 }
 
 void
-PutOperation::onClose(DistributorMessageSender& sender)
+PutOperation::onClose(DistributorStripeMessageSender& sender)
 {
     const char* error = "Process is shutting down";
     LOG(debug, "%s", error);

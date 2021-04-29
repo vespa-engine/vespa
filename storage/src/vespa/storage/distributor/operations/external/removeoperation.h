@@ -23,12 +23,12 @@ public:
                     SequencingHandle sequencingHandle = SequencingHandle());
     ~RemoveOperation() override;
 
-    void onStart(DistributorMessageSender& sender) override;
+    void onStart(DistributorStripeMessageSender& sender) override;
     const char* getName() const override { return "remove"; };
     std::string getStatus() const override { return ""; };
 
-    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
-    void onClose(DistributorMessageSender& sender) override;
+    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
+    void onClose(DistributorStripeMessageSender& sender) override;
 
 private:
     PersistenceMessageTrackerImpl _trackerInstance;

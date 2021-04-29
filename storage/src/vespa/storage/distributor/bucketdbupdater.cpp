@@ -27,36 +27,36 @@ using document::BucketSpace;
 
 namespace storage::distributor {
 
-BucketDBUpdater::BucketDBUpdater(DistributorStripeInterface& owner, // FIXME STRIPE!
-                                 DistributorMessageSender& sender,
-                                 DistributorComponentRegister& comp_reg,
+BucketDBUpdater::BucketDBUpdater(const DistributorNodeContext& node_ctx,
+                                 DistributorOperationContext& op_ctx,
+                                 DistributorInterface& distributor_interface,
+                                 ChainedMessageSender& chained_sender,
+                                 std::shared_ptr<const lib::Distribution> bootstrap_distribution,
                                  StripeAccessor& stripe_accessor)
     : framework::StatusReporter("temp_bucketdb", "Bucket DB Updater"), // TODO STRIPE rename once duplication is removed
       _stripe_accessor(stripe_accessor),
       _active_state_bundle(lib::ClusterState()),
-      _dummy_mutable_bucket_space_repo(std::make_unique<DistributorBucketSpaceRepo>(owner.getDistributorIndex())),
-      _dummy_read_only_bucket_space_repo(std::make_unique<DistributorBucketSpaceRepo>(owner.getDistributorIndex())),
-      _distributor_component(owner, *_dummy_mutable_bucket_space_repo, *_dummy_read_only_bucket_space_repo, comp_reg, "Bucket DB Updater"),
-      _node_ctx(_distributor_component),
-      _op_ctx(_distributor_component),
-      _distributor_interface(_distributor_component.getDistributor()),
+      _node_ctx(node_ctx),
+      _op_ctx(op_ctx),
+      _distributor_interface(distributor_interface),
       _pending_cluster_state(),
       _history(),
-      _sender(sender),
+      _sender(distributor_interface),
+      _chained_sender(chained_sender),
       _outdated_nodes_map(),
       _transition_timer(_node_ctx.clock()),
       _stale_reads_enabled(false)
 {
     // FIXME STRIPE top-level Distributor needs a proper way to track the current cluster state bundle!
     propagate_active_state_bundle_internally();
-    bootstrap_distribution_config(_distributor_component.getDistribution());
+    bootstrap_distribution_config(bootstrap_distribution);
 }
 
 BucketDBUpdater::~BucketDBUpdater() = default;
 
 void
 BucketDBUpdater::propagate_active_state_bundle_internally() {
-    for (auto* repo : {_dummy_mutable_bucket_space_repo.get(), _dummy_read_only_bucket_space_repo.get()}) {
+    for (auto* repo : {&_op_ctx.bucket_space_repo(), &_op_ctx.read_only_bucket_space_repo()}) {
         for (auto& iter : *repo) {
             iter.second->setClusterState(_active_state_bundle.getDerivedClusterState(iter.first));
         }
@@ -66,7 +66,7 @@ BucketDBUpdater::propagate_active_state_bundle_internally() {
 void
 BucketDBUpdater::bootstrap_distribution_config(std::shared_ptr<const lib::Distribution> distribution) {
     auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
-    for (auto* repo : {_dummy_mutable_bucket_space_repo.get(), _dummy_read_only_bucket_space_repo.get()}) {
+    for (auto* repo : {&_op_ctx.bucket_space_repo(), &_op_ctx.read_only_bucket_space_repo()}) {
         repo->get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
         repo->get(document::FixedBucketSpaces::global_space()).setDistribution(global_distr);
     }
@@ -172,7 +172,7 @@ BucketDBUpdater::ensure_transition_timer_started()
 void
 BucketDBUpdater::complete_transition_timer()
 {
-    _distributor_interface.getMetrics()
+    _distributor_interface.metrics()
             .stateTransitionTime.addValue(_transition_timer.getElapsedTimeAsDouble());
 }
 
@@ -184,11 +184,11 @@ BucketDBUpdater::storage_distribution_changed(const BucketSpaceDistributionConfi
     auto guard = _stripe_accessor.rendezvous_and_hold_all();
     // FIXME STRIPE might this cause a mismatch with the component stuff's own distribution config..?!
     guard->update_distribution_config(configs);
-    remove_superfluous_buckets(*guard, _op_ctx.cluster_state_bundle(), true);
+    remove_superfluous_buckets(*guard, _active_state_bundle, true);
 
     auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
             _node_ctx.node_index(),
-            _op_ctx.cluster_state_bundle(),
+            _active_state_bundle,
             _op_ctx.storage_node_up_states());
     _pending_cluster_state = PendingClusterState::createForDistributionChange(
             _node_ctx.clock(),
@@ -205,7 +205,7 @@ void
 BucketDBUpdater::reply_to_previous_pending_cluster_state_if_any()
 {
     if (_pending_cluster_state.get() && _pending_cluster_state->hasCommand()) {
-        _distributor_interface.getMessageSender().sendUp(
+        _chained_sender.sendUp(
                 std::make_shared<api::SetSystemStateReply>(*_pending_cluster_state->getCommand()));
     }
 }
@@ -217,7 +217,7 @@ BucketDBUpdater::reply_to_activation_with_actual_version(
 {
     auto reply = std::make_shared<api::ActivateClusterStateVersionReply>(cmd);
     reply->setActualVersion(actualVersion);
-    _distributor_interface.getMessageSender().sendUp(reply); // TODO let API accept rvalues
+    _chained_sender.sendUp(reply); // TODO let API accept rvalues
 }
 
 bool
@@ -245,7 +245,7 @@ BucketDBUpdater::onSetSystemState(
 
     auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
                 _node_ctx.node_index(),
-                _op_ctx.cluster_state_bundle(),
+                _active_state_bundle,
                 _op_ctx.storage_node_up_states());
     _pending_cluster_state = PendingClusterState::createForClusterStateChange(
             _node_ctx.clock(),
@@ -257,7 +257,7 @@ BucketDBUpdater::onSetSystemState(
             _op_ctx.generate_unique_timestamp()); // FIXME STRIPE must be atomic across all threads
     _outdated_nodes_map = _pending_cluster_state->getOutdatedNodesMap();
 
-    _distributor_interface.getMetrics().set_cluster_state_processing_time.addValue(
+    _distributor_interface.metrics().set_cluster_state_processing_time.addValue(
             process_timer.getElapsedTimeAsDouble());
 
     guard->set_pending_cluster_state_bundle(_pending_cluster_state->getNewClusterStateBundle());
@@ -358,7 +358,7 @@ BucketDBUpdater::process_completed_pending_cluster_state(StripeAccessGuard& guar
         // taken effect via activation. External operation handler will keep operations from
         // actually being scheduled until state has been activated. The external operation handler
         // needs to be explicitly aware of the case where no state has yet to be activated.
-        _distributor_interface.getMessageSender().sendDown(_pending_cluster_state->getCommand());
+        _chained_sender.sendDown(_pending_cluster_state->getCommand());
         _pending_cluster_state->clearCommand();
         return;
     }
@@ -379,14 +379,13 @@ BucketDBUpdater::activate_pending_cluster_state(StripeAccessGuard& guard)
         LOG(debug, "Activating pending cluster state version %u", _pending_cluster_state->clusterStateVersion());
         enable_current_cluster_state_bundle_in_distributor_and_stripes(guard);
         if (_pending_cluster_state->hasCommand()) {
-            _distributor_interface.getMessageSender().sendDown(_pending_cluster_state->getCommand());
+            _chained_sender.sendDown(_pending_cluster_state->getCommand());
         }
         add_current_state_to_cluster_state_history();
     } else {
         LOG(debug, "Activating pending distribution config");
         // TODO distribution changes cannot currently be deferred as they are not
         // initiated by the cluster controller!
-        _distributor_interface.notifyDistributionChangeEnabled(); // TODO factor these two out into one func?
         guard.notify_distribution_change_enabled();
     }
 
@@ -397,7 +396,7 @@ BucketDBUpdater::activate_pending_cluster_state(StripeAccessGuard& guard)
     complete_transition_timer();
     guard.clear_read_only_bucket_repo_databases();
 
-    _distributor_interface.getMetrics().activate_cluster_state_processing_time.addValue(
+    _distributor_interface.metrics().activate_cluster_state_processing_time.addValue(
             process_timer.getElapsedTimeAsDouble());
 }
 
@@ -412,16 +411,11 @@ BucketDBUpdater::enable_current_cluster_state_bundle_in_distributor_and_stripes(
     LOG(debug, "BucketDBUpdater finished processing state %s",
         state.getBaselineClusterState()->toString().c_str());
 
-    // First enable the cluster state for the _top-level_ distributor component.
-    _distributor_interface.enableClusterStateBundle(state);
-    // And then subsequently for all underlying stripes. Technically the order doesn't matter
-    // since all threads are blocked at this point.
     guard.enable_cluster_state_bundle(state);
 }
 
 void BucketDBUpdater::simulate_cluster_state_bundle_activation(const lib::ClusterStateBundle& activated_state) {
     auto guard = _stripe_accessor.rendezvous_and_hold_all();
-    _distributor_interface.enableClusterStateBundle(activated_state);
     guard->enable_cluster_state_bundle(activated_state);
 
     _active_state_bundle = activated_state;
@@ -476,7 +470,7 @@ BucketDBUpdater::report_xml_status(vespalib::xml::XmlOutputStream& xos,
     using namespace vespalib::xml;
     xos << XmlTag("bucketdb")
         << XmlTag("systemstate_active")
-        << XmlContent(_op_ctx.cluster_state_bundle().getBaselineClusterState()->toString())
+        << XmlContent(_active_state_bundle.getBaselineClusterState()->toString())
         << XmlEndTag();
     if (_pending_cluster_state) {
         xos << *_pending_cluster_state;

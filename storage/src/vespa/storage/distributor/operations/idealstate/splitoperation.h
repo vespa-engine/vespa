@@ -16,8 +16,8 @@ public:
     SplitOperation & operator = (const SplitOperation &) = delete;
     ~SplitOperation();
 
-    void onStart(DistributorMessageSender& sender) override;
-    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
+    void onStart(DistributorStripeMessageSender& sender) override;
+    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
     const char* getName() const override { return "split"; };
     Type getType() const override { return SPLIT_BUCKET; }
     bool isBlocked(const PendingMessageTracker&, const OperationSequencer&) const override;

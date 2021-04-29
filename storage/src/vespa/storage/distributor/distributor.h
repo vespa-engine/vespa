@@ -4,7 +4,9 @@
 
 #include "bucket_spaces_stats_provider.h"
 #include "bucketdbupdater.h"
+#include "distributor_component.h"
 #include "distributor_host_info_reporter.h"
+#include "distributor_interface.h"
 #include "distributor_stripe_interface.h"
 #include "externaloperationhandler.h"
 #include "idealstatemanager.h"
@@ -46,6 +48,7 @@ class ThrottlingOperationStarter;
 
 class Distributor final
     : public StorageLink,
+      public DistributorInterface,
       public StatusDelegator,
       public framework::StatusReporter,
       public framework::TickingThread,
@@ -63,9 +66,6 @@ public:
 
     ~Distributor() override;
 
-    const ClusterContext& cluster_context() const {
-        return _component.cluster_context();
-    }
     void onOpen() override;
     void onClose() override;
     bool onDown(const std::shared_ptr<api::StorageMessage>&) override;
@@ -73,6 +73,15 @@ public:
     void sendDown(const std::shared_ptr<api::StorageMessage>&) override;
 
     DistributorMetricSet& getMetrics() { return *_metrics; }
+
+    // Implements DistributorInterface and DistributorMessageSender.
+    DistributorMetricSet& metrics() override { return getMetrics(); }
+    const DistributorConfiguration& config() const override;
+
+    void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) override;
+    void sendReply(const std::shared_ptr<api::StorageReply>& reply) override;
+    int getDistributorIndex() const override { return _component.node_index(); }
+    const ClusterContext& cluster_context() const override { return _component.cluster_context(); }
 
     /**
      * Enables a new cluster state. Called after the bucket db updater has
@@ -171,7 +180,8 @@ private:
     // TODO STRIPE multiple stripes...! This is for proof of concept of wiring.
     std::unique_ptr<DistributorStripe>   _stripe;
     std::unique_ptr<LegacySingleStripeAccessor> _stripe_accessor;
-    storage::DistributorComponent        _component;
+    distributor::DistributorComponent    _component;
+    std::shared_ptr<const DistributorConfiguration> _total_config;
     std::unique_ptr<BucketDBUpdater>     _bucket_db_updater;
     StatusReporterDelegate               _distributorStatusDelegate;
     framework::TickingThreadPool&        _threadPool;

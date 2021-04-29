@@ -21,7 +21,7 @@ class PendingMessageTracker;
 /**
  * TODO STRIPE add class comment.
  */
-class DistributorStripeInterface : public DistributorMessageSender
+class DistributorStripeInterface : public DistributorStripeMessageSender
 {
 public:
     virtual PendingMessageTracker& getPendingMessageTracker() = 0;
