@@ -413,7 +413,7 @@ Distributor::doNonCriticalTick(framework::ThreadIndex idx)
 }
 
 void
-Distributor::enableNextConfig()
+Distributor::enableNextConfig() // TODO STRIPE rename to enable_next_config_if_changed()?
 {
     // Only lazily trigger a config propagation and internal update if something has _actually changed_.
     if (_component.internal_config_generation() != _current_internal_config_generation) {
