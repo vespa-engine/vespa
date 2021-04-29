@@ -35,7 +35,7 @@ void DistributorStripePool::park_all_threads() noexcept {
 }
 
 void DistributorStripePool::unpark_all_threads() noexcept {
-    // Thread pool is not dynamic and unpark_thread(0 is thread safe.
+    // Thread pool is not dynamic and unpark_thread() is thread safe.
     for (auto& s : _stripes) {
         s->unpark_thread();
     }

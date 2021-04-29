@@ -36,6 +36,7 @@ struct DistributorStripePoolThreadingTest : Test {
     void loop_park_unpark_cycle_until_test_time_expired() {
         constexpr size_t min_cycles = 100;
         size_t cycle = 0;
+        // TODO enforce minimum number of actual calls to tick() per thread?
         while ((cycle < min_cycles) || !min_test_time_reached()) {
             _pool.park_all_threads();
             _is_parked = true;

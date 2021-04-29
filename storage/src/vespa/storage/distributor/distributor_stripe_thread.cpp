@@ -76,6 +76,8 @@ void DistributorStripeThread::wait_until_unparked() noexcept {
 }
 
 void DistributorStripeThread::notify_event_has_triggered() noexcept {
+    // TODO mutex protect and add flag for "should tick immediately next time"
+    // TODO only notify if _waiting_for_event == true
     _event_cond.notify_one();
 }
 
