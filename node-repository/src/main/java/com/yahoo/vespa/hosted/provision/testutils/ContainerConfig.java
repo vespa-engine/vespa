@@ -36,6 +36,7 @@ public class ContainerConfig {
                "    <binding>http://*/nodes/v2/*</binding>\n" +
                "  </handler>\n" +
                "  <handler id='com.yahoo.vespa.hosted.provision.restapi.LoadBalancersV1ApiHandler'>\n" +
+               "    <binding>http://*/loadbalancers/v1</binding>\n" +
                "    <binding>http://*/loadbalancers/v1/*</binding>\n" +
                "  </handler>\n" +
                "  <http>\n" +

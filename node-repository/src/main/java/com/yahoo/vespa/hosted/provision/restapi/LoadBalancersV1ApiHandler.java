@@ -47,7 +47,7 @@ public class LoadBalancersV1ApiHandler extends LoggingRequestHandler {
 
     private HttpResponse handleGET(HttpRequest request) {
         String path = request.getUri().getPath();
-        if (path.equals("/loadbalancers/v1/")) return new LoadBalancersResponse(request, nodeRepository);
+        if (path.matches("/loadbalancers/v1/?")) return new LoadBalancersResponse(request, nodeRepository);
         throw new NotFoundException("Nothing at path '" + path + "'");
     }
 }
