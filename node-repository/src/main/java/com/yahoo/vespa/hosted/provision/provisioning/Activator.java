@@ -78,8 +78,8 @@ class Activator {
             throw new IllegalArgumentException("Activation of " + application + " failed. " +
                                                "Could not find all requested hosts." +
                                                "\nRequested: " + hosts +
-                                               "\nReserved: " + toHostNames(reserved) +
-                                               "\nActive: " + toHostNames(oldActive) +
+                                               "\nReserved: " + reserved.hostnames() +
+                                               "\nActive: " + oldActive.hostnames() +
                                                "\nThis might happen if the time from reserving host to activation takes " +
                                                "longer time than reservation expiry (the hosts will then no longer be reserved)");
 
@@ -158,17 +158,15 @@ class Activator {
                     .collect(Collectors.toUnmodifiableSet());
     }
 
-    private static void validateParentHosts(ApplicationId application, NodeList nodes, NodeList potentialChildren) {
+    private static void validateParentHosts(ApplicationId application, NodeList allNodes, NodeList potentialChildren) {
         Set<String> parentHostnames = potentialChildren.stream()
                 .map(Node::parentHostname)
                 .flatMap(Optional::stream)
                 .collect(Collectors.toSet());
 
-        Set<String> nonActiveHosts = nodes.asList().stream()
-                .filter(node -> parentHostnames.contains(node.hostname()))
-                .filter(node -> node.state() != Node.State.active)
-                .map(Node::hostname)
-                .collect(Collectors.toSet());
+        Set<String> nonActiveHosts = allNodes.not().state(Node.State.active)
+                                             .matching(node -> parentHostnames.contains(node.hostname()))
+                                             .hostnames();
 
         if (nonActiveHosts.size() > 0) {
             long numActive = parentHostnames.size() - nonActiveHosts.size();
@@ -193,10 +191,6 @@ class Activator {
 
             throw new ParentHostUnavailableException(message);
         }
-    }
-
-    private Set<String> toHostNames(NodeList nodes) {
-        return nodes.stream().map(Node::hostname).collect(Collectors.toSet());
     }
 
     private boolean containsAll(Set<String> hosts, NodeList nodes) {

@@ -118,7 +118,7 @@ public class History {
         StringBuilder b = new StringBuilder("history: ");
         for (Event e : events.values())
             b.append(e).append(", ");
-         b.setLength(b.length() -2); // remove last comma
+         b.setLength(b.length() - 2); // remove last comma
         return b.toString();
     }
 
