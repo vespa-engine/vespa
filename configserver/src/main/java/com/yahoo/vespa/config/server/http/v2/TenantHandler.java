@@ -94,6 +94,7 @@ public class TenantHandler extends HttpHandler {
     private static BindingMatch<?> getBindingMatch(HttpRequest request) {
         return HttpConfigRequests.getBindingMatch(request,
                 "http://*/application/v2/tenant",
+                "http://*/application/v2/tenant/",
                 "http://*/application/v2/tenant/*");
     }
 
