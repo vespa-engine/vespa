@@ -2,6 +2,7 @@ package com.yahoo.vespa.hosted.controller.restapi.billing;
 
 import com.yahoo.application.container.handler.Request;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.test.ManualClock;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.MockBillingController;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
@@ -11,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.security.CloudTenantSpec;
 import org.junit.Before;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.Set;
 
 /**
@@ -38,6 +40,8 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
     public void before() {
         tester = new ContainerTester(container, responseFiles);
         tester.controller().tenants().create(new CloudTenantSpec(tenant, ""), new Auth0Credentials(() -> "foo", Set.of(Role.hostedOperator())));
+        var clock = (ManualClock) tester.controller().serviceRegistry().clock();
+        clock.setInstant(Instant.parse("2021-04-13T00:00:00Z"));
         billingController = (MockBillingController) tester.serviceRegistry().billingController();
         billingController.addInvoice(tenant, BillingApiHandlerTest.createInvoice(), true);
     }
@@ -99,10 +103,10 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
 
     @Test
     public void require_tenant_invoice() {
-        var listRequest = request("/billing/v2/tenant/" + tenant + "/invoice").roles(tenantReader);
+        var listRequest = request("/billing/v2/tenant/" + tenant + "/bill").roles(tenantReader);
         tester.assertResponse(listRequest, "{\"invoices\":[{\"id\":\"id-1\",\"from\":\"2020-05-23\",\"to\":\"2020-05-23\",\"total\":\"123.00\",\"status\":\"OPEN\"}]}");
 
-        var singleRequest = request("/billing/v2/tenant/" + tenant + "/invoice/id-1").roles(tenantReader);
+        var singleRequest = request("/billing/v2/tenant/" + tenant + "/bill/id-1").roles(tenantReader);
         tester.assertResponse(singleRequest, "{\"id\":\"id-1\",\"from\":\"2020-05-23\",\"to\":\"2020-05-23\",\"total\":\"123.00\",\"status\":\"OPEN\",\"statusHistory\":[{\"at\":\"2020-05-23T00:00:00+02:00\",\"status\":\"OPEN\"}],\"items\":[{\"id\":\"some-id\",\"description\":\"description\",\"amount\":\"123.00\",\"plan\":\"some-plan\",\"planName\":\"Plan with id: some-plan\",\"cpu\":{},\"memory\":{},\"disk\":{}}]}");
     }
 }

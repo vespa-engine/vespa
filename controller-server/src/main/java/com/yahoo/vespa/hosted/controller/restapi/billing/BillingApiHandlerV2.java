@@ -27,7 +27,9 @@ import javax.ws.rs.ForbiddenException;
 import java.io.IOException;
 import java.math.BigDecimal;
 import java.security.Principal;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
 import java.util.Optional;
 import java.util.List;
@@ -42,12 +44,14 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     private final ApplicationController applications;
     private final TenantController tenants;
     private final BillingController billing;
+    private final Clock clock;
 
     public BillingApiHandlerV2(LoggingRequestHandler.Context context, Controller controller) {
         super(context, BillingApiHandlerV2::createRestApi);
         this.applications = controller.applications();
         this.tenants = controller.tenants();
         this.billing = controller.serviceRegistry().billingController();
+        this.clock = controller.serviceRegistry().clock();
     }
 
     private static RestApi createRestApi(BillingApiHandlerV2 self) {
@@ -60,9 +64,9 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
                         .patch(Slime.class, self::patchTenant))
                 .addRoute(RestApi.route("/billing/v2/tenant/{tenant}/usage")
                         .get(self::tenantUsage))
-                .addRoute(RestApi.route("/billing/v2/tenant/{tenant}/invoice")
+                .addRoute(RestApi.route("/billing/v2/tenant/{tenant}/bill")
                         .get(self::tenantInvoiceList))
-                .addRoute(RestApi.route("/billing/v2/tenant/{tenant}/invoice/{invoice}")
+                .addRoute(RestApi.route("/billing/v2/tenant/{tenant}/bill/{invoice}")
                         .get(self::tenantInvoice))
                 /*
                  * This is the API that is created for accountant role in Vespa Cloud
@@ -149,7 +153,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         var invoice = billing.getInvoicesForTenant(tenant.name()).stream()
                 .filter(inv -> inv.id().value().equals(invoiceId))
                 .findAny()
-                .orElseThrow(RestApiException.NotFoundException::new);
+                .orElseThrow(RestApiException.NotFound::new);
 
         if (format.equals("json")) {
             var slime = new Slime();
@@ -177,8 +181,9 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         var tenant = tenants.require(tenantName, CloudTenant.class);
         var untilAt = requestContext.queryParameters().getString("until")
                 .map(LocalDate::parse)
-                .orElseGet(() -> LocalDate.now().plusDays(1));
-        var usage = billing.createUncommittedInvoice(tenant.name(), untilAt);
+                .map(date -> date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant())
+                .orElseGet(clock::instant);
+        var usage = billing.createUncommittedInvoice(tenant.name(), untilAt.atZone(ZoneOffset.UTC).toLocalDate());
 
         var slime = new Slime();
         usageToSlime(slime.setObject(), usage);

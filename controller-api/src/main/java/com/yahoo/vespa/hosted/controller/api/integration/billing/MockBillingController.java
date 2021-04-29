@@ -5,7 +5,9 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.hosted.controller.api.integration.user.User;
 
 import java.math.BigDecimal;
+import java.time.Clock;
 import java.time.LocalDate;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -21,12 +23,17 @@ import java.util.stream.Collectors;
  */
 public class MockBillingController implements BillingController {
 
+    private final Clock clock;
     Map<TenantName, PlanId> plans = new HashMap<>();
     Map<TenantName, PaymentInstrument> activeInstruments = new HashMap<>();
     Map<TenantName, List<Invoice>> committedInvoices = new HashMap<>();
     Map<TenantName, Invoice> uncommittedInvoices = new HashMap<>();
     Map<TenantName, List<Invoice.LineItem>> unusedLineItems = new HashMap<>();
     Map<TenantName, CollectionMethod> collectionMethod = new HashMap<>();
+
+    public MockBillingController(Clock clock) {
+        this.clock = clock;
+    }
 
     @Override
     public PlanId getPlan(TenantName tenant) {
@@ -192,6 +199,8 @@ public class MockBillingController implements BillingController {
     }
 
     private Invoice emptyInvoice() {
-        return new Invoice(Invoice.Id.of("empty"), TenantName.defaultName(), Invoice.StatusHistory.open(), List.of(), ZonedDateTime.now(), ZonedDateTime.now());
+        var start = clock.instant().atZone(ZoneOffset.UTC);
+        var end = clock.instant().atZone(ZoneOffset.UTC);
+        return new Invoice(Invoice.Id.of("empty"), TenantName.defaultName(), Invoice.StatusHistory.open(), List.of(), start, end);
     }
 }
