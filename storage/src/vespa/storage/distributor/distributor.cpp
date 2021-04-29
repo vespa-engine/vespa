@@ -18,6 +18,7 @@
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/node_identity.h>
 #include <vespa/storage/common/nodestateupdater.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <vespa/vdslib/distribution/distribution.h>
@@ -56,7 +57,8 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _stripe(std::make_unique<DistributorStripe>(compReg, *_metrics, node_identity, threadPool,
                                                   doneInitHandler, *this, (num_distributor_stripes == 0))),
       _stripe_accessor(std::make_unique<LegacySingleStripeAccessor>(*_stripe)),
-      _component(compReg, "distributor"),
+      _component(*this, compReg, "distributor"),
+      _total_config(_component.total_distributor_config_sp()),
       _bucket_db_updater(),
       _distributorStatusDelegate(compReg, *this, *this),
       _threadPool(threadPool),
@@ -71,8 +73,11 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
     _component.registerMetricUpdateHook(_metricUpdateHook, framework::SecondTime(0));
     if (num_distributor_stripes > 0) {
         LOG(info, "Setting up distributor with %u stripes", num_distributor_stripes); // TODO STRIPE remove once legacy gone
-        // FIXME STRIPE using the singular stripe here is a temporary Hack McHack Deluxe 3000!
-        _bucket_db_updater = std::make_unique<BucketDBUpdater>(*_stripe, *_stripe, _comp_reg, *_stripe_accessor);
+        // TODO STRIPE: Avoid passing the singular stripe as DistributorMessageSender.
+        _bucket_db_updater = std::make_unique<BucketDBUpdater>(_component, _component,
+                                                               *this, *_stripe,
+                                                               *this, _component.getDistribution(),
+                                                               *_stripe_accessor);
     }
     _hostInfoReporter.enableReporting(getConfig().getEnableHostInfoReporting());
     _distributorStatusDelegate.registerStatusPage();
@@ -274,6 +279,12 @@ Distributor::handleMessage(const std::shared_ptr<api::StorageMessage>& msg)
     return _stripe->handleMessage(msg);
 }
 
+const DistributorConfiguration&
+Distributor::config() const
+{
+    return *_total_config;
+}
+
 const lib::ClusterStateBundle&
 Distributor::getClusterStateBundle() const
 {
@@ -396,6 +407,7 @@ Distributor::enableNextConfig()
     // Only lazily trigger a config propagation and internal update if something has _actually changed_.
     if (_component.internal_config_generation() != _current_internal_config_generation) {
         if (_bucket_db_updater) {
+            _total_config = _component.total_distributor_config_sp();
             auto guard = _stripe_accessor->rendezvous_and_hold_all();
             guard->update_total_distributor_config(_component.total_distributor_config_sp());
         } else {

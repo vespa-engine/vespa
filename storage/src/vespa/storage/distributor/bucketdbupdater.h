@@ -28,7 +28,7 @@ namespace storage::distributor {
 
 struct BucketSpaceDistributionConfigs;
 class BucketSpaceDistributionContext;
-class DistributorStripeInterface;
+class DistributorInterface;
 class StripeAccessor;
 class StripeAccessGuard;
 
@@ -37,9 +37,12 @@ class BucketDBUpdater : public framework::StatusReporter,
 {
 public:
     using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
-    BucketDBUpdater(DistributorStripeInterface& owner,
+    BucketDBUpdater(const DistributorNodeContext& node_ctx,
+                    DistributorOperationContext& op_ctx,
+                    DistributorInterface& distributor_interface,
                     DistributorMessageSender& sender,
-                    DistributorComponentRegister& comp_reg,
+                    ChainedMessageSender& chained_sender,
+                    std::shared_ptr<const lib::Distribution> bootstrap_distribution,
                     StripeAccessor& stripe_accessor);
     ~BucketDBUpdater() override;
 
@@ -59,8 +62,6 @@ public:
     vespalib::string report_xml_status(vespalib::xml::XmlOutputStream& xos, const framework::HttpUrlPath&) const;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const;
-    const DistributorNodeContext& node_context() const { return _node_ctx; }
-    DistributorStripeOperationContext& operation_context() { return _op_ctx; }
 
     void set_stale_reads_enabled(bool enabled) noexcept {
         _stale_reads_enabled.store(enabled, std::memory_order_relaxed);
@@ -106,16 +107,14 @@ private:
     // TODO STRIPE remove once distributor component dependencies have been pruned
     StripeAccessor& _stripe_accessor;
     lib::ClusterStateBundle _active_state_bundle;
-    std::unique_ptr<DistributorBucketSpaceRepo> _dummy_mutable_bucket_space_repo;
-    std::unique_ptr<DistributorBucketSpaceRepo> _dummy_read_only_bucket_space_repo;
 
-    DistributorStripeComponent _distributor_component;
     const DistributorNodeContext& _node_ctx;
-    DistributorStripeOperationContext& _op_ctx;
-    DistributorStripeInterface& _distributor_interface;
+    DistributorOperationContext& _op_ctx;
+    DistributorInterface& _distributor_interface;
     std::unique_ptr<PendingClusterState> _pending_cluster_state;
     std::list<PendingClusterState::Summary> _history;
     DistributorMessageSender& _sender;
+    ChainedMessageSender& _chained_sender;
     OutdatedNodesMap         _outdated_nodes_map;
     framework::MilliSecTimer _transition_timer;
     std::atomic<bool> _stale_reads_enabled;
