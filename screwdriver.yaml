@@ -2,7 +2,7 @@
 ---
 cache:
    job:
-       main: [/main_job_cache]
+       build-vespa: [/main_job_cache]
 
 jobs:
   build-vespa:
