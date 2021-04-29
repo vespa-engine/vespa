@@ -6,6 +6,11 @@ import java.util.List;
 import java.util.Objects;
 
 /**
+ * Represents an event that we want to notify the tenant about. The message(s) should be short
+ * and only describe event details: the final presentation will prefix the message with general
+ * information from other metadata in this notification (e.g. links to relevant console views
+ * and/or relevant documentation.
+ *
  * @author freva
  */
 public class Notification {
@@ -56,6 +61,7 @@ public class Notification {
     }
 
     public enum Level {
+        // Must be ordered in order of importance
         warning, error
     }
 
@@ -64,7 +70,10 @@ public class Notification {
         applicationPackage,
 
         /** Related to deployment of application, e.g. system test failure, out of capacity, internal errors, etc. */
-        deployment
+        deployment,
+
+        /** Application cluster is (near) external feed blocked */
+        feedBlock;
     }
 
 }

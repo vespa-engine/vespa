@@ -58,9 +58,10 @@ public class DeploymentMetricsMaintainer extends ControllerMaintainer {
                         attempts.incrementAndGet();
                         try {
                             if (deployment.version().getMajor() < 7) continue;
-                            List<ClusterMetrics> clusterMetrics = controller().serviceRegistry().configServer()
-                                    .getDeploymentMetrics(new DeploymentId(instance.id(), deployment.zone()));
+                            DeploymentId deploymentId = new DeploymentId(instance.id(), deployment.zone());
+                            List<ClusterMetrics> clusterMetrics = controller().serviceRegistry().configServer().getDeploymentMetrics(deploymentId);
                             Instant now = controller().clock().instant();
+
                             applications.lockApplicationIfPresent(application.id(), locked -> {
                                 Deployment existingDeployment = locked.get().require(instance.name()).deployments().get(deployment.zone());
                                 if (existingDeployment == null) return; // Deployment removed since we started collecting metrics
@@ -69,6 +70,7 @@ public class DeploymentMetricsMaintainer extends ControllerMaintainer {
                                                                lockedInstance -> lockedInstance.with(existingDeployment.zone(), newMetrics)
                                                                                                .recordActivityAt(now, existingDeployment.zone())));
 
+                                controller().notificationsDb().setDeploymentFeedingBlockedNotifications(deploymentId, clusterMetrics);
                             });
                         } catch (Exception e) {
                             failures.incrementAndGet();

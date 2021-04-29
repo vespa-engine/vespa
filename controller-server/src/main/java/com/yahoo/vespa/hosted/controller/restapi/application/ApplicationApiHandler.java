@@ -517,6 +517,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         switch (type) {
             case applicationPackage: return "applicationPackage";
             case deployment: return "deployment";
+            case feedBlock: return "feedBlock";
             default: throw new IllegalArgumentException("No serialization defined for notification type " + type);
         }
     }
