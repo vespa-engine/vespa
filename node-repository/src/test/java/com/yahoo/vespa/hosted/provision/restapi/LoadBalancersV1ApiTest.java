@@ -22,6 +22,7 @@ public class LoadBalancersV1ApiTest {
 
     @Test
     public void test_load_balancers() throws Exception {
+        tester.assertFile(new Request("http://localhost:8080/loadbalancers/v1"), "load-balancers.json");
         tester.assertFile(new Request("http://localhost:8080/loadbalancers/v1/"), "load-balancers.json");
         tester.assertFile(new Request("http://localhost:8080/loadbalancers/v1/?application=tenant4.application4.instance4"), "load-balancers-single.json");
         tester.assertResponse(new Request("http://localhost:8080/loadbalancers/v1/?application=tenant.nonexistent.default"), "{\"loadBalancers\":[]}");
