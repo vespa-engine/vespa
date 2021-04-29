@@ -494,9 +494,8 @@ public class ModelProvisioningTest {
         Set<HostResource> clusterControllerHosts = admin.getClusterControllers().getContainers()
                                                         .stream().map(cc -> cc.getHostResource()).collect(Collectors.toSet());
         Set<HostResource> slobrokHosts = admin.getSlobroks().stream().map(Slobrok::getHost).collect(Collectors.toSet());
-        assertEquals(6, slobrokHosts.size());
-        assertTrue("Slobroks are assigned from container and cluster controller nodes",
-                   union(containerHosts, clusterControllerHosts).containsAll(slobrokHosts));
+        assertEquals(3, slobrokHosts.size());
+        assertTrue("Slobroks are assigned on cluster controller nodes", clusterControllerHosts.containsAll(slobrokHosts));
         assertTrue("Logserver is assigned from container nodes", containerHosts.contains(admin.getLogserver().getHost()));
         assertEquals("No in-cluster config servers in a hosted environment", 0, admin.getConfigservers().size());
         assertEquals("Dedicated admin cluster controllers when hosted", 3, admin.getClusterControllers().getContainers().size());
@@ -560,6 +559,40 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testSlobroksOnContainersIfNoContentClusters() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                "<services>" +
+                "  <admin version='4.0'/>" +
+                "  <container version='1.0' id='foo'>" +
+                "     <nodes count='10'/>" +
+                "  </container>" +
+                "</services>";
+
+        int numberOfHosts = 10;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts);
+        VespaModel model = tester.createModel(services, true);
+        assertEquals(numberOfHosts, model.getRoot().hostSystem().getHosts().size());
+
+        // Check container cluster
+        assertEquals(1, model.getContainerClusters().size());
+        Set<HostResource> containerHosts = model.getContainerClusters().get("foo").getContainers().stream()
+                                                .map(Container::getHost)
+                                                .collect(Collectors.toSet());
+        assertEquals(10, containerHosts.size());
+
+        // Check admin clusters
+        Admin admin = model.getAdmin();
+        Set<HostResource> slobrokHosts = admin.getSlobroks().stream().map(Slobrok::getHost).collect(Collectors.toSet());
+        assertEquals(3, slobrokHosts.size());
+        assertTrue("Slobroks are assigned from container nodes",
+                   containerHosts.containsAll(slobrokHosts));
+        assertTrue("Logserver is assigned from container nodes", containerHosts.contains(admin.getLogserver().getHost()));
+        assertEquals("No in-cluster config servers in a hosted environment", 0, admin.getConfigservers().size());
+    }
+
+    @Test
     public void testUsingNodesAndGroupCountAttributesWithoutDedicatedClusterControllers() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +
@@ -602,9 +635,8 @@ public class ModelProvisioningTest {
         Set<HostResource> clusterControllerHosts = admin.getClusterControllers().getContainers()
                                                         .stream().map(cc -> cc.getHostResource()).collect(Collectors.toSet());
         Set<HostResource> slobrokHosts = admin.getSlobroks().stream().map(Slobrok::getHost).collect(Collectors.toSet());
-        assertEquals(6, slobrokHosts.size());
-        assertTrue("Slobroks are assigned from container and cluster controller nodes",
-                   union(containerHosts, clusterControllerHosts).containsAll(slobrokHosts));
+        assertEquals(3, slobrokHosts.size());
+        assertTrue("Slobroks are assigned on cluster controller nodes", clusterControllerHosts.containsAll(slobrokHosts));
         assertTrue("Logserver is assigned from container nodes", containerHosts.contains(admin.getLogserver().getHost()));
         assertEquals("No in-cluster config servers in a hosted environment", 0, admin.getConfigservers().size());
         assertEquals(3, admin.getClusterControllers().getContainers().size());
@@ -1613,7 +1645,7 @@ public class ModelProvisioningTest {
         tester.addHosts(6);
         VespaModel model = tester.createModel(services, true);
         assertEquals(6, model.getRoot().hostSystem().getHosts().size());
-        assertEquals(5, model.getAdmin().getSlobroks().size());
+        assertEquals(3, model.getAdmin().getSlobroks().size());
         assertEquals(2, model.getContainerClusters().get("foo").getContainers().size());
         assertEquals(1, model.getContentClusters().get("bar").getRootGroup().countNodes(true));
     }
@@ -2132,13 +2164,6 @@ public class ModelProvisioningTest {
 
     private static void assertProvisioned(int nodeCount, ClusterSpec.Id id, ClusterSpec.Type type, VespaModel model) {
         assertProvisioned(nodeCount, id, null, type, model);
-    }
-
-    private Set<HostResource> union(Set<HostResource> a, Set<HostResource> b) {
-        Set<HostResource> union = new HashSet<>();
-        union.addAll(a);
-        union.addAll(b);
-        return union;
     }
 
 }

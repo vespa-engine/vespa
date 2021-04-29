@@ -79,6 +79,11 @@ public class HostResource implements Comparable<HostResource> {
         return ports;
     }
 
+    void deallocateService(AbstractService service) {
+        hostPorts.deallocatePorts(service);
+        services.remove(service.getServiceName());
+    }
+
     /**
      * Returns the service with the given "sentinel name" on this Host,
      * or null if the name does not match any service.
