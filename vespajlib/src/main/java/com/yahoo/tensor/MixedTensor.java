@@ -53,7 +53,7 @@ public class MixedTensor implements Tensor {
     @Override
     public double get(TensorAddress address) {
         long cellIndex = index.indexOf(address);
-        if (cellIndex < 0)
+        if (cellIndex < 0 || cellIndex >= cells.size())
             return Double.NaN;
         Cell cell = cells.get((int)cellIndex);
         if ( ! address.equals(cell.getKey()))
