@@ -32,12 +32,12 @@ public class NotificationsDbTest {
 
     private static final TenantName tenant = TenantName.from("tenant1");
     private static final List<Notification> notifications = List.of(
-            notification(1001, Notification.Type.DEPLOYMENT_FAILURE, NotificationSource.from(tenant), "tenant msg"),
-            notification(1101, Notification.Type.DEPLOYMENT_FAILURE, NotificationSource.from(TenantAndApplicationId.from(tenant.value(), "app1")), "app msg"),
-            notification(1201, Notification.Type.DEPLOYMENT_FAILURE, NotificationSource.from(ApplicationId.from(tenant.value(), "app2", "instance2")), "instance msg"),
-            notification(1301, Notification.Type.DEPLOYMENT_FAILURE, NotificationSource.from(new DeploymentId(ApplicationId.from(tenant.value(), "app2", "instance2"), ZoneId.from("prod", "us-north-2"))), "deployment msg"),
-            notification(1401, Notification.Type.DEPLOYMENT_FAILURE, NotificationSource.from(new DeploymentId(ApplicationId.from(tenant.value(), "app1", "instance1"), ZoneId.from("dev", "us-south-1")), ClusterSpec.Id.from("cluster1")), "cluster msg"),
-            notification(1501, Notification.Type.DEPLOYMENT_FAILURE, NotificationSource.from(new RunId(ApplicationId.from(tenant.value(), "app1", "instance1"), JobType.devUsEast1, 4)), "run id msg"));
+            notification(1001, Notification.Type.deployment, NotificationSource.from(tenant), "tenant msg"),
+            notification(1101, Notification.Type.deployment, NotificationSource.from(TenantAndApplicationId.from(tenant.value(), "app1")), "app msg"),
+            notification(1201, Notification.Type.deployment, NotificationSource.from(ApplicationId.from(tenant.value(), "app2", "instance2")), "instance msg"),
+            notification(1301, Notification.Type.deployment, NotificationSource.from(new DeploymentId(ApplicationId.from(tenant.value(), "app2", "instance2"), ZoneId.from("prod", "us-north-2"))), "deployment msg"),
+            notification(1401, Notification.Type.deployment, NotificationSource.from(new DeploymentId(ApplicationId.from(tenant.value(), "app1", "instance1"), ZoneId.from("dev", "us-south-1")), ClusterSpec.Id.from("cluster1")), "cluster msg"),
+            notification(1501, Notification.Type.deployment, NotificationSource.from(new RunId(ApplicationId.from(tenant.value(), "app1", "instance1"), JobType.devUsEast1, 4)), "run id msg"));
 
     private final ManualClock clock = new ManualClock(Instant.ofEpochSecond(12345));
     private final MockCuratorDb curatorDb = new MockCuratorDb();
@@ -55,14 +55,14 @@ public class NotificationsDbTest {
 
     @Test
     public void add_test() {
-        Notification notification1 = notification(12345, Notification.Type.DEPLOYMENT_FAILURE, NotificationSource.from(ApplicationId.from(tenant.value(), "app2", "instance2")), "instance msg #2");
-        Notification notification2 = notification(12345, Notification.Type.DEPLOYMENT_FAILURE, NotificationSource.from(ApplicationId.from(tenant.value(), "app3", "instance2")), "instance msg #3");
+        Notification notification1 = notification(12345, Notification.Type.deployment, NotificationSource.from(ApplicationId.from(tenant.value(), "app2", "instance2")), "instance msg #2");
+        Notification notification2 = notification(12345, Notification.Type.deployment, NotificationSource.from(ApplicationId.from(tenant.value(), "app3", "instance2")), "instance msg #3");
 
         // Replace the 3rd notification
-        notificationsDb.setNotification(notification1.source(), notification1.type(), notification1.messages());
+        notificationsDb.setNotification(notification1.source(), notification1.type(), Notification.Level.warning, notification1.messages());
 
         // Notification for a new app, add without replacement
-        notificationsDb.setNotification(notification2.source(), notification2.type(), notification2.messages());
+        notificationsDb.setNotification(notification2.source(), notification2.type(), Notification.Level.warning, notification2.messages());
 
         List<Notification> expected = notificationIndices(0, 1, 3, 4, 5);
         expected.addAll(List.of(notification1, notification2));
@@ -72,10 +72,10 @@ public class NotificationsDbTest {
     @Test
     public void remove_single_test() {
         // Remove the 3rd notification
-        notificationsDb.removeNotification(NotificationSource.from(ApplicationId.from(tenant.value(), "app2", "instance2")), Notification.Type.DEPLOYMENT_FAILURE);
+        notificationsDb.removeNotification(NotificationSource.from(ApplicationId.from(tenant.value(), "app2", "instance2")), Notification.Type.deployment);
 
         // Removing something that doesn't exist is OK
-        notificationsDb.removeNotification(NotificationSource.from(ApplicationId.from(tenant.value(), "app3", "instance2")), Notification.Type.DEPLOYMENT_FAILURE);
+        notificationsDb.removeNotification(NotificationSource.from(ApplicationId.from(tenant.value(), "app3", "instance2")), Notification.Type.deployment);
 
         assertEquals(notificationIndices(0, 1, 3, 4, 5), curatorDb.readNotifications(tenant));
     }
@@ -102,6 +102,6 @@ public class NotificationsDbTest {
     }
 
     private static Notification notification(long secondsSinceEpoch, Notification.Type type, NotificationSource source, String... messages) {
-        return new Notification(Instant.ofEpochSecond(secondsSinceEpoch), type, source, List.of(messages));
+        return new Notification(Instant.ofEpochSecond(secondsSinceEpoch), type, Notification.Level.warning, source, List.of(messages));
     }
 }

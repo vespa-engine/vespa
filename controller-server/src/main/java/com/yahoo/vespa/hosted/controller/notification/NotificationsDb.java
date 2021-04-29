@@ -3,12 +3,17 @@ package com.yahoo.vespa.hosted.controller.notification;
 
 import com.yahoo.vespa.curator.Lock;
 import com.yahoo.vespa.hosted.controller.Controller;
+import com.yahoo.vespa.hosted.controller.api.application.v4.model.ClusterMetrics;
+import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 
 import java.time.Clock;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.yahoo.vespa.hosted.controller.notification.Notification.Level;
+import static com.yahoo.vespa.hosted.controller.notification.Notification.Type;
 
 /**
  * Adds, updates and removes tenant notifications in ZK
@@ -35,26 +40,26 @@ public class NotificationsDb {
                 .collect(Collectors.toUnmodifiableList());
     }
 
-    public void setNotification(NotificationSource source, Notification.Type type, String message) {
-        setNotification(source, type, List.of(message));
+    public void setNotification(NotificationSource source, Type type, Level level, String message) {
+        setNotification(source, type, level, List.of(message));
     }
 
     /**
      * Add a notification with given source and type. If a notification with same source and type
      * already exists, it'll be replaced by this one instead
      */
-    public void setNotification(NotificationSource source, Notification.Type type, List<String> messages) {
+    public void setNotification(NotificationSource source, Type type, Level level, List<String> messages) {
         try (Lock lock = curatorDb.lockNotifications(source.tenant())) {
             List<Notification> notifications = curatorDb.readNotifications(source.tenant()).stream()
                     .filter(notification -> !source.equals(notification.source()) || type != notification.type())
                     .collect(Collectors.toCollection(ArrayList::new));
-            notifications.add(new Notification(clock.instant(), type, source, messages));
+            notifications.add(new Notification(clock.instant(), type, level, source, messages));
             curatorDb.writeNotifications(source.tenant(), notifications);
         }
     }
 
     /** Remove the notification with the given source and type */
-    public void removeNotification(NotificationSource source, Notification.Type type) {
+    public void removeNotification(NotificationSource source, Type type) {
         try (Lock lock = curatorDb.lockNotifications(source.tenant())) {
             List<Notification> initial = curatorDb.readNotifications(source.tenant());
             List<Notification> filtered = initial.stream()
