@@ -249,7 +249,7 @@ public class BindingSetTestCase {
         handlers.put(new UriPattern("http://*/config/v1/*/"), foo1);
         handlers.put(new UriPattern("http://*/config/v1/*/*"), foo2);
         handlers.put(new UriPattern("http://*/config/v1/*/*/"), foo3);
-        handlers.put(new UriPattern("http://*/application/v2/tenant"), foo4);
+        handlers.put(new UriPattern("http://*/application/v2/tenant*"), foo4);
         handlers.put(new UriPattern("http://*/application/v2/tenant/*"), foo5);
         handlers.put(new UriPattern("http://*/application/v2/tenant/*/session"), foo6);
         handlers.put(new UriPattern("http://*/application/v2/tenant/*/session/*/prepared"), foo7);
