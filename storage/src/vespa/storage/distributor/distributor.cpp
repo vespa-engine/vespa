@@ -73,10 +73,9 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
     _component.registerMetricUpdateHook(_metricUpdateHook, framework::SecondTime(0));
     if (num_distributor_stripes > 0) {
         LOG(info, "Setting up distributor with %u stripes", num_distributor_stripes); // TODO STRIPE remove once legacy gone
-        // TODO STRIPE: Avoid passing the singular stripe as DistributorMessageSender.
         _bucket_db_updater = std::make_unique<BucketDBUpdater>(_component, _component,
-                                                               *this, *_stripe,
-                                                               *this, _component.getDistribution(),
+                                                               *this, *this,
+                                                               _component.getDistribution(),
                                                                *_stripe_accessor);
     }
     _hostInfoReporter.enableReporting(getConfig().getEnableHostInfoReporting());
@@ -283,6 +282,18 @@ const DistributorConfiguration&
 Distributor::config() const
 {
     return *_total_config;
+}
+
+void
+Distributor::sendCommand(const std::shared_ptr<api::StorageCommand>& cmd)
+{
+    sendUp(cmd);
+}
+
+void
+Distributor::sendReply(const std::shared_ptr<api::StorageReply>& reply)
+{
+    sendUp(reply);
 }
 
 const lib::ClusterStateBundle&

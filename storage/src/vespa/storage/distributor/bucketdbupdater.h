@@ -40,7 +40,6 @@ public:
     BucketDBUpdater(const DistributorNodeContext& node_ctx,
                     DistributorOperationContext& op_ctx,
                     DistributorInterface& distributor_interface,
-                    DistributorMessageSender& sender,
                     ChainedMessageSender& chained_sender,
                     std::shared_ptr<const lib::Distribution> bootstrap_distribution,
                     StripeAccessor& stripe_accessor);

@@ -66,9 +66,6 @@ public:
 
     ~Distributor() override;
 
-    const ClusterContext& cluster_context() const {
-        return _component.cluster_context();
-    }
     void onOpen() override;
     void onClose() override;
     bool onDown(const std::shared_ptr<api::StorageMessage>&) override;
@@ -77,9 +74,14 @@ public:
 
     DistributorMetricSet& getMetrics() { return *_metrics; }
 
-    // Implements DistributorInterface,
+    // Implements DistributorInterface and DistributorMessageSender.
     DistributorMetricSet& metrics() override { return getMetrics(); }
     const DistributorConfiguration& config() const override;
+
+    void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) override;
+    void sendReply(const std::shared_ptr<api::StorageReply>& reply) override;
+    int getDistributorIndex() const override { return _component.node_index(); }
+    const ClusterContext& cluster_context() const override { return _component.cluster_context(); }
 
     /**
      * Enables a new cluster state. Called after the bucket db updater has
