@@ -16,6 +16,7 @@ class MetricDefinitions {
     static final String CLIENT_AUTHENTICATED_DIMENSION = "clientAuthenticated";
     static final String REQUEST_SERVER_NAME_DIMENSION = "requestServerName";
     static final String FILTER_CHAIN_ID_DIMENSION = "chainId";
+    static final String PROTOCOL_DIMENSION = "protocol";
 
     static final String NUM_OPEN_CONNECTIONS = "serverNumOpenConnections";
     static final String NUM_CONNECTIONS_OPEN_MAX = "serverConnectionsOpenMax";
