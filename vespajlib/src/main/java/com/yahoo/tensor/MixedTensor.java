@@ -61,6 +61,17 @@ public class MixedTensor implements Tensor {
         return cell.getValue();
     }
 
+    @Override
+    public boolean has(TensorAddress address) {
+        long cellIndex = index.indexOf(address);
+        if (cellIndex < 0 || cellIndex >= cells.size())
+            return false;
+        Cell cell = cells.get((int)cellIndex);
+        if ( ! address.equals(cell.getKey()))
+            return false;
+        return true;
+    }
+
     /**
      * Returns an iterator over the cells of this tensor.
      * Cells are returned in order of increasing indexes in the

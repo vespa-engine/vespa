@@ -125,11 +125,12 @@ public class Merge<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
     private static void addCellsOf(Tensor a, Tensor b, Tensor.Builder builder, DoubleBinaryOperator combinator) {
         for (Iterator<Tensor.Cell> i = a.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> aCell = i.next();
-            double bCellValue = b.get(aCell.getKey());
-            if (Double.isNaN(bCellValue))
-                builder.cell(aCell.getKey(), aCell.getValue());
-            else if (combinator != null)
-                builder.cell(aCell.getKey(), combinator.applyAsDouble(aCell.getValue(), bCellValue));
+            var key = aCell.getKey();
+            if (! b.has(key)) {
+                builder.cell(key, aCell.getValue());
+            } else if (combinator != null) {
+                builder.cell(key, combinator.applyAsDouble(aCell.getValue(), b.get(key)));
+            }
         }
     }
 

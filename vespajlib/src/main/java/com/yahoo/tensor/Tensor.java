@@ -70,6 +70,9 @@ public interface Tensor {
     /** Returns the value of a cell, or NaN if this cell does not exist/have no value */
     double get(TensorAddress address);
 
+    /** Returns true if this cell exists */
+    boolean has(TensorAddress address);
+
     /**
      * Returns the cell of this in some undefined order.
      * A cell instances is only valid until next() is called.
