@@ -497,7 +497,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private static void toSlime(Cursor cursor, Notification notification) {
         cursor.setLong("at", notification.at().toEpochMilli());
-        cursor.setString("level", notificatioLevelAsString(notification.type().level()));
+        cursor.setString("level", notificationLevelAsString(notification.level()));
         cursor.setString("type", notificationTypeAsString(notification.type()));
         Cursor messagesArray = cursor.setArray("messages");
         notification.messages().forEach(messagesArray::addString);
@@ -515,13 +515,14 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
 
     private static String notificationTypeAsString(Notification.Type type) {
         switch (type) {
-            case APPLICATION_PACKAGE_WARNING: return "APPLICATION_PACKAGE_WARNING";
-            case DEPLOYMENT_FAILURE: return "DEPLOYMENT_FAILURE";
+            case applicationPackage: return "applicationPackage";
+            case deployment: return "deployment";
+            case feedBlock: return "feedBlock";
             default: throw new IllegalArgumentException("No serialization defined for notification type " + type);
         }
     }
 
-    private static String notificatioLevelAsString(Notification.Level level) {
+    private static String notificationLevelAsString(Notification.Level level) {
         switch (level) {
             case warning: return "warning";
             case error: return "error";

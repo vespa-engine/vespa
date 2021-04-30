@@ -407,8 +407,8 @@ public class ApplicationController {
                             .distinct()
                             .collect(Collectors.toList()))
                     .orElseGet(List::of);
-            if (warnings.isEmpty()) controller.notificationsDb().removeNotification(source, Notification.Type.APPLICATION_PACKAGE_WARNING);
-            else controller.notificationsDb().setNotification(source, Notification.Type.APPLICATION_PACKAGE_WARNING, warnings);
+            if (warnings.isEmpty()) controller.notificationsDb().removeNotification(source, Notification.Type.applicationPackage);
+            else controller.notificationsDb().setNotification(source, Notification.Type.applicationPackage, Notification.Level.warning, warnings);
 
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(job.application().instance(),

@@ -35,7 +35,7 @@ public class ClusterDeploymentMetricsRetrieverTest {
 
     @Test
     public void testMetricAggregation() throws IOException {
-        List<URI> hosts = Stream.of(1, 2, 3)
+        List<URI> hosts = Stream.of(1, 2, 3, 4)
                 .map(item -> URI.create("http://localhost:" + wireMock.port() + "/" + item))
                 .collect(Collectors.toList());
 
@@ -54,13 +54,21 @@ public class ClusterDeploymentMetricsRetrieverTest {
                         .withStatus(200)
                         .withBody(containerMetrics())));
 
+        stubFor(get(urlEqualTo("/4"))
+                .willReturn(aResponse()
+                        .withStatus(200)
+                        .withBody(clustercontrollerMetrics())));
+
         ClusterInfo expectedContentCluster = new ClusterInfo("content_cluster_id", "content");
         ClusterInfo expectedContainerCluster = new ClusterInfo("container_cluster_id", "container");
 
         Map<ClusterInfo, DeploymentMetricsAggregator> aggregatorMap = new ClusterDeploymentMetricsRetriever().requestMetricsGroupedByCluster(hosts);
 
         compareAggregators(
-                new DeploymentMetricsAggregator().addDocumentCount(6000.0).addFeedingBlocked(0),
+                new DeploymentMetricsAggregator()
+                        .addDocumentCount(6000.0)
+                        .addMemoryUsage(0.89074, 0.8)
+                        .addDiskUsage(0.83517, 0.75),
                 aggregatorMap.get(expectedContentCluster)
         );
 
@@ -84,6 +92,10 @@ public class ClusterDeploymentMetricsRetrieverTest {
         return Files.readString(Path.of("src/test/resources/metrics/content_metrics.json"));
     }
 
+    private String clustercontrollerMetrics() throws IOException {
+        return Files.readString(Path.of("src/test/resources/metrics/clustercontroller_metrics.json"));
+    }
+
     // Same tolerance value as used internally in MetricsAggregator.isZero
     private static final double metricsTolerance = 0.001;
 
@@ -95,7 +107,10 @@ public class ClusterDeploymentMetricsRetrieverTest {
         compareOptionals(expected.aggregateFeedRate(), actual.aggregateFeedRate(), assertDoubles);
         compareOptionals(expected.aggregateQueryLatency(), actual.aggregateQueryLatency(), assertDoubles);
         compareOptionals(expected.aggregateFeedLatency(), actual.aggregateFeedLatency(), assertDoubles);
-        assertEquals(expected.feedingBlocked(), actual.feedingBlocked());
+        compareOptionals(expected.diskUsage(), actual.diskUsage(), (a, b) -> assertDoubles.accept(a.util(), b.util()));
+        compareOptionals(expected.diskUsage(), actual.diskUsage(), (a, b) -> assertDoubles.accept(a.feedBlockLimit(), b.feedBlockLimit()));
+        compareOptionals(expected.memoryUsage(), actual.memoryUsage(), (a, b) -> assertDoubles.accept(a.util(), b.util()));
+        compareOptionals(expected.memoryUsage(), actual.memoryUsage(), (a, b) -> assertDoubles.accept(a.feedBlockLimit(), b.feedBlockLimit()));
     }
 
     @SuppressWarnings("OptionalUsedAsFieldOrParameterType")
