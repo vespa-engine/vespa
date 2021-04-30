@@ -194,6 +194,8 @@ TOKEN :
     <TO_BOOL: "to_bool"> |
     <TRIM: "trim"> |
     <ZCURVE: "zcurve"> |
+    <TRUE: "true" > |
+    <FALSE: "false" > |
     <IDENTIFIER: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-"])*>
 }
 
@@ -315,6 +317,7 @@ Expression value() :
       val = toWsetExp()             |
       val = toBoolExp()             |
       val = trimExp()               |
+      val = literalBoolExp()        |
       val = zcurveExp()             |
       ( <LPAREN> val = statement() <RPAREN> { val = new ParenthesisExpression(val); } ) )
     { return val; }
@@ -698,6 +701,12 @@ Expression trimExp() : { }
     { return new TrimExpression(); }
 }
 
+Expression literalBoolExp() : { }
+{
+    ( <TRUE> | <FALSE> )
+    { return new LiteralBoolExpression(Boolean.parseBoolean(token.image)); }
+}
+
 Expression zcurveExp() : { }
 {
     ( <ZCURVE> )
@@ -762,6 +771,8 @@ String identifier() :
         <TO_BOOL>                |
         <TOKENIZE>               |
         <TRIM>                   |
+        <TRUE>                   |
+        <FALSE>                  |
         <ZCURVE>                 ) { val = token.image; } )
     { return val; }
 }

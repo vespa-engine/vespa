@@ -79,4 +79,15 @@ public class ScriptTestCase {
         assertEquals(new StringFieldValue("foo"), output.getFieldValue("out-1"));
     }
 
+    @Test
+    public void testLiteralBoolean() throws ParseException {
+        Document input = new Document(type, "id:scheme:mytype::");
+        input.setFieldValue("in-1", new StringFieldValue("foo"));
+        var expression = Expression.fromString("if (input 'in-1' == \"foo\") { true | summary 'mybool' | attribute 'mybool' }");
+        System.out.println(expression);
+        Document output = Expression.execute(expression, input);
+        assertNotNull(output);
+        assertEquals(new BoolFieldValue(true), output.getFieldValue("mybool"));
+    }
+
 }
