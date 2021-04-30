@@ -168,7 +168,7 @@ int BitVectorBenchmark::Main()
     int idx = 1;
     std::string operation;
     size_t numBits(8*1000000);
-    char opt;
+    int opt;
     const char * arg;
     bool optError = false;
     while ((opt = GetOpt("n:t:", arg, idx)) != -1) {

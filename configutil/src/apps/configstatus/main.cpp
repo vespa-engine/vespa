@@ -33,7 +33,7 @@ Application::Application()
 Application::~Application() { }
 
 int Application::parseOpts() {
-    char c = '?';
+    int c = '?';
     const char *optArg = NULL;
     int optInd = 0;
     while ((c = GetOpt("c:s:vC:f:", optArg, optInd)) != -1) {

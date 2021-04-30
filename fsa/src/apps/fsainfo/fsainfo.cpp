@@ -41,7 +41,7 @@ int main(int argc, char** argv)
 {
   const char *fsa_file;
 
-  char         opt;
+  int          opt;
   extern int   optind;
 
   while((opt=getopt(argc,argv,"hV")) != -1){

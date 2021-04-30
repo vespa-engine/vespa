@@ -486,7 +486,7 @@ AttributeBenchmark::Main()
     dc._prefixSearch = false;
 
     int idx = 1;
-    char opt;
+    int opt;
     const char * arg;
     bool optError = false;
     while ((opt = GetOpt("n:u:v:s:q:p:r:c:l:h:i:a:e:S:E:D:L:bRPtw", arg, idx)) != -1) {

@@ -57,7 +57,7 @@ Application::usage()
 int
 Application::parseOpts()
 {
-    char c = '?';
+    int c = '?';
     const char *optArg = NULL;
     int optInd = 0;
     while ((c = GetOpt("d:f:qh", optArg, optInd)) != -1) {
