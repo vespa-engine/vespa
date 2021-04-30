@@ -144,7 +144,7 @@ class RestApiImpl implements RestApi {
     private static Route createDefaultRoute() {
         RouteBuilder routeBuilder = new RouteBuilderImpl("{*}")
                 .defaultHandler(context -> {
-                    throw new RestApiException.NotFound();
+                    throw new RestApiException.NotFound(context.request());
                 });
         return ((RouteBuilderImpl)routeBuilder).build();
     }
