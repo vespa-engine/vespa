@@ -83,7 +83,7 @@ public class TenantHandlerTest {
     public void testTenantCreateWithAllPossibleCharactersInName() throws Exception {
         TenantName tenantName = TenantName.from("aB-9999_foo");
         assertNull(tenantRepository.getTenant(tenantName));
-        assertResponse(PUT, "/application/v2/tenant/aB-999;9_foo",
+        assertResponse(PUT, "/application/v2/tenant/aB-9999_foo",
                        "{\"message\":\"Tenant " + tenantName + " created.\"}");
     }
 

@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -151,11 +152,12 @@ class RestApiImpl implements RestApi {
 
     private static List<ExceptionMapperHolder<?>> combineWithDefaultExceptionMappers(
             List<ExceptionMapperHolder<?>> configuredExceptionMappers, boolean disableDefaultMappers) {
-        List<ExceptionMapperHolder<?>> exceptionMappers = new ArrayList<>();
+        List<ExceptionMapperHolder<?>> exceptionMappers = new ArrayList<>(configuredExceptionMappers);
         if (!disableDefaultMappers){
             exceptionMappers.add(new ExceptionMapperHolder<>(RestApiException.class, (context, exception) -> exception.response()));
         }
-        exceptionMappers.addAll(configuredExceptionMappers);
+        // Topologically sort children before superclasses, so most the specific match is found by iterating through mappers in order.
+        exceptionMappers.sort((a, b) -> a.type.isAssignableFrom(b.type) ? 1 : b.type.isAssignableFrom(a.type) ? -1 : 0);
         return exceptionMappers;
     }
 
