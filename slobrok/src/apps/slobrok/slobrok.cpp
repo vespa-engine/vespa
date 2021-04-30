@@ -53,7 +53,7 @@ App::Main()
 
     int argi = 1;
     const char* optArg;
-    char c;
+    int c;
     while ((c = GetOpt("c:s:p:", optArg, argi)) != -1) {
         switch (c) {
         case 'c':

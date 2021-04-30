@@ -649,7 +649,7 @@ int
 FieldWriterTest::Main()
 {
     int argi;
-    char c;
+    int c;
     const char *optArg;
 
     if (_argc > 0) {
