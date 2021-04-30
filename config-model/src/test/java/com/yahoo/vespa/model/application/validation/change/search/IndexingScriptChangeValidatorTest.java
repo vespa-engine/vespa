@@ -151,7 +151,7 @@ public class IndexingScriptChangeValidatorTest {
                     " field f1 type string { indexing: index } } " +
                     " field f2 type string { indexing: input f1 | summary ")
                 .assertValidation(VespaReindexAction.of(ClusterSpec.Id.from("test"),
-                                                        ValidationId.indexingChange,
+                                                        null,
                                                         "Non-document field 'f2' added; this may be populated by reindexing"));
     }
 

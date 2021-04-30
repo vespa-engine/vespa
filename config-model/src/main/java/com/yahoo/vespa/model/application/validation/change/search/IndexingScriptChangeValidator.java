@@ -44,7 +44,7 @@ public class IndexingScriptChangeValidator {
             }
             else if (nextField.isExtraField()) {
                 result.add(VespaReindexAction.of(id,
-                                                 ValidationId.indexingChange,
+                                                 null,
                                                  "Non-document field '" + nextField.getName() +
                                                  "' added; this may be populated by reindexing"));
             }
