@@ -2,6 +2,7 @@
 package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.searchdefinition.Search;
 import com.yahoo.searchdefinition.document.ImmutableSDField;
@@ -12,8 +13,8 @@ import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaReindexAction;
 
+import java.time.Instant;
 import java.util.ArrayList;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
 
@@ -36,17 +37,11 @@ public class IndexingScriptChangeValidator {
 
     public List<VespaConfigChangeAction> validate() {
         List<VespaConfigChangeAction> result = new ArrayList<>();
-        for (ImmutableSDField nextField : new LinkedHashSet<>(nextSearch.allConcreteFields())) {
+        for (ImmutableSDField nextField : nextSearch.allConcreteFields()) {
             String fieldName = nextField.getName();
             ImmutableSDField currentField = currentSearch.getConcreteField(fieldName);
             if (currentField != null) {
                 validateScripts(currentField, nextField).ifPresent(r -> result.add(r));
-            }
-            else if (nextField.isExtraField()) {
-                result.add(VespaReindexAction.of(id,
-                                                 null,
-                                                 "Non-document field '" + nextField.getName() +
-                                                 "' added; this may be populated by reindexing"));
             }
         }
         return result;
