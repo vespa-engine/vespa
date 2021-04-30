@@ -22,8 +22,8 @@ DistributorBucketSpace::DistributorBucketSpace()
 {
 }
 
-DistributorBucketSpace::DistributorBucketSpace(uint16_t node_index)
-    : _bucketDatabase(std::make_unique<BTreeBucketDatabase>()),
+DistributorBucketSpace::DistributorBucketSpace(uint16_t node_index, bool use_bucket_db)
+    : _bucketDatabase(use_bucket_db ? std::make_unique<BTreeBucketDatabase>() : std::unique_ptr<BTreeBucketDatabase>()),
       _clusterState(),
       _distribution(),
       _node_index(node_index),
