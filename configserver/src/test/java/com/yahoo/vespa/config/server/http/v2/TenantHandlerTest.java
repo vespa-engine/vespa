@@ -102,6 +102,9 @@ public class TenantHandlerTest {
         assertResponseEquals((ListTenantsResponse) handler.handleGET(
                 HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/", Method.GET)),
                 "{\"tenants\":[\"default\",\"a\"]}");
+        assertResponseEquals((ListTenantsResponse) handler.handleGET(
+                HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant", Method.GET)),
+                             "{\"tenants\":[\"default\",\"a\"]}");
     }
 
     @Test(expected=BadRequestException.class)

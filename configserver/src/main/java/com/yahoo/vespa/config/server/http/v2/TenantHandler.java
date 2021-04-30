@@ -93,6 +93,7 @@ public class TenantHandler extends HttpHandler {
 
     private static BindingMatch<?> getBindingMatch(HttpRequest request) {
         return HttpConfigRequests.getBindingMatch(request,
+                "http://*/application/v2/tenant",
                 "http://*/application/v2/tenant/",
                 "http://*/application/v2/tenant/*");
     }
@@ -103,7 +104,7 @@ public class TenantHandler extends HttpHandler {
 
     private static boolean isListTenantsRequest(HttpRequest request) {
         return getBindingMatch(request).groupCount() == 2 &&
-                request.getUri().getPath().endsWith("/tenant/");
+                request.getUri().getPath().matches("/application/v2/tenant/?");
     }
 
     private static TenantName getTenantNameFromRequest(HttpRequest request) {
