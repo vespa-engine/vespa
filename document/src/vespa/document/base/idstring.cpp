@@ -7,6 +7,7 @@
 #include <vespa/vespalib/util/stringfmt.h>
 #include <vespa/vespalib/util/optimized.h>
 #include <cerrno>
+#include <cstring>
 
 using vespalib::string;
 using vespalib::stringref;
@@ -56,13 +57,16 @@ union FourByte {
 const FourByte _G_null = {{'n', 'u', 'l', 'l'}};
 const TwoByte _G_id = {{'i', 'd'}};
 
+#ifdef __x86_64__
 typedef char v16qi __attribute__ ((__vector_size__(16)));
 
 v16qi _G_zero  = { ':', ':', ':', ':', ':', ':', ':', ':', ':', ':', ':', ':', ':', ':', ':', ':' };
+#endif
 
 inline const char *
 fmemchr(const char * s, const char * e)
 {
+#ifdef __x86_64__
     while (s+15 < e) {
 #ifdef __clang__
         v16qi tmpCurrent = __builtin_ia32_lddqu(s);
@@ -101,6 +105,9 @@ fmemchr(const char * s, const char * e)
         s++;
     }
     return nullptr;
+#else
+    return static_cast<const char *>(memchr(s, ':', e - s));
+#endif
 }
 
 void
