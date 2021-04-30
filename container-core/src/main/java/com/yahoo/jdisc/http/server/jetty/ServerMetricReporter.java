@@ -86,6 +86,7 @@ class ServerMetricReporter {
                 dimensions.put(MetricDefinitions.METHOD_DIMENSION, metricEntry.method);
                 dimensions.put(MetricDefinitions.SCHEME_DIMENSION, metricEntry.scheme);
                 dimensions.put(MetricDefinitions.REQUEST_TYPE_DIMENSION, metricEntry.requestType);
+                dimensions.put(MetricDefinitions.PROTOCOL_DIMENSION, metricEntry.protocol);
                 metric.add(metricEntry.name, metricEntry.value, metric.createContext(dimensions));
             }
         }
