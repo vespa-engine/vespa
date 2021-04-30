@@ -70,9 +70,9 @@ BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.7.1
 BuildRequires: vespa-openssl-devel >= 1.1.1k-1
 %if 0%{?centos}
-BuildRequires: vespa-protobuf-devel = 3.7.0-4
+BuildRequires: vespa-protobuf-devel = 3.7.0-4.el7
 %else
-BuildRequires: vespa-protobuf-devel = 3.7.0-5
+BuildRequires: vespa-protobuf-devel = 3.7.0-5.el7
 %endif
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
@@ -88,7 +88,7 @@ BuildRequires: openssl-devel
 BuildRequires: vespa-gtest >= 1.8.1-1
 BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.7.1
-BuildRequires: vespa-protobuf-devel = 3.7.0-5
+BuildRequires: vespa-protobuf-devel = 3.7.0-5.el8
 BuildRequires: vespa-libzstd-devel >= 1.4.5-2
 %endif
 %if 0%{?fedora}
