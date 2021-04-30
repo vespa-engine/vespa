@@ -120,9 +120,10 @@ public class JRTConfigRequester implements RequestWaiter {
     }
 
     private void doHandle(JRTConfigSubscription<ConfigInstance> sub, JRTClientConfigRequest jrtReq, Connection connection) {
+        if (subscriptionIsClosed(sub)) return; // Avoid error messages etc. after closing
+
         boolean validResponse = jrtReq.validateResponse();
         log.log(FINE, () -> "Request callback " + (validResponse ? "valid" : "invalid") + ". Req: " + jrtReq + "\nSpec: " + connection);
-        if (sub.getState() == ConfigSubscription.State.CLOSED) return; // Avoid error messages etc. after closing
         Trace trace = jrtReq.getResponseTrace();
         trace.trace(TRACELEVEL, "JRTConfigRequester.doHandle()");
         log.log(FINEST, () -> trace.toString());
@@ -199,7 +200,6 @@ public class JRTConfigRequester implements RequestWaiter {
         fatalFailures = false;
         log.log(INFO, "Connection to " + connection.getAddress() +
                       " failed or timed out, clients will keep existing config, will keep trying.");
-        if (sub.getState() != ConfigSubscription.State.OPEN) return;
         scheduleNextRequest(jrtReq, sub, delay, calculateErrorTimeout());
     }
 
@@ -216,9 +216,7 @@ public class JRTConfigRequester implements RequestWaiter {
      * @param sub    a config subscription
      * @param delay  delay before sending a new request
      */
-    private void handleFatallyFailed(JRTClientConfigRequest jrtReq,
-                                     JRTConfigSubscription<ConfigInstance> sub, long delay) {
-        if (sub.getState() != ConfigSubscription.State.OPEN) return;
+    private void handleFatallyFailed(JRTClientConfigRequest jrtReq, JRTConfigSubscription<ConfigInstance> sub, long delay) {
         fatalFailures = true;
         // The logging depends on whether we are configured or not.
         Level logLevel = sub.getConfigState().getConfig() == null ? Level.FINE : Level.INFO;
@@ -242,8 +240,11 @@ public class JRTConfigRequester implements RequestWaiter {
                 sub.setException(new ConfigurationRuntimeException("Could not put returned request on queue of subscription " + sub));
             }
         }
-        if (sub.getState() != ConfigSubscription.State.OPEN) return;
         scheduleNextRequest(jrtReq, sub, calculateSuccessDelay(), calculateSuccessTimeout());
+    }
+
+    private boolean subscriptionIsClosed(JRTConfigSubscription<ConfigInstance> sub) {
+        return sub.getState() == ConfigSubscription.State.CLOSED;
     }
 
     private long calculateSuccessTimeout() {
