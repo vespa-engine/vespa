@@ -110,7 +110,7 @@ int
 PostingListBM::Main()
 {
     int argi;
-    char c;
+    int c;
     const char *optArg;
 
     argi = 1;

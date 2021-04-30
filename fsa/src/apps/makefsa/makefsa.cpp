@@ -73,7 +73,7 @@ int main(int argc, char** argv)
   bool verbose = false;
   unsigned int lines=0,count = 0;
 
-  char         opt;
+  int          opt;
   extern char *optarg;
   extern int   optind;
 

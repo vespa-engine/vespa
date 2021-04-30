@@ -189,7 +189,7 @@ public:
 
         int argi = 1;
         const char* optArg;
-        char c;
+        int c;
         while ((c = GetOpt("n:p:s:", optArg, argi)) != -1) {
             switch (c) {
             case 'p':

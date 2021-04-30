@@ -642,7 +642,7 @@ TransLogStress::Main()
     vespalib::duration sleepTime = 4s;
 
     int idx = 1;
-    char opt;
+    int opt;
     const char * arg;
     bool optError = false;
     while ((opt = GetOpt("d:p:t:f:s:v:c:e:g:i:a:b:h", arg, idx)) != -1) {

@@ -45,7 +45,6 @@ public class JRTConfigRequester implements RequestWaiter {
     private static final int TRACELEVEL = 6;
     private final TimingValues timingValues;
     private boolean fatalFailures = false;
-    private boolean transientFailures = false;
     private final ScheduledThreadPoolExecutor scheduler;
     private Instant noApplicationWarningLogged = Instant.MIN;
     private static final Duration delayBetweenWarnings = Duration.ofSeconds(60);
@@ -121,14 +120,15 @@ public class JRTConfigRequester implements RequestWaiter {
     }
 
     private void doHandle(JRTConfigSubscription<ConfigInstance> sub, JRTClientConfigRequest jrtReq, Connection connection) {
+        if (subscriptionIsClosed(sub)) return; // Avoid error messages etc. after closing
+
         boolean validResponse = jrtReq.validateResponse();
         log.log(FINE, () -> "Request callback " + (validResponse ? "valid" : "invalid") + ". Req: " + jrtReq + "\nSpec: " + connection);
-        if (sub.getState() == ConfigSubscription.State.CLOSED) return; // Avoid error messages etc. after closing
         Trace trace = jrtReq.getResponseTrace();
         trace.trace(TRACELEVEL, "JRTConfigRequester.doHandle()");
         log.log(FINEST, () -> trace.toString());
         if (validResponse) {
-            handleOKRequest(jrtReq, sub, connection);
+            handleOKRequest(jrtReq, sub);
         } else {
             logWhenErrorResponse(jrtReq, connection);
             handleFailedRequest(jrtReq, sub, connection);
@@ -165,7 +165,7 @@ public class JRTConfigRequester implements RequestWaiter {
         }
         ErrorType errorType = ErrorType.getErrorType(jrtReq.errorCode());
         connectionPool.setError(connection, jrtReq.errorCode());
-        long delay = calculateFailedRequestDelay(errorType, transientFailures, fatalFailures, timingValues, configured);
+        long delay = calculateFailedRequestDelay(errorType, fatalFailures, timingValues, configured);
         if (errorType == ErrorType.TRANSIENT) {
             handleTransientlyFailed(jrtReq, sub, delay, connection);
         } else {
@@ -173,17 +173,18 @@ public class JRTConfigRequester implements RequestWaiter {
         }
     }
 
-    static long calculateFailedRequestDelay(ErrorType errorType, boolean transientFailures, boolean fatalFailures,
-                                            TimingValues timingValues, boolean configured) {
+    static long calculateFailedRequestDelay(ErrorType errorType,
+                                            boolean fatalFailures,
+                                            TimingValues timingValues,
+                                            boolean configured) {
         long delay = (configured ? timingValues.getConfiguredErrorDelay(): timingValues.getUnconfiguredDelay());
 
         switch (errorType) {
             case TRANSIENT:
-                if (transientFailures)
-                    delay = delay * 2;
+                delay = timingValues.getRandomTransientDelay(delay);
                 break;
             case FATAL:
-                delay = timingValues.getFixedDelay() + (delay * (fatalFailures ? 1 : 0));
+                delay = timingValues.getFixedDelay() + (fatalFailures ? delay : 0);
                 delay = timingValues.getPlusMinusFractionRandom(delay, randomFraction);
                 break;
             default:
@@ -196,10 +197,9 @@ public class JRTConfigRequester implements RequestWaiter {
                                          JRTConfigSubscription<ConfigInstance> sub,
                                          long delay,
                                          Connection connection) {
-        transientFailures = true;
+        fatalFailures = false;
         log.log(INFO, "Connection to " + connection.getAddress() +
                       " failed or timed out, clients will keep existing config, will keep trying.");
-        if (sub.getState() != ConfigSubscription.State.OPEN) return;
         scheduleNextRequest(jrtReq, sub, delay, calculateErrorTimeout());
     }
 
@@ -216,9 +216,7 @@ public class JRTConfigRequester implements RequestWaiter {
      * @param sub    a config subscription
      * @param delay  delay before sending a new request
      */
-    private void handleFatallyFailed(JRTClientConfigRequest jrtReq,
-                                     JRTConfigSubscription<ConfigInstance> sub, long delay) {
-        if (sub.getState() != ConfigSubscription.State.OPEN) return;
+    private void handleFatallyFailed(JRTClientConfigRequest jrtReq, JRTConfigSubscription<ConfigInstance> sub, long delay) {
         fatalFailures = true;
         // The logging depends on whether we are configured or not.
         Level logLevel = sub.getConfigState().getConfig() == null ? Level.FINE : Level.INFO;
@@ -229,11 +227,8 @@ public class JRTConfigRequester implements RequestWaiter {
         scheduleNextRequest(jrtReq, sub, delay, calculateErrorTimeout());
     }
 
-    private void handleOKRequest(JRTClientConfigRequest jrtReq,
-                                 JRTConfigSubscription<ConfigInstance> sub,
-                                 Connection connection) {
+    private void handleOKRequest(JRTClientConfigRequest jrtReq, JRTConfigSubscription<ConfigInstance> sub) {
         fatalFailures = false;
-        transientFailures = false;
         noApplicationWarningLogged = Instant.MIN;
         sub.setLastCallBackOKTS(Instant.now());
         log.log(FINE, () -> "OK response received in handleOkRequest: " + jrtReq);
@@ -245,8 +240,11 @@ public class JRTConfigRequester implements RequestWaiter {
                 sub.setException(new ConfigurationRuntimeException("Could not put returned request on queue of subscription " + sub));
             }
         }
-        if (sub.getState() != ConfigSubscription.State.OPEN) return;
         scheduleNextRequest(jrtReq, sub, calculateSuccessDelay(), calculateSuccessTimeout());
+    }
+
+    private boolean subscriptionIsClosed(JRTConfigSubscription<ConfigInstance> sub) {
+        return sub.getState() == ConfigSubscription.State.CLOSED;
     }
 
     private long calculateSuccessTimeout() {
@@ -301,10 +299,6 @@ public class JRTConfigRequester implements RequestWaiter {
             this.jrtReq = jrtReq;
             this.connection = connection;
         }
-    }
-
-    boolean getTransientFailures() {
-        return transientFailures;
     }
 
     boolean getFatalFailures() {

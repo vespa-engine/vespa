@@ -67,7 +67,7 @@ int main(int argc, char** argv)
   FSA_Input_Format  format = OUTPUT_UNDEF;
   const char *input_file;
 
-  char         opt;
+  int          opt;
   extern int   optind;
 
   while((opt=getopt(argc,argv,"ebBhntpdV")) != -1){
