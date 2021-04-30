@@ -72,6 +72,8 @@ TEST("size of important objects")
 {
 #ifdef __APPLE__
     constexpr size_t MUTEX_SIZE = 64u;
+#elif defined(__aarch64__)
+    constexpr size_t MUTEX_SIZE = 48u;
 #else
     constexpr size_t MUTEX_SIZE = 40u;
 #endif
