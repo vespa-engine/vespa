@@ -151,10 +151,11 @@ class RestApiImpl implements RestApi {
 
     private static List<ExceptionMapperHolder<?>> combineWithDefaultExceptionMappers(
             List<ExceptionMapperHolder<?>> configuredExceptionMappers, boolean disableDefaultMappers) {
-        List<ExceptionMapperHolder<?>> exceptionMappers = new ArrayList<>(configuredExceptionMappers);
+        List<ExceptionMapperHolder<?>> exceptionMappers = new ArrayList<>();
         if (!disableDefaultMappers){
             exceptionMappers.add(new ExceptionMapperHolder<>(RestApiException.class, (context, exception) -> exception.response()));
         }
+        exceptionMappers.addAll(configuredExceptionMappers);
         return exceptionMappers;
     }
 
