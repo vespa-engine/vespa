@@ -319,7 +319,7 @@ TEST("testNegate") {
     testNegate(FloatResultNode(67.0), FloatResultNode(-67.0));
 
     char strnorm[4] = { 102, 111, 111, 0 };
-    char strneg[4] = { -102, -111, -111, 0 };
+    char strneg[4] = { (char)-102, (char)-111, (char)-111, 0 };
     testNegate(StringResultNode(strnorm), StringResultNode(strneg));
     testNegate(RawResultNode(strnorm, 3), RawResultNode(strneg, 3));
 }
