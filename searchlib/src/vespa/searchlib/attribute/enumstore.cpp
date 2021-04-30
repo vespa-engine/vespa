@@ -29,13 +29,7 @@ EnumStoreT<const char*>::load_unique_value(const void* src, size_t available, In
     if (available < sz) {
         return -1;
     }
-    Index prev_idx = idx;
     idx = _store.get_allocator().allocate(value);
-
-    if (prev_idx.valid()) {
-        auto cmp = make_comparator(value);
-        assert(cmp.less(prev_idx, Index()));
-    }
     return sz;
 }
 
