@@ -1,7 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "futf8strchrfieldsearcher.h"
+#ifdef __x86_64__
 #include "fold.h"
+#endif
 #include <vespa/vespalib/util/size_literals.h>
 
 using search::byte;
@@ -42,8 +44,9 @@ FUTF8StrChrFieldSearcher::ansiFold(const char * toFold, size_t sz, char * folded
 bool
 FUTF8StrChrFieldSearcher::lfoldaa(const char * toFold, size_t sz, char * folded, size_t & unalignedStart)
 {
-  bool retval(true);
   unalignedStart = (size_t(toFold) & 0xF);
+#ifdef __x86_64__
+  bool retval(true);
   size_t unalignedsz = std::min(sz, (16 - unalignedStart) & 0xF);
 
   size_t foldedUnaligned = (size_t(folded) & 0xF);
@@ -65,14 +68,17 @@ FUTF8StrChrFieldSearcher::lfoldaa(const char * toFold, size_t sz, char * folded,
     retval = ansiFold(toFold + unalignedsz + alignsz16, rest, folded+alignedStart+alignsz16);
   }
   return retval;
+#else
+  return ansiFold(toFold, sz, folded + unalignedStart);
+#endif
 }
 
 bool
 FUTF8StrChrFieldSearcher::lfoldua(const char * toFold, size_t sz, char * folded, size_t & alignedStart)
 {
-  bool retval(true);
-
   alignedStart =  0xF - (size_t(folded + 0xF) % 0x10);
+#ifdef __x86_64__
+  bool retval(true);
 
   size_t alignsz16 = sz & 0xFFFFFFF0;
   size_t rest = sz - alignsz16;
@@ -85,10 +91,14 @@ FUTF8StrChrFieldSearcher::lfoldua(const char * toFold, size_t sz, char * folded,
     retval = ansiFold(toFold + alignsz16, rest, folded+alignedStart+alignsz16);
   }
   return retval;
+#else
+  return ansiFold(toFold, sz, folded + alignedStart);
+#endif
 }
 
 namespace {
 
+#ifdef __x86_64__
 inline const char * advance(const char * n, const v16qi zero)
 {
     uint32_t charMap = 0;
@@ -136,12 +146,30 @@ inline const char * advance(const char * n, const v16qi zero)
     }
     return n + sum;
 }
+#else
+inline const char* advance(const char* n)
+{
+    const char* p = n;
+    const char* zero = static_cast<const char *>(memchr(p, 0, 64_Ki));
+    while (zero == nullptr) {
+        p += 64_Ki;
+        zero = static_cast<const char *>(memchr(p, 0, 64_Ki));
+    }
+    p = zero;
+    while (*p == '\0') {
+        ++p;
+    }
+    return p;
+}
+#endif
 
 }
 
 size_t FUTF8StrChrFieldSearcher::match(const char *folded, size_t sz, QueryTerm & qt)
 {
+#ifdef __x86_64__
   const v16qi _G_zero  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+#endif
   termcount_t words(0);
   const char * term;
   termsize_t tsz = qt.term(term);
@@ -177,7 +205,11 @@ size_t FUTF8StrChrFieldSearcher::match(const char *folded, size_t sz, QueryTerm 
     }
 #endif
     words++;
+#ifdef __x86_64__
     n = advance(n, _G_zero);
+#else
+    n = advance(n);
+#endif
   }
   return words;
 }
@@ -185,7 +217,9 @@ size_t FUTF8StrChrFieldSearcher::match(const char *folded, size_t sz, QueryTerm 
 size_t FUTF8StrChrFieldSearcher::match(const char *folded, size_t sz, size_t mintsz, QueryTerm ** qtl, size_t qtlSize)
 {
   (void) mintsz;
+#ifdef __x86_64__
   const v16qi _G_zero  = { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 };
+#endif
   termcount_t words(0);
   const char * n = folded;
   const char *e = n + sz;
@@ -228,7 +262,11 @@ size_t FUTF8StrChrFieldSearcher::match(const char *folded, size_t sz, size_t min
     }
 #endif
     words++;
+#ifdef __x86_64__
     n = advance(n, _G_zero);
+#else
+    n = advance(n);
+#endif
   }
   return words;
 }
