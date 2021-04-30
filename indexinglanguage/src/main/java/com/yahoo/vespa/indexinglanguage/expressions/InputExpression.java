@@ -96,7 +96,7 @@ public final class InputExpression extends Expression {
 
     public static class InputFieldNameExtractor implements ObjectOperation, ObjectPredicate {
 
-        private List<String> inputFieldNames = new ArrayList<>(1);
+        private final List<String> inputFieldNames = new ArrayList<>(1);
 
         public List<String> getInputFieldNames() { return inputFieldNames; }
 

@@ -63,7 +63,10 @@ public class IdentifierTestCase {
                                             "to_pos",
                                             "to_string",
                                             "to_wset",
+                                            "to_bool",
                                             "trim",
+                                            "true",
+                                            "false",
                                             "zcurve");
         for (String str : tokens) {
             IndexingParser parser = new IndexingParser(new IndexingInput(str));

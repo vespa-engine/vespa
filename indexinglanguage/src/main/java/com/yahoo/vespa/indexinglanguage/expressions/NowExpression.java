@@ -61,9 +61,10 @@ public final class NowExpression extends Expression {
         return getClass().hashCode() + timer.hashCode();
     }
 
-    public static interface Timer {
+    public interface Timer {
 
-        public long currentTimeSeconds();
+        long currentTimeSeconds();
+
     }
 
     private static class SystemTimer implements Timer {
@@ -75,4 +76,5 @@ public final class NowExpression extends Expression {
             return System.currentTimeMillis() / 1000;
         }
     }
+
 }
