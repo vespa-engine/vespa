@@ -191,6 +191,7 @@ TOKEN :
     <TO_POS: "to_pos"> |
     <TO_STRING: "to_string"> |
     <TO_WSET: "to_wset"> |
+    <TO_BOOL: "to_bool"> |
     <TRIM: "trim"> |
     <ZCURVE: "zcurve"> |
     <IDENTIFIER: ["a"-"z","A"-"Z", "_"] (["a"-"z","A"-"Z","0"-"9","_","-"])*>
@@ -312,6 +313,7 @@ Expression value() :
       val = toPosExp()              |
       val = toStringExp()           |
       val = toWsetExp()             |
+      val = toBoolExp()             |
       val = trimExp()               |
       val = zcurveExp()             |
       ( <LPAREN> val = statement() <RPAREN> { val = new ParenthesisExpression(val); } ) )
@@ -684,6 +686,12 @@ Expression toWsetExp() :
     { return new ToWsetExpression(createIfNonExistent, removeIfZero); }
 }
 
+Expression toBoolExp() : { }
+{
+    ( <TO_BOOL> )
+    { return new ToBoolExpression(); }
+}
+
 Expression trimExp() : { }
 {
     ( <TRIM> )
@@ -751,6 +759,7 @@ String identifier() :
         <TO_POS>                 |
         <TO_STRING>              |
         <TO_WSET>                |
+        <TO_BOOL>                |
         <TOKENIZE>               |
         <TRIM>                   |
         <ZCURVE>                 ) { val = token.image; } )

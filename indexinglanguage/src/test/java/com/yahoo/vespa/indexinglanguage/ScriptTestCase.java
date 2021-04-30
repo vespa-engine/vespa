@@ -4,6 +4,7 @@ package com.yahoo.vespa.indexinglanguage;
 import com.yahoo.document.DataType;
 import com.yahoo.document.Document;
 import com.yahoo.document.DocumentType;
+import com.yahoo.document.datatypes.BoolFieldValue;
 import com.yahoo.document.datatypes.StringFieldValue;
 import com.yahoo.vespa.indexinglanguage.expressions.*;
 import com.yahoo.vespa.indexinglanguage.parser.ParseException;
@@ -24,6 +25,7 @@ public class ScriptTestCase {
         type.addField("in-2", DataType.STRING);
         type.addField("out-1", DataType.STRING);
         type.addField("out-2", DataType.STRING);
+        type.addField("mybool", DataType.BOOL);
     }
 
     @Test
@@ -76,4 +78,5 @@ public class ScriptTestCase {
         assertNotNull(output);
         assertEquals(new StringFieldValue("foo"), output.getFieldValue("out-1"));
     }
+
 }

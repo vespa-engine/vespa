@@ -63,6 +63,7 @@ public class IdentifierTestCase {
                                             "to_pos",
                                             "to_string",
                                             "to_wset",
+                                            "to_bool",
                                             "trim",
                                             "zcurve");
         for (String str : tokens) {
