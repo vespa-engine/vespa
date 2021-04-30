@@ -30,9 +30,6 @@ private:
     int              _bitOffset;
 };
 
-// Use inline assembly for asmlog2 calculations
-#define DO_ASMLOG
-
 /*
  * The so-called rice2 code is very similar to the well known exp
  * golomb code.  One difference is that the first bits are inverted.
@@ -82,11 +79,8 @@ private:
 class CodingTables
 {
 public:
-    static uint8_t _log2Table[65536];
     static uint64_t _intMask64[65];
     static uint64_t _intMask64le[65];
-
-    CodingTables();
 };
 
 #define UC64_DECODECONTEXT(prefix)                  \
@@ -933,12 +927,7 @@ template <>
 inline uint64_t
 EncodeContext64EBase<true>::bswap(uint64_t val)
 {
-#ifdef __x86_64__
-    __asm__("bswap %0" : "=r" (val) : "0" (val));
-    return val;
-#else
     return __builtin_bswap64(val);
-#endif
 }
 
 
@@ -967,47 +956,13 @@ public:
     static inline uint32_t
     asmlog2(uint64_t x)
     {
-        uint64_t retVal;
-
-#if (defined(__x86_64__)) && defined(DO_ASMLOG)
-        __asm("bsrq %1,%0" : "=r" (retVal) : "r" (x));
-#elif defined(__aarch64__) && defined(DO_ASMLOG)
         return sizeof(uint64_t) * 8 - 1 - __builtin_clzl(x);
-#else
-        uint64_t lower = x;
-        uint32_t upper32 = lower >> 32;
-        if (upper32 != 0) {
-            uint32_t upper16 = upper32 >> 16;
-            if (upper16 != 0) {
-                retVal = 48 + CodingTables::_log2Table[upper16];
-            } else {
-                retVal = 32 + CodingTables::_log2Table[upper32];
-            }
-        } else {
-            uint32_t lower32 = static_cast<uint32_t>(x);
-            uint32_t upper16 = lower32 >> 16;
-
-            if (upper16 != 0) {
-                retVal = 16 + CodingTables::_log2Table[upper16];
-            } else {
-                retVal = CodingTables::_log2Table[lower32];
-            }
-        }
-#endif
-
-        return retVal;
     }
 
     static inline uint64_t
     ffsl(uint64_t x)
     {
-#ifdef __x86_64__
-        uint64_t retVal;
-        __asm("bsfq %1,%0" : "=r" (retVal) : "r" (x));
-        return retVal;
-#else
         return __builtin_ctzl(x);
-#endif
     }
 
     /**
