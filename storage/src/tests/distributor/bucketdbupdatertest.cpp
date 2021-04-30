@@ -1865,15 +1865,15 @@ TEST_F(BucketDBUpdaterTest, cluster_state_always_sends_full_fetch_when_distribut
 TEST_F(BucketDBUpdaterTest, changed_distribution_config_triggers_recovery_mode) {
     ASSERT_NO_FATAL_FAILURE(setAndEnableClusterState(lib::ClusterState("distributor:6 storage:6"), messageCount(6), 20));
     _sender.clear();
-    EXPECT_TRUE(_distributor->isInRecoveryMode());
+    EXPECT_TRUE(distributor_is_in_recovery_mode());
     complete_recovery_mode();
-    EXPECT_FALSE(_distributor->isInRecoveryMode());
+    EXPECT_FALSE(distributor_is_in_recovery_mode());
 
     std::string distConfig(getDistConfig6Nodes4Groups());
     setDistribution(distConfig);
     sortSentMessagesByIndex(_sender);
     // No replies received yet, still no recovery mode.
-    EXPECT_FALSE(_distributor->isInRecoveryMode());
+    EXPECT_FALSE(distributor_is_in_recovery_mode());
 
     ASSERT_EQ(messageCount(6), _sender.commands().size());
     uint32_t numBuckets = 10;
@@ -1884,9 +1884,9 @@ TEST_F(BucketDBUpdaterTest, changed_distribution_config_triggers_recovery_mode) 
 
     // Pending cluster state (i.e. distribution) has been enabled, which should
     // cause recovery mode to be entered.
-    EXPECT_TRUE(_distributor->isInRecoveryMode());
+    EXPECT_TRUE(distributor_is_in_recovery_mode());
     complete_recovery_mode();
-    EXPECT_FALSE(_distributor->isInRecoveryMode());
+    EXPECT_FALSE(distributor_is_in_recovery_mode());
 }
 
 namespace {
@@ -2471,14 +2471,14 @@ TEST_F(BucketDBUpdaterTest, deferred_activated_state_does_not_enable_state_until
                                                            "version:2 distributor:1 storage:4", n_buckets, 4));
 
     // Version should not be switched over yet
-    EXPECT_EQ(uint32_t(1), getDistributor().getClusterStateBundle().getVersion());
+    EXPECT_EQ(uint32_t(1), current_distributor_cluster_state_bundle().getVersion());
 
     EXPECT_EQ(uint64_t(0), mutable_default_db().size());
     EXPECT_EQ(uint64_t(0), mutable_global_db().size());
 
     EXPECT_FALSE(activate_cluster_state_version(2));
 
-    EXPECT_EQ(uint32_t(2), getDistributor().getClusterStateBundle().getVersion());
+    EXPECT_EQ(uint32_t(2), current_distributor_cluster_state_bundle().getVersion());
     EXPECT_EQ(uint64_t(n_buckets), mutable_default_db().size());
     EXPECT_EQ(uint64_t(n_buckets), mutable_global_db().size());
 }
