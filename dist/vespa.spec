@@ -192,9 +192,9 @@ Requires: vespa-lz4 >= 1.9.2-2
 Requires: vespa-onnxruntime = 1.7.1
 Requires: vespa-openssl >= 1.1.1k-1
 %if 0%{?centos}
-Requires: vespa-protobuf = 3.7.0-4
+Requires: vespa-protobuf = 3.7.0-4.el7
 %else
-Requires: vespa-protobuf = 3.7.0-5
+Requires: vespa-protobuf = 3.7.0-5.el7
 %endif
 Requires: vespa-telegraf >= 1.1.1-1
 Requires: vespa-valgrind >= 3.16.0-1
@@ -214,7 +214,7 @@ Requires: llvm-libs >= 10.0.1
 Requires: openssl-libs
 Requires: vespa-lz4 >= 1.9.2-2
 Requires: vespa-onnxruntime = 1.7.1
-Requires: vespa-protobuf = 3.7.0-5
+Requires: vespa-protobuf = 3.7.0-5.el8
 Requires: vespa-zstd >= 1.4.5-2
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
