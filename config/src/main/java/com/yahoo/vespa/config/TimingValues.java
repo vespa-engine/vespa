@@ -160,12 +160,22 @@ public class TimingValues {
     /**
      * Returns a number +/- a random component
      *
-     * @param val      input
+     * @param value      input
      * @param fraction for instance 0.1 for +/- 10%
      * @return a number
      */
-    public long getPlusMinusFractionRandom(long val, float fraction) {
-        return Math.round(val - (val * fraction) + (rand.nextFloat() * 2L * val * fraction));
+    public long getPlusMinusFractionRandom(long value, float fraction) {
+        return Math.round(value - (value * fraction) + (rand.nextFloat() * 2L * value * fraction));
+    }
+
+    /**
+     * Returns a number between 0 and maxValue
+     *
+     * @param maxValue max maxValue
+     * @return a number
+     */
+    public long getRandomTransientDelay(long maxValue) {
+        return Math.round(rand.nextFloat() * maxValue);
     }
 
     @Override
