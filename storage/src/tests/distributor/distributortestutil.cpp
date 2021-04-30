@@ -425,6 +425,36 @@ DistributorTestUtil::getReadOnlyBucketSpaceRepo() const {
     return _distributor->getReadOnlyBucketSpaceRepo();
 }
 
+bool
+DistributorTestUtil::distributor_is_in_recovery_mode() const noexcept {
+    return _distributor->isInRecoveryMode();
+}
+
+const lib::ClusterStateBundle&
+DistributorTestUtil::current_distributor_cluster_state_bundle() const noexcept {
+    return getDistributor().getClusterStateBundle();
+}
+
+std::string
+DistributorTestUtil::active_ideal_state_operations() const {
+    return _distributor->getActiveIdealStateOperations();
+}
+
+const PendingMessageTracker&
+DistributorTestUtil::pending_message_tracker() const noexcept {
+    return _distributor->getPendingMessageTracker();
+}
+
+PendingMessageTracker&
+DistributorTestUtil::pending_message_tracker() noexcept {
+    return _distributor->getPendingMessageTracker();
+}
+
+std::chrono::steady_clock::duration
+DistributorTestUtil::db_memory_sample_interval() const noexcept {
+    return _distributor->db_memory_sample_interval();
+}
+
 const lib::Distribution&
 DistributorTestUtil::getDistribution() const {
     return getBucketSpaceRepo().get(makeBucketSpace()).getDistribution();
@@ -451,6 +481,11 @@ void
 DistributorTestUtil::enable_distributor_cluster_state(const lib::ClusterStateBundle& state)
 {
     getBucketDBUpdater().simulate_cluster_state_bundle_activation(state);
+}
+
+void
+DistributorTestUtil::setSystemState(const lib::ClusterState& systemState) {
+    _distributor->enableClusterStateBundle(lib::ClusterStateBundle(systemState));
 }
 
 }

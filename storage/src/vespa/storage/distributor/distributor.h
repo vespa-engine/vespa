@@ -83,12 +83,6 @@ public:
     int getDistributorIndex() const override { return _component.node_index(); }
     const ClusterContext& cluster_context() const override { return _component.cluster_context(); }
 
-    /**
-     * Enables a new cluster state. Called after the bucket db updater has
-     * retrieved all bucket info related to the change.
-     */
-    void enableClusterStateBundle(const lib::ClusterStateBundle& clusterStateBundle);
-
     void storageDistributionChanged() override;
 
     bool handleReply(const std::shared_ptr<api::StorageReply>& reply);
@@ -99,25 +93,8 @@ public:
 
     bool handleStatusRequest(const DelegatedStatusRequest& request) const override;
 
-    std::string getActiveIdealStateOperations() const;
-
     virtual framework::ThreadWaitInfo doCriticalTick(framework::ThreadIndex) override;
     virtual framework::ThreadWaitInfo doNonCriticalTick(framework::ThreadIndex) override;
-
-    const lib::ClusterStateBundle& getClusterStateBundle() const;
-    const DistributorConfiguration& getConfig() const;
-
-    bool isInRecoveryMode() const noexcept;
-
-    PendingMessageTracker& getPendingMessageTracker();
-    const PendingMessageTracker& getPendingMessageTracker() const;
-
-    DistributorBucketSpaceRepo& getBucketSpaceRepo() noexcept;
-    const DistributorBucketSpaceRepo& getBucketSpaceRepo() const noexcept;
-    DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo() noexcept;
-    const DistributorBucketSpaceRepo& getReadyOnlyBucketSpaceRepo() const noexcept;
-
-    storage::distributor::DistributorStripeComponent& distributor_component() noexcept;
 
     class MetricUpdateHook : public framework::MetricUpdateHook
     {
@@ -135,8 +112,6 @@ public:
         Distributor& _self;
     };
 
-    std::chrono::steady_clock::duration db_memory_sample_interval() const noexcept;
-
 private:
     friend struct DistributorTest;
     friend class BucketDBUpdaterTest;
@@ -146,14 +121,31 @@ private:
     void setNodeStateUp();
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);
 
+    /**
+     * Enables a new cluster state. Used by tests to bypass BucketDBUpdater.
+     */
+    void enableClusterStateBundle(const lib::ClusterStateBundle& clusterStateBundle);
+
     // Accessors used by tests
+    std::string getActiveIdealStateOperations() const;
+    const lib::ClusterStateBundle& getClusterStateBundle() const;
+    const DistributorConfiguration& getConfig() const;
+    bool isInRecoveryMode() const noexcept;
+    PendingMessageTracker& getPendingMessageTracker();
+    const PendingMessageTracker& getPendingMessageTracker() const;
+    DistributorBucketSpaceRepo& getBucketSpaceRepo() noexcept;
+    const DistributorBucketSpaceRepo& getBucketSpaceRepo() const noexcept;
+    DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo() noexcept;
+    const DistributorBucketSpaceRepo& getReadyOnlyBucketSpaceRepo() const noexcept;
+    storage::distributor::DistributorStripeComponent& distributor_component() noexcept;
+    std::chrono::steady_clock::duration db_memory_sample_interval() const noexcept;
+
     StripeBucketDBUpdater& bucket_db_updater();
     const StripeBucketDBUpdater& bucket_db_updater() const;
     IdealStateManager& ideal_state_manager();
     const IdealStateManager& ideal_state_manager() const;
     ExternalOperationHandler& external_operation_handler();
     const ExternalOperationHandler& external_operation_handler() const;
-
     BucketDBMetricUpdater& bucket_db_metric_updater() const noexcept;
 
     /**
@@ -177,6 +169,7 @@ private:
     DistributorComponentRegister&         _comp_reg;
     std::shared_ptr<DistributorMetricSet> _metrics;
     ChainedMessageSender*                 _messageSender;
+    const bool                            _use_legacy_mode;
     // TODO STRIPE multiple stripes...! This is for proof of concept of wiring.
     std::unique_ptr<DistributorStripe>   _stripe;
     std::unique_ptr<LegacySingleStripeAccessor> _stripe_accessor;

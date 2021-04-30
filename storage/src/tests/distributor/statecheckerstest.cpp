@@ -48,7 +48,7 @@ struct StateCheckersTest : Test, DistributorTestUtil {
     };
 
     void enableClusterState(const lib::ClusterState& systemState) {
-        _distributor->enableClusterStateBundle(lib::ClusterStateBundle(systemState));
+        setSystemState(systemState);
     }
 
     void insertJoinableBuckets();
