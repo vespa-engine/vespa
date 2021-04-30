@@ -36,7 +36,7 @@ public class IndexingScriptChangeValidator {
 
     public List<VespaConfigChangeAction> validate() {
         List<VespaConfigChangeAction> result = new ArrayList<>();
-        for (ImmutableSDField nextField : nextSearch.allConcreteFields()) {
+        for (ImmutableSDField nextField : new LinkedHashSet<>(nextSearch.allConcreteFields())) {
             String fieldName = nextField.getName();
             ImmutableSDField currentField = currentSearch.getConcreteField(fieldName);
             if (currentField != null) {
