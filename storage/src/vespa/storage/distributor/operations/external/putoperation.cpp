@@ -156,7 +156,7 @@ bool PutOperation::has_unavailable_targets_in_pending_state(const OperationTarge
     if (!pending_state) {
         return false;
     }
-    const char* up_states = _op_ctx.storage_node_up_states();
+    const char* up_states = storage_node_up_states();
     return std::any_of(targets.begin(), targets.end(), [pending_state, up_states](const auto& target){
         return !pending_state->getNodeState(target.getNode()).getState().oneOf(up_states);
     });
@@ -176,7 +176,7 @@ PutOperation::onStart(DistributorStripeMessageSender& sender)
     bool up = false;
     for (uint16_t i = 0; i < systemState.getNodeCount(lib::NodeType::STORAGE); i++) {
         if (systemState.getNodeState(lib::Node(lib::NodeType::STORAGE, i))
-            .getState().oneOf(_op_ctx.storage_node_up_states()))
+            .getState().oneOf(storage_node_up_states()))
         {
             up = true;
         }

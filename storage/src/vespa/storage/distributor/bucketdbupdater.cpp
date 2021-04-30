@@ -108,7 +108,7 @@ BucketDBUpdater::remove_superfluous_buckets(
         const lib::ClusterStateBundle& new_state,
         bool is_distribution_config_change)
 {
-    const char* up_states = _op_ctx.storage_node_up_states();
+    const char* up_states = storage_node_up_states();
     // TODO STRIPE explicit space -> config mapping, don't get via repo
     //   ... but we need to get the current cluster state per space..!
     for (auto& elem : _op_ctx.bucket_space_repo()) {
@@ -189,7 +189,7 @@ BucketDBUpdater::storage_distribution_changed(const BucketSpaceDistributionConfi
     auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
             _node_ctx.node_index(),
             _active_state_bundle,
-            _op_ctx.storage_node_up_states());
+            storage_node_up_states());
     _pending_cluster_state = PendingClusterState::createForDistributionChange(
             _node_ctx.clock(),
             std::move(clusterInfo),
@@ -246,7 +246,7 @@ BucketDBUpdater::onSetSystemState(
     auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
                 _node_ctx.node_index(),
                 _active_state_bundle,
-                _op_ctx.storage_node_up_states());
+                storage_node_up_states());
     _pending_cluster_state = PendingClusterState::createForClusterStateChange(
             _node_ctx.clock(),
             std::move(clusterInfo),

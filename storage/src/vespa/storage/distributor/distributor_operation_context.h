@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "storage_node_up_states.h"
 #include <vespa/storageapi/defs.h>
 
 namespace storage { class DistributorConfiguration; }
@@ -24,9 +25,6 @@ public:
     virtual const DistributorBucketSpaceRepo& read_only_bucket_space_repo() const noexcept = 0;
     virtual DistributorBucketSpaceRepo& read_only_bucket_space_repo() noexcept = 0;
     virtual const DistributorConfiguration& distributor_config() const noexcept = 0;
-
-    // TODO STRIPE: Move to a common place.
-    virtual const char* storage_node_up_states() const = 0;
 };
 
 }

@@ -61,10 +61,7 @@ public:
     const storage::DistributorConfiguration& distributor_config() const noexcept override {
         return _distributor.config();
     }
-    const char* storage_node_up_states() const override {
-        // TODO STRIPE: Move to a common place.
-        return "uri";
-    }
+
 
 };
 
