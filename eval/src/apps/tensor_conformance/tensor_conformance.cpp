@@ -37,6 +37,7 @@ using namespace std::placeholders;
 //-----------------------------------------------------------------------------
 
 size_t fail_cnt = 0;
+size_t ignore_cnt = 0;
 
 //-----------------------------------------------------------------------------
 
@@ -176,7 +177,8 @@ private:
 public:
     MyTestBuilder(bool full_in, Output &out) : TestBuilder(full_in), _writer(out) {}
     void add(const vespalib::string &expression,
-             const std::map<vespalib::string,TensorSpec> &inputs_in) override
+             const std::map<vespalib::string,TensorSpec> &inputs_in,
+             const std::set<vespalib::string> &ignore_in) override
     {
         Cursor &test = _writer.create();
         test.setString("expression", expression);
@@ -185,6 +187,12 @@ public:
             insert_value(inputs, name, spec);
         }
         test.setObject("result");
+        if (!ignore_in.empty()) {
+            Cursor &ignore = test.setObject("ignore");
+            for (const auto &impl: ignore_in) {
+                ignore.setBool(impl, true);
+            }
+        }
     }
     void add_failing_test(bool ignore_fail) {
         Cursor &test = _writer.create();
@@ -192,7 +200,7 @@ public:
         insert_value(test.setObject("inputs"), "a", GenSpec(1).idx("x", 3));
         insert_value(test.setObject("result"), "dummy", GenSpec(2).idx("x", 3));
         if (ignore_fail) {
-            test.setBool("ignore_fail", true);
+            test.setObject("ignore").setBool("dummy", true);
         }
     }
 };
@@ -232,8 +240,10 @@ void verify(Input &in, Output &out) {
             ++result_map[result];
             auto actual_result = extract_value(slime["result"][result]);
             if (!require_impl::eq(actual_result, reference_result)) {
-                bool ignore_fail = slime["ignore_fail"].asBool();
-                if (!ignore_fail) {
+                bool ignore_fail = slime["ignore"][result].asBool();
+                if (ignore_fail) {
+                    ++ignore_cnt;
+                } else {
                     ++fail_cnt;
                 }
                 fprintf(stderr, "%sexpression failed('%s'): '%s'\n", ignore_fail ? "IGNORED: " : "",
@@ -249,7 +259,9 @@ void verify(Input &in, Output &out) {
             stats.setLong(entry.first, entry.second);
         }
         REQUIRE(!slime["fail_cnt"].valid());
+        REQUIRE(!slime["ignore_cnt"].valid());
         slime.get().setLong("fail_cnt", fail_cnt);
+        slime.get().setLong("ignore_cnt", ignore_cnt);
         JsonFormat::encode(slime, out, false);
     };
     for_each_test(in, handle_test, handle_summary);
