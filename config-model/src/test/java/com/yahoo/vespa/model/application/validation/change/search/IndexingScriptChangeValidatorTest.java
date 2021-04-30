@@ -2,12 +2,14 @@
 package com.yahoo.vespa.model.application.validation.change.search;
 
 import com.yahoo.config.application.api.ValidationId;
+import com.yahoo.config.application.api.ValidationOverrides;
 import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.vespa.indexinglanguage.expressions.ScriptExpression;
 import com.yahoo.vespa.model.application.validation.change.VespaConfigChangeAction;
 import com.yahoo.vespa.model.application.validation.change.VespaReindexAction;
 import org.junit.Test;
 
+import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
 
@@ -128,7 +130,7 @@ public class IndexingScriptChangeValidatorTest {
     }
 
     @Test
-    public void requireThatAddingDocumentIndexFieldIsOk() throws Exception {
+    public void requireThatAddingIndexFieldIsOk() throws Exception {
         new Fixture("", "field f1 type string { indexing: index | summary }").
                 assertValidation();
     }
@@ -140,19 +142,9 @@ public class IndexingScriptChangeValidatorTest {
     }
 
     @Test
-    public void requireThatAddingDocumentFieldIsOk() throws Exception {
+    public void requireThatAddingFieldIsOk() throws Exception {
         new Fixture("", FIELD + " { indexing: attribute | summary }").
                 assertValidation();
-    }
-
-    @Test
-    public void requireThatAddingExtraFieldRequiresReindexing() throws Exception {
-        new Fixture(" field f1 type string { indexing: index }",
-                    " field f1 type string { indexing: index } } " +
-                    " field f2 type string { indexing: input f1 | summary ")
-                .assertValidation(VespaReindexAction.of(ClusterSpec.Id.from("test"),
-                                                        null,
-                                                        "Non-document field 'f2' added; this may be populated by reindexing"));
     }
 
     @Test
