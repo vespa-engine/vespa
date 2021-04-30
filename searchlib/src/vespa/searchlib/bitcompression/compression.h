@@ -933,8 +933,12 @@ template <>
 inline uint64_t
 EncodeContext64EBase<true>::bswap(uint64_t val)
 {
+#ifdef __x86_64__
     __asm__("bswap %0" : "=r" (val) : "0" (val));
     return val;
+#else
+    return __builtin_bswap64(val);
+#endif
 }
 
 
@@ -967,10 +971,11 @@ public:
 
 #if (defined(__x86_64__)) && defined(DO_ASMLOG)
         __asm("bsrq %1,%0" : "=r" (retVal) : "r" (x));
-
+#elif defined(__aarch64__) && defined(DO_ASMLOG)
+        return sizeof(uint64_t) * 8 - 1 - __builtin_clzl(x);
 #else
-        register uint64_t lower = x;
-            uint32_t upper32 = lower >> 32;
+        uint64_t lower = x;
+        uint32_t upper32 = lower >> 32;
         if (upper32 != 0) {
             uint32_t upper16 = upper32 >> 16;
             if (upper16 != 0) {
@@ -996,9 +1001,13 @@ public:
     static inline uint64_t
     ffsl(uint64_t x)
     {
+#ifdef __x86_64__
         uint64_t retVal;
         __asm("bsfq %1,%0" : "=r" (retVal) : "r" (x));
         return retVal;
+#else
+        return __builtin_ctzl(x);
+#endif
     }
 
     /**
