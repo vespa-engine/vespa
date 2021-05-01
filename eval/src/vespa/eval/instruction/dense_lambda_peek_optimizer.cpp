@@ -139,7 +139,7 @@ struct PeekAnalyzer {
         do {
             for (size_t i = 0; i < src_dim_funs.size(); ++i) {
                 auto dim_fun = src_dim_funs[i]->get_function();
-                size_t dim_idx = dim_fun(&params[0]);
+                size_t dim_idx = (int64_t) dim_fun(&params[0]);
                 if (dim_idx >= src_dim_sizes[i]) {
                     return Result::invalid();
                 }
