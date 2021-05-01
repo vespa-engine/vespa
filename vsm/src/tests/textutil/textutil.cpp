@@ -32,8 +32,10 @@ private:
     void assertSkipSeparators(const char * input, size_t len, const UCS4V & expdstbuf, const SizeV & expoffsets);
     void assertAnsiFold(const std::string & toFold, const std::string & exp);
     void assertAnsiFold(char c, char exp);
+#ifdef __x86_64__
     void assert_sse2_foldua(const std::string & toFold, size_t charFolded, const std::string & exp);
     void assert_sse2_foldua(unsigned char c, unsigned char exp, size_t charFolded = 16);
+#endif
 
     template <typename BW, bool OFF>
     void testSkipSeparators();
@@ -41,7 +43,9 @@ private:
     void testSeparatorCharacter();
     void testAnsiFold();
     void test_lfoldua();
+#ifdef __x86_64__
     void test_sse2_foldua();
+#endif
 
 public:
     int Main() override;
@@ -91,6 +95,7 @@ TextUtilTest::assertAnsiFold(char c, char exp)
     EXPECT_EQUAL((int32_t)folded, (int32_t)exp);
 }
 
+#ifdef __x86_64__
 void
 TextUtilTest::assert_sse2_foldua(const std::string & toFold, size_t charFolded, const std::string & exp)
 {
@@ -116,6 +121,7 @@ TextUtilTest::assert_sse2_foldua(unsigned char c, unsigned char exp, size_t char
         EXPECT_EQUAL((int32_t)folded[i + alignedStart], (int32_t)exp);
     }
 }
+#endif
 
 template <typename BW, bool OFF>
 void
@@ -227,6 +233,7 @@ TextUtilTest::test_lfoldua()
     EXPECT_EQUAL(std::string(folded + alignedStart, len), "abcdefghijklmnopqrstuvwxyz");
 }
 
+#ifdef __x86_64__
 void
 TextUtilTest::test_sse2_foldua()
 {
@@ -255,6 +262,7 @@ TextUtilTest::test_sse2_foldua()
         assert_sse2_foldua(i, '?', 0);
     }
 }
+#endif
 
 int
 TextUtilTest::Main()
@@ -265,7 +273,9 @@ TextUtilTest::Main()
     testSeparatorCharacter();
     testAnsiFold();
     test_lfoldua();
+#ifdef __x86_64__
     test_sse2_foldua();
+#endif
 
     TEST_DONE();
 }
