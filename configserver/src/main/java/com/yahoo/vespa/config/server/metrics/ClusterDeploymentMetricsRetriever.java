@@ -165,7 +165,7 @@ public class ClusterDeploymentMetricsRetriever {
         }
     }
 
-    public static OptionalDouble optionalDouble(Inspector field) {
+    private static OptionalDouble optionalDouble(Inspector field) {
         return field.valid() ? OptionalDouble.of(field.asDouble()) : OptionalDouble.empty();
     }
 }
