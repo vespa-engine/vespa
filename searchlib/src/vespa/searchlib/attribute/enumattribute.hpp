@@ -28,7 +28,7 @@ void EnumAttribute<B>::load_enum_store(LoadedVector& loaded)
         auto loader = _enumStore.make_non_enumerated_loader();
         if (!loaded.empty()) {
             auto value = loaded.read();
-            LoadedValueType prev = value.getValue();
+            typename B::LoadedValueType prev = value.getValue();
             uint32_t prevRefCount(0);
             EnumIndex index = loader.insert(value.getValue(), value._pidx.ref());
             for (size_t i(0), m(loaded.size()); i < m; ++i, loaded.next()) {
@@ -62,16 +62,9 @@ template <typename B>
 void
 EnumAttribute<B>::insertNewUniqueValues(EnumStoreBatchUpdater& updater)
 {
-    UniqueSet newUniques;
-
-    // find new unique strings
+    // find and insert new unique strings
     for (const auto & data : this->_changes) {
-        considerAttributeChange(data, newUniques);
-    }
-
-    // insert new unique values in EnumStore
-    for (const auto & data : newUniques) {
-        updater.insert(data.raw());
+        considerAttributeChange(data, updater);
     }
 }
 

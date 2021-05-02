@@ -68,9 +68,6 @@ StringSearchHelper::isMatch(const char *src) const {
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(StringAttribute, AttributeVector);
 
-using attribute::LoadedEnumAttribute;
-using attribute::LoadedEnumAttributeVector;
-
 class SortDataChar {
 public:
     SortDataChar() { }

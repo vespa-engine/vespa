@@ -26,7 +26,6 @@ template <typename B, typename M>
 class MultiValueStringAttributeT : public MultiValueEnumAttribute<B, M> {
 protected:
     using DocIndices = typename MultiValueAttribute<B, M>::DocumentValues;
-    using EnumHintSearchContext = attribute::EnumHintSearchContext;
     using EnumIndex = typename MultiValueAttribute<B, M>::ValueType;
     using EnumStore = typename B::EnumStore;
     using MultiValueMapping = typename MultiValueAttribute<B, M>::MultiValueMapping;
@@ -150,7 +149,7 @@ public:
 
     template <typename BT>
     class StringTemplSearchContext : public BT,
-                                     public EnumHintSearchContext
+                                     public attribute::EnumHintSearchContext
     {
         using BT::queryTerm;
         using AttrType = MultiValueStringAttributeT<B, M>;
