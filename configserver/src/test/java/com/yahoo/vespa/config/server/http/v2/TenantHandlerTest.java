@@ -6,16 +6,13 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
 import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.container.jdisc.HttpRequest;
-import com.yahoo.container.jdisc.HttpResponse;
+import com.yahoo.container.jdisc.HttpRequestBuilder;
 import com.yahoo.jdisc.http.HttpRequest.Method;
+import com.yahoo.restapi.RestApiTestDriver;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.MockProvisioner;
 import com.yahoo.vespa.config.server.application.OrchestratorMock;
-import com.yahoo.vespa.config.server.http.BadRequestException;
-import com.yahoo.vespa.config.server.http.NotFoundException;
 import com.yahoo.vespa.config.server.session.PrepareParams;
-import com.yahoo.vespa.config.server.tenant.Tenant;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.vespa.config.server.tenant.TestTenantRepository;
 import org.junit.After;
@@ -29,11 +26,11 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-import static org.hamcrest.CoreMatchers.is;
+import static com.yahoo.jdisc.http.HttpRequest.Method.DELETE;
+import static com.yahoo.jdisc.http.HttpRequest.Method.GET;
+import static com.yahoo.jdisc.http.HttpRequest.Method.PUT;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertThat;
-import static org.junit.Assert.fail;
 
 public class TenantHandlerTest {
 
@@ -43,6 +40,8 @@ public class TenantHandlerTest {
     private ApplicationRepository applicationRepository;
     private TenantHandler handler;
     private final TenantName a = TenantName.from("a");
+
+    private RestApiTestDriver testDriver;
 
     @Rule
     public TemporaryFolder temporaryFolder = new TemporaryFolder();
@@ -63,7 +62,8 @@ public class TenantHandlerTest {
                 .withOrchestrator(new OrchestratorMock())
                 .withConfigserverConfig(configserverConfig)
                 .build();
-        handler = new TenantHandler(TenantHandler.testOnlyContext(), applicationRepository);
+        handler = new TenantHandler(RestApiTestDriver.createHandlerTestContext(), applicationRepository);
+        testDriver = RestApiTestDriver.newBuilder(handler).build();
     }
 
     @After
@@ -74,91 +74,81 @@ public class TenantHandlerTest {
     @Test
     public void testTenantCreate() throws Exception {
         assertNull(tenantRepository.getTenant(a));
-        TenantCreateResponse response = putSync(
-                HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.PUT));
-        assertResponseEquals(response, "{\"message\":\"Tenant a created.\"}");
+        assertResponse(PUT, "/application/v2/tenant/a",
+                       "{\"message\":\"Tenant a created.\"}");
+        assertEquals(a, tenantRepository.getTenant(a).getName());
     }
 
     @Test
     public void testTenantCreateWithAllPossibleCharactersInName() throws Exception {
         TenantName tenantName = TenantName.from("aB-9999_foo");
         assertNull(tenantRepository.getTenant(tenantName));
-        TenantCreateResponse response = putSync(
-                HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/" + tenantName, Method.PUT));
-        assertResponseEquals(response, "{\"message\":\"Tenant " + tenantName + " created.\"}");
+        assertResponse(PUT, "/application/v2/tenant/aB-9999_foo",
+                       "{\"message\":\"Tenant " + tenantName + " created.\"}");
     }
 
-    @Test(expected=NotFoundException.class)
-    public void testGetNonExisting() {
-        handler.handleGET(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/x", Method.GET));
+    @Test
+    public void testGetNonExisting() throws IOException {
+        assertResponse(GET, "/application/v2/tenant/x",
+                       "{\"error-code\":\"NOT_FOUND\",\"message\":\"Tenant 'x' was not found.\"}");
     }
- 
+
     @Test
     public void testGetAndList() throws Exception {
         tenantRepository.addTenant(a);
-        assertResponseEquals((TenantGetResponse) handler.handleGET(
-                HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.GET)),
-                "{\"message\":\"Tenant 'a' exists.\"}");
-        assertResponseEquals((ListTenantsResponse) handler.handleGET(
-                HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/", Method.GET)),
-                "{\"tenants\":[\"default\",\"a\"]}");
+        assertResponse(GET, "/application/v2/tenant/a",
+                       "{\"message\":\"Tenant 'a' exists.\"}");
+        assertResponse(GET, "/application/v2/tenant/",
+                       "{\"tenants\":[\"default\",\"a\"]}");
+        assertResponse(GET, "/application/v2/tenant",
+                       "{\"tenants\":[\"default\",\"a\"]}");
     }
 
-    @Test(expected=BadRequestException.class)
+    @Test
     public void testCreateExisting() throws Exception {
         assertNull(tenantRepository.getTenant(a));
-        TenantCreateResponse response = putSync(HttpRequest.createTestRequest(
-                "http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.PUT));
-        assertResponseEquals(response, "{\"message\":\"Tenant a created.\"}");
+        assertResponse(PUT, "/application/v2/tenant/a",
+                       "{\"message\":\"Tenant a created.\"}");
         assertEquals(tenantRepository.getTenant(a).getName(), a);
-        handler.handlePUT(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.PUT));
+        assertResponse(PUT, "/application/v2/tenant/a",
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"There already exists a tenant 'a'\"}");
     }
 
     @Test
     public void testDelete() throws IOException {
-        putSync(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.PUT));
-        assertEquals(tenantRepository.getTenant(a).getName(), a);
-        TenantDeleteResponse delResp = (TenantDeleteResponse) handler.handleDELETE(
-                HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a", Method.DELETE));
-        assertResponseEquals(delResp, "{\"message\":\"Tenant a deleted.\"}");
+        tenantRepository.addTenant(a);
+        assertResponse(DELETE, "/application/v2/tenant/a",
+                       "{\"message\":\"Tenant a deleted.\"}");
         assertNull(tenantRepository.getTenant(a));
     }
 
     @Test
-    public void testDeleteTenantWithActiveApplications() {
-        putSync(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/" + a, Method.PUT));
-        Tenant tenant = tenantRepository.getTenant(a);
-        assertEquals(a, tenant.getName());
-
+    public void testDeleteTenantWithActiveApplications() throws IOException {
+        tenantRepository.addTenant(a);
         ApplicationId applicationId = ApplicationId.from(a, ApplicationName.from("foo"), InstanceName.defaultName());
         applicationRepository.deploy(testApp, new PrepareParams.Builder().applicationId(applicationId).build());
 
-        try {
-            handler.handleDELETE(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/" + a, Method.DELETE));
-            fail();
-        } catch (IllegalArgumentException e) {
-            assertThat(e.getMessage(), is("Cannot delete tenant 'a', it has active applications: [a.foo]"));
-        }
+        assertResponse(DELETE, "/application/v2/tenant/a",
+                       "{\"error-code\":\"BAD_REQUEST\",\"message\":\"Cannot delete tenant 'a', it has active applications: [a.foo]\"}");
     }
 
-    @Test(expected=NotFoundException.class)
-    public void testDeleteNonExisting() {
-        handler.handleDELETE(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/x", Method.DELETE));
-    }
-    
-    @Test(expected=BadRequestException.class)
-    public void testIllegalNameSlashes() {
-        putSync(HttpRequest.createTestRequest("http://deploy.example.yahoo.com:80/application/v2/tenant/a/b", Method.PUT));
+    @Test
+    public void testDeleteNonExisting() throws IOException {
+        assertResponse(DELETE, "/application/v2/tenant/a",
+                       "{\"error-code\":\"NOT_FOUND\",\"message\":\"Tenant 'a' was not found.\"}");
     }
 
-    private TenantCreateResponse putSync(HttpRequest testRequest) {
-        return (TenantCreateResponse) handler.handlePUT(testRequest);
+    @Test
+    public void testIllegalNameSlashes() throws IOException {
+        assertResponse(PUT, "/application/v2/tenant/a/b",
+                       "{\"error-code\":\"NOT_FOUND\",\"message\":\"Nothing at '/application/v2/tenant/a/b'\"}");
     }
 
-    private void assertResponseEquals(HttpResponse response, String payload) throws IOException {
+    private void assertResponse(Method method, String path, String payload) throws IOException {
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        response.render(baos);
-        assertEquals(baos.toString(StandardCharsets.UTF_8), payload);
+        testDriver.executeRequest(HttpRequestBuilder.create(method, path).build())
+                  .render(baos);
+        assertEquals(payload, baos.toString(StandardCharsets.UTF_8));
     }
 
 }

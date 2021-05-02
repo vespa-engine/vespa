@@ -110,7 +110,7 @@ public class HttpErrorResponse extends HttpResponse {
         new JsonFormat(true).encode(stream, slime);
     }
 
-    //@Override
+    @Override
     public String getContentType() {
         return HttpConfigResponse.JSON_CONTENT_TYPE;
     }
