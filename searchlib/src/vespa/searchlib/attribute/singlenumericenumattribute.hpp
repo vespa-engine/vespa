@@ -24,7 +24,7 @@ SingleValueNumericEnumAttribute<B>::considerUpdateAttributeChange(const Change &
 
 template <typename B>
 void
-SingleValueNumericEnumAttribute<B>::considerArithmeticAttributeChange(const Change & c, UniqueSet & newUniques)
+SingleValueNumericEnumAttribute<B>::considerArithmeticAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter)
 {
     T oldValue;
     auto iter = _currDocValues.find(c._doc);
@@ -38,7 +38,9 @@ SingleValueNumericEnumAttribute<B>::considerArithmeticAttributeChange(const Chan
 
     EnumIndex idx;
     if (!this->_enumStore.find_index(newValue, idx)) {
-        newUniques.insert(newValue);
+        c._enumScratchPad = inserter.insert(newValue).ref();
+    } else {
+        c._enumScratchPad = idx.ref();
     }
 
     _currDocValues[c._doc] = newValue;
@@ -158,9 +160,9 @@ SingleValueNumericEnumAttribute<B>::getSearch(QueryTermSimple::UP qTerm,
     (void) params;
     QueryTermSimple::RangeResult<T> res = qTerm->getRange<T>();
     if (res.isEqual()) {
-        return AttributeVector::SearchContext::UP (new SingleSearchContext(std::move(qTerm), *this));
+        return std::make_unique<SingleSearchContext>(std::move(qTerm), *this);
     } else {
-        return AttributeVector::SearchContext::UP (new SingleSearchContext(std::move(qTerm), *this));
+        return std::make_unique<SingleSearchContext>(std::move(qTerm), *this);
     }
 }
 

@@ -45,16 +45,10 @@ class SingleValueEnumAttribute : public B, public SingleValueEnumAttributeBase {
 protected:
     using Change = typename B::Change;
     using ChangeVector = typename B::ChangeVector;
-    using ChangeVectorIterator = typename B::ChangeVector::const_iterator;
     using DocId = typename B::DocId;
-    using EnumIndexRemapper = IEnumStore::EnumIndexRemapper;
-    using EnumModifier = typename B::EnumModifier;
     using EnumStore = typename B::EnumStore;
     using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
-    using LoadedEnumAttribute = attribute::LoadedEnumAttribute;
-    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using LoadedVector = typename B::LoadedVector;
-    using UniqueSet = typename B::UniqueSet;
     using ValueModifier = typename B::ValueModifier;
     using WeightedEnum = typename B::WeightedEnum;
     using generation_t = typename B::generation_t;
@@ -62,16 +56,16 @@ protected:
     using B::getGenerationHolder;
 
 private:
-    void considerUpdateAttributeChange(const Change & c, UniqueSet & newUniques);
+    void considerUpdateAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter);
     void applyUpdateValueChange(const Change& c, EnumStoreBatchUpdater& updater);
 
 protected:
     // from EnumAttribute
-    void considerAttributeChange(const Change & c, UniqueSet & newUniques) override;
+    void considerAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter) override;
 
     // implemented by single value numeric enum attribute.
     virtual void considerUpdateAttributeChange(const Change & c) { (void) c; }
-    virtual void considerArithmeticAttributeChange(const Change & c, UniqueSet & newUniques) { (void) c; (void) newUniques; }
+    virtual void considerArithmeticAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter) { (void) c; (void) inserter; }
 
     virtual void applyValueChanges(EnumStoreBatchUpdater& updater) ;
     virtual void applyArithmeticValueChange(const Change& c, EnumStoreBatchUpdater& updater) {

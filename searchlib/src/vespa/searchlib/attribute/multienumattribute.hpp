@@ -34,7 +34,7 @@ MultiValueEnumAttribute<B, M>::extractChangeData(const Change & c, EnumIndex & i
 
 template <typename B, typename M>
 void
-MultiValueEnumAttribute<B, M>::considerAttributeChange(const Change & c, UniqueSet & newUniques)
+MultiValueEnumAttribute<B, M>::considerAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter)
 {
     if (c._type == ChangeBase::APPEND ||
         (this->getInternalCollectionType().createIfNonExistant() &&
@@ -42,7 +42,7 @@ MultiValueEnumAttribute<B, M>::considerAttributeChange(const Change & c, UniqueS
     {
         EnumIndex idx;
         if (!this->_enumStore.find_index(c._data.raw(), idx)) {
-            newUniques.insert(c._data);
+            c._enumScratchPad = inserter.insert(c._data.raw()).ref();
         } else {
             c._enumScratchPad = idx.ref();
         }

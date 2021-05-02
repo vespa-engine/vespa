@@ -49,7 +49,6 @@ class StringAttribute : public AttributeVector
 {
 public:
     using EnumIndex = IEnumStore::Index;
-    using EnumIndexVector = IEnumStore::IndexVector;
     using EnumVector = IEnumStore::EnumVector;
     using LoadedValueType = const char*;
     using LoadedVector = NoLoadedVector;
