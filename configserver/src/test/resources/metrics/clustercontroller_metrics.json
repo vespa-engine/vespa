@@ -17,6 +17,15 @@
             "clustertype": "content",
             "clusterid": "content_cluster_id"
           }
+        },
+        {
+          "values": {
+            "some.other.metrics": 1
+          },
+          "dimensions": {
+            "clustertype": "admin",
+            "clusterid": "cluster-controllers"
+          }
         }
       ]
     }
