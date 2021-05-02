@@ -84,10 +84,4 @@ public class Slobrok extends AbstractService implements StateserverConfig.Produc
         return "tcp/" + getHostName() + ":" + getRpcPort();
     }
 
-    public void remove() {
-        super.remove();
-        portsMeta.on(0).tag("rpc").tag("admin").tag("status");
-        portsMeta.on(1).tag("http").tag("state");
-    }
-
 }
