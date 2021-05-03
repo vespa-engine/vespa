@@ -79,7 +79,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
                                                                _component.getDistribution(),
                                                                *_stripe_accessor);
     }
-    _hostInfoReporter.enableReporting(getConfig().getEnableHostInfoReporting());
+    _hostInfoReporter.enableReporting(config().getEnableHostInfoReporting());
     _distributorStatusDelegate.registerStatusPage();
     hostInfoReporterRegistrar.registerReporter(&_hostInfoReporter);
     propagateDefaultDistribution(_component.getDistribution());
@@ -443,14 +443,14 @@ Distributor::enableNextConfig() // TODO STRIPE rename to enable_next_config_if_c
 {
     // Only lazily trigger a config propagation and internal update if something has _actually changed_.
     if (_component.internal_config_generation() != _current_internal_config_generation) {
+        _total_config = _component.total_distributor_config_sp();
         if (!_use_legacy_mode) {
-            _total_config = _component.total_distributor_config_sp();
             auto guard = _stripe_accessor->rendezvous_and_hold_all();
             guard->update_total_distributor_config(_component.total_distributor_config_sp());
         } else {
             _stripe->update_total_distributor_config(_component.total_distributor_config_sp());
         }
-        _hostInfoReporter.enableReporting(getConfig().getEnableHostInfoReporting());
+        _hostInfoReporter.enableReporting(config().getEnableHostInfoReporting());
         _current_internal_config_generation = _component.internal_config_generation();
     }
     if (_use_legacy_mode) {
