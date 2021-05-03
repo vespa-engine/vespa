@@ -53,6 +53,7 @@ public class SlobrokClient implements NodeLookup {
         this.connectionSpecs = slobrokConnectionSpecs;
         shutdown();
         supervisor = new Supervisor(new Transport("slobrok-client"));
+        supervisor.useSmallBuffers();
         SlobrokList slist = new SlobrokList();
         slist.setup(slobrokConnectionSpecs);
         mirror = new Mirror(supervisor, slist);
