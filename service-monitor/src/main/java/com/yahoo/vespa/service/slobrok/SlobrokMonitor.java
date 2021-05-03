@@ -24,21 +24,19 @@ public class SlobrokMonitor implements AutoCloseable {
 
     private final SlobrokList slobrokList;
     private final Mirror mirror;
-    private final Transport transport;
 
-    SlobrokMonitor() {
-        this(new SlobrokList(), new Transport("slobrok-monitor"));
+    SlobrokMonitor(Supervisor supervisor) {
+        this(new SlobrokList(), supervisor);
+    }
+
+    private SlobrokMonitor(SlobrokList slobrokList, Supervisor supervisor) {
+        this(slobrokList, new Mirror(supervisor, slobrokList));
     }
 
     // Package-private for testing.
-    SlobrokMonitor(SlobrokList slobrokList, Mirror mirror, Transport transport) {
+    SlobrokMonitor(SlobrokList slobrokList, Mirror mirror) {
         this.slobrokList = slobrokList;
         this.mirror = mirror;
-        this.transport = transport;
-    }
-
-    private SlobrokMonitor(SlobrokList slobrokList, Transport transport) {
-        this(slobrokList, new Mirror(new Supervisor(transport), slobrokList), transport);
     }
 
     void updateSlobrokList(ApplicationInfo application) {
@@ -74,9 +72,6 @@ public class SlobrokMonitor implements AutoCloseable {
     @Override
     public void close() {
         mirror.shutdown();
-        transport.sync()     // Wait for mirror shutdown.
-                 .shutdown() // Signal shutdown of transport threads.
-                 .join();    // Wait for shutdown of transport threads.
     }
 
     boolean registeredInSlobrok(String slobrokServiceName) {
