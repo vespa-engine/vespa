@@ -54,10 +54,10 @@ public class MixedTensor implements Tensor {
     public double get(TensorAddress address) {
         long cellIndex = index.indexOf(address);
         if (cellIndex < 0 || cellIndex >= cells.size())
-            return Double.NaN;
+            return 0.0;
         Cell cell = cells.get((int)cellIndex);
         if ( ! address.equals(cell.getKey()))
-            return Double.NaN;
+            return 0.0;
         return cell.getValue();
     }
 

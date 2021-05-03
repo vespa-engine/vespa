@@ -106,7 +106,7 @@ public abstract class IndexedTensor implements Tensor {
         return getFloat((int)toValueIndex(indexes, dimensionSizes));
     }
 
-    /** Returns the value at this address, or NaN if there is no value at this address */
+    /** Returns the value at this address, or 0.0 if there is no value at this address */
     @Override
     public double get(TensorAddress address) {
         // optimize for fast lookup within bounds:
@@ -114,7 +114,7 @@ public abstract class IndexedTensor implements Tensor {
             return get((int)toValueIndex(address, dimensionSizes, type));
         }
         catch (IllegalArgumentException e) {
-            return Double.NaN;
+            return 0.0;
         }
     }
 

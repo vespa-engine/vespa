@@ -67,7 +67,7 @@ public interface Tensor {
     /** Returns the number of cells in this */
     long size();
 
-    /** Returns the value of a cell, or NaN if this cell does not exist/have no value */
+    /** Returns the value of a cell, or 0.0 if this cell does not exist */
     double get(TensorAddress address);
 
     /** Returns true if this cell exists */
