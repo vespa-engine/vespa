@@ -95,7 +95,7 @@ public class SlobrokMonitorManagerImpl extends AbstractComponent implements Slob
 
     @Override
     public void deconstruct() {
-        transport.sync().shutdown().join();
+        transport.shutdown().join();
     }
 
     @Override
