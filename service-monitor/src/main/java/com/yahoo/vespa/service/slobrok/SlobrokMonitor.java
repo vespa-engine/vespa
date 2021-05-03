@@ -12,7 +12,6 @@ import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
@@ -25,19 +24,21 @@ public class SlobrokMonitor implements AutoCloseable {
 
     private final SlobrokList slobrokList;
     private final Mirror mirror;
+    private final Transport transport;
 
     SlobrokMonitor() {
-        this(new SlobrokList());
+        this(new SlobrokList(), new Transport("slobrok-monitor"));
     }
 
     // Package-private for testing.
-    SlobrokMonitor(SlobrokList slobrokList, Mirror mirror) {
+    SlobrokMonitor(SlobrokList slobrokList, Mirror mirror, Transport transport) {
         this.slobrokList = slobrokList;
         this.mirror = mirror;
+        this.transport = transport;
     }
 
-    private SlobrokMonitor(SlobrokList slobrokList) {
-        this(slobrokList, new Mirror(new Supervisor(new Transport("slobrok-monitor")), slobrokList));
+    private SlobrokMonitor(SlobrokList slobrokList, Transport transport) {
+        this(slobrokList, new Mirror(new Supervisor(transport), slobrokList), transport);
     }
 
     void updateSlobrokList(ApplicationInfo application) {
@@ -73,6 +74,9 @@ public class SlobrokMonitor implements AutoCloseable {
     @Override
     public void close() {
         mirror.shutdown();
+        transport.sync()     // Wait for mirror shutdown.
+                 .shutdown() // Signal shutdown of transport threads.
+                 .join();    // Wait for shutdown of transport threads.
     }
 
     boolean registeredInSlobrok(String slobrokServiceName) {
