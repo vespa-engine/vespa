@@ -7,7 +7,7 @@ namespace storage::distributor {
 /**
  * Returns the states in which the distributors consider storage nodes to be up.
  */
-constexpr const char* storage_node_up_states() {
+constexpr const char* storage_node_up_states() noexcept {
     return "uri";
 }
 
