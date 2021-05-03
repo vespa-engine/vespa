@@ -138,8 +138,8 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundIntFlag MAX_PENDING_MOVE_OPS = defineIntFlag(
-            "max-pending-move-ops", 10,
-            List.of("baldersheim"), "2021-02-15", "2021-05-01",
+            "max-pending-move-ops", 100,
+            List.of("baldersheim"), "2021-02-15", "2021-06-01",
             "Max number of move operations inflight",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
@@ -152,15 +152,15 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_LID_SPACE_COMPACT = defineFeatureFlag(
-            "use-bucket-executor-for-lid-space-compact", false,
-            List.of("baldersheim"), "2021-01-24", "2021-05-01",
+            "use-bucket-executor-for-lid-space-compact", true,
+            List.of("baldersheim"), "2021-01-24", "2021-06-01",
             "Wheter to use content-level bucket executor or legacy frozen buckets",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_BUCKET_MOVE = defineFeatureFlag(
-            "use-bucket-executor-for-bucket-move", false,
-            List.of("baldersheim"), "2021-02-15", "2021-05-01",
+            "use-bucket-executor-for-bucket-move", true,
+            List.of("baldersheim"), "2021-02-15", "2021-06-01",
             "Wheter to use content-level bucket executor or legacy frozen buckets",
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
@@ -180,8 +180,8 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundDoubleFlag MAX_DEAD_BYTES_RATIO = defineDoubleFlag(
-            "max-dead-bytes-ratio", 0.15,
-            List.of("baldersheim", "geirst","toregge"), "2021-02-03", "2021-05-01",
+            "max-dead-bytes-ratio", 0.05,
+            List.of("baldersheim", "geirst","toregge"), "2021-02-03", "2021-06-01",
             "max ratio of dead to used memory bytes in large data structures before compaction is attempted",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
