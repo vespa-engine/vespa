@@ -133,14 +133,6 @@ public:
     const lib::ClusterStateBundle& getClusterStateBundle() const override;
 
     /**
-     * @return Returns the states in which the distributors consider
-     * storage nodes to be up.
-     */
-    const char* getStorageNodeUpStates() const override {
-        return "uri";
-    }
-
-    /**
      * Called by bucket db updater after a merge has finished, and all the
      * request bucket info operations have been performed as well. Passes the
      * merge back to the operation that created it.

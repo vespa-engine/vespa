@@ -295,7 +295,7 @@ DistributorStripe::enableClusterStateBundle(const lib::ClusterStateBundle& state
     const uint16_t new_node_count = baseline_state.getNodeCount(lib::NodeType::STORAGE);
     for (uint16_t i = 0; i < std::max(old_node_count, new_node_count); ++i) {
         const auto& node_state = baseline_state.getNodeState(lib::Node(lib::NodeType::STORAGE, i)).getState();
-        if (!node_state.oneOf(getStorageNodeUpStates())) {
+        if (!node_state.oneOf(storage_node_up_states())) {
             std::vector<uint64_t> msgIds = _pendingMessageTracker.clearMessagesForNode(i);
             LOG(debug, "Node %u is down, clearing %zu pending maintenance operations", i, msgIds.size());
 

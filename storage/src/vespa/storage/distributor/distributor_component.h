@@ -22,8 +22,8 @@ class DistributorComponent : public storage::DistributorComponent,
                              public DistributorOperationContext {
 private:
     DistributorInterface& _distributor;
-    // TODO STRIPE: These bucket space repos are only temporary until we get an interface
-    // to look at state per bucket space.
+    // TODO STRIPE: When legacy mode is removed, replace this with mapping from BucketSpace to struct with
+    //              lib::ClusterState and lib::Distribution (need by BucketDBUpdater).
     std::unique_ptr<DistributorBucketSpaceRepo> _bucket_space_repo;
     std::unique_ptr<DistributorBucketSpaceRepo> _read_only_bucket_space_repo;
 
@@ -61,10 +61,7 @@ public:
     const storage::DistributorConfiguration& distributor_config() const noexcept override {
         return _distributor.config();
     }
-    const char* storage_node_up_states() const override {
-        // TODO STRIPE: Move to a common place.
-        return "uri";
-    }
+
 
 };
 

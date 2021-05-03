@@ -158,10 +158,6 @@ public:
      */
     bool storage_node_is_up(document::BucketSpace bucket_space, uint32_t node_index) const override;
 
-    const char* storage_node_up_states() const override {
-        return getDistributor().getStorageNodeUpStates();
-    }
-
     // Implements DocumentSelectionParser
     std::unique_ptr<document::select::Node> parse_selection(const vespalib::string& selection) const override;
 
