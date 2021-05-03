@@ -64,12 +64,7 @@ public class Slice<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETY
 
         PartialAddress subspaceAddress = subspaceToAddress(tensor.type(), context);
         if (resultType.rank() == 0) { // shortcut common case
-            var key = subspaceAddress.asAddress(tensor.type());
-            if (tensor.has(key)) {
-                return Tensor.from(tensor.get(key));
-            } else {
-                return Tensor.from(0.0);
-            }
+            return Tensor.from(tensor.get(subspaceAddress.asAddress(tensor.type())));
         }
 
         Tensor.Builder b = Tensor.Builder.of(resultType);
