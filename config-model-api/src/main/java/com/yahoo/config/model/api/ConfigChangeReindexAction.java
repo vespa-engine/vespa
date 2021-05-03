@@ -13,7 +13,7 @@ public interface ConfigChangeReindexAction extends ConfigChangeAction {
     @Override default Type getType() { return Type.REINDEX; }
 
     /** @return name identifying this kind of change, used to identify names which should be allowed */
-    default String name() { return validationId().orElseThrow().value(); }
+    default String name() { return validationId().map(ValidationId::value).orElse("reindexing"); }
 
     /** @return name of the document type that must be re-indexed */
     String getDocumentType();
