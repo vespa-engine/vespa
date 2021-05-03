@@ -38,6 +38,10 @@ struct IdealStateManagerTest : Test, DistributorTestUtil {
         close();
     }
 
+    void setSystemState(const lib::ClusterState& systemState) {
+        _distributor->enableClusterStateBundle(lib::ClusterStateBundle(systemState));
+    }
+
     bool checkBlock(const IdealStateOperation& op,
                     const document::Bucket& bucket,
                     const PendingMessageTracker& tracker,
@@ -116,7 +120,7 @@ TEST_F(IdealStateManagerTest, disabled_state_checker) {
          ost.str());
 
     tick();
-    EXPECT_EQ("", active_ideal_state_operations());
+    EXPECT_EQ("", _distributor->getActiveIdealStateOperations());
 
 }
 
@@ -139,12 +143,13 @@ TEST_F(IdealStateManagerTest, clear_active_on_node_down) {
     EXPECT_EQ("setbucketstate to [2] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)) (pri 100)\n"
               "setbucketstate to [2] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000002)) (pri 100)\n"
               "setbucketstate to [2] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000003)) (pri 100)\n",
-              active_ideal_state_operations());
+              _distributor->getActiveIdealStateOperations());
 
     setSystemState(lib::ClusterState("distributor:1 storage:3 .2.s:d"));
 
-    EXPECT_EQ("", active_ideal_state_operations());
-    EXPECT_EQ(0, pending_message_tracker().getNodeInfo().getPendingCount(0));
+    EXPECT_EQ("", _distributor->getActiveIdealStateOperations());
+    EXPECT_EQ(0, _distributor->getPendingMessageTracker()
+                 .getNodeInfo().getPendingCount(0));
 }
 
 TEST_F(IdealStateManagerTest, recheck_when_active) {
@@ -157,17 +162,17 @@ TEST_F(IdealStateManagerTest, recheck_when_active) {
     tick();
 
     EXPECT_EQ("setbucketstate to [0] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)) (pri 100)\n",
-              active_ideal_state_operations());
+              _distributor->getActiveIdealStateOperations());
 
     tick();
 
     EXPECT_EQ("setbucketstate to [0] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)) (pri 100)\n",
-              active_ideal_state_operations());
+              _distributor->getActiveIdealStateOperations());
 
     tick();
 
     EXPECT_EQ("setbucketstate to [0] Bucket(BucketSpace(0x0000000000000001), BucketId(0x4000000000000001)) (pri 100)\n",
-              active_ideal_state_operations());
+              _distributor->getActiveIdealStateOperations());
 }
 
 TEST_F(IdealStateManagerTest, block_ideal_state_ops_on_full_request_bucket_info) {
