@@ -835,7 +835,7 @@ TEST_F(VisitorOperationTest, inconsistency_handling) {
 
 TEST_F(VisitorOperationTest, visit_ideal_node) {
     ClusterState state("distributor:1 storage:3");
-    _distributor->enableClusterStateBundle(lib::ClusterStateBundle(state));
+    enable_distributor_cluster_state(lib::ClusterStateBundle(state));
 
     // Create buckets in bucketdb
     for (int i=0; i<32; i++ ) {

@@ -67,7 +67,7 @@ struct ReadForWriteVisitorOperationStarterTest : Test, DistributorTestUtil {
         createLinks();
         setupDistributor(1, 1, "version:1 distributor:1 storage:1");
         _op_owner = std::make_unique<OperationOwner>(_sender, getClock());
-        _sender.setPendingMessageTracker(getDistributor().getPendingMessageTracker());
+        _sender.setPendingMessageTracker(pending_message_tracker());
 
         addNodesToBucketDB(_sub_bucket, "0=1/2/3/t");
     }
@@ -96,7 +96,7 @@ struct ReadForWriteVisitorOperationStarterTest : Test, DistributorTestUtil {
     std::shared_ptr<ReadForWriteVisitorOperationStarter> create_rfw_op(std::shared_ptr<VisitorOperation> visitor_op) {
         return std::make_shared<ReadForWriteVisitorOperationStarter>(
                 std::move(visitor_op), operation_sequencer(),
-                *_op_owner, getDistributor().getPendingMessageTracker(),
+                *_op_owner, pending_message_tracker(),
                 _mock_uuid_generator);
     }
 };
@@ -123,7 +123,7 @@ TEST_F(ReadForWriteVisitorOperationStarterTest, visitor_is_bounced_if_merge_pend
                                                            std::move(nodes),
                                                            api::Timestamp(123456));
     merge->setAddress(make_storage_address(0));
-    getDistributor().getPendingMessageTracker().insert(merge);
+    pending_message_tracker().insert(merge);
     _op_owner->start(op, OperationStarter::Priority(120));
     ASSERT_EQ("", _sender.getCommands(true));
     EXPECT_EQ("CreateVisitorReply(last=BucketId(0x0000000000000000)) "
@@ -157,13 +157,13 @@ struct ConcurrentMutationFixture {
         _mutation = _test.sender().command(0);
         // Since pending message tracking normally happens in the distributor itself during sendUp,
         // we have to emulate this and explicitly insert the sent message into the pending mapping.
-        _test.getDistributor().getPendingMessageTracker().insert(_mutation);
+        _test.pending_message_tracker().insert(_mutation);
     }
 
     void unblock_bucket() {
         // Pretend update operation completed
         auto update_reply = std::shared_ptr<api::StorageReply>(_mutation->makeReply());
-        _test.getDistributor().getPendingMessageTracker().reply(*update_reply);
+        _test.pending_message_tracker().reply(*update_reply);
         _test._op_owner->handleReply(update_reply);
     }
 };
