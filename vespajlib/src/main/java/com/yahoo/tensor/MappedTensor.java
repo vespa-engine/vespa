@@ -35,6 +35,9 @@ public class MappedTensor implements Tensor {
     public double get(TensorAddress address) { return cells.getOrDefault(address, Double.NaN); }
 
     @Override
+    public boolean has(TensorAddress address) { return cells.containsKey(address); }
+
+    @Override
     public Iterator<Cell> cellIterator() { return new CellIteratorAdaptor(cells.entrySet().iterator()); }
 
     @Override

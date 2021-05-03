@@ -126,9 +126,10 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         Tensor.Builder builder = Tensor.Builder.of(joinedType);
         for (Iterator<Tensor.Cell> i = a.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> aCell = i.next();
-            double bCellValue = b.get(aCell.getKey());
-            if (Double.isNaN(bCellValue)) continue; // no match
-            builder.cell(aCell.getKey(), combinator.applyAsDouble(aCell.getValue(), bCellValue));
+            var key = aCell.getKey();
+            if (b.has(key)) {
+                builder.cell(key, combinator.applyAsDouble(aCell.getValue(), b.get(key)));
+            }
         }
         return builder.build();
     }
@@ -203,11 +204,12 @@ public class Join<NAMETYPE extends Name> extends PrimitiveTensorFunction<NAMETYP
         for (Iterator<Tensor.Cell> i = superspace.cellIterator(); i.hasNext(); ) {
             Map.Entry<TensorAddress, Double> supercell = i.next();
             TensorAddress subaddress = mapAddressToSubspace(supercell.getKey(), subspaceIndexes);
-            double subspaceValue = subspace.get(subaddress);
-            if ( ! Double.isNaN(subspaceValue))
+            if (subspace.has(subaddress)) {
+                double subspaceValue = subspace.get(subaddress);
                 builder.cell(supercell.getKey(),
                         reversedArgumentOrder ? combinator.applyAsDouble(supercell.getValue(), subspaceValue)
-                                : combinator.applyAsDouble(subspaceValue, supercell.getValue()));
+                             : combinator.applyAsDouble(subspaceValue, supercell.getValue()));
+            }
         }
         return builder.build();
     }

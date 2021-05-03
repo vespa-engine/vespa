@@ -118,6 +118,17 @@ public abstract class IndexedTensor implements Tensor {
         }
     }
 
+    @Override
+    public boolean has(TensorAddress address) {
+        try {
+            long index = toValueIndex(address, dimensionSizes, type);
+            if (index < 0) return false;
+            return (index < size());
+        } catch (IllegalArgumentException e) {
+            return false;
+        }
+    }
+
     /**
      * Returns the value at the given <i>standard value order</i> index as a double.
      *
