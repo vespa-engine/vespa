@@ -3,6 +3,7 @@ package com.yahoo.vespa.service.slobrok;
 
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.model.api.SuperModel;
+import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import com.yahoo.jrt.slobrok.api.SlobrokList;
 import com.yahoo.vespa.service.model.ExampleModel;
@@ -14,7 +15,8 @@ import static org.mockito.Mockito.verify;
 public class SlobrokMonitorTest {
     private final SlobrokList slobrokList = mock(SlobrokList.class);
     private final Mirror mirror = mock(Mirror.class);
-    private SlobrokMonitor slobrokMonitor = new SlobrokMonitor(slobrokList, mirror);
+    private final Transport transport = mock(Transport.class);
+    private final SlobrokMonitor slobrokMonitor = new SlobrokMonitor(slobrokList, mirror, transport);
 
     @Test
     public void testUpdateSlobrokList() {
