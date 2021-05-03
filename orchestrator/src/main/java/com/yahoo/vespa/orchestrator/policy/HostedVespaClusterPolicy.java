@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.policy;
 
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.ServiceType;
 import com.yahoo.vespa.flags.BooleanFlag;
@@ -18,10 +19,12 @@ import static com.yahoo.vespa.orchestrator.policy.HostedVespaPolicy.ENOUGH_SERVI
 public class HostedVespaClusterPolicy implements ClusterPolicy {
 
     private final BooleanFlag groupSuspensionFlag;
+    private final Zone zone;
 
-    public HostedVespaClusterPolicy(FlagSource flagSource) {
+    public HostedVespaClusterPolicy(FlagSource flagSource, Zone zone) {
         // Note that the "group" in this flag refers to hierarchical groups of a content cluster.
         this.groupSuspensionFlag = Flags.GROUP_SUSPENSION.bindTo(flagSource);
+        this.zone = zone;
     }
 
     @Override
@@ -155,7 +158,9 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
                     return ConcurrentSuspensionLimitForCluster.ONE_NODE;
                 }
 
-                return ConcurrentSuspensionLimitForCluster.TWENTY_PERCENT;
+                return zone.system().isCd()
+                        ? ConcurrentSuspensionLimitForCluster.FIFTY_PERCENT
+                        : ConcurrentSuspensionLimitForCluster.TWENTY_PERCENT;
             }
 
             // The above should cover all cases, but if not we'll return a reasonable default:
@@ -183,7 +188,9 @@ public class HostedVespaClusterPolicy implements ClusterPolicy {
             }
 
             if (clusterApi.getApplication().applicationId().equals(VespaModelUtil.TENANT_HOST_APPLICATION_ID)) {
-                return ConcurrentSuspensionLimitForCluster.TWENTY_PERCENT;
+                return zone.system().isCd()
+                        ? ConcurrentSuspensionLimitForCluster.FIFTY_PERCENT
+                        : ConcurrentSuspensionLimitForCluster.TWENTY_PERCENT;
             }
 
             return ConcurrentSuspensionLimitForCluster.TEN_PERCENT;

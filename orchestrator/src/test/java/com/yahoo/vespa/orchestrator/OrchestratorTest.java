@@ -43,6 +43,9 @@ import static org.mockito.Mockito.when;
  * @author hakon
  */
 public class OrchestratorTest {
+
+    private static final Zone zone = Zone.defaultZone();
+
     private final InMemoryStatusService statusService = new InMemoryStatusService();
     private DuperModelManager duperModelManager;
     private MySuperModelProvider superModelManager;
@@ -55,7 +58,7 @@ public class OrchestratorTest {
         var timer = new TestTimer();
         var clustercontroller = new ClusterControllerClientFactoryMock();
         var applicationApiFactory = new ApplicationApiFactory(3, timer.toUtcClock());
-        var policy = new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource), clustercontroller, applicationApiFactory);
+        var policy = new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource, zone), clustercontroller, applicationApiFactory);
         var zone = new Zone(SystemName.cd, Environment.prod, RegionName.from("cd-us-east-1"));
         this.superModelManager = new MySuperModelProvider();
         var duperModel = new DuperModel();

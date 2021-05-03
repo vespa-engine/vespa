@@ -1,4 +1,4 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator.model;
 
 import com.yahoo.config.provision.Zone;
@@ -48,6 +48,8 @@ import static org.mockito.Mockito.when;
  * @author hakonhall
  */
 public class ClusterApiImplTest {
+
+    private static final Zone zone = Zone.defaultZone();
 
     private final ApplicationApi applicationApi = mock(ApplicationApi.class);
     private final ModelTestUtils modelUtils = new ModelTestUtils();
@@ -107,7 +109,7 @@ public class ClusterApiImplTest {
     public void testCfg1SuspensionFailsWithMissingCfg3() {
         ClusterApiImpl clusterApi = makeCfg1ClusterApi(ServiceStatus.UP, ServiceStatus.UP);
 
-        HostedVespaClusterPolicy policy = new HostedVespaClusterPolicy(flagSource);
+        HostedVespaClusterPolicy policy = new HostedVespaClusterPolicy(flagSource, zone);
 
         try {
             policy.verifyGroupGoingDownIsFine(clusterApi);
@@ -139,7 +141,7 @@ public class ClusterApiImplTest {
                 ServiceStatus.UP,
                 ServiceStatus.UP);
 
-        HostedVespaClusterPolicy policy = new HostedVespaClusterPolicy(flagSource);
+        HostedVespaClusterPolicy policy = new HostedVespaClusterPolicy(flagSource, zone);
 
         try {
             policy.verifyGroupGoingDownIsFine(clusterApi);
@@ -167,7 +169,7 @@ public class ClusterApiImplTest {
     public void testCfg1SuspendsIfDownWithMissingCfg3() throws HostStateChangeDeniedException {
         ClusterApiImpl clusterApi = makeCfg1ClusterApi(ServiceStatus.DOWN, ServiceStatus.UP);
 
-        HostedVespaClusterPolicy policy = new HostedVespaClusterPolicy(flagSource);
+        HostedVespaClusterPolicy policy = new HostedVespaClusterPolicy(flagSource, zone);
 
         policy.verifyGroupGoingDownIsFine(clusterApi);
     }
@@ -180,7 +182,7 @@ public class ClusterApiImplTest {
                 ServiceStatus.DOWN,
                 ServiceStatus.UP);
 
-        HostedVespaClusterPolicy policy = new HostedVespaClusterPolicy(flagSource);
+        HostedVespaClusterPolicy policy = new HostedVespaClusterPolicy(flagSource, zone);
 
         policy.verifyGroupGoingDownIsFine(clusterApi);
     }
@@ -189,7 +191,7 @@ public class ClusterApiImplTest {
     public void testSingleConfigServerCanSuspend() {
         for (var status : EnumSet.of(ServiceStatus.UP, ServiceStatus.DOWN)) {
             var clusterApi = makeConfigClusterApi(1, status);
-            var policy = new HostedVespaClusterPolicy(flagSource);
+            var policy = new HostedVespaClusterPolicy(flagSource, zone);
             try {
                 policy.verifyGroupGoingDownIsFine(clusterApi);
             } catch (HostStateChangeDeniedException e) {

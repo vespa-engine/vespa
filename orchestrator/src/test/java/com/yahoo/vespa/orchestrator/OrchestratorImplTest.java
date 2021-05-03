@@ -1,7 +1,8 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.orchestrator;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.jdisc.test.TestTimer;
 import com.yahoo.test.ManualClock;
@@ -77,6 +78,8 @@ import static org.mockito.internal.verification.VerificationModeFactory.atLeastO
  */
 public class OrchestratorImplTest {
 
+    private static final Zone zone = Zone.defaultZone();
+
     private final ManualClock clock = new ManualClock();
     private final ApplicationApiFactory applicationApiFactory = new ApplicationApiFactory(3, clock);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
@@ -104,7 +107,9 @@ public class OrchestratorImplTest {
         app2 = OrchestratorUtil.toApplicationId(iterator.next().reference());
 
         clustercontroller = new ClusterControllerClientFactoryMock();
-        orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource), clustercontroller, applicationApiFactory),
+        orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource, zone),
+                                                                  clustercontroller,
+                                                                  applicationApiFactory),
                                             clustercontroller,
                                             statusService,
                                             new DummyServiceMonitor(),
@@ -448,7 +453,9 @@ public class OrchestratorImplTest {
         when(clusterControllerClientFactory.createClient(List.of(ccHost), "foo")).thenReturn(fooClient);
         when(clusterControllerClientFactory.createClient(List.of(ccHost), "bar")).thenReturn(barClient);
 
-        orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource), clusterControllerClientFactory, applicationApiFactory),
+        orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource, zone),
+                                                                  clusterControllerClientFactory,
+                                                                  applicationApiFactory),
                                             clusterControllerClientFactory,
                                             statusService,
                                             serviceMonitor,
@@ -507,7 +514,9 @@ public class OrchestratorImplTest {
 
         ServiceMonitor serviceMonitor = () -> new ServiceModel(Map.of(reference, applicationInstance));
 
-        orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource), clusterControllerClientFactory, applicationApiFactory),
+        orchestrator = new OrchestratorImpl(new HostedVespaPolicy(new HostedVespaClusterPolicy(flagSource, zone),
+                                                                  clusterControllerClientFactory,
+                                                                  applicationApiFactory),
                                             clusterControllerClientFactory,
                                             statusService,
                                             serviceMonitor,
