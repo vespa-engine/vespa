@@ -436,9 +436,9 @@ void generate_converting_lambda(TestBuilder &dst) {
     auto sparse = GenSpec::from_desc("y5_2");
     auto mixed = GenSpec::from_desc("x3y5_2");
     // change cell type and dimension types
-    dst.add_ignore_java("tensor<bfloat16>(x[5])(a{x:(x)})", {{"a", dense}});
-    dst.add_ignore_java("tensor<bfloat16>(y[10])(a{y:(y)})", {{"a", sparse}});
-    dst.add_ignore_java("tensor<bfloat16>(x[5],y[10])(a{x:(x),y:(y)})", {{"a", mixed}});
+    dst.add("tensor<bfloat16>(x[5])(a{x:(x)})", {{"a", dense}});
+    dst.add("tensor<bfloat16>(y[10])(a{y:(y)})", {{"a", sparse}});
+    dst.add("tensor<bfloat16>(x[5],y[10])(a{x:(x),y:(y)})", {{"a", mixed}});
 }
 
 //-----------------------------------------------------------------------------
@@ -492,12 +492,12 @@ void generate_nan_existence(TestBuilder &dst) {
     const vespalib::string inner_expr = "f(x,y)(if(isNan(x),11,x)+if(isNan(y),22,y))";
     vespalib::string merge_expr = fmt("merge(a,b,%s)", inner_expr.c_str());
     vespalib::string join_expr = fmt("join(a,b,%s)", inner_expr.c_str());
-    dst.add_ignore_java(merge_expr, {{"a", sparse1}, {"b", sparse2}});
-    dst.add_ignore_java(merge_expr, {{"a",  mixed1}, {"b",  mixed2}});
-    dst.add_ignore_java(join_expr, {{"a", sparse1}, {"b", sparse2}});
-    dst.add_ignore_java(join_expr, {{"a",  mixed1}, {"b",  mixed2}});
-    dst.add_ignore_java(join_expr, {{"a", sparse1}, {"b",  mixed2}});
-    dst.add_ignore_java(join_expr, {{"a",  mixed1}, {"b", sparse2}});
+    dst.add(merge_expr, {{"a", sparse1}, {"b", sparse2}});
+    dst.add(merge_expr, {{"a",  mixed1}, {"b",  mixed2}});
+    dst.add(join_expr, {{"a", sparse1}, {"b", sparse2}});
+    dst.add(join_expr, {{"a",  mixed1}, {"b",  mixed2}});
+    dst.add(join_expr, {{"a", sparse1}, {"b",  mixed2}});
+    dst.add(join_expr, {{"a",  mixed1}, {"b", sparse2}});
 }
 
 //-----------------------------------------------------------------------------
