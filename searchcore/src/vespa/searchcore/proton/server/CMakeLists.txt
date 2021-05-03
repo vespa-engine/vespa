@@ -5,7 +5,6 @@ vespa_add_library(searchcore_server STATIC
     bootstrapconfig.cpp
     bootstrapconfigmanager.cpp
     buckethandler.cpp
-    bucketmovejob.cpp
     bucketmovejobv2.cpp
     clusterstatehandler.cpp
     combiningfeedview.cpp
@@ -58,7 +57,6 @@ vespa_add_library(searchcore_server STATIC
     ireplayconfig.cpp
     job_tracked_maintenance_job.cpp
     lid_space_compaction_handler.cpp
-    lid_space_compaction_job.cpp
     lid_space_compaction_job_base.cpp
     lid_space_compaction_job_take2.cpp
     maintenance_controller_explorer.cpp
