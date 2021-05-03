@@ -417,7 +417,7 @@ public class ModelContextImpl implements ModelContext {
         return new NodeResources(Double.parseDouble(parts[0]),
                                  Double.parseDouble(parts[1]),
                                  Double.parseDouble(parts[2]),
-                                 0.3,
+                                 0.1,
                                  NodeResources.DiskSpeed.any,
                                  NodeResources.StorageType.any);
     }
