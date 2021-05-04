@@ -5574,8 +5574,8 @@
       "public com.yahoo.search.query.parser.ParserEnvironment setIndexFacts(com.yahoo.prelude.IndexFacts)",
       "public com.yahoo.language.Linguistics getLinguistics()",
       "public com.yahoo.search.query.parser.ParserEnvironment setLinguistics(com.yahoo.language.Linguistics)",
-      "public com.yahoo.prelude.query.parser.SpecialTokens getSpecialTokens()",
-      "public com.yahoo.search.query.parser.ParserEnvironment setSpecialTokens(com.yahoo.prelude.query.parser.SpecialTokens)",
+      "public com.yahoo.language.process.SpecialTokens getSpecialTokens()",
+      "public com.yahoo.search.query.parser.ParserEnvironment setSpecialTokens(com.yahoo.language.process.SpecialTokens)",
       "public static com.yahoo.search.query.parser.ParserEnvironment fromExecutionContext(com.yahoo.search.searchchain.Execution$Context)",
       "public static com.yahoo.search.query.parser.ParserEnvironment fromParserEnvironment(com.yahoo.search.query.parser.ParserEnvironment)"
     ],
@@ -7765,7 +7765,7 @@
       "final"
     ],
     "methods": [
-      "public void <init>(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.prelude.query.parser.SpecialTokenRegistry, com.yahoo.search.rendering.RendererRegistry, com.yahoo.language.Linguistics)",
+      "public void <init>(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts, com.yahoo.language.process.SpecialTokenRegistry, com.yahoo.search.rendering.RendererRegistry, com.yahoo.language.Linguistics)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub()",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.prelude.IndexFacts)",
       "public static com.yahoo.search.searchchain.Execution$Context createContextStub(com.yahoo.search.searchchain.SearchChainRegistry, com.yahoo.prelude.IndexFacts)",
@@ -7779,8 +7779,8 @@
       "public void setIndexFacts(com.yahoo.prelude.IndexFacts)",
       "public com.yahoo.search.searchchain.SearchChainRegistry searchChainRegistry()",
       "public com.yahoo.search.rendering.RendererRegistry rendererRegistry()",
-      "public com.yahoo.prelude.query.parser.SpecialTokenRegistry getTokenRegistry()",
-      "public void setTokenRegistry(com.yahoo.prelude.query.parser.SpecialTokenRegistry)",
+      "public com.yahoo.language.process.SpecialTokenRegistry getTokenRegistry()",
+      "public void setTokenRegistry(com.yahoo.language.process.SpecialTokenRegistry)",
       "public void setDetailedDiagnostics(boolean)",
       "public boolean getDetailedDiagnostics()",
       "public boolean getBreakdown()",
