@@ -7,26 +7,26 @@ namespace proton {
 constexpr vespalib::duration MAX_DELAY_SEC = 300s;
 
 DocumentDBPruneConfig::DocumentDBPruneConfig() noexcept
-    : _delay(MAX_DELAY_SEC),
-      _interval(21600s),
-      _age(1209600s)
+    : DocumentDBPruneConfig(21600s, 1209600s, false)
 {
 }
 
 DocumentDBPruneConfig::
-DocumentDBPruneConfig(vespalib::duration interval, vespalib::duration age) noexcept
+DocumentDBPruneConfig(vespalib::duration interval, vespalib::duration age, bool useBucketExecutor) noexcept
     : _delay(std::min(MAX_DELAY_SEC, interval)),
       _interval(interval),
-      _age(age)
+      _age(age),
+      _useBucketExecutor(useBucketExecutor)
 {
 }
 
 bool
 DocumentDBPruneConfig::operator==(const DocumentDBPruneConfig &rhs) const noexcept
 {
-    return _delay == rhs._delay &&
-           _interval == rhs._interval &&
-           _age == rhs._age;
+    return (_delay == rhs._delay) &&
+            (_interval == rhs._interval) &&
+            (_age == rhs._age) &&
+            (_useBucketExecutor == rhs._useBucketExecutor);
 }
 
 DocumentDBHeartBeatConfig::DocumentDBHeartBeatConfig() noexcept
@@ -144,7 +144,7 @@ DocumentDBMaintenanceConfig::DocumentDBMaintenanceConfig() noexcept
 DocumentDBMaintenanceConfig::~DocumentDBMaintenanceConfig() = default;
 
 DocumentDBMaintenanceConfig::
-DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &pruneRemovedDocuments,
+DocumentDBMaintenanceConfig(const DocumentDBPruneConfig &pruneRemovedDocuments,
                             const DocumentDBHeartBeatConfig &heartBeat,
                             vespalib::duration groupingSessionPruneInterval,
                             vespalib::duration visibilityDelay,

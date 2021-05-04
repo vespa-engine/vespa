@@ -857,6 +857,17 @@ public class ContentBuilderTest extends DomBuilderTest {
         assertEquals(moveOps, config.maintenancejobs().maxoutstandingmoveops());
     }
 
+    private void verifyThatFeatureFlagControlsUseBucketExecutorForPruneRemoved(boolean flag) {
+        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().useBucketExecutorForPruneRemoved(flag));
+        VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
+                .withServices(singleNodeContentXml())
+                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
+                .build())
+                .create(deployStateBuilder);
+        ProtonConfig config = getProtonConfig(model.getContentClusters().values().iterator().next());
+        assertEquals(flag, config.pruneremoveddocuments().usebucketexecutor());
+    }
+
     @Test
     public void verifyMaxPendingMoveOps() {
         verifyThatFeatureFlagControlsMaxpendingMoveOps(13);
@@ -873,6 +884,12 @@ public class ContentBuilderTest extends DomBuilderTest {
     public void verifyUseBucketExecutorForBucketMove() {
         verifyThatFeatureFlagControlsUseBucketExecutorForBucketMove(true);
         verifyThatFeatureFlagControlsUseBucketExecutorForBucketMove(false);
+    }
+
+    @Test
+    public void verifyUseBucketExecutorForPruneRemoved() {
+        verifyThatFeatureFlagControlsUseBucketExecutorForPruneRemoved(true);
+        verifyThatFeatureFlagControlsUseBucketExecutorForPruneRemoved(false);
     }
 
     @Test

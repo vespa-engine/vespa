@@ -15,36 +15,22 @@ public:
     typedef std::unique_ptr<PruneRemovedDocumentsOperation> UP;
 
     PruneRemovedDocumentsOperation();
-
-    PruneRemovedDocumentsOperation(search::DocumentIdT docIdLimit,
-                                   uint32_t subDbId);
-
-    virtual
-    ~PruneRemovedDocumentsOperation()
-    {
-    }
+    PruneRemovedDocumentsOperation(search::DocumentIdT docIdLimit, uint32_t subDbId);
 
     uint32_t getSubDbId() const { return _subDbId; }
 
-    void setLidsToRemove(const LidVectorContext::SP &lidsToRemove)
-    {
+    void setLidsToRemove(const LidVectorContext::SP &lidsToRemove) {
         RemoveDocumentsOperation::setLidsToRemove(_subDbId, lidsToRemove);
     }
 
     const LidVectorContext::SP
-    getLidsToRemove() const
-    {
+    getLidsToRemove() const {
         return RemoveDocumentsOperation::getLidsToRemove(_subDbId);
     }
 
-    virtual void
-    serialize(vespalib::nbostream &os) const override;
-
-    virtual void
-    deserialize(vespalib::nbostream &is,
-                const document::DocumentTypeRepo &repo) override;
-
-    virtual vespalib::string toString() const override;
+    void serialize(vespalib::nbostream &os) const override;
+    void deserialize(vespalib::nbostream &is, const document::DocumentTypeRepo &repo) override;
+    vespalib::string toString() const override;
 };
 
 } // namespace proton

@@ -165,6 +165,13 @@ public class Flags {
             "Takes effect on next internal redeployment",
             APPLICATION_ID);
 
+    public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_PRUNE_REMOVED = defineFeatureFlag(
+            "use-bucket-executor-for-prune-removed", true,
+            List.of("baldersheim"), "2021-05-04", "2021-06-01",
+            "Wheter to use content-level bucket executor or legacy frozen buckets for prune removed",
+            "Takes effect on next internal redeployment",
+            APPLICATION_ID);
+
     public static final UnboundBooleanFlag GROUP_SUSPENSION = defineFeatureFlag(
             "group-suspension", true,
             List.of("hakon"), "2021-01-22", "2021-05-22",

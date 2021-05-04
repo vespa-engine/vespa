@@ -15,18 +15,20 @@ private:
     vespalib::duration _delay;
     vespalib::duration _interval;
     vespalib::duration _age;
+    bool               _useBucketExecutor;
 
 public:
     DocumentDBPruneConfig() noexcept;
-    DocumentDBPruneConfig(vespalib::duration interval, vespalib::duration age) noexcept;
+    DocumentDBPruneConfig(vespalib::duration interval, vespalib::duration age, bool useBucketExecutor) noexcept;
 
     bool operator==(const DocumentDBPruneConfig &rhs) const noexcept;
     vespalib::duration getDelay() const noexcept { return _delay; }
     vespalib::duration getInterval() const noexcept { return _interval; }
     vespalib::duration getAge() const noexcept { return _age; }
+    bool useBucketExecutor() const noexcept { return _useBucketExecutor; }
 };
 
-typedef DocumentDBPruneConfig DocumentDBPruneRemovedDocumentsConfig;
+using DocumentDBPruneRemovedDocumentsConfig = DocumentDBPruneConfig;
 
 class DocumentDBHeartBeatConfig
 {
@@ -107,7 +109,7 @@ public:
     typedef std::shared_ptr<DocumentDBMaintenanceConfig> SP;
 
 private:
-    DocumentDBPruneRemovedDocumentsConfig _pruneRemovedDocuments;
+    DocumentDBPruneConfig                 _pruneRemovedDocuments;
     DocumentDBHeartBeatConfig             _heartBeat;
     vespalib::duration                    _sessionCachePruneInterval;
     vespalib::duration                    _visibilityDelay;
@@ -120,7 +122,7 @@ private:
 
 public:
     DocumentDBMaintenanceConfig() noexcept;
-    DocumentDBMaintenanceConfig(const DocumentDBPruneRemovedDocumentsConfig &pruneRemovedDocuments,
+    DocumentDBMaintenanceConfig(const DocumentDBPruneConfig &pruneRemovedDocuments,
                                 const DocumentDBHeartBeatConfig &heartBeat,
                                 vespalib::duration sessionCachePruneInterval,
                                 vespalib::duration visibilityDelay,
@@ -139,7 +141,7 @@ public:
     bool
     operator==(const DocumentDBMaintenanceConfig &rhs) const noexcept ;
 
-    const DocumentDBPruneRemovedDocumentsConfig &getPruneRemovedDocumentsConfig() const noexcept {
+    const DocumentDBPruneConfig &getPruneRemovedDocumentsConfig() const noexcept {
         return _pruneRemovedDocuments;
     }
     const DocumentDBHeartBeatConfig &getHeartBeatConfig() const noexcept {
