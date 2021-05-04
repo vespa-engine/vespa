@@ -53,6 +53,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double feedConcurrency = 0.5;
     private boolean useBucketExecutorForLidSpaceCompact;
     private boolean useBucketExecutorForBucketMove;
+    private boolean useBucketExecutorForPruneRemoved;
     private boolean enableFeedBlockInDistributor = true;
     private double maxDeadBytesRatio = 0.2;
     private int clusterControllerMaxHeapSizeInMb = 256;
@@ -95,6 +96,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double feedConcurrency() { return feedConcurrency; }
     @Override public boolean useBucketExecutorForLidSpaceCompact() { return useBucketExecutorForLidSpaceCompact; }
     @Override public boolean useBucketExecutorForBucketMove() { return useBucketExecutorForBucketMove; }
+    @Override public boolean useBucketExecutorForPruneRemoved() { return useBucketExecutorForPruneRemoved; }
     @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
     @Override public double maxDeadBytesRatio() { return maxDeadBytesRatio; }
     @Override public int clusterControllerMaxHeapSizeInMb() { return clusterControllerMaxHeapSizeInMb; }
@@ -207,6 +209,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties useBucketExecutorForBucketMove(boolean enabled) {
         useBucketExecutorForBucketMove = enabled;
+        return this;
+    }
+
+    public TestProperties useBucketExecutorForPruneRemoved(boolean enabled) {
+        useBucketExecutorForPruneRemoved = enabled;
         return this;
     }
 

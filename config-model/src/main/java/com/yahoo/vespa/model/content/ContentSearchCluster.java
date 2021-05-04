@@ -68,6 +68,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private final double defaultFeedConcurrency;
     private final boolean useBucketExecutorForLidSpaceCompact;
     private final boolean useBucketExecutorForBucketMove;
+    private final boolean useBucketExecutorForPruneRemoved;
     private final double defaultMaxDeadBytesRatio;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
@@ -216,6 +217,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         defaultFeedConcurrency = featureFlags.feedConcurrency();
         useBucketExecutorForLidSpaceCompact = featureFlags.useBucketExecutorForLidSpaceCompact();
         useBucketExecutorForBucketMove = featureFlags.useBucketExecutorForBucketMove();
+        useBucketExecutorForPruneRemoved = featureFlags.useBucketExecutorForPruneRemoved();
         defaultMaxDeadBytesRatio = featureFlags.maxDeadBytesRatio();
     }
 
@@ -437,6 +439,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         builder.maintenancejobs.maxoutstandingmoveops(maxPendingMoveOps);
         builder.lidspacecompaction.usebucketexecutor(useBucketExecutorForLidSpaceCompact);
         builder.bucketmove.usebucketexecutor(useBucketExecutorForBucketMove);
+        builder.pruneremoveddocuments.usebucketexecutor(useBucketExecutorForPruneRemoved);
     }
 
     private boolean isGloballyDistributed(NewDocumentType docType) {
