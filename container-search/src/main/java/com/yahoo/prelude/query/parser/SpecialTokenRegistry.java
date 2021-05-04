@@ -2,14 +2,16 @@
 package com.yahoo.prelude.query.parser;
 
 import com.yahoo.config.subscription.ConfigGetter;
-import com.yahoo.config.subscription.ConfigSubscriber;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig.Tokenlist;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig.Tokenlist.Tokens;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.logging.Logger;
-
 
 /**
  * A <i>registry</i> which is responsible for knowing the current
@@ -26,10 +28,10 @@ public class SpecialTokenRegistry {
     private static final SpecialTokens nullSpecialTokens = new SpecialTokens();
 
     /**
-     * The current authorative special token lists, indexed on name.
+     * The current special token lists, indexed on name.
      * These lists are unmodifiable and used directly by clients of this
      */
-    private Map<String,SpecialTokens> specialTokenMap = new HashMap<>();
+    private Map<String, SpecialTokens> specialTokenMap = new HashMap<>();
 
     private boolean frozen = false;
 
@@ -47,8 +49,7 @@ public class SpecialTokenRegistry {
         try {
             build(new ConfigGetter<>(SpecialtokensConfig.class).getConfig(configId));
         } catch (Exception e) {
-            log.config(
-                    "No special tokens are configured (" + e.getMessage() + ")");
+            log.config("No special tokens are configured (" + e.getMessage() + ")");
         }
     }
 
@@ -111,13 +112,11 @@ public class SpecialTokenRegistry {
         specialTokenMap = tokens;
     }
 
-
     /**
-     * Returns the currently authorative list of special tokens for
-     * a given name.
+     * Returns the list of special tokens for a given name.
      *
      * @param  name the name of the special tokens to return
-     *         null, the empth string or the string "default" returns
+     *         null, the empty string or the string "default" returns
      *         the default ones
      * @return a read-only list of SpecialToken instances, an empty list if this name
      *         has no special tokens

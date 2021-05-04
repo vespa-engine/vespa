@@ -216,9 +216,9 @@ public final class Tokenizer {
     }
 
     private int consumeSpecialToken(int start) {
-        SpecialTokens.SpecialToken specialToken=getSpecialToken(start);
-        if (specialToken==null) return start;
-        tokens.add(specialToken.toToken(start,source));
+        SpecialTokens.SpecialToken specialToken = getSpecialToken(start);
+        if (specialToken == null) return start;
+        tokens.add(specialToken.toToken(start, source));
         return start + specialToken.token().length();
     }
 
@@ -229,7 +229,7 @@ public final class Tokenizer {
 
     private int consumeExact(int start,Index index) {
         if (index.getExactTerminator() == null) return consumeHeuristicExact(start);
-        return consumeToTerminator(start,index.getExactTerminator());
+        return consumeToTerminator(start, index.getExactTerminator());
     }
 
     private boolean looksLikeExactEnd(int end) {

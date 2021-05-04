@@ -52,7 +52,7 @@ public class SpecialTokens {
         if (!caseIndependentLength(token)) {
             return;
         }
-        // TODO are special tokens correctly unicode normalized in reagards to query parsing?
+        // TODO: Are special tokens correctly unicode normalized in regards to query parsing?
         final SpecialToken specialTokenToAdd = new SpecialToken(token, replace);
         currentMaximumLength = Math.max(currentMaximumLength, specialTokenToAdd.token.length());
         specialTokens.add(specialTokenToAdd);
@@ -62,11 +62,11 @@ public class SpecialTokens {
     private boolean caseIndependentLength(String token) {
         // XXX not fool proof length test, should test codepoint by codepoint for mixed case user input? not even that will necessarily be 100% robust...
         String asLow = toLowerCase(token);
-        // TODO put along with the global toLowerCase
+        // TODO: Put along with the global toLowerCase
         String asHigh = token.toUpperCase(Locale.ENGLISH);
         if (asLow.length() != token.length() || asHigh.length() != token.length()) {
-            log.log(Level.SEVERE, "Special token '" + token + "' has case sensitive length. Ignoring the token."
-                    + " Please report this message in a bug to the Vespa team.");
+            log.log(Level.SEVERE, "Special token '" + token + "' has case sensitive length. Ignoring the token." +
+                                  " Please report this message in a bug to the Vespa team.");
             return false;
         } else {
             return true;
@@ -84,7 +84,7 @@ public class SpecialTokens {
     public SpecialToken tokenize(String string, boolean substring) {
         // XXX detonator pattern token.length may be != the length of the
         // matching data in string, ref caseIndependentLength(String)
-        final String input = toLowerCase(string.substring(0, Math.min(string.length(), currentMaximumLength)));
+        String input = toLowerCase(string.substring(0, Math.min(string.length(), currentMaximumLength)));
         for (Iterator<SpecialToken> i = specialTokens.iterator(); i.hasNext();) {
             SpecialTokens.SpecialToken special = i.next();
 
@@ -118,9 +118,9 @@ public class SpecialTokens {
     /** An immutable special token */
     public final static class SpecialToken implements Comparable<SpecialToken> {
 
-        private String token;
+        private final String token;
 
-        private String replace;
+        private final String replace;
 
         public SpecialToken(String token, String replace) {
             this.token = toLowerCase(token);
