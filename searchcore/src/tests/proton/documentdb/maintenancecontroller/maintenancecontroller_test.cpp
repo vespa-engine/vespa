@@ -290,27 +290,20 @@ struct MySimpleJob : public BlockableMaintenanceJob
 {
     vespalib::CountDownLatch _latch;
     size_t                   _runCnt;
-    bool                     _stopped;
 
     MySimpleJob(vespalib::duration delay,
                 vespalib::duration interval,
                 uint32_t finishCount)
         : BlockableMaintenanceJob("my_job", delay, interval),
           _latch(finishCount),
-          _runCnt(0),
-          _stopped(false)
-    {
-    }
+          _runCnt(0)
+    { }
     void block() { setBlocked(BlockedReason::FROZEN_BUCKET); }
     bool run() override {
         LOG(info, "MySimpleJob::run()");
         _latch.countDown();
         ++_runCnt;
         return true;
-    }
-    void onStop() override {
-        BlockableMaintenanceJob::onStop();
-        _stopped = true;
     }
 };
 
@@ -333,13 +326,11 @@ struct MySplitJob : public MySimpleJob
 struct MyLongRunningJob : public BlockableMaintenanceJob
 {
     vespalib::Gate _firstRun;
-    bool           _stopped;
 
     MyLongRunningJob(vespalib::duration delay,
                      vespalib::duration interval)
         : BlockableMaintenanceJob("long_running_job", delay, interval),
-          _firstRun(),
-          _stopped(false)
+          _firstRun()
     {
     }
     void block() { setBlocked(BlockedReason::FROZEN_BUCKET); }
@@ -347,10 +338,6 @@ struct MyLongRunningJob : public BlockableMaintenanceJob
         _firstRun.countDown();
         usleep(10000);
         return false;
-    }
-    void onStop() override {
-        BlockableMaintenanceJob::onStop();
-        _stopped = true;
     }
 };
 

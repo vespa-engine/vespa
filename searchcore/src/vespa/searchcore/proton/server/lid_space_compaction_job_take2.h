@@ -52,7 +52,6 @@ private:
     BucketExecutor                               &_bucketExecutor;
     RetainGuard                                   _dbRetainer;
     document::BucketSpace                         _bucketSpace;
-    std::atomic<bool>                             _stopped;
 
     bool hasTooMuchLidBloat(const search::LidUsageStats &stats) const;
     bool shouldRestartScanDocuments(const search::LidUsageStats &stats) const;
@@ -66,7 +65,6 @@ private:
                              std::shared_ptr<IDestructorCallback> onDone);
     void completeMove(const search::DocumentMetaData & metaThen, std::unique_ptr<MoveOperation> moveOp,
                       std::shared_ptr<IDestructorCallback> onDone);
-    void onStop() override;
     class MoveTask;
 
     CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,

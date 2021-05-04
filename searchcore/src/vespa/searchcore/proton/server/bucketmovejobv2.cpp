@@ -87,7 +87,6 @@ BucketMoveJobV2::BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &
       _movers(),
       _bucketsInFlight(),
       _buckets2Move(),
-      _stopped(false),
       _bucketsPending(0),
       _bucketCreateNotifier(bucketCreateNotifier),
       _clusterStateChangedNotifier(clusterStateChangedNotifier),
@@ -206,9 +205,9 @@ private:
 void
 BucketMoveJobV2::failOperation(std::shared_ptr<BucketMoveJobV2> job, BucketId bucketId) {
     auto & master = job->_master;
-    if (job->_stopped) return;
+    if (job->stopped()) return;
     master.execute(makeLambdaTask([job=std::move(job), bucketId]() {
-        if (job->_stopped.load(std::memory_order_relaxed)) return;
+        if (job->stopped()) return;
         job->considerBucket(job->_ready.meta_store()->getBucketDB().takeGuard(), bucketId);
     }));
 }
@@ -229,12 +228,12 @@ BucketMoveJobV2::startMove(BucketMover & mover, size_t maxDocsToMove) {
 void
 BucketMoveJobV2::prepareMove(std::shared_ptr<BucketMoveJobV2> job, BucketMover::MoveKeys keys, IDestructorCallbackSP onDone)
 {
-    if (job->_stopped) return; //TODO Remove once lidtracker is no longer in use.
+    if (job->stopped()) return; //TODO Remove once lidtracker is no longer in use.
     auto moveOps = keys.createMoveOperations();
     auto & master = job->_master;
-    if (job->_stopped) return;
+    if (job->stopped()) return;
     master.execute(makeLambdaTask([job=std::move(job), moveOps=std::move(moveOps), onDone=std::move(onDone)]() mutable {
-        if (job->_stopped.load(std::memory_order_relaxed)) return;
+        if (job->stopped()) return;
         job->completeMove(std::move(moveOps), std::move(onDone));
     }));
 }
@@ -446,13 +445,6 @@ BucketMoveJobV2::notifyDiskMemUsage(DiskMemUsageState state)
 {
     // Called by master write thread
     internalNotifyDiskMemUsage(state);
-}
-
-void
-BucketMoveJobV2::onStop() {
-    // Called by master write thread
-    BlockableMaintenanceJob::onStop();
-    _stopped = true;
 }
 
 void

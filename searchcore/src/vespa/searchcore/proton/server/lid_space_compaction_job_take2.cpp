@@ -59,7 +59,7 @@ public:
     void fail(const Bucket & bucket) override {
         assert(bucket.getBucketId() == _meta.bucketId);
         auto & master = _job->_master;
-        if (_job->_stopped) return;
+        if (_job->stopped()) return;
         master.execute(makeLambdaTask([job=std::move(_job)] { job->_scanItr.reset(); }));
     }
 private:
@@ -88,7 +88,7 @@ void
 CompactionJob::moveDocument(std::shared_ptr<CompactionJob> job, const search::DocumentMetaData & metaThen,
                             std::shared_ptr<IDestructorCallback> context)
 {
-    if (job->_stopped) return; //TODO Remove once lidtracker is no longer in use.
+    if (job->stopped()) return; //TODO Remove once lidtracker is no longer in use.
     // The real lid must be sampled in the master thread.
     //TODO remove target lid from createMoveOperation interface
     auto op = job->_handler->createMoveOperation(metaThen, 0);
@@ -97,9 +97,9 @@ CompactionJob::moveDocument(std::shared_ptr<CompactionJob> job, const search::Do
     if (metaThen.gid != op->getDocument()->getId().getGlobalId()) return;
 
     auto & master = job->_master;
-    if (job->_stopped) return;
+    if (job->stopped()) return;
     master.execute(makeLambdaTask([self=std::move(job), meta=metaThen, moveOp=std::move(op), onDone=std::move(context)]() mutable {
-        if (self->_stopped.load(std::memory_order_relaxed)) return;
+        if (self->stopped()) return;
         self->completeMove(meta, std::move(moveOp), std::move(onDone));
     }));
 }
@@ -151,8 +151,7 @@ CompactionJob::CompactionJob(const DocumentDBLidSpaceCompactionConfig &config,
       _master(master),
       _bucketExecutor(bucketExecutor),
       _dbRetainer(std::move(dbRetainer)),
-      _bucketSpace(bucketSpace),
-      _stopped(false)
+      _bucketSpace(bucketSpace)
 {
     _diskMemUsageNotifier.addDiskMemUsageListener(this);
     _clusterStateChangedNotifier.addClusterStateChangedHandler(this);
@@ -187,12 +186,6 @@ CompactionJob::create(const DocumentDBLidSpaceCompactionConfig &config,
                 auto failed = master.execute(makeLambdaTask([job]() { delete job; }));
                 assert(!failed);
             });
-}
-
-void
-CompactionJob::onStop() {
-    BlockableMaintenanceJob::onStop();
-    _stopped = true;
 }
 
 DocumentMetaData

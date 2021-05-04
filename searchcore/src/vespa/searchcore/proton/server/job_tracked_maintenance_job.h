@@ -9,7 +9,7 @@ namespace proton {
 /**
  * Class for tracking the start and end of a maintenance job.
  */
-class JobTrackedMaintenanceJob : public IMaintenanceJob
+class JobTrackedMaintenanceJob final : public IMaintenanceJob
 {
 private:
     IJobTracker::SP     _tracker;
@@ -26,7 +26,7 @@ public:
         _job->registerRunner(runner);
     }
     bool run() override;
-    void onStop() override { _job->onStop(); }
+    void onStop() override { _job->stop(); }
 };
 
 } // namespace proton

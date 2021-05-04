@@ -34,13 +34,11 @@ struct MyMaintenanceJob : public IBlockableMaintenanceJob
     GateVector _runGates;
     size_t     _runIdx;
     bool       _blocked;
-    bool       _stopped;
     MyMaintenanceJob(size_t numRuns)
         : IBlockableMaintenanceJob("myjob", 10s, 20s),
           _runGates(getGateVector(numRuns)),
           _runIdx(0),
-          _blocked(false),
-          _stopped(false)
+          _blocked(false)
     {}
     void block() { setBlocked(BlockedReason::RESOURCE_LIMITS); }
     void unBlock() { unBlock(BlockedReason::RESOURCE_LIMITS); }
@@ -51,7 +49,7 @@ struct MyMaintenanceJob : public IBlockableMaintenanceJob
         _runGates[_runIdx++]->await(5s);
         return _runIdx == _runGates.size();
     }
-    void onStop() override { _stopped = true; }
+    void onStop() override { }
 };
 
 struct Fixture
@@ -65,10 +63,10 @@ struct Fixture
     size_t _runIdx;
     ThreadStackExecutor _exec;
     Fixture(size_t numRuns = 1)
-        : _tracker(new SimpleJobTracker(1)),
-          _job(new MyMaintenanceJob(numRuns)),
+        : _tracker(std::make_shared<SimpleJobTracker>(1)),
+          _job(std::make_unique<MyMaintenanceJob>(numRuns)),
           _myJob(static_cast<MyMaintenanceJob *>(_job.get())),
-          _trackedJob(new JobTrackedMaintenanceJob(_tracker, std::move(_job))),
+          _trackedJob(std::make_unique<JobTrackedMaintenanceJob>(_tracker, std::move(_job))),
           _runRetval(false),
           _runGates(getGateVector(numRuns)),
           _runIdx(0),
@@ -144,9 +142,9 @@ TEST_F("require that block calls are sent to underlying jobs", Fixture)
 
 TEST_F("require that stop calls are sent to underlying jobs", Fixture)
 {
-    EXPECT_FALSE(f._myJob->_stopped);
-    f._trackedJob->onStop();
-    EXPECT_TRUE(f._myJob->_stopped);
+    EXPECT_FALSE(f._myJob->stopped());
+    f._trackedJob->stop();
+    EXPECT_TRUE(f._myJob->stopped());
 }
 
 TEST_MAIN() { TEST_RUN_ALL(); }
