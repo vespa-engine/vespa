@@ -66,7 +66,6 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private final ProtonConfig.Indexing.Optimize.Enum feedSequencerType;
     private final double defaultFeedConcurrency;
     private final boolean useBucketExecutorForPruneRemoved;
-    private final double defaultMaxDeadBytesRatio;
 
     /** Whether the nodes of this cluster also hosts a container cluster in a hosted system */
     private final boolean combined;
@@ -212,7 +211,6 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         feedSequencerType = convertFeedSequencerType(featureFlags.feedSequencerType());
         defaultFeedConcurrency = featureFlags.feedConcurrency();
         useBucketExecutorForPruneRemoved = featureFlags.useBucketExecutorForPruneRemoved();
-        defaultMaxDeadBytesRatio = featureFlags.maxDeadBytesRatio();
     }
 
     public void setVisibilityDelay(double delay) {
@@ -379,7 +377,6 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
                 .configid(getConfigId())
                 .visibilitydelay(visibilityDelay)
                 .global(globalDocType);
-            ddbB.allocation.max_dead_bytes_ratio(defaultMaxDeadBytesRatio);
 
             if (hasIndexingModeStreaming(type)) {
                 hasAnyNonIndexedCluster = true;
