@@ -368,6 +368,8 @@ public interface Tensor {
     }
 
     static boolean approxEquals(double x, double y, double tolerance) {
+        if (x == y) return true;
+        if (Double.isNaN(x) && Double.isNaN(y)) return true;
         return Math.abs(x-y) < tolerance;
     }
 
