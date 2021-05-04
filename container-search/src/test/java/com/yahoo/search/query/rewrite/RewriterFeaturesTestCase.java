@@ -8,7 +8,7 @@ import org.junit.Test;
 import com.yahoo.prelude.query.AndItem;
 import com.yahoo.prelude.query.CompositeItem;
 import com.yahoo.prelude.query.Item;
-import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
+import com.yahoo.language.process.SpecialTokenRegistry;
 import com.yahoo.search.Query;
 import com.yahoo.search.searchchain.Execution;
 import com.yahoo.search.searchchain.Execution.Context;
