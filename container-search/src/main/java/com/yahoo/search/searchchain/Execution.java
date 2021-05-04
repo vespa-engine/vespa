@@ -17,8 +17,6 @@ import com.yahoo.search.cluster.PingableSearcher;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.statistics.TimeTracker;
 
-import java.util.logging.Logger;
-
 /**
  * <p>An execution of a search chain. This keeps track of the call state for an execution (in the calling thread)
  * of the searchers of a search chain.</p>

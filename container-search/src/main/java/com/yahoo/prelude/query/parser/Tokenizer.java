@@ -200,7 +200,7 @@ public final class Tokenizer {
         }
         StringBuilder tmp = new StringBuilder();
         for (int i = 0; i < tokencnt; i++) {
-            Token useToken = tokens.get(backtrack+i);
+            Token useToken = tokens.get(backtrack + i);
             tmp.append(useToken.image);
         }
         String indexName = tmp.toString();
@@ -216,13 +216,13 @@ public final class Tokenizer {
     }
 
     private int consumeSpecialToken(int start) {
-        SpecialTokens.SpecialToken specialToken = getSpecialToken(start);
-        if (specialToken == null) return start;
-        tokens.add(specialToken.toToken(start, source));
-        return start + specialToken.token().length();
+        SpecialTokens.Token token = getSpecialToken(start);
+        if (token == null) return start;
+        tokens.add(toToken(token, start, source));
+        return start + token.token().length();
     }
 
-    private SpecialTokens.SpecialToken getSpecialToken(int start) {
+    private SpecialTokens.Token getSpecialToken(int start) {
         if (specialTokens == null) return null;
         return specialTokens.tokenize(source.substring(start), substringSpecialTokens);
     }
@@ -467,7 +467,7 @@ public final class Tokenizer {
     /** Consumes a word or number <i>and/or possibly</i> a special token starting within this word or number */
     private int consumeWordOrNumber(int start, Index currentIndex) {
         int tokenEnd = start;
-        SpecialTokens.SpecialToken substringSpecialToken = null;
+        SpecialTokens.Token substringToken = null;
         boolean digitsOnly = true;
         // int underscores = 0;
         // boolean underscoresOnly = true;
@@ -475,8 +475,8 @@ public final class Tokenizer {
 
         while (tokenEnd < source.length()) {
             if (substringSpecialTokens) {
-                substringSpecialToken = getSpecialToken(tokenEnd);
-                if (substringSpecialToken != null) break;
+                substringToken = getSpecialToken(tokenEnd);
+                if (substringToken != null) break;
             }
 
             int c = source.codePointAt(tokenEnd);
@@ -524,11 +524,11 @@ public final class Tokenizer {
             }
         }
 
-        if (substringSpecialToken == null)
+        if (substringToken == null)
             return --tokenEnd;
         // TODO: test the logic around tokenEnd with friends
-        addToken(substringSpecialToken.toToken(tokenEnd, source));
-        return --tokenEnd + substringSpecialToken.token().length();
+        addToken(toToken(substringToken, tokenEnd, source));
+        return --tokenEnd + substringToken.token().length();
     }
 
     private void addToken(Token.Kind kind, String word, int start, int end) {
@@ -537,6 +537,13 @@ public final class Tokenizer {
 
     private void addToken(Token token) {
         tokens.add(token);
+    }
+
+    public Token toToken(SpecialTokens.Token specialToken, int start, String rawSource) {
+        return new Token(Token.Kind.WORD,
+                         specialToken.replacement(),
+                         true,
+                         new Substring(start, start + specialToken.token().length(), rawSource)); // XXX: Unsafe?
     }
 
 }

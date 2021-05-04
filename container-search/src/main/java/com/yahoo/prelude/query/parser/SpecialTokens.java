@@ -1,11 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.prelude.query.parser;
 
-import java.util.logging.Level;
-import com.yahoo.prelude.query.Substring;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Locale;
+import java.util.Objects;
 
-import java.util.*;
-import java.util.logging.Logger;
+import com.yahoo.prelude.query.Substring;
 
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
@@ -17,61 +20,28 @@ import static com.yahoo.language.LinguisticsCase.toLowerCase;
  */
 public class SpecialTokens {
 
-    private static final Logger log = Logger.getLogger(SpecialTokens.class.getName());
+    private static final SpecialTokens empty = new SpecialTokens("(empty)", List.of());
 
     private final String name;
+    private final List<Token> tokens;
+    private final int maximumLength;
 
-    private final List<SpecialToken> specialTokens = new ArrayList<>();
-
-    private boolean frozen = false;
-
-    private int currentMaximumLength = 0;
-
-    /** Creates a null list of special tokens */
-    public SpecialTokens() {
-        this.name = "(null)";
-    }
-
-    public SpecialTokens(String name) {
+    public SpecialTokens(String name,  List<Token> tokens) {
+        tokens.stream().peek(token -> token.validate());
+        List<Token> mutableTokens = new ArrayList<>(tokens);
+        Collections.sort(mutableTokens);
+        this.tokens = List.copyOf(mutableTokens);
         this.name = name;
+        this.maximumLength = tokens.stream().mapToInt(token -> token.token().length()).max().orElse(0);
     }
 
     /** Returns the name of this special tokens list */
-    public String getName() {
+    public String name() {
         return name;
     }
 
-    /**
-     * Adds a special token to this
-     *
-     * @param token the special token string to add
-     * @param replace the token to replace instances of the special token with, or null to keep the token
-     */
-    public void addSpecialToken(String token, String replace) {
-        ensureNotFrozen();
-        if (!caseIndependentLength(token)) {
-            return;
-        }
-        // TODO: Are special tokens correctly unicode normalized in regards to query parsing?
-        final SpecialToken specialTokenToAdd = new SpecialToken(token, replace);
-        currentMaximumLength = Math.max(currentMaximumLength, specialTokenToAdd.token.length());
-        specialTokens.add(specialTokenToAdd);
-        Collections.sort(specialTokens);
-    }
-
-    private boolean caseIndependentLength(String token) {
-        // XXX not fool proof length test, should test codepoint by codepoint for mixed case user input? not even that will necessarily be 100% robust...
-        String asLow = toLowerCase(token);
-        // TODO: Put along with the global toLowerCase
-        String asHigh = token.toUpperCase(Locale.ENGLISH);
-        if (asLow.length() != token.length() || asHigh.length() != token.length()) {
-            log.log(Level.SEVERE, "Special token '" + token + "' has case sensitive length. Ignoring the token." +
-                                  " Please report this message in a bug to the Vespa team.");
-            return false;
-        } else {
-            return true;
-        }
-    }
+    /** Returns a sorted immutable list of the special tokens in this */
+    public List<Token> tokens() { return tokens; }
 
     /**
      * Returns the special token starting at the start of the given string, or null if no
@@ -81,12 +51,12 @@ public class SpecialTokens {
      * @param substring true to allow the special token to be followed by a character which does not
      *        mark the end of a token
      */
-    public SpecialToken tokenize(String string, boolean substring) {
+    public Token tokenize(String string, boolean substring) {
         // XXX detonator pattern token.length may be != the length of the
         // matching data in string, ref caseIndependentLength(String)
-        String input = toLowerCase(string.substring(0, Math.min(string.length(), currentMaximumLength)));
-        for (Iterator<SpecialToken> i = specialTokens.iterator(); i.hasNext();) {
-            SpecialTokens.SpecialToken special = i.next();
+        String input = toLowerCase(string.substring(0, Math.min(string.length(), maximumLength)));
+        for (Iterator<Token> i = tokens.iterator(); i.hasNext();) {
+            Token special = i.next();
 
             if (input.startsWith(special.token())) {
                 if (string.length() == special.token().length() || substring || tokenEndsAt(special.token().length(), string))
@@ -100,49 +70,36 @@ public class SpecialTokens {
         return !Character.isLetterOrDigit(string.charAt(position));
     }
 
-    /** Returns the number of special tokens in this */
-    public int size() {
-        return specialTokens.size();
-    }
-
-    private void ensureNotFrozen() {
-        if (frozen) {
-            throw new IllegalStateException("Tried to modify a frozen SpecialTokens instance.");
-        }
-    }
-
-    public void freeze() {
-        frozen = true;
-    }
+    public static SpecialTokens empty() { return empty; }
 
     /** An immutable special token */
-    public final static class SpecialToken implements Comparable<SpecialToken> {
+    public final static class Token implements Comparable<Token> {
 
         private final String token;
+        private final String replacement;
 
-        private final String replace;
+        /** Creates a special token */
+        public Token(String token) {
+            this(token, null);
+        }
 
-        public SpecialToken(String token, String replace) {
+        /** Creates a special token which will be represented by the given replacement token */
+        public Token(String token, String replacement) {
             this.token = toLowerCase(token);
-            if (replace == null || replace.trim().equals("")) {
-                this.replace = this.token;
-            } else {
-                this.replace = toLowerCase(replace);
-            }
+            if (replacement == null || replacement.trim().equals(""))
+                this.replacement = this.token;
+            else
+                this.replacement = toLowerCase(replacement);
         }
 
         /** Returns the special token */
-        public String token() {
-            return token;
-        }
+        public String token() { return token; }
 
-        /** Returns the right replace value, never null or an empty string */
-        public String replace() {
-            return replace;
-        }
+        /** Returns the token to replace occurrences of this by, which equals token() unless this has a replacement. */
+        public String replacement() { return replacement; }
 
         @Override
-        public int compareTo(SpecialToken other) {
+        public int compareTo(Token other) {
             if (this.token().length() < other.token().length()) return 1;
             if (this.token().length() == other.token().length()) return 0;
             return -1;
@@ -151,15 +108,27 @@ public class SpecialTokens {
         @Override
         public boolean equals(Object other) {
             if (other == this) return true;
-            if ( ! (other instanceof SpecialToken)) return false;
-            return Objects.equals(this.token, ((SpecialToken)other).token);
+            if ( ! (other instanceof Token)) return false;
+            return Objects.equals(this.token, ((Token)other).token);
         }
 
         @Override
         public int hashCode() { return token.hashCode(); }
 
-        public Token toToken(int start, String rawSource) {
-            return new Token(Token.Kind.WORD, replace(), true, new Substring(start, start + token.length(), rawSource)); // XXX: Unsafe?
+        @Override
+        public String toString() {
+            return "token '" + token + "'" + (replacement.equals(token) ? "" : " replacement '" + replacement + "'");
+        }
+
+        private void validate() {
+            // XXX not fool proof length test, should test codepoint by codepoint for mixed case user input? not even that will necessarily be 100% robust...
+            String asLow = toLowerCase(token);
+            // TODO: Put along with the global toLowerCase
+            String asHigh = token.toUpperCase(Locale.ENGLISH);
+            if (asLow.length() != token.length() || asHigh.length() != token.length()) {
+                throw new IllegalArgumentException("Special token '" + token + "' has case sensitive length. " +
+                                                   "Please report this to the Vespa team.");
+            }
         }
 
     }

@@ -18,7 +18,7 @@ public final class ParserEnvironment {
 
     private IndexFacts indexFacts = new IndexFacts();
     private Linguistics linguistics = new SimpleLinguistics();
-    private SpecialTokens specialTokens = new SpecialTokens();
+    private SpecialTokens specialTokens = SpecialTokens.empty();
 
     public IndexFacts getIndexFacts() {
         return indexFacts;

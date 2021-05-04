@@ -10,8 +10,10 @@ import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
 import com.yahoo.prelude.query.parser.SpecialTokens;
 import com.yahoo.prelude.query.parser.Token;
 import com.yahoo.prelude.query.parser.Tokenizer;
+import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import org.junit.Test;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -39,13 +41,11 @@ import static org.junit.Assert.assertTrue;
  */
 public class TokenizerTestCase {
 
-    private SpecialTokenRegistry defaultRegistry = new SpecialTokenRegistry("file:src/test/java/com/yahoo/prelude/query/parser/test/replacingtokens.cfg");
-
     @Test
     public void testPlainTokenization() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
-        tokenizer.setSpecialTokens(createSpecialTokens());
+        tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("default"));
         List<?> tokens = tokenizer.tokenize("drive (to hwy88, 88) +or language:en ugcapi_1 & &a");
 
         assertEquals(new Token(WORD, "drive"), tokens.get(0));
@@ -87,7 +87,7 @@ public class TokenizerTestCase {
     public void testOneSpecialToken() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
-        tokenizer.setSpecialTokens(createSpecialTokens());
+        tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("default"));
         List<?> tokens = tokenizer.tokenize("c++ lovers, please apply");
 
         assertEquals(new Token(WORD, "c++"), tokens.get(0));
@@ -97,7 +97,7 @@ public class TokenizerTestCase {
     public void testSpecialTokenCombination() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
-        tokenizer.setSpecialTokens(createSpecialTokens());
+        tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("default"));
         List<?> tokens = tokenizer.tokenize("c#, c++ or .net know, not tcp/ip");
 
         assertEquals(new Token(WORD, "c#"), tokens.get(0));
@@ -123,10 +123,9 @@ public class TokenizerTestCase {
      */
     @Test
     public void testSpecialTokenCJK() {
-        assertEquals("Special tokens configured", 6, defaultRegistry.getSpecialTokens("default").size());
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
         tokenizer.setSubstringSpecialTokens(true);
-        tokenizer.setSpecialTokens(defaultRegistry.getSpecialTokens("default"));
+        tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("replacing"));
 
         List<?> tokens = tokenizer.tokenize("fooc#bar,c++with spacebarknowknowknow,knowknownot know");
         assertEquals(new Token(WORD, "foo"), tokens.get(0));
@@ -151,7 +150,7 @@ public class TokenizerTestCase {
     public void testSpecialTokenCaseInsensitive() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
-        tokenizer.setSpecialTokens(createSpecialTokens());
+        tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("default"));
         List<?> tokens = tokenizer.tokenize("The AS/400 is great");
 
         assertEquals(new Token(WORD, "The"), tokens.get(0));
@@ -167,7 +166,7 @@ public class TokenizerTestCase {
     public void testSpecialTokenNonMatch() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
-        tokenizer.setSpecialTokens(createSpecialTokens());
+        tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("default"));
         List<?> tokens = tokenizer.tokenize("c++ c+ aS/400 i/o .net i/ooo ap.net");
 
         assertEquals(new Token(WORD, "c++"), tokens.get(0));
@@ -190,18 +189,9 @@ public class TokenizerTestCase {
 
     @Test
     public void testSpecialTokenConfigurationDefault() {
-        String tokenFile = "file:src/test/java/com/yahoo/prelude/query/parser/test/specialtokens.cfg";
-
-        SpecialTokenRegistry r = new SpecialTokenRegistry(tokenFile);
-        assertEquals("Special tokens configured", 6,
-                r.getSpecialTokens("default").size());
-        assertEquals("Special tokens configured", 4,
-                r.getSpecialTokens("other").size());
-
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
-        tokenizer.setSpecialTokens(
-                r.getSpecialTokens("default"));
+        tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("default"));
         List<?> tokens = tokenizer.tokenize(
                 "with space, c++ or .... know, not b.s.d.");
 
@@ -224,18 +214,9 @@ public class TokenizerTestCase {
 
     @Test
     public void testSpecialTokenConfigurationOther() {
-        String tokenFile = "file:src/test/java/com/yahoo/prelude/query/parser/test/specialtokens.cfg";
-
-        SpecialTokenRegistry r = new SpecialTokenRegistry(tokenFile);
-        assertEquals("Special tokens configured", 6,
-                r.getSpecialTokens("default").size());
-        assertEquals("Special tokens configured", 4,
-                r.getSpecialTokens("other").size());
-
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
-        tokenizer.setSpecialTokens(
-                r.getSpecialTokens("other"));
+        tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("other"));
         List<?> tokens = tokenizer.tokenize(
                 "with space,!!!*** [huh] or ------ " + "know, &&&%%% b.s.d.");
 
@@ -267,26 +248,9 @@ public class TokenizerTestCase {
     }
 
     @Test
-    public void testSpecialTokenConfigurationMissing() {
-        String tokenFile = "file:source/bogus/specialtokens.cfg";
-
-        SpecialTokenRegistry r = new SpecialTokenRegistry(tokenFile);
-
-        Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
-
-        tokenizer.setSpecialTokens(r.getSpecialTokens("other"));
-        List<?> tokens = tokenizer.tokenize("c++");
-
-        assertEquals(new Token(WORD, "c"), tokens.get(0));
-        assertEquals(new Token(PLUS, "+"), tokens.get(1));
-        assertEquals(new Token(PLUS, "+"), tokens.get(2));
-    }
-
-    @Test
     public void testTokenReplacing() {
-        assertEquals("Special tokens configured", 6, defaultRegistry.getSpecialTokens("default").size());
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
-        tokenizer.setSpecialTokens(defaultRegistry.getSpecialTokens("default"));
+        tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("replacing"));
 
         List<?> tokens = tokenizer.tokenize("with space, c++ or .... know, not b.s.d.");
         assertEquals(new Token(WORD, "with-space"), tokens.get(0));
@@ -745,7 +709,7 @@ public class TokenizerTestCase {
     public void testSingleQuoteAsWordCharacter() {
         Tokenizer tokenizer = new Tokenizer(new SimpleLinguistics());
 
-        tokenizer.setSpecialTokens(createSpecialTokens());
+        tokenizer.setSpecialTokens(createSpecialTokens().getSpecialTokens("default"));
         List<?> tokens = tokenizer.tokenize("drive (to hwy88, 88) +or language:en nalle:a'a ugcapi_1 'a' 'a a'");
 
         assertEquals(new Token(WORD, "drive"), tokens.get(0));
@@ -781,17 +745,66 @@ public class TokenizerTestCase {
         assertEquals(new Token(WORD, "a'"), tokens.get(30));
     }
 
-    private SpecialTokens createSpecialTokens() {
-        SpecialTokens tokens = new SpecialTokens("default");
+    @Test
+    public void testSpecialTokensConfig() {
+        var builder = new SpecialtokensConfig.Builder();
+        var tokenBuilder = new SpecialtokensConfig.Tokenlist.Builder();
+        tokenBuilder.name("default");
 
-        tokens.addSpecialToken("c+", null);
-        tokens.addSpecialToken("c++", null);
-        tokens.addSpecialToken(".net", null);
-        tokens.addSpecialToken("tcp/ip", null);
-        tokens.addSpecialToken("i/o", null);
-        tokens.addSpecialToken("c#", null);
-        tokens.addSpecialToken("AS/400", null);
-        return tokens;
+        var tokenListBuilder1 = new SpecialtokensConfig.Tokenlist.Tokens.Builder();
+        tokenListBuilder1.token("c++");
+        tokenListBuilder1.replace("cpp");
+        tokenBuilder.tokens(tokenListBuilder1);
+
+        var tokenListBuilder2 = new SpecialtokensConfig.Tokenlist.Tokens.Builder();
+        tokenListBuilder2.token("...");
+        tokenBuilder.tokens(tokenListBuilder2);
+
+        builder.tokenlist(tokenBuilder);
+
+        var registry = new SpecialTokenRegistry(builder.build());
+
+        var defaultTokens = registry.getSpecialTokens("default");
+        assertEquals("default", defaultTokens.name());
+        assertEquals(2, defaultTokens.tokens().size());
+        assertEquals("c++", defaultTokens.tokens().get(0).token());
+        assertEquals("cpp", defaultTokens.tokens().get(0).replacement());
+        assertEquals("...", defaultTokens.tokens().get(1).token());
+        assertEquals("...", defaultTokens.tokens().get(1).replacement());
+    }
+
+    private SpecialTokenRegistry createSpecialTokens() {
+        List<SpecialTokens.Token> tokens = new ArrayList<>();
+        tokens.add(new SpecialTokens.Token("c+"));
+        tokens.add(new SpecialTokens.Token("c++"));
+        tokens.add(new SpecialTokens.Token(".net"));
+        tokens.add(new SpecialTokens.Token("tcp/ip"));
+        tokens.add(new SpecialTokens.Token("i/o"));
+        tokens.add(new SpecialTokens.Token("c#"));
+        tokens.add(new SpecialTokens.Token("AS/400"));
+        tokens.add(new SpecialTokens.Token("...."));
+        tokens.add(new SpecialTokens.Token("b.s.d."));
+        tokens.add(new SpecialTokens.Token("with space"));
+        tokens.add(new SpecialTokens.Token("dvd\\xB1r"));
+        SpecialTokens defaultTokens = new SpecialTokens("default", tokens);
+
+        tokens = new ArrayList<>();
+        tokens.add(new SpecialTokens.Token("[huh]"));
+        tokens.add(new SpecialTokens.Token("&&&%%%"));
+        tokens.add(new SpecialTokens.Token("------"));
+        tokens.add(new SpecialTokens.Token("!!!***"));
+        SpecialTokens otherTokens = new SpecialTokens("other", tokens);
+
+        tokens = new ArrayList<>();
+        tokens.add(new SpecialTokens.Token("...."));
+        tokens.add(new SpecialTokens.Token("c++", "cpp"));
+        tokens.add(new SpecialTokens.Token("b.s.d."));
+        tokens.add(new SpecialTokens.Token("with space", "with-space"));
+        tokens.add(new SpecialTokens.Token("c#"));
+        tokens.add(new SpecialTokens.Token("know", "knuwww"));
+        SpecialTokens replacingTokens = new SpecialTokens("replacing", tokens);
+
+        return new SpecialTokenRegistry(List.of(defaultTokens, otherTokens, replacingTokens));
     }
 
 }

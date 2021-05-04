@@ -1639,7 +1639,7 @@ public class ParseTestCase {
 
     @Test
     public void testNonSpecialTokenParsing() {
-        ParsingTester customTester = new ParsingTester(new SpecialTokens("default"));
+        ParsingTester customTester = new ParsingTester(SpecialTokens.empty());
         customTester.assertParsed("OR c or c with (AND tcp ip)", "c# or c++ with tcp/ip", Query.Type.ANY);
     }
 
