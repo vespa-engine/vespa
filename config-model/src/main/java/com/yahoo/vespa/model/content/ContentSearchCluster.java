@@ -64,10 +64,7 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
     private final Map<StorageGroup, NodeSpec> groupToSpecMap = new LinkedHashMap<>();
     private Optional<ResourceLimits> resourceLimits = Optional.empty();
     private final ProtonConfig.Indexing.Optimize.Enum feedSequencerType;
-    private final int maxPendingMoveOps;
     private final double defaultFeedConcurrency;
-    private final boolean useBucketExecutorForLidSpaceCompact;
-    private final boolean useBucketExecutorForBucketMove;
     private final boolean useBucketExecutorForPruneRemoved;
     private final double defaultMaxDeadBytesRatio;
 
@@ -212,11 +209,8 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         this.syncTransactionLog = syncTransactionLog;
 
         this.combined = combined;
-        maxPendingMoveOps = featureFlags.maxPendingMoveOps();
         feedSequencerType = convertFeedSequencerType(featureFlags.feedSequencerType());
         defaultFeedConcurrency = featureFlags.feedConcurrency();
-        useBucketExecutorForLidSpaceCompact = featureFlags.useBucketExecutorForLidSpaceCompact();
-        useBucketExecutorForBucketMove = featureFlags.useBucketExecutorForBucketMove();
         useBucketExecutorForPruneRemoved = featureFlags.useBucketExecutorForPruneRemoved();
         defaultMaxDeadBytesRatio = featureFlags.maxDeadBytesRatio();
     }
@@ -436,9 +430,6 @@ public class ContentSearchCluster extends AbstractConfigProducer<SearchCluster> 
         } else {
             builder.indexing.optimize(feedSequencerType);
         }
-        builder.maintenancejobs.maxoutstandingmoveops(maxPendingMoveOps);
-        builder.lidspacecompaction.usebucketexecutor(useBucketExecutorForLidSpaceCompact);
-        builder.bucketmove.usebucketexecutor(useBucketExecutorForBucketMove);
         builder.pruneremoveddocuments.usebucketexecutor(useBucketExecutorForPruneRemoved);
     }
 
