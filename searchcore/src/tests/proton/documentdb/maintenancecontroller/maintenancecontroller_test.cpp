@@ -929,57 +929,6 @@ MaintenanceControllerFixture::removeDocs(const test::UserDocuments &docs, Timest
     }
 }
 
-TEST_F("require that bucket move controller is active", MaintenanceControllerFixture)
-{
-    f._builder.createDocs(1, 1, 4); // 3 docs
-    f._builder.createDocs(2, 4, 6); // 2 docs
-    test::UserDocuments readyDocs(f._builder.getDocs());
-    BucketId bucketId1(readyDocs.getBucket(1));
-    BucketId bucketId2(readyDocs.getBucket(2));
-    f.insertDocs(readyDocs, f._ready);
-    f._builder.clearDocs();
-    f._builder.createDocs(3, 1, 3); // 2 docs
-    f._builder.createDocs(4, 3, 6); // 3 docs
-    test::UserDocuments notReadyDocs(f._builder.getDocs());
-    BucketId bucketId4(notReadyDocs.getBucket(4));
-    f.insertDocs(notReadyDocs, f._notReady);
-    f._builder.clearDocs();
-    f.notifyClusterStateChanged();
-    EXPECT_TRUE(f._executor.isIdle());
-    EXPECT_EQUAL(5u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(5u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._notReady.getDocumentCount());
-    f.startMaintenance();
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(0u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(0u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(10u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(10u, f._notReady.getDocumentCount());
-    f._calc->addReady(bucketId1);
-    f.notifyClusterStateChanged();
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(3u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(3u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(7u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(7u, f._notReady.getDocumentCount());
-    MyFrozenBucket::UP frozen2(new MyFrozenBucket(f._mc, bucketId2));
-    f._calc->addReady(bucketId2);
-    f._calc->addReady(bucketId4);
-    f.notifyClusterStateChanged();
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(6u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(6u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(4u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(4u, f._notReady.getDocumentCount());
-    frozen2.reset();
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(8u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(8u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(2u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(2u, f._notReady.getDocumentCount());
-}
-
 TEST_F("require that document pruner is active", MaintenanceControllerFixture)
 {
     uint64_t tshz = 1000000;
@@ -1052,74 +1001,6 @@ TEST_F("require that periodic session prunings are scheduled",
         }
     }
     ASSERT_TRUE(f._gsp.isInvoked);
-}
-
-TEST_F("require that active bucket is not moved until de-activated", MaintenanceControllerFixture)
-{
-    f._builder.createDocs(1, 1, 4); // 3 docs
-    f._builder.createDocs(2, 4, 6); // 2 docs
-    test::UserDocuments readyDocs(f._builder.getDocs());
-    f.insertDocs(readyDocs, f._ready);
-    f._builder.clearDocs();
-    f._builder.createDocs(3, 1, 3); // 2 docs
-    f._builder.createDocs(4, 3, 6); // 3 docs
-    test::UserDocuments notReadyDocs(f._builder.getDocs());
-    f.insertDocs(notReadyDocs, f._notReady);
-    f._builder.clearDocs();
-
-    // bucket 1 (active) should be moved from ready to not ready according to cluster state
-    f._calc->addReady(readyDocs.getBucket(2));
-    f._ready.setBucketState(readyDocs.getBucket(1), true);
-
-    f.notifyClusterStateChanged();
-    EXPECT_TRUE(f._executor.isIdle());
-    EXPECT_EQUAL(5u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(5u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._notReady.getDocumentCount());
-
-    f.startMaintenance();
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(5u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(5u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._notReady.getDocumentCount());
-
-    // de-activate bucket 1
-    f._ready.setBucketState(readyDocs.getBucket(1), false);
-    f.notifyBucketStateChanged(readyDocs.getBucket(1), BucketInfo::NOT_ACTIVE);
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(2u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(2u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(8u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(8u, f._notReady.getDocumentCount());
-
-    // re-activate bucket 1
-    f._ready.setBucketState(readyDocs.getBucket(1), true);
-    f.notifyBucketStateChanged(readyDocs.getBucket(1), BucketInfo::ACTIVE);
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(5u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(5u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._notReady.getDocumentCount());
-
-    // de-activate bucket 1
-    f._ready.setBucketState(readyDocs.getBucket(1), false);
-    f.notifyBucketStateChanged(readyDocs.getBucket(1), BucketInfo::NOT_ACTIVE);
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(2u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(2u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(8u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(8u, f._notReady.getDocumentCount());
-
-    // re-activate bucket 1
-    f._ready.setBucketState(readyDocs.getBucket(1), true);
-    f.notifyBucketStateChanged(readyDocs.getBucket(1), BucketInfo::ACTIVE);
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(5u, f._ready.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._ready.getDocumentCount());
-    EXPECT_EQUAL(5u, f._notReady.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._notReady.getDocumentCount());
 }
 
 TEST_F("require that a simple maintenance job is executed", MaintenanceControllerFixture)

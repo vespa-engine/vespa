@@ -8,7 +8,7 @@
 #include <vespa/vespalib/gtest/gtest.h>
 
 namespace storage::spi::dummy { class DummyBucketExecutor; }
-struct JobTestBase : public ::testing::TestWithParam<bool> {
+struct JobTestBase : public ::testing::Test {
     MonitoredRefCount _refCount;
     test::ClusterStateHandler _clusterStateHandler;
     test::DiskMemUsageNotifier _diskMemUsageNotifier;
@@ -17,7 +17,6 @@ struct JobTestBase : public ::testing::TestWithParam<bool> {
     std::unique_ptr<searchcorespi::index::IThreadService> _master;
     std::shared_ptr<MyHandler> _handler;
     MyStorer _storer;
-    MyFrozenBucketHandler _frozenHandler;
     std::shared_ptr<BlockableMaintenanceJob> _job;
     JobTestBase();
     ~JobTestBase() override;
@@ -51,7 +50,6 @@ struct JobTestBase : public ::testing::TestWithParam<bool> {
     void assertOneDocumentCompacted();
     JobTestBase &setupThreeDocumentsToCompact();
     void sync() const;
-    bool useBucketDB() const { return GetParam(); }
 };
 
 struct JobTest : public JobTestBase {

@@ -5,18 +5,6 @@ vespa_add_library(searchcore_bucketmover_test STATIC
     bucketmover_common.cpp
 )
 
-vespa_add_executable(searchcore_documentbucketmover_test_app TEST
-    SOURCES
-    documentbucketmover_test.cpp
-    DEPENDS
-    searchcore_bucketmover_test
-    searchcore_test
-    searchcore_server
-    searchcore_feedoperation
-    GTest::GTest
-)
-vespa_add_test(NAME searchcore_documentbucketmover_test_app COMMAND searchcore_documentbucketmover_test_app)
-
 vespa_add_executable(searchcore_documentbucketmover_v2_test_app TEST
     SOURCES
     documentbucketmover_v2_test.cpp
