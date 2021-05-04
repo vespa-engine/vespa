@@ -394,10 +394,10 @@ public class ApplicationController {
             // Record the quota usage for this application
             var quotaUsage = deploymentQuotaUsage(zone, job.application());
 
-            // For direct deployments use the full application ID, but otherwise use just the tenant and application as
+            // For direct deployments use the full deployment ID, but otherwise use just the tenant and application as
             // the source since it's the same application, so it should have the same warnings
             NotificationSource source = zone.environment().isManuallyDeployed() ?
-                    NotificationSource.from(job.application()) : NotificationSource.from(applicationId);
+                    NotificationSource.from(new DeploymentId(job.application(), zone)) : NotificationSource.from(applicationId);
             List<String> warnings = Optional.ofNullable(result.prepareResponse().log)
                     .map(logs -> logs.stream()
                             .filter(log -> log.applicationPackage)
