@@ -11,8 +11,8 @@ import java.util.Objects;
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
 /**
- * A list of special tokens - string that should be treated as word
- * no matter what they contain. Special tokens are case insensitive.
+ * An immutable list of special tokens - strings which should override the normal tokenizer semantics
+ * and be tokenized into a single token. Special tokens are case insensitive.
  *
  * @author bratseth
  */

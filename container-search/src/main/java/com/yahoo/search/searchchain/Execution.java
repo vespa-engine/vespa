@@ -109,7 +109,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         public Context(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts,
                        SpecialTokenRegistry tokenRegistry, RendererRegistry rendererRegistry, Linguistics linguistics)
         {
-            owner=null;
+            owner = null;
             // The next time something is added here, compose into wrapper objects. Many arguments...
 
             // Four methods need to be updated when adding something:

@@ -12,8 +12,8 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 /**
- * A registry which is responsible for knowing the current
- * set of special tokens.Usage of this registry is multithread safe.
+ * Immutable named lists of "special tokens" - strings which should override the normal tokenizer semantics
+ * and be tokenized into a single token.
  *
  * @author bratseth
  */
