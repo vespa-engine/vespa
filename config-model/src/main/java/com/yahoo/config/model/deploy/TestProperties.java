@@ -52,6 +52,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double feedConcurrency = 0.5;
     private boolean useBucketExecutorForPruneRemoved;
     private boolean enableFeedBlockInDistributor = true;
+    private double maxDeadBytesRatio = 0.2;
     private int clusterControllerMaxHeapSizeInMb = 256;
     private int metricsProxyMaxHeapSizeInMb = 256;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
@@ -91,6 +92,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     @Override public double feedConcurrency() { return feedConcurrency; }
     @Override public boolean useBucketExecutorForPruneRemoved() { return useBucketExecutorForPruneRemoved; }
     @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
+    @Override public double maxDeadBytesRatio() { return maxDeadBytesRatio; }
     @Override public int clusterControllerMaxHeapSizeInMb() { return clusterControllerMaxHeapSizeInMb; }
     @Override public int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return metricsProxyMaxHeapSizeInMb; }
     @Override public int maxActivationInhibitedOutOfSyncGroups() { return maxActivationInhibitedOutOfSyncGroups; }
@@ -198,6 +200,11 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
 
     public TestProperties enableFeedBlockInDistributor(boolean enabled) {
         enableFeedBlockInDistributor = enabled;
+        return this;
+    }
+
+    public TestProperties maxDeadBytesRatio(double ratio) {
+        maxDeadBytesRatio = ratio;
         return this;
     }
 
