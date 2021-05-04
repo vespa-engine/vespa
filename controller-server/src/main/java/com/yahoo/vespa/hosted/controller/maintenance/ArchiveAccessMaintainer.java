@@ -4,9 +4,9 @@ package com.yahoo.vespa.hosted.controller.maintenance;
 import com.google.common.collect.Maps;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Controller;
-import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucketDb;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
 import com.yahoo.vespa.hosted.controller.api.integration.zone.ZoneRegistry;
+import com.yahoo.vespa.hosted.controller.archive.CuratorArchiveBucketDb;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
@@ -23,7 +23,7 @@ public class ArchiveAccessMaintainer extends ControllerMaintainer {
 
     private static final String bucketCountMetricName = "archive.bucketCount";
 
-    private final ArchiveBucketDb archiveBucketDb;
+    private final CuratorArchiveBucketDb archiveBucketDb;
     private final ArchiveService archiveService;
     private final ZoneRegistry zoneRegistry;
     private final Metric metric;
