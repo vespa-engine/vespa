@@ -36,7 +36,7 @@ public class SpecialTokenRegistry {
     }
 
     public SpecialTokenRegistry(List<SpecialTokens> specialTokensList) {
-        specialTokenMap = specialTokensList.stream().collect(Collectors.toMap(t -> t.name(), t -> t));
+        specialTokenMap = specialTokensList.stream().collect(Collectors.toUnmodifiableMap(t -> t.name(), t -> t));
     }
 
     private static List<SpecialTokens> specialTokensFrom(SpecialtokensConfig config) {

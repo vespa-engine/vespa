@@ -6,7 +6,9 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.yahoo.language.LinguisticsCase.toLowerCase;
 
@@ -21,16 +23,18 @@ public class SpecialTokens {
     private static final SpecialTokens empty = new SpecialTokens("(empty)", List.of());
 
     private final String name;
-    private final List<Token> tokens;
     private final int maximumLength;
+    private final List<Token> tokens;
+    private final Map<String, String> tokenMap;
 
     public SpecialTokens(String name,  List<Token> tokens) {
         tokens.stream().peek(token -> token.validate());
         List<Token> mutableTokens = new ArrayList<>(tokens);
         Collections.sort(mutableTokens);
-        this.tokens = List.copyOf(mutableTokens);
         this.name = name;
         this.maximumLength = tokens.stream().mapToInt(token -> token.token().length()).max().orElse(0);
+        this.tokens = List.copyOf(mutableTokens);
+        this.tokenMap = tokens.stream().collect(Collectors.toUnmodifiableMap(t -> t.token(), t -> t.replacement()));
     }
 
     /** Returns the name of this special tokens list */
@@ -38,8 +42,11 @@ public class SpecialTokens {
         return name;
     }
 
-    /** Returns a sorted immutable list of the special tokens in this */
-    public List<Token> tokens() { return tokens; }
+    /**
+     * Returns the tokens of this as an immutable map from token to replacement.
+     * Tokens which do not have a replacement token maps to themselves.
+     */
+    public Map<String, String> asMap() { return tokenMap; }
 
     /**
      * Returns the special token starting at the start of the given string, or null if no
@@ -64,7 +71,7 @@ public class SpecialTokens {
         return null;
     }
 
-    private boolean tokenEndsAt(int position,String string) {
+    private boolean tokenEndsAt(int position, String string) {
         return !Character.isLetterOrDigit(string.charAt(position));
     }
 

@@ -32,11 +32,9 @@ public class SpecialTokensTestCase {
 
         var defaultTokens = registry.getSpecialTokens("default");
         assertEquals("default", defaultTokens.name());
-        assertEquals(2, defaultTokens.tokens().size());
-        assertEquals("c++", defaultTokens.tokens().get(0).token());
-        assertEquals("cpp", defaultTokens.tokens().get(0).replacement());
-        assertEquals("...", defaultTokens.tokens().get(1).token());
-        assertEquals("...", defaultTokens.tokens().get(1).replacement());
+        assertEquals(2, defaultTokens.asMap().size());
+        assertEquals("cpp", defaultTokens.asMap().get("c++"));
+        assertEquals("...", defaultTokens.asMap().get("..."));
     }
 
 }

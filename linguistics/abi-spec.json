@@ -472,7 +472,7 @@
     "methods": [
       "public void <init>(java.lang.String, java.util.List)",
       "public java.lang.String name()",
-      "public java.util.List tokens()",
+      "public java.util.Map asMap()",
       "public com.yahoo.language.process.SpecialTokens$Token tokenize(java.lang.String, boolean)",
       "public static com.yahoo.language.process.SpecialTokens empty()"
     ],
