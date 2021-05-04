@@ -145,7 +145,7 @@ public class Flags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_PRUNE_REMOVED = defineFeatureFlag(
-            "use-bucket-executor-for-prune-removed", true,
+            "use-bucket-executor-for-prune-removed", false,
             List.of("baldersheim"), "2021-05-04", "2021-06-01",
             "Wheter to use content-level bucket executor or legacy frozen buckets for prune removed",
             "Takes effect on next internal redeployment",
@@ -162,13 +162,6 @@ public class Flags {
             "enable-feed-block-in-distributor", true,
             List.of("geirst"), "2021-01-27", "2021-07-01",
             "Enables blocking of feed in the distributor if resource usage is above limit on at least one content node",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundDoubleFlag MAX_DEAD_BYTES_RATIO = defineDoubleFlag(
-            "max-dead-bytes-ratio", 0.05,
-            List.of("baldersheim", "geirst","toregge"), "2021-02-03", "2021-06-01",
-            "max ratio of dead to used memory bytes in large data structures before compaction is attempted",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 

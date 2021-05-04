@@ -1005,22 +1005,6 @@ public class ContentClusterTest extends ContentBaseTest {
         assertTrue(resolveThreePhaseUpdateConfigWithFeatureFlag(true));
     }
 
-    private double resolveMaxDeadBytesRatio(double maxDeadBytesRatio) {
-        VespaModel model = createEnd2EndOneNode(new TestProperties().maxDeadBytesRatio(maxDeadBytesRatio));
-        ContentCluster cc = model.getContentClusters().get("storage");
-        ProtonConfig.Builder protonBuilder = new ProtonConfig.Builder();
-        cc.getSearch().getConfig(protonBuilder);
-        ProtonConfig protonConfig = new ProtonConfig(protonBuilder);
-        assertEquals(1, protonConfig.documentdb().size());
-        return protonConfig.documentdb(0).allocation().max_dead_bytes_ratio();
-    }
-
-    @Test
-    public void default_max_dead_bytes_ratio_config_controlled_by_properties() {
-        assertEquals(0.2, resolveMaxDeadBytesRatio(0.2), 1e-5);
-        assertEquals(0.1, resolveMaxDeadBytesRatio(0.1), 1e-5);
-    }
-
     void assertZookeeperServerImplementation(String expectedClassName,
                                              ClusterControllerContainerCluster clusterControllerCluster) {
         for (ClusterControllerContainer c : clusterControllerCluster.getContainers()) {
