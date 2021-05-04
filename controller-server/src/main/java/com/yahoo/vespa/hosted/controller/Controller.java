@@ -221,7 +221,8 @@ public class Controller extends AbstractComponent {
         if (version.isEmpty()) {
             throw new IllegalArgumentException("Invalid version '" + version.toFullString() + "'");
         }
-        if (!clouds().contains(cloudName)) {
+        Set<CloudName> clouds = clouds();
+        if (!clouds.contains(cloudName)) {
             throw new IllegalArgumentException("Cloud '" + cloudName + "' does not exist in this system");
         }
         try (Lock lock = curator.lockOsVersions()) {
@@ -305,5 +306,4 @@ public class Controller extends AbstractComponent {
     public NotificationsDb notificationsDb() {
         return notificationsDb;
     }
-
 }
