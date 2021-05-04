@@ -205,13 +205,6 @@ public class Flags {
             "Takes effect when restarting metrics proxy",
             CLUSTER_TYPE);
 
-    public static final UnboundIntFlag CONFIG_PROXY_MAX_HEAP_SIZE_IN_MB = defineIntFlag(
-            "config-proxy-max-heap-size-in-mb", 256,
-            List.of("hmusum"), "2021-03-15", "2021-05-15",
-            "JVM max heap size for config proxy in Mb",
-            "Takes effect on restart of Docker container",
-            CLUSTER_TYPE, CLUSTER_ID);
-
     public static final UnboundStringFlag DEDICATED_CLUSTER_CONTROLLER_FLAVOR = defineStringFlag(
             "dedicated-cluster-controller-flavor", "", List.of("jonmv"), "2021-02-25", "2021-05-25",
             "Flavor as <vpu>-<memgb>-<diskgb> to use for dedicated cluster controller nodes",
