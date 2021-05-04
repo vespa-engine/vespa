@@ -81,6 +81,8 @@ enum PathGroup {
     billing(Matcher.tenant,
             "/billing/v2/tenant/{tenant}/{*}"),
 
+    accountant("/billing/v2/accountant/{*}"),
+
     applicationKeys(Matcher.tenant,
                     Matcher.application,
                     "/application/v4/tenant/{tenant}/application/{application}/key/"),

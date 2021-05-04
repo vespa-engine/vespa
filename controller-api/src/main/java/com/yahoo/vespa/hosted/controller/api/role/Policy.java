@@ -190,7 +190,7 @@ enum Policy {
 
     /** Invoice management */
     hostedAccountant(Privilege.grant(Action.all())
-                                    .on(PathGroup.hostedAccountant)
+                                    .on(PathGroup.hostedAccountant, PathGroup.accountant)
                                     .in(SystemName.PublicCd, SystemName.Public)),
 
     /** Listing endpoint certificate request info */

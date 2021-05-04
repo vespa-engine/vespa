@@ -1,14 +1,15 @@
 package com.yahoo.vespa.hosted.controller.restapi.billing;
 
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
+import com.yahoo.restapi.MessageResponse;
 import com.yahoo.restapi.RestApi;
 import com.yahoo.restapi.RestApiException;
 import com.yahoo.restapi.RestApiRequestHandler;
 import com.yahoo.restapi.SlimeJsonResponse;
 import com.yahoo.slime.Cursor;
+import com.yahoo.slime.Inspector;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeUtils;
 import com.yahoo.slime.Type;
@@ -22,18 +23,19 @@ import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SecurityContext;
 import com.yahoo.vespa.hosted.controller.tenant.CloudTenant;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 
-import javax.ws.rs.ForbiddenException;
+import javax.ws.rs.BadRequestException;
 import java.io.IOException;
 import java.math.BigDecimal;
-import java.security.Principal;
 import java.time.Clock;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 import java.time.format.DateTimeFormatter;
+import java.util.Comparator;
 import java.util.Optional;
 import java.util.List;
-import java.util.function.Function;
 
 /**
  * @author ogronnesby
@@ -73,6 +75,9 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
                  */
                 .addRoute(RestApi.route("/billing/v2/accountant")
                         .get(self::accountant))
+                .addRoute(RestApi.route("/billing/v2/accountant/preview/tenant/{tenant}")
+                        .get(self::previewBill)
+                        .post(Slime.class, self::createBill))
                 /*
                  * Utility - map Slime.class => SlimeJsonResponse
                  */
@@ -179,10 +184,7 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     private Slime tenantUsage(RestApi.RequestContext requestContext) {
         var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
         var tenant = tenants.require(tenantName, CloudTenant.class);
-        var untilAt = requestContext.queryParameters().getString("until")
-                .map(LocalDate::parse)
-                .map(date -> date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant())
-                .orElseGet(clock::instant);
+        var untilAt = untilParameter(requestContext);
         var usage = billing.createUncommittedInvoice(tenant.name(), untilAt.atZone(ZoneOffset.UTC).toLocalDate());
 
         var slime = new Slime();
@@ -193,7 +195,52 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
     // --------- ACCOUNTANT API ----------
 
     private Slime accountant(RestApi.RequestContext requestContext) {
-        return null;
+        var untilAt = untilParameter(requestContext);
+        var usagePerTenant = billing.createUncommittedInvoices(untilAt.atZone(ZoneOffset.UTC).toLocalDate());
+
+        var response = new Slime();
+        var tenantsResponse = response.setObject().setArray("tenants");
+        tenants.asList().stream().sorted(Comparator.comparing(Tenant::name)).forEach(tenant -> {
+            var usage = Optional.ofNullable(usagePerTenant.get(tenant.name()));
+            var tenantResponse = tenantsResponse.addObject();
+            tenantResponse.setString("tenant", tenant.name().value());
+            tenantResponse.setString("plan", billing.getPlan(tenant.name()).value());
+            tenantResponse.setString("collection", billing.getCollectionMethod(tenant.name()).name());
+            tenantResponse.setString("lastBill", usage.map(Invoice::getStartTime).map(DateTimeFormatter.ISO_DATE::format).orElse(null));
+            tenantResponse.setString("unbilled", usage.map(Invoice::sum).map(BigDecimal::toPlainString).orElse("0.00"));
+        });
+
+        return response;
+    }
+
+    private Slime previewBill(RestApi.RequestContext requestContext) {
+        var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
+        var tenant = tenants.require(tenantName, CloudTenant.class);
+        var untilAt = untilParameter(requestContext);
+
+        var usage = billing.createUncommittedInvoice(tenant.name(), untilAt.atZone(ZoneOffset.UTC).toLocalDate());
+
+        var slime = new Slime();
+        toSlime(slime.setObject(), usage);
+        return slime;
+    }
+
+    private HttpResponse createBill(RestApi.RequestContext requestContext, Slime slime) {
+        var body = slime.get();
+        var security = requestContext.attributes().get(SecurityContext.ATTRIBUTE_NAME)
+                .map(SecurityContext.class::cast)
+                .orElseThrow(() -> new RestApiException.Forbidden("Must be logged in"));
+
+        var tenantName = TenantName.from(requestContext.pathParameters().getStringOrThrow("tenant"));
+        var tenant = tenants.require(tenantName, CloudTenant.class);
+
+        var startAt = LocalDate.parse(getInspectorFieldOrThrow(body, "from")).atStartOfDay(ZoneOffset.UTC);
+        var endAt = LocalDate.parse(getInspectorFieldOrThrow(body, "to")).atStartOfDay(ZoneOffset.UTC);
+
+        var invoiceId = billing.createInvoiceForPeriod(tenant.name(), startAt, endAt, security.principal().getName());
+
+        // TODO: Make a redirect to the bill itself
+        return new MessageResponse("Created bill " + invoiceId.value());
     }
 
 
@@ -277,10 +324,17 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
 
     // ---------- END INVOICE RENDERING ----------
 
-    private static String userIdOrThrow(HttpRequest request) {
-        return Optional.ofNullable(request.getJDiscRequest().getUserPrincipal())
-                .map(Principal::getName)
-                .orElseThrow(() -> new ForbiddenException("Must be authenticated to use this API"));
+    private Instant untilParameter(RestApi.RequestContext ctx) {
+        return ctx.queryParameters().getString("until")
+                .map(LocalDate::parse)
+                .map(date -> date.plusDays(1).atStartOfDay(ZoneOffset.UTC).toInstant())
+                .orElseGet(clock::instant);
+    }
+
+    private static String getInspectorFieldOrThrow(Inspector inspector, String field) {
+        if (!inspector.field(field).valid())
+            throw new BadRequestException("Field " + field + " cannot be null");
+        return inspector.field(field).asString();
     }
 
     private static Optional<Slime> slimeRequestMapper(RestApi.RequestContext requestContext) {
@@ -291,20 +345,8 @@ public class BillingApiHandlerV2 extends RestApiRequestHandler<BillingApiHandler
         }
     }
 
-    private static <T> RestApi.Handler<T> withCloudTenant(TenantController ctl, FunctionWithCloudTenant<T> f) {
-        return (RestApi.RequestContext ctx) -> {
-            var tenantName = TenantName.from(ctx.pathParameters().getStringOrThrow("tenant"));
-            var tenant = ctl.require(tenantName, CloudTenant.class);
-            return f.applyWithTenant(ctx, tenant);
-        };
-    }
-
     private static HttpResponse slimeResponseMapper(RestApi.RequestContext ctx, Slime slime) {
         return new SlimeJsonResponse(slime);
     }
 
-    @FunctionalInterface
-    private interface FunctionWithCloudTenant<T> {
-        T applyWithTenant(RestApi.RequestContext ctx, CloudTenant tenant);
-    }
 }

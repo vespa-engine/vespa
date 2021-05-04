@@ -70,7 +70,7 @@ public class MockBillingController implements BillingController {
                 .add(new Invoice(
                         invoiceId,
                         tenant,
-                        Invoice.StatusHistory.open(),
+                        Invoice.StatusHistory.open(clock),
                         List.of(),
                         startTime,
                         endTime
@@ -111,10 +111,11 @@ public class MockBillingController implements BillingController {
 
     @Override
     public void updateInvoiceStatus(Invoice.Id invoiceId, String agent, String status) {
+        var now = clock.instant().atZone(ZoneOffset.UTC);
         committedInvoices.values().stream()
                 .flatMap(List::stream)
                 .filter(invoice -> invoiceId.equals(invoice.id()))
-                .forEach(invoice -> invoice.statusHistory().history.put(ZonedDateTime.now(), status));
+                .forEach(invoice -> invoice.statusHistory().history.put(now, status));
     }
 
     @Override
@@ -201,6 +202,6 @@ public class MockBillingController implements BillingController {
     private Invoice emptyInvoice() {
         var start = clock.instant().atZone(ZoneOffset.UTC);
         var end = clock.instant().atZone(ZoneOffset.UTC);
-        return new Invoice(Invoice.Id.of("empty"), TenantName.defaultName(), Invoice.StatusHistory.open(), List.of(), start, end);
+        return new Invoice(Invoice.Id.of("empty"), TenantName.defaultName(), Invoice.StatusHistory.open(clock), List.of(), start, end);
     }
 }

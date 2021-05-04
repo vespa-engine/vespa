@@ -109,4 +109,30 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
         var singleRequest = request("/billing/v2/tenant/" + tenant + "/bill/id-1").roles(tenantReader);
         tester.assertResponse(singleRequest, "{\"id\":\"id-1\",\"from\":\"2020-05-23\",\"to\":\"2020-05-23\",\"total\":\"123.00\",\"status\":\"OPEN\",\"statusHistory\":[{\"at\":\"2020-05-23T00:00:00+02:00\",\"status\":\"OPEN\"}],\"items\":[{\"id\":\"some-id\",\"description\":\"description\",\"amount\":\"123.00\",\"plan\":\"some-plan\",\"planName\":\"Plan with id: some-plan\",\"cpu\":{},\"memory\":{},\"disk\":{}}]}");
     }
+
+    @Test
+    public void require_accountant_summary() {
+        var tenantRequest = request("/billing/v2/accountant").roles(tenantReader);
+        tester.assertResponse(tenantRequest, "{\n" +
+                "  \"code\" : 403,\n" +
+                "  \"message\" : \"Access denied\"\n" +
+                "}", 403);
+
+        var accountantRequest = request("/billing/v2/accountant").roles(Role.hostedAccountant());
+        tester.assertResponse(accountantRequest, "{\"tenants\":[{\"tenant\":\"tenant1\",\"plan\":\"trial\",\"collection\":\"AUTO\",\"lastBill\":null,\"unbilled\":\"0.00\"}]}");
+    }
+
+    @Test
+    public void require_accountant_tenant_preview() {
+        var accountantRequest = request("/billing/v2/accountant/preview/tenant/tenant1").roles(Role.hostedAccountant());
+        tester.assertResponse(accountantRequest, "{\"id\":\"empty\",\"from\":\"2021-04-13\",\"to\":\"2021-04-13\",\"total\":\"0.00\",\"status\":\"OPEN\",\"statusHistory\":[{\"at\":\"2021-04-13T00:00:00Z\",\"status\":\"OPEN\"}],\"items\":[]}");
+    }
+
+    @Test
+    public void require_accountant_tenant_bill() {
+        var accountantRequest = request("/billing/v2/accountant/preview/tenant/tenant1", Request.Method.POST)
+                .roles(Role.hostedAccountant())
+                .data("{\"from\": \"2020-05-01\",\"to\": \"2020-06-01\"}");
+        tester.assertResponse(accountantRequest, "{\"message\":\"Created bill id-123\"}");
+    }
 }
