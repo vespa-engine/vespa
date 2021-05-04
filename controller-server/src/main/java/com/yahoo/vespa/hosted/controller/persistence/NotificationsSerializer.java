@@ -73,11 +73,10 @@ public class NotificationsSerializer {
     }
 
     private static Notification fromInspector(TenantName tenantName, Inspector inspector) {
-        Notification.Type type = typeFrom(inspector.field(typeField));
         return new Notification(
                Serializers.instant(inspector.field(atFieldName)),
-               type,
-               levelFrom(inspector.field(levelField), type),
+               typeFrom(inspector.field(typeField)),
+               levelFrom(inspector.field(levelField)),
                new NotificationSource(
                        tenantName,
                        Serializers.optionalString(inspector.field(applicationField)).map(ApplicationName::from),
@@ -100,9 +99,7 @@ public class NotificationsSerializer {
 
     private static Notification.Type typeFrom(Inspector field) {
         switch (field.asString()) {
-            case "APPLICATION_PACKAGE_WARNING": // TODO (valerijf): Remove after 7.398+
             case "applicationPackage": return Notification.Type.applicationPackage;
-            case "DEPLOYMENT_FAILURE": // TODO (valerijf): Remove after 7.398+
             case "deployment": return Notification.Type.deployment;
             case "feedBlock": return Notification.Type.feedBlock;
             default: throw new IllegalArgumentException("Unknown serialized notification type value '" + field.asString() + "'");
@@ -117,10 +114,7 @@ public class NotificationsSerializer {
         }
     }
 
-    private static Notification.Level levelFrom(Inspector field, Notification.Type type) {
-        if (!field.valid()) // TODO (valerijf): Remove after 7.398+
-            return type == Notification.Type.deployment ? Notification.Level.error : Notification.Level.warning;
-
+    private static Notification.Level levelFrom(Inspector field) {
         switch (field.asString()) {
             case "warning": return Notification.Level.warning;
             case "error": return Notification.Level.error;
