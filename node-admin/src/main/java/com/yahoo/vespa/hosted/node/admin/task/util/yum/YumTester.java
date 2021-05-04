@@ -34,15 +34,15 @@ public class YumTester extends Yum {
     }
 
     public GenericYumCommandExpectation expectInstall(String... packages) {
-        return new GenericYumCommandExpectation("install", packages);
+        return new GenericYumCommandExpectation(CommandType.install, packages);
     }
 
     public GenericYumCommandExpectation expectUpdate(String... packages) {
-        return new GenericYumCommandExpectation("upgrade", packages);
+        return new GenericYumCommandExpectation(CommandType.upgrade, packages);
     }
 
     public GenericYumCommandExpectation expectRemove(String... packages) {
-        return new GenericYumCommandExpectation("remove", packages);
+        return new GenericYumCommandExpectation(CommandType.remove, packages);
     }
 
     public InstallFixedCommandExpectation expectInstallFixedVersion(String yumPackage) {
@@ -55,12 +55,12 @@ public class YumTester extends Yum {
 
 
     public class GenericYumCommandExpectation {
-        private final String command;
+        private final CommandType commandType;
         protected final List<YumPackageName> packages;
         private List<String> enableRepos = List.of();
 
-        private GenericYumCommandExpectation(String command, String... packages) {
-            this.command = command;
+        private GenericYumCommandExpectation(CommandType commandType, String... packages) {
+            this.commandType = commandType;
             this.packages = Stream.of(packages).map(YumPackageName::fromString).collect(Collectors.toList());
         }
 
@@ -72,11 +72,12 @@ public class YumTester extends Yum {
         /** Mock the return value of the converge(TaskContext) method for this operation (true iff system was modified) */
         public YumTester andReturn(boolean value) {
             if (value) return execute("Success");
-            switch (command) {
-                case "install": return execute("Nothing to do");
-                case "upgrade": return execute("No packages marked for update");
-                case "remove": return execute("No Packages marked for removal");
-                default: throw new IllegalArgumentException("Unknown command: " + command);
+            switch (commandType) {
+                case installFixed:
+                case install: return execute("Nothing to do");
+                case upgrade: return execute("No packages marked for update");
+                case remove: return execute("No Packages marked for removal");
+                default: throw new IllegalArgumentException("Unknown command type: " + commandType);
             }
         }
 
@@ -85,12 +86,24 @@ public class YumTester extends Yum {
         }
 
         private YumTester execute(String output) {
+            if (commandType == CommandType.install)
+                terminal.interceptCommand("rpm query", cmd -> new TestChildProcess2(1, "Not installed"));
+            if (commandType == CommandType.remove) { // Pretend the first package is installed so we can continue to yum commands
+                YumPackageName pkg = packages.get(0);
+                terminal.interceptCommand("rpm query", cmd -> new TestChildProcess2(0, String.join("\n",
+                        pkg.getName(),
+                        pkg.getEpoch().orElse("(none)"),
+                        pkg.getVersion().orElse("1.2.3"),
+                        pkg.getRelease().orElse("1"),
+                        pkg.getArchitecture().orElse("(none)"))));
+            }
+
             StringBuilder cmd = new StringBuilder();
-            cmd.append("yum ").append(command).append(" --assumeyes");
+            cmd.append("yum ").append(commandType.command).append(" --assumeyes");
             enableRepos.forEach(repo -> cmd.append(" --enablerepo=").append(repo));
-            if ("install".equals(command) && packages.size() > 1)
+            if (commandType == CommandType.install && packages.size() > 1)
                 cmd.append(" --setopt skip_missing_names_on_install=False");
-            if ("upgrade".equals(command) && packages.size() > 1)
+            if (commandType == CommandType.upgrade && packages.size() > 1)
                 cmd.append(" --setopt skip_missing_names_on_update=False");
             packages.forEach(pkg -> {
                 String name = pkg.toName(yumVersion);
@@ -109,7 +122,7 @@ public class YumTester extends Yum {
 
     public class InstallFixedCommandExpectation extends GenericYumCommandExpectation {
         private InstallFixedCommandExpectation(String yumPackage) {
-            super("install", yumPackage);
+            super(CommandType.installFixed, yumPackage);
         }
 
         @Override
@@ -147,6 +160,15 @@ public class YumTester extends Yum {
 
             terminal.expectCommand("rpm -q " + packageName + " --queryformat \"%{NAME}\\\\n%{EPOCH}\\\\n%{VERSION}\\\\n%{RELEASE}\\\\n%{ARCH}\" 2>&1", process);
             return YumTester.this;
+        }
+    }
+
+    private enum CommandType {
+        install("install"), upgrade("upgrade"), remove("remove"), installFixed("install");
+
+        private final String command;
+        CommandType(String command) {
+            this.command = command;
         }
     }
 

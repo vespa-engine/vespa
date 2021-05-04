@@ -78,6 +78,7 @@ public class YumTest {
 
     @Test
     public void testAlreadyInstalled() {
+        mockRpmQuery("package-1", null);
         mockYumVersion();
         terminal.expectCommand(
                 "yum install --assumeyes --enablerepo=repo1 --enablerepo=repo2 --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
@@ -90,6 +91,7 @@ public class YumTest {
                 .converge(taskContext));
 
         // RHEL 8
+        mockRpmQuery("package-1", null);
         mockYumVersion(YumVersion.rhel8);
         terminal.expectCommand(
                 "yum install --assumeyes --enablerepo=repo1 --enablerepo=repo2 --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
@@ -125,6 +127,7 @@ public class YumTest {
 
     @Test
     public void testAlreadyRemoved() {
+        mockRpmQuery("package-1", YumPackageName.fromString("package-1-1.2.3-1"));
         mockYumVersion();
         terminal.expectCommand(
                 "yum remove --assumeyes package-1 package-2 2>&1",
@@ -136,6 +139,7 @@ public class YumTest {
                 .converge(taskContext));
 
         // RHEL 8
+        mockRpmQuery("package-1", YumPackageName.fromString("package-1-1.2.3-1"));
         mockYumVersion(YumVersion.rhel8);
         terminal.expectCommand(
                 "yum remove --assumeyes package-1 package-2 2>&1",
@@ -147,7 +151,15 @@ public class YumTest {
     }
 
     @Test
+    public void skipsYumRemoveNotInRpm() {
+        mockRpmQuery("package-1", null);
+        mockRpmQuery("package-2", null);
+        assertFalse(yum.remove("package-1", "package-2").converge(taskContext));
+    }
+
+    @Test
     public void testInstall() {
+        mockRpmQuery("package-1", null);
         mockYumVersion();
         terminal.expectCommand(
                 "yum install --assumeyes --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
@@ -160,7 +172,15 @@ public class YumTest {
     }
 
     @Test
+    public void skipsYumInstallIfInRpm() {
+        mockRpmQuery("package-1", YumPackageName.fromString("package-1-1.2.3-1"));
+        mockRpmQuery("package-2", YumPackageName.fromString("1:package-2-1.2.3-1.el7.x86_64"));
+        assertFalse(yum.install("package-1-1.2.3-1", "package-2").converge(taskContext));
+    }
+
+    @Test
     public void testInstallWithEnablerepo() {
+        mockRpmQuery("package-1", null);
         mockYumVersion();
         terminal.expectCommand(
                 "yum install --assumeyes --enablerepo=repo-name --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
@@ -273,6 +293,7 @@ public class YumTest {
 
     @Test(expected = ChildProcessFailureException.class)
     public void testFailedInstall() {
+        mockRpmQuery("package-1", null);
         mockYumVersion();
         terminal.expectCommand(
                 "yum install --assumeyes --enablerepo=repo-name --setopt skip_missing_names_on_install=False package-1 package-2 2>&1",
@@ -288,6 +309,7 @@ public class YumTest {
 
     @Test
     public void testUnknownPackages() {
+        mockRpmQuery("package-1", null);
         mockYumVersion();
         terminal.expectCommand(
                 "yum install --assumeyes --setopt skip_missing_names_on_install=False package-1 package-2 package-3 2>&1",
@@ -328,4 +350,7 @@ public class YumTest {
         mockYumVersion(YumVersion.rhel7);
     }
 
+    private void mockRpmQuery(String packageName, YumPackageName installedOrNull) {
+        new YumTester(terminal).expectQueryInstalled(packageName).andReturn(installedOrNull);
+    }
 }
