@@ -602,6 +602,13 @@ public class CuratorDb {
                 .map(slime -> NotificationsSerializer.fromSlime(tenantName, slime)).orElseGet(List::of);
     }
 
+
+    public List<TenantName> listNotifications() {
+        return curator.getChildren(notificationsRoot).stream()
+                .map(TenantName::from)
+                .collect(Collectors.toUnmodifiableList());
+    }
+
     public void writeNotifications(TenantName tenantName, List<Notification> notifications) {
         curator.set(notificationsPath(tenantName), asJson(NotificationsSerializer.toSlime(notifications)));
     }
