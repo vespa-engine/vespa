@@ -353,7 +353,7 @@ pruneremoveddocumentsinterval double default=0.0
 pruneremoveddocumentsage double default=1209600.0
 
 ## Set to true to enable bucket locking via content layer
-pruneremoveddocuments.usebucketexecutor bool default=false
+pruneremoveddocuments.usebucketexecutor bool default=true
 
 ## Minimum size of packets to compress (0 means no compression)
 ##
@@ -416,14 +416,12 @@ lidspacecompaction.removebatchblockrate double default=0.5
 lidspacecompaction.removeblockrate double default=100.0
 
 ## Set to true to enable bucket locking via content layer
-## DEPRECATED and unused
 lidspacecompaction.usebucketexecutor bool default=true
 
 ## Maximum docs to move in single operation per bucket
 bucketmove.maxdocstomoveperbucket int default=1
 
 ## Set to true to enable bucket locking via content layer
-## DEPRECATED and unused
 bucketmove.usebucketexecutor bool default=true
 
 ## This is the maximum value visibilitydelay you can have.
