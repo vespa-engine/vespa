@@ -6,11 +6,10 @@ import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.IndexModel;
 import com.yahoo.prelude.SearchDefinition;
-import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
-import com.yahoo.prelude.query.parser.SpecialTokens;
+import com.yahoo.language.process.SpecialTokenRegistry;
+import com.yahoo.language.process.SpecialTokens;
 import com.yahoo.prelude.query.parser.Token;
 import com.yahoo.prelude.query.parser.Tokenizer;
-import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import org.junit.Test;
 
 import java.util.ArrayList;
@@ -743,34 +742,6 @@ public class TokenizerTestCase {
         assertEquals(new Token(WORD, "'a"), tokens.get(28));
         assertEquals(new Token(SPACE, " "), tokens.get(29));
         assertEquals(new Token(WORD, "a'"), tokens.get(30));
-    }
-
-    @Test
-    public void testSpecialTokensConfig() {
-        var builder = new SpecialtokensConfig.Builder();
-        var tokenBuilder = new SpecialtokensConfig.Tokenlist.Builder();
-        tokenBuilder.name("default");
-
-        var tokenListBuilder1 = new SpecialtokensConfig.Tokenlist.Tokens.Builder();
-        tokenListBuilder1.token("c++");
-        tokenListBuilder1.replace("cpp");
-        tokenBuilder.tokens(tokenListBuilder1);
-
-        var tokenListBuilder2 = new SpecialtokensConfig.Tokenlist.Tokens.Builder();
-        tokenListBuilder2.token("...");
-        tokenBuilder.tokens(tokenListBuilder2);
-
-        builder.tokenlist(tokenBuilder);
-
-        var registry = new SpecialTokenRegistry(builder.build());
-
-        var defaultTokens = registry.getSpecialTokens("default");
-        assertEquals("default", defaultTokens.name());
-        assertEquals(2, defaultTokens.tokens().size());
-        assertEquals("c++", defaultTokens.tokens().get(0).token());
-        assertEquals("cpp", defaultTokens.tokens().get(0).replacement());
-        assertEquals("...", defaultTokens.tokens().get(1).token());
-        assertEquals("...", defaultTokens.tokens().get(1).replacement());
     }
 
     private SpecialTokenRegistry createSpecialTokens() {

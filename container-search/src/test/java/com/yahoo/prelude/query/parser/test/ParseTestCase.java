@@ -18,16 +18,14 @@ import com.yahoo.prelude.query.PhraseSegmentItem;
 import com.yahoo.prelude.query.PrefixItem;
 import com.yahoo.prelude.query.RankItem;
 import com.yahoo.prelude.query.SubstringItem;
-import com.yahoo.prelude.query.SubstringItem;
 import com.yahoo.prelude.query.SuffixItem;
 import com.yahoo.prelude.query.TaggableItem;
 import com.yahoo.prelude.query.WordItem;
-import com.yahoo.prelude.query.parser.SpecialTokens;
+import com.yahoo.language.process.SpecialTokens;
 import com.yahoo.prelude.query.parser.TestLinguistics;
 import com.yahoo.search.Query;
 import org.junit.Test;
 
-import java.util.Collections;
 import java.util.Iterator;
 
 import static org.junit.Assert.assertEquals;

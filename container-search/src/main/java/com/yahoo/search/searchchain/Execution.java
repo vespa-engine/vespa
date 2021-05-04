@@ -6,7 +6,7 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
-import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
+import com.yahoo.language.process.SpecialTokenRegistry;
 import com.yahoo.processing.Processor;
 import com.yahoo.processing.Request;
 import com.yahoo.processing.Response;

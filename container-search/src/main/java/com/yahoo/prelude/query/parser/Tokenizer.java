@@ -3,6 +3,7 @@ package com.yahoo.prelude.query.parser;
 
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.process.CharacterClasses;
+import com.yahoo.language.process.SpecialTokens;
 import com.yahoo.prelude.Index;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.query.Substring;

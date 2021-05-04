@@ -1,12 +1,11 @@
-// Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.prelude.query.parser;
+// Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+package com.yahoo.language.process;
 
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig.Tokenlist;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig.Tokenlist.Tokens;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -24,9 +23,7 @@ public class SpecialTokenRegistry {
      * The current special token lists, indexed on name.
      * These lists are unmodifiable and used directly by clients of this
      */
-    private Map<String, SpecialTokens> specialTokenMap;
-
-    private boolean frozen = false;
+    private final Map<String, SpecialTokens> specialTokenMap;
 
     /** Creates an empty special token registry */
     public SpecialTokenRegistry() {
@@ -40,11 +37,6 @@ public class SpecialTokenRegistry {
 
     public SpecialTokenRegistry(List<SpecialTokens> specialTokensList) {
         specialTokenMap = specialTokensList.stream().collect(Collectors.toMap(t -> t.name(), t -> t));
-        freeze();
-    }
-
-    private void freeze() {
-        frozen = true;
     }
 
     private static List<SpecialTokens> specialTokensFrom(SpecialtokensConfig config) {
@@ -60,12 +52,6 @@ public class SpecialTokenRegistry {
             specialTokensList.add(new SpecialTokens(tokenListConfig.name(), tokenList));
         }
         return specialTokensList;
-    }
-
-    private void ensureNotFrozen() {
-        if (frozen) {
-            throw new IllegalStateException("Tried to modify a frozen SpecialTokenRegistry instance.");
-        }
     }
 
     /**
