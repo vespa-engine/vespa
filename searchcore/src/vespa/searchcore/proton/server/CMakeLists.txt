@@ -82,6 +82,7 @@ vespa_add_library(searchcore_server STATIC
     proton_thread_pools_explorer.cpp
     prune_session_cache_job.cpp
     pruneremoveddocumentsjob.cpp
+    pruneremoveddocumentsjob_v2.cpp
     putdonecontext.cpp
     reconfig_params.cpp
     remove_operations_rate_tracker.cpp

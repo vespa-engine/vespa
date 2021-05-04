@@ -132,9 +132,9 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
         isDocumentTypeGlobal = ddbConfig.global;
     }
     return std::make_shared<DocumentDBMaintenanceConfig>(
-            DocumentDBPruneRemovedDocumentsConfig(
-                    pruneRemovedDocumentsInterval,
-                    pruneRemovedDocumentsAge),
+            DocumentDBPruneConfig(pruneRemovedDocumentsInterval,
+                                  pruneRemovedDocumentsAge,
+                                  proton.pruneremoveddocuments.usebucketexecutor),
             DocumentDBHeartBeatConfig(),
             vespalib::from_s(proton.grouping.sessionmanager.pruning.interval),
             visibilityDelay,
