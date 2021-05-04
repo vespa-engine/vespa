@@ -18,6 +18,8 @@ import com.yahoo.language.process.Tokenizer;
 import com.yahoo.language.process.Transformer;
 import com.yahoo.vespa.configdefinition.SpecialtokensConfig;
 
+import java.util.List;
+
 /**
  * Factory of simple linguistic processor implementations.
  * Useful for testing and english-only use cases.
@@ -33,20 +35,15 @@ public class SimpleLinguistics implements Linguistics {
     private final Detector detector;
     private final CharacterClasses characterClasses;
     private final GramSplitter gramSplitter;
-    private final SpecialTokenRegistry specialTokenRegistry;
-
-    public SimpleLinguistics() {
-        this(new SpecialtokensConfig.Builder().build());
-    }
+    private final SpecialTokenRegistry specialTokenRegistry = new SpecialTokenRegistry(List.of());
 
     @Inject
-    public SimpleLinguistics(SpecialtokensConfig specialTokensConfig) {
+    public SimpleLinguistics() {
         this.normalizer = new SimpleNormalizer();
         this.transformer = new SimpleTransformer();
         this.detector = new SimpleDetector();
         this.characterClasses = new CharacterClasses();
         this.gramSplitter = new GramSplitter(characterClasses);
-        this.specialTokenRegistry = new SpecialTokenRegistry(specialTokensConfig);
     }
 
     @Override
