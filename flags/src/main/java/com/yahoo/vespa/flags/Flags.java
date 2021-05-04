@@ -137,33 +137,12 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundIntFlag MAX_PENDING_MOVE_OPS = defineIntFlag(
-            "max-pending-move-ops", 100,
-            List.of("baldersheim"), "2021-02-15", "2021-06-01",
-            "Max number of move operations inflight",
-            "Takes effect at redeployment",
-            ZONE_ID, APPLICATION_ID);
-
     public static final UnboundDoubleFlag FEED_CONCURRENCY = defineDoubleFlag(
             "feed-concurrency", 0.5,
             List.of("baldersheim"), "2020-12-02", "2022-01-01",
             "How much concurrency should be allowed for feed",
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
-
-    public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_LID_SPACE_COMPACT = defineFeatureFlag(
-            "use-bucket-executor-for-lid-space-compact", true,
-            List.of("baldersheim"), "2021-01-24", "2021-06-01",
-            "Wheter to use content-level bucket executor or legacy frozen buckets",
-            "Takes effect on next internal redeployment",
-            APPLICATION_ID);
-
-    public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_BUCKET_MOVE = defineFeatureFlag(
-            "use-bucket-executor-for-bucket-move", true,
-            List.of("baldersheim"), "2021-02-15", "2021-06-01",
-            "Wheter to use content-level bucket executor or legacy frozen buckets",
-            "Takes effect on next internal redeployment",
-            APPLICATION_ID);
 
     public static final UnboundBooleanFlag USE_BUCKET_EXECUTOR_FOR_PRUNE_REMOVED = defineFeatureFlag(
             "use-bucket-executor-for-prune-removed", true,
