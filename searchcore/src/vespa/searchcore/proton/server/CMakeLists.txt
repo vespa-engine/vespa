@@ -5,7 +5,7 @@ vespa_add_library(searchcore_server STATIC
     bootstrapconfig.cpp
     bootstrapconfigmanager.cpp
     buckethandler.cpp
-    bucketmovejobv2.cpp
+    bucketmovejob.cpp
     clusterstatehandler.cpp
     combiningfeedview.cpp
     ddbstate.cpp
