@@ -1,7 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketmover_common.h"
-#include <vespa/searchcore/proton/server/bucketmovejobv2.h>
+#include <vespa/searchcore/proton/server/bucketmovejob.h>
 #include <vespa/searchcore/proton/server/executor_thread_service.h>
 #include <vespa/searchcore/proton/server/document_db_maintenance_config.h>
 #include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>

@@ -1,9 +1,9 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "bucketmovejobv2.h"
+#include "bucketmovejob.h"
 #include "heart_beat_job.h"
 #include "job_tracked_maintenance_job.h"
-#include "lid_space_compaction_job_take2.h"
+#include "lid_space_compaction_job.h"
 #include "lid_space_compaction_handler.h"
 #include "maintenance_jobs_injector.h"
 #include "prune_session_cache_job.h"
