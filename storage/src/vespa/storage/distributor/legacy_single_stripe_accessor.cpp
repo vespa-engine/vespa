@@ -14,6 +14,10 @@ LegacySingleStripeAccessGuard::~LegacySingleStripeAccessGuard() {
     _accessor.mark_guard_released();
 }
 
+void LegacySingleStripeAccessGuard::flush_and_close() {
+    _stripe.flush_and_close();
+}
+
 void LegacySingleStripeAccessGuard::update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config) {
     _stripe.update_total_distributor_config(std::move(config));
 }

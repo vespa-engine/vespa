@@ -28,6 +28,8 @@ class StripeAccessGuard {
 public:
     virtual ~StripeAccessGuard() = default;
 
+    virtual void flush_and_close() = 0;
+
     virtual void update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config) = 0;
 
     virtual void update_distribution_config(const BucketSpaceDistributionConfigs& new_configs) = 0;
