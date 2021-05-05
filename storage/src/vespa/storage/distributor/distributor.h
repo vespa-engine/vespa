@@ -171,6 +171,12 @@ private:
     void enableNextDistribution();
     void propagateDefaultDistribution(std::shared_ptr<const lib::Distribution>);
 
+    void dispatch_to_main_distributor_thread_queue(const std::shared_ptr<api::StorageMessage>& msg);
+    void fetch_external_messages();
+    void process_fetched_external_messages();
+
+    using MessageQueue = std::vector<std::shared_ptr<api::StorageMessage>>;
+
     DistributorComponentRegister&         _comp_reg;
     std::shared_ptr<DistributorMetricSet> _metrics;
     ChainedMessageSender*                 _messageSender;
@@ -180,6 +186,8 @@ private:
     std::unique_ptr<DistributorStripePool> _stripe_pool;
     std::vector<std::unique_ptr<DistributorStripe>> _stripes;
     std::unique_ptr<StripeAccessor>      _stripe_accessor;
+    MessageQueue                         _message_queue; // Queue for top-level ops
+    MessageQueue                         _fetched_messages;
     distributor::DistributorComponent    _component;
     std::shared_ptr<const DistributorConfiguration> _total_config;
     std::unique_ptr<BucketDBUpdater>     _bucket_db_updater;
