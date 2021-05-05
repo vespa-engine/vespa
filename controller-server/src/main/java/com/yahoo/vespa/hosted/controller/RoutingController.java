@@ -95,7 +95,7 @@ public class RoutingController {
             if (!policy.status().isActive()) continue;
             for (var routingMethod :  controller.zoneRegistry().routingMethods(policy.id().zone())) {
                 if (routingMethod.isDirect() && !isSystemApplication && !canRouteDirectlyTo(deployment, application.get())) continue;
-                endpoints.add(policy.endpointIn(controller.system(), routingMethod, controller.zoneRegistry()));
+                endpoints.addAll(policy.endpointsIn(controller.system(), routingMethod, controller.zoneRegistry()));
                 endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod));
             }
         }
@@ -140,7 +140,7 @@ public class RoutingController {
     public Map<ZoneId, List<Endpoint>> zoneEndpointsOf(Collection<DeploymentId> deployments) {
         var endpoints = new TreeMap<ZoneId, List<Endpoint>>(Comparator.comparing(ZoneId::value));
         for (var deployment : deployments) {
-            EndpointList zoneEndpoints = endpointsOf(deployment).scope(Endpoint.Scope.zone);
+            EndpointList zoneEndpoints = endpointsOf(deployment).scope(Endpoint.Scope.zone).not().legacy();
             zoneEndpoints = directEndpoints(zoneEndpoints, deployment.applicationId());
             if  ( ! zoneEndpoints.isEmpty()) {
                 endpoints.put(deployment.zoneId(), zoneEndpoints.asList());
@@ -316,7 +316,7 @@ public class RoutingController {
                                   .on(Port.fromRoutingMethod(method))
                                   .routingMethod(method)
                                   .in(controller.system()));
-            // TODO(mpolden): Remove this once all applications have migrated away from legacy endpoints
+            // Add legacy endpoints
             if (method == RoutingMethod.shared) {
                 endpoints.add(Endpoint.of(routingId.application())
                                       .target(routingId.endpointId(), cluster, zones)

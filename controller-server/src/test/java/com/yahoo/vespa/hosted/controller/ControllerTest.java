@@ -896,6 +896,14 @@ public class ControllerTest {
                                 "application--tenant.global.vespa.oath.cloud"),
                          tester.configServer().containerEndpoints().get(context.deploymentIdIn(zone)));
         }
+        List<String> zoneDnsNames = tester.controller().routing().endpointsOf(context.deploymentIdIn(zone1))
+                                          .scope(Endpoint.Scope.zone)
+                                          .mapToList(Endpoint::dnsName);
+        assertEquals(List.of("application--tenant.us-west-1.vespa.oath.cloud",
+                             "application.tenant.us-west-1.prod.vespa.yahooapis.com",
+                             "application--tenant.us-west-1.prod.vespa.yahooapis.com",
+                             "application.tenant.us-west-1.vespa.oath.cloud"),
+                     zoneDnsNames);
     }
 
     @Test

@@ -206,10 +206,11 @@ public class RoutingPolicies {
 
     /** Update zone DNS record for given policy */
     private void updateZoneDnsOf(RoutingPolicy policy) {
-        var name = RecordName.from(policy.endpointIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())
-                                         .dnsName());
-        var data = RecordData.fqdn(policy.canonicalName().value());
-        nameServiceForwarderIn(policy.id().zone()).createCname(name, data, Priority.normal);
+        for (var endpoint : policy.endpointsIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())) {
+            var name = RecordName.from(endpoint.dnsName());
+            var data = RecordData.fqdn(policy.canonicalName().value());
+            nameServiceForwarderIn(policy.id().zone()).createCname(name, data, Priority.normal);
+        }
     }
 
     /** Remove policies and zone DNS records unreferenced by given load balancers */
@@ -221,11 +222,12 @@ public class RoutingPolicies {
             // Leave active load balancers and irrelevant zones alone
             if (activeIds.contains(policy.id()) ||
                 !policy.id().zone().equals(allocation.deployment.zoneId())) continue;
-
-            var dnsName = policy.endpointIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry()).dnsName();
-            nameServiceForwarderIn(allocation.deployment.zoneId()).removeRecords(Record.Type.CNAME,
-                                                                                 RecordName.from(dnsName),
-                                                                                 Priority.normal);
+            for (var endpoint : policy.endpointsIn(controller.system(), RoutingMethod.exclusive, controller.zoneRegistry())) {
+                var dnsName = endpoint.dnsName();
+                nameServiceForwarderIn(allocation.deployment.zoneId()).removeRecords(Record.Type.CNAME,
+                                                                                     RecordName.from(dnsName),
+                                                                                     Priority.normal);
+            }
             newPolicies.remove(policy.id());
         }
         db.writeRoutingPolicies(allocation.deployment.applicationId(), newPolicies);

@@ -11,6 +11,8 @@ import com.yahoo.vespa.hosted.controller.application.Endpoint.Port;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.Set;
@@ -69,12 +71,28 @@ public class RoutingPolicy {
         return new RoutingPolicy(id, canonicalName, dnsZone, endpoints, status);
     }
 
-    /** Returns the zone endpoint of this */
-    public Endpoint endpointIn(SystemName system, RoutingMethod routingMethod, ZoneRegistry zoneRegistry) {
+    /** Returns the zone endpoints of this */
+    public List<Endpoint> endpointsIn(SystemName system, RoutingMethod routingMethod, ZoneRegistry zoneRegistry) {
         Optional<Endpoint> infraEndpoint = SystemApplication.matching(id.owner())
                                                             .flatMap(app -> app.endpointIn(id.zone(), zoneRegistry));
-        return infraEndpoint.orElseGet(() -> endpoint(routingMethod).target(id.cluster(), id.zone())
-                                                                    .in(system));
+        List<Endpoint> endpoints = new ArrayList<>(3);
+        if (infraEndpoint.isPresent()) {
+            endpoints.add(infraEndpoint.get());
+        } else {
+            endpoints.add(endpoint(routingMethod).target(id.cluster(), id.zone()).in(system));
+            // Add legacy endpoints
+            if (routingMethod == RoutingMethod.shared) {
+                endpoints.add(endpoint(routingMethod).target(id.cluster(), id.zone())
+                                                     .on(Port.plain(4080))
+                                                     .legacy()
+                                                     .in(system));
+                endpoints.add(endpoint(routingMethod).target(id.cluster(), id.zone())
+                                                     .on(Port.tls(4443))
+                                                     .legacy()
+                                                     .in(system));
+            }
+        }
+        return endpoints;
     }
 
     /** Returns the region endpoint of this */
