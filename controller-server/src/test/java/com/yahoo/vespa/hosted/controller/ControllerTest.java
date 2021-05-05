@@ -254,6 +254,11 @@ public class ControllerTest {
         assertTrue(record.isPresent());
         assertEquals("app1--tenant1.global.vespa.oath.cloud", record.get().name().asString());
         assertEquals("rotation-fqdn-01.", record.get().data().asString());
+
+        List<String> globalDnsNames = tester.controller().routing().endpointsOf(context.instanceId())
+                                            .scope(Endpoint.Scope.global)
+                                            .mapToList(Endpoint::dnsName);
+        assertEquals(List.of("app1--tenant1.global.vespa.oath.cloud"), globalDnsNames);
     }
 
     @Test
@@ -293,6 +298,14 @@ public class ControllerTest {
         assertTrue(record.isPresent());
         assertEquals("app1.tenant1.global.vespa.yahooapis.com", record.get().name().asString());
         assertEquals("rotation-fqdn-01.", record.get().data().asString());
+
+        List<String> globalDnsNames = tester.controller().routing().endpointsOf(context.instanceId())
+                                            .scope(Endpoint.Scope.global)
+                                            .mapToList(Endpoint::dnsName);
+        assertEquals(List.of("app1--tenant1.global.vespa.oath.cloud",
+                             "app1.tenant1.global.vespa.yahooapis.com",
+                             "app1--tenant1.global.vespa.yahooapis.com"),
+                     globalDnsNames);
     }
 
     @Test
