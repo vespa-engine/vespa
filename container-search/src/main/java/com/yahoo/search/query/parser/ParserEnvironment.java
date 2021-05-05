@@ -4,7 +4,7 @@ package com.yahoo.search.query.parser;
 import com.yahoo.language.Linguistics;
 import com.yahoo.language.simple.SimpleLinguistics;
 import com.yahoo.prelude.IndexFacts;
-import com.yahoo.language.process.SpecialTokens;
+import com.yahoo.prelude.query.parser.SpecialTokens;
 import com.yahoo.search.Searcher;
 import com.yahoo.search.searchchain.Execution;
 
@@ -18,7 +18,7 @@ public final class ParserEnvironment {
 
     private IndexFacts indexFacts = new IndexFacts();
     private Linguistics linguistics = new SimpleLinguistics();
-    private SpecialTokens specialTokens = SpecialTokens.empty();
+    private SpecialTokens specialTokens = new SpecialTokens();
 
     public IndexFacts getIndexFacts() {
         return indexFacts;
