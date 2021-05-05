@@ -952,7 +952,6 @@ DocumentDB::injectMaintenanceJobs(const DocumentDBMaintenanceConfig &config, std
             *_feedHandler, // IHeartBeatHandler
             *_sessionManager, // ISessionCachePruner
             *_feedHandler, // IOperationStorer
-            _maintenanceController, // IFrozenBucketHandler
             _subDBs.getBucketCreateNotifier(),
             _bucketSpace,
             *_feedHandler, // IPruneRemovedDocumentsHandler

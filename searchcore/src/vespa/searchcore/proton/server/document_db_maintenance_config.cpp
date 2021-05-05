@@ -7,16 +7,15 @@ namespace proton {
 constexpr vespalib::duration MAX_DELAY_SEC = 300s;
 
 DocumentDBPruneConfig::DocumentDBPruneConfig() noexcept
-    : DocumentDBPruneConfig(21600s, 1209600s, false)
+    : DocumentDBPruneConfig(21600s, 1209600s)
 {
 }
 
 DocumentDBPruneConfig::
-DocumentDBPruneConfig(vespalib::duration interval, vespalib::duration age, bool useBucketExecutor) noexcept
+DocumentDBPruneConfig(vespalib::duration interval, vespalib::duration age) noexcept
     : _delay(std::min(MAX_DELAY_SEC, interval)),
       _interval(interval),
-      _age(age),
-      _useBucketExecutor(useBucketExecutor)
+      _age(age)
 {
 }
 
@@ -25,8 +24,7 @@ DocumentDBPruneConfig::operator==(const DocumentDBPruneConfig &rhs) const noexce
 {
     return (_delay == rhs._delay) &&
             (_interval == rhs._interval) &&
-            (_age == rhs._age) &&
-            (_useBucketExecutor == rhs._useBucketExecutor);
+            (_age == rhs._age);
 }
 
 DocumentDBHeartBeatConfig::DocumentDBHeartBeatConfig() noexcept
@@ -52,8 +50,7 @@ DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig() noexcep
       _allowedLidBloatFactor(1.0),
       _remove_batch_block_rate(0.5),
       _remove_block_rate(100),
-      _disabled(false),
-      _useBucketExecutor(false)
+      _disabled(false)
 {
 }
 
@@ -62,16 +59,14 @@ DocumentDBLidSpaceCompactionConfig::DocumentDBLidSpaceCompactionConfig(vespalib:
                                                                        double allowedLidBloatFactor,
                                                                        double remove_batch_block_rate,
                                                                        double remove_block_rate,
-                                                                       bool disabled,
-                                                                       bool useBucketExecutor) noexcept
+                                                                       bool disabled) noexcept
     : _delay(std::min(MAX_DELAY_SEC, interval)),
       _interval(interval),
       _allowedLidBloat(allowedLidBloat),
       _allowedLidBloatFactor(allowedLidBloatFactor),
       _remove_batch_block_rate(remove_batch_block_rate),
       _remove_block_rate(remove_block_rate),
-      _disabled(disabled),
-      _useBucketExecutor(useBucketExecutor)
+      _disabled(disabled)
 {
 }
 
@@ -113,19 +108,16 @@ BlockableMaintenanceJobConfig::operator==(const BlockableMaintenanceJobConfig &r
 }
 
 BucketMoveConfig::BucketMoveConfig() noexcept
-    : _maxDocsToMovePerBucket(1),
-      _useBucketExecutor(false)
+    : _maxDocsToMovePerBucket(1)
 {}
-BucketMoveConfig::BucketMoveConfig(uint32_t  maxDocsToMovePerBucket, bool useBucketExecutor_) noexcept
-    : _maxDocsToMovePerBucket(maxDocsToMovePerBucket),
-      _useBucketExecutor(useBucketExecutor_)
+BucketMoveConfig::BucketMoveConfig(uint32_t  maxDocsToMovePerBucket) noexcept
+    : _maxDocsToMovePerBucket(maxDocsToMovePerBucket)
 {}
 
 bool
 BucketMoveConfig::operator==(const BucketMoveConfig &rhs) const noexcept
 {
-    return _maxDocsToMovePerBucket == rhs._maxDocsToMovePerBucket &&
-            _useBucketExecutor == rhs._useBucketExecutor;
+    return _maxDocsToMovePerBucket == rhs._maxDocsToMovePerBucket;
 }
 
 DocumentDBMaintenanceConfig::DocumentDBMaintenanceConfig() noexcept

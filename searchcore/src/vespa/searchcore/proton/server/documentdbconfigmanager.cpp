@@ -133,8 +133,7 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
     }
     return std::make_shared<DocumentDBMaintenanceConfig>(
             DocumentDBPruneConfig(pruneRemovedDocumentsInterval,
-                                  pruneRemovedDocumentsAge,
-                                  proton.pruneremoveddocuments.usebucketexecutor),
+                                  pruneRemovedDocumentsAge),
             DocumentDBHeartBeatConfig(),
             vespalib::from_s(proton.grouping.sessionmanager.pruning.interval),
             visibilityDelay,
@@ -144,8 +143,7 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
                     proton.lidspacecompaction.allowedlidbloatfactor,
                     proton.lidspacecompaction.removebatchblockrate,
                     proton.lidspacecompaction.removeblockrate,
-                    isDocumentTypeGlobal,
-                    proton.lidspacecompaction.usebucketexecutor),
+                    isDocumentTypeGlobal),
             AttributeUsageFilterConfig(
                     proton.writefilter.attribute.enumstorelimit,
                     proton.writefilter.attribute.multivaluelimit),
@@ -154,7 +152,7 @@ buildMaintenanceConfig(const BootstrapConfig::SP &bootstrapConfig,
                     proton.maintenancejobs.resourcelimitfactor,
                     proton.maintenancejobs.maxoutstandingmoveops),
             DocumentDBFlushConfig(proton.index.maxflushed,proton.index.maxflushedretired),
-            BucketMoveConfig(proton.bucketmove.maxdocstomoveperbucket, proton.bucketmove.usebucketexecutor));
+            BucketMoveConfig(proton.bucketmove.maxdocstomoveperbucket));
 }
 
 template<typename T>

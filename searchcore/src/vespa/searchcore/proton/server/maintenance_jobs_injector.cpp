@@ -7,7 +7,6 @@
 #include "lid_space_compaction_handler.h"
 #include "maintenance_jobs_injector.h"
 #include "prune_session_cache_job.h"
-#include "pruneremoveddocumentsjob.h"
 #include "pruneremoveddocumentsjob_v2.h"
 #include "sample_attribute_usage_job.h"
 #include <vespa/searchcore/proton/attribute/attribute_config_inspector.h>
@@ -76,7 +75,6 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
                                     IHeartBeatHandler &hbHandler,
                                     matching::ISessionCachePruner &scPruner,
                                     IOperationStorer &opStorer,
-                                    IFrozenBucketHandler &fbHandler,
                                     bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                                     document::BucketSpace bucketSpace,
                                     IPruneRemovedDocumentsHandler &prdHandler,
@@ -98,20 +96,14 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
 
     const auto & docTypeName = controller.getDocTypeName().getName();
     const MaintenanceDocumentSubDB &mRemSubDB(controller.getRemSubDB());
-    if (config.getPruneRemovedDocumentsConfig().useBucketExecutor()) {
-        controller.registerJobInMasterThread(
-                trackJob(jobTrackers.getRemovedDocumentsPrune(),
-                         PruneRemovedDocumentsJobV2::create(config.getPruneRemovedDocumentsConfig(), controller.retainDB(),
-                                                            *mRemSubDB.meta_store(), mRemSubDB.sub_db_id(), bucketSpace,
-                                                            docTypeName, prdHandler, controller.masterThread(),
-                                                            bucketExecutor)));
-    } else {
-        controller.registerJobInMasterThread(
-                trackJob(jobTrackers.getRemovedDocumentsPrune(),
-                         std::make_unique<PruneRemovedDocumentsJob>(config.getPruneRemovedDocumentsConfig(),
-                                                                    *mRemSubDB.meta_store(), mRemSubDB.sub_db_id(),
-                                                                    docTypeName, prdHandler, fbHandler)));
-    }
+
+    controller.registerJobInMasterThread(
+            trackJob(jobTrackers.getRemovedDocumentsPrune(),
+                     PruneRemovedDocumentsJobV2::create(config.getPruneRemovedDocumentsConfig(), controller.retainDB(),
+                                                        *mRemSubDB.meta_store(), mRemSubDB.sub_db_id(), bucketSpace,
+                                                        docTypeName, prdHandler, controller.masterThread(),
+                                                        bucketExecutor)));
+
 
     if (!config.getLidSpaceCompactionConfig().isDisabled()) {
         ILidSpaceCompactionHandler::Vector lidSpaceCompactionHandlers;
