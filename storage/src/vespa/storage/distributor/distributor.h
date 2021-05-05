@@ -40,8 +40,9 @@ class BucketDBUpdater;
 class DistributorBucketSpaceRepo;
 class DistributorStatus;
 class DistributorStripe;
+class DistributorStripePool;
+class StripeAccessor;
 class OperationSequencer;
-class LegacySingleStripeAccessor;
 class OwnershipTransferSafeTimePointCalculator;
 class SimpleMaintenanceScanner;
 class ThrottlingOperationStarter;
@@ -118,6 +119,10 @@ private:
     friend class DistributorTestUtil;
     friend class MetricUpdateHook;
 
+    // TODO STRIPE remove
+    DistributorStripe& first_stripe() noexcept;
+    const DistributorStripe& first_stripe() const noexcept;
+
     void setNodeStateUp();
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);
 
@@ -171,8 +176,10 @@ private:
     ChainedMessageSender*                 _messageSender;
     const bool                            _use_legacy_mode;
     // TODO STRIPE multiple stripes...! This is for proof of concept of wiring.
-    std::unique_ptr<DistributorStripe>   _stripe;
-    std::unique_ptr<LegacySingleStripeAccessor> _stripe_accessor;
+    std::unique_ptr<DistributorStripe>    _stripe;
+    std::unique_ptr<DistributorStripePool> _stripe_pool;
+    std::vector<std::unique_ptr<DistributorStripe>> _stripes;
+    std::unique_ptr<StripeAccessor>      _stripe_accessor;
     distributor::DistributorComponent    _component;
     std::shared_ptr<const DistributorConfiguration> _total_config;
     std::unique_ptr<BucketDBUpdater>     _bucket_db_updater;

@@ -60,6 +60,7 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _externalOperationHandler(_component, _component, getMetrics(), getMessageSender(),
                                 *_operation_sequencer, *this, _component,
                                 _idealStateManager, _operationOwner),
+      _external_message_mutex(),
       _threadPool(threadPool),
       _doneInitializeHandler(doneInitHandler),
       _doneInitializing(false),
@@ -168,14 +169,19 @@ DistributorStripe::handle_or_enqueue_message(const std::shared_ptr<api::StorageM
     if (_externalOperationHandler.try_handle_message_outside_main_thread(msg)) {
         return true;
     }
-    // TODO STRIPE redesign how message queue guarding and wakeup is performed.
-    //   Currently involves a _thread pool global_ lock transitively via tick guard!
-    framework::TickingLockGuard guard(_threadPool.freezeCriticalTicks());
     MBUS_TRACE(msg->getTrace(), 9,
                "Distributor: Added to message queue. Thread state: "
                + _threadPool.getStatus());
-    _messageQueue.push_back(msg);
-    guard.broadcast();
+    if (_use_legacy_mode) {
+        // TODO STRIPE remove
+        framework::TickingLockGuard guard(_threadPool.freezeCriticalTicks());
+        _messageQueue.push_back(msg);
+        guard.broadcast();
+    } else {
+        std::lock_guard lock(_external_message_mutex);
+        _messageQueue.push_back(msg);
+        // Caller has the responsibility to wake up correct stripe
+    }
     return true;
 }
 
@@ -727,6 +733,7 @@ DistributorStripe::scanNextBucket()
 
 void DistributorStripe::send_updated_host_info_if_required() {
     if (_must_send_updated_host_info) {
+        // TODO STRIPE how to handle with multiple stripes?
         _component.getStateUpdater().immediately_send_get_node_state_replies();
         _must_send_updated_host_info = false;
     }
@@ -745,10 +752,9 @@ framework::ThreadWaitInfo
 DistributorStripe::doCriticalTick(framework::ThreadIndex)
 {
     _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
-    if (_use_legacy_mode) {
-        enableNextDistribution();
-        enableNextConfig();
-    }
+    assert(_use_legacy_mode);
+    enableNextDistribution();
+    enableNextConfig();
     fetchStatusRequests();
     fetchExternalMessages();
     return _tickResult;
@@ -758,6 +764,11 @@ framework::ThreadWaitInfo
 DistributorStripe::doNonCriticalTick(framework::ThreadIndex)
 {
     _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
+    if (!_use_legacy_mode) {
+        std::lock_guard lock(_external_message_mutex);
+        fetchStatusRequests();
+        fetchExternalMessages();
+    }
     handleStatusRequests();
     startExternalOperations();
     if (initializing()) {
@@ -920,14 +931,19 @@ DistributorStripe::reportStatus(std::ostream& out,
     return true;
 }
 
+// TODO STRIPE remove this; delegated to top-level Distributor only
 bool
 DistributorStripe::handleStatusRequest(const DelegatedStatusRequest& request) const
 {
     auto wrappedRequest = std::make_shared<DistributorStatus>(request);
-    {
+    if (_use_legacy_mode) {
         framework::TickingLockGuard guard(_threadPool.freezeCriticalTicks());
         _statusToDo.push_back(wrappedRequest);
         guard.broadcast();
+    } else {
+        std::lock_guard lock(_external_message_mutex);
+        _statusToDo.push_back(wrappedRequest);
+        // FIXME won't be woken up explicitly, but will be processed after 1ms anyway.
     }
     wrappedRequest->waitForCompletion();
     return true;

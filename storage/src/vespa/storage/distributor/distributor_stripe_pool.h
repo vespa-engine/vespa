@@ -62,10 +62,10 @@ public:
     void park_all_threads() noexcept;
     void unpark_all_threads() noexcept;
 
-    [[nodiscard]] const DistributorStripeThread& stripe(size_t idx) const noexcept {
+    [[nodiscard]] const DistributorStripeThread& stripe_thread(size_t idx) const noexcept {
         return *_stripes[idx];
     }
-    [[nodiscard]] DistributorStripeThread& stripe(size_t idx) noexcept {
+    [[nodiscard]] DistributorStripeThread& stripe_thread(size_t idx) noexcept {
         return *_stripes[idx];
     }
     [[nodiscard]] size_t stripe_count() const noexcept { return _stripes.size(); }

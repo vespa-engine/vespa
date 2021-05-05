@@ -22,6 +22,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
+#include <mutex>
 #include <queue>
 #include <unordered_map>
 
@@ -298,6 +299,7 @@ private:
             std::vector<std::shared_ptr<api::StorageMessage>>,
             IndirectHigherPriority
     >;
+    mutable std::mutex _external_message_mutex;
     MessageQueue _messageQueue;
     ClientRequestPriorityQueue _client_request_priority_queue;
     MessageQueue _fetchedMessages;

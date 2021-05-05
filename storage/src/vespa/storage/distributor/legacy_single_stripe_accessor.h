@@ -21,6 +21,8 @@ public:
                                   DistributorStripe& stripe);
     ~LegacySingleStripeAccessGuard() override;
 
+    void flush_and_close() override;
+
     void update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config) override;
 
     void update_distribution_config(const BucketSpaceDistributionConfigs& new_configs) override;

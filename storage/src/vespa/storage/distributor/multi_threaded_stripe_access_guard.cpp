@@ -21,6 +21,10 @@ MultiThreadedStripeAccessGuard::~MultiThreadedStripeAccessGuard() {
     _accessor.mark_guard_released();
 }
 
+void MultiThreadedStripeAccessGuard::flush_and_close() {
+    first_stripe().flush_and_close();
+}
+
 void MultiThreadedStripeAccessGuard::update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config) {
     // TODO STRIPE multiple stripes
     first_stripe().update_total_distributor_config(std::move(config));
@@ -95,7 +99,7 @@ void MultiThreadedStripeAccessGuard::clear_read_only_bucket_repo_databases() {
 }
 
 DistributorStripe& MultiThreadedStripeAccessGuard::first_stripe() noexcept {
-    return dynamic_cast<DistributorStripe&>(_stripe_pool.stripe(0));
+    return dynamic_cast<DistributorStripe&>(_stripe_pool.stripe_thread(0).stripe());
 }
 
 std::unique_ptr<StripeAccessGuard> MultiThreadedStripeAccessor::rendezvous_and_hold_all() {

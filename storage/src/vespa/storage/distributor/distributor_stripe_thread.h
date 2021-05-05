@@ -53,6 +53,9 @@ public:
 
     TickableStripe*       operator->() noexcept       { return &_stripe; }
     const TickableStripe* operator->() const noexcept { return &_stripe; }
+
+    TickableStripe& stripe() noexcept             { return _stripe; }
+    const TickableStripe& stripe() const noexcept { return _stripe; }
 private:
     [[nodiscard]] bool should_stop_thread_relaxed() const noexcept {
         return _should_stop.load(std::memory_order_relaxed);

@@ -27,6 +27,8 @@ public:
                                    DistributorStripePool& stripe_pool);
     ~MultiThreadedStripeAccessGuard() override;
 
+    void flush_and_close() override;
+
     void update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config) override;
 
     void update_distribution_config(const BucketSpaceDistributionConfigs& new_configs) override;
@@ -65,7 +67,7 @@ class MultiThreadedStripeAccessor : public StripeAccessor {
 
     friend class MultiThreadedStripeAccessGuard;
 public:
-    MultiThreadedStripeAccessor(DistributorStripePool& stripe_pool)
+    explicit MultiThreadedStripeAccessor(DistributorStripePool& stripe_pool)
         : _stripe_pool(stripe_pool),
           _guard_held(false)
     {}
