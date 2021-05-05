@@ -27,7 +27,6 @@ vespa_add_library(storage_distributor
     ideal_service_layer_nodes_bundle.cpp
     idealstatemanager.cpp
     idealstatemetricsset.cpp
-    legacy_single_stripe_accessor.cpp
     messagetracker.cpp
     multi_threaded_stripe_access_guard.cpp
     nodeinfo.cpp

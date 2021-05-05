@@ -140,7 +140,6 @@ private:
 
     friend class DistributorTestUtil;
     // TODO refactor and rewire to avoid needing this direct meddling
-    friend class LegacySingleStripeAccessGuard;
     friend class MultiThreadedStripeAccessGuard;
 
     // Only to be used by tests that want to ensure both the BucketDBUpdater _and_ the Distributor
