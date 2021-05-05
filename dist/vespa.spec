@@ -28,12 +28,12 @@ Source0:        vespa-%{version}.tar.gz
 
 %if 0%{?centos}
 BuildRequires: epel-release
-%if 0%{?el7} && ! 0%{?amzn:1}
+%if 0%{?el7} && ! 0%{?amzn2}
 BuildRequires: centos-release-scl
 %endif
 %endif
 %if 0%{?el7}
-%if 0%{?amzn}
+%if 0%{?amzn2}
 BuildRequires: gcc10-c++
 BuildRequires: libatomic10-devel
 BuildRequires: gcc10-binutils
@@ -79,7 +79,7 @@ BuildRequires: vespa-lz4-devel >= 1.9.2-2
 BuildRequires: vespa-onnxruntime-devel = 1.7.1
 BuildRequires: vespa-openssl-devel >= 1.1.1k-1
 %if 0%{?centos}
-%if 0%{?amzn}
+%if 0%{?amzn2}
 BuildRequires: vespa-protobuf-devel = 3.7.0-5.amzn2
 %else
 BuildRequires: vespa-protobuf-devel = 3.7.0-4.el7
@@ -140,7 +140,7 @@ BuildRequires: gtest-devel
 BuildRequires: gmock-devel
 %endif
 %endif
-%if 0%{?el7} && 0%{?amzn:1}
+%if 0%{?el7} && 0%{?amzn2}
 BuildRequires: vespa-xxhash-devel = 0.8.0
 BuildRequires: vespa-openblas-devel = 0.3.12
 %else
@@ -152,7 +152,7 @@ BuildRequires: re2-devel
 %if ! 0%{?el7}
 BuildRequires: libicu-devel
 %endif
-%if 0%{?el7} && 0%{?amzn:1}
+%if 0%{?el7} && 0%{?amzn2}
 BuildRequires: java-11-amazon-corretto
 %else
 BuildRequires: java-11-openjdk-devel
@@ -188,7 +188,7 @@ Requires: perl-URI
 %if ! 0%{?el7}
 Requires: valgrind
 %endif
-%if 0%{?el7} && 0%{?amzn:1}
+%if 0%{?el7} && 0%{?amzn2}
 Requires: vespa-xxhash = 0.8.0
 %else
 Requires: xxhash
@@ -197,7 +197,7 @@ Requires: xxhash-libs >= 0.8.0
 %if 0%{?el8}
 Requires: openblas
 %else
-%if 0%{?el7} && 0%{?amzn:1}
+%if 0%{?el7} && 0%{?amzn2}
 Requires: vespa-openblas
 %else
 Requires: openblas-serial
@@ -222,7 +222,7 @@ Requires: vespa-lz4 >= 1.9.2-2
 Requires: vespa-onnxruntime = 1.7.1
 Requires: vespa-openssl >= 1.1.1k-1
 %if 0%{?centos}
-%if 0%{?amzn}
+%if 0%{?amzn2}
 Requires: vespa-protobuf = 3.7.0-5.amzn2
 %else
 Requires: vespa-protobuf = 3.7.0-4.el7
@@ -230,14 +230,14 @@ Requires: vespa-protobuf = 3.7.0-4.el7
 %else
 Requires: vespa-protobuf = 3.7.0-5.el7
 %endif
-%if ! 0%{?amzn}
+%if ! 0%{?amzn2}
 Requires: vespa-telegraf >= 1.1.1-1
 Requires: vespa-valgrind >= 3.16.0-1
 %endif
 Requires: vespa-zstd >= 1.4.5-2
 %define _vespa_llvm_version 7
 %define _extra_link_directory /usr/lib64/llvm7.0/lib;%{_vespa_deps_prefix}/lib64
-%if 0%{?amzn}
+%if 0%{?amzn2}
 %define _extra_include_directory /usr/include/llvm7.0;%{_vespa_deps_prefix}/include
 %else
 %define _extra_include_directory /usr/include/llvm7.0;%{_vespa_deps_prefix}/include;/usr/include/openblas
@@ -302,7 +302,7 @@ Requires: %{name}-tools = %{version}-%{release}
 
 # Ugly workaround because vespamalloc/src/vespamalloc/malloc/mmap.cpp uses the private
 # _dl_sym function. Exclude automated reqires for libraries in /opt/vespa-deps/lib64.
-%if 0%{?amzn2:1}
+%if 0%{?amzn2}
 %global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(crypto|icui18n|icuuc|lz4|protobuf|ssl|zstd|onnxruntime|openblas|re2|xxhash)\\.so\\.[0-9.]*\\([A-Z._0-9]*\\))\\(64bit\\)$
 %else
 %global __requires_exclude ^lib(c\\.so\\.6\\(GLIBC_PRIVATE\\)|pthread\\.so\\.0\\(GLIBC_PRIVATE\\)|(crypto|icui18n|icuuc|lz4|protobuf|ssl|zstd|onnxruntime)\\.so\\.[0-9.]*\\([A-Z._0-9]*\\))\\(64bit\\)$
@@ -317,7 +317,7 @@ Vespa - The open big data serving engine
 
 Summary: Vespa - The open big data serving engine - base
 
-%if 0%{?el7} && 0%{?amzn:1}
+%if 0%{?el7} && 0%{?amzn2}
 Requires: java-11-amazon-corretto
 %else
 Requires: java-11-openjdk-devel
@@ -334,7 +334,7 @@ Vespa - The open big data serving engine - base
 
 Summary: Vespa - The open big data serving engine - base C++ libs
 
-%if 0%{?el7} && 0%{?amzn:1}
+%if 0%{?el7} && 0%{?amzn2}
 Requires: vespa-xxhash = 0.8.0
 %else
 Requires: xxhash-libs >= 0.8.0
