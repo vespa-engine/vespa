@@ -4,6 +4,7 @@ package com.yahoo.language.opennlp;
 import com.yahoo.language.Language;
 import com.yahoo.language.LinguisticsCase;
 import com.yahoo.language.process.Normalizer;
+import com.yahoo.language.process.SpecialTokenRegistry;
 import com.yahoo.language.process.StemMode;
 import com.yahoo.language.process.Token;
 import com.yahoo.language.process.TokenType;
@@ -32,15 +33,21 @@ public class OpenNlpTokenizer implements Tokenizer {
     private final Normalizer normalizer;
     private final Transformer transformer;
     private final SimpleTokenizer simpleTokenizer;
+    private final SpecialTokenRegistry specialTokenRegistry;
 
     public OpenNlpTokenizer() {
         this(new SimpleNormalizer(), new SimpleTransformer());
     }
 
     public OpenNlpTokenizer(Normalizer normalizer, Transformer transformer) {
+        this(normalizer, transformer, new SpecialTokenRegistry(List.of()));
+    }
+
+    public OpenNlpTokenizer(Normalizer normalizer, Transformer transformer, SpecialTokenRegistry specialTokenRegistry) {
         this.normalizer = normalizer;
         this.transformer = transformer;
-        simpleTokenizer = new SimpleTokenizer(normalizer, transformer);
+        this.specialTokenRegistry = specialTokenRegistry;
+        this.simpleTokenizer = new SimpleTokenizer(normalizer, transformer, specialTokenRegistry);
     }
 
     @Override
