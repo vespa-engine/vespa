@@ -29,18 +29,15 @@ import static org.junit.Assert.assertTrue;
 public class JRTConnectionPoolTest {
     private static final List<String> sources = new ArrayList<>((Arrays.asList("host0", "host1", "host2")));
 
-    /**
-     * Tests that hash-based selection through the list works.
-     */
     @Test
-    public void test_random_selection_of_sourceBasicHashBasedSelection() {
+    public void test_random_selection_of_source() {
         JRTConnectionPool sourcePool = new JRTConnectionPool(sources);
         assertEquals("host0,host1,host2",
                      sourcePool.getSources().stream().map(JRTConnection::getAddress).collect(Collectors.joining(",")));
 
         Map<String, Integer> sourceOccurrences = new HashMap<>();
         for (int i = 0; i < 1000; i++) {
-            final String address = sourcePool.switchConnection().getAddress();
+            String address = sourcePool.switchConnection().getAddress();
             if (sourceOccurrences.containsKey(address)) {
                 sourceOccurrences.put(address, sourceOccurrences.get(address) + 1);
             } else {
@@ -60,10 +57,7 @@ public class JRTConnectionPoolTest {
     public void testManySources() {
         Map<String, Integer> timesUsed = new LinkedHashMap<>();
 
-        List<String> twoSources = new ArrayList<>();
-
-        twoSources.add("host0");
-        twoSources.add("host1");
+        List<String> twoSources = List.of("host0", "host1");
         JRTConnectionPool sourcePool = new JRTConnectionPool(twoSources);
 
         int count = 1000;
@@ -99,10 +93,8 @@ public class JRTConnectionPoolTest {
      */
     @Test
     public void updateSources() {
-        List<String> twoSources = new ArrayList<>();
+        List<String> twoSources = List.of("host0", "host1");
 
-        twoSources.add("host0");
-        twoSources.add("host1");
         JRTConnectionPool sourcePool = new JRTConnectionPool(twoSources);
 
         ConfigSourceSet sourcesBefore = sourcePool.getSourceSet();
@@ -138,36 +130,38 @@ public class JRTConnectionPoolTest {
 
     @Test
     public void testFailingSources() {
-        List<String> sources = new ArrayList<>();
+        List<String> sources = List.of("host0", "host1", "host2");
+        JRTConnectionPool connectionPool = new JRTConnectionPool(sources);
 
-        sources.add("host0");
-        sources.add("host1");
-        sources.add("host2");
-        JRTConnectionPool sourcePool = new JRTConnectionPool(sources);
+        Connection firstConnection = connectionPool.getCurrent();
 
-        Connection firstConnection = sourcePool.getCurrent();
+        // Should change connection, not getting first connection as new
+        JRTConnection secondConnection = failAndGetNewConnection(connectionPool, firstConnection);
+        assertNotEquals(firstConnection, secondConnection);
 
-        // Should change connection away from first connection
-        sourcePool.setError(firstConnection, 123);
-        JRTConnection secondConnection = sourcePool.getCurrent();
-        assertNotEquals(secondConnection, firstConnection);
+        // Should change connection, not getting second connection as new
+        JRTConnection thirdConnection = failAndGetNewConnection(connectionPool, secondConnection);
+        // Fail a few more times with old connection, as will happen when there are multiple subscribers
+        // Connection should not change
+        assertEquals(thirdConnection, failAndGetNewConnection(connectionPool, secondConnection));
+        assertEquals(thirdConnection, failAndGetNewConnection(connectionPool, secondConnection));
+        assertEquals(thirdConnection, failAndGetNewConnection(connectionPool, secondConnection));
+        assertNotEquals(secondConnection, thirdConnection);
 
-        // Should change connection away from first AND second connection
-        sourcePool.setError(secondConnection, 123);
-        JRTConnection thirdConnection = sourcePool.getCurrent();
-        assertNotEquals(sourcePool.getCurrent(), firstConnection);
-        assertNotEquals(sourcePool.getCurrent(), secondConnection);
+        // Should change connection, not getting third connection as new
+        JRTConnection currentConnection = failAndGetNewConnection(connectionPool, thirdConnection);
+        assertNotEquals(thirdConnection, currentConnection);
 
-        // Should change connection away from third connection
-        sourcePool.setError(thirdConnection, 123);
-        JRTConnection currentConnection = sourcePool.getCurrent();
-        assertNotEquals(sourcePool.getCurrent(), thirdConnection);
+        // Should change connection, not getting current connection as new
+        JRTConnection currentConnection2 = failAndGetNewConnection(connectionPool, currentConnection);
+        assertNotEquals(currentConnection, currentConnection2);
 
-        // Should change connection from current connection
-        sourcePool.setError(thirdConnection, 123);
-        assertNotEquals(sourcePool.getCurrent(), currentConnection);
+        connectionPool.close();
+    }
 
-        sourcePool.close();
+    private JRTConnection failAndGetNewConnection(JRTConnectionPool connectionPool, Connection failingConnection) {
+        connectionPool.setError(failingConnection, 123);
+        return connectionPool.getCurrent();
     }
 
 }

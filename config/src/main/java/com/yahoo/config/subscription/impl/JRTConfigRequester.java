@@ -234,7 +234,6 @@ public class JRTConfigRequester implements RequestWaiter {
         fatalFailures = 0;
         transientFailures = 0;
         noApplicationWarningLogged = Instant.MIN;
-        connection.setSuccess();
         sub.setLastCallBackOKTS(Instant.now());
         log.log(FINE, () -> "OK response received in handleOkRequest: " + jrtReq);
         if (jrtReq.hasUpdatedGeneration()) {

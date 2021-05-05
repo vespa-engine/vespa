@@ -7,8 +7,7 @@ import com.yahoo.jrt.Spec;
 import com.yahoo.jrt.Supervisor;
 import com.yahoo.jrt.Target;
 
-import java.time.Duration;
-import java.time.Instant;
+import java.util.Objects;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -24,10 +23,6 @@ public class JRTConnection implements Connection {
     private final String address;
     private final Supervisor supervisor;
     private Target target;
-
-    private Instant lastConnected = Instant.EPOCH.plus(Duration.ofSeconds(1)); // to be healthy initially, see isHealthy()
-    private Instant lastSuccess = Instant.EPOCH;
-    private Instant lastFailure = Instant.EPOCH;
 
     public JRTConnection(String address, Supervisor supervisor) {
         this.address = address;
@@ -58,38 +53,26 @@ public class JRTConnection implements Connection {
         if (target == null || !target.isValid()) {
             logger.log(Level.INFO, "Connecting to " + address);
             target = supervisor.connect(new Spec(address));
-            lastConnected = Instant.now();
         }
         return target;
     }
 
     @Override
-    public synchronized void setError(int errorCode) {
-        lastFailure = Instant.now();
+    public String toString() {
+        return address;
     }
 
     @Override
-    public synchronized void setSuccess() {
-        lastSuccess = Instant.now();
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        JRTConnection that = (JRTConnection) o;
+        return address.equals(that.address);
     }
 
-    public synchronized boolean isHealthy() {
-        return lastSuccess.isAfter(lastFailure) || lastConnected.isAfter(lastFailure);
-    }
-
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(address);
-        sb.append(", ").append(isHealthy() ? "healthy" : "unhealthy");
-        if (lastSuccess.isAfter(Instant.EPOCH)) {
-            sb.append(", last success: ");
-            sb.append(lastSuccess);
-        }
-        if (lastFailure.isAfter(Instant.EPOCH)) {
-            sb.append(", last failure: ");
-            sb.append(lastFailure);
-        }
-        return sb.toString();
+    @Override
+    public int hashCode() {
+        return Objects.hash(address);
     }
 
 }
