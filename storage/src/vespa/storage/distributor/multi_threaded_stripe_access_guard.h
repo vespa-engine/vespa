@@ -52,9 +52,16 @@ public:
     void update_read_snapshot_after_db_pruning(const lib::ClusterStateBundle& new_state) override;
     void update_read_snapshot_after_activation(const lib::ClusterStateBundle& activated_state) override;
     void clear_read_only_bucket_repo_databases() override;
+
+    void report_bucket_db_status(document::BucketSpace bucket_space, std::ostream& out) const override;
+    PendingOperationStats pending_operation_stats() const override;
+    void report_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const override;
+    void report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const override;
+
 private:
     // TODO STRIPE remove once multi threaded stripe support is implemented
     DistributorStripe& first_stripe() noexcept;
+    const DistributorStripe& first_stripe() const noexcept;
 };
 
 /**

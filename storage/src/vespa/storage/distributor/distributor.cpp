@@ -87,9 +87,11 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
                                                                _component.getDistribution(),
                                                                *_stripe_accessor);
         _stripes.emplace_back(std::move(_stripe));
+        _distributorStatusDelegate.registerStatusPage();
+        _bucket_db_status_delegate = std::make_unique<StatusReporterDelegate>(compReg, *this, *_bucket_db_updater);
+        _bucket_db_status_delegate->registerStatusPage();
     }
     _hostInfoReporter.enableReporting(config().getEnableHostInfoReporting());
-    _distributorStatusDelegate.registerStatusPage();
     hostInfoReporterRegistrar.registerReporter(&_hostInfoReporter);
     propagateDefaultDistribution(_component.getDistribution());
 };
@@ -514,7 +516,7 @@ Distributor::process_fetched_external_messages()
     }
     if (!_fetched_messages.empty()) {
         _fetched_messages.clear();
-        _tickResult = framework::ThreadWaitInfo::MORE_WORK_ENQUEUED;
+        signal_work_was_done();
     }
 }
 
@@ -524,6 +526,7 @@ Distributor::doCriticalTick(framework::ThreadIndex idx)
     _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     if (!_use_legacy_mode) {
         enableNextDistribution();
+        fetch_status_requests();
         fetch_external_messages();
     }
     // Propagates any new configs down to stripe(s)
@@ -543,6 +546,7 @@ Distributor::doNonCriticalTick(framework::ThreadIndex idx)
         _tickResult = _stripe->_tickResult;
     } else {
         _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
+        handle_status_requests();
         process_fetched_external_messages();
         _bucket_db_updater->resend_delayed_messages();
     }
@@ -571,15 +575,45 @@ Distributor::enableNextConfig() // TODO STRIPE rename to enable_next_config_if_c
     }
 }
 
+void
+Distributor::fetch_status_requests()
+{
+    if (_fetched_status_requests.empty()) {
+        _fetched_status_requests.swap(_status_to_do);
+    }
+}
+
+void
+Distributor::handle_status_requests()
+{
+    for (auto& s : _fetched_status_requests) {
+        s->getReporter().reportStatus(s->getStream(), s->getPath());
+        s->notifyCompleted();
+    }
+    if (!_fetched_status_requests.empty()) {
+        _fetched_status_requests.clear();
+        signal_work_was_done();
+    }
+}
+
+void
+Distributor::signal_work_was_done()
+{
+    _tickResult = framework::ThreadWaitInfo::MORE_WORK_ENQUEUED;
+}
+
 vespalib::string
 Distributor::getReportContentType(const framework::HttpUrlPath& path) const
 {
-    // This is const thread safe
-    // TODO STRIPE we should probably do this in the top-level distributor
-    if (_use_legacy_mode) {
-        return _stripe->getReportContentType(path);
+    assert(!_use_legacy_mode);
+    if (path.hasAttribute("page")) {
+        if (path.getAttribute("page") == "buckets") {
+            return "text/html";
+        } else {
+            return "application/xml";
+        }
     } else {
-        return first_stripe().getReportContentType(path);
+        return "text/html";
     }
 }
 
@@ -599,28 +633,54 @@ bool
 Distributor::reportStatus(std::ostream& out,
                           const framework::HttpUrlPath& path) const
 {
-    // TODO STRIPE need to aggregate status responses _across_ stripes..!
-    if (_use_legacy_mode) {
-        return _stripe->reportStatus(out, path);
+    assert(!_use_legacy_mode);
+    if (!path.hasAttribute("page") || path.getAttribute("page") == "buckets") {
+        framework::PartlyHtmlStatusReporter htmlReporter(*this);
+        htmlReporter.reportHtmlHeader(out, path);
+        if (!path.hasAttribute("page")) {
+            out << "<a href=\"?page=pending\">Count of pending messages to "
+                << "storage nodes</a><br><a href=\"?page=maintenance&show=50\">"
+                << "List maintenance queue (adjust show parameter to see more "
+                << "operations, -1 for all)</a><br>\n<a href=\"?page=buckets\">"
+                << "List all buckets, highlight non-ideal state</a><br>\n";
+        } else {
+            auto guard = _stripe_accessor->rendezvous_and_hold_all();
+            const auto& op_ctx = _component;
+            for (const auto& space : op_ctx.bucket_space_repo()) {
+                out << "<h2>" << document::FixedBucketSpaces::to_string(space.first) << " - " << space.first << "</h2>\n";
+                guard->report_bucket_db_status(space.first, out);
+            }
+        }
+        htmlReporter.reportHtmlFooter(out, path);
     } else {
-        auto guard = _stripe_accessor->rendezvous_and_hold_all();
-        return first_stripe().reportStatus(out, path);
+        framework::PartlyXmlStatusReporter xmlReporter(*this, out, path);
+        using namespace vespalib::xml;
+        std::string page(path.getAttribute("page"));
+
+        if (page == "pending") {
+            auto guard = _stripe_accessor->rendezvous_and_hold_all();
+            auto stats = guard->pending_operation_stats();
+            xmlReporter << XmlTag("pending")
+                        << XmlAttribute("externalload", stats.external_load_operations)
+                        << XmlAttribute("maintenance", stats.maintenance_operations)
+                        << XmlEndTag();
+        }
     }
+    return true;
 }
 
 bool
 Distributor::handleStatusRequest(const DelegatedStatusRequest& request) const
 {
-    // TODO STRIPE need to aggregate status responses _across_ stripes..!
-    if (_use_legacy_mode) {
-        return _stripe->handleStatusRequest(request);
-    } else {
-        // Can't hold guard here or we'll deadlock by never allowing the thread to process the request
-        bool handled = first_stripe().handleStatusRequest(request);
-        // TODO STRIPE wake up stripe thread; handleStatusRequest waits for completion
-        //    (not really needed since this will be removed)
-        return handled;
+    assert(!_use_legacy_mode);
+    auto wrappedRequest = std::make_shared<DistributorStatus>(request);
+    {
+        framework::TickingLockGuard guard(_threadPool.freezeCriticalTicks());
+        _status_to_do.push_back(wrappedRequest);
+        guard.broadcast();
     }
+    wrappedRequest->waitForCompletion();
+    return true;
 }
 
 }

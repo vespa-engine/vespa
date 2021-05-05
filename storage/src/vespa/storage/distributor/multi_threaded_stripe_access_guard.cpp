@@ -98,8 +98,33 @@ void MultiThreadedStripeAccessGuard::clear_read_only_bucket_repo_databases() {
     first_stripe().bucket_db_updater().clearReadOnlyBucketRepoDatabases();
 }
 
+void MultiThreadedStripeAccessGuard::report_bucket_db_status(document::BucketSpace bucket_space, std::ostream& out) const {
+    // TODO STRIPE multiple stripes
+    first_stripe().ideal_state_manager().dump_bucket_space_db_status(bucket_space, out);
+}
+
+StripeAccessGuard::PendingOperationStats
+MultiThreadedStripeAccessGuard::pending_operation_stats() const {
+    // TODO STRIPE multiple stripes
+    return first_stripe().pending_operation_stats();
+}
+
+void MultiThreadedStripeAccessGuard::report_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const {
+    // TODO STRIPE multiple stripes
+    first_stripe().bucket_db_updater().report_single_bucket_requests(xos);
+}
+
+void MultiThreadedStripeAccessGuard::report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const {
+    // TODO STRIPE multiple stripes
+    first_stripe().bucket_db_updater().report_delayed_single_bucket_requests(xos);
+}
+
 DistributorStripe& MultiThreadedStripeAccessGuard::first_stripe() noexcept {
     return dynamic_cast<DistributorStripe&>(_stripe_pool.stripe_thread(0).stripe());
+}
+
+const DistributorStripe& MultiThreadedStripeAccessGuard::first_stripe() const noexcept {
+    return dynamic_cast<const DistributorStripe&>(_stripe_pool.stripe_thread(0).stripe());
 }
 
 std::unique_ptr<StripeAccessGuard> MultiThreadedStripeAccessor::rendezvous_and_hold_all() {

@@ -117,6 +117,8 @@ public:
 
     bool handleStatusRequest(const DelegatedStatusRequest& request) const override;
 
+    StripeAccessGuard::PendingOperationStats pending_operation_stats() const;
+
     std::string getActiveIdealStateOperations() const;
     std::string getActiveOperations() const;
 

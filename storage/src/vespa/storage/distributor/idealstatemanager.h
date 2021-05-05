@@ -68,6 +68,9 @@ public:
 
     IdealStateMetricSet& getMetrics() { return *_metrics; }
 
+
+    void dump_bucket_space_db_status(document::BucketSpace bucket_space, std::ostream& out) const;
+
     void getBucketStatus(std::ostream& out) const;
 
     // HtmlStatusReporter
@@ -126,7 +129,6 @@ private:
 
     void getBucketStatus(document::BucketSpace bucketSpace, const BucketDatabase::ConstEntryRef& entry,
                          NodeMaintenanceStatsTracker& statsTracker, std::ostream& out) const;
-    void dump_bucket_space_db_status(document::BucketSpace bucket_space, std::ostream& out) const;
 };
 
 }

@@ -85,7 +85,10 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _must_send_updated_host_info(false),
       _use_legacy_mode(use_legacy_mode)
 {
-    _bucketDBStatusDelegate.registerStatusPage();
+    if (use_legacy_mode) {
+        _distributorStatusDelegate.registerStatusPage();
+        _bucketDBStatusDelegate.registerStatusPage();
+    }
     propagateDefaultDistribution(_component.getDistribution());
     propagateClusterStates();
 };
@@ -766,10 +769,11 @@ DistributorStripe::doNonCriticalTick(framework::ThreadIndex)
     _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     if (!_use_legacy_mode) {
         std::lock_guard lock(_external_message_mutex);
-        fetchStatusRequests();
         fetchExternalMessages();
     }
-    handleStatusRequests();
+    if (_use_legacy_mode) {
+        handleStatusRequests();
+    }
     startExternalOperations();
     if (initializing()) {
         _bucketDBUpdater.resendDelayedMessages();
@@ -841,6 +845,7 @@ DistributorStripe::propagate_config_snapshot_to_internal_components()
 void
 DistributorStripe::fetchStatusRequests()
 {
+    assert(_use_legacy_mode);
     if (_fetchedStatusRequests.empty()) {
         _fetchedStatusRequests.swap(_statusToDo);
     }
@@ -856,6 +861,7 @@ DistributorStripe::fetchExternalMessages()
 void
 DistributorStripe::handleStatusRequests()
 {
+    assert(_use_legacy_mode);
     uint32_t sz = _fetchedStatusRequests.size();
     for (uint32_t i = 0; i < sz; ++i) {
         auto& s = *_fetchedStatusRequests[i];
@@ -871,6 +877,7 @@ DistributorStripe::handleStatusRequests()
 vespalib::string
 DistributorStripe::getReportContentType(const framework::HttpUrlPath& path) const
 {
+    assert(_use_legacy_mode);
     if (path.hasAttribute("page")) {
         if (path.getAttribute("page") == "buckets") {
             return "text/html";
@@ -894,10 +901,12 @@ DistributorStripe::getActiveOperations() const
     return _operationOwner.toString();
 }
 
+// TODO STRIPE remove this; delegated to top-level Distributor only
 bool
 DistributorStripe::reportStatus(std::ostream& out,
                           const framework::HttpUrlPath& path) const
 {
+    assert(_use_legacy_mode);
     if (!path.hasAttribute("page") || path.getAttribute("page") == "buckets") {
         framework::PartlyHtmlStatusReporter htmlReporter(*this);
         htmlReporter.reportHtmlHeader(out, path);
@@ -920,8 +929,7 @@ DistributorStripe::reportStatus(std::ostream& out,
         if (page == "pending") {
             xmlReporter << XmlTag("pending")
                         << XmlAttribute("externalload", _operationOwner.size())
-                        << XmlAttribute("maintenance",
-                                _maintenanceOperationOwner.size())
+                        << XmlAttribute("maintenance",_maintenanceOperationOwner.size())
                         << XmlEndTag();
         } else if (page == "maintenance") {
             // Need new page
@@ -935,18 +943,21 @@ DistributorStripe::reportStatus(std::ostream& out,
 bool
 DistributorStripe::handleStatusRequest(const DelegatedStatusRequest& request) const
 {
+    assert(_use_legacy_mode);
     auto wrappedRequest = std::make_shared<DistributorStatus>(request);
-    if (_use_legacy_mode) {
+    {
         framework::TickingLockGuard guard(_threadPool.freezeCriticalTicks());
         _statusToDo.push_back(wrappedRequest);
         guard.broadcast();
-    } else {
-        std::lock_guard lock(_external_message_mutex);
-        _statusToDo.push_back(wrappedRequest);
-        // FIXME won't be woken up explicitly, but will be processed after 1ms anyway.
     }
     wrappedRequest->waitForCompletion();
     return true;
+}
+
+StripeAccessGuard::PendingOperationStats
+DistributorStripe::pending_operation_stats() const
+{
+    return {_operationOwner.size(), _maintenanceOperationOwner.size()};
 }
 
 }

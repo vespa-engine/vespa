@@ -33,7 +33,7 @@ BucketDBUpdater::BucketDBUpdater(const DistributorNodeContext& node_ctx,
                                  ChainedMessageSender& chained_sender,
                                  std::shared_ptr<const lib::Distribution> bootstrap_distribution,
                                  StripeAccessor& stripe_accessor)
-    : framework::StatusReporter("temp_bucketdb", "Bucket DB Updater"), // TODO STRIPE rename once duplication is removed
+    : framework::StatusReporter("bucketdb", "Bucket DB Updater"),
       _stripe_accessor(stripe_accessor),
       _active_state_bundle(lib::ClusterState()),
       _node_ctx(node_ctx),
@@ -483,6 +483,13 @@ BucketDBUpdater::report_xml_status(vespalib::xml::XmlOutputStream& xos,
             << XmlAttribute("processingtime", i->_processingTime)
             << XmlEndTag();
     }
+    xos << XmlEndTag()
+        << XmlTag("single_bucket_requests");
+    auto guard = _stripe_accessor.rendezvous_and_hold_all();
+    guard->report_single_bucket_requests(xos);
+    xos << XmlEndTag()
+        << XmlTag("delayed_single_bucket_requests");
+    guard->report_delayed_single_bucket_requests(xos);
     xos << XmlEndTag() << XmlEndTag();
     return "";
 }

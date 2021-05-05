@@ -21,9 +21,10 @@
 #include <vespa/log/bufferedlogger.h>
 LOG_SETUP(".distributor.stripe_bucket_db_updater");
 
+using document::BucketSpace;
 using storage::lib::Node;
 using storage::lib::NodeType;
-using document::BucketSpace;
+using vespalib::xml::XmlAttribute;
 
 namespace storage::distributor {
 
@@ -960,18 +961,28 @@ StripeBucketDBUpdater::reportXmlStatus(vespalib::xml::XmlOutputStream& xos,
     }
     xos << XmlEndTag()
         << XmlTag("single_bucket_requests");
-    for (const auto & entry : _sentMessages)
-    {
-        entry.second.print_xml_tag(xos, XmlAttribute("sendtimestamp", entry.second.timestamp));
-    }
+    report_single_bucket_requests(xos);
     xos << XmlEndTag()
         << XmlTag("delayed_single_bucket_requests");
-    for (const auto & entry : _delayedRequests)
-    {
-        entry.second.print_xml_tag(xos, XmlAttribute("resendtimestamp", entry.first.getTime()));
-    }
+    report_delayed_single_bucket_requests(xos);
     xos << XmlEndTag() << XmlEndTag();
     return "";
+}
+
+void
+StripeBucketDBUpdater::report_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const
+{
+    for (const auto& entry : _sentMessages) {
+        entry.second.print_xml_tag(xos, XmlAttribute("sendtimestamp", entry.second.timestamp));
+    }
+}
+
+void
+StripeBucketDBUpdater::report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const
+{
+    for (const auto& entry : _delayedRequests) {
+        entry.second.print_xml_tag(xos, XmlAttribute("resendtimestamp", entry.first.getTime()));
+    }
 }
 
 StripeBucketDBUpdater::MergingNodeRemover::MergingNodeRemover(
