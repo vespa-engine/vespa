@@ -197,7 +197,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testGlobalRotations() {
+    public void testGlobalRotationStatus() {
         var context = tester.newDeploymentContext();
         var zone1 = ZoneId.from("prod", "us-west-1");
         var zone2 = ZoneId.from("prod", "us-east-3");
@@ -229,7 +229,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDnsAliasRegistration() {
+    public void testDnsUpdatesForGlobalEndpoint() {
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .endpoint("default", "foo")
@@ -257,7 +257,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDnsAliasRegistrationLegacy() {
+    public void testDnsUpdatesForGlobalEndpointLegacySyntax() {
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .globalServiceId("foo")
@@ -296,7 +296,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDnsAliasRegistrationWithEndpoints() {
+    public void testDnsUpdatesForMultipleGlobalEndpoints() {
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder()
                 .endpoint("foobar", "qrs", "us-west-1", "us-central-1")  // Rotation 01
@@ -349,7 +349,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDnsAliasRegistrationWithChangingEndpoints() {
+    public void testDnsUpdatesForGlobalEndpointChanges() {
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         var west = ZoneId.from("prod", "us-west-1");
         var central = ZoneId.from("prod", "us-central-1");
@@ -491,7 +491,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testUpdatesExistingDnsAlias() {
+    public void testDnsUpdatesWithChangeInRotationAssignment() {
         // Application 1 is deployed and deleted
         {
             var context = tester.newDeploymentContext("tenant1", "app1", "default");
@@ -719,7 +719,7 @@ public class ControllerTest {
     }
 
     @Test
-    public void testDeployWithCrossCloudEndpoints() {
+    public void testDeployWithGlobalEndpointsInMultipleClouds() {
         tester.controllerTester().zoneRegistry().setZones(
                 ZoneApiMock.fromId("prod.us-west-1"),
                 ZoneApiMock.newBuilder().with(CloudName.from("aws")).withId("prod.aws-us-east-1").build()
