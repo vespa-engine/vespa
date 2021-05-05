@@ -20,6 +20,7 @@ import java.io.File;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
@@ -222,7 +223,7 @@ public class BillingApiHandlerTest extends ControllerContainerCloudTest {
     }
 
     static Invoice createInvoice() {
-        var start = LocalDate.of(2020, 5, 23).atStartOfDay(ZoneId.systemDefault());
+        var start = LocalDate.of(2020, 5, 23).atStartOfDay(ZoneOffset.UTC);
         var end = start.plusDays(5);
         var statusHistory = new Invoice.StatusHistory(new TreeMap<>(Map.of(start, "OPEN")));
         return new Invoice(

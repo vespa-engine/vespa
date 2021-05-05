@@ -107,7 +107,7 @@ public class BillingApiHandlerV2Test extends ControllerContainerCloudTest {
         tester.assertResponse(listRequest, "{\"invoices\":[{\"id\":\"id-1\",\"from\":\"2020-05-23\",\"to\":\"2020-05-23\",\"total\":\"123.00\",\"status\":\"OPEN\"}]}");
 
         var singleRequest = request("/billing/v2/tenant/" + tenant + "/bill/id-1").roles(tenantReader);
-        tester.assertResponse(singleRequest, "{\"id\":\"id-1\",\"from\":\"2020-05-23\",\"to\":\"2020-05-23\",\"total\":\"123.00\",\"status\":\"OPEN\",\"statusHistory\":[{\"at\":\"2020-05-23T00:00:00+02:00\",\"status\":\"OPEN\"}],\"items\":[{\"id\":\"some-id\",\"description\":\"description\",\"amount\":\"123.00\",\"plan\":\"some-plan\",\"planName\":\"Plan with id: some-plan\",\"cpu\":{},\"memory\":{},\"disk\":{}}]}");
+        tester.assertResponse(singleRequest, "{\"id\":\"id-1\",\"from\":\"2020-05-23\",\"to\":\"2020-05-23\",\"total\":\"123.00\",\"status\":\"OPEN\",\"statusHistory\":[{\"at\":\"2020-05-23T00:00:00Z\",\"status\":\"OPEN\"}],\"items\":[{\"id\":\"some-id\",\"description\":\"description\",\"amount\":\"123.00\",\"plan\":\"some-plan\",\"planName\":\"Plan with id: some-plan\",\"cpu\":{},\"memory\":{},\"disk\":{}}]}");
     }
 
     @Test
