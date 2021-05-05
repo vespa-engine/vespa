@@ -49,8 +49,9 @@ public class NotificationsDb {
             try (Lock lock = curatorDb.lockNotifications(tenant)) {
                 List<Notification> initial = curatorDb.readNotifications(tenant);
                 List<Notification> filtered = initial.stream()
-                        .filter(notification -> notification.type() == Type.applicationPackage &&
-                                notification.source().instance().isPresent() && notification.source().zoneId().isEmpty())
+                        .filter(notification -> notification.type() != Type.applicationPackage ||
+                                notification.source().instance().isEmpty() ||
+                                notification.source().zoneId().isPresent())
                         .collect(Collectors.toUnmodifiableList());
                 if (initial.size() > filtered.size())
                     curatorDb.writeNotifications(tenant, filtered);
