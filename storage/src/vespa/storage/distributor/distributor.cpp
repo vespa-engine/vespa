@@ -62,6 +62,8 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _stripe_pool(),
       _stripes(),
       _stripe_accessor(),
+      _message_queue(),
+      _fetched_messages(),
       _component(*this, compReg, "distributor"),
       _total_config(_component.total_distributor_config_sp()),
       _bucket_db_updater(),
@@ -312,10 +314,9 @@ Distributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
     if (_use_legacy_mode) {
         return _stripe->handle_or_enqueue_message(msg);
     } else {
-        // FIXME STRIPE this MUST be in a separate thread to enforce processing in a single thread
-        //   regardless of what RPC thread (comm mgr, FRT...) this is called from!
         if (should_be_handled_by_top_level_bucket_db_updater(*msg)) {
-            return msg->callHandler(*_bucket_db_updater, msg);
+            dispatch_to_main_distributor_thread_queue(msg);
+            return true;
         }
         assert(_stripes.size() == 1);
         assert(_stripe_pool->stripe_count() == 1);
@@ -331,9 +332,7 @@ Distributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
 bool
 Distributor::handleReply(const std::shared_ptr<api::StorageReply>& reply)
 {
-    if (!_use_legacy_mode && should_be_handled_by_top_level_bucket_db_updater(*reply)) {
-        return reply->callHandler(*_bucket_db_updater, reply);
-    }
+    // TODO STRIPE this is used by tests. Do we need to invoke top-level BucketDBUpdater for any of them?
     assert(_use_legacy_mode);
     return _stripe->handleReply(reply);
 }
@@ -485,12 +484,47 @@ Distributor::scanAllBuckets()
     _stripe->scanAllBuckets();
 }
 
+void
+Distributor::dispatch_to_main_distributor_thread_queue(const std::shared_ptr<api::StorageMessage>& msg)
+{
+    MBUS_TRACE(msg->getTrace(), 9, "Distributor: Added to main thread message queue");
+    framework::TickingLockGuard guard(_threadPool.freezeCriticalTicks());
+    _message_queue.emplace_back(msg);
+    guard.broadcast();
+}
+
+void
+Distributor::fetch_external_messages()
+{
+    assert(!_use_legacy_mode);
+    assert(_fetched_messages.empty());
+    _fetched_messages.swap(_message_queue);
+}
+
+void
+Distributor::process_fetched_external_messages()
+{
+    assert(!_use_legacy_mode);
+    for (auto& msg : _fetched_messages) {
+        MBUS_TRACE(msg->getTrace(), 9, "Distributor: Processing message in main thread");
+        if (!msg->callHandler(*_bucket_db_updater, msg)) {
+            MBUS_TRACE(msg->getTrace(), 9, "Distributor: Not handling it. Sending further down");
+            sendDown(msg);
+        }
+    }
+    if (!_fetched_messages.empty()) {
+        _fetched_messages.clear();
+        _tickResult = framework::ThreadWaitInfo::MORE_WORK_ENQUEUED;
+    }
+}
+
 framework::ThreadWaitInfo
 Distributor::doCriticalTick(framework::ThreadIndex idx)
 {
     _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
     if (!_use_legacy_mode) {
         enableNextDistribution();
+        fetch_external_messages();
     }
     // Propagates any new configs down to stripe(s)
     enableNextConfig();
@@ -508,8 +542,9 @@ Distributor::doNonCriticalTick(framework::ThreadIndex idx)
         _stripe->doNonCriticalTick(idx);
         _tickResult = _stripe->_tickResult;
     } else {
-        _bucket_db_updater->resend_delayed_messages();
         _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
+        process_fetched_external_messages();
+        _bucket_db_updater->resend_delayed_messages();
     }
     return _tickResult;
 }
