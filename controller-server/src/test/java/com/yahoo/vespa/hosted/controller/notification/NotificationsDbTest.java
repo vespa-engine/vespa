@@ -50,6 +50,19 @@ public class NotificationsDbTest {
     private final NotificationsDb notificationsDb = new NotificationsDb(clock, curatorDb);
 
     @Test
+    public void clears_old_application_package_notifications() {
+        List<Notification> allNotifications = new ArrayList<>(notifications);
+        allNotifications.add(notification(1601, Type.applicationPackage, Level.warning, NotificationSource.from(ApplicationId.from("tenant1", "app1", "instance1")), "msg"));
+        allNotifications.add(notification(1701, Type.applicationPackage, Level.warning, NotificationSource.from(new DeploymentId(ApplicationId.from("tenant1", "app1", "instance1"), ZoneId.from("dev", "us-south-3"))), "msg"));
+        curatorDb.writeNotifications(tenant, allNotifications);
+
+        assertEquals(allNotifications, notificationsDb.listNotifications(NotificationSource.from(tenant), false));
+        notificationsDb.removeApplicationPackageNotificationsWithInstanceSource();
+        allNotifications.remove(6);
+        assertEquals(allNotifications, notificationsDb.listNotifications(NotificationSource.from(tenant), false));
+    }
+
+    @Test
     public void list_test() {
         assertEquals(notifications, notificationsDb.listNotifications(NotificationSource.from(tenant), false));
         assertEquals(notificationIndices(0, 1, 2, 3), notificationsDb.listNotifications(NotificationSource.from(tenant), true));
