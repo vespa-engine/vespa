@@ -36,7 +36,6 @@ PruneRemovedDocumentsJobV2(const DocumentDBPruneConfig &config, RetainGuard dbRe
       _cfgAgeLimit(config.getAge()),
       _subDbId(subDbId),
       _bucketSpace(bucketSpace),
-      _stopped(false),
       _nextLid(1u)
 {
 }
@@ -75,7 +74,7 @@ PruneRemovedDocumentsJobV2::PruneTask::run(const Bucket & bucket, IDestructorCal
 
 void
 PruneRemovedDocumentsJobV2::remove(uint32_t lid, const RawDocumentMetaData & oldMeta) {
-    if (_stopped.load(std::memory_order_relaxed)) return;
+    if (stopped()) return;
     if ( ! _metaStore.validLid(lid)) return;
     const RawDocumentMetaData &meta = _metaStore.getRawMetaData(lid);
     if (meta.getBucketId() != oldMeta.getBucketId()) return;

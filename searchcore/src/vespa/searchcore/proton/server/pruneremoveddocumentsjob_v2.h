@@ -40,7 +40,6 @@ private:
     const vespalib::duration       _cfgAgeLimit;
     const uint32_t                 _subDbId;
     const document::BucketSpace    _bucketSpace;
-    std::atomic<bool>              _stopped;
 
     DocId                          _nextLid;
 
@@ -51,7 +50,6 @@ private:
                                IPruneRemovedDocumentsHandler &handler, IThreadService & master,
                                BucketExecutor & bucketExecutor);
     bool run() override;
-    void onStop() override { _stopped = true; }
 public:
     static std::shared_ptr<PruneRemovedDocumentsJobV2>
     create(const Config &config, RetainGuard dbRetainer, const IDocumentMetaStore &metaStore, uint32_t subDbId,

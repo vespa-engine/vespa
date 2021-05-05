@@ -12,11 +12,9 @@ using namespace proton;
 
 struct MyBlockableMaintenanceJob : public IBlockableMaintenanceJob {
     bool blocked;
-    bool stopped;
     MyBlockableMaintenanceJob()
         : IBlockableMaintenanceJob("my_job", 1s, 1s),
-          blocked(false),
-          stopped(false)
+          blocked(false)
     {}
     void setBlocked(BlockedReason reason) override {
         ASSERT_TRUE(reason == BlockedReason::OUTSTANDING_OPS);
@@ -29,7 +27,7 @@ struct MyBlockableMaintenanceJob : public IBlockableMaintenanceJob {
         blocked = false;
     }
     bool run() override { return true; }
-    void onStop() override { stopped = true; }
+    void onStop() override { }
 };
 
 struct Fixture {

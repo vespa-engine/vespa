@@ -72,7 +72,6 @@ private:
     Bucket2Mover                              _bucketsInFlight;
     BucketMoveSet                             _buckets2Move;
 
-    std::atomic<bool>                         _stopped;
     std::atomic<size_t>                       _bucketsPending;
 
     bucketdb::IBucketCreateNotifier   &_bucketCreateNotifier;
@@ -142,7 +141,6 @@ public:
     void notifyBucketStateChanged(const BucketId &bucketId, ActiveState newState) override;
     void notifyDiskMemUsage(DiskMemUsageState state) override;
     void notifyCreateBucket(const bucketdb::Guard & guard, const BucketId &bucket) override;
-    void onStop() override;
     void updateMetrics(DocumentDBTaggedMetrics & metrics) const override;
 };
 
