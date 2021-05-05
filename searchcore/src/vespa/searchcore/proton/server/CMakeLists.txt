@@ -57,7 +57,7 @@ vespa_add_library(searchcore_server STATIC
     ireplayconfig.cpp
     job_tracked_maintenance_job.cpp
     lid_space_compaction_handler.cpp
-    lid_space_compaction_job_take2.cpp
+    lid_space_compaction_job.cpp
     maintenance_controller_explorer.cpp
     maintenance_jobs_injector.cpp
     maintenancecontroller.cpp

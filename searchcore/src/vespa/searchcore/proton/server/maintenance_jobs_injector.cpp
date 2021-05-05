@@ -3,7 +3,7 @@
 #include "bucketmovejobv2.h"
 #include "heart_beat_job.h"
 #include "job_tracked_maintenance_job.h"
-#include "lid_space_compaction_job_take2.h"
+#include "lid_space_compaction_job.h"
 #include "lid_space_compaction_handler.h"
 #include "maintenance_jobs_injector.h"
 #include "prune_session_cache_job.h"

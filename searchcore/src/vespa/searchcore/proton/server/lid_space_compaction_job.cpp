@@ -1,6 +1,6 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "lid_space_compaction_job_take2.h"
+#include "lid_space_compaction_job.h"
 #include "i_document_scan_iterator.h"
 #include "i_lid_space_compaction_handler.h"
 #include "i_operation_storer.h"

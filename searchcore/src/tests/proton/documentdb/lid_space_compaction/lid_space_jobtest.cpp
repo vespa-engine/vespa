@@ -1,7 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "lid_space_jobtest.h"
-#include <vespa/searchcore/proton/server/lid_space_compaction_job_take2.h>
+#include <vespa/searchcore/proton/server/lid_space_compaction_job.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
