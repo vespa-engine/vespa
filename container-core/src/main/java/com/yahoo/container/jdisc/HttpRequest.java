@@ -573,7 +573,7 @@ public class HttpRequest {
 
                 @Override
                 public long currentTimeMillis() {
-                    return 0;
+                    return System.currentTimeMillis();
                 }
             };
         }
