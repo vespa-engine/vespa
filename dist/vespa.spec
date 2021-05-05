@@ -232,7 +232,7 @@ Requires: vespa-protobuf = 3.7.0-5.el7
 %endif
 %if ! 0%{?amzn2}
 Requires: vespa-telegraf >= 1.1.1-1
-Requires: vespa-valgrind >= 3.16.0-1
+Requires: vespa-valgrind >= 3.17.0-1
 %endif
 Requires: vespa-zstd >= 1.4.5-2
 %define _vespa_llvm_version 7
