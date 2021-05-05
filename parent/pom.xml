@@ -537,6 +537,18 @@
                 <version>${prometheus.client.version}</version>
             </dependency>
             <dependency>
+                <!-- TODO: Try to remove, as this overlaps with javax.activation. -->
+                <groupId>jakarta.activation</groupId>
+                <artifactId>jakarta.activation-api</artifactId>
+                <version>1.2.1</version>
+            </dependency>
+            <dependency>
+                <!-- TODO: Try to remove, as this conflicts with javax.xml.bind:jaxb-api -->
+                <groupId>jakarta.xml.bind</groupId>
+                <artifactId>jakarta.xml.bind-api</artifactId>
+                <version>2.3.2</version>
+            </dependency>
+            <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
                 <version>4.12</version>
