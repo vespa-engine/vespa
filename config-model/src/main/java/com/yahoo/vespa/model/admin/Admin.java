@@ -9,6 +9,7 @@ import com.yahoo.config.model.ConfigModelContext.ApplicationType;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.model.AbstractService;
 import com.yahoo.vespa.model.ConfigProxy;
@@ -60,11 +61,13 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     private Logserver logserver;
 
     private LogForwarder.Config logForwarderConfig = null;
+    private boolean logForwarderUnconditional = false;
 
     private ApplicationType applicationType = ApplicationType.DEFAULT;
 
-    public void setLogForwarderConfig(LogForwarder.Config cfg) {
+    public void setLogForwarderConfig(LogForwarder.Config cfg, boolean unconditional) {
         this.logForwarderConfig = cfg;
+        this.logForwarderUnconditional = unconditional;
     }
 
     /**
@@ -236,7 +239,18 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
         addConfigProxy(deployState.getDeployLogger(), host);
         addFileDistribution(host);
         if (logForwarderConfig != null) {
-            addLogForwarder(deployState.getDeployLogger(), host);
+            boolean actuallyAdd = true;
+            var membership = host.spec().membership();
+            if (membership.isPresent()) {
+                var clustertype = membership.get().cluster().type();
+                // XXX should skip only if this.isHostedVespa is true?
+                if (clustertype == ClusterSpec.Type.admin) {
+                    actuallyAdd = logForwarderUnconditional;
+                }
+            }
+            if (actuallyAdd) {
+                addLogForwarder(deployState.getDeployLogger(), host);
+            }
         }
     }
 
