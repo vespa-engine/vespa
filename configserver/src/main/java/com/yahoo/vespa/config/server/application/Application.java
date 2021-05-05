@@ -105,16 +105,12 @@ public class Application implements ModelResult {
             defMd5 = ConfigUtils.getDefMd5(req.getDefContent().asList());
         }
         ConfigCacheKey cacheKey = new ConfigCacheKey(configKey, defMd5);
-        if (logDebug()) {
-            debug("Resolving config " + cacheKey);
-        }
+        log.log(Level.FINE, () -> TenantRepository.logPre(getId()) + ("Resolving config " + cacheKey));
 
         if (useCache(req)) {
             ConfigResponse config = cache.get(cacheKey);
             if (config != null) {
-                if (logDebug()) {
-                    debug("Found config " + cacheKey + " in cache");
-                }
+                log.log(Level.FINE, () -> TenantRepository.logPre(getId()) + ("Found config " + cacheKey + " in cache"));
                 metricUpdater.incrementProcTime(System.currentTimeMillis() - start);
                 return config;
             }
@@ -125,9 +121,7 @@ public class Application implements ModelResult {
             metricUpdater.incrementFailedRequests();
             throw new UnknownConfigDefinitionException("Unable to find config definition for '" + configKey.getNamespace() + "." + configKey.getName());
         }
-        if (logDebug()) {
-            debug("Resolving " + configKey + " with config definition " + def);
-        }
+        log.log(Level.FINE, () -> TenantRepository.logPre(getId()) + ("Resolving " + configKey + " with config definition " + def));
 
         ConfigInstance.Builder builder;
         ConfigPayload payload;
@@ -174,27 +168,15 @@ public class Application implements ModelResult {
         return !request.noCache();
     }
 
-    private boolean logDebug() {
-        return log.isLoggable(Level.FINE);
-    }
-
-    private void debug(String message) {
-        log.log(Level.FINE, TenantRepository.logPre(getId()) + message);
-    }
-
     private ConfigDefinition getTargetDef(GetConfigRequest req) {
         ConfigKey<?> configKey = req.getConfigKey();
         DefContent def = req.getDefContent();
         ConfigDefinitionKey configDefinitionKey = new ConfigDefinitionKey(configKey.getName(), configKey.getNamespace());
         if (def.isEmpty()) {
-            if (logDebug()) {
-                debug("No config schema in request for " + configKey);
-            }
+            log.log(Level.FINE, () -> TenantRepository.logPre(getId()) + ("No config schema in request for " + configKey));
             return cache.getDef(configDefinitionKey);
         } else {
-            if (logDebug()) {
-                debug("Got config schema from request, length:" + def.asList().size() + " : " + configKey);
-            }
+            log.log(Level.FINE, () -> TenantRepository.logPre(getId()) + ("Got config schema from request, length:" + def.asList().size() + " : " + configKey));
             return new ConfigDefinition(configKey.getName(), def.asStringArray());
         }
     }

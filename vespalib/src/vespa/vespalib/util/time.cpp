@@ -2,7 +2,6 @@
 
 #include "time.h"
 #include <thread>
-#include <immintrin.h>
 
 namespace vespalib {
 
@@ -43,7 +42,7 @@ Timer::waitAtLeast(duration dur, bool busyWait) {
         steady_clock::time_point deadline = steady_clock::now() + dur;
         while (steady_clock::now() < deadline) {
             for (int i = 0; i < 1000; i++) {
-                _mm_pause();
+                std::this_thread::yield();
             }
         }
     } else {

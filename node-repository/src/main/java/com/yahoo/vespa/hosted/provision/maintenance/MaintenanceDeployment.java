@@ -168,10 +168,11 @@ class MaintenanceDeployment implements Closeable {
                     if ( ! deployment.prepare()) return false;
                     if (verifyTarget) {
                         expectedNewNode =
-                                nodeRepository.nodes().list(Node.State.reserved).owner(application).stream()
-                                              .filter(n -> !n.hostname().equals(node.hostname()))
-                                              .filter(n -> n.allocation().get().membership().cluster().id().equals(node.allocation().get().membership().cluster().id()))
-                                              .findAny();
+                                nodeRepository.nodes().list(Node.State.reserved)
+                                              .owner(application)
+                                              .cluster(node.allocation().get().membership().cluster().id())
+                                              .except(node)
+                                              .first();
                         if (expectedNewNode.isEmpty()) return false;
                         if (!expectedNewNode.get().hasParent(toHost.hostname())) return false;
                     }

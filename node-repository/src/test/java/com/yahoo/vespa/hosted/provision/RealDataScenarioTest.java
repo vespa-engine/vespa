@@ -21,6 +21,7 @@ import com.yahoo.config.provisioning.FlavorsConfig;
 import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.persistence.DnsNameResolver;
 import com.yahoo.vespa.hosted.provision.persistence.NodeSerializer;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
 import com.yahoo.vespa.model.builder.xml.dom.DomConfigPayloadBuilder;
@@ -62,20 +63,25 @@ public class RealDataScenarioTest {
     public void test() {
         ProvisioningTester tester = new ProvisioningTester.Builder()
                 .zone(new Zone(Cloud.builder().dynamicProvisioning(true).build(), SystemName.defaultSystem(), Environment.prod, RegionName.defaultName()))
-                .flavorsConfig(parseFlavors(Paths.get("flavors.xml")))
+                .flavorsConfig(parseFlavors(Paths.get(System.getProperty("user.home"), ".flavors.xml")))
+                .nameResolver(new DnsNameResolver())
+                .spareCount(1)
                 .build();
-        initFromZk(tester.nodeRepository(), Paths.get("snapshot"));
+        initFromZk(tester.nodeRepository(), Paths.get(System.getProperty("user.home"), "snapshot"));
 
         ApplicationId app = ApplicationId.from("tenant", "app", "default");
         Version version = Version.fromString("7.123.4");
 
         Capacity[] capacities = new Capacity[]{
-                Capacity.from(new ClusterResources(1, 1, new NodeResources(0.5, 4, 50, 0.3, any, remote))),
+                Capacity.from(new ClusterResources(1, 1, NodeResources.unspecified())),
+                /** TODO: Change to NodeResources.unspecified() when {@link (com.yahoo.vespa.flags.Flags).DEDICATED_CLUSTER_CONTROLLER_FLAVOR} is gone */
+                Capacity.from(new ClusterResources(3, 1, new NodeResources(0.25, 1.0, 10.0, 0.3, any))),
                 Capacity.from(new ClusterResources(4, 1, new NodeResources(8, 16, 100, 0.3, fast, remote))),
                 Capacity.from(new ClusterResources(2, 1, new NodeResources(4, 8, 100, 0.3, fast, local)))
         };
         ClusterSpec[] specs = new ClusterSpec[]{
                 ClusterSpec.request(ClusterSpec.Type.admin, ClusterSpec.Id.from("logserver")).vespaVersion(version).build(),
+                ClusterSpec.request(ClusterSpec.Type.admin, ClusterSpec.Id.from("cluster-controllers")).vespaVersion(version).build(),
                 ClusterSpec.request(ClusterSpec.Type.container, ClusterSpec.Id.from("container")).vespaVersion(version).build(),
                 ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content")).vespaVersion(version).build()
         };

@@ -42,6 +42,7 @@ public class RestApiException extends RuntimeException {
 
     public static class NotFound extends RestApiException {
         public NotFound() { this(null, null); }
+        public NotFound(HttpRequest request) { this("Nothing at '" + request.getUri().getRawPath() + "'", null); }
         public NotFound(Throwable cause) { this(cause.getMessage(), cause); }
         public NotFound(String message) { this(message, null); }
         public NotFound(String message, Throwable cause) { super(ErrorResponse::notFoundError, message, cause); }
@@ -50,7 +51,8 @@ public class RestApiException extends RuntimeException {
     public static class MethodNotAllowed extends RestApiException {
         public MethodNotAllowed() { super(ErrorResponse::methodNotAllowed, "Method not allowed", null); }
         public MethodNotAllowed(HttpRequest request) {
-            super(ErrorResponse::methodNotAllowed, "Method '" + request.getMethod().name() + "' is not allowed", null);
+            super(ErrorResponse::methodNotAllowed, "Method '" + request.getMethod().name() + "' is not allowed at '" +
+                                                   request.getUri().getRawPath() + "'", null);
         }
     }
 

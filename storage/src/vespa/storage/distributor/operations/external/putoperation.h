@@ -24,17 +24,17 @@ class PutOperation : public SequencedOperation
 {
 public:
     PutOperation(DistributorNodeContext& node_ctx,
-                 DistributorOperationContext& op_ctx,
+                 DistributorStripeOperationContext& op_ctx,
                  DistributorBucketSpace &bucketSpace,
                  std::shared_ptr<api::PutCommand> msg,
                  PersistenceOperationMetricSet& metric,
                  SequencingHandle sequencingHandle = SequencingHandle());
 
-    void onStart(DistributorMessageSender& sender) override;
+    void onStart(DistributorStripeMessageSender& sender) override;
     const char* getName() const override { return "put"; };
     std::string getStatus() const override { return ""; };
-    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
-    void onClose(DistributorMessageSender& sender) override;
+    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
+    void onClose(DistributorStripeMessageSender& sender) override;
 
     static void getTargetNodes(const std::vector<uint16_t>& idealNodes, std::vector<uint16_t>& targetNodes,
                                std::vector<uint16_t>& createNodes, const BucketInfo& bucketInfo, uint32_t redundancy);
@@ -54,7 +54,7 @@ private:
     bool has_unavailable_targets_in_pending_state(const OperationTargetList& targets) const;
 
     std::shared_ptr<api::PutCommand> _msg;
-    DistributorOperationContext& _op_ctx;
+    DistributorStripeOperationContext& _op_ctx;
     DistributorBucketSpace &_bucketSpace;
 };
 

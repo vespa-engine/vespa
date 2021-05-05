@@ -2,8 +2,11 @@
 package com.yahoo.vespa.service.slobrok;
 
 import com.google.inject.Inject;
+import com.yahoo.component.AbstractComponent;
 import com.yahoo.config.model.api.ApplicationInfo;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.jrt.Supervisor;
+import com.yahoo.jrt.Transport;
 import com.yahoo.jrt.slobrok.api.Mirror;
 import java.util.logging.Level;
 import com.yahoo.vespa.applicationmodel.ClusterId;
@@ -21,7 +24,7 @@ import java.util.Optional;
 import java.util.function.Supplier;
 import java.util.logging.Logger;
 
-public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
+public class SlobrokMonitorManagerImpl extends AbstractComponent implements SlobrokApi, MonitorManager {
     private static final Logger logger =
             Logger.getLogger(SlobrokMonitorManagerImpl.class.getName());
 
@@ -30,14 +33,29 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
     private final Object monitor = new Object();
     private final HashMap<ApplicationId, SlobrokMonitor> slobrokMonitors = new HashMap<>();
     private final DuperModelManager duperModel;
+    private final Transport transport;
+
+    private static int getTransportThreadCount() {
+        return Math.max(4, Runtime.getRuntime().availableProcessors());
+    }
 
     @Inject
     public SlobrokMonitorManagerImpl(DuperModelManager duperModel) {
-        this(SlobrokMonitor::new, duperModel);
+        this(new Transport("slobrok-monitor", getTransportThreadCount() / 4), duperModel);
     }
 
-    SlobrokMonitorManagerImpl(Supplier<SlobrokMonitor> slobrokMonitorFactory, DuperModelManager duperModel) {
+    private SlobrokMonitorManagerImpl(Transport transport, DuperModelManager duperModel) {
+        this(transport, new Supervisor(transport), duperModel);
+    }
+
+    private SlobrokMonitorManagerImpl(Transport transport, Supervisor orb, DuperModelManager duperModel) {
+        this(() -> new SlobrokMonitor(orb), transport, duperModel);
+        orb.useSmallBuffers();
+    }
+
+    SlobrokMonitorManagerImpl(Supplier<SlobrokMonitor> slobrokMonitorFactory, Transport transport, DuperModelManager duperModel) {
         this.slobrokMonitorFactory = slobrokMonitorFactory;
+        this.transport = transport;
         this.duperModel = duperModel;
     }
 
@@ -74,6 +92,11 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
 
     @Override
     public void bootstrapComplete() {
+    }
+
+    @Override
+    public void deconstruct() {
+        transport.shutdown().join();
     }
 
     @Override
@@ -145,7 +168,7 @@ public class SlobrokMonitorManagerImpl implements SlobrokApi, MonitorManager {
             case "storagenode":
                 return Optional.of("storage/cluster." + configId.s());
             default:
-                logger.log(Level.FINE, "Unknown service type " + serviceType.s() +
+                logger.log(Level.FINE, () -> "Unknown service type " + serviceType.s() +
                         " with config id " + configId.s());
                 return Optional.empty();
         }

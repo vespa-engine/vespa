@@ -19,7 +19,7 @@ using document::BucketSpace;
 
 RemoveLocationOperation::RemoveLocationOperation(
         DistributorNodeContext& node_ctx,
-        DistributorOperationContext& op_ctx,
+        DistributorStripeOperationContext& op_ctx,
         DocumentSelectionParser& parser,
         DistributorBucketSpace &bucketSpace,
         std::shared_ptr<api::RemoveLocationCommand> msg,
@@ -60,7 +60,7 @@ RemoveLocationOperation::getBucketId(
 }
 
 void
-RemoveLocationOperation::onStart(DistributorMessageSender& sender)
+RemoveLocationOperation::onStart(DistributorStripeMessageSender& sender)
 {
     document::BucketId bid;
     int count = getBucketId(_node_ctx, _parser, *_msg, bid);
@@ -108,14 +108,14 @@ RemoveLocationOperation::onStart(DistributorMessageSender& sender)
 
 void
 RemoveLocationOperation::onReceive(
-        DistributorMessageSender& sender,
+        DistributorStripeMessageSender& sender,
         const std::shared_ptr<api::StorageReply> & msg)
 {
     _tracker.receiveReply(sender, static_cast<api::BucketInfoReply&>(*msg));
 }
 
 void
-RemoveLocationOperation::onClose(DistributorMessageSender& sender)
+RemoveLocationOperation::onClose(DistributorStripeMessageSender& sender)
 {
     _tracker.fail(sender, api::ReturnCode(api::ReturnCode::ABORTED,
                                           "Process is shutting down"));

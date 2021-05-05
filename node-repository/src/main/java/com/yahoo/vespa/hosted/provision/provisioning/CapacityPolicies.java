@@ -55,7 +55,7 @@ public class CapacityPolicies {
 
         // Allow slow storage in zones which are not performance sensitive
         if (zone.system().isCd() || zone.environment() == Environment.dev || zone.environment() == Environment.test)
-            target = target.with(NodeResources.DiskSpeed.any).with(NodeResources.StorageType.any);
+            target = target.with(NodeResources.DiskSpeed.any).with(NodeResources.StorageType.any).withBandwidthGbps(0.1);
 
         return target;
     }

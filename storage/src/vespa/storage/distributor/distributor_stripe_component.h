@@ -2,8 +2,8 @@
 #pragma once
 
 #include "distributor_node_context.h"
-#include "distributor_operation_context.h"
 #include "distributor_stripe_interface.h"
+#include "distributor_stripe_operation_context.h"
 #include "document_selection_parser.h"
 #include "operationowner.h"
 #include "statechecker.h"
@@ -30,7 +30,7 @@ struct DatabaseUpdate {
  */
 class DistributorStripeComponent : public storage::DistributorComponent,
                                    public DistributorNodeContext,
-                                   public DistributorOperationContext,
+                                   public DistributorStripeOperationContext,
                                    public DocumentSelectionParser
 {
 public:
@@ -62,7 +62,7 @@ public:
      */
     api::StorageMessageAddress node_address(uint16_t node_index) const noexcept override;
 
-    // Implements DistributorOperationContext
+    // Implements DistributorStripeOperationContext
     api::Timestamp generate_unique_timestamp() override { return getUniqueTimestamp(); }
 
     /**
@@ -157,10 +157,6 @@ public:
      * Returns true if the given storage node is in an "up state".
      */
     bool storage_node_is_up(document::BucketSpace bucket_space, uint32_t node_index) const override;
-
-    const char* storage_node_up_states() const override {
-        return getDistributor().getStorageNodeUpStates();
-    }
 
     // Implements DocumentSelectionParser
     std::unique_ptr<document::select::Node> parse_selection(const vespalib::string& selection) const override;

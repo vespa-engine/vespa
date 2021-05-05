@@ -21,7 +21,7 @@ GarbageCollectionOperation::GarbageCollectionOperation(const ClusterContext& clu
 
 GarbageCollectionOperation::~GarbageCollectionOperation() = default;
 
-void GarbageCollectionOperation::onStart(DistributorMessageSender& sender) {
+void GarbageCollectionOperation::onStart(DistributorStripeMessageSender& sender) {
     BucketDatabase::Entry entry = _bucketSpace->getBucketDatabase().get(getBucketId());
     std::vector<uint16_t> nodes = entry->getNodes();
 
@@ -42,7 +42,7 @@ void GarbageCollectionOperation::onStart(DistributorMessageSender& sender) {
 }
 
 void
-GarbageCollectionOperation::onReceive(DistributorMessageSender&,
+GarbageCollectionOperation::onReceive(DistributorStripeMessageSender&,
                                       const std::shared_ptr<api::StorageReply>& reply)
 {
     auto* rep = dynamic_cast<api::RemoveLocationReply*>(reply.get());

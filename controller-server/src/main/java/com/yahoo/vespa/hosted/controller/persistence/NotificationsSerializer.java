@@ -15,7 +15,6 @@ import com.yahoo.vespa.hosted.controller.notification.Notification;
 import com.yahoo.vespa.hosted.controller.notification.NotificationSource;
 
 import java.util.List;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -35,6 +34,7 @@ public class NotificationsSerializer {
     private static final String notificationsFieldName = "notifications";
     private static final String atFieldName = "at";
     private static final String typeField = "type";
+    private static final String levelField = "level";
     private static final String messagesField = "messages";
     private static final String applicationField = "application";
     private static final String instanceField = "instance";
@@ -51,6 +51,7 @@ public class NotificationsSerializer {
             Cursor notificationObject = notificationsArray.addObject();
             notificationObject.setLong(atFieldName, notification.at().toEpochMilli());
             notificationObject.setString(typeField, asString(notification.type()));
+            notificationObject.setString(levelField, asString(notification.level()));
             Cursor messagesArray = notificationObject.setArray(messagesField);
             notification.messages().forEach(messagesArray::addString);
 
@@ -72,9 +73,10 @@ public class NotificationsSerializer {
     }
 
     private static Notification fromInspector(TenantName tenantName, Inspector inspector) {
-       return new Notification(
+        return new Notification(
                Serializers.instant(inspector.field(atFieldName)),
                typeFrom(inspector.field(typeField)),
+               levelFrom(inspector.field(levelField)),
                new NotificationSource(
                        tenantName,
                        Serializers.optionalString(inspector.field(applicationField)).map(ApplicationName::from),
@@ -88,17 +90,35 @@ public class NotificationsSerializer {
     
     private static String asString(Notification.Type type) {
         switch (type) {
-            case APPLICATION_PACKAGE_WARNING: return "APPLICATION_PACKAGE_WARNING";
-            case DEPLOYMENT_FAILURE: return "DEPLOYMENT_FAILURE";
+            case applicationPackage: return "applicationPackage";
+            case deployment: return "deployment";
+            case feedBlock: return "feedBlock";
             default: throw new IllegalArgumentException("No serialization defined for notification type " + type);
         }
     }
 
     private static Notification.Type typeFrom(Inspector field) {
         switch (field.asString()) {
-            case "APPLICATION_PACKAGE_WARNING": return Notification.Type.APPLICATION_PACKAGE_WARNING;
-            case "DEPLOYMENT_FAILURE": return Notification.Type.DEPLOYMENT_FAILURE;
+            case "applicationPackage": return Notification.Type.applicationPackage;
+            case "deployment": return Notification.Type.deployment;
+            case "feedBlock": return Notification.Type.feedBlock;
             default: throw new IllegalArgumentException("Unknown serialized notification type value '" + field.asString() + "'");
+        }
+    }
+
+    private static String asString(Notification.Level level) {
+        switch (level) {
+            case warning: return "warning";
+            case error: return "error";
+            default: throw new IllegalArgumentException("No serialization defined for notification level " + level);
+        }
+    }
+
+    private static Notification.Level levelFrom(Inspector field) {
+        switch (field.asString()) {
+            case "warning": return Notification.Level.warning;
+            case "error": return Notification.Level.error;
+            default: throw new IllegalArgumentException("Unknown serialized notification level value '" + field.asString() + "'");
         }
     }
 }

@@ -29,7 +29,7 @@ public class FakeTimer implements Timer {
     public synchronized void advanceTime(long time) {
         long currentTime = getCurrentTimeInMillis();
         this.currentTime += time;
-        log.log(Level.FINE, "Time advanced by " + time + " ms. Time increased from " + currentTime + " to " + (currentTime + time));
+        log.log(Level.FINE, () -> "Time advanced by " + time + " ms. Time increased from " + currentTime + " to " + (currentTime + time));
         notifyAll();
     }
 

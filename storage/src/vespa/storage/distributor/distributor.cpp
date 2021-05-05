@@ -18,6 +18,7 @@
 #include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/node_identity.h>
 #include <vespa/storage/common/nodestateupdater.h>
+#include <vespa/storage/config/distributorconfiguration.h>
 #include <vespa/storage/distributor/maintenance/simplebucketprioritydatabase.h>
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <vespa/vdslib/distribution/distribution.h>
@@ -53,10 +54,12 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _comp_reg(compReg),
       _metrics(std::make_shared<DistributorMetricSet>()),
       _messageSender(messageSender),
+      _use_legacy_mode(num_distributor_stripes == 0),
       _stripe(std::make_unique<DistributorStripe>(compReg, *_metrics, node_identity, threadPool,
-                                                  doneInitHandler, *this, (num_distributor_stripes == 0))),
+                                                  doneInitHandler, *this, _use_legacy_mode)),
       _stripe_accessor(std::make_unique<LegacySingleStripeAccessor>(*_stripe)),
-      _component(compReg, "distributor"),
+      _component(*this, compReg, "distributor"),
+      _total_config(_component.total_distributor_config_sp()),
       _bucket_db_updater(),
       _distributorStatusDelegate(compReg, *this, *this),
       _threadPool(threadPool),
@@ -69,12 +72,14 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
 {
     _component.registerMetric(*_metrics);
     _component.registerMetricUpdateHook(_metricUpdateHook, framework::SecondTime(0));
-    if (num_distributor_stripes > 0) {
+    if (!_use_legacy_mode) {
         LOG(info, "Setting up distributor with %u stripes", num_distributor_stripes); // TODO STRIPE remove once legacy gone
-        // FIXME STRIPE using the singular stripe here is a temporary Hack McHack Deluxe 3000!
-        _bucket_db_updater = std::make_unique<BucketDBUpdater>(*_stripe, *_stripe, _comp_reg, *_stripe_accessor);
+        _bucket_db_updater = std::make_unique<BucketDBUpdater>(_component, _component,
+                                                               *this, *this,
+                                                               _component.getDistribution(),
+                                                               *_stripe_accessor);
     }
-    _hostInfoReporter.enableReporting(getConfig().getEnableHostInfoReporting());
+    _hostInfoReporter.enableReporting(config().getEnableHostInfoReporting());
     _distributorStatusDelegate.registerStatusPage();
     hostInfoReporterRegistrar.registerReporter(&_hostInfoReporter);
     propagateDefaultDistribution(_component.getDistribution());
@@ -86,43 +91,54 @@ Distributor::~Distributor()
     closeNextLink();
 }
 
+// TODO STRIPE figure out how to handle inspection functions used by tests when legacy mode no longer exists.
+//   All functions below that assert on _use_legacy_mode are only currently used by tests
+
 bool
 Distributor::isInRecoveryMode() const noexcept {
+    assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->isInRecoveryMode();
 }
 
 const PendingMessageTracker&
 Distributor::getPendingMessageTracker() const {
+    assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->getPendingMessageTracker();
 }
 
 PendingMessageTracker&
 Distributor::getPendingMessageTracker() {
+    assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->getPendingMessageTracker();
 }
 
 DistributorBucketSpaceRepo&
 Distributor::getBucketSpaceRepo() noexcept {
+    assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->getBucketSpaceRepo();
 }
 
 const DistributorBucketSpaceRepo&
 Distributor::getBucketSpaceRepo() const noexcept {
+    assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->getBucketSpaceRepo();
 }
 
 DistributorBucketSpaceRepo&
 Distributor::getReadOnlyBucketSpaceRepo() noexcept {
+    assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->getReadOnlyBucketSpaceRepo();
 }
 
 const DistributorBucketSpaceRepo&
 Distributor::getReadyOnlyBucketSpaceRepo() const noexcept {
+    assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->getReadOnlyBucketSpaceRepo();;
 }
 
 storage::distributor::DistributorStripeComponent&
 Distributor::distributor_component() noexcept {
+    assert(_use_legacy_mode); // TODO STRIPE
     // TODO STRIPE We need to grab the stripe's component since tests like to access
     //             these things uncomfortably directly.
     return _stripe->_component;
@@ -130,46 +146,55 @@ Distributor::distributor_component() noexcept {
 
 StripeBucketDBUpdater&
 Distributor::bucket_db_updater() {
+    assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->bucket_db_updater();
 }
 
 const StripeBucketDBUpdater&
 Distributor::bucket_db_updater() const {
+    assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->bucket_db_updater();
 }
 
 IdealStateManager&
 Distributor::ideal_state_manager() {
+    assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->ideal_state_manager();
 }
 
 const IdealStateManager&
 Distributor::ideal_state_manager() const {
+    assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->ideal_state_manager();
 }
 
 ExternalOperationHandler&
 Distributor::external_operation_handler() {
+    assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->external_operation_handler();
 }
 
 const ExternalOperationHandler&
 Distributor::external_operation_handler() const {
+    assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->external_operation_handler();
 }
 
 BucketDBMetricUpdater&
 Distributor::bucket_db_metric_updater() const noexcept {
+    assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->_bucketDBMetricUpdater;
 }
 
 const DistributorConfiguration&
 Distributor::getConfig() const {
+    assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->getConfig();
 }
 
 std::chrono::steady_clock::duration
 Distributor::db_memory_sample_interval() const noexcept {
+    assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->db_memory_sample_interval();
 }
 
@@ -250,7 +275,7 @@ Distributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
 {
     // FIXME STRIPE this MUST be in a separate thread to enforce processing in a single thread
     //   regardless of what RPC thread (comm mgr, FRT...) this is called from!
-    if (_bucket_db_updater && should_be_handled_by_top_level_bucket_db_updater(*msg)) {
+    if (!_use_legacy_mode && should_be_handled_by_top_level_bucket_db_updater(*msg)) {
         return msg->callHandler(*_bucket_db_updater, msg);
     }
     // TODO STRIPE can we route both requests and responses that are BucketCommand|Reply based on their bucket alone?
@@ -261,7 +286,7 @@ Distributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
 bool
 Distributor::handleReply(const std::shared_ptr<api::StorageReply>& reply)
 {
-    if (_bucket_db_updater && should_be_handled_by_top_level_bucket_db_updater(*reply)) {
+    if (!_use_legacy_mode && should_be_handled_by_top_level_bucket_db_updater(*reply)) {
         return reply->callHandler(*_bucket_db_updater, reply);
     }
     return _stripe->handleReply(reply);
@@ -271,12 +296,32 @@ Distributor::handleReply(const std::shared_ptr<api::StorageReply>& reply)
 bool
 Distributor::handleMessage(const std::shared_ptr<api::StorageMessage>& msg)
 {
+    assert(_use_legacy_mode); // TODO STRIPE
     return _stripe->handleMessage(msg);
+}
+
+const DistributorConfiguration&
+Distributor::config() const
+{
+    return *_total_config;
+}
+
+void
+Distributor::sendCommand(const std::shared_ptr<api::StorageCommand>& cmd)
+{
+    sendUp(cmd);
+}
+
+void
+Distributor::sendReply(const std::shared_ptr<api::StorageReply>& reply)
+{
+    sendUp(reply);
 }
 
 const lib::ClusterStateBundle&
 Distributor::getClusterStateBundle() const
 {
+    assert(_use_legacy_mode); // TODO STRIPE
     // TODO STRIPE must offer a single unifying state across stripes
     return _stripe->getClusterStateBundle();
 }
@@ -284,6 +329,7 @@ Distributor::getClusterStateBundle() const
 void
 Distributor::enableClusterStateBundle(const lib::ClusterStateBundle& state)
 {
+    assert(_use_legacy_mode); // TODO STRIPE
     // TODO STRIPE make test injection/force-function
     _stripe->enableClusterStateBundle(state);
 }
@@ -291,7 +337,7 @@ Distributor::enableClusterStateBundle(const lib::ClusterStateBundle& state)
 void
 Distributor::storageDistributionChanged()
 {
-    if (_bucket_db_updater) {
+    if (!_use_legacy_mode) {
         if (!_distribution || (*_component.getDistribution() != *_distribution)) {
             LOG(debug, "Distribution changed to %s, must re-fetch bucket information",
                 _component.getDistribution()->toString().c_str());
@@ -310,7 +356,7 @@ Distributor::storageDistributionChanged()
 void
 Distributor::enableNextDistribution()
 {
-    if (_bucket_db_updater) {
+    if (!_use_legacy_mode) {
         if (_next_distribution) {
             _distribution = _next_distribution;
             _next_distribution = std::shared_ptr<lib::Distribution>();
@@ -328,7 +374,7 @@ void
 Distributor::propagateDefaultDistribution(
         std::shared_ptr<const lib::Distribution> distribution)
 {
-    // TODO STRIPE top-level bucket DB updater
+    // TODO STRIPE cannot directly access stripe when not in legacy mode!
     _stripe->propagateDefaultDistribution(std::move(distribution));
 }
 
@@ -361,6 +407,7 @@ Distributor::propagateInternalScanMetricsToExternal()
 void
 Distributor::scanAllBuckets()
 {
+    assert(_use_legacy_mode); // TODO STRIPE
     _stripe->scanAllBuckets();
 }
 
@@ -368,11 +415,12 @@ framework::ThreadWaitInfo
 Distributor::doCriticalTick(framework::ThreadIndex idx)
 {
     _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
-    if (_bucket_db_updater) {
+    if (!_use_legacy_mode) {
         enableNextDistribution();
     }
     // Propagates any new configs down to stripe(s)
     enableNextConfig();
+    // TODO STRIPE only do in legacy mode, use stripe pool ticking otherwise
     _stripe->doCriticalTick(idx);
     _tickResult.merge(_stripe->_tickResult);
     return _tickResult;
@@ -381,7 +429,7 @@ Distributor::doCriticalTick(framework::ThreadIndex idx)
 framework::ThreadWaitInfo
 Distributor::doNonCriticalTick(framework::ThreadIndex idx)
 {
-    if (_bucket_db_updater) {
+    if (!_use_legacy_mode) {
         _bucket_db_updater->resend_delayed_messages();
     }
     // TODO STRIPE stripes need their own thread loops!
@@ -391,20 +439,21 @@ Distributor::doNonCriticalTick(framework::ThreadIndex idx)
 }
 
 void
-Distributor::enableNextConfig()
+Distributor::enableNextConfig() // TODO STRIPE rename to enable_next_config_if_changed()?
 {
     // Only lazily trigger a config propagation and internal update if something has _actually changed_.
     if (_component.internal_config_generation() != _current_internal_config_generation) {
-        if (_bucket_db_updater) {
+        _total_config = _component.total_distributor_config_sp();
+        if (!_use_legacy_mode) {
             auto guard = _stripe_accessor->rendezvous_and_hold_all();
             guard->update_total_distributor_config(_component.total_distributor_config_sp());
         } else {
             _stripe->update_total_distributor_config(_component.total_distributor_config_sp());
         }
-        _hostInfoReporter.enableReporting(getConfig().getEnableHostInfoReporting());
+        _hostInfoReporter.enableReporting(config().getEnableHostInfoReporting());
         _current_internal_config_generation = _component.internal_config_generation();
     }
-    if (!_bucket_db_updater) {
+    if (_use_legacy_mode) {
         // TODO STRIPE remove these once tests are fixed to trigger reconfig properly
         _hostInfoReporter.enableReporting(getConfig().getEnableHostInfoReporting());
         _stripe->enableNextConfig(); // TODO STRIPE avoid redundant call

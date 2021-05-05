@@ -57,7 +57,7 @@ public class ProxyServer implements Runnable {
     ProxyServer(Spec spec, ConfigSourceSet source, MemoryCache memoryCache, ConfigSourceClient configClient) {
         this.configSource = source;
         supervisor = new Supervisor(new Transport("proxy-server", JRT_TRANSPORT_THREADS)).useSmallBuffers();
-        log.log(Level.FINE, "Using config source '" + source);
+        log.log(Level.FINE, () -> "Using config source '" + source);
         this.memoryCache = memoryCache;
         this.rpcServer = createRpcServer(spec);
         this.configClient = (configClient == null) ? createRpcClient(rpcServer, source, memoryCache) : configClient;

@@ -11,6 +11,7 @@ import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.config.provision.exception.LoadBalancerServiceException;
+import com.yahoo.transaction.NestedTransaction;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
@@ -175,7 +176,9 @@ public class LoadBalancerProvisionerTest {
 
         // Application is removed, nodes are deleted and load balancer is deactivated
         tester.remove(app1);
-        tester.nodeRepository().database().removeNodes(tester.nodeRepository().nodes().list().nodeType(NodeType.tenant).asList());
+        NestedTransaction transaction = new NestedTransaction();
+        tester.nodeRepository().database().removeNodes(tester.nodeRepository().nodes().list().nodeType(NodeType.tenant).asList(), transaction);
+        transaction.commit();
         assertTrue("Nodes are deleted", tester.nodeRepository().nodes().list().nodeType(NodeType.tenant).isEmpty());
         assertSame("Load balancer is deactivated", LoadBalancer.State.inactive, lb.get().state());
 

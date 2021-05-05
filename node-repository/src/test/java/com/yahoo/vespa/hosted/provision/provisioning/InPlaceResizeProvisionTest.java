@@ -20,7 +20,6 @@ import org.junit.Test;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 import static com.yahoo.config.provision.NodeResources.DiskSpeed.fast;
 import static com.yahoo.config.provision.NodeResources.StorageType.local;
@@ -96,7 +95,7 @@ public class InPlaceResizeProvisionTest {
                 .prepare(container1, 4, 1, smallResources)
                 .prepare(container2, 4, 1, mediumResources)
                 .activate();
-        Set<String> container1Hostnames = listCluster(container1).stream().map(Node::hostname).collect(Collectors.toSet());
+        Set<String> container1Hostnames = listCluster(container1).hostnames();
         assertSizeAndResources(container1, 4, new NodeResources(2, 4, 80, 1, fast, local));
         assertSizeAndResources(container2, 4, new NodeResources(4, 8, 160, 1, fast, local));
 
@@ -104,7 +103,7 @@ public class InPlaceResizeProvisionTest {
                 .prepare(container1, 4, 1, mediumResources)
                 .prepare(container2, 4, 1, smallResources)
                 .activate();
-        assertEquals(container1Hostnames, listCluster(container1).stream().map(Node::hostname).collect(Collectors.toSet()));
+        assertEquals(container1Hostnames, listCluster(container1).hostnames());
         assertSizeAndResources(container1, 4, new NodeResources(4, 8, 160, 1, fast, local));
         assertSizeAndResources(container2, 4, new NodeResources(2, 4, 80, 1, fast, local));
         assertEquals("No nodes are retired", 0, tester.getNodes(app, Node.State.active).retired().size());
@@ -115,11 +114,11 @@ public class InPlaceResizeProvisionTest {
         addParentHosts(6, largeResources.with(fast).with(local));
 
         new PrepareHelper(tester, app).prepare(container1, 4, 1, mediumResources).activate();
-        Set<String> initialHostnames = listCluster(container1).stream().map(Node::hostname).collect(Collectors.toSet());
+        Set<String> initialHostnames = listCluster(container1).hostnames();
 
         new PrepareHelper(tester, app)
                 .prepare(container1, 6, 1, largeResources).activate();
-        assertTrue(listCluster(container1).stream().map(Node::hostname).collect(Collectors.toSet()).containsAll(initialHostnames));
+        assertTrue(listCluster(container1).hostnames().containsAll(initialHostnames));
         assertSizeAndResources(container1, 6, new NodeResources(8, 16, 320, 1, fast, local));
         assertEquals("No nodes are retired", 0, tester.getNodes(app, Node.State.active).retired().size());
     }
@@ -144,8 +143,7 @@ public class InPlaceResizeProvisionTest {
         // 2 of the nodes will be increased in-place and 2 will be allocated to the new hosts.
         addParentHosts(2, new NodeResources(8, 16, 320, 8, fast, local));
 
-        Set<String> initialHostnames = listCluster(container1).stream().map(Node::hostname)
-                .collect(Collectors.collectingAndThen(Collectors.toSet(), HashSet::new));
+        Set<String> initialHostnames = new HashSet<>(listCluster(container1).hostnames());
         new PrepareHelper(tester, app).prepare(container1, 4, 1, largeResources).activate();
         NodeList appNodes = tester.getNodes(app, Node.State.active);
         assertEquals(6, appNodes.size()); // 4 nodes with large resources + 2 retired nodes with medium resources

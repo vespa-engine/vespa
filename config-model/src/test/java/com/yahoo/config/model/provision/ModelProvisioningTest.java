@@ -39,6 +39,7 @@ import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.StringReader;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -491,9 +492,12 @@ public class ModelProvisioningTest {
 
         // Check admin clusters
         Admin admin = model.getAdmin();
+        Set<HostResource> clusterControllerHosts = admin.getClusterControllers().getContainers()
+                                                        .stream().map(cc -> cc.getHostResource()).collect(Collectors.toSet());
         Set<HostResource> slobrokHosts = admin.getSlobroks().stream().map(Slobrok::getHost).collect(Collectors.toSet());
-        assertEquals(3, slobrokHosts.size());
-        assertTrue("Slobroks are assigned from container nodes", containerHosts.containsAll(slobrokHosts));
+        assertEquals(6, slobrokHosts.size());
+        assertTrue("Slobroks are assigned from container and cluster controller nodes",
+                   union(containerHosts, clusterControllerHosts).containsAll(slobrokHosts));
         assertTrue("Logserver is assigned from container nodes", containerHosts.contains(admin.getLogserver().getHost()));
         assertEquals("No in-cluster config servers in a hosted environment", 0, admin.getConfigservers().size());
         assertEquals("Dedicated admin cluster controllers when hosted", 3, admin.getClusterControllers().getContainers().size());
@@ -596,9 +600,12 @@ public class ModelProvisioningTest {
 
         // Check admin clusters
         Admin admin = model.getAdmin();
+        Set<HostResource> clusterControllerHosts = admin.getClusterControllers().getContainers()
+                                                        .stream().map(cc -> cc.getHostResource()).collect(Collectors.toSet());
         Set<HostResource> slobrokHosts = admin.getSlobroks().stream().map(Slobrok::getHost).collect(Collectors.toSet());
-        assertEquals(3, slobrokHosts.size());
-        assertTrue("Slobroks are assigned from container nodes", containerHosts.containsAll(slobrokHosts));
+        assertEquals(6, slobrokHosts.size());
+        assertTrue("Slobroks are assigned from container and cluster controller nodes",
+                   union(containerHosts, clusterControllerHosts).containsAll(slobrokHosts));
         assertTrue("Logserver is assigned from container nodes", containerHosts.contains(admin.getLogserver().getHost()));
         assertEquals("No in-cluster config servers in a hosted environment", 0, admin.getConfigservers().size());
         assertEquals(3, admin.getClusterControllers().getContainers().size());
@@ -947,10 +954,6 @@ public class ModelProvisioningTest {
         assertEquals("1|*", cluster.getRootGroup().getPartitions().get());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(2, cluster.getRootGroup().getSubgroups().size());
-        System.out.println("Nodes in group 0: ");
-        cluster.getRootGroup().getSubgroups().get(0).getNodes().forEach(n -> System.out.println("  " + n));
-        System.out.println("Nodes in group 1: ");
-        cluster.getRootGroup().getSubgroups().get(1).getNodes().forEach(n -> System.out.println("  " + n));
     }
 
     @Test
@@ -980,10 +983,6 @@ public class ModelProvisioningTest {
         assertEquals("1|*", cluster.getRootGroup().getPartitions().get());
         assertEquals(0, cluster.getRootGroup().getNodes().size());
         assertEquals(2, cluster.getRootGroup().getSubgroups().size());
-        System.out.println("Nodes in group 0: ");
-        cluster.getRootGroup().getSubgroups().get(0).getNodes().forEach(n -> System.out.println("  " + n));
-        System.out.println("Nodes in group 1: ");
-        cluster.getRootGroup().getSubgroups().get(1).getNodes().forEach(n -> System.out.println("  " + n));
     }
 
     @Test
@@ -1503,7 +1502,7 @@ public class ModelProvisioningTest {
         tester.addHosts(6);
         VespaModel model = tester.createModel(services, true);
         assertEquals(6, model.getRoot().hostSystem().getHosts().size());
-        assertEquals(2, model.getAdmin().getSlobroks().size());
+        assertEquals(5, model.getAdmin().getSlobroks().size());
         assertEquals(2, model.getContainerClusters().get("foo").getContainers().size());
         assertEquals(1, model.getContentClusters().get("bar").getRootGroup().countNodes());
     }
@@ -2026,6 +2025,13 @@ public class ModelProvisioningTest {
 
     private static void assertProvisioned(int nodeCount, ClusterSpec.Id id, ClusterSpec.Type type, VespaModel model) {
         assertProvisioned(nodeCount, id, null, type, model);
+    }
+
+    private Set<HostResource> union(Set<HostResource> a, Set<HostResource> b) {
+        Set<HostResource> union = new HashSet<>();
+        union.addAll(a);
+        union.addAll(b);
+        return union;
     }
 
 }

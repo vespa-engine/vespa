@@ -21,7 +21,11 @@ public:
                                 const std::shared_ptr<api::StorageCommand>& cmd, bool useDocumentAPI = false);
 
     virtual int getDistributorIndex() const = 0;
-    virtual const ClusterContext & cluster_context() const = 0;
+    virtual const ClusterContext& cluster_context() const = 0;
+};
+
+class DistributorStripeMessageSender : public DistributorMessageSender {
+public:
     virtual const PendingMessageTracker& getPendingMessageTracker() const = 0;
     virtual const OperationSequencer& operation_sequencer() const noexcept = 0;
 };

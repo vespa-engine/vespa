@@ -13,6 +13,7 @@ import com.yahoo.vespa.model.admin.Logserver;
 import com.yahoo.vespa.model.admin.LogserverContainer;
 import com.yahoo.vespa.model.admin.LogserverContainerCluster;
 import com.yahoo.vespa.model.admin.Slobrok;
+import com.yahoo.vespa.model.admin.clustercontroller.ClusterControllerContainer;
 import com.yahoo.vespa.model.container.Container;
 import com.yahoo.vespa.model.container.ContainerModel;
 import org.w3c.dom.Element;
@@ -62,10 +63,14 @@ public class DomAdminV4Builder extends DomAdminBuilderBase {
 
     private void assignSlobroks(DeployLogger deployLogger, NodesSpecification nodesSpecification, Admin admin) {
         if (nodesSpecification.isDedicated()) {
-            createSlobroks(deployLogger, admin, allocateHosts(admin.hostSystem(), "slobroks", nodesSpecification));
+            createSlobroks(deployLogger,
+                           admin,
+                           allocateHosts(admin.hostSystem(), "slobroks", nodesSpecification));
         }
-        else {
-            createSlobroks(deployLogger, admin, pickContainerHostsForSlobrok(nodesSpecification.minResources().nodes(), 2));
+        else { // TODO: Remove
+            createSlobroks(deployLogger,
+                           admin,
+                           pickContainerHostsForSlobrok(nodesSpecification.minResources().nodes(), 2));
         }
     }
 

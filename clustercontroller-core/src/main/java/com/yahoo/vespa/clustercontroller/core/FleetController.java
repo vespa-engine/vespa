@@ -579,8 +579,8 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
             responseCode = StatusPageResponse.ResponseCode.INTERNAL_SERVER_ERROR;
             message = "Internal Server Error";
             hiddenMessage = ExceptionUtils.getStackTraceAsString(e);
-            log.log(Level.FINE, "Unknown exception thrown for request " + httpRequest.getRequest() +
-                    ": " + hiddenMessage);
+            if (log.isLoggable(Level.FINE))
+                log.log(Level.FINE, "Unknown exception thrown for request " + httpRequest.getRequest() + ": " + hiddenMessage);
         }
 
         TimeZone tz = TimeZone.getTimeZone("UTC");
@@ -1093,7 +1093,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 firstAllowedStateBroadcast = currentTime + options.minTimeBeforeFirstSystemStateBroadcast;
                 isMaster = true;
                 inMasterMoratorium = true;
-                log.log(Level.FINE, "At time " + currentTime + " we set first system state broadcast time to be "
+                log.log(Level.FINE, () -> "At time " + currentTime + " we set first system state broadcast time to be "
                         + options.minTimeBeforeFirstSystemStateBroadcast + " ms after at time " + firstAllowedStateBroadcast + ".");
                 didWork = true;
             }
@@ -1127,7 +1127,7 @@ public class FleetController implements NodeStateOrHostInfoChangeHandler, NodeAd
                 tick();
             }
         } catch (InterruptedException e) {
-            log.log(Level.FINE, "Event thread stopped by interrupt exception: " + e);
+            log.log(Level.FINE, () -> "Event thread stopped by interrupt exception: " + e);
         } catch (Throwable t) {
             t.printStackTrace();
             log.log(Level.SEVERE, "Fatal error killed fleet controller", t);

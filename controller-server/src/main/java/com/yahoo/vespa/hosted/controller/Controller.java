@@ -22,7 +22,6 @@ import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
 import com.yahoo.vespa.hosted.controller.config.ControllerConfig;
 import com.yahoo.vespa.hosted.controller.deployment.JobController;
 import com.yahoo.vespa.hosted.controller.dns.NameServiceForwarder;
-import com.yahoo.vespa.hosted.controller.metric.ConfigServerMetrics;
 import com.yahoo.vespa.hosted.controller.notification.NotificationsDb;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.JobControlFlags;
@@ -73,7 +72,6 @@ public class Controller extends AbstractComponent {
     private final Clock clock;
     private final ZoneRegistry zoneRegistry;
     private final ServiceRegistry serviceRegistry;
-    private final ConfigServerMetrics metrics;
     private final AuditLogger auditLogger;
     private final FlagSource flagSource;
     private final NameServiceForwarder nameServiceForwarder;
@@ -111,7 +109,6 @@ public class Controller extends AbstractComponent {
         this.mavenRepository = Objects.requireNonNull(mavenRepository, "MavenRepository cannot be null");
         this.metric = Objects.requireNonNull(metric, "Metric cannot be null");
 
-        metrics = new ConfigServerMetrics(serviceRegistry.configServer());
         nameServiceForwarder = new NameServiceForwarder(curator);
         jobController = new JobController(this);
         applicationController = new ApplicationController(this, curator, accessControl, clock, flagSource, serviceRegistry.billingController());
@@ -224,8 +221,7 @@ public class Controller extends AbstractComponent {
         if (version.isEmpty()) {
             throw new IllegalArgumentException("Invalid version '" + version.toFullString() + "'");
         }
-        Set<CloudName> clouds = clouds();
-        if (!clouds.contains(cloudName)) {
+        if (!clouds().contains(cloudName)) {
             throw new IllegalArgumentException("Cloud '" + cloudName + "' does not exist in this system");
         }
         try (Lock lock = curator.lockOsVersions()) {
@@ -266,10 +262,6 @@ public class Controller extends AbstractComponent {
     /** Returns the hostname of this controller */
     public HostName hostname() {
         return HostName.from(hostnameSupplier.get());
-    }
-
-    public ConfigServerMetrics metrics() {
-        return metrics;
     }
 
     public SystemName system() {
@@ -313,4 +305,5 @@ public class Controller extends AbstractComponent {
     public NotificationsDb notificationsDb() {
         return notificationsDb;
     }
+
 }

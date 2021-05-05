@@ -97,13 +97,13 @@ public class RpcServer {
 
     public void connect() throws ListenFailedException, UnknownHostException {
         disconnect();
-        log.log(Level.FINE, "Fleetcontroller " + fleetControllerIndex + ": Connecting RPC server.");
+        log.log(Level.FINE, () -> "Fleetcontroller " + fleetControllerIndex + ": Connecting RPC server.");
         if (supervisor != null) disconnect();
         supervisor = new Supervisor(new Transport("rpc" + port)).useSmallBuffers();
         addMethods();
-        log.log(Level.FINE, "Fleetcontroller " + fleetControllerIndex + ": Attempting to bind to port " + port);
+        log.log(Level.FINE, () -> "Fleetcontroller " + fleetControllerIndex + ": Attempting to bind to port " + port);
         acceptor = supervisor.listen(new Spec(port));
-        log.log(Level.FINE, "Fleetcontroller " + fleetControllerIndex + ": RPC server listening to port " + acceptor.port());
+        log.log(Level.FINE, () -> "Fleetcontroller " + fleetControllerIndex + ": RPC server listening to port " + acceptor.port());
         StringBuffer slobroks = new StringBuffer("(");
         for (String s : slobrokConnectionSpecs) {
             slobroks.append(" ").append(s);
@@ -123,7 +123,7 @@ public class RpcServer {
 
     public void disconnect() {
         if (register != null) {
-            log.log(Level.FINE, "Fleetcontroller " + fleetControllerIndex + ": Disconnecting RPC server.");
+            log.log(Level.FINE, () -> "Fleetcontroller " + fleetControllerIndex + ": Disconnecting RPC server.");
             register.shutdown();
             register = null;
         }

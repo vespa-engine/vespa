@@ -26,7 +26,7 @@ namespace storage::distributor {
 
 TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
         DistributorNodeContext& node_ctx,
-        DistributorOperationContext& op_ctx,
+        DistributorStripeOperationContext& op_ctx,
         DocumentSelectionParser& parser,
         DistributorBucketSpace &bucketSpace,
         std::shared_ptr<api::UpdateCommand> msg,
@@ -60,13 +60,13 @@ TwoPhaseUpdateOperation::~TwoPhaseUpdateOperation() = default;
 
 namespace {
 
-struct IntermediateMessageSender : DistributorMessageSender {
+struct IntermediateMessageSender : DistributorStripeMessageSender {
     SentMessageMap& msgMap;
     std::shared_ptr<Operation> callback;
-    DistributorMessageSender& forward;
+    DistributorStripeMessageSender& forward;
     std::shared_ptr<api::StorageReply> _reply;
 
-    IntermediateMessageSender(SentMessageMap& mm, std::shared_ptr<Operation> cb, DistributorMessageSender & fwd);
+    IntermediateMessageSender(SentMessageMap& mm, std::shared_ptr<Operation> cb, DistributorStripeMessageSender & fwd);
     ~IntermediateMessageSender() override;
 
     void sendCommand(const std::shared_ptr<api::StorageCommand>& cmd) override {
@@ -97,7 +97,7 @@ struct IntermediateMessageSender : DistributorMessageSender {
 
 IntermediateMessageSender::IntermediateMessageSender(SentMessageMap& mm,
                                                      std::shared_ptr<Operation> cb,
-                                                     DistributorMessageSender & fwd)
+                                                     DistributorStripeMessageSender & fwd)
     : msgMap(mm),
       callback(std::move(cb)),
       forward(fwd)
@@ -141,7 +141,7 @@ TwoPhaseUpdateOperation::ensureUpdateReplyCreated()
 
 void
 TwoPhaseUpdateOperation::sendReply(
-        DistributorMessageSender& sender,
+        DistributorStripeMessageSender& sender,
         std::shared_ptr<api::StorageReply>& reply)
 {
     assert(!_replySent);
@@ -152,7 +152,7 @@ TwoPhaseUpdateOperation::sendReply(
 
 void
 TwoPhaseUpdateOperation::sendReplyWithResult(
-        DistributorMessageSender& sender,
+        DistributorStripeMessageSender& sender,
         const api::ReturnCode& result)
 {
     ensureUpdateReplyCreated();
@@ -179,7 +179,7 @@ TwoPhaseUpdateOperation::isFastPathPossible(const std::vector<BucketDatabase::En
 }
 
 void
-TwoPhaseUpdateOperation::startFastPathUpdate(DistributorMessageSender& sender, std::vector<BucketDatabase::Entry> entries)
+TwoPhaseUpdateOperation::startFastPathUpdate(DistributorStripeMessageSender& sender, std::vector<BucketDatabase::Entry> entries)
 {
     _mode = Mode::FAST_PATH;
     LOG(debug, "Update(%s) fast path: sending Update commands", update_doc_id().c_str());
@@ -196,7 +196,7 @@ TwoPhaseUpdateOperation::startFastPathUpdate(DistributorMessageSender& sender, s
 }
 
 void
-TwoPhaseUpdateOperation::startSafePathUpdate(DistributorMessageSender& sender)
+TwoPhaseUpdateOperation::startSafePathUpdate(DistributorStripeMessageSender& sender)
 {
     if (_op_ctx.cluster_state_bundle().block_feed_in_cluster()) {
         send_feed_blocked_error_reply(sender);
@@ -248,7 +248,7 @@ TwoPhaseUpdateOperation::create_initial_safe_path_get_operation() {
 }
 
 void
-TwoPhaseUpdateOperation::onStart(DistributorMessageSender& sender) {
+TwoPhaseUpdateOperation::onStart(DistributorStripeMessageSender& sender) {
     auto entries = get_bucket_database_entries();
     if (isFastPathPossible(entries)) {
         startFastPathUpdate(sender, std::move(entries));
@@ -274,7 +274,7 @@ TwoPhaseUpdateOperation::lostBucketOwnershipBetweenPhases() const
 }
 
 void
-TwoPhaseUpdateOperation::sendLostOwnershipTransientErrorReply(DistributorMessageSender& sender)
+TwoPhaseUpdateOperation::sendLostOwnershipTransientErrorReply(DistributorStripeMessageSender& sender)
 {
     sendReplyWithResult(sender,
             api::ReturnCode(api::ReturnCode::BUCKET_NOT_FOUND,
@@ -284,7 +284,7 @@ TwoPhaseUpdateOperation::sendLostOwnershipTransientErrorReply(DistributorMessage
 }
 
 void
-TwoPhaseUpdateOperation::send_feed_blocked_error_reply(DistributorMessageSender& sender)
+TwoPhaseUpdateOperation::send_feed_blocked_error_reply(DistributorStripeMessageSender& sender)
 {
     sendReplyWithResult(sender,
                         api::ReturnCode(api::ReturnCode::NO_SPACE,
@@ -294,7 +294,7 @@ TwoPhaseUpdateOperation::send_feed_blocked_error_reply(DistributorMessageSender&
 
 void
 TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(std::shared_ptr<document::Document> doc,
-                                                         api::Timestamp putTimestamp, DistributorMessageSender& sender)
+                                                         api::Timestamp putTimestamp, DistributorStripeMessageSender& sender)
 {
     if (lostBucketOwnershipBetweenPhases()) {
         sendLostOwnershipTransientErrorReply(sender);
@@ -318,7 +318,7 @@ TwoPhaseUpdateOperation::schedulePutsWithUpdatedDocument(std::shared_ptr<documen
 }
 
 void
-TwoPhaseUpdateOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply>& msg)
+TwoPhaseUpdateOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply>& msg)
 {
     if (_mode == Mode::FAST_PATH) {
         handleFastPathReceive(sender, msg);
@@ -328,7 +328,7 @@ TwoPhaseUpdateOperation::onReceive(DistributorMessageSender& sender, const std::
 }
 
 void
-TwoPhaseUpdateOperation::handleFastPathReceive(DistributorMessageSender& sender,
+TwoPhaseUpdateOperation::handleFastPathReceive(DistributorStripeMessageSender& sender,
                                                const std::shared_ptr<api::StorageReply>& msg)
 {
     if (msg->getType() == api::MessageType::GET_REPLY) {
@@ -396,7 +396,7 @@ TwoPhaseUpdateOperation::handleFastPathReceive(DistributorMessageSender& sender,
 }
 
 void
-TwoPhaseUpdateOperation::handleSafePathReceive(DistributorMessageSender& sender,
+TwoPhaseUpdateOperation::handleSafePathReceive(DistributorStripeMessageSender& sender,
                                                const std::shared_ptr<api::StorageReply>& msg)
 {
     // No explicit operation is associated with the direct replica Get operation,
@@ -434,7 +434,7 @@ TwoPhaseUpdateOperation::handleSafePathReceive(DistributorMessageSender& sender,
 }
 
 void TwoPhaseUpdateOperation::handle_safe_path_received_single_full_get(
-        DistributorMessageSender& sender,
+        DistributorStripeMessageSender& sender,
         api::GetReply& reply)
 {
     LOG(spam, "Received single full Get reply for '%s'", update_doc_id().c_str());
@@ -453,7 +453,7 @@ void TwoPhaseUpdateOperation::handle_safe_path_received_single_full_get(
 }
 
 void TwoPhaseUpdateOperation::handle_safe_path_received_metadata_get(
-        DistributorMessageSender& sender, api::GetReply& reply,
+        DistributorStripeMessageSender& sender, api::GetReply& reply,
         const std::optional<NewestReplica>& newest_replica,
         bool any_replicas_failed)
 {
@@ -511,7 +511,7 @@ void TwoPhaseUpdateOperation::handle_safe_path_received_metadata_get(
 }
 
 void
-TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorMessageSender& sender, api::GetReply& reply)
+TwoPhaseUpdateOperation::handleSafePathReceivedGet(DistributorStripeMessageSender& sender, api::GetReply& reply)
 {
     LOG(debug, "Update(%s): got Get reply with code %s",
         _updateCmd->getDocumentId().toString().c_str(),
@@ -585,7 +585,7 @@ bool TwoPhaseUpdateOperation::replica_set_unchanged_after_get_operation() const 
     return (replicas_in_db_now == _replicas_at_get_send_time);
 }
 
-void TwoPhaseUpdateOperation::restart_with_fast_path_due_to_consistent_get_timestamps(DistributorMessageSender& sender) {
+void TwoPhaseUpdateOperation::restart_with_fast_path_due_to_consistent_get_timestamps(DistributorStripeMessageSender& sender) {
     LOG(debug, "Update(%s): all Gets returned in initial safe path were consistent, restarting in fast path mode",
                update_doc_id().c_str());
     if (lostBucketOwnershipBetweenPhases()) {
@@ -600,7 +600,7 @@ void TwoPhaseUpdateOperation::restart_with_fast_path_due_to_consistent_get_times
 }
 
 bool
-TwoPhaseUpdateOperation::processAndMatchTasCondition(DistributorMessageSender& sender,
+TwoPhaseUpdateOperation::processAndMatchTasCondition(DistributorStripeMessageSender& sender,
                                                      const document::Document& candidateDoc)
 {
     if (!hasTasCondition()) {
@@ -631,7 +631,7 @@ TwoPhaseUpdateOperation::hasTasCondition() const noexcept
 }
 
 void
-TwoPhaseUpdateOperation::replyWithTasFailure(DistributorMessageSender& sender, vespalib::stringref message)
+TwoPhaseUpdateOperation::replyWithTasFailure(DistributorStripeMessageSender& sender, vespalib::stringref message)
 {
     sendReplyWithResult(sender, api::ReturnCode(api::ReturnCode::TEST_AND_SET_CONDITION_FAILED, message));
 }
@@ -651,7 +651,7 @@ TwoPhaseUpdateOperation::createBlankDocument() const
 }
 
 void
-TwoPhaseUpdateOperation::handleSafePathReceivedPut(DistributorMessageSender& sender, const api::PutReply& reply)
+TwoPhaseUpdateOperation::handleSafePathReceivedPut(DistributorStripeMessageSender& sender, const api::PutReply& reply)
 {
     sendReplyWithResult(sender, reply.getResult());
 }
@@ -681,7 +681,7 @@ TwoPhaseUpdateOperation::addTraceFromReply(api::StorageReply & reply)
 }
 
 void
-TwoPhaseUpdateOperation::onClose(DistributorMessageSender& sender) {
+TwoPhaseUpdateOperation::onClose(DistributorStripeMessageSender& sender) {
     while (true) {
         std::shared_ptr<Operation> cb = _sentMessageMap.pop();
 

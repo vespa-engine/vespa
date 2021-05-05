@@ -68,10 +68,9 @@ public class FailedExpirer extends NodeRepositoryMaintainer {
 
     @Override
     protected boolean maintain() {
-        List<Node> remainingNodes = nodeRepository.nodes().list(Node.State.failed).stream()
-                                                  .filter(node -> node.type() == NodeType.tenant ||
-                                                                  node.type() == NodeType.host)
-                                                  .collect(Collectors.toList());
+        List<Node> remainingNodes = new ArrayList<>(nodeRepository.nodes().list(Node.State.failed)
+                                                                  .nodeType(NodeType.tenant, NodeType.host)
+                                                                  .asList());
 
         recycleIf(remainingNodes, node -> node.allocation().isEmpty());
         recycleIf(remainingNodes, node ->

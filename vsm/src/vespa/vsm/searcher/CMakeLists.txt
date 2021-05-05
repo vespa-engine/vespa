@@ -1,10 +1,17 @@
 # Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
+
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
+  set(SSE2_FILES "fold.cpp")
+else()
+  unset(SSE2_FILES)
+endif()
+
 vespa_add_library(vsm_vsmsearcher OBJECT
     SOURCES
     boolfieldsearcher.cpp
     fieldsearcher.cpp
     floatfieldsearcher.cpp
-    fold.cpp
+    ${SSE2_FILES}
     futf8strchrfieldsearcher.cpp
     intfieldsearcher.cpp
     strchrfieldsearcher.cpp

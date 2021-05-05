@@ -26,7 +26,7 @@ Operation::getStatus() const
 }
 
 void
-Operation::start(DistributorMessageSender& sender,
+Operation::start(DistributorStripeMessageSender& sender,
                  framework::MilliSecTime startTime)
 {
     _startTime = startTime;

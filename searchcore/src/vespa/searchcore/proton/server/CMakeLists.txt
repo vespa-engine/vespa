@@ -6,7 +6,6 @@ vespa_add_library(searchcore_server STATIC
     bootstrapconfigmanager.cpp
     buckethandler.cpp
     bucketmovejob.cpp
-    bucketmovejobv2.cpp
     clusterstatehandler.cpp
     combiningfeedview.cpp
     ddbstate.cpp
@@ -59,8 +58,6 @@ vespa_add_library(searchcore_server STATIC
     job_tracked_maintenance_job.cpp
     lid_space_compaction_handler.cpp
     lid_space_compaction_job.cpp
-    lid_space_compaction_job_base.cpp
-    lid_space_compaction_job_take2.cpp
     maintenance_controller_explorer.cpp
     maintenance_jobs_injector.cpp
     maintenancecontroller.cpp
@@ -84,6 +81,7 @@ vespa_add_library(searchcore_server STATIC
     proton_thread_pools_explorer.cpp
     prune_session_cache_job.cpp
     pruneremoveddocumentsjob.cpp
+    pruneremoveddocumentsjob_v2.cpp
     putdonecontext.cpp
     reconfig_params.cpp
     remove_operations_rate_tracker.cpp

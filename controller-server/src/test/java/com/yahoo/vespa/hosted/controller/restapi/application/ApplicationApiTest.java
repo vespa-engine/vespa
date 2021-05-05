@@ -1641,11 +1641,13 @@ public class ApplicationApiTest extends ControllerContainerTest {
     private void addNotifications(TenantName tenantName) {
         tester.controller().notificationsDb().setNotification(
                 NotificationSource.from(TenantAndApplicationId.from(tenantName.value(), "app1")),
-                Notification.Type.APPLICATION_PACKAGE_WARNING,
+                Notification.Type.applicationPackage,
+                Notification.Level.warning,
                 "Something something deprecated...");
         tester.controller().notificationsDb().setNotification(
                 NotificationSource.from(new RunId(ApplicationId.from(tenantName.value(), "app2", "instance1"), JobType.systemTest, 12)),
-                Notification.Type.DEPLOYMENT_FAILURE,
+                Notification.Type.deployment,
+                Notification.Level.error,
                 "Failed to deploy: Out of capacity");
     }
 

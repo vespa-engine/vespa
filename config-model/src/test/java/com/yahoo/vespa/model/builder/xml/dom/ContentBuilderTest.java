@@ -824,55 +824,22 @@ public class ContentBuilderTest extends DomBuilderTest {
         verifyThatFeatureFlagControlsVisibilityDelayDefault(0.6, 0.6);
     }
 
-    private void verifyThatFeatureFlagControlsUseBucketExecutorForLidSpaceCompact(boolean flag) {
-        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().useBucketExecutorForLidSpaceCompact(flag));
+    private void verifyThatFeatureFlagControlsUseBucketExecutorForPruneRemoved(boolean flag) {
+        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().useBucketExecutorForPruneRemoved(flag));
         VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
                 .withServices(singleNodeContentXml())
                 .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
                 .build())
                 .create(deployStateBuilder);
         ProtonConfig config = getProtonConfig(model.getContentClusters().values().iterator().next());
-        assertEquals(flag, config.lidspacecompaction().usebucketexecutor());
+        assertEquals(flag, config.pruneremoveddocuments().usebucketexecutor());
     }
 
-    private void verifyThatFeatureFlagControlsUseBucketExecutorForBucketMove(boolean flag) {
-        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().useBucketExecutorForBucketMove(flag));
-        VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
-                .withServices(singleNodeContentXml())
-                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
-                .build())
-                .create(deployStateBuilder);
-        ProtonConfig config = getProtonConfig(model.getContentClusters().values().iterator().next());
-        assertEquals(flag, config.bucketmove().usebucketexecutor());
-    }
-
-    private void verifyThatFeatureFlagControlsMaxpendingMoveOps(int moveOps) {
-        DeployState.Builder deployStateBuilder = new DeployState.Builder().properties(new TestProperties().setMaxPendingMoveOps(moveOps));
-        VespaModel model = new VespaModelCreatorWithMockPkg(new MockApplicationPackage.Builder()
-                .withServices(singleNodeContentXml())
-                .withSearchDefinition(MockApplicationPackage.MUSIC_SEARCHDEFINITION)
-                .build())
-                .create(deployStateBuilder);
-        ProtonConfig config = getProtonConfig(model.getContentClusters().values().iterator().next());
-        assertEquals(moveOps, config.maintenancejobs().maxoutstandingmoveops());
-    }
 
     @Test
-    public void verifyMaxPendingMoveOps() {
-        verifyThatFeatureFlagControlsMaxpendingMoveOps(13);
-        verifyThatFeatureFlagControlsMaxpendingMoveOps(107);
-    }
-
-    @Test
-    public void verifyUseBucketExecutorForLidSpaceCompact() {
-        verifyThatFeatureFlagControlsUseBucketExecutorForLidSpaceCompact(true);
-        verifyThatFeatureFlagControlsUseBucketExecutorForLidSpaceCompact(false);
-    }
-
-    @Test
-    public void verifyUseBucketExecutorForBucketMove() {
-        verifyThatFeatureFlagControlsUseBucketExecutorForBucketMove(true);
-        verifyThatFeatureFlagControlsUseBucketExecutorForBucketMove(false);
+    public void verifyUseBucketExecutorForPruneRemoved() {
+        verifyThatFeatureFlagControlsUseBucketExecutorForPruneRemoved(true);
+        verifyThatFeatureFlagControlsUseBucketExecutorForPruneRemoved(false);
     }
 
     @Test

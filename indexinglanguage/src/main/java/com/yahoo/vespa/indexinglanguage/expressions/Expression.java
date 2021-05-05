@@ -177,7 +177,6 @@ public abstract class Expression extends Selectable {
     public abstract DataType createdOutputType();
 
     /** Creates an expression with simple lingustics for testing */
-    @SuppressWarnings("deprecation")
     public static Expression fromString(String expression) throws ParseException {
         return fromString(expression, new SimpleLinguistics());
     }
@@ -210,9 +209,11 @@ public abstract class Expression extends Selectable {
     public static Document execute(Expression expression, Document doc) {
         return expression.execute(new SimpleAdapterFactory(), doc);
     }
-    public static final DocumentUpdate execute(Expression expression, DocumentUpdate update) {
+
+    public static DocumentUpdate execute(Expression expression, DocumentUpdate update) {
         return execute(expression, new SimpleAdapterFactory(), update);
     }
+
     public final FieldValue execute() {
         return execute(new ExecutionContext());
     }

@@ -49,7 +49,7 @@ DistributorStripeComponent::enumerateUnavailableNodes(
         const document::Bucket& bucket,
         const std::vector<BucketCopy>& candidates) const
 {
-    const auto* up_states = _distributor.getStorageNodeUpStates();
+    const auto* up_states = storage_node_up_states();
     for (uint32_t i = 0; i < candidates.size(); ++i) {
         const BucketCopy& copy(candidates[i]);
         const lib::NodeState& ns(
@@ -177,7 +177,7 @@ DistributorStripeComponent::node_address(uint16_t node_index) const noexcept
 }
 
 
-// Implements DistributorOperationContext
+// Implements DistributorStripeOperationContext
 void
 DistributorStripeComponent::remove_nodes_from_bucket_database(const document::Bucket& bucket,
                                                               const std::vector<uint16_t>& nodes)
@@ -257,7 +257,7 @@ DistributorStripeComponent::has_pending_message(uint16_t node_index,
                                                 const document::Bucket& bucket,
                                                 uint32_t message_type) const
 {
-    const auto& sender = static_cast<const DistributorMessageSender&>(getDistributor());
+    const auto& sender = static_cast<const DistributorStripeMessageSender&>(getDistributor());
     return sender.getPendingMessageTracker().hasPendingMessage(node_index, bucket, message_type);
 }
 
@@ -273,7 +273,7 @@ DistributorStripeComponent::storage_node_is_up(document::BucketSpace bucket_spac
     const lib::NodeState& ns = cluster_state_bundle().getDerivedClusterState(bucket_space)->getNodeState(
             lib::Node(lib::NodeType::STORAGE, node_index));
 
-    return ns.getState().oneOf(_distributor.getStorageNodeUpStates());
+    return ns.getState().oneOf(storage_node_up_states());
 }
 
 std::unique_ptr<document::select::Node>

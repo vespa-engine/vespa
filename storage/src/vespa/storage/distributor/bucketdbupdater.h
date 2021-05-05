@@ -28,7 +28,7 @@ namespace storage::distributor {
 
 struct BucketSpaceDistributionConfigs;
 class BucketSpaceDistributionContext;
-class DistributorStripeInterface;
+class DistributorInterface;
 class StripeAccessor;
 class StripeAccessGuard;
 
@@ -37,9 +37,11 @@ class BucketDBUpdater : public framework::StatusReporter,
 {
 public:
     using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
-    BucketDBUpdater(DistributorStripeInterface& owner,
-                    DistributorMessageSender& sender,
-                    DistributorComponentRegister& comp_reg,
+    BucketDBUpdater(const DistributorNodeContext& node_ctx,
+                    DistributorOperationContext& op_ctx,
+                    DistributorInterface& distributor_interface,
+                    ChainedMessageSender& chained_sender,
+                    std::shared_ptr<const lib::Distribution> bootstrap_distribution,
                     StripeAccessor& stripe_accessor);
     ~BucketDBUpdater() override;
 
@@ -48,7 +50,6 @@ public:
     bool onSetSystemState(const std::shared_ptr<api::SetSystemStateCommand>& cmd) override;
     bool onActivateClusterStateVersion(const std::shared_ptr<api::ActivateClusterStateVersionCommand>& cmd) override;
     bool onRequestBucketInfoReply(const std::shared_ptr<api::RequestBucketInfoReply> & repl) override;
-    bool onMergeBucketReply(const std::shared_ptr<api::MergeBucketReply>& reply) override;
 
     vespalib::string getReportContentType(const framework::HttpUrlPath&) const override;
     bool reportStatus(std::ostream&, const framework::HttpUrlPath&) const override;
@@ -60,8 +61,6 @@ public:
     vespalib::string report_xml_status(vespalib::xml::XmlOutputStream& xos, const framework::HttpUrlPath&) const;
 
     void print(std::ostream& out, bool verbose, const std::string& indent) const;
-    const DistributorNodeContext& node_context() const { return _node_ctx; }
-    DistributorOperationContext& operation_context() { return _op_ctx; }
 
     void set_stale_reads_enabled(bool enabled) noexcept {
         _stale_reads_enabled.store(enabled, std::memory_order_relaxed);
@@ -71,61 +70,6 @@ public:
     }
 
 private:
-    class MergeReplyGuard {
-    public:
-        MergeReplyGuard(DistributorStripeInterface& distributor_interface, const std::shared_ptr<api::MergeBucketReply>& reply) noexcept
-            : _distributor_interface(distributor_interface), _reply(reply) {}
-
-        ~MergeReplyGuard();
-
-        // Used when we're flushing and simply want to drop the reply rather
-        // than send it down
-        void resetReply() { _reply.reset(); }
-    private:
-        DistributorStripeInterface& _distributor_interface;
-        std::shared_ptr<api::MergeBucketReply> _reply;
-    };
-
-    struct BucketRequest {
-        BucketRequest()
-            : targetNode(0), bucket(), timestamp(0) {};
-
-        BucketRequest(uint16_t t, uint64_t currentTime, const document::Bucket& b,
-                      const std::shared_ptr<MergeReplyGuard>& guard)
-            : targetNode(t),
-              bucket(b),
-              timestamp(currentTime),
-              _mergeReplyGuard(guard) {};
-
-        void print_xml_tag(vespalib::xml::XmlOutputStream &xos, const vespalib::xml::XmlAttribute &timestampAttribute) const;
-        uint16_t targetNode;
-        document::Bucket bucket;
-        uint64_t timestamp;
-
-        std::shared_ptr<MergeReplyGuard> _mergeReplyGuard;
-    };
-
-    struct EnqueuedBucketRecheck {
-        uint16_t node;
-        document::Bucket bucket;
-
-        EnqueuedBucketRecheck() : node(0), bucket() {}
-
-        EnqueuedBucketRecheck(uint16_t _node, const document::Bucket& _bucket)
-          : node(_node),
-            bucket(_bucket)
-        {}
-
-        bool operator<(const EnqueuedBucketRecheck& o) const {
-            if (node != o.node) {
-                return node < o.node;
-            }
-            return bucket < o.bucket;
-        }
-        bool operator==(const EnqueuedBucketRecheck& o) const {
-            return node == o.node && bucket == o.bucket;
-        }
-    };
 
     friend class DistributorTestUtil;
     // Only to be used by tests that want to ensure both the BucketDBUpdater _and_ the Distributor
@@ -139,8 +83,6 @@ private:
     bool is_pending_cluster_state_completed() const;
     void process_completed_pending_cluster_state(StripeAccessGuard& guard);
     void activate_pending_cluster_state(StripeAccessGuard& guard);
-    void send_request_bucket_info(uint16_t node, const document::Bucket& bucket,
-                                  const std::shared_ptr<MergeReplyGuard>& mergeReplyGuard);
     void ensure_transition_timer_started();
     void complete_transition_timer();
 
@@ -155,7 +97,6 @@ private:
 
     void enable_current_cluster_state_bundle_in_distributor_and_stripes(StripeAccessGuard& guard);
     void add_current_state_to_cluster_state_history();
-    void send_all_queued_bucket_rechecks();
 
     void propagate_active_state_bundle_internally();
 
@@ -165,19 +106,14 @@ private:
     // TODO STRIPE remove once distributor component dependencies have been pruned
     StripeAccessor& _stripe_accessor;
     lib::ClusterStateBundle _active_state_bundle;
-    std::unique_ptr<DistributorBucketSpaceRepo> _dummy_mutable_bucket_space_repo;
-    std::unique_ptr<DistributorBucketSpaceRepo> _dummy_read_only_bucket_space_repo;
 
-    DistributorStripeComponent _distributor_component;
     const DistributorNodeContext& _node_ctx;
     DistributorOperationContext& _op_ctx;
-    DistributorStripeInterface& _distributor_interface;
-    std::deque<std::pair<framework::MilliSecTime, BucketRequest>> _delayed_requests;
-    std::map<uint64_t, BucketRequest> _sent_messages;
+    DistributorInterface& _distributor_interface;
     std::unique_ptr<PendingClusterState> _pending_cluster_state;
     std::list<PendingClusterState::Summary> _history;
     DistributorMessageSender& _sender;
-    std::set<EnqueuedBucketRecheck> _enqueued_rechecks;
+    ChainedMessageSender& _chained_sender;
     OutdatedNodesMap         _outdated_nodes_map;
     framework::MilliSecTimer _transition_timer;
     std::atomic<bool> _stale_reads_enabled;

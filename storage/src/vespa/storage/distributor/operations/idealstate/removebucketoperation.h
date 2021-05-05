@@ -18,16 +18,16 @@ public:
     /**
        Sends messages, returns true if we are done (sent nothing).
     */
-    bool onStartInternal(DistributorMessageSender& sender);
+    bool onStartInternal(DistributorStripeMessageSender& sender);
 
     /**
        Sends messages, calls done() if we are done (sent nothing).
     */
-    void onStart(DistributorMessageSender& sender) override;
+    void onStart(DistributorStripeMessageSender& sender) override;
 
     bool onReceiveInternal(const std::shared_ptr<api::StorageReply> &);
 
-    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
+    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> &) override;
     const char* getName() const override { return "remove"; };
     Type getType() const override { return DELETE_BUCKET; }
     bool shouldBlockThisOperation(uint32_t, uint8_t) const  override;

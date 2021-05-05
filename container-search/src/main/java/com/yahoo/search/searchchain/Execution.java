@@ -6,7 +6,7 @@ import com.yahoo.language.Linguistics;
 import com.yahoo.prelude.IndexFacts;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
-import com.yahoo.prelude.query.parser.SpecialTokenRegistry;
+import com.yahoo.language.process.SpecialTokenRegistry;
 import com.yahoo.processing.Processor;
 import com.yahoo.processing.Request;
 import com.yahoo.processing.Response;
@@ -16,8 +16,6 @@ import com.yahoo.search.Searcher;
 import com.yahoo.search.cluster.PingableSearcher;
 import com.yahoo.search.rendering.RendererRegistry;
 import com.yahoo.search.statistics.TimeTracker;
-
-import java.util.logging.Logger;
 
 /**
  * <p>An execution of a search chain. This keeps track of the call state for an execution (in the calling thread)
@@ -111,7 +109,7 @@ public class Execution extends com.yahoo.processing.execution.Execution {
         public Context(SearchChainRegistry searchChainRegistry, IndexFacts indexFacts,
                        SpecialTokenRegistry tokenRegistry, RendererRegistry rendererRegistry, Linguistics linguistics)
         {
-            owner=null;
+            owner = null;
             // The next time something is added here, compose into wrapper objects. Many arguments...
 
             // Four methods need to be updated when adding something:

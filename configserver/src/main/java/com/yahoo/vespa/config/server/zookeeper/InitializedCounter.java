@@ -27,7 +27,7 @@ public class InitializedCounter {
     }
 
     private void initializeCounterValue(Long latestSessionId) {
-        log.log(Level.FINE, "path=" + sessionsDirPath + ", current=" + latestSessionId);
+        log.log(Level.FINE, () -> "path=" + sessionsDirPath + ", current=" + latestSessionId);
         if (latestSessionId != null) {
             counter.initialize(latestSessionId);
         } else {

@@ -2,6 +2,8 @@
 package com.yahoo.vespa.orchestrator.policy;
 
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.vespa.applicationmodel.ClusterId;
 import com.yahoo.vespa.applicationmodel.HostName;
 import com.yahoo.vespa.applicationmodel.ServiceType;
@@ -23,14 +25,17 @@ import static org.mockito.Mockito.spy;
 import static org.mockito.Mockito.when;
 
 public class HostedVespaClusterPolicyTest {
-    private ApplicationApi applicationApi = mock(ApplicationApi.class);
-    private ClusterApi clusterApi = mock(ClusterApi.class);
+
+    private final ApplicationApi applicationApi = mock(ApplicationApi.class);
+    private final ClusterApi clusterApi = mock(ClusterApi.class);
+    private final Zone zone = mock(Zone.class);
     private final InMemoryFlagSource flagSource = new InMemoryFlagSource();
-    private HostedVespaClusterPolicy policy = spy(new HostedVespaClusterPolicy(flagSource));
+    private final HostedVespaClusterPolicy policy = spy(new HostedVespaClusterPolicy(flagSource, zone));
 
     @Before
     public void setUp() {
         when(clusterApi.getApplication()).thenReturn(applicationApi);
+        when(zone.system()).thenReturn(SystemName.main);
     }
 
     @Test
@@ -72,6 +77,11 @@ public class HostedVespaClusterPolicyTest {
         when(clusterApi.isStorageCluster()).thenReturn(false);
         assertEquals(ConcurrentSuspensionLimitForCluster.TWENTY_PERCENT,
                 policy.getConcurrentSuspensionLimit(clusterApi, false));
+
+
+        when(zone.system()).thenReturn(SystemName.cd);
+        assertEquals(ConcurrentSuspensionLimitForCluster.FIFTY_PERCENT,
+                     policy.getConcurrentSuspensionLimit(clusterApi, false));
     }
 
     @Test

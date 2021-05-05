@@ -779,9 +779,7 @@ FeedHandler::sync()
 FeedHandler::RPC::Result
 FeedHandler::receive(const Packet &packet)
 {
-    // Called directly when replaying transaction log
-    // (by fnet thread).  Called via DocumentDB::recoverPacket() when
-    // recovering from another node.
+    // Called directly when replaying transaction log (by fnet thread).
     FeedStateSP state = getFeedState();
     auto wrap = make_shared<PacketWrapper>(packet, _tlsReplayProgress.get());
     state->receive(wrap, _writeService.master());

@@ -90,8 +90,7 @@ public class DynamicProvisioningMaintainerTest {
         assertTrue("No IP addresses assigned", Stream.of(host4, host41).map(node -> node.ipConfig().primary()).allMatch(Set::isEmpty));
 
         tester.maintainer.maintain();
-        assertEquals(Set.of("host4", "host4-1"),
-                     tester.nodeRepository.nodes().list(Node.State.failed).stream().map(Node::hostname).collect(Collectors.toSet()));
+        assertEquals(Set.of("host4", "host4-1"), tester.nodeRepository.nodes().list(Node.State.failed).hostnames());
     }
 
     @Test

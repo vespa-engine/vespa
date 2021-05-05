@@ -49,7 +49,7 @@ public class FileDistributionImpl implements FileDistribution, RequestWaiter {
         Request request = new Request("filedistribution.setFileReferencesToDownload");
         request.setContext(target);
         request.parameters().add(new StringArray(fileReferences.stream().map(FileReference::value).toArray(String[]::new)));
-        log.log(Level.FINE, "Executing " + request.methodName() + " against " + target);
+        log.log(Level.FINE, () -> "Executing " + request.methodName() + " against " + target);
         target.invokeAsync(request, rpcTimeout, this);
     }
 
@@ -58,7 +58,7 @@ public class FileDistributionImpl implements FileDistribution, RequestWaiter {
     public void handleRequestDone(Request req) {
         Target target = (Target) req.getContext();
         if (req.isError()) {
-            log.log(Level.FINE, req.methodName() + " failed for " + target + ": " + req.errorCode() + " (" + req.errorMessage() + ")");
+            log.log(Level.FINE, () -> req.methodName() + " failed for " + target + ": " + req.errorCode() + " (" + req.errorMessage() + ")");
         }
         if (target != null) target.close();
     }

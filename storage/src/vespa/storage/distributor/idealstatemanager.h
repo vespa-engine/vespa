@@ -77,8 +77,8 @@ public:
     }
 
     const DistributorNodeContext& node_context() const { return _distributorComponent; }
-    DistributorOperationContext& operation_context() { return _distributorComponent; }
-    const DistributorOperationContext& operation_context() const { return _distributorComponent; }
+    DistributorStripeOperationContext& operation_context() { return _distributorComponent; }
+    const DistributorStripeOperationContext& operation_context() const { return _distributorComponent; }
     DistributorBucketSpaceRepo &getBucketSpaceRepo() { return _bucketSpaceRepo; }
     const DistributorBucketSpaceRepo &getBucketSpaceRepo() const { return _bucketSpaceRepo; }
 

@@ -225,7 +225,7 @@ StripeBucketDBUpdater::removeSuperfluousBuckets(
 {
     assert(_use_legacy_mode);
     const bool move_to_read_only_db = shouldDeferStateEnabling();
-    const char* up_states = _op_ctx.storage_node_up_states();
+    const char* up_states = storage_node_up_states();
     for (auto& elem : _op_ctx.bucket_space_repo()) {
         const auto& newDistribution(elem.second->getDistribution());
         const auto& oldClusterState(elem.second->getClusterState());
@@ -273,7 +273,7 @@ StripeBucketDBUpdater::remove_superfluous_buckets(
     assert(!_use_legacy_mode);
     (void)is_distribution_change; // TODO remove if not needed
     const bool move_to_read_only_db = shouldDeferStateEnabling();
-    const char* up_states = _op_ctx.storage_node_up_states();
+    const char* up_states = storage_node_up_states();
 
     auto& s = _op_ctx.bucket_space_repo().get(bucket_space);
     const auto& new_distribution = s.getDistribution();
@@ -377,7 +377,7 @@ StripeBucketDBUpdater::storageDistributionChanged()
     auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
             _node_ctx.node_index(),
             _op_ctx.cluster_state_bundle(),
-            _op_ctx.storage_node_up_states());
+            storage_node_up_states());
     _pendingClusterState = PendingClusterState::createForDistributionChange(
             _node_ctx.clock(),
             std::move(clusterInfo),
@@ -489,7 +489,7 @@ StripeBucketDBUpdater::onSetSystemState(
     auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
                 _node_ctx.node_index(),
                 _op_ctx.cluster_state_bundle(),
-                _op_ctx.storage_node_up_states());
+                storage_node_up_states());
     _pendingClusterState = PendingClusterState::createForClusterStateChange(
             _node_ctx.clock(),
             std::move(clusterInfo),

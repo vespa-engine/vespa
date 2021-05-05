@@ -113,7 +113,7 @@ LoadAttribute::Main()
     bool doHuge = false;
 
     int idx = 1;
-    char opt;
+    int opt;
     const char * arg;
     bool optError = false;
     while ((opt = GetOpt("pasf:h", arg, idx)) != -1) {

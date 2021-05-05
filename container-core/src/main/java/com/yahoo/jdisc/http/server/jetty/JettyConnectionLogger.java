@@ -153,7 +153,8 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void onResponseBegin(Request request) {
         handleListenerInvocation("HttpChannel.Listener", "onResponseBegin", "%h", List.of(request), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(request.getHttpChannel().getEndPoint());
-            ConnectionInfo info = Objects.requireNonNull(connectionInfo.get(IdentityKey.of(endpoint)));
+            ConnectionInfo info = connectionInfo.get(IdentityKey.of(endpoint));
+            if (info == null) return; // Connection closed before response started - observed during Jetty server shutdown
             info.incrementResponses();
         });
     }

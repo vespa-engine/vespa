@@ -10,7 +10,7 @@ using namespace fsa;
 
 int main(int argc, char **argv)
 {
-  char         opt;
+  int          opt;
   //extern char *optarg;
   extern int   optind;
 

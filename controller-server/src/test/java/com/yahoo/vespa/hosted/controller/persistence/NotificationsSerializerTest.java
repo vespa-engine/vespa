@@ -28,11 +28,13 @@ public class NotificationsSerializerTest {
         TenantName tenantName = TenantName.from("tenant1");
         List<Notification> notifications = List.of(
                 new Notification(Instant.ofEpochSecond(1234),
-                        Notification.Type.APPLICATION_PACKAGE_WARNING,
+                        Notification.Type.applicationPackage,
+                        Notification.Level.warning,
                         NotificationSource.from(TenantAndApplicationId.from(tenantName.value(), "app1")),
                         List.of("Something something deprecated...")),
                 new Notification(Instant.ofEpochSecond(2345),
-                        Notification.Type.DEPLOYMENT_FAILURE,
+                        Notification.Type.deployment,
+                        Notification.Level.error,
                         NotificationSource.from(new RunId(ApplicationId.from(tenantName.value(), "app1", "instance1"), JobType.systemTest, 12)),
                         List.of("Failed to deploy: Out of capacity")));
 
@@ -40,12 +42,14 @@ public class NotificationsSerializerTest {
         assertEquals("{\"notifications\":[" +
                 "{" +
                     "\"at\":1234000," +
-                    "\"type\":\"APPLICATION_PACKAGE_WARNING\"," +
+                    "\"type\":\"applicationPackage\"," +
+                    "\"level\":\"warning\"," +
                     "\"messages\":[\"Something something deprecated...\"]," +
                     "\"application\":\"app1\"" +
                 "},{" +
                     "\"at\":2345000," +
-                    "\"type\":\"DEPLOYMENT_FAILURE\"," +
+                    "\"type\":\"deployment\"," +
+                    "\"level\":\"error\"," +
                     "\"messages\":[\"Failed to deploy: Out of capacity\"]," +
                     "\"application\":\"app1\"," +
                     "\"instance\":\"instance1\"," +

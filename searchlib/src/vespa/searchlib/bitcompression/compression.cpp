@@ -10,23 +10,6 @@
 
 namespace search::bitcompression {
 
-uint8_t CodingTables::_log2Table[64_Ki];
-
-CodingTables tables;  // Static initializer
-
-CodingTables::CodingTables()
-{
-    unsigned int x;
-    uint8_t log2Val;
-
-    for (x = 0; x < 64_Ki; x++) {
-        unsigned int val = x;
-        for (log2Val = 0; (val >>= 1) != 0; log2Val++) {
-        }
-        _log2Table[x] = log2Val;
-    }
-}
-
 uint64_t CodingTables::_intMask64[65] =
 {
     (UINT64_C(1) <<  0) - 1, (UINT64_C(1) <<  1) - 1,

@@ -394,10 +394,10 @@ public class ApplicationController {
             // Record the quota usage for this application
             var quotaUsage = deploymentQuotaUsage(zone, job.application());
 
-            // For direct deployments use the full application ID, but otherwise use just the tenant and application as
+            // For direct deployments use the full deployment ID, but otherwise use just the tenant and application as
             // the source since it's the same application, so it should have the same warnings
             NotificationSource source = zone.environment().isManuallyDeployed() ?
-                    NotificationSource.from(job.application()) : NotificationSource.from(applicationId);
+                    NotificationSource.from(new DeploymentId(job.application(), zone)) : NotificationSource.from(applicationId);
             List<String> warnings = Optional.ofNullable(result.prepareResponse().log)
                     .map(logs -> logs.stream()
                             .filter(log -> log.applicationPackage)
@@ -407,8 +407,8 @@ public class ApplicationController {
                             .distinct()
                             .collect(Collectors.toList()))
                     .orElseGet(List::of);
-            if (warnings.isEmpty()) controller.notificationsDb().removeNotification(source, Notification.Type.APPLICATION_PACKAGE_WARNING);
-            else controller.notificationsDb().setNotification(source, Notification.Type.APPLICATION_PACKAGE_WARNING, warnings);
+            if (warnings.isEmpty()) controller.notificationsDb().removeNotification(source, Notification.Type.applicationPackage);
+            else controller.notificationsDb().setNotification(source, Notification.Type.applicationPackage, Notification.Level.warning, warnings);
 
             lockApplicationOrThrow(applicationId, application ->
                     store(application.with(job.application().instance(),
@@ -702,6 +702,8 @@ public class ApplicationController {
             controller.routing().policies().refresh(application.get().id().instance(instanceName), application.get().deploymentSpec(), zone);
             if (zone.environment().isManuallyDeployed())
                 applicationStore.putMetaTombstone(id, clock.instant());
+            if (!zone.environment().isTest())
+                controller.notificationsDb().removeNotifications(NotificationSource.from(id));
         }
         return application.with(instanceName, instance -> instance.withoutDeploymentIn(zone));
     }

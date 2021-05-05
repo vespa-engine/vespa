@@ -289,7 +289,7 @@ public class RewriterUtils {
      * @param msg Log message
      */
     public static void log(Logger logger, String msg) {
-        logger.log(Level.FINE, logger.getName() + ": " + msg);
+        logger.log(Level.FINE, () -> logger.getName() + ": " + msg);
     }
 
     /**
@@ -303,7 +303,7 @@ public class RewriterUtils {
         if(query!=null) {
             query.trace(logger.getName() + ": " + msg, true, TRACELEVEL);
         }
-        logger.log(Level.FINE, logger.getName() + ": " + msg);
+        logger.log(Level.FINE, () -> logger.getName() + ": " + msg);
     }
 
     /**

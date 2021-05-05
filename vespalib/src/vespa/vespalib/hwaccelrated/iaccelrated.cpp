@@ -2,8 +2,10 @@
 
 #include "iaccelrated.h"
 #include "generic.h"
+#ifdef __x86_64__
 #include "avx2.h"
 #include "avx512.h"
+#endif
 #include <vespa/vespalib/util/memory.h>
 #include <cstdio>
 #include <vector>
@@ -26,6 +28,7 @@ public:
     IAccelrated::UP create() const override { return std::make_unique<GenericAccelrator>(); }
 };
 
+#ifdef __x86_64__
 class Avx2Factory :public Factory{
 public:
     IAccelrated::UP create() const override { return std::make_unique<Avx2Accelrator>(); }
@@ -35,6 +38,7 @@ class Avx512Factory :public Factory{
 public:
     IAccelrated::UP create() const override { return std::make_unique<Avx512Accelrator>(); }
 };
+#endif
 
 template<typename T>
 std::vector<T> createAndFill(size_t sz) {
@@ -255,6 +259,7 @@ private:
 Selector::Selector() :
     _factory()
 {
+#ifdef __x86_64__
     __builtin_cpu_init ();
     if (__builtin_cpu_supports("avx512f")) {
         _factory = std::make_unique<Avx512Factory>();
@@ -263,6 +268,9 @@ Selector::Selector() :
     } else {
         _factory = std::make_unique<GenericFactory>();
     }
+#else
+    _factory = std::make_unique<GenericFactory>();
+#endif
 }
 
 }

@@ -16,7 +16,7 @@ using storage::spi::Timestamp;
 namespace proton {
 
 PruneRemovedDocumentsJob::
-PruneRemovedDocumentsJob(const Config &config,
+PruneRemovedDocumentsJob(const DocumentDBPruneConfig &config,
                          const IDocumentMetaStore &metaStore,
                          uint32_t subDbId,
                          const vespalib::string &docTypeName,

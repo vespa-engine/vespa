@@ -31,9 +31,7 @@ private:
 
     void flush(DocId lowLid, DocId nextLowLid, const storage::spi::Timestamp ageLimit);
 public:
-    using Config = DocumentDBPruneRemovedDocumentsConfig;
-
-    PruneRemovedDocumentsJob(const Config &config,
+    PruneRemovedDocumentsJob(const DocumentDBPruneConfig &config,
                              const IDocumentMetaStore &metaStore,
                              uint32_t subDbId,
                              const vespalib::string &docTypeName,

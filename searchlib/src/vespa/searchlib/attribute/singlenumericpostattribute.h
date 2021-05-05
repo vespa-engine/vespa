@@ -43,7 +43,6 @@ private:
     using ComparatorType = typename EnumStore::ComparatorType;
     using DocId = typename B::BaseClass::DocId;
     using EnumIndex = typename SingleValueEnumAttributeBase::EnumIndex;
-    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using PostingMap = typename PostingParent::PostingMap;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
     using SelfType = SingleValueNumericPostingAttribute<B>;

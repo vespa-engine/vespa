@@ -22,16 +22,12 @@ protected:
     using DocId = typename B::BaseClass::DocId;
     using EnumHandle = typename B::BaseClass::EnumHandle;
     using EnumIndex = typename SingleValueEnumAttributeBase::EnumIndex;
-    using EnumIndexVector = IEnumStore::IndexVector;
     using EnumStore = typename SingleValueEnumAttribute<B>::EnumStore;
     using EnumStoreBatchUpdater = typename EnumStore::BatchUpdater;
     using EnumVector = IEnumStore::EnumVector;
-    using LoadedEnumAttribute = attribute::LoadedEnumAttribute;
-    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using LoadedNumericValueT = typename B::BaseClass::LoadedNumericValueT;
     using LoadedVector = typename B::BaseClass::LoadedVector;
     using QueryTermSimpleUP = AttributeVector::QueryTermSimpleUP;
-    using UniqueSet = typename SingleValueEnumAttribute<B>::UniqueSet;
     using Weighted = typename B::BaseClass::Weighted;
     using WeightedFloat = typename B::BaseClass::WeightedFloat;
     using WeightedInt = typename B::BaseClass::WeightedInt;
@@ -46,7 +42,7 @@ protected:
 
     // from SingleValueEnumAttribute
     void considerUpdateAttributeChange(const Change & c) override;
-    void considerArithmeticAttributeChange(const Change & c, UniqueSet & newUniques) override;
+    void considerArithmeticAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter) override;
     void applyArithmeticValueChange(const Change& c, EnumStoreBatchUpdater& updater) override;
 
     /*

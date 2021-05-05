@@ -12,7 +12,7 @@ Home page: [https://vespa.ai](https://vespa.ai)
 Documentation: [https://docs.vespa.ai/](https://docs.vespa.ai/)  
 Run applications in the cloud for free: [https://cloud.vespa.ai](https://cloud.vespa.ai)  
 
-Screwdriver build status: [![Build Status](https://cd.screwdriver.cd/pipelines/6386/badge)](https://cd.screwdriver.cd/pipelines/6386)
+Vespa build status: [![Vespa Build Status](https://cd.screwdriver.cd/pipelines/6386/build-vespa/badge)](https://cd.screwdriver.cd/pipelines/6386)
 
 ## Table of contents
 
@@ -44,10 +44,10 @@ Or deploy your Vespa applications to the cloud service: [https://cloud.vespa.ai]
 ## Usage 
 
 - The application created in the getting started guide is fully functional and production ready, but you may want to [add more nodes](https://docs.vespa.ai/en/multinode-systems.html) for redundancy.
-- Try the [Blog search and recommendation tutorial](https://docs.vespa.ai/en/tutorials/blog-search.html) to learn more about using Vespa
 - See [developing applications](https://docs.vespa.ai/en/developer-guide.html) on adding your own Java components to your Vespa application.
 - [Vespa APIs](https://docs.vespa.ai/en/api.html) is useful to understand how to interface with Vespa
 - Explore the [sample applications](https://github.com/vespa-engine/sample-apps/tree/master)
+- Follow the [Vespa Blog](https://blog.vespa.ai/) for feature updates / use cases
 
 Full documentation is available on [https://docs.vespa.ai](https://docs.vespa.ai).
 

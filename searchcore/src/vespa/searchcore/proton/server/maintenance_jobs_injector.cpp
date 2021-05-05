@@ -1,15 +1,14 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
 #include "bucketmovejob.h"
-#include "bucketmovejobv2.h"
 #include "heart_beat_job.h"
 #include "job_tracked_maintenance_job.h"
 #include "lid_space_compaction_job.h"
-#include "lid_space_compaction_job_take2.h"
 #include "lid_space_compaction_handler.h"
 #include "maintenance_jobs_injector.h"
 #include "prune_session_cache_job.h"
 #include "pruneremoveddocumentsjob.h"
+#include "pruneremoveddocumentsjob_v2.h"
 #include "sample_attribute_usage_job.h"
 #include <vespa/searchcore/proton/attribute/attribute_config_inspector.h>
 
@@ -31,7 +30,6 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
                              storage::spi::BucketExecutor & bucketExecutor,
                              ILidSpaceCompactionHandler::Vector lscHandlers,
                              IOperationStorer &opStorer,
-                             IFrozenBucketHandler &fbHandler,
                              IJobTracker::SP tracker,
                              IDiskMemUsageNotifier &diskMemUsageNotifier,
                              IClusterStateChangedNotifier &clusterStateChangedNotifier,
@@ -39,21 +37,10 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
                              document::BucketSpace bucketSpace)
 {
     for (auto &lidHandler : lscHandlers) {
-        std::shared_ptr<IMaintenanceJob> job;
-        if (config.getLidSpaceCompactionConfig().useBucketExecutor()) {
-            job = lidspace::CompactionJob::create(config.getLidSpaceCompactionConfig(), controller.retainDB(),
-                                                  std::move(lidHandler), opStorer, controller.masterThread(),
-                                                  bucketExecutor, diskMemUsageNotifier,config.getBlockableJobConfig(),
-                                                  clusterStateChangedNotifier, (calc ? calc->nodeRetired() : false), bucketSpace);
-        } else {
-            job = std::make_shared<LidSpaceCompactionJob>(
-                    config.getLidSpaceCompactionConfig(),
-                    std::move(lidHandler), opStorer, fbHandler,
-                    diskMemUsageNotifier,
-                    config.getBlockableJobConfig(),
-                    clusterStateChangedNotifier,
-                    (calc ? calc->nodeRetired() : false));
-        }
+        auto job = lidspace::CompactionJob::create(config.getLidSpaceCompactionConfig(), controller.retainDB(),
+                                                   std::move(lidHandler), opStorer, controller.masterThread(),
+                                                   bucketExecutor, diskMemUsageNotifier,config.getBlockableJobConfig(),
+                                                   clusterStateChangedNotifier, (calc ? calc->nodeRetired() : false), bucketSpace);
         controller.registerJobInMasterThread(trackJob(tracker, std::move(job)));
     }
 }
@@ -61,7 +48,6 @@ injectLidSpaceCompactionJobs(MaintenanceController &controller,
 void
 injectBucketMoveJob(MaintenanceController &controller,
                     const DocumentDBMaintenanceConfig &config,
-                    IFrozenBucketHandler &fbHandler,
                     storage::spi::BucketExecutor & bucketExecutor,
                     bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
                     const vespalib::string &docTypeName,
@@ -74,26 +60,10 @@ injectBucketMoveJob(MaintenanceController &controller,
                     DocumentDBJobTrackers &jobTrackers,
                     IDiskMemUsageNotifier &diskMemUsageNotifier)
 {
-    std::shared_ptr<IMaintenanceJob> bmj;
-    if (config.getBucketMoveConfig().useBucketExecutor()) {
-        bmj = BucketMoveJobV2::create(calc, controller.retainDB(), moveHandler, bucketModifiedHandler, controller.masterThread(),
-                                      bucketExecutor, controller.getReadySubDB(), controller.getNotReadySubDB(),
-                                      bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
-                                      diskMemUsageNotifier, config.getBlockableJobConfig(), docTypeName, bucketSpace);
-    } else {
-        bmj = std::make_shared<BucketMoveJob>(calc,
-                                              moveHandler,
-                                              bucketModifiedHandler,
-                                              controller.getReadySubDB(),
-                                              controller.getNotReadySubDB(),
-                                              fbHandler,
-                                              bucketCreateNotifier,
-                                              clusterStateChangedNotifier,
-                                              bucketStateChangedNotifier,
-                                              diskMemUsageNotifier,
-                                              config.getBlockableJobConfig(),
-                                              docTypeName, bucketSpace);
-    }
+    auto bmj = BucketMoveJobV2::create(calc, controller.retainDB(), moveHandler, bucketModifiedHandler, controller.masterThread(),
+                                       bucketExecutor, controller.getReadySubDB(), controller.getNotReadySubDB(),
+                                       bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
+                                       diskMemUsageNotifier, config.getBlockableJobConfig(), docTypeName, bucketSpace);
     controller.registerJobInMasterThread(trackJob(jobTrackers.getBucketMove(), std::move(bmj)));
 }
 
@@ -128,9 +98,20 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
 
     const auto & docTypeName = controller.getDocTypeName().getName();
     const MaintenanceDocumentSubDB &mRemSubDB(controller.getRemSubDB());
-    auto pruneRDjob = std::make_unique<PruneRemovedDocumentsJob>(config.getPruneRemovedDocumentsConfig(), *mRemSubDB.meta_store(),
-                                                                 mRemSubDB.sub_db_id(), docTypeName, prdHandler, fbHandler);
-    controller.registerJobInMasterThread(trackJob(jobTrackers.getRemovedDocumentsPrune(), std::move(pruneRDjob)));
+    if (config.getPruneRemovedDocumentsConfig().useBucketExecutor()) {
+        controller.registerJobInMasterThread(
+                trackJob(jobTrackers.getRemovedDocumentsPrune(),
+                         PruneRemovedDocumentsJobV2::create(config.getPruneRemovedDocumentsConfig(), controller.retainDB(),
+                                                            *mRemSubDB.meta_store(), mRemSubDB.sub_db_id(), bucketSpace,
+                                                            docTypeName, prdHandler, controller.masterThread(),
+                                                            bucketExecutor)));
+    } else {
+        controller.registerJobInMasterThread(
+                trackJob(jobTrackers.getRemovedDocumentsPrune(),
+                         std::make_unique<PruneRemovedDocumentsJob>(config.getPruneRemovedDocumentsConfig(),
+                                                                    *mRemSubDB.meta_store(), mRemSubDB.sub_db_id(),
+                                                                    docTypeName, prdHandler, fbHandler)));
+    }
 
     if (!config.getLidSpaceCompactionConfig().isDisabled()) {
         ILidSpaceCompactionHandler::Vector lidSpaceCompactionHandlers;
@@ -138,11 +119,11 @@ MaintenanceJobsInjector::injectJobs(MaintenanceController &controller,
         lidSpaceCompactionHandlers.push_back(std::make_shared<LidSpaceCompactionHandler>(controller.getRemSubDB(), docTypeName));
         lidSpaceCompactionHandlers.push_back(std::make_shared<LidSpaceCompactionHandler>(controller.getNotReadySubDB(), docTypeName));
         injectLidSpaceCompactionJobs(controller, config, bucketExecutor, std::move(lidSpaceCompactionHandlers),
-                                     opStorer, fbHandler, jobTrackers.getLidSpaceCompact(), diskMemUsageNotifier,
+                                     opStorer, jobTrackers.getLidSpaceCompact(), diskMemUsageNotifier,
                                      clusterStateChangedNotifier, calc, bucketSpace);
     }
 
-    injectBucketMoveJob(controller, config, fbHandler, bucketExecutor, bucketCreateNotifier, docTypeName, bucketSpace,
+    injectBucketMoveJob(controller, config, bucketExecutor, bucketCreateNotifier, docTypeName, bucketSpace,
                         moveHandler, bucketModifiedHandler, clusterStateChangedNotifier, bucketStateChangedNotifier,
                         calc, jobTrackers, diskMemUsageNotifier);
 

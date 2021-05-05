@@ -24,17 +24,17 @@ class UpdateOperation : public Operation
 {
 public:
     UpdateOperation(DistributorNodeContext& node_ctx,
-                    DistributorOperationContext& op_ctx,
+                    DistributorStripeOperationContext& op_ctx,
                     DistributorBucketSpace& bucketSpace,
                     const std::shared_ptr<api::UpdateCommand>& msg,
                     std::vector<BucketDatabase::Entry> entries,
                     UpdateMetricSet& metric);
 
-    void onStart(DistributorMessageSender& sender) override;
+    void onStart(DistributorStripeMessageSender& sender) override;
     const char* getName() const override { return "update"; };
     std::string getStatus() const override { return ""; };
-    void onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override;
-    void onClose(DistributorMessageSender& sender) override;
+    void onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg) override;
+    void onClose(DistributorStripeMessageSender& sender) override;
 
     std::pair<document::BucketId, uint16_t> getNewestTimestampLocation() const {
         return _newestTimestampLocation;

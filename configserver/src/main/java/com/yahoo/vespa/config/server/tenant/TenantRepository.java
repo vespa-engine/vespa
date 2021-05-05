@@ -318,7 +318,7 @@ public class TenantRepository {
         if (tenants.containsKey(tenantName)) return getTenant(tenantName);
 
         Instant start = Instant.now();
-        log.log(Level.FINE, "Adding tenant '" + tenantName);
+        log.log(Level.FINE, () -> "Adding tenant '" + tenantName);
         TenantApplications applicationRepo =
                 new TenantApplications(tenantName,
                                        curator,

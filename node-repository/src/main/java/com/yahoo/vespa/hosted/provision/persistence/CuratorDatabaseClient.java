@@ -110,8 +110,7 @@ public class CuratorDatabaseClient {
     }
 
     /** Adds a set of nodes. Rollbacks/fails transaction if any node is not in the expected state. */
-    public List<Node> addNodesInState(List<Node> nodes, Node.State expectedState, Agent agent) {
-        NestedTransaction transaction = new NestedTransaction();
+    public List<Node> addNodesInState(List<Node> nodes, Node.State expectedState, Agent agent, NestedTransaction transaction) {
         CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
         for (Node node : nodes) {
             if (node.state() != expectedState)
@@ -120,7 +119,6 @@ public class CuratorDatabaseClient {
             node = node.with(node.history().recordStateTransition(null, expectedState, agent, clock.instant()));
             curatorTransaction.add(CuratorOperations.create(toPath(node).getAbsolute(), nodeSerializer.toJson(node)));
         }
-        transaction.commit();
 
         for (Node node : nodes)
             log.log(Level.INFO, "Added " + node);
@@ -128,21 +126,20 @@ public class CuratorDatabaseClient {
         return nodes;
     }
 
-    /**
-     * Removes multiple nodes in a single transaction.
-     *
-     * @param nodes list of the nodes to remove
-     */
-    public void removeNodes(List<Node> nodes) {
+    public List<Node> addNodesInState(List<Node> nodes, Node.State expectedState, Agent agent) {
         NestedTransaction transaction = new NestedTransaction();
+        List<Node> writtenNodes = addNodesInState(nodes, expectedState, agent, transaction);
+        transaction.commit();
+        return writtenNodes;
+    }
 
+    /** Removes given nodes in transaction */
+    public void removeNodes(List<Node> nodes, NestedTransaction transaction) {
         for (Node node : nodes) {
             Path path = toPath(node.state(), node.hostname());
             CuratorTransaction curatorTransaction = db.newCuratorTransactionIn(transaction);
             curatorTransaction.add(CuratorOperations.delete(path.getAbsolute()));
         }
-
-        transaction.commit();
         nodes.forEach(node -> log.log(Level.INFO, "Removed node " + node.hostname() + " in state " + node.state()));
     }
 

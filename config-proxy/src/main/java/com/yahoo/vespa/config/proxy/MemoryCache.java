@@ -109,16 +109,15 @@ public class MemoryCache {
     }
 
     private void writeConfigToFile(RawConfig config, String path) {
-        String filename = null;
+        String filename = path + File.separator + createCacheFileName(config);
         Writer writer = null;
         try {
-            filename = path + File.separator + createCacheFileName(config);
             if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, "Writing '" + config.getKey() + "' to '" + filename + "'");
             }
             final Payload payload = config.getPayload();
             long protocolVersion = 3;
-            log.log(Level.FINE, "Writing config '" + config + "' to file '" + filename + "' with protocol version " + protocolVersion);
+            log.log(Level.FINE, () -> "Writing config '" + config + "' to file '" + filename + "' with protocol version " + protocolVersion);
             writer = IOUtils.createWriter(filename, "UTF-8", false);
 
             // First three lines are meta-data about config as comment lines, fourth line is empty

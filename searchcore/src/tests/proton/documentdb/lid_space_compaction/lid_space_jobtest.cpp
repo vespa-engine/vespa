@@ -2,7 +2,6 @@
 
 #include "lid_space_jobtest.h"
 #include <vespa/searchcore/proton/server/lid_space_compaction_job.h>
-#include <vespa/searchcore/proton/server/lid_space_compaction_job_take2.h>
 #include <vespa/searchcore/proton/server/executorthreadingservice.h>
 #include <vespa/persistence/dummyimpl/dummy_bucket_executor.h>
 #include <vespa/vespalib/util/threadstackexecutor.h>
@@ -33,7 +32,6 @@ JobTestBase::JobTestBase()
       _diskMemUsageNotifier(),
       _handler(),
       _storer(),
-      _frozenHandler(),
       _job()
 {
     init(ALLOWED_LID_BLOAT, ALLOWED_LID_BLOAT_FACTOR, RESOURCE_LIMIT_FACTOR, JOB_DELAY, false, MAX_OUTSTANDING_MOVE_OPS);
@@ -47,23 +45,18 @@ JobTestBase::init(uint32_t allowedLidBloat,
           bool nodeRetired,
           uint32_t maxOutstandingMoveOps)
 {
-    _handler = std::make_shared<MyHandler>(maxOutstandingMoveOps != MAX_OUTSTANDING_MOVE_OPS, useBucketDB());
+    _handler = std::make_shared<MyHandler>(maxOutstandingMoveOps != MAX_OUTSTANDING_MOVE_OPS, true);
     DocumentDBLidSpaceCompactionConfig compactCfg(interval, allowedLidBloat, allowedLidBloatFactor,
-                                                  REMOVE_BATCH_BLOCK_RATE, REMOVE_BLOCK_RATE, false, useBucketDB());
+                                                  REMOVE_BATCH_BLOCK_RATE, REMOVE_BLOCK_RATE, false, true);
     BlockableMaintenanceJobConfig blockableCfg(resourceLimitFactor, maxOutstandingMoveOps);
 
     _job.reset();
-    if (useBucketDB()) {
-        _singleExecutor = std::make_unique<vespalib::ThreadStackExecutor>(1, 0x10000);
-        _master = std::make_unique<proton::ExecutorThreadService> (*_singleExecutor);
-        _bucketExecutor = std::make_unique<storage::spi::dummy::DummyBucketExecutor>(4);
-        _job = lidspace::CompactionJob::create(compactCfg, RetainGuard(_refCount), _handler, _storer, *_master, *_bucketExecutor,
-                                               _diskMemUsageNotifier, blockableCfg, _clusterStateHandler, nodeRetired,
-                                               document::BucketSpace::placeHolder());
-    } else {
-        _job = std::make_shared<LidSpaceCompactionJob>(compactCfg, _handler, _storer, _frozenHandler, _diskMemUsageNotifier,
-                                                       blockableCfg, _clusterStateHandler, nodeRetired);
-    }
+    _singleExecutor = std::make_unique<vespalib::ThreadStackExecutor>(1, 0x10000);
+    _master = std::make_unique<proton::ExecutorThreadService> (*_singleExecutor);
+    _bucketExecutor = std::make_unique<storage::spi::dummy::DummyBucketExecutor>(4);
+    _job = lidspace::CompactionJob::create(compactCfg, RetainGuard(_refCount), _handler, _storer, *_master, *_bucketExecutor,
+                                           _diskMemUsageNotifier, blockableCfg, _clusterStateHandler, nodeRetired,
+                                           document::BucketSpace::placeHolder());
 }
 
 void

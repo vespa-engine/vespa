@@ -167,7 +167,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         }
         if (prematureCrashCount != count) {
             prematureCrashCount = count;
-            log.log(Level.FINE, "Premature crash count on " + toString() + " set to " + count);
+            log.log(Level.FINE, () -> "Premature crash count on " + toString() + " set to " + count);
         }
     }
     public int getPrematureCrashCount() { return prematureCrashCount; }
@@ -309,17 +309,17 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
         if (state.getState().oneOf("dsm") && !reportedState.getState().oneOf("dsm")) {
             wentDownWithStartTime = reportedState.getStartTimestamp();
             wentDownAtClusterState = getNewestSystemStateSent();
-            log.log(Level.FINE, "Setting going down timestamp of node " + node + " to " + wentDownWithStartTime);
+            log.log(Level.FINE, () -> "Setting going down timestamp of node " + node + " to " + wentDownWithStartTime);
         }
         if (state.getState().equals(State.DOWN) && !reportedState.getState().oneOf("d")) {
             downStableStateTime = time;
-            log.log(Level.FINE, "Down stable state on " + toString() + " altered to " + time);
+            log.log(Level.FINE, () -> "Down stable state on " + toString() + " altered to " + time);
             if (reportedState.getState() == State.INITIALIZING) {
                 recentlyObservedUnstableDuringInit = true;
             }
         } else if (state.getState().equals(State.UP) && !reportedState.getState().oneOf("u")) {
             upStableStateTime = time;
-            log.log(Level.FINE, "Up stable state on " + toString() + " altered to " + time);
+            log.log(Level.FINE, () -> "Up stable state on " + toString() + " altered to " + time);
         }
         if (!state.getState().validReportedNodeState(node.getType())) {
             throw new IllegalStateException("Trying to set illegal reported node state: " + state);
@@ -342,19 +342,19 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
             } else {
                 nextAttemptTime = time + 5000;
             }
-            log.log(Level.FINEST, "Failed to get state from node " + toString() + ", scheduling next attempt in " + (nextAttemptTime - time) + " ms.");
+            log.log(Level.FINEST, () -> "Failed to get state from node " + toString() + ", scheduling next attempt in " + (nextAttemptTime - time) + " ms.");
         } else {
             connectionAttemptCount = 0;
             timeOfFirstFailingConnectionAttempt = 0;
             reportedState = state;
             if (version == 0 || state.getState().equals(State.STOPPING)) {
                 nextAttemptTime = time + cluster.getPollingFrequency();
-                log.log(Level.FINEST, "Scheduling next attempt to get state from " + toString() + " in " + (nextAttemptTime - time) + " ms (polling freq).");
+                log.log(Level.FINEST, () -> "Scheduling next attempt to get state from " + toString() + " in " + (nextAttemptTime - time) + " ms (polling freq).");
             } else {
                 nextAttemptTime = time;
             }
         }
-        log.log(Level.FINEST, "Set reported state of node " + this + " to " + reportedState + ". Next connection attempt is at " + nextAttemptTime);
+        log.log(Level.FINEST, () -> "Set reported state of node " + this + " to " + reportedState + ". Next connection attempt is at " + nextAttemptTime);
     }
 
     /** Sets the wanted state. The wanted state is taken as UP if a null argument is given */
@@ -374,7 +374,7 @@ abstract public class NodeInfo implements Comparable<NodeInfo> {
             }
         }
         wantedState = newWanted;
-        log.log(Level.FINEST, "Set wanted state of node " + this + " to " + wantedState + ".");
+        log.log(Level.FINEST, () -> "Set wanted state of node " + this + " to " + wantedState + ".");
     }
 
     public long getTimeForNextStateRequestAttempt() {

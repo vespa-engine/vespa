@@ -156,6 +156,7 @@ private:
         return _writeService.summary();
     }
     void putSummary(SerialNum serialNum,  Lid lid, FutureStream doc, OnOperationDoneType onDone);
+    void putSummaryNoop(SerialNum serialNum,  Lid lid, FutureStream doc, OnOperationDoneType onDone);
     void putSummary(SerialNum serialNum,  Lid lid, DocumentSP doc, OnOperationDoneType onDone);
     void removeSummary(SerialNum serialNum,  Lid lid, OnWriteDoneType onDone);
     void heartBeatSummary(SerialNum serialNum);
@@ -184,7 +185,7 @@ private:
 
     IPendingLidTracker::Token get_pending_lid_token(const DocumentOperation &op);
 
-    void makeUpdatedDocument(SerialNum serialNum, Lid lid, const DocumentUpdate & update, OnOperationDoneType onWriteDone,
+    void makeUpdatedDocument(bool useDocStore, Lid lid, const DocumentUpdate & update, OnOperationDoneType onWriteDone,
                              PromisedDoc promisedDoc, PromisedStream promisedStream);
 
 protected:

@@ -65,12 +65,13 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
 
         if ( registry.getTypeRegistry().hasApplicationTypes() && registry.allComponents().isEmpty()) {
             logger.logApplicationPackage(Level.WARNING, "This application define query profile types, but has " +
-                                      "no query profiles referencing them so they have no effect. "  +
-                                      (tensorFields.isEmpty()
-                                       ? ""
-                                       : "In particular, the tensors (" + String.join(", ", tensorFields) +
-                                         ") will be interpreted as strings, not tensors if sent in requests. ") +
-                                      "See https://docs.vespa.ai/en/query-profiles.html");
+                                                        "no query profiles referencing them so they have no effect. "  +
+                                                        (tensorFields.isEmpty() ? ""
+                                                                                : "In particular, the tensors (" +
+                                                                                  String.join(", ", tensorFields) +
+                                                                                  ") will be interpreted as strings, " +
+                                                                                  "not tensors if sent in requests. ") +
+                                                        "See https://docs.vespa.ai/en/query-profiles.html");
         }
 
     }
@@ -100,7 +101,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
         for (QueryProfile inherited : profile.inherited())
             qB.inherit(inherited.getId().stringValue());
 
-        if (profile.getVariants()!=null) {
+        if (profile.getVariants() != null) {
             for (String dimension : profile.getVariants().getDimensions())
                 qB.dimensions(dimension);            
         }
@@ -180,7 +181,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
                 QueryProfilesConfig.Queryprofile.Queryprofilevariant.Reference.Builder refB = new QueryProfilesConfig.Queryprofile.Queryprofilevariant.Reference.Builder();
                 createVariantReferenceFieldConfig(refB, fullName, ((BackedOverridableQueryProfile) subProfile).getBacking().getId().stringValue());
                 qpB.reference(refB);
-                addVariantFieldChildren(qpB, subProfile,fullName + ".");
+                addVariantFieldChildren(qpB, subProfile, fullName + ".");
             }
         }
         else { // a primitive
@@ -208,7 +209,7 @@ public class QueryProfiles implements Serializable, QueryProfilesConfig.Producer
             }
             qB.queryprofilevariant(varB);
         }
-    }    
+    }
 
     private void createReferenceFieldConfig(QueryProfilesConfig.Queryprofile.Reference.Builder refB, QueryProfile profile,
             String fullName, String localName, String stringValue) {

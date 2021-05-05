@@ -90,10 +90,10 @@ public class HostRequestHandler extends RestApiRequestHandler<HostRequestHandler
                     applicationUri.toString(),
                     hostServices);
         } catch (UncheckedTimeoutException e) {
-            log.log(Level.FINE, "Failed to get host " + hostName + ": " + e.getMessage());
+            log.log(Level.FINE, () -> "Failed to get host " + hostName + ": " + e.getMessage());
             throw restApiExceptionFromTimeout("getHost", hostName, e);
         } catch (HostNameNotFoundException e) {
-            log.log(Level.FINE, "Host not found: " + hostName);
+            log.log(Level.FINE, () -> "Host not found: " + hostName);
             throw new RestApiException.NotFound(e);
         }
     }
@@ -116,10 +116,10 @@ public class HostRequestHandler extends RestApiRequestHandler<HostRequestHandler
             try {
                 orchestrator.setNodeStatus(hostName, state);
             } catch (HostNameNotFoundException e) {
-                log.log(Level.FINE, "Host not found: " + hostName);
+                log.log(Level.FINE, () -> "Host not found: " + hostName);
                 throw new RestApiException.NotFound(e);
             } catch (UncheckedTimeoutException e) {
-                log.log(Level.FINE, "Failed to patch " + hostName + ": " + e.getMessage());
+                log.log(Level.FINE, () -> "Failed to patch " + hostName + ": " + e.getMessage());
                 throw restApiExceptionFromTimeout("patch", hostName, e);
             } catch (OrchestrationException e) {
                 String message = "Failed to set " + hostName + " to " + state + ": " + e.getMessage();
@@ -150,13 +150,13 @@ public class HostRequestHandler extends RestApiRequestHandler<HostRequestHandler
         try {
             orchestrator.suspend(hostName);
         } catch (HostNameNotFoundException e) {
-            log.log(Level.FINE, "Host not found: " + hostName);
+            log.log(Level.FINE, () -> "Host not found: " + hostName);
             throw new RestApiException.NotFound(e);
         } catch (UncheckedTimeoutException e) {
-            log.log(Level.FINE, "Failed to suspend " + hostName + ": " + e.getMessage());
+            log.log(Level.FINE, () -> "Failed to suspend " + hostName + ": " + e.getMessage());
             throw restApiExceptionFromTimeout("suspend", hostName, e);
         } catch (HostStateChangeDeniedException e) {
-            log.log(Level.FINE, "Failed to suspend " + hostName + ": " + e.getMessage());
+            log.log(Level.FINE, () -> "Failed to suspend " + hostName + ": " + e.getMessage());
             throw restApiExceptionWithDenialReason("suspend", hostName, e);
         }
         return new UpdateHostResponse(hostName.s(), null);
@@ -173,13 +173,13 @@ public class HostRequestHandler extends RestApiRequestHandler<HostRequestHandler
         try {
             orchestrator.resume(hostName);
         } catch (HostNameNotFoundException e) {
-            log.log(Level.FINE, "Host not found: " + hostName);
+            log.log(Level.FINE, () -> "Host not found: " + hostName);
             throw new RestApiException.NotFound(e);
         } catch (UncheckedTimeoutException e) {
-            log.log(Level.FINE, "Failed to resume " + hostName + ": " + e.getMessage());
+            log.log(Level.FINE, () -> "Failed to resume " + hostName + ": " + e.getMessage());
             throw restApiExceptionFromTimeout("resume", hostName, e);
         } catch (HostStateChangeDeniedException e) {
-            log.log(Level.FINE, "Failed to resume " + hostName + ": " + e.getMessage());
+            log.log(Level.FINE, () -> "Failed to resume " + hostName + ": " + e.getMessage());
             throw restApiExceptionWithDenialReason("resume", hostName, e);
         }
         return new UpdateHostResponse(hostName.s(), null);

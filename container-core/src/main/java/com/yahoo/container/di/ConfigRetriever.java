@@ -64,7 +64,7 @@ public final class ConfigRetriever {
             throw new IllegalArgumentException(
                     "Component config keys [" + componentConfigKeys + "] overlaps with bootstrap config keys [" + bootstrapKeys + "]");
         }
-        log.log(FINE, "getConfigsOnce: " + componentConfigKeys);
+        log.log(FINE, () -> "getConfigsOnce: " + componentConfigKeys);
 
         Set<ConfigKey<? extends ConfigInstance>> allKeys = new HashSet<>(componentConfigKeys);
         allKeys.addAll(bootstrapKeys);
@@ -75,20 +75,20 @@ public final class ConfigRetriever {
 
     private Optional<ConfigSnapshot> getConfigsOptional(long leastGeneration, boolean isInitializing) {
         long newestComponentGeneration = componentSubscriber.waitNextGeneration(isInitializing);
-        log.log(FINE, "getConfigsOptional: new component generation: " + newestComponentGeneration);
+        log.log(FINE, () -> "getConfigsOptional: new component generation: " + newestComponentGeneration);
 
         // leastGeneration is only used to ensure newer generation when the previous generation was invalidated due to an exception
         if (newestComponentGeneration < leastGeneration) {
             return Optional.empty();
         } else if (bootstrapSubscriber.generation() < newestComponentGeneration) {
             long newestBootstrapGeneration = bootstrapSubscriber.waitNextGeneration(isInitializing);
-            log.log(FINE, "getConfigsOptional: new bootstrap generation: " + bootstrapSubscriber.generation());
+            log.log(FINE, () -> "getConfigsOptional: new bootstrap generation: " + bootstrapSubscriber.generation());
             Optional<ConfigSnapshot> bootstrapConfig = bootstrapConfigIfChanged();
             if (bootstrapConfig.isPresent()) {
                 return bootstrapConfig;
             } else {
                 if (newestBootstrapGeneration == newestComponentGeneration) {
-                    log.log(FINE, "Got new components configs with unchanged bootstrap configs.");
+                    log.log(FINE, () -> "Got new components configs with unchanged bootstrap configs.");
                     return componentsConfigIfChanged();
                 } else {
                     // This should not be a normal case, and hence a warning to allow investigation.
@@ -131,7 +131,7 @@ public final class ConfigRetriever {
             componentSubscriber.close();
             componentSubscriberKeys = keys;
             try {
-                log.log(FINE, "Setting up new component subscriber for keys: " + keys);
+                log.log(FINE, () -> "Setting up new component subscriber for keys: " + keys);
                 componentSubscriber = subscribe.apply(keys);
             } catch (Throwable e) {
                 log.log(Level.WARNING, "Failed setting up subscriptions for component configs: " + e.getMessage());

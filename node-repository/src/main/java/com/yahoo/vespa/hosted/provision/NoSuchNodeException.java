@@ -6,7 +6,7 @@ package com.yahoo.vespa.hosted.provision;
  *
  * @author musum
  */
-public class NoSuchNodeException extends RuntimeException {
+public class NoSuchNodeException extends IllegalArgumentException {
 
     public NoSuchNodeException(String message) { super(message); }
 

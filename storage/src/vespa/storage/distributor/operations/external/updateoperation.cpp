@@ -19,7 +19,7 @@ using document::BucketSpace;
 namespace storage::distributor {
 
 UpdateOperation::UpdateOperation(DistributorNodeContext& node_ctx,
-                                 DistributorOperationContext& op_ctx,
+                                 DistributorStripeOperationContext& op_ctx,
                                  DistributorBucketSpace& bucketSpace,
                                  const std::shared_ptr<api::UpdateCommand>& msg,
                                  std::vector<BucketDatabase::Entry> entries,
@@ -60,7 +60,7 @@ UpdateOperation::anyStorageNodesAvailable() const
 }
 
 void
-UpdateOperation::onStart(DistributorMessageSender& sender)
+UpdateOperation::onStart(DistributorStripeMessageSender& sender)
 {
     LOG(debug, "Received UPDATE %s for bucket %" PRIx64,
         _msg->getDocumentId().toString().c_str(),
@@ -123,7 +123,7 @@ UpdateOperation::onStart(DistributorMessageSender& sender)
 };
 
 void
-UpdateOperation::onReceive(DistributorMessageSender& sender,
+UpdateOperation::onReceive(DistributorStripeMessageSender& sender,
                           const std::shared_ptr<api::StorageReply> & msg)
 {
     auto& reply = static_cast<api::UpdateReply&>(*msg);
@@ -186,7 +186,7 @@ UpdateOperation::onReceive(DistributorMessageSender& sender,
 }
 
 void
-UpdateOperation::onClose(DistributorMessageSender& sender)
+UpdateOperation::onClose(DistributorStripeMessageSender& sender)
 {
     _tracker.fail(sender, api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"));
 }

@@ -34,8 +34,8 @@ public:
 
     ~MergeOperation();
 
-    void onStart(DistributorMessageSender& sender) override;
-    void onReceive(DistributorMessageSender& sender, const api::StorageReply::SP&) override;
+    void onStart(DistributorStripeMessageSender& sender) override;
+    void onReceive(DistributorStripeMessageSender& sender, const api::StorageReply::SP&) override;
     const char* getName() const override { return "merge"; };
     std::string getStatus() const override;
     Type getType() const override { return MERGE_BUCKET; }
@@ -60,7 +60,7 @@ private:
             std::vector<MergeMetaData>& result);
 
     void deleteSourceOnlyNodes(const BucketDatabase::Entry& currentState,
-                               DistributorMessageSender& sender);
+                               DistributorStripeMessageSender& sender);
 };
 
 }

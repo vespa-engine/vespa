@@ -112,8 +112,7 @@ public class DocumentProcessingTask implements Runnable {
                 } else {
                     location = "no processing instance";
                 }
-                String errorMsg = processing + " failed, " + location;
-                log.log(Level.FINE, "Time is up for '" + errorMsg + "'.");
+                log.log(Level.FINE, () -> "Time is up for '" + processing + " failed, " + location + "'.");
                 requestContext.processingFailed(RequestContext.ErrorCode.ERROR_PROCESSING_FAILURE, "Time is up.");
                 return progress;
             }
@@ -203,7 +202,7 @@ public class DocumentProcessingTask implements Runnable {
         if (exception != null) {
             StringWriter backtrace = new StringWriter();
             exception.printStackTrace(new PrintWriter(backtrace));
-            log.log(Level.FINE, "Failed to process " + processing + ": " + backtrace.toString());
+            log.log(Level.FINE, () -> "Failed to process " + processing + ": " + backtrace);
         }
     }
 

@@ -64,7 +64,7 @@ matches_visitor_library(vespalib::stringref input, vespalib::stringref expected)
 
 VisitorOperation::VisitorOperation(
         DistributorNodeContext& node_ctx,
-        DistributorOperationContext& op_ctx,
+        DistributorStripeOperationContext& op_ctx,
         DistributorBucketSpace &bucketSpace,
         const api::CreateVisitorCommand::SP& m,
         const Config& config,
@@ -190,7 +190,7 @@ VisitorOperation::markOperationAsFailedDueToNodeError(
 
 void
 VisitorOperation::onReceive(
-        DistributorMessageSender& sender,
+        DistributorStripeMessageSender& sender,
         const api::StorageReply::SP& r)
 {
     api::CreateVisitorReply& reply = static_cast<api::CreateVisitorReply&>(*r);
@@ -348,7 +348,7 @@ VisitorOperation::verifyOperationSentToCorrectDistributor()
 }
 
 bool
-VisitorOperation::verifyCreateVisitorCommand(DistributorMessageSender& sender)
+VisitorOperation::verifyCreateVisitorCommand(DistributorStripeMessageSender& sender)
 {
     try {
         verifyOperationContainsBuckets();
@@ -587,7 +587,7 @@ VisitorOperation::pickTargetNode(
 }
 
 void
-VisitorOperation::onStart(DistributorMessageSender& sender)
+VisitorOperation::onStart(DistributorStripeMessageSender& sender)
 {
     if (!_verified_and_expanded) {
         if (!verify_command_and_expand_buckets(sender)) {
@@ -598,7 +598,7 @@ VisitorOperation::onStart(DistributorMessageSender& sender)
 }
 
 bool
-VisitorOperation::verify_command_and_expand_buckets(DistributorMessageSender& sender)
+VisitorOperation::verify_command_and_expand_buckets(DistributorStripeMessageSender& sender)
 {
     assert(!_verified_and_expanded);
     _verified_and_expanded = true;
@@ -636,7 +636,7 @@ VisitorOperation::maySendNewStorageVisitors() const noexcept
 }
 
 void
-VisitorOperation::startNewVisitors(DistributorMessageSender& sender)
+VisitorOperation::startNewVisitors(DistributorStripeMessageSender& sender)
 {
     LOG(spam,
         "Starting new visitors: Superbucket: %s, last subbucket: %s",
@@ -764,7 +764,7 @@ VisitorOperation::getNumVisitorsToSendForNode(uint16_t node, uint32_t totalBucke
 
 bool
 VisitorOperation::sendStorageVisitors(const NodeToBucketsMap& nodeToBucketsMap,
-                                      DistributorMessageSender& sender)
+                                      DistributorStripeMessageSender& sender)
 {
     bool visitorsSent = false;
     for (const auto & entry : nodeToBucketsMap ) {
@@ -800,7 +800,7 @@ void
 VisitorOperation::sendStorageVisitor(uint16_t node,
                                      const std::vector<document::BucketId>& buckets,
                                      uint32_t pending,
-                                     DistributorMessageSender& sender)
+                                     DistributorStripeMessageSender& sender)
 {
     // TODO rewrite to not use copy ctor and remove wonky StorageCommand copy ctor impl
     auto cmd = std::make_shared<api::CreateVisitorCommand>(*_msg);
@@ -839,7 +839,7 @@ VisitorOperation::sendStorageVisitor(uint16_t node,
 }
 
 void
-VisitorOperation::sendReply(const api::ReturnCode& code, DistributorMessageSender& sender)
+VisitorOperation::sendReply(const api::ReturnCode& code, DistributorStripeMessageSender& sender)
 {
     if (!_sentReply) {
         // Send create visitor reply
@@ -880,20 +880,20 @@ VisitorOperation::updateReplyMetrics(const api::ReturnCode& result)
 }
 
 void
-VisitorOperation::onClose(DistributorMessageSender& sender)
+VisitorOperation::onClose(DistributorStripeMessageSender& sender)
 {
     sendReply(api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"), sender);
 }
 
 void
-VisitorOperation::fail_with_bucket_already_locked(DistributorMessageSender& sender)
+VisitorOperation::fail_with_bucket_already_locked(DistributorStripeMessageSender& sender)
 {
     assert(is_read_for_write());
     sendReply(api::ReturnCode(api::ReturnCode::BUSY, "This bucket is already locked by another operation"), sender);
 }
 
 void
-VisitorOperation::fail_with_merge_pending(DistributorMessageSender& sender)
+VisitorOperation::fail_with_merge_pending(DistributorStripeMessageSender& sender)
 {
     assert(is_read_for_write());
     sendReply(api::ReturnCode(api::ReturnCode::BUSY, "A merge operation is pending for this bucket"), sender);

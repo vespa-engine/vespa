@@ -2,6 +2,7 @@ package com.yahoo.vespa.orchestrator.resources;// Copyright Verizon Media. Licen
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.yahoo.cloud.config.ConfigserverConfig;
+import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.HttpRequestBuilder;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.jdisc.core.SystemTimer;
@@ -48,7 +49,8 @@ class ApplicationSuspensionRequestHandlerTest {
                 new OrchestratorConfig(new OrchestratorConfig.Builder()),
                 serviceMonitor,
                 new ConfigserverConfig(new ConfigserverConfig.Builder()),
-                new InMemoryFlagSource());
+                new InMemoryFlagSource(),
+                Zone.defaultZone());
         var handler = new ApplicationSuspensionRequestHandler(RestApiTestDriver.createHandlerTestContext(), orchestrator);
         testDriver = RestApiTestDriver.newBuilder(handler).build();
     }

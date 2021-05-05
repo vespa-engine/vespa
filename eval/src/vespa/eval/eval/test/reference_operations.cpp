@@ -239,7 +239,7 @@ TensorSpec ReferenceOperations::peek(const PeekSpec &peek_spec, const std::vecto
                            if (is_mapped_dim(dim)) {
                                addr.emplace(dim, vespalib::make_string("%" PRId64, int64_t(child_value)));
                            } else {
-                               addr.emplace(dim, child_value);
+                               addr.emplace(dim, (int64_t)child_value);
                            }
                        }
                    }, label_or_child);

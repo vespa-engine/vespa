@@ -37,7 +37,7 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
      * Returns the live reference to the values of this. This may be modified
      * if this is not frozen.
      */
-    public Map<String,Object> values() {
+    public Map<String, Object> values() {
         if (values == null) {
             if (frozen)
                 return Collections.emptyMap();
@@ -68,6 +68,8 @@ public class QueryProfileVariant implements Cloneable, Comparable<QueryProfileVa
         Object oldValue = values.get(key);
 
         Object combinedOrNull = QueryProfile.combineValues(newValue, oldValue);
+        if (combinedOrNull instanceof BackedOverridableQueryProfile) // Use the owner's, not the referenced dimensions
+            ((QueryProfile) combinedOrNull).setDimensions(owner.getDimensions().toArray(new String[0]));
         if (combinedOrNull != null)
             values.put(key, combinedOrNull);
         return combinedOrNull;

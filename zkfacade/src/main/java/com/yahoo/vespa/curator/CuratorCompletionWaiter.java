@@ -1,6 +1,7 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.curator;
 
+import java.util.ArrayList;
 import java.util.logging.Level;
 import com.yahoo.path.Path;
 
@@ -36,9 +37,9 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
     public void awaitCompletion(Duration timeout) {
         List<String> respondents;
         try {
-            log.log(Level.FINE, "Synchronizing on barrier " + barrierPath);
+            log.log(Level.FINE, () -> "Synchronizing on barrier " + barrierPath);
             respondents = awaitInternal(timeout);
-            log.log(Level.FINE, "Done synchronizing on barrier " + barrierPath);
+            log.log(Level.FINE, () -> "Done synchronizing on barrier " + barrierPath);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -54,9 +55,10 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
     private List<String> awaitInternal(Duration timeout) throws Exception {
         Instant startTime = clock.instant();
         Instant endTime = startTime.plus(timeout);
-        List<String> respondents;
+        List<String> respondents = new ArrayList<>();
         do {
-            respondents = curator.framework().getChildren().forPath(barrierPath);
+            respondents.clear();
+            respondents.addAll(curator.framework().getChildren().forPath(barrierPath));
             if (log.isLoggable(Level.FINE)) {
                 log.log(Level.FINE, respondents.size() + "/" + curator.zooKeeperEnsembleCount() + " responded: " +
                                     respondents + ", all participants: " + curator.zooKeeperEnsembleConnectionSpec());
@@ -64,12 +66,12 @@ class CuratorCompletionWaiter implements Curator.CompletionWaiter {
 
             // First, check if all config servers responded
             if (respondents.size() == curator.zooKeeperEnsembleCount()) {
-                log.log(Level.FINE, barrierCompletedMessage(respondents, startTime));
+                log.log(Level.FINE, () -> barrierCompletedMessage(respondents, startTime));
                 break;
             }
             // If some are missing, quorum is enough
             if (respondents.size() >= barrierMemberCount()) {
-                log.log(Level.FINE, barrierCompletedMessage(respondents, startTime));
+                log.log(Level.FINE, () -> barrierCompletedMessage(respondents, startTime));
                 break;
             }
 

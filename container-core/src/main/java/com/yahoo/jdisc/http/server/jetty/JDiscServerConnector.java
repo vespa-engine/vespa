@@ -76,6 +76,7 @@ class JDiscServerConnector extends ServerConnector {
         dimensions.put(MetricDefinitions.METHOD_DIMENSION, method);
         dimensions.put(MetricDefinitions.SCHEME_DIMENSION, scheme);
         dimensions.put(MetricDefinitions.CLIENT_AUTHENTICATED_DIMENSION, Boolean.toString(clientAuthenticated));
+        dimensions.put(MetricDefinitions.PROTOCOL_DIMENSION, request.getProtocol());
         String serverName = Optional.ofNullable(request.getServerName()).orElse("unknown");
         dimensions.put(MetricDefinitions.REQUEST_SERVER_NAME_DIMENSION, serverName);
         dimensions.putAll(extraDimensions);

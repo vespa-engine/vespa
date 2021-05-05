@@ -21,7 +21,7 @@ class PendingMessageTracker;
 /**
  * TODO STRIPE add class comment.
  */
-class DistributorStripeInterface : public DistributorMessageSender
+class DistributorStripeInterface : public DistributorStripeMessageSender
 {
 public:
     virtual PendingMessageTracker& getPendingMessageTracker() = 0;
@@ -59,7 +59,6 @@ public:
      */
     virtual bool initializing() const = 0;
     virtual void handleCompletedMerge(const std::shared_ptr<api::MergeBucketReply>&) = 0;
-    virtual const char* getStorageNodeUpStates() const = 0;
     virtual const DistributorConfiguration& getConfig() const = 0;
     virtual ChainedMessageSender& getMessageSender() = 0;
     virtual const BucketGcTimeCalculator::BucketIdHasher& getBucketIdHasher() const = 0;

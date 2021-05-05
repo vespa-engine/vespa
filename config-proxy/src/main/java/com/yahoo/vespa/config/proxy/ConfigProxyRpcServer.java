@@ -50,7 +50,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
     public void run() {
         try {
             Acceptor acceptor = supervisor.listen(spec);
-            log.log(Level.FINE, "Ready for requests on " + spec);
+            log.log(Level.FINE, () -> "Ready for requests on " + spec);
             supervisor.transport().join();
             acceptor.shutdown().join();
         } catch (ListenFailedException e) {
@@ -284,7 +284,7 @@ public class ConfigProxyRpcServer implements Runnable, TargetWatcher, RpcServer 
             } else if (ProxyServer.configOrGenerationHasChanged(config, request)) {
                 returnOkResponse(request, config);
             } else {
-                log.log(Level.FINEST, "No new config for " + request.getShortDescription() + ", not sending response");
+                log.log(Level.FINEST, () -> "No new config for " + request.getShortDescription() + ", not sending response");
             }
         } catch (Exception e) {
             e.printStackTrace();

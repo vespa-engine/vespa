@@ -146,7 +146,7 @@ public class RpcServer {
 
     void setExtraMetrics(Request req) {
         String metricsJson = req.parameters().get(0).asString();
-        log.log(FINE, "setExtraMetrics called with argument: " + metricsJson);
+        log.log(FINE, () -> "setExtraMetrics called with argument: " + metricsJson);
         withExceptionHandling(req, () -> metricsManager.setExtraMetrics(toMetricsPackets(metricsJson)));
     }
 

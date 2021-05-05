@@ -32,7 +32,7 @@ public class HttpHandler extends LoggingRequestHandler {
 
     @Override
     public HttpResponse handle(HttpRequest request) {
-        log.log(Level.FINE, request.getMethod() + " " + request.getUri().toString());
+        log.log(Level.FINE, () -> request.getMethod() + " " + request.getUri().toString());
         try {
             switch (request.getMethod()) {
                 case POST:

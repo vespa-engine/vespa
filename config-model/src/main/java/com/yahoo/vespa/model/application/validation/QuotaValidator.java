@@ -3,15 +3,17 @@ package com.yahoo.vespa.model.application.validation;
 
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.config.provision.Capacity;
+import com.yahoo.config.provision.ClusterResources;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.config.provision.HostSpec;
+import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.vespa.model.VespaModel;
+import org.jetbrains.annotations.NotNull;
 
 import java.math.BigDecimal;
 import java.util.Locale;
 import java.util.Map;
-import java.util.Objects;
+import java.util.Set;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
@@ -23,6 +25,7 @@ import java.util.stream.Collectors;
 public class QuotaValidator extends Validator {
 
     private static final Logger log = Logger.getLogger(QuotaValidator.class.getName());
+    private static final Capacity zeroCapacity = Capacity.from(new ClusterResources(0, 0, NodeResources.zero()));
 
     @Override
     public void validate(VespaModel model, DeployState deployState) {
@@ -32,18 +35,35 @@ public class QuotaValidator extends Validator {
     }
 
     private void validateBudget(BigDecimal budget, VespaModel model, SystemName systemName) {
-        var spend = model.allocatedHosts().getHosts().stream()
+
+        var maxSpend = model.allClusters().stream()
+                .filter(id -> !adminClusterIds(model).contains(id))
+                .map(id -> model.provisioned().all().getOrDefault(id, zeroCapacity))
+                .mapToDouble(c -> c.maxResources().cost())
+                .sum();
+
+        var actualSpend = model.allocatedHosts().getHosts().stream()
                          .filter(hostSpec -> hostSpec.membership().get().cluster().type() != ClusterSpec.Type.admin)
                          .mapToDouble(hostSpec -> hostSpec.advertisedResources().cost())
                          .sum();
 
-        if (Math.abs(spend) < 0.01) {
+        if (Math.abs(actualSpend) < 0.01) {
             log.warning("Deploying application " + model.applicationPackage().getApplicationId() + " with zero budget use.  This is suspicious, but not blocked");
             return;
         }
 
-        throwIfBudgetNegative(spend, budget, systemName);
-        throwIfBudgetExceeded(spend, budget, systemName);
+        throwIfBudgetNegative(actualSpend, budget, systemName);
+        throwIfBudgetExceeded(actualSpend, budget, systemName);
+        throwIfBudgetExceeded(maxSpend, budget, systemName);
+    }
+
+    @NotNull
+    private Set<ClusterSpec.Id> adminClusterIds(VespaModel model) {
+        return model.allocatedHosts().getHosts().stream()
+                .map(hostSpec -> hostSpec.membership().orElseThrow().cluster())
+                .filter(cluster -> cluster.type() == ClusterSpec.Type.admin)
+                .map(ClusterSpec::id)
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     /** Check that all clusters in the application do not exceed the quota max cluster size. */

@@ -173,7 +173,7 @@ public class RetiredExpirerTest {
     public void config_server_reprovisioning() throws OrchestrationException {
         NodeList configServers = tester.makeConfigServers(3, "default", Version.emptyVersion);
         var cfg1 = new HostName("cfg1");
-        assertEquals(Set.of(cfg1.s(), "cfg2", "cfg3"), configServers.stream().map(Node::hostname).collect(Collectors.toSet()));
+        assertEquals(Set.of(cfg1.s(), "cfg2", "cfg3"), configServers.hostnames());
 
         var configServerApplication = new ConfigServerApplication();
         var duperModel = new MockDuperModel().support(configServerApplication);
@@ -249,12 +249,10 @@ public class RetiredExpirerTest {
         // There are now 2 retired config servers left
         retiredExpirer.run();
         assertEquals(3, tester.nodeRepository().nodes().list(Node.State.active).nodeType(NodeType.config).size());
-        var retiredHostnames = tester.nodeRepository()
-                                     .nodes().list(() -> {})
-                                     .stream()
-                                     .filter(n -> n.allocation().map(allocation -> allocation.membership().retired()).orElse(false))
-                                     .map(Node::hostname)
-                                     .collect(Collectors.toSet());
+        Set<String> retiredHostnames = tester.nodeRepository()
+                                             .nodes().list()
+                                             .matching(n -> n.allocation().map(allocation -> allocation.membership().retired()).orElse(false))
+                                             .hostnames();
         assertEquals(Set.of("cfg2", "cfg3"), retiredHostnames);
     }
 

@@ -6,10 +6,10 @@ import com.yahoo.config.provision.ClusterSpec;
 import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
+import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
 import com.yahoo.vespa.hosted.provision.node.IP;
 
-import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.Optional;
@@ -34,23 +34,23 @@ public class SharedLoadBalancerService implements LoadBalancerService {
 
     @Override
     public LoadBalancerInstance create(LoadBalancerSpec spec, boolean force) {
-        var proxyNodes = nodeRepository.nodes().list().nodeType(NodeType.proxy).sortedBy(hostnameComparator);
+        NodeList proxyNodes = nodeRepository.nodes().list().nodeType(NodeType.proxy).sortedBy(hostnameComparator);
 
         if (proxyNodes.size() == 0) {
             throw new IllegalStateException("Missing proxy nodes in node repository");
         }
 
-        var firstProxyNode = proxyNodes.first().get();
-        var networkNames = proxyNodes.stream()
-                                     .flatMap(node -> node.ipConfig().primary().stream())
-                                     .map(SharedLoadBalancerService::withPrefixLength)
-                                     .collect(Collectors.toSet());
+        Node firstProxyNode = proxyNodes.first().get();
+        Set<String> networks = proxyNodes.stream()
+                                         .flatMap(node -> node.ipConfig().primary().stream())
+                                         .map(SharedLoadBalancerService::withPrefixLength)
+                                         .collect(Collectors.toSet());
 
         return new LoadBalancerInstance(
                 HostName.from(firstProxyNode.hostname()),
                 Optional.empty(),
                 Set.of(4080, 4443),
-                networkNames,
+                networks,
                 spec.reals()
         );
     }

@@ -43,7 +43,6 @@ protected:
     using DocId = AttributeVector::DocId;
     using EntryRef = vespalib::datastore::EntryRef;
     using EnumIndex = IEnumStore::Index;
-    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using PostingList = typename AggregationTraits::PostingList;
     using PostingMap = std::map<EnumPostingPair, PostingChange<P> >;
 
@@ -87,7 +86,6 @@ public:
     using EnumIndex = IEnumStore::Index;
     using EnumStore = EnumStoreType;
     using ComparatorType = typename EnumStore::ComparatorType;
-    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using PostingList = typename Parent::PostingList;
     using PostingMap = typename Parent::PostingMap;
 

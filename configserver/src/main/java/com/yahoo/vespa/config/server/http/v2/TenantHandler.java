@@ -3,112 +3,77 @@ package com.yahoo.vespa.config.server.http.v2;
 
 import com.google.common.collect.ImmutableSet;
 import com.google.inject.Inject;
-
 import com.yahoo.config.provision.TenantName;
-import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
-import com.yahoo.jdisc.application.BindingMatch;
+import com.yahoo.restapi.ErrorResponse;
+import com.yahoo.restapi.RestApi;
+import com.yahoo.restapi.RestApiException;
+import com.yahoo.restapi.RestApiRequestHandler;
 import com.yahoo.vespa.config.server.ApplicationRepository;
 import com.yahoo.vespa.config.server.tenant.TenantRepository;
 import com.yahoo.yolean.Exceptions;
-import com.yahoo.vespa.config.server.http.BadRequestException;
-import com.yahoo.vespa.config.server.http.HttpHandler;
-import com.yahoo.vespa.config.server.http.InternalServerException;
-import com.yahoo.vespa.config.server.http.Utils;
 
 /**
  * Handler to create, get and delete a tenant, and listing of tenants.
  *
- * @author Vegard Havdal
+ * @author jonmv
  */
-public class TenantHandler extends HttpHandler {
+public class TenantHandler extends RestApiRequestHandler<TenantHandler> {
 
     private static final String TENANT_NAME_REGEXP = "[\\w-]+";
     private final TenantRepository tenantRepository;
     private final ApplicationRepository applicationRepository;
 
-    // instantiated by dependency injection
     @Inject
     public TenantHandler(Context ctx, ApplicationRepository applicationRepository) {
-        super(ctx);
+        super(ctx, TenantHandler::defineApi);
         this.tenantRepository = applicationRepository.tenantRepository();
         this.applicationRepository = applicationRepository;
     }
 
-    @Override
-    protected HttpResponse handlePUT(HttpRequest request) {
-        TenantName tenantName = getAndValidateTenantFromRequest(request);
-        try {
-            tenantRepository.addTenant(tenantName);
-        } catch (Exception e) {
-            throw new InternalServerException(Exceptions.toMessageString(e));
-        }
-        return new TenantCreateResponse(tenantName);
+    private RestApi defineApi() {
+        return RestApi.builder()
+                      .addRoute(RestApi.route("/application/v2/tenant")
+                                       .get(this::getTenants))
+                      .addRoute(RestApi.route("/application/v2/tenant/{tenant}")
+                                       .get(this::getTenant)
+                                       .put(this::putTenant)
+                                       .delete(this::deleteTenant))
+                      .addExceptionMapper(IllegalArgumentException.class, (c, e) -> ErrorResponse.badRequest(Exceptions.toMessageString(e)))
+                      .addExceptionMapper(RuntimeException.class, (c, e) -> ErrorResponse.internalServerError(Exceptions.toMessageString(e)))
+                      .build();
     }
 
-    @Override
-    protected HttpResponse handleGET(HttpRequest request) {
-        if (isGetTenantRequest(request)) {
-            final TenantName tenantName = getTenantNameFromRequest(request);
-            Utils.checkThatTenantExists(tenantRepository, tenantName);
-            return new TenantGetResponse(tenantName);
-        } else if (isListTenantsRequest(request)) {
-            return new ListTenantsResponse(ImmutableSet.copyOf(tenantRepository.getAllTenantNames()));
-        } else {
-            throw new BadRequestException(request.getUri().toString());
-        }
+    private HttpResponse getTenants(RestApi.RequestContext context) {
+        return new ListTenantsResponse(ImmutableSet.copyOf(tenantRepository.getAllTenantNames()));
     }
 
-    @Override
-    protected HttpResponse handleDELETE(HttpRequest request) {
-        final TenantName tenantName = getTenantNameFromRequest(request);
-        Utils.checkThatTenantExists(tenantRepository, tenantName);
-        applicationRepository.deleteTenant(tenantName);
-        return new TenantDeleteResponse(tenantName);
+    private HttpResponse getTenant(RestApi.RequestContext context) {
+        TenantName name = TenantName.from(context.pathParameters().getStringOrThrow("tenant"));
+        if ( ! tenantRepository.checkThatTenantExists(name))
+            throw new RestApiException.NotFound("Tenant '" + name + "' was not found.");
+
+        return new TenantGetResponse(name);
     }
 
-    /**
-     * Gets the tenant name from the request, throws if it exists already and validates its name
-     *
-     * @param request an {@link com.yahoo.container.jdisc.HttpRequest}
-     * @return tenant name
-     */
-    private TenantName getAndValidateTenantFromRequest(HttpRequest request) {
-        final TenantName tenantName = getTenantNameFromRequest(request);
-        checkThatTenantDoesNotExist(tenantName);
-        validateTenantName(tenantName);
-        return tenantName;
+    private HttpResponse putTenant(RestApi.RequestContext context) {
+        TenantName name = TenantName.from(context.pathParameters().getStringOrThrow("tenant"));
+        if (tenantRepository.checkThatTenantExists(name))
+            throw new RestApiException.BadRequest("There already exists a tenant '" + name + "'");
+        if ( ! name.value().matches(TENANT_NAME_REGEXP))
+            throw new RestApiException.BadRequest("Illegal tenant name: " + name);
+
+        tenantRepository.addTenant(name);
+        return new TenantCreateResponse(name);
     }
 
-    private void validateTenantName(TenantName tenant) {
-        if (!tenant.value().matches(TENANT_NAME_REGEXP)) {
-            throw new BadRequestException("Illegal tenant name: " + tenant);
-        }
-    }
+    private HttpResponse deleteTenant(RestApi.RequestContext context) {
+        TenantName name = TenantName.from(context.pathParameters().getStringOrThrow("tenant"));
+        if ( ! tenantRepository.checkThatTenantExists(name))
+            throw new RestApiException.NotFound("Tenant '" + name + "' was not found.");
 
-    private void checkThatTenantDoesNotExist(TenantName tenantName) {
-        if (tenantRepository.checkThatTenantExists(tenantName))
-            throw new BadRequestException("There already exists a tenant '" + tenantName + "'");
-    }
-
-    private static BindingMatch<?> getBindingMatch(HttpRequest request) {
-        return HttpConfigRequests.getBindingMatch(request,
-                "http://*/application/v2/tenant/",
-                "http://*/application/v2/tenant/*");
-    }
-
-    private static boolean isGetTenantRequest(HttpRequest request) {
-        return getBindingMatch(request).groupCount() == 3;
-    }
-
-    private static boolean isListTenantsRequest(HttpRequest request) {
-        return getBindingMatch(request).groupCount() == 2 &&
-                request.getUri().getPath().endsWith("/tenant/");
-    }
-
-    private static TenantName getTenantNameFromRequest(HttpRequest request) {
-        BindingMatch<?> bm = getBindingMatch(request);
-        return TenantName.from(bm.group(2));
+        applicationRepository.deleteTenant(name);
+        return new TenantDeleteResponse(name);
     }
 
 }

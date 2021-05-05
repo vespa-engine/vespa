@@ -14,10 +14,13 @@ vespa_add_library(storage_distributor
     distributor.cpp
     distributor_bucket_space.cpp
     distributor_bucket_space_repo.cpp
+    distributor_component.cpp
     distributor_host_info_reporter.cpp
     distributor_status.cpp
     distributor_stripe.cpp
     distributor_stripe_component.cpp
+    distributor_stripe_pool.cpp
+    distributor_stripe_thread.cpp
     distributormessagesender.cpp
     distributormetricsset.cpp
     externaloperationhandler.cpp
@@ -26,6 +29,7 @@ vespa_add_library(storage_distributor
     idealstatemetricsset.cpp
     legacy_single_stripe_accessor.cpp
     messagetracker.cpp
+    multi_threaded_stripe_access_guard.cpp
     nodeinfo.cpp
     operation_routing_snapshot.cpp
     operation_sequencer.cpp

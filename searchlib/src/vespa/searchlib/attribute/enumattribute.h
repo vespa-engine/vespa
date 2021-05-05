@@ -6,7 +6,6 @@
 #include "loadedenumvalue.h"
 #include "enumstore.h"
 #include "no_loaded_vector.h"
-#include <set>
 
 namespace search {
 
@@ -24,25 +23,18 @@ class EnumAttribute : public B
 protected:
     using BaseClass = B;
     using Change = typename B::Change;
-    using ChangeDataType = typename B::Change::DataType;
     using ChangeVector = typename B::ChangeVector;
-    using ChangeVectorIterator = typename B::ChangeVector::const_iterator;
     using DocId = typename B::DocId;
     using EnumEntryType = typename B::EnumEntryType;  // Template argument for enum store
     using EnumHandle = typename B::EnumHandle;
-    using EnumModifier = typename B::EnumModifier;
     using ValueModifier = typename B::ValueModifier;
 
 public:
-    using EnumIndexVector = typename B::EnumIndexVector;
     using EnumVector = typename B::EnumVector;
-    using LoadedValueType = typename B::LoadedValueType;
     using LoadedVector = typename B::LoadedVector;
 
 protected:
     using generation_t = typename B::generation_t;
-    using UniqueSet = std::set<ChangeDataType>;
-    using LoadedEnumAttributeVector = attribute::LoadedEnumAttributeVector;
     using B::getGenerationHolder;
     using B::getStatus;
 
@@ -52,7 +44,6 @@ public:
 
 protected:
     using EnumIndex = IEnumStore::Index;
-    using EnumIndexRemapper = IEnumStore::EnumIndexRemapper;
 
     EnumStore _enumStore;
 
@@ -71,7 +62,7 @@ protected:
      * Perform compaction if necessary and insert the new unique values into the EnumStore.
      */
     void insertNewUniqueValues(EnumStoreBatchUpdater& updater);
-    virtual void considerAttributeChange(const Change & c, UniqueSet & newUniques) = 0;
+    virtual void considerAttributeChange(const Change & c, EnumStoreBatchUpdater & inserter) = 0;
     vespalib::MemoryUsage getEnumStoreValuesMemoryUsage() const override;
     vespalib::AddressSpace getEnumStoreAddressSpaceUsage() const override;
 public:

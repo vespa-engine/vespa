@@ -89,23 +89,23 @@ public class CompressedApplicationInputStream implements AutoCloseable {
     }
 
     private void decompressInto(File application) throws IOException {
-        log.log(Level.FINE, "Application is in " + application.getAbsolutePath());
+        log.log(Level.FINE, () -> "Application is in " + application.getAbsolutePath());
         int entries = 0;
         ArchiveEntry entry;
         while ((entry = ais.getNextEntry()) != null) {
-            log.log(Level.FINE, "Unpacking " + entry.getName());
+            log.log(Level.FINE, "Unpacking %s", entry.getName());
             File outFile = new File(application, entry.getName());
             // FIXME/TODO: write more tests that break this logic. I have a feeling it is not very robust.
             if (entry.isDirectory()) {
                 if (!(outFile.exists() && outFile.isDirectory())) {
-                    log.log(Level.FINE, "Creating dir: " + outFile.getAbsolutePath());
+                    log.log(Level.FINE, () -> "Creating dir: " + outFile.getAbsolutePath());
                     boolean res = outFile.mkdirs();
                     if (!res) {
                         log.log(Level.WARNING, "Could not create dir " + entry.getName());
                     }
                 }
             } else {
-                log.log(Level.FINE, "Creating output file: " + outFile.getAbsolutePath());
+                log.log(Level.FINE, () -> "Creating output file: " + outFile.getAbsolutePath());
 
                 // Create parent dir if necessary
                 String parent = outFile.getParent();

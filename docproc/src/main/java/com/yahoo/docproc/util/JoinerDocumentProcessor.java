@@ -59,7 +59,7 @@ public class JoinerDocumentProcessor extends DocumentProcessor {
             if (op instanceof DocumentPut) {
                 innerDocuments.add(((DocumentPut)op).getDocument());
             } else {
-                log.log(Level.FINE, "Skipping: " + op);
+                log.log(Level.FINE, () -> "Skipping: " + op);
             }
         }
         processing.getDocumentOperations().clear();

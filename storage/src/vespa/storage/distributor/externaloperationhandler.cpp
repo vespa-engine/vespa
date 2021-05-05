@@ -31,7 +31,7 @@ LOG_SETUP(".distributor.manager");
 
 namespace storage::distributor {
 
-class DirectDispatchSender : public DistributorMessageSender {
+class DirectDispatchSender : public DistributorStripeMessageSender {
     DistributorNodeContext& _node_ctx;
     NonTrackingMessageSender& _msg_sender;
 public:
@@ -63,7 +63,7 @@ public:
 };
 
 ExternalOperationHandler::ExternalOperationHandler(DistributorNodeContext& node_ctx,
-                                                   DistributorOperationContext& op_ctx,
+                                                   DistributorStripeOperationContext& op_ctx,
                                                    DistributorMetricSet& metrics,
                                                    ChainedMessageSender& msg_sender,
                                                    OperationSequencer& operation_sequencer,

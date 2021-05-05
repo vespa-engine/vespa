@@ -110,10 +110,10 @@ public class SchemaValidators {
         if (uris == null) throw new IllegalArgumentException("Could not find XML schemas ");
 
         File tmpDir = createTempDirectory(tmpBase.toPath(), "vespa").toFile();
-        log.log(Level.FINE, "Will save all XML schemas for " + vespaVersion + " to " + tmpDir);
+        log.log(Level.FINE, () -> "Will save all XML schemas for " + vespaVersion + " to " + tmpDir);
         while (uris.hasMoreElements()) {
             URL u = uris.nextElement();
-            log.log(Level.FINE, "uri for resource 'schema'=" + u.toString());
+            log.log(Level.FINE, () -> "uri for resource 'schema'=" + u.toString());
             // TODO: When is this the case? Remove?
             if ("jar".equals(u.getProtocol())) {
                 JarURLConnection jarConnection = (JarURLConnection) u.openConnection();
@@ -127,7 +127,7 @@ public class SchemaValidators {
                 jarFile.close();
             } else if ("bundle".equals(u.getProtocol())) {
                 Bundle bundle = getBundle(schemaValidatorClass);
-                log.log(Level.FINE, "bundle=" + bundle);
+                log.log(Level.FINE, () -> "bundle=" + bundle);
                 // TODO: Hack to handle cases where bundle=null (which seems to always be the case with config-model-fat-amended.jar)
                 if (bundle == null) {
                     String pathPrefix = getDefaults().underVespaHome("share/vespa/schema/");
@@ -135,11 +135,10 @@ public class SchemaValidators {
                     // Fallback to path without version if path with version does not exist
                     if (! schemaPath.exists())
                         schemaPath = new File(pathPrefix);
-                    log.log(Level.FINE, "Using schemas found in " + schemaPath);
+                    log.log(Level.FINE, "Using schemas found in %s", schemaPath);
                     copySchemas(schemaPath, tmpDir);
                 } else {
-                    log.log(Level.FINE, String.format("Saving schemas for model bundle %s:%s", bundle.getSymbolicName(), bundle
-                            .getVersion()));
+                    log.log(Level.FINE, () -> String.format("Saving schemas for model bundle %s:%s", bundle.getSymbolicName(), bundle.getVersion()));
                     for (Enumeration<URL> entries = bundle.findEntries("schema", "*.rnc", true);
                          entries.hasMoreElements(); ) {
 

@@ -10,8 +10,6 @@ namespace search {
 
 IMPLEMENT_IDENTIFIABLE_ABSTRACT(NumericAttribute, AttributeVector);
 
-using attribute::LoadedEnumAttributeVector;
-
 void
 NumericAttribute::load_enumerated_data(ReaderBase&,
                                        enumstore::EnumeratedPostingsLoader&,

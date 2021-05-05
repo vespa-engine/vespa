@@ -5,7 +5,6 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.concurrent.maintenance.Maintainer;
 import com.yahoo.config.provision.Deployer;
-import com.yahoo.config.provision.Environment;
 import com.yahoo.config.provision.HostLivenessTracker;
 import com.yahoo.config.provision.InfraDeployer;
 import com.yahoo.config.provision.NodeType;
@@ -13,7 +12,6 @@ import com.yahoo.config.provision.Zone;
 import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
-import com.yahoo.vespa.hosted.provision.autoscale.MetricsDb;
 import com.yahoo.vespa.hosted.provision.autoscale.MetricsFetcher;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisionServiceProvider;
 import com.yahoo.vespa.orchestrator.Orchestrator;
@@ -146,7 +144,6 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
             spareCapacityMaintenanceInterval = Duration.ofMinutes(30);
             switchRebalancerInterval = Duration.ofHours(1);
             throttlePolicy = NodeFailer.ThrottlePolicy.hosted;
-            retiredExpiry = Duration.ofDays(4); // give up migrating data after 4 days
             inactiveConfigServerExpiry = Duration.ofMinutes(5);
             inactiveControllerExpiry = Duration.ofMinutes(5);
 
@@ -154,12 +151,14 @@ public class NodeRepositoryMaintenance extends AbstractComponent {
                 inactiveExpiry = Duration.ofHours(4); // enough time for the application owner to discover and redeploy
                 retiredInterval = Duration.ofMinutes(30);
                 dirtyExpiry = Duration.ofHours(2); // enough time to clean the node
+                retiredExpiry = Duration.ofDays(4); // give up migrating data after 4 days
             } else {
                 // long enough that nodes aren't reused immediately and delete can happen on all config servers
                 // with time enough to clean up even with ZK connection issues on config servers
                 inactiveExpiry = Duration.ofMinutes(1);
                 retiredInterval = Duration.ofMinutes(1);
                 dirtyExpiry = Duration.ofMinutes(30);
+                retiredExpiry = Duration.ofDays(1);
             }
         }
 

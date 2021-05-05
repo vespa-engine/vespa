@@ -89,7 +89,7 @@ public class ClusterStateView {
             // The distributor may be old (null), or the distributor may not have updated
             // to the latest state version just yet. We log here with fine, because it may
             // also be a symptom of something wrong.
-            log.log(Level.FINE, "Current state version is " + currentStateVersion +
+            log.log(Level.FINE, () -> "Current state version is " + currentStateVersion +
                     ", while host info received from distributor " + node.getNodeIndex() +
                     " is " + hostVersion);
             return;

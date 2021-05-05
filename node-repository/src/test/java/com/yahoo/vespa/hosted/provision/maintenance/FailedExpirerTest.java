@@ -339,12 +339,9 @@ public class FailedExpirerTest {
         }
 
         public void assertNodesIn(Node.State state, String... hostnames) {
-            assertEquals(Stream.of(hostnames).collect(Collectors.toSet()),
-                         nodeRepository.nodes()
-                                       .list(state).stream()
-                                       .map(Node::hostname)
-                                       .collect(Collectors.toSet()));
+            assertEquals(Set.of(hostnames), nodeRepository.nodes().list(state).hostnames());
         }
+
     }
 
 }

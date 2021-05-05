@@ -25,7 +25,7 @@ class SessionContentStatusListResponse extends SlimeJsonResponse {
             element.setString("status", f.getMetaData().getStatus());
             element.setString("md5", f.getMetaData().getMd5());
             element.setString("name", urlBase + f.getPath());
-            log.log(Level.FINE, "Adding file " + urlBase + f.getPath());
+            log.log(Level.FINE, () -> "Adding file " + urlBase + f.getPath());
         }
     }
 

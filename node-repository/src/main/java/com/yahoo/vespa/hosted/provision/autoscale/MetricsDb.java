@@ -4,9 +4,7 @@ package com.yahoo.vespa.hosted.provision.autoscale;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterSpec;
-import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
-import com.yahoo.vespa.hosted.provision.NodeRepository;
 
 import java.time.Clock;
 import java.time.Duration;
@@ -14,7 +12,6 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 /**
  * An in-memory time-series database of node metrics.
@@ -40,7 +37,7 @@ public interface MetricsDb {
     List<NodeTimeseries> getNodeTimeseries(Duration period, Set<String> hostnames);
 
     default List<NodeTimeseries> getNodeTimeseries(Duration period, NodeList nodes) {
-        return getNodeTimeseries(period, nodes.stream().map(Node::hostname).collect(Collectors.toSet()));
+        return getNodeTimeseries(period, nodes.hostnames());
     }
 
     /** Returns all cluster level metric snapshots for a given cluster */

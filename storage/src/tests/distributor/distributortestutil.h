@@ -21,7 +21,7 @@ class StripeBucketDBUpdater;
 class Distributor;
 class DistributorBucketSpace;
 class DistributorBucketSpaceRepo;
-class DistributorOperationContext;
+class DistributorStripeOperationContext;
 class DistributorStripe;
 class DistributorStripeComponent;
 class ExternalOperationHandler;
@@ -116,11 +116,10 @@ public:
     IdealStateManager& getIdealStateManager();
     ExternalOperationHandler& getExternalOperationHandler();
     storage::distributor::DistributorStripeComponent& distributor_component();
-    storage::distributor::DistributorOperationContext& operation_context();
+    storage::distributor::DistributorStripeOperationContext& operation_context();
 
-    Distributor& getDistributor() {
-        return *_distributor;
-    }
+    Distributor& getDistributor() noexcept { return *_distributor; }
+    const Distributor& getDistributor() const noexcept { return *_distributor; }
 
     bool tick();
 
@@ -140,6 +139,12 @@ public:
     const DistributorBucketSpaceRepo &getBucketSpaceRepo() const;
     DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo();
     const DistributorBucketSpaceRepo& getReadOnlyBucketSpaceRepo() const;
+    [[nodiscard]] bool distributor_is_in_recovery_mode() const noexcept;
+    [[nodiscard]] const lib::ClusterStateBundle& current_distributor_cluster_state_bundle() const noexcept;
+    [[nodiscard]] std::string active_ideal_state_operations() const;
+    [[nodiscard]] const PendingMessageTracker& pending_message_tracker() const noexcept;
+    [[nodiscard]] PendingMessageTracker& pending_message_tracker() noexcept;
+    [[nodiscard]] std::chrono::steady_clock::duration db_memory_sample_interval() const noexcept;
 
     const lib::Distribution& getDistribution() const;
     // "End to end" distribution change trigger, which will invoke the bucket
@@ -190,6 +195,8 @@ public:
 
     DistributorMessageSenderStub& sender() noexcept { return _sender; }
     const DistributorMessageSenderStub& sender() const noexcept { return _sender; }
+
+    void setSystemState(const lib::ClusterState& systemState);
 protected:
     vdstestlib::DirConfig _config;
     std::unique_ptr<TestDistributorApp> _node;

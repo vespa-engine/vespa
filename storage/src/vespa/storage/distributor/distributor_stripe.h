@@ -12,6 +12,7 @@
 #include "statusreporterdelegate.h"
 #include "stripe_access_guard.h"
 #include "stripe_bucket_db_updater.h"
+#include "tickable_stripe.h"
 #include <vespa/config/config.h>
 #include <vespa/storage/common/doneinitializehandler.h>
 #include <vespa/storage/common/messagesender.h>
@@ -50,7 +51,8 @@ class DistributorStripe final
       public framework::StatusReporter,
       public MinReplicaProvider,
       public BucketSpacesStatsProvider,
-      public NonTrackingMessageSender
+      public NonTrackingMessageSender,
+      public TickableStripe
 {
 public:
     DistributorStripe(DistributorComponentRegister&,
@@ -131,14 +133,6 @@ public:
     const lib::ClusterStateBundle& getClusterStateBundle() const override;
 
     /**
-     * @return Returns the states in which the distributors consider
-     * storage nodes to be up.
-     */
-    const char* getStorageNodeUpStates() const override {
-        return "uri";
-    }
-
-    /**
      * Called by bucket db updater after a merge has finished, and all the
      * request bucket info operations have been performed as well. Passes the
      * merge back to the operation that created it.
@@ -190,13 +184,17 @@ public:
         return _db_memory_sample_interval;
     }
 
+    bool tick() override;
+
 private:
+    // TODO reduce number of friends. DistributorStripe too popular for its own good.
     friend struct DistributorTest;
     friend class BucketDBUpdaterTest;
     friend class DistributorTestUtil;
     friend class MetricUpdateHook;
     friend class Distributor;
     friend class LegacySingleStripeAccessGuard;
+    friend class MultiThreadedStripeAccessGuard;
 
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);
     bool isMaintenanceReply(const api::StorageReply& reply) const;

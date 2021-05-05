@@ -27,39 +27,36 @@ using document::BucketSpace;
 
 namespace storage::distributor {
 
-BucketDBUpdater::BucketDBUpdater(DistributorStripeInterface& owner, // FIXME STRIPE!
-                                 DistributorMessageSender& sender,
-                                 DistributorComponentRegister& comp_reg,
+BucketDBUpdater::BucketDBUpdater(const DistributorNodeContext& node_ctx,
+                                 DistributorOperationContext& op_ctx,
+                                 DistributorInterface& distributor_interface,
+                                 ChainedMessageSender& chained_sender,
+                                 std::shared_ptr<const lib::Distribution> bootstrap_distribution,
                                  StripeAccessor& stripe_accessor)
     : framework::StatusReporter("temp_bucketdb", "Bucket DB Updater"), // TODO STRIPE rename once duplication is removed
       _stripe_accessor(stripe_accessor),
       _active_state_bundle(lib::ClusterState()),
-      _dummy_mutable_bucket_space_repo(std::make_unique<DistributorBucketSpaceRepo>(owner.getDistributorIndex())),
-      _dummy_read_only_bucket_space_repo(std::make_unique<DistributorBucketSpaceRepo>(owner.getDistributorIndex())),
-      _distributor_component(owner, *_dummy_mutable_bucket_space_repo, *_dummy_read_only_bucket_space_repo, comp_reg, "Bucket DB Updater"),
-      _node_ctx(_distributor_component),
-      _op_ctx(_distributor_component),
-      _distributor_interface(_distributor_component.getDistributor()),
-      _delayed_requests(),
-      _sent_messages(),
+      _node_ctx(node_ctx),
+      _op_ctx(op_ctx),
+      _distributor_interface(distributor_interface),
       _pending_cluster_state(),
       _history(),
-      _sender(sender),
-      _enqueued_rechecks(),
+      _sender(distributor_interface),
+      _chained_sender(chained_sender),
       _outdated_nodes_map(),
       _transition_timer(_node_ctx.clock()),
       _stale_reads_enabled(false)
 {
     // FIXME STRIPE top-level Distributor needs a proper way to track the current cluster state bundle!
     propagate_active_state_bundle_internally();
-    bootstrap_distribution_config(_distributor_component.getDistribution());
+    bootstrap_distribution_config(bootstrap_distribution);
 }
 
 BucketDBUpdater::~BucketDBUpdater() = default;
 
 void
 BucketDBUpdater::propagate_active_state_bundle_internally() {
-    for (auto* repo : {_dummy_mutable_bucket_space_repo.get(), _dummy_read_only_bucket_space_repo.get()}) {
+    for (auto* repo : {&_op_ctx.bucket_space_repo(), &_op_ctx.read_only_bucket_space_repo()}) {
         for (auto& iter : *repo) {
             iter.second->setClusterState(_active_state_bundle.getDerivedClusterState(iter.first));
         }
@@ -69,7 +66,7 @@ BucketDBUpdater::propagate_active_state_bundle_internally() {
 void
 BucketDBUpdater::bootstrap_distribution_config(std::shared_ptr<const lib::Distribution> distribution) {
     auto global_distr = GlobalBucketSpaceDistributionConverter::convert_to_global(*distribution);
-    for (auto* repo : {_dummy_mutable_bucket_space_repo.get(), _dummy_read_only_bucket_space_repo.get()}) {
+    for (auto* repo : {&_op_ctx.bucket_space_repo(), &_op_ctx.read_only_bucket_space_repo()}) {
         repo->get(document::FixedBucketSpaces::default_space()).setDistribution(distribution);
         repo->get(document::FixedBucketSpaces::global_space()).setDistribution(global_distr);
     }
@@ -77,21 +74,13 @@ BucketDBUpdater::bootstrap_distribution_config(std::shared_ptr<const lib::Distri
     //   ... need to take a guard if so, so can probably not be done at ctor time..?
 }
 
-// TODO STRIPE what to do with merge guards...
 // FIXME what about bucket DB replica update timestamp allocations?! Replace with u64 counter..?
 //   Must at the very least ensure we use stripe-local TS generation for DB inserts...! i.e. no global TS
 //   Or do we have to touch these at all here? Just defer all this via stripe interface?
 void
 BucketDBUpdater::flush()
 {
-    for (auto & entry : _sent_messages) {
-        // Cannot sendDown MergeBucketReplies during flushing, since
-        // all lower links have been closed
-        if (entry.second._mergeReplyGuard) {
-            entry.second._mergeReplyGuard->resetReply();
-        }
-    }
-    _sent_messages.clear();
+    // TODO STRIPE: Consider if this must flush_and_close() all stripes
 }
 
 void
@@ -114,39 +103,12 @@ BucketDBUpdater::has_pending_cluster_state() const
 }
 
 void
-BucketDBUpdater::send_request_bucket_info(
-        uint16_t node,
-        const document::Bucket& bucket,
-        const std::shared_ptr<MergeReplyGuard>& mergeReplyGuard)
-{
-    if (!_op_ctx.storage_node_is_up(bucket.getBucketSpace(), node)) {
-        return;
-    }
-
-    std::vector<document::BucketId> buckets;
-    buckets.push_back(bucket.getBucketId());
-
-    auto msg = std::make_shared<api::RequestBucketInfoCommand>(bucket.getBucketSpace(), buckets);
-
-    LOG(debug, "Sending request bucket info command %" PRIu64 " for bucket %s to node %u",
-        msg->getMsgId(), bucket.toString().c_str(), node);
-
-    msg->setPriority(50);
-    msg->setAddress(_node_ctx.node_address(node));
-
-    _sent_messages[msg->getMsgId()] =
-        BucketRequest(node, _op_ctx.generate_unique_timestamp(),
-                      bucket, mergeReplyGuard);
-    _sender.sendCommand(msg);
-}
-
-void
 BucketDBUpdater::remove_superfluous_buckets(
         StripeAccessGuard& guard,
         const lib::ClusterStateBundle& new_state,
         bool is_distribution_config_change)
 {
-    const char* up_states = _op_ctx.storage_node_up_states();
+    const char* up_states = storage_node_up_states();
     // TODO STRIPE explicit space -> config mapping, don't get via repo
     //   ... but we need to get the current cluster state per space..!
     for (auto& elem : _op_ctx.bucket_space_repo()) {
@@ -210,7 +172,7 @@ BucketDBUpdater::ensure_transition_timer_started()
 void
 BucketDBUpdater::complete_transition_timer()
 {
-    _distributor_interface.getMetrics()
+    _distributor_interface.metrics()
             .stateTransitionTime.addValue(_transition_timer.getElapsedTimeAsDouble());
 }
 
@@ -222,12 +184,12 @@ BucketDBUpdater::storage_distribution_changed(const BucketSpaceDistributionConfi
     auto guard = _stripe_accessor.rendezvous_and_hold_all();
     // FIXME STRIPE might this cause a mismatch with the component stuff's own distribution config..?!
     guard->update_distribution_config(configs);
-    remove_superfluous_buckets(*guard, _op_ctx.cluster_state_bundle(), true);
+    remove_superfluous_buckets(*guard, _active_state_bundle, true);
 
     auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
             _node_ctx.node_index(),
-            _op_ctx.cluster_state_bundle(),
-            _op_ctx.storage_node_up_states());
+            _active_state_bundle,
+            storage_node_up_states());
     _pending_cluster_state = PendingClusterState::createForDistributionChange(
             _node_ctx.clock(),
             std::move(clusterInfo),
@@ -243,7 +205,7 @@ void
 BucketDBUpdater::reply_to_previous_pending_cluster_state_if_any()
 {
     if (_pending_cluster_state.get() && _pending_cluster_state->hasCommand()) {
-        _distributor_interface.getMessageSender().sendUp(
+        _chained_sender.sendUp(
                 std::make_shared<api::SetSystemStateReply>(*_pending_cluster_state->getCommand()));
     }
 }
@@ -255,7 +217,7 @@ BucketDBUpdater::reply_to_activation_with_actual_version(
 {
     auto reply = std::make_shared<api::ActivateClusterStateVersionReply>(cmd);
     reply->setActualVersion(actualVersion);
-    _distributor_interface.getMessageSender().sendUp(reply); // TODO let API accept rvalues
+    _chained_sender.sendUp(reply); // TODO let API accept rvalues
 }
 
 bool
@@ -283,8 +245,8 @@ BucketDBUpdater::onSetSystemState(
 
     auto clusterInfo = std::make_shared<const SimpleClusterInformation>(
                 _node_ctx.node_index(),
-                _op_ctx.cluster_state_bundle(),
-                _op_ctx.storage_node_up_states());
+                _active_state_bundle,
+                storage_node_up_states());
     _pending_cluster_state = PendingClusterState::createForClusterStateChange(
             _node_ctx.clock(),
             std::move(clusterInfo),
@@ -295,7 +257,7 @@ BucketDBUpdater::onSetSystemState(
             _op_ctx.generate_unique_timestamp()); // FIXME STRIPE must be atomic across all threads
     _outdated_nodes_map = _pending_cluster_state->getOutdatedNodesMap();
 
-    _distributor_interface.getMetrics().set_cluster_state_processing_time.addValue(
+    _distributor_interface.metrics().set_cluster_state_processing_time.addValue(
             process_timer.getElapsedTimeAsDouble());
 
     guard->set_pending_cluster_state_bundle(_pending_cluster_state->getNewClusterStateBundle());
@@ -339,51 +301,6 @@ BucketDBUpdater::onActivateClusterStateVersion(const std::shared_ptr<api::Activa
     return false;
 }
 
-// TODO remove entirely from this abstraction level?
-BucketDBUpdater::MergeReplyGuard::~MergeReplyGuard()
-{
-    if (_reply) {
-        _distributor_interface.handleCompletedMerge(_reply);
-    }
-}
-
-bool
-BucketDBUpdater::onMergeBucketReply(
-        const std::shared_ptr<api::MergeBucketReply>& reply)
-{
-   auto replyGuard = std::make_shared<MergeReplyGuard>(_distributor_interface, reply);
-
-   // In case the merge was unsuccessful somehow, or some nodes weren't
-   // actually merged (source-only nodes?) we request the bucket info of the
-   // bucket again to make sure it's ok.
-   for (uint32_t i = 0; i < reply->getNodes().size(); i++) {
-       send_request_bucket_info(reply->getNodes()[i].index,
-                                reply->getBucket(),
-                                replyGuard);
-   }
-
-   return true;
-}
-
-void
-BucketDBUpdater::send_all_queued_bucket_rechecks()
-{
-    LOG(spam, "Sending %zu queued bucket rechecks previously received "
-              "via NotifyBucketChange commands",
-        _enqueued_rechecks.size());
-
-    for (const auto & entry :_enqueued_rechecks) {
-        send_request_bucket_info(entry.node, entry.bucket, std::shared_ptr<MergeReplyGuard>());
-    }
-    _enqueued_rechecks.clear();
-}
-
-bool sort_pred(const BucketListMerger::BucketEntry& left,
-               const BucketListMerger::BucketEntry& right)
-{
-    return left.first < right.first;
-}
-
 bool
 BucketDBUpdater::onRequestBucketInfoReply(
         const std::shared_ptr<api::RequestBucketInfoReply>& repl)
@@ -418,17 +335,6 @@ BucketDBUpdater::resend_delayed_messages()
     if (_pending_cluster_state) {
         _pending_cluster_state->resendDelayedMessages();
     }
-    if (_delayed_requests.empty()) {
-        return; // Don't fetch time if not needed
-    }
-    framework::MilliSecTime currentTime(_node_ctx.clock());
-    while (!_delayed_requests.empty()
-           && currentTime >= _delayed_requests.front().first)
-    {
-        BucketRequest& req(_delayed_requests.front().second);
-        send_request_bucket_info(req.targetNode, req.bucket, std::shared_ptr<MergeReplyGuard>());
-        _delayed_requests.pop_front();
-    }
 }
 
 bool
@@ -452,7 +358,7 @@ BucketDBUpdater::process_completed_pending_cluster_state(StripeAccessGuard& guar
         // taken effect via activation. External operation handler will keep operations from
         // actually being scheduled until state has been activated. The external operation handler
         // needs to be explicitly aware of the case where no state has yet to be activated.
-        _distributor_interface.getMessageSender().sendDown(_pending_cluster_state->getCommand());
+        _chained_sender.sendDown(_pending_cluster_state->getCommand());
         _pending_cluster_state->clearCommand();
         return;
     }
@@ -473,14 +379,13 @@ BucketDBUpdater::activate_pending_cluster_state(StripeAccessGuard& guard)
         LOG(debug, "Activating pending cluster state version %u", _pending_cluster_state->clusterStateVersion());
         enable_current_cluster_state_bundle_in_distributor_and_stripes(guard);
         if (_pending_cluster_state->hasCommand()) {
-            _distributor_interface.getMessageSender().sendDown(_pending_cluster_state->getCommand());
+            _chained_sender.sendDown(_pending_cluster_state->getCommand());
         }
         add_current_state_to_cluster_state_history();
     } else {
         LOG(debug, "Activating pending distribution config");
         // TODO distribution changes cannot currently be deferred as they are not
         // initiated by the cluster controller!
-        _distributor_interface.notifyDistributionChangeEnabled(); // TODO factor these two out into one func?
         guard.notify_distribution_change_enabled();
     }
 
@@ -488,11 +393,10 @@ BucketDBUpdater::activate_pending_cluster_state(StripeAccessGuard& guard)
     _pending_cluster_state.reset();
     _outdated_nodes_map.clear();
     guard.clear_pending_cluster_state_bundle();
-    send_all_queued_bucket_rechecks();
     complete_transition_timer();
     guard.clear_read_only_bucket_repo_databases();
 
-    _distributor_interface.getMetrics().activate_cluster_state_processing_time.addValue(
+    _distributor_interface.metrics().activate_cluster_state_processing_time.addValue(
             process_timer.getElapsedTimeAsDouble());
 }
 
@@ -507,16 +411,11 @@ BucketDBUpdater::enable_current_cluster_state_bundle_in_distributor_and_stripes(
     LOG(debug, "BucketDBUpdater finished processing state %s",
         state.getBaselineClusterState()->toString().c_str());
 
-    // First enable the cluster state for the _top-level_ distributor component.
-    _distributor_interface.enableClusterStateBundle(state);
-    // And then subsequently for all underlying stripes. Technically the order doesn't matter
-    // since all threads are blocked at this point.
     guard.enable_cluster_state_bundle(state);
 }
 
 void BucketDBUpdater::simulate_cluster_state_bundle_activation(const lib::ClusterStateBundle& activated_state) {
     auto guard = _stripe_accessor.rendezvous_and_hold_all();
-    _distributor_interface.enableClusterStateBundle(activated_state);
     guard->enable_cluster_state_bundle(activated_state);
 
     _active_state_bundle = activated_state;
@@ -547,21 +446,6 @@ const vespalib::string BUCKETDB_UPDATER = "Bucket Database Updater";
 
 }
 
-void
-BucketDBUpdater::BucketRequest::print_xml_tag(vespalib::xml::XmlOutputStream &xos, const vespalib::xml::XmlAttribute &timestampAttribute) const
-{
-    using namespace vespalib::xml;
-    xos << XmlTag("storagenode")
-        << XmlAttribute("index", targetNode);
-    xos << XmlAttribute("bucketspace", bucket.getBucketSpace().getId(), XmlAttribute::HEX);
-    if (bucket.getBucketId().getRawId() == 0) {
-        xos << XmlAttribute("bucket", ALL);
-    } else {
-        xos << XmlAttribute("bucket", bucket.getBucketId().getId(), XmlAttribute::HEX);
-    }
-    xos << timestampAttribute << XmlEndTag();
-}
-
 bool
 BucketDBUpdater::reportStatus(std::ostream& out,
                               const framework::HttpUrlPath& path) const
@@ -586,7 +470,7 @@ BucketDBUpdater::report_xml_status(vespalib::xml::XmlOutputStream& xos,
     using namespace vespalib::xml;
     xos << XmlTag("bucketdb")
         << XmlTag("systemstate_active")
-        << XmlContent(_op_ctx.cluster_state_bundle().getBaselineClusterState()->toString())
+        << XmlContent(_active_state_bundle.getBaselineClusterState()->toString())
         << XmlEndTag();
     if (_pending_cluster_state) {
         xos << *_pending_cluster_state;
@@ -598,18 +482,6 @@ BucketDBUpdater::report_xml_status(vespalib::xml::XmlOutputStream& xos,
             << XmlAttribute("to", i->_newClusterState)
             << XmlAttribute("processingtime", i->_processingTime)
             << XmlEndTag();
-    }
-    xos << XmlEndTag()
-        << XmlTag("single_bucket_requests");
-    for (const auto & entry : _sent_messages)
-    {
-        entry.second.print_xml_tag(xos, XmlAttribute("sendtimestamp", entry.second.timestamp));
-    }
-    xos << XmlEndTag()
-        << XmlTag("delayed_single_bucket_requests");
-    for (const auto & entry : _delayed_requests)
-    {
-        entry.second.print_xml_tag(xos, XmlAttribute("resendtimestamp", entry.first.getTime()));
     }
     xos << XmlEndTag() << XmlEndTag();
     return "";

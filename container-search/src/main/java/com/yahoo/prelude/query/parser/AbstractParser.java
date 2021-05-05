@@ -19,7 +19,6 @@ import java.util.*;
  * @author bratseth
  * @author Steinar Knutsen
  */
-@SuppressWarnings("deprecation")
 public abstract class AbstractParser implements CustomParser {
 
     /** The current submodes of this parser */
@@ -48,7 +47,7 @@ public abstract class AbstractParser implements CustomParser {
      * of these may be active at the same time. SubModes are activated or
      * deactivated by specifying special indexes in the query.
      */
-    final class Submodes {
+    static final class Submodes {
 
         /**
          * Url mode allows "_" and "-" as word characters. Default is false

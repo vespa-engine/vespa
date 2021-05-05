@@ -11,12 +11,14 @@ import com.yahoo.vespa.hosted.controller.api.identifiers.DeploymentId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
+import com.yahoo.vespa.hosted.controller.application.DeploymentMetrics;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.time.Instant;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.function.Supplier;
 
@@ -111,6 +113,21 @@ public class DeploymentMetricsMaintainerTest {
         assertEquals(t3, deployment.get().activity().lastWritten().get());
         assertEquals(1, deployment.get().activity().lastQueriesPerSecond().getAsDouble(), Double.MIN_VALUE);
         assertEquals(5, deployment.get().activity().lastWritesPerSecond().getAsDouble(), Double.MIN_VALUE);
+    }
+
+    @Test
+    public void cluster_metric_aggregation_test() {
+        List<ClusterMetrics> clusterMetrics = List.of(
+                new ClusterMetrics("niceCluster", "container", Map.of("queriesPerSecond", 23.0, "queryLatency", 1337.0)),
+                new ClusterMetrics("alsoNiceCluster", "container", Map.of("queriesPerSecond", 11.0, "queryLatency", 12.0)));
+
+        DeploymentMetrics deploymentMetrics = DeploymentMetricsMaintainer.updateDeploymentMetrics(DeploymentMetrics.none, clusterMetrics);
+
+        assertEquals(23.0 + 11.0, deploymentMetrics.queriesPerSecond(), 0.001);
+        assertEquals(908.323, deploymentMetrics.queryLatencyMillis(), 0.001);
+        assertEquals(0, deploymentMetrics.documentCount(), 0.001);
+        assertEquals(0.0, deploymentMetrics.writeLatencyMillis(), 0.001);
+        assertEquals(0.0, deploymentMetrics.writesPerSecond(), 0.001);
     }
 
     private void setMetrics(ApplicationId application, Map<String, Double> metrics) {

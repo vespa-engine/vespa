@@ -14,6 +14,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URI;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ListIterator;
@@ -144,7 +145,7 @@ class RestApiImpl implements RestApi {
     private static Route createDefaultRoute() {
         RouteBuilder routeBuilder = new RouteBuilderImpl("{*}")
                 .defaultHandler(context -> {
-                    throw new RestApiException.NotFound();
+                    throw new RestApiException.NotFound(context.request());
                 });
         return ((RouteBuilderImpl)routeBuilder).build();
     }
@@ -155,6 +156,8 @@ class RestApiImpl implements RestApi {
         if (!disableDefaultMappers){
             exceptionMappers.add(new ExceptionMapperHolder<>(RestApiException.class, (context, exception) -> exception.response()));
         }
+        // Topologically sort children before superclasses, so most the specific match is found by iterating through mappers in order.
+        exceptionMappers.sort((a, b) -> (a.type.isAssignableFrom(b.type) ? 1 : 0) + (b.type.isAssignableFrom(a.type) ? -1 : 0));
         return exceptionMappers;
     }
 

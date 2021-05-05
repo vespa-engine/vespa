@@ -56,7 +56,7 @@ class TwoPhaseUpdateOperation : public SequencedOperation
 {
 public:
     TwoPhaseUpdateOperation(DistributorNodeContext& node_ctx,
-                            DistributorOperationContext& op_ctx,
+                            DistributorStripeOperationContext& op_ctx,
                             DocumentSelectionParser& parser,
                             DistributorBucketSpace &bucketSpace,
                             std::shared_ptr<api::UpdateCommand> msg,
@@ -64,16 +64,16 @@ public:
                             SequencingHandle sequencingHandle = SequencingHandle());
     ~TwoPhaseUpdateOperation() override;
 
-    void onStart(DistributorMessageSender& sender) override;
+    void onStart(DistributorStripeMessageSender& sender) override;
 
     const char* getName() const override { return "twophaseupdate"; }
 
     std::string getStatus() const override { return ""; }
 
-    void onReceive(DistributorMessageSender&,
+    void onReceive(DistributorStripeMessageSender&,
                    const std::shared_ptr<api::StorageReply>&) override;
 
-    void onClose(DistributorMessageSender& sender) override;
+    void onClose(DistributorStripeMessageSender& sender) override;
 
 private:
     enum class SendState {
@@ -93,49 +93,49 @@ private:
     void transitionTo(SendState newState);
     static const char* stateToString(SendState);
 
-    void sendReply(DistributorMessageSender&,
+    void sendReply(DistributorStripeMessageSender&,
                    std::shared_ptr<api::StorageReply>&);
-    void sendReplyWithResult(DistributorMessageSender&, const api::ReturnCode&);
+    void sendReplyWithResult(DistributorStripeMessageSender&, const api::ReturnCode&);
     void ensureUpdateReplyCreated();
 
     std::vector<BucketDatabase::Entry> get_bucket_database_entries() const;
     bool isFastPathPossible(const std::vector<BucketDatabase::Entry>& entries) const;
-    void startFastPathUpdate(DistributorMessageSender& sender, std::vector<BucketDatabase::Entry> entries);
-    void startSafePathUpdate(DistributorMessageSender&);
+    void startFastPathUpdate(DistributorStripeMessageSender& sender, std::vector<BucketDatabase::Entry> entries);
+    void startSafePathUpdate(DistributorStripeMessageSender&);
     bool lostBucketOwnershipBetweenPhases() const;
-    void sendLostOwnershipTransientErrorReply(DistributorMessageSender&);
-    void send_feed_blocked_error_reply(DistributorMessageSender& sender);
+    void sendLostOwnershipTransientErrorReply(DistributorStripeMessageSender&);
+    void send_feed_blocked_error_reply(DistributorStripeMessageSender& sender);
     void schedulePutsWithUpdatedDocument(
             std::shared_ptr<document::Document>,
             api::Timestamp,
-            DistributorMessageSender&);
+            DistributorStripeMessageSender&);
     void applyUpdateToDocument(document::Document&) const;
     std::shared_ptr<document::Document> createBlankDocument() const;
     void setUpdatedForTimestamp(api::Timestamp);
-    void handleFastPathReceive(DistributorMessageSender&,
+    void handleFastPathReceive(DistributorStripeMessageSender&,
                                const std::shared_ptr<api::StorageReply>&);
-    void handleSafePathReceive(DistributorMessageSender&,
+    void handleSafePathReceive(DistributorStripeMessageSender&,
                                const std::shared_ptr<api::StorageReply>&);
     std::shared_ptr<GetOperation> create_initial_safe_path_get_operation();
-    void handle_safe_path_received_metadata_get(DistributorMessageSender&,
+    void handle_safe_path_received_metadata_get(DistributorStripeMessageSender&,
                                                 api::GetReply&,
                                                 const std::optional<NewestReplica>&,
                                                 bool any_replicas_failed);
-    void handle_safe_path_received_single_full_get(DistributorMessageSender&, api::GetReply&);
-    void handleSafePathReceivedGet(DistributorMessageSender&, api::GetReply&);
-    void handleSafePathReceivedPut(DistributorMessageSender&, const api::PutReply&);
+    void handle_safe_path_received_single_full_get(DistributorStripeMessageSender&, api::GetReply&);
+    void handleSafePathReceivedGet(DistributorStripeMessageSender&, api::GetReply&);
+    void handleSafePathReceivedPut(DistributorStripeMessageSender&, const api::PutReply&);
     bool shouldCreateIfNonExistent() const;
     bool processAndMatchTasCondition(
-            DistributorMessageSender& sender,
+            DistributorStripeMessageSender& sender,
             const document::Document& candidateDoc);
     bool satisfiesUpdateTimestampConstraint(api::Timestamp) const;
     void addTraceFromReply(api::StorageReply& reply);
     bool hasTasCondition() const noexcept;
-    void replyWithTasFailure(DistributorMessageSender& sender,
+    void replyWithTasFailure(DistributorStripeMessageSender& sender,
                              vespalib::stringref message);
     bool may_restart_with_fast_path(const api::GetReply& reply);
     bool replica_set_unchanged_after_get_operation() const;
-    void restart_with_fast_path_due_to_consistent_get_timestamps(DistributorMessageSender& sender);
+    void restart_with_fast_path_due_to_consistent_get_timestamps(DistributorStripeMessageSender& sender);
     // Precondition: reply has not yet been sent.
     vespalib::string update_doc_id() const;
 
@@ -146,7 +146,7 @@ private:
     std::shared_ptr<api::UpdateCommand> _updateCmd;
     std::shared_ptr<api::StorageReply> _updateReply;
     DistributorNodeContext& _node_ctx;
-    DistributorOperationContext& _op_ctx;
+    DistributorStripeOperationContext& _op_ctx;
     DocumentSelectionParser& _parser;
     DistributorBucketSpace &_bucketSpace;
     SentMessageMap _sentMessageMap;

@@ -13,7 +13,7 @@ using namespace storage;
 using document::BucketSpace;
 
 RemoveOperation::RemoveOperation(DistributorNodeContext& node_ctx,
-                                 DistributorOperationContext& op_ctx,
+                                 DistributorStripeOperationContext& op_ctx,
                                  DistributorBucketSpace &bucketSpace,
                                  std::shared_ptr<api::RemoveCommand> msg,
                                  PersistenceOperationMetricSet& metric,
@@ -32,7 +32,7 @@ RemoveOperation::RemoveOperation(DistributorNodeContext& node_ctx,
 RemoveOperation::~RemoveOperation() = default;
 
 void
-RemoveOperation::onStart(DistributorMessageSender& sender)
+RemoveOperation::onStart(DistributorStripeMessageSender& sender)
 {
     LOG(spam, "Started remove on document %s", _msg->getDocumentId().toString().c_str());
 
@@ -79,7 +79,7 @@ RemoveOperation::onStart(DistributorMessageSender& sender)
 
 
 void
-RemoveOperation::onReceive(DistributorMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
+RemoveOperation::onReceive(DistributorStripeMessageSender& sender, const std::shared_ptr<api::StorageReply> & msg)
 {
     api::RemoveReply& reply(static_cast<api::RemoveReply&>(*msg));
 
@@ -96,7 +96,7 @@ RemoveOperation::onReceive(DistributorMessageSender& sender, const std::shared_p
 }
 
 void
-RemoveOperation::onClose(DistributorMessageSender& sender)
+RemoveOperation::onClose(DistributorStripeMessageSender& sender)
 {
     _tracker.fail(sender, api::ReturnCode(api::ReturnCode::ABORTED, "Process is shutting down"));
 }

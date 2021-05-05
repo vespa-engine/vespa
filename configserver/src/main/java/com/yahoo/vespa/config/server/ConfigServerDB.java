@@ -68,10 +68,10 @@ public class ConfigServerDB {
         for (String pluginDirectory : pluginDirectories) {
             bundles.addAll(Bundle.getBundles(new File(pluginDirectory)));
         }
-        log.log(Level.FINE, "Found " + bundles.size() + " bundles");
+        log.log(Level.FINE, () -> "Found " + bundles.size() + " bundles");
         List<Bundle> addedBundles = new ArrayList<>();
         for (Bundle bundle : bundles) {
-            log.log(Level.FINE, "Bundle in " + bundle.getFile().getAbsolutePath() + " appears to contain " + bundle.getDefEntries().size() + " entries");
+            log.log(Level.FINE, () -> "Bundle in " + bundle.getFile().getAbsolutePath() + " appears to contain " + bundle.getDefEntries().size() + " entries");
             configDefinitionDir.addConfigDefinitionsFromBundle(bundle, addedBundles);
             addedBundles.add(bundle);
         }

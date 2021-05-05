@@ -32,7 +32,7 @@ Application::~Application() { }
 int
 Application::parseOpts()
 {
-    char c = '?';
+    int c = '?';
     const char *optArg = NULL;
     int optInd = 0;
     while ((c = GetOpt("hvut:c:C:", optArg, optInd)) != -1) {
