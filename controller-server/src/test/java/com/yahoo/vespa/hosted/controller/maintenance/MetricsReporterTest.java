@@ -5,11 +5,14 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.CloudName;
 import com.yahoo.config.provision.HostName;
+import com.yahoo.config.provision.SystemName;
+import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.UpgradePolicy;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Change;
@@ -18,12 +21,14 @@ import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
+import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import com.yahoo.vespa.hosted.controller.versions.VespaVersion;
 import org.junit.Test;
 
 import java.time.Duration;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
@@ -470,6 +475,23 @@ public class MetricsReporterTest {
         assertEquals(VespaVersion.Confidence.high, tester.controller().readVersionStatus().systemVersion().get().confidence());
         reporter.maintain();
         assertEquals(0, metrics.getMetric(MetricsReporter.BROKEN_SYSTEM_VERSION));
+    }
+
+    @Test
+    public void tenant_counter() {
+        var tester = new ControllerTester(SystemName.Public);
+        tester.zoneRegistry().setSystemName(SystemName.Public);
+        tester.createTenant("foo", Tenant.Type.cloud);
+        tester.createTenant("bar", Tenant.Type.cloud);
+        tester.createTenant("fix", Tenant.Type.cloud);
+        tester.controller().serviceRegistry().billingController().setPlan(TenantName.from("foo"), PlanId.from("pay-as-you-go"), false);
+        tester.controller().serviceRegistry().billingController().setPlan(TenantName.from("bar"), PlanId.from("pay-as-you-go"), false);
+
+        var reporter = createReporter(tester.controller());
+        reporter.maintain();
+
+        assertEquals(2, metrics.getMetric(d -> "pay-as-you-go".equals(d.get("plan")), MetricsReporter.TENANT_METRIC).get());
+        assertEquals(1, metrics.getMetric(d -> "trial".equals(d.get("plan")), MetricsReporter.TENANT_METRIC).get());
     }
 
     private void assertNodeCount(String metric, int n, Version version) {
