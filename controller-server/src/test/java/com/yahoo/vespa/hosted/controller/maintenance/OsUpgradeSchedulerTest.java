@@ -40,14 +40,14 @@ public class OsUpgradeSchedulerTest {
         tester.controller().upgradeOsIn(cloud, version0, Duration.ofDays(1), false);
 
         // Target remains unchanged as it hasn't expired yet
-        for (var interval : List.of(Duration.ZERO, Duration.ofDays(15))) {
+        for (var interval : List.of(Duration.ZERO, Duration.ofDays(30))) {
             tester.clock().advance(interval);
             scheduler.maintain();
             assertEquals(version0, tester.controller().osVersionTarget(cloud).get().osVersion().version());
         }
 
-        // Just over 30 days pass, and a new target replaces the expired one
-        Version version1 = Version.fromString("7.0.0.20210215");
+        // Just over 45 days pass, and a new target replaces the expired one
+        Version version1 = Version.fromString("7.0.0.20210302");
         tester.clock().advance(Duration.ofDays(15).plus(Duration.ofSeconds(1)));
         scheduler.maintain();
         assertEquals("New target set", version1, tester.controller().osVersionTarget(cloud).get().osVersion().version());
