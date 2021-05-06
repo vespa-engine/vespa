@@ -19,7 +19,7 @@ class JdiscFilterResponse extends DiscFilterResponse {
     private final Response parent;
 
     JdiscFilterResponse(Response parent) {
-        // A separate adapter is required as super-constructor will invoke methods from ServletOrJdiscHttpResponse in its constructor
+        // A separate adapter is required as DiscFilterResponse will invoke methods from ServletOrJdiscHttpResponse parameter in its constructor
         super(parent instanceof HttpResponse ? (HttpResponse)parent : new Adapter(parent));
         this.parent = parent;
     }
