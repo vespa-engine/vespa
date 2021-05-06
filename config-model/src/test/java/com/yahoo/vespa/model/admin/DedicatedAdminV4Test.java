@@ -147,7 +147,7 @@ public class DedicatedAdminV4Test {
                 "  <admin version='4.0'>" +
                 "    <slobroks><nodes count='2' dedicated='true'/></slobroks>" +
                 "    <logservers><nodes count='1' dedicated='true'/></logservers>" +
-                "    <logforwarding>" +
+                "    <logforwarding include-admin='true'>" +
                 "      <splunk deployment-server='foo:123' client-name='foocli' phone-home-interval='900'/>" +
                 "    </logforwarding>" +
                 "  </admin>" +

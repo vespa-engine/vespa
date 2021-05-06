@@ -863,6 +863,89 @@ public class ModelProvisioningTest {
     }
 
     @Test
+    public void testLogForwarderNotInAdminCluster() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                        "<services>" +
+                        "  <admin version='4.0'>" +
+                        "    <logservers>" +
+                        "      <nodes count='1' dedicated='true'/>" +
+                        "    </logservers>" +
+                        "    <logforwarding>" +
+                        "      <splunk deployment-server='bardeplserv:123' client-name='barclinam' phone-home-interval='987' />" +
+                        "    </logforwarding>" +
+                        "  </admin>" +
+                        "  <container version='1.0' id='foo'>" +
+                        "     <nodes count='1'/>" +
+                        "  </container>" +
+                        "</services>";
+
+        int numberOfHosts = 2;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts+1);
+
+        VespaModel model = tester.createModel(Zone.defaultZone(), services, true);
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
+
+        Admin admin = model.getAdmin();
+        Logserver logserver = admin.getLogserver();
+        HostResource hostResource = logserver.getHostResource();
+
+        assertNotNull(hostResource.getService("logserver"));
+        assertNull(hostResource.getService("container"));
+        assertNull(hostResource.getService("logforwarder"));
+
+        var clist = model.getContainerClusters().get("foo").getContainers();
+        assertThat(clist.size(), is(1));
+        hostResource = clist.get(0).getHostResource();
+        assertNull(hostResource.getService("logserver"));
+        assertNotNull(hostResource.getService("container"));
+        assertNotNull(hostResource.getService("logforwarder"));
+    }
+
+
+    @Test
+    public void testLogForwarderInAdminCluster() {
+        String services =
+                "<?xml version='1.0' encoding='utf-8' ?>\n" +
+                        "<services>" +
+                        "  <admin version='4.0'>" +
+                        "    <logservers>" +
+                        "      <nodes count='1' dedicated='true'/>" +
+                        "    </logservers>" +
+                        "    <logforwarding include-admin='true'>" +
+                        "      <splunk deployment-server='bardeplserv:123' client-name='barclinam' phone-home-interval='987' />" +
+                        "    </logforwarding>" +
+                        "  </admin>" +
+                        "  <container version='1.0' id='foo'>" +
+                        "     <nodes count='1'/>" +
+                        "  </container>" +
+                        "</services>";
+
+        int numberOfHosts = 2;
+        VespaModelTester tester = new VespaModelTester();
+        tester.addHosts(numberOfHosts+1);
+
+        VespaModel model = tester.createModel(Zone.defaultZone(), services, true);
+        assertThat(model.getRoot().hostSystem().getHosts().size(), is(numberOfHosts));
+
+        Admin admin = model.getAdmin();
+        Logserver logserver = admin.getLogserver();
+        HostResource hostResource = logserver.getHostResource();
+
+        assertNotNull(hostResource.getService("logserver"));
+        assertNull(hostResource.getService("container"));
+        assertNotNull(hostResource.getService("logforwarder"));
+
+        var clist = model.getContainerClusters().get("foo").getContainers();
+        assertThat(clist.size(), is(1));
+        hostResource = clist.get(0).getHostResource();
+        assertNull(hostResource.getService("logserver"));
+        assertNotNull(hostResource.getService("container"));
+        assertNotNull(hostResource.getService("logforwarder"));
+    }
+
+    @Test
     public void testImplicitLogserverContainer() {
         String services =
                 "<?xml version='1.0' encoding='utf-8' ?>\n" +

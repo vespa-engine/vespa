@@ -114,14 +114,14 @@ public abstract class DomAdminBuilderBase extends VespaDomBuilder.DomConfigProdu
 
     void addLogForwarders(ModelElement logForwardingElement, Admin admin) {
         if (logForwardingElement == null) return;
-
+        boolean alsoForAdminCluster = logForwardingElement.booleanAttribute("include-admin");
         for (ModelElement e : logForwardingElement.children("splunk")) {
             LogForwarder.Config cfg = LogForwarder.cfg()
 		    .withSplunkHome(e.stringAttribute("splunk-home"))
 		    .withDeploymentServer(e.stringAttribute("deployment-server"))
 		    .withClientName(e.stringAttribute("client-name"))
             .withPhoneHomeInterval(e.integerAttribute("phone-home-interval"));
-            admin.setLogForwarderConfig(cfg);
+            admin.setLogForwarderConfig(cfg, alsoForAdminCluster);
         }
     }
 
