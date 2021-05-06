@@ -70,7 +70,6 @@ void DistributorStripeThread::wait_until_event_notified_or_timed_out() noexcept 
 
 void DistributorStripeThread::wait_until_unparked() noexcept {
     std::unique_lock lock(_mutex);
-    assert(should_park_relaxed());
     // _should_park is always written within _mutex, relaxed load is safe.
     _park_cond.wait(lock, [this]{ return !should_park_relaxed(); });
 }
