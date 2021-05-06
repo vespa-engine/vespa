@@ -27,7 +27,7 @@ import java.util.stream.Collectors;
 public class OsUpgradeScheduler extends ControllerMaintainer {
 
     /** Trigger a new upgrade when the current target version reaches this age */
-    private static final Duration MAX_VERSION_AGE = Duration.ofDays(30);
+    private static final Duration MAX_VERSION_AGE = Duration.ofDays(45);
 
     /**
      * The interval at which new versions become available. We use this to avoid scheduling upgrades to a version that
