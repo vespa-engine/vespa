@@ -427,6 +427,57 @@
     ],
     "fields": []
   },
+  "com.yahoo.language.process.SpecialTokenRegistry": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>()",
+      "public void <init>(com.yahoo.vespa.configdefinition.SpecialtokensConfig)",
+      "public void <init>(java.util.List)",
+      "public com.yahoo.language.process.SpecialTokens getSpecialTokens(java.lang.String)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.language.process.SpecialTokens$Token": {
+    "superClass": "java.lang.Object",
+    "interfaces": [
+      "java.lang.Comparable"
+    ],
+    "attributes": [
+      "public",
+      "final"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String)",
+      "public void <init>(java.lang.String, java.lang.String)",
+      "public java.lang.String token()",
+      "public java.lang.String replacement()",
+      "public int compareTo(com.yahoo.language.process.SpecialTokens$Token)",
+      "public boolean equals(java.lang.Object)",
+      "public int hashCode()",
+      "public java.lang.String toString()",
+      "public bridge synthetic int compareTo(java.lang.Object)"
+    ],
+    "fields": []
+  },
+  "com.yahoo.language.process.SpecialTokens": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(java.lang.String, java.util.List)",
+      "public java.lang.String name()",
+      "public java.util.Map asMap()",
+      "public com.yahoo.language.process.SpecialTokens$Token tokenize(java.lang.String, boolean)",
+      "public static com.yahoo.language.process.SpecialTokens empty()"
+    ],
+    "fields": []
+  },
   "com.yahoo.language.process.StemList": {
     "superClass": "java.util.AbstractList",
     "interfaces": [],
