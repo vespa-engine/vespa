@@ -248,7 +248,7 @@ SBEnv::addPeer(const std::string &name, const std::string &spec)
         vespalib::string peers = toString(_partnerList);
         LOG(warning, "got addPeer with non-configured peer %s, check config consistency. configured peers = %s",
                      spec.c_str(), peers.c_str());
-        return OkState(FRTE_RPC_METHOD_FAILED, "configured partner list does not contain peer. configured peers = " + peers);
+        _partnerList.push_back(spec);
     }
     return _rpcsrvmanager.addPeer(name, spec.c_str());
 }
