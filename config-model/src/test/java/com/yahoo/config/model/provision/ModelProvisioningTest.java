@@ -914,7 +914,7 @@ public class ModelProvisioningTest {
                         "    <logservers>" +
                         "      <nodes count='1' dedicated='true'/>" +
                         "    </logservers>" +
-                        "    <logforwarding unconditional='true'>" +
+                        "    <logforwarding include-admin='true'>" +
                         "      <splunk deployment-server='bardeplserv:123' client-name='barclinam' phone-home-interval='987' />" +
                         "    </logforwarding>" +
                         "  </admin>" +

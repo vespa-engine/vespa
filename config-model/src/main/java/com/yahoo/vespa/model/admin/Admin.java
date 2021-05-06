@@ -65,9 +65,9 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
 
     private ApplicationType applicationType = ApplicationType.DEFAULT;
 
-    public void setLogForwarderConfig(LogForwarder.Config cfg, boolean unconditional) {
+    public void setLogForwarderConfig(LogForwarder.Config cfg, boolean includeAdmin) {
         this.logForwarderConfig = cfg;
-        this.logForwarderUnconditional = unconditional;
+        this.logForwarderUnconditional = includeAdmin;
     }
 
     /**
