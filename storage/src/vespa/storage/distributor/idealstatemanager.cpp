@@ -29,13 +29,11 @@ IdealStateManager::IdealStateManager(
         DistributorBucketSpaceRepo& bucketSpaceRepo,
         DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
         DistributorComponentRegister& compReg)
-    : HtmlStatusReporter("idealstateman", "Ideal state manager"),
-      _metrics(new IdealStateMetricSet),
+    : _metrics(new IdealStateMetricSet),
       _distributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Ideal state manager"),
       _bucketSpaceRepo(bucketSpaceRepo),
       _has_logged_phantom_replica_warning(false)
 {
-    _distributorComponent.registerStatusPage(*this);
     _distributorComponent.registerMetric(*_metrics);
 
     LOG(debug, "Adding BucketStateStateChecker to state checkers");
