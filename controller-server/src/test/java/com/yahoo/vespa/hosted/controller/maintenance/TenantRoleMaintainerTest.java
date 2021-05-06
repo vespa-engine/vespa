@@ -25,19 +25,22 @@ public class TenantRoleMaintainerTest {
 
     @Test
     public void maintains_iam_roles_for_tenants_in_production() {
-        var devApp = tester.newDeploymentContext("tenant1", "app1", "default");
-        var prodApp = tester.newDeploymentContext("tenant2", "app2", "default");
+        var devAppTenant1 = tester.newDeploymentContext("tenant1", "app1", "default");
+        var prodAppTenant2 = tester.newDeploymentContext("tenant2", "app2", "default");
+        var devAppTenant2 = tester.newDeploymentContext("tenant2","app3","default");
         ApplicationPackage appPackage = new ApplicationPackageBuilder()
                 .region("us-west-1")
                 .build();
 
-        // Deploy dev
-        devApp.runJob(JobType.devUsEast1, appPackage);
+        // Deploy dev apps
+        devAppTenant1.runJob(JobType.devUsEast1, appPackage);
+        devAppTenant2.runJob(JobType.devUsEast1, appPackage);
 
         // Deploy prod
-        prodApp.submit(appPackage).deploy();
-        assertEquals(1, permanentDeployments(devApp.instance()));
-        assertEquals(1, permanentDeployments(prodApp.instance()));
+        prodAppTenant2.submit(appPackage).deploy();
+        assertEquals(1, permanentDeployments(devAppTenant1.instance()));
+        assertEquals(1, permanentDeployments(devAppTenant2.instance()));
+        assertEquals(1, permanentDeployments(prodAppTenant2.instance()));
 
         var maintainer = new TenantRoleMaintainer(tester.controller(), Duration.ofDays(1));
         maintainer.maintain();
@@ -46,7 +49,7 @@ public class TenantRoleMaintainerTest {
         List<TenantName> tenantNames = ((MockRoleService) roleService).maintainedTenants();
 
         assertEquals(1, tenantNames.size());
-        assertEquals(prodApp.application().id().tenant(), tenantNames.get(0));
+        assertEquals(prodAppTenant2.application().id().tenant(), tenantNames.get(0));
     }
 
     private long permanentDeployments(Instance instance) {

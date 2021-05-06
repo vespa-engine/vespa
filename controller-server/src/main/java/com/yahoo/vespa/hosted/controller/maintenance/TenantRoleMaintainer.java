@@ -13,6 +13,7 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import java.time.Duration;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 public class TenantRoleMaintainer extends ControllerMaintainer {
@@ -36,6 +37,6 @@ public class TenantRoleMaintainer extends ControllerMaintainer {
     private boolean hasProductionDeployment(TenantName tenant) {
         return controller().applications().asList(tenant).stream()
                 .map(Application::productionInstances)
-                .noneMatch(Map::isEmpty);
+                .anyMatch(Predicate.not(Map::isEmpty));
     }
 }
