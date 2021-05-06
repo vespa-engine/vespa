@@ -52,6 +52,7 @@ public class VespaModelTester {
     private final Map<NodeResources, Collection<Host>> hostsByResources = new HashMap<>();
     private ApplicationId applicationId = ApplicationId.defaultId();
     private boolean useDedicatedNodeForLogserver = false;
+    private HostProvisioner provisioner;
 
     public VespaModelTester() {
         this(new NullConfigModelRegistry());
@@ -59,6 +60,12 @@ public class VespaModelTester {
 
     public VespaModelTester(ConfigModelRegistry configModelRegistry) {
         this.configModelRegistry = configModelRegistry;
+    }
+
+    public HostProvisioner provisioner() {
+        if (provisioner instanceof ProvisionerAdapter)
+            return ((ProvisionerAdapter)provisioner).provisioner();
+        return provisioner;
     }
 
     /** Adds some nodes with resources 1, 3, 10 */
@@ -108,37 +115,43 @@ public class VespaModelTester {
 
     /** Creates a model which uses 0 as start index */
     public VespaModel createModel(String services, boolean failOnOutOfCapacity, String ... retiredHostNames) {
-        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, false, 0,
+        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, false, false, 0,
                            Optional.empty(), new DeployState.Builder(), retiredHostNames);
     }
 
     /** Creates a model which uses 0 as start index */
     public VespaModel createModel(String services, boolean failOnOutOfCapacity, DeployState.Builder builder) {
-        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, false, 0, Optional.empty(), builder);
+        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, false, false, 0, Optional.empty(), builder);
     }
 
     /** Creates a model which uses 0 as start index */
     public VespaModel createModel(String services, boolean failOnOutOfCapacity, boolean useMaxResources, String ... retiredHostNames) {
-        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, useMaxResources, 0,
+        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, useMaxResources, false, 0,
+                           Optional.empty(), new DeployState.Builder(), retiredHostNames);
+    }
+
+    /** Creates a model which uses 0 as start index */
+    public VespaModel createModel(String services, boolean failOnOutOfCapacity, boolean useMaxResources, boolean alwaysReturnOneNode, String ... retiredHostNames) {
+        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, useMaxResources, alwaysReturnOneNode, 0,
                            Optional.empty(), new DeployState.Builder(), retiredHostNames);
     }
 
     /** Creates a model which uses 0 as start index */
     public VespaModel createModel(String services, boolean failOnOutOfCapacity, int startIndexForClusters, String ... retiredHostNames) {
-        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, false, startIndexForClusters,
+        return createModel(Zone.defaultZone(), services, failOnOutOfCapacity, false, false, startIndexForClusters,
                            Optional.empty(), new DeployState.Builder(), retiredHostNames);
     }
 
     /** Creates a model which uses 0 as start index */
     public VespaModel createModel(Zone zone, String services, boolean failOnOutOfCapacity, String ... retiredHostNames) {
-        return createModel(zone, services, failOnOutOfCapacity, false, 0,
+        return createModel(zone, services, failOnOutOfCapacity, false, false, 0,
                            Optional.empty(), new DeployState.Builder(), retiredHostNames);
     }
 
     /** Creates a model which uses 0 as start index */
     public VespaModel createModel(Zone zone, String services, boolean failOnOutOfCapacity,
                                   DeployState.Builder deployStateBuilder, String ... retiredHostNames) {
-        return createModel(zone, services, failOnOutOfCapacity, false, 0,
+        return createModel(zone, services, failOnOutOfCapacity, false, false, 0,
                            Optional.empty(), deployStateBuilder, retiredHostNames);
     }
 
@@ -152,15 +165,16 @@ public class VespaModelTester {
      * @return the resulting model
      */
     public VespaModel createModel(Zone zone, String services, boolean failOnOutOfCapacity, boolean useMaxResources,
+                                  boolean alwaysReturnOneNode,
                                   int startIndexForClusters, Optional<VespaModel> previousModel,
                                   DeployState.Builder deployStatebuilder, String ... retiredHostNames) {
         VespaModelCreatorWithMockPkg modelCreatorWithMockPkg = new VespaModelCreatorWithMockPkg(null, services, ApplicationPackageUtils.generateSearchDefinition("type1"));
         ApplicationPackage appPkg = modelCreatorWithMockPkg.appPkg;
 
-        HostProvisioner provisioner = hosted ?
-                                      new ProvisionerAdapter(new InMemoryProvisioner(hostsByResources,
+        provisioner = hosted ?        new ProvisionerAdapter(new InMemoryProvisioner(hostsByResources,
                                                                                      failOnOutOfCapacity,
                                                                                      useMaxResources,
+                                                                                     alwaysReturnOneNode,
                                                                                      false,
                                                                                      startIndexForClusters,
                                                                                      retiredHostNames)) :
@@ -184,11 +198,13 @@ public class VespaModelTester {
     /** To verify that we don't call allocateHost(alias) in hosted environments */
     private static class ProvisionerAdapter implements HostProvisioner {
 
-        private final HostProvisioner provisioner;
+        private final InMemoryProvisioner provisioner;
 
-        public ProvisionerAdapter(HostProvisioner provisioner) {
+        public ProvisionerAdapter(InMemoryProvisioner provisioner) {
             this.provisioner = provisioner;
         }
+
+        public InMemoryProvisioner provisioner() { return provisioner; }
 
         @Override
         public HostSpec allocateHost(String alias) {
