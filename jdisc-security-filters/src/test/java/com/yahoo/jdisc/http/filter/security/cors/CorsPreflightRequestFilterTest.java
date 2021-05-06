@@ -15,7 +15,9 @@ import java.util.Arrays;
 import static com.yahoo.jdisc.http.HttpRequest.Method.OPTIONS;
 import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.ACCESS_CONTROL_HEADERS;
 import static com.yahoo.jdisc.http.filter.security.cors.CorsLogic.ALLOW_ORIGIN_HEADER;
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -37,6 +39,13 @@ public class CorsPreflightRequestFilterTest {
     public void allowed_request_origin_yields_allow_origin_header_in_response() {
         final String ALLOWED_ORIGIN = "http://allowed.origin";
         HeaderFields headers = doFilterRequest(newRequestFilter(ALLOWED_ORIGIN), ALLOWED_ORIGIN);
+        assertEquals(ALLOWED_ORIGIN, headers.getFirst(ALLOW_ORIGIN_HEADER));
+    }
+
+    @Test
+    public void allowed_wildcard_origin_yields_origin_header_in_response() {
+        final String ALLOWED_ORIGIN = "http://allowed.origin";
+        HeaderFields headers = doFilterRequest(newRequestFilter("*"), ALLOWED_ORIGIN);
         assertEquals(ALLOWED_ORIGIN, headers.getFirst(ALLOW_ORIGIN_HEADER));
     }
 
