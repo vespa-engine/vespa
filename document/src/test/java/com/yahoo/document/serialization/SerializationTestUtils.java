@@ -12,6 +12,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
+import java.nio.file.StandardCopyOption;
 
 import static org.junit.Assert.assertEquals;
 
@@ -50,8 +51,10 @@ public class SerializationTestUtils {
     public static void assertSerializationMatchesCpp(String binaryFilesFolder, String fileName,
                                                      Document document, TestDocumentFactory factory) throws IOException {
         byte[] buf = serializeDocument(document);
-        Files.write(Paths.get(binaryFilesFolder, fileName + "__java"), buf,
-                StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+        Files.write(Paths.get(binaryFilesFolder, fileName + "__java.new"), buf,
+                    StandardOpenOption.CREATE, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING);
+        Files.move(Paths.get(binaryFilesFolder, fileName + "__java.new"),
+                   Paths.get(binaryFilesFolder, fileName + "__java"), StandardCopyOption.ATOMIC_MOVE);
 
         assertDeserializeFromFile(Paths.get(binaryFilesFolder, fileName + "__java"), document, factory);
         assertDeserializeFromFile(Paths.get(binaryFilesFolder, fileName + "__cpp"), document, factory);
