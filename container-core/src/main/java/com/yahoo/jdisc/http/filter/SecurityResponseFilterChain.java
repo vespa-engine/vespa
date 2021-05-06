@@ -1,6 +1,11 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.filter;
 
+import com.yahoo.jdisc.AbstractResource;
+import com.yahoo.jdisc.Request;
+import com.yahoo.jdisc.Response;
+import com.yahoo.jdisc.http.HttpRequest;
+
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -8,16 +13,10 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import com.yahoo.jdisc.AbstractResource;
-import com.yahoo.jdisc.Request;
-import com.yahoo.jdisc.Response;
-import com.yahoo.jdisc.http.HttpRequest;
-import com.yahoo.jdisc.http.HttpResponse;
-
 /**
  * Implementation of TypedFilterChain for DiscFilterResponse
- * @author tejalk
  *
+ * @author Tejal Knot
  */
 public class SecurityResponseFilterChain extends AbstractResource implements ResponseFilter {
 
@@ -31,12 +30,9 @@ public class SecurityResponseFilterChain extends AbstractResource implements Res
 
     @Override
     public void filter(Response response, Request request) {
-        if(response instanceof HttpResponse) {
-            DiscFilterResponse discFilterResponse = new JdiscFilterResponse((HttpResponse)response);
-            RequestView requestView = new RequestViewImpl(request);
-            filter(requestView, discFilterResponse);
-        }
-
+        DiscFilterResponse discFilterResponse = new JdiscFilterResponse(response);
+        RequestView requestView = new RequestViewImpl(request);
+        filter(requestView, discFilterResponse);
     }
 
     public void filter(RequestView requestView, DiscFilterResponse response) {
