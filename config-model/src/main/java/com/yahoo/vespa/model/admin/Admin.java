@@ -61,13 +61,13 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
     private Logserver logserver;
 
     private LogForwarder.Config logForwarderConfig = null;
-    private boolean logForwarderUnconditional = false;
+    private boolean logForwarderIncludeAdmin = false;
 
     private ApplicationType applicationType = ApplicationType.DEFAULT;
 
     public void setLogForwarderConfig(LogForwarder.Config cfg, boolean includeAdmin) {
         this.logForwarderConfig = cfg;
-        this.logForwarderUnconditional = includeAdmin;
+        this.logForwarderIncludeAdmin = includeAdmin;
     }
 
     /**
@@ -245,7 +245,7 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
                 var clustertype = membership.get().cluster().type();
                 // XXX should skip only if this.isHostedVespa is true?
                 if (clustertype == ClusterSpec.Type.admin) {
-                    actuallyAdd = logForwarderUnconditional;
+                    actuallyAdd = logForwarderIncludeAdmin;
                 }
             }
             if (actuallyAdd) {
