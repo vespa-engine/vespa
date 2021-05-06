@@ -911,11 +911,8 @@ DistributorStripe::reportStatus(std::ostream& out,
         framework::PartlyHtmlStatusReporter htmlReporter(*this);
         htmlReporter.reportHtmlHeader(out, path);
         if (!path.hasAttribute("page")) {
-            out << "<a href=\"?page=pending\">Count of pending messages to "
-                << "storage nodes</a><br><a href=\"?page=maintenance&show=50\">"
-                << "List maintenance queue (adjust show parameter to see more "
-                << "operations, -1 for all)</a><br>\n<a href=\"?page=buckets\">"
-                << "List all buckets, highlight non-ideal state</a><br>\n";
+            out << "<a href=\"?page=pending\">Count of pending messages to storage nodes</a><br>\n"
+                << "<a href=\"?page=buckets\">List all buckets, highlight non-ideal state</a><br>\n";
         } else {
             const_cast<IdealStateManager&>(_idealStateManager)
                 .getBucketStatus(out);
@@ -931,8 +928,6 @@ DistributorStripe::reportStatus(std::ostream& out,
                         << XmlAttribute("externalload", _operationOwner.size())
                         << XmlAttribute("maintenance",_maintenanceOperationOwner.size())
                         << XmlEndTag();
-        } else if (page == "maintenance") {
-            // Need new page
         }
     }
 

@@ -638,11 +638,8 @@ Distributor::reportStatus(std::ostream& out,
         framework::PartlyHtmlStatusReporter htmlReporter(*this);
         htmlReporter.reportHtmlHeader(out, path);
         if (!path.hasAttribute("page")) {
-            out << "<a href=\"?page=pending\">Count of pending messages to "
-                << "storage nodes</a><br><a href=\"?page=maintenance&show=50\">"
-                << "List maintenance queue (adjust show parameter to see more "
-                << "operations, -1 for all)</a><br>\n<a href=\"?page=buckets\">"
-                << "List all buckets, highlight non-ideal state</a><br>\n";
+            out << "<a href=\"?page=pending\">Count of pending messages to storage nodes</a><br>\n"
+                << "<a href=\"?page=buckets\">List all buckets, highlight non-ideal state</a><br>\n";
         } else {
             auto guard = _stripe_accessor->rendezvous_and_hold_all();
             const auto& op_ctx = _component;
