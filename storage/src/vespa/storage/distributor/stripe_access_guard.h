@@ -16,6 +16,8 @@ class Distribution;
 
 namespace storage { class DistributorConfiguration; }
 
+namespace vespalib::xml { class XmlOutputStream; }
+
 namespace storage::distributor {
 
 /**
@@ -53,6 +55,22 @@ public:
     virtual void update_read_snapshot_after_db_pruning(const lib::ClusterStateBundle& new_state) = 0;
     virtual void update_read_snapshot_after_activation(const lib::ClusterStateBundle& activated_state) = 0;
     virtual void clear_read_only_bucket_repo_databases() = 0;
+
+    // TODO STRIPE: Add merge() function.
+    struct PendingOperationStats {
+        size_t external_load_operations;
+        size_t maintenance_operations;
+        PendingOperationStats(size_t external_load_operations_in,
+                              size_t maintenance_operations_in)
+            : external_load_operations(external_load_operations_in),
+              maintenance_operations(maintenance_operations_in) {}
+    };
+
+    // Functions used for state reporting
+    virtual void report_bucket_db_status(document::BucketSpace bucket_space, std::ostream& out) const = 0;
+    virtual PendingOperationStats pending_operation_stats() const = 0;
+    virtual void report_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const = 0;
+    virtual void report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const = 0;
 
 };
 

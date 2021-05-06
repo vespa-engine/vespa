@@ -168,6 +168,9 @@ private:
     void propagateInternalScanMetricsToExternal();
     void scanAllBuckets();
     void enableNextConfig();
+    void fetch_status_requests();
+    void handle_status_requests();
+    void signal_work_was_done();
     void enableNextDistribution();
     void propagateDefaultDistribution(std::shared_ptr<const lib::Distribution>);
 
@@ -192,7 +195,10 @@ private:
     std::shared_ptr<const DistributorConfiguration> _total_config;
     std::unique_ptr<BucketDBUpdater>     _bucket_db_updater;
     StatusReporterDelegate               _distributorStatusDelegate;
+    std::unique_ptr<StatusReporterDelegate> _bucket_db_status_delegate;
     framework::TickingThreadPool&        _threadPool;
+    mutable std::vector<std::shared_ptr<DistributorStatus>> _status_to_do;
+    mutable std::vector<std::shared_ptr<DistributorStatus>> _fetched_status_requests;
     framework::ThreadWaitInfo            _tickResult;
     MetricUpdateHook                     _metricUpdateHook;
     DistributorHostInfoReporter          _hostInfoReporter;

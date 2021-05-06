@@ -117,6 +117,8 @@ public:
 
     bool handleStatusRequest(const DelegatedStatusRequest& request) const override;
 
+    StripeAccessGuard::PendingOperationStats pending_operation_stats() const;
+
     std::string getActiveIdealStateOperations() const;
     std::string getActiveOperations() const;
 
@@ -194,7 +196,6 @@ private:
     friend class DistributorTestUtil;
     friend class MetricUpdateHook;
     friend class Distributor;
-    friend class LegacySingleStripeAccessGuard;
     friend class MultiThreadedStripeAccessGuard;
 
     bool handleMessage(const std::shared_ptr<api::StorageMessage>& msg);
