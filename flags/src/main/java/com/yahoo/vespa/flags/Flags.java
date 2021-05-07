@@ -165,12 +165,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundStringFlag SYNC_HOST_LOGS_TO_S3_BUCKET = defineStringFlag(
-            "sync-host-logs-to-s3-bucket", "", List.of("andreer", "valerijf"), "2021-02-10", "2021-05-14",
-            "Host-admin should sync host logs to an S3 bucket named by this flag. If left empty, sync is disabled",
-            "Takes effect on next run of S3 log sync task in host-admin",
-            TENANT_ID, ZONE_ID);
-
     public static final UnboundIntFlag CLUSTER_CONTROLLER_MAX_HEAP_SIZE_IN_MB = defineIntFlag(
             "cluster-controller-max-heap-size-in-mb", 128,
             List.of("hmusum"), "2021-02-10", "2021-05-15",
