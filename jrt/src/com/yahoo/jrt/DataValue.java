@@ -10,7 +10,7 @@ import java.nio.ByteBuffer;
  **/
 public class DataValue extends Value
 {
-    private byte[] value;
+    private final byte[] value;
 
     /**
      * Create from a Java-type value
@@ -24,7 +24,7 @@ public class DataValue extends Value
      *
      * @param src buffer where the value is stored
      **/
-    DataValue(ByteBuffer src) {
+    public DataValue(ByteBuffer src) {
         int size = src.getInt();
         value = new byte[size];
         src.get(value);
