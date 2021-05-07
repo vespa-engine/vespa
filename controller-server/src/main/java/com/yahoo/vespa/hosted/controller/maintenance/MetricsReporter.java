@@ -45,7 +45,7 @@ import java.util.stream.Collectors;
  */
 public class MetricsReporter extends ControllerMaintainer {
 
-    public static final String TENANT_METRIC = "tenant";
+    public static final String TENANT_METRIC = "billing.tenants";
     public static final String DEPLOYMENT_FAIL_METRIC = "deployment.failurePercentage";
     public static final String DEPLOYMENT_AVERAGE_DURATION = "deployment.averageDuration";
     public static final String DEPLOYMENT_FAILING_UPGRADES = "deployment.failingUpgrades";
@@ -204,8 +204,7 @@ public class MetricsReporter extends ControllerMaintainer {
 
         controller().tenants().asList().forEach(tenant -> {
             var planId = controller().serviceRegistry().billingController().getPlan(tenant.name());
-            planCounter.computeIfPresent(planId.value(), (k, v) -> v + 1);
-            planCounter.putIfAbsent(planId.value(), 1);
+            planCounter.merge(planId.value(), 1, Integer::sum);
         });
 
         planCounter.forEach((planId, count) -> {
