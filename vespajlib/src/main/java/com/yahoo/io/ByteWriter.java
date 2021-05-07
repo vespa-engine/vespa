@@ -28,7 +28,7 @@ public class ByteWriter extends AbstractByteWriter {
     @Override
     public void send(final ByteBuffer b) throws IOException {
         // we know from how BufferChain works we have a backing array
-        stream.write(b.array(), b.position() + b.arrayOffset(), b.limit() - b.position());
+        stream.write(b.array(), b.position() + b.arrayOffset(), b.remaining());
     }
 
     @Override

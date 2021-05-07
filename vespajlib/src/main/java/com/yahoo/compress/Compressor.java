@@ -6,6 +6,7 @@ import net.jpountz.lz4.LZ4Factory;
 import net.jpountz.lz4.LZ4FastDecompressor;
 import net.jpountz.lz4.LZ4SafeDecompressor;
 
+import java.nio.ByteBuffer;
 import java.util.Arrays;
 import java.util.Optional;
 import java.util.Random;
@@ -159,7 +160,16 @@ public class Compressor {
     }
 
     public byte[] compressUnconditionally(byte[] input) {
-        return getCompressor().compress(input);
+        return getCompressor().compress(input, 0, input.length);
+    }
+    public byte[] compressUnconditionally(ByteBuffer input) {
+        return getCompressor().compress(input.array(), input.arrayOffset()+input.position(), input.remaining());
+    }
+
+    public void decompressUnconditionally(ByteBuffer input, ByteBuffer output) {
+        if (input.remaining() > 0) {
+            factory.fastDecompressor().decompress(input, output);
+        }
     }
 
     public byte [] decompressUnconditionally(byte[] input, int srcOffset, int uncompressedLen) {
