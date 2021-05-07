@@ -721,8 +721,6 @@ fi
 %{_prefix}/lib/jars/hk2-*.jar
 %{_prefix}/lib/jars/hosted-zone-api-jar-with-dependencies.jar
 %{_prefix}/lib/jars/jackson-*.jar
-%{_prefix}/lib/jars/jakarta.activation-api-*.jar
-%{_prefix}/lib/jars/jakarta.xml.bind-api-*.jar
 %{_prefix}/lib/jars/javassist-*.jar
 %{_prefix}/lib/jars/javax.*.jar
 %{_prefix}/lib/jars/jdisc-cloud-aws-jar-with-dependencies.jar
