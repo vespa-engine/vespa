@@ -1,9 +1,8 @@
 package com.yahoo.vespa.hosted.controller.archive;
 
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import org.apache.curator.shaded.com.google.common.collect.Streams;
@@ -22,22 +21,13 @@ public class CuratorArchiveBucketDbTest {
 
     @Test
     public void archiveUriFor() {
-        ControllerTester tester = new ControllerTester();
-        InMemoryFlagSource flagSource = (InMemoryFlagSource) tester.controller().flagSource();
+        ControllerTester tester = new ControllerTester(SystemName.Public);
         CuratorArchiveBucketDb bucketDb = new CuratorArchiveBucketDb(tester.controller());
 
         tester.curator().writeArchiveBuckets(ZoneId.defaultId(),
                 Set.of(new ArchiveBucket("existingBucket", "keyArn").withTenant(TenantName.defaultName())));
 
-        // Nothing when feature flag is not set.
-        assertEquals(Optional.empty(), bucketDb.archiveUriFor(ZoneId.defaultId(), TenantName.defaultName()));
-
-        // Returns hardcoded name from feature flag
-        flagSource.withStringFlag(Flags.SYNC_HOST_LOGS_TO_S3_BUCKET.id(), "hardcoded");
-        assertEquals(Optional.of(URI.create("s3://hardcoded/default/")), bucketDb.archiveUriFor(ZoneId.defaultId(), TenantName.defaultName()));
-
-        // Finds existing bucket in db when set to "auto"
-        flagSource.withStringFlag(Flags.SYNC_HOST_LOGS_TO_S3_BUCKET.id(), "auto");
+        // Finds existing bucket in db
         assertEquals(Optional.of(URI.create("s3://existingBucket/default/")), bucketDb.archiveUriFor(ZoneId.defaultId(), TenantName.defaultName()));
 
         // Assigns to existing bucket while there is space

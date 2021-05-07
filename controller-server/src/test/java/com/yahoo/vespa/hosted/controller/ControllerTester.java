@@ -28,6 +28,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.api.integration.organization.Contact;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockMavenRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.stubs.MockUserManagement;
+import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.api.role.SimplePrincipal;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
@@ -58,10 +59,10 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 import java.util.OptionalLong;
+import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
@@ -98,12 +99,11 @@ public final class ControllerTester {
         this(new AthenzDbMock(),
              curatorDb,
              rotationsConfig,
-             new ServiceRegistryMock(),
-             SystemName.defaultSystem());
+             new ServiceRegistryMock());
     }
 
     public ControllerTester(ServiceRegistryMock serviceRegistryMock) {
-        this(new AthenzDbMock(), new MockCuratorDb(), defaultRotationsConfig(), serviceRegistryMock, SystemName.defaultSystem());
+        this(new AthenzDbMock(), new MockCuratorDb(), defaultRotationsConfig(), serviceRegistryMock);
     }
 
     public ControllerTester(RotationsConfig rotationsConfig) {
@@ -119,7 +119,7 @@ public final class ControllerTester {
     }
 
     public ControllerTester(SystemName system) {
-        this(new AthenzDbMock(), new MockCuratorDb(), defaultRotationsConfig(), new ServiceRegistryMock(), system);
+        this(new AthenzDbMock(), new MockCuratorDb(), defaultRotationsConfig(), new ServiceRegistryMock(system));
     }
 
     private ControllerTester(AthenzDbMock athenzDb, boolean inContainer,
@@ -143,10 +143,9 @@ public final class ControllerTester {
 
     private ControllerTester(AthenzDbMock athenzDb,
                              CuratorDb curator, RotationsConfig rotationsConfig,
-                             ServiceRegistryMock serviceRegistry, SystemName systemName) {
+                             ServiceRegistryMock serviceRegistry) {
         this(athenzDb, false, curator, rotationsConfig, serviceRegistry,
-             systemName.isPublic() ? createCloudController(curator, rotationsConfig, serviceRegistry) :
-                                     createController(curator, rotationsConfig, athenzDb, serviceRegistry));
+             createController(curator, rotationsConfig, athenzDb, serviceRegistry));
     }
 
     /** Creates a ControllerTester built on the ContainerTester's controller. This controller can not be recreated. */
@@ -275,8 +274,7 @@ public final class ControllerTester {
     }
 
     public TenantName createTenant(String tenantName) {
-        return createTenant(tenantName, "domain" + nextDomainId.getAndIncrement(),
-                            nextPropertyId.getAndIncrement());
+        return createTenant(tenantName, zoneRegistry().system().isPublic() ? Tenant.Type.cloud : Tenant.Type.athenz);
     }
 
     public TenantName createTenant(String tenantName, Tenant.Type type) {
@@ -313,7 +311,7 @@ public final class ControllerTester {
     private TenantName createCloudTenant(String tenantName) {
         TenantName tenant = TenantName.from(tenantName);
         TenantSpec spec = new CloudTenantSpec(tenant, "token");
-        controller().tenants().create(spec, new Auth0Credentials(new SimplePrincipal("dev"), Collections.emptySet()));
+        controller().tenants().create(spec, new Auth0Credentials(new SimplePrincipal("dev"), Set.of(Role.administrator(tenant))));
         return tenant;
     }
 
@@ -358,34 +356,19 @@ public final class ControllerTester {
     private static Controller createController(CuratorDb curator, RotationsConfig rotationsConfig,
                                                AthenzDbMock athensDb,
                                                ServiceRegistryMock serviceRegistry) {
+        InMemoryFlagSource flagSource = new InMemoryFlagSource()
+                .withBooleanFlag(PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
         Controller controller = new Controller(curator,
                                                rotationsConfig,
-                                               new AthenzFacade(new AthenzClientFactoryMock(athensDb)),
+                                               serviceRegistry.zoneRegistry().system().isPublic() ?
+                                                       new CloudAccessControl(new MockUserManagement(), flagSource, serviceRegistry) :
+                                                       new AthenzFacade(new AthenzClientFactoryMock(athensDb)),
                                                () -> "test-controller",
-                                               new InMemoryFlagSource(),
+                                               flagSource,
                                                new MockMavenRepository(),
                                                serviceRegistry,
                                                new MetricsMock(), new SecretStoreMock(),
                                                new ControllerConfig.Builder().build());
-        // Calculate initial versions
-        controller.updateVersionStatus(VersionStatus.compute(controller));
-        return controller;
-    }
-
-    private static Controller createCloudController(CuratorDb curator, RotationsConfig rotationsConfig,
-                                                    ServiceRegistryMock serviceRegistry) {
-        var flagSource = new InMemoryFlagSource()
-                .withBooleanFlag(PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
-        Controller controller = new Controller(
-                curator,
-                rotationsConfig,
-                new CloudAccessControl(new MockUserManagement(), flagSource, serviceRegistry),
-                () -> "test-controller",
-                flagSource,
-                new MockMavenRepository(),
-                serviceRegistry,
-                new MetricsMock(), new SecretStoreMock(),
-                new ControllerConfig.Builder().build());
         // Calculate initial versions
         controller.updateVersionStatus(VersionStatus.compute(controller));
         return controller;

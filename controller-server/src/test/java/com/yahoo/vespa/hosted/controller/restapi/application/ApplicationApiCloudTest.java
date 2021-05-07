@@ -3,9 +3,11 @@ package com.yahoo.vespa.hosted.controller.restapi.application;
 
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ApplicationName;
+import com.yahoo.config.provision.InstanceName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -13,6 +15,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.secrets.TenantSecretSto
 import com.yahoo.vespa.hosted.controller.api.role.Role;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
+import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
 import com.yahoo.vespa.hosted.controller.restapi.ContainerTester;
 import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
 import com.yahoo.vespa.hosted.controller.security.Auth0Credentials;
@@ -23,6 +26,7 @@ import org.junit.Before;
 import org.junit.Test;
 
 import javax.ws.rs.ForbiddenException;
+import java.io.File;
 import java.util.Collections;
 import java.util.Optional;
 import java.util.Set;
@@ -198,6 +202,11 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
 
     @Test
     public void archive_uri_test() {
+        new DeploymentTester(new ControllerTester(tester))
+                .newDeploymentContext(ApplicationId.from(tenantName, applicationName, InstanceName.defaultName()))
+                .submit()
+                .deploy();
+
         tester.assertResponse(request("/application/v4/tenant/scoober", GET).roles(Role.reader(tenantName)),
                 (response) -> assertFalse(response.getBodyAsString().contains("archiveAccessRole")),
                 200);
@@ -212,6 +221,10 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
                 (response) -> assertTrue(response.getBodyAsString().contains("\"archiveAccessRole\":\"arn:aws:iam::123456789012:role/my-role\"")),
                 200);
 
+        tester.assertResponse(request("/application/v4/tenant/scoober/application/albums/environment/prod/region/aws-us-east-1c/instance/default", GET)
+                        .roles(Role.reader(tenantName)),
+                new File("deployment-cloud.json"));
+
         tester.assertResponse(request("/application/v4/tenant/scoober/archive-access", DELETE).roles(Role.administrator(tenantName)),
                 "{\"message\":\"Archive access role removed for tenant scoober.\"}", 200);
         tester.assertResponse(request("/application/v4/tenant/scoober", GET).roles(Role.reader(tenantName)),
@@ -222,7 +235,7 @@ public class ApplicationApiCloudTest extends ControllerContainerCloudTest {
     private ApplicationPackageBuilder prodBuilder() {
         return new ApplicationPackageBuilder()
                 .instances("default")
-                .region("aws-us-east-1a");
+                .region("aws-us-east-1c");
     }
 
     private void setupTenantAndApplication() {
