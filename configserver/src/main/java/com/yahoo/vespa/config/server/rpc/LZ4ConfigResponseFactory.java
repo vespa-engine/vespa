@@ -2,7 +2,6 @@
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.text.Utf8Array;
-import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.LZ4PayloadCompressor;
 import com.yahoo.vespa.config.protocol.CompressionInfo;
 import com.yahoo.vespa.config.protocol.CompressionType;
@@ -20,13 +19,12 @@ public class LZ4ConfigResponseFactory implements ConfigResponseFactory {
     private static final LZ4PayloadCompressor compressor = new LZ4PayloadCompressor();
 
     @Override
-    public ConfigResponse createResponse(ConfigPayload payload,
+    public ConfigResponse createResponse(Utf8Array rawPayload,
                                          long generation,
                                          boolean applyOnRestart) {
-        Utf8Array rawPayload = payload.toUtf8Array(true);
         String configMd5 = ConfigUtils.getMd5(rawPayload);
         CompressionInfo info = CompressionInfo.create(CompressionType.LZ4, rawPayload.getByteLength());
-        Utf8Array compressed = new Utf8Array(compressor.compress(rawPayload.getBytes()));
+        Utf8Array compressed = new Utf8Array(compressor.compress(rawPayload.wrap()));
         return new SlimeConfigResponse(compressed, generation, applyOnRestart, configMd5, info);
     }
 
