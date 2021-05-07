@@ -9,6 +9,7 @@ import com.yahoo.jdisc.Metric;
 import com.yahoo.vespa.hosted.controller.Application;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
+import com.yahoo.vespa.hosted.controller.api.integration.billing.PlanId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.ApplicationVersion;
 import com.yahoo.vespa.hosted.controller.application.ApplicationList;
 import com.yahoo.vespa.hosted.controller.application.Deployment;
@@ -31,6 +32,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -43,6 +45,7 @@ import java.util.stream.Collectors;
  */
 public class MetricsReporter extends ControllerMaintainer {
 
+    public static final String TENANT_METRIC = "billing.tenants";
     public static final String DEPLOYMENT_FAIL_METRIC = "deployment.failurePercentage";
     public static final String DEPLOYMENT_AVERAGE_DURATION = "deployment.averageDuration";
     public static final String DEPLOYMENT_FAILING_UPGRADES = "deployment.failingUpgrades";
@@ -78,6 +81,7 @@ public class MetricsReporter extends ControllerMaintainer {
         reportInfrastructureUpgradeMetrics(versionStatus);
         reportAuditLog();
         reportBrokenSystemVersion(versionStatus);
+        reportTenantMetrics();
         return true;
     }
 
@@ -190,6 +194,22 @@ public class MetricsReporter extends ControllerMaintainer {
     private void reportChangeDurations(Map<NodeVersion, Duration> changeDurations, String metricName) {
         changeDurations.forEach((nodeVersion, duration) -> {
             metric.set(metricName, duration.toSeconds(), metric.createContext(dimensions(nodeVersion.hostname(), nodeVersion.zone())));
+        });
+    }
+
+    private void reportTenantMetrics() {
+        if (! controller().system().isPublic()) return;
+
+        var planCounter = new TreeMap<String, Integer>();
+
+        controller().tenants().asList().forEach(tenant -> {
+            var planId = controller().serviceRegistry().billingController().getPlan(tenant.name());
+            planCounter.merge(planId.value(), 1, Integer::sum);
+        });
+
+        planCounter.forEach((planId, count) -> {
+            var context = metric.createContext(Map.of("plan", planId));
+            metric.set(TENANT_METRIC, count, context);
         });
     }
 
