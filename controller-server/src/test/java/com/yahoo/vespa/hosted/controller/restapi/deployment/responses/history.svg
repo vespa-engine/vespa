@@ -1,0 +1,176 @@
+<svg xmlns='http://www.w3.org/2000/svg' width='616.7390658896196' height='20' role='img' aria-label='Deployment Status'>
+    <title>Deployment Status</title>
+    <linearGradient id='light' x2='0' y2='100%'>
+        <stop offset='0'  stop-color='#fff' stop-opacity='.5'/>
+        <stop offset='.1' stop-color='#fff' stop-opacity='.15'/>
+        <stop offset='.9' stop-color='#000' stop-opacity='.15'/>
+        <stop offset='1'  stop-color='#000' stop-opacity='.7'/>
+    </linearGradient>
+    <linearGradient id='left-light' x2='100%' y2='0'>
+        <stop offset='0' stop-color='#fff' stop-opacity='.3'/>
+        <stop offset='.5' stop-color='#fff' stop-opacity='.1'/>
+        <stop offset='1' stop-color='#fff' stop-opacity='.0'/>
+    </linearGradient>
+    <linearGradient id='right-shadow' x2='100%' y2='0'>
+        <stop offset='0' stop-color='#000' stop-opacity='.0'/>
+        <stop offset='.5' stop-color='#000' stop-opacity='.1'/>
+        <stop offset='1' stop-color='#000' stop-opacity='.3'/>
+    </linearGradient>
+    <linearGradient id='shadow' x2='100%' y2='0'>
+        <stop offset='0' stop-color='#222' stop-opacity='.4'/>
+        <stop offset='.5' stop-color='#555' stop-opacity='.4'/>
+        <stop offset='1' stop-color='#555' stop-opacity='.0'/>
+    </linearGradient>
+    <linearGradient id='shade' x2='100%' y2='0'>
+        <stop offset='0' stop-color='#000' stop-opacity='.20'/>
+        <stop offset='0.05' stop-color='#000' stop-opacity='.10'/>
+        <stop offset='1' stop-color='#000' stop-opacity='.0'/>
+    </linearGradient>
+    <linearGradient id='run-on-failure' x1='40%' x2='80%' y2='0%'>
+        <stop offset='0' stop-color='#ab83ff' />
+        <stop offset='1' stop-color='#bf103c' />
+        <animate attributeName='x1' values='-110%;150%;20%;-110%' dur='6s' repeatCount='indefinite' />
+        <animate attributeName='x2' values='-10%;250%;120%;-10%' dur='6s' repeatCount='indefinite' />
+    </linearGradient>
+    <linearGradient id='run-on-success' x1='40%' x2='80%' y2='0%'>
+        <stop offset='0' stop-color='#ab83ff' />
+        <stop offset='1' stop-color='#00ff48' />
+        <animate attributeName='x1' values='-110%;150%;20%;-110%' dur='6s' repeatCount='indefinite' />
+        <animate attributeName='x2' values='-10%;250%;120%;-10%' dur='6s' repeatCount='indefinite' />
+    </linearGradient>
+    <clipPath id='rounded'>
+        <rect width='616.7390658896196' height='20' rx='3' fill='#fff'/>
+    </clipPath>
+    <g clip-path='url(#rounded)'>
+        <rect x='610.9256720815912' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='604.6322196342305' rx='3' width='12.293452447360632' height='20' fill='#00ff48'/>
+        <rect x='604.6322196342305' rx='3' width='12.293452447360632' height='20' fill='url(#shade)'/>
+        <rect x='604.8245279299437' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='598.3387671868699' rx='3' width='12.485760743073765' height='20' fill='#bf103c'/>
+        <rect x='598.3387671868699' rx='3' width='12.485760743073765' height='20' fill='url(#shade)'/>
+        <rect x='598.5369518248465' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='591.8530064437961' rx='3' width='12.68394538105045' height='20' fill='#bf103c'/>
+        <rect x='591.8530064437961' rx='3' width='12.68394538105045' height='20' fill='url(#shade)'/>
+        <rect x='592.0572469867445' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='585.1690610627456' rx='3' width='12.888185923998947' height='20' fill='#bf103c'/>
+        <rect x='585.1690610627456' rx='3' width='12.888185923998947' height='20' fill='url(#shade)'/>
+        <rect x='585.3795425602511' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='578.2808751387468' rx='3' width='13.098667421504338' height='20' fill='#bf103c'/>
+        <rect x='578.2808751387468' rx='3' width='13.098667421504338' height='20' fill='url(#shade)'/>
+        <rect x='578.4977882949328' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='571.1822077172424' rx='3' width='13.31558057769039' height='20' fill='#bf103c'/>
+        <rect x='571.1822077172424' rx='3' width='13.31558057769039' height='20' fill='url(#shade)'/>
+        <rect x='571.4057490635566' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='563.866627139552' rx='3' width='13.539121924004645' height='20' fill='#bf103c'/>
+        <rect x='563.866627139552' rx='3' width='13.539121924004645' height='20' fill='url(#shade)'/>
+        <rect x='564.0969992128305' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='556.3275052155473' rx='3' width='13.769493997283261' height='20' fill='#bf103c'/>
+        <rect x='556.3275052155473' rx='3' width='13.769493997283261' height='20' fill='url(#shade)'/>
+        <rect x='556.564916741521' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='548.558011218264' rx='3' width='14.006905523256986' height='20' fill='#bf103c'/>
+        <rect x='548.558011218264' rx='3' width='14.006905523256986' height='20' fill='url(#shade)'/>
+        <rect x='548.8026773006716' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='540.5511056950071' rx='3' width='14.251571605664486' height='20' fill='#bf103c'/>
+        <rect x='540.5511056950071' rx='3' width='14.251571605664486' height='20' fill='url(#shade)'/>
+        <rect x='540.803248010487' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='532.2995340893426' rx='3' width='14.503713921144396' height='20' fill='#bf103c'/>
+        <rect x='532.2995340893426' rx='3' width='14.503713921144396' height='20' fill='url(#shade)'/>
+        <rect x='532.5593810882809' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='523.7958201681982' rx='3' width='14.763560920082657' height='20' fill='#bf103c'/>
+        <rect x='523.7958201681982' rx='3' width='14.763560920082657' height='20' fill='url(#shade)'/>
+        <rect x='524.0636072817127' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='515.0322592481156' rx='3' width='15.031348033597132' height='20' fill='#bf103c'/>
+        <rect x='515.0322592481156' rx='3' width='15.031348033597132' height='20' fill='url(#shade)'/>
+        <rect x='515.3082291013654' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='506.0009112145184' rx='3' width='15.307317886847013' height='20' fill='#bf103c'/>
+        <rect x='506.0009112145184' rx='3' width='15.307317886847013' height='20' fill='url(#shade)'/>
+        <rect x='506.2853138465317' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='496.6935933276714' rx='3' width='15.591720518860313' height='20' fill='#bf103c'/>
+        <rect x='496.6935933276714' rx='3' width='15.591720518860313' height='20' fill='url(#shade)'/>
+        <rect x='496.9866864178897' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='487.1018728088111' rx='3' width='15.884813609078591' height='20' fill='#bf103c'/>
+        <rect x='487.1018728088111' rx='3' width='15.884813609078591' height='20' fill='url(#shade)'/>
+        <rect x='487.4039219105567' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='477.2170591997325' rx='3' width='16.186862710824187' height='20' fill='#bf103c'/>
+        <rect x='477.2170591997325' rx='3' width='16.186862710824187' height='20' fill='url(#shade)'/>
+        <rect x='477.5283379808098' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='467.0301964889083' rx='3' width='16.498141491901468' height='20' fill='#bf103c'/>
+        <rect x='467.0301964889083' rx='3' width='16.498141491901468' height='20' fill='url(#shade)'/>
+        <rect x='467.3509869795569' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='456.5320549970068' rx='3' width='16.81893198255014' height='20' fill='#bf103c'/>
+        <rect x='456.5320549970068' rx='3' width='16.81893198255014' height='20' fill='url(#shade)'/>
+        <rect x='456.86264784543187' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='445.7131230144567' rx='3' width='17.14952483097518' height='20' fill='#bf103c'/>
+        <rect x='445.7131230144567' rx='3' width='17.14952483097518' height='20' fill='url(#shade)'/>
+        <rect x='446.05381775016656' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='434.56359818348153' rx='3' width='17.49021956668504' height='20' fill='#bf103c'/>
+        <rect x='434.56359818348153' rx='3' width='17.49021956668504' height='20' fill='url(#shade)'/>
+        <rect x='434.91470348867307' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='423.0733786167965' rx='3' width='17.841324871876566' height='20' fill='#bf103c'/>
+        <rect x='423.0733786167965' rx='3' width='17.841324871876566' height='20' fill='url(#shade)'/>
+        <rect x='423.43521260603256' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='411.23205374491994' rx='3' width='18.20315886111265' height='20' fill='#bf103c'/>
+        <rect x='411.23205374491994' rx='3' width='18.20315886111265' height='20' fill='url(#shade)'/>
+        <rect x='411.60494425335327' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='399.0288948838073' rx='3' width='18.576049369545963' height='20' fill='#bf103c'/>
+        <rect x='399.0288948838073' rx='3' width='18.576049369545963' height='20' fill='url(#shade)'/>
+        <rect x='399.41317976421124' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='386.45284551426136' rx='3' width='18.960334249949863' height='20' fill='#bf103c'/>
+        <rect x='386.45284551426136' rx='3' width='18.960334249949863' height='20' fill='url(#shade)'/>
+        <rect x='386.84887294313717' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='373.4925112643115' rx='3' width='19.35636167882567' height='20' fill='#bf103c'/>
+        <rect x='373.4925112643115' rx='3' width='19.35636167882567' height='20' fill='url(#shade)'/>
+        <rect x='373.90064005734945' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='360.1361495854858' rx='3' width='19.764490471863645' height='20' fill='#bf103c'/>
+        <rect x='360.1361495854858' rx='3' width='19.764490471863645' height='20' fill='url(#shade)'/>
+        <rect x='360.55674952266554' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='346.3716591136221' rx='3' width='20.18509040904341' height='20' fill='#bf103c'/>
+        <rect x='346.3716591136221' rx='3' width='20.18509040904341' height='20' fill='url(#shade)'/>
+        <rect x='346.8051112742472' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='332.1865687045787' rx='3' width='20.61854256966852' height='20' fill='#bf103c'/>
+        <rect x='332.1865687045787' rx='3' width='20.61854256966852' height='20' fill='url(#shade)'/>
+        <rect x='332.6332658125487' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='317.56802613491016' rx='3' width='21.06523967763854' height='20' fill='#bf103c'/>
+        <rect x='317.56802613491016' rx='3' width='21.06523967763854' height='20' fill='url(#shade)'/>
+        <rect x='318.02837291454324' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='302.5027864572716' rx='3' width='21.525586457271643' height='20' fill='#bf103c'/>
+        <rect x='302.5027864572716' rx='3' width='21.525586457271643' height='20' fill='url(#shade)'/>
+        <rect x='302.9772' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='286.9772' rx='3' width='22.0' height='20' fill='#bf103c'/>
+        <rect x='286.9772' rx='3' width='22.0' height='20' fill='url(#shade)'/>
+        <rect x='286.9772' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='162.7498' rx='3' width='130.2274' height='20' fill='url(#run-on-failure)'/>
+        <rect x='162.7498' rx='3' width='130.2274' height='20' fill='url(#shade)'/>
+        <rect width='168.7498' height='20' fill='#5a5a5a'/>
+        <rect x='-6.0' rx='3' width='174.7498' height='20' fill='url(#shade)'/>
+        <rect width='2' height='20' fill='url(#left-light)'/>
+        <rect x='614.7390658896196' width='2' height='20' fill='url(#right-shadow)'/>
+        <rect width='616.7390658896196' height='20' fill='url(#light)'/>
+    </g>
+    <g fill='#fff' text-anchor='middle' font-family='Verdana,Geneva,DejaVu Sans,sans-serif' text-rendering='geometricPrecision' font-size='10'>
+        <svg x='8.5' y='3.0' width='16.0' height='16.0' viewBox='0 0 150 150'>
+            <polygon fill='#402a14' fill-opacity='0.5' points='84.84 10 34.1 44.46 34.1 103.78 84.84 68.02 135.57 103.78 135.57 44.46 84.84 10'/>
+            <polygon fill='#402a14' fill-opacity='0.5' points='84.84 68.02 84.84 10 135.57 44.46 135.57 103.78 84.84 68.02'/>
+            <polygon fill='#061a29' fill-opacity='0.5' points='65.07 81.99 14.34 46.22 14.34 105.54 65.07 140 115.81 105.54 115.81 46.22 65.07 81.99'/>
+            <polygon fill='#061a29' fill-opacity='0.5' points='65.07 81.99 65.07 140 14.34 105.54 14.34 46.22 65.07 81.99'/>
+        </svg>
+        <svg x='8.0' y='2.0' width='16.0' height='16.0' viewBox='0 0 150 150'>
+            <linearGradient id='yellow-shaded' x1='91.17' y1='44.83' x2='136.24' y2='73.4'  gradientUnits='userSpaceOnUse'>
+                <stop offset='0.01' stop-color='#c6783e'/>
+                <stop offset='0.54' stop-color='#ff9750'/>
+            </linearGradient>
+            <linearGradient id='blue-shaded' x1='60.71' y1='104.56' x2='-15.54' y2='63' gradientUnits='userSpaceOnUse'>
+                <stop offset='0' stop-color='#005a8e'/>
+                <stop offset='0.54' stop-color='#1a7db6'/>
+            </linearGradient>
+            <polygon fill='#ff9d4b' points='84.84 10 34.1 44.46 34.1 103.78 84.84 68.02 135.57 103.78 135.57 44.46 84.84 10'/>
+            <polygon fill='url(#yellow-shaded)' points='84.84 68.02 84.84 10 135.57 44.46 135.57 103.78 84.84 68.02'/>
+            <polygon fill='#1a7db6' points='65.07 81.99 14.34 46.22 14.34 105.54 65.07 140 115.81 105.54 115.81 46.22 65.07 81.99'/>
+            <polygon fill='url(#blue-shaded)' points='65.07 81.99 65.07 140 14.34 105.54 14.34 46.22 65.07 81.99'/>
+        </svg>
+        <text x='96.8749' y='14' fill='#000' fill-opacity='.3' textLength='128.7498'>tenant.application.default</text>
+        <text x='96.3749' y='13' fill='#fff' textLength='128.7498'>tenant.application.default</text>
+        <text x='231.3635' y='14' fill='#000' fill-opacity='.3' textLength='108.22739999999999'>production-us-west-1</text>
+        <text x='230.8635' y='13' fill='#fff' textLength='108.22739999999999'>production-us-west-1</text>
+    </g>
+</svg>
