@@ -134,7 +134,10 @@ public abstract class LoggingRequestHandler extends ThreadedHttpRequestHandler {
         long summaryStartTime = 0;
         if (t != null) {
             timeoutInterval = t.getTimeout();
-            requestOverhead = t.getQueryStartTime() - startTime;
+            long queryStartTime = t.getQueryStartTime();
+            if (queryStartTime > 0) {
+                requestOverhead = queryStartTime - startTime;
+            }
             summaryStartTime = t.getSummaryStartTime();
         }
 
