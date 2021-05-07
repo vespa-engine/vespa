@@ -5,6 +5,8 @@ import com.yahoo.compress.CompressionType;
 import com.yahoo.compress.Compressor;
 import com.yahoo.vespa.config.util.ConfigUtils;
 
+import java.nio.ByteBuffer;
+
 /**
  * Wrapper for LZ4 compression that selects compression level based on properties.
  *
@@ -24,9 +26,17 @@ public class LZ4PayloadCompressor {
     public byte[] compress(byte[] input) {
         return compressor.compressUnconditionally(input);
     }
+    public byte[] compress(ByteBuffer input) {
+        return compressor.compressUnconditionally(input);
+    }
 
     public byte [] decompress(byte[] input, int uncompressedLen) {
         return compressor.decompressUnconditionally(input, 0, uncompressedLen);
+    }
+    public byte [] decompress(ByteBuffer input, int uncompressedLen) {
+        ByteBuffer uncompressed = ByteBuffer.allocate(uncompressedLen);
+        compressor.decompressUnconditionally(input, uncompressed);
+        return uncompressed.array();
     }
 
 }

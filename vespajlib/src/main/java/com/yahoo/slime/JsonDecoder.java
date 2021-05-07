@@ -5,6 +5,7 @@ import com.yahoo.text.Text;
 import com.yahoo.text.Utf8;
 
 import java.io.ByteArrayOutputStream;
+import java.nio.ByteBuffer;
 
 /**
  * A port of the C++ json decoder intended to be fast.
@@ -34,7 +35,10 @@ public class JsonDecoder {
     public JsonDecoder() {}
 
     public Slime decode(Slime slime, byte[] bytes) {
-        in = new BufferedInput(bytes);
+        return decode(slime, ByteBuffer.wrap(bytes));
+    }
+    public Slime decode(Slime slime, ByteBuffer buf) {
+        in = new BufferedInput(buf.array(), buf.arrayOffset()+buf.position(), buf.remaining());
         next();
         decodeValue(slimeInserter.adjust(slime));
         if (in.failed()) {
