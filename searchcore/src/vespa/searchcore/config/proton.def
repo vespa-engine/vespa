@@ -353,7 +353,7 @@ pruneremoveddocumentsinterval double default=0.0
 pruneremoveddocumentsage double default=1209600.0
 
 ## Set to true to enable bucket locking via content layer
-pruneremoveddocuments.usebucketexecutor bool default=false
+pruneremoveddocuments.usebucketexecutor bool default=true
 
 ## Minimum size of packets to compress (0 means no compression)
 ##
