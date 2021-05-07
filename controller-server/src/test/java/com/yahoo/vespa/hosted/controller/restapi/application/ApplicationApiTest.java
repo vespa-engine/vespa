@@ -1472,6 +1472,12 @@ public class ApplicationApiTest extends ControllerContainerTest {
                                       .userIdentity(USER_ID),
                               new File("deployment-with-routing-policy.json"));
 
+        // GET deployment including legacy endpoints
+        tester.assertResponse(request("/application/v4/tenant/tenant1/application/application1/environment/prod/region/us-west-1/instance/instance1", GET)
+                                      .userIdentity(USER_ID)
+                                      .properties(Map.of("includeLegacyEndpoints", "true")),
+                              new File("deployment-with-routing-policy-legacy.json"));
+
         // Hide shared endpoints
         ((InMemoryFlagSource) tester.controller().flagSource()).withBooleanFlag(Flags.HIDE_SHARED_ROUTING_ENDPOINT.id(), true);
 
