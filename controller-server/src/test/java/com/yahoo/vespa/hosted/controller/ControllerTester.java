@@ -8,6 +8,7 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
+import com.yahoo.config.provision.zone.RoutingMethod;
 import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.test.ManualClock;
@@ -38,6 +39,7 @@ import com.yahoo.vespa.hosted.controller.integration.ConfigServerMock;
 import com.yahoo.vespa.hosted.controller.integration.MetricsMock;
 import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
 import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
+import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
@@ -68,6 +70,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.logging.Handler;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
@@ -195,6 +198,21 @@ public final class ControllerTester {
     public Version nextVersion() {
         var current = ControllerVersion.CURRENT.version();
         return new Version(current.getMajor(), nextMinorVersion.getAndIncrement(), current.getMicro());
+    }
+
+    /** Set the zones and system for this and bootstrap infrastructure nodes */
+    public ControllerTester setZones(List<ZoneId> zones, SystemName system) {
+        zoneRegistry().setZones(zones.stream().map(ZoneApiMock::from).collect(Collectors.toList()))
+                      .setSystemName(system);
+        configServer().bootstrap(zones, SystemApplication.notController());
+        return this;
+    }
+
+    /** Set the routing method for given zones */
+    public ControllerTester setRoutingMethod(List<ZoneId> zones, RoutingMethod routingMethod) {
+        zoneRegistry().setRoutingMethod(zones.stream().map(ZoneApiMock::from).collect(Collectors.toList()),
+                                        routingMethod);
+        return this;
     }
 
     /** Create a new controller instance. Useful to verify that controller state is rebuilt from persistence */

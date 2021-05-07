@@ -599,7 +599,7 @@ public class ControllerTest {
         var context = tester.newDeploymentContext();
         ZoneId zone = ZoneId.from("dev", "us-east-1");
         tester.controllerTester().zoneRegistry()
-                .setRoutingMethod(ZoneApiMock.from(zone), RoutingMethod.shared, RoutingMethod.sharedLayer4);
+              .setRoutingMethod(ZoneApiMock.from(zone), RoutingMethod.shared, RoutingMethod.sharedLayer4);
 
         // Deploy
         context.runJob(zone, applicationPackage);

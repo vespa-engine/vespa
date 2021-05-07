@@ -186,27 +186,28 @@ public class ApplicationPackageBuilder {
         return this;
     }
 
+    /** Add a trusted certificate to security/clients.pem */
     public ApplicationPackageBuilder trust(X509Certificate certificate) {
         this.trustedCertificates.add(certificate);
         return this;
     }
 
+    /** Add a default trusted certificate to security/clients.pem */
     public ApplicationPackageBuilder trustDefaultCertificate() {
         try {
             var generator = KeyPairGenerator.getInstance("RSA");
-            var builder = X509CertificateBuilder.fromKeypair(
+            var certificate = X509CertificateBuilder.fromKeypair(
                     generator.generateKeyPair(),
                     new X500Principal("CN=name"),
                     Instant.now(),
                     Instant.now().plusMillis(300_000),
                     SignatureAlgorithm.SHA256_WITH_RSA,
                     X509CertificateBuilder.generateRandomSerialNumber()
-            );
-            this.trustedCertificates.add(builder.build());
+            ).build();
+            return trust(certificate);
         } catch (NoSuchAlgorithmException e) {
             throw new RuntimeException(e);
         }
-        return this;
     }
 
     private byte[] deploymentSpec() {

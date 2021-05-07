@@ -576,14 +576,10 @@ public class RoutingPoliciesTest {
         var prodZone = ZoneId.from(Environment.prod, sharedRegion);
         var stagingZone = ZoneId.from(Environment.staging, sharedRegion);
         var testZone = ZoneId.from(Environment.test, sharedRegion);
-        var zones = List.of(ZoneApiMock.from(prodZone),
-                            ZoneApiMock.from(stagingZone),
-                            ZoneApiMock.from(testZone));
-        tester.controllerTester().zoneRegistry()
-              .setZones(zones)
+        var zones = List.of(prodZone, stagingZone, testZone);
+        tester.controllerTester()
+              .setZones(zones, SystemName.Public)
               .setRoutingMethod(zones, RoutingMethod.exclusive);
-        tester.controllerTester().configServer().bootstrap(List.of(prodZone, stagingZone, testZone),
-                                                           SystemApplication.notController());
 
         var context = tester.tester.newDeploymentContext();
         var endpointId = EndpointId.of("r0");
