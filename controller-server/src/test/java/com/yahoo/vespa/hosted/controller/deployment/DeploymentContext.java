@@ -41,7 +41,6 @@ import com.yahoo.vespa.hosted.controller.routing.Status;
 
 import javax.security.auth.x500.X500Principal;
 import java.math.BigInteger;
-import java.net.URI;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
 import java.time.Duration;
