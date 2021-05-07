@@ -143,12 +143,13 @@ BuildRequires: gmock-devel
 %if 0%{?el7} && 0%{?amzn2}
 BuildRequires: vespa-xxhash-devel = 0.8.0
 BuildRequires: vespa-openblas-devel = 0.3.12
+BuildRequires: vespa-re2-devel = 20190801
 %else
 BuildRequires: xxhash-devel >= 0.8.0
 BuildRequires: openblas-devel
+BuildRequires: re2-devel
 %endif
 BuildRequires: zlib-devel
-BuildRequires: re2-devel
 %if ! 0%{?el7}
 BuildRequires: libicu-devel
 %endif
@@ -204,7 +205,11 @@ Requires: openblas-serial
 %endif
 %endif
 Requires: zlib
+%if 0%{?amzn2}
+Requires: vespa-re2 = 20190801
+%else
 Requires: re2
+%endif
 %if ! 0%{?el7}
 Requires: libicu
 %endif
