@@ -14,7 +14,7 @@ public class Utf8ByteWriter extends AbstractByteWriter {
     @Override
     public void send(ByteBuffer src) throws IOException {
         if (myBuf.remaining() < src.remaining()) {
-            ByteBuffer newBuf = ByteBuffer.allocate(1 << Integer.highestOneBit(myBuf.position()+src.remaining()));
+            ByteBuffer newBuf = ByteBuffer.allocate(Integer.highestOneBit(myBuf.position()+src.remaining()) << 1);
             myBuf.flip();
             newBuf.put(myBuf);
             myBuf = newBuf;
