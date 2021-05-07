@@ -32,7 +32,6 @@ import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTester;
-import com.yahoo.vespa.hosted.controller.integration.ServiceRegistryMock;
 import com.yahoo.vespa.hosted.controller.integration.ZoneApiMock;
 import com.yahoo.vespa.hosted.controller.maintenance.NameServiceDispatcher;
 import com.yahoo.vespa.hosted.rotation.config.RotationsConfig;
@@ -721,7 +720,7 @@ public class RoutingPoliciesTest {
         }
 
         public RoutingPoliciesTester(SystemName system) {
-            this(new DeploymentTester(new ControllerTester(new ServiceRegistryMock(system))), true);
+            this(new DeploymentTester(new ControllerTester(system)), true);
         }
 
         public RoutingPolicies routingPolicies() {

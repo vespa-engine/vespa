@@ -5,7 +5,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
-import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
 import org.apache.curator.shaded.com.google.common.collect.Streams;
 import org.junit.Test;
 
@@ -22,8 +21,7 @@ public class CuratorArchiveBucketDbTest {
 
     @Test
     public void archiveUriFor() {
-        ControllerTester tester = new ControllerTester();
-        ((ZoneRegistryMock) tester.controller().zoneRegistry()).setSystemName(SystemName.Public);
+        ControllerTester tester = new ControllerTester(SystemName.Public);
         CuratorArchiveBucketDb bucketDb = new CuratorArchiveBucketDb(tester.controller());
 
         tester.curator().writeArchiveBuckets(ZoneId.defaultId(),

@@ -5,6 +5,7 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
+import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -27,7 +28,7 @@ import static org.junit.Assert.assertEquals;
  */
 public class ArchiveUriUpdaterTest {
 
-    private final DeploymentTester tester = new DeploymentTester();
+    private final DeploymentTester tester = new DeploymentTester(new ControllerTester(SystemName.Public));
 
     @Test
     public void archive_uri_test() {
@@ -37,7 +38,7 @@ public class ArchiveUriUpdaterTest {
         var tenant2 = TenantName.from("tenant2");
         var tenantInfra = SystemApplication.TENANT;
         var application = tester.newDeploymentContext(tenant1.value(), "app1", "instance1");
-        ZoneId zone = ZoneId.from("prod", "ap-northeast-1");
+        ZoneId zone = ZoneId.from("prod", "aws-us-east-1c");
 
         // Initially we should not set any archive URIs as the archive service does not return any
         updater.maintain();
@@ -79,6 +80,6 @@ public class ArchiveUriUpdaterTest {
     }
 
     private void deploy(DeploymentContext application, ZoneId zone) {
-        application.runJob(JobType.from(SystemName.main, zone).orElseThrow(), new ApplicationPackage(new byte[0]), Version.fromString("7.1"));
+        application.runJob(JobType.from(SystemName.Public, zone).orElseThrow(), new ApplicationPackage(new byte[0]), Version.fromString("7.1"));
     }
 }
