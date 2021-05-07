@@ -388,11 +388,7 @@
       "public long getQueryStartTime()",
       "public long getTimeout()"
     ],
-    "fields": [
-      "protected long summaryStartTime",
-      "protected long queryStartTime",
-      "protected long timeout"
-    ]
+    "fields": []
   },
   "com.yahoo.container.handler.VipStatus": {
     "superClass": "java.lang.Object",
