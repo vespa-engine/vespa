@@ -9,7 +9,6 @@ import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.LockedTenant;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.MockArchiveService;
-import com.yahoo.vespa.hosted.controller.restapi.ControllerContainerCloudTest;
 import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import org.junit.Test;
 
@@ -24,7 +23,7 @@ import static org.junit.Assert.assertNull;
 /**
  * @author andreer
  */
-public class ArchiveAccessMaintainerTest extends ControllerContainerCloudTest {
+public class ArchiveAccessMaintainerTest {
 
     @Test
     public void grantsRoleAccess() {
