@@ -5,8 +5,6 @@ import com.yahoo.component.Version;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.NodeRepository;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
@@ -20,7 +18,6 @@ import java.net.URI;
 import java.time.Duration;
 import java.util.LinkedHashSet;
 import java.util.Map;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.junit.Assert.assertEquals;
@@ -35,9 +32,6 @@ public class ArchiveUriUpdaterTest {
     @Test
     public void archive_uri_test() {
         var updater = new ArchiveUriUpdater(tester.controller(), Duration.ofDays(1));
-
-        ((InMemoryFlagSource) tester.controller().flagSource())
-                .withStringFlag(Flags.SYNC_HOST_LOGS_TO_S3_BUCKET.id(), "auto");
 
         var tenant1 = TenantName.from("tenant1");
         var tenant2 = TenantName.from("tenant2");

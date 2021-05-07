@@ -33,8 +33,7 @@ public class ArchiveAccessMaintainerTest extends ControllerContainerCloudTest {
     public void grantsRoleAccess() {
         var containerTester = new ContainerTester(container, "");
         ((InMemoryFlagSource) containerTester.controller().flagSource())
-                .withBooleanFlag(PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true)
-                .withStringFlag(Flags.SYNC_HOST_LOGS_TO_S3_BUCKET.id(), "auto");
+                .withBooleanFlag(PermanentFlags.ENABLE_PUBLIC_SIGNUP_FLOW.id(), true);
         var tester = new ControllerTester(containerTester);
 
         String tenant1role = "arn:aws:iam::123456789012:role/my-role";

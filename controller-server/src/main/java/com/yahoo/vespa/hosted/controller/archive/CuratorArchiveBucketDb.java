@@ -3,9 +3,6 @@ package com.yahoo.vespa.hosted.controller.archive;
 
 import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.zone.ZoneId;
-import com.yahoo.vespa.flags.FetchVector;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.StringFlag;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveBucket;
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
@@ -42,25 +39,20 @@ public class CuratorArchiveBucketDb {
 
     private final ArchiveService archiveService;
     private final CuratorDb curatorDb;
-    private final StringFlag bucketNameFlag;
+    private final boolean enabled;
 
     public CuratorArchiveBucketDb(Controller controller) {
         this.archiveService = controller.serviceRegistry().archiveService();
         this.curatorDb = controller.curator();
-        this.bucketNameFlag = Flags.SYNC_HOST_LOGS_TO_S3_BUCKET.bindTo(controller.flagSource());
+        this.enabled = controller.zoneRegistry().system().isPublic();
     }
 
     public Optional<URI> archiveUriFor(ZoneId zoneId, TenantName tenant) {
-        String bucketName = bucketNameFlag
-                .with(FetchVector.Dimension.ZONE_ID, zoneId.value())
-                .with(FetchVector.Dimension.TENANT_ID, tenant.value())
-                .value();
-
-        if (bucketName.isBlank()) return Optional.empty();
-
-        if ("auto".equals(bucketName)) bucketName = findOrAssignBucket(zoneId, tenant);
-
-        return Optional.of(URI.create(String.format("s3://%s/%s/", bucketName, tenant.value())));
+        if (enabled) {
+            return Optional.of(URI.create(String.format("s3://%s/%s/", findOrAssignBucket(zoneId, tenant), tenant.value())));
+        } else {
+            return Optional.empty();
+        }
     }
 
     private String findOrAssignBucket(ZoneId zoneId, TenantName tenant) {
@@ -125,5 +117,4 @@ public class CuratorArchiveBucketDb {
                 .collect(Collectors.toUnmodifiableMap(Map.Entry::getKey, Map.Entry::getValue));
         archiveUriCache.put(zoneId, bucketNameByTenant);
     }
-
 }
