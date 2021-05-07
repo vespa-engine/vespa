@@ -128,7 +128,7 @@ public class Presentation implements Cloneable {
             return clone;
         }
         catch (CloneNotSupportedException e) {
-            throw new RuntimeException("Someone inserted a noncloneable superclass",e);
+            throw new RuntimeException("Someone inserted a noncloneable superclass", e);
         }
     }
 
