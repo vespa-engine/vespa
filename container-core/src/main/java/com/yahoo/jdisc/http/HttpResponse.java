@@ -9,9 +9,6 @@ import com.yahoo.jdisc.handler.ContentChannel;
 import com.yahoo.jdisc.handler.ResponseHandler;
 import com.yahoo.jdisc.http.servlet.ServletOrJdiscHttpResponse;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedList;
 import java.util.List;
 
 /**
@@ -62,23 +59,13 @@ public class HttpResponse extends Response implements ServletOrJdiscHttpResponse
         target.addAll(headers());
     }
 
+    @Override
     public List<Cookie> decodeSetCookieHeader() {
-        List<String> cookies = headers().get(HttpHeaders.Names.SET_COOKIE);
-        if (cookies == null) {
-            return Collections.emptyList();
-        }
-        List<Cookie> ret = new LinkedList<>();
-        for (String cookie : cookies) {
-            ret.add(Cookie.fromSetCookieHeader(cookie));
-        }
-        return ret;
+        return CookieHelper.decodeSetCookieHeader(headers());
     }
 
     public void encodeSetCookieHeader(List<Cookie> cookies) {
-        headers().remove(HttpHeaders.Names.SET_COOKIE);
-        for (Cookie cookie : cookies) {
-            headers().add(HttpHeaders.Names.SET_COOKIE, Cookie.toSetCookieHeaders(Arrays.asList(cookie)));
-        }
+        CookieHelper.encodeSetCookieHeader(headers(), cookies);
     }
 
     /**
