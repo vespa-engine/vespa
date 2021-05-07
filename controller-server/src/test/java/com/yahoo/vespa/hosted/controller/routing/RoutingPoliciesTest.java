@@ -14,7 +14,6 @@ import com.yahoo.config.provision.HostName;
 import com.yahoo.config.provision.RegionName;
 import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.RoutingMethod;
-import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -28,6 +27,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.dns.RecordName;
 import com.yahoo.vespa.hosted.controller.application.ApplicationPackage;
 import com.yahoo.vespa.hosted.controller.application.Endpoint;
 import com.yahoo.vespa.hosted.controller.application.EndpointId;
+import com.yahoo.vespa.hosted.controller.application.EndpointList;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.deployment.ApplicationPackageBuilder;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentContext;
@@ -312,7 +312,7 @@ public class RoutingPoliciesTest {
 
     @Test
     public void zone_routing_policies_without_dns_update() {
-        var tester = new RoutingPoliciesTester(new DeploymentTester(), false);
+        var tester = new RoutingPoliciesTester(new DeploymentTester(), SystemName.main, false);
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
         tester.provisionLoadBalancers(1, context.instanceId(), true, zone1, zone2);
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
@@ -323,13 +323,17 @@ public class RoutingPoliciesTest {
 
     @Test
     public void global_routing_policies_in_rotationless_system() {
-        var tester = new RoutingPoliciesTester(new DeploymentTester(new ControllerTester(new RotationsConfig.Builder().build())), true);
+        var tester = new RoutingPoliciesTester(SystemName.Public);
         var context = tester.newDeploymentContext("tenant1", "app1", "default");
+        List<ZoneId> prodZones = tester.controllerTester().controller().zoneRegistry().zones().all().in(Environment.prod).ids();
+        ZoneId zone1 = prodZones.get(0);
+        ZoneId zone2 = prodZones.get(1);
         tester.provisionLoadBalancers(1, context.instanceId(), zone1, zone2);
 
         var applicationPackage = applicationPackageBuilder()
                 .region(zone1.region().value())
                 .endpoint("r0", "c0")
+                .trustDefaultCertificate()
                 .build();
         context.submit(applicationPackage).deferLoadBalancerProvisioningIn(Environment.prod).deploy();
 
@@ -337,6 +341,39 @@ public class RoutingPoliciesTest {
         assertTrue("No rotations assigned", context.application().instances().values().stream()
                                                    .map(Instance::rotations)
                                                    .allMatch(List::isEmpty));
+    }
+
+    @Test
+    public void global_routing_policies_in_public() {
+        var tester = new RoutingPoliciesTester(SystemName.Public);
+        var context = tester.newDeploymentContext("tenant1", "app1", "default");
+        List<ZoneId> prodZones = tester.controllerTester().controller().zoneRegistry().zones().all().in(Environment.prod).ids();
+        ZoneId zone1 = prodZones.get(0);
+        ZoneId zone2 = prodZones.get(1);
+
+        var applicationPackage = applicationPackageBuilder()
+                .region(zone1.region().value())
+                .region(zone2.region().value())
+                .endpoint("default", "default")
+                .trustDefaultCertificate()
+                .build();
+        context.submit(applicationPackage).deploy();
+
+        tester.assertTargets(context.instanceId(), EndpointId.defaultId(),
+                             ClusterSpec.Id.from("default"), 0,
+                             Map.of(zone1, 1L, zone2, 1L), true);
+        assertEquals("Registers expected DNS names",
+                     Set.of("app1.tenant1.aws-eu-west-1-w.public.vespa.oath.cloud",
+                            "app1.tenant1.aws-eu-west-1.r.vespa-app.cloud",
+                            "app1.tenant1.aws-eu-west-1a.public.vespa.oath.cloud",
+                            "app1.tenant1.aws-eu-west-1a.z.vespa-app.cloud",
+                            "app1.tenant1.aws-us-east-1-w.public.vespa.oath.cloud",
+                            "app1.tenant1.aws-us-east-1.r.vespa-app.cloud",
+                            "app1.tenant1.aws-us-east-1c.public.vespa.oath.cloud",
+                            "app1.tenant1.aws-us-east-1c.z.vespa-app.cloud",
+                            "app1.tenant1.g.vespa-app.cloud",
+                            "app1.tenant1.global.public.vespa.oath.cloud"),
+                     tester.recordNames());
     }
 
     @Test
@@ -572,20 +609,11 @@ public class RoutingPoliciesTest {
         var tester = new RoutingPoliciesTester(SystemName.Public);
 
         // Configure the system to use the same region for test, staging and prod
-        var sharedRegion = RegionName.from("aws-us-east-1c");
-        var prodZone = ZoneId.from(Environment.prod, sharedRegion);
-        var stagingZone = ZoneId.from(Environment.staging, sharedRegion);
-        var testZone = ZoneId.from(Environment.test, sharedRegion);
-        var zones = List.of(prodZone, stagingZone, testZone);
-        tester.controllerTester()
-              .setZones(zones, SystemName.Public)
-              .setRoutingMethod(zones, RoutingMethod.exclusive);
-
         var context = tester.tester.newDeploymentContext();
         var endpointId = EndpointId.of("r0");
         var applicationPackage = applicationPackageBuilder()
                 .trustDefaultCertificate()
-                .region(sharedRegion)
+                .region("aws-us-east-1c")
                 .endpoint(endpointId.id(), "default")
                 .build();
 
@@ -596,14 +624,14 @@ public class RoutingPoliciesTest {
             // Since runJob implicitly tears down the deployment and immediately deletes DNS records associated with the
             // deployment, we consume only one DNS update at a time here
             do {
-                context = context.flushDnsUpdates(1);
+                context.flushDnsUpdates(1);
                 tester.assertTargets(context.instanceId(), endpointId, 0);
             } while (!tester.recordNames().isEmpty());
         }
 
         // Deployment completes
         context.completeRollout();
-        tester.assertTargets(context.instanceId(), endpointId, ClusterSpec.Id.from("default"), 0, Map.of(prodZone, 1L));
+        tester.assertTargets(context.instanceId(), endpointId, ClusterSpec.Id.from("default"), 0, Map.of(ZoneId.from("prod", "aws-us-east-1c"), 1L));
     }
 
     @Test
@@ -707,6 +735,14 @@ public class RoutingPoliciesTest {
         return loadBalancers;
     }
 
+    private static List<ZoneId> publicZones() {
+        var sharedRegion = RegionName.from("aws-us-east-1c");
+        return List.of(ZoneId.from(Environment.prod, sharedRegion),
+                       ZoneId.from(Environment.prod, RegionName.from("aws-eu-west-1a")),
+                       ZoneId.from(Environment.staging, sharedRegion),
+                       ZoneId.from(Environment.test, sharedRegion));
+    }
+
     private static class RoutingPoliciesTester {
 
         private final DeploymentTester tester;
@@ -716,7 +752,26 @@ public class RoutingPoliciesTest {
         }
 
         public RoutingPoliciesTester(SystemName system) {
-            this(new DeploymentTester(new ControllerTester(system)), true);
+            this(new DeploymentTester(system.isPublic()
+                                              ? new ControllerTester(new RotationsConfig.Builder().build(), system)
+                                              : new ControllerTester()),
+                 system,
+                 true);
+        }
+
+        public RoutingPoliciesTester(DeploymentTester tester, SystemName system, boolean exclusiveRouting) {
+            this.tester = tester;
+            List<ZoneId> zones;
+            if (system.isPublic()) {
+                zones = publicZones();
+            } else {
+                zones = new ArrayList<>(tester.controllerTester().zoneRegistry().zones().all().ids()); // Default zones
+                zones.add(zone4); // Missing from default ZoneRegistryMock zones
+            }
+            tester.controllerTester().setZones(zones, system);
+            if (exclusiveRouting) {
+                tester.controllerTester().setRoutingMethod(zones, RoutingMethod.exclusive);
+            }
         }
 
         public RoutingPolicies routingPolicies() {
@@ -733,19 +788,6 @@ public class RoutingPoliciesTest {
 
         public ControllerTester controllerTester() {
             return tester.controllerTester();
-        }
-
-        public RoutingPoliciesTester(DeploymentTester tester, boolean exclusiveRouting) {
-            this.tester = tester;
-            List<ZoneApi> zones = new ArrayList<>(tester.controllerTester().zoneRegistry().zones().all().zones());
-            zones.add(ZoneApiMock.from(zone3));
-            zones.add(ZoneApiMock.from(zone4));
-            tester.controllerTester().zoneRegistry().setZones(zones);
-            if (exclusiveRouting) {
-                  tester.controllerTester().zoneRegistry().exclusiveRoutingIn(zones);
-            }
-            tester.controllerTester().configServer().bootstrap(tester.controllerTester().zoneRegistry().zones().all().ids(),
-                                                               SystemApplication.notController());
         }
 
         private void provisionLoadBalancers(int clustersPerZone, ApplicationId application, boolean shared, ZoneId... zones) {
@@ -785,14 +827,21 @@ public class RoutingPoliciesTest {
         }
 
         private void assertTargets(ApplicationId application, EndpointId endpointId, ClusterSpec.Id cluster, int loadBalancerId, Map<ZoneId, Long> zoneWeights) {
+            assertTargets(application, endpointId, cluster, loadBalancerId, zoneWeights, false);
+        }
+
+        private void assertTargets(ApplicationId application, EndpointId endpointId, ClusterSpec.Id cluster, int loadBalancerId, Map<ZoneId, Long> zoneWeights, boolean legacy) {
             Set<String> latencyTargets = new HashSet<>();
             Map<String, List<ZoneId>> zonesByRegionEndpoint = new HashMap<>();
             for (var zone : zoneWeights.keySet()) {
-                Endpoint regionEndpoint = tester.controller().routing().endpointsOf(new DeploymentId(application, zone))
-                                                .scope(Endpoint.Scope.region)
-                                                .cluster(cluster)
-                                                .asList()
-                                                .get(0);
+                DeploymentId deployment = new DeploymentId(application, zone);
+                EndpointList regionEndpoints = tester.controller().routing().endpointsOf(deployment)
+                                                    .cluster(cluster)
+                                                    .scope(Endpoint.Scope.region);
+                if (!legacy) {
+                    regionEndpoints = regionEndpoints.not().legacy();
+                }
+                Endpoint regionEndpoint = regionEndpoints.first().orElseThrow(() -> new IllegalArgumentException("No region endpoint found for " + cluster + " in " + deployment));
                 zonesByRegionEndpoint.computeIfAbsent(regionEndpoint.dnsName(), (k) -> new ArrayList<>())
                                      .add(zone);
             }

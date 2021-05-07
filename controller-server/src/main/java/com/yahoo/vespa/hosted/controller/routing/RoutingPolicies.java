@@ -119,54 +119,63 @@ public class RoutingPolicies {
         }
     }
 
-    /** Update global DNS record for given policies */
+    /** Update global DNS records for given policies */
     private void updateGlobalDnsOf(Collection<RoutingPolicy> routingPolicies, Set<ZoneId> inactiveZones, @SuppressWarnings("unused") Lock lock) {
         Map<RoutingId, List<RoutingPolicy>> routingTable = routingTableFrom(routingPolicies);
         for (Map.Entry<RoutingId, List<RoutingPolicy>> routeEntry : routingTable.entrySet()) {
-            Collection<RegionEndpoint> regionEndpoints = computeRegionEndpoints(routeEntry.getValue(), inactiveZones);
-            // Create a weighted ALIAS per region, pointing to all zones within the same region
-            regionEndpoints.forEach(regionEndpoint -> {
-                controller.nameServiceForwarder().createAlias(RecordName.from(regionEndpoint.target().name().value()),
-                                                              Collections.unmodifiableSet(regionEndpoint.zoneTargets()),
-                                                              Priority.normal);
-            });
-
-            // Create global latency-based ALIAS pointing to each per-region weighted ALIAS
-            Set<AliasTarget> latencyTargets = new LinkedHashSet<>();
-            Set<AliasTarget> inactiveLatencyTargets = new LinkedHashSet<>();
-            for (var regionEndpoint : regionEndpoints) {
-                if (regionEndpoint.active()) {
-                    latencyTargets.add(regionEndpoint.target());
-                } else {
-                    inactiveLatencyTargets.add(regionEndpoint.target());
-                }
-            }
-            // If all targets are configured out, all targets are set in. We do this because otherwise removing 100% of
-            // the ALIAS records would cause the global endpoint to stop resolving entirely (NXDOMAIN).
-            if (latencyTargets.isEmpty() && !inactiveLatencyTargets.isEmpty()) {
-                latencyTargets.addAll(inactiveLatencyTargets);
-                inactiveLatencyTargets.clear();
-            }
-            var endpoints = controller.routing().endpointsOf(routeEntry.getKey().application())
-                                      .named(routeEntry.getKey().endpointId())
-                                      .not().requiresRotation();
-            endpoints.forEach(endpoint -> controller.nameServiceForwarder().createAlias(RecordName.from(endpoint.dnsName()),
-                                                                                        latencyTargets, Priority.normal));
-            inactiveLatencyTargets.forEach(t -> controller.nameServiceForwarder()
-                                                          .removeRecords(Record.Type.ALIAS,
-                                                                         RecordData.fqdn(t.name().value()),
-                                                                         Priority.normal));
+            RoutingId routingId = routeEntry.getKey();
+            controller.routing().endpointsOf(routingId.application())
+                      .named(routingId.endpointId())
+                      .not().requiresRotation()
+                      .forEach(endpoint -> updateGlobalDnsOf(endpoint, inactiveZones, routeEntry.getValue()));
         }
     }
 
+    /** Update global DNS records for given global endpoint */
+    private void updateGlobalDnsOf(Endpoint endpoint, Set<ZoneId> inactiveZones, List<RoutingPolicy> policies) {
+        if (endpoint.scope() != Endpoint.Scope.global) throw new IllegalArgumentException("Endpoint " + endpoint + " is not global");
+        // Create a weighted ALIAS per region, pointing to all zones within the same region
+        Collection<RegionEndpoint> regionEndpoints = computeRegionEndpoints(policies, inactiveZones, endpoint.legacy());
+        regionEndpoints.forEach(regionEndpoint -> {
+            controller.nameServiceForwarder().createAlias(RecordName.from(regionEndpoint.target().name().value()),
+                                                          Collections.unmodifiableSet(regionEndpoint.zoneTargets()),
+                                                          Priority.normal);
+        });
+
+        // Create global latency-based ALIAS pointing to each per-region weighted ALIAS
+        Set<AliasTarget> latencyTargets = new LinkedHashSet<>();
+        Set<AliasTarget> inactiveLatencyTargets = new LinkedHashSet<>();
+        for (var regionEndpoint : regionEndpoints) {
+            if (regionEndpoint.active()) {
+                latencyTargets.add(regionEndpoint.target());
+            } else {
+                inactiveLatencyTargets.add(regionEndpoint.target());
+            }
+        }
+
+        // If all targets are configured OUT, all targets are kept IN. We do this because otherwise removing 100% of
+        // the ALIAS records would cause the global endpoint to stop resolving entirely (NXDOMAIN).
+        if (latencyTargets.isEmpty() && !inactiveLatencyTargets.isEmpty()) {
+            latencyTargets.addAll(inactiveLatencyTargets);
+            inactiveLatencyTargets.clear();
+        }
+
+        controller.nameServiceForwarder().createAlias(RecordName.from(endpoint.dnsName()), latencyTargets, Priority.normal);
+        inactiveLatencyTargets.forEach(t -> controller.nameServiceForwarder()
+                                                      .removeRecords(Record.Type.ALIAS,
+                                                                     RecordData.fqdn(t.name().value()),
+                                                                     Priority.normal));
+    }
+
+
     /** Compute region endpoints and their targets from given policies */
-    private Collection<RegionEndpoint> computeRegionEndpoints(List<RoutingPolicy> policies, Set<ZoneId> inactiveZones) {
+    private Collection<RegionEndpoint> computeRegionEndpoints(List<RoutingPolicy> policies, Set<ZoneId> inactiveZones, boolean legacy) {
         Map<Endpoint, RegionEndpoint> endpoints = new LinkedHashMap<>();
         RoutingMethod routingMethod = RoutingMethod.exclusive;
         for (var policy : policies) {
             if (policy.dnsZone().isEmpty()) continue;
             if (!controller.zoneRegistry().routingMethods(policy.id().zone()).contains(routingMethod)) continue;
-            Endpoint regionEndpoint = policy.regionEndpointIn(controller.system(), routingMethod);
+            Endpoint regionEndpoint = policy.regionEndpointIn(controller.system(), routingMethod, legacy);
             var zonePolicy = db.readZoneRoutingPolicy(policy.id().zone());
             long weight = 1;
             if (isConfiguredOut(policy, zonePolicy, inactiveZones)) {

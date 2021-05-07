@@ -109,8 +109,8 @@ public final class ControllerTester {
         this(new AthenzDbMock(), new MockCuratorDb(), defaultRotationsConfig(), serviceRegistryMock);
     }
 
-    public ControllerTester(RotationsConfig rotationsConfig) {
-        this(rotationsConfig, new MockCuratorDb());
+    public ControllerTester(RotationsConfig rotationsConfig, SystemName system) {
+        this(new AthenzDbMock(), new MockCuratorDb(), rotationsConfig, new ServiceRegistryMock(system));
     }
 
     public ControllerTester(MockCuratorDb curatorDb) {

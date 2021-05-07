@@ -834,7 +834,7 @@ public class ControllerTest {
     @Test
     public void testDeploymentDirectRouting() {
         // Rotation-less system
-        DeploymentTester tester = new DeploymentTester(new ControllerTester(new RotationsConfig.Builder().build()));
+        DeploymentTester tester = new DeploymentTester(new ControllerTester(new RotationsConfig.Builder().build(), main));
         var context = tester.newDeploymentContext();
         var zone1 = ZoneId.from("prod", "us-west-1");
         var zone2 = ZoneId.from("prod", "us-east-3");
