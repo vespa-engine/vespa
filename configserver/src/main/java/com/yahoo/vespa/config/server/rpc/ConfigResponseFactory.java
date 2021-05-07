@@ -2,7 +2,7 @@
 package com.yahoo.vespa.config.server.rpc;
 
 import com.yahoo.cloud.config.ConfigserverConfig;
-import com.yahoo.text.Utf8Array;
+import com.yahoo.text.AbstractUtf8Array;
 import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.protocol.ConfigResponse;
 
@@ -34,6 +34,6 @@ public interface ConfigResponseFactory {
      *                       false if it should be applied immediately
      * @return a {@link ConfigResponse} that can be sent to the client
      */
-    ConfigResponse createResponse(Utf8Array rawPayload, long generation, boolean applyOnRestart);
+    ConfigResponse createResponse(AbstractUtf8Array rawPayload, long generation, boolean applyOnRestart);
 
 }

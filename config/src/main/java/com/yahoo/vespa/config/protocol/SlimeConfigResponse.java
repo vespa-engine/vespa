@@ -1,11 +1,12 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
-import com.yahoo.text.Utf8Array;
+import com.yahoo.text.AbstractUtf8Array;
 import com.yahoo.vespa.config.ConfigPayload;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 
 /**
  * Class for serializing config responses based on {@link com.yahoo.slime.Slime} implementing the {@link ConfigResponse} interface.
@@ -14,7 +15,7 @@ import java.io.OutputStream;
  */
 public class SlimeConfigResponse implements ConfigResponse {
 
-    private final Utf8Array payload;
+    private final AbstractUtf8Array payload;
     private final CompressionInfo compressionInfo;
     private final long generation;
     private final boolean applyOnRestart;
@@ -22,13 +23,13 @@ public class SlimeConfigResponse implements ConfigResponse {
 
     public static SlimeConfigResponse fromConfigPayload(ConfigPayload payload, long generation,
                                                         boolean applyOnRestart, String configMd5) {
-        Utf8Array data = payload.toUtf8Array(true);
+        AbstractUtf8Array data = payload.toUtf8Array(true);
         return new SlimeConfigResponse(data, generation, applyOnRestart,
                                        configMd5,
                                        CompressionInfo.create(CompressionType.UNCOMPRESSED, data.getByteLength()));
     }
 
-    public SlimeConfigResponse(Utf8Array payload,
+    public SlimeConfigResponse(AbstractUtf8Array payload,
                                long generation,
                                boolean applyOnRestart,
                                String configMd5,
@@ -41,7 +42,7 @@ public class SlimeConfigResponse implements ConfigResponse {
     }
 
     @Override
-    public Utf8Array getPayload() {
+    public AbstractUtf8Array getPayload() {
         return payload;
     }
 
@@ -60,7 +61,8 @@ public class SlimeConfigResponse implements ConfigResponse {
 
     @Override
     public void serialize(OutputStream os, CompressionType type) throws IOException {
-        os.write(Payload.from(payload, compressionInfo).withCompression(type).getData().getBytes());
+        ByteBuffer buf = Payload.from(payload, compressionInfo).withCompression(type).getData().wrap();
+        os.write(buf.array(), buf.arrayOffset()+buf.position(), buf.remaining());
     }
 
     @Override
