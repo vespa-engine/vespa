@@ -20,7 +20,7 @@
          Copied here because vz-tenant-base does not have a parent. -->
     <properties>
         <aopalliance.version>1.0</aopalliance.version>
-        <athenz.version>1.10.11</athenz.version>
+        <athenz.version>1.10.14</athenz.version>
         <bouncycastle.version>1.68</bouncycastle.version>
         <felix.version>6.0.3</felix.version>
         <felix.log.version>1.0.1</felix.log.version>

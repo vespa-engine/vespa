@@ -851,7 +851,7 @@
         <apache.httpclient5.version>5.0.3</apache.httpclient5.version>
         <asm.version>9.1</asm.version>
         <!-- Athenz dependencies. Make sure these dependencies match those in Vespa's internal repositories -->
-        <athenz.version>1.10.11</athenz.version>
+        <athenz.version>1.10.14</athenz.version>
         <jjwt.version>0.11.2</jjwt.version>
         <aws.sdk.version>1.11.974</aws.sdk.version>
         <!-- WARNING: If you change curator version, you also need to update
