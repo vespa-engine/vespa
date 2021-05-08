@@ -15,6 +15,7 @@ import com.yahoo.vespa.config.util.ConfigUtils;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.util.Arrays;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -104,7 +105,9 @@ public class JRTServerConfigRequestV3 implements JRTServerConfigRequest {
             if (buf.hasArray() && buf.remaining() == buf.array().length) {
                 request.returnValues().add(new DataValue(buf.array()));
             } else {
-                request.returnValues().add(new DataValue(buf));
+                byte [] dst = new byte[buf.remaining()];
+                buf.get(dst);
+                request.returnValues().add(new DataValue(dst));
             }
         } else {
             request.returnValues().add(new DataValue(new byte[0]));
