@@ -5,16 +5,18 @@ import com.yahoo.config.ConfigInstance;
 import com.yahoo.config.codegen.InnerCNode;
 import com.yahoo.config.subscription.ConfigInstanceSerializer;
 import com.yahoo.config.subscription.ConfigInstanceUtil;
+import com.yahoo.io.Utf8ByteWriter;
 import com.yahoo.slime.JsonDecoder;
 import com.yahoo.slime.JsonFormat;
 import com.yahoo.slime.Slime;
 import com.yahoo.slime.SlimeFormat;
-import com.yahoo.text.Utf8Array;
+import com.yahoo.text.AbstractUtf8Array;
+import com.yahoo.text.Utf8PartialArray;
 import com.yahoo.text.Utf8String;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.ByteBuffer;
 
 /**
  * A config payload.
@@ -79,19 +81,20 @@ public class ConfigPayload {
         return !slime.get().valid() || slime.get().children() == 0;
     }
 
-    public Utf8Array toUtf8Array(boolean compact) {
-        ByteArrayOutputStream os = new ByteArrayOutputStream(10000);
+    public AbstractUtf8Array toUtf8Array(boolean compact) {
+        Utf8ByteWriter os = new Utf8ByteWriter(8192);
         try {
             new JsonFormat(compact).encode(os, slime);
             os.close();
         } catch (IOException e) {
             e.printStackTrace();
         }
-        return new Utf8Array(os.toByteArray());
+        ByteBuffer buf = os.getBuf();
+        return new Utf8PartialArray(buf.array(), buf.arrayOffset() + buf.position(), buf.remaining());
     }
 
-    public static ConfigPayload fromUtf8Array(Utf8Array payload) {
-        return new ConfigPayload(new JsonDecoder().decode(new Slime(), payload.getBytes()));
+    public static ConfigPayload fromUtf8Array(AbstractUtf8Array payload) {
+        return new ConfigPayload(new JsonDecoder().decode(new Slime(), payload.wrap()));
     }
 
     public <ConfigType extends ConfigInstance> ConfigType toInstance(Class<ConfigType> clazz, String configId) {

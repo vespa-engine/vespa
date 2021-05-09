@@ -24,7 +24,7 @@ public class DataValue extends Value
      *
      * @param src buffer where the value is stored
      **/
-    public DataValue(ByteBuffer src) {
+    DataValue(ByteBuffer src) {
         int size = src.getInt();
         value = new byte[size];
         src.get(value);

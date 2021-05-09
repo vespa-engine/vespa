@@ -1,7 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.config.protocol;
 
-import com.yahoo.text.Utf8Array;
+import com.yahoo.text.AbstractUtf8Array;
 
 import java.io.IOException;
 import java.io.OutputStream;
@@ -16,7 +16,7 @@ import java.io.OutputStream;
  */
 public interface ConfigResponse {
 
-    Utf8Array getPayload();
+    AbstractUtf8Array getPayload();
 
     long getGeneration();
 

@@ -5,7 +5,6 @@ import com.yahoo.config.codegen.DefParser;
 import com.yahoo.config.model.api.ConfigDefinitionRepo;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
-import com.yahoo.vespa.config.ConfigPayload;
 import com.yahoo.vespa.config.GetConfigRequest;
 import com.yahoo.vespa.config.buildergen.ConfigDefinition;
 import com.yahoo.vespa.config.protocol.ConfigResponse;

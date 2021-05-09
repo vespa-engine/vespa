@@ -10,7 +10,7 @@ import com.yahoo.config.model.api.Model;
 import com.yahoo.config.provision.ApplicationId;
 import java.util.logging.Level;
 
-import com.yahoo.text.Utf8Array;
+import com.yahoo.text.AbstractUtf8Array;
 import com.yahoo.vespa.config.ConfigCacheKey;
 import com.yahoo.vespa.config.ConfigDefinitionKey;
 import com.yahoo.vespa.config.ConfigKey;
@@ -141,7 +141,7 @@ public class Application implements ModelResult {
         return configResponse;
     }
 
-    private Pair<Utf8Array, Boolean> createPayload(ConfigKey<?> configKey, ConfigDefinition def) {
+    private Pair<AbstractUtf8Array, Boolean> createPayload(ConfigKey<?> configKey, ConfigDefinition def) {
         try {
             ConfigInstance.Builder builder = model.getConfigInstance(configKey, def);
             boolean tempApplyOnRestart = builder.getApplyOnRestart();
