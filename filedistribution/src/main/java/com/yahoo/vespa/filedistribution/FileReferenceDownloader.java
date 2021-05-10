@@ -181,6 +181,7 @@ public class FileReferenceDownloader {
     }
 
     public void close() {
+        downloadExecutor.shutdown();
         try {
             downloadExecutor.awaitTermination(1, TimeUnit.SECONDS);
         } catch (InterruptedException e) {
