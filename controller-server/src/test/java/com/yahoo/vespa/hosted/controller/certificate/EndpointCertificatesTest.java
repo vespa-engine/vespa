@@ -204,7 +204,7 @@ public class EndpointCertificatesTest {
         assertTrue(endpointCertificateMetadata.isPresent());
         assertEquals(0, endpointCertificateMetadata.get().version());
         assertEquals(endpointCertificateMetadata, mockCuratorDb.readEndpointCertificateMetadata(testInstance.id()));
-        assertEquals("original-request-uuid", endpointCertificateMetadata.get().request_id());
+        assertEquals("original-request-uuid", endpointCertificateMetadata.get().requestId());
         assertEquals(Set.copyOf(expectedCombinedSans), Set.copyOf(endpointCertificateMetadata.get().requestedDnsSans()));
     }
 
