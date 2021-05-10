@@ -1,6 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 
-#include "pruneremoveddocumentsjob_v2.h"
+#include "pruneremoveddocumentsjob.h"
 #include "ipruneremoveddocumentshandler.h"
 #include <vespa/persistence/spi/bucket_tasks.h>
 #include <vespa/searchcore/proton/feedoperation/pruneremoveddocumentsoperation.h>
@@ -20,11 +20,11 @@ using vespalib::makeLambdaTask;
 
 namespace proton {
 
-PruneRemovedDocumentsJobV2::
-PruneRemovedDocumentsJobV2(const DocumentDBPruneConfig &config, RetainGuard dbRetainer, const IDocumentMetaStore &metaStore,
-                           uint32_t subDbId, document::BucketSpace bucketSpace, const vespalib::string &docTypeName,
-                           IPruneRemovedDocumentsHandler &handler, IThreadService & master,
-                           BucketExecutor & bucketExecutor)
+PruneRemovedDocumentsJob::
+PruneRemovedDocumentsJob(const DocumentDBPruneConfig &config, RetainGuard dbRetainer, const IDocumentMetaStore &metaStore,
+                         uint32_t subDbId, document::BucketSpace bucketSpace, const vespalib::string &docTypeName,
+                         IPruneRemovedDocumentsHandler &handler, IThreadService & master,
+                         BucketExecutor & bucketExecutor)
     : BlockableMaintenanceJob("prune_removed_documents." + docTypeName,
                               config.getDelay(), config.getInterval()),
       _metaStore(metaStore),
@@ -40,9 +40,9 @@ PruneRemovedDocumentsJobV2(const DocumentDBPruneConfig &config, RetainGuard dbRe
 {
 }
 
-class PruneRemovedDocumentsJobV2::PruneTask : public storage::spi::BucketTask {
+class PruneRemovedDocumentsJob::PruneTask : public storage::spi::BucketTask {
 public:
-    PruneTask(std::shared_ptr<PruneRemovedDocumentsJobV2> job, uint32_t lid, const RawDocumentMetaData & meta, IDestructorCallback::SP opsTracker)
+    PruneTask(std::shared_ptr<PruneRemovedDocumentsJob> job, uint32_t lid, const RawDocumentMetaData & meta, IDestructorCallback::SP opsTracker)
         : _job(std::move(job)),
           _lid(lid),
           _meta(meta),
@@ -53,14 +53,14 @@ public:
         assert(bucket.getBucketId() == _meta.getBucketId());
     }
 private:
-    std::shared_ptr<PruneRemovedDocumentsJobV2> _job;
+    std::shared_ptr<PruneRemovedDocumentsJob> _job;
     uint32_t                                    _lid;
     const RawDocumentMetaData                   _meta;
     IDestructorCallback::SP                     _opsTracker;
 };
 
 void
-PruneRemovedDocumentsJobV2::PruneTask::run(const Bucket & bucket, IDestructorCallback::SP onDone) {
+PruneRemovedDocumentsJob::PruneTask::run(const Bucket & bucket, IDestructorCallback::SP onDone) {
     assert(bucket.getBucketId() == _meta.getBucketId());
     using DoneContext = vespalib::KeepAlive<std::pair<IDestructorCallback::SP, IDestructorCallback::SP>>;
     auto & job = *_job;
@@ -73,7 +73,7 @@ PruneRemovedDocumentsJobV2::PruneTask::run(const Bucket & bucket, IDestructorCal
 }
 
 void
-PruneRemovedDocumentsJobV2::remove(uint32_t lid, const RawDocumentMetaData & oldMeta) {
+PruneRemovedDocumentsJob::remove(uint32_t lid, const RawDocumentMetaData & oldMeta) {
     if (stopped()) return;
     if ( ! _metaStore.validLid(lid)) return;
     const RawDocumentMetaData &meta = _metaStore.getRawMetaData(lid);
@@ -87,7 +87,7 @@ PruneRemovedDocumentsJobV2::remove(uint32_t lid, const RawDocumentMetaData & old
 }
 
 bool
-PruneRemovedDocumentsJobV2::run()
+PruneRemovedDocumentsJob::run()
 {
     vespalib::system_time now = vespalib::system_clock::now();
     const Timestamp ageLimit(static_cast<Timestamp::Type>
