@@ -1308,6 +1308,7 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         object.setString("url", endpoint.url().toString());
         object.setString("scope", endpointScopeString(endpoint.scope()));
         object.setString("routingMethod", routingMethodString(endpoint.routingMethod()));
+        object.setBool("legacy", endpoint.legacy());
     }
 
     private void toSlime(Cursor response, DeploymentId deploymentId, Deployment deployment, HttpRequest request) {
@@ -1319,17 +1320,22 @@ public class ApplicationApiHandler extends AuditLoggingRequestHandler {
         var application = controller.applications().requireApplication(TenantAndApplicationId.from(deploymentId.applicationId()));
 
         // Add zone endpoints
+        boolean legacyEndpoints = request.getBooleanProperty("includeLegacyEndpoints");
         var endpointArray = response.setArray("endpoints");
         EndpointList zoneEndpoints = controller.routing().endpointsOf(deploymentId)
-                                               .scope(Endpoint.Scope.zone)
-                                               .not().legacy();
+                                               .scope(Endpoint.Scope.zone);
+        if (!legacyEndpoints) {
+            zoneEndpoints = zoneEndpoints.not().legacy();
+        }
         for (var endpoint : controller.routing().directEndpoints(zoneEndpoints, deploymentId.applicationId())) {
             toSlime(endpoint, endpointArray.addObject());
         }
         // Add global endpoints
         EndpointList globalEndpoints = controller.routing().endpointsOf(application, deploymentId.applicationId().instance())
-                                                 .not().legacy()
                                                  .targets(deploymentId.zoneId());
+        if (!legacyEndpoints) {
+            globalEndpoints = globalEndpoints.not().legacy();
+        }
         for (var endpoint : controller.routing().directEndpoints(globalEndpoints, deploymentId.applicationId())) {
             toSlime(endpoint, endpointArray.addObject());
         }

@@ -96,7 +96,7 @@ public class RoutingController {
             for (var routingMethod :  controller.zoneRegistry().routingMethods(policy.id().zone())) {
                 if (routingMethod.isDirect() && !isSystemApplication && !canRouteDirectlyTo(deployment, application.get())) continue;
                 endpoints.addAll(policy.endpointsIn(controller.system(), routingMethod, controller.zoneRegistry()));
-                endpoints.add(policy.regionEndpointIn(controller.system(), routingMethod));
+                endpoints.addAll(policy.regionEndpointsIn(controller.system(), routingMethod));
             }
         }
         return EndpointList.copyOf(endpoints);
@@ -315,6 +315,14 @@ public class RoutingController {
                                   .on(Port.fromRoutingMethod(method))
                                   .routingMethod(method)
                                   .in(controller.system()));
+            if (controller.system().isPublic()) {
+                endpoints.add(Endpoint.of(routingId.application())
+                                      .target(routingId.endpointId(), cluster, zones)
+                                      .on(Port.fromRoutingMethod(method))
+                                      .routingMethod(method)
+                                      .legacy()
+                                      .in(controller.system()));
+            }
             // Add legacy endpoints
             if (legacyNamesAvailable && method == RoutingMethod.shared) {
                 endpoints.add(Endpoint.of(routingId.application())

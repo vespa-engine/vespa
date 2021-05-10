@@ -69,6 +69,21 @@ public class EndpointTest {
                 Endpoint.of(app1).target(endpointId).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.Public)
         );
         tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
+
+        Map<String, Endpoint> tests2 = Map.of(
+                // Default endpoint in public system using new domain
+                "https://a1.t1.g.vespa-app.cloud/",
+                Endpoint.of(app1).target(endpointId).on(Port.tls()).routingMethod(RoutingMethod.exclusive).legacy().in(SystemName.Public),
+
+                // Default endpoint in public CD system using new domain
+                "https://a1.t1.g.cd.vespa-app.cloud/",
+                Endpoint.of(app1).target(endpointId).on(Port.tls()).routingMethod(RoutingMethod.exclusive).legacy().in(SystemName.PublicCd),
+
+                // Custom instance in public system, using new domain
+                "https://i2.a2.t2.g.vespa-app.cloud/",
+                Endpoint.of(app2).target(endpointId).on(Port.tls()).routingMethod(RoutingMethod.exclusive).legacy().in(SystemName.Public)
+        );
+        tests2.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
     }
 
     @Test
@@ -117,6 +132,13 @@ public class EndpointTest {
                 Endpoint.of(app1).target(endpointId).on(Port.tls()).routingMethod(RoutingMethod.exclusive).in(SystemName.Public)
         );
         tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
+
+        Map<String, Endpoint> tests2 = Map.of(
+                // Custom endpoint and instance in public system, using new domain
+                "https://foo.i2.a2.t2.g.vespa-app.cloud/",
+                Endpoint.of(app2).target(EndpointId.of("foo")).on(Port.tls()).routingMethod(RoutingMethod.exclusive).legacy().in(SystemName.Public)
+        );
+        tests2.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
     }
 
     @Test
@@ -167,6 +189,21 @@ public class EndpointTest {
                 Endpoint.of(app1).target(cluster, prodZone).on(Port.tls()).routingMethod(RoutingMethod.sharedLayer4).in(SystemName.main)
         );
         tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
+
+        Map<String, Endpoint> tests2 = Map.of(
+                // Custom cluster name in public, using new domain
+                "https://c1.a1.t1.us-north-1.z.vespa-app.cloud/",
+                Endpoint.of(app1).target(ClusterSpec.Id.from("c1"), prodZone).on(Port.tls()).routingMethod(RoutingMethod.exclusive).legacy().in(SystemName.Public),
+
+                // Default cluster name in non-production zone in public, using new domain
+                "https://a1.t1.us-north-2.test.z.vespa-app.cloud/",
+                Endpoint.of(app1).target(ClusterSpec.Id.from("default"), testZone).on(Port.tls()).routingMethod(RoutingMethod.exclusive).legacy().in(SystemName.Public),
+
+                // Default cluster name in public CD, using new domain
+                "https://a1.t1.us-north-1.z.cd.vespa-app.cloud/",
+                Endpoint.of(app1).target(ClusterSpec.Id.from("default"), prodZone).on(Port.tls()).routingMethod(RoutingMethod.exclusive).legacy().in(SystemName.PublicCd)
+        );
+        tests2.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
     }
 
     @Test
@@ -229,8 +266,9 @@ public class EndpointTest {
     }
 
     @Test
-    public void weighted_endpoints() {
+    public void region_endpoints() {
         var cluster = ClusterSpec.Id.from("default");
+        var prodZone = ZoneId.from("prod", "us-north-2");
         Map<String, Endpoint> tests = Map.of(
                 "https://a1.t1.us-north-1-w.public.vespa.oath.cloud/",
                 Endpoint.of(app1)
@@ -240,7 +278,7 @@ public class EndpointTest {
                         .in(SystemName.Public),
                 "https://a1.t1.us-north-2-w.public.vespa.oath.cloud/",
                 Endpoint.of(app1)
-                        .targetRegion(cluster, ZoneId.from("prod", "us-north-2"))
+                        .targetRegion(cluster, prodZone)
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
                         .in(SystemName.Public),
@@ -249,6 +287,13 @@ public class EndpointTest {
                         .targetRegion(cluster, ZoneId.from("test", "us-north-2"))
                         .routingMethod(RoutingMethod.exclusive)
                         .on(Port.tls())
+                        .in(SystemName.Public),
+                "https://c1.a1.t1.us-north-2.r.vespa-app.cloud/",
+                Endpoint.of(app1)
+                        .targetRegion(ClusterSpec.Id.from("c1"), prodZone)
+                        .routingMethod(RoutingMethod.exclusive)
+                        .on(Port.tls())
+                        .legacy()
                         .in(SystemName.Public)
         );
         tests.forEach((expected, endpoint) -> assertEquals(expected, endpoint.url().toString()));
