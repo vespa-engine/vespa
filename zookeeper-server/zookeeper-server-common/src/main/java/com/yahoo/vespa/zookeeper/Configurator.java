@@ -40,6 +40,8 @@ public class Configurator {
         System.setProperty(ZOOKEEPER_JUTE_MAX_BUFFER, Integer.valueOf(zookeeperServerConfig.juteMaxBuffer()).toString());
         // Need to set this as a system property instead of config, config does not work
         System.setProperty("zookeeper.authProvider.x509", "com.yahoo.vespa.zookeeper.VespaMtlsAuthenticationProvider");
+        // Need to set this as a system property, otherwise it will be parsed for _every_ packet and an exception will be thrown (and handled)
+        System.setProperty("zookeeper.globalOutstandingLimit", "1000");
     }
 
     void writeConfigToDisk() { writeConfigToDisk(VespaTlsConfig.fromSystem()); }
