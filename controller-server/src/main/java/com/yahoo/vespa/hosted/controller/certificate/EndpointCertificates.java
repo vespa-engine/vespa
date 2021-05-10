@@ -2,7 +2,6 @@
 package com.yahoo.vespa.hosted.controller.certificate;
 
 import com.yahoo.config.application.api.DeploymentInstanceSpec;
-import com.yahoo.config.provision.zone.ZoneApi;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.Instance;
@@ -15,7 +14,6 @@ import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
-import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Optional;
@@ -78,7 +76,7 @@ public class EndpointCertificates {
         }
 
         // Re-provision certificate if it is missing SANs for the zone we are deploying to
-        var requiredSansForZone = controller.routing().wildcardEndpoints(deployment);
+        var requiredSansForZone = controller.routing().certificateDnsNames(deployment);
         if (!currentCertificateMetadata.get().requestedDnsSans().containsAll(requiredSansForZone)) {
             var reprovisionedCertificateMetadata =
                     provisionEndpointCertificate(deployment, currentCertificateMetadata, instanceSpec)
@@ -93,38 +91,36 @@ public class EndpointCertificates {
         return currentCertificateMetadata;
     }
 
-    private EndpointCertificateMetadata provisionEndpointCertificate(DeploymentId deployment, Optional<EndpointCertificateMetadata> currentMetadata, Optional<DeploymentInstanceSpec> instanceSpec) {
-
-        List<String> currentlyPresentNames = currentMetadata.isPresent() ?
-                currentMetadata.get().requestedDnsSans() : Collections.emptyList();
-
-        var requiredZones = new LinkedHashSet<>(Set.of(deployment.zoneId()));
-
-        var zoneCandidateList = controller.zoneRegistry().zones().controllerUpgraded().zones().stream().map(ZoneApi::getId).collect(Collectors.toList());
-
-        // If not deploying to a dev or perf zone, require all prod zones in deployment spec + test and staging
+    private EndpointCertificateMetadata provisionEndpointCertificate(DeploymentId deployment,
+                                                                     Optional<EndpointCertificateMetadata> currentMetadata,
+                                                                     Optional<DeploymentInstanceSpec> instanceSpec) {
+        List<ZoneId> zonesInSystem = controller.zoneRegistry().zones().controllerUpgraded().ids();
+        Set<ZoneId> requiredZones = new LinkedHashSet<>();
+        requiredZones.add(deployment.zoneId());
         if (!deployment.zoneId().environment().isManuallyDeployed()) {
-            zoneCandidateList.stream()
-                             .filter(z -> z.environment().isTest() || instanceSpec.isPresent() && instanceSpec.get().deploysTo(z.environment(), z.region()))
-                             .forEach(requiredZones::add);
+            // If not deploying to a dev or perf zone, require all prod zones in deployment spec + test and staging
+            zonesInSystem.stream()
+                         .filter(zone -> zone.environment().isTest() ||
+                                         (instanceSpec.isPresent() &&
+                                          instanceSpec.get().deploysTo(zone.environment(), zone.region())))
+                         .forEach(requiredZones::add);
         }
+        Set<String> requiredNames = requiredZones.stream()
+                                                 .flatMap(zone -> controller.routing().certificateDnsNames(new DeploymentId(deployment.applicationId(), zone)).stream())
+                                                 .collect(Collectors.toCollection(LinkedHashSet::new));
 
-        var requiredNames = requiredZones.stream()
-                                         .flatMap(zone -> controller.routing().wildcardEndpoints(new DeploymentId(deployment.applicationId(), zone)).stream())
-                                         .collect(Collectors.toCollection(LinkedHashSet::new));
-
-        // Make sure all currently present names will remain present.
-        // Instead of just adding "currently present names", we regenerate them in case the names for a zone have changed.
-        zoneCandidateList.stream()
-                         .map(zone -> controller.routing().wildcardEndpoints(new DeploymentId(deployment.applicationId(), zone)))
-                         .filter(zoneNames -> zoneNames.stream().anyMatch(currentlyPresentNames::contains))
-                         .filter(currentlyPresentNames::containsAll)
-                         .forEach(requiredNames::addAll);
+        // Preserve any currently present names that are still valid
+        List<String> currentNames = currentMetadata.map(EndpointCertificateMetadata::requestedDnsSans)
+                                                   .orElseGet(List::of);
+        zonesInSystem.stream()
+                     .map(zone -> controller.routing().certificateDnsNames(new DeploymentId(deployment.applicationId(), zone)))
+                     .filter(currentNames::containsAll)
+                     .forEach(requiredNames::addAll);
 
         // This check must be relaxed if we ever remove from the set of names generated.
-        if (!requiredNames.containsAll(currentlyPresentNames))
+        if (!requiredNames.containsAll(currentNames))
             throw new RuntimeException("SANs to be requested do not cover all existing names! Missing names: "
-                                       + currentlyPresentNames.stream().filter(s -> !requiredNames.contains(s)).collect(Collectors.joining(", ")));
+                                       + currentNames.stream().filter(s -> !requiredNames.contains(s)).collect(Collectors.joining(", ")));
 
         return certificateProvider.requestCaSignedCertificate(deployment.applicationId(), List.copyOf(requiredNames), currentMetadata);
     }

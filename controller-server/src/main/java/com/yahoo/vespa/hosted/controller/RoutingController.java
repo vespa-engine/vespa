@@ -154,8 +154,8 @@ public class RoutingController {
         return Collections.unmodifiableMap(endpoints);
     }
 
-    /** Returns the wildcard endpoints for given deployment */
-    public List<String> wildcardEndpoints(DeploymentId deployment) {
+    /** Returns certificate DNS names (CN and SAN values) for given deployment */
+    public List<String> certificateDnsNames(DeploymentId deployment) {
         List<String> endpointDnsNames = new ArrayList<>();
 
         // We add first an endpoint name based on a hash of the application ID,
