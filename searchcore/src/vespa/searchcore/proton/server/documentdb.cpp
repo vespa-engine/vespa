@@ -744,11 +744,6 @@ DocumentDB::startTransactionLogReplay()
     LOG(debug, "DocumentDB(%s): Database started.", _docTypeName.toString().c_str());
 }
 
-BucketGuard::UP DocumentDB::lockBucket(const document::BucketId &bucket)
-{
-    return std::make_unique<BucketGuard>(bucket, _maintenanceController);
-}
-
 std::shared_ptr<std::vector<IDocumentRetriever::SP> >
 DocumentDB::getDocumentRetrievers(IDocumentRetriever::ReadConsistency consistency)
 {

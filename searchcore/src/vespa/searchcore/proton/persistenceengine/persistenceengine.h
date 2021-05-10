@@ -48,13 +48,11 @@ private:
         PersistenceHandlerSequence  handler_sequence;
         DocumentIterator it;
         bool in_use;
-        std::vector<BucketGuard::UP> bucket_guards;
         IteratorEntry(storage::spi::ReadConsistency readConsistency, const Bucket &b, FieldSetSP f,
                       const Selection &s, IncludedVersions v, ssize_t defaultSerializedSize, bool ignoreMaxBytes)
             : handler_sequence(),
               it(b, std::move(f), s, v, defaultSerializedSize, ignoreMaxBytes, readConsistency),
-              in_use(false),
-              bucket_guards() {}
+              in_use(false) {}
     };
     struct BucketSpaceHash {
         std::size_t operator() (const document::BucketSpace &bucketSpace) const { return bucketSpace.getId(); }

@@ -11,9 +11,9 @@
 #include <vespa/document/update/assignvalueupdate.h>
 #include <vespa/persistence/spi/documentselection.h>
 #include <vespa/persistence/spi/test.h>
-#include <vespa/searchcore/proton/persistenceengine/bucket_guard.h>
 #include <vespa/searchcore/proton/persistenceengine/ipersistenceengineowner.h>
 #include <vespa/searchcore/proton/persistenceengine/persistenceengine.h>
+#include <vespa/searchcore/proton/server/ibucketfreezer.h>
 #include <vespa/searchcore/proton/test/disk_mem_usage_notifier.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vdslib/state/clusterstate.h>
@@ -266,10 +266,6 @@ struct MyHandler : public IPersistenceHandler, IBucketFreezer {
         ret->push_back(IDocumentRetriever::SP(new MyDocumentRetriever(nullptr, Timestamp(), lastDocId)));
         ret->push_back(IDocumentRetriever::SP(new MyDocumentRetriever(document, existingTimestamp, lastDocId)));
         return ret;
-    }
-
-    BucketGuard::UP lockBucket(const storage::spi::Bucket &b) override {
-        return std::make_unique<BucketGuard>(b.getBucketId(), *this);
     }
 
     void handleListActiveBuckets(IBucketIdListResultHandler &resultHandler) override {
@@ -668,17 +664,6 @@ TEST_F("require that get is sent to all handlers", SimpleFixture) {
     EXPECT_EQUAL(docId1, f.hset.handler2.lastDocId);
 }
 
-TEST_F("require that get freezes the bucket", SimpleFixture) {
-    EXPECT_FALSE(f.hset.handler1.wasFrozen(bucket1));
-    EXPECT_FALSE(f.hset.handler2.wasFrozen(bucket1));
-    Context context(storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
-    f.engine.get(bucket1, document::AllFields(), docId1, context);
-    EXPECT_TRUE(f.hset.handler1.wasFrozen(bucket1));
-    EXPECT_TRUE(f.hset.handler2.wasFrozen(bucket1));
-    EXPECT_FALSE(f.hset.handler1.isFrozen(bucket1));
-    EXPECT_FALSE(f.hset.handler2.isFrozen(bucket1));
-}
-
 TEST_F("require that get returns the first document found", SimpleFixture) {
     f.hset.handler1.setDocument(*doc1, tstamp1);
     f.hset.handler2.setDocument(*doc2, tstamp2);
@@ -771,20 +756,6 @@ TEST_F("require that destroyIterator prevents iteration", SimpleFixture) {
     EXPECT_EQUAL(Result::ErrorType::PERMANENT_ERROR, it_result.getErrorCode());
     string msg_prefix = "Unknown iterator with id";
     EXPECT_EQUAL(msg_prefix, it_result.getErrorMessage().substr(0, msg_prefix.size()));
-}
-
-TEST_F("require that buckets are frozen during iterator life", SimpleFixture) {
-    EXPECT_FALSE(f.hset.handler1.isFrozen(bucket1));
-    EXPECT_FALSE(f.hset.handler2.isFrozen(bucket1));
-    Context context(storage::spi::Priority(0), storage::spi::Trace::TraceLevel(0));
-    CreateIteratorResult create_result =
-        f.engine.createIterator(bucket1, std::make_shared<document::AllFields>(), selection,
-                                storage::spi::NEWEST_DOCUMENT_ONLY, context);
-    EXPECT_TRUE(f.hset.handler1.isFrozen(bucket1));
-    EXPECT_TRUE(f.hset.handler2.isFrozen(bucket1));
-    f.engine.destroyIterator(create_result.getIteratorId(), context);
-    EXPECT_FALSE(f.hset.handler1.isFrozen(bucket1));
-    EXPECT_FALSE(f.hset.handler2.isFrozen(bucket1));
 }
 
 TEST_F("require that multiple bucket spaces works", SimpleFixture(altBucketSpace)) {

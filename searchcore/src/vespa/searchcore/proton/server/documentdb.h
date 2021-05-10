@@ -22,7 +22,6 @@
 #include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/searchcore/proton/metrics/documentdb_job_trackers.h>
 #include <vespa/searchcore/proton/metrics/documentdb_tagged_metrics.h>
-#include <vespa/searchcore/proton/persistenceengine/bucket_guard.h>
 #include <vespa/searchcore/proton/persistenceengine/i_resource_write_filter.h>
 #include <vespa/searchcore/proton/index/indexmanager.h>
 #include <vespa/searchlib/docstore/cachestats.h>
@@ -365,10 +364,7 @@ public:
         return _maintenanceController;
     }
 
-    BucketGuard::UP lockBucket(const document::BucketId &bucket);
-
     virtual SerialNum getOldestFlushedSerial();
-
     virtual SerialNum getNewestFlushedSerial();
 
     std::unique_ptr<search::engine::SearchReply>
