@@ -164,9 +164,6 @@ BuildRequires: git
 BuildRequires: systemd
 BuildRequires: flex >= 2.5.0
 BuildRequires: bison >= 3.0.0
-%if 0%{?centos}
-Requires: epel-release
-%endif
 Requires: which
 Requires: initscripts
 Requires: libcgroup-tools
@@ -195,21 +192,7 @@ Requires: vespa-xxhash = 0.8.0
 Requires: xxhash
 Requires: xxhash-libs >= 0.8.0
 %endif
-%if 0%{?el8}
-Requires: openblas
-%else
-%if 0%{?el7} && 0%{?amzn2}
-Requires: vespa-openblas
-%else
-Requires: openblas-serial
-%endif
-%endif
 Requires: zlib
-%if 0%{?amzn2}
-Requires: vespa-re2 = 20190801
-%else
-Requires: re2
-%endif
 %if ! 0%{?el7}
 Requires: libicu
 %endif
@@ -339,7 +322,10 @@ Vespa - The open big data serving engine - base
 
 Summary: Vespa - The open big data serving engine - base C++ libraries
 
-%if 0%{?el7} && 0%{?amzn2}
+%if 0%{?centos}
+Requires: epel-release
+%endif
+%if 0%{?amzn2}
 Requires: vespa-xxhash = 0.8.0
 %else
 Requires: xxhash-libs >= 0.8.0
@@ -351,6 +337,20 @@ Requires: openssl-libs
 %endif
 Requires: vespa-lz4 >= 1.9.2-2
 Requires: vespa-libzstd >= 1.4.5-2
+%if 0%{?el8}
+Requires: openblas
+%else
+%if 0%{?amzn2}
+Requires: vespa-openblas
+%else
+Requires: openblas-serial
+%endif
+%endif
+%if 0%{?amzn2}
+Requires: vespa-re2 = 20190801
+%else
+Requires: re2
+%endif
 
 %description base-libs
 
