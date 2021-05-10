@@ -193,9 +193,6 @@ Requires: xxhash
 Requires: xxhash-libs >= 0.8.0
 %endif
 Requires: zlib
-%if ! 0%{?el7}
-Requires: libicu
-%endif
 Requires: perf
 Requires: gdb
 Requires: nc
@@ -205,24 +202,10 @@ Requires: unzip
 Requires: zstd
 %if 0%{?el7}
 Requires: llvm7.0
-Requires: vespa-icu >= 65.1.0-1
-Requires: vespa-lz4 >= 1.9.2-2
-Requires: vespa-onnxruntime = 1.7.1
-Requires: vespa-openssl >= 1.1.1k-1
-%if 0%{?centos}
-%if 0%{?amzn2}
-Requires: vespa-protobuf = 3.7.0-5.amzn2
-%else
-Requires: vespa-protobuf = 3.7.0-4.el7
-%endif
-%else
-Requires: vespa-protobuf = 3.7.0-5.el7
-%endif
 %if ! 0%{?amzn2}
 Requires: vespa-telegraf >= 1.1.1-1
 Requires: vespa-valgrind >= 3.17.0-1
 %endif
-Requires: vespa-zstd >= 1.4.5-2
 %define _vespa_llvm_version 7
 %define _extra_link_directory /usr/lib64/llvm7.0/lib;%{_vespa_deps_prefix}/lib64
 %if 0%{?amzn2}
@@ -233,43 +216,24 @@ Requires: vespa-zstd >= 1.4.5-2
 %endif
 %if 0%{?el8}
 %if 0%{?_centos_stream}
-Requires: llvm-libs >= 11.0.0
 %define _vespa_llvm_version 11
 %else
-Requires: llvm-libs >= 10.0.1
 %define _vespa_llvm_version 10
 %endif
-Requires: openssl-libs
-Requires: vespa-lz4 >= 1.9.2-2
-Requires: vespa-onnxruntime = 1.7.1
-Requires: vespa-protobuf = 3.7.0-5.el8
-Requires: vespa-zstd >= 1.4.5-2
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
 %define _extra_include_directory %{_vespa_deps_prefix}/include;/usr/include/openblas
 %endif
 %if 0%{?fedora}
-Requires: openssl-libs
-Requires: vespa-lz4 >= 1.9.2-2
-Requires: vespa-onnxruntime = 1.7.1
-Requires: vespa-zstd >= 1.4.5-2
 %if 0%{?fc32}
-Requires: protobuf
-Requires: llvm-libs >= 10.0.0
 %define _vespa_llvm_version 10
 %endif
 %if 0%{?fc33}
-Requires: protobuf
-Requires: llvm-libs >= 11.0.0
 %define _vespa_llvm_version 11
 %endif
 %if 0%{?fc34}
-Requires: protobuf
-Requires: llvm-libs >= 12.0.0
 %define _vespa_llvm_version 12
 %endif
 %if 0%{?fc35}
-Requires: protobuf
-Requires: llvm-libs >= 12.0.0
 %define _vespa_llvm_version 12
 %endif
 %define _extra_link_directory %{_vespa_deps_prefix}/lib64
@@ -361,6 +325,47 @@ Vespa - The open big data serving engine - base C++ libraries
 Summary: Vespa - The open big data serving engine - C++ libraries
 
 Requires: %{name}-base-libs = %{version}-%{release}
+%if 0%{?el7}
+Requires: llvm7.0-libs
+Requires: vespa-icu >= 65.1.0-1
+Requires: vespa-openssl >= 1.1.1k-1
+%if 0%{?centos}
+%if 0%{?amzn2}
+Requires: vespa-protobuf = 3.7.0-5.amzn2
+%else
+Requires: vespa-protobuf = 3.7.0-4.el7
+%endif
+%else
+Requires: vespa-protobuf = 3.7.0-5.el7
+%endif
+%else
+Requires: libicu
+Requires: openssl-libs
+%endif
+%if 0%{?el8}
+%if 0%{?_centos_stream}
+Requires: llvm-libs >= 11.0.0
+%else
+Requires: llvm-libs >= 10.0.1
+%endif
+Requires: vespa-protobuf = 3.7.0-5.el8
+%endif
+%if 0%{?fedora}
+Requires: protobuf
+%if 0%{?fc32}
+Requires: llvm-libs >= 10.0.0
+%endif
+%if 0%{?fc33}
+Requires: llvm-libs >= 11.0.0
+%endif
+%if 0%{?fc34}
+Requires: llvm-libs >= 12.0.0
+%endif
+%if 0%{?fc35}
+Requires: llvm-libs >= 12.0.0
+%endif
+%endif
+Requires: vespa-onnxruntime = 1.7.1
 
 %description libs
 
@@ -606,16 +611,6 @@ fi
 %{_prefix}/lib/jars/vespa-testrunner-components-jar-with-dependencies.jar
 %{_prefix}/lib/jars/zookeeper-command-line-client-jar-with-dependencies.jar
 %{_prefix}/lib/perl5
-%{_prefix}/lib64
-%exclude %{_prefix}/lib64/libfastos.so
-%exclude %{_prefix}/lib64/libfnet.so
-%exclude %{_prefix}/lib64/libstaging_vespalib.so
-%exclude %{_prefix}/lib64/libvespadefaults.so
-%exclude %{_prefix}/lib64/libvespalib.so
-%exclude %{_prefix}/lib64/libvespalog.so
-%if ! 0%{?_skip_vespamalloc:1}
-%exclude %{_prefix}/lib64/vespa
-%endif
 %{_prefix}/libexec
 %exclude %{_prefix}/libexec/vespa/common-env.sh
 %exclude %{_prefix}/libexec/vespa/node-admin.sh
@@ -676,6 +671,20 @@ fi
 %{_prefix}/lib64/libvespalog.so
 
 %files libs
+%if %{_defattr_is_vespa_vespa}
+%defattr(-,%{_vespa_user},%{_vespa_group},-)
+%endif
+%dir %{_prefix}
+%{_prefix}/lib64
+%exclude %{_prefix}/lib64/libfastos.so
+%exclude %{_prefix}/lib64/libfnet.so
+%exclude %{_prefix}/lib64/libstaging_vespalib.so
+%exclude %{_prefix}/lib64/libvespadefaults.so
+%exclude %{_prefix}/lib64/libvespalib.so
+%exclude %{_prefix}/lib64/libvespalog.so
+%if ! 0%{?_skip_vespamalloc:1}
+%exclude %{_prefix}/lib64/vespa
+%endif
 
 %files clients
 %if %{_defattr_is_vespa_vespa}
