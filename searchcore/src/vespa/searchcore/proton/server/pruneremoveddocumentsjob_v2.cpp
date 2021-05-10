@@ -94,7 +94,7 @@ PruneRemovedDocumentsJobV2::run()
                              (vespalib::count_us(now.time_since_epoch() - _cfgAgeLimit)));
     const DocId docIdLimit(_metaStore.getCommittedDocIdLimit());
     const DocId lidLimit = std::min(_nextLid + 1000000u, docIdLimit);
-    for (uint32_t removed = 0; removed < 1000 && _nextLid < lidLimit; _nextLid++) {
+    for (; ! isBlocked() && _nextLid < lidLimit; _nextLid++) {
         if ( ! _metaStore.validLid(_nextLid)) continue;
         const RawDocumentMetaData &meta = _metaStore.getRawMetaData(_nextLid);
         if (meta.getTimestamp() >= ageLimit) continue;
