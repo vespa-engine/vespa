@@ -68,7 +68,7 @@ public class ServiceRegistryMock extends AbstractComponent implements ServiceReg
     private final MockRunDataStore mockRunDataStore = new MockRunDataStore();
     private final MockResourceTagger mockResourceTagger = new MockResourceTagger();
     private final RoleService roleService = new MockRoleService();
-    private final BillingController billingController = new MockBillingController();
+    private final BillingController billingController = new MockBillingController(clock);
     private final ContainerRegistryMock containerRegistry = new ContainerRegistryMock();
     private final NoopTenantSecretService tenantSecretService = new NoopTenantSecretService();
     private final ArchiveService archiveService = new MockArchiveService();

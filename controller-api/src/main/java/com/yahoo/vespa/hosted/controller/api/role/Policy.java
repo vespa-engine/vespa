@@ -174,7 +174,7 @@ enum Policy {
 
     /** Ability to update tenant payment instrument */
     planUpdate(Privilege.grant(Action.update)
-            .on(PathGroup.billingPlan)
+            .on(PathGroup.billingPlan, PathGroup.billing)
             .in(SystemName.PublicCd, SystemName.Public)),
 
     /** Ability to update tenant collection method */
@@ -185,12 +185,12 @@ enum Policy {
 
     /** Read the generated bills */
     billingInformationRead(Privilege.grant(Action.read)
-                                    .on(PathGroup.billingList)
+                                    .on(PathGroup.billingList, PathGroup.billing)
                                     .in(SystemName.PublicCd, SystemName.Public)),
 
     /** Invoice management */
     hostedAccountant(Privilege.grant(Action.all())
-                                    .on(PathGroup.hostedAccountant)
+                                    .on(PathGroup.hostedAccountant, PathGroup.accountant)
                                     .in(SystemName.PublicCd, SystemName.Public)),
 
     /** Listing endpoint certificate request info */
