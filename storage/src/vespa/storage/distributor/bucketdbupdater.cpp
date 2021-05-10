@@ -74,6 +74,18 @@ BucketDBUpdater::bootstrap_distribution_config(std::shared_ptr<const lib::Distri
     //   ... need to take a guard if so, so can probably not be done at ctor time..?
 }
 
+void
+BucketDBUpdater::propagate_distribution_config(const BucketSpaceDistributionConfigs& configs) {
+    for (auto* repo : {&_op_ctx.bucket_space_repo(), &_op_ctx.read_only_bucket_space_repo()}) {
+        if (auto distr = configs.get_or_nullptr(document::FixedBucketSpaces::default_space())) {
+            repo->get(document::FixedBucketSpaces::default_space()).setDistribution(distr);
+        }
+        if (auto distr = configs.get_or_nullptr(document::FixedBucketSpaces::global_space())) {
+            repo->get(document::FixedBucketSpaces::global_space()).setDistribution(distr);
+        }
+    }
+}
+
 // FIXME what about bucket DB replica update timestamp allocations?! Replace with u64 counter..?
 //   Must at the very least ensure we use stripe-local TS generation for DB inserts...! i.e. no global TS
 //   Or do we have to touch these at all here? Just defer all this via stripe interface?
@@ -179,6 +191,7 @@ BucketDBUpdater::complete_transition_timer()
 void
 BucketDBUpdater::storage_distribution_changed(const BucketSpaceDistributionConfigs& configs)
 {
+    propagate_distribution_config(configs);
     ensure_transition_timer_started();
 
     auto guard = _stripe_accessor.rendezvous_and_hold_all();

@@ -57,6 +57,7 @@ public:
     void resend_delayed_messages();
     void storage_distribution_changed(const BucketSpaceDistributionConfigs& configs);
     void bootstrap_distribution_config(std::shared_ptr<const lib::Distribution>);
+    void propagate_distribution_config(const BucketSpaceDistributionConfigs& configs);
 
     vespalib::string report_xml_status(vespalib::xml::XmlOutputStream& xos, const framework::HttpUrlPath&) const;
 
