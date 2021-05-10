@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.provision.provisioning;
 
+import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.ClusterMembership;
 import com.yahoo.config.provision.Flavor;
@@ -192,6 +193,12 @@ public abstract class NodeCandidate implements Nodelike, Comparable<NodeCandidat
         if (this.allocation().isPresent() && other.allocation().isPresent())
             return Integer.compare(this.allocation().get().membership().index(),
                                    other.allocation().get().membership().index());
+
+        // Prefer host with latest OS version
+        Version thisHostOsVersion = this.parent.flatMap(host -> host.status().osVersion().current()).orElse(Version.emptyVersion);
+        Version otherHostOsVersion = other.parent.flatMap(host -> host.status().osVersion().current()).orElse(Version.emptyVersion);
+        if (thisHostOsVersion.isAfter(otherHostOsVersion)) return -1;
+        if (otherHostOsVersion.isAfter(thisHostOsVersion)) return 1;
 
         return 0;
     }
