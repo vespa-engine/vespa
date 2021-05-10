@@ -136,7 +136,7 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
 
     @Override
     public Result doSearch2(Query query, Execution execution) {
-        if (query.getTimeLeft() < 0) {
+        if (query.getTimeLeft() <= 0) {
             return new Result(query, ErrorMessage.createTimeout(String.format("No time left for searching (timeout=%d)", query.getTimeout())));
         }
 
