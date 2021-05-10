@@ -124,12 +124,6 @@ PersistenceHandlerProxy::getDocumentRetrievers(storage::spi::ReadConsistency con
     return _documentDB->getDocumentRetrievers(consistency);
 }
 
-BucketGuard::UP
-PersistenceHandlerProxy::lockBucket(const storage::spi::Bucket &bucket)
-{
-    return _documentDB->lockBucket(bucket.getBucketId().stripUnused());
-}
-
 void
 PersistenceHandlerProxy::handleListActiveBuckets(IBucketIdListResultHandler &resultHandler)
 {

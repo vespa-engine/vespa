@@ -54,7 +54,6 @@ public:
                     const storage::spi::Bucket &target1, const storage::spi::Bucket &target2) override;
 
     RetrieversSP getDocumentRetrievers(storage::spi::ReadConsistency consistency) override;
-    BucketGuard::UP lockBucket(const storage::spi::Bucket &bucket) override;
 
     void handleListActiveBuckets(IBucketIdListResultHandler &resultHandler) override;
 
