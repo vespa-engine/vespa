@@ -28,13 +28,14 @@ import java.util.stream.Collectors;
  * Looks up stored endpoint certificate metadata, provisions new certificates if none is found,
  * re-provisions if zone is not covered, and uses refreshed certificates if a newer version is available.
  *
- * See also EndpointCertificateMaintainer, which handles refreshes, deletions and triggers deployments
+ * See also {@link com.yahoo.vespa.hosted.controller.maintenance.EndpointCertificateMaintainer}, which handles
+ * refreshes, deletions and triggers deployments.
  *
  * @author andreer
  */
-public class EndpointCertificateManager {
+public class EndpointCertificates {
 
-    private static final Logger log = Logger.getLogger(EndpointCertificateManager.class.getName());
+    private static final Logger log = Logger.getLogger(EndpointCertificates.class.getName());
 
     private final Controller controller;
     private final CuratorDb curator;
@@ -42,8 +43,8 @@ public class EndpointCertificateManager {
     private final EndpointCertificateProvider certificateProvider;
     private final EndpointCertificateValidator certificateValidator;
 
-    public EndpointCertificateManager(Controller controller, EndpointCertificateProvider certificateProvider,
-                                      EndpointCertificateValidator certificateValidator) {
+    public EndpointCertificates(Controller controller, EndpointCertificateProvider certificateProvider,
+                                EndpointCertificateValidator certificateValidator) {
         this.controller = controller;
         this.curator = controller.curator();
         this.clock = controller.clock();
@@ -51,7 +52,8 @@ public class EndpointCertificateManager {
         this.certificateValidator = certificateValidator;
     }
 
-    public Optional<EndpointCertificateMetadata> getEndpointCertificateMetadata(Instance instance, ZoneId zone, Optional<DeploymentInstanceSpec> instanceSpec) {
+    /** Returns certificate metadata for endpoints of given instance and zone */
+    public Optional<EndpointCertificateMetadata> getMetadata(Instance instance, ZoneId zone, Optional<DeploymentInstanceSpec> instanceSpec) {
         Instant start = clock.instant();
         Optional<EndpointCertificateMetadata> metadata = getOrProvision(instance, zone, instanceSpec);
         metadata.ifPresent(m -> curator.writeEndpointCertificateMetadata(instance.id(), m.withLastRequested(clock.instant().getEpochSecond())));

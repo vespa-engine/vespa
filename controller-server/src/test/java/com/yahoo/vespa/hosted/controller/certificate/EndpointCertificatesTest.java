@@ -38,7 +38,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * @author andreer
  */
-public class EndpointCertificateManagerTest {
+public class EndpointCertificatesTest {
 
     private final ControllerTester tester = new ControllerTester();
     private final SecretStoreMock secretStore = new SecretStoreMock();
@@ -46,7 +46,7 @@ public class EndpointCertificateManagerTest {
     private final ManualClock clock = tester.clock();
     private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock();
     private final EndpointCertificateValidatorImpl endpointCertificateValidator = new EndpointCertificateValidatorImpl(secretStore, clock);
-    private final EndpointCertificateManager endpointCertificateManager = new EndpointCertificateManager(tester.controller(), endpointCertificateMock, endpointCertificateValidator);
+    private final EndpointCertificates endpointCertificates = new EndpointCertificates(tester.controller(), endpointCertificateMock, endpointCertificateValidator);
     private final KeyPair testKeyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 192);
 
     private X509Certificate testCertificate;
@@ -109,7 +109,7 @@ public class EndpointCertificateManagerTest {
     @Test
     public void provisions_new_certificate_in_dev() {
         ZoneId testZone = tester.zoneRegistry().zones().directlyRouted().in(Environment.dev).zones().stream().findFirst().orElseThrow().getId();
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(testInstance, testZone, Optional.empty());
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, Optional.empty());
         assertTrue(endpointCertificateMetadata.isPresent());
         assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.default.default.*-key"));
         assertTrue(endpointCertificateMetadata.get().certName().matches("vespa.tls.default.default.*-cert"));
@@ -119,7 +119,7 @@ public class EndpointCertificateManagerTest {
 
     @Test
     public void provisions_new_certificate_in_prod() {
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(testInstance, testZone, Optional.empty());
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, Optional.empty());
         assertTrue(endpointCertificateMetadata.isPresent());
         assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.default.default.*-key"));
         assertTrue(endpointCertificateMetadata.get().certName().matches("vespa.tls.default.default.*-cert"));
@@ -138,7 +138,7 @@ public class EndpointCertificateManagerTest {
                 "", Optional.empty(), Optional.empty()));
         secretStore.setSecret(testKeyName, KeyUtils.toPem(testKeyPair.getPrivate()), 7);
         secretStore.setSecret(testCertName, X509CertificateUtils.toPem(testCertificate) + X509CertificateUtils.toPem(testCertificate), 7);
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(testInstance, testZone, Optional.empty());
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, Optional.empty());
         assertTrue(endpointCertificateMetadata.isPresent());
         assertEquals(testKeyName, endpointCertificateMetadata.get().keyName());
         assertEquals(testCertName, endpointCertificateMetadata.get().certName());
@@ -150,7 +150,7 @@ public class EndpointCertificateManagerTest {
         mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "uuid", List.of(), "issuer", Optional.empty(), Optional.empty()));
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), 0);
         secretStore.setSecret("vespa.tls.default.default.default-cert", X509CertificateUtils.toPem(testCertificate) + X509CertificateUtils.toPem(testCertificate), 0);
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(testInstance, testZone, Optional.empty());
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, Optional.empty());
         assertTrue(endpointCertificateMetadata.isPresent());
         assertEquals(0, endpointCertificateMetadata.get().version());
         assertEquals(endpointCertificateMetadata, mockCuratorDb.readEndpointCertificateMetadata(testInstance.id()));
@@ -167,7 +167,7 @@ public class EndpointCertificateManagerTest {
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), 0);
         secretStore.setSecret("vespa.tls.default.default.default-cert", X509CertificateUtils.toPem(testCertificate2) + X509CertificateUtils.toPem(testCertificate2), 0);
 
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(testInstance, testZone, Optional.empty());
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, Optional.empty());
         assertTrue(endpointCertificateMetadata.isPresent());
         assertEquals(0, endpointCertificateMetadata.get().version());
         assertEquals(endpointCertificateMetadata, mockCuratorDb.readEndpointCertificateMetadata(testInstance.id()));
@@ -189,7 +189,7 @@ public class EndpointCertificateManagerTest {
                         "</deployment>\n");
 
         ZoneId testZone = tester.zoneRegistry().zones().all().in(Environment.staging).zones().stream().findFirst().orElseThrow().getId();
-        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(testInstance, testZone, Optional.of(deploymentSpec.requireInstance("default")));
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, Optional.of(deploymentSpec.requireInstance("default")));
         assertTrue(endpointCertificateMetadata.isPresent());
         assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.default.default.*-key"));
         assertTrue(endpointCertificateMetadata.get().certName().matches("vespa.tls.default.default.*-cert"));
