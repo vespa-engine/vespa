@@ -21,8 +21,8 @@ class RawDocumentMetaData;
  * Job that regularly checks whether old removed documents should be
  * forgotten.
  */
-class PruneRemovedDocumentsJobV2 : public BlockableMaintenanceJob,
-                                 public std::enable_shared_from_this<PruneRemovedDocumentsJobV2>
+class PruneRemovedDocumentsJob : public BlockableMaintenanceJob,
+                                 public std::enable_shared_from_this<PruneRemovedDocumentsJob>
 {
 private:
     class PruneTask;
@@ -45,20 +45,20 @@ private:
 
     void remove(uint32_t lid, const RawDocumentMetaData & meta);
 
-    PruneRemovedDocumentsJobV2(const DocumentDBPruneConfig &config, RetainGuard dbRetainer, const IDocumentMetaStore &metaStore,
-                               uint32_t subDbId, document::BucketSpace bucketSpace, const vespalib::string &docTypeName,
-                               IPruneRemovedDocumentsHandler &handler, IThreadService & master,
-                               BucketExecutor & bucketExecutor);
+    PruneRemovedDocumentsJob(const DocumentDBPruneConfig &config, RetainGuard dbRetainer, const IDocumentMetaStore &metaStore,
+                             uint32_t subDbId, document::BucketSpace bucketSpace, const vespalib::string &docTypeName,
+                             IPruneRemovedDocumentsHandler &handler, IThreadService & master,
+                             BucketExecutor & bucketExecutor);
     bool run() override;
 public:
-    static std::shared_ptr<PruneRemovedDocumentsJobV2>
+    static std::shared_ptr<PruneRemovedDocumentsJob>
     create(const Config &config, RetainGuard dbRetainer, const IDocumentMetaStore &metaStore, uint32_t subDbId,
            document::BucketSpace bucketSpace, const vespalib::string &docTypeName,
            IPruneRemovedDocumentsHandler &handler, IThreadService & master, BucketExecutor & bucketExecutor)
    {
-        return std::shared_ptr<PruneRemovedDocumentsJobV2>(
-                new PruneRemovedDocumentsJobV2(config, std::move(dbRetainer), metaStore, subDbId, bucketSpace,
-                                               docTypeName, handler, master, bucketExecutor));
+        return std::shared_ptr<PruneRemovedDocumentsJob>(
+                new PruneRemovedDocumentsJob(config, std::move(dbRetainer), metaStore, subDbId, bucketSpace,
+                                             docTypeName, handler, master, bucketExecutor));
     }
 };
 
