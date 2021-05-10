@@ -5,7 +5,6 @@ import com.yahoo.document.DocumentId;
 import com.yahoo.document.select.parser.ParseException;
 import com.yahoo.document.select.parser.TokenMgrException;
 import com.yahoo.fs4.DocsumPacket;
-import java.util.logging.Level;
 import com.yahoo.messagebus.routing.Route;
 import com.yahoo.prelude.Ping;
 import com.yahoo.prelude.Pong;
@@ -30,6 +29,7 @@ import java.math.BigInteger;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -136,6 +136,10 @@ public class VdsStreamingSearcher extends VespaBackEndSearcher {
 
     @Override
     public Result doSearch2(Query query, Execution execution) {
+        if (query.getTimeLeft() <= 0) {
+            return new Result(query, ErrorMessage.createTimeout(String.format("No time left for searching (timeout=%d)", query.getTimeout())));
+        }
+
         initializeMissingQueryFields(query);
         if (documentSelectionQueryParameterCount(query) != 1) {
             return new Result(query, ErrorMessage.createBackendCommunicationError("Streaming search needs one and " +
