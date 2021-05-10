@@ -16,7 +16,8 @@ using document::test::makeDocumentBucket;
 namespace storage::distributor {
 
 DistributorTestUtil::DistributorTestUtil()
-    : _messageSender(_sender, _senderDown)
+    : _messageSender(_sender, _senderDown),
+      _num_distributor_stripes(0) // TODO STRIPE change default
 {
     _config = getStandardConfig(false);
 }
@@ -32,7 +33,7 @@ DistributorTestUtil::createLinks()
             _node->node_identity(),
             *_threadPool,
             *this,
-            0,
+            _num_distributor_stripes,
             _hostInfo,
             &_messageSender));
     _component.reset(new storage::DistributorComponent(_node->getComponentRegister(), "distrtestutil"));
