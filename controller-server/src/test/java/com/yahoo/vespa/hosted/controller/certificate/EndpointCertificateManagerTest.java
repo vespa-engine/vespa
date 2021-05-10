@@ -5,29 +5,26 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
-import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
 import com.yahoo.security.SignatureAlgorithm;
 import com.yahoo.security.X509CertificateBuilder;
 import com.yahoo.security.X509CertificateUtils;
-import com.yahoo.vespa.flags.Flags;
-import com.yahoo.vespa.flags.InMemoryFlagSource;
+import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.hosted.controller.ControllerTester;
 import com.yahoo.vespa.hosted.controller.Instance;
-import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMetadata;
+import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateMock;
 import com.yahoo.vespa.hosted.controller.api.integration.certificates.EndpointCertificateValidatorImpl;
 import com.yahoo.vespa.hosted.controller.integration.SecretStoreMock;
-import com.yahoo.vespa.hosted.controller.integration.ZoneRegistryMock;
-import com.yahoo.vespa.hosted.controller.persistence.MockCuratorDb;
+import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
 import org.junit.Before;
 import org.junit.Test;
 
 import javax.security.auth.x500.X500Principal;
 import java.security.KeyPair;
 import java.security.cert.X509Certificate;
-import java.time.Clock;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
@@ -43,15 +40,17 @@ import static org.junit.Assert.assertTrue;
  */
 public class EndpointCertificateManagerTest {
 
+    private final ControllerTester tester = new ControllerTester();
     private final SecretStoreMock secretStore = new SecretStoreMock();
-    private final ZoneRegistryMock zoneRegistryMock = new ZoneRegistryMock(SystemName.main);
-    private final MockCuratorDb mockCuratorDb = new MockCuratorDb();
+    private final CuratorDb mockCuratorDb = tester.curator();
+    private final ManualClock clock = tester.clock();
     private final EndpointCertificateMock endpointCertificateMock = new EndpointCertificateMock();
-    private final InMemoryFlagSource inMemoryFlagSource = new InMemoryFlagSource();
-    private static final Clock clock = Clock.fixed(Instant.EPOCH, java.time.ZoneId.systemDefault());
     private final EndpointCertificateValidatorImpl endpointCertificateValidator = new EndpointCertificateValidatorImpl(secretStore, clock);
-    private final EndpointCertificateManager endpointCertificateManager =
-            new EndpointCertificateManager(zoneRegistryMock, mockCuratorDb, endpointCertificateMock, endpointCertificateValidator, clock);
+    private final EndpointCertificateManager endpointCertificateManager = new EndpointCertificateManager(tester.controller(), endpointCertificateMock, endpointCertificateValidator);
+    private final KeyPair testKeyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 192);
+
+    private X509Certificate testCertificate;
+    private X509Certificate testCertificate2;
 
     private static final List<String> expectedSans = List.of(
             "vt2ktgkqme5zlnp4tj4ttyor7fj3v7q5o.vespa.oath.cloud",
@@ -81,11 +80,7 @@ public class EndpointCertificateManagerTest {
             "*.default.default.us-east-1.dev.vespa.oath.cloud"
     );
 
-    private static final KeyPair testKeyPair = KeyUtils.generateKeypair(KeyAlgorithm.EC, 192);
-    private static final X509Certificate testCertificate = makeTestCert(expectedSans);
-    private static final X509Certificate testCertificate2 = makeTestCert(expectedCombinedSans);
-
-    private static X509Certificate makeTestCert(List<String> sans) {
+    private X509Certificate makeTestCert(List<String> sans) {
         X509CertificateBuilder x509CertificateBuilder = X509CertificateBuilder
                 .fromKeypair(
                         testKeyPair,
@@ -104,13 +99,16 @@ public class EndpointCertificateManagerTest {
 
     @Before
     public void setUp() {
-        zoneRegistryMock.exclusiveRoutingIn(zoneRegistryMock.zones().all().zones());
-        testZone = zoneRegistryMock.zones().directlyRouted().in(Environment.prod).zones().stream().findFirst().orElseThrow().getId();
+        tester.zoneRegistry().exclusiveRoutingIn(tester.zoneRegistry().zones().all().zones());
+        testZone = tester.zoneRegistry().zones().directlyRouted().in(Environment.prod).zones().stream().findFirst().orElseThrow().getId();
+        clock.setInstant(Instant.EPOCH);
+        testCertificate = makeTestCert(expectedSans);
+        testCertificate2 = makeTestCert(expectedCombinedSans);
     }
 
     @Test
     public void provisions_new_certificate_in_dev() {
-        ZoneId testZone = zoneRegistryMock.zones().directlyRouted().in(Environment.dev).zones().stream().findFirst().orElseThrow().getId();
+        ZoneId testZone = tester.zoneRegistry().zones().directlyRouted().in(Environment.dev).zones().stream().findFirst().orElseThrow().getId();
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(testInstance, testZone, Optional.empty());
         assertTrue(endpointCertificateMetadata.isPresent());
         assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.default.default.*-key"));
@@ -160,7 +158,7 @@ public class EndpointCertificateManagerTest {
 
     @Test
     public void reprovisions_certificate_with_added_sans_when_deploying_to_new_zone() {
-        ZoneId testZone = zoneRegistryMock.zones().directlyRouted().in(Environment.prod).zones().stream().skip(1).findFirst().orElseThrow().getId();
+        ZoneId testZone = tester.zoneRegistry().zones().directlyRouted().in(Environment.prod).zones().stream().skip(1).findFirst().orElseThrow().getId();
 
         mockCuratorDb.writeEndpointCertificateMetadata(testInstance.id(), new EndpointCertificateMetadata(testKeyName, testCertName, -1, 0, "original-request-uuid", expectedSans, "mockCa", Optional.empty(), Optional.empty()));
         secretStore.setSecret("vespa.tls.default.default.default-key", KeyUtils.toPem(testKeyPair.getPrivate()), -1);
@@ -190,7 +188,7 @@ public class EndpointCertificateManagerTest {
                         "  </instance>\n" +
                         "</deployment>\n");
 
-        ZoneId testZone = zoneRegistryMock.zones().controllerUpgraded().in(Environment.staging).zones().stream().findFirst().orElseThrow().getId();
+        ZoneId testZone = tester.zoneRegistry().zones().all().in(Environment.staging).zones().stream().findFirst().orElseThrow().getId();
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(testInstance, testZone, Optional.of(deploymentSpec.requireInstance("default")));
         assertTrue(endpointCertificateMetadata.isPresent());
         assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.default.default.*-key"));
@@ -198,4 +196,5 @@ public class EndpointCertificateManagerTest {
         assertEquals(0, endpointCertificateMetadata.get().version());
         assertEquals(Set.copyOf(expectedCombinedSans), Set.copyOf(endpointCertificateMetadata.get().requestedDnsSans()));
     }
+
 }
