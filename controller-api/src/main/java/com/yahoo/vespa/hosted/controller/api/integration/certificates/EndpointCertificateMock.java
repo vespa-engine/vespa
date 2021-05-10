@@ -34,11 +34,12 @@ public class EndpointCertificateMock implements EndpointCertificateProvider {
 
     @Override
     public List<EndpointCertificateMetadata> listCertificates() {
-        return Collections.emptyList();
+        return List.of();
     }
 
     @Override
     public void deleteCertificate(ApplicationId applicationId, EndpointCertificateMetadata endpointCertificateMetadata) {
         dnsNames.remove(applicationId);
     }
+
 }
