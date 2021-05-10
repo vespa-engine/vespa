@@ -91,7 +91,7 @@ public class MessageBusSyncSession implements MessageBusSession, SyncSession, Re
     }
 
     private Reply syncSend(Message msg, DocumentOperationParameters parameters) {
-        return syncSend(msg, defaultTimeout, parameters());
+        return syncSend(msg, defaultTimeout, parameters);
     }
 
     private Reply syncSend(Message msg, Duration timeout, DocumentOperationParameters parameters) {
