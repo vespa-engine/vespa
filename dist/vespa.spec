@@ -337,7 +337,7 @@ Vespa - The open big data serving engine - base
 
 %package base-libs
 
-Summary: Vespa - The open big data serving engine - base C++ libs
+Summary: Vespa - The open big data serving engine - base C++ libraries
 
 %if 0%{?el7} && 0%{?amzn2}
 Requires: vespa-xxhash = 0.8.0
@@ -354,7 +354,17 @@ Requires: vespa-libzstd >= 1.4.5-2
 
 %description base-libs
 
-Vespa - The open big data serving engine - base C++ libs
+Vespa - The open big data serving engine - base C++ libraries
+
+%package libs
+
+Summary: Vespa - The open big data serving engine - C++ libraries
+
+Requires: %{name}-base-libs = %{version}-%{release}
+
+%description libs
+
+Vespa - The open big data serving engine - C++ libraries
 
 %package clients
 
@@ -664,6 +674,8 @@ fi
 %{_prefix}/lib64/libvespadefaults.so
 %{_prefix}/lib64/libvespalib.so
 %{_prefix}/lib64/libvespalog.so
+
+%files libs
 
 %files clients
 %if %{_defattr_is_vespa_vespa}
