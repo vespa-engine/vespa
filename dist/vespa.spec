@@ -296,7 +296,7 @@ Requires: llvm-libs >= 12.0.0
 %define _skip_vespamalloc 1
 %endif
 Requires: %{name}-base = %{version}-%{release}
-Requires: %{name}-base-libs = %{version}-%{release}
+Requires: %{name}-libs = %{version}-%{release}
 Requires: %{name}-clients = %{version}-%{release}
 Requires: %{name}-config-model-fat = %{version}-%{release}
 Requires: %{name}-jars = %{version}-%{release}
