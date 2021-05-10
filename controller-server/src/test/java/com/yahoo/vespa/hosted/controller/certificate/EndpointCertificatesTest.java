@@ -5,6 +5,7 @@ import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.xml.DeploymentSpecXmlReader;
 import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.Environment;
+import com.yahoo.config.provision.SystemName;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.security.KeyAlgorithm;
 import com.yahoo.security.KeyUtils;
@@ -119,6 +120,38 @@ public class EndpointCertificatesTest {
 
     @Test
     public void provisions_new_certificate_in_prod() {
+        Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, Optional.empty());
+        assertTrue(endpointCertificateMetadata.isPresent());
+        assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.default.default.*-key"));
+        assertTrue(endpointCertificateMetadata.get().certName().matches("vespa.tls.default.default.*-cert"));
+        assertEquals(0, endpointCertificateMetadata.get().version());
+        assertEquals(expectedSans, endpointCertificateMetadata.get().requestedDnsSans());
+    }
+
+    @Test
+    public void provisions_new_certificate_in_public_prod() {
+        ControllerTester tester = new ControllerTester(SystemName.Public);
+        EndpointCertificateValidatorImpl endpointCertificateValidator = new EndpointCertificateValidatorImpl(secretStore, clock);
+        EndpointCertificates endpointCertificates = new EndpointCertificates(tester.controller(), endpointCertificateMock, endpointCertificateValidator);
+        List<String> expectedSans = List.of(
+                "vt2ktgkqme5zlnp4tj4ttyor7fj3v7q5o.public.vespa.oath.cloud",
+                "default.default.global.public.vespa.oath.cloud",
+                "default.default.g.vespa-app.cloud",
+                "*.default.default.global.public.vespa.oath.cloud",
+                "*.default.default.g.vespa-app.cloud",
+                "default.default.aws-us-east-1a.public.vespa.oath.cloud",
+                "default.default.aws-us-east-1a.z.vespa-app.cloud",
+                "*.default.default.aws-us-east-1a.public.vespa.oath.cloud",
+                "*.default.default.aws-us-east-1a.z.vespa-app.cloud",
+                "default.default.aws-us-east-1c.test.public.vespa.oath.cloud",
+                "default.default.aws-us-east-1c.test.z.vespa-app.cloud",
+                "*.default.default.aws-us-east-1c.test.public.vespa.oath.cloud",
+                "*.default.default.aws-us-east-1c.test.z.vespa-app.cloud",
+                "default.default.aws-us-east-1c.staging.public.vespa.oath.cloud",
+                "default.default.aws-us-east-1c.staging.z.vespa-app.cloud",
+                "*.default.default.aws-us-east-1c.staging.public.vespa.oath.cloud",
+                "*.default.default.aws-us-east-1c.staging.z.vespa-app.cloud"
+        );
         Optional<EndpointCertificateMetadata> endpointCertificateMetadata = endpointCertificates.getMetadata(testInstance, testZone, Optional.empty());
         assertTrue(endpointCertificateMetadata.isPresent());
         assertTrue(endpointCertificateMetadata.get().keyName().matches("vespa.tls.default.default.*-key"));

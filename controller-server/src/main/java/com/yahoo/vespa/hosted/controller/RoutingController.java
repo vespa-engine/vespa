@@ -173,11 +173,16 @@ public class RoutingController {
         builders.add(Endpoint.of(deployment.applicationId()).target(ClusterSpec.Id.from("default"), deployment.zoneId()));
         builders.add(Endpoint.of(deployment.applicationId()).wildcard(deployment.zoneId()));
 
+        // Build all endpoints
         for (var builder : builders) {
-            Endpoint endpoint = builder.routingMethod(RoutingMethod.exclusive)
-                                       .on(Port.tls())
-                                       .in(controller.system());
+            builder = builder.routingMethod(RoutingMethod.exclusive)
+                             .on(Port.tls());
+            Endpoint endpoint = builder.in(controller.system());
             endpointDnsNames.add(endpoint.dnsName());
+            if (controller.system().isPublic()) {
+                Endpoint legacyEndpoint = builder.legacy().in(controller.system());
+                endpointDnsNames.add(legacyEndpoint.dnsName());
+            }
         }
         return Collections.unmodifiableList(endpointDnsNames);
     }
