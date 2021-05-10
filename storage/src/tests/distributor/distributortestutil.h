@@ -197,6 +197,11 @@ public:
     const DistributorMessageSenderStub& sender() const noexcept { return _sender; }
 
     void setSystemState(const lib::ClusterState& systemState);
+
+    // Must be called prior to createLinks() to have any effect
+    void set_num_distributor_stripes(uint32_t n_stripes) noexcept {
+        _num_distributor_stripes = n_stripes;
+    }
 protected:
     vdstestlib::DirConfig _config;
     std::unique_ptr<TestDistributorApp> _node;
@@ -221,6 +226,7 @@ protected:
         }
     };
     MessageSenderImpl _messageSender;
+    uint32_t _num_distributor_stripes;
 
     void enableDistributorClusterState(vespalib::stringref state);
     void enable_distributor_cluster_state(const lib::ClusterStateBundle& state);

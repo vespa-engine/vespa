@@ -41,6 +41,7 @@ class DistributorBucketSpaceRepo;
 class OperationSequencer;
 class OwnershipTransferSafeTimePointCalculator;
 class SimpleMaintenanceScanner;
+class StripeHostInfoNotifier;
 class ThrottlingOperationStarter;
 
 /**
@@ -62,6 +63,7 @@ public:
                       framework::TickingThreadPool&,
                       DoneInitializeHandler&,
                       ChainedMessageSender& messageSender,
+                      StripeHostInfoNotifier& stripe_host_info_notifier,
                       bool use_legacy_mode);
 
     ~DistributorStripe() override;
@@ -283,6 +285,7 @@ private:
     StatusReporterDelegate _bucketDBStatusDelegate;
     IdealStateManager _idealStateManager;
     ChainedMessageSender& _messageSender;
+    StripeHostInfoNotifier& _stripe_host_info_notifier;
     ExternalOperationHandler _externalOperationHandler;
 
     std::shared_ptr<lib::Distribution> _distribution;

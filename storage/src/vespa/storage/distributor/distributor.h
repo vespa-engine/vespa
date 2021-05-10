@@ -14,6 +14,7 @@
 #include "pendingmessagetracker.h"
 #include "statusreporterdelegate.h"
 #include "stripe_bucket_db_updater.h" // TODO this is temporary
+#include "stripe_host_info_notifier.h"
 #include <vespa/config/config.h>
 #include <vespa/storage/common/distributorcomponent.h>
 #include <vespa/storage/common/doneinitializehandler.h>
@@ -23,6 +24,7 @@
 #include <vespa/storageapi/message/state.h>
 #include <vespa/storageframework/generic/metric/metricupdatehook.h>
 #include <vespa/storageframework/generic/thread/tickingthread.h>
+#include <chrono>
 #include <queue>
 #include <unordered_map>
 
@@ -54,7 +56,8 @@ class Distributor final
       public framework::StatusReporter,
       public framework::TickingThread,
       public MinReplicaProvider,
-      public BucketSpacesStatsProvider
+      public BucketSpacesStatsProvider,
+      public StripeHostInfoNotifier
 {
 public:
     Distributor(DistributorComponentRegister&,
@@ -96,6 +99,10 @@ public:
 
     virtual framework::ThreadWaitInfo doCriticalTick(framework::ThreadIndex) override;
     virtual framework::ThreadWaitInfo doNonCriticalTick(framework::ThreadIndex) override;
+
+    // Called by DistributorStripe threads when they want to notify the cluster controller of changed stats.
+    // Thread safe.
+    void notify_stripe_wants_to_send_host_info(uint16_t stripe_index) override;
 
     class MetricUpdateHook : public framework::MetricUpdateHook
     {
@@ -177,6 +184,14 @@ private:
     void dispatch_to_main_distributor_thread_queue(const std::shared_ptr<api::StorageMessage>& msg);
     void fetch_external_messages();
     void process_fetched_external_messages();
+    void send_host_info_if_appropriate();
+    // Precondition: _stripe_scan_notify_mutex is held
+    [[nodiscard]] bool may_send_host_info_on_behalf_of_stripes(std::lock_guard<std::mutex>& held_lock) noexcept;
+
+    struct StripeScanStats {
+        bool wants_to_send_host_info = false;
+        bool has_reported_in_at_least_once = false;
+    };
 
     using MessageQueue = std::vector<std::shared_ptr<api::StorageMessage>>;
 
@@ -199,6 +214,10 @@ private:
     framework::TickingThreadPool&        _threadPool;
     mutable std::vector<std::shared_ptr<DistributorStatus>> _status_to_do;
     mutable std::vector<std::shared_ptr<DistributorStatus>> _fetched_status_requests;
+    mutable std::mutex                   _stripe_scan_notify_mutex;
+    std::vector<StripeScanStats>         _stripe_scan_stats; // Indices are 1-1 with _stripes entries
+    std::chrono::steady_clock::time_point _last_host_info_send_time;
+    std::chrono::milliseconds            _host_info_send_delay;
     framework::ThreadWaitInfo            _tickResult;
     MetricUpdateHook                     _metricUpdateHook;
     DistributorHostInfoReporter          _hostInfoReporter;

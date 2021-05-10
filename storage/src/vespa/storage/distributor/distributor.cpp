@@ -25,6 +25,7 @@
 #include <vespa/storageframework/generic/status/xmlstatusreporter.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/util/memoryusage.h>
+#include <vespa/vespalib/util/time.h>
 #include <algorithm>
 
 #include <vespa/log/log.h>
@@ -58,7 +59,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _messageSender(messageSender),
       _use_legacy_mode(num_distributor_stripes == 0),
       _stripe(std::make_unique<DistributorStripe>(compReg, *_metrics, node_identity, threadPool,
-                                                  doneInitHandler, *this, _use_legacy_mode)),
+                                                  doneInitHandler, *this, *this, _use_legacy_mode)),
       _stripe_pool(),
       _stripes(),
       _stripe_accessor(),
@@ -68,7 +69,14 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _total_config(_component.total_distributor_config_sp()),
       _bucket_db_updater(),
       _distributorStatusDelegate(compReg, *this, *this),
+      _bucket_db_status_delegate(),
       _threadPool(threadPool),
+      _status_to_do(),
+      _fetched_status_requests(),
+      _stripe_scan_notify_mutex(),
+      _stripe_scan_stats(),
+      _last_host_info_send_time(),
+      _host_info_send_delay(1000ms),
       _tickResult(framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN),
       _metricUpdateHook(*this),
       _hostInfoReporter(*this, *this),
@@ -87,6 +95,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
                                                                _component.getDistribution(),
                                                                *_stripe_accessor);
         _stripes.emplace_back(std::move(_stripe));
+        _stripe_scan_stats.resize(num_distributor_stripes);
         _distributorStatusDelegate.registerStatusPage();
         _bucket_db_status_delegate = std::make_unique<StatusReporterDelegate>(compReg, *this, *_bucket_db_updater);
         _bucket_db_status_delegate->registerStatusPage();
@@ -258,13 +267,18 @@ void Distributor::onClose() {
     if (_use_legacy_mode) {
         _stripe->flush_and_close();
     } else {
-        {
-            auto guard = _stripe_accessor->rendezvous_and_hold_all();
-            guard->flush_and_close();
+        // Tests may run with multiple stripes but without threads (for determinism's sake),
+        // so only try to flush stripes if a pool is running.
+        // TODO STRIPE probably also need to flush when running tests to handle any explicit close-tests.
+        if (_stripe_pool->stripe_count() > 0){
+            {
+                auto guard = _stripe_accessor->rendezvous_and_hold_all();
+                guard->flush_and_close();
+            }
+            // TODO STRIPE must ensure no incoming requests can be posted on stripes between close
+            //   and pool stop+join!
+            _stripe_pool->stop_and_join();
         }
-        // TODO STRIPE must ensure no incoming requests can be posted on stripes between close
-        //   and pool stop+join!
-        _stripe_pool->stop_and_join();
         assert(_bucket_db_updater);
         _bucket_db_updater->flush();
     }
@@ -548,6 +562,7 @@ Distributor::doNonCriticalTick(framework::ThreadIndex idx)
         _tickResult = framework::ThreadWaitInfo::NO_MORE_CRITICAL_WORK_KNOWN;
         handle_status_requests();
         process_fetched_external_messages();
+        send_host_info_if_appropriate();
         _bucket_db_updater->resend_delayed_messages();
     }
     return _tickResult;
@@ -572,6 +587,56 @@ Distributor::enableNextConfig() // TODO STRIPE rename to enable_next_config_if_c
         // TODO STRIPE remove these once tests are fixed to trigger reconfig properly
         _hostInfoReporter.enableReporting(getConfig().getEnableHostInfoReporting());
         _stripe->enableNextConfig(); // TODO STRIPE avoid redundant call
+    }
+}
+
+
+void
+Distributor::notify_stripe_wants_to_send_host_info(uint16_t stripe_index)
+{
+    LOG(debug, "Stripe %u has signalled an intent to send host info out-of-band", stripe_index);
+    std::lock_guard lock(_stripe_scan_notify_mutex);
+    assert(!_use_legacy_mode);
+    assert(stripe_index < _stripe_scan_stats.size());
+    auto& stats = _stripe_scan_stats[stripe_index];
+    stats.wants_to_send_host_info = true;
+    stats.has_reported_in_at_least_once = true;
+    // TODO STRIPE consider if we want to wake up distributor thread here. Will be rechecked
+    //  every nth millisecond anyway. Not really an issue for out-of-band CC notifications.
+}
+
+bool
+Distributor::may_send_host_info_on_behalf_of_stripes([[maybe_unused]] std::lock_guard<std::mutex>& held_lock) noexcept
+{
+    bool any_stripe_wants_to_send = false;
+    for (const auto& stats : _stripe_scan_stats) {
+        if (!stats.has_reported_in_at_least_once) {
+            // If not all stripes have reported in at least once, they have not all completed their
+            // first recovery mode pass through their DBs. To avoid sending partial stats to the cluster
+            // controller, we wait with sending the first out-of-band host info reply until they have all
+            // reported in.
+            return false;
+        }
+        any_stripe_wants_to_send |= stats.wants_to_send_host_info;
+    }
+    return any_stripe_wants_to_send;
+}
+
+void
+Distributor::send_host_info_if_appropriate()
+{
+    const auto now = _component.getClock().getMonotonicTime();
+    std::lock_guard lock(_stripe_scan_notify_mutex);
+
+    if (may_send_host_info_on_behalf_of_stripes(lock)) {
+        if ((now - _last_host_info_send_time) >= _host_info_send_delay) {
+            LOG(debug, "Sending GetNodeState replies to cluster controllers on behalf of stripes");
+            _component.getStateUpdater().immediately_send_get_node_state_replies();
+            _last_host_info_send_time = now;
+            for (auto& stats : _stripe_scan_stats) {
+                stats.wants_to_send_host_info = false;
+            }
+        }
     }
 }
 

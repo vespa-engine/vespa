@@ -6,6 +6,7 @@
 #include "distributor_bucket_space.h"
 #include "distributormetricsset.h"
 #include "idealstatemetricsset.h"
+#include "stripe_host_info_notifier.h"
 #include "operation_sequencer.h"
 #include "ownership_transfer_safe_time_point_calculator.h"
 #include "throttlingoperationstarter.h"
@@ -39,6 +40,7 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
                                      framework::TickingThreadPool& threadPool,
                                      DoneInitializeHandler& doneInitHandler,
                                      ChainedMessageSender& messageSender,
+                                     StripeHostInfoNotifier& stripe_host_info_notifier,
                                      bool use_legacy_mode)
     : DistributorStripeInterface(),
       framework::StatusReporter("distributor", "Distributor"),
@@ -57,6 +59,7 @@ DistributorStripe::DistributorStripe(DistributorComponentRegister& compReg,
       _bucketDBStatusDelegate(compReg, *this, _bucketDBUpdater),
       _idealStateManager(*this, *_bucketSpaceRepo, *_readOnlyBucketSpaceRepo, compReg),
       _messageSender(messageSender),
+      _stripe_host_info_notifier(stripe_host_info_notifier),
       _externalOperationHandler(_component, _component, getMetrics(), getMessageSender(),
                                 *_operation_sequencer, *this, _component,
                                 _idealStateManager, _operationOwner),
@@ -736,8 +739,11 @@ DistributorStripe::scanNextBucket()
 
 void DistributorStripe::send_updated_host_info_if_required() {
     if (_must_send_updated_host_info) {
-        // TODO STRIPE how to handle with multiple stripes?
-        _component.getStateUpdater().immediately_send_get_node_state_replies();
+        if (_use_legacy_mode) {
+            _component.getStateUpdater().immediately_send_get_node_state_replies();
+        } else {
+            _stripe_host_info_notifier.notify_stripe_wants_to_send_host_info(0); // TODO STRIPE correct stripe index!
+        }
         _must_send_updated_host_info = false;
     }
 }
