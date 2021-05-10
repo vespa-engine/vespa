@@ -47,7 +47,7 @@ JobTestBase::init(uint32_t allowedLidBloat,
 {
     _handler = std::make_shared<MyHandler>(maxOutstandingMoveOps != MAX_OUTSTANDING_MOVE_OPS, true);
     DocumentDBLidSpaceCompactionConfig compactCfg(interval, allowedLidBloat, allowedLidBloatFactor,
-                                                  REMOVE_BATCH_BLOCK_RATE, REMOVE_BLOCK_RATE, false, true);
+                                                  REMOVE_BATCH_BLOCK_RATE, REMOVE_BLOCK_RATE, false);
     BlockableMaintenanceJobConfig blockableCfg(resourceLimitFactor, maxOutstandingMoveOps);
 
     _job.reset();

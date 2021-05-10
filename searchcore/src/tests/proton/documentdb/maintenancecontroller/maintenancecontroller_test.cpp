@@ -842,7 +842,7 @@ void
 MaintenanceControllerFixture::injectMaintenanceJobs()
 {
     if (_injectDefaultJobs) {
-        MaintenanceJobsInjector::injectJobs(_mc, *_mcCfg, _bucketExecutor, _fh, _gsp, _fh, _mc,
+        MaintenanceJobsInjector::injectJobs(_mc, *_mcCfg, _bucketExecutor, _fh, _gsp, _fh,
                                             _bucketCreateNotifier, makeBucketSpace(), _fh, _fh,
                                             _bmc, _clusterStateHandler, _bucketHandler, _calc, _diskMemUsageNotifier,
                                             _jobTrackers, _readyAttributeManager, _notReadyAttributeManager,
@@ -940,52 +940,7 @@ TEST_F("require that document pruner is active", MaintenanceControllerFixture)
     ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
     EXPECT_EQUAL(10u, f._removed.getNumUsedLids());
     EXPECT_EQUAL(10u, f._removed.getDocumentCount());
-    MyFrozenBucket::UP frozen3(new MyFrozenBucket(f._mc, bucketId3));
-    f.setPruneConfig(DocumentDBPruneConfig(200ms, 900s, false));
-    for (uint32_t i = 0; i < 6; ++i) {
-        std::this_thread::sleep_for(100ms);
-        ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-        if (f._removed.getNumUsedLids() != 10u)
-            break;
-    }
-    EXPECT_EQUAL(10u, f._removed.getNumUsedLids());
-    EXPECT_EQUAL(10u, f._removed.getDocumentCount());
-    frozen3.reset();
-    for (uint32_t i = 0; i < 600; ++i) {
-        std::this_thread::sleep_for(100ms);
-        ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-        if (f._removed.getNumUsedLids() != 10u)
-            break;
-    }
-    EXPECT_EQUAL(5u, f._removed.getNumUsedLids());
-    EXPECT_EQUAL(5u, f._removed.getDocumentCount());
-}
-
-TEST_F("require that document pruner v2 is active", MaintenanceControllerFixture)
-{
-    uint64_t tshz = 1000000;
-    uint64_t now = static_cast<uint64_t>(time(nullptr)) * tshz;
-    Timestamp remTime(static_cast<Timestamp::Type>(now - 3600 * tshz));
-    Timestamp keepTime(static_cast<Timestamp::Type>(now + 3600 * tshz));
-    f._builder.createDocs(1, 1, 4); // 3 docs
-    f._builder.createDocs(2, 4, 6); // 2 docs
-    test::UserDocuments keepDocs(f._builder.getDocs());
-    f.removeDocs(keepDocs, keepTime);
-    f._builder.clearDocs();
-    f._builder.createDocs(3, 6, 8); // 2 docs
-    f._builder.createDocs(4, 8, 11); // 3 docs
-    test::UserDocuments removeDocs(f._builder.getDocs());
-    BucketId bucketId3(removeDocs.getBucket(3));
-    f.removeDocs(removeDocs, remTime);
-    f.notifyClusterStateChanged();
-    EXPECT_TRUE(f._executor.isIdle());
-    EXPECT_EQUAL(10u, f._removed.getNumUsedLids());
-    EXPECT_EQUAL(10u, f._removed.getDocumentCount());
-    f.startMaintenance();
-    ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
-    EXPECT_EQUAL(10u, f._removed.getNumUsedLids());
-    EXPECT_EQUAL(10u, f._removed.getDocumentCount());
-    f.setPruneConfig(DocumentDBPruneConfig(200ms, 900s, true));
+    f.setPruneConfig(DocumentDBPruneConfig(200ms, 900s));
     for (uint32_t i = 0; i < 600; ++i) {
         std::this_thread::sleep_for(100ms);
         ASSERT_TRUE(f._executor.waitIdle(TIMEOUT));
@@ -1213,7 +1168,7 @@ TEST_F("require that maintenance jobs are run by correct executor", MaintenanceC
 void
 assertPruneRemovedDocumentsConfig(vespalib::duration expDelay, vespalib::duration expInterval, vespalib::duration interval, MaintenanceControllerFixture &f)
 {
-    f.setPruneConfig(DocumentDBPruneConfig(interval, 1000s, true));
+    f.setPruneConfig(DocumentDBPruneConfig(interval, 1000s));
     const auto *job = findJob(f._mc.getJobList(), "prune_removed_documents.searchdocument");
     EXPECT_EQUAL(expDelay, job->getJob().getDelay());
     EXPECT_EQUAL(expInterval, job->getJob().getInterval());
