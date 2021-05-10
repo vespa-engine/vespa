@@ -32,6 +32,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.Mode.BOOTSTRAP_IN_CONSTRUCTOR;
+import static com.yahoo.vespa.config.server.ConfigServerBootstrap.Mode.FOR_TESTING_NO_BOOTSTRAP_OF_APPS;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApplicationsFails.CONTINUE;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.RedeployingApplicationsFails.EXIT_JVM;
 
@@ -51,8 +52,7 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     private static final Logger log = Logger.getLogger(ConfigServerBootstrap.class.getName());
 
-    // INITIALIZE_ONLY is for testing only
-    enum Mode { BOOTSTRAP_IN_CONSTRUCTOR, BOOTSTRAP_IN_SEPARATE_THREAD, INITIALIZE_ONLY }
+    enum Mode { BOOTSTRAP_IN_CONSTRUCTOR, FOR_TESTING_NO_BOOTSTRAP_OF_APPS}
     enum RedeployingApplicationsFails { EXIT_JVM, CONTINUE }
     enum VipStatusMode { VIP_STATUS_FILE, VIP_STATUS_PROGRAMMATICALLY }
 
@@ -66,7 +66,6 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private final Duration sleepTimeWhenRedeployingFails;
     private final RedeployingApplicationsFails exitIfRedeployingApplicationsFails;
     private final ExecutorService rpcServerExecutor;
-    private final Optional<ExecutorService> bootstrapExecutor;
 
     @Inject
     public ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
@@ -79,8 +78,9 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
 
     // For testing only
     ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server, VersionState versionState,
-                          StateMonitor stateMonitor, VipStatus vipStatus, Mode mode, VipStatusMode vipStatusMode) {
-        this(applicationRepository, server, versionState, stateMonitor, vipStatus, mode, CONTINUE, vipStatusMode);
+                          StateMonitor stateMonitor, VipStatus vipStatus, VipStatusMode vipStatusMode) {
+        this(applicationRepository, server, versionState, stateMonitor, vipStatus,
+             FOR_TESTING_NO_BOOTSTRAP_OF_APPS, CONTINUE, vipStatusMode);
     }
 
     private ConfigServerBootstrap(ApplicationRepository applicationRepository, RpcServer server,
@@ -102,16 +102,10 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         initializing(vipStatusMode);
 
         switch (mode) {
-            case BOOTSTRAP_IN_SEPARATE_THREAD:
-                bootstrapExecutor = Optional.of(Executors.newSingleThreadExecutor(new DaemonThreadFactory("config server bootstrap")));
-                bootstrapExecutor.get().execute(this);
-                break;
             case BOOTSTRAP_IN_CONSTRUCTOR:
-                bootstrapExecutor = Optional.empty();
                 start();
                 break;
-            case INITIALIZE_ONLY:
-                bootstrapExecutor = Optional.empty();
+            case FOR_TESTING_NO_BOOTSTRAP_OF_APPS:
                 break;
             default:
                 throw new IllegalArgumentException("Unknown bootstrap mode " + mode + ", legal values: " + Arrays.toString(Mode.values()));
@@ -125,7 +119,6 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
         server.stop();
         log.log(Level.FINE, "RPC server stopped");
         rpcServerExecutor.shutdown();
-        bootstrapExecutor.ifPresent(ExecutorService::shutdownNow);
     }
 
     @Override
