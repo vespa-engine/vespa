@@ -117,11 +117,6 @@ public class EndpointCertificates {
                      .filter(currentNames::containsAll)
                      .forEach(requiredNames::addAll);
 
-        // This check must be relaxed if we ever remove from the set of names generated.
-        if (!requiredNames.containsAll(currentNames))
-            throw new RuntimeException("SANs to be requested do not cover all existing names! Missing names: "
-                                       + currentNames.stream().filter(s -> !requiredNames.contains(s)).collect(Collectors.joining(", ")));
-
         return certificateProvider.requestCaSignedCertificate(deployment.applicationId(), List.copyOf(requiredNames), currentMetadata);
     }
 
