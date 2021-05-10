@@ -74,7 +74,21 @@ public class SearchClusterCoverageTest {
 
     @Test
     public void three_groups_one_has_a_node_down() {
-        var tester =  new SearchClusterTester(3, 3);
+        var tester = new SearchClusterTester(3, 3);
+
+        tester.setDocsPerNode(100, 0);
+        tester.setDocsPerNode(100, 1);
+        tester.setDocsPerNode(100, 2);
+        tester.setWorking(1, 1, false);
+        tester.pingIterationCompleted();
+        assertTrue(tester.group(0).hasSufficientCoverage());
+        assertFalse(tester.group(1).hasSufficientCoverage());
+        assertTrue(tester.group(2).hasSufficientCoverage());
+    }
+
+    @Test
+    public void three_groups_one_has_a_node_down_but_remaining_has_enough_docs() {
+        var tester = new SearchClusterTester(3, 3);
 
         tester.setDocsPerNode(100, 0);
         tester.setDocsPerNode(150, 1);
@@ -82,7 +96,7 @@ public class SearchClusterCoverageTest {
         tester.setWorking(1, 1, false);
         tester.pingIterationCompleted();
         assertTrue(tester.group(0).hasSufficientCoverage());
-        assertFalse(tester.group(1).hasSufficientCoverage());
+        assertTrue("Sufficient documents on remaining two nodes", tester.group(1).hasSufficientCoverage());
         assertTrue(tester.group(2).hasSufficientCoverage());
     }
 
