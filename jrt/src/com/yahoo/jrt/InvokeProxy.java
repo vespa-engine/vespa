@@ -7,9 +7,8 @@ package com.yahoo.jrt;
  * <p>
  * This class is thread safe.
  *
- * @author <a href="mailto:havardpe@yahoo-inc.com">Haavard Pettersen</a>
+ * @author havardpe
  */
-//@ThreadSafe
 public class InvokeProxy  {
 
     private boolean active  = true;

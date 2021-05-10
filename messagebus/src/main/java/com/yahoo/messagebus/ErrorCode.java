@@ -53,7 +53,7 @@ public final class ErrorCode {
     /** An error occured while encoding the message. */
     public static final int ENCODE_ERROR           = FATAL_ERROR + 5;
 
-    /** A fatal network error occured while sending. */
+    /** A fatal network error occurred while sending. */
     public static final int NETWORK_ERROR          = FATAL_ERROR + 6;
 
     /** The protocol specified for the message is unknown. */
