@@ -5,11 +5,7 @@ import com.yahoo.config.provision.zone.ZoneId;
 
 import java.util.List;
 
-/**
- * @author andreer
- */
 public class EndpointCertificateValidatorMock implements EndpointCertificateValidator {
-
     @Override
     public void validate(
             EndpointCertificateMetadata endpointCertificateMetadata,
@@ -18,5 +14,4 @@ public class EndpointCertificateValidatorMock implements EndpointCertificateVali
             List<String> requiredNamesForZone) {
         // Mock does no validation - for unit tests only!
     }
-
 }
