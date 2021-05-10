@@ -606,7 +606,7 @@ Distributor::notify_stripe_wants_to_send_host_info(uint16_t stripe_index)
 }
 
 bool
-Distributor::may_send_host_info_on_behalf_of_stripes() noexcept
+Distributor::may_send_host_info_on_behalf_of_stripes([[maybe_unused]] std::lock_guard<std::mutex>& held_lock) noexcept
 {
     bool any_stripe_wants_to_send = false;
     for (const auto& stats : _stripe_scan_stats) {
@@ -628,7 +628,7 @@ Distributor::send_host_info_if_appropriate()
     const auto now = _component.getClock().getMonotonicTime();
     std::lock_guard lock(_stripe_scan_notify_mutex);
 
-    if (may_send_host_info_on_behalf_of_stripes()) {
+    if (may_send_host_info_on_behalf_of_stripes(lock)) {
         if ((now - _last_host_info_send_time) >= _host_info_send_delay) {
             LOG(debug, "Sending GetNodeState replies to cluster controllers on behalf of stripes");
             _component.getStateUpdater().immediately_send_get_node_state_replies();

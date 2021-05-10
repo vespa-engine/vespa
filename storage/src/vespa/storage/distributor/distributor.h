@@ -186,7 +186,7 @@ private:
     void process_fetched_external_messages();
     void send_host_info_if_appropriate();
     // Precondition: _stripe_scan_notify_mutex is held
-    [[nodiscard]] bool may_send_host_info_on_behalf_of_stripes() noexcept;
+    [[nodiscard]] bool may_send_host_info_on_behalf_of_stripes(std::lock_guard<std::mutex>& held_lock) noexcept;
 
     struct StripeScanStats {
         bool wants_to_send_host_info = false;
