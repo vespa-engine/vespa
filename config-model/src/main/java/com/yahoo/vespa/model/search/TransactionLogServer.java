@@ -1,7 +1,6 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.model.search;
 
-import com.yahoo.config.model.api.ModelContext;
 import com.yahoo.config.model.deploy.DeployState;
 import com.yahoo.searchlib.TranslogserverConfig;
 import com.yahoo.config.model.producer.AbstractConfigProducer;
@@ -15,18 +14,9 @@ import org.w3c.dom.Element;
  */
 public class TransactionLogServer extends AbstractService  {
 
-    private static final long serialVersionUID = 1L;
-
-    private static TranslogserverConfig.Compression.Type.Enum convertCompressionType(String type) {
-        try {
-            return TranslogserverConfig.Compression.Type.Enum.valueOf(type);
-        } catch (Throwable t) {
-            return TranslogserverConfig.Compression.Type.NONE;
-        }
-    }
-
     private final Boolean useFsync;
-    public TransactionLogServer(AbstractConfigProducer searchNode, String clusterName, Boolean useFsync) {
+
+    public TransactionLogServer(AbstractConfigProducer<?> searchNode, String clusterName, Boolean useFsync) {
         super(searchNode, "transactionlogserver");
         portsMeta.on(0).tag("tls");
         this.useFsync = useFsync;
@@ -44,7 +34,7 @@ public class TransactionLogServer extends AbstractService  {
         }
 
         @Override
-        protected TransactionLogServer doBuild(DeployState deployState, AbstractConfigProducer ancestor, Element producerSpec) {
+        protected TransactionLogServer doBuild(DeployState deployState, AbstractConfigProducer<?> ancestor, Element producerSpec) {
             return new TransactionLogServer(ancestor, clusterName, useFsync);
         }
 
