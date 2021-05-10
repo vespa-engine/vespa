@@ -52,7 +52,7 @@ import com.yahoo.vespa.hosted.controller.application.QuotaUsage;
 import com.yahoo.vespa.hosted.controller.application.SystemApplication;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.athenz.impl.AthenzFacade;
-import com.yahoo.vespa.hosted.controller.certificate.EndpointCertificateManager;
+import com.yahoo.vespa.hosted.controller.certificate.EndpointCertificates;
 import com.yahoo.vespa.hosted.controller.concurrent.Once;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentTrigger;
 import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
@@ -118,7 +118,7 @@ public class ApplicationController {
     private final Clock clock;
     private final DeploymentTrigger deploymentTrigger;
     private final ApplicationPackageValidator applicationPackageValidator;
-    private final EndpointCertificateManager endpointCertificateManager;
+    private final EndpointCertificates endpointCertificates;
     private final StringFlag dockerImageRepoFlag;
     private final BillingController billingController;
 
@@ -137,9 +137,9 @@ public class ApplicationController {
 
         deploymentTrigger = new DeploymentTrigger(controller, clock);
         applicationPackageValidator = new ApplicationPackageValidator(controller);
-        endpointCertificateManager = new EndpointCertificateManager(controller,
-                                                                    controller.serviceRegistry().endpointCertificateProvider(),
-                                                                    controller.serviceRegistry().endpointCertificateValidator());
+        endpointCertificates = new EndpointCertificates(controller,
+                                                        controller.serviceRegistry().endpointCertificateProvider(),
+                                                        controller.serviceRegistry().endpointCertificateValidator());
 
         // Update serialization format of all applications
         Once.after(Duration.ofMinutes(1), () -> {
@@ -379,7 +379,7 @@ public class ApplicationController {
                     &&   run.testerCertificate().isPresent())
                     applicationPackage = applicationPackage.withTrustedCertificate(run.testerCertificate().get());
 
-                endpointCertificateMetadata = endpointCertificateManager.getEndpointCertificateMetadata(instance, zone, applicationPackage.deploymentSpec().instance(instance.name()));
+                endpointCertificateMetadata = endpointCertificates.getMetadata(instance, zone, applicationPackage.deploymentSpec().instance(instance.name()));
 
                 containerEndpoints = controller.routing().containerEndpointsOf(application.get(), job.application().instance(), zone);
 
