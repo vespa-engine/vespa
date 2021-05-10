@@ -311,28 +311,22 @@ public class SearchCluster implements NodeManager<Node> {
         // With just one group sufficient coverage may not be the same as full coverage, as the
         // group will always be marked sufficient for use.
         updateSufficientCoverage(group, true);
-        boolean sufficientCoverage = isGroupCoverageSufficient(group.workingNodes(),
-                                                               group.getActiveDocuments(),
+        boolean sufficientCoverage = isGroupCoverageSufficient(group.getActiveDocuments(),
                                                                group.getActiveDocuments());
         trackGroupCoverageChanges(group, sufficientCoverage, group.getActiveDocuments());
     }
 
     private void pingIterationCompletedMultipleGroups() {
-        aggregateNodeValues();
+        orderedGroups().forEach(Group::aggregateNodeValues);
         long medianDocuments = medianDocumentsPerGroup();
         boolean anyGroupsSufficientCoverage = false;
         for (Group group : orderedGroups()) {
-            boolean sufficientCoverage = isGroupCoverageSufficient(group.workingNodes(),
-                                                                   group.getActiveDocuments(),
+            boolean sufficientCoverage = isGroupCoverageSufficient(group.getActiveDocuments(),
                                                                    medianDocuments);
             anyGroupsSufficientCoverage = anyGroupsSufficientCoverage || sufficientCoverage;
             updateSufficientCoverage(group, sufficientCoverage);
             trackGroupCoverageChanges(group, sufficientCoverage, medianDocuments);
         }
-    }
-
-    private void aggregateNodeValues() {
-        orderedGroups().forEach(Group::aggregateNodeValues);
     }
 
     private long medianDocumentsPerGroup() {
@@ -356,21 +350,11 @@ public class SearchCluster implements NodeManager<Node> {
         }
     }
 
-    private boolean isGroupCoverageSufficient(int workingNodesInGroup, long activeDocuments, long medianDocuments) {
+    private boolean isGroupCoverageSufficient(long activeDocuments, long medianDocuments) {
         double documentCoverage = 100.0 * (double) activeDocuments / medianDocuments;
         if (medianDocuments > 0 && documentCoverage < dispatchConfig.minActivedocsPercentage())
             return false;
-
-        if ( ! isGroupNodeCoverageSufficient(workingNodesInGroup))
-            return false;
-
         return true;
-    }
-
-    private boolean isGroupNodeCoverageSufficient(int workingNodesInGroup) {
-        int nodesAllowedDown = dispatchConfig.maxNodesDownPerGroup()
-                + (int) (((double) wantedGroupSize() * (100.0 - dispatchConfig.minGroupCoverage())) / 100.0);
-        return workingNodesInGroup + nodesAllowedDown >= wantedGroupSize();
     }
 
     public boolean isGroupWellBalanced(OptionalInt groupId) {
@@ -386,7 +370,7 @@ public class SearchCluster implements NodeManager<Node> {
         if (orderedGroups().size() == 1)
             return nodes.size() >= wantedGroupSize() - dispatchConfig.maxNodesDownPerGroup();
         long activeDocuments = nodes.stream().mapToLong(Node::getActiveDocuments).sum();
-        return isGroupCoverageSufficient(nodes.size(), activeDocuments, medianDocumentsPerGroup());
+        return isGroupCoverageSufficient(activeDocuments, medianDocumentsPerGroup());
     }
 
     private void trackGroupCoverageChanges(Group group, boolean fullCoverage, long medianDocuments) {
