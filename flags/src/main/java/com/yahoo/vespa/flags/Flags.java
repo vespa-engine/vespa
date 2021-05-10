@@ -13,7 +13,6 @@ import java.util.Optional;
 import java.util.TreeMap;
 
 import static com.yahoo.vespa.flags.FetchVector.Dimension.APPLICATION_ID;
-import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_ID;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.CLUSTER_TYPE;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.HOSTNAME;
 import static com.yahoo.vespa.flags.FetchVector.Dimension.TENANT_ID;
@@ -157,6 +156,12 @@ public class Flags {
             "Allow all content nodes in a hierarchical group to suspend at the same time",
             "Takes effect on the next suspension request to the Orchestrator.",
             APPLICATION_ID);
+
+    public static final UnboundBooleanFlag ENCRYPT_DISK = defineFeatureFlag(
+            "encrypt-disk", false,
+            List.of("hakonhall"), "2021-05-05", "2021-06-05",
+            "Allow migrating an unencrypted data partition to being encrypted.",
+            "Takes effect on next host-admin tick.");
 
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
             "enable-feed-block-in-distributor", true,
