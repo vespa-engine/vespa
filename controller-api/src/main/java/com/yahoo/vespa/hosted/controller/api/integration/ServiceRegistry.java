@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.controller.api.integration;
 
 import com.yahoo.vespa.hosted.controller.api.integration.archive.ArchiveService;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.AccessControlService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.RoleService;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.AwsEventFetcher;
 import com.yahoo.vespa.hosted.controller.api.integration.aws.ResourceTagger;
@@ -93,4 +94,6 @@ public interface ServiceRegistry {
     ArchiveService archiveService();
 
     ChangeRequestClient changeRequestClient();
+
+    AccessControlService accessControlService();
 }

@@ -11,6 +11,8 @@ import com.yahoo.restapi.Path;
 import com.yahoo.restapi.ResourceResponse;
 import com.yahoo.slime.Inspector;
 import com.yahoo.slime.SlimeUtils;
+import com.yahoo.vespa.athenz.api.AthenzUser;
+import com.yahoo.vespa.athenz.utils.AthenzIdentities;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.maintenance.ControllerMaintenance;
@@ -77,7 +79,14 @@ public class ControllerApiHandler extends AuditLoggingRequestHandler {
     private HttpResponse post(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/controller/v1/jobs/upgrader/confidence/{version}")) return overrideConfidence(request, path.get("version"));
+        if (path.matches("/controller/v1/access/requests/{user}")) return approveMembership(request, path.get("user"));
         return notFound(path);
+    }
+
+    private HttpResponse approveMembership(HttpRequest request, String user) {
+        AthenzUser athenzUser = AthenzUser.fromUserId(user);
+        boolean approved = controller.serviceRegistry().accessControlService().approveDataPlaneAccess(athenzUser);
+        return new AccessRequestResponse(controller.serviceRegistry().accessControlService().listMembers());
     }
 
     private HttpResponse delete(HttpRequest request) {

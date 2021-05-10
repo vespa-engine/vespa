@@ -6,8 +6,10 @@ import com.yahoo.config.provision.ApplicationId;
 import com.yahoo.config.provision.zone.ZoneId;
 import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.test.ManualClock;
+import com.yahoo.vespa.athenz.api.AthenzUser;
 import com.yahoo.vespa.flags.InMemoryFlagSource;
 import com.yahoo.vespa.flags.PermanentFlags;
+import com.yahoo.vespa.hosted.controller.api.integration.athenz.MockAccessControlService;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Application;
 import com.yahoo.vespa.hosted.controller.api.integration.resource.ResourceSnapshot;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLogger;
@@ -165,4 +167,15 @@ public class ControllerApiTest extends ControllerContainerTest {
         );
     }
 
+    @Test
+    public void testApproveMembership() {
+        // TODO Migrate test to use MockZmsClient
+        MockAccessControlService accessControlService = (MockAccessControlService) tester.serviceRegistry().accessControlService();
+        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/access/requests/"+hostedOperator.getName(), "", Request.Method.POST),
+                              "{\"members\":[]}");
+
+        accessControlService.addPendingMember(hostedOperator);
+        tester.assertResponse(operatorRequest("http://localhost:8080/controller/v1/access/requests/"+hostedOperator.getName(), "", Request.Method.POST),
+                              "{\"members\":[\"user.alice\"]}");
+    }
 }
