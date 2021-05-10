@@ -42,8 +42,7 @@ MaintenanceController::MaintenanceController(IThreadService &masterThread,
                                              vespalib::Executor & defaultExecutor,
                                              MonitoredRefCount & refCount,
                                              const DocTypeName &docTypeName)
-    : IBucketFreezeListener(),
-      _masterThread(masterThread),
+    : _masterThread(masterThread),
       _defaultExecutor(defaultExecutor),
       _refCount(refCount),
       _readySubDB(),
@@ -51,19 +50,15 @@ MaintenanceController::MaintenanceController(IThreadService &masterThread,
       _notReadySubDB(),
       _periodicTimer(),
       _config(),
-      _frozenBuckets(masterThread),
       _state(State::INITIALIZING),
       _docTypeName(docTypeName),
       _jobs(),
       _jobsLock()
-{
-    _frozenBuckets.addListener(this); // forward freeze/thaw to bmc
-}
+{ }
 
 MaintenanceController::~MaintenanceController()
 {
     kill();
-    _frozenBuckets.removeListener(this);
 }
 
 void
@@ -234,20 +229,5 @@ MaintenanceController::syncSubDBs(const MaintenanceDocumentSubDB &readySubDB,
         restart();
     }
 }
-
-
-void
-MaintenanceController::notifyThawedBucket(const BucketId &bucket)
-{
-    (void) bucket;
-    // No need to take _jobsLock as modification of _jobs also happens in master write thread.
-    for (const auto &jw : _jobs) {
-        IBlockableMaintenanceJob *job = jw->getJob().asBlockable();
-        if (job && job->isBlocked()) {
-            job->unBlock(IBlockableMaintenanceJob::BlockedReason::FROZEN_BUCKET);
-        }
-    }
-}
-
 
 } // namespace proton

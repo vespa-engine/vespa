@@ -163,13 +163,6 @@ MyStorer::startCommit(DoneCallback) {
     return CommitResult();
 }
 
-IFrozenBucketHandler::ExclusiveBucketGuard::UP
-MyFrozenBucketHandler::acquireExclusiveBucket(BucketId bucket) {
-    return (_bucket == bucket)
-           ? ExclusiveBucketGuard::UP()
-           : std::make_unique<ExclusiveBucketGuard>(bucket);
-}
-
 MyDocumentStore::MyDocumentStore()
     : _readDoc(),
       _readLid(0)

@@ -264,28 +264,6 @@ public:
     bool waitIdle(vespalib::duration timeout);
 };
 
-
-class MyFrozenBucket
-{
-    IBucketFreezer &_freezer;
-    BucketId _bucketId;
-public:
-    typedef std::unique_ptr<MyFrozenBucket> UP;
-
-    MyFrozenBucket(IBucketFreezer &freezer,
-                   const BucketId &bucketId)
-        : _freezer(freezer),
-          _bucketId(bucketId)
-    {
-        _freezer.freezeBucket(_bucketId);
-    }
-
-    ~MyFrozenBucket()
-    {
-        _freezer.thawBucket(_bucketId);
-    }
-};
-
 struct MySimpleJob : public BlockableMaintenanceJob
 {
     vespalib::CountDownLatch _latch;
@@ -1006,39 +984,6 @@ TEST_F("require that a split maintenance job is executed", MaintenanceController
     EXPECT_EQUAL(0u, myJob._latch.getCount());
 }
 
-TEST_F("require that a blocked job is unblocked and executed after thaw bucket",
-        MaintenanceControllerFixture)
-{
-    auto job1 = std::make_unique<MySimpleJob>(TIMEOUT * 2, TIMEOUT * 2, 1);
-    MySimpleJob &myJob1 = *job1;
-    auto job2 = std::make_unique< MySimpleJob>(TIMEOUT * 2, TIMEOUT * 2, 0);
-    MySimpleJob &myJob2 = *job2;
-    f._mc.registerJobInMasterThread(std::move(job1));
-    f._mc.registerJobInMasterThread(std::move(job2));
-    f._injectDefaultJobs = false;
-    f.startMaintenance();
-
-    myJob1.block();
-    EXPECT_TRUE(myJob1.isBlocked());
-    EXPECT_FALSE(myJob2.isBlocked());
-    IBucketFreezer &ibf = f._mc;
-    ibf.freezeBucket(BucketId(1));
-    ibf.thawBucket(BucketId(1));
-    EXPECT_TRUE(myJob1.isBlocked());
-    ibf.freezeBucket(BucketId(1));
-    IFrozenBucketHandler & fbh = f._mc;
-    // This is to simulate contention, as that is required for notification on thawed buckets.
-    EXPECT_FALSE(fbh.acquireExclusiveBucket(BucketId(1)));
-    ibf.thawBucket(BucketId(1));
-    f._executor.sync();
-    EXPECT_FALSE(myJob1.isBlocked());
-    EXPECT_FALSE(myJob2.isBlocked());
-    bool done1 = myJob1._latch.await(TIMEOUT);
-    EXPECT_TRUE(done1);
-    std::this_thread::sleep_for(2s);
-    EXPECT_EQUAL(0u, myJob2._runCnt);
-}
-
 TEST_F("require that blocked jobs are not executed", MaintenanceControllerFixture)
 {
     auto job = std::make_unique<MySimpleJob>(200ms, 200ms, 0);
@@ -1077,39 +1022,6 @@ TEST_F("require that maintenance controller state list jobs", MaintenanceControl
     EXPECT_EQUAL(2u, allJobs.children());
     EXPECT_EQUAL("my_job", allJobs[0]["name"].asString().make_string());
     EXPECT_EQUAL("long_running_job", allJobs[1]["name"].asString().make_string());
-}
-
-TEST("Verify FrozenBucketsMap interface") {
-    FrozenBucketsMap m;
-    BucketId a(8, 6);
-    {
-        auto guard = m.acquireExclusiveBucket(a);
-        EXPECT_TRUE(bool(guard));
-        EXPECT_EQUAL(a, guard->getBucket());
-    }
-    m.freezeBucket(a);
-    EXPECT_FALSE(m.thawBucket(a));
-    m.freezeBucket(a);
-    {
-        auto guard = m.acquireExclusiveBucket(a);
-        EXPECT_FALSE(bool(guard));
-    }
-    EXPECT_TRUE(m.thawBucket(a));
-    m.freezeBucket(a);
-    m.freezeBucket(a);
-    m.freezeBucket(a);
-    {
-        auto guard = m.acquireExclusiveBucket(a);
-        EXPECT_FALSE(bool(guard));
-    }
-    EXPECT_FALSE(m.thawBucket(a));
-    EXPECT_FALSE(m.thawBucket(a));
-    EXPECT_TRUE(m.thawBucket(a));
-    {
-        auto guard = m.acquireExclusiveBucket(a);
-        EXPECT_TRUE(bool(guard));
-        EXPECT_EQUAL(a, guard->getBucket());
-    }
 }
 
 const MaintenanceJobRunner *

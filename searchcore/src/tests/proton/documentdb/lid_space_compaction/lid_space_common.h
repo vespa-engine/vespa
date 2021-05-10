@@ -3,7 +3,6 @@
 #pragma once
 
 #include <vespa/searchcore/proton/server/i_document_scan_iterator.h>
-#include <vespa/searchcore/proton/server/ifrozenbuckethandler.h>
 #include <vespa/searchcore/proton/server/imaintenancejobrunner.h>
 #include <vespa/searchcore/proton/server/lid_space_compaction_handler.h>
 #include <vespa/searchcore/proton/server/remove_operations_rate_tracker.h>
@@ -101,14 +100,6 @@ struct MyStorer : public IOperationStorer {
     {}
     void appendOperation(const FeedOperation &op, DoneCallback) override;
     CommitResult startCommit(DoneCallback) override;
-};
-
-struct MyFrozenBucketHandler : public IFrozenBucketHandler {
-    BucketId _bucket;
-    MyFrozenBucketHandler() : _bucket() {}
-    ExclusiveBucketGuard::UP acquireExclusiveBucket(BucketId bucket) override;
-    void addListener(IBucketFreezeListener *) override { }
-    void removeListener(IBucketFreezeListener *) override { }
 };
 
 struct MyFeedView : public test::DummyFeedView {
