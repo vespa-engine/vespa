@@ -49,6 +49,8 @@ class DistributorStripePool {
 
     friend class DistributorStripeThread;
 public:
+    using const_iterator = StripeVector::const_iterator;
+
     DistributorStripePool();
     ~DistributorStripePool();
 
@@ -58,6 +60,12 @@ public:
     // Precondition: stripes.size() > 0
     void start(const std::vector<TickableStripe*>& stripes);
     void stop_and_join();
+
+    const_iterator begin() const noexcept { return _stripes.begin(); }
+    const_iterator end() const noexcept   { return _stripes.end(); }
+
+    const_iterator cbegin() const noexcept { return _stripes.cbegin(); }
+    const_iterator cend() const noexcept   { return _stripes.cend(); }
 
     void park_all_threads() noexcept;
     void unpark_all_threads() noexcept;
