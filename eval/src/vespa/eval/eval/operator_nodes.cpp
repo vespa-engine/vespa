@@ -13,7 +13,7 @@ Operator::Operator(const vespalib::string &op_str_in, int priority_in, Order ord
       _order(order_in),
       _lhs(),
       _rhs(),
-      _is_const(false)
+      _is_const_double(false)
 {}
 
 Operator::~Operator() { }

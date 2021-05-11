@@ -3,6 +3,8 @@
 #include "constant_feature.h"
 #include "valuefeature.h"
 #include <vespa/searchlib/fef/featureexecutor.h>
+#include <vespa/searchlib/fef/properties.h>
+#include <vespa/eval/eval/function.h>
 #include <vespa/eval/eval/value_cache/constant_value.h>
 #include <vespa/vespalib/util/stash.h>
 
@@ -10,6 +12,10 @@
 LOG_SETUP(".features.constant_feature");
 
 using namespace search::fef;
+
+using vespalib::eval::ValueType;
+using vespalib::eval::Function;
+using vespalib::eval::SimpleConstantValue;
 
 namespace search::features {
 
@@ -62,13 +68,26 @@ ConstantBlueprint::setup(const IIndexEnvironment &env,
     _key = params[0].getValue();
     _value = env.getConstantValue(_key);
     if (!_value) {
-        fail("Constant '%s' not found", _key.c_str());
+        auto type_prop = env.getProperties().lookup(getName(), "type");
+        auto value_prop = env.getProperties().lookup(getName(), "value");
+        if ((type_prop.size() == 1) && (value_prop.size() == 1)) {
+            auto type = ValueType::from_spec(type_prop.get());
+            auto value = Function::parse(value_prop.get())->root().get_const_value();
+            if (!type.is_error() && value && (value->type() == type)) {
+                _value = std::make_unique<SimpleConstantValue>(std::move(value));
+            } else {
+                fail("Constant '%s' has invalid spec: type='%s', value='%s'",
+                     _key.c_str(), type_prop.get().c_str(), value_prop.get().c_str());
+            }
+        } else {
+            fail("Constant '%s' not found", _key.c_str());
+        }
     } else if (_value->type().is_error()) {
         fail("Constant '%s' has invalid type", _key.c_str());
     }
-    FeatureType output_type = _value ?
-                              FeatureType::object(_value->type()) :
-                              FeatureType::number();
+    FeatureType output_type = _value
+        ? FeatureType::object(_value->type())
+        : FeatureType::number();
     describeOutput("out", "The constant looked up in index environment using the given key.",
                    output_type);
     return (_value && !_value->type().is_error());

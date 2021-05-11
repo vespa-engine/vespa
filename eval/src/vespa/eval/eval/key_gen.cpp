@@ -28,7 +28,7 @@ struct KeyGen : public NodeVisitor, public NodeTraverser {
     void visit(const In       &node) override { add_byte( 4);
         add_size(node.num_entries());
         for (size_t i = 0; i < node.num_entries(); ++i) {
-            add_double(node.get_entry(i).get_const_value());
+            add_double(node.get_entry(i).get_const_double_value());
         }
     }
     void visit(const Neg            &) override { add_byte( 5); }
