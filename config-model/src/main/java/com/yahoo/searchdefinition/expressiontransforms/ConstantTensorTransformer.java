@@ -59,7 +59,6 @@ public class ConstantTensorTransformer extends ExpressionTransformer<RankProfile
             return node;
         }
         Value value = context.constants().get(constantName);
-        System.err.println("lookup constant: "+constantName+" -> "+value);
         if (value == null || value.type().rank() == 0) return node;
 
         TensorValue tensorValue = (TensorValue)value;
