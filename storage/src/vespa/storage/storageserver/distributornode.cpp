@@ -5,9 +5,10 @@
 #include "communicationmanager.h"
 #include "opslogger.h"
 #include "statemanager.h"
+#include <vespa/storage/common/hostreporter/hostinfo.h>
 #include <vespa/storage/common/i_storage_chain_builder.h>
 #include <vespa/storage/distributor/distributor.h>
-#include <vespa/storage/common/hostreporter/hostinfo.h>
+#include <vespa/storage/distributor/distributor_stripe_pool.h>
 #include <vespa/vespalib/util/exceptions.h>
 
 #include <vespa/log/log.h>
@@ -26,6 +27,7 @@ DistributorNode::DistributorNode(
                   std::make_unique<HostInfo>(),
                   !communicationManager ? NORMAL : SINGLE_THREADED_TEST_MODE),
       _threadPool(framework::TickingThreadPool::createDefault("distributor")),
+      _stripe_pool(std::make_unique<distributor::DistributorStripePool>()),
       _context(context),
       _lastUniqueTimestampRequested(0),
       _uniqueTimestampCounter(0),
@@ -52,6 +54,7 @@ void
 DistributorNode::shutdownDistributor()
 {
     _threadPool->stop();
+    _stripe_pool->stop_and_join();
     shutdown();
 }
 
@@ -100,7 +103,7 @@ DistributorNode::createChain(IStorageChainBuilder &builder)
     // manager, which is safe since the lifetime of said state manager
     // extends to the end of the process.
     builder.add(std::make_unique<storage::distributor::Distributor>
-                (dcr, *_node_identity, *_threadPool, getDoneInitializeHandler(),
+                (dcr, *_node_identity, *_threadPool, *_stripe_pool, getDoneInitializeHandler(),
                  _num_distributor_stripes,
                  stateManager->getHostInfo()));
 

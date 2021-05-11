@@ -7,6 +7,7 @@
 #include <vespa/storage/distributor/distributor_bucket_space.h>
 #include <vespa/storage/distributor/distributor_stripe.h>
 #include <vespa/storage/distributor/distributor_stripe_component.h>
+#include <vespa/storage/distributor/distributor_stripe_pool.h>
 #include <vespa/vdslib/distribution/distribution.h>
 #include <vespa/vespalib/text/stringtokenizer.h>
 
@@ -28,10 +29,12 @@ DistributorTestUtil::createLinks()
 {
     _node.reset(new TestDistributorApp(_config.getConfigId()));
     _threadPool = framework::TickingThreadPool::createDefault("distributor");
+    _stripe_pool = std::make_unique<DistributorStripePool>();
     _distributor.reset(new Distributor(
             _node->getComponentRegister(),
             _node->node_identity(),
             *_threadPool,
+            *_stripe_pool,
             *this,
             _num_distributor_stripes,
             _hostInfo,
