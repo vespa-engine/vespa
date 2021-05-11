@@ -16,20 +16,22 @@ import com.yahoo.yolean.Exceptions;
 
 import java.time.Duration;
 import java.time.Instant;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
+import java.util.Set;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.Mode.BOOTSTRAP_IN_CONSTRUCTOR;
 import static com.yahoo.vespa.config.server.ConfigServerBootstrap.Mode.FOR_TESTING_NO_BOOTSTRAP_OF_APPS;
@@ -223,9 +225,9 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
     private List<ApplicationId> redeployApplications(List<ApplicationId> applicationIds) throws InterruptedException {
         ExecutorService executor = Executors.newFixedThreadPool(configserverConfig.numRedeploymentThreads(),
                                                                 new DaemonThreadFactory("redeploy-apps-"));
-        // Keep track of deployment per application
+        // Keep track of deployment status per application
         Map<ApplicationId, Future<?>> deployments = new HashMap<>();
-        log.log(Level.INFO, () -> "Redeploying " + applicationIds);
+        log.log(Level.INFO, () -> "Redeploying " + applicationIds.size() + " apps: " + applicationIds);
         applicationIds.forEach(appId -> deployments.put(appId, executor.submit(() -> {
             log.log(Level.INFO, () -> "Starting redeployment of " + appId);
             applicationRepository.deployFromLocalActive(appId, true /* bootstrap */)
@@ -233,32 +235,65 @@ public class ConfigServerBootstrap extends AbstractComponent implements Runnable
             log.log(Level.INFO, () -> appId + " redeployed");
         })));
 
-        List<ApplicationId> failedDeployments =
-                deployments.entrySet().stream()
-                        .map(entry -> checkDeployment(entry.getKey(), entry.getValue()))
-                        .filter(Optional::isPresent)
-                        .map(Optional::get)
-                        .collect(Collectors.toList());
+        List<ApplicationId> failedDeployments = checkDeployments(deployments);
 
         executor.shutdown();
         executor.awaitTermination(365, TimeUnit.DAYS); // Timeout should never happen
+
         return failedDeployments;
     }
 
-    // Returns an application id if deployment failed
-    private Optional<ApplicationId> checkDeployment(ApplicationId applicationId, Future<?> future) {
+    private enum DeploymentStatus { inProgress, done, failed};
+
+    private List<ApplicationId> checkDeployments(Map<ApplicationId, Future<?>> deployments) {
+        int applicationCount = deployments.size();
+        Set<ApplicationId> failedDeployments = new LinkedHashSet<>();
+        Set<ApplicationId> finishedDeployments = new LinkedHashSet<>();
+        Instant lastLogged = Instant.EPOCH;
+
+        do {
+            deployments.forEach((applicationId, future) -> {
+                if (finishedDeployments.contains(applicationId) || failedDeployments.contains(applicationId)) return;
+
+                DeploymentStatus status = getDeploymentStatus(applicationId, future);
+                switch (status) {
+                    case done:
+                        finishedDeployments.add(applicationId);
+                        break;
+                    case inProgress:
+                        break;
+                    case failed:
+                        failedDeployments.add(applicationId);
+                        break;
+                    default:
+                        throw new IllegalArgumentException("Unknown deployment status " + status);
+                }
+            });
+            if ( ! Duration.between(lastLogged, Instant.now()).minus(Duration.ofSeconds(10)).isNegative()) {
+                log.log(Level.INFO, () -> finishedDeployments.size() + " of " + applicationCount + " apps redeployed " +
+                                          "(" + failedDeployments.size() + " failed)");
+                lastLogged = Instant.now();
+            }
+        } while (failedDeployments.size() + finishedDeployments.size() < applicationCount);
+
+        return new ArrayList<>(failedDeployments);
+    }
+
+    private DeploymentStatus getDeploymentStatus(ApplicationId applicationId, Future<?> future) {
         try {
-            future.get();
+            future.get(1, TimeUnit.MILLISECONDS);
+            return DeploymentStatus.done;
         } catch (ExecutionException | InterruptedException e) {
             if (e.getCause() instanceof TransientException) {
                 log.log(Level.INFO, "Redeploying " + applicationId +
                                     " failed with transient error, will retry after bootstrap: " + Exceptions.toMessageString(e));
             } else {
                 log.log(Level.WARNING, "Redeploying " + applicationId + " failed, will retry", e);
-                return Optional.of(applicationId);
             }
+            return DeploymentStatus.failed;
+        } catch (TimeoutException e) {
+            return DeploymentStatus.inProgress;
         }
-        return Optional.empty();
     }
 
 }
