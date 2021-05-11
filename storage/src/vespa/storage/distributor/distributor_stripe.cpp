@@ -961,4 +961,93 @@ DistributorStripe::pending_operation_stats() const
     return {_operationOwner.size(), _maintenanceOperationOwner.size()};
 }
 
+void
+DistributorStripe::set_pending_cluster_state_bundle(const lib::ClusterStateBundle& pending_state)
+{
+    getBucketSpaceRepo().set_pending_cluster_state_bundle(pending_state);
+}
+
+void
+DistributorStripe::clear_pending_cluster_state_bundle()
+{
+    getBucketSpaceRepo().clear_pending_cluster_state_bundle();
+}
+
+void
+DistributorStripe::enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state)
+{
+    // TODO STRIPE replace legacy func
+    enableClusterStateBundle(new_state);
+}
+
+void
+DistributorStripe::notify_distribution_change_enabled()
+{
+    // TODO STRIPE replace legacy func
+    notifyDistributionChangeEnabled();
+}
+
+PotentialDataLossReport
+DistributorStripe::remove_superfluous_buckets(document::BucketSpace bucket_space,
+                                              const lib::ClusterState& new_state,
+                                              bool is_distribution_change)
+{
+    return bucket_db_updater().remove_superfluous_buckets(bucket_space, new_state, is_distribution_change);
+}
+
+void
+DistributorStripe::merge_entries_into_db(document::BucketSpace bucket_space,
+                                         api::Timestamp gathered_at_timestamp,
+                                         const lib::Distribution& distribution,
+                                         const lib::ClusterState& new_state,
+                                         const char* storage_up_states,
+                                         const std::unordered_set<uint16_t>& outdated_nodes,
+                                         const std::vector<dbtransition::Entry>& entries)
+{
+    bucket_db_updater().merge_entries_into_db(bucket_space, gathered_at_timestamp, distribution,
+                                               new_state, storage_up_states, outdated_nodes, entries);
+}
+
+void
+DistributorStripe::update_read_snapshot_before_db_pruning()
+{
+    bucket_db_updater().update_read_snapshot_before_db_pruning();
+}
+
+void
+DistributorStripe::update_read_snapshot_after_db_pruning(const lib::ClusterStateBundle& new_state)
+{
+    bucket_db_updater().update_read_snapshot_after_db_pruning(new_state);
+}
+
+void
+DistributorStripe::update_read_snapshot_after_activation(const lib::ClusterStateBundle& activated_state)
+{
+    bucket_db_updater().update_read_snapshot_after_activation(activated_state);
+}
+
+void
+DistributorStripe::clear_read_only_bucket_repo_databases()
+{
+    bucket_db_updater().clearReadOnlyBucketRepoDatabases();
+}
+
+void
+DistributorStripe::report_bucket_db_status(document::BucketSpace bucket_space, std::ostream& out) const
+{
+    ideal_state_manager().dump_bucket_space_db_status(bucket_space, out);
+}
+
+void
+DistributorStripe::report_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const
+{
+    bucket_db_updater().report_single_bucket_requests(xos);
+}
+
+void
+DistributorStripe::report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const
+{
+    bucket_db_updater().report_delayed_single_bucket_requests(xos);
+}
+
 }

@@ -7,7 +7,7 @@ namespace storage::distributor {
 
 class MultiThreadedStripeAccessor;
 class DistributorStripePool;
-class DistributorStripe;
+class TickableStripe;
 
 /**
  * StripeAccessGuard implementation which provides exclusive access to a set of stripes
@@ -60,8 +60,8 @@ public:
 
 private:
     // TODO STRIPE remove once multi threaded stripe support is implemented
-    DistributorStripe& first_stripe() noexcept;
-    const DistributorStripe& first_stripe() const noexcept;
+    TickableStripe& first_stripe() noexcept;
+    const TickableStripe& first_stripe() const noexcept;
 };
 
 /**

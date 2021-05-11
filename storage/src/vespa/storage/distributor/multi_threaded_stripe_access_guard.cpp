@@ -37,22 +37,22 @@ void MultiThreadedStripeAccessGuard::update_distribution_config(const BucketSpac
 
 void MultiThreadedStripeAccessGuard::set_pending_cluster_state_bundle(const lib::ClusterStateBundle& pending_state) {
     // TODO STRIPE multiple stripes
-    first_stripe().getBucketSpaceRepo().set_pending_cluster_state_bundle(pending_state);
+    first_stripe().set_pending_cluster_state_bundle(pending_state);
 }
 
 void MultiThreadedStripeAccessGuard::clear_pending_cluster_state_bundle() {
     // TODO STRIPE multiple stripes
-    first_stripe().getBucketSpaceRepo().clear_pending_cluster_state_bundle();
+    first_stripe().clear_pending_cluster_state_bundle();
 }
 
 void MultiThreadedStripeAccessGuard::enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state) {
     // TODO STRIPE multiple stripes
-    first_stripe().enableClusterStateBundle(new_state);
+    first_stripe().enable_cluster_state_bundle(new_state);
 }
 
 void MultiThreadedStripeAccessGuard::notify_distribution_change_enabled() {
     // TODO STRIPE multiple stripes
-    first_stripe().notifyDistributionChangeEnabled();
+    first_stripe().notify_distribution_change_enabled();
 }
 
 PotentialDataLossReport
@@ -61,7 +61,7 @@ MultiThreadedStripeAccessGuard::remove_superfluous_buckets(document::BucketSpace
                                                            bool is_distribution_change)
 {
     // TODO STRIPE multiple stripes
-    return first_stripe().bucket_db_updater().remove_superfluous_buckets(bucket_space, new_state, is_distribution_change);
+    return first_stripe().remove_superfluous_buckets(bucket_space, new_state, is_distribution_change);
 }
 
 void
@@ -74,33 +74,33 @@ MultiThreadedStripeAccessGuard::merge_entries_into_db(document::BucketSpace buck
                                                       const std::vector<dbtransition::Entry>& entries)
 {
     // TODO STRIPE multiple stripes
-    first_stripe().bucket_db_updater().merge_entries_into_db(bucket_space, gathered_at_timestamp, distribution,
-                                                             new_state, storage_up_states, outdated_nodes, entries);
+    first_stripe().merge_entries_into_db(bucket_space, gathered_at_timestamp, distribution,
+                                         new_state, storage_up_states, outdated_nodes, entries);
 }
 
 void MultiThreadedStripeAccessGuard::update_read_snapshot_before_db_pruning() {
     // TODO STRIPE multiple stripes
-    first_stripe().bucket_db_updater().update_read_snapshot_before_db_pruning();
+    first_stripe().update_read_snapshot_before_db_pruning();
 }
 
 void MultiThreadedStripeAccessGuard::update_read_snapshot_after_db_pruning(const lib::ClusterStateBundle& new_state) {
     // TODO STRIPE multiple stripes
-    first_stripe().bucket_db_updater().update_read_snapshot_after_db_pruning(new_state);
+    first_stripe().update_read_snapshot_after_db_pruning(new_state);
 }
 
 void MultiThreadedStripeAccessGuard::update_read_snapshot_after_activation(const lib::ClusterStateBundle& activated_state) {
     // TODO STRIPE multiple stripes
-    first_stripe().bucket_db_updater().update_read_snapshot_after_activation(activated_state);
+    first_stripe().update_read_snapshot_after_activation(activated_state);
 }
 
 void MultiThreadedStripeAccessGuard::clear_read_only_bucket_repo_databases() {
     // TODO STRIPE multiple stripes
-    first_stripe().bucket_db_updater().clearReadOnlyBucketRepoDatabases();
+    first_stripe().clear_read_only_bucket_repo_databases();
 }
 
 void MultiThreadedStripeAccessGuard::report_bucket_db_status(document::BucketSpace bucket_space, std::ostream& out) const {
     // TODO STRIPE multiple stripes
-    first_stripe().ideal_state_manager().dump_bucket_space_db_status(bucket_space, out);
+    first_stripe().report_bucket_db_status(bucket_space, out);
 }
 
 StripeAccessGuard::PendingOperationStats
@@ -111,20 +111,20 @@ MultiThreadedStripeAccessGuard::pending_operation_stats() const {
 
 void MultiThreadedStripeAccessGuard::report_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const {
     // TODO STRIPE multiple stripes
-    first_stripe().bucket_db_updater().report_single_bucket_requests(xos);
+    first_stripe().report_single_bucket_requests(xos);
 }
 
 void MultiThreadedStripeAccessGuard::report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const {
     // TODO STRIPE multiple stripes
-    first_stripe().bucket_db_updater().report_delayed_single_bucket_requests(xos);
+    first_stripe().report_delayed_single_bucket_requests(xos);
 }
 
-DistributorStripe& MultiThreadedStripeAccessGuard::first_stripe() noexcept {
-    return dynamic_cast<DistributorStripe&>(_stripe_pool.stripe_thread(0).stripe());
+TickableStripe& MultiThreadedStripeAccessGuard::first_stripe() noexcept {
+    return _stripe_pool.stripe_thread(0).stripe();
 }
 
-const DistributorStripe& MultiThreadedStripeAccessGuard::first_stripe() const noexcept {
-    return dynamic_cast<const DistributorStripe&>(_stripe_pool.stripe_thread(0).stripe());
+const TickableStripe& MultiThreadedStripeAccessGuard::first_stripe() const noexcept {
+    return _stripe_pool.stripe_thread(0).stripe();
 }
 
 std::unique_ptr<StripeAccessGuard> MultiThreadedStripeAccessor::rendezvous_and_hold_all() {
