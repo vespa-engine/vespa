@@ -6,6 +6,7 @@ import com.yahoo.container.logging.ConnectionLogEntry;
 import com.yahoo.container.logging.ConnectionLogEntry.SslHandshakeFailure.ExceptionEntry;
 import com.yahoo.io.HexDump;
 import com.yahoo.jdisc.http.ServerConfig;
+import org.eclipse.jetty.alpn.server.ALPNServerConnection;
 import org.eclipse.jetty.http2.server.HTTP2ServerConnection;
 import org.eclipse.jetty.io.Connection;
 import org.eclipse.jetty.io.EndPoint;
@@ -124,6 +125,14 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
             if (info == null) return; // Closed connection already handled
             if (connection instanceof HttpConnection) {
                 info.setHttpBytes(connection.getBytesIn(), connection.getBytesOut());
+            } else if (connection instanceof SslConnection) {
+                SSLEngine sslEngine = ((SslConnection) connection).getSSLEngine();
+                sslToConnectionInfo.remove(IdentityKey.of(sslEngine));
+            } else if (connection instanceof ALPNServerConnection) {
+                SSLEngine sslEngine = ((ALPNServerConnection) connection).getSSLEngine();
+                if (sslEngine != null) {
+                    sslToConnectionInfo.remove(IdentityKey.of(sslEngine));
+                }
             }
             if (!endpoint.isOpen()) {
                 info.setClosedAt(System.currentTimeMillis());
@@ -170,6 +179,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         SSLEngine sslEngine = event.getSSLEngine();
         handleListenerInvocation("SslHandshakeListener", "handshakeSucceeded", "sslEngine=%h", List.of(sslEngine), () -> {
             ConnectionInfo info = sslToConnectionInfo.remove(IdentityKey.of(sslEngine));
+            if (info == null) return;
             info.setSslSessionDetails(sslEngine.getSession());
         });
     }
@@ -180,6 +190,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         handleListenerInvocation("SslHandshakeListener", "handshakeFailed", "sslEngine=%h,failure=%s", List.of(sslEngine, failure), () -> {
             log.log(Level.FINE, failure, failure::toString);
             ConnectionInfo info = sslToConnectionInfo.remove(IdentityKey.of(sslEngine));
+            if (info == null) return;
             info.setSslHandshakeFailure((SSLHandshakeException)failure);
         });
     }
