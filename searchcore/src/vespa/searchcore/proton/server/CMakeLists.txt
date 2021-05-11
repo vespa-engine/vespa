@@ -50,7 +50,6 @@ vespa_add_library(searchcore_server STATIC
     flushhandlerproxy.cpp
     forcecommitcontext.cpp
     forcecommitdonetask.cpp
-    frozenbuckets.cpp
     health_adapter.cpp
     heart_beat_job.cpp
     idocumentdbowner.cpp

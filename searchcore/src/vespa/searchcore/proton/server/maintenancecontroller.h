@@ -4,8 +4,6 @@
 
 #include "maintenancedocumentsubdb.h"
 #include "i_maintenance_job.h"
-#include "frozenbuckets.h"
-#include "ibucketfreezelistener.h"
 #include <vespa/searchcore/proton/common/doctypename.h>
 #include <vespa/searchcore/proton/common/monitored_refcount.h>
 #include <vespa/vespalib/util/scheduledexecutor.h>
@@ -29,7 +27,7 @@ class MonitoredRefCount;
  * and a set of maintenance jobs for a document db.
  * The maintenance jobs are independent of the controller.
  */
-class MaintenanceController : public IBucketFreezeListener
+class MaintenanceController
 {
 public:
     using IThreadService = searchcorespi::index::IThreadService;
@@ -40,7 +38,7 @@ public:
 
     MaintenanceController(IThreadService &masterThread, vespalib::Executor & defaultExecutor, MonitoredRefCount & refCount, const DocTypeName &docTypeName);
 
-    ~MaintenanceController() override;
+    ~MaintenanceController();
     void registerJobInMasterThread(IMaintenanceJob::UP job);
     void registerJobInDefaultPool(IMaintenanceJob::UP job);
 
@@ -62,10 +60,6 @@ public:
                const MaintenanceDocumentSubDB &notReadySubDB);
 
     void kill();
-
-    operator IBucketFreezer &() { return _frozenBuckets; }
-    operator const IFrozenBucketHandler &() const { return _frozenBuckets; }
-    operator IFrozenBucketHandler &() { return _frozenBuckets; }
 
     bool  getStarted() const { return _state >= State::STARTED; }
     bool getStopping() const { return _state == State::STOPPING; }
@@ -89,7 +83,6 @@ private:
     MaintenanceDocumentSubDB          _notReadySubDB;
     std::unique_ptr<vespalib::ScheduledExecutor>  _periodicTimer;
     DocumentDBMaintenanceConfigSP     _config;
-    FrozenBuckets                     _frozenBuckets;
     State                             _state;
     const DocTypeName                &_docTypeName;
     JobList                           _jobs;
@@ -97,7 +90,6 @@ private:
 
     void addJobsToPeriodicTimer();
     void restart();
-    void notifyThawedBucket(const document::BucketId &bucket) override;
     void performHoldJobs(JobList jobs);
     void registerJob(vespalib::Executor & executor, IMaintenanceJob::UP job);
 };
