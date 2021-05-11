@@ -15,8 +15,8 @@ public class OperationParameters {
 
     }
 
-    public Optional<String> documentCondition() { return Optional.empty(); }
-    public Optional<Duration> operationTimeout() { return Optional.empty(); }
+    public Optional<String> testAndSetCondition() { return Optional.empty(); }
+    public Optional<Duration> timeout() { return Optional.empty(); }
 
     public static class Builder {
 

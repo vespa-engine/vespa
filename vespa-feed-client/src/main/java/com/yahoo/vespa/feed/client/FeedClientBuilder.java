@@ -10,5 +10,5 @@ public class FeedClientBuilder {
 
     private FeedClientBuilder() {}
 
-    public FeedClient build() { return new FeedClientImpl(this); }
+    public FeedClient build() { return new HttpFeedClient(this); }
 }

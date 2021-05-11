@@ -6,9 +6,9 @@ import java.util.concurrent.Future;
 /**
  * @author bjorncs
  */
-class FeedClientImpl implements FeedClient {
+class HttpFeedClient implements FeedClient {
 
-    FeedClientImpl(FeedClientBuilder builder) {
+    HttpFeedClient(FeedClientBuilder builder) {
 
     }
 
