@@ -4,8 +4,6 @@ package com.yahoo.jdisc.http.server.jetty;
 import com.google.inject.Inject;
 import com.yahoo.component.ComponentId;
 import com.yahoo.component.provider.ComponentRegistry;
-import com.yahoo.concurrent.DaemonThreadFactory;
-import com.yahoo.container.logging.AccessLog;
 import com.yahoo.container.logging.ConnectionLog;
 import com.yahoo.container.logging.RequestLog;
 import com.yahoo.jdisc.Metric;
@@ -43,8 +41,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -59,8 +55,6 @@ public class JettyHttpServer extends AbstractServerProvider {
 
     private final static Logger log = Logger.getLogger(JettyHttpServer.class.getName());
 
-    private final ExecutorService janitor;
-
     private final Server server;
     private final List<Integer> listenedPorts = new ArrayList<>();
     private final ServerMetricReporter metricsReporter;
@@ -71,6 +65,7 @@ public class JettyHttpServer extends AbstractServerProvider {
                            ServerConfig serverConfig,
                            ServletPathsConfig servletPathsConfig,
                            FilterBindings filterBindings,
+                           Janitor janitor,
                            ComponentRegistry<ConnectorFactory> connectorFactories,
                            ComponentRegistry<ServletHolder> servletHolders,
                            FilterInvoker filterInvoker,
@@ -94,8 +89,6 @@ public class JettyHttpServer extends AbstractServerProvider {
             server.addConnector(connectorFactory.createConnector(metric, server, connectionLogger));
             listenedPorts.add(connectorConfig.listenPort());
         }
-
-        janitor = newJanitor();
 
         JDiscContext jDiscContext = new JDiscContext(filterBindings,
                                                      container,
@@ -208,15 +201,6 @@ public class JettyHttpServer extends AbstractServerProvider {
         return ports.stream().map(Object::toString).collect(Collectors.joining(":"));
     }
 
-    // Separate threadpool for tasks that cannot be executed on the jdisc default threadpool due to risk of deadlock
-    private static ExecutorService newJanitor() {
-        int threadPoolSize = Math.max(1, Runtime.getRuntime().availableProcessors()/8);
-        log.info("Creating janitor executor with " + threadPoolSize + " threads");
-        return Executors.newFixedThreadPool(
-                threadPoolSize,
-                new DaemonThreadFactory(JettyHttpServer.class.getName() + "-Janitor-"));
-    }
-
     @Override
     public void start() {
         try {
@@ -258,7 +242,6 @@ public class JettyHttpServer extends AbstractServerProvider {
         }
 
         metricsReporter.shutdown();
-        janitor.shutdown();
     }
 
     private boolean isGracefulShutdownEnabled() {
