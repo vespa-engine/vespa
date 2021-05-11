@@ -27,11 +27,15 @@ import java.time.Instant;
 import java.time.ZonedDateTime;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
+
+import static org.junit.Assert.assertEquals;
 
 public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
 
     private static final String responses = "src/test/java/com/yahoo/vespa/hosted/controller/restapi/changemanagement/responses/";
     private static final AthenzIdentity operator = AthenzUser.fromUserId("operatorUser");
+    private static final String changeRequestId = "id123";
 
     private ContainerTester tester;
 
@@ -49,6 +53,36 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
     public void test_api() {
         assertFile(new Request("http://localhost:8080/changemanagement/v1/assessment", "{\"zone\":\"prod.us-east-3\", \"hosts\": [\"host1\"]}", Request.Method.POST), "initial.json");
         assertFile(new Request("http://localhost:8080/changemanagement/v1/vcmr"), "vcmrs.json");
+    }
+
+    @Test
+    public void deletes_vcmr() {
+        assertEquals(1, tester.controller().curator().readChangeRequests().size());
+        assertFile(new Request("http://localhost:8080/changemanagement/v1/vcmr/" + changeRequestId, "", Request.Method.DELETE), "vcmr.json");
+        assertEquals(0, tester.controller().curator().readChangeRequests().size());
+    }
+
+    @Test
+    public void get_vcmr() {
+        assertFile(new Request("http://localhost:8080/changemanagement/v1/vcmr/" + changeRequestId, "", Request.Method.GET), "vcmr.json");
+    }
+
+    @Test
+    public void patch_vcmr() {
+        var payload = "{" +
+                "\"approval\": \"REJECTED\"," +
+                "\"status\": \"COMPLETED\"," +
+                "\"actionPlan\": {" +
+                "   \"hosts\": [{" +
+                "       \"hostname\": \"host1\"," +
+                "       \"state\": \"REQUIRES_OPERATOR_ACTION\"," +
+                "       \"lastUpdated\": \"2021-05-10T14:08:15Z\"" +
+                "}]}" +
+                "}";
+        assertFile(new Request("http://localhost:8080/changemanagement/v1/vcmr/" + changeRequestId, payload, Request.Method.PATCH), "patched-vcmr.json");
+        var changeRequest = tester.controller().curator().readChangeRequest(changeRequestId).orElseThrow();
+        assertEquals(ChangeRequest.Approval.REJECTED, changeRequest.getApproval());
+        assertEquals(VespaChangeRequest.Status.COMPLETED, changeRequest.getStatus());
     }
 
     private void assertResponse(Request request, @Language("JSON") String body, int statusCode) {
@@ -77,7 +111,7 @@ public class ChangeManagementApiHandlerTest extends ControllerContainerTest {
         );
 
         return new VespaChangeRequest(
-                "id123",
+                changeRequestId,
                 source,
                 List.of("switch1"),
                 List.of("host1", "host2"),

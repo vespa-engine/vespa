@@ -119,7 +119,7 @@ public class ChangeRequestSerializer {
         cursor.setString(STATUS_FIELD, source.getStatus().name());
     }
 
-    private static ChangeRequestSource readChangeRequestSource(Inspector inspector) {
+    public static ChangeRequestSource readChangeRequestSource(Inspector inspector) {
         return new ChangeRequestSource(
                 inspector.field(SOURCE_SYSTEM_FIELD).asString(),
                 inspector.field(ID_FIELD).asString(),
@@ -130,7 +130,7 @@ public class ChangeRequestSerializer {
         );
     }
 
-    private static List<HostAction> readHostActionPlan(Inspector inspector) {
+    public static List<HostAction> readHostActionPlan(Inspector inspector) {
         if (!inspector.valid())
             return List.of();
 
