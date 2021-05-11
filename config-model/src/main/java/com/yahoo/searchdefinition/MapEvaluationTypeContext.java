@@ -206,6 +206,14 @@ public class MapEvaluationTypeContext extends FunctionReferenceContext implement
                 return featureTypes.get(reference);
             }
 
+            // the name of a constant feature?
+            if (reference.isIdentifier()) {
+                Reference asConst = FeatureNames.asConstantFeature(reference.name());
+                if (featureTypes.containsKey(asConst)) {
+                    return featureTypes.get(asConst);
+                }
+            }
+
             // We do not know what this is - since we do not have complete knowledge about the match features
             // in Java we must assume this is a match feature and return the double type - which is the type of
             // all match features

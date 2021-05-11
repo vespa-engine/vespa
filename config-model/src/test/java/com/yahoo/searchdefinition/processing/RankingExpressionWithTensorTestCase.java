@@ -33,6 +33,26 @@ public class RankingExpressionWithTensorTestCase {
     }
 
     @Test
+    public void requireConstantTensorCanBeReferredViaConstantFeature() throws ParseException {
+        RankProfileSearchFixture f = new RankProfileSearchFixture(
+                "  rank-profile my_profile {\n" +
+                "    first-phase {\n" +
+                "      expression: sum(constant(my_tensor))\n" +
+                "    }\n" +
+                "    constants {\n" +
+                "      my_tensor {\n" +
+                "        value: { {x:1,y:2}:1, {x:2,y:1}:2 }\n" +
+                "        type: tensor(x{},y{})\n" +
+                "      }\n" +
+                "    }\n" +
+                "  }");
+        f.compileRankProfile("my_profile");
+        f.assertFirstPhaseExpression("reduce(constant(my_tensor), sum)", "my_profile");
+        f.assertRankProperty("tensor(x{},y{}):{{x:1,y:2}:1.0,{x:2,y:1}:2.0}", "constant(my_tensor).value", "my_profile");
+        f.assertRankProperty("tensor(x{},y{})", "constant(my_tensor).type", "my_profile");
+    }
+
+    @Test
     public void requireThatMultiLineConstantTensorAndTypeCanBeParsed() throws ParseException {
         RankProfileSearchFixture f = new RankProfileSearchFixture(
                 "  rank-profile my_profile {\n" +

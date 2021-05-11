@@ -57,6 +57,56 @@ public class RankingExpressionTypeResolverTestCase {
         }
     }
 
+
+    @Test
+    public void tensorFirstPhaseFromConstantMustProduceDouble() throws Exception {
+        try {
+            SearchBuilder builder = new SearchBuilder();
+            builder.importString(joinLines(
+                    "search test {",
+                    "  document test { ",
+                    "    field a type tensor(d0[3]) {",
+                    "      indexing: attribute",
+                    "    }",
+                    "  }",
+                    "  rank-profile my_rank_profile {",
+                    "    function my_func() {",
+                    "      expression: x_tensor*2.0",
+                    "    }",
+                    "    function inline other_func() {",
+                    "      expression: z_tensor+3.0",
+                    "    }",
+                    "    first-phase {",
+                    "      expression: reduce(attribute(a),sum,d0)+y_tensor+my_func+other_func",
+                    "    }",
+                    "    constants {",
+                    "      x_tensor {",
+                    "        type: tensor(x{})",
+                    "        value: { {x:bar}:17 }",
+                    "      }",
+                    "      y_tensor {",
+                    "        type: tensor(y{})",
+                    "        value: { {y:foo}:42 }",
+                    "      }",
+                    "      z_tensor {",
+                    "        type: tensor(z{})",
+                    "        value: { {z:qux}:666 }",
+                    "      }",
+                    "    }",
+                    "  }",
+                    "}"
+            ));
+            builder.build();
+            fail("Expected exception");
+        }
+        catch (IllegalArgumentException expected) {
+            assertEquals("In search definition 'test', rank profile 'my_rank_profile': The first-phase expression must produce a double (a tensor with no dimensions), but produces tensor(x{},y{},z{})",
+                         Exceptions.toMessageString(expected));
+        }
+    }
+
+
+
     @Test
     public void tensorSecondPhaseMustProduceDouble() throws Exception {
         try {
