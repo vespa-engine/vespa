@@ -48,6 +48,7 @@ namespace storage::distributor {
 Distributor::Distributor(DistributorComponentRegister& compReg,
                          const NodeIdentity& node_identity,
                          framework::TickingThreadPool& threadPool,
+                         DistributorStripePool& stripe_pool,
                          DoneInitializeHandler& doneInitHandler,
                          uint32_t num_distributor_stripes,
                          HostInfo& hostInfoReporterRegistrar,
@@ -60,7 +61,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
       _use_legacy_mode(num_distributor_stripes == 0),
       _stripe(std::make_unique<DistributorStripe>(compReg, *_metrics, node_identity, threadPool,
                                                   doneInitHandler, *this, *this, _use_legacy_mode)),
-      _stripe_pool(),
+      _stripe_pool(stripe_pool),
       _stripes(),
       _stripe_accessor(),
       _message_queue(),
@@ -88,8 +89,7 @@ Distributor::Distributor(DistributorComponentRegister& compReg,
     _component.registerMetricUpdateHook(_metricUpdateHook, framework::SecondTime(0));
     if (!_use_legacy_mode) {
         LOG(info, "Setting up distributor with %u stripes", num_distributor_stripes); // TODO STRIPE remove once legacy gone
-        _stripe_pool = std::make_unique<DistributorStripePool>();
-        _stripe_accessor = std::make_unique<MultiThreadedStripeAccessor>(*_stripe_pool);
+        _stripe_accessor = std::make_unique<MultiThreadedStripeAccessor>(_stripe_pool);
         _bucket_db_updater = std::make_unique<BucketDBUpdater>(_component, _component,
                                                                *this, *this,
                                                                _component.getDistribution(),
@@ -253,7 +253,7 @@ Distributor::onOpen()
         _threadPool.start(_component.getThreadPool());
         if (!_use_legacy_mode) {
             std::vector<TickableStripe*> pool_stripes({_stripes[0].get()});
-            _stripe_pool->start(pool_stripes);
+            _stripe_pool.start(pool_stripes);
         }
     } else {
         LOG(warning, "Not starting distributor thread as it's configured to "
@@ -263,6 +263,8 @@ Distributor::onOpen()
 }
 
 void Distributor::onClose() {
+    // Note: In a running system this function is called by the main thread in StorageApp as part of shutdown.
+    // The distributor and stripe thread pools are already stopped at this point.
     LOG(debug, "Distributor::onClose invoked");
     if (_use_legacy_mode) {
         _stripe->flush_and_close();
@@ -270,14 +272,11 @@ void Distributor::onClose() {
         // Tests may run with multiple stripes but without threads (for determinism's sake),
         // so only try to flush stripes if a pool is running.
         // TODO STRIPE probably also need to flush when running tests to handle any explicit close-tests.
-        if (_stripe_pool->stripe_count() > 0){
-            {
-                auto guard = _stripe_accessor->rendezvous_and_hold_all();
-                guard->flush_and_close();
+        if (_stripe_pool.stripe_count() > 0) {
+            assert(_stripe_pool.is_stopped());
+            for (auto& thread : _stripe_pool) {
+                thread->stripe().flush_and_close();
             }
-            // TODO STRIPE must ensure no incoming requests can be posted on stripes between close
-            //   and pool stop+join!
-            _stripe_pool->stop_and_join();
         }
         assert(_bucket_db_updater);
         _bucket_db_updater->flush();
@@ -335,11 +334,11 @@ Distributor::onDown(const std::shared_ptr<api::StorageMessage>& msg)
             return true;
         }
         assert(_stripes.size() == 1);
-        assert(_stripe_pool->stripe_count() == 1);
+        assert(_stripe_pool.stripe_count() == 1);
         // TODO STRIPE correct routing with multiple stripes
         bool handled = first_stripe().handle_or_enqueue_message(msg);
         if (handled) {
-            _stripe_pool->stripe_thread(0).notify_event_has_triggered();
+            _stripe_pool.stripe_thread(0).notify_event_has_triggered();
         }
         return handled;
     }
@@ -440,7 +439,7 @@ Distributor::propagateDefaultDistribution(
         _stripe->propagateDefaultDistribution(std::move(distribution));
     } else {
         // Should only be called at ctor time, at which point the pool is not yet running.
-        assert(_stripe_pool->stripe_count() == 0);
+        assert(_stripe_pool.stripe_count() == 0);
         assert(_stripes.size() == 1); // TODO STRIPE all the stripes yes
         auto new_configs = BucketSpaceDistributionConfigs::from_default_distribution(std::move(distribution));
         for (auto& stripe : _stripes) {

@@ -77,6 +77,7 @@ public:
         return *_stripes[idx];
     }
     [[nodiscard]] size_t stripe_count() const noexcept { return _stripes.size(); }
+    [[nodiscard]] bool is_stopped() const noexcept { return _stopped; }
 
     // Applies to all threads. May be called both before and after start(). Thread safe.
     void set_tick_wait_duration(vespalib::duration new_tick_wait_duration) noexcept;

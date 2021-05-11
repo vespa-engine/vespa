@@ -63,6 +63,7 @@ public:
     Distributor(DistributorComponentRegister&,
                 const NodeIdentity& node_identity,
                 framework::TickingThreadPool&,
+                DistributorStripePool& stripe_pool,
                 DoneInitializeHandler&,
                 uint32_t num_distributor_stripes,
                 HostInfo& hostInfoReporterRegistrar,
@@ -201,7 +202,7 @@ private:
     const bool                            _use_legacy_mode;
     // TODO STRIPE multiple stripes...! This is for proof of concept of wiring.
     std::unique_ptr<DistributorStripe>    _stripe;
-    std::unique_ptr<DistributorStripePool> _stripe_pool;
+    DistributorStripePool&                _stripe_pool;
     std::vector<std::unique_ptr<DistributorStripe>> _stripes;
     std::unique_ptr<StripeAccessor>      _stripe_accessor;
     MessageQueue                         _message_queue; // Queue for top-level ops

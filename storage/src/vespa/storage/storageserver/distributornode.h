@@ -15,6 +15,8 @@
 
 namespace storage {
 
+namespace distributor { class DistributorStripePool; }
+
 class IStorageChainBuilder;
 
 class DistributorNode
@@ -22,6 +24,7 @@ class DistributorNode
         private UniqueTimeCalculator
 {
     framework::TickingThreadPool::UP _threadPool;
+    std::unique_ptr<distributor::DistributorStripePool> _stripe_pool;
     DistributorNodeContext& _context;
     uint64_t _lastUniqueTimestampRequested;
     uint32_t _uniqueTimestampCounter;

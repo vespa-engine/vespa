@@ -17,16 +17,17 @@ namespace framework { struct TickingThreadPool; }
 
 namespace distributor {
 
-class StripeBucketDBUpdater;
 class Distributor;
 class DistributorBucketSpace;
 class DistributorBucketSpaceRepo;
-class DistributorStripeOperationContext;
 class DistributorStripe;
 class DistributorStripeComponent;
+class DistributorStripeOperationContext;
+class DistributorStripePool;
 class ExternalOperationHandler;
 class IdealStateManager;
 class Operation;
+class StripeBucketDBUpdater;
 
 // TODO STRIPE rename to DistributorStripeTestUtil?
 class DistributorTestUtil : private DoneInitializeHandler
@@ -206,6 +207,7 @@ protected:
     vdstestlib::DirConfig _config;
     std::unique_ptr<TestDistributorApp> _node;
     std::unique_ptr<framework::TickingThreadPool> _threadPool;
+    std::unique_ptr<DistributorStripePool> _stripe_pool;
     std::unique_ptr<Distributor> _distributor;
     std::unique_ptr<storage::DistributorComponent> _component;
     DistributorMessageSenderStub _sender;
