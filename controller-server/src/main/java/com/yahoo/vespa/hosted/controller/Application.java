@@ -1,7 +1,6 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.vespa.hosted.controller;
 
-import com.google.common.collect.ImmutableSortedMap;
 import com.yahoo.component.Version;
 import com.yahoo.config.application.api.DeploymentSpec;
 import com.yahoo.config.application.api.ValidationOverrides;
@@ -21,6 +20,7 @@ import com.yahoo.vespa.hosted.controller.tenant.Tenant;
 import java.security.PublicKey;
 import java.time.Instant;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
@@ -29,6 +29,7 @@ import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -79,7 +80,15 @@ public class Application {
         this.deployKeys = Objects.requireNonNull(deployKeys, "deployKeys cannot be null");
         this.projectId = Objects.requireNonNull(projectId, "projectId cannot be null");
         this.latestVersion = requireNotUnknown(latestVersion);
-        this.instances = ImmutableSortedMap.copyOf(instances.stream().collect(Collectors.toMap(Instance::name, Function.identity())));
+        this.instances = instances.stream().collect(
+                Collectors.collectingAndThen(Collectors.toMap(Instance::name,
+                                                              Function.identity(),
+                                                              (i1, i2) -> {
+                                                                  throw new IllegalArgumentException("Duplicate key " + i1);
+                                                              },
+                                                              TreeMap::new),
+                                             Collections::unmodifiableMap)
+        );
     }
 
     public TenantAndApplicationId id() { return id; }
