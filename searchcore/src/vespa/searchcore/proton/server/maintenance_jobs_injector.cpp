@@ -59,10 +59,10 @@ injectBucketMoveJob(MaintenanceController &controller,
                     DocumentDBJobTrackers &jobTrackers,
                     IDiskMemUsageNotifier &diskMemUsageNotifier)
 {
-    auto bmj = BucketMoveJobV2::create(calc, controller.retainDB(), moveHandler, bucketModifiedHandler, controller.masterThread(),
-                                       bucketExecutor, controller.getReadySubDB(), controller.getNotReadySubDB(),
-                                       bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
-                                       diskMemUsageNotifier, config.getBlockableJobConfig(), docTypeName, bucketSpace);
+    auto bmj = BucketMoveJob::create(calc, controller.retainDB(), moveHandler, bucketModifiedHandler, controller.masterThread(),
+                                     bucketExecutor, controller.getReadySubDB(), controller.getNotReadySubDB(),
+                                     bucketCreateNotifier, clusterStateChangedNotifier, bucketStateChangedNotifier,
+                                     diskMemUsageNotifier, config.getBlockableJobConfig(), docTypeName, bucketSpace);
     controller.registerJobInMasterThread(trackJob(jobTrackers.getBucketMove(), std::move(bmj)));
 }
 
