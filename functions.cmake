@@ -183,7 +183,7 @@ endmacro()
 
 function(vespa_add_library TARGET)
     cmake_parse_arguments(ARG
-        "STATIC;OBJECT;INTERFACE;TEST"
+        "STATIC;OBJECT;INTERFACE;TEST;ALLOW_UNRESOLVED_SYMBOLS"
         "INSTALL;OUTPUT_NAME"
         "DEPENDS;EXTERNAL_DEPENDS;AFTER;SOURCES"
         ${ARGN})
@@ -225,6 +225,10 @@ function(vespa_add_library TARGET)
 
     if(ARG_OUTPUT_NAME)
         set_target_properties(${TARGET} PROPERTIES OUTPUT_NAME ${ARG_OUTPUT_NAME})
+    endif()
+
+    if(NOT ARG_OBJECT AND NOT ARG_STATIC AND NOT ARG_INTERFACE AND NOT ARG_ALLOW_UNRESOLVED_SYMBOLS AND DEFINED VESPA_DISALLOW_UNRESOLVED_SYMBOLS_IN_SHARED_LIBRARIES)
+        __add_private_target_link_option(${TARGET} ${VESPA_DISALLOW_UNRESOLVED_SYMBOLS_IN_SHARED_LIBRARIES})
     endif()
 
     __add_target_to_module(${TARGET})
@@ -757,5 +761,19 @@ function(vespa_suppress_warnings_for_protobuf_sources)
       unset(VESPA_DISABLE_UNUSED_WARNING)
     endif()
     set_source_files_properties(${ARG_SOURCES} PROPERTIES COMPILE_FLAGS "-Wno-array-bounds -Wno-suggest-override -Wno-inline ${VESPA_DISABLE_UNUSED_WARNING}")
+  endif()
+endfunction()
+
+function(__add_private_target_link_option TARGET TARGET_LINK_OPTION)
+  if(COMMAND target_link_options)
+    target_link_options(${TARGET} PRIVATE ${TARGET_LINK_OPTION})
+  else()
+    get_target_property(TARGET_LINK_FLAGS ${TARGET} LINK_FLAGS)
+    if (NOT DEFINED TARGET_LINK_FLAGS OR ${TARGET_LINK_FLAGS} STREQUAL "" OR ${TARGET_LINK_FLAGS} STREQUAL "TARGET_LINK_FLAGS-NOTFOUND")
+      set(TARGET_LINK_FLAGS ${TARGET_LINK_OPTION})
+    else()
+      set(TARGET_LINK_FLAGS "${TARGET_LINK_FLAGS} ${TARGET_LINK_OPTION}")
+    endif()
+    set_target_properties(${TARGET} PROPERTIES LINK_FLAGS "${TARGET_LINK_FLAGS}")
   endif()
 endfunction()
