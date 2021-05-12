@@ -34,7 +34,7 @@
     </linearGradient>
     <linearGradient id='run-on-success' x1='40%' x2='80%' y2='0%'>
         <stop offset='0' stop-color='#ab83ff' />
-        <stop offset='1' stop-color='#00ff48' />
+        <stop offset='1' stop-color='#00f244' />
         <animate attributeName='x1' values='-110%;150%;20%;-110%' dur='6s' repeatCount='indefinite' />
         <animate attributeName='x2' values='-10%;250%;120%;-10%' dur='6s' repeatCount='indefinite' />
     </linearGradient>
@@ -43,7 +43,7 @@
     </clipPath>
     <g clip-path='url(#rounded)'>
         <rect x='634.6233920815913' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='628.3299396342306' rx='3' width='12.293452447360632' height='20' fill='#00ff48'/>
+        <rect x='628.3299396342306' rx='3' width='12.293452447360632' height='20' fill='#00f244'/>
         <rect x='628.3299396342306' rx='3' width='12.293452447360632' height='20' fill='url(#shade)'/>
         <rect x='628.5222479299438' rx='3' width='9' height='20' fill='url(#shadow)'/>
         <rect x='622.03648718687' rx='3' width='12.485760743073765' height='20' fill='#bf103c'/>

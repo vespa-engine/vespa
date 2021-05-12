@@ -34,7 +34,7 @@
     </linearGradient>
     <linearGradient id='run-on-success' x1='40%' x2='80%' y2='0%'>
         <stop offset='0' stop-color='#ab83ff' />
-        <stop offset='1' stop-color='#00ff48' />
+        <stop offset='1' stop-color='#00f244' />
         <animate attributeName='x1' values='-110%;150%;20%;-110%' dur='6s' repeatCount='indefinite' />
         <animate attributeName='x2' values='-10%;250%;120%;-10%' dur='6s' repeatCount='indefinite' />
     </linearGradient>
@@ -44,21 +44,21 @@
     <g clip-path='url(#rounded)'>
         <rect x='822.9662400000001' rx='3' width='9' height='20' fill='url(#shadow)'/>
         <rect x='784.0136600000001' rx='3' width='44.95258' height='20' fill='url(#run-on-success)'/>
-        <polygon points='677.43227 0 677.43227 20 791.5136600000001 20 799.5136600000001 0' fill='#00ff48'/>
+        <polygon points='677.43227 0 677.43227 20 791.5136600000001 20 799.5136600000001 0' fill='#00f244'/>
         <rect x='677.43227' rx='3' width='151.53397' height='20' fill='url(#shade)'/>
         <rect x='677.43227' rx='3' width='9' height='20' fill='url(#shadow)'/>
         <rect x='638.47969' rx='3' width='44.95258' height='20' fill='#bf103c'/>
-        <polygon points='503.68385 0 503.68385 20 645.97969 20 653.97969 0' fill='#00ff48'/>
+        <polygon points='503.68385 0 503.68385 20 645.97969 20 653.97969 0' fill='#00f244'/>
         <rect x='503.68385' rx='3' width='179.74842' height='20' fill='url(#shade)'/>
         <rect x='503.68385' rx='3' width='9' height='20' fill='url(#shadow)'/>
         <rect x='391.84293' rx='3' width='117.84091999999998' height='20' fill='url(#run-on-success)'/>
         <rect x='401.84293' rx='3' width='107.84091999999998' height='20' fill='url(#shade)'/>
         <rect x='401.84293' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='362.89035' rx='3' width='44.95258' height='20' fill='#00ff48'/>
+        <rect x='362.89035' rx='3' width='44.95258' height='20' fill='#00f244'/>
         <polygon points='257.13066000000003 0 257.13066000000003 20 370.39035 20 378.39035 0' fill='url(#run-on-failure)'/>
         <rect x='257.13066000000003' rx='3' width='150.71227000000002' height='20' fill='url(#shade)'/>
         <rect x='257.13066000000003' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='165.62478000000002' rx='3' width='97.50588' height='20' fill='#00ff48'/>
+        <rect x='165.62478000000002' rx='3' width='97.50588' height='20' fill='#00f244'/>
         <rect x='175.62478000000002' rx='3' width='87.50588' height='20' fill='url(#shade)'/>
         <rect width='181.62478000000002' height='20' fill='#5a5a5a'/>
         <rect x='-6.0' rx='3' width='187.62478000000002' height='20' fill='url(#shade)'/>

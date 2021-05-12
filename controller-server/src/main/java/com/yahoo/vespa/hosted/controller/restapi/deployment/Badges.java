@@ -66,7 +66,7 @@ public class Badges {
     static final double xPad = 8;
     static final double logoSize = 16;
     static final String dark = "#5a5a5a";
-    static final String success = "#00ff48";
+    static final String success = "#00f244";
     static final String running = "#ab83ff";
     static final String failure = "#bf103c";
 
