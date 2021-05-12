@@ -6,6 +6,7 @@ vespa_add_library(storage_distributor
     bucket_db_prune_elision.cpp
     bucket_space_distribution_configs.cpp
     bucket_space_distribution_context.cpp
+    bucket_space_state_map.cpp
     bucketdbupdater.cpp
     bucketgctimecalculator.cpp
     bucketlistmerger.cpp
