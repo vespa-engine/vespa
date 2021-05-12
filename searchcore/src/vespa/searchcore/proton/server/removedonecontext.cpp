@@ -22,7 +22,6 @@ RemoveDoneContext::RemoveDoneContext(FeedToken token, IPendingLidTracker::Token 
 
 RemoveDoneContext::~RemoveDoneContext()
 {
-    ack();
     if (_task) {
         vespalib::Executor::Task::UP res = _executor.execute(std::move(_task));
         assert(!res);

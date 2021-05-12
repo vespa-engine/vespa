@@ -17,16 +17,12 @@ namespace proton {
 class OperationDoneContext : public vespalib::IDestructorCallback
 {
     FeedToken _token;
-protected:
     void ack();
-    FeedToken steal() { return std::move(_token); }
-
 public:
     OperationDoneContext(FeedToken token);
 
     ~OperationDoneContext() override;
     bool hasToken() const { return static_cast<bool>(_token); }
 };
-
 
 }  // namespace proton
