@@ -54,6 +54,22 @@ IndexEnvironment::addConstantValue(const vespalib::string &name,
     (void) insertRes;
 }
 
+vespalib::string
+IndexEnvironment::getRankingExpression(const vespalib::string &name) const
+{
+    auto pos = _expressions.find(name);
+    if (pos != _expressions.end()) {
+        return pos->second;
+    }
+    return {};
+}
+
+void
+IndexEnvironment::addRankingExpression(const vespalib::string &name, const vespalib::string &value)
+{
+    _expressions.insert_or_assign(name, value);    
+}
+
 const OnnxModel *
 IndexEnvironment::getOnnxModel(const vespalib::string &name) const
 {

@@ -17,6 +17,7 @@ using namespace search::index;
 using namespace search;
 using namespace vespa::config::search;
 using proton::matching::RankingConstants;
+using proton::matching::RankingExpressions;
 using proton::matching::OnnxModels;
 using std::make_shared;
 using std::shared_ptr;
@@ -67,6 +68,11 @@ public:
     MyConfigBuilder &addRankingConstant() {
         RankingConstants::Vector constants = {{"my_name", "my_type", "my_path"}};
         _builder.rankingConstants(make_shared<RankingConstants>(constants));
+        return *this;
+    }
+    MyConfigBuilder &addRankingExpression() {
+        auto expr_list = RankingExpressions().add("my_expr", "my_file");
+        _builder.rankingExpressions(make_shared<RankingExpressions>(expr_list));
         return *this;
     }
     MyConfigBuilder &addOnnxModel() {
@@ -138,6 +144,7 @@ struct Fixture {
         fullCfg = MyConfigBuilder(4, schema, repo).addAttribute().
                                                    addRankProfile().
                                                    addRankingConstant().
+                                                   addRankingExpression().
                                                    addOnnxModel().
                                                    addImportedField().
                                                    addSummary(true).
@@ -173,6 +180,7 @@ struct DelayAttributeAspectFixture {
         attrCfg = MyConfigBuilder(4, schema, makeDocTypeRepo(true)).addAttribute().
                                                    addRankProfile().
                                                    addRankingConstant().
+                                                   addRankingExpression().
                                                    addOnnxModel().
                                                    addImportedField().
                                                    addSummary(true).
@@ -180,6 +188,7 @@ struct DelayAttributeAspectFixture {
                                                    build();
         noAttrCfg = MyConfigBuilder(4, schema, makeDocTypeRepo(hasDocField)).addRankProfile().
                          addRankingConstant().
+                         addRankingExpression().
                          addOnnxModel().
                          addImportedField().
                          addSummary(hasDocField).

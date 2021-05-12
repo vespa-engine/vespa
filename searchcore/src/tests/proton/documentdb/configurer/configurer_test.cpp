@@ -643,6 +643,7 @@ TEST("require that maintenance controller should change if some config has chang
 
     TEST_DO(assertMaintenanceControllerShouldChange(CCR().setRankProfilesChanged(true)));
     TEST_DO(assertMaintenanceControllerShouldChange(CCR().setRankingConstantsChanged(true)));
+    TEST_DO(assertMaintenanceControllerShouldChange(CCR().setRankingExpressionsChanged(true)));
     TEST_DO(assertMaintenanceControllerShouldChange(CCR().setOnnxModelsChanged(true)));
     TEST_DO(assertMaintenanceControllerShouldChange(CCR().setIndexschemaChanged(true)));
     TEST_DO(assertMaintenanceControllerShouldChange(CCR().setAttributesChanged(true)));
@@ -690,6 +691,7 @@ TEST("require that subdbs should change if relevant config changed")
     TEST_DO(assertSubDbsShouldChange(CCR().setVisibilityDelayChanged(true)));
     TEST_DO(assertSubDbsShouldChange(CCR().setRankProfilesChanged(true)));
     TEST_DO(assertSubDbsShouldChange(CCR().setRankingConstantsChanged(true)));
+    TEST_DO(assertSubDbsShouldChange(CCR().setRankingExpressionsChanged(true)));
     TEST_DO(assertSubDbsShouldChange(CCR().setOnnxModelsChanged(true)));
     TEST_DO(assertSubDbsShouldChange(CCR().setSchemaChanged(true)));
     TEST_DO(assertSubDbsShouldChange(CCR().set_alloc_config_changed(true)));

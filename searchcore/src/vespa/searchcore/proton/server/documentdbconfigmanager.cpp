@@ -6,6 +6,7 @@
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
+#include <vespa/searchcore/config/config-ranking-expressions.h>
 #include <vespa/searchcore/config/config-onnx-models.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-rank-profiles.h>
@@ -36,6 +37,7 @@ using search::TuneFileDocumentDB;
 using search::index::Schema;
 using search::index::SchemaBuilder;
 using proton::matching::RankingConstants;
+using proton::matching::RankingExpressions;
 using proton::matching::OnnxModels;
 using vespalib::compression::CompressionConfig;
 using search::LogDocumentStore;
@@ -53,6 +55,7 @@ DocumentDBConfigManager::createConfigKeySet() const
     ConfigKeySet set;
     set.add<RankProfilesConfig,
             RankingConstantsConfig,
+            RankingExpressionsConfig,
             OnnxModelsConfig,
             IndexschemaConfig,
             AttributesConfig,
@@ -271,6 +274,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
 {
     using RankProfilesConfigSP = DocumentDBConfig::RankProfilesConfigSP;
     using RankingConstantsConfigSP = std::shared_ptr<vespa::config::search::core::RankingConstantsConfig>;
+    using RankingExpressionsConfigSP = std::shared_ptr<vespa::config::search::core::RankingExpressionsConfig>;
     using OnnxModelsConfigSP = std::shared_ptr<vespa::config::search::core::OnnxModelsConfig>;
     using IndexschemaConfigSP = DocumentDBConfig::IndexschemaConfigSP;
     using SummaryConfigSP = DocumentDBConfig::SummaryConfigSP;
@@ -282,6 +286,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     DocumentDBConfig::SP current = _pendingConfigSnapshot;
     RankProfilesConfigSP newRankProfilesConfig;
     matching::RankingConstants::SP newRankingConstants;
+    matching::RankingExpressions::SP newRankingExpressions;
     matching::OnnxModels::SP newOnnxModels;
     IndexschemaConfigSP newIndexschemaConfig;
     MaintenanceConfigSP oldMaintenanceConfig;
@@ -308,6 +313,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     if (current) {
         newRankProfilesConfig = current->getRankProfilesConfigSP();
         newRankingConstants = current->getRankingConstantsSP();
+        newRankingExpressions = current->getRankingExpressionsSP();
         newOnnxModels = current->getOnnxModelsSP();
         newIndexschemaConfig = current->getIndexschemaConfigSP();
         oldMaintenanceConfig = current->getMaintenanceConfigSP();
@@ -343,6 +349,31 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
             }
         }
         newRankingConstants = std::make_shared<RankingConstants>(constants);
+    }
+    if (snapshot.isChanged<RankingExpressionsConfig>(_configId, currentGeneration)) {
+        RankingExpressionsConfigSP newRankingExpressionsConfig = RankingExpressionsConfigSP(
+            snapshot.getConfig<RankingExpressionsConfig>(_configId));
+        const vespalib::string &spec = _bootstrapConfig->getFiledistributorrpcConfig().connectionspec;
+        RankingExpressions expressions;
+        if (spec != "") {
+            config::RpcFileAcquirer fileAcquirer(spec);
+            vespalib::TimeBox timeBox(5*60, 5);
+            for (const RankingExpressionsConfig::Expression &rc : newRankingExpressionsConfig->expression) {
+                vespalib::string filePath;
+                LOG(info, "Waiting for file acquirer (name='%s', ref='%s')",
+                    rc.name.c_str(), rc.fileref.c_str());
+                while (timeBox.hasTimeLeft() && (filePath == "")) {
+                    filePath = fileAcquirer.wait_for(rc.fileref, timeBox.timeLeft());
+                    if (filePath == "") {
+                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
+                    }
+                }
+                LOG(info, "Got file path from file acquirer: '%s' (name='%s', ref='%s')",
+                    filePath.c_str(), rc.name.c_str(), rc.fileref.c_str());
+                expressions.add(rc.name, filePath);
+            }
+        }
+        newRankingExpressions = std::make_shared<RankingExpressions>(std::move(expressions));
     }
     if (snapshot.isChanged<OnnxModelsConfig>(_configId, currentGeneration)) {
         OnnxModelsConfigSP newOnnxModelsConfig = OnnxModelsConfigSP(
@@ -403,6 +434,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     auto newSnapshot = std::make_shared<DocumentDBConfig>(generation,
                                  newRankProfilesConfig,
                                  newRankingConstants,
+                                 newRankingExpressions,
                                  newOnnxModels,
                                  newIndexschemaConfig,
                                  filterImportedAttributes(newAttributesConfig),
