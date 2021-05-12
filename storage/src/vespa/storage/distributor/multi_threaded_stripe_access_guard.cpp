@@ -12,7 +12,7 @@ MultiThreadedStripeAccessGuard::MultiThreadedStripeAccessGuard(
     : _accessor(accessor),
       _stripe_pool(stripe_pool)
 {
-    assert(_stripe_pool.stripe_count() == 1); // TODO STRIPE many more yes yes
+    assert(_stripe_pool.stripe_count() > 0);
     _stripe_pool.park_all_threads();
 }
 
@@ -22,37 +22,45 @@ MultiThreadedStripeAccessGuard::~MultiThreadedStripeAccessGuard() {
 }
 
 void MultiThreadedStripeAccessGuard::flush_and_close() {
-    first_stripe().flush_and_close();
+    for_each_stripe([](TickableStripe& stripe) {
+        stripe.flush_and_close();
+    });
 }
 
 void MultiThreadedStripeAccessGuard::update_total_distributor_config(std::shared_ptr<const DistributorConfiguration> config) {
-    // TODO STRIPE multiple stripes
-    first_stripe().update_total_distributor_config(std::move(config));
+    for_each_stripe([&](TickableStripe& stripe) {
+        stripe.update_total_distributor_config(config);
+    });
 }
 
 void MultiThreadedStripeAccessGuard::update_distribution_config(const BucketSpaceDistributionConfigs& new_configs) {
-    // TODO STRIPE multiple stripes
-    first_stripe().update_distribution_config(new_configs);
+    for_each_stripe([&](TickableStripe& stripe) {
+        stripe.update_distribution_config(new_configs);
+    });
 }
 
 void MultiThreadedStripeAccessGuard::set_pending_cluster_state_bundle(const lib::ClusterStateBundle& pending_state) {
-    // TODO STRIPE multiple stripes
-    first_stripe().set_pending_cluster_state_bundle(pending_state);
+    for_each_stripe([&](TickableStripe& stripe) {
+        stripe.set_pending_cluster_state_bundle(pending_state);
+    });
 }
 
 void MultiThreadedStripeAccessGuard::clear_pending_cluster_state_bundle() {
-    // TODO STRIPE multiple stripes
-    first_stripe().clear_pending_cluster_state_bundle();
+    for_each_stripe([](TickableStripe& stripe) {
+        stripe.clear_pending_cluster_state_bundle();
+    });
 }
 
 void MultiThreadedStripeAccessGuard::enable_cluster_state_bundle(const lib::ClusterStateBundle& new_state) {
-    // TODO STRIPE multiple stripes
-    first_stripe().enable_cluster_state_bundle(new_state);
+    for_each_stripe([&](TickableStripe& stripe) {
+        stripe.enable_cluster_state_bundle(new_state);
+    });
 }
 
 void MultiThreadedStripeAccessGuard::notify_distribution_change_enabled() {
-    // TODO STRIPE multiple stripes
-    first_stripe().notify_distribution_change_enabled();
+    for_each_stripe([](TickableStripe& stripe) {
+        stripe.notify_distribution_change_enabled();
+    });
 }
 
 PotentialDataLossReport
@@ -60,8 +68,11 @@ MultiThreadedStripeAccessGuard::remove_superfluous_buckets(document::BucketSpace
                                                            const lib::ClusterState& new_state,
                                                            bool is_distribution_change)
 {
-    // TODO STRIPE multiple stripes
-    return first_stripe().remove_superfluous_buckets(bucket_space, new_state, is_distribution_change);
+    PotentialDataLossReport report;
+    for_each_stripe([&](TickableStripe& stripe) {
+        report.merge(stripe.remove_superfluous_buckets(bucket_space, new_state, is_distribution_change));
+    });
+    return report;
 }
 
 void
@@ -79,28 +90,33 @@ MultiThreadedStripeAccessGuard::merge_entries_into_db(document::BucketSpace buck
 }
 
 void MultiThreadedStripeAccessGuard::update_read_snapshot_before_db_pruning() {
-    // TODO STRIPE multiple stripes
-    first_stripe().update_read_snapshot_before_db_pruning();
+    for_each_stripe([](TickableStripe& stripe) {
+        stripe.update_read_snapshot_before_db_pruning();
+    });
 }
 
 void MultiThreadedStripeAccessGuard::update_read_snapshot_after_db_pruning(const lib::ClusterStateBundle& new_state) {
-    // TODO STRIPE multiple stripes
-    first_stripe().update_read_snapshot_after_db_pruning(new_state);
+    for_each_stripe([&](TickableStripe& stripe) {
+        stripe.update_read_snapshot_after_db_pruning(new_state);
+    });
 }
 
 void MultiThreadedStripeAccessGuard::update_read_snapshot_after_activation(const lib::ClusterStateBundle& activated_state) {
-    // TODO STRIPE multiple stripes
-    first_stripe().update_read_snapshot_after_activation(activated_state);
+    for_each_stripe([&](TickableStripe& stripe) {
+        stripe.update_read_snapshot_after_activation(activated_state);
+    });
 }
 
 void MultiThreadedStripeAccessGuard::clear_read_only_bucket_repo_databases() {
-    // TODO STRIPE multiple stripes
-    first_stripe().clear_read_only_bucket_repo_databases();
+    for_each_stripe([](TickableStripe& stripe) {
+        stripe.clear_read_only_bucket_repo_databases();
+    });
 }
 
 void MultiThreadedStripeAccessGuard::report_bucket_db_status(document::BucketSpace bucket_space, std::ostream& out) const {
-    // TODO STRIPE multiple stripes
-    first_stripe().report_bucket_db_status(bucket_space, out);
+    for_each_stripe([&](TickableStripe& stripe) {
+        stripe.report_bucket_db_status(bucket_space, out);
+    });
 }
 
 StripeAccessGuard::PendingOperationStats
@@ -110,13 +126,15 @@ MultiThreadedStripeAccessGuard::pending_operation_stats() const {
 }
 
 void MultiThreadedStripeAccessGuard::report_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const {
-    // TODO STRIPE multiple stripes
-    first_stripe().report_single_bucket_requests(xos);
+    for_each_stripe([&](TickableStripe& stripe) {
+        stripe.report_single_bucket_requests(xos);
+    });
 }
 
 void MultiThreadedStripeAccessGuard::report_delayed_single_bucket_requests(vespalib::xml::XmlOutputStream& xos) const {
-    // TODO STRIPE multiple stripes
-    first_stripe().report_delayed_single_bucket_requests(xos);
+    for_each_stripe([&](TickableStripe& stripe) {
+        stripe.report_delayed_single_bucket_requests(xos);
+    });
 }
 
 TickableStripe& MultiThreadedStripeAccessGuard::first_stripe() noexcept {
@@ -125,6 +143,20 @@ TickableStripe& MultiThreadedStripeAccessGuard::first_stripe() noexcept {
 
 const TickableStripe& MultiThreadedStripeAccessGuard::first_stripe() const noexcept {
     return _stripe_pool.stripe_thread(0).stripe();
+}
+
+template <typename Func>
+void MultiThreadedStripeAccessGuard::for_each_stripe(Func&& f) {
+    for (auto& stripe_thread : _stripe_pool) {
+        f(stripe_thread->stripe());
+    }
+}
+
+template <typename Func>
+void MultiThreadedStripeAccessGuard::for_each_stripe(Func&& f) const {
+    for (const auto& stripe_thread : _stripe_pool) {
+        f(stripe_thread->stripe());
+    }
 }
 
 std::unique_ptr<StripeAccessGuard> MultiThreadedStripeAccessor::rendezvous_and_hold_all() {

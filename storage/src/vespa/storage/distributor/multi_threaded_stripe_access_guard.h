@@ -62,6 +62,12 @@ private:
     // TODO STRIPE remove once multi threaded stripe support is implemented
     TickableStripe& first_stripe() noexcept;
     const TickableStripe& first_stripe() const noexcept;
+
+    template <typename Func>
+    void for_each_stripe(Func&& f);
+
+    template <typename Func>
+    void for_each_stripe(Func&& f) const;
 };
 
 /**
