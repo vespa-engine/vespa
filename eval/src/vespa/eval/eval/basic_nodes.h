@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "value.h"
 #include "string_stuff.h"
 #include <vespa/vespalib/util/hdr_abort.h>
 #include <vespa/vespalib/stllike/string.h>
@@ -48,9 +49,10 @@ struct DumpContext {
 struct Node {
     virtual bool is_forest() const { return false; }
     virtual bool is_tree() const { return false; }
-    virtual bool is_const() const { return false; }
+    virtual bool is_const_double() const { return false; }
     virtual bool is_param() const { return false; }
-    virtual double get_const_value() const;
+    virtual double get_const_double_value() const;
+    Value::UP get_const_value() const;
     void traverse(NodeTraverser &traverser) const;
     virtual vespalib::string dump(DumpContext &ctx) const = 0;
     virtual void accept(NodeVisitor &visitor) const = 0;
@@ -92,8 +94,8 @@ private:
     double _value;
 public:
     Number(double value_in) : _value(value_in) {}
-    virtual bool is_const() const override { return true; }
-    virtual double get_const_value() const override { return value(); }
+    virtual bool is_const_double() const override { return true; }
+    double get_const_double_value() const override { return value(); }
     double value() const { return _value; }
     vespalib::string dump(DumpContext &) const override {
         return make_string("%g", _value);
@@ -120,8 +122,8 @@ private:
     vespalib::string _value;
 public:
     String(const vespalib::string &value_in) : _value(value_in) {}
-    bool is_const() const override { return true; }
-    double get_const_value() const override { return hash(); }
+    bool is_const_double() const override { return true; }
+    double get_const_double_value() const override { return hash(); }
     const vespalib::string &value() const { return _value; }
     uint32_t hash() const { return hash_code(_value.data(), _value.size()); }
     vespalib::string dump(DumpContext &) const override {
@@ -137,7 +139,7 @@ private:
 public:
     In(Node_UP child) : _child(std::move(child)), _entries() {}
     void add_entry(Node_UP entry) {
-        assert(entry->is_const());
+        assert(entry->is_const_double());
         _entries.push_back(std::move(entry));
     }
     size_t num_entries() const { return _entries.size(); }
@@ -171,10 +173,10 @@ public:
 class Neg : public Node {
 private:
     Node_UP _child;
-    bool    _is_const;
+    bool    _is_const_double;
 public:
-    Neg(Node_UP child_in) : _child(std::move(child_in)), _is_const(_child->is_const()) {}
-    bool is_const() const override { return _is_const; }
+    Neg(Node_UP child_in) : _child(std::move(child_in)), _is_const_double(_child->is_const_double()) {}
+    bool is_const_double() const override { return _is_const_double; }
     const Node &child() const { return *_child; }
     size_t num_children() const override { return _child ? 1 : 0; }
     const Node &get_child(size_t idx) const override {
@@ -198,10 +200,10 @@ public:
 class Not : public Node {
 private:
     Node_UP _child;
-    bool    _is_const;
+    bool    _is_const_double;
 public:
-    Not(Node_UP child_in) : _child(std::move(child_in)), _is_const(_child->is_const()) {}
-    bool is_const() const override { return _is_const; }
+    Not(Node_UP child_in) : _child(std::move(child_in)), _is_const_double(_child->is_const_double()) {}
+    bool is_const_double() const override { return _is_const_double; }
     const Node &child() const { return *_child; }
     size_t num_children() const override { return _child ? 1 : 0; }
     const Node &get_child(size_t idx) const override {

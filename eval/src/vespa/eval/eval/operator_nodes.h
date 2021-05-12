@@ -32,7 +32,7 @@ private:
     Order            _order;
     Node_UP          _lhs;
     Node_UP          _rhs;
-    bool             _is_const;
+    bool             _is_const_double;
 
 public:
     Operator(const vespalib::string &op_str_in, int priority_in, Order order_in);
@@ -42,7 +42,7 @@ public:
     Order order() const { return _order; }
     const Node &lhs() const { return *_lhs; }
     const Node &rhs() const { return *_rhs; }
-    bool is_const() const override { return _is_const; }
+    bool is_const_double() const override { return _is_const_double; }
     size_t num_children() const override { return (_lhs && _rhs) ? 2 : 0; }
     const Node &get_child(size_t idx) const override {
         assert(idx < 2);
@@ -67,7 +67,7 @@ public:
     virtual void bind(Node_UP lhs_in, Node_UP rhs_in) {
         _lhs = std::move(lhs_in);
         _rhs = std::move(rhs_in);
-        _is_const = (_lhs->is_const() && _rhs->is_const());
+        _is_const_double = (_lhs->is_const_double() && _rhs->is_const_double());
     }
 
     vespalib::string dump(DumpContext &ctx) const override {

@@ -83,14 +83,14 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
 
     bool maybe_make_const(const Node &node) {
         if (auto create = as<TensorCreate>(node)) {
-            bool is_const = true;
+            bool is_const_double = true;
             for (size_t i = 0; i < create->num_children(); ++i) {
-                is_const &= create->get_child(i).is_const();
+                is_const_double &= create->get_child(i).is_const_double();
             }
-            if (is_const) {
+            if (is_const_double) {
                 TensorSpec spec(create->type().to_spec());
                 for (size_t i = 0; i < create->num_children(); ++i) {
-                    spec.add(create->get_child_address(i), create->get_child(i).get_const_value());
+                    spec.add(create->get_child_address(i), create->get_child(i).get_const_double_value());
                 }
                 make_const(node, *stash.create<Value::UP>(value_from_spec(spec, factory)));
                 return true;
@@ -172,7 +172,7 @@ struct TensorFunctionBuilder : public NodeVisitor, public NodeTraverser {
     void visit(const In &node) override {
         auto my_in = std::make_unique<In>(std::make_unique<Symbol>(0));
         for (size_t i = 0; i < node.num_entries(); ++i) {
-            my_in->add_entry(std::make_unique<Number>(node.get_entry(i).get_const_value()));
+            my_in->add_entry(std::make_unique<Number>(node.get_entry(i).get_const_double_value()));
         }
         auto my_fun = Function::create(std::move(my_in), {"x"});
         const auto &token = stash.create<CompileCache::Token::UP>(CompileCache::compile(*my_fun, PassParams::SEPARATE));

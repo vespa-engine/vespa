@@ -25,12 +25,12 @@ private:
     vespalib::string     _name;
     size_t               _num_params;
     std::vector<Node_UP> _args;
-    bool                 _is_const;
+    bool                 _is_const_double;
 public:
     Call(const vespalib::string &name_in, size_t num_params_in)
-        : _name(name_in), _num_params(num_params_in), _is_const(false) {}
+        : _name(name_in), _num_params(num_params_in), _is_const_double(false) {}
     ~Call();
-    bool is_const() const override { return _is_const; }
+    bool is_const_double() const override { return _is_const_double; }
     const vespalib::string &name() const { return _name; }
     size_t num_params() const { return _num_params; }
     size_t num_args() const { return _args.size(); }
@@ -45,9 +45,9 @@ public:
     }
     virtual void bind_next(Node_UP arg_in) {
         if (_args.empty()) {
-            _is_const = arg_in->is_const();
+            _is_const_double = arg_in->is_const_double();
         } else {
-            _is_const = (_is_const && arg_in->is_const());
+            _is_const_double = (_is_const_double && arg_in->is_const_double());
         }
         _args.push_back(std::move(arg_in));
     }
