@@ -22,8 +22,7 @@ class DistributorComponent : public storage::DistributorComponent,
                              public DistributorOperationContext {
 private:
     DistributorInterface& _distributor;
-    // TODO STRIPE: When legacy mode is removed, replace this with mapping from BucketSpace to struct with
-    //              lib::ClusterState and lib::Distribution (need by BucketDBUpdater).
+    // TODO STRIPE: When legacy mode is removed, replace this with BucketSpaceStateMap.
     std::unique_ptr<DistributorBucketSpaceRepo> _bucket_space_repo;
     std::unique_ptr<DistributorBucketSpaceRepo> _read_only_bucket_space_repo;
 
