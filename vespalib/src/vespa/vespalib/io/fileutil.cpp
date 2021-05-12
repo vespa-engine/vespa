@@ -398,18 +398,13 @@ File::sync()
 {
     if (_fd != -1) {
         if (::fsync(_fd) == 0) {
-            LOG(debug, "sync(%s): File synchronized with disk.",
-                _filename.c_str());
+            LOG(debug, "sync(%s): File synchronized with disk.",_filename.c_str());
         } else {
-            asciistream ost;
-            ost << "sync(" << _filename << "): Failed, errno(" << errno << "): "
-                << safeStrerror(errno);
-            throw IoException(ost.str(), IoException::getErrorType(errno),
-                              VESPA_STRLOC);
+            LOG(warning, "fsync(%s): Failed to sync file. errno(%d): %s",
+                _filename.c_str(), errno, safeStrerror(errno).c_str());
         }
     } else {
-        LOG(debug, "sync(%s): Called on closed file.",
-            _filename.c_str());
+        LOG(debug, "sync(%s): Called on closed file.", _filename.c_str());
     }
 }
 
@@ -427,8 +422,7 @@ File::close()
 {
     if (_fd != -1) {
         if (::close(_fd) == 0) {
-            LOG(debug, "close(%s): Closed file with descriptor %i.",
-                _filename.c_str(), _fd);
+            LOG(debug, "close(%s): Closed file with descriptor %i.", _filename.c_str(), _fd);
             _fd = -1;
             return true;
         } else {
@@ -438,8 +432,7 @@ File::close()
             return false;
         }
     } else {
-        LOG(debug, "close(%s): Called on closed file.",
-            _filename.c_str());
+        LOG(debug, "close(%s): Called on closed file.", _filename.c_str());
     }
     return true;
 }
@@ -459,10 +452,8 @@ getCurrentDirectory()
         return string(static_cast<char*>(ptr.get()));
     }
     asciistream ost;
-    ost << "getCurrentDirectory(): Failed, errno(" << errno
-        << "): " << safeStrerror(errno);
-    throw IoException(ost.str(), IoException::getErrorType(errno),
-                      VESPA_STRLOC);
+    ost << "getCurrentDirectory(): Failed, errno(" << errno << "): " << safeStrerror(errno);
+    throw IoException(ost.str(), IoException::getErrorType(errno), VESPA_STRLOC);
 }
 
 bool
