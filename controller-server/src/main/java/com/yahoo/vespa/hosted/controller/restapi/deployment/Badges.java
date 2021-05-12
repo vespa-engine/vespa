@@ -139,7 +139,7 @@ public class Badges {
             Run run = runs.get(i);
             if (run.id().type().isProduction() && run.id().type().isTest()) {
                 int j = i;
-                while (!runs.get(j - 1).id().type().zone(system).equals(run.id().type().zone(system)))
+                while ( ! runs.get(j - 1).id().type().zone(system).equals(run.id().type().zone(system)))
                     runs.set(j, runs.get(--j));
                 runs.set(j, run);
             }
@@ -174,7 +174,7 @@ public class Badges {
             addText(texts, text, x + (dx - (isTest ? xPad : 0)) / 2, textWidth);
 
             // Add "deploy" when appropriate
-            if ( ! run.id().type().isTest()) {
+            if ( ! run.id().type().isTest() && test != null) {
                 String deploy = "deploy";
                 textWidth = widthOf(deploy);
                 addText(texts, deploy, x + dx + textWidth / 2, textWidth);
