@@ -1,4 +1,4 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='913.3539000000001' height='20' role='img' aria-label='Deployment Status'>
+<svg xmlns='http://www.w3.org/2000/svg' width='763.7809900000001' height='20' role='img' aria-label='Deployment Status'>
     <title>Deployment Status</title>
     <linearGradient id='light' x2='0' y2='100%'>
         <stop offset='0'  stop-color='#fff' stop-opacity='.5'/>
@@ -34,50 +34,46 @@
     </linearGradient>
     <linearGradient id='run-on-success' x1='40%' x2='80%' y2='0%'>
         <stop offset='0' stop-color='#ab83ff' />
-        <stop offset='1' stop-color='#00ff48' />
+        <stop offset='1' stop-color='#00f244' />
         <animate attributeName='x1' values='-110%;150%;20%;-110%' dur='6s' repeatCount='indefinite' />
         <animate attributeName='x2' values='-10%;250%;120%;-10%' dur='6s' repeatCount='indefinite' />
     </linearGradient>
     <clipPath id='rounded'>
-        <rect width='913.3539000000001' height='20' rx='3' fill='#fff'/>
+        <rect width='763.7809900000001' height='20' rx='3' fill='#fff'/>
     </clipPath>
     <g clip-path='url(#rounded)'>
-        <rect x='907.3539000000001' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='870.3061' rx='3' width='43.0478' height='20' fill='url(#run-on-success)'/>
-        <polygon points='772.1412 0 772.1412 20 877.8061 20 885.8061 0' fill='#00ff48'/>
-        <rect x='772.1412' rx='3' width='141.2127' height='20' fill='url(#shade)'/>
-        <rect x='772.1412' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='735.0934' rx='3' width='43.0478' height='20' fill='#bf103c'/>
-        <polygon points='611.279 0 611.279 20 742.5934 20 750.5934 0' fill='#00ff48'/>
-        <rect x='611.279' rx='3' width='166.86219999999997' height='20' fill='url(#shade)'/>
-        <rect x='611.279' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='574.2312' rx='3' width='43.0478' height='20' fill='#00ff48'/>
-        <polygon points='449.0446 0 449.0446 20 581.7312 20 589.7312 0' fill='url(#run-on-success)'/>
-        <rect x='449.0446' rx='3' width='168.2344' height='20' fill='url(#shade)'/>
-        <rect x='449.0446' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='411.9968' rx='3' width='43.0478' height='20' fill='#00ff48'/>
-        <polygon points='314.5789 0 314.5789 20 419.4968 20 427.4968 0' fill='url(#run-on-failure)'/>
-        <rect x='314.5789' rx='3' width='140.4657' height='20' fill='url(#shade)'/>
-        <rect x='314.5789' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='228.3006' rx='3' width='92.2783' height='20' fill='url(#run-on-success)'/>
-        <rect x='238.3006' rx='3' width='82.2783' height='20' fill='url(#shade)'/>
-        <rect x='238.3006' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='152.7498' rx='3' width='91.55080000000001' height='20' fill='#00ff48'/>
-        <rect x='162.7498' rx='3' width='81.55080000000001' height='20' fill='url(#shade)'/>
-        <rect width='168.7498' height='20' fill='#5a5a5a'/>
-        <rect x='-6.0' rx='3' width='174.7498' height='20' fill='url(#shade)'/>
+        <rect x='757.7809900000001' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='725.59036' rx='3' width='38.19063' height='20' fill='url(#run-on-success)'/>
+        <polygon points='635.8470950000001 0 635.8470950000001 20 734.59036 20 742.59036 0' fill='#00f244'/>
+        <rect x='635.8470950000001' rx='3' width='131.74345499999998' height='20' fill='url(#shade)'/>
+        <rect x='635.8470950000001' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='603.656465' rx='3' width='38.19063' height='20' fill='#bf103c'/>
+        <polygon points='486.981225 0 486.981225 20 612.656465 20 620.656465 0' fill='#00f244'/>
+        <rect x='486.981225' rx='3' width='158.67543' height='20' fill='url(#shade)'/>
+        <rect x='486.981225' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='348.865175' rx='3' width='144.11604999999997' height='20' fill='url(#run-on-success)'/>
+        <rect x='358.865175' rx='3' width='134.11604999999997' height='20' fill='url(#shade)'/>
+        <rect x='358.865175' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='326.674545' rx='3' width='38.19063' height='20' fill='#00f244'/>
+        <polygon points='237.71563000000003 0 237.71563000000003 20 335.674545 20 343.674545 0' fill='url(#run-on-failure)'/>
+        <rect x='237.71563000000003' rx='3' width='130.959105' height='20' fill='url(#shade)'/>
+        <rect x='237.71563000000003' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='153.18729000000002' rx='3' width='90.52834000000001' height='20' fill='#00f244'/>
+        <rect x='163.18729000000002' rx='3' width='80.52834000000001' height='20' fill='url(#shade)'/>
+        <rect width='169.18729000000002' height='20' fill='#5a5a5a'/>
+        <rect x='-6.0' rx='3' width='175.18729000000002' height='20' fill='url(#shade)'/>
         <rect width='2' height='20' fill='url(#left-light)'/>
-        <rect x='911.3539000000001' width='2' height='20' fill='url(#right-shadow)'/>
-        <rect width='913.3539000000001' height='20' fill='url(#light)'/>
+        <rect x='761.7809900000001' width='2' height='20' fill='url(#right-shadow)'/>
+        <rect width='763.7809900000001' height='20' fill='url(#light)'/>
     </g>
-    <g fill='#fff' text-anchor='middle' font-family='Verdana,Geneva,DejaVu Sans,sans-serif' text-rendering='geometricPrecision' font-size='10'>
-        <svg x='8.5' y='3.0' width='16.0' height='16.0' viewBox='0 0 150 150'>
+    <g fill='#fff' text-anchor='middle' font-family='Verdana,Geneva,DejaVu Sans,sans-serif' text-rendering='geometricPrecision' font-size='11'>
+        <svg x='6.5' y='3.0' width='16.0' height='16.0' viewBox='0 0 150 150'>
             <polygon fill='#402a14' fill-opacity='0.5' points='84.84 10 34.1 44.46 34.1 103.78 84.84 68.02 135.57 103.78 135.57 44.46 84.84 10'/>
             <polygon fill='#402a14' fill-opacity='0.5' points='84.84 68.02 84.84 10 135.57 44.46 135.57 103.78 84.84 68.02'/>
             <polygon fill='#061a29' fill-opacity='0.5' points='65.07 81.99 14.34 46.22 14.34 105.54 65.07 140 115.81 105.54 115.81 46.22 65.07 81.99'/>
             <polygon fill='#061a29' fill-opacity='0.5' points='65.07 81.99 65.07 140 14.34 105.54 14.34 46.22 65.07 81.99'/>
         </svg>
-        <svg x='8.0' y='2.0' width='16.0' height='16.0' viewBox='0 0 150 150'>
+        <svg x='6.0' y='2.0' width='16.0' height='16.0' viewBox='0 0 150 150'>
             <linearGradient id='yellow-shaded' x1='91.17' y1='44.83' x2='136.24' y2='73.4'  gradientUnits='userSpaceOnUse'>
                 <stop offset='0.01' stop-color='#c6783e'/>
                 <stop offset='0.54' stop-color='#ff9750'/>
@@ -91,35 +87,31 @@
             <polygon fill='#1a7db6' points='65.07 81.99 14.34 46.22 14.34 105.54 65.07 140 115.81 105.54 115.81 46.22 65.07 81.99'/>
             <polygon fill='url(#blue-shaded)' points='65.07 81.99 65.07 140 14.34 105.54 14.34 46.22 65.07 81.99'/>
         </svg>
-        <text x='96.8749' y='14' fill='#000' fill-opacity='.3' textLength='128.7498'>tenant.application.default</text>
-        <text x='96.3749' y='13' fill='#fff' textLength='128.7498'>tenant.application.default</text>
-        <text x='207.02519999999998' y='14' fill='#000' fill-opacity='.3' textLength='59.5508'>system-test</text>
-        <text x='206.52519999999998' y='13' fill='#fff' textLength='59.5508'>system-test</text>
-        <text x='282.93975' y='14' fill='#000' fill-opacity='.3' textLength='60.2783'>staging-test</text>
-        <text x='282.43975' y='13' fill='#fff' textLength='60.2783'>staging-test</text>
-        <text x='354.21315' y='14' fill='#000' fill-opacity='.3' textLength='50.2685'>us-west-1</text>
-        <text x='353.71315' y='13' fill='#fff' textLength='50.2685'>us-west-1</text>
-        <text x='403.9221' y='14' fill='#000' fill-opacity='.3' textLength='33.1494'>deploy</text>
-        <text x='403.4221' y='13' fill='#fff' textLength='33.1494'>deploy</text>
-        <text x='438.02070000000003' y='14' fill='#000' fill-opacity='.3' textLength='19.047800000000002'>test</text>
-        <text x='437.52070000000003' y='13' fill='#fff' textLength='19.047800000000002'>test</text>
-        <text x='502.5632' y='14' fill='#000' fill-opacity='.3' textLength='78.0372'>aws-us-east-1a</text>
-        <text x='502.0632' y='13' fill='#fff' textLength='78.0372'>aws-us-east-1a</text>
-        <text x='566.1565' y='14' fill='#000' fill-opacity='.3' textLength='33.1494'>deploy</text>
-        <text x='565.6565' y='13' fill='#fff' textLength='33.1494'>deploy</text>
-        <text x='600.2551' y='14' fill='#000' fill-opacity='.3' textLength='19.047800000000002'>test</text>
-        <text x='599.7551' y='13' fill='#fff' textLength='19.047800000000002'>test</text>
-        <text x='664.1115' y='14' fill='#000' fill-opacity='.3' textLength='76.66499999999999'>ap-southeast-1</text>
-        <text x='663.6115' y='13' fill='#fff' textLength='76.66499999999999'>ap-southeast-1</text>
-        <text x='727.0187' y='14' fill='#000' fill-opacity='.3' textLength='33.1494'>deploy</text>
-        <text x='726.5187' y='13' fill='#fff' textLength='33.1494'>deploy</text>
-        <text x='761.1173' y='14' fill='#000' fill-opacity='.3' textLength='19.047800000000002'>test</text>
-        <text x='760.6173' y='13' fill='#fff' textLength='19.047800000000002'>test</text>
-        <text x='812.14895' y='14' fill='#000' fill-opacity='.3' textLength='51.015499999999996'>eu-west-1</text>
-        <text x='811.64895' y='13' fill='#fff' textLength='51.015499999999996'>eu-west-1</text>
-        <text x='862.2314' y='14' fill='#000' fill-opacity='.3' textLength='33.1494'>deploy</text>
-        <text x='861.7314' y='13' fill='#fff' textLength='33.1494'>deploy</text>
-        <text x='896.33' y='14' fill='#000' fill-opacity='.3' textLength='19.047800000000002'>test</text>
-        <text x='895.83' y='13' fill='#fff' textLength='19.047800000000002'>test</text>
+        <text font-size='11' x='96.09364500000001' y='15' fill='#000' fill-opacity='.4' textLength='135.18729000000002'>tenant.application.default</text>
+        <text font-size='11' x='95.59364500000001' y='14' fill='#fff' textLength='135.18729000000002'>tenant.application.default</text>
+        <text font-size='11' x='206.95146000000003' y='15' fill='#000' fill-opacity='.4' textLength='62.52834000000001'>system-test</text>
+        <text font-size='11' x='206.45146000000003' y='14' fill='#fff' textLength='62.52834000000001'>system-test</text>
+        <text font-size='11' x='276.60659250000003' y='15' fill='#000' fill-opacity='.4' textLength='52.781925'>us-west-1</text>
+        <text font-size='11' x='276.10659250000003' y='14' fill='#fff' textLength='52.781925'>us-west-1</text>
+        <text font-size='9' x='323.08605000000006' y='15' fill='#000' fill-opacity='.4' textLength='28.176989999999996'>deploy</text>
+        <text font-size='9' x='322.58605000000006' y='14' fill='#fff' textLength='28.176989999999996'>deploy</text>
+        <text font-size='9' x='351.26986000000005' y='15' fill='#000' fill-opacity='.4' textLength='16.190630000000002'>test</text>
+        <text font-size='9' x='350.76986000000005' y='14' fill='#fff' textLength='16.190630000000002'>test</text>
+        <text font-size='11' x='412.334705' y='15' fill='#000' fill-opacity='.4' textLength='81.93905999999998'>aws-us-east-1a</text>
+        <text font-size='11' x='411.834705' y='14' fill='#fff' textLength='81.93905999999998'>aws-us-east-1a</text>
+        <text font-size='9' x='473.39273000000003' y='15' fill='#000' fill-opacity='.4' textLength='28.176989999999996'>deploy</text>
+        <text font-size='9' x='472.89273000000003' y='14' fill='#fff' textLength='28.176989999999996'>deploy</text>
+        <text font-size='11' x='539.73035' y='15' fill='#000' fill-opacity='.4' textLength='80.49825'>ap-southeast-1</text>
+        <text font-size='11' x='539.23035' y='14' fill='#fff' textLength='80.49825'>ap-southeast-1</text>
+        <text font-size='9' x='600.06797' y='15' fill='#000' fill-opacity='.4' textLength='28.176989999999996'>deploy</text>
+        <text font-size='9' x='599.56797' y='14' fill='#fff' textLength='28.176989999999996'>deploy</text>
+        <text font-size='9' x='628.25178' y='15' fill='#000' fill-opacity='.4' textLength='16.190630000000002'>test</text>
+        <text font-size='9' x='627.75178' y='14' fill='#fff' textLength='16.190630000000002'>test</text>
+        <text font-size='11' x='675.1302325' y='15' fill='#000' fill-opacity='.4' textLength='53.566275'>eu-west-1</text>
+        <text font-size='11' x='674.6302325' y='14' fill='#fff' textLength='53.566275'>eu-west-1</text>
+        <text font-size='9' x='722.0018650000001' y='15' fill='#000' fill-opacity='.4' textLength='28.176989999999996'>deploy</text>
+        <text font-size='9' x='721.5018650000001' y='14' fill='#fff' textLength='28.176989999999996'>deploy</text>
+        <text font-size='9' x='750.1856750000001' y='15' fill='#000' fill-opacity='.4' textLength='16.190630000000002'>test</text>
+        <text font-size='9' x='749.6856750000001' y='14' fill='#fff' textLength='16.190630000000002'>test</text>
     </g>
 </svg>

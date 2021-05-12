@@ -28,7 +28,6 @@ public class BadgeApiTest extends ControllerContainerTest {
         ApplicationPackage applicationPackage = new ApplicationPackageBuilder().systemTest()
                                                                                .parallel("us-west-1", "aws-us-east-1a")
                                                                                .test("us-west-1")
-                                                                               .test("aws-us-east-1a")
                                                                                .region("ap-southeast-1")
                                                                                .test("ap-southeast-1")
                                                                                .region("eu-west-1")
@@ -41,7 +40,6 @@ public class BadgeApiTest extends ControllerContainerTest {
                    .runJob(JobType.productionUsWest1)
                    .runJob(JobType.productionAwsUsEast1a)
                    .runJob(JobType.testUsWest1)
-                   .runJob(JobType.testAwsUsEast1a)
                    .runJob(JobType.productionApSoutheast1)
                    .failDeployment(JobType.testApSoutheast1);
         application.submit(applicationPackage)

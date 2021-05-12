@@ -6,17 +6,19 @@ import com.yahoo.container.jdisc.HttpRequest;
 import com.yahoo.container.jdisc.HttpResponse;
 import com.yahoo.container.jdisc.LoggingRequestHandler;
 import com.yahoo.jdisc.http.HttpRequest.Method;
+import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.restapi.Path;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobId;
 import com.yahoo.vespa.hosted.controller.api.integration.deployment.JobType;
-import com.yahoo.restapi.ErrorResponse;
 import com.yahoo.vespa.hosted.controller.application.TenantAndApplicationId;
 import com.yahoo.vespa.hosted.controller.deployment.DeploymentStatus;
+import com.yahoo.vespa.hosted.controller.deployment.JobStatus;
 import com.yahoo.yolean.Exceptions;
 
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -68,8 +70,9 @@ public class BadgeApiHandler extends LoggingRequestHandler {
     private HttpResponse badge(String tenant, String application, String instance) {
         ApplicationId id = ApplicationId.from(tenant, application, instance);
         DeploymentStatus status = controller.jobController().deploymentStatus(controller.applications().requireApplication(TenantAndApplicationId.from(id)));
+        Predicate<JobStatus> isDeclaredJob = job -> status.jobSteps().get(job.id()) != null && status.jobSteps().get(job.id()).isDeclared();
         return svgResponse(Badges.overviewBadge(id,
-                                                status.jobs().instance(id.instance()),
+                                                status.jobs().instance(id.instance()).matching(isDeclaredJob),
                                                 controller.system()));
     }
 
