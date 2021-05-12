@@ -134,7 +134,7 @@ BucketMover::createMoveOperations(MoveKeys toMove) {
 void
 BucketMover::moveDocuments(std::vector<GuardedMoveOp> moveOps, IDestructorCallbackSP onDone) {
     for (auto & moveOp : moveOps) {
-        moveDocument(std::move(moveOp.first), std::move(onDone));
+        moveDocument(std::move(moveOp.first), onDone);
     }
 }
 
