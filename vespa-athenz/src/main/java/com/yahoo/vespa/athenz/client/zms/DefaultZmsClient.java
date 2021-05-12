@@ -111,7 +111,10 @@ public class DefaultZmsClient extends ClientBase implements ZmsClient {
     @Override
     public void addRoleMember(AthenzRole role, AthenzIdentity member) {
         URI uri = zmsUrl.resolve(String.format("domain/%s/role/%s/member/%s", role.domain().getName(), role.roleName(), member.getFullName()));
-        HttpUriRequest request = RequestBuilder.put(uri).build();
+        MembershipEntity membership = new MembershipEntity(member.getFullName(), true, role.roleName(), null);
+        HttpUriRequest request = RequestBuilder.put(uri)
+                .setEntity(toJsonStringEntity(membership))
+                .build();
         execute(request, response -> readEntity(response, Void.class));
     }
 
