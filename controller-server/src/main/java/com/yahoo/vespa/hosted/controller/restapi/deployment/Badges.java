@@ -41,9 +41,9 @@ public class Badges {
         return 32 <= codePoint && codePoint <= 126 ? widths[codePoint - 32] : widths[95];
     }
 
-    /** Computes an approximate pixel width of a 10px size Verdana font rendering of the given string, ignoring kerning. */
+    /** Computes an approximate pixel width of a 11px size Verdana font rendering of the given string, ignoring kerning. */
     public static double widthOf(String text) {
-        return text.codePoints().mapToDouble(Badges::widthOf).sum() / 10;
+        return text.codePoints().mapToDouble(Badges::widthOf).sum() * 11 / 100;
     }
 
     static String colorOf(Run run, Boolean wasOk) {
@@ -71,8 +71,8 @@ public class Badges {
     static final String failure = "#bf103c";
 
     static void addText(List<String> texts, String text, double x, double width) {
-        texts.add("        <text x='" + (x + 0.5) + "' y='14' fill='#000' fill-opacity='.3' textLength='" + width + "'>" + text + "</text>\n");
-        texts.add("        <text x='" + x + "' y='13' fill='#fff' textLength='" + width + "'>" + text + "</text>\n");
+        texts.add("        <text x='" + (x + 0.5) + "' y='15' fill='#000' fill-opacity='.3' textLength='" + width + "'>" + text + "</text>\n");
+        texts.add("        <text x='" + x + "' y='14' fill='#fff' textLength='" + width + "'>" + text + "</text>\n");
     }
 
     static void addShade(List<String> sections, double x, double width) {
@@ -262,7 +262,7 @@ public class Badges {
                "        <rect x='" + (width - 2) + "' width='" + 2 + "' height='20' fill='url(#right-shadow)'/>\n" +
                "        <rect width='" + width + "' height='20' fill='url(#light)'/>\n" +
                "    </g>\n" +
-               "    <g fill='#fff' text-anchor='middle' font-family='Verdana,Geneva,DejaVu Sans,sans-serif' text-rendering='geometricPrecision' font-size='10'>\n" +
+               "    <g fill='#fff' text-anchor='middle' font-family='Verdana,Geneva,DejaVu Sans,sans-serif' text-rendering='geometricPrecision' font-size='11'>\n" +
                // The vespa.ai logo (with a slightly coloured shadow)!
                "        <svg x='" + (xPad + 0.5) + "' y='" + ((20 - logoSize) / 2 + 1) + "' width='" + logoSize + "' height='" + logoSize + "' viewBox='0 0 150 150'>\n" +
                "            <polygon fill='#402a14' fill-opacity='0.5' points='84.84 10 34.1 44.46 34.1 103.78 84.84 68.02 135.57 103.78 135.57 44.46 84.84 10'/>\n" +
