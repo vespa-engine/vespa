@@ -121,7 +121,7 @@ public class VCMRMaintainerTest {
         var writtenChangeRequest = tester.curator().readChangeRequest(changeRequestId).orElseThrow();
         var parkedNodeAction = writtenChangeRequest.getHostActionPlan().get(0);
         assertEquals(State.RETIRED, parkedNodeAction.getState());
-        assertEquals(Status.IN_PROGRESS, writtenChangeRequest.getStatus());
+        assertEquals(Status.READY, writtenChangeRequest.getStatus());
     }
 
     @Test
