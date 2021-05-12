@@ -14,7 +14,7 @@ struct IDocumentMetaStore;
 
 
 /**
- * Context class for document removes that acks remove andschedules a
+ * Context class for document removes that acks remove and schedules a
  * task when instance is destroyed. Typically a shared pointer to an
  * instance is passed around to multiple worker threads that performs
  * portions of a larger task before dropping the shared pointer,
