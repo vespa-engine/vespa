@@ -40,6 +40,7 @@ BuildRequires: gcc10-binutils
 BuildRequires: maven
 %define _use_mvn_wrapper 1
 %define _java_home /usr/lib/jvm/java-11-amazon-corretto.%{?_arch}
+BuildRequires: python3-pytest
 %else
 BuildRequires: devtoolset-9-gcc-c++
 BuildRequires: devtoolset-9-libatomic-devel
@@ -47,7 +48,10 @@ BuildRequires: devtoolset-9-binutils
 BuildRequires: rh-maven35
 %define _devtoolset_enable /opt/rh/devtoolset-9/enable
 %define _rhmaven35_enable /opt/rh/rh-maven35/enable
+BuildRequires: python36-pytest
 %endif
+BuildRequires: vespa-pybind11-devel
+BuildRequires: python3-devel
 %endif
 %if 0%{?el8}
 %if 0%{?centos}
@@ -64,10 +68,16 @@ BuildRequires: gcc-toolset-9-binutils
 %define _devtoolset_enable /opt/rh/gcc-toolset-9/enable
 %endif
 BuildRequires: maven
+BuildRequires: pybind11-devel
+BuildRequires: python3-pytest
+BuildRequires: python36-devel
 %endif
 %if 0%{?fedora}
 BuildRequires: gcc-c++
 BuildRequires: libatomic
+BuildRequires: pybind11-devel
+BuildRequires: python3-pytest
+BuildRequires: python3-devel
 %endif
 %if 0%{?el7}
 BuildRequires: cmake3
