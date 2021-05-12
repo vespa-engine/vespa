@@ -66,9 +66,11 @@ public class ConnectorFactory {
         return connectorConfig;
     }
 
-    public ServerConnector createConnector(final Metric metric, final Server server, JettyConnectionLogger connectionLogger) {
+    public ServerConnector createConnector(final Metric metric, final Server server, JettyConnectionLogger connectionLogger,
+                                           ConnectionMetricAggregator connectionMetricAggregator) {
         ServerConnector connector = new JDiscServerConnector(
-                connectorConfig, metric, server, connectionLogger, createConnectionFactories(metric).toArray(ConnectionFactory[]::new));
+                connectorConfig, metric, server, connectionLogger, connectionMetricAggregator,
+                createConnectionFactories(metric).toArray(ConnectionFactory[]::new));
         connector.setPort(connectorConfig.listenPort());
         connector.setName(connectorConfig.name());
         connector.setAcceptQueueSize(connectorConfig.acceptQueueSize());

@@ -1,6 +1,7 @@
 // Copyright 2017 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package com.yahoo.jdisc.http.server.jetty;
 
+import org.eclipse.jetty.http2.server.HTTP2ServerConnection;
 import org.eclipse.jetty.io.Connection;
 import org.eclipse.jetty.server.HttpConnection;
 import org.eclipse.jetty.server.Request;
@@ -26,6 +27,10 @@ public class RequestUtils {
 
     public static JDiscServerConnector getConnector(Request request) {
         return (JDiscServerConnector) request.getHttpChannel().getConnector();
+    }
+
+    static boolean isHttpServerConnection(Connection connection) {
+        return connection instanceof HttpConnection || connection instanceof HTTP2ServerConnection;
     }
 
     /**
