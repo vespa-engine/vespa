@@ -250,7 +250,10 @@ RankingExpressionBlueprint::setup(const fef::IIndexEnvironment &env,
         }
         //LOG(debug, "Script from config: '%s'\n", script.c_str());
     } else if (params.size() == 1) {
-        script = params[0].getValue();
+        script = env.getRankingExpression(params[0].getValue());
+        if (script.empty()) {
+            script = params[0].getValue();
+        }
         //LOG(debug, "Script from param: '%s'\n", script.c_str());
     } else {
         return fail("No expression given.");

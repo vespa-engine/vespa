@@ -71,6 +71,7 @@ struct Setup {
     std::map<std::string,std::string>                         properties;
     std::map<std::string,std::string>                         constants;
     std::vector<bool>                                         extra_profiles;
+    std::map<std::string,std::string>                         ranking_expressions;
     std::map<std::string,OnnxModel>                           onnx_models;
     Setup();
     ~Setup();
@@ -95,6 +96,9 @@ struct Setup {
     }
     void rank_expr(const std::string &name, const std::string &expr) {
         property(fmt("rankingExpression(%s).rankingScript", name.c_str()), expr);
+    }
+    void ext_rank_expr(const std::string &name, const std::string &file) {
+        ranking_expressions.insert_or_assign(name, TEST_PATH(file));
     }
     void first_phase(const std::string &feature) {
         property(rank::FirstPhase::NAME, feature);
@@ -157,6 +161,14 @@ struct Setup {
             ++idx;
         }
     }
+    void write_ranking_expressions(const Writer &out) {
+        size_t idx = 0;
+        for (const auto &entry: ranking_expressions) {
+            out.fmt("expression[%zu].name \"%s\"\n", idx, entry.first.c_str());
+            out.fmt("expression[%zu].fileref \"expr_ref_%zu\"\n", idx, idx);
+            ++idx;
+        }
+    }
     void write_onnx_models(const Writer &out) {
         size_t idx = 0;
         for (const auto &entry: onnx_models) {
@@ -179,6 +191,12 @@ struct Setup {
     }
     void write_self_cfg(const Writer &out) {
         size_t idx = 0;
+        for (const auto &entry: ranking_expressions) {
+            out.fmt("file[%zu].ref \"expr_ref_%zu\"\n", idx, idx);
+            out.fmt("file[%zu].path \"%s\"\n", idx, entry.second.c_str());
+            ++idx;
+        }
+        idx = 0;
         for (const auto &entry: onnx_models) {
             out.fmt("file[%zu].ref \"onnx_ref_%zu\"\n", idx, idx);
             out.fmt("file[%zu].path \"%s\"\n", idx, entry.second.file_path().c_str());
@@ -190,6 +208,7 @@ struct Setup {
         write_indexschema(Writer(gen_dir + "/indexschema.cfg"));
         write_rank_profiles(Writer(gen_dir + "/rank-profiles.cfg"));
         write_ranking_constants(Writer(gen_dir + "/ranking-constants.cfg"));
+        write_ranking_expressions(Writer(gen_dir + "/ranking-expressions.cfg"));
         write_onnx_models(Writer(gen_dir + "/onnx-models.cfg"));
         write_self_cfg(Writer(gen_dir + "/verify-ranksetup.cfg"));
     }
@@ -354,6 +373,23 @@ TEST_F("require that nested tensor join is not supported", SimpleSetup()) {
 
 TEST_F("require that imported attribute field can be used by rank feature", SimpleSetup()) {
     f.verify_valid({"attribute(imported_attr)"});
+}
+
+//-----------------------------------------------------------------------------
+
+TEST_F("require that external ranking expression can be verified", SimpleSetup()) {
+    f.ext_rank_expr("my_expr", "good_ranking_expression");
+    f.verify_valid({"rankingExpression(my_expr)"});
+}
+
+TEST_F("require that external ranking expression can fail verification", SimpleSetup()) {
+    f.ext_rank_expr("my_expr", "bad_ranking_expression");
+    f.verify_invalid({"rankingExpression(my_expr)"});
+}
+
+TEST_F("require that missing expression file fails verification", SimpleSetup()) {
+    f.ext_rank_expr("my_expr", "missing_ranking_expression_file");
+    f.verify_invalid({"rankingExpression(my_expr)"});
 }
 
 //-----------------------------------------------------------------------------
