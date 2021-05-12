@@ -128,7 +128,7 @@ public class Badges {
         addText(texts, text, x + dx / 2, textWidth);
         x += dx;
 
-        dx = xPad * (128.0 / (32 + runs.size())); // Broader sections with shorter history.
+        dx = xPad * (192.0 / (32 + runs.size())); // Broader sections with shorter history.
         for (Run run : runs) {
             addShade(sections, x, dx);
             sections.add("        <rect x='" + (x - 6) + "' rx='3' width='" + (dx + 6) + "' height='20' fill='" + colorOf(run, null) + "'/>\n");
