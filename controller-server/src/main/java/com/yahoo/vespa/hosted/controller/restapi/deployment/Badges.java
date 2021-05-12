@@ -41,9 +41,14 @@ public class Badges {
         return 32 <= codePoint && codePoint <= 126 ? widths[codePoint - 32] : widths[95];
     }
 
+    /** Computes an approximate pixel width of the given size Verdana font rendering of the given string, ignoring kerning. */
+    public static double widthOf(String text, int size) {
+        return text.codePoints().mapToDouble(Badges::widthOf).sum() * (size - 0.5) / 100;
+    }
+
     /** Computes an approximate pixel width of a 11px size Verdana font rendering of the given string, ignoring kerning. */
     public static double widthOf(String text) {
-        return text.codePoints().mapToDouble(Badges::widthOf).sum() * 11 / 100;
+        return widthOf(text, 11);
     }
 
     static String colorOf(Run run, Boolean wasOk) {
@@ -63,7 +68,7 @@ public class Badges {
                              : type.jobName().replace("production-", "");
     }
 
-    static final double xPad = 8;
+    static final double xPad = 6;
     static final double logoSize = 16;
     static final String dark = "#5a5a5a";
     static final String success = "#00f244";
@@ -71,8 +76,12 @@ public class Badges {
     static final String failure = "#bf103c";
 
     static void addText(List<String> texts, String text, double x, double width) {
-        texts.add("        <text x='" + (x + 0.5) + "' y='15' fill='#000' fill-opacity='.3' textLength='" + width + "'>" + text + "</text>\n");
-        texts.add("        <text x='" + x + "' y='14' fill='#fff' textLength='" + width + "'>" + text + "</text>\n");
+        addText(texts, text, x, width, 11);
+    }
+
+    static void addText(List<String> texts, String text, double x, double width, int size) {
+        texts.add("        <text font-size='" + size + "' x='" + (x + 0.5) + "' y='" + (15) + "' fill='#000' fill-opacity='.4' textLength='" + width + "'>" + text + "</text>\n");
+        texts.add("        <text font-size='" + size + "' x='" + x + "' y='" + (14) + "' fill='#fff' textLength='" + width + "'>" + text + "</text>\n");
     }
 
     static void addShade(List<String> sections, double x, double width) {
@@ -135,9 +144,11 @@ public class Badges {
     static String overviewBadge(ApplicationId id, JobList jobs, SystemName system) {
         // Put production tests right after their deployments, for a more compact rendering.
         List<Run> runs = new ArrayList<>(jobs.lastTriggered().asList());
+        boolean anyTest = false;
         for (int i = 0; i < runs.size(); i++) {
             Run run = runs.get(i);
             if (run.id().type().isProduction() && run.id().type().isTest()) {
+                anyTest = true;
                 int j = i;
                 while ( ! runs.get(j - 1).id().type().zone(system).equals(run.id().type().zone(system)))
                     runs.set(j, runs.get(--j));
@@ -167,17 +178,17 @@ public class Badges {
 
             boolean isTest = run.id().type().isTest() && run.id().type().isProduction();
             text = nameOf(run.id().type());
-            textWidth = widthOf(text);
+            textWidth = widthOf(text, isTest ? 9 : 11);
             dx = xPad + textWidth + (isTest ? 0 : xPad);
             boolean wasOk = jobs.get(run.id().job()).flatMap(JobStatus::lastStatus).map(RunStatus.success::equals).orElse(true);
 
-            addText(texts, text, x + (dx - (isTest ? xPad : 0)) / 2, textWidth);
+            addText(texts, text, x + (dx - (isTest ? xPad : 0)) / 2, textWidth, isTest ? 9 : 11);
 
             // Add "deploy" when appropriate
-            if ( ! run.id().type().isTest() && test != null) {
+            if ( ! run.id().type().isTest() && anyTest) {
                 String deploy = "deploy";
-                textWidth = widthOf(deploy);
-                addText(texts, deploy, x + dx + textWidth / 2, textWidth);
+                textWidth = widthOf(deploy, 9);
+                addText(texts, deploy, x + dx + textWidth / 2, textWidth, 9);
                 dx += textWidth + xPad;
             }
 
@@ -190,7 +201,7 @@ public class Badges {
                 sections.add("        <rect x='" + (x - 16) + "' rx='3' width='" + (dx + 16) + "' height='20' fill='" + colorOf(run, wasOk) + "'/>\n");
             // ... with a slant if a test is next.
             else
-                sections.add("        <polygon points='" + (x - 6) + " 0 " + (x - 6) + " 20 " + (x + dx - 8.5) + " 20 " + (x + dx - 0.5) + " 0' fill='" + colorOf(run, wasOk) + "'/>\n");
+                sections.add("        <polygon points='" + (x - 6) + " 0 " + (x - 6) + " 20 " + (x + dx - 7) + " 20 " + (x + dx + 1) + " 0' fill='" + colorOf(run, wasOk) + "'/>\n");
 
             // Cast a shadow onto the next zone ...
             if (test == null)

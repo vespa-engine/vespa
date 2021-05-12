@@ -1,4 +1,4 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='640.4367858896197' height='20' role='img' aria-label='Deployment Status'>
+<svg xmlns='http://www.w3.org/2000/svg' width='537.6474594172146' height='20' role='img' aria-label='Deployment Status'>
     <title>Deployment Status</title>
     <linearGradient id='light' x2='0' y2='100%'>
         <stop offset='0'  stop-color='#fff' stop-opacity='.5'/>
@@ -39,122 +39,122 @@
         <animate attributeName='x2' values='-10%;250%;120%;-10%' dur='6s' repeatCount='indefinite' />
     </linearGradient>
     <clipPath id='rounded'>
-        <rect width='640.4367858896197' height='20' rx='3' fill='#fff'/>
+        <rect width='537.6474594172146' height='20' rx='3' fill='#fff'/>
     </clipPath>
     <g clip-path='url(#rounded)'>
-        <rect x='634.6233920815913' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='628.3299396342306' rx='3' width='12.293452447360632' height='20' fill='#00f244'/>
-        <rect x='628.3299396342306' rx='3' width='12.293452447360632' height='20' fill='url(#shade)'/>
-        <rect x='628.5222479299438' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='622.03648718687' rx='3' width='12.485760743073765' height='20' fill='#bf103c'/>
-        <rect x='622.03648718687' rx='3' width='12.485760743073765' height='20' fill='url(#shade)'/>
-        <rect x='622.2346718248466' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='615.5507264437962' rx='3' width='12.68394538105045' height='20' fill='#bf103c'/>
-        <rect x='615.5507264437962' rx='3' width='12.68394538105045' height='20' fill='url(#shade)'/>
-        <rect x='615.7549669867446' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='608.8667810627458' rx='3' width='12.888185923998947' height='20' fill='#bf103c'/>
-        <rect x='608.8667810627458' rx='3' width='12.888185923998947' height='20' fill='url(#shade)'/>
-        <rect x='609.0772625602513' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='601.9785951387469' rx='3' width='13.098667421504338' height='20' fill='#bf103c'/>
-        <rect x='601.9785951387469' rx='3' width='13.098667421504338' height='20' fill='url(#shade)'/>
-        <rect x='602.1955082949329' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='594.8799277172425' rx='3' width='13.31558057769039' height='20' fill='#bf103c'/>
-        <rect x='594.8799277172425' rx='3' width='13.31558057769039' height='20' fill='url(#shade)'/>
-        <rect x='595.1034690635568' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='587.5643471395521' rx='3' width='13.539121924004645' height='20' fill='#bf103c'/>
-        <rect x='587.5643471395521' rx='3' width='13.539121924004645' height='20' fill='url(#shade)'/>
-        <rect x='587.7947192128306' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='580.0252252155474' rx='3' width='13.769493997283261' height='20' fill='#bf103c'/>
-        <rect x='580.0252252155474' rx='3' width='13.769493997283261' height='20' fill='url(#shade)'/>
-        <rect x='580.2626367415211' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='572.2557312182641' rx='3' width='14.006905523256986' height='20' fill='#bf103c'/>
-        <rect x='572.2557312182641' rx='3' width='14.006905523256986' height='20' fill='url(#shade)'/>
-        <rect x='572.5003973006717' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='564.2488256950072' rx='3' width='14.251571605664486' height='20' fill='#bf103c'/>
-        <rect x='564.2488256950072' rx='3' width='14.251571605664486' height='20' fill='url(#shade)'/>
-        <rect x='564.5009680104871' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='555.9972540893427' rx='3' width='14.503713921144396' height='20' fill='#bf103c'/>
-        <rect x='555.9972540893427' rx='3' width='14.503713921144396' height='20' fill='url(#shade)'/>
-        <rect x='556.257101088281' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='547.4935401681984' rx='3' width='14.763560920082657' height='20' fill='#bf103c'/>
-        <rect x='547.4935401681984' rx='3' width='14.763560920082657' height='20' fill='url(#shade)'/>
-        <rect x='547.7613272817129' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='538.7299792481157' rx='3' width='15.031348033597132' height='20' fill='#bf103c'/>
-        <rect x='538.7299792481157' rx='3' width='15.031348033597132' height='20' fill='url(#shade)'/>
-        <rect x='539.0059491013656' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='529.6986312145185' rx='3' width='15.307317886847013' height='20' fill='#bf103c'/>
-        <rect x='529.6986312145185' rx='3' width='15.307317886847013' height='20' fill='url(#shade)'/>
-        <rect x='529.9830338465317' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='520.3913133276715' rx='3' width='15.591720518860313' height='20' fill='#bf103c'/>
-        <rect x='520.3913133276715' rx='3' width='15.591720518860313' height='20' fill='url(#shade)'/>
-        <rect x='520.6844064178897' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='510.7995928088111' rx='3' width='15.884813609078591' height='20' fill='#bf103c'/>
-        <rect x='510.7995928088111' rx='3' width='15.884813609078591' height='20' fill='url(#shade)'/>
-        <rect x='511.10164191055674' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='500.91477919973255' rx='3' width='16.186862710824187' height='20' fill='#bf103c'/>
-        <rect x='500.91477919973255' rx='3' width='16.186862710824187' height='20' fill='url(#shade)'/>
-        <rect x='501.22605798080986' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='490.72791648890836' rx='3' width='16.498141491901468' height='20' fill='#bf103c'/>
-        <rect x='490.72791648890836' rx='3' width='16.498141491901468' height='20' fill='url(#shade)'/>
-        <rect x='491.048706979557' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='480.22977499700687' rx='3' width='16.81893198255014' height='20' fill='#bf103c'/>
-        <rect x='480.22977499700687' rx='3' width='16.81893198255014' height='20' fill='url(#shade)'/>
-        <rect x='480.5603678454319' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='469.41084301445676' rx='3' width='17.14952483097518' height='20' fill='#bf103c'/>
-        <rect x='469.41084301445676' rx='3' width='17.14952483097518' height='20' fill='url(#shade)'/>
-        <rect x='469.7515377501666' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='458.2613181834816' rx='3' width='17.49021956668504' height='20' fill='#bf103c'/>
-        <rect x='458.2613181834816' rx='3' width='17.49021956668504' height='20' fill='url(#shade)'/>
-        <rect x='458.61242348867313' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='446.77109861679656' rx='3' width='17.841324871876566' height='20' fill='#bf103c'/>
-        <rect x='446.77109861679656' rx='3' width='17.841324871876566' height='20' fill='url(#shade)'/>
-        <rect x='447.1329326060326' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='434.92977374492' rx='3' width='18.20315886111265' height='20' fill='#bf103c'/>
-        <rect x='434.92977374492' rx='3' width='18.20315886111265' height='20' fill='url(#shade)'/>
-        <rect x='435.3026642533533' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='422.7266148838074' rx='3' width='18.576049369545963' height='20' fill='#bf103c'/>
-        <rect x='422.7266148838074' rx='3' width='18.576049369545963' height='20' fill='url(#shade)'/>
-        <rect x='423.1108997642113' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='410.1505655142614' rx='3' width='18.960334249949863' height='20' fill='#bf103c'/>
-        <rect x='410.1505655142614' rx='3' width='18.960334249949863' height='20' fill='url(#shade)'/>
-        <rect x='410.5465929431372' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='397.19023126431154' rx='3' width='19.35636167882567' height='20' fill='#bf103c'/>
-        <rect x='397.19023126431154' rx='3' width='19.35636167882567' height='20' fill='url(#shade)'/>
-        <rect x='397.5983600573495' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='383.83386958548584' rx='3' width='19.764490471863645' height='20' fill='#bf103c'/>
-        <rect x='383.83386958548584' rx='3' width='19.764490471863645' height='20' fill='url(#shade)'/>
-        <rect x='384.2544695226656' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='370.0693791136222' rx='3' width='20.18509040904341' height='20' fill='#bf103c'/>
-        <rect x='370.0693791136222' rx='3' width='20.18509040904341' height='20' fill='url(#shade)'/>
-        <rect x='370.5028312742473' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='355.88428870457875' rx='3' width='20.61854256966852' height='20' fill='#bf103c'/>
-        <rect x='355.88428870457875' rx='3' width='20.61854256966852' height='20' fill='url(#shade)'/>
-        <rect x='356.33098581254876' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='341.2657461349102' rx='3' width='21.06523967763854' height='20' fill='#bf103c'/>
-        <rect x='341.2657461349102' rx='3' width='21.06523967763854' height='20' fill='url(#shade)'/>
-        <rect x='341.7260929145433' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='326.2005064572717' rx='3' width='21.525586457271643' height='20' fill='#bf103c'/>
-        <rect x='326.2005064572717' rx='3' width='21.525586457271643' height='20' fill='url(#shade)'/>
-        <rect x='326.67492000000004' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='310.67492000000004' rx='3' width='22.0' height='20' fill='#bf103c'/>
-        <rect x='310.67492000000004' rx='3' width='22.0' height='20' fill='url(#shade)'/>
-        <rect x='310.67492000000004' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='175.62478000000002' rx='3' width='141.05014' height='20' fill='url(#run-on-failure)'/>
-        <rect x='175.62478000000002' rx='3' width='141.05014' height='20' fill='url(#shade)'/>
-        <rect width='181.62478000000002' height='20' fill='#5a5a5a'/>
-        <rect x='-6.0' rx='3' width='187.62478000000002' height='20' fill='url(#shade)'/>
+        <rect x='531.7874140611932' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='527.0673247256727' rx='3' width='10.720089335520475' height='20' fill='#00f244'/>
+        <rect x='527.0673247256727' rx='3' width='10.720089335520475' height='20' fill='url(#shade)'/>
+        <rect x='527.2115559474576' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='522.3472353901523' rx='3' width='10.864320557305325' height='20' fill='#bf103c'/>
+        <rect x='522.3472353901523' rx='3' width='10.864320557305325' height='20' fill='url(#shade)'/>
+        <rect x='522.4958738686348' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='517.482914832847' rx='3' width='11.01295903578784' height='20' fill='#bf103c'/>
+        <rect x='517.482914832847' rx='3' width='11.01295903578784' height='20' fill='url(#shade)'/>
+        <rect x='517.6360952400584' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='512.4699557970591' rx='3' width='11.166139442999212' height='20' fill='#bf103c'/>
+        <rect x='512.4699557970591' rx='3' width='11.166139442999212' height='20' fill='url(#shade)'/>
+        <rect x='512.6278169201881' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='507.3038163540599' rx='3' width='11.324000566128255' height='20' fill='#bf103c'/>
+        <rect x='507.3038163540599' rx='3' width='11.324000566128255' height='20' fill='url(#shade)'/>
+        <rect x='507.46650122119945' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='501.97981578793167' rx='3' width='11.486685433267795' height='20' fill='#bf103c'/>
+        <rect x='501.97981578793167' rx='3' width='11.486685433267795' height='20' fill='url(#shade)'/>
+        <rect x='502.1474717976674' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='496.4931303546639' rx='3' width='11.654341443003485' height='20' fill='#bf103c'/>
+        <rect x='496.4931303546639' rx='3' width='11.654341443003485' height='20' fill='url(#shade)'/>
+        <rect x='496.6659094096228' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='490.8387889116604' rx='3' width='11.827120497962447' height='20' fill='#bf103c'/>
+        <rect x='490.8387889116604' rx='3' width='11.827120497962447' height='20' fill='url(#shade)'/>
+        <rect x='491.0168475561407' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='485.011668413698' rx='3' width='12.00517914244274' height='20' fill='#bf103c'/>
+        <rect x='485.011668413698' rx='3' width='12.00517914244274' height='20' fill='url(#shade)'/>
+        <rect x='485.19516797550364' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='479.00648927125525' rx='3' width='12.188678704248366' height='20' fill='#bf103c'/>
+        <rect x='479.00648927125525' rx='3' width='12.188678704248366' height='20' fill='url(#shade)'/>
+        <rect x='479.19559600786516' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='472.81781056700686' rx='3' width='12.377785440858299' height='20' fill='#bf103c'/>
+        <rect x='472.81781056700686' rx='3' width='12.377785440858299' height='20' fill='url(#shade)'/>
+        <rect x='473.01269581621057' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='466.44002512614856' rx='3' width='12.572670690061994' height='20' fill='#bf103c'/>
+        <rect x='466.44002512614856' rx='3' width='12.572670690061994' height='20' fill='url(#shade)'/>
+        <rect x='466.6408654612844' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='459.86735443608654' rx='3' width='12.773511025197852' height='20' fill='#bf103c'/>
+        <rect x='459.86735443608654' rx='3' width='12.773511025197852' height='20' fill='url(#shade)'/>
+        <rect x='460.0743318260239' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='453.09384341088867' rx='3' width='12.980488415135262' height='20' fill='#bf103c'/>
+        <rect x='453.09384341088867' rx='3' width='12.980488415135262' height='20' fill='url(#shade)'/>
+        <rect x='453.30714538489866' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='446.1133549957534' rx='3' width='13.193790389145235' height='20' fill='#bf103c'/>
+        <rect x='446.1133549957534' rx='3' width='13.193790389145235' height='20' fill='url(#shade)'/>
+        <rect x='446.3331748134171' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='438.91956460660816' rx='3' width='13.413610206808944' height='20' fill='#bf103c'/>
+        <rect x='438.91956460660816' rx='3' width='13.413610206808944' height='20' fill='url(#shade)'/>
+        <rect x='439.14610143291736' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='431.50595439979924' rx='3' width='13.64014703311814' height='20' fill='#bf103c'/>
+        <rect x='431.50595439979924' rx='3' width='13.64014703311814' height='20' fill='url(#shade)'/>
+        <rect x='431.7394134856072' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='423.8658073666811' rx='3' width='13.873606118926102' height='20' fill='#bf103c'/>
+        <rect x='423.8658073666811' rx='3' width='13.873606118926102' height='20' fill='url(#shade)'/>
+        <rect x='424.1064002346676' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='415.992201247755' rx='3' width='14.114198986912605' height='20' fill='#bf103c'/>
+        <rect x='415.992201247755' rx='3' width='14.114198986912605' height='20' fill='url(#shade)'/>
+        <rect x='416.2401458840738' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='407.87800226084244' rx='3' width='14.362143623231388' height='20' fill='#bf103c'/>
+        <rect x='407.87800226084244' rx='3' width='14.362143623231388' height='20' fill='url(#shade)'/>
+        <rect x='408.13352331262485' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='399.5158586376111' rx='3' width='14.617664675013781' height='20' fill='#bf103c'/>
+        <rect x='399.5158586376111' rx='3' width='14.617664675013781' height='20' fill='url(#shade)'/>
+        <rect x='399.7791876165047' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='390.8981939625973' rx='3' width='14.880993653907423' height='20' fill='#bf103c'/>
+        <rect x='390.8981939625973' rx='3' width='14.880993653907423' height='20' fill='url(#shade)'/>
+        <rect x='391.1695694545244' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='382.0172003086899' rx='3' width='15.152369145834488' height='20' fill='#bf103c'/>
+        <rect x='382.0172003086899' rx='3' width='15.152369145834488' height='20' fill='url(#shade)'/>
+        <rect x='382.2968681900149' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='372.8648311628554' rx='3' width='15.432037027159472' height='20' fill='#bf103c'/>
+        <rect x='372.8648311628554' rx='3' width='15.432037027159472' height='20' fill='url(#shade)'/>
+        <rect x='373.1530448231583' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='363.43279413569593' rx='3' width='15.720250687462396' height='20' fill='#bf103c'/>
+        <rect x='363.43279413569593' rx='3' width='15.720250687462396' height='20' fill='url(#shade)'/>
+        <rect x='363.7298147073528' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='353.71254344823353' rx='3' width='16.017271259119255' height='20' fill='#bf103c'/>
+        <rect x='353.71254344823353' rx='3' width='16.017271259119255' height='20' fill='url(#shade)'/>
+        <rect x='354.018640043012' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='343.6952721891143' rx='3' width='16.323367853897732' height='20' fill='#bf103c'/>
+        <rect x='343.6952721891143' rx='3' width='16.323367853897732' height='20' fill='url(#shade)'/>
+        <rect x='344.01072214199917' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='333.3719043352166' rx='3' width='16.638817806782562' height='20' fill='#bf103c'/>
+        <rect x='333.3719043352166' rx='3' width='16.638817806782562' height='20' fill='url(#shade)'/>
+        <rect x='333.6969934556854' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='322.733086528434' rx='3' width='16.963906927251394' height='20' fill='#bf103c'/>
+        <rect x='322.733086528434' rx='3' width='16.963906927251394' height='20' fill='url(#shade)'/>
+        <rect x='323.0681093594115' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='311.7691796011826' rx='3' width='17.29892975822891' height='20' fill='#bf103c'/>
+        <rect x='311.7691796011826' rx='3' width='17.29892975822891' height='20' fill='url(#shade)'/>
+        <rect x='312.1144396859074' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='300.4702498429537' rx='3' width='17.644189842953732' height='20' fill='#bf103c'/>
+        <rect x='300.4702498429537' rx='3' width='17.644189842953732' height='20' fill='url(#shade)'/>
+        <rect x='300.82606' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='288.82606' rx='3' width='18.0' height='20' fill='#bf103c'/>
+        <rect x='288.82606' rx='3' width='18.0' height='20' fill='url(#shade)'/>
+        <rect x='288.82606' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='163.18729000000002' rx='3' width='131.63876999999997' height='20' fill='url(#run-on-failure)'/>
+        <rect x='163.18729000000002' rx='3' width='131.63876999999997' height='20' fill='url(#shade)'/>
+        <rect width='169.18729000000002' height='20' fill='#5a5a5a'/>
+        <rect x='-6.0' rx='3' width='175.18729000000002' height='20' fill='url(#shade)'/>
         <rect width='2' height='20' fill='url(#left-light)'/>
-        <rect x='638.4367858896197' width='2' height='20' fill='url(#right-shadow)'/>
-        <rect width='640.4367858896197' height='20' fill='url(#light)'/>
+        <rect x='535.6474594172146' width='2' height='20' fill='url(#right-shadow)'/>
+        <rect width='537.6474594172146' height='20' fill='url(#light)'/>
     </g>
     <g fill='#fff' text-anchor='middle' font-family='Verdana,Geneva,DejaVu Sans,sans-serif' text-rendering='geometricPrecision' font-size='11'>
-        <svg x='8.5' y='3.0' width='16.0' height='16.0' viewBox='0 0 150 150'>
+        <svg x='6.5' y='3.0' width='16.0' height='16.0' viewBox='0 0 150 150'>
             <polygon fill='#402a14' fill-opacity='0.5' points='84.84 10 34.1 44.46 34.1 103.78 84.84 68.02 135.57 103.78 135.57 44.46 84.84 10'/>
             <polygon fill='#402a14' fill-opacity='0.5' points='84.84 68.02 84.84 10 135.57 44.46 135.57 103.78 84.84 68.02'/>
             <polygon fill='#061a29' fill-opacity='0.5' points='65.07 81.99 14.34 46.22 14.34 105.54 65.07 140 115.81 105.54 115.81 46.22 65.07 81.99'/>
             <polygon fill='#061a29' fill-opacity='0.5' points='65.07 81.99 65.07 140 14.34 105.54 14.34 46.22 65.07 81.99'/>
         </svg>
-        <svg x='8.0' y='2.0' width='16.0' height='16.0' viewBox='0 0 150 150'>
+        <svg x='6.0' y='2.0' width='16.0' height='16.0' viewBox='0 0 150 150'>
             <linearGradient id='yellow-shaded' x1='91.17' y1='44.83' x2='136.24' y2='73.4'  gradientUnits='userSpaceOnUse'>
                 <stop offset='0.01' stop-color='#c6783e'/>
                 <stop offset='0.54' stop-color='#ff9750'/>
@@ -168,9 +168,9 @@
             <polygon fill='#1a7db6' points='65.07 81.99 14.34 46.22 14.34 105.54 65.07 140 115.81 105.54 115.81 46.22 65.07 81.99'/>
             <polygon fill='url(#blue-shaded)' points='65.07 81.99 65.07 140 14.34 105.54 14.34 46.22 65.07 81.99'/>
         </svg>
-        <text x='103.31239000000001' y='15' fill='#000' fill-opacity='.3' textLength='141.62478000000002'>tenant.application.default</text>
-        <text x='102.81239000000001' y='14' fill='#fff' textLength='141.62478000000002'>tenant.application.default</text>
-        <text x='249.64985000000001' y='15' fill='#000' fill-opacity='.3' textLength='119.05014'>production-us-west-1</text>
-        <text x='249.14985000000001' y='14' fill='#fff' textLength='119.05014'>production-us-west-1</text>
+        <text font-size='11' x='96.09364500000001' y='15' fill='#000' fill-opacity='.4' textLength='135.18729000000002'>tenant.application.default</text>
+        <text font-size='11' x='95.59364500000001' y='14' fill='#fff' textLength='135.18729000000002'>tenant.application.default</text>
+        <text font-size='11' x='232.506675' y='15' fill='#000' fill-opacity='.4' textLength='113.63876999999998'>production-us-west-1</text>
+        <text font-size='11' x='232.006675' y='14' fill='#fff' textLength='113.63876999999998'>production-us-west-1</text>
     </g>
 </svg>
