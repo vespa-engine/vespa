@@ -2,6 +2,7 @@
 package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
+import com.yahoo.config.provision.NodeType;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -13,39 +14,42 @@ import java.util.Optional;
 import java.util.logging.Logger;
 
 /**
- * An upgrader that retires and rebuilds hosts on stale OS versions. Retirement of each host is spread out in time,
- * according to a time budget, to avoid potential service impact of retiring too many hosts close together.
+ * An upgrader that retires and rebuilds hosts on stale OS versions. We limit the number of concurrent rebuilds to
+ * reduce impact of retiring too many hosts at once.
  *
  * Used in cases where performing an OS upgrade requires rebuilding the host, e.g. when upgrading across major versions.
  *
  * @author mpolden
  */
-public class RebuildingOsUpgrader extends RetiringOsUpgrader {
+public class RebuildingOsUpgrader implements OsUpgrader {
 
     private static final Logger LOG = Logger.getLogger(RebuildingOsUpgrader.class.getName());
 
+    private final NodeRepository nodeRepository;
     private final int maxRebuilds;
 
     public RebuildingOsUpgrader(NodeRepository nodeRepository, int maxRebuilds) {
-        super(nodeRepository);
+        this.nodeRepository = nodeRepository;
         this.maxRebuilds = maxRebuilds;
         if (maxRebuilds < 1) throw new IllegalArgumentException("maxRebuilds must be positive, was " + maxRebuilds);
     }
 
     @Override
-    protected NodeList candidates(Instant instant, OsVersionTarget target, NodeList allNodes) {
-        if (allNodes.nodeType(target.nodeType()).rebuilding().size() < maxRebuilds) {
-            return super.candidates(instant, target, allNodes);
-        }
-        return NodeList.of();
+    public void upgradeTo(OsVersionTarget target) {
+        NodeList allNodesOfType = nodeRepository.nodes().list().nodeType(target.nodeType());
+        NodeList activeNodes = allNodesOfType.state(Node.State.active);
+        int numberToUpgrade = Math.max(0, maxRebuilds - allNodesOfType.rebuilding().size());
+        NodeList nodesToUpgrade = activeNodes.not().rebuilding()
+                                             .osVersionIsBefore(target.version())
+                                             .byIncreasingOsVersion()
+                                             .first(numberToUpgrade);
+        Instant now = nodeRepository.clock().instant();
+        nodesToUpgrade.forEach(node -> rebuild(node, target.version(), now));
     }
 
     @Override
-    protected void upgradeNodes(NodeList candidates, Version version, Instant instant) {
-        candidates.not().rebuilding()
-                  .byIncreasingOsVersion()
-                  .first(1)
-                  .forEach(node -> rebuild(node, version, instant));
+    public void disableUpgrade(NodeType type) {
+        // No action needed in this implementation. Hosts that have started rebuilding cannot be halted
     }
 
     private void rebuild(Node host, Version target, Instant now) {
@@ -54,7 +58,6 @@ public class RebuildingOsUpgrader extends RetiringOsUpgrader {
                  ", want " + target);
         nodeRepository.nodes().rebuild(host.hostname(), Agent.RebuildingOsUpgrader, now);
         nodeRepository.nodes().upgradeOs(NodeListFilter.from(host), Optional.of(target));
-        nodeRepository.osVersions().writeChange((change) -> change.withRetirementAt(now, host.type()));
     }
 
 }

@@ -247,7 +247,6 @@ public class OsVersionsTest {
     @Test
     public void upgrade_by_rebuilding() {
         var versions = new OsVersions(tester.nodeRepository(), false, Integer.MAX_VALUE, 1);
-        var clock = tester.clock();
         int hostCount = 10;
         provisionInfraApplication(hostCount + 1);
         Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
@@ -263,20 +262,13 @@ public class OsVersionsTest {
 
         // Target is set for new major version. Upgrade mechanism switches to rebuilding
         var version1 = Version.fromString("8.0");
-        Duration totalBudget = Duration.ofHours(12);
-        Duration nodeBudget = totalBudget.dividedBy(hostCount);
-        versions.setTarget(NodeType.host, version1, totalBudget, false);
+        versions.setTarget(NodeType.host, version1, Duration.ZERO, false);
         versions.resumeUpgradeOf(NodeType.host, true);
 
         // One host starts rebuilding
         assertEquals(1, hostNodes.get().rebuilding().size());
 
-        // Nothing happens on next resume as first host has not spent its budget
-        versions.resumeUpgradeOf(NodeType.host, true);
-        assertEquals(1, hostNodes.get().rebuilding().size());
-
-        // Time budget has been spent, but we cannot rebuild another host until the current one is done
-        clock.advance(nodeBudget);
+        // We cannot rebuild another host until the current one is done
         versions.resumeUpgradeOf(NodeType.host, true);
         NodeList hostsRebuilding = hostNodes.get().rebuilding();
         assertEquals(1, hostsRebuilding.size());
@@ -290,7 +282,6 @@ public class OsVersionsTest {
 
         // The remaining hosts complete their upgrade
         for (int i = 0; i < hostCount - 2; i++) {
-            clock.advance(nodeBudget);
             versions.resumeUpgradeOf(NodeType.host, true);
             hostsRebuilding = hostNodes.get().rebuilding();
             assertEquals(1, hostsRebuilding.size());
@@ -307,7 +298,7 @@ public class OsVersionsTest {
 
         // Next version is within same major. Upgrade mechanism switches to delegated
         var version2 = Version.fromString("8.1");
-        versions.setTarget(NodeType.host, version2, totalBudget, false);
+        versions.setTarget(NodeType.host, version2, Duration.ZERO, false);
         versions.resumeUpgradeOf(NodeType.host, true);
         NodeList nonFailingHosts = hostNodes.get().except(failedHost);
         assertTrue("Wanted version is set", nonFailingHosts.stream()
@@ -320,7 +311,6 @@ public class OsVersionsTest {
         assertEquals(version0, reactivatedHost.status().osVersion().current().get());
 
         // Resuming upgrades reactivated host. Upgrade mechanism switches to rebuilding
-        clock.advance(nodeBudget);
         versions.resumeUpgradeOf(NodeType.host, true);
         hostsRebuilding = hostNodes.get().rebuilding();
         assertEquals(List.of(reactivatedHost), hostsRebuilding.asList());
@@ -330,7 +320,6 @@ public class OsVersionsTest {
     @Test
     public void upgrade_by_rebuilding_multiple_host_types() {
         var versions = new OsVersions(tester.nodeRepository(), false, Integer.MAX_VALUE, 1);
-        var clock = tester.clock();
         int hostCount = 3;
         provisionInfraApplication(hostCount, infraApplication, NodeType.host);
         provisionInfraApplication(hostCount, ApplicationId.from("hosted-vespa", "confighost", "default"), NodeType.confighost);
@@ -345,14 +334,11 @@ public class OsVersionsTest {
 
         // Target is set for new major version
         var version1 = Version.fromString("8.0");
-        Duration totalBudget = Duration.ofHours(12);
-        Duration nodeBudget = totalBudget.dividedBy(hostCount);
-        versions.setTarget(NodeType.host, version1, totalBudget, false);
-        versions.setTarget(NodeType.confighost, version1, totalBudget, false);
+        versions.setTarget(NodeType.host, version1, Duration.ZERO, false);
+        versions.setTarget(NodeType.confighost, version1, Duration.ZERO, false);
 
         // One  host of each type is upgraded
         for (int i = 0; i < hostCount; i++) {
-            clock.advance(nodeBudget);
             versions.resumeUpgradeOf(NodeType.host, true);
             versions.resumeUpgradeOf(NodeType.confighost, true);
             NodeList hostsRebuilding = hosts.get().rebuilding();

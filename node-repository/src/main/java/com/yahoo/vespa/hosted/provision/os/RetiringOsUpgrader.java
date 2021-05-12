@@ -37,7 +37,10 @@ public class RetiringOsUpgrader implements OsUpgrader {
         NodeList allNodes = nodeRepository.nodes().list();
         Instant now = nodeRepository.clock().instant();
         NodeList candidates = candidates(now, target, allNodes);
-        upgradeNodes(candidates, target.version(), now);
+        candidates.not().deprovisioning()
+                  .byIncreasingOsVersion()
+                  .first(1)
+                  .forEach(node -> deprovision(node, target.version(), now));
     }
 
     @Override
@@ -46,7 +49,7 @@ public class RetiringOsUpgrader implements OsUpgrader {
     }
 
     /** Returns nodes that are candidates for upgrade */
-    protected NodeList candidates(Instant instant, OsVersionTarget target, NodeList allNodes) {
+    private NodeList candidates(Instant instant, OsVersionTarget target, NodeList allNodes) {
         NodeList activeNodes = allNodes.state(Node.State.active).nodeType(target.nodeType());
         if (activeNodes.isEmpty()) return NodeList.of();
 
@@ -55,14 +58,6 @@ public class RetiringOsUpgrader implements OsUpgrader {
         if (instant.isBefore(retiredAt.plus(nodeBudget))) return NodeList.of(); // Budget has not been spent yet
 
         return activeNodes.osVersionIsBefore(target.version());
-    }
-
-    /** Trigger upgrade of candidates to given version */
-    protected void upgradeNodes(NodeList candidates, Version version, Instant instant) {
-        candidates.not().deprovisioning()
-                  .byIncreasingOsVersion()
-                  .first(1)
-                  .forEach(node -> deprovision(node, version, instant));
     }
 
     /** Upgrade given host by retiring and deprovisioning it */
