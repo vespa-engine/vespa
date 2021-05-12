@@ -20,7 +20,6 @@ import java.nio.ByteBuffer;
 import java.util.Map;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -57,7 +56,7 @@ public class ServletResponseController {
     public ServletResponseController(
             HttpServletRequest servletRequest,
             HttpServletResponse servletResponse,
-            Executor executor,
+            Janitor janitor,
             RequestMetricReporter metricReporter,
             boolean developerMode) throws IOException {
 
@@ -65,7 +64,7 @@ public class ServletResponseController {
         this.servletResponse = servletResponse;
         this.developerMode = developerMode;
         this.servletOutputStreamWriter =
-                new ServletOutputStreamWriter(servletResponse.getOutputStream(), executor, metricReporter);
+                new ServletOutputStreamWriter(servletResponse.getOutputStream(), janitor, metricReporter);
     }
 
 

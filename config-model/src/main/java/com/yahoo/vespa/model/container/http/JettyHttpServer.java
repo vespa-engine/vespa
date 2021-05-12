@@ -5,6 +5,7 @@ import com.yahoo.component.ComponentId;
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
 import com.yahoo.jdisc.http.ServerConfig;
+import com.yahoo.jdisc.http.server.jetty.Janitor;
 import com.yahoo.osgi.provider.model.ComponentModel;
 import com.yahoo.vespa.model.container.ApplicationContainerCluster;
 import com.yahoo.vespa.model.container.ContainerCluster;
@@ -13,8 +14,6 @@ import com.yahoo.vespa.model.container.component.SimpleComponent;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import static com.yahoo.component.ComponentSpecification.fromString;
 
 /**
  * @author Einar M R Rosenvinge
@@ -33,6 +32,7 @@ public class JettyHttpServer extends SimpleComponent implements ServerConfig.Pro
         final FilterBindingsProviderComponent filterBindingsProviderComponent = new FilterBindingsProviderComponent(componentId);
         addChild(filterBindingsProviderComponent);
         inject(filterBindingsProviderComponent);
+        inject(new SimpleComponent(Janitor.class.getName()));
     }
 
     public void setHostedVespa(boolean isHostedVespa) { this.isHostedVespa = isHostedVespa; }
