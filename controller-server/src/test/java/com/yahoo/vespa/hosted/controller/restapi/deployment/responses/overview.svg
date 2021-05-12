@@ -1,4 +1,4 @@
-<svg xmlns='http://www.w3.org/2000/svg' width='845.1567000000001' height='20' role='img' aria-label='Deployment Status'>
+<svg xmlns='http://www.w3.org/2000/svg' width='768.8784' height='20' role='img' aria-label='Deployment Status'>
     <title>Deployment Status</title>
     <linearGradient id='light' x2='0' y2='100%'>
         <stop offset='0'  stop-color='#fff' stop-opacity='.5'/>
@@ -39,35 +39,32 @@
         <animate attributeName='x2' values='-10%;250%;120%;-10%' dur='6s' repeatCount='indefinite' />
     </linearGradient>
     <clipPath id='rounded'>
-        <rect width='845.1567000000001' height='20' rx='3' fill='#fff'/>
+        <rect width='768.8784' height='20' rx='3' fill='#fff'/>
     </clipPath>
     <g clip-path='url(#rounded)'>
-        <rect x='839.1567000000001' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='802.1089000000001' rx='3' width='43.0478' height='20' fill='url(#run-on-success)'/>
-        <polygon points='703.9440000000001 0 703.9440000000001 20 809.6089000000001 20 817.6089000000001 0' fill='#00ff48'/>
-        <rect x='703.9440000000001' rx='3' width='141.2127' height='20' fill='url(#shade)'/>
-        <rect x='703.9440000000001' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='666.8962' rx='3' width='43.0478' height='20' fill='#bf103c'/>
-        <polygon points='543.0818 0 543.0818 20 674.3962 20 682.3962 0' fill='#00ff48'/>
-        <rect x='543.0818' rx='3' width='166.86219999999997' height='20' fill='url(#shade)'/>
-        <rect x='543.0818' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='439.0446' rx='3' width='110.0372' height='20' fill='url(#run-on-success)'/>
-        <rect x='449.0446' rx='3' width='100.0372' height='20' fill='url(#shade)'/>
-        <rect x='449.0446' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='411.9968' rx='3' width='43.0478' height='20' fill='#00ff48'/>
-        <polygon points='314.5789 0 314.5789 20 419.4968 20 427.4968 0' fill='url(#run-on-failure)'/>
-        <rect x='314.5789' rx='3' width='140.4657' height='20' fill='url(#shade)'/>
-        <rect x='314.5789' rx='3' width='9' height='20' fill='url(#shadow)'/>
-        <rect x='228.3006' rx='3' width='92.2783' height='20' fill='url(#run-on-success)'/>
-        <rect x='238.3006' rx='3' width='82.2783' height='20' fill='url(#shade)'/>
+        <rect x='762.8784' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='725.8306' rx='3' width='43.0478' height='20' fill='url(#run-on-success)'/>
+        <polygon points='627.6657 0 627.6657 20 733.3306 20 741.3306 0' fill='#00ff48'/>
+        <rect x='627.6657' rx='3' width='141.2127' height='20' fill='url(#shade)'/>
+        <rect x='627.6657' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='590.6179' rx='3' width='43.0478' height='20' fill='#bf103c'/>
+        <polygon points='466.8035 0 466.8035 20 598.1179 20 606.1179 0' fill='#00ff48'/>
+        <rect x='466.8035' rx='3' width='166.86219999999997' height='20' fill='url(#shade)'/>
+        <rect x='466.8035' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='362.7663' rx='3' width='110.0372' height='20' fill='url(#run-on-success)'/>
+        <rect x='372.7663' rx='3' width='100.0372' height='20' fill='url(#shade)'/>
+        <rect x='372.7663' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='335.7185' rx='3' width='43.0478' height='20' fill='#00ff48'/>
+        <polygon points='238.3006 0 238.3006 20 343.2185 20 351.2185 0' fill='url(#run-on-failure)'/>
+        <rect x='238.3006' rx='3' width='140.4657' height='20' fill='url(#shade)'/>
         <rect x='238.3006' rx='3' width='9' height='20' fill='url(#shadow)'/>
         <rect x='152.7498' rx='3' width='91.55080000000001' height='20' fill='#00ff48'/>
         <rect x='162.7498' rx='3' width='81.55080000000001' height='20' fill='url(#shade)'/>
         <rect width='168.7498' height='20' fill='#5a5a5a'/>
         <rect x='-6.0' rx='3' width='174.7498' height='20' fill='url(#shade)'/>
         <rect width='2' height='20' fill='url(#left-light)'/>
-        <rect x='843.1567000000001' width='2' height='20' fill='url(#right-shadow)'/>
-        <rect width='845.1567000000001' height='20' fill='url(#light)'/>
+        <rect x='766.8784' width='2' height='20' fill='url(#right-shadow)'/>
+        <rect width='768.8784' height='20' fill='url(#light)'/>
     </g>
     <g fill='#fff' text-anchor='middle' font-family='Verdana,Geneva,DejaVu Sans,sans-serif' text-rendering='geometricPrecision' font-size='10'>
         <svg x='8.5' y='3.0' width='16.0' height='16.0' viewBox='0 0 150 150'>
@@ -94,27 +91,25 @@
         <text x='96.3749' y='13' fill='#fff' textLength='128.7498'>tenant.application.default</text>
         <text x='207.02519999999998' y='14' fill='#000' fill-opacity='.3' textLength='59.5508'>system-test</text>
         <text x='206.52519999999998' y='13' fill='#fff' textLength='59.5508'>system-test</text>
-        <text x='282.93975' y='14' fill='#000' fill-opacity='.3' textLength='60.2783'>staging-test</text>
-        <text x='282.43975' y='13' fill='#fff' textLength='60.2783'>staging-test</text>
-        <text x='354.21315' y='14' fill='#000' fill-opacity='.3' textLength='50.2685'>us-west-1</text>
-        <text x='353.71315' y='13' fill='#fff' textLength='50.2685'>us-west-1</text>
-        <text x='403.9221' y='14' fill='#000' fill-opacity='.3' textLength='33.1494'>deploy</text>
-        <text x='403.4221' y='13' fill='#fff' textLength='33.1494'>deploy</text>
-        <text x='438.02070000000003' y='14' fill='#000' fill-opacity='.3' textLength='19.047800000000002'>test</text>
-        <text x='437.52070000000003' y='13' fill='#fff' textLength='19.047800000000002'>test</text>
-        <text x='502.5632' y='14' fill='#000' fill-opacity='.3' textLength='78.0372'>aws-us-east-1a</text>
-        <text x='502.0632' y='13' fill='#fff' textLength='78.0372'>aws-us-east-1a</text>
-        <text x='595.9143' y='14' fill='#000' fill-opacity='.3' textLength='76.66499999999999'>ap-southeast-1</text>
-        <text x='595.4143' y='13' fill='#fff' textLength='76.66499999999999'>ap-southeast-1</text>
-        <text x='658.8215' y='14' fill='#000' fill-opacity='.3' textLength='33.1494'>deploy</text>
-        <text x='658.3215' y='13' fill='#fff' textLength='33.1494'>deploy</text>
-        <text x='692.9201' y='14' fill='#000' fill-opacity='.3' textLength='19.047800000000002'>test</text>
-        <text x='692.4201' y='13' fill='#fff' textLength='19.047800000000002'>test</text>
-        <text x='743.9517500000001' y='14' fill='#000' fill-opacity='.3' textLength='51.015499999999996'>eu-west-1</text>
-        <text x='743.4517500000001' y='13' fill='#fff' textLength='51.015499999999996'>eu-west-1</text>
-        <text x='794.0342' y='14' fill='#000' fill-opacity='.3' textLength='33.1494'>deploy</text>
-        <text x='793.5342' y='13' fill='#fff' textLength='33.1494'>deploy</text>
-        <text x='828.1328000000001' y='14' fill='#000' fill-opacity='.3' textLength='19.047800000000002'>test</text>
-        <text x='827.6328000000001' y='13' fill='#fff' textLength='19.047800000000002'>test</text>
+        <text x='277.93485' y='14' fill='#000' fill-opacity='.3' textLength='50.2685'>us-west-1</text>
+        <text x='277.43485' y='13' fill='#fff' textLength='50.2685'>us-west-1</text>
+        <text x='327.6438' y='14' fill='#000' fill-opacity='.3' textLength='33.1494'>deploy</text>
+        <text x='327.1438' y='13' fill='#fff' textLength='33.1494'>deploy</text>
+        <text x='361.74240000000003' y='14' fill='#000' fill-opacity='.3' textLength='19.047800000000002'>test</text>
+        <text x='361.24240000000003' y='13' fill='#fff' textLength='19.047800000000002'>test</text>
+        <text x='426.2849' y='14' fill='#000' fill-opacity='.3' textLength='78.0372'>aws-us-east-1a</text>
+        <text x='425.7849' y='13' fill='#fff' textLength='78.0372'>aws-us-east-1a</text>
+        <text x='519.636' y='14' fill='#000' fill-opacity='.3' textLength='76.66499999999999'>ap-southeast-1</text>
+        <text x='519.136' y='13' fill='#fff' textLength='76.66499999999999'>ap-southeast-1</text>
+        <text x='582.5432' y='14' fill='#000' fill-opacity='.3' textLength='33.1494'>deploy</text>
+        <text x='582.0432' y='13' fill='#fff' textLength='33.1494'>deploy</text>
+        <text x='616.6418' y='14' fill='#000' fill-opacity='.3' textLength='19.047800000000002'>test</text>
+        <text x='616.1418' y='13' fill='#fff' textLength='19.047800000000002'>test</text>
+        <text x='667.67345' y='14' fill='#000' fill-opacity='.3' textLength='51.015499999999996'>eu-west-1</text>
+        <text x='667.17345' y='13' fill='#fff' textLength='51.015499999999996'>eu-west-1</text>
+        <text x='717.7559' y='14' fill='#000' fill-opacity='.3' textLength='33.1494'>deploy</text>
+        <text x='717.2559' y='13' fill='#fff' textLength='33.1494'>deploy</text>
+        <text x='751.8545' y='14' fill='#000' fill-opacity='.3' textLength='19.047800000000002'>test</text>
+        <text x='751.3545' y='13' fill='#fff' textLength='19.047800000000002'>test</text>
     </g>
 </svg>
