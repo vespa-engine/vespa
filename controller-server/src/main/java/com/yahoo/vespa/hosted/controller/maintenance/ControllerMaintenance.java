@@ -135,7 +135,7 @@ public class ControllerMaintenance extends AbstractComponent {
             this.deploymentMetricsMaintainer = duration(10, MINUTES);
             this.applicationOwnershipConfirmer = duration(12, HOURS);
             this.systemUpgrader = duration(2, MINUTES);
-            this.jobRunner = duration(90, SECONDS);
+            this.jobRunner = duration(system.isCd() ? 45 : 90, SECONDS);
             this.osVersionStatusUpdater = duration(2, MINUTES);
             this.osUpgrader = duration(1, MINUTES);
             this.osUpgradeScheduler = duration(3, HOURS);
