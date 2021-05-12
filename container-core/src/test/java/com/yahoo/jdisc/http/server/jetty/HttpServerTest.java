@@ -917,6 +917,20 @@ public class HttpServerTest {
         assertThat(driver.close(), is(true));
     }
 
+    @Test
+    public void requireThatRequestsPerConnectionMetricIsAggregated() throws IOException {
+        Path privateKeyFile = tmpFolder.newFile().toPath();
+        Path certificateFile = tmpFolder.newFile().toPath();
+        generatePrivateKeyAndCertificate(privateKeyFile, certificateFile);
+        var metricConsumer = new MetricConsumerMock();
+        InMemoryConnectionLog connectionLog = new InMemoryConnectionLog();
+        JettyTestDriver driver = createSslTestDriver(certificateFile, privateKeyFile, metricConsumer, connectionLog);
+        driver.client().get("/").expectStatusCode(is(OK));
+        assertThat(driver.close(), is(true));
+        verify(metricConsumer.mockitoMock(), atLeast(1))
+                .set(MetricDefinitions.REQUESTS_PER_CONNECTION, 1L, MetricConsumerMock.STATIC_CONTEXT);
+    }
+
     private ContentResponse sendJettyClientRequest(JettyTestDriver testDriver, Path certificateFile, Object tag)
             throws Exception {
         HttpClient client = createJettyHttpClient(certificateFile);

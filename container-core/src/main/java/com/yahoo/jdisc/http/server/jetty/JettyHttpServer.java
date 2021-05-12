@@ -83,10 +83,11 @@ public class JettyHttpServer extends AbstractServerProvider {
         setupJmx(server, serverConfig);
         configureJettyThreadpool(server, serverConfig);
         JettyConnectionLogger connectionLogger = new JettyConnectionLogger(serverConfig.connectionLog(), connectionLog);
+        ConnectionMetricAggregator connectionMetricAggregator = new ConnectionMetricAggregator(serverConfig, metric);
 
         for (ConnectorFactory connectorFactory : connectorFactories.allComponents()) {
             ConnectorConfig connectorConfig = connectorFactory.getConnectorConfig();
-            server.addConnector(connectorFactory.createConnector(metric, server, connectionLogger));
+            server.addConnector(connectorFactory.createConnector(metric, server, connectionLogger, connectionMetricAggregator));
             listenedPorts.add(connectorConfig.listenPort());
         }
 

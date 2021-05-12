@@ -33,7 +33,6 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
-import java.util.Objects;
 import java.util.UUID;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -88,11 +87,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void onOpened(Connection connection) {
         handleListenerInvocation("Connection.Listener", "onOpened", "%h", List.of(connection), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(connection.getEndPoint());
-            ConnectionInfo info = connectionInfo.get(endpoint);
-            if (info == null) {
-                info = ConnectionInfo.from(endpoint);
-                connectionInfo.put(endpoint, info);
-            }
+            ConnectionInfo info = connectionInfo.computeIfAbsent(endpoint, ConnectionInfo::from);
             String connectionClassName = connection.getClass().getSimpleName(); // For hidden implementations of Connection
             if (connection instanceof SslConnection) {
                 SSLEngine sslEngine = ((SslConnection) connection).getSSLEngine();
@@ -117,7 +112,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void onClosed(Connection connection) {
         handleListenerInvocation("Connection.Listener", "onClosed", "%h", List.of(connection), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(connection.getEndPoint());
-            ConnectionInfo info = connectionInfo.get(endpoint);
+            ConnectionInfo info = connectionInfo.get(endpoint).orElse(null);
             if (info == null) return; // Closed connection already handled
             if (connection instanceof HttpConnection) {
                 info.setHttpBytes(connection.getBytesIn(), connection.getBytesOut());
@@ -148,7 +143,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void onRequestBegin(Request request) {
         handleListenerInvocation("HttpChannel.Listener", "onRequestBegin", "%h", List.of(request), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(request.getHttpChannel().getEndPoint());
-            ConnectionInfo info = Objects.requireNonNull(connectionInfo.get(endpoint));
+            ConnectionInfo info = connectionInfo.get(endpoint).get();
             info.incrementRequests();
             request.setAttribute(CONNECTION_ID_REQUEST_ATTRIBUTE, info.uuid());
         });
@@ -158,7 +153,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void onResponseBegin(Request request) {
         handleListenerInvocation("HttpChannel.Listener", "onResponseBegin", "%h", List.of(request), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(request.getHttpChannel().getEndPoint());
-            ConnectionInfo info = connectionInfo.get(endpoint);
+            ConnectionInfo info = connectionInfo.get(endpoint).orElse(null);
             if (info == null) return; // Connection closed before response started - observed during Jetty server shutdown
             info.incrementResponses();
         });
@@ -174,7 +169,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void handshakeSucceeded(Event event) {
         SSLEngine sslEngine = event.getSSLEngine();
         handleListenerInvocation("SslHandshakeListener", "handshakeSucceeded", "sslEngine=%h", List.of(sslEngine), () -> {
-            ConnectionInfo info = sslToConnectionInfo.remove(sslEngine);
+            ConnectionInfo info = sslToConnectionInfo.remove(sslEngine).orElse(null);
             if (info == null) return;
             info.setSslSessionDetails(sslEngine.getSession());
         });
@@ -185,7 +180,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         SSLEngine sslEngine = event.getSSLEngine();
         handleListenerInvocation("SslHandshakeListener", "handshakeFailed", "sslEngine=%h,failure=%s", List.of(sslEngine, failure), () -> {
             log.log(Level.FINE, failure, failure::toString);
-            ConnectionInfo info = sslToConnectionInfo.remove(sslEngine);
+            ConnectionInfo info = sslToConnectionInfo.remove(sslEngine).orElse(null);
             if (info == null) return;
             info.setSslHandshakeFailure((SSLHandshakeException)failure);
         });
