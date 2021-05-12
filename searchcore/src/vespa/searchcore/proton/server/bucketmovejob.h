@@ -36,12 +36,12 @@ namespace bucketdb { class IBucketCreateNotifier; }
  * 3 - Actual movement is then done in master thread while still holding bucket lock. Once bucket has fully moved
  *     bucket modified notification is sent.
  */
-class BucketMoveJobV2 : public BlockableMaintenanceJob,
+class BucketMoveJob : public BlockableMaintenanceJob,
                       public IClusterStateChangedHandler,
                       public bucketdb::IBucketCreateListener,
                       public IBucketStateChangedHandler,
                       public IDiskMemUsageListener,
-                      public std::enable_shared_from_this<BucketMoveJobV2>
+                      public std::enable_shared_from_this<BucketMoveJob>
 {
 private:
     using BucketExecutor = storage::spi::BucketExecutor;
@@ -79,24 +79,24 @@ private:
     IBucketStateChangedNotifier       &_bucketStateChangedNotifier;
     IDiskMemUsageNotifier             &_diskMemUsageNotifier;
 
-    BucketMoveJobV2(const std::shared_ptr<IBucketStateCalculator> &calc,
-                    RetainGuard dbRetainer,
-                    IDocumentMoveHandler &moveHandler,
-                    IBucketModifiedHandler &modifiedHandler,
-                    IThreadService & master,
-                    BucketExecutor & bucketExecutor,
-                    const MaintenanceDocumentSubDB &ready,
-                    const MaintenanceDocumentSubDB &notReady,
-                    bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
-                    IClusterStateChangedNotifier &clusterStateChangedNotifier,
-                    IBucketStateChangedNotifier &bucketStateChangedNotifier,
-                    IDiskMemUsageNotifier &diskMemUsageNotifier,
-                    const BlockableMaintenanceJobConfig &blockableConfig,
-                    const vespalib::string &docTypeName,
-                    document::BucketSpace bucketSpace);
+    BucketMoveJob(const std::shared_ptr<IBucketStateCalculator> &calc,
+                  RetainGuard dbRetainer,
+                  IDocumentMoveHandler &moveHandler,
+                  IBucketModifiedHandler &modifiedHandler,
+                  IThreadService & master,
+                  BucketExecutor & bucketExecutor,
+                  const MaintenanceDocumentSubDB &ready,
+                  const MaintenanceDocumentSubDB &notReady,
+                  bucketdb::IBucketCreateNotifier &bucketCreateNotifier,
+                  IClusterStateChangedNotifier &clusterStateChangedNotifier,
+                  IBucketStateChangedNotifier &bucketStateChangedNotifier,
+                  IDiskMemUsageNotifier &diskMemUsageNotifier,
+                  const BlockableMaintenanceJobConfig &blockableConfig,
+                  const vespalib::string &docTypeName,
+                  document::BucketSpace bucketSpace);
 
     void startMove(BucketMover & mover, size_t maxDocsToMove);
-    static void prepareMove(std::shared_ptr<BucketMoveJobV2> job, BucketMover::MoveKeys keys, IDestructorCallbackSP context);
+    static void prepareMove(std::shared_ptr<BucketMoveJob> job, BucketMover::MoveKeys keys, IDestructorCallbackSP context);
     void completeMove(GuardedMoveOps moveOps, IDestructorCallbackSP context);
     bool checkIfMoverComplete(const BucketMover & mover);
     void considerBucket(const bucketdb::Guard & guard, BucketId bucket);
@@ -109,11 +109,11 @@ private:
     BucketMoverSP greedyCreateMover();
     void backFillMovers();
     void moveDocs(size_t maxDocsToMove);
-    static void failOperation(std::shared_ptr<BucketMoveJobV2> job, BucketId bucket);
+    static void failOperation(std::shared_ptr<BucketMoveJob> job, BucketId bucket);
     void recompute(const bucketdb::Guard & guard);
     class StartMove;
 public:
-    static std::shared_ptr<BucketMoveJobV2>
+    static std::shared_ptr<BucketMoveJob>
     create(const std::shared_ptr<IBucketStateCalculator> &calc,
            RetainGuard dbRetainer,
            IDocumentMoveHandler &moveHandler,
@@ -130,7 +130,7 @@ public:
            const vespalib::string &docTypeName,
            document::BucketSpace bucketSpace);
 
-    ~BucketMoveJobV2() override;
+    ~BucketMoveJob() override;
 
     bool scanAndMove(size_t maxBuckets2Move, size_t maxDocsToMovePerBucket);
     bool done() const;
