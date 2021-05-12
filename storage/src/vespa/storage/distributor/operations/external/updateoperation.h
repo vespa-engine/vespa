@@ -23,7 +23,7 @@ class DistributorBucketSpace;
 class UpdateOperation : public Operation
 {
 public:
-    UpdateOperation(DistributorNodeContext& node_ctx,
+    UpdateOperation(const DistributorNodeContext& node_ctx,
                     DistributorStripeOperationContext& op_ctx,
                     DistributorBucketSpace& bucketSpace,
                     const std::shared_ptr<api::UpdateCommand>& msg,
@@ -48,7 +48,7 @@ private:
     const api::Timestamp _new_timestamp;
     const bool _is_auto_create_update;
 
-    DistributorNodeContext& _node_ctx;
+    const DistributorNodeContext& _node_ctx;
     DistributorBucketSpace &_bucketSpace;
     std::pair<document::BucketId, uint16_t> _newestTimestampLocation;
     api::BucketInfo _infoAtSendTime; // Should be same across all replicas

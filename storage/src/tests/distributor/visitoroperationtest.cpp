@@ -104,8 +104,8 @@ struct VisitorOperationTest : Test, DistributorTestUtil {
             const VisitorOperation::Config& config)
     {
         return std::make_unique<VisitorOperation>(
-                distributor_component(),
-                distributor_component(),
+                node_context(),
+                operation_context(),
                 getDistributorBucketSpace(),
                 msg,
                 config,

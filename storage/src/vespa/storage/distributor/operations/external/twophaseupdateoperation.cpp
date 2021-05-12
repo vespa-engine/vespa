@@ -25,9 +25,9 @@ namespace storage::distributor {
 
 
 TwoPhaseUpdateOperation::TwoPhaseUpdateOperation(
-        DistributorNodeContext& node_ctx,
+        const DistributorNodeContext& node_ctx,
         DistributorStripeOperationContext& op_ctx,
-        DocumentSelectionParser& parser,
+        const DocumentSelectionParser& parser,
         DistributorBucketSpace &bucketSpace,
         std::shared_ptr<api::UpdateCommand> msg,
         DistributorMetricSet& metrics,

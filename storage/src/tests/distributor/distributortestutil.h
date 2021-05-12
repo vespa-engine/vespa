@@ -20,10 +20,12 @@ namespace distributor {
 class Distributor;
 class DistributorBucketSpace;
 class DistributorBucketSpaceRepo;
+class DistributorNodeContext;
 class DistributorStripe;
 class DistributorStripeComponent;
 class DistributorStripeOperationContext;
 class DistributorStripePool;
+class DocumentSelectionParser;
 class ExternalOperationHandler;
 class IdealStateManager;
 class Operation;
@@ -116,8 +118,9 @@ public:
     StripeBucketDBUpdater& getBucketDBUpdater();
     IdealStateManager& getIdealStateManager();
     ExternalOperationHandler& getExternalOperationHandler();
-    storage::distributor::DistributorStripeComponent& distributor_component();
+    const storage::distributor::DistributorNodeContext& node_context() const;
     storage::distributor::DistributorStripeOperationContext& operation_context();
+    const DocumentSelectionParser& doc_selection_parser() const;
 
     Distributor& getDistributor() noexcept { return *_distributor; }
     const Distributor& getDistributor() const noexcept { return *_distributor; }

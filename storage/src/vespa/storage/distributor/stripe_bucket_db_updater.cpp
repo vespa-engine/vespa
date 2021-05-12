@@ -28,17 +28,15 @@ using vespalib::xml::XmlAttribute;
 
 namespace storage::distributor {
 
-StripeBucketDBUpdater::StripeBucketDBUpdater(DistributorStripeInterface& owner,
-                                             DistributorBucketSpaceRepo& bucketSpaceRepo,
-                                             DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
+StripeBucketDBUpdater::StripeBucketDBUpdater(const DistributorNodeContext& node_ctx,
+                                             DistributorStripeOperationContext& op_ctx,
+                                             DistributorStripeInterface& owner,
                                              DistributorMessageSender& sender,
-                                             DistributorComponentRegister& compReg,
                                              bool use_legacy_mode)
     : framework::StatusReporter("bucketdb", "Bucket DB Updater"),
-      _distributorComponent(owner, bucketSpaceRepo, readOnlyBucketSpaceRepo, compReg, "Bucket DB Updater"),
-      _node_ctx(_distributorComponent),
-      _op_ctx(_distributorComponent),
-      _distributor_interface(_distributorComponent.getDistributor()),
+      _node_ctx(node_ctx),
+      _op_ctx(op_ctx),
+      _distributor_interface(owner),
       _delayedRequests(),
       _sentMessages(),
       _pendingClusterState(),

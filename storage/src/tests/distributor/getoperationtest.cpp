@@ -57,7 +57,7 @@ struct GetOperationTest : Test, DistributorTestUtil {
     void sendGet(api::InternalReadConsistency consistency = api::InternalReadConsistency::Strong) {
         auto msg = std::make_shared<api::GetCommand>(makeDocumentBucket(BucketId(0)), docId, document::AllFields::NAME);
         op = std::make_unique<GetOperation>(
-                distributor_component(), getDistributorBucketSpace(),
+                node_context(), getDistributorBucketSpace(),
                 getDistributorBucketSpace().getBucketDatabase().acquire_read_guard(),
                 msg, getDistributor().getMetrics().gets,
                 consistency);

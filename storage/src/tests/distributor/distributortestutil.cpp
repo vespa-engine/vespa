@@ -295,7 +295,7 @@ DistributorTestUtil::insertBucketInfo(document::BucketId id,
     if (active) {
         info2.setActive();
     }
-    BucketCopy copy(distributor_component().getUniqueTimestamp(), node, info2);
+    BucketCopy copy(operation_context().generate_unique_timestamp(), node, info2);
 
     entry->addNode(copy.setTrusted(trusted), toVector<uint16_t>(0));
 
@@ -355,14 +355,18 @@ DistributorTestUtil::getExternalOperationHandler() {
     return _distributor->external_operation_handler();
 }
 
-storage::distributor::DistributorStripeComponent&
-DistributorTestUtil::distributor_component() {
-    // TODO STRIPE tests use this to indirectly access bucket space repos/DBs!
+const storage::distributor::DistributorNodeContext&
+DistributorTestUtil::node_context() const {
     return _distributor->distributor_component();
 }
 
 storage::distributor::DistributorStripeOperationContext&
 DistributorTestUtil::operation_context() {
+    return _distributor->distributor_component();
+}
+
+const DocumentSelectionParser&
+DistributorTestUtil::doc_selection_parser() const {
     return _distributor->distributor_component();
 }
 

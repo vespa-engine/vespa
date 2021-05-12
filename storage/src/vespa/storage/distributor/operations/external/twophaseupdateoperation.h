@@ -55,9 +55,9 @@ class GetOperation;
 class TwoPhaseUpdateOperation : public SequencedOperation
 {
 public:
-    TwoPhaseUpdateOperation(DistributorNodeContext& node_ctx,
+    TwoPhaseUpdateOperation(const DistributorNodeContext& node_ctx,
                             DistributorStripeOperationContext& op_ctx,
-                            DocumentSelectionParser& parser,
+                            const DocumentSelectionParser& parser,
                             DistributorBucketSpace &bucketSpace,
                             std::shared_ptr<api::UpdateCommand> msg,
                             DistributorMetricSet& metrics,
@@ -145,9 +145,9 @@ private:
     PersistenceOperationMetricSet& _metadata_get_metrics;
     std::shared_ptr<api::UpdateCommand> _updateCmd;
     std::shared_ptr<api::StorageReply> _updateReply;
-    DistributorNodeContext& _node_ctx;
+    const DistributorNodeContext& _node_ctx;
     DistributorStripeOperationContext& _op_ctx;
-    DocumentSelectionParser& _parser;
+    const DocumentSelectionParser& _parser;
     DistributorBucketSpace &_bucketSpace;
     SentMessageMap _sentMessageMap;
     SendState _sendState;

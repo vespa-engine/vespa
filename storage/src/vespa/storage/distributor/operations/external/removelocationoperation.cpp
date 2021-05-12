@@ -18,9 +18,9 @@ using namespace storage;
 using document::BucketSpace;
 
 RemoveLocationOperation::RemoveLocationOperation(
-        DistributorNodeContext& node_ctx,
+        const DistributorNodeContext& node_ctx,
         DistributorStripeOperationContext& op_ctx,
-        DocumentSelectionParser& parser,
+        const DocumentSelectionParser& parser,
         DistributorBucketSpace &bucketSpace,
         std::shared_ptr<api::RemoveLocationCommand> msg,
         PersistenceOperationMetricSet& metric)
@@ -41,8 +41,8 @@ RemoveLocationOperation::~RemoveLocationOperation() = default;
 
 int
 RemoveLocationOperation::getBucketId(
-        DistributorNodeContext& node_ctx,
-        DocumentSelectionParser& parser,
+        const DistributorNodeContext& node_ctx,
+        const DocumentSelectionParser& parser,
         const api::RemoveLocationCommand& cmd, document::BucketId& bid)
 {
     document::BucketSelector bucketSel(node_ctx.bucket_id_factory());
