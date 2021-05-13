@@ -1,6 +1,7 @@
 // Copyright 2018 Yahoo Holdings. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
 package ai.vespa.models.evaluation;
 
+import ai.vespa.modelintegration.evaluator.OnnxEvaluator;
 import com.yahoo.collections.Pair;
 import com.yahoo.config.FileReference;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
@@ -13,6 +14,7 @@ import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 import com.yahoo.tensor.serialization.TypedBinaryFormat;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 
 import java.io.File;
@@ -29,6 +31,7 @@ import java.util.Optional;
 import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.stream.Collectors;
 
 /**
  * Converts RankProfilesConfig instances to RankingExpressions for evaluation.
@@ -48,11 +51,13 @@ public class RankProfilesConfigImporter {
      * Returns a map of the models contained in this config, indexed on name.
      * The map is modifiable and owned by the caller.
      */
-    public Map<String, Model> importFrom(RankProfilesConfig config, RankingConstantsConfig constantsConfig) {
+    public Map<String, Model> importFrom(RankProfilesConfig config,
+                                         RankingConstantsConfig constantsConfig,
+                                         OnnxModelsConfig onnxModelsConfig) {
         try {
             Map<String, Model> models = new HashMap<>();
             for (RankProfilesConfig.Rankprofile profile : config.rankprofile()) {
-                Model model = importProfile(profile, constantsConfig);
+                Model model = importProfile(profile, constantsConfig, onnxModelsConfig);
                 models.put(model.name(), model);
             }
             return models;
@@ -62,9 +67,12 @@ public class RankProfilesConfigImporter {
         }
     }
 
-    private Model importProfile(RankProfilesConfig.Rankprofile profile, RankingConstantsConfig constantsConfig)
+    private Model importProfile(RankProfilesConfig.Rankprofile profile,
+                                RankingConstantsConfig constantsConfig,
+                                OnnxModelsConfig onnxModelsConfig)
             throws ParseException {
 
+        List<OnnxModel> onnxModels = readOnnxModelsConfig(onnxModelsConfig);
         List<Constant> constants = readLargeConstants(constantsConfig);
 
         Map<FunctionReference, ExpressionFunction> functions = new LinkedHashMap<>();
@@ -76,7 +84,7 @@ public class RankProfilesConfigImporter {
             Optional<FunctionReference> reference = FunctionReference.fromSerial(property.name());
             Optional<Pair<FunctionReference, String>> argumentType = FunctionReference.fromTypeArgumentSerial(property.name());
             Optional<FunctionReference> returnType = FunctionReference.fromReturnTypeSerial(property.name());
-            if ( reference.isPresent()) {
+            if (reference.isPresent()) {
                 RankingExpression expression = new RankingExpression(reference.get().functionName(), property.value());
                 ExpressionFunction function = new ExpressionFunction(reference.get().functionName(),
                                                                      Collections.emptyList(),
@@ -122,7 +130,7 @@ public class RankProfilesConfigImporter {
         constants.addAll(smallConstantsInfo.asConstants());
 
         try {
-            return new Model(profile.name(), functions, referencedFunctions, constants);
+            return new Model(profile.name(), functions, referencedFunctions, constants, onnxModels);
         }
         catch (RuntimeException e) {
             throw new IllegalArgumentException("Could not load model '" + profile.name() + "'", e);
@@ -136,14 +144,36 @@ public class RankProfilesConfigImporter {
         return null;
     }
 
+    private List<OnnxModel> readOnnxModelsConfig(OnnxModelsConfig onnxModelsConfig) {
+        List<OnnxModel> onnxModels = new ArrayList<>();
+        if (onnxModelsConfig != null) {
+            for (OnnxModelsConfig.Model onnxModelConfig : onnxModelsConfig.model()) {
+                onnxModels.add(readOnnxModelConfig(onnxModelConfig));
+            }
+        }
+        return onnxModels;
+    }
+
+    private OnnxModel readOnnxModelConfig(OnnxModelsConfig.Model onnxModelConfig) {
+        try {
+            String name = onnxModelConfig.name();
+            File file = fileAcquirer.waitFor(onnxModelConfig.fileref(), 7, TimeUnit.DAYS);
+            return new OnnxModel(name, file);
+        } catch (InterruptedException e) {
+            throw new IllegalStateException("Gave up waiting for ONNX model " + onnxModelConfig.name());
+        }
+    }
+
     private List<Constant> readLargeConstants(RankingConstantsConfig constantsConfig) {
         List<Constant> constants = new ArrayList<>();
 
-        for (RankingConstantsConfig.Constant constantConfig : constantsConfig.constant()) {
-            constants.add(new Constant(constantConfig.name(),
-                                       readTensorFromFile(constantConfig.name(),
-                                                          TensorType.fromSpec(constantConfig.type()),
-                                                          constantConfig.fileref())));
+        if (constantsConfig != null) {
+            for (RankingConstantsConfig.Constant constantConfig : constantsConfig.constant()) {
+                constants.add(new Constant(constantConfig.name(),
+                                           readTensorFromFile(constantConfig.name(),
+                                                              TensorType.fromSpec(constantConfig.type()),
+                                                              constantConfig.fileref())));
+            }
         }
         return constants;
     }

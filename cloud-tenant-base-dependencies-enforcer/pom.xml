@@ -221,6 +221,7 @@
                                         <include>com.google.protobuf:protobuf-java:3.7.0:jar:test</include>
                                         <include>com.ibm.icu:icu4j:57.1:jar:test</include>
                                         <include>com.intellij:annotations:12.0:jar:test</include>
+                                        <include>com.microsoft.onnxruntime:onnxruntime:1.7.0:jar:test</include>
                                         <include>com.optimaize.languagedetector:language-detector:0.6:jar:test</include>
                                         <include>com.thaiopensource:jing:20091111:jar:test</include>
                                         <include>com.yahoo.athenz:athenz-auth-core:[${athenz.version}]:jar:test</include>

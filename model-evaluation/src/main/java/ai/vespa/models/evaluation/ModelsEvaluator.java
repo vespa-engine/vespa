@@ -7,6 +7,7 @@ import com.google.inject.Inject;
 import com.yahoo.component.AbstractComponent;
 import com.yahoo.filedistribution.fileacquirer.FileAcquirer;
 import com.yahoo.vespa.config.search.RankProfilesConfig;
+import com.yahoo.vespa.config.search.core.OnnxModelsConfig;
 import com.yahoo.vespa.config.search.core.RankingConstantsConfig;
 
 import java.util.Map;
@@ -27,8 +28,9 @@ public class ModelsEvaluator extends AbstractComponent {
     @Inject
     public ModelsEvaluator(RankProfilesConfig config,
                            RankingConstantsConfig constantsConfig,
+                           OnnxModelsConfig onnxModelsConfig,
                            FileAcquirer fileAcquirer) {
-        this(new RankProfilesConfigImporter(fileAcquirer).importFrom(config, constantsConfig));
+        this(new RankProfilesConfigImporter(fileAcquirer).importFrom(config, constantsConfig, onnxModelsConfig));
     }
 
     public ModelsEvaluator(Map<String, Model> models) {

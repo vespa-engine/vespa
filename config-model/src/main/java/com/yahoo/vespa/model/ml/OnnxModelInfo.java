@@ -14,6 +14,7 @@ import com.yahoo.tensor.TensorType;
 import onnx.Onnx;
 
 import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;

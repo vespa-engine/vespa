@@ -11,6 +11,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.DoubleValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.searchlib.rankingexpression.evaluation.Value;
 import com.yahoo.searchlib.rankingexpression.rule.CompositeNode;
+import com.yahoo.searchlib.rankingexpression.rule.ConstantNode;
 import com.yahoo.searchlib.rankingexpression.rule.ExpressionNode;
 import com.yahoo.searchlib.rankingexpression.rule.ReferenceNode;
 import com.yahoo.tensor.Tensor;
@@ -20,6 +21,7 @@ import java.util.Arrays;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Set;
 
 /**
@@ -41,9 +43,10 @@ public final class LazyArrayContext extends Context implements ContextIndex {
     LazyArrayContext(ExpressionFunction function,
                      Map<FunctionReference, ExpressionFunction> referencedFunctions,
                      List<Constant> constants,
+                     List<OnnxModel> onnxModels,
                      Model model) {
         this.function = function;
-        this.indexedBindings = new IndexedBindings(function, referencedFunctions, constants, this, model);
+        this.indexedBindings = new IndexedBindings(function, referencedFunctions, constants, onnxModels, this, model);
     }
 
     /**
@@ -117,6 +120,9 @@ public final class LazyArrayContext extends Context implements ContextIndex {
     /** Returns the (immutable) subset of names in this which must be bound when invoking */
     public Set<String> arguments() { return indexedBindings.arguments(); }
 
+    /** Returns the set of ONNX models that need to be evaluated on this context */
+    public Set<OnnxModel> onnxModels() { return indexedBindings.onnxModels(); }
+
     private Integer requireIndexOf(String name) {
         Integer index = indexedBindings.indexOf(name);
         if (index == null)
@@ -152,18 +158,24 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         /** The current values set */
         private final Value[] values;
 
+        /** ONNX models */
+        private final ImmutableSet<OnnxModel> onnxModels;
+
         /** The object instance which encodes "no value is set". The actual value of this is never used. */
         private static final Value missing = new DoubleValue(Double.NaN).freeze();
 
         /** The value to return for lookups where no value is set (default: NaN) */
         private Value missingValue = new DoubleValue(Double.NaN).freeze();
 
+
         private IndexedBindings(ImmutableMap<String, Integer> nameToIndex,
                                 Value[] values,
-                                ImmutableSet<String> arguments) {
+                                ImmutableSet<String> arguments,
+                                ImmutableSet<OnnxModel> onnxModels) {
             this.nameToIndex = nameToIndex;
             this.values = values;
             this.arguments = arguments;
+            this.onnxModels = onnxModels;
         }
 
         /**
@@ -173,13 +185,36 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         IndexedBindings(ExpressionFunction function,
                         Map<FunctionReference, ExpressionFunction> referencedFunctions,
                         List<Constant> constants,
+                        List<OnnxModel> onnxModelList,
                         LazyArrayContext owner,
                         Model model) {
             // 1. Determine and prepare bind targets
             Set<String> bindTargets = new LinkedHashSet<>();
             Set<String> arguments = new LinkedHashSet<>(); // Arguments: Bind targets which need to be bound before invocation
-            extractBindTargets(function.getBody().getRoot(), referencedFunctions, bindTargets, arguments);
+            Set<String> onnxModelNames = new LinkedHashSet<>();
+            extractBindTargets(function.getBody().getRoot(), referencedFunctions, bindTargets, arguments, onnxModelNames);
 
+            // Can this be done more elegantly? Perhaps in extractBindTargets?
+
+            // Change this so that the actual invocation, e.g. "onnx(...)" found in the rank expression is
+            // associated with this model, so we don't have to fabricate the feature.
+            // Something like, get evaluator of "onnx(...)" or something?
+            // Then we need a single OnnxModels object - and add this mapping in extractbindtargets
+            // But, we need some way of adding which models are used in this function. Or not?
+
+            Set<OnnxModel> onnxModels = new LinkedHashSet<>();
+            for (OnnxModel onnxModel : onnxModelList) {
+                if (onnxModelNames.contains(onnxModel.name())) {
+                    onnxModels.add(onnxModel);
+                    onnxModel.load();
+                    for(String input : onnxModel.inputs().keySet()) {
+                        bindTargets.add(input);
+                        arguments.add(input);
+                    }
+                }
+            }
+
+            this.onnxModels = ImmutableSet.copyOf(onnxModels);
             this.arguments = ImmutableSet.copyOf(arguments);
             values = new Value[bindTargets.size()];
             Arrays.fill(values, missing);
@@ -214,12 +249,22 @@ public final class LazyArrayContext extends Context implements ContextIndex {
         private void extractBindTargets(ExpressionNode node,
                                         Map<FunctionReference, ExpressionFunction> functions,
                                         Set<String> bindTargets,
-                                        Set<String> arguments) {
+                                        Set<String> arguments,
+                                        Set<String> onnxModelNames) {
             if (isFunctionReference(node)) {
                 FunctionReference reference = FunctionReference.fromSerial(node.toString()).get();
                 bindTargets.add(reference.serialForm());
 
-                extractBindTargets(functions.get(reference).getBody().getRoot(), functions, bindTargets, arguments);
+                ExpressionNode functionNode = functions.get(reference).getBody().getRoot();
+                extractBindTargets(functionNode, functions, bindTargets, arguments, onnxModelNames);
+            }
+            else if (isOnnx(node)) {
+                bindTargets.add(node.toString());
+                arguments.add(node.toString());
+                Optional<String> modelName = getArgument(node);
+                if (modelName.isPresent()) {
+                    onnxModelNames.add(modelName.get());
+                }
             }
             else if (isConstant(node)) {
                 bindTargets.add(node.toString());
@@ -231,15 +276,41 @@ public final class LazyArrayContext extends Context implements ContextIndex {
             else if (node instanceof CompositeNode) {
                 CompositeNode cNode = (CompositeNode)node;
                 for (ExpressionNode child : cNode.children())
-                    extractBindTargets(child, functions, bindTargets, arguments);
+                    extractBindTargets(child, functions, bindTargets, arguments, onnxModelNames);
             }
+        }
+
+        private Optional<String> getArgument(ExpressionNode node) {
+            if (node instanceof ReferenceNode) {
+                ReferenceNode reference = (ReferenceNode) node;
+                if (reference.getArguments().size() > 0) {
+                    if (reference.getArguments().expressions().get(0) instanceof ConstantNode) {
+                        ConstantNode constantNode = (ConstantNode) reference.getArguments().expressions().get(0);
+                        return Optional.of(stripQuotes(constantNode.sourceString()));
+                    }
+                }
+            }
+            return Optional.empty();
+        }
+
+        public static String stripQuotes(String s) {
+            if (s.codePointAt(0) == '"' && s.codePointAt(s.length()-1) == '"')
+                return s.substring(1, s.length()-1);
+            return s;
         }
 
         private boolean isFunctionReference(ExpressionNode node) {
             if ( ! (node instanceof ReferenceNode)) return false;
-
             ReferenceNode reference = (ReferenceNode)node;
             return reference.getName().equals("rankingExpression") && reference.getArguments().size() == 1;
+        }
+
+        private boolean isOnnx(ExpressionNode node) {
+            if (node instanceof ReferenceNode) {
+                ReferenceNode reference = (ReferenceNode) node;
+                return reference.getName().equals("onnx") || reference.getName().equals("onnxModel");
+            }
+            return false;
         }
 
         private boolean isConstant(ExpressionNode node) {
@@ -260,13 +331,14 @@ public final class LazyArrayContext extends Context implements ContextIndex {
 
         Set<String> names() { return nameToIndex.keySet(); }
         Set<String> arguments() { return arguments; }
+        Set<OnnxModel> onnxModels() { return onnxModels; }
         Integer indexOf(String name) { return nameToIndex.get(name); }
 
         IndexedBindings copy(Context context) {
             Value[] valueCopy = new Value[values.length];
             for (int i = 0; i < values.length; i++)
                 valueCopy[i] = values[i] instanceof LazyValue ? ((LazyValue) values[i]).copyFor(context) : values[i];
-            return new IndexedBindings(nameToIndex, valueCopy, arguments);
+            return new IndexedBindings(nameToIndex, valueCopy, arguments, onnxModels);
         }
 
     }

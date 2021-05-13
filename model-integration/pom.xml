@@ -52,6 +52,13 @@
       <scope>provided</scope>
     </dependency>
 
+    <!-- move this to parent/pom.xml? Remember cloud-tenant-base-dependencies-enforcer -->
+    <dependency>
+      <groupId>com.microsoft.onnxruntime</groupId>
+      <artifactId>onnxruntime</artifactId>
+      <version>1.7.0</version> <!-- that is - move this -->
+    </dependency>
+
     <dependency>
       <groupId>com.google.protobuf</groupId>
       <artifactId>protobuf-java</artifactId>
