@@ -9,7 +9,7 @@ package com.yahoo.search.cluster;
 public class MonitorConfiguration  {
 
     /** The interval in ms between consecutive checks of the monitored nodes */
-    private long checkInterval=1000;
+    private long checkInterval = 1000;
 
     /** The number of milliseconds to attempt to complete a request before giving up */
     private final long requestTimeout = 980;

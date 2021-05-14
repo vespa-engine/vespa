@@ -39,6 +39,7 @@ import java.util.logging.Logger;
  * @author ollivir
  */
 public class RpcFillInvoker extends FillInvoker {
+
     private static final Logger log = Logger.getLogger(RpcFillInvoker.class.getName());
 
     private final DocumentDatabase documentDb;

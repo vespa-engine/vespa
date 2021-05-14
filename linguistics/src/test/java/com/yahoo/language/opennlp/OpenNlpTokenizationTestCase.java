@@ -31,6 +31,20 @@ public class OpenNlpTokenizationTestCase {
 
     @Test
     public void testTokenizer() {
+        assertStemmed("best", "best");
+        assertStemmed("cats", "cat");
+        assertStemmed("rocks", "rocks");
+        assertStemmed("café", "cafe");
+        assertStemmed("walküre", "walkure");
+        assertStemmed("españa", "espana");
+        assertStemmed("françois", "francoi");
+        assertStemmed("blues", "blues");
+        assertStemmed("number", "number");
+        assertStemmed("electrics", "electric");
+    }
+
+    @Test
+    public void testTokenizerOrig() {
         assertTokenize("This is a test, 123",
                        List.of("this", "is", "a", "test", "123"),
                        List.of("This", " ", "is", " ", "a", " ", "test", ",", " ", "123"));
@@ -185,6 +199,11 @@ public class OpenNlpTokenizationTestCase {
             trailing = i;
         }
         return true;
+    }
+
+    private void assertStemmed(String input, String ... tokens) {
+        assertTokenize(input, Language.ENGLISH, StemMode.BEST, true, List.of(tokens),
+                       List.of(input.split(" ")));
     }
 
     private void assertTokenize(String input, List<String> indexed, List<String> orig) {

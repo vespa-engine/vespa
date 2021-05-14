@@ -111,7 +111,7 @@ public class ClusterMonitor<T> {
      */
     public void ping(Executor executor) {
         for (Iterator<BaseNodeMonitor<T>> i = nodeMonitorIterator(); i.hasNext() && !closed.get(); ) {
-            BaseNodeMonitor<T> monitor= i.next();
+            BaseNodeMonitor<T> monitor = i.next();
             nodeManager.ping(this, monitor.getNode(), executor); // Cause call to failed or responded
         }
         if (closed.get()) return; // Do nothing to change state if close has started.

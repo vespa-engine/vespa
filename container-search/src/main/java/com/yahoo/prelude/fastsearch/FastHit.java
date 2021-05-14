@@ -33,7 +33,7 @@ public class FastHit extends Hit {
 
     private static final byte [] emptyGID = new byte[GlobalId.LENGTH];
     /** The index of the content node this hit originated at */
-    private int distributionKey = 0;
+    private int distributionKey;
 
     /** The local identifier of the content store for this hit on the node it originated at */
     private int partId;
@@ -102,11 +102,7 @@ public class FastHit extends Hit {
     /** Returns false - this is a concrete hit containing requested content */
     public boolean isMeta() { return false; }
 
-    /**
-     * Returns the explicitly set uri if available, returns "index:[source]/[partid]/[id]" otherwise
-     *
-     * @return uri of hit
-     */
+    /** Returns the explicitly set uri if available, returns "index:[source]/[partid]/[id]" otherwise. */
     @Override
     public URI getId() {
         URI uri = super.getId();
