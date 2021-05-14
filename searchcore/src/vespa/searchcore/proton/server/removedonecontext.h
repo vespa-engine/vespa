@@ -5,8 +5,6 @@
 #include "operationdonecontext.h"
 #include <vespa/searchcore/proton/common/ipendinglidtracker.h>
 #include <vespa/vespalib/util/executor.h>
-#include <vespa/document/base/globalid.h>
-#include <vespa/searchlib/common/serialnum.h>
 
 namespace proton {
 
@@ -28,8 +26,8 @@ class RemoveDoneContext : public OperationDoneContext
     IPendingLidTracker::Token _uncommitted;
 
 public:
-    RemoveDoneContext(FeedToken token, IPendingLidTracker::Token uncommitted, vespalib::Executor &executor, IDocumentMetaStore &documentMetaStore,
-                      uint32_t lid);
+    RemoveDoneContext(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted, vespalib::Executor &executor,
+                      IDocumentMetaStore &documentMetaStore, uint32_t lid);
     ~RemoveDoneContext() override;
 };
 

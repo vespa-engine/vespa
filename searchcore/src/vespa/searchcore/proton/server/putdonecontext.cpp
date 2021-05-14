@@ -9,9 +9,8 @@ using document::Document;
 
 namespace proton {
 
-PutDoneContext::PutDoneContext(FeedToken token, IPendingLidTracker::Token uncommitted,
-                               std::shared_ptr<const Document> doc,
-                               uint32_t lid)
+PutDoneContext::PutDoneContext(IDestructorCallback::SP token, IPendingLidTracker::Token uncommitted,
+                               std::shared_ptr<const Document> doc, uint32_t lid)
     : OperationDoneContext(std::move(token)),
       _uncommitted(std::move(uncommitted)),
       _lid(lid),
