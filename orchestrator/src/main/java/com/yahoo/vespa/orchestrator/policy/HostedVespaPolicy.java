@@ -48,9 +48,9 @@ public class HostedVespaPolicy implements Policy {
             suspensionReasons.mergeWith(clusterPolicy.verifyGroupGoingDownIsFine(cluster));
         }
 
-        // Ask Cluster Controller to set UP storage nodes in maintenance.
-        // These storage nodes are guaranteed to be NO_REMARKS
-        for (StorageNode storageNode : application.getUpStorageNodesInGroupInClusterOrder()) {
+        // Ask Cluster Controller to set storage nodes in maintenance, unless the node is already allowed
+        // to be down (or permanently down) in case they are guaranteed to be in maintenance already.
+        for (StorageNode storageNode : application.getNoRemarksStorageNodesInGroupInClusterOrder()) {
             storageNode.setNodeState(context, ClusterControllerNodeState.MAINTENANCE);
         }
 

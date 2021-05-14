@@ -129,31 +129,31 @@ public class ApplicationApiImplTest {
                         )
                 ));
 
-        verifyUpStorageNodesInOrder(modelUtils.createScopedApplicationApi(applicationInstance, hostName1), hostName1);
-        verifyUpStorageNodesInOrder(modelUtils.createScopedApplicationApi(applicationInstance, hostName2), hostName2);
-        verifyUpStorageNodesInOrder(modelUtils.createScopedApplicationApi(applicationInstance, hostName3)); // host3 is DOWN
-        verifyUpStorageNodesInOrder(modelUtils.createScopedApplicationApi(applicationInstance, hostName4), hostName4);
-        verifyUpStorageNodesInOrder(modelUtils.createScopedApplicationApi(applicationInstance, hostName5)); // not a storage cluster
+        verifyNoRemarksStorageNodesInOrder(modelUtils.createScopedApplicationApi(applicationInstance, hostName1), hostName1);
+        verifyNoRemarksStorageNodesInOrder(modelUtils.createScopedApplicationApi(applicationInstance, hostName2), hostName2);
+        verifyNoRemarksStorageNodesInOrder(modelUtils.createScopedApplicationApi(applicationInstance, hostName3), hostName3); // host3 is DOWN
+        verifyNoRemarksStorageNodesInOrder(modelUtils.createScopedApplicationApi(applicationInstance, hostName4), hostName4);
+        verifyNoRemarksStorageNodesInOrder(modelUtils.createScopedApplicationApi(applicationInstance, hostName5)); // not a storage cluster
 
-        verifyUpStorageNodesInOrder(modelUtils.createScopedApplicationApi(applicationInstance, hostName1, hostName3), hostName1);
+        verifyNoRemarksStorageNodesInOrder(modelUtils.createScopedApplicationApi(applicationInstance, hostName1, hostName3), hostName3, hostName1);
 
         // For the node group (host1, host4), they both have an up storage node (service instance)
         // with clusters (cluster-3, cluster-1) respectively, and so the order of the hosts are reversed
         // (host4, host1) when sorted by the clusters.
-        verifyUpStorageNodesInOrder(modelUtils.createScopedApplicationApi(applicationInstance, hostName1, hostName4), hostName4, hostName1);
+        verifyNoRemarksStorageNodesInOrder(modelUtils.createScopedApplicationApi(applicationInstance, hostName1, hostName4), hostName4, hostName1);
 
-        verifyUpStorageNodesInOrder(modelUtils.createScopedApplicationApi(
+        verifyNoRemarksStorageNodesInOrder(modelUtils.createScopedApplicationApi(
                 applicationInstance, hostName1, hostName4, hostName5), hostName4, hostName1);
-        verifyUpStorageNodesInOrder(modelUtils.createScopedApplicationApi(
-                applicationInstance, hostName1, hostName4, hostName5, hostName6), hostName4, hostName1);
-        verifyUpStorageNodesInOrder(modelUtils.createScopedApplicationApi(
+        verifyNoRemarksStorageNodesInOrder(modelUtils.createScopedApplicationApi(
+                applicationInstance, hostName1, hostName4, hostName5, hostName6), hostName4, hostName6, hostName1);
+        verifyNoRemarksStorageNodesInOrder(modelUtils.createScopedApplicationApi(
                 applicationInstance, hostName1, hostName4, hostName5, hostName7), hostName4, hostName7, hostName1);
     }
 
-    private void verifyUpStorageNodesInOrder(ScopedApplicationApi scopedApi,
-                                             HostName... expectedHostNames) {
+    private void verifyNoRemarksStorageNodesInOrder(ScopedApplicationApi scopedApi,
+                                                    HostName... expectedHostNames) {
         try (scopedApi) {
-            List<HostName> upStorageNodes = scopedApi.applicationApi().getUpStorageNodesInGroupInClusterOrder().stream()
+            List<HostName> upStorageNodes = scopedApi.applicationApi().getNoRemarksStorageNodesInGroupInClusterOrder().stream()
                     .map(storageNode -> storageNode.hostName())
                     .collect(Collectors.toList());
             assertEquals(Arrays.asList(expectedHostNames), upStorageNodes);
@@ -162,15 +162,15 @@ public class ApplicationApiImplTest {
 
     @Test
     public void testUpConditionOfStorageNode() {
-        verifyUpConditionWith(HostStatus.NO_REMARKS, ServiceStatus.UP, true);
-        verifyUpConditionWith(HostStatus.NO_REMARKS, ServiceStatus.NOT_CHECKED, true);
-        verifyUpConditionWith(HostStatus.NO_REMARKS, ServiceStatus.DOWN, false);
-        verifyUpConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceStatus.UP, false);
-        verifyUpConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceStatus.NOT_CHECKED, false);
-        verifyUpConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceStatus.DOWN, false);
+        verifyNoRemarksConditionWith(HostStatus.NO_REMARKS, ServiceStatus.UP, true);
+        verifyNoRemarksConditionWith(HostStatus.NO_REMARKS, ServiceStatus.NOT_CHECKED, true);
+        verifyNoRemarksConditionWith(HostStatus.NO_REMARKS, ServiceStatus.DOWN, true);
+        verifyNoRemarksConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceStatus.UP, false);
+        verifyNoRemarksConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceStatus.NOT_CHECKED, false);
+        verifyNoRemarksConditionWith(HostStatus.ALLOWED_TO_BE_DOWN, ServiceStatus.DOWN, false);
     }
 
-    private void verifyUpConditionWith(HostStatus hostStatus, ServiceStatus serviceStatus, boolean expectUp) {
+    private void verifyNoRemarksConditionWith(HostStatus hostStatus, ServiceStatus serviceStatus, boolean expectUp) {
         HostName hostName1 = new HostName("host1");
         ApplicationInstance applicationInstance =
                 modelUtils.createApplicationInstance(Arrays.asList(
@@ -187,7 +187,7 @@ public class ApplicationApiImplTest {
             List<HostName> upStorageNodes = expectUp ? Arrays.asList(hostName1) : new ArrayList<>();
 
             List<HostName> actualStorageNodes = scopedApi.applicationApi()
-                    .getUpStorageNodesInGroupInClusterOrder()
+                    .getNoRemarksStorageNodesInGroupInClusterOrder()
                     .stream()
                     .map(storageNode -> storageNode.hostName())
                     .collect(Collectors.toList());
