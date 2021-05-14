@@ -163,6 +163,12 @@ public class Flags {
             "Allow migrating an unencrypted data partition to being encrypted.",
             "Takes effect on next host-admin tick.");
 
+    public static final UnboundBooleanFlag ENCRYPT_DIRTY_DISK = defineFeatureFlag(
+            "encrypt-dirty-disk", false,
+            List.of("hakonhall"), "2021-05-14", "2021-06-05",
+            "Allow migrating an unencrypted data partition to being encrypted when provisioned or dirty.",
+            "Takes effect on next host-admin tick.");
+
     public static final UnboundBooleanFlag ENABLE_FEED_BLOCK_IN_DISTRIBUTOR = defineFeatureFlag(
             "enable-feed-block-in-distributor", true,
             List.of("geirst"), "2021-01-27", "2021-07-01",
