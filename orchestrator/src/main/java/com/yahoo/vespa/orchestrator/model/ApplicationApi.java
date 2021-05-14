@@ -36,6 +36,6 @@ public interface ApplicationApi {
     }
 
     List<StorageNode> getStorageNodesInGroupInClusterOrder();
-    List<StorageNode> getNoRemarksStorageNodesInGroupInClusterOrder();
+    List<StorageNode> getUpStorageNodesInGroupInClusterOrder();
     List<StorageNode> getSuspendedStorageNodesInGroupInReverseClusterOrder();
 }
