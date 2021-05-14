@@ -29,6 +29,7 @@ import java.util.List;
  */
 public class OpenNlpTokenizer implements Tokenizer {
 
+    private final static Language defaultLanguage = Language.ENGLISH;
     private final static int SPACE_CODE = 32;
     private final Normalizer normalizer;
     private final Transformer transformer;
@@ -53,6 +54,10 @@ public class OpenNlpTokenizer implements Tokenizer {
     @Override
     public Iterable<Token> tokenize(String input, Language language, StemMode stemMode, boolean removeAccents) {
         if (input.isEmpty()) return Collections.emptyList();
+
+        if (language == null || language == Language.UNKNOWN)
+            language = defaultLanguage;
+
         Stemmer stemmer = stemmerFor(language, stemMode);
         if (stemmer == null) return simpleTokenizer.tokenize(input, language, stemMode, removeAccents);
 

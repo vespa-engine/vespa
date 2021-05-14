@@ -41,6 +41,8 @@ public class OpenNlpTokenizationTestCase {
         assertStemmed("blues", "blues");
         assertStemmed("number", "number");
         assertStemmed("electrics", "electric");
+        assertStemmed(Language.UNKNOWN, "electrics", "electric");
+        assertStemmed((Language)null, "electrics", "electric");
     }
 
     @Test
@@ -202,7 +204,11 @@ public class OpenNlpTokenizationTestCase {
     }
 
     private void assertStemmed(String input, String ... tokens) {
-        assertTokenize(input, Language.ENGLISH, StemMode.BEST, true, List.of(tokens),
+        assertStemmed(Language.ENGLISH, input, tokens);
+    }
+
+    private void assertStemmed(Language language, String input, String ... tokens) {
+        assertTokenize(input, language, StemMode.BEST, true, List.of(tokens),
                        List.of(input.split(" ")));
     }
 
