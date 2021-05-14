@@ -12,6 +12,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.vcmr.HostAction.State;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest.Status;
 import com.yahoo.vespa.hosted.controller.integration.NodeRepositoryMock;
+import org.junit.Before;
 import org.junit.Test;
 
 import java.time.Duration;
@@ -26,13 +27,20 @@ import static org.junit.Assert.*;
  */
 public class VCMRMaintainerTest {
 
-    private final ControllerTester tester = new ControllerTester();
-    private final VCMRMaintainer maintainer = new VCMRMaintainer(tester.controller(), Duration.ofMinutes(1));
-    private final NodeRepositoryMock nodeRepo = tester.serviceRegistry().configServer().nodeRepository();
+    private ControllerTester tester;
+    private VCMRMaintainer maintainer;
+    private NodeRepositoryMock nodeRepo;
     private final ZoneId zoneId = ZoneId.from("prod.us-east-3");
     private final HostName host1 = HostName.from("host1");
     private final HostName host2 = HostName.from("host2");
     private final String changeRequestId = "id123";
+
+    @Before
+    public void setup() {
+        tester = new ControllerTester();
+        maintainer = new VCMRMaintainer(tester.controller(), Duration.ofMinutes(1));
+        nodeRepo = tester.serviceRegistry().configServer().nodeRepository();
+    }
 
     @Test
     public void recycle_hosts_after_completion() {
@@ -88,7 +96,6 @@ public class VCMRMaintainerTest {
 
         activeNode = nodeRepo.list(zoneId, List.of(activeNode.hostname())).get(0);
         assertTrue(activeNode.wantToRetire());
-
     }
 
     @Test
@@ -107,6 +114,9 @@ public class VCMRMaintainerTest {
         assertEquals(State.REQUIRES_OPERATOR_ACTION, parkedNodeAction.getState());
         assertEquals(State.REQUIRES_OPERATOR_ACTION, failedNodeAction.getState());
         assertEquals(Status.REQUIRES_OPERATOR_ACTION, writtenChangeRequest.getStatus());
+
+        var approvedChangeRequests = tester.serviceRegistry().changeRequestClient().getApprovedChangeRequests();
+        assertTrue(approvedChangeRequests.isEmpty());
     }
 
     @Test
@@ -137,6 +147,9 @@ public class VCMRMaintainerTest {
         var tenantHostAction = writtenChangeRequest.getHostActionPlan().get(0);
         assertEquals(State.PENDING_RETIREMENT, tenantHostAction.getState());
         assertEquals(Status.PENDING_ACTION, writtenChangeRequest.getStatus());
+
+        var approvedChangeRequests = tester.serviceRegistry().changeRequestClient().getApprovedChangeRequests();
+        assertEquals(1, approvedChangeRequests.size());
     }
 
     @Test
@@ -195,7 +208,7 @@ public class VCMRMaintainerTest {
                 source,
                 List.of("switch1"),
                 List.of("host1", "host2"),
-                ChangeRequest.Approval.APPROVED,
+                ChangeRequest.Approval.REQUESTED,
                 ChangeRequest.Impact.VERY_HIGH,
                 VespaChangeRequest.Status.IN_PROGRESS,
                 actionPlan,
