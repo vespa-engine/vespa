@@ -6,39 +6,81 @@ import javax.net.ssl.SSLContext;
 import java.net.URI;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 import java.util.function.Supplier;
+
+import static java.util.Objects.requireNonNull;
 
 /**
  * Builder for creating a {@link FeedClient} instance.
  *
  * @author bjorncs
+ * @author jonmv
  */
 public class FeedClientBuilder {
 
+    final URI endpoint;
+    final Map<String, Supplier<String>> requestHeaders = new HashMap<>();
     SSLContext sslContext;
     HostnameVerifier hostnameVerifier;
-    final Map<String, Supplier<String>> requestHeaders = new HashMap<>();
-    URI endpoint;
     Integer maxConnections;
+    Integer maxStreamsPerConnection;
 
-    public static FeedClientBuilder create() { return new FeedClientBuilder(); }
+    public static FeedClientBuilder create(URI endpoint) { return new FeedClientBuilder(endpoint); }
 
-    private FeedClientBuilder() {}
+    private FeedClientBuilder(URI endpoint) {
+        requireNonNull(endpoint.getHost());
+        this.endpoint = endpoint;
+    }
 
-    public FeedClientBuilder setMaxConnection(int max) { this.maxConnections = max; return this; }
-
-    public FeedClientBuilder setEndpoint(URI endpoint) { this.endpoint = endpoint; return this; }
-
-    public FeedClientBuilder setSslContext(SSLContext context) { this.sslContext = context; return this; }
-
-    public FeedClientBuilder setHostnameVerifier(HostnameVerifier verifier) { this.hostnameVerifier = verifier; return this; }
-
-    public FeedClientBuilder addRequestHeader(String name, String value) { return addRequestHeader(name, () -> value); }
-
-    public FeedClientBuilder addRequestHeader(String name, Supplier<String> valueSupplier) {
-        this.requestHeaders.put(name, valueSupplier);
+    /**
+     * Sets the maximum number of connections this client will use.
+     *
+     * A reasonable value here is a small multiple of the numbers of containers in the
+     * cluster to feed, so load can be balanced across these.
+     * In general, this value should be kept as low as possible, but poor connectivity
+     * between feeder and cluster may also warrant a higher number of connections.
+     */
+    public FeedClientBuilder setMaxConnections(int max) {
+        if (max < 1) throw new IllegalArgumentException("Max connections must be at least 1, but was " + max);
+        this.maxConnections = max;
         return this;
     }
 
-    public FeedClient build() { return new HttpFeedClient(this); }
+    /**
+     * Sets the maximum number of streams per HTTP/2 connection for this client.
+     *
+     * This determines the maximum number of concurrent, inflight requests for this client,
+     * which is {@code maxConnections * maxStreamsPerConnection}. Prefer more streams over
+     * more connections, when possible. The server's maximum is usually around 128-256.
+     */
+    public FeedClientBuilder setMaxStreamPerConnection(int max) {
+        if (max < 1) throw new IllegalArgumentException("Max streams per connection must be at least 1, but was " + max);
+        this.maxStreamsPerConnection = max;
+        return this;
+    }
+
+    public FeedClientBuilder setSslContext(SSLContext context) {
+        this.sslContext = requireNonNull(context);
+        return this;
+    }
+
+    public FeedClientBuilder setHostnameVerifier(HostnameVerifier verifier) {
+        this.hostnameVerifier = requireNonNull(verifier);
+        return this;
+    }
+
+    public FeedClientBuilder addRequestHeader(String name, String value) {
+        return addRequestHeader(name, () -> requireNonNull(value));
+    }
+
+    public FeedClientBuilder addRequestHeader(String name, Supplier<String> valueSupplier) {
+        this.requestHeaders.put(requireNonNull(name), requireNonNull(valueSupplier));
+        return this;
+    }
+
+    public FeedClient build() {
+        return new HttpFeedClient(this);
+    }
+
 }

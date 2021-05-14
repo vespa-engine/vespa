@@ -2,19 +2,16 @@
 package com.yahoo.vespa.feed.client;
 
 import java.io.Closeable;
-import java.util.concurrent.Future;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * @author bjorncs
+ * @author jonmv
  */
 public interface FeedClient extends Closeable {
-    Future<Result> put(String documentId, String documentJson, OperationParameters params, ResultCallback callback);
-    Future<Result> remove(String documentId, OperationParameters params, ResultCallback callback);
-    Future<Result> update(String documentId, String documentJson, OperationParameters params, ResultCallback callback);
 
-    interface ResultCallback {
-        void completed(Result result);
-        void failed(FeedException e);
-    }
+    CompletableFuture<Result> put(DocumentId documentId, String documentJson, OperationParameters params);
+    CompletableFuture<Result> update(DocumentId documentId, String updateJson, OperationParameters params);
+    CompletableFuture<Result> remove(DocumentId documentId, OperationParameters params);
 
 }

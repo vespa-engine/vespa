@@ -5,15 +5,31 @@ import java.util.Optional;
 
 /**
  * @author bjorncs
+ * @author jonmv
  */
 public class Result {
 
-    public enum Type {
+    private final Type type;
+    private final DocumentId documentId;
+    private final String resultMessage;
+    private final String traceMessage;
 
+    Result(Type type, DocumentId documentId, String resultMessage, String traceMessage) {
+        this.type = type;
+        this.documentId = documentId;
+        this.resultMessage = resultMessage;
+        this.traceMessage = traceMessage;
     }
 
-    public Type type() { return null; }
-    public String documentId() { return null; }
-    public String resultMessage() { return null; }
-    public Optional<String> traceMessage() { return Optional.empty(); }
+    public enum Type {
+        success,
+        cancelled,
+        failure
+    }
+
+    public Type type() { return type; }
+    public DocumentId documentId() { return documentId; }
+    public Optional<String> resultMessage() { return Optional.ofNullable(resultMessage); }
+    public Optional<String> traceMessage() { return Optional.ofNullable(traceMessage); }
+
 }
