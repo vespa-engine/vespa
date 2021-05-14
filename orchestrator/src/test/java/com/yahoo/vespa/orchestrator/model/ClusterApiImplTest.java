@@ -309,7 +309,6 @@ public class ClusterApiImplTest {
 
         assertTrue(clusterApi.isStorageCluster());
         assertEquals(Optional.of(hostName1), clusterApi.storageNodeInGroup().map(storageNode -> storageNode.hostName()));
-        assertEquals(Optional.of(hostName1), clusterApi.upStorageNodeInGroup().map(storageNode -> storageNode.hostName()));
     }
 
     private ClusterApiImpl makeConfigClusterApi(int clusterSize, ServiceStatus first, ServiceStatus... rest) {
