@@ -157,6 +157,12 @@ public class PermanentFlags {
             "Takes effect on redeployment",
             APPLICATION_ID);
 
+    public static final UnboundIntFlag MAX_REBUILDS = defineIntFlag(
+            "max-host-rebuilds", 10,
+            "The maximum number of hosts allowed to rebuild at a time",
+            "Takes effect immediately, but any current excess rebuilds will not be cancelled"
+    );
+
     private PermanentFlags() {}
 
     private static UnboundBooleanFlag defineFeatureFlag(

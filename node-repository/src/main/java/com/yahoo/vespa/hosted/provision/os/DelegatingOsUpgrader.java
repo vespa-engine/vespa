@@ -37,7 +37,7 @@ public class DelegatingOsUpgrader implements OsUpgrader {
 
     @Override
     public void upgradeTo(OsVersionTarget target) {
-        NodeList activeNodes = nodeRepository.nodes().list().nodeType(target.nodeType()).state(Node.State.active);
+        NodeList activeNodes = nodeRepository.nodes().list(Node.State.active).nodeType(target.nodeType());
         int numberToUpgrade = Math.max(0, maxActiveUpgrades - activeNodes.changingOsVersionTo(target.version()).size());
         NodeList nodesToUpgrade = activeNodes.not().changingOsVersionTo(target.version())
                                              .osVersionIsBefore(target.version())
