@@ -23,7 +23,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.function.BiFunction;
-import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.logging.Logger;
 
@@ -44,7 +43,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
     /** Executes the given request with response/error handling and retries. */
     private <T> T execute(RequestBuilder builder,
                           BiFunction<ClassicHttpResponse, ClassicHttpRequest, T> handler,
-                          Consumer<IOException> catcher) {
+                          ExceptionHandler catcher) {
         HttpClientContext context = HttpClientContext.create();
         context.setRequestConfig(builder.config);
 
@@ -57,8 +56,8 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
                     return handler.apply(execute(request, context), request);
                 }
                 catch (IOException e) {
-                    catcher.accept(e);
-                    throw new UncheckedIOException(e); // Throw unchecked if catcher doesn't throw.
+                    catcher.handle(e, request);
+                    throw RetryException.wrap(e, request);
                 }
             }
             catch (RetryException e) {
@@ -118,7 +117,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         private HttpEntity entity;
         private RequestConfig config = ConfigServerClient.defaultRequestConfig;
         private ResponseVerifier verifier = ConfigServerClient.throwOnError;
-        private Consumer<IOException> catcher = ConfigServerClient.retryAll;
+        private ExceptionHandler catcher = ConfigServerClient.retryAll;
 
         private RequestBuilder(HostStrategy hosts, Method method) {
             if ( ! hosts.iterator().hasNext())
@@ -181,7 +180,7 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
         }
 
         @Override
-        public RequestBuilder catching(Consumer<IOException> catcher) {
+        public RequestBuilder catching(ExceptionHandler catcher) {
             this.catcher = requireNonNull(catcher);
             return this;
         }
@@ -244,8 +243,8 @@ public abstract class AbstractConfigServerClient implements ConfigServerClient {
                                        e.addSuppressed(f);
                                    }
                                    if (e instanceof IOException) {
-                                       catcher.accept((IOException) e);
-                                       throw new UncheckedIOException((IOException) e);
+                                       catcher.handle((IOException) e, request);
+                                       throw RetryException.wrap((IOException) e, request);
                                    }
                                    else
                                        sneakyThrow(e); // e is a runtime exception or an error, so this is fine.
