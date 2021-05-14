@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.NodeType;
+import com.yahoo.vespa.flags.IntFlag;
+import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.NodeRepository;
@@ -33,12 +35,11 @@ public class RebuildingOsUpgrader implements OsUpgrader {
     private static final Logger LOG = Logger.getLogger(RebuildingOsUpgrader.class.getName());
 
     private final NodeRepository nodeRepository;
-    private final int maxRebuilds;
+    private final IntFlag maxRebuilds;
 
-    public RebuildingOsUpgrader(NodeRepository nodeRepository, int maxRebuilds) {
+    public RebuildingOsUpgrader(NodeRepository nodeRepository) {
         this.nodeRepository = nodeRepository;
-        this.maxRebuilds = maxRebuilds;
-        if (maxRebuilds < 1) throw new IllegalArgumentException("maxRebuilds must be positive, was " + maxRebuilds);
+        this.maxRebuilds = PermanentFlags.MAX_REBUILDS.bindTo(nodeRepository.flagSource());
     }
 
     @Override
@@ -55,7 +56,7 @@ public class RebuildingOsUpgrader implements OsUpgrader {
     }
 
     private List<Node> rebuildableNodes(Version target, NodeList allNodesOfType) {
-        int upgradeLimit = Math.max(0, maxRebuilds - allNodesOfType.rebuilding().size());
+        int upgradeLimit = Math.max(0, maxRebuilds.value() - allNodesOfType.rebuilding().size());
 
         // Nodes grouped by flavor, sorted descending by group count
         List<List<Node>> nodeGroups = allNodesOfType.state(Node.State.active)
