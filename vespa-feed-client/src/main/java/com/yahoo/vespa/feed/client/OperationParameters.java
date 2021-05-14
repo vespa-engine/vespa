@@ -3,9 +3,11 @@ package com.yahoo.vespa.feed.client;
 
 import java.time.Duration;
 import java.util.Optional;
+import java.util.OptionalInt;
 
 /**
  * @author bjorncs
+ * @author jonmv
  */
 public class OperationParameters {
 
@@ -15,8 +17,11 @@ public class OperationParameters {
 
     }
 
+    public boolean createIfNonExistent() { return false; }
     public Optional<String> testAndSetCondition() { return Optional.empty(); }
     public Optional<Duration> timeout() { return Optional.empty(); }
+    public Optional<String> route() { return Optional.empty(); }
+    public OptionalInt tracelevel() { return OptionalInt.empty(); }
 
     public static class Builder {
 
