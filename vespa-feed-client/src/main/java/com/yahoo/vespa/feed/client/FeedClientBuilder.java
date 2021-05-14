@@ -19,12 +19,15 @@ import static java.util.Objects.requireNonNull;
  */
 public class FeedClientBuilder {
 
+    FeedClient.RetryStrategy defaultRetryStrategy = new FeedClient.RetryStrategy() { };
+
     final URI endpoint;
     final Map<String, Supplier<String>> requestHeaders = new HashMap<>();
     SSLContext sslContext;
     HostnameVerifier hostnameVerifier;
-    Integer maxConnections;
-    Integer maxStreamsPerConnection;
+    int maxConnections = 4;
+    int maxStreamsPerConnection = 1024;
+    FeedClient.RetryStrategy retryStrategy = defaultRetryStrategy;
 
     public static FeedClientBuilder create(URI endpoint) { return new FeedClientBuilder(endpoint); }
 
@@ -76,6 +79,11 @@ public class FeedClientBuilder {
 
     public FeedClientBuilder addRequestHeader(String name, Supplier<String> valueSupplier) {
         this.requestHeaders.put(requireNonNull(name), requireNonNull(valueSupplier));
+        return this;
+    }
+
+    public FeedClientBuilder setRetryStrategy(FeedClient.RetryStrategy strategy) {
+        this.retryStrategy = requireNonNull(strategy);
         return this;
     }
 

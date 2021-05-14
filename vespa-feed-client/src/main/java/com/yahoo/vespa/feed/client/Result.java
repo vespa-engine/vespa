@@ -23,7 +23,7 @@ public class Result {
 
     public enum Type {
         success,
-        cancelled,
+        conditionNotMet,
         failure
     }
 
