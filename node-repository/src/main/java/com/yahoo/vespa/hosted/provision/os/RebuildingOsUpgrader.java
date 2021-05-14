@@ -10,12 +10,19 @@ import com.yahoo.vespa.hosted.provision.node.Agent;
 import com.yahoo.vespa.hosted.provision.node.filter.NodeListFilter;
 
 import java.time.Instant;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 /**
- * An upgrader that retires and rebuilds hosts on stale OS versions. We limit the number of concurrent rebuilds to
- * reduce impact of retiring too many hosts at once.
+ * An upgrader that retires and rebuilds hosts on stale OS versions.
+ *
+ * - We limit the number of concurrent rebuilds to reduce impact of retiring too many hosts.
+ * - We distribute rebuilds equally among all host flavors to preserve free capacity for deployments.
  *
  * Used in cases where performing an OS upgrade requires rebuilding the host, e.g. when upgrading across major versions.
  *
@@ -37,19 +44,45 @@ public class RebuildingOsUpgrader implements OsUpgrader {
     @Override
     public void upgradeTo(OsVersionTarget target) {
         NodeList allNodesOfType = nodeRepository.nodes().list().nodeType(target.nodeType());
-        NodeList activeNodes = allNodesOfType.state(Node.State.active);
-        int numberToUpgrade = Math.max(0, maxRebuilds - allNodesOfType.rebuilding().size());
-        NodeList nodesToUpgrade = activeNodes.not().rebuilding()
-                                             .osVersionIsBefore(target.version())
-                                             .byIncreasingOsVersion()
-                                             .first(numberToUpgrade);
         Instant now = nodeRepository.clock().instant();
-        nodesToUpgrade.forEach(node -> rebuild(node, target.version(), now));
+        List<Node> rebuildableNodes = rebuildableNodes(target.version(), allNodesOfType);
+        rebuildableNodes.forEach(node -> rebuild(node, target.version(), now));
     }
 
     @Override
     public void disableUpgrade(NodeType type) {
         // No action needed in this implementation. Hosts that have started rebuilding cannot be halted
+    }
+
+    private List<Node> rebuildableNodes(Version target, NodeList allNodesOfType) {
+        int upgradeLimit = Math.max(0, maxRebuilds - allNodesOfType.rebuilding().size());
+
+        // Nodes grouped by flavor, sorted descending by group count
+        List<List<Node>> nodeGroups = allNodesOfType.state(Node.State.active)
+                                                    .not().rebuilding()
+                                                    .osVersionIsBefore(target)
+                                                    .byIncreasingOsVersion()
+                                                    .asList()
+                                                    .stream()
+                                                    .collect(Collectors.groupingBy(Node::flavor))
+                                                    .values().stream()
+                                                    .sorted(Comparator.<List<Node>, Integer>comparing(List::size).reversed())
+                                                    .collect(Collectors.toList());
+
+        // Pick one node from each group until limit is fulfilled or we exhaust nodes to upgrade
+        List<Node> nodesToUpgrade = new ArrayList<>(upgradeLimit);
+        int emptyNodeGroups = 0;
+        while (nodesToUpgrade.size() < upgradeLimit && emptyNodeGroups < nodeGroups.size()) {
+            for (List<Node> nodeGroup : nodeGroups) {
+                if (nodeGroup.isEmpty()) {
+                    emptyNodeGroups++;
+                } else if (nodesToUpgrade.size() < upgradeLimit) {
+                    nodesToUpgrade.add(nodeGroup.remove(0));
+                }
+            }
+        }
+
+        return Collections.unmodifiableList(nodesToUpgrade);
     }
 
     private void rebuild(Node host, Version target, Instant now) {

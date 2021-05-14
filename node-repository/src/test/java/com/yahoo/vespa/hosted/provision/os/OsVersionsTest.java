@@ -349,6 +349,65 @@ public class OsVersionsTest {
         assertEquals("All hosts upgraded", hostCount * 2, hosts.get().onOsVersion(version1).size());
     }
 
+    @Test
+    public void upgrade_by_rebuilding_distributes_upgrades_among_all_flavors() {
+        var versions = new OsVersions(tester.nodeRepository(), false, Integer.MAX_VALUE, 3);
+        int smallHosts = 5;
+        int mediumHosts = 3;
+        int largeHosts = 2;
+        NodeResources smallFlavor = tester.asFlavor("small", NodeType.host).resources();
+        NodeResources mediumFlavor = tester.asFlavor("default", NodeType.host).resources();
+        NodeResources largeFlavor = tester.asFlavor("large", NodeType.host).resources();
+        provisionInfraApplication(smallHosts, smallFlavor, infraApplication, NodeType.host);
+        provisionInfraApplication(mediumHosts, mediumFlavor, infraApplication, NodeType.host);
+        provisionInfraApplication(largeHosts, largeFlavor, infraApplication, NodeType.host);
+        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
+
+        // All hosts are on initial version
+        var version0 = Version.fromString("7.0");
+        versions.setTarget(NodeType.host, version0, Duration.ZERO, false);
+        setCurrentVersion(hostNodes.get().asList(), version0);
+
+        // Target is set for new major version
+        var version1 = Version.fromString("8.0");
+        versions.setTarget(NodeType.host, version1, Duration.ZERO, false);
+
+        // One host of each flavor is upgraded in the first two iterations
+        for (int i = 0; i < 2; i++) {
+            versions.resumeUpgradeOf(NodeType.host, true);
+            NodeList rebuilding = hostNodes.get().rebuilding();
+            assertEquals(1, rebuilding.resources(smallFlavor).size());
+            assertEquals(1, rebuilding.resources(mediumFlavor).size());
+            assertEquals(1, rebuilding.resources(largeFlavor).size());
+            completeRebuildOf(rebuilding.asList(), NodeType.host);
+        }
+
+        // All hosts of largest flavor have been upgraded
+        assertEquals(largeHosts, hostNodes.get().resources(largeFlavor).onOsVersion(version1).size());
+
+        // Since one flavor group is upgraded, we upgrade more of the flavor having the most hosts
+        {
+            versions.resumeUpgradeOf(NodeType.host, true);
+            NodeList rebuilding = hostNodes.get().rebuilding();
+            assertEquals(2, rebuilding.resources(smallFlavor).size());
+            assertEquals(1, rebuilding.resources(mediumFlavor).size());
+            completeRebuildOf(rebuilding.asList(), NodeType.host);
+        }
+        assertEquals(mediumHosts, hostNodes.get().resources(mediumFlavor).onOsVersion(version1).size());
+
+        // Last host is upgraded
+        versions.resumeUpgradeOf(NodeType.host, true);
+        NodeList rebuilding = hostNodes.get().rebuilding();
+        assertEquals(1, rebuilding.resources(smallFlavor).size());
+        completeRebuildOf(rebuilding.asList(), NodeType.host);
+
+        // Resume has no effect as all hosts are upgraded
+        versions.resumeUpgradeOf(NodeType.host, true);
+        NodeList hosts = hostNodes.get();
+        assertEquals(0, hosts.rebuilding().size());
+        assertEquals(smallHosts + mediumHosts + largeHosts, hosts.onOsVersion(version1).size());
+    }
+
     private NodeList deprovisioningChildrenOf(Node parent) {
         return tester.nodeRepository().nodes().list()
                      .childrenOf(parent)
@@ -360,12 +419,17 @@ public class OsVersionsTest {
     }
 
     private List<Node> provisionInfraApplication(int nodeCount, ApplicationId application, NodeType nodeType) {
-        var nodes = tester.makeReadyNodes(nodeCount, "default", nodeType, 1);
+        return provisionInfraApplication(nodeCount, tester.asFlavor("default", nodeType).resources(), application, nodeType);
+    }
+
+    private List<Node> provisionInfraApplication(int nodeCount, NodeResources resources, ApplicationId application, NodeType nodeType) {
+        var nodes = tester.makeReadyNodes(nodeCount, resources, nodeType, 10);
         tester.prepareAndActivateInfraApplication(application, nodeType);
         return nodes.stream()
                     .map(Node::hostname)
                     .flatMap(hostname -> tester.nodeRepository().nodes().node(hostname).stream())
                     .collect(Collectors.toList());
+
     }
 
     private Version minVersion(NodeList nodes, Function<OsVersion, Optional<Version>> versionField) {
