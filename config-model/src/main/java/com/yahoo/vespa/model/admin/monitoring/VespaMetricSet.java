@@ -183,7 +183,7 @@ public class VespaMetricSet {
         metrics.add(new Metric("athenz-tenant-cert.expiry.seconds.last"));
 
         metrics.add(new Metric("jdisc.http.request.prematurely_closed.rate"));
-        addMetric(metrics, "jdisc.http.request.requests_per_connection", List.of("sum", "count", "min", "max"));
+        addMetric(metrics, "jdisc.http.request.requests_per_connection", List.of("sum", "count", "min", "max", "average"));
 
         metrics.add(new Metric("http.status.1xx.rate"));
         metrics.add(new Metric("http.status.2xx.rate"));
