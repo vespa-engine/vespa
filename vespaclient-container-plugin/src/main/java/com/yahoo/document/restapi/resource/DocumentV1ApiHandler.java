@@ -126,6 +126,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     private static final Logger log = Logger.getLogger(DocumentV1ApiHandler.class.getName());
     private static final Parser<Integer> integerParser = Integer::parseInt;
+    private static final Parser<Long> unsignedLongParser = Long::parseUnsignedLong;
     private static final Parser<Long> timeoutMillisParser = value -> ParameterParser.asMilliSeconds(value, defaultTimeout.toMillis());
     private static final Parser<Boolean> booleanParser = Boolean::parseBoolean;
 
@@ -1269,7 +1270,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
         DocumentPath(Path path) {
             this.path = requireNonNull(path);
-            this.group = Optional.ofNullable(path.get("number")).map(integerParser::parse).map(Group::of)
+            this.group = Optional.ofNullable(path.get("number")).map(unsignedLongParser::parse).map(Group::of)
                                  .or(() -> Optional.ofNullable(path.get("group")).map(Group::of));
         }
 
@@ -1289,22 +1290,26 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
 
     static class Group {
 
-        private final String value;
         private final String docIdPart;
         private final String selection;
 
-        private Group(String value, String docIdPart, String selection) {
-            Text.validateTextString(value)
-                .ifPresent(codePoint -> { throw new IllegalArgumentException(String.format("Illegal code point U%04X in group", codePoint)); });
-            this.value = value;
+        private Group(String docIdPart, String selection) {
             this.docIdPart = docIdPart;
             this.selection = selection;
         }
 
-        public static Group of(long value) { return new Group(Long.toString(value), "n=" + value, "id.user==" + value); }
-        public static Group of(String value) { return new Group(value, "g=" + value, "id.group=='" + value.replaceAll("'", "\\\\'") + "'"); }
+        public static Group of(long value) {
+            String stringValue = Long.toUnsignedString(value);
+            return new Group("n=" + stringValue, "id.user==" + stringValue);
+        }
 
-        public String value() { return value; }
+        public static Group of(String value) {
+            Text.validateTextString(value)
+                .ifPresent(codePoint -> { throw new IllegalArgumentException(String.format("Illegal code point U%04X in group", codePoint)); });
+
+            return new Group("g=" + value, "id.group=='" + value.replaceAll("'", "\\\\'") + "'");
+        }
+
         public String docIdPart() { return docIdPart; }
         public String selection() { return selection; }
 
@@ -1313,21 +1318,19 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;
             Group group = (Group) o;
-            return value.equals(group.value) &&
-                   docIdPart.equals(group.docIdPart) &&
+            return docIdPart.equals(group.docIdPart) &&
                    selection.equals(group.selection);
         }
 
         @Override
         public int hashCode() {
-            return Objects.hash(value, docIdPart, selection);
+            return Objects.hash(docIdPart, selection);
         }
 
         @Override
         public String toString() {
             return "Group{" +
-                   "value='" + value + '\'' +
-                   ", docIdPart='" + docIdPart + '\'' +
+                   "docIdPart='" + docIdPart + '\'' +
                    ", selection='" + selection + '\'' +
                    '}';
         }
