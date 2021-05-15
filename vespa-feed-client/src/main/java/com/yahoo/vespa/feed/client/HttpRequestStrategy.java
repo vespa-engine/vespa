@@ -2,16 +2,21 @@
 package com.yahoo.vespa.feed.client;
 
 import org.apache.hc.client5.http.HttpRequestRetryStrategy;
+import org.apache.hc.client5.http.async.methods.SimpleHttpResponse;
 import org.apache.hc.core5.http.HttpRequest;
 import org.apache.hc.core5.http.HttpResponse;
 import org.apache.hc.core5.http.protocol.HttpContext;
 import org.apache.hc.core5.util.TimeValue;
 
 import java.io.IOException;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.locks.Condition;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReentrantLock;
+import java.util.function.Consumer;
 
 import static com.yahoo.vespa.feed.client.FeedClient.OperationType.remove;
 
@@ -26,8 +31,9 @@ import static com.yahoo.vespa.feed.client.FeedClient.OperationType.remove;
  *
  * @author jonmv
  */
-class HttpRequestStrategy implements HttpRequestRetryStrategy {
+class HttpRequestStrategy implements RequestStrategy<SimpleHttpResponse>, HttpRequestRetryStrategy {
 
+    private final Map<DocumentId, CompletableFuture<SimpleHttpResponse>> byId = new ConcurrentHashMap<>();
     private final FeedClient.RetryStrategy wrapped;
     private final long maxInflight;
     private double targetInflight;
@@ -38,8 +44,7 @@ class HttpRequestStrategy implements HttpRequestRetryStrategy {
     private final Condition available;
 
     HttpRequestStrategy(FeedClientBuilder builder) {
-        this.wrapped = builder.retryStrategy != null ? builder.retryStrategy : new FeedClient.RetryStrategy() {
-        };
+        this.wrapped = builder.retryStrategy;
         this.maxInflight = builder.maxConnections * (long) builder.maxStreamsPerConnection;
         this.targetInflight = maxInflight;
         this.inflight = 0;
@@ -121,8 +126,27 @@ class HttpRequestStrategy implements HttpRequestRetryStrategy {
         }
     }
 
-    boolean hasFailed() {
+    @Override
+    public boolean hasFailed() {
         return errorRate.get() > errorThreshold;
+    }
+
+    @Override
+    public CompletableFuture<SimpleHttpResponse> enqueue(DocumentId documentId, Consumer<CompletableFuture<SimpleHttpResponse>> dispatch) {
+        acquireSlot();
+
+        CompletableFuture<SimpleHttpResponse> vessel = new CompletableFuture<>();
+        byId.compute(documentId, (id, previous) -> { // TODO; consider merging with above locking.
+            if (previous == null) dispatch.accept(vessel);
+            else previous.whenComplete((__, ___) -> dispatch.accept(vessel)); // TODO: keep a list so we can empty it?
+            return vessel;
+        });
+
+        return vessel.whenComplete((__, thrown) -> {
+            releaseSlot();
+            if (thrown == null)
+                success();
+        });
     }
 
 }

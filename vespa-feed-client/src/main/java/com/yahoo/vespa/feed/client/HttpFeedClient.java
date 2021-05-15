@@ -126,24 +126,14 @@ class HttpFeedClient implements FeedClient {
         if (operationJson != null)
             request.setBody(operationJson, ContentType.APPLICATION_JSON);
 
-        requestStrategy.acquireSlot();
-
-        CompletableFuture<SimpleHttpResponse> future = new CompletableFuture<>();
-        httpClient.execute(new SimpleHttpRequest(method, endpoint),
-                                  new FutureCallback<SimpleHttpResponse>() {
-                                      @Override public void completed(SimpleHttpResponse response) {
-                                          future.complete(response);
-                                      }
-                                      @Override public void failed(Exception ex) {
-                                          future.completeExceptionally(ex);
-                                      }
-                                      @Override public void cancelled() {
-                                          future.cancel(false);
-                                      }
-                                  });
-
-        return future.handle((response, thrown) -> {
-            requestStrategy.releaseSlot();
+        return requestStrategy.enqueue(documentId, future -> {
+            httpClient.execute(new SimpleHttpRequest(method, endpoint),
+                               new FutureCallback<SimpleHttpResponse>() {
+                                   @Override public void completed(SimpleHttpResponse response) { future.complete(response); }
+                                   @Override public void failed(Exception ex) { future.completeExceptionally(ex); }
+                                   @Override public void cancelled() { future.cancel(false); }
+                               });
+        }).handle((response, thrown) -> {
             if (thrown != null) {
                 if (requestStrategy.hasFailed()) {
                     try { close(); }
@@ -151,7 +141,6 @@ class HttpFeedClient implements FeedClient {
                 }
                 return new Result(failure, documentId, thrown.getMessage(), null);
             }
-            requestStrategy.success();
             return toResult(response, documentId);
         });
     }
