@@ -247,7 +247,6 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
          _params._subDbId, doc->toString(true).size(), doc->toString(true).c_str());
 
     adjustMetaStore(putOp, docId.getGlobalId(), docId);
-    auto uncommitted = get_pending_lid_token(putOp);
 
     bool docAlreadyExists = putOp.getValidPrevDbdId(_params._subDbId);
 
@@ -255,7 +254,7 @@ StoreOnlyFeedView::internalPut(FeedToken token, const PutOperation &putOp)
         if (putOp.changedDbdId() && useDocumentMetaStore(serialNum)) {
             _gidToLidChangeHandler.notifyPut(token, docId.getGlobalId(), putOp.getLid(), serialNum);
         }
-        auto onWriteDone = createPutDoneContext(std::move(token), std::move(uncommitted), doc, putOp.getLid());
+        auto onWriteDone = createPutDoneContext(std::move(token), get_pending_lid_token(putOp), doc, putOp.getLid());
         putSummary(serialNum, putOp.getLid(), doc, onWriteDone);
         putAttributes(serialNum, putOp.getLid(), *doc, onWriteDone);
         putIndexedFields(serialNum, putOp.getLid(), doc, onWriteDone);
@@ -409,9 +408,8 @@ StoreOnlyFeedView::internalUpdate(FeedToken token, const UpdateOperation &updOp)
         (void) updateOk;
         _metaStore.commit(CommitParam(serialNum));
     }
-    auto uncommitted = get_pending_lid_token(updOp);
 
-    auto onWriteDone = createUpdateDoneContext(std::move(token), std::move(uncommitted), updOp.getUpdate());
+    auto onWriteDone = createUpdateDoneContext(std::move(token), get_pending_lid_token(updOp), updOp.getUpdate());
     UpdateScope updateScope(*_schema, upd);
     updateAttributes(serialNum, lid, upd, onWriteDone, updateScope);
 
@@ -533,13 +531,12 @@ StoreOnlyFeedView::internalRemove(FeedToken token, const RemoveOperationWithDocI
          rmOp.getSubDbId(), rmOp.getLid(), rmOp.getPrevSubDbId(), rmOp.getPrevLid(), _params._subDbId);
 
     adjustMetaStore(rmOp, docId.getGlobalId(), docId);
-    auto uncommitted = get_pending_lid_token(rmOp);
 
     if (rmOp.getValidDbdId(_params._subDbId)) {
         auto clearDoc = std::make_unique<Document>(*_docType, docId);
         clearDoc->setRepo(*_repo);
 
-        putSummary(serialNum, rmOp.getLid(), std::move(clearDoc), std::make_shared<SummaryPutDoneContext>(std::move(token), std::move(uncommitted)));
+        putSummary(serialNum, rmOp.getLid(), std::move(clearDoc), std::make_shared<SummaryPutDoneContext>(std::move(token), get_pending_lid_token(rmOp)));
     }
     if (rmOp.getValidPrevDbdId(_params._subDbId)) {
         if (rmOp.changedDbdId()) {
@@ -558,7 +555,6 @@ StoreOnlyFeedView::internalRemove(FeedToken token, const RemoveOperationWithGid 
     const SerialNum serialNum = rmOp.getSerialNum();
     DocumentId dummy;
     adjustMetaStore(rmOp, rmOp.getGlobalId(), dummy);
-    auto uncommitted = _pendingLidsForCommit->produce(rmOp.getLid());
 
     if (rmOp.getValidPrevDbdId(_params._subDbId)) {
         if (rmOp.changedDbdId()) {
