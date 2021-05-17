@@ -90,23 +90,6 @@ TEST_F(DocumentMoverTest, require_that_we_can_move_all_documents)
     }
 }
 
-TEST_F(DocumentMoverTest, require_that_move_is_stalled_if_document_is_pending_commit)
-{
-    setupForBucket(_source.bucket(1), 6, 9);
-    {
-        IPendingLidTracker::Token token = _pendingLidsForCommit.produce(1);
-        EXPECT_FALSE(moveDocuments(5));
-        EXPECT_FALSE(_mover.bucketDone());
-    }
-    EXPECT_TRUE(moveDocuments(5));
-    EXPECT_TRUE(_mover.bucketDone());
-    EXPECT_EQ(5u, _handler._moves.size());
-    EXPECT_EQ(5u, _limiter.beginOpCount);
-    for (size_t i = 0; i < 5u; ++i) {
-        assertEqual(_source.bucket(1), _source.docs(1)[0], 6, 9, _handler._moves[0]);
-    }
-}
-
 TEST_F(DocumentMoverTest, require_that_bucket_is_cached_when_IDocumentMoveHandler_handles_move_operation)
 {
     setupForBucket(_source.bucket(1), 6, 9);
