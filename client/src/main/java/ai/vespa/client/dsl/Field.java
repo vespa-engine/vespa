@@ -550,6 +550,29 @@ public class Field extends QueryChain {
         return common("=", annotation, false);
     }
 
+    /**
+     * Nearest neighbor query.
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#nearestneighbor
+     *
+     * @param rankFeature the rankfeature.
+     * @return the query
+     */
+    public Query nearestNeighbor(String rankFeature) {
+        return common("nearestNeighbor", annotation, (Object) rankFeature);
+    }
+
+    /**
+     * Nearest neighbor query.
+     * https://docs.vespa.ai/en/reference/query-language-reference.html#nearestneighbor
+     *
+     * @param annotation the annotation
+     * @param rankFeature the rankfeature.
+     * @return the query
+     */
+    public Query nearestNeighbor(Annotation annotation, String rankFeature) {
+        return common("nearestNeighbor", annotation, (Object) rankFeature);
+    }
+
     private Query common(String relation, Annotation annotation, Object value) {
         return common(relation, annotation, value, values.toArray());
     }
@@ -604,6 +627,12 @@ public class Field extends QueryChain {
             case "sameElement":
                 return String.format("%s contains %s(%s)", fieldName, relation,
                                      ((Query) values.get(0)).toCommaSeparatedAndQueries());
+            case "nearestNeighbor":
+                valuesStr = values.stream().map(i -> (String) i).collect(Collectors.joining(", "));
+
+                return hasAnnotation
+                    ? String.format("([%s]nearestNeighbor(%s, %s))", annotation, fieldName, valuesStr)
+                    : String.format("nearestNeighbor(%s, %s)", fieldName, valuesStr);
             default:
                 Object value = values.get(0);
                 valuesStr = value instanceof Long ? value.toString() + "L" : value.toString();
