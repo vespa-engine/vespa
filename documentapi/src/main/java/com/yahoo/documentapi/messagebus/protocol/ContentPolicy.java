@@ -108,13 +108,13 @@ public class ContentPolicy extends SlobrokPolicy {
             while ((targets.total != 0) &&
                    (100 * targets.list.size() / targets.total >= requiredUpPercentageToSendToKnownGoodNodes))
             {
-                int randIndex = randomizer.nextInt(targets.list.size());
-                String targetSpec = getTargetSpec(targets.list.get(randIndex), context);
+                Integer distributor = targets.list.get(randomizer.nextInt(targets.list.size()));
+                String targetSpec = getTargetSpec(distributor, context);
                 if (targetSpec != null) {
                     context.trace(3, "Sending to random node seen up in cluster state");
                     return targetSpec;
                 }
-                targets.list.remove(randIndex);
+                targets.list.remove(distributor);
             }
             context.trace(3, "Too few nodes seen up in state. Sending totally random.");
             return getTargetSpec(null, context);
