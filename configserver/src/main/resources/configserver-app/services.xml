@@ -46,7 +46,6 @@
     </components>
 
     <preprocess:include file='config-models.xml' required='false' />
-    <preprocess:include file='node-repository.xml' required='false' />
     <preprocess:include file='routing-status.xml' required='false' />
     <preprocess:include file='model-integration.xml' required='true' />
 
