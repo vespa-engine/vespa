@@ -154,7 +154,7 @@ private:
     std::vector<const char *> _input_name_refs;
     std::vector<const char *> _output_name_refs;
 
-    void extract_meta_data();
+    void extract_meta_data() __attribute__((noinline));
 
 public:
     Onnx(const vespalib::string &model_file, Optimize optimize);
