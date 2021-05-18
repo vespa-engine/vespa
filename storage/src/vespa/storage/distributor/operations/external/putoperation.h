@@ -23,7 +23,7 @@ class OperationTargetList;
 class PutOperation : public SequencedOperation
 {
 public:
-    PutOperation(DistributorNodeContext& node_ctx,
+    PutOperation(const DistributorNodeContext& node_ctx,
                  DistributorStripeOperationContext& op_ctx,
                  DistributorBucketSpace &bucketSpace,
                  std::shared_ptr<api::PutCommand> msg,

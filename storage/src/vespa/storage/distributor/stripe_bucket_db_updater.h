@@ -36,11 +36,10 @@ class StripeBucketDBUpdater final
 {
 public:
     using OutdatedNodesMap = dbtransition::OutdatedNodesMap;
-    StripeBucketDBUpdater(DistributorStripeInterface& owner,
-                          DistributorBucketSpaceRepo& bucketSpaceRepo,
-                          DistributorBucketSpaceRepo& readOnlyBucketSpaceRepo,
+    StripeBucketDBUpdater(const DistributorNodeContext& node_ctx,
+                          DistributorStripeOperationContext& op_ctx,
+                          DistributorStripeInterface& owner,
                           DistributorMessageSender& sender,
-                          DistributorComponentRegister& compReg,
                           bool use_legacy_mode);
     ~StripeBucketDBUpdater() override;
 
@@ -264,7 +263,6 @@ private:
         mutable bool _cachedOwned;
     };
 
-    DistributorStripeComponent _distributorComponent;
     const DistributorNodeContext& _node_ctx;
     DistributorStripeOperationContext& _op_ctx;
     DistributorStripeInterface& _distributor_interface;

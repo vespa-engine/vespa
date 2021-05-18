@@ -332,9 +332,9 @@ TwoPhaseUpdateOperationTest::sendUpdate(const std::string& bucketState,
     msg->setCondition(options._condition);
     msg->setTransportContext(std::make_unique<DummyTransportContext>());
 
-    auto& comp = distributor_component();
     return std::make_shared<TwoPhaseUpdateOperation>(
-            comp, comp, comp, getDistributorBucketSpace(), msg, getDistributor().getMetrics());
+            node_context(), operation_context(), doc_selection_parser(),
+            getDistributorBucketSpace(), msg, getDistributor().getMetrics());
 }
 
 TEST_F(TwoPhaseUpdateOperationTest, simple) {

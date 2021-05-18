@@ -21,7 +21,7 @@ using namespace storage::distributor;
 using namespace storage;
 using document::BucketSpace;
 
-PutOperation::PutOperation(DistributorNodeContext& node_ctx,
+PutOperation::PutOperation(const DistributorNodeContext& node_ctx,
                            DistributorStripeOperationContext& op_ctx,
                            DistributorBucketSpace &bucketSpace,
                            std::shared_ptr<api::PutCommand> msg,

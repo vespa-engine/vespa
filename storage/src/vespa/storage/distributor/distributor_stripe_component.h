@@ -158,6 +158,10 @@ public:
      */
     bool storage_node_is_up(document::BucketSpace bucket_space, uint32_t node_index) const override;
 
+    const BucketGcTimeCalculator::BucketIdHasher& bucket_id_hasher() const override {
+        return getDistributor().getBucketIdHasher();
+    }
+
     // Implements DocumentSelectionParser
     std::unique_ptr<document::select::Node> parse_selection(const vespalib::string& selection) const override;
 

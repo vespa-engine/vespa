@@ -45,7 +45,7 @@ GetOperation::GroupId::operator==(const GroupId& other) const
             && _node == other._node);
 }
 
-GetOperation::GetOperation(DistributorNodeContext& node_ctx,
+GetOperation::GetOperation(const DistributorNodeContext& node_ctx,
                            const DistributorBucketSpace &bucketSpace,
                            std::shared_ptr<BucketDatabase::ReadGuard> read_guard,
                            std::shared_ptr<api::GetCommand> msg,

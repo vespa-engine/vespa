@@ -61,7 +61,7 @@ IdealStateManager::print(std::ostream& out, bool verbose,
 bool
 IdealStateManager::iAmUp() const
 {
-    Node node(NodeType::DISTRIBUTOR, _distributorComponent.getIndex());
+    Node node(NodeType::DISTRIBUTOR, node_context().node_index());
     // Assume that derived cluster states agree on distributor node being up
     const auto &state = *operation_context().cluster_state_bundle().getBaselineClusterState();
     const lib::State &nodeState = state.getNodeState(node).getState();
@@ -121,7 +121,7 @@ IdealStateManager::runStateCheckers(StateChecker::Context& c) const
     // We go through _all_ active state checkers so that statistics can be
     // collected across all checkers, not just the ones that are highest pri.
     for (uint32_t i = 0; i < _stateCheckers.size(); i++) {
-        if (!_distributorComponent.getDistributor().getConfig().stateCheckerIsActive(
+        if (!operation_context().distributor_config().stateCheckerIsActive(
                 _stateCheckers[i]->getName()))
         {
             LOG(spam, "Skipping state checker %s",
@@ -164,7 +164,7 @@ IdealStateManager::generateHighestPriority(
         NodeMaintenanceStatsTracker& statsTracker) const
 {
     auto &distributorBucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    StateChecker::Context c(_distributorComponent, distributorBucketSpace, statsTracker, bucket);
+    StateChecker::Context c(node_context(), operation_context(), distributorBucketSpace, statsTracker, bucket);
     fillParentAndChildBuckets(c);
     fillSiblingBucket(c);
 
@@ -201,7 +201,7 @@ IdealStateManager::generateInterceptingSplit(BucketSpace bucketSpace,
     NodeMaintenanceStatsTracker statsTracker;
     document::Bucket bucket(bucketSpace, e.getBucketId());
     auto &distributorBucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    StateChecker::Context c(_distributorComponent, distributorBucketSpace, statsTracker, bucket);
+    StateChecker::Context c(node_context(), operation_context(), distributorBucketSpace, statsTracker, bucket);
     if (e.valid()) {
         c.entry = e;
 
@@ -236,7 +236,7 @@ IdealStateManager::generateAll(const document::Bucket &bucket,
                                NodeMaintenanceStatsTracker& statsTracker) const
 {
     auto &distributorBucketSpace(_bucketSpaceRepo.get(bucket.getBucketSpace()));
-    StateChecker::Context c(_distributorComponent, distributorBucketSpace, statsTracker, bucket);
+    StateChecker::Context c(node_context(), operation_context(), distributorBucketSpace, statsTracker, bucket);
     fillParentAndChildBuckets(c);
     fillSiblingBucket(c);
     BucketDatabase::Entry* e(getEntryForPrimaryBucket(c));
@@ -293,7 +293,7 @@ void IdealStateManager::dump_bucket_space_db_status(document::BucketSpace bucket
 
 void IdealStateManager::getBucketStatus(std::ostream& out) const {
     LOG(debug, "Dumping bucket database valid at cluster state version %u",
-        _distributorComponent.getDistributor().getClusterStateBundle().getVersion());
+        operation_context().cluster_state_bundle().getVersion());
 
     for (auto& space : _bucketSpaceRepo) {
         out << "<h2>" << document::FixedBucketSpaces::to_string(space.first) << " - " << space.first << "</h2>\n";

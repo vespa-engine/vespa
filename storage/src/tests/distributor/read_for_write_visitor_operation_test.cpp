@@ -84,7 +84,7 @@ struct ReadForWriteVisitorOperationStarterTest : Test, DistributorTestUtil {
             cmd->addBucketToBeVisited(BucketId()); // Will be inferred to first sub-bucket in DB
         }
         return std::make_shared<VisitorOperation>(
-                distributor_component(), distributor_component(),
+                node_context(), operation_context(),
                 getDistributorBucketSpace(), cmd, _default_config,
                 getDistributor().getMetrics().visits);
     }

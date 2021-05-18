@@ -35,7 +35,7 @@ public:
         uint32_t maxVisitorsPerNodePerVisitor;
     };
 
-    VisitorOperation(DistributorNodeContext& node_ctx,
+    VisitorOperation(const DistributorNodeContext& node_ctx,
                      DistributorStripeOperationContext& op_ctx,
                      DistributorBucketSpace &bucketSpace,
                      const std::shared_ptr<api::CreateVisitorCommand>& msg,
@@ -152,7 +152,7 @@ private:
      */
     vespalib::duration timeLeft() const noexcept;
 
-    DistributorNodeContext& _node_ctx;
+    const DistributorNodeContext& _node_ctx;
     DistributorStripeOperationContext& _op_ctx;
     DistributorBucketSpace &_bucketSpace;
     SentMessagesMap _sentMessages;

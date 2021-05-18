@@ -15,17 +15,17 @@ class DistributorBucketSpace;
 class RemoveLocationOperation  : public Operation
 {
 public:
-    RemoveLocationOperation(DistributorNodeContext& node_ctx,
+    RemoveLocationOperation(const DistributorNodeContext& node_ctx,
                             DistributorStripeOperationContext& op_ctx,
-                            DocumentSelectionParser& parser,
+                            const DocumentSelectionParser& parser,
                             DistributorBucketSpace &bucketSpace,
                             std::shared_ptr<api::RemoveLocationCommand> msg,
                             PersistenceOperationMetricSet& metric);
     ~RemoveLocationOperation() override;
 
 
-    static int getBucketId(DistributorNodeContext& node_ctx,
-                           DocumentSelectionParser& parser,
+    static int getBucketId(const DistributorNodeContext& node_ctx,
+                           const DocumentSelectionParser& parser,
                            const api::RemoveLocationCommand& cmd,
                            document::BucketId& id);
     void onStart(DistributorStripeMessageSender& sender) override;
@@ -39,8 +39,8 @@ private:
 
     std::shared_ptr<api::RemoveLocationCommand> _msg;
 
-    DistributorNodeContext& _node_ctx;
-    DocumentSelectionParser& _parser;
+    const DistributorNodeContext& _node_ctx;
+    const DocumentSelectionParser& _parser;
     DistributorBucketSpace &_bucketSpace;
 };
 

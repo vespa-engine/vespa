@@ -74,8 +74,8 @@ public:
     }
 
     void sendPut(std::shared_ptr<api::PutCommand> msg) {
-        op = std::make_unique<PutOperation>(distributor_component(),
-                                            distributor_component(),
+        op = std::make_unique<PutOperation>(node_context(),
+                                            operation_context(),
                                             getDistributorBucketSpace(),
                                             msg,
                                             getDistributor().getMetrics().
@@ -402,7 +402,7 @@ TEST_F(PutOperationTest, do_not_send_CreateBucket_if_already_pending) {
     // Manually shove sent messages into pending message tracker, since
     // this isn't done automatically.
     for (size_t i = 0; i < _sender.commands().size(); ++i) {
-        distributor_component().getDistributor().getPendingMessageTracker()
+        operation_context().pending_message_tracker()
             .insert(_sender.command(i));
     }
 

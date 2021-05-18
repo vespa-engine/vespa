@@ -12,7 +12,7 @@ using namespace storage::distributor;
 using namespace storage;
 using document::BucketSpace;
 
-RemoveOperation::RemoveOperation(DistributorNodeContext& node_ctx,
+RemoveOperation::RemoveOperation(const DistributorNodeContext& node_ctx,
                                  DistributorStripeOperationContext& op_ctx,
                                  DistributorBucketSpace &bucketSpace,
                                  std::shared_ptr<api::RemoveCommand> msg,

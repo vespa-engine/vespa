@@ -15,7 +15,7 @@ class DistributorBucketSpace;
 class RemoveOperation  : public SequencedOperation
 {
 public:
-    RemoveOperation(DistributorNodeContext& node_ctx,
+    RemoveOperation(const DistributorNodeContext& node_ctx,
                     DistributorStripeOperationContext& op_ctx,
                     DistributorBucketSpace &bucketSpace,
                     std::shared_ptr<api::RemoveCommand> msg,
@@ -36,7 +36,7 @@ private:
 
     std::shared_ptr<api::RemoveCommand> _msg;
 
-    DistributorNodeContext& _node_ctx;
+    const DistributorNodeContext& _node_ctx;
     DistributorBucketSpace &_bucketSpace;
 };
 

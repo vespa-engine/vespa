@@ -2,6 +2,7 @@
 
 #pragma once
 
+#include "bucketgctimecalculator.h"
 #include "bucketownership.h"
 #include "distributor_operation_context.h"
 #include "operation_routing_snapshot.h"
@@ -46,6 +47,7 @@ public:
     virtual const lib::ClusterState* pending_cluster_state_or_null(const document::BucketSpace& bucket_space) const = 0;
     virtual const lib::ClusterStateBundle& cluster_state_bundle() const = 0;
     virtual bool storage_node_is_up(document::BucketSpace bucket_space, uint32_t node_index) const = 0;
+    virtual const BucketGcTimeCalculator::BucketIdHasher& bucket_id_hasher() const = 0;
 };
 
 }
