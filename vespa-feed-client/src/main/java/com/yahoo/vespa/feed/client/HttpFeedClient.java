@@ -115,7 +115,8 @@ class HttpFeedClient implements FeedClient {
         return send("DELETE", documentId, null, params);
     }
 
-    @Override public void close() throws IOException {
+    @Override
+    public void close() throws IOException {
         if ( ! closed.getAndSet(true))
             httpClient.close();
     }

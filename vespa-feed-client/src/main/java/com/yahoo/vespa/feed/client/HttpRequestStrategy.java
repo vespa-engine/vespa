@@ -135,10 +135,14 @@ class HttpRequestStrategy implements RequestStrategy<SimpleHttpResponse>, HttpRe
     public CompletableFuture<SimpleHttpResponse> enqueue(DocumentId documentId, Consumer<CompletableFuture<SimpleHttpResponse>> dispatch) {
         acquireSlot();
 
+        Consumer<CompletableFuture<SimpleHttpResponse>> safeDispatch = vessel -> {
+            try { dispatch.accept(vessel); }
+            catch (Throwable t) { vessel.completeExceptionally(t); }
+        };
         CompletableFuture<SimpleHttpResponse> vessel = new CompletableFuture<>();
-        byId.compute(documentId, (id, previous) -> { // TODO; consider merging with above locking.
-            if (previous == null) dispatch.accept(vessel);
-            else previous.whenComplete((__, ___) -> dispatch.accept(vessel)); // TODO: keep a list so we can empty it?
+        byId.compute(documentId, (id, previous) -> {
+            if (previous == null) safeDispatch.accept(vessel);
+            else previous.whenComplete((__, ___) -> safeDispatch.accept(vessel));
             return vessel;
         });
 
@@ -146,6 +150,8 @@ class HttpRequestStrategy implements RequestStrategy<SimpleHttpResponse>, HttpRe
             releaseSlot();
             if (thrown == null)
                 success();
+
+            byId.compute(documentId, (id, current) -> current == vessel ? null : current);
         });
     }
 
