@@ -226,7 +226,7 @@ TestDistributorApp::TestDistributorApp(NodeIndex index, vespalib::stringref conf
 TestDistributorApp::~TestDistributorApp() = default;
 
 api::Timestamp
-TestDistributorApp::getUniqueTimestamp()
+TestDistributorApp::generate_unique_timestamp()
 {
     std::lock_guard guard(_accessLock);
     uint64_t timeNow(getClock().getTimeInSeconds().getTime());

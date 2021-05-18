@@ -101,7 +101,7 @@ public:
 
 private:
     // Storage server interface implementation (until we can remove it)
-    virtual api::Timestamp getUniqueTimestamp() { abort(); }
+    virtual api::Timestamp generate_unique_timestamp() { abort(); }
     [[nodiscard]] virtual StorBucketDatabase& content_bucket_db(document::BucketSpace) { abort(); }
     virtual StorBucketDatabase& getStorageBucketDatabase() { abort(); }
     virtual BucketDatabase& getBucketDatabase() { abort(); }
@@ -157,7 +157,7 @@ public:
         return _compReg;
     }
 
-    api::Timestamp getUniqueTimestamp() override;
+    api::Timestamp generate_unique_timestamp() override;
 };
 
 } // storageo
