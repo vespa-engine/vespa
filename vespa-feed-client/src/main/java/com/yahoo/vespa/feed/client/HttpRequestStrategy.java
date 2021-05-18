@@ -150,6 +150,8 @@ class HttpRequestStrategy implements RequestStrategy<SimpleHttpResponse>, HttpRe
             releaseSlot();
             if (thrown == null)
                 success();
+
+            byId.compute(documentId, (id, current) -> current == vessel ? null : current);
         });
     }
 
