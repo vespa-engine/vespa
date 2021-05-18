@@ -11,6 +11,6 @@ public interface ChangeRequestClient {
     /** Get upcoming change requests and updated status of previously stored requests */
     List<ChangeRequest> getChangeRequests(List<ChangeRequest> changeRequests);
 
-    void approveChangeRequests(List<ChangeRequest> changeRequests);
+    void approveChangeRequest(ChangeRequest changeRequest);
 
 }
