@@ -68,7 +68,7 @@ public class HostedVespaPolicyTest {
         when(storageNode1.hostName()).thenReturn(hostName3);
 
         List<StorageNode> upStorageNodes = Arrays.asList(storageNode1, storageNode3);
-        when(applicationApi.getUpStorageNodesInGroupInClusterOrder()).thenReturn(upStorageNodes);
+        when(applicationApi.getNoRemarksStorageNodesInGroupInClusterOrder()).thenReturn(upStorageNodes);
         // setHostState
 
         List<HostName> noRemarksHostNames = Arrays.asList(hostName1, hostName2, hostName3);
@@ -84,7 +84,7 @@ public class HostedVespaPolicyTest {
         order.verify(clusterPolicy).verifyGroupGoingDownIsFine(clusterApi2);
         order.verify(clusterPolicy).verifyGroupGoingDownIsFine(clusterApi3);
 
-        order.verify(applicationApi).getUpStorageNodesInGroupInClusterOrder();
+        order.verify(applicationApi).getNoRemarksStorageNodesInGroupInClusterOrder();
         order.verify(storageNode1).setNodeState(context, ClusterControllerNodeState.MAINTENANCE);
         order.verify(storageNode3).setNodeState(context, ClusterControllerNodeState.MAINTENANCE);
 
