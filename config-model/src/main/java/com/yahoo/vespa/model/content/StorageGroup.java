@@ -54,7 +54,7 @@ public class StorageGroup {
      *
      * @param isHosted true if this is in a hosted setup
      * @param name the name of this group
-     * @param index the distribution-key index og this group
+     * @param index the distribution-key index of this group
      * @param partitions the distribution strategy to use to distribute content to subgroups or empty
      *        (meaning that the "*" distribution will be used) only if this is a leaf group
      *        (having nodes, not subgroups as children).
