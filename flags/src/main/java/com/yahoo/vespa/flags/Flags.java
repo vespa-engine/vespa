@@ -176,12 +176,6 @@ public class Flags {
             "Takes effect at redeployment",
             ZONE_ID, APPLICATION_ID);
 
-    public static final UnboundIntFlag CLUSTER_CONTROLLER_MAX_HEAP_SIZE_IN_MB = defineIntFlag(
-            "cluster-controller-max-heap-size-in-mb", 128,
-            List.of("hmusum"), "2021-02-10", "2021-05-15",
-            "JVM max heap size for cluster controller in Mb",
-            "Takes effect when restarting cluster controller");
-
     public static final UnboundIntFlag METRICS_PROXY_MAX_HEAP_SIZE_IN_MB = defineIntFlag(
             "metrics-proxy-max-heap-size-in-mb", 256,
             List.of("hmusum"), "2021-03-01", "2021-06-15",

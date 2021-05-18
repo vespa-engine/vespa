@@ -175,7 +175,7 @@ public class ContainerClusterTest {
         cluster.getConfig(qrBuilder);
         QrStartConfig qrStartConfig = new QrStartConfig(qrBuilder);
         assertEquals(32, qrStartConfig.jvm().minHeapsize());
-        assertEquals(256, qrStartConfig.jvm().heapsize());
+        assertEquals(128, qrStartConfig.jvm().heapsize());
         assertEquals(32, qrStartConfig.jvm().compressedClassSpaceSize());
         assertEquals(0, qrStartConfig.jvm().heapSizeAsPercentageOfPhysicalMemory());
         root.freezeModelTopology();

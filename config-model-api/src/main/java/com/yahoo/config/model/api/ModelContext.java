@@ -85,7 +85,7 @@ public interface ModelContext {
         @ModelFeatureFlag(owners = {"baldersheim"}) default boolean useBucketExecutorForPruneRemoved() { throw new UnsupportedOperationException("TODO specify default value"); }
         @ModelFeatureFlag(owners = {"geirst"}) default boolean enableFeedBlockInDistributor() { return true; }
         @ModelFeatureFlag(owners = {"baldersheim", "geirst", "toregge"}) default double maxDeadBytesRatio() { return 0.05; }
-        @ModelFeatureFlag(owners = {"hmusum"}) default int clusterControllerMaxHeapSizeInMb() { return 128; }
+        @ModelFeatureFlag(owners = {"hmusum"}, removeAfter = "7.406") default int clusterControllerMaxHeapSizeInMb() { return 128; }
         @ModelFeatureFlag(owners = {"hmusum"}) default int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return 256; }
         @ModelFeatureFlag(owners = {"bjorncs", "tokle"}) default List<String> allowedAthenzProxyIdentities() { return List.of(); }
         @ModelFeatureFlag(owners = {"tokle"}) default boolean tenantIamRole() { return false; }

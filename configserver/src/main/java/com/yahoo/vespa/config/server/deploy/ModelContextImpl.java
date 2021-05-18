@@ -28,7 +28,6 @@ import com.yahoo.config.provision.TenantName;
 import com.yahoo.config.provision.Zone;
 import com.yahoo.container.jdisc.secretstore.SecretStore;
 import com.yahoo.vespa.config.server.tenant.SecretStoreExternalIdRetriever;
-import com.yahoo.vespa.flags.BooleanFlag;
 import com.yahoo.vespa.flags.FetchVector;
 import com.yahoo.vespa.flags.FlagSource;
 import com.yahoo.vespa.flags.Flags;
@@ -170,7 +169,6 @@ public class ModelContextImpl implements ModelContext {
         private final double feedConcurrency;
         private final boolean useBucketExecutorForPruneRemoved;
         private final boolean enableFeedBlockInDistributor;
-        private final int clusterControllerMaxHeapSizeInMb;
         private final ToIntFunction<ClusterSpec.Type> metricsProxyMaxHeapSizeInMb;
         private final List<String> allowedAthenzProxyIdentities;
         private final boolean tenantIamRole;
@@ -194,7 +192,6 @@ public class ModelContextImpl implements ModelContext {
             this.feedConcurrency = flagValue(source, appId, Flags.FEED_CONCURRENCY);
             this.useBucketExecutorForPruneRemoved = flagValue(source, appId, Flags.USE_BUCKET_EXECUTOR_FOR_PRUNE_REMOVED);
             this.enableFeedBlockInDistributor = flagValue(source, appId, Flags.ENABLE_FEED_BLOCK_IN_DISTRIBUTOR);
-            this.clusterControllerMaxHeapSizeInMb = flagValue(source, appId, Flags.CLUSTER_CONTROLLER_MAX_HEAP_SIZE_IN_MB);
             this.metricsProxyMaxHeapSizeInMb = type -> Flags.METRICS_PROXY_MAX_HEAP_SIZE_IN_MB.bindTo(source).with(CLUSTER_TYPE, type.name()).value();
             this.allowedAthenzProxyIdentities = flagValue(source, appId, Flags.ALLOWED_ATHENZ_PROXY_IDENTITIES);
             this.tenantIamRole = flagValue(source, appId.tenant(), Flags.TENANT_IAM_ROLE);
@@ -218,7 +215,6 @@ public class ModelContextImpl implements ModelContext {
         @Override public double feedConcurrency() { return feedConcurrency; }
         @Override public boolean useBucketExecutorForPruneRemoved() { return useBucketExecutorForPruneRemoved; }
         @Override public boolean enableFeedBlockInDistributor() { return enableFeedBlockInDistributor; }
-        @Override public int clusterControllerMaxHeapSizeInMb() { return clusterControllerMaxHeapSizeInMb; }
         @Override public int metricsProxyMaxHeapSizeInMb(ClusterSpec.Type type) { return metricsProxyMaxHeapSizeInMb.applyAsInt(type); }
         @Override public List<String> allowedAthenzProxyIdentities() { return allowedAthenzProxyIdentities; }
         @Override public boolean tenantIamRole() { return tenantIamRole; }
