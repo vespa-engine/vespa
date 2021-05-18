@@ -14,4 +14,20 @@ public interface FeedClient extends Closeable {
     CompletableFuture<Result> update(DocumentId documentId, String updateJson, OperationParameters params);
     CompletableFuture<Result> remove(DocumentId documentId, OperationParameters params);
 
+    interface RetryStrategy {
+
+        /** Whether to retry operations of the given type. */
+        default boolean retry(OperationType type) { return true; }
+
+        /** Number of retries per operation for non-backpressure problems. */
+        default int retries() { return 5; }
+
+    }
+
+    enum OperationType {
+        put,
+        update,
+        remove;
+    }
+
 }

@@ -19,6 +19,7 @@ import org.apache.hc.core5.util.TimeValue;
 import org.apache.hc.core5.util.Timeout;
 
 import java.io.IOException;
+import java.io.UncheckedIOException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
@@ -27,8 +28,12 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Supplier;
 
+import static com.yahoo.vespa.feed.client.Result.Type.conditionNotMet;
+import static com.yahoo.vespa.feed.client.Result.Type.failure;
+import static com.yahoo.vespa.feed.client.Result.Type.success;
 import static java.util.Objects.requireNonNull;
 
 /**
@@ -39,28 +44,29 @@ import static java.util.Objects.requireNonNull;
  */
 class HttpFeedClient implements FeedClient {
 
-    private final CloseableHttpAsyncClient httpClient;
     private final URI endpoint;
     private final Map<String, Supplier<String>> requestHeaders;
-    private final int maxPendingRequests;
+    private final HttpRequestStrategy requestStrategy;
+    private final CloseableHttpAsyncClient httpClient;
+    private final AtomicBoolean closed = new AtomicBoolean();
 
     HttpFeedClient(FeedClientBuilder builder) {
-        this.httpClient = createHttpClient(builder);
-        this.endpoint = getEndpoint(builder);
+        this.endpoint = builder.endpoint;
         this.requestHeaders = new HashMap<>(builder.requestHeaders);
-        this.maxPendingRequests = (builder.maxConnections != null ? builder.maxConnections : 4)
-                                * (builder.maxStreamsPerConnection != null ? builder.maxStreamsPerConnection : 128);
 
+        this.requestStrategy = new HttpRequestStrategy(builder);
+        this.httpClient = createHttpClient(builder, requestStrategy);
         this.httpClient.start();
     }
 
-    private static CloseableHttpAsyncClient createHttpClient(FeedClientBuilder builder) {
+    private static CloseableHttpAsyncClient createHttpClient(FeedClientBuilder builder, HttpRequestStrategy retryStrategy) {
         HttpAsyncClientBuilder httpClientBuilder = HttpAsyncClientBuilder.create()
                 .setUserAgent(String.format("vespa-feed-client/%s", Vespa.VERSION))
                 .setDefaultHeaders(Collections.singletonList(new BasicHeader("Vespa-Client-Version", Vespa.VERSION)))
                 .disableCookieManagement()
                 .disableRedirectHandling()
                 .disableConnectionState()
+                .setRetryStrategy(retryStrategy)
                 .setIOReactorConfig(IOReactorConfig.custom()
                         .setSoTimeout(Timeout.ofSeconds(10))
                         .build())
@@ -71,11 +77,12 @@ class HttpFeedClient implements FeedClient {
                                 .setResponseTimeout(Timeout.ofMinutes(5))
                                 .build())
                 .setH2Config(H2Config.custom()
-                        .setMaxConcurrentStreams(builder.maxStreamsPerConnection != null ? builder.maxStreamsPerConnection : 128)
+                        .setMaxConcurrentStreams(builder.maxStreamsPerConnection)
+                        .setCompressionEnabled(true)
                         .setPushEnabled(false)
                         .build());
 
-        int maxConnections = builder.maxConnections != null ? builder.maxConnections : 4;
+        int maxConnections = builder.maxConnections;
         PoolingAsyncClientConnectionManagerBuilder connectionManagerBuilder = PoolingAsyncClientConnectionManagerBuilder.create()
                 .setConnectionTimeToLive(TimeValue.ofMinutes(10))
                 .setMaxConnTotal(maxConnections)
@@ -93,11 +100,6 @@ class HttpFeedClient implements FeedClient {
         return httpClientBuilder.build();
     }
 
-    private static URI getEndpoint(FeedClientBuilder builder) {
-        if (builder.endpoint == null) throw new IllegalArgumentException("Endpoint must be specified");
-        return builder.endpoint;
-    }
-
     @Override
     public CompletableFuture<Result> put(DocumentId documentId, String documentJson, OperationParameters params) {
         return send("POST", documentId, requireNonNull(documentJson), params);
@@ -113,7 +115,10 @@ class HttpFeedClient implements FeedClient {
         return send("DELETE", documentId, null, params);
     }
 
-    @Override public void close() throws IOException { this.httpClient.close(); }
+    @Override public void close() throws IOException {
+        if ( ! closed.getAndSet(true))
+            httpClient.close();
+    }
 
     private CompletableFuture<Result> send(String method, DocumentId documentId, String operationJson, OperationParameters params) {
         SimpleHttpRequest request = new SimpleHttpRequest(method, operationUrl(endpoint, documentId, params));
@@ -121,27 +126,34 @@ class HttpFeedClient implements FeedClient {
         if (operationJson != null)
             request.setBody(operationJson, ContentType.APPLICATION_JSON);
 
-        CompletableFuture<Result> future = new CompletableFuture<>();
-        httpClient.execute(new SimpleHttpRequest(method, endpoint),
-                                  new FutureCallback<SimpleHttpResponse>() {
-                                      @Override public void completed(SimpleHttpResponse response) {
-                                          Result result = toResult(response, documentId);
-                                          future.complete(result); // TODO: add retrying
-                                      }
-                                      @Override public void failed(Exception ex) {
-                                          Result result = new Result(Result.Type.failure, documentId, ex.getMessage(), null);
-                                          future.completeExceptionally(ex); // TODO: add retrying
-                                      }
-                                      @Override public void cancelled() {
-                                          Result result = new Result(Result.Type.cancelled, documentId, null, null);
-                                          future.cancel(false); // TODO: add retrying
-                                      }
-                                  });
-        return future;
+        return requestStrategy.enqueue(documentId, future -> {
+            httpClient.execute(new SimpleHttpRequest(method, endpoint),
+                               new FutureCallback<SimpleHttpResponse>() {
+                                   @Override public void completed(SimpleHttpResponse response) { future.complete(response); }
+                                   @Override public void failed(Exception ex) { future.completeExceptionally(ex); }
+                                   @Override public void cancelled() { future.cancel(false); }
+                               });
+        }).handle((response, thrown) -> {
+            if (thrown != null) {
+                if (requestStrategy.hasFailed()) {
+                    try { close(); }
+                    catch (IOException exception) { throw new UncheckedIOException(exception); }
+                }
+                return new Result(failure, documentId, thrown.getMessage(), null);
+            }
+            return toResult(response, documentId);
+        });
     }
 
     static Result toResult(SimpleHttpResponse response, DocumentId documentId) {
-        return new Result(Result.Type.failure, documentId, null, null); // TODO: parse JSON and status code
+        Result.Type type;
+        switch (response.getCode()) {
+            case 200: type = success; break;
+            case 412: type = conditionNotMet; break;
+            default:  type = failure;
+        }
+        Map<String, String> responseJson = null; // TODO: parse JSON.
+        return new Result(type, documentId, responseJson.get("message"), responseJson.get("trace"));
     }
 
     static List<String> toPath(DocumentId documentId) {

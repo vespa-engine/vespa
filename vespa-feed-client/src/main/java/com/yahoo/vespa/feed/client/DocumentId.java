@@ -3,6 +3,7 @@ package com.yahoo.vespa.feed.client;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
 import java.util.OptionalLong;
@@ -73,6 +74,19 @@ public class DocumentId {
 
     public String userSpecific() {
         return userSpecific;
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        DocumentId that = (DocumentId) o;
+        return documentType.equals(that.documentType) && namespace.equals(that.namespace) && number.equals(that.number) && group.equals(that.group) && userSpecific.equals(that.userSpecific);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(documentType, namespace, number, group, userSpecific);
     }
 
 }
