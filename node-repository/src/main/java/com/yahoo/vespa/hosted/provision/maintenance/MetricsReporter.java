@@ -145,6 +145,9 @@ public class MetricsReporter extends NodeRepositoryMaintainer {
         metric.set("hostedVespa.pendingRedeployments", pendingRedeploymentsSupplier.get(), null);
     }
 
+    /**
+     * NB: Keep this metric set in sync with internal configserver metric pre-aggregation
+     */
     private void updateNodeMetrics(Node node, ServiceModel serviceModel) {
         Metric.Context context;
 
