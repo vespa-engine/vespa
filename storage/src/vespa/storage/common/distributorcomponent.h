@@ -46,7 +46,7 @@ typedef vespa::config::content::core::internal::InternalStorVisitordispatcherTyp
 
 struct UniqueTimeCalculator {
     virtual ~UniqueTimeCalculator() {}
-    virtual api::Timestamp getUniqueTimestamp() = 0;
+    [[nodiscard]] virtual api::Timestamp generate_unique_timestamp() = 0;
 };
 
 struct DistributorManagedComponent
@@ -90,8 +90,8 @@ public:
     DistributorComponent(DistributorComponentRegister& compReg, vespalib::stringref name);
     ~DistributorComponent() override;
 
-    api::Timestamp getUniqueTimestamp() const {
-        return _timeCalculator->getUniqueTimestamp();
+    [[nodiscard]] api::Timestamp getUniqueTimestamp() const {
+        return _timeCalculator->generate_unique_timestamp();
     }
     const DistributorConfig& getDistributorConfig() const {
         return _distributorConfig;

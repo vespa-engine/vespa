@@ -29,8 +29,9 @@ DistributorNode::DistributorNode(
       _threadPool(framework::TickingThreadPool::createDefault("distributor")),
       _stripe_pool(std::make_unique<distributor::DistributorStripePool>()),
       _context(context),
-      _lastUniqueTimestampRequested(0),
-      _uniqueTimestampCounter(0),
+      _timestamp_mutex(),
+      _timestamp_second_counter(0),
+      _intra_second_pseudo_usec_counter(0),
       _num_distributor_stripes(num_distributor_stripes),
       _retrievedCommunicationManager(std::move(communicationManager))
 {
@@ -110,23 +111,32 @@ DistributorNode::createChain(IStorageChainBuilder &builder)
     builder.add(std::move(stateManager));
 }
 
-// FIXME STRIPE not thread safe!!
 api::Timestamp
-DistributorNode::getUniqueTimestamp()
+DistributorNode::generate_unique_timestamp()
 {
-    uint64_t timeNow(_component->getClock().getTimeInSeconds().getTime());
-    if (timeNow == _lastUniqueTimestampRequested) {
-        ++_uniqueTimestampCounter;
-    } else {
-        if (timeNow < _lastUniqueTimestampRequested) {
-            LOG(error, "Time has moved backwards, from %" PRIu64 " to %" PRIu64 ".",
-                _lastUniqueTimestampRequested, timeNow);
+    uint64_t now_seconds = _component->getClock().getTimeInSeconds().getTime();
+    std::lock_guard lock(_timestamp_mutex);
+    // We explicitly handle a seemingly decreased wall clock time, as multiple threads may
+    // race with each other over a second change edge. In this case, pretend an earlier
+    // timestamp took place in the same second as the newest observed wall clock time.
+    if (now_seconds <= _timestamp_second_counter) {
+        // ... but if we're stuck too far in the past, we trigger a process restart.
+        if ((_timestamp_second_counter - now_seconds) > SanityCheckMaxWallClockSecondSkew) {
+            LOG(error, "Current wall clock time is more than %u seconds in the past "
+                       "compared to the highest observed wall clock time (%" PRIu64 " < %" PRIu64 "). "
+                       "%u timestamps were generated within this time period.",
+                SanityCheckMaxWallClockSecondSkew, now_seconds,_timestamp_second_counter,
+                _intra_second_pseudo_usec_counter);
+            abort();
         }
-        _lastUniqueTimestampRequested = timeNow;
-        _uniqueTimestampCounter = 0;
+        assert(_intra_second_pseudo_usec_counter < 1'000'000);
+        ++_intra_second_pseudo_usec_counter;
+    } else {
+        _timestamp_second_counter = now_seconds;
+        _intra_second_pseudo_usec_counter = 0;
     }
 
-    return _lastUniqueTimestampRequested * 1000000ll + _uniqueTimestampCounter;
+    return _timestamp_second_counter * 1'000'000LL + _intra_second_pseudo_usec_counter;
 }
 
 ResumeGuard
