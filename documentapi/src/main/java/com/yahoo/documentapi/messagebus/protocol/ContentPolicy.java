@@ -75,14 +75,25 @@ public class ContentPolicy extends SlobrokPolicy {
     public abstract static class HostFetcher {
 
         private static class Targets {
+            final int total;
             private final List<Integer> list;
-            private final int total;
+            private int k;
             Targets() {
-                this(Collections.emptyList(), 1);
+                this(Collections.emptyList(), 0);
             }
             Targets(List<Integer> list, int total) {
-                this.list = list;
                 this.total = total;
+                this.list = list;
+                this.k = 0;
+            }
+            synchronized Integer next() {
+                return list.isEmpty() ? null : list.get(k = ++k == list.size() ? 0 : k);
+            }
+            synchronized void remove(Integer t) {
+                list.remove(t);
+            }
+            synchronized int size() {
+                return list.size();
             }
         }
 
@@ -99,22 +110,22 @@ public class ContentPolicy extends SlobrokPolicy {
             for (int i=0; i<state.getNodeCount(NodeType.DISTRIBUTOR); ++i) {
                 if (state.getNodeState(new Node(NodeType.DISTRIBUTOR, i)).getState().oneOf(upStates)) validRandomTargets.add(i);
             }
-            validTargets.set(new Targets(new CopyOnWriteArrayList<>(validRandomTargets), state.getNodeCount(NodeType.DISTRIBUTOR)));
+            validTargets.set(new Targets(validRandomTargets, state.getNodeCount(NodeType.DISTRIBUTOR)));
         }
         public abstract String getTargetSpec(Integer distributor, RoutingContext context);
         String getRandomTargetSpec(RoutingContext context) {
             Targets targets = validTargets.get();
             // Try to use list of random targets, if at least X % of the nodes are up
-            while ((targets.total != 0) &&
-                   (100 * targets.list.size() / targets.total >= requiredUpPercentageToSendToKnownGoodNodes))
+            while ((100 * targets.size() >= requiredUpPercentageToSendToKnownGoodNodes * targets.total))
             {
-                Integer distributor = targets.list.get(randomizer.nextInt(targets.list.size()));
+                Integer distributor = targets.next();
+                if (distributor == null) break;
                 String targetSpec = getTargetSpec(distributor, context);
                 if (targetSpec != null) {
                     context.trace(3, "Sending to random node seen up in cluster state");
                     return targetSpec;
                 }
-                targets.list.remove(distributor);
+                targets.remove(distributor);
             }
             context.trace(3, "Too few nodes seen up in state. Sending totally random.");
             return getTargetSpec(null, context);
