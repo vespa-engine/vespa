@@ -18,6 +18,7 @@ import com.yahoo.slime.SlimeUtils;
 import com.yahoo.vespa.hosted.controller.Controller;
 import com.yahoo.vespa.hosted.controller.api.integration.configserver.Node;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest;
+import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
 import com.yahoo.vespa.hosted.controller.auditlog.AuditLoggingRequestHandler;
 import com.yahoo.vespa.hosted.controller.maintenance.ChangeManagementAssessor;
 import com.yahoo.vespa.hosted.controller.persistence.ChangeRequestSerializer;
@@ -50,6 +51,10 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
                     return get(request);
                 case POST:
                     return post(request);
+                case PATCH:
+                    return patch(request);
+                case DELETE:
+                    return delete(request);
                 default:
                     return ErrorResponse.methodNotAllowed("Method '" + request.getMethod() + "' is unsupported");
             }
@@ -65,12 +70,25 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
         Path path = new Path(request.getUri());
         if (path.matches("/changemanagement/v1/assessment/{changeRequestId}")) return changeRequestAssessment(path.get("changeRequestId"));
         if (path.matches("/changemanagement/v1/vcmr")) return getVCMRs();
+        if (path.matches("/changemanagement/v1/vcmr/{vcmrId}")) return getVCMR(path.get("vcmrId"));
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
     private HttpResponse post(HttpRequest request) {
         Path path = new Path(request.getUri());
         if (path.matches("/changemanagement/v1/assessment")) return doAssessment(request);
+        return ErrorResponse.notFoundError("Nothing at " + path);
+    }
+
+    private HttpResponse patch(HttpRequest request) {
+        Path path = new Path(request.getUri());
+        if (path.matches("/changemanagement/v1/vcmr/{vcmrId}")) return patchVCMR(request, path.get("vcmrId"));
+        return ErrorResponse.notFoundError("Nothing at " + path);
+    }
+
+    private HttpResponse delete(HttpRequest request) {
+        Path path = new Path(request.getUri());
+        if (path.matches("/changemanagement/v1/vcmr/{vcmrId}")) return deleteVCMR(path.get("vcmrId"));
         return ErrorResponse.notFoundError("Nothing at " + path);
     }
 
@@ -180,6 +198,72 @@ public class ChangeManagementApiHandler extends AuditLoggingRequestHandler {
             var changeCursor = cursor.addObject();
             ChangeRequestSerializer.writeChangeRequest(changeCursor, changeRequest);
         });
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse getVCMR(String vcmrId) {
+        var changeRequest = controller.curator().readChangeRequest(vcmrId);
+
+        if (changeRequest.isEmpty()) {
+            return ErrorResponse.notFoundError("No VCMR with id: " + vcmrId);
+        }
+
+        var slime = new Slime();
+        var cursor = slime.setObject();
+
+        ChangeRequestSerializer.writeChangeRequest(cursor, changeRequest.get());
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse patchVCMR(HttpRequest request, String vcmrId) {
+        var optionalChangeRequest = controller.curator().readChangeRequest(vcmrId);
+
+        if (optionalChangeRequest.isEmpty()) {
+            return ErrorResponse.notFoundError("No VCMR with id: " + vcmrId);
+        }
+
+        var changeRequest = optionalChangeRequest.get();
+        var inspector = inspectorOrThrow(request);
+
+        if (inspector.field("approval").valid()) {
+            var approval = ChangeRequest.Approval.valueOf(inspector.field("approval").asString());
+            changeRequest = changeRequest.withApproval(approval);
+        }
+
+        if (inspector.field("actionPlan").valid()) {
+            var actionPlan = ChangeRequestSerializer.readHostActionPlan(inspector.field("actionPlan"));
+            changeRequest = changeRequest.withActionPlan(actionPlan);
+        }
+
+        if (inspector.field("status").valid()) {
+            var status = VespaChangeRequest.Status.valueOf(inspector.field("status").asString());
+            changeRequest = changeRequest.withStatus(status);
+        }
+
+        try (var lock = controller.curator().lockChangeRequests()) {
+            controller.curator().writeChangeRequest(changeRequest);
+        }
+
+        var slime = new Slime();
+        var cursor = slime.setObject();
+        ChangeRequestSerializer.writeChangeRequest(cursor, changeRequest);
+        return new SlimeJsonResponse(slime);
+    }
+
+    private HttpResponse deleteVCMR(String vcmrId) {
+        var changeRequest = controller.curator().readChangeRequest(vcmrId);
+
+        if (changeRequest.isEmpty()) {
+            return ErrorResponse.notFoundError("No VCMR with id: " + vcmrId);
+        }
+
+        try (var lock = controller.curator().lockChangeRequests()) {
+            controller.curator().deleteChangeRequest(changeRequest.get());
+        }
+
+        var slime = new Slime();
+        var cursor = slime.setObject();
+        ChangeRequestSerializer.writeChangeRequest(cursor, changeRequest.get());
         return new SlimeJsonResponse(slime);
     }
 
