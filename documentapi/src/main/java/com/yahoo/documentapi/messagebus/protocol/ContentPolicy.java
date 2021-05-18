@@ -24,7 +24,6 @@ import com.yahoo.vdslib.state.State;
 import com.yahoo.vespa.config.content.DistributionConfig;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -76,13 +75,26 @@ public class ContentPolicy extends SlobrokPolicy {
 
         private static class Targets {
             private final List<Integer> list;
-            private final int total;
+            private final AtomicInteger size;
+            final int total;
             Targets() {
-                this(Collections.emptyList(), 1);
+                this(List.of(), 0);
             }
             Targets(List<Integer> list, int total) {
-                this.list = list;
-                this.total = total;
+                this.list = new CopyOnWriteArrayList<>(list);
+                this.size = new AtomicInteger(list.size());
+                this.total = Math.max(1, total);
+            }
+            Integer get(int i) {
+                return list.get(i);
+            }
+            void remove(Integer v) {
+                size.decrementAndGet();
+                list.add(null); // Avoid index out of bounds for racing getters.
+                list.remove(v);
+            }
+            int size() {
+                return size.get();
             }
         }
 
@@ -99,22 +111,22 @@ public class ContentPolicy extends SlobrokPolicy {
             for (int i=0; i<state.getNodeCount(NodeType.DISTRIBUTOR); ++i) {
                 if (state.getNodeState(new Node(NodeType.DISTRIBUTOR, i)).getState().oneOf(upStates)) validRandomTargets.add(i);
             }
-            validTargets.set(new Targets(new CopyOnWriteArrayList<>(validRandomTargets), state.getNodeCount(NodeType.DISTRIBUTOR)));
+            validTargets.set(new Targets(validRandomTargets, state.getNodeCount(NodeType.DISTRIBUTOR)));
         }
         public abstract String getTargetSpec(Integer distributor, RoutingContext context);
         String getRandomTargetSpec(RoutingContext context) {
             Targets targets = validTargets.get();
             // Try to use list of random targets, if at least X % of the nodes are up
-            while ((targets.total != 0) &&
-                   (100 * targets.list.size() / targets.total >= requiredUpPercentageToSendToKnownGoodNodes))
+            while (100 * targets.size() >= requiredUpPercentageToSendToKnownGoodNodes * targets.total)
             {
-                Integer distributor = targets.list.get(randomizer.nextInt(targets.list.size()));
+                Integer distributor = targets.get(randomizer.nextInt(targets.size()));
+                if (distributor == null) continue;
                 String targetSpec = getTargetSpec(distributor, context);
                 if (targetSpec != null) {
                     context.trace(3, "Sending to random node seen up in cluster state");
                     return targetSpec;
                 }
-                targets.list.remove(distributor);
+                targets.remove(distributor);
             }
             context.trace(3, "Too few nodes seen up in state. Sending totally random.");
             return getTargetSpec(null, context);
