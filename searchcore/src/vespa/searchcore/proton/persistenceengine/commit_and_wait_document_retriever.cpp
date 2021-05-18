@@ -31,7 +31,6 @@ CommitAndWaitDocumentRetriever::getDocumentMetaData(const document::DocumentId &
 document::Document::UP
 CommitAndWaitDocumentRetriever::getFullDocument(search::DocumentIdT lid) const {
     // Ensure that attribute vectors are committed
-    assert(_uncommittedLidsTracker.getState(lid) == ILidCommitState::State::COMPLETED);
     _uncommittedLidsTracker.waitComplete(lid);
     return _retriever->getFullDocument(lid);
 }
@@ -40,7 +39,6 @@ document::Document::UP
 CommitAndWaitDocumentRetriever::getPartialDocument(search::DocumentIdT lid, const document::DocumentId & docId,
                                                    const document::FieldSet & fieldSet) const
 {
-    assert(_uncommittedLidsTracker.getState(lid) == ILidCommitState::State::COMPLETED);
     _uncommittedLidsTracker.waitComplete(lid);
     return _retriever->getPartialDocument(lid, docId, fieldSet);
 }
@@ -49,9 +47,6 @@ void
 CommitAndWaitDocumentRetriever::visitDocuments(const LidVector &lids, search::IDocumentVisitor &visitor,
                                                ReadConsistency readConsistency) const
 {
-    for (auto lid : lids) {
-        assert(_uncommittedLidsTracker.getState(lid) == ILidCommitState::State::COMPLETED);
-    }
     _uncommittedLidsTracker.waitComplete(lids);
     _retriever->visitDocuments(lids, visitor, readConsistency);
 }
