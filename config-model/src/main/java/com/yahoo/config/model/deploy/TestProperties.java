@@ -52,7 +52,7 @@ public class TestProperties implements ModelContext.Properties, ModelContext.Fea
     private double feedConcurrency = 0.5;
     private boolean useBucketExecutorForPruneRemoved;
     private boolean enableFeedBlockInDistributor = true;
-    private int clusterControllerMaxHeapSizeInMb = 256;
+    private int clusterControllerMaxHeapSizeInMb = 128;
     private int metricsProxyMaxHeapSizeInMb = 256;
     private int maxActivationInhibitedOutOfSyncGroups = 0;
     private List<TenantSecretStore> tenantSecretStores = Collections.emptyList();
