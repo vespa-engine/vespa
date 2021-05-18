@@ -17,8 +17,8 @@ ForceCommitContext::ForceCommitContext(vespalib::Executor &executor,
       _task(std::make_unique<ForceCommitDoneTask>(documentMetaStore, std::move(pending_gid_to_lid_changes))),
       _committedDocIdLimit(0u),
       _docIdLimit(nullptr),
-      _lidsToCommit(std::move(lidsToCommit)),
-      _onDone(std::move(onDone))
+      _onDone(std::move(onDone)),
+      _lidsToCommit(std::move(lidsToCommit))
 {
 }
 
