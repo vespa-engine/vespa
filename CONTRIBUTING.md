@@ -10,7 +10,7 @@ This documents tells you what you need to know to contribute.
 All work on Vespa happens directly on Github,
 using the [Github flow model](https://guides.github.com/introduction/flow/).
 We release the master branch a few times a week and you should expect it to almost always work.
-In addition to the [public Travis build](https://travis-ci.org/vespa-engine/vespa) 
+In addition to the [public Screwdriver build](https://cd.screwdriver.cd/pipelines/6386)
 we have a large acceptance and performance test suite which
 is also run continuously. We plan to add this to the open source code base later.
 
@@ -27,7 +27,7 @@ Please follow [best practices](https://github.com/trein/dev-best-practices/wiki/
 
 When your code is ready to be submitted, [submit a pull request](https://help.github.com/articles/creating-a-pull-request/) to begin the code review process.
 
-We only seek to accept code that you are authorized to contribute to the project. We have added a pull request template on our projects so that your contributions are made with the following confirmation: 
+We only seek to accept code that you are authorized to contribute to the project. We have added a pull request template on our projects so that your contributions are made with the following confirmation:
 
 > I confirm that this contribution is made under the terms of the license found in the root directory of this repository's source tree and that I have the authority necessary to make this contribution on behalf of its copyright owner.
 
@@ -49,7 +49,7 @@ There is also a [ToDo list](TODO.md) for larger things which nobody are working 
 If you have questions, want to share your experience or help others, please join our community on [Stack Overflow](http://stackoverflow.com/questions/tagged/vespa).
 
 ### Getting started
-See [README](README.md) for how to build and test Vespa. 
+See [README](README.md) for how to build and test Vespa.
 
 For an overview of the modules, see [Code-map.md](Code-map.md).
 More details are in the READMEs of each module.

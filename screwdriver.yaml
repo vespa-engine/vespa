@@ -47,14 +47,7 @@ jobs:
           ccache -z
 
       - compile: |
-          export TRAVIS_REPO_SLUG="vespa-engine/vespa"
-          if [[ -z $SD_PULL_REQUEST ]]; then
-            export TRAVIS_PULL_REQUEST=false
-          else
-            export TRAVIS_PULL_REQUEST=$SD_PULL_REQUEST
-          fi
-
-          travis/travis-build.sh
+          screwdriver/build-vespa.sh
 
       - save-cache: |
           if [[ -z "$SD_PULL_REQUEST" ]]; then

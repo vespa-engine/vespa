@@ -6,18 +6,18 @@ if (( ${#BASH_SOURCE[@]} == 1 )); then
     exit 1
 fi
 
-if [[ $TRAVIS_PULL_REQUEST == false ]]; then
+if [[ -z $SD_PULL_REQUEST == false ]]; then
     export SHOULD_BUILD=all
     return 0
 fi
 
-JSON=$(curl -sLf https://api.github.com/repos/$TRAVIS_REPO_SLUG/pulls/$TRAVIS_PULL_REQUEST)
+JSON=$(curl -sLf https://api.github.com/repos/vespa-engine/vespa/pulls/$SD_PULL_REQUEST)
 PR_TITLE=$(jq -re '.title' <<< "$JSON")
 
-JSON=$(curl -sLf https://api.github.com/repos/$TRAVIS_REPO_SLUG/pulls/$TRAVIS_PULL_REQUEST/commits)
+JSON=$(curl -sLf https://api.github.com/repos/vespa-engine/vespa/pulls/$SD_PULL_REQUEST/commits)
 COMMITS=$(jq -re '.[].sha' <<< "$JSON")
 
-FILES=$(for C in $COMMITS; do JSON=$(curl -sLf https://api.github.com/repos/$TRAVIS_REPO_SLUG/commits/$C); jq -re '.files[].filename' <<< "$JSON"; done)
+FILES=$(for C in $COMMITS; do JSON=$(curl -sLf https://api.github.com/repos/vespa-engine/vespa/commits/$C); jq -re '.files[].filename' <<< "$JSON"; done)
 
 if [[ $PR_TITLE =~ \[run-systemtest\] ]]; then
   SHOULD_BUILD=systemtest
