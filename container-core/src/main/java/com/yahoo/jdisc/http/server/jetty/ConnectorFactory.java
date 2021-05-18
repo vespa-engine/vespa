@@ -161,7 +161,9 @@ public class ConnectorFactory {
     }
 
     private HTTP2ServerConnectionFactory newHttp2ConnectionFactory() {
-        return new HTTP2ServerConnectionFactory(newHttpConfiguration());
+        HTTP2ServerConnectionFactory factory = new HTTP2ServerConnectionFactory(newHttpConfiguration());
+        factory.setMaxConcurrentStreams(4096);
+        return factory;
     }
 
     private SslConnectionFactory newSslConnectionFactory(Metric metric, ConnectionFactory wrappedFactory) {
