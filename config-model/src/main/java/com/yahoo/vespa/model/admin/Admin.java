@@ -29,7 +29,6 @@ import com.yahoo.vespa.model.filedistribution.FileDistributor;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
@@ -212,7 +211,8 @@ public class Admin extends AbstractConfigProducer<Admin> implements Serializable
         if (slobroks.isEmpty()) // TODO: Move to caller
             slobroks.addAll(createDefaultSlobrokSetup(deployState.getDeployLogger()));
 
-        addMetricsProxyCluster(hosts, deployState);
+        if (! deployState.isHosted() || ! deployState.getProperties().applicationId().instance().isTester())
+            addMetricsProxyCluster(hosts, deployState);
 
         for (HostResource host : hosts) {
             if (!host.getHost().runsConfigServer()) {
