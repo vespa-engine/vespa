@@ -24,6 +24,7 @@ import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 import java.util.function.Predicate;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
@@ -77,7 +78,7 @@ public class VCMRMaintainer extends ControllerMaintainer {
      * Status is based on:
      *  1. Whether the source has reportedly closed the request
      *  2. Whether any host requires operator action
-     *  3. Whether any host has started/finished retiring
+     *  3. Whether any host is pending/started/finished retirement
      */
     private Status getStatus(List<HostAction> nextActions, VespaChangeRequest changeRequest) {
         if (changeRequest.getChangeRequestSource().isClosed()) {
@@ -90,8 +91,12 @@ public class VCMRMaintainer extends ControllerMaintainer {
             return Status.REQUIRES_OPERATOR_ACTION;
         }
 
-        if (byActionState.getOrDefault(State.RETIRING, 0L) + byActionState.getOrDefault(State.RETIRED, 0L) > 0) {
+        if (byActionState.getOrDefault(State.RETIRING, 0L) > 0) {
             return Status.IN_PROGRESS;
+        }
+
+        if (Set.of(State.RETIRED, State.NONE).containsAll(byActionState.keySet())) {
+            return Status.READY;
         }
 
         if (byActionState.getOrDefault(State.PENDING_RETIREMENT, 0L) > 0) {
