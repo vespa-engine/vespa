@@ -1082,15 +1082,15 @@ public class ApplicationRepository implements com.yahoo.config.provision.Deploye
         }
         RefeedActions refeedActions = actions.getRefeedActions();
         if ( ! refeedActions.isEmpty()) {
-            logger.log(Level.WARNING,
-                       "Change(s) between active and new application that may require re-feed:\n" +
-                       refeedActions.format());
+            logger.logApplicationPackage(Level.WARNING,
+                                         "Change(s) between active and new application that may require re-feed:\n" +
+                                         refeedActions.format());
         }
         ReindexActions reindexActions = actions.getReindexActions();
         if ( ! reindexActions.isEmpty()) {
-            logger.log(Level.WARNING,
-                       "Change(s) between active and new application that may require re-index:\n" +
-                       reindexActions.format());
+            logger.logApplicationPackage(Level.WARNING,
+                                         "Change(s) between active and new application that may require re-index:\n" +
+                                         reindexActions.format());
         }
     }
 
