@@ -21,6 +21,7 @@
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/time/time_box.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <thread>
 #include <cassert>
 
@@ -46,6 +47,8 @@ using search::DocumentStore;
 using search::WriteableFileChunk;
 using std::make_shared;
 using std::make_unique;
+
+using vespalib::make_string_short::fmt;
 
 namespace proton {
 
@@ -267,6 +270,21 @@ build_alloc_config(const ProtonConfig& proton_config, const vespalib::string& do
          distribution_config.redundancy, distribution_config.searchablecopies);
 }
 
+vespalib::string resolve_file(config::RpcFileAcquirer &fileAcquirer, vespalib::TimeBox &timeBox,
+                              const vespalib::string &desc, const vespalib::string &fileref)
+{
+    vespalib::string filePath;
+    LOG(info, "Waiting for file acquirer (%s, ref='%s')", desc.c_str(), fileref.c_str());
+    while (timeBox.hasTimeLeft() && (filePath == "")) {
+        filePath = fileAcquirer.wait_for(fileref, timeBox.timeLeft());
+        if (filePath == "") {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
+    LOG(info, "Got file path from file acquirer: '%s' (%s, ref='%s')", filePath.c_str(), desc.c_str(), fileref.c_str());
+    return filePath;
+}
+
 }
 
 void
@@ -334,17 +352,8 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
             config::RpcFileAcquirer fileAcquirer(spec);
             vespalib::TimeBox timeBox(5*60, 5);
             for (const RankingConstantsConfig::Constant &rc : newRankingConstantsConfig->constant) {
-                vespalib::string filePath;
-                LOG(info, "Waiting for file acquirer (name='%s', type='%s', ref='%s')",
-                    rc.name.c_str(), rc.type.c_str(), rc.fileref.c_str());
-                while (timeBox.hasTimeLeft() && (filePath == "")) {
-                    filePath = fileAcquirer.wait_for(rc.fileref, timeBox.timeLeft());
-                    if (filePath == "") {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                    }
-                }
-                LOG(info, "Got file path from file acquirer: '%s' (name='%s', type='%s', ref='%s')",
-                    filePath.c_str(), rc.name.c_str(), rc.type.c_str(), rc.fileref.c_str());
+                auto desc = fmt("name='%s', type='%s'", rc.name.c_str(), rc.type.c_str());
+                vespalib::string filePath = resolve_file(fileAcquirer, timeBox, desc, rc.fileref);
                 constants.emplace_back(rc.name, rc.type, filePath);
             }
         }
@@ -359,17 +368,8 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
             config::RpcFileAcquirer fileAcquirer(spec);
             vespalib::TimeBox timeBox(5*60, 5);
             for (const RankingExpressionsConfig::Expression &rc : newRankingExpressionsConfig->expression) {
-                vespalib::string filePath;
-                LOG(info, "Waiting for file acquirer (name='%s', ref='%s')",
-                    rc.name.c_str(), rc.fileref.c_str());
-                while (timeBox.hasTimeLeft() && (filePath == "")) {
-                    filePath = fileAcquirer.wait_for(rc.fileref, timeBox.timeLeft());
-                    if (filePath == "") {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                    }
-                }
-                LOG(info, "Got file path from file acquirer: '%s' (name='%s', ref='%s')",
-                    filePath.c_str(), rc.name.c_str(), rc.fileref.c_str());
+                auto desc = fmt("name='%s'", rc.name.c_str());
+                vespalib::string filePath = resolve_file(fileAcquirer, timeBox, desc, rc.fileref);
                 expressions.add(rc.name, filePath);
             }
         }
@@ -384,17 +384,8 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
             config::RpcFileAcquirer fileAcquirer(spec);
             vespalib::TimeBox timeBox(5*60, 5);
             for (const OnnxModelsConfig::Model &rc : newOnnxModelsConfig->model) {
-                vespalib::string filePath;
-                LOG(info, "Waiting for file acquirer (name='%s', ref='%s')",
-                    rc.name.c_str(), rc.fileref.c_str());
-                while (timeBox.hasTimeLeft() && (filePath == "")) {
-                    filePath = fileAcquirer.wait_for(rc.fileref, timeBox.timeLeft());
-                    if (filePath == "") {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                    }
-                }
-                LOG(info, "Got file path from file acquirer: '%s' (name='%s', ref='%s')",
-                    filePath.c_str(), rc.name.c_str(), rc.fileref.c_str());
+                auto desc = fmt("name='%s'", rc.name.c_str());
+                vespalib::string filePath = resolve_file(fileAcquirer, timeBox, desc, rc.fileref);
                 models.emplace_back(rc.name, filePath);
                 OnnxModels::configure(rc, models.back());
             }
