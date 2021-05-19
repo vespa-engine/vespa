@@ -71,7 +71,9 @@ MoveOperation::UP
 LidSpaceCompactionHandler::createMoveOperation(const search::DocumentMetaData &document, uint32_t moveToLid) const
 {
     const uint32_t moveFromLid = document.lid;
-    assert ( ! _subDb.lidNeedsCommit(moveFromLid) );
+    if (_subDb.lidNeedsCommit(moveFromLid)) {
+        return MoveOperation::UP();
+    }
     auto doc = _subDb.retriever()->getFullDocument(moveFromLid);
     auto op = std::make_unique<MoveOperation>(document.bucketId, document.timestamp,
                                               std::move(doc),
