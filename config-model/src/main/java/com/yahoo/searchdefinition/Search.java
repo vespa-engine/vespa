@@ -61,6 +61,8 @@ public class Search implements ImmutableSearch {
     /** True if this doesn't define a search, just a document type */
     private boolean documentsOnly = false;
 
+    private boolean rawAsBase64 = false;
+
     /** The stemming setting of this search definition. Default is BEST. */
     private Stemming stemming = Stemming.BEST;
 
@@ -123,6 +125,16 @@ public class Search implements ImmutableSearch {
     public boolean isDocumentsOnly() {
         return documentsOnly;
     }
+
+    /**
+     * Returns true if 'raw' fields shall be presented as base64 in summary
+     * Note that tis is temporary and will disappear on Vespa 8 as it will become default, and only option.
+     *
+     * @return true if raw shall be encoded as base64 in summary
+     */
+    public boolean isRawAsBase64() { return rawAsBase64; }
+
+    public void enableRawAsBase64() { rawAsBase64 = true; }
 
     /**
      * Sets the stemming default of fields. Default is ALL

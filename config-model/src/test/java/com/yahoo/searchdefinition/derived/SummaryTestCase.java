@@ -23,6 +23,37 @@ import static org.junit.Assert.assertNull;
 public class SummaryTestCase extends SchemaTestCase {
 
     @Test
+    public void deriveRawAsBase64() throws ParseException {
+        String sd = joinLines(
+                "schema s {",
+                "  raw-as-base64-in-summary",
+                "  document s {",
+                "      field raw_field type raw {",
+                "          indexing: summary",
+                "      }",
+                "  }",
+                "}");
+        Search search = SearchBuilder.createFromString(sd).getSearch();
+        SummaryClass summary = new SummaryClass(search, search.getSummary("default"), new BaseDeployLogger());
+        assertEquals(SummaryClassField.Type.RAW, summary.getField("raw_field").getType());
+    }
+
+    @Test
+    public void deriveRawAsLegacy() throws ParseException {
+        String sd = joinLines(
+                "schema s {",
+                "  document s {",
+                "      field raw_field type raw {",
+                "          indexing: summary",
+                "      }",
+                "  }",
+                "}");
+        Search search = SearchBuilder.createFromString(sd).getSearch();
+        SummaryClass summary = new SummaryClass(search, search.getSummary("default"), new BaseDeployLogger());
+        assertEquals(SummaryClassField.Type.DATA, summary.getField("raw_field").getType());
+    }
+
+    @Test
     public void testDeriving() throws IOException, ParseException {
         Search search = SearchBuilder.buildFromFile("src/test/examples/simple.sd");
         SummaryClass summary = new SummaryClass(search, search.getSummary("default"), new BaseDeployLogger());

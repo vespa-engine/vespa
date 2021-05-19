@@ -23,7 +23,7 @@ public class DataField extends DocsumField {
         super(name);
     }
 
-    private Object convert(byte[] value) {
+    private RawData convert(byte[] value) {
         return new RawData(value);
     }
 
