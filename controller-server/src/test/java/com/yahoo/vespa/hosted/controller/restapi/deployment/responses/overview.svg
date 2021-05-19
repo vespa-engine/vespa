@@ -4,7 +4,7 @@
         <stop offset='0'  stop-color='#fff' stop-opacity='.5'/>
         <stop offset='.1' stop-color='#fff' stop-opacity='.15'/>
         <stop offset='.9' stop-color='#000' stop-opacity='.15'/>
-        <stop offset='1'  stop-color='#000' stop-opacity='.7'/>
+        <stop offset='1'  stop-color='#000' stop-opacity='.5'/>
     </linearGradient>
     <linearGradient id='left-light' x2='100%' y2='0'>
         <stop offset='0' stop-color='#fff' stop-opacity='.3'/>
@@ -17,8 +17,9 @@
         <stop offset='1' stop-color='#000' stop-opacity='.3'/>
     </linearGradient>
     <linearGradient id='shadow' x2='100%' y2='0'>
-        <stop offset='0' stop-color='#222' stop-opacity='.4'/>
-        <stop offset='.5' stop-color='#555' stop-opacity='.4'/>
+        <stop offset='0' stop-color='#222' stop-opacity='.3'/>
+        <stop offset='.625' stop-color='#555' stop-opacity='.3'/>
+        <stop offset='.9' stop-color='#555' stop-opacity='.05'/>
         <stop offset='1' stop-color='#555' stop-opacity='.0'/>
     </linearGradient>
     <linearGradient id='shade' x2='100%' y2='0'>
@@ -42,25 +43,25 @@
         <rect width='763.7809900000001' height='20' rx='3' fill='#fff'/>
     </clipPath>
     <g clip-path='url(#rounded)'>
-        <rect x='757.7809900000001' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='757.7809900000001' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='725.59036' rx='3' width='38.19063' height='20' fill='url(#run-on-success)'/>
         <polygon points='635.8470950000001 0 635.8470950000001 20 734.59036 20 742.59036 0' fill='#00f244'/>
         <rect x='635.8470950000001' rx='3' width='131.74345499999998' height='20' fill='url(#shade)'/>
-        <rect x='635.8470950000001' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='635.8470950000001' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='603.656465' rx='3' width='38.19063' height='20' fill='#bf103c'/>
         <polygon points='486.981225 0 486.981225 20 612.656465 20 620.656465 0' fill='#00f244'/>
         <rect x='486.981225' rx='3' width='158.67543' height='20' fill='url(#shade)'/>
-        <rect x='486.981225' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='486.981225' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='348.865175' rx='3' width='144.11604999999997' height='20' fill='url(#run-on-success)'/>
         <rect x='358.865175' rx='3' width='134.11604999999997' height='20' fill='url(#shade)'/>
-        <rect x='358.865175' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='358.865175' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='326.674545' rx='3' width='38.19063' height='20' fill='#00f244'/>
         <polygon points='237.71563000000003 0 237.71563000000003 20 335.674545 20 343.674545 0' fill='url(#run-on-failure)'/>
         <rect x='237.71563000000003' rx='3' width='130.959105' height='20' fill='url(#shade)'/>
-        <rect x='237.71563000000003' rx='3' width='9' height='20' fill='url(#shadow)'/>
+        <rect x='237.71563000000003' rx='3' width='8' height='20' fill='url(#shadow)'/>
         <rect x='153.18729000000002' rx='3' width='90.52834000000001' height='20' fill='#00f244'/>
         <rect x='163.18729000000002' rx='3' width='80.52834000000001' height='20' fill='url(#shade)'/>
-        <rect width='169.18729000000002' height='20' fill='#5a5a5a'/>
+        <rect width='169.18729000000002' height='20' fill='#404040'/>
         <rect x='-6.0' rx='3' width='175.18729000000002' height='20' fill='url(#shade)'/>
         <rect width='2' height='20' fill='url(#left-light)'/>
         <rect x='761.7809900000001' width='2' height='20' fill='url(#right-shadow)'/>
