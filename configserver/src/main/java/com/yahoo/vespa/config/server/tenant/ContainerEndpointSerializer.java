@@ -54,6 +54,9 @@ public class ContainerEndpointSerializer {
 
     public static List<ContainerEndpoint> endpointListFromSlime(Slime slime) {
         final var inspector = slime.get();
+        return endpointListFromSlime(inspector);
+    }
+    public static List<ContainerEndpoint> endpointListFromSlime(Inspector inspector) {
         final var endpoints = new ArrayList<ContainerEndpoint>();
 
         inspector.traverse((ArrayTraverser) (idx, endpointInspector) -> {

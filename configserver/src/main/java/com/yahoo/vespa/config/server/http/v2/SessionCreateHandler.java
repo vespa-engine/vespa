@@ -19,6 +19,8 @@ import com.yahoo.vespa.config.server.http.Utils;
 
 import java.net.URI;
 import java.time.Duration;
+import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * A handler that is able to create a session from an application package,
@@ -55,7 +57,7 @@ public class SessionCreateHandler extends SessionHandler {
             logger = DeployHandlerLogger.forApplication(applicationId, verbose);
             sessionId = applicationRepository.createSessionFromExisting(applicationId, false, timeoutBudget);
         } else {
-            validateDataAndHeader(request);
+            validateDataAndHeader(request, List.of(ApplicationApiHandler.APPLICATION_ZIP, ApplicationApiHandler.APPLICATION_X_GZIP));
             logger = DeployHandlerLogger.forTenant(tenantName, verbose);
             // TODO: Avoid using application id here at all
             ApplicationId applicationId = ApplicationId.from(tenantName, ApplicationName.defaultName(), InstanceName.defaultName());
@@ -84,16 +86,16 @@ public class SessionCreateHandler extends SessionHandler {
             .instanceName(match.group(6)).build();
     }
 
-    static void validateDataAndHeader(HttpRequest request) {
+    static void validateDataAndHeader(HttpRequest request, List<String> supportedContentTypes) {
         if (request.getData() == null) {
             throw new BadRequestException("Request contains no data");
         }
         String header = request.getHeader(ApplicationApiHandler.contentTypeHeader);
         if (header == null) {
             throw new BadRequestException("Request contains no " + ApplicationApiHandler.contentTypeHeader + " header");
-        } else if (!(header.equals(ApplicationApiHandler.APPLICATION_X_GZIP) || header.equals(ApplicationApiHandler.APPLICATION_ZIP))) {
-            throw new BadRequestException("Request contains invalid " + ApplicationApiHandler.contentTypeHeader + " header, only '" +
-                                                  ApplicationApiHandler.APPLICATION_X_GZIP + "' and '" + ApplicationApiHandler.APPLICATION_ZIP + "' are supported");
+        } else if (!supportedContentTypes.contains(header)) {
+            throw new BadRequestException("Request contains invalid " + ApplicationApiHandler.contentTypeHeader + " header, only '["
+                                          + String.join(", ", supportedContentTypes) + "' are supported");
         }
     }
 }
