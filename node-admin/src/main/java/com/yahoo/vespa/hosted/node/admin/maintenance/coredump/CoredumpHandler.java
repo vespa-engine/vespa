@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Dimensions;
 import com.yahoo.vespa.hosted.dockerapi.metrics.Metrics;
 import com.yahoo.vespa.hosted.node.admin.configserver.noderepository.NodeSpec;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.FileFinder;
 import com.yahoo.vespa.hosted.node.admin.task.util.file.UnixPath;
@@ -84,11 +85,22 @@ public class CoredumpHandler {
     }
 
 
-    public void converge(NodeAgentContext context, Supplier<Map<String, Object>> nodeAttributesSupplier) {
+    public void converge(NodeAgentContext context, Supplier<Map<String, Object>> nodeAttributesSupplier, boolean throwIfCoreBeingWritten) {
         Path containerCrashPathOnHost = context.pathOnHostFromPathInNode(crashPatchInContainer);
         Path containerProcessingPathOnHost = containerCrashPathOnHost.resolve(PROCESSING_DIRECTORY_NAME);
 
         updateMetrics(context, containerCrashPathOnHost);
+
+        if (throwIfCoreBeingWritten) {
+            List<String> pendingCores = FileFinder.files(containerCrashPathOnHost)
+                    .match(fileAttributes -> !isReadyForProcessing(fileAttributes))
+                    .maxDepth(1).stream()
+                    .map(FileFinder.FileAttributes::filename)
+                    .collect(Collectors.toUnmodifiableList());
+            if (!pendingCores.isEmpty())
+                throw new ConvergenceException(String.format("Cannot process %s coredumps: Still being written",
+                        pendingCores.size() < 5 ? pendingCores : pendingCores.size()));
+        }
 
         // Check if we have already started to process a core dump or we can enqueue a new core one
         getCoredumpToProcess(containerCrashPathOnHost, containerProcessingPathOnHost)
