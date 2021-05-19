@@ -191,14 +191,6 @@ public abstract class IndexedTensor implements Tensor {
 
     public DimensionSizes dimensionSizes() { return dimensionSizes; }
 
-    public long[] shape() {
-        long[] result = new long[dimensionSizes.dimensions()];
-        for (int i = 0; i < result.length; ++i) {
-            result[i] = dimensionSizes.size(i);
-        }
-        return result;
-    }
-
     @Override
     public Map<TensorAddress, Double> cells() {
         if (dimensionSizes.dimensions() == 0)
