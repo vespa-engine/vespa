@@ -99,7 +99,7 @@ public class QueryProfileTypeTestCase {
         profile.set("myInteger", 3, registry);
         assertWrongType(profile,"long","myLong","notLong");
         assertWrongType(profile, "long", "myLong", "1.5");
-        profile.set("myLong", 4000000000000l, registry);
+        profile.set("myLong", 4000000000000L, registry);
         assertWrongType(profile, "float", "myFloat", "notFloat");
         profile.set("myFloat", 3.14f, registry);
         assertWrongType(profile, "double", "myDouble", "notDouble");

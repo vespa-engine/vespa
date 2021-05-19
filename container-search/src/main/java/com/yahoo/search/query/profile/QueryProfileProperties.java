@@ -117,7 +117,7 @@ public class QueryProfileProperties extends Properties {
                             value = fieldDescription.getType().convertFrom(value, profile.getRegistry());
                             if (value == null)
                                 throw new IllegalInputException("'" + value + "' is not a " +
-                                                                   fieldDescription.getType().toInstanceDescription());
+                                                                fieldDescription.getType().toInstanceDescription());
                         }
                         else if (fieldDescription.getType() instanceof QueryProfileFieldType) {
                             // If a type is specified, use that instead of the type implied by the name
