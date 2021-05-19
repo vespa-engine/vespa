@@ -12,7 +12,7 @@ jobs:
       screwdriver.cd/cpu: 7
       screwdriver.cd/ram: 16
       screwdriver.cd/disk: HIGH
-      screwdriver.cd/timeout: 600
+      screwdriver.cd/timeout: 60
 
     environment:
       USER_SHELL_BIN: bash
