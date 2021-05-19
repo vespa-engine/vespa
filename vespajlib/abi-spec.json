@@ -897,6 +897,7 @@
       "public com.yahoo.tensor.TensorType type()",
       "public abstract com.yahoo.tensor.IndexedTensor withType(com.yahoo.tensor.TensorType)",
       "public com.yahoo.tensor.DimensionSizes dimensionSizes()",
+      "public long[] shape()",
       "public java.util.Map cells()",
       "public com.yahoo.tensor.Tensor remove(java.util.Set)",
       "public java.lang.String toString()",
