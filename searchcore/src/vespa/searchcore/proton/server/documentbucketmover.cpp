@@ -22,7 +22,7 @@ typedef IDocumentMetaStore::Iterator Iterator;
 
 MoveOperation::UP
 BucketMover::createMoveOperation(const MoveKey &key) {
-    if (_source->lidNeedsCommit(key._lid)) return {};
+    assert ( ! _source->lidNeedsCommit(key._lid) );
 
     const RawDocumentMetaData &metaNow = _source->meta_store()->getRawMetaData(key._lid);
     if (metaNow.getGid() != key._gid) return {};

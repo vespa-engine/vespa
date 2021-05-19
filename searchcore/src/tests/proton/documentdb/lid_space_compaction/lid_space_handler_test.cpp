@@ -38,13 +38,6 @@ TEST_F(HandlerTest, createMoveOperation_works_as_expected)
     const BucketId bucketId(100);
     const Timestamp timestamp(200);
     DocumentMetaData document(moveFromLid, timestamp, bucketId, GlobalId());
-    {
-        EXPECT_FALSE(_subDb.maintenance_sub_db.lidNeedsCommit(moveFromLid));
-        IPendingLidTracker::Token token = _subDb._pendingLidsForCommit.produce(moveFromLid);
-        EXPECT_TRUE(_subDb.maintenance_sub_db.lidNeedsCommit(moveFromLid));
-        MoveOperation::UP op = _handler.createMoveOperation(document, moveToLid);
-        ASSERT_FALSE(op);
-    }
     EXPECT_FALSE(_subDb.maintenance_sub_db.lidNeedsCommit(moveFromLid));
     MoveOperation::UP op = _handler.createMoveOperation(document, moveToLid);
     ASSERT_TRUE(op);
