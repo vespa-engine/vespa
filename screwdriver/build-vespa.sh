@@ -17,7 +17,7 @@ ccache --max-size=1600M
 ccache --set-config=compression=true
 ccache -p
 
-if ! source $SOURCE_DIR/travis/detect-what-to-build.sh; then
+if ! source $SOURCE_DIR/screwdriver/detect-what-to-build.sh; then
     echo "Could not detect what to build."
     SHOULD_BUILD=all
 fi
