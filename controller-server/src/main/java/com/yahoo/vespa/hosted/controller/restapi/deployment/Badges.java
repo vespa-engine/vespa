@@ -70,7 +70,7 @@ public class Badges {
 
     static final double xPad = 6;
     static final double logoSize = 16;
-    static final String dark = "#5a5a5a";
+    static final String dark = "#404040";
     static final String success = "#00f244";
     static final String running = "#ab83ff";
     static final String failure = "#bf103c";
@@ -89,7 +89,7 @@ public class Badges {
     }
 
     static void addShadow(List<String> sections, double x) {
-        sections.add("        <rect x='" + (x - 6) + "' rx='3' width='" + 9 + "' height='20' fill='url(#shadow)'/>\n");
+        sections.add("        <rect x='" + (x - 6) + "' rx='3' width='" + 8 + "' height='20' fill='url(#shadow)'/>\n");
     }
 
     static String historyBadge(ApplicationId id, JobStatus status, int length) {
@@ -222,7 +222,7 @@ public class Badges {
                "        <stop offset='0'  stop-color='#fff' stop-opacity='.5'/>\n" +
                "        <stop offset='.1' stop-color='#fff' stop-opacity='.15'/>\n" +
                "        <stop offset='.9' stop-color='#000' stop-opacity='.15'/>\n" +
-               "        <stop offset='1'  stop-color='#000' stop-opacity='.7'/>\n" +
+               "        <stop offset='1'  stop-color='#000' stop-opacity='.5'/>\n" +
                "    </linearGradient>\n" +
                // Dispersed light at the left of the badge.
                "    <linearGradient id='left-light' x2='100%' y2='0'>\n" +
@@ -238,8 +238,9 @@ public class Badges {
                "    </linearGradient>\n" +
                // Shadow to highlight the border between sections, without using a heavy separator.
                "    <linearGradient id='shadow' x2='100%' y2='0'>\n" +
-               "        <stop offset='0' stop-color='#222' stop-opacity='.4'/>\n" +
-               "        <stop offset='.5' stop-color='#555' stop-opacity='.4'/>\n" +
+               "        <stop offset='0' stop-color='#222' stop-opacity='.3'/>\n" +
+               "        <stop offset='.625' stop-color='#555' stop-opacity='.3'/>\n" +
+               "        <stop offset='.9' stop-color='#555' stop-opacity='.05'/>\n" +
                "        <stop offset='1' stop-color='#555' stop-opacity='.0'/>\n" +
                "    </linearGradient>\n" +
                // Weak shade across each panel to highlight borders further.
