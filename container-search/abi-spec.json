@@ -201,6 +201,18 @@
     ],
     "fields": []
   },
+  "com.yahoo.prelude.hitfield.RawBase64": {
+    "superClass": "java.lang.Object",
+    "interfaces": [],
+    "attributes": [
+      "public"
+    ],
+    "methods": [
+      "public void <init>(byte[])",
+      "public java.lang.String toString()"
+    ],
+    "fields": []
+  },
   "com.yahoo.prelude.hitfield.RawData": {
     "superClass": "java.lang.Object",
     "interfaces": [],

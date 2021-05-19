@@ -51,6 +51,7 @@ public abstract class DocsumField {
             fieldFactory.put("double", DoubleField.class);
             fieldFactory.put("string", StringField.class);
             fieldFactory.put("data", DataField.class);
+            fieldFactory.put("raw", Base64DataField.class);
             fieldFactory.put("longstring", LongstringField.class);
             fieldFactory.put("longdata", LongdataField.class);
             fieldFactory.put("jsonstring", StructDataField.class);

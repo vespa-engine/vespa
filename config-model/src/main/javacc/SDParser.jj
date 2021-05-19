@@ -237,6 +237,7 @@ TOKEN :
 | < RANKPROFILE: "rank-profile" >
 | < RANKDEGRADATIONFREQ: "rank-degradation-frequency" >
 | < RANKDEGRADATION: "rank-degradation" >
+| < RAW_AS_BASE64_IN_SUMMARY: "raw-as-base64-in-summary" >
 | < RPBINSIZE: "doc-frequency" >
 | < RPBINLOW:  "min-fullrank-docs">
 | < RPPOSBINSIZE: "occurrences-per-doc" >
@@ -451,6 +452,7 @@ Search rootSchema(String dir) :
 Object rootSchemaItem(Search search) : { }
 {
     ( document(search)
+      | rawAsBase64(search)
       | documentSummary(search)
       | field(null, search)
       | index(search, null)
@@ -559,6 +561,12 @@ Object documentBody(SDDocumentType document, Search search) :
       | structInside(document, search)
       | field(document, search) )
     { return null; }
+}
+
+void rawAsBase64(Search search) :
+{}
+{
+    <RAW_AS_BASE64_IN_SUMMARY> { search.enableRawAsBase64(); }
 }
 
 /**

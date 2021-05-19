@@ -44,6 +44,7 @@ public class SummaryClassField {
         DOUBLE("double"),
         STRING("string"),
         DATA("data"),
+        RAW("raw"),
         LONGSTRING("longstring"),
         LONGDATA("longdata"),
         XMLSTRING("xmlstring"),
@@ -67,9 +68,9 @@ public class SummaryClassField {
         }
     }
 
-    public SummaryClassField(String name, DataType type, SummaryTransform transform) {
+    public SummaryClassField(String name, DataType type, SummaryTransform transform, boolean rawAsBase64) {
         this.name = name;
-        this.type = convertDataType(type, transform);
+        this.type = convertDataType(type, transform, rawAsBase64);
     }
 
     public String getName() { return name; }
@@ -77,7 +78,7 @@ public class SummaryClassField {
     public Type getType() { return type; }
 
     /** Converts to the right summary field type from a field datatype and a transform*/
-    public static Type convertDataType(DataType fieldType, SummaryTransform transform) {
+    public static Type convertDataType(DataType fieldType, SummaryTransform transform, boolean rawAsBase64) {
         FieldValue fval = fieldType.createFieldValue();
         if (fval instanceof StringFieldValue) {
             if (transform != null && transform.equals(SummaryTransform.RANKFEATURES)) {
@@ -102,7 +103,7 @@ public class SummaryClassField {
         } else if (fval instanceof ByteFieldValue) {
             return Type.BYTE;
         } else if (fval instanceof Raw) {
-            return Type.DATA;
+            return rawAsBase64 ? Type.RAW : Type.DATA;
         } else if (fval instanceof Struct) {
             return Type.JSONSTRING;
         } else if (fval instanceof PredicateFieldValue) {
