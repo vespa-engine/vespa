@@ -48,7 +48,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
 
     private static final Logger log = Logger.getLogger(JettyConnectionLogger.class.getName());
 
-    private final SimpleConcurrentIdentityHashMap<SocketChannelEndPoint, ConnectionInfo> connectionInfo = new SimpleConcurrentIdentityHashMap<>();
+    private final SimpleConcurrentIdentityHashMap<SocketChannelEndPoint, ConnectionInfo> connectionInfos = new SimpleConcurrentIdentityHashMap<>();
     private final SimpleConcurrentIdentityHashMap<SSLEngine, ConnectionInfo> sslToConnectionInfo = new SimpleConcurrentIdentityHashMap<>();
 
     private final boolean enabled;
@@ -87,7 +87,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void onOpened(Connection connection) {
         handleListenerInvocation("Connection.Listener", "onOpened", "%h", List.of(connection), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(connection.getEndPoint());
-            ConnectionInfo info = connectionInfo.computeIfAbsent(endpoint, ConnectionInfo::from);
+            ConnectionInfo info = connectionInfos.computeIfAbsent(endpoint, ConnectionInfo::from);
             String connectionClassName = connection.getClass().getSimpleName(); // For hidden implementations of Connection
             if (connection instanceof SslConnection) {
                 SSLEngine sslEngine = ((SslConnection) connection).getSSLEngine();
@@ -112,7 +112,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void onClosed(Connection connection) {
         handleListenerInvocation("Connection.Listener", "onClosed", "%h", List.of(connection), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(connection.getEndPoint());
-            ConnectionInfo info = connectionInfo.get(endpoint).orElse(null);
+            ConnectionInfo info = connectionInfos.get(endpoint).orElse(null);
             if (info == null) return; // Closed connection already handled
             if (connection instanceof HttpConnection) {
                 info.setHttpBytes(connection.getBytesIn(), connection.getBytesOut());
@@ -128,7 +128,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
             if (!endpoint.isOpen()) {
                 info.setClosedAt(System.currentTimeMillis());
                 connectionLog.log(info.toLogEntry());
-                connectionInfo.remove(endpoint);
+                connectionInfos.remove(endpoint);
             }
         });
     }
@@ -143,7 +143,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void onRequestBegin(Request request) {
         handleListenerInvocation("HttpChannel.Listener", "onRequestBegin", "%h", List.of(request), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(request.getHttpChannel().getEndPoint());
-            ConnectionInfo info = connectionInfo.get(endpoint).get();
+            ConnectionInfo info = connectionInfos.get(endpoint).get();
             info.incrementRequests();
             request.setAttribute(CONNECTION_ID_REQUEST_ATTRIBUTE, info.uuid());
         });
@@ -153,7 +153,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void onResponseBegin(Request request) {
         handleListenerInvocation("HttpChannel.Listener", "onResponseBegin", "%h", List.of(request), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(request.getHttpChannel().getEndPoint());
-            ConnectionInfo info = connectionInfo.get(endpoint).orElse(null);
+            ConnectionInfo info = connectionInfos.get(endpoint).orElse(null);
             if (info == null) return; // Connection closed before response started - observed during Jetty server shutdown
             info.incrementResponses();
         });
