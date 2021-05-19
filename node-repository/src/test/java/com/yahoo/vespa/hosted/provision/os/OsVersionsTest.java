@@ -3,6 +3,8 @@ package com.yahoo.vespa.hosted.provision.os;
 
 import com.yahoo.component.Version;
 import com.yahoo.config.provision.ApplicationId;
+import com.yahoo.config.provision.ClusterSpec;
+import com.yahoo.config.provision.HostSpec;
 import com.yahoo.config.provision.NodeResources;
 import com.yahoo.config.provision.NodeType;
 import com.yahoo.test.ManualClock;
@@ -10,6 +12,7 @@ import com.yahoo.vespa.flags.PermanentFlags;
 import com.yahoo.vespa.hosted.provision.Node;
 import com.yahoo.vespa.hosted.provision.NodeList;
 import com.yahoo.vespa.hosted.provision.node.Agent;
+import com.yahoo.vespa.hosted.provision.node.Allocation;
 import com.yahoo.vespa.hosted.provision.node.OsVersion;
 import com.yahoo.vespa.hosted.provision.node.Status;
 import com.yahoo.vespa.hosted.provision.provisioning.ProvisioningTester;
@@ -353,63 +356,99 @@ public class OsVersionsTest {
     }
 
     @Test
-    public void upgrade_by_rebuilding_distributes_upgrades_among_all_flavors() {
+    public void upgrade_by_rebuilding_is_limited_by_stateful_clusters() {
         tester.flagSource().withIntFlag(PermanentFlags.MAX_REBUILDS.id(), 3);
         var versions = new OsVersions(tester.nodeRepository(), false, Integer.MAX_VALUE);
-        int smallHosts = 5;
-        int mediumHosts = 3;
-        int largeHosts = 2;
-        NodeResources smallFlavor = tester.asFlavor("small", NodeType.host).resources();
-        NodeResources mediumFlavor = tester.asFlavor("default", NodeType.host).resources();
-        NodeResources largeFlavor = tester.asFlavor("large", NodeType.host).resources();
-        provisionInfraApplication(smallHosts, smallFlavor, infraApplication, NodeType.host);
-        provisionInfraApplication(mediumHosts, mediumFlavor, infraApplication, NodeType.host);
-        provisionInfraApplication(largeHosts, largeFlavor, infraApplication, NodeType.host);
-        Supplier<NodeList> hostNodes = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
+        int hostCount = 5;
+        ApplicationId app1 = ApplicationId.from("t1", "a1", "i1");
+        ApplicationId app2 = ApplicationId.from("t2", "a2", "i2");
+        provisionInfraApplication(hostCount, infraApplication, NodeType.host);
+        deployApplication(app1);
+        deployApplication(app2);
+        Supplier<NodeList> hosts = () -> tester.nodeRepository().nodes().list().nodeType(NodeType.host);
 
         // All hosts are on initial version
         var version0 = Version.fromString("7.0");
         versions.setTarget(NodeType.host, version0, Duration.ZERO, false);
-        setCurrentVersion(hostNodes.get().asList(), version0);
+        setCurrentVersion(hosts.get().asList(), version0);
 
         // Target is set for new major version
         var version1 = Version.fromString("8.0");
         versions.setTarget(NodeType.host, version1, Duration.ZERO, false);
 
-        // One host of each flavor is upgraded in the first two iterations
-        for (int i = 0; i < 2; i++) {
-            versions.resumeUpgradeOf(NodeType.host, true);
-            NodeList rebuilding = hostNodes.get().rebuilding();
-            assertEquals(1, rebuilding.resources(smallFlavor).size());
-            assertEquals(1, rebuilding.resources(mediumFlavor).size());
-            assertEquals(1, rebuilding.resources(largeFlavor).size());
-            completeRebuildOf(rebuilding.asList(), NodeType.host);
+        // Upgrades 1 host per stateful cluster and 1 empty host
+        versions.resumeUpgradeOf(NodeType.host, true);
+        NodeList allNodes = tester.nodeRepository().nodes().list();
+        List<Node> hostsRebuilding = allNodes.nodeType(NodeType.host)
+                                             .rebuilding()
+                                             .sortedBy(Comparator.comparing(Node::hostname))
+                                             .asList();
+        List<Optional<ApplicationId>> owners = List.of(Optional.of(app1), Optional.of(app2), Optional.empty());
+        assertEquals(3, hostsRebuilding.size());
+        for (int i = 0; i < hostsRebuilding.size(); i++) {
+            Optional<ApplicationId> owner = owners.get(i);
+            List<Node> retiringChildren = allNodes.childrenOf(hostsRebuilding.get(i)).retiring().asList();
+            assertEquals(owner.isPresent() ? 1 : 0, retiringChildren.size());
+            assertEquals("Rebuilding host of " + owner.map(ApplicationId::toString)
+                                                      .orElse("no application"),
+                         owner,
+                         retiringChildren.stream()
+                                         .findFirst()
+                                         .flatMap(Node::allocation)
+                                         .map(Allocation::owner));
         }
 
-        // All hosts of largest flavor have been upgraded
-        assertEquals(largeHosts, hostNodes.get().resources(largeFlavor).onOsVersion(version1).size());
+        // Replace any retired nodes
+        replaceNodes(app1);
+        replaceNodes(app2);
 
-        // Since one flavor group is upgraded, we upgrade more of the flavor having the most hosts
-        {
-            versions.resumeUpgradeOf(NodeType.host, true);
-            NodeList rebuilding = hostNodes.get().rebuilding();
-            assertEquals(2, rebuilding.resources(smallFlavor).size());
-            assertEquals(1, rebuilding.resources(mediumFlavor).size());
-            completeRebuildOf(rebuilding.asList(), NodeType.host);
+        // Complete rebuild
+        completeRebuildOf(hostsRebuilding, NodeType.host);
+        assertEquals(3, hosts.get().onOsVersion(version1).size());
+
+        // Both applications have moved their nodes to the hosts on old OS version
+        allNodes = tester.nodeRepository().nodes().list();
+        NodeList hostsOnOldVersion = allNodes.onOsVersion(version0);
+        assertEquals(2, hostsOnOldVersion.size());
+        for (var host : hostsOnOldVersion) {
+            assertEquals(1, allNodes.childrenOf(host).owner(app1).size());
+            assertEquals(1, allNodes.childrenOf(host).owner(app2).size());
         }
-        assertEquals(mediumHosts, hostNodes.get().resources(mediumFlavor).onOsVersion(version1).size());
 
-        // Last host is upgraded
-        versions.resumeUpgradeOf(NodeType.host, true);
-        NodeList rebuilding = hostNodes.get().rebuilding();
-        assertEquals(1, rebuilding.resources(smallFlavor).size());
-        completeRebuildOf(rebuilding.asList(), NodeType.host);
+        // Since both applications now occupy all remaining hosts, we can only upgrade 1 at a time
+        for (int i = 0; i < hostsOnOldVersion.size(); i++) {
+            versions.resumeUpgradeOf(NodeType.host, true);
+            hostsRebuilding = hosts.get().rebuilding().asList();
+            assertEquals(1, hostsRebuilding.size());
+            replaceNodes(app1);
+            replaceNodes(app2);
+            completeRebuildOf(hostsRebuilding, NodeType.host);
+        }
 
-        // Resume has no effect as all hosts are upgraded
+        // Resuming upgrade has no effect as all hosts have upgraded
         versions.resumeUpgradeOf(NodeType.host, true);
-        NodeList hosts = hostNodes.get();
-        assertEquals(0, hosts.rebuilding().size());
-        assertEquals(smallHosts + mediumHosts + largeHosts, hosts.onOsVersion(version1).size());
+        NodeList allHosts = hosts.get();
+        assertEquals(0, allHosts.rebuilding().size());
+        assertEquals(allHosts.size(), allHosts.onOsVersion(version1).size());
+    }
+
+    private void deployApplication(ApplicationId application) {
+        ClusterSpec contentSpec = ClusterSpec.request(ClusterSpec.Type.content, ClusterSpec.Id.from("content1")).vespaVersion("7").build();
+        List<HostSpec> hostSpecs = tester.prepare(application, contentSpec, 2, 1, new NodeResources(4, 8, 100, 0.3));
+        tester.activate(application, hostSpecs);
+    }
+
+    private void replaceNodes(ApplicationId application) {
+        // Deploy to retire nodes
+        deployApplication(application);
+        List<Node> retired = tester.nodeRepository().nodes().list().owner(application).retired().asList();
+        assertFalse("At least one node is retired", retired.isEmpty());
+        tester.nodeRepository().nodes().setRemovable(application, retired);
+
+        // Redeploy to deactivate removable nodes and allocate new ones
+        deployApplication(application);
+        tester.nodeRepository().nodes().list(Node.State.inactive).owner(application)
+              .forEach(node -> tester.nodeRepository().nodes().removeRecursively(node, true));
     }
 
     private NodeList deprovisioningChildrenOf(Node parent) {
@@ -423,11 +462,7 @@ public class OsVersionsTest {
     }
 
     private List<Node> provisionInfraApplication(int nodeCount, ApplicationId application, NodeType nodeType) {
-        return provisionInfraApplication(nodeCount, tester.asFlavor("default", nodeType).resources(), application, nodeType);
-    }
-
-    private List<Node> provisionInfraApplication(int nodeCount, NodeResources resources, ApplicationId application, NodeType nodeType) {
-        var nodes = tester.makeReadyNodes(nodeCount, resources, nodeType, 10);
+        var nodes = tester.makeReadyNodes(nodeCount, new NodeResources(48, 128, 2000, 10), nodeType, 10);
         tester.prepareAndActivateInfraApplication(application, nodeType);
         return nodes.stream()
                     .map(Node::hostname)
