@@ -968,7 +968,7 @@ public class MessageBusVisitorSession implements VisitorSession {
     }
 
     private long messageTimeoutMillis() {
-        return !isInfiniteTimeout(params.getTimeoutMs()) ? params.getTimeoutMs() : 5 * 60 * 1000;
+        return !isInfiniteTimeout(params.getTimeoutMs()) ? Math.max(1, params.getTimeoutMs()) : 5 * 60 * 1000;
     }
 
     private long sessionTimeoutMillis() {
@@ -985,9 +985,10 @@ public class MessageBusVisitorSession implements VisitorSession {
 
     private long computeBoundedMessageTimeoutMillis(long elapsedMs) {
         final long messageTimeoutMillis = messageTimeoutMillis();
-        return !isInfiniteTimeout(sessionTimeoutMillis())
-                ? Math.min(sessionTimeoutMillis() - elapsedMs, messageTimeoutMillis)
-                : messageTimeoutMillis;
+        return ! isInfiniteTimeout(sessionTimeoutMillis())
+               ? Math.min(Math.max(1, sessionTimeoutMillis() - elapsedMs),
+                          messageTimeoutMillis)
+               : messageTimeoutMillis;
     }
 
     /**
