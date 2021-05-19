@@ -101,7 +101,7 @@ public abstract class Message extends Routable {
     }
 
     /**
-     * <p>Sets the numer of milliseconds that remain before this message times out. Please see comment on {@link
+     * <p>Sets the number of milliseconds that remain before this message times out. Please see comment on {@link
      * #isExpired()} for more information on how to determine whether or not a message has expired.</p>
      *
      * @param timeRemaining The number of milliseconds until expiration.

@@ -577,6 +577,20 @@ public class DocumentV1ApiTest {
                        "}", response.readAll());
         assertEquals(400, response.getStatus());
 
+        // TIMEOUT is a 504
+        access.session.expect((id, parameters) -> {
+            assertEquals(clock.instant().plusSeconds(1000), parameters.deadline().get());
+            parameters.responseHandler().get().handleResponse(new Response(0, "timeout", Response.Outcome.TIMEOUT));
+            return new Result(Result.ResultType.SUCCESS, null);
+        });
+        response = driver.sendRequest("http://localhost/document/v1/space/music/number/1/two?timeout=1ks");
+        assertSameJson("{" +
+                       "  \"pathId\": \"/document/v1/space/music/number/1/two\"," +
+                       "  \"id\": \"id:space:music:n=1:two\"," +
+                       "  \"message\": \"timeout\"" +
+                       "}", response.readAll());
+        assertEquals(504, response.getStatus());
+
         // INSUFFICIENT_STORAGE is a 507
         access.session.expect((id, parameters) -> {
             parameters.responseHandler().get().handleResponse(new Response(0, "disk full", Response.Outcome.INSUFFICIENT_STORAGE));

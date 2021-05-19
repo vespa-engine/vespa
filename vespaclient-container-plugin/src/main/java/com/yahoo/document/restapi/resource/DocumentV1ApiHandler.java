@@ -479,6 +479,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
     private DocumentOperationParameters parametersFromRequest(HttpRequest request, String... names) {
         DocumentOperationParameters parameters = getProperty(request, TRACELEVEL, integerParser).map(parameters()::withTraceLevel)
                                                                                                 .orElse(parameters());
+        parameters = getProperty(request, TIMEOUT, timeoutMillisParser).map(clock.instant()::plusMillis)
+                                                                       .map(parameters::withDeadline)
+                                                                       .orElse(parameters);
         for (String name : names) switch (name) {
             case CLUSTER:
                 parameters = getProperty(request, CLUSTER).map(cluster -> resolveCluster(Optional.of(cluster), clusters).name())
@@ -904,6 +907,9 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                     case INSUFFICIENT_STORAGE:
                         jsonResponse.commit(Response.Status.INSUFFICIENT_STORAGE);
                         break;
+                    case TIMEOUT:
+                        jsonResponse.commit(Response.Status.GATEWAY_TIMEOUT);
+                        break;
                     default:
                         log.log(WARNING, "Unexpected document API operation outcome '" + response.outcome() + "'");
                     case ERROR:
@@ -1022,6 +1028,7 @@ public class DocumentV1ApiHandler extends AbstractRequestHandler {
                                     break; // This is all OK — the latter two are due to mitigating races.
                                 case ERROR:
                                 case INSUFFICIENT_STORAGE:
+                                case TIMEOUT:
                                     onError.accept(operationResponse.getTextMessage());
                                     break;
                                 default:
