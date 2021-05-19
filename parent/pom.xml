@@ -467,6 +467,11 @@
                 <version>1.4</version>
             </dependency>
             <dependency>
+                <groupId>com.microsoft.onnxruntime</groupId>
+                <artifactId>onnxruntime</artifactId>
+                <version>${onnxruntime.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>com.optimaize.languagedetector</groupId>
                 <artifactId>language-detector</artifactId>
                 <version>0.6</version>
@@ -880,6 +885,7 @@
         <maven-site-plugin.version>3.3</maven-site-plugin.version>
         <maven-source-plugin.version>3.0.1</maven-source-plugin.version>
         <prometheus.client.version>0.6.0</prometheus.client.version>
+        <onnxruntime.version>1.7.0</onnxruntime.version>
         <protobuf.version>3.11.4</protobuf.version>
         <spifly.version>1.3.3</spifly.version>
         <surefire.version>2.22.0</surefire.version>
