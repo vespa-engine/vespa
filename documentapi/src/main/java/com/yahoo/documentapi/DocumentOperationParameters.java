@@ -5,6 +5,7 @@ import com.yahoo.document.fieldset.FieldSet;
 import com.yahoo.document.fieldset.FieldSetRepo;
 import com.yahoo.documentapi.messagebus.protocol.DocumentProtocol;
 
+import java.time.Instant;
 import java.util.Objects;
 import java.util.Optional;
 import java.util.OptionalInt;
@@ -18,20 +19,22 @@ import static java.util.Objects.requireNonNull;
  */
 public class DocumentOperationParameters {
 
-    private static final DocumentOperationParameters empty = new DocumentOperationParameters(null, null, null, -1, null);
+    private static final DocumentOperationParameters empty = new DocumentOperationParameters(null, null, null, -1, null, null);
 
     private final DocumentProtocol.Priority priority;
     private final String fieldSet;
     private final String route;
     private final int traceLevel;
+    private final Instant deadline;
     private final ResponseHandler responseHandler;
 
     private DocumentOperationParameters(DocumentProtocol.Priority priority, String fieldSet, String route,
-                                        int traceLevel, ResponseHandler responseHandler) {
+                                        int traceLevel, Instant deadline, ResponseHandler responseHandler) {
         this.priority = priority;
         this.fieldSet = fieldSet;
         this.route = route;
         this.traceLevel = traceLevel;
+        this.deadline = deadline;
         this.responseHandler = responseHandler;
     }
 
@@ -41,22 +44,22 @@ public class DocumentOperationParameters {
 
     /** Sets the priority with which to perform an operation. */
     public DocumentOperationParameters withPriority(DocumentProtocol.Priority priority) {
-        return new DocumentOperationParameters(requireNonNull(priority), fieldSet, route, traceLevel, responseHandler);
+        return new DocumentOperationParameters(requireNonNull(priority), fieldSet, route, traceLevel, deadline, responseHandler);
     }
 
     /** Sets the field set used for retrieval. */
     public DocumentOperationParameters withFieldSet(FieldSet fieldSet) {
-        return new DocumentOperationParameters(priority, new FieldSetRepo().serialize(fieldSet), route, traceLevel, responseHandler);
+        return new DocumentOperationParameters(priority, new FieldSetRepo().serialize(fieldSet), route, traceLevel, deadline, responseHandler);
     }
 
     /** Sets the field set used for retrieval. */
     public DocumentOperationParameters withFieldSet(String fieldSet) {
-        return new DocumentOperationParameters(priority, requireNonNull(fieldSet), route, traceLevel, responseHandler);
+        return new DocumentOperationParameters(priority, requireNonNull(fieldSet), route, traceLevel, deadline, responseHandler);
     }
 
     /** Sets the route along which to send the operation. */
     public DocumentOperationParameters withRoute(String route) {
-        return new DocumentOperationParameters(priority, fieldSet, requireNonNull(route), traceLevel, responseHandler);
+        return new DocumentOperationParameters(priority, fieldSet, requireNonNull(route), traceLevel, deadline, responseHandler);
     }
 
     /** Sets the trace level for an operation. */
@@ -64,18 +67,24 @@ public class DocumentOperationParameters {
         if (traceLevel < 0 || traceLevel > 9)
             throw new IllegalArgumentException("Trace level must be from 0 (no tracing) to 9 (maximum)");
 
-        return new DocumentOperationParameters(priority, fieldSet, route, traceLevel, responseHandler);
+        return new DocumentOperationParameters(priority, fieldSet, route, traceLevel, deadline, responseHandler);
+    }
+
+    /** Sets the deadline for an operation. */
+    public DocumentOperationParameters withDeadline(Instant deadline) {
+        return new DocumentOperationParameters(priority, fieldSet, route, traceLevel, requireNonNull(deadline), responseHandler);
     }
 
     /** Sets the {@link ResponseHandler} to handle the {@link Response} of an async operation, instead of the session default. */
     public DocumentOperationParameters withResponseHandler(ResponseHandler responseHandler) {
-        return new DocumentOperationParameters(priority, fieldSet, route, traceLevel, requireNonNull(responseHandler));
+        return new DocumentOperationParameters(priority, fieldSet, route, traceLevel, deadline, requireNonNull(responseHandler));
     }
 
     public Optional<DocumentProtocol.Priority> priority() { return Optional.ofNullable(priority); }
     public Optional<String> fieldSet() { return Optional.ofNullable(fieldSet); }
     public Optional<String> route() { return Optional.ofNullable(route); }
     public OptionalInt traceLevel() { return traceLevel >= 0 ? OptionalInt.of(traceLevel) : OptionalInt.empty(); }
+    public Optional<Instant> deadline() { return Optional.ofNullable(deadline); }
     public Optional<ResponseHandler> responseHandler() { return Optional.ofNullable(responseHandler); }
 
     @Override

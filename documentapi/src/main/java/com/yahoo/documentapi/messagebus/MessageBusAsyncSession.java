@@ -26,7 +26,6 @@ import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.RemoveDocumentReply;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentMessage;
 import com.yahoo.documentapi.messagebus.protocol.UpdateDocumentReply;
-import java.util.logging.Level;
 import com.yahoo.messagebus.ErrorCode;
 import com.yahoo.messagebus.Message;
 import com.yahoo.messagebus.MessageBus;
@@ -36,11 +35,14 @@ import com.yahoo.messagebus.SourceSession;
 import com.yahoo.messagebus.StaticThrottlePolicy;
 import com.yahoo.messagebus.ThrottlePolicy;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.Queue;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static com.yahoo.documentapi.DocumentOperationParameters.parameters;
@@ -49,6 +51,7 @@ import static com.yahoo.documentapi.Response.Outcome.ERROR;
 import static com.yahoo.documentapi.Response.Outcome.INSUFFICIENT_STORAGE;
 import static com.yahoo.documentapi.Response.Outcome.NOT_FOUND;
 import static com.yahoo.documentapi.Response.Outcome.SUCCESS;
+import static com.yahoo.documentapi.Response.Outcome.TIMEOUT;
 
 /**
  * An access session which wraps a messagebus source session sending document messages.
@@ -168,6 +171,7 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
             long reqId = requestId.incrementAndGet();
             msg.setContext(new OperationContext(reqId, parameters.responseHandler().orElse(null)));
             msg.getTrace().setLevel(parameters.traceLevel().orElse(traceLevel));
+            parameters.deadline().ifPresent(deadline -> msg.setTimeRemaining(Math.max(1, Duration.between(Instant.now(), deadline).toMillis())));
             // Use route from parameters, or session route if non-default, or finally, defaults for get and non-get, if set. Phew!
             String toRoute = parameters.route().orElse(mayOverrideWithGetOnlyRoute(msg) ? routeForGet : route);
             if (toRoute != null) {
@@ -284,6 +288,8 @@ public class MessageBusAsyncSession implements MessageBusSession, AsyncSession {
         if (   reply instanceof UpdateDocumentReply && ! ((UpdateDocumentReply) reply).wasFound()
             || reply instanceof RemoveDocumentReply && ! ((RemoveDocumentReply) reply).wasFound())
             return NOT_FOUND;
+        if (reply.getErrorCodes().contains(ErrorCode.TIMEOUT))
+            return TIMEOUT;
         return ERROR;
     }
 
