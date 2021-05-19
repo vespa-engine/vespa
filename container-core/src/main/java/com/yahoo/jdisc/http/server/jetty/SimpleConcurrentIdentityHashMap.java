@@ -20,7 +20,7 @@ class SimpleConcurrentIdentityHashMap<K, V> {
 
     Optional<V> remove(K key) { return Optional.ofNullable(wrappedMap.remove(identityKey(key))); }
 
-    void put(K key, V value) { wrappedMap.put(identityKey(key), value); }
+    Optional<V> put(K key, V value) { return Optional.ofNullable(wrappedMap.put(identityKey(key), value)); }
 
     V computeIfAbsent(K key, Supplier<V> supplier) {
         return wrappedMap.computeIfAbsent(identityKey(key), ignored -> supplier.get());

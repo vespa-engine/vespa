@@ -48,7 +48,9 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
 
     private static final Logger log = Logger.getLogger(JettyConnectionLogger.class.getName());
 
-    private final SimpleConcurrentIdentityHashMap<SocketChannelEndPoint, ConnectionInfo> connectionInfo = new SimpleConcurrentIdentityHashMap<>();
+    private final SimpleConcurrentIdentityHashMap<SocketChannelEndPoint, ConnectionInfo> connectionInfos = new SimpleConcurrentIdentityHashMap<>();
+    private final SimpleConcurrentIdentityHashMap<SocketChannelEndPoint, SSLEngine> sslEngines = new SimpleConcurrentIdentityHashMap<>();
+    // Extra mapping as callbacks in SslHandshakeListener only provides SSLEngine (no connection reference) as argument
     private final SimpleConcurrentIdentityHashMap<SSLEngine, ConnectionInfo> sslToConnectionInfo = new SimpleConcurrentIdentityHashMap<>();
 
     private final boolean enabled;
@@ -87,11 +89,14 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void onOpened(Connection connection) {
         handleListenerInvocation("Connection.Listener", "onOpened", "%h", List.of(connection), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(connection.getEndPoint());
-            ConnectionInfo info = connectionInfo.computeIfAbsent(endpoint, ConnectionInfo::from);
+            ConnectionInfo info = connectionInfos.computeIfAbsent(endpoint, ConnectionInfo::from);
             String connectionClassName = connection.getClass().getSimpleName(); // For hidden implementations of Connection
             if (connection instanceof SslConnection) {
                 SSLEngine sslEngine = ((SslConnection) connection).getSSLEngine();
-                sslToConnectionInfo.put(sslEngine, info);
+                addReferenceToSslEngine(endpoint, info, sslEngine);
+            } else if (connection instanceof ALPNServerConnection) {
+                SSLEngine sslEngine = ((ALPNServerConnection) connection).getSSLEngine();
+                addReferenceToSslEngine(endpoint, info, sslEngine);
             } else if (connection instanceof HttpConnection) {
                 info.setHttpProtocol("HTTP/1.1");
             } else if (connection instanceof HTTP2ServerConnection) {
@@ -108,27 +113,29 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         });
     }
 
+    private void addReferenceToSslEngine(SocketChannelEndPoint endpoint, ConnectionInfo info, SSLEngine sslEngine) {
+        if (sslEngine != null) {
+            sslEngines.put(endpoint, sslEngine)
+                    .ifPresent(sslToConnectionInfo::remove);
+            sslToConnectionInfo.put(sslEngine, info);
+        }
+    }
+
     @Override
     public void onClosed(Connection connection) {
         handleListenerInvocation("Connection.Listener", "onClosed", "%h", List.of(connection), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(connection.getEndPoint());
-            ConnectionInfo info = connectionInfo.get(endpoint).orElse(null);
+            ConnectionInfo info = connectionInfos.get(endpoint).orElse(null);
             if (info == null) return; // Closed connection already handled
             if (connection instanceof HttpConnection) {
                 info.setHttpBytes(connection.getBytesIn(), connection.getBytesOut());
-            } else if (connection instanceof SslConnection) {
-                SSLEngine sslEngine = ((SslConnection) connection).getSSLEngine();
-                sslToConnectionInfo.remove(sslEngine);
-            } else if (connection instanceof ALPNServerConnection) {
-                SSLEngine sslEngine = ((ALPNServerConnection) connection).getSSLEngine();
-                if (sslEngine != null) {
-                    sslToConnectionInfo.remove(sslEngine);
-                }
             }
             if (!endpoint.isOpen()) {
                 info.setClosedAt(System.currentTimeMillis());
                 connectionLog.log(info.toLogEntry());
-                connectionInfo.remove(endpoint);
+                connectionInfos.remove(endpoint);
+                sslEngines.remove(endpoint)
+                        .ifPresent(sslToConnectionInfo::remove);
             }
         });
     }
@@ -143,7 +150,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void onRequestBegin(Request request) {
         handleListenerInvocation("HttpChannel.Listener", "onRequestBegin", "%h", List.of(request), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(request.getHttpChannel().getEndPoint());
-            ConnectionInfo info = connectionInfo.get(endpoint).get();
+            ConnectionInfo info = connectionInfos.get(endpoint).get();
             info.incrementRequests();
             request.setAttribute(CONNECTION_ID_REQUEST_ATTRIBUTE, info.uuid());
         });
@@ -153,7 +160,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void onResponseBegin(Request request) {
         handleListenerInvocation("HttpChannel.Listener", "onResponseBegin", "%h", List.of(request), () -> {
             SocketChannelEndPoint endpoint = findUnderlyingSocketEndpoint(request.getHttpChannel().getEndPoint());
-            ConnectionInfo info = connectionInfo.get(endpoint).orElse(null);
+            ConnectionInfo info = connectionInfos.get(endpoint).orElse(null);
             if (info == null) return; // Connection closed before response started - observed during Jetty server shutdown
             info.incrementResponses();
         });
@@ -169,7 +176,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
     public void handshakeSucceeded(Event event) {
         SSLEngine sslEngine = event.getSSLEngine();
         handleListenerInvocation("SslHandshakeListener", "handshakeSucceeded", "sslEngine=%h", List.of(sslEngine), () -> {
-            ConnectionInfo info = sslToConnectionInfo.remove(sslEngine).orElse(null);
+            ConnectionInfo info = sslToConnectionInfo.get(sslEngine).orElse(null);
             if (info == null) return;
             info.setSslSessionDetails(sslEngine.getSession());
         });
@@ -180,7 +187,7 @@ class JettyConnectionLogger extends AbstractLifeCycle implements Connection.List
         SSLEngine sslEngine = event.getSSLEngine();
         handleListenerInvocation("SslHandshakeListener", "handshakeFailed", "sslEngine=%h,failure=%s", List.of(sslEngine, failure), () -> {
             log.log(Level.FINE, failure, failure::toString);
-            ConnectionInfo info = sslToConnectionInfo.remove(sslEngine).orElse(null);
+            ConnectionInfo info = sslToConnectionInfo.get(sslEngine).orElse(null);
             if (info == null) return;
             info.setSslHandshakeFailure((SSLHandshakeException)failure);
         });
