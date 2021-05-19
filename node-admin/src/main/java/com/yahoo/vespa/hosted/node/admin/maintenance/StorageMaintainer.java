@@ -165,9 +165,9 @@ public class StorageMaintainer {
     }
 
     /** Checks if container has any new coredumps, reports and archives them if so */
-    public void handleCoreDumpsForContainer(NodeAgentContext context, Optional<Container> container) {
+    public void handleCoreDumpsForContainer(NodeAgentContext context, Optional<Container> container, boolean throwIfCoreBeingWritten) {
         if (context.isDisabled(NodeAgentTask.CoreDumps)) return;
-        coredumpHandler.converge(context, () -> getCoredumpNodeAttributes(context, container));
+        coredumpHandler.converge(context, () -> getCoredumpNodeAttributes(context, container), throwIfCoreBeingWritten);
     }
 
     private Map<String, Object> getCoredumpNodeAttributes(NodeAgentContext context, Optional<Container> container) {
