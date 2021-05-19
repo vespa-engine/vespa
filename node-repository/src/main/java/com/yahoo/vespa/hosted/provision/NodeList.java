@@ -193,8 +193,8 @@ public class NodeList extends AbstractFilteringList<Node, NodeList> {
     /** Returns the subset of nodes which have a record of being down */
     public NodeList down() { return matching(Node::isDown); }
 
-    /** Returns the subset of nodes which have retirement requested */
-    public NodeList retirementRequested() {
+    /** Returns the subset of nodes which are being retired */
+    public NodeList retiring() {
         return matching(node -> node.status().wantToRetire() || node.status().preferToRetire());
     }
 
