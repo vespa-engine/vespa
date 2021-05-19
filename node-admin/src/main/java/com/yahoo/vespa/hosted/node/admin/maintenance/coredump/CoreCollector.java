@@ -3,6 +3,7 @@ package com.yahoo.vespa.hosted.node.admin.maintenance.coredump;
 
 import com.yahoo.vespa.hosted.dockerapi.ProcessResult;
 import com.yahoo.vespa.hosted.node.admin.docker.ContainerOperations;
+import com.yahoo.vespa.hosted.node.admin.nodeadmin.ConvergenceException;
 import com.yahoo.vespa.hosted.node.admin.nodeagent.NodeAgentContext;
 
 import java.nio.file.Path;
@@ -45,7 +46,7 @@ public class CoreCollector {
 
         Matcher matcher = CORE_GENERATOR_PATH_PATTERN.matcher(result.getOutput());
         if (! matcher.find()) {
-            throw new RuntimeException(String.format("Failed to extract binary path from GDB, result: %s, command: %s",
+            throw new ConvergenceException(String.format("Failed to extract binary path from GDB, result: %s, command: %s",
                     result, Arrays.toString(wrappedCommand)));
         }
         return Paths.get(matcher.group("path").split(" ")[0]);
@@ -56,7 +57,7 @@ public class CoreCollector {
         try {
             ProcessResult result = docker.executeCommandInContainerAsRoot(context, command);
             if (result.getExitStatus() != 0) {
-                throw new RuntimeException("file command failed with " + result);
+                throw new ConvergenceException("file command failed with " + result);
             }
 
             Matcher execfnMatcher = EXECFN_PATH_PATTERN.matcher(result.getOutput());
@@ -82,7 +83,7 @@ public class CoreCollector {
 
         ProcessResult result = docker.executeCommandInContainerAsRoot(context, command);
         if (result.getExitStatus() != 0)
-            throw new RuntimeException("Failed to read backtrace " + result + ", Command: " + Arrays.toString(command));
+            throw new ConvergenceException("Failed to read backtrace " + result + ", Command: " + Arrays.toString(command));
 
         return List.of(result.getOutput().split("\n"));
     }
@@ -92,7 +93,7 @@ public class CoreCollector {
 
         ProcessResult result = docker.executeCommandInContainerAsRoot(context, command);
         if (result.getExitStatus() != 0)
-            throw new RuntimeException("Failed to read jstack " + result + ", Command: " + Arrays.toString(command));
+            throw new ConvergenceException("Failed to read jstack " + result + ", Command: " + Arrays.toString(command));
 
         return List.of(result.getOutput().split("\n"));
     }
@@ -118,6 +119,8 @@ public class CoreCollector {
                 data.put("backtrace", readBacktrace(context, coredumpPath, binPath, false));
                 data.put("backtrace_all_threads", readBacktrace(context, coredumpPath, binPath, true));
             }
+        } catch (ConvergenceException e) {
+            context.log(logger, Level.WARNING, "Failed to extract backtrace: " + e.getMessage());
         } catch (RuntimeException e) {
             context.log(logger, Level.WARNING, "Failed to extract backtrace", e);
         }
