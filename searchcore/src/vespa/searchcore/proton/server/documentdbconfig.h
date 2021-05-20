@@ -6,7 +6,6 @@
 #include <vespa/searchlib/common/tunefileinfo.h>
 #include <vespa/searchcommon/common/schema.h>
 #include <vespa/searchcore/proton/matching/ranking_constants.h>
-#include <vespa/searchcore/proton/matching/ranking_expressions.h>
 #include <vespa/searchcore/proton/matching/onnx_models.h>
 #include <vespa/config/retriever/configkeyset.h>
 #include <vespa/config/retriever/configsnapshot.h>
@@ -41,7 +40,6 @@ public:
     public:
         bool rankProfilesChanged;
         bool rankingConstantsChanged;
-        bool rankingExpressionsChanged;
         bool onnxModelsChanged;
         bool indexschemaChanged;
         bool attributesChanged;
@@ -63,7 +61,6 @@ public:
         ComparisonResult();
         ComparisonResult &setRankProfilesChanged(bool val) { rankProfilesChanged = val; return *this; }
         ComparisonResult &setRankingConstantsChanged(bool val) { rankingConstantsChanged = val; return *this; }
-        ComparisonResult &setRankingExpressionsChanged(bool val) { rankingExpressionsChanged = val; return *this; }
         ComparisonResult &setOnnxModelsChanged(bool val) { onnxModelsChanged = val; return *this; }
         ComparisonResult &setIndexschemaChanged(bool val) { indexschemaChanged = val; return *this; }
         ComparisonResult &setAttributesChanged(bool val) { attributesChanged = val; return *this; }
@@ -104,7 +101,6 @@ public:
     using RankProfilesConfig = const vespa::config::search::internal::InternalRankProfilesType;
     using RankProfilesConfigSP = std::shared_ptr<RankProfilesConfig>;
     using RankingConstants = matching::RankingConstants;
-    using RankingExpressions = matching::RankingExpressions;
     using OnnxModels = matching::OnnxModels;
     using SummaryConfig = const vespa::config::search::internal::InternalSummaryType;
     using SummaryConfigSP = std::shared_ptr<SummaryConfig>;
@@ -124,7 +120,6 @@ private:
     int64_t                          _generation;
     RankProfilesConfigSP             _rankProfiles;
     RankingConstants::SP             _rankingConstants;
-    RankingExpressions::SP           _rankingExpressions;
     OnnxModels::SP                   _onnxModels;
     IndexschemaConfigSP              _indexschema;
     AttributesConfigSP               _attributes;
@@ -164,7 +159,6 @@ public:
     DocumentDBConfig(int64_t generation,
                      const RankProfilesConfigSP &rankProfiles,
                      const RankingConstants::SP &rankingConstants,
-                     const RankingExpressions::SP &rankingExpressions,
                      const OnnxModels::SP &onnxModels,
                      const IndexschemaConfigSP &indexschema,
                      const AttributesConfigSP &attributes,
@@ -195,7 +189,6 @@ public:
 
     const RankProfilesConfig &getRankProfilesConfig() const { return *_rankProfiles; }
     const RankingConstants &getRankingConstants() const { return *_rankingConstants; }
-    const RankingExpressions &getRankingExpressions() const { return *_rankingExpressions; }
     const OnnxModels &getOnnxModels() const { return *_onnxModels; }
     const IndexschemaConfig &getIndexschemaConfig() const { return *_indexschema; }
     const AttributesConfig &getAttributesConfig() const { return *_attributes; }
@@ -205,7 +198,6 @@ public:
     const DocumenttypesConfig &getDocumenttypesConfig() const { return *_documenttypes; }
     const RankProfilesConfigSP &getRankProfilesConfigSP() const { return _rankProfiles; }
     const RankingConstants::SP &getRankingConstantsSP() const { return _rankingConstants; }
-    const RankingExpressions::SP &getRankingExpressionsSP() const { return _rankingExpressions; }
     const OnnxModels::SP &getOnnxModelsSP() const { return _onnxModels; }
     const IndexschemaConfigSP &getIndexschemaConfigSP() const { return _indexschema; }
     const AttributesConfigSP &getAttributesConfigSP() const { return _attributes; }
