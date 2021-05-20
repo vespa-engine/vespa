@@ -109,7 +109,7 @@ public abstract class AbstractService extends AbstractConfigProducer<AbstractCon
     }
 
     @Override
-    protected void remove() {
+    public void remove() {
         super.remove();
         if (hostResource != null)
             hostResource.deallocateService(this);
