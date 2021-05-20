@@ -437,6 +437,27 @@ Requires: %{name}-base-libs = %{version}-%{release}
 
 Vespa - The open big data serving engine - tools
 
+%package ann-benchmark
+
+Summary: Vespa - The open big data serving engine - ann-benchmark
+
+Requires: %{name}-libs = %{version}-%{release}
+%if 0%{?el7}
+Requires: python3
+%endif
+%if 0%{?el8}
+Requires: python36
+%endif
+%if 0%{?fedora}
+Requires: python3
+%endif
+
+%description ann-benchmark
+
+Vespa - The open big data serving engine - ann-benchmark
+
+Python binding for an HNSW index fixture using tensor attribute.
+
 %prep
 %if 0%{?installdir:1}
 %setup -c -D -T
@@ -622,6 +643,7 @@ fi
 %{_prefix}/lib/jars/zookeeper-command-line-client-jar-with-dependencies.jar
 %{_prefix}/lib/perl5
 %{_prefix}/libexec
+%exclude %{_prefix}/libexec/vespa_ann_benchmark
 %exclude %{_prefix}/libexec/vespa/common-env.sh
 %exclude %{_prefix}/libexec/vespa/node-admin.sh
 %exclude %{_prefix}/libexec/vespa/standalone-container.sh
@@ -816,5 +838,13 @@ fi
 %dir %{_prefix}/lib
 %dir %{_prefix}/lib/jars
 %{_prefix}/lib/jars/vespaclient-java-jar-with-dependencies.jar
+
+%files ann-benchmark
+%if %{_defattr_is_vespa_vespa}
+%defattr(-,%{_vespa_user},%{_vespa_group},-)
+%endif
+%dir %{_prefix}
+%dir %{_prefix}/libexec
+%{_prefix}/libexec/vespa_ann_benchmark
 
 %changelog
