@@ -9,7 +9,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- * ONNX models tied to a search definition.
+ * ONNX models tied to a search definition or global.
  *
  * @author lesters
  */
@@ -21,6 +21,10 @@ public class OnnxModels {
         model.validate();
         String name = model.getName();
         models.put(name, model);
+    }
+
+    public void add(Map<String, OnnxModel> models) {
+        models.values().forEach(this::add);
     }
 
     public OnnxModel get(String name) {

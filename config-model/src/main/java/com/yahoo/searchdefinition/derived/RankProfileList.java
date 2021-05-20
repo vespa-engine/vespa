@@ -57,8 +57,8 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
                            ModelContext.Properties deployProperties) {
         setName(search == null ? "default" : search.getName());
         this.rankingConstants = rankingConstants;
-        deriveRankProfiles(rankProfileRegistry, queryProfiles, importedModels, search, attributeFields, deployProperties);
         this.onnxModels = search == null ? new OnnxModels() : search.onnxModels();  // as ONNX models come from parsing rank expressions
+        deriveRankProfiles(rankProfileRegistry, queryProfiles, importedModels, search, attributeFields, deployProperties);
     }
 
     private void deriveRankProfiles(RankProfileRegistry rankProfileRegistry,
@@ -92,6 +92,10 @@ public class RankProfileList extends Derived implements RankProfilesConfig.Produ
 
     public void sendConstantsTo(Collection<? extends AbstractService> services) {
         rankingConstants.sendTo(services);
+    }
+
+    public void sendOnnxModelsTo(Collection<? extends AbstractService> services) {
+        onnxModels.sendTo(services);
     }
 
     @Override
