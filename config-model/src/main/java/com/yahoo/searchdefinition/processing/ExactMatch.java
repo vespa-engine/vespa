@@ -62,9 +62,9 @@ public class ExactMatch extends Processor {
                 && ! field.getMatching().getExactMatchTerminator().equals("")) {
                 exactTerminator = field.getMatching().getExactMatchTerminator();
             } else {
-                warn(search, field,
-                     "With 'exact' matching, an exact-terminator is needed " +
-                     "(using '" + exactTerminator +"' as terminator)");
+                info(search, field,
+                     "With 'exact' matching, an exact-terminator is needed," +
+                     " using default value '" + exactTerminator +"' as terminator");
             }
             field.addQueryCommand("exact " + exactTerminator);
 
