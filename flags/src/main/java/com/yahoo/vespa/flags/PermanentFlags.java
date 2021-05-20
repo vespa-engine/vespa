@@ -122,7 +122,7 @@ public class PermanentFlags {
             ZONE_ID, APPLICATION_ID);
 
     public static final UnboundStringFlag ZOOKEEPER_SERVER_VERSION = defineStringFlag(
-            "zookeeper-server-version", "3.6.2",
+            "zookeeper-server-version", "3.6.3",
             "ZooKeeper server version, a jar file zookeeper-server-<ZOOKEEPER_SERVER_VERSION>-jar-with-dependencies.jar must exist",
             "Takes effect on restart of Docker container",
             NODE_TYPE, APPLICATION_ID, HOSTNAME);
