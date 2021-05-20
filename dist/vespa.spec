@@ -456,7 +456,8 @@ Requires: python3
 
 Vespa - The open big data serving engine - ann-benchmark
 
-Python binding for an HNSW index fixture using tensor attribute.
+Python binding for the Vespa implementation of an HNSW index for
+nearest neighbor search used for low-level benchmarking.
 
 %prep
 %if 0%{?installdir:1}

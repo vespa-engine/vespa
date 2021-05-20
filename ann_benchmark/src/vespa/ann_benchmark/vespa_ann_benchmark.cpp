@@ -49,8 +49,13 @@ constexpr uint32_t lid_bias = 1; // lid 0 is reserved
 }
 
 /*
- * Wrapper class for a tensor attribute vector containing a nearest
- * neighbor index.
+ * Class exposing the Vespa implementation of an HNSW index for nearest neighbor search over data points in a high dimensional vector space.
+ *
+ * A tensor attribute field (https://docs.vespa.ai/en/reference/schema-reference.html#type:tensor) is used to store the vectors in memory.
+ * This class only supports single-threaded access (both for indexing and searching),
+ * and should only be used for low-level benchmarking.
+ * To use nearest neighbor search in a Vespa application,
+ * see https://docs.vespa.ai/en/approximate-nn-hnsw.html for more details.
  */
 class HnswIndex
 {
@@ -69,7 +74,7 @@ public:
     void set_vector(uint32_t lid, const std::vector<float>& value);
     std::vector<float> get_vector(uint32_t lid);
     void clear_vector(uint32_t lid);
-    TopKResult find_top_k(uint32_t k, const std::vector<float>& value, uint32_t explore_k, double distance_threshold);
+    TopKResult find_top_k(uint32_t k, const std::vector<float>& value, uint32_t explore_k);
 };
 
 HnswIndex::HnswIndex(uint32_t dim_size, const HnswIndexParams &hnsw_index_params)
@@ -85,7 +90,6 @@ HnswIndex::HnswIndex(uint32_t dim_size, const HnswIndexParams &hnsw_index_params
     assert(_tensor_type.is_dense());
     assert(_tensor_type.count_indexed_dimensions() == 1u);
     _dim_size = _tensor_type.dimensions()[0].size;
-    std::cout << "HnswIndex::HnswIndex Dimension size is " << _dim_size << std::endl;
     cfg.setTensorType(_tensor_type);
     cfg.set_distance_metric(hnsw_index_params.distance_metric());
     cfg.set_hnsw_index_params(hnsw_index_params);
@@ -166,7 +170,7 @@ HnswIndex::clear_vector(uint32_t lid)
 }
 
 TopKResult
-HnswIndex::find_top_k(uint32_t k, const std::vector<float>& value, uint32_t explore_k, double distance_threshold)
+HnswIndex::find_top_k(uint32_t k, const std::vector<float>& value, uint32_t explore_k)
 {
     if (!check_value("find_top_k", value)) {
         return {};
@@ -177,7 +181,7 @@ HnswIndex::find_top_k(uint32_t k, const std::vector<float>& value, uint32_t expl
      */
     TopKResult result;
     TypedCells typed_cells(&value[0], CellType::FLOAT, value.size());
-    auto raw_result = _nearest_neighbor_index->find_top_k(k, typed_cells, explore_k, distance_threshold * distance_threshold);
+    auto raw_result = _nearest_neighbor_index->find_top_k(k, typed_cells, explore_k, std::numeric_limits<double>::max());
     result.reserve(raw_result.size());
     switch (_hnsw_index_params.distance_metric()) {
     case DistanceMetric::Euclidean:

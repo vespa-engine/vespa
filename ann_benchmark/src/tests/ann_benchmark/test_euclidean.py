@@ -21,7 +21,7 @@ class Fixture:
         return self.index.clear_vector(lid)
 
     def find(self, k, value):
-        return self.index.find_top_k(k, value, k + 200, 1e300)
+        return self.index.find_top_k(k, value, k + 200)
 
 def test_set_value():
     f = Fixture()
@@ -41,8 +41,6 @@ def test_find():
     f = Fixture()
     f.set(0, [0, 0])
     f.set(1, [10, 10])
-    assert f.get(0) == [0, 0]
-    assert f.get(1) == [10, 10]
     top = f.find(10, [1, 1])
     assert [top[0][0], top[1][0]] == [0, 1]
     # Allow some rounding errors
