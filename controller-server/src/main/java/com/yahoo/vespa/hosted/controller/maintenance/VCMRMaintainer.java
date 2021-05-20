@@ -15,6 +15,7 @@ import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequest.Impa
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.ChangeRequestClient;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.HostAction;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.HostAction.State;
+import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VCMRReport;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest;
 import com.yahoo.vespa.hosted.controller.api.integration.vcmr.VespaChangeRequest.Status;
 import com.yahoo.vespa.hosted.controller.persistence.CuratorDb;
@@ -144,11 +145,14 @@ public class VCMRMaintainer extends ControllerMaintainer {
         if (changeRequest.getChangeRequestSource().isClosed()) {
             logger.fine(() -> changeRequest.getChangeRequestSource().getId() + " is closed, recycling " + node.hostname());
             recycleNode(changeRequest.getZoneId(), node, hostAction);
+            removeReport(changeRequest, node);
             return hostAction.withState(State.COMPLETE);
         }
 
         if (isLowImpact(changeRequest))
             return hostAction;
+
+        addReport(changeRequest, node);
 
         if (isPostponed(changeRequest, hostAction)) {
             logger.fine(() -> changeRequest.getChangeRequestSource().getId() + " is postponed, recycling " + node.hostname());
@@ -284,5 +288,29 @@ public class VCMRMaintainer extends ControllerMaintainer {
 
         logger.info("Approving " + changeRequest.getChangeRequestSource().getId());
         changeRequestClient.approveChangeRequest(changeRequest);
+    }
+
+    private void removeReport(VespaChangeRequest changeRequest, Node node) {
+        var report = VCMRReport.fromReports(node.reports());
+
+        if (report.removeVcmr(changeRequest.getChangeRequestSource().getId())) {
+            updateReport(changeRequest.getZoneId(), node, report);
+        }
+    }
+
+    private void addReport(VespaChangeRequest changeRequest, Node node) {
+        var report = VCMRReport.fromReports(node.reports());
+
+        var source = changeRequest.getChangeRequestSource();
+        if (report.addVcmr(source.getId(), source.getPlannedStartTime(), source.getPlannedEndTime())) {
+            updateReport(changeRequest.getZoneId(), node, report);
+        }
+    }
+
+    private void updateReport(ZoneId zoneId, Node node, VCMRReport report) {
+        logger.info(String.format("Updating report for %s: %s", node.hostname(), report));
+        var newNode = new NodeRepositoryNode();
+        newNode.setReports(report.toNodeReports());
+        nodeRepository.patchNode(zoneId, node.hostname().value(), newNode);
     }
 }

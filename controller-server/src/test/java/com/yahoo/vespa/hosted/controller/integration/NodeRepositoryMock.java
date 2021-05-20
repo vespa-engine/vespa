@@ -292,6 +292,8 @@ public class NodeRepositoryMock implements NodeRepository {
             newNode.modelName(node.getModelName());
         if (node.getWantToRetire() != null)
             newNode.wantToRetire(node.getWantToRetire());
+        if (!node.getReports().isEmpty())
+            newNode.reports(node.getReports());
 
         putNodes(zoneId, newNode.build());
     }
