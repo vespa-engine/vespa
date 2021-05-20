@@ -11,23 +11,60 @@ import java.util.OptionalInt;
  */
 public class OperationParameters {
 
-    public static Builder builder() { return new Builder(); }
+    static final OperationParameters empty = new OperationParameters(false, null, null, null, 0);
 
-    private OperationParameters(Builder builder) {
+    private final boolean create;
+    private final String condition;
+    private final Duration timeout;
+    private final String route;
+    private final int tracelevel;
 
+    private OperationParameters(boolean create, String condition, Duration timeout, String route, int tracelevel) {
+        this.create = create;
+        this.condition = condition;
+        this.timeout = timeout;
+        this.route = route;
+        this.tracelevel = tracelevel;
     }
 
-    public boolean createIfNonExistent() { return false; }
-    public Optional<String> testAndSetCondition() { return Optional.empty(); }
-    public Optional<Duration> timeout() { return Optional.empty(); }
-    public Optional<String> route() { return Optional.empty(); }
-    public OptionalInt tracelevel() { return OptionalInt.empty(); }
+    public static OperationParameters empty() { return empty; }
 
-    public static class Builder {
-
-        private Builder() {}
-
-        public OperationParameters build() { return new OperationParameters(this); }
-
+    public OperationParameters createIfNonExistent(boolean create) {
+        return new OperationParameters(create, condition, timeout, route, tracelevel);
     }
+
+    public OperationParameters testAndSetCondition(String condition) {
+        if (condition.isEmpty())
+            throw new IllegalArgumentException("TestAndSetCondition must be non-empty");
+
+        return new OperationParameters(create, condition, timeout, route, tracelevel);
+    }
+
+    public OperationParameters timeout(Duration timeout) {
+        if (timeout.isNegative() || timeout.isZero())
+            throw new IllegalArgumentException("Timeout must be positive, but was " + timeout);
+
+        return new OperationParameters(create, condition, timeout, route, tracelevel);
+    }
+
+    public OperationParameters route(String route) {
+        if (route.isEmpty())
+            throw new IllegalArgumentException("Route must be non-empty");
+
+        return new OperationParameters(create, condition, timeout, route, tracelevel);
+    }
+
+    public OperationParameters tracelevel(int tracelevel) {
+        if (tracelevel < 1 || tracelevel > 9)
+            throw new IllegalArgumentException("Tracelevel must be in [1, 9]");
+
+        return new OperationParameters(create, condition, timeout, route, tracelevel);
+    }
+
+    public boolean createIfNonExistent() { return create; }
+    public Optional<String> testAndSetCondition() { return Optional.ofNullable(condition); }
+    public Optional<Duration> timeout() { return Optional.ofNullable(timeout); }
+    public Optional<String> route() { return Optional.ofNullable(route); }
+    public OptionalInt tracelevel() { return tracelevel == 0 ? OptionalInt.empty() : OptionalInt.of(tracelevel); }
+
 }
