@@ -238,6 +238,13 @@ public class Flags {
             "Takes effect on next host-admin tick",
             HOSTNAME);
 
+    public static final UnboundBooleanFlag CFG_DEPLOY_MULTIPART = defineFeatureFlag(
+            "cfg-deploy-multipart", false,
+            List.of("tokle"), "2021-05-19", "2021-08-01",
+            "Wheter to deploy applications using multipart form data (instead of url params)",
+            "Takes effect immediately",
+            APPLICATION_ID);
+
     /** WARNING: public for testing: All flags should be defined in {@link Flags}. */
     public static UnboundBooleanFlag defineFeatureFlag(String flagId, boolean defaultValue, List<String> owners,
                                                        String createdAt, String expiresAt, String description,
