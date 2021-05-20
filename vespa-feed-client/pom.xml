@@ -48,6 +48,12 @@
       <scope>compile</scope>
     </dependency>
 
+    <dependency>
+      <groupId>com.fasterxml.jackson.core</groupId>
+      <artifactId>jackson-core</artifactId>
+      <scope>compile</scope>
+    </dependency>
+
     <!-- test scope -->
     <dependency>
       <groupId>org.junit.jupiter</groupId>
@@ -89,7 +95,7 @@
               <executable>src/main/sh/vespa-version-generator.sh</executable>
               <arguments>
                 <argument>${project.basedir}/../dist/vtag.map</argument>
-                <argument>${project.build.directory}/generated-sources/vespa-version/com/yahoo/vespa/feed/client/Vespa.java</argument>
+                <argument>${project.build.directory}/generated-sources/vespa-version/ai/vespa/feed/client/Vespa.java</argument>
               </arguments>
               <sourceRoot>${project.build.directory}/generated-sources/vespa-version</sourceRoot>
             </configuration>

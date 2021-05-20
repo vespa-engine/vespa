@@ -1,11 +1,8 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.feed.client;
+package ai.vespa.feed.client;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Objects;
 import java.util.Optional;
-import java.util.OptionalInt;
 import java.util.OptionalLong;
 
 import static java.util.Objects.requireNonNull;
@@ -30,15 +27,15 @@ public class DocumentId {
     }
 
     public static DocumentId of(String namespace, String documentType, String userSpecific) {
-        return new DocumentId(namespace, documentType, OptionalLong.empty(), Optional.empty(), userSpecific);
+        return new DocumentId(documentType, namespace, OptionalLong.empty(), Optional.empty(), userSpecific);
     }
 
     public static DocumentId of(String namespace, String documentType, long number, String userSpecific) {
-        return new DocumentId(namespace, documentType, OptionalLong.of(number), Optional.empty(), userSpecific);
+        return new DocumentId(documentType, namespace, OptionalLong.of(number), Optional.empty(), userSpecific);
     }
 
     public static DocumentId of(String namespace, String documentType, String group, String userSpecific) {
-        return new DocumentId(namespace, documentType, OptionalLong.empty(), Optional.of(group), userSpecific);
+        return new DocumentId(documentType, namespace, OptionalLong.empty(), Optional.of(group), userSpecific);
     }
 
     public static DocumentId of(String serialized) {
@@ -87,6 +84,13 @@ public class DocumentId {
     @Override
     public int hashCode() {
         return Objects.hash(documentType, namespace, number, group, userSpecific);
+    }
+
+    @Override
+    public String toString() {
+        return "id:" + namespace + ":" + documentType + ":" +
+               (number.isPresent() ? "n=" + number.getAsLong() : group.map("g="::concat).orElse("")) +
+               ":" + userSpecific;
     }
 
 }

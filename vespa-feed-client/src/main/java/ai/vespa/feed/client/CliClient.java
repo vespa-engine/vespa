@@ -1,7 +1,5 @@
 // Copyright Verizon Media. Licensed under the terms of the Apache 2.0 license. See LICENSE in the project root.
-package com.yahoo.vespa.feed.client;
-
-import com.yahoo.vespa.feed.client.CliArguments.CliArgumentsException;
+package ai.vespa.feed.client;
 
 import javax.net.ssl.HostnameVerifier;
 import javax.net.ssl.SSLSession;
@@ -46,12 +44,12 @@ class CliClient {
             }
             FeedClient feedClient = createFeedClient(cliArgs);
             return 0;
-        } catch (CliArgumentsException | IOException e) {
+        } catch (CliArguments.CliArgumentsException | IOException e) {
             return handleException(e);
         }
     }
 
-    private static FeedClient createFeedClient(CliArguments cliArgs) throws CliArgumentsException, IOException {
+    private static FeedClient createFeedClient(CliArguments cliArgs) throws CliArguments.CliArgumentsException, IOException {
         FeedClientBuilder builder = FeedClientBuilder.create(cliArgs.endpoint());
         cliArgs.connections().ifPresent(builder::setMaxConnections);
         cliArgs.maxStreamsPerConnection().ifPresent(builder::setMaxConnections);
