@@ -133,7 +133,6 @@ public:
                         1,
                         std::make_shared<RankProfilesConfig>(),
                         std::make_shared<matching::RankingConstants>(),
-                        std::make_shared<matching::RankingExpressions>(),
                         std::make_shared<matching::OnnxModels>(),
                         indexschema,
                         attributes,

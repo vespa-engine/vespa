@@ -73,10 +73,6 @@ public:
         return vespalib::eval::ConstantValue::UP();
     }
 
-    vespalib::string getRankingExpression(const vespalib::string &) const override {
-        return {};
-    }
-
     const search::fef::OnnxModel *getOnnxModel(const vespalib::string &) const override {
         return nullptr;
     }
