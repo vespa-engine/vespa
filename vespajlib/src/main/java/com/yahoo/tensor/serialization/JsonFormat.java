@@ -216,7 +216,7 @@ public class JsonFormat {
         return result;
     }
 
-    private static double[] decodeHexString(String input, TensorType.Value valueType) {
+    public static double[] decodeHexString(String input, TensorType.Value valueType) {
         switch(valueType) {
             case INT8:
                 return decodeHexStringAsBytes(input);
