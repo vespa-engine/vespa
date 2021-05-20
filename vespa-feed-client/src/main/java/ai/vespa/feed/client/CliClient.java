@@ -68,6 +68,7 @@ class CliClient {
             }
             builder.setSslContext(sslContextBuilder.build());
         }
+        cliArgs.headers().forEach(builder::addRequestHeader);
         return builder.build();
     }
 

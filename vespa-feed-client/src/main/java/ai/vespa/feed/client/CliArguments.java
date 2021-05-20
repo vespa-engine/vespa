@@ -16,6 +16,9 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.nio.file.Path;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Optional;
 import java.util.OptionalInt;
 
@@ -38,6 +41,7 @@ class CliArguments {
     private static final String PRIVATE_KEY_OPTION = "private-key";
     private static final String CA_CERTIFICATES_OPTION = "ca-certificates";
     private static final String DISABLE_SSL_HOSTNAME_VERIFICATION_OPTION = "disable-ssl-hostname-verification";
+    private static final String HEADER_OPTION = "header";
 
     private final CommandLine arguments;
 
@@ -89,6 +93,24 @@ class CliArguments {
             .orElseThrow(() -> new CliArgumentsException("Feed file must be specified"));
     }
 
+    Map<String, String> headers() throws CliArgumentsException {
+        String[] rawArguments = arguments.getOptionValues(HEADER_OPTION);
+        if (rawArguments == null) return Collections.emptyMap();
+        Map<String, String> headers = new HashMap<>();
+        for (String rawArgument : rawArguments) {
+            if (rawArgument.startsWith("\"") || rawArgument.startsWith("'")) {
+                rawArgument = rawArgument.substring(1);
+            }
+            if (rawArgument.endsWith("\"") || rawArgument.endsWith("'")) {
+                rawArgument = rawArgument.substring(0, rawArgument.length() - 1);
+            }
+            int colonIndex = rawArgument.indexOf(':');
+            if (colonIndex == -1) throw new CliArgumentsException("Invalid header: '" + rawArgument + "'");
+            headers.put(rawArgument.substring(0, colonIndex), rawArgument.substring(colonIndex + 1).trim());
+        }
+        return Collections.unmodifiableMap(headers);
+    }
+
     boolean sslHostnameVerificationDisabled() { return has(DISABLE_SSL_HOSTNAME_VERIFICATION_OPTION); }
 
     private OptionalInt intValue(String option) throws CliArgumentsException {
@@ -124,6 +146,10 @@ class CliArguments {
                         .longOpt(ENDPOINT_OPTION)
                         .hasArg()
                         .type(URL.class)
+                        .build())
+                .addOption(Option.builder()
+                        .longOpt(HEADER_OPTION)
+                        .hasArgs()
                         .build())
                 .addOption(Option.builder()
                         .longOpt(FILE_OPTION)
