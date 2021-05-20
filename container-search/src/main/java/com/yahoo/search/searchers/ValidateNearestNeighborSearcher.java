@@ -29,7 +29,6 @@ import java.util.Optional;
  *
  * @author arnej
  */
-@Beta
 @Before(GroupingExecutor.COMPONENT_NAME) // Must happen before query.prepare()
 public class ValidateNearestNeighborSearcher extends Searcher {
 

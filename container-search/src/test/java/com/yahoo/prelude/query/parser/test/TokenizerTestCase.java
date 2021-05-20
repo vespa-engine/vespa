@@ -36,7 +36,7 @@ import static org.junit.Assert.assertTrue;
 /**
  * Tests the tokenizer
  *
- * @author  bratseth
+ * @author bratseth
  */
 public class TokenizerTestCase {
 
