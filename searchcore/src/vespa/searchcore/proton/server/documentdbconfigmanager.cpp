@@ -6,6 +6,7 @@
 #include <vespa/searchcore/proton/common/alloc_config.h>
 #include <vespa/searchcore/proton/common/hw_info.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
+#include <vespa/searchcore/config/config-ranking-expressions.h>
 #include <vespa/searchcore/config/config-onnx-models.h>
 #include <vespa/config-imported-fields.h>
 #include <vespa/config-rank-profiles.h>
@@ -20,6 +21,7 @@
 #include <vespa/searchlib/index/schemautil.h>
 #include <vespa/searchsummary/config/config-juniperrc.h>
 #include <vespa/vespalib/time/time_box.h>
+#include <vespa/vespalib/util/stringfmt.h>
 #include <thread>
 #include <cassert>
 
@@ -36,6 +38,7 @@ using search::TuneFileDocumentDB;
 using search::index::Schema;
 using search::index::SchemaBuilder;
 using proton::matching::RankingConstants;
+using proton::matching::RankingExpressions;
 using proton::matching::OnnxModels;
 using vespalib::compression::CompressionConfig;
 using search::LogDocumentStore;
@@ -45,6 +48,8 @@ using search::WriteableFileChunk;
 using std::make_shared;
 using std::make_unique;
 
+using vespalib::make_string_short::fmt;
+
 namespace proton {
 
 const ConfigKeySet
@@ -53,6 +58,7 @@ DocumentDBConfigManager::createConfigKeySet() const
     ConfigKeySet set;
     set.add<RankProfilesConfig,
             RankingConstantsConfig,
+            RankingExpressionsConfig,
             OnnxModelsConfig,
             IndexschemaConfig,
             AttributesConfig,
@@ -264,6 +270,21 @@ build_alloc_config(const ProtonConfig& proton_config, const vespalib::string& do
          distribution_config.redundancy, distribution_config.searchablecopies);
 }
 
+vespalib::string resolve_file(config::RpcFileAcquirer &fileAcquirer, vespalib::TimeBox &timeBox,
+                              const vespalib::string &desc, const vespalib::string &fileref)
+{
+    vespalib::string filePath;
+    LOG(info, "Waiting for file acquirer (%s, ref='%s')", desc.c_str(), fileref.c_str());
+    while (timeBox.hasTimeLeft() && (filePath == "")) {
+        filePath = fileAcquirer.wait_for(fileref, timeBox.timeLeft());
+        if (filePath == "") {
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+        }
+    }
+    LOG(info, "Got file path from file acquirer: '%s' (%s, ref='%s')", filePath.c_str(), desc.c_str(), fileref.c_str());
+    return filePath;
+}
+
 }
 
 void
@@ -271,6 +292,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
 {
     using RankProfilesConfigSP = DocumentDBConfig::RankProfilesConfigSP;
     using RankingConstantsConfigSP = std::shared_ptr<vespa::config::search::core::RankingConstantsConfig>;
+    using RankingExpressionsConfigSP = std::shared_ptr<vespa::config::search::core::RankingExpressionsConfig>;
     using OnnxModelsConfigSP = std::shared_ptr<vespa::config::search::core::OnnxModelsConfig>;
     using IndexschemaConfigSP = DocumentDBConfig::IndexschemaConfigSP;
     using SummaryConfigSP = DocumentDBConfig::SummaryConfigSP;
@@ -282,6 +304,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     DocumentDBConfig::SP current = _pendingConfigSnapshot;
     RankProfilesConfigSP newRankProfilesConfig;
     matching::RankingConstants::SP newRankingConstants;
+    matching::RankingExpressions::SP newRankingExpressions;
     matching::OnnxModels::SP newOnnxModels;
     IndexschemaConfigSP newIndexschemaConfig;
     MaintenanceConfigSP oldMaintenanceConfig;
@@ -308,6 +331,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     if (current) {
         newRankProfilesConfig = current->getRankProfilesConfigSP();
         newRankingConstants = current->getRankingConstantsSP();
+        newRankingExpressions = current->getRankingExpressionsSP();
         newOnnxModels = current->getOnnxModelsSP();
         newIndexschemaConfig = current->getIndexschemaConfigSP();
         oldMaintenanceConfig = current->getMaintenanceConfigSP();
@@ -328,21 +352,28 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
             config::RpcFileAcquirer fileAcquirer(spec);
             vespalib::TimeBox timeBox(5*60, 5);
             for (const RankingConstantsConfig::Constant &rc : newRankingConstantsConfig->constant) {
-                vespalib::string filePath;
-                LOG(info, "Waiting for file acquirer (name='%s', type='%s', ref='%s')",
-                    rc.name.c_str(), rc.type.c_str(), rc.fileref.c_str());
-                while (timeBox.hasTimeLeft() && (filePath == "")) {
-                    filePath = fileAcquirer.wait_for(rc.fileref, timeBox.timeLeft());
-                    if (filePath == "") {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                    }
-                }
-                LOG(info, "Got file path from file acquirer: '%s' (name='%s', type='%s', ref='%s')",
-                    filePath.c_str(), rc.name.c_str(), rc.type.c_str(), rc.fileref.c_str());
+                auto desc = fmt("name='%s', type='%s'", rc.name.c_str(), rc.type.c_str());
+                vespalib::string filePath = resolve_file(fileAcquirer, timeBox, desc, rc.fileref);
                 constants.emplace_back(rc.name, rc.type, filePath);
             }
         }
         newRankingConstants = std::make_shared<RankingConstants>(constants);
+    }
+    if (snapshot.isChanged<RankingExpressionsConfig>(_configId, currentGeneration)) {
+        RankingExpressionsConfigSP newRankingExpressionsConfig = RankingExpressionsConfigSP(
+            snapshot.getConfig<RankingExpressionsConfig>(_configId));
+        const vespalib::string &spec = _bootstrapConfig->getFiledistributorrpcConfig().connectionspec;
+        RankingExpressions expressions;
+        if (spec != "") {
+            config::RpcFileAcquirer fileAcquirer(spec);
+            vespalib::TimeBox timeBox(5*60, 5);
+            for (const RankingExpressionsConfig::Expression &rc : newRankingExpressionsConfig->expression) {
+                auto desc = fmt("name='%s'", rc.name.c_str());
+                vespalib::string filePath = resolve_file(fileAcquirer, timeBox, desc, rc.fileref);
+                expressions.add(rc.name, filePath);
+            }
+        }
+        newRankingExpressions = std::make_shared<RankingExpressions>(std::move(expressions));
     }
     if (snapshot.isChanged<OnnxModelsConfig>(_configId, currentGeneration)) {
         OnnxModelsConfigSP newOnnxModelsConfig = OnnxModelsConfigSP(
@@ -353,17 +384,8 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
             config::RpcFileAcquirer fileAcquirer(spec);
             vespalib::TimeBox timeBox(5*60, 5);
             for (const OnnxModelsConfig::Model &rc : newOnnxModelsConfig->model) {
-                vespalib::string filePath;
-                LOG(info, "Waiting for file acquirer (name='%s', ref='%s')",
-                    rc.name.c_str(), rc.fileref.c_str());
-                while (timeBox.hasTimeLeft() && (filePath == "")) {
-                    filePath = fileAcquirer.wait_for(rc.fileref, timeBox.timeLeft());
-                    if (filePath == "") {
-                        std::this_thread::sleep_for(std::chrono::milliseconds(100));
-                    }
-                }
-                LOG(info, "Got file path from file acquirer: '%s' (name='%s', ref='%s')",
-                    filePath.c_str(), rc.name.c_str(), rc.fileref.c_str());
+                auto desc = fmt("name='%s'", rc.name.c_str());
+                vespalib::string filePath = resolve_file(fileAcquirer, timeBox, desc, rc.fileref);
                 models.emplace_back(rc.name, filePath);
                 OnnxModels::configure(rc, models.back());
             }
@@ -403,6 +425,7 @@ DocumentDBConfigManager::update(const ConfigSnapshot &snapshot)
     auto newSnapshot = std::make_shared<DocumentDBConfig>(generation,
                                  newRankProfilesConfig,
                                  newRankingConstants,
+                                 newRankingExpressions,
                                  newOnnxModels,
                                  newIndexschemaConfig,
                                  filterImportedAttributes(newAttributesConfig),

@@ -35,6 +35,7 @@ namespace proton {
 DocumentDBConfig::ComparisonResult::ComparisonResult()
     : rankProfilesChanged(false),
       rankingConstantsChanged(false),
+      rankingExpressionsChanged(false),
       onnxModelsChanged(false),
       indexschemaChanged(false),
       attributesChanged(false),
@@ -58,6 +59,7 @@ DocumentDBConfig::DocumentDBConfig(
                int64_t generation,
                const RankProfilesConfigSP &rankProfiles,
                const RankingConstants::SP &rankingConstants,
+               const RankingExpressions::SP &rankingExpressions,
                const OnnxModels::SP &onnxModels,
                const IndexschemaConfigSP &indexschema,
                const AttributesConfigSP &attributes,
@@ -80,6 +82,7 @@ DocumentDBConfig::DocumentDBConfig(
       _generation(generation),
       _rankProfiles(rankProfiles),
       _rankingConstants(rankingConstants),
+      _rankingExpressions(rankingExpressions),
       _onnxModels(onnxModels),
       _indexschema(indexschema),
       _attributes(attributes),
@@ -107,6 +110,7 @@ DocumentDBConfig(const DocumentDBConfig &cfg)
       _generation(cfg._generation),
       _rankProfiles(cfg._rankProfiles),
       _rankingConstants(cfg._rankingConstants),
+      _rankingExpressions(cfg._rankingExpressions),
       _onnxModels(cfg._onnxModels),
       _indexschema(cfg._indexschema),
       _attributes(cfg._attributes),
@@ -133,6 +137,7 @@ DocumentDBConfig::operator==(const DocumentDBConfig & rhs) const
 {
     return equals<RankProfilesConfig>(_rankProfiles.get(), rhs._rankProfiles.get()) &&
            equals<RankingConstants>(_rankingConstants.get(), rhs._rankingConstants.get()) &&
+           equals<RankingExpressions>(_rankingExpressions.get(), rhs._rankingExpressions.get()) &&
            equals<OnnxModels>(_onnxModels.get(), rhs._onnxModels.get()) &&
            equals<IndexschemaConfig>(_indexschema.get(), rhs._indexschema.get()) &&
            equals<AttributesConfig>(_attributes.get(), rhs._attributes.get()) &&
@@ -157,6 +162,7 @@ DocumentDBConfig::compare(const DocumentDBConfig &rhs) const
     ComparisonResult retval;
     retval.rankProfilesChanged = !equals<RankProfilesConfig>(_rankProfiles.get(), rhs._rankProfiles.get());
     retval.rankingConstantsChanged = !equals<RankingConstants>(_rankingConstants.get(), rhs._rankingConstants.get());
+    retval.rankingExpressionsChanged = !equals<RankingExpressions>(_rankingExpressions.get(), rhs._rankingExpressions.get());
     retval.onnxModelsChanged = !equals<OnnxModels>(_onnxModels.get(), rhs._onnxModels.get());
     retval.indexschemaChanged = !equals<IndexschemaConfig>(_indexschema.get(), rhs._indexschema.get());
     retval.attributesChanged = !equals<AttributesConfig>(_attributes.get(), rhs._attributes.get());
@@ -183,6 +189,7 @@ DocumentDBConfig::valid() const
 {
     return _rankProfiles &&
            _rankingConstants &&
+           _rankingExpressions &&
            _onnxModels &&
            _indexschema &&
            _attributes &&
@@ -226,6 +233,7 @@ DocumentDBConfig::makeReplayConfig(const SP & orig)
                 o._generation,
                 emptyConfig(o._rankProfiles),
                 std::make_shared<RankingConstants>(),
+                std::make_shared<RankingExpressions>(),
                 std::make_shared<OnnxModels>(),
                 o._indexschema,
                 o._attributes,
@@ -269,6 +277,7 @@ DocumentDBConfig::newFromAttributesConfig(const AttributesConfigSP &attributes) 
             _generation,
             _rankProfiles,
             _rankingConstants,
+            _rankingExpressions,
             _onnxModels,
             _indexschema,
             attributes,
@@ -307,6 +316,7 @@ DocumentDBConfig::makeDelayedAttributeAspectConfig(const SP &newCfg, const Docum
                   (n._generation,
                    n._rankProfiles,
                    n._rankingConstants,
+                   n._rankingExpressions,
                    n._onnxModels,
                    n._indexschema,
                    attributeAspectDelayer.getAttributesConfig(),

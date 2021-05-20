@@ -15,6 +15,7 @@ ReconfigParams::configHasChanged() const
 {
     return _res.rankProfilesChanged ||
             _res.rankingConstantsChanged ||
+            _res.rankingExpressionsChanged ||
             _res.onnxModelsChanged ||
             _res.indexschemaChanged ||
             _res.attributesChanged ||
@@ -40,7 +41,7 @@ ReconfigParams::shouldSchemaChange() const
 bool
 ReconfigParams::shouldMatchersChange() const
 {
-    return _res.rankProfilesChanged || _res.rankingConstantsChanged || _res.onnxModelsChanged || shouldSchemaChange();
+    return _res.rankProfilesChanged || _res.rankingConstantsChanged || _res.rankingExpressionsChanged || _res.onnxModelsChanged || shouldSchemaChange();
 }
 
 bool

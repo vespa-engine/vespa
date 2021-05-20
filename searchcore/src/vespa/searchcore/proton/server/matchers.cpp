@@ -2,11 +2,13 @@
 
 #include "matchers.h"
 #include <vespa/searchcore/proton/matching/matcher.h>
+#include <vespa/searchcore/proton/matching/ranking_expressions.h>
 #include <vespa/searchcore/proton/matching/onnx_models.h>
 #include <vespa/vespalib/stllike/hash_map.hpp>
 
 namespace proton {
 
+using matching::RankingExpressions;
 using matching::OnnxModels;
 
 Matchers::Matchers(const vespalib::Clock &clock,
@@ -14,7 +16,7 @@ Matchers::Matchers(const vespalib::Clock &clock,
                    const matching::IConstantValueRepo &constantValueRepo)
     : _rpmap(),
       _fallback(new matching::Matcher(search::index::Schema(), search::fef::Properties(),
-                                      clock, queryLimiter, constantValueRepo, OnnxModels(), -1)),
+                                      clock, queryLimiter, constantValueRepo, RankingExpressions(), OnnxModels(), -1)),
       _default()
 { }
 

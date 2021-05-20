@@ -48,6 +48,7 @@ public:
     };
 
     using ConstantsMap = std::map<vespalib::string, Constant>;
+    using ExprMap = std::map<vespalib::string, vespalib::string>;
     using ModelMap = std::map<vespalib::string, OnnxModel>;
 
     IndexEnvironment();
@@ -85,6 +86,9 @@ public:
                           vespalib::eval::ValueType type,
                           std::unique_ptr<vespalib::eval::Value> value);
 
+    vespalib::string getRankingExpression(const vespalib::string &name) const override;
+    void addRankingExpression(const vespalib::string &name, const vespalib::string &value);
+
     const OnnxModel *getOnnxModel(const vespalib::string &name) const override;
     void addOnnxModel(const OnnxModel &model);
 
@@ -98,6 +102,7 @@ private:
     AttributeMap           _attrMap;
     TableManager           _tableMan;
     ConstantsMap           _constants;
+    ExprMap                _expressions;
     ModelMap               _models;
 };
 

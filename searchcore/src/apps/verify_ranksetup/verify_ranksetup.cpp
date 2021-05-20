@@ -15,8 +15,10 @@
 #include <vespa/eval/eval/value_codec.h>
 #include <vespa/searchcommon/common/schemaconfigurer.h>
 #include <vespa/searchcore/config/config-ranking-constants.h>
+#include <vespa/searchcore/config/config-ranking-expressions.h>
 #include <vespa/searchcore/config/config-onnx-models.h>
 #include <vespa/searchcore/proton/matching/indexenvironment.h>
+#include <vespa/searchcore/proton/matching/ranking_expressions.h>
 #include <vespa/searchlib/features/setup.h>
 #include <vespa/searchlib/fef/fef.h>
 #include <vespa/searchlib/fef/test/plugin/setup.h>
@@ -33,11 +35,13 @@ using config::ConfigSubscriber;
 using config::IConfigContext;
 using config::InvalidConfigException;
 using proton::matching::IConstantValueRepo;
+using proton::matching::RankingExpressions;
 using proton::matching::OnnxModels;
 using vespa::config::search::AttributesConfig;
 using vespa::config::search::IndexschemaConfig;
 using vespa::config::search::RankProfilesConfig;
 using vespa::config::search::core::RankingConstantsConfig;
+using vespa::config::search::core::RankingExpressionsConfig;
 using vespa::config::search::core::OnnxModelsConfig;
 using vespa::config::search::core::VerifyRanksetupConfig;
 using vespalib::eval::BadConstantValue;
@@ -57,6 +61,19 @@ std::optional<vespalib::string> get_file(const vespalib::string &ref, const Veri
     return std::nullopt;
 }
 
+RankingExpressions make_expressions(const RankingExpressionsConfig &expressionsCfg, const VerifyRanksetupConfig &myCfg) {
+    RankingExpressions expressions;
+    for (const auto &entry: expressionsCfg.expression) {
+        if (auto file = get_file(entry.fileref, myCfg)) {
+            expressions.add(entry.name, file.value());
+        } else {
+            LOG(warning, "could not find file for ranking expression '%s' (ref:'%s')",
+                entry.name.c_str(), entry.fileref.c_str());
+        }
+    }
+    return expressions;
+}
+
 OnnxModels make_models(const OnnxModelsConfig &modelsCfg, const VerifyRanksetupConfig &myCfg) {
     OnnxModels::Vector model_list;
     for (const auto &entry: modelsCfg.model) {
@@ -64,7 +81,7 @@ OnnxModels make_models(const OnnxModelsConfig &modelsCfg, const VerifyRanksetupC
             model_list.emplace_back(entry.name, file.value());
             OnnxModels::configure(entry, model_list.back());
         } else {
-            LOG(warning, "could not find file for onnx model '%s' (ref:'%s')\n",
+            LOG(warning, "could not find file for onnx model '%s' (ref:'%s')",
                 entry.name.c_str(), entry.fileref.c_str());
         }
     }
@@ -77,13 +94,15 @@ public:
     bool verify(const search::index::Schema &schema,
                 const search::fef::Properties &props,
                 const IConstantValueRepo &repo,
-                OnnxModels models);
+                const RankingExpressions &expressions,
+                const OnnxModels &models);
 
     bool verifyConfig(const VerifyRanksetupConfig &myCfg,
                       const RankProfilesConfig &rankCfg,
                       const IndexschemaConfig &schemaCfg,
                       const AttributesConfig &attributeCfg,
                       const RankingConstantsConfig &constantsCfg,
+                      const RankingExpressionsConfig &expressionsCfg,
                       const OnnxModelsConfig &modelsCfg);
 
     int usage();
@@ -112,9 +131,10 @@ bool
 App::verify(const search::index::Schema &schema,
             const search::fef::Properties &props,
             const IConstantValueRepo &repo,
-            OnnxModels models)
+            const RankingExpressions &expressions,
+            const OnnxModels &models)
 {
-    proton::matching::IndexEnvironment indexEnv(0, schema, props, repo, models);
+    proton::matching::IndexEnvironment indexEnv(0, schema, props, repo, expressions, models);
     search::fef::BlueprintFactory factory;
     search::features::setup_search_features(factory);
     search::fef::test::setup_fef_test_plugin(factory);
@@ -143,6 +163,7 @@ App::verifyConfig(const VerifyRanksetupConfig &myCfg,
                   const IndexschemaConfig &schemaCfg,
                   const AttributesConfig &attributeCfg,
                   const RankingConstantsConfig &constantsCfg,
+                  const RankingExpressionsConfig &expressionsCfg,
                   const OnnxModelsConfig &modelsCfg)
 {
     bool ok = true;
@@ -150,6 +171,7 @@ App::verifyConfig(const VerifyRanksetupConfig &myCfg,
     search::index::SchemaBuilder::build(schemaCfg, schema);
     search::index::SchemaBuilder::build(attributeCfg, schema);
     DummyConstantValueRepo repo(constantsCfg);
+    auto expressions = make_expressions(expressionsCfg, myCfg);
     auto models = make_models(modelsCfg, myCfg);
     for(size_t i = 0; i < rankCfg.rankprofile.size(); i++) {
         search::fef::Properties properties;
@@ -158,7 +180,7 @@ App::verifyConfig(const VerifyRanksetupConfig &myCfg,
             properties.add(profile.fef.property[j].name,
                            profile.fef.property[j].value);
         }
-        if (verify(schema, properties, repo, models)) {
+        if (verify(schema, properties, repo, expressions, models)) {
             LOG(info, "rank profile '%s': pass", profile.name.c_str());
         } else {
             LOG(error, "rank profile '%s': FAIL", profile.name.c_str());
@@ -196,6 +218,7 @@ App::Main()
         ConfigHandle<AttributesConfig>::UP attributesHandle = subscriber.subscribe<AttributesConfig>(cfgId);
         ConfigHandle<IndexschemaConfig>::UP schemaHandle = subscriber.subscribe<IndexschemaConfig>(cfgId);
         ConfigHandle<RankingConstantsConfig>::UP constantsHandle = subscriber.subscribe<RankingConstantsConfig>(cfgId);
+        ConfigHandle<RankingExpressionsConfig>::UP expressionsHandle = subscriber.subscribe<RankingExpressionsConfig>(cfgId);
         ConfigHandle<OnnxModelsConfig>::UP modelsHandle = subscriber.subscribe<OnnxModelsConfig>(cfgId);
 
         subscriber.nextConfig();
@@ -204,6 +227,7 @@ App::Main()
                           *schemaHandle->getConfig(),
                           *attributesHandle->getConfig(),
                           *constantsHandle->getConfig(),
+                          *expressionsHandle->getConfig(),
                           *modelsHandle->getConfig());
     } catch (ConfigRuntimeException & e) {
         LOG(error, "Unable to subscribe to config: %s", e.getMessage().c_str());

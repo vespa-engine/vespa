@@ -99,17 +99,18 @@ handleGroupingSession(SessionManager &sessionMgr, GroupingContext & groupingCont
 }  // namespace proton::matching::<unnamed>
 
 Matcher::Matcher(const search::index::Schema &schema, const Properties &props, const vespalib::Clock &clock,
-                 QueryLimiter &queryLimiter, const IConstantValueRepo &constantValueRepo, OnnxModels onnxModels, uint32_t distributionKey)
-    : _indexEnv(distributionKey, schema, props, constantValueRepo, std::move(onnxModels)),
-      _blueprintFactory(),
-      _rankSetup(),
-      _viewResolver(ViewResolver::createFromSchema(schema)),
-      _statsLock(),
-      _stats(),
-      _startTime(my_clock::now()),
-      _clock(clock),
-      _queryLimiter(queryLimiter),
-      _distributionKey(distributionKey)
+                 QueryLimiter &queryLimiter, const IConstantValueRepo &constantValueRepo,
+                 RankingExpressions rankingExpressions, OnnxModels onnxModels, uint32_t distributionKey)
+  : _indexEnv(distributionKey, schema, props, constantValueRepo, std::move(rankingExpressions), std::move(onnxModels)),
+    _blueprintFactory(),
+    _rankSetup(),
+    _viewResolver(ViewResolver::createFromSchema(schema)),
+    _statsLock(),
+    _stats(),
+    _startTime(my_clock::now()),
+    _clock(clock),
+    _queryLimiter(queryLimiter),
+    _distributionKey(distributionKey)
 {
     search::features::setup_search_features(_blueprintFactory);
     search::fef::test::setup_fef_test_plugin(_blueprintFactory);
