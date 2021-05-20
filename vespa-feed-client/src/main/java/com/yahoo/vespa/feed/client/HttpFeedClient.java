@@ -123,12 +123,12 @@ class HttpFeedClient implements FeedClient {
 
     private CompletableFuture<Result> send(String method, DocumentId documentId, String operationJson, OperationParameters params) {
         SimpleHttpRequest request = new SimpleHttpRequest(method, operationUrl(endpoint, documentId, params));
-        requestHeaders.forEach(request::setHeader);
+        requestHeaders.forEach((name, value) -> request.setHeader(name, value.get()));
         if (operationJson != null)
             request.setBody(operationJson, ContentType.APPLICATION_JSON);
 
         return requestStrategy.enqueue(documentId, future -> {
-            httpClient.execute(new SimpleHttpRequest(method, endpoint),
+            httpClient.execute(request,
                                new FutureCallback<SimpleHttpResponse>() {
                                    @Override public void completed(SimpleHttpResponse response) { future.complete(response); }
                                    @Override public void failed(Exception ex) { future.completeExceptionally(ex); }
@@ -154,7 +154,7 @@ class HttpFeedClient implements FeedClient {
             default:  type = failure;
         }
         Map<String, String> responseJson = null; // TODO: parse JSON.
-        return new Result(type, documentId, responseJson.get("message"), responseJson.get("trace"));
+        return new Result(type, documentId, response.getBodyText(), "trace");
     }
 
     static List<String> toPath(DocumentId documentId) {
