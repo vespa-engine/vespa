@@ -39,6 +39,7 @@
       "public int size()",
       "public java.util.Set names()",
       "public java.util.Set arguments()",
+      "public java.util.Map onnxModels()",
       "public com.yahoo.searchlib.rankingexpression.evaluation.Value defaultValue()",
       "public bridge synthetic com.yahoo.tensor.TensorType getType(com.yahoo.tensor.evaluation.Name)"
     ],
@@ -66,7 +67,7 @@
       "public"
     ],
     "methods": [
-      "public void <init>(com.yahoo.vespa.config.search.RankProfilesConfig, com.yahoo.vespa.config.search.core.RankingConstantsConfig, com.yahoo.filedistribution.fileacquirer.FileAcquirer)",
+      "public void <init>(com.yahoo.vespa.config.search.RankProfilesConfig, com.yahoo.vespa.config.search.core.RankingConstantsConfig, com.yahoo.vespa.config.search.core.OnnxModelsConfig, com.yahoo.filedistribution.fileacquirer.FileAcquirer)",
       "public void <init>(java.util.Map)",
       "public java.util.Map models()",
       "public varargs ai.vespa.models.evaluation.FunctionEvaluator evaluatorOf(java.lang.String, java.lang.String[])",
@@ -82,7 +83,7 @@
     ],
     "methods": [
       "public void <init>(com.yahoo.filedistribution.fileacquirer.FileAcquirer)",
-      "public java.util.Map importFrom(com.yahoo.vespa.config.search.RankProfilesConfig, com.yahoo.vespa.config.search.core.RankingConstantsConfig)",
+      "public java.util.Map importFrom(com.yahoo.vespa.config.search.RankProfilesConfig, com.yahoo.vespa.config.search.core.RankingConstantsConfig, com.yahoo.vespa.config.search.core.OnnxModelsConfig)",
       "protected com.yahoo.tensor.Tensor readTensorFromFile(java.lang.String, com.yahoo.tensor.TensorType, com.yahoo.config.FileReference)"
     ],
     "fields": []

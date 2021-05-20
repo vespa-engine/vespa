@@ -161,7 +161,7 @@ public class RankProfile implements Cloneable {
         return search != null ? search.rankingConstants() : model.rankingConstants();
     }
 
-    private Map<String, OnnxModel> onnxModels() {
+    public Map<String, OnnxModel> onnxModels() {
         return search != null ? search.onnxModels().asMap() : Collections.emptyMap();
     }
 

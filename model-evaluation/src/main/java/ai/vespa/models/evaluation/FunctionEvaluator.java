@@ -7,6 +7,7 @@ import com.yahoo.searchlib.rankingexpression.evaluation.TensorValue;
 import com.yahoo.tensor.Tensor;
 import com.yahoo.tensor.TensorType;
 
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -100,17 +101,38 @@ public class FunctionEvaluator {
     }
 
     public Tensor evaluate() {
+        evaluateOnnxModels();
         for (Map.Entry<String, TensorType> argument : function.argumentTypes().entrySet()) {
-            if (context.isMissing(argument.getKey()))
-                throw new IllegalStateException("Missing argument '" + argument.getKey() +
-                                                "': Must be bound to a value of type " + argument.getValue());
-            if (! context.get(argument.getKey()).type().isAssignableTo(argument.getValue()))
-                throw new IllegalStateException("Argument '" + argument.getKey() +
-                                                "' must be bound to a value of type " + argument.getValue());
-
+            checkArgument(argument.getKey(), argument.getValue());
         }
         evaluated = true;
         return function.getBody().evaluate(context).asTensor();
+    }
+
+    private void checkArgument(String name, TensorType type) {
+        if (context.isMissing(name))
+            throw new IllegalStateException("Missing argument '" + name + "': Must be bound to a value of type " + type);
+        if (! context.get(name).type().isAssignableTo(type))
+            throw new IllegalStateException("Argument '" + name + "' must be bound to a value of type " + type);
+    }
+
+    /**
+     * Evaluate ONNX models (if not already evaluated) and add the result back to the context.
+     */
+    private void evaluateOnnxModels() {
+        for (Map.Entry<String, OnnxModel> entry : context().onnxModels().entrySet()) {
+            String onnxFeature = entry.getKey();
+            OnnxModel onnxModel = entry.getValue();
+            if (context.get(onnxFeature).equals(context.defaultValue())) {
+                Map<String, Tensor> inputs = new HashMap<>();
+                for (Map.Entry<String, TensorType> input: onnxModel.inputs().entrySet()) {
+                    checkArgument(input.getKey(), input.getValue());
+                    inputs.put(input.getKey(), context.get(input.getKey()).asTensor());
+                }
+                Tensor result = onnxModel.evaluate(inputs, function.getName());  // Function name is output of model
+                context.put(onnxFeature, new TensorValue(result));
+            }
+        }
     }
 
     /** Returns the function evaluated by this */
