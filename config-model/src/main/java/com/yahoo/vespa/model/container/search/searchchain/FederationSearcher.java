@@ -11,7 +11,12 @@ import com.yahoo.search.federation.FederationConfig;
 import com.yahoo.search.searchchain.model.federation.FederationSearcherModel.TargetSpec;
 import com.yahoo.vespa.model.container.component.Component;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 /**
  * Config producer for the FederationSearcher.
@@ -26,8 +31,8 @@ public class FederationSearcher extends Searcher<FederationSearcherModel> implem
      * Generates config for a single search chain contained in a target.
      */
     private static final class SearchChainConfig {
+
         private final SearchChain searchChain;
-        //Zero if not applicable
         final ComponentId providerId;
         final FederationOptions targetOptions;
         final List<String> documentTypes;
@@ -61,6 +66,7 @@ public class FederationSearcher extends Searcher<FederationSearcherModel> implem
      * which can be federated to as a single entity.
      */
     private static abstract class Target {
+
         final ComponentId id;
         final FederationOptions targetOptions;
 
@@ -79,41 +85,36 @@ public class FederationSearcher extends Searcher<FederationSearcherModel> implem
         }
 
         protected abstract void getSearchChainsConfig(FederationConfig.Target.Builder tb);
+
     }
 
     private static class SearchChainTarget extends Target {
+
         private final SearchChainConfig searchChainConfig;
 
-        public SearchChainTarget(SearchChain searchChain,
-                                 FederationOptions targetOptions) {
+        public SearchChainTarget(SearchChain searchChain, FederationOptions targetOptions) {
             super(searchChain.getComponentId(), targetOptions);
-            searchChainConfig = new SearchChainConfig(
-                    searchChain,
-                    null,
-                    targetOptions,
-                    searchChain.getDocumentTypes());
+            searchChainConfig = new SearchChainConfig(searchChain, null, targetOptions, searchChain.getDocumentTypes());
         }
 
         @Override
         protected void getSearchChainsConfig(FederationConfig.Target.Builder tB) {
             tB.searchChain(searchChainConfig.getSearchChainConfig());
         }
+
     }
 
     private static class SourceGroupTarget extends Target {
-        private final SearchChainConfig leaderConfig;
-        private final List<SearchChainConfig> participantsConfig =
-                new ArrayList<>();
 
-        public SourceGroupTarget(SourceGroup group,
-                                 FederationOptions targetOptions) {
+        private final SearchChainConfig leaderConfig;
+        private final List<SearchChainConfig> participantsConfig = new ArrayList<>();
+
+        public SourceGroupTarget(SourceGroup group, FederationOptions targetOptions) {
             super(group.getComponentId(), applyDefaultSourceGroupOptions(targetOptions));
 
             leaderConfig = createConfig(group.leader(), targetOptions);
-            for (Source participant : group.participants()) {
-                participantsConfig.add(
-                        createConfig(participant, targetOptions));
-            }
+            for (Source participant : group.participants())
+                participantsConfig.add(createConfig(participant, targetOptions));
         }
 
         private static FederationOptions applyDefaultSourceGroupOptions(FederationOptions targetOptions) {
@@ -121,64 +122,49 @@ public class FederationSearcher extends Searcher<FederationSearcherModel> implem
             return targetOptions.inherit(defaultSourceGroupOption);
         }
 
-        private SearchChainConfig createConfig(Source source,
-                                               FederationOptions targetOptions) {
-            return new SearchChainConfig(
-                    source,
-                    source.getParentProvider().getComponentId(),
-                    targetOptions,
-                    source.getDocumentTypes());
+        private SearchChainConfig createConfig(Source source, FederationOptions targetOptions) {
+            return new SearchChainConfig(source,
+                                         source.getParentProvider().getComponentId(),
+                                         targetOptions,
+                                         source.getDocumentTypes());
         }
 
         @Override
         protected void getSearchChainsConfig(FederationConfig.Target.Builder tB) {
             tB.searchChain(leaderConfig.getSearchChainConfig());
-            for (SearchChainConfig participant : participantsConfig) {
+            for (SearchChainConfig participant : participantsConfig)
                 tB.searchChain(participant.getSearchChainConfig());
-            }
         }
     }
 
     private static class TargetResolver {
+
         final ComponentRegistry<SearchChain> searchChainRegistry;
         final SourceGroupRegistry sourceGroupRegistry;
 
-        /**
-         * @return true if searchChain.id newer than sourceGroup.id
-         */
-        private boolean newerVersion(SearchChain searchChain,
-                                     SourceGroup sourceGroup) {
-            if (searchChain == null || sourceGroup == null) {
-                return false;
-            } else {
-                return newerVersion(searchChain.getComponentId(), sourceGroup.getComponentId());
-            }
+        /** Returns true if searchChain.id newer than sourceGroup.id */
+        private boolean newerVersion(SearchChain searchChain, SourceGroup sourceGroup) {
+            if (searchChain == null || sourceGroup == null) return false;
+            return newerVersion(searchChain.getComponentId(), sourceGroup.getComponentId());
         }
 
-        /**
-         * @return true if a newer than b
-         */
+        /** Returns true if a newer than b */
         private boolean newerVersion(ComponentId a, ComponentId b) {
             return a.compareTo(b) > 0;
         }
 
-
-        TargetResolver(ComponentRegistry<SearchChain> searchChainRegistry,
-                       SourceGroupRegistry sourceGroupRegistry) {
+        TargetResolver(ComponentRegistry<SearchChain> searchChainRegistry, SourceGroupRegistry sourceGroupRegistry) {
             this.searchChainRegistry = searchChainRegistry;
             this.sourceGroupRegistry = sourceGroupRegistry;
         }
 
         Target resolve(FederationSearcherModel.TargetSpec specification) {
-            SearchChain searchChain = searchChainRegistry.getComponent(
-                    specification.sourceSpec);
-            SourceGroup sourceGroup = sourceGroupRegistry.getComponent(
-                    specification.sourceSpec);
+            SearchChain searchChain = searchChainRegistry.getComponent(specification.sourceSpec);
+            SourceGroup sourceGroup = sourceGroupRegistry.getComponent(specification.sourceSpec);
 
             if (searchChain == null && sourceGroup == null) {
                 return null;
-            } else if (sourceGroup == null ||
-                    newerVersion(searchChain, sourceGroup)) {
+            } else if (sourceGroup == null || newerVersion(searchChain, sourceGroup)) {
                 return new SearchChainTarget(searchChain, specification.federationOptions);
             } else {
                 return new SourceGroupTarget(sourceGroup, specification.federationOptions);
@@ -186,26 +172,21 @@ public class FederationSearcher extends Searcher<FederationSearcherModel> implem
         }
     }
 
-    private final Map<ComponentId, Target> resolvedTargets =
-            new LinkedHashMap<>();
+    private final Map<ComponentId, Target> resolvedTargets = new LinkedHashMap<>();
 
     public FederationSearcher(FederationSearcherModel searcherModel, Optional<Component> targetSelector) {
         super(searcherModel);
         this.targetSelector = targetSelector;
 
-        if (targetSelector.isPresent())
-            addChild(targetSelector.get());
+        targetSelector.ifPresent(selector -> addChild(selector));
     }
 
     @Override
     public void getConfig(FederationConfig.Builder builder) {
-        for (Target target : resolvedTargets.values()) {
+        for (Target target : resolvedTargets.values())
             builder.target(target.getTargetConfig());
-        }
 
-        if (targetSelector.isPresent()) {
-            builder.targetSelector(targetSelector.get().getGlobalComponentId().stringValue());
-        }
+        targetSelector.ifPresent(selector -> builder.targetSelector(selector.getGlobalComponentId().stringValue()));
     }
 
     @Override
@@ -213,10 +194,8 @@ public class FederationSearcher extends Searcher<FederationSearcherModel> implem
         initialize(getSearchChains().allChains(), getSearchChains().allSourceGroups());
     }
 
-    void initialize(ComponentRegistry<SearchChain> searchChainRegistry,
-                    SourceGroupRegistry sourceGroupRegistry) {
-        TargetResolver targetResolver = new TargetResolver(
-                searchChainRegistry, sourceGroupRegistry);
+    void initialize(ComponentRegistry<SearchChain> searchChainRegistry, SourceGroupRegistry sourceGroupRegistry) {
+        TargetResolver targetResolver = new TargetResolver(searchChainRegistry, sourceGroupRegistry);
 
         addSourceTargets(targetResolver, model.targets);
 
@@ -229,16 +208,14 @@ public class FederationSearcher extends Searcher<FederationSearcherModel> implem
 
             Target target = targetResolver.resolve(targetSpec);
             if (target == null) {
-                throw new RuntimeException("Can't find source " +
-                        targetSpec.sourceSpec +
-                        " used as a source for federation '" +
-                        getComponentId() + "'");
+                throw new RuntimeException("Can't find source " + targetSpec.sourceSpec +
+                                           " used as a source for federation '" + getComponentId() + "'");
             }
 
             Target duplicate = resolvedTargets.put(target.id, target);
             if (duplicate != null && !duplicate.targetOptions.equals(target.targetOptions)) {
-                throw new RuntimeException("Search chain " + target.id + " added twice with different federation options"
-                + " to the federation searcher " + getComponentId());
+                throw new RuntimeException("Search chain " + target.id + " added twice with different federation options" +
+                                           " to the federation searcher " + getComponentId());
             }
         }
     }
@@ -248,23 +225,21 @@ public class FederationSearcher extends Searcher<FederationSearcherModel> implem
         for (GenericTarget genericTarget : defaultTargets(searchChainRegistry.allComponents())) {
             ComponentSpecification specification = genericTarget.getComponentId().toSpecification();
 
-            //Can't use genericTarget directly, as it might be part of a source group.
+            // Can't use genericTarget directly, as it might be part of a source group.
             Target federationTarget = targetResolver.resolve(new TargetSpec(specification, new FederationOptions()));
-            //Do not replace manually added sources, as they might have manually configured federation options
+            // Do not replace manually added sources, as they might have manually configured federation options
             if (!resolvedTargets.containsKey(federationTarget.id))
                 resolvedTargets.put(federationTarget.id, federationTarget);
         }
     }
 
-
     private static List<GenericTarget> defaultTargets(Collection<SearchChain> allSearchChains) {
-        Collection<Provider> providers =
-                CollectionUtil.filter(allSearchChains, Provider.class);
+        Collection<Provider> providers = CollectionUtil.filter(allSearchChains, Provider.class);
 
         List<GenericTarget> defaultTargets = new ArrayList<>();
-        for (Provider provider : providers) {
+        for (Provider provider : providers)
             defaultTargets.addAll(provider.defaultFederationTargets());
-        }
         return defaultTargets;
     }
+
 }

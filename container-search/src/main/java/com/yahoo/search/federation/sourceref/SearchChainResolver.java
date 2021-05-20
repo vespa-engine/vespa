@@ -92,7 +92,6 @@ public class SearchChainResolver {
         public Builder addSourceForProvider(ComponentId sourceId, ComponentId providerId, ComponentId searchChainId,
                                             boolean isDefaultProviderForSource, FederationOptions federationOptions,
                                             List<String> documentTypes) {
-
             SearchChainInvocationSpec searchChainInvocationSpec =
                     new SearchChainInvocationSpec(searchChainId, sourceId, providerId, federationOptions, documentTypes);
 
@@ -132,7 +131,6 @@ public class SearchChainResolver {
         this.targets = targets;
         this.defaultTargets = Collections.unmodifiableSortedSet(defaultTargets);
     }
-
 
     public SearchChainInvocationSpec resolve(ComponentSpecification sourceRef, Properties sourceToProviderMap)
             throws UnresolvedSearchChainException {

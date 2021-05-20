@@ -5,7 +5,6 @@ import java.util.List;
 
 import com.google.common.collect.ImmutableList;
 import com.yahoo.container.bundle.BundleInstantiationSpecification;
-import net.jcip.annotations.Immutable;
 
 import com.yahoo.component.ComponentSpecification;
 import com.yahoo.component.chain.dependencies.Dependencies;
@@ -17,22 +16,7 @@ import com.yahoo.search.federation.FederationSearcher;
  *
  * @author Tony Vaagenes
  */
-@Immutable
 public class FederationSearcherModel extends ChainedComponentModel {
-
-    /**
-     * Specifies one or more search chains that can be addressed
-     * as a single source.
-     */
-    public static class TargetSpec {
-        public final ComponentSpecification sourceSpec;
-        public final FederationOptions federationOptions;
-
-        public TargetSpec(ComponentSpecification sourceSpec, FederationOptions federationOptions) {
-            this.sourceSpec = sourceSpec;
-            this.federationOptions = federationOptions;
-        }
-    }
 
     private static final ComponentSpecification federationSearcherComponentSpecification =
             new ComponentSpecification(FederationSearcher.class.getName());
@@ -46,6 +30,18 @@ public class FederationSearcherModel extends ChainedComponentModel {
               dependencies);
         this.inheritDefaultSources = inheritDefaultSources;
         this.targets = ImmutableList.copyOf(targets);
+    }
+
+    /** Specifies one or more search chains that can be addressed as a single source. */
+    public static class TargetSpec {
+
+        public final ComponentSpecification sourceSpec;
+        public final FederationOptions federationOptions;
+
+        public TargetSpec(ComponentSpecification sourceSpec, FederationOptions federationOptions) {
+            this.sourceSpec = sourceSpec;
+            this.federationOptions = federationOptions;
+        }
     }
 
 }
