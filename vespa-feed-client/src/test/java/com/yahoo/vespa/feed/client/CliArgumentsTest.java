@@ -20,7 +20,7 @@ class CliArgumentsTest {
     void parses_parameters_correctly() throws CliArgumentsException {
         CliArguments args = CliArguments.fromRawArgs(new String[]{
                 "--endpoint=https://vespa.ai:4443/", "--file=feed.json", "--connections=10",
-                "--max-streams-per-connection=128", "--certificate=cert.pem", "--key=key.pem",
+                "--max-streams-per-connection=128", "--certificate=cert.pem", "--private-key=key.pem",
                 "--ca-certificates=ca-certs.pem", "--disable-ssl-hostname-verification"});
         assertEquals(URI.create("https://vespa.ai:4443/"), args.endpoint());
         assertEquals(Paths.get("feed.json"), args.inputFile());

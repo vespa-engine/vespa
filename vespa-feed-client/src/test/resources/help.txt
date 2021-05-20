@@ -7,6 +7,6 @@ Vespa feed client (7.164.0)
     --endpoint <arg>
     --file <arg>
     --help
-    --key <arg>
     --max-streams-per-connection <arg>
+    --private-key <arg>
     --version
