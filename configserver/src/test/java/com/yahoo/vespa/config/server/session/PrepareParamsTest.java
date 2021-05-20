@@ -164,7 +164,7 @@ public class PrepareParamsTest {
         Duration barrierTimeout = Duration.ofSeconds(60);
         HttpRequest httpRequest = HttpRequest.createTestRequest(baseRequest, com.yahoo.jdisc.http.HttpRequest.Method.POST);
         PrepareParams urlPrepareParams = PrepareParams.fromHttpRequest(httpRequest, tenantName, barrierTimeout);
-        PrepareParams jsonPrepareParams = PrepareParams.fromJson(new byte[0], tenantName, barrierTimeout);
+        PrepareParams jsonPrepareParams = PrepareParams.fromJson("{}".getBytes(StandardCharsets.UTF_8), tenantName, barrierTimeout);
 
         assertPrepareParamsEqual(urlPrepareParams, jsonPrepareParams);
     }
